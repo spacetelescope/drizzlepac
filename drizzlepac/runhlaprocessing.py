@@ -118,62 +118,94 @@ def generate_test_data(file_name):
     obs_info_dict,filelist
     """
     if file_name == "ib4604.out": # WFC3 UVIS/IR visit 11665_04
-         # obs_info_dict = {'total detection product 00':
-         #                     {'info': '11665 B46 WFC3 UVIS',
-         #                      'files': ['ib4604fmq_flc.fits',
-         #                                'ib4604fxq_flc.fits',
-         #                                'ib4604fnq_flc.fits',
-         #                                'ib4604fuq_flc.fits',
-         #                                'ib4604fqq_flc.fits',
-         #                                'ib4604fvq_flc.fits']},
-         #                 'total detection product 01':
-         #                     {'info': '11665 B46 WFC3 IR',
-         #                      'files': ['ib4604g2q_flt.fits',
-         #                                'ib4604g6q_flt.fits',
-         #                                'ib4604g3q_flt.fits',
-         #                                'ib4604g8q_flt.fits']},
-         #                 'filter product 00':
-         #                     {'info': '11665 B46 WFC3 IR F110W',
-         #                      'files': ['ib4604g2q_flt.fits',
-         #                                'ib4604g6q_flt.fits']},
-         #                 'single exposure product 00':
-         #                     {'info': '11665 B46 WFC3 UVIS F555W IB4604FMQ',
-         #                      'files': ['ib4604fmq_flc.fits']},
-         #                 'single exposure product 01':
-         #                     {'info': '11665 B46 WFC3 UVIS F555W IB4604FXQ',
-         #                      'files': ['ib4604fxq_flc.fits']},
-         #                 'filter product 01':
-         #                     {'info': '11665 B46 WFC3 IR F160W',
-         #                      'files': ['ib4604g3q_flt.fits',
-         #                                'ib4604g8q_flt.fits']},
-         #                 'single exposure product 02':
-         #                     {'info': '11665 B46 WFC3 UVIS F555W IB4604FNQ',
-         #                      'files': ['ib4604fnq_flc.fits']},
-         #                 'single exposure product 03':
-         #                     {'info': '11665 B46 WFC3 UVIS F555W IB4604FUQ',
-         #                      'files': ['ib4604fuq_flc.fits']},
-         #                 'filter product 02':
-         #                     {'info': '11665 B46 WFC3 UVIS F555W',
-         #                      'files': ['ib4604fqq_flc.fits',
-         #                                'ib4604fvq_flc.fits']},
-         #                 'single exposure product 04':
-         #                     {'info': '11665 B46 WFC3 UVIS F555W IB4604FQQ',
-         #                      'files': ['ib4604fqq_flc.fits']},
-         #                 'single exposure product 05':
-         #                     {'info': '11665 B46 WFC3 UVIS F555W IB4604FVQ',
-         #                      'files': ['ib4604fvq_flc.fits']},
-         #                 'single exposure product 06':
-         #                     {'info': '11665 B46 WFC3 IR F110W IB4604G2Q',
-         #                      'files': ['ib4604g2q_flt.fits']},
-         #                 'single exposure product 07':
-         #                     {'info': '11665 B46 WFC3 IR F110W IB4604G6Q',
-         #                      'files': ['ib4604g6q_flt.fits']},
-         #                 'single exposure product 08':
-         #                     {'info': '11665 B46 WFC3 IR F160W IB4604G3Q',
-         #                      'files': ['ib4604g3q_flt.fits']},
-         #                 'single exposure product 09':
-         #                     {'info': '11665 B46 WFC3 IR F160W IB4604G8Q',
-         #                      'files': ['ib4604g8q_flt.fits']}}
+         obs_info_dict = {'total detection product 00': # full visit
+                             {'info': '11665 B46 WFC3 UVIS',
+                              'files': ['ib4604fmq_flc.fits',
+                                        'ib4604fxq_flc.fits',
+                                        'ib4604fnq_flc.fits',
+                                        'ib4604fuq_flc.fits',
+                                        'ib4604fqq_flc.fits',
+                                        'ib4604fvq_flc.fits']},
+                         'total detection product 01':
+                             {'info': '11665 B46 WFC3 IR',
+                              'files': ['ib4604g2q_flt.fits',
+                                        'ib4604g6q_flt.fits',
+                                        'ib4604g3q_flt.fits',
+                                        'ib4604g8q_flt.fits']},
+                         'filter product 00':
+                             {'info': '11665 B46 WFC3 IR F110W',
+                              'files': ['ib4604g2q_flt.fits',
+                                        'ib4604g6q_flt.fits']},
+                         'single exposure product 00':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FMQ',
+                              'files': ['ib4604fmq_flc.fits']},
+                         'single exposure product 01':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FXQ',
+                              'files': ['ib4604fxq_flc.fits']},
+                         'filter product 01':
+                             {'info': '11665 B46 WFC3 IR F160W',
+                              'files': ['ib4604g3q_flt.fits',
+                                        'ib4604g8q_flt.fits']},
+                         'single exposure product 02':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FNQ',
+                              'files': ['ib4604fnq_flc.fits']},
+                         'single exposure product 03':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FUQ',
+                              'files': ['ib4604fuq_flc.fits']},
+                         'filter product 02':
+                             {'info': '11665 B46 WFC3 UVIS F555W',
+                              'files': ['ib4604fqq_flc.fits',
+                                        'ib4604fvq_flc.fits']},
+                         'single exposure product 04':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FQQ',
+                              'files': ['ib4604fqq_flc.fits']},
+                         'single exposure product 05':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FVQ',
+                              'files': ['ib4604fvq_flc.fits']},
+                         'single exposure product 06':
+                             {'info': '11665 B46 WFC3 IR F110W IB4604G2Q',
+                              'files': ['ib4604g2q_flt.fits']},
+                         'single exposure product 07':
+                             {'info': '11665 B46 WFC3 IR F110W IB4604G6Q',
+                              'files': ['ib4604g6q_flt.fits']},
+                         'single exposure product 08':
+                             {'info': '11665 B46 WFC3 IR F160W IB4604G3Q',
+                              'files': ['ib4604g3q_flt.fits']},
+                         'single exposure product 09':
+                             {'info': '11665 B46 WFC3 IR F160W IB4604G8Q',
+                              'files': ['ib4604g8q_flt.fits']}}
+    if file_name == "ib4604uvis.out": # WFC3 UVIS/IR visit 11665_04
+         obs_info_dict = {'total detection product 00': # full visit
+                             {'info': '11665 B46 WFC3 UVIS',
+                              'files': ['ib4604fmq_flc.fits',
+                                        'ib4604fxq_flc.fits',
+                                        'ib4604fnq_flc.fits',
+                                        'ib4604fuq_flc.fits',
+                                        'ib4604fqq_flc.fits',
+                                        'ib4604fvq_flc.fits']},
+                         'single exposure product 00':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FMQ',
+                              'files': ['ib4604fmq_flc.fits']},
+                         'single exposure product 01':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FXQ',
+                              'files': ['ib4604fxq_flc.fits']},
+                         'single exposure product 02':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FNQ',
+                              'files': ['ib4604fnq_flc.fits']},
+                         'single exposure product 03':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FUQ',
+                              'files': ['ib4604fuq_flc.fits']},
+                         'filter product 00':
+                             {'info': '11665 B46 WFC3 UVIS F555W',
+                              'files': ['ib4604fqq_flc.fits',
+                                        'ib4604fvq_flc.fits']},
+                         'single exposure product 04':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FQQ',
+                              'files': ['ib4604fqq_flc.fits']},
+                         'single exposure product 05':
+                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FVQ',
+                              'files': ['ib4604fvq_flc.fits']}}
+    if file_name == "ib4604ir.out":
         obs_info_dict = {'total detection product 00': #Just the WFC3/IR portion of 11665_04
                              {'info': '11665 B46 WFC3 IR',
                               'files': ['ib4604g2q_flt.fits',
