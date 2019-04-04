@@ -99,14 +99,14 @@ def check_and_get_data(input_list,**pars):
     # (*_asn.fits), a full individual image file (aka singleton, *_flt.fits), or a root name specification 
     # (association or singleton, ipppssoot).
     for input_item in input_list:
-        print('Input item: ', input_item)
+        log.info('Input item: ', input_item)
         indx = input_item.find('_')
         
         # Input with a suffix (_xxx.fits)
         if indx != -1:
             lc_input_item = input_item.lower()
             suffix = lc_input_item[indx+1:indx+4]
-            print('file: ', lc_input_item)
+            log.info('file: ', lc_input_item)
             # For an association, need to open the table and read the image names as this could
             # be a custom association.  The assumption is this file is on local disk when specified
             # in this manner (vs just the ipppssoot of the association).
@@ -241,7 +241,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         else:
             log.warning("WARNING: Unable to display Git repository revision information.")
 
-    print(input_list)
+    log.info(input_list)
    
     # 1: Interpret input data and optional parameters
     log.info("-------------------- STEP 1: Get data ------------------------------------------------------------------")
@@ -363,7 +363,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         # add the name of the image to the imglist object
         for im in img:
         #    im.meta['name'] = image
-            print('im.meta[name] = {}'.format(im.meta['name']))
+            log.info('im.meta[name] = {}'.format(im.meta['name']))
         imglist.extend(img)
     #store mapping of group_id to filename/chip
     group_id_dict={}
@@ -451,7 +451,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                             continue
                         temp_imglist = copy.deepcopy(imglist) # preserve best fit solution so that it can be inserted into a reinitialized imglist next time through.
                 except Exception:
-                    print("\a\a\a")
                     exc_type, exc_value, exc_tb = sys.exc_info()
                     traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
                     log.warning(
