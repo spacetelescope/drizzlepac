@@ -117,6 +117,12 @@ The task 'runastrodriz' can be used to reproduce the same Drizzle processing tha
 
    Running Astrodriz <runastrodriz.rst>
 
+HLA API
+-------
+.. toctree::
+   :maxdepth: 2
+
+   hla
 
 Indices and tables
 ==================
