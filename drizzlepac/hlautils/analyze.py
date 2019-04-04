@@ -196,20 +196,6 @@ def analyze_data(inputFileList, **kwargs):
             noProcKey   = SCNKEY
             noProcValue = scan_typ
 
-        # Filter which does not begin with: 'F'(F###), 'C'(CLEAR), 'N'(N/A), and is not blank
-        # The sfilter variable may be the concatenation of two filters (F160_CLEAR)
-        elif sfilter and not sfilter.startswith(('F', 'C', 'N')):
-            noProcKey   = FILKEY
-            noProcValue = sfilter
-
-        elif '_' in sfilter:
-            pos = sfilter.index('_')
-            pos += 1
-
-            if sfilter[pos] != 'F' and sfilter[pos] != '' and sfilter[pos] != 'C' and sfilter[pos] != 'N':
-                noProcKey   = FILKEY
-                noProcValue = sfilter
-
         # Ramp, polarizer, grism, or prism
         elif any (x in aperture for x in ['RAMP', 'POL', 'GRISM', '-REF', 'PRISM']):
             noProcKey   = APKEY
@@ -235,6 +221,20 @@ def analyze_data(inputFileList, **kwargs):
             noProcKey   = CHINKEY
             noProcValue = chinject
 
+        # Filter which does not begin with: 'F'(F###), 'C'(CLEAR), 'N'(N/A), and is not blank
+        # The sfilter variable may be the concatenation of two filters (F160_CLEAR)
+        elif sfilter and not sfilter.startswith(('F', 'C', 'N')):
+            noProcKey   = FILKEY
+            noProcValue = sfilter
+
+        elif '_' in sfilter:
+            pos = sfilter.index('_')
+            pos += 1
+
+            if sfilter[pos] != 'F' and sfilter[pos] != '' and sfilter[pos] != 'C' and sfilter[pos] != 'N':
+                noProcKey   = FILKEY
+                noProcValue = sfilter
+
         # If noProcKey is set to a keyword, then this image has been found to not be viable for
         # alignment purposes.
         if (noProcKey is not None):
@@ -258,6 +258,7 @@ def analyze_data(inputFileList, **kwargs):
                              offset_x, offset_y, rot, scale, rms_x, rms_y,
                              rms_ra, rms_dec, completed, fit_rms, total_rms, datasetKey,
                              status, fit_qual, headerletFile])
+        processMsg = None
     #outputTable.pprint(max_width=-1)
 
     return(outputTable)
