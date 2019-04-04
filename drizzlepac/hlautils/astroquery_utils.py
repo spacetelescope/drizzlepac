@@ -10,9 +10,12 @@ from stsci.tools import logutil
 
 __taskname__ = 'astroquery_utils'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger(__name__,
+                            level=logutil.logging.INFO,
+                            stream=sys.stdout)
 
-def retrieve_observation(obsid, suffix=['FLC'], archive=False,clobber=False):
+
+def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
     """Simple interface for retrieving an observation from the MAST archive
 
     If the input obsid is for an association, it will request all members with
@@ -22,17 +25,19 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False,clobber=False):
     -----------
     obsid : string
         ID for observation to be retrieved from the MAST archive.  Only the
-        IPPSSOOT (rootname) of exposure or ASN needs to be provided; eg., ib6v06060.
+        IPPSSOOT (rootname) of exposure or ASN needs to be provided; eg.,
+        ib6v06060.
 
     suffix : list
         List containing suffixes of files which should be requested from MAST.
 
     path : string
-        Directory to use for writing out downloaded files.  If `None` (default),
-        the current working directory will be used.
+        Directory to use for writing out downloaded files.  If `None`
+        (default), the current working directory will be used.
 
     archive : Boolean
-        Retain copies of the downloaded files in the astroquery created sub-directories? Default is 'False'.
+        Retain copies of the downloaded files in the astroquery created
+        sub-directories? Default is 'False'.
 
     clobber : Boolean
         Download and Overwrite existing files? Default is 'False'.
@@ -44,7 +49,8 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False,clobber=False):
     """
     local_files = []
 
-    # Query MAST for the data with an observation type of either "science" or "calibration"
+    # Query MAST for the data with an observation type of either "science" or
+    # "calibration"
     obsTable = Observations.query_criteria(obs_id=obsid, obstype='all')
     # Catch the case where no files are found for download
     if len(obsTable) == 0:
@@ -53,25 +59,30 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False,clobber=False):
 
     dpobs = Observations.get_product_list(obsTable)
     dataProductsByID = Observations.filter_products(dpobs,
-                                              productSubGroupDescription=suffix,
-                                              extension='fits',
-                                              mrp_only=False)
+                                                    productSubGroupDescription=
+                                                    suffix, extension='fits',
+                                                    mrp_only=False)
 
-    # After the filtering has been done, ensure there is still data in the table for download.
-    # If the table is empty, look for FLT images in lieu of FLC images. Only want one
-    # or the other (not both!), so just do the filtering again.
+    # After the filtering has been done, ensure there is still data in the
+    # table for download. If the table is empty, look for FLT images in lieu
+    # of FLC images. Only want one or the other (not both!), so just do the
+    # filtering again.
     if len(dataProductsByID) == 0:
-        log.info("WARNING: No FLC files found for {} - will look for FLT files instead.".format(obsid))
+        log.info(
+            "WARNING: No FLC files found for {} - will look for FLT files "
+            "instead.".format(obsid))
         suffix = ['FLT']
-        dataProductsByID = Observations.filter_products(dpobs,
-                                              productSubGroupDescription=suffix,
-                                              extension='fits',
-                                              mrp_only=False)
+        dataProductsByID = \
+            Observations.filter_products(dpobs,
+                                         productSubGroupDescription=suffix,
+                                         extension='fits',
+                                         mrp_only=False)
 
-        # If still no data, then return.  An exception will eventually be thrown in
-        # the higher level code.
+        # If still no data, then return.  An exception will eventually be
+        # thrown in the higher level code.
         if len(dataProductsByID) == 0:
-            log.info("WARNING: No FLC or FLT files found for {}.".format(obsid))
+            log.info(
+                "WARNING: No FLC or FLT files found for {}.".format(obsid))
             return local_files
     allImages = []
     for tableLine in dataProductsByID:
@@ -79,9 +90,10 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False,clobber=False):
     log.info(allImages)
     if not clobber:
         rowsToRemove = []
-        for rowCtr in range(0,len(dataProductsByID)):
+        for rowCtr in range(0, len(dataProductsByID)):
             if os.path.exists(dataProductsByID[rowCtr]['productFilename']):
-                log.info("{} already exists. File download skipped.".format(dataProductsByID[rowCtr]['productFilename']))
+                log.info("{} already exists. File download skipped.".format(
+                    dataProductsByID[rowCtr]['productFilename']))
                 rowsToRemove.append(rowCtr)
         if rowsToRemove:
             rowsToRemove.reverse()
@@ -97,12 +109,15 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False,clobber=False):
                 local_files = allImages
                 return local_files
             else:
-                manifest.insert_row(rownum,vals=[allImages[rownum],"LOCAL","None","None"])
+                manifest.insert_row(rownum,
+                                    vals=[allImages[rownum], "LOCAL", "None",
+                                          "None"])
 
     download_dir = None
-    for file,fileStatus in zip(manifest['Local Path'],manifest['Status']):
+    for file, fileStatus in zip(manifest['Local Path'], manifest['Status']):
         if fileStatus != "LOCAL":
-            # Identify what sub-directory was created by astroquery for the download
+            # Identify what sub-directory was created by astroquery for the
+            # download
             if download_dir is None:
                 file_path = file.split(os.sep)
                 file_path.remove('.')
