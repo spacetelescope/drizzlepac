@@ -28,19 +28,16 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
         IPPSSOOT (rootname) of exposure or ASN needs to be provided; eg.,
         ib6v06060.
 
-    suffix : list
+    suffix : list, optional
         List containing suffixes of files which should be requested from MAST.
+        Default value  "['FLC']".
 
-    path : string
-        Directory to use for writing out downloaded files.  If `None`
-        (default), the current working directory will be used.
-
-    archive : Boolean
+    archive : Boolean, optional
         Retain copies of the downloaded files in the astroquery created
-        sub-directories? Default is 'False'.
+        sub-directories? Default is "False".
 
-    clobber : Boolean
-        Download and Overwrite existing files? Default is 'False'.
+    clobber : Boolean, optional
+        Download and Overwrite existing files? Default is "False".
 
     Returns
     -------
