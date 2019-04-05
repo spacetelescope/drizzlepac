@@ -864,7 +864,7 @@ def determine_fit_quality(imglist, filteredTable, print_fit_parameters=True):
     overall_valid = True
     overall_comp = False
     for item in imglist:
-        if item.meta['fit_info']['status'].startswith('FAILED') not True:
+        if not item.meta['fit_info']['status'].startswith('FAILED'):
             xshifts.append(item.meta['fit_info']['shift'][0])
             yshifts.append(item.meta['fit_info']['shift'][1])
 
@@ -974,12 +974,13 @@ def determine_fit_quality(imglist, filteredTable, print_fit_parameters=True):
                     log.info("{} : {}".format(tweakwcs_info_key,
                                               item.meta['fit_info'][
                                                   tweakwcs_info_key]))
-            log.info(
-                "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            log.info(
-                "nmatchesCheck: {} radialOffsetCheck: {} largeRmsCheck: {}, consistencyCheck: {}".format(
-                    nmatchesCheck, radialOffsetCheck, largeRmsCheck,
-                    consistencyCheck))
+            log.info("~"*84)
+            log.info("nmatchesCheck: {} radialOffsetCheck: {} "
+                     "largeRmsCheck: {}, "
+                     "consistencyCheck: {}".format(nmatchesCheck,
+                                                   radialOffsetCheck,
+                                                   largeRmsCheck,
+                                                   consistencyCheck))
 
     # determine which fit quality category this latest fit falls into
     if overall_valid is False:
@@ -1007,14 +1008,14 @@ def determine_fit_quality(imglist, filteredTable, print_fit_parameters=True):
             fitQual = 4
 
     if print_fit_parameters:
-        for item in imglist: log.info(fitStatusDict[
-                                          "{},{}".format(item.meta['name'],
-                                                         item.meta['chip'])])
+        for item in imglist:
+            log.info(fitStatusDict["{},{}".format(item.meta['name'],
+                                                  item.meta['chip'])])
 
     if max_rms_val > MAX_FIT_RMS:
         log.info(
-            "Total fit RMS value = {} mas greater than the maximum threshold value {}.".format(
-                max_rms_val, MAX_FIT_RMS))
+            "Total fit RMS value = {} mas greater than the "
+            "maximum threshold value {}.".format(max_rms_val, MAX_FIT_RMS))
     if not overall_valid:
         log.info(
             "The fit solution for some or all of the images is not valid.")
@@ -1029,13 +1030,15 @@ def determine_fit_quality(imglist, filteredTable, print_fit_parameters=True):
 
 
 def generate_astrometric_catalog(imglist, **pars):
-    """Generates a catalog of all sources from an existing astrometric catalog are in or near the FOVs of the images in
+    """Generates a catalog of all sources from an existing astrometric catalog
+        are in or near the FOVs of the images in
         the input list.
 
     Parameters
     ----------
     imglist : list
-        List of one or more calibrated fits images that will be used for catalog generation.
+        List of one or more calibrated fits images that will be used for
+        catalog generation.
 
     Returns
     =======
@@ -1070,14 +1073,16 @@ def generate_source_catalogs(imglist, **pars):
     Parameters
     ----------
     imglist : list
-        List of one or more calibrated fits images that will be used for source detection.
+        List of one or more calibrated fits images that will be used for
+        source detection.
 
     Returns
     -------
     sourcecatalogdict : dictionary
-        a dictionary (keyed by image name) of two element dictionaries which in tern contain 1) a dictionary of the
-        detector-specific processing parameters and 2) an astropy table of position and photometry information of all
-        detected sources
+        a dictionary (keyed by image name) of two element dictionaries which
+        in tern contain 1) a dictionary of the detector-specific processing
+        parameters and 2) an astropy table of position and photometry
+        information of all detected sources
     """
     output = pars.get('output', False)
     sourcecatalogdict = {}
@@ -1096,33 +1101,38 @@ def generate_source_catalogs(imglist, **pars):
         if instrument in detector_specific_params.keys():
             if detector in detector_specific_params[instrument].keys():
                 detector_pars = detector_specific_params[instrument][detector]
-                # to allow generate_source_catalog to get detector specific parameters
+                # to allow generate_source_catalog to get detector specific
+                # parameters
                 detector_pars.update(pars)
                 sourcecatalogdict[imgname]["params"] = detector_pars
             else:
-                sys.exit(
+                sys.error(
                     "ERROR! Unrecognized detector '{}'. Exiting...".format(
                         detector))
-                log.error(
+                log.exit(
                     "ERROR! Unrecognized detector '{}'. Exiting...".format(
                         detector))
         else:
-            sys.exit("ERROR! Unrecognized instrument '{}'. Exiting...".format(
+            sys.error("ERROR! Unrecognized instrument '{}'. Exiting...".format(
                 instrument))
-            log.error("ERROR! Unrecognized instrument '{}'. Exiting...".format(
+            log.exit("ERROR! Unrecognized instrument '{}'. Exiting...".format(
                 instrument))
 
-        # Identify sources in image, convert coords from chip x, y form to reference WCS sky RA, Dec form.
+        # Identify sources in image, convert coords from chip x, y form to
+        # reference WCS sky RA, Dec form.
         imgwcs = HSTWCS(imghdu, 1)
-        fwhmpsf_pix = sourcecatalogdict[imgname]["params"][
-                          'fwhmpsf'] / imgwcs.pscale  # Convert fwhmpsf from arsec to pixels
-        sourcecatalogdict[imgname][
-            "catalog_table"] = amutils.generate_source_catalog(imghdu,
-                                                               fwhm=fwhmpsf_pix,
-                                                               **detector_pars)
+        # Convert fwhmpsf from arsec to pixels
+        fwhmpsf_pix = \
+            sourcecatalogdict[imgname]["params"]['fwhmpsf'] / imgwcs.pscale
+        sourcecatalogdict[imgname]["catalog_table"] = \
+            amutils.generate_source_catalog(imghdu,
+                                            fwhm=fwhmpsf_pix,
+                                            **detector_pars)
 
-        # write out coord lists to files for diagnostic purposes. Protip: To display the sources in these files in DS9,
-        # set the "Coordinate System" option to "Physical" when loading the region file.
+        # write out coord lists to files for diagnostic purposes. Protip: To
+        # display the sources in these files in DS9, set the
+        # "Coordinate System" option to "Physical" when loading
+        # the region file.
         imgroot = os.path.basename(imgname).split('_')[0]
         numSci = amutils.countExtn(imghdu)
         # Allow user to decide when and how to write out catalogs to files
@@ -1144,18 +1154,21 @@ def generate_source_catalogs(imglist, **pars):
 
 
 def update_image_wcs_info(tweakwcs_output):
-    """Write newly computed WCS information to image headers and write headerlet files
+    """Write newly computed WCS information to image headers and write
+        headerlet files
 
         Parameters
         ----------
         tweakwcs_output : list
-            output of tweakwcs. Contains sourcelist tables, newly computed WCS info, etc. for every chip of every valid
+            output of tweakwcs. Contains sourcelist tables, newly computed
+            WCS info, etc. for every chip of every valid
             input image.
 
         Returns
         -------
         out_headerlet_list : dictionary
-            a dictionary of the headerlet files created by this subroutine, keyed by flt/flc fits filename.
+            a dictionary of the headerlet files created by this subroutine,
+            keyed by flt/flc fits filename.
         """
     out_headerlet_dict = {}
     for item in tweakwcs_output:
@@ -1167,9 +1180,9 @@ def update_image_wcs_info(tweakwcs_output):
             num_sci_ext = amutils.countExtn(hdulist)
 
             # generate wcs name for updated image header, headerlet
+            # Just in case header value 'wcsname' is empty.
             if not hdulist['SCI', 1].header['WCSNAME'] or \
-                    hdulist['SCI', 1].header[
-                        'WCSNAME'] is "":  # Just in case header value 'wcsname' is empty.
+                    hdulist['SCI', 1].header['WCSNAME'] is "":
                 wcsName = "FIT_{}".format(item.meta['catalog_name'])
             else:
                 wname = hdulist['sci', 1].header['wcsname']
@@ -1194,7 +1207,6 @@ def update_image_wcs_info(tweakwcs_output):
                              reusename=True, verbose=True)
         if chipctr is num_sci_ext:
             # Close updated flc.fits or flt.fits file
-            # log.info("CLOSE {}\n".format(imageName))  # TODO: Remove before deployment
             hdulist.flush()
             hdulist.close()
 
@@ -1224,13 +1236,14 @@ def update_image_wcs_info(tweakwcs_output):
 
 # ----------------------------------------------------------------------------------------------------------------------
 def update_headerlet_phdu(tweakwcs_item, headerlet):
-    """Update the primary header data unit keywords of a headerlet object in-place
+    """Update the primary header data unit keywords of a headerlet object
+        in-place
 
     Parameters
     ==========
     tweakwc_item :
-        Basically the output from tweakwcs which contains the cross match and fit
-        information for every chip of every valid input image.
+        Basically the output from tweakwcs which contains the cross match and
+        fit information for every chip of every valid input image.
 
     headerlet :
         object containing WCS information
@@ -1283,13 +1296,15 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
     Parameters
     ----------
     tweakwcs_output : list
-        output of tweakwcs. Contains sourcelist tables, newly computed WCS info, etc. for every chip of every valid
-        input image.  This list gets updated, in-place, with the new RMS values;
-        specifically,
+        output of tweakwcs. Contains sourcelist tables, newly computed WCS
+        info, etc. for every chip of every valid input image.  This list gets
+        updated, in-place, with the new RMS values; specifically,
 
-            * 'FIT_RMS': RMS of the separations between fitted image positions and reference positions
+            * 'FIT_RMS': RMS of the separations between fitted image positions
+               and reference positions
             * 'TOTAL_RMS': mean of the FIT_RMS values for all observations
-            * 'NUM_FITS': number of images/group_id's with successful fits included in the TOTAL_RMS
+            * 'NUM_FITS': number of images/group_id's with successful fits
+               included in the TOTAL_RMS
 
         These entries are added to the 'fit_info' dictionary.
 
@@ -1302,14 +1317,16 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
     """
     # Start by collecting information by group_id
     group_ids = [info.meta['group_id'] for info in tweakwcs_output]
-    # Compress the list to have only unique group_id values to avoid some unnecessary iterations
+    # Compress the list to have only unique group_id values to avoid some
+    # unnecessary iterations
     group_ids = list(set(group_ids))
     group_dict = {'avg_RMS': None}
     obs_rms = []
     for group_id in group_ids:
         for item in tweakwcs_output:
-            # When status = FAILED (fit failed) or REFERENCE (relative alignment done with first image
-            # as the reference), skip to the beginning of the loop as there is no 'fit_info'.
+            # When status = FAILED (fit failed) or REFERENCE (relative
+            # alignment done with first image as the reference), skip to the
+            # beginning of the loop as there is no 'fit_info'.
             if item.meta['fit_info']['status'] != 'SUCCESS':
                 continue
             # Make sure to store data for any particular group_id only once.
@@ -1370,48 +1387,60 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Align images')
     parser.add_argument('raw_input_list', nargs='+', help='The Images one '
-                                                          'wishes to align. Valid input formats: 1. An association '
-                                                          'name; Example; j92c12345. 2. A space-separated list of '
-                                                          'flc.fits (or flt.fits) files to align; Example: '
-                                                          'aaa_flc.fits bbb_flc.fits  ccc_flc.fits 3. a simple text '
-                                                          'file containing a list of fits files to align, one per '
-                                                          'line; Example: input_list.txt')
+                        'wishes to align. Valid input formats: '
+                        '1. An association name; Example; j92c12345. '
+                        '2. A space-separated list of flc.fits (or flt.fits) '
+                        'files to align; Example: aaa_flc.fits bbb_flc.fits  '
+                        'ccc_flc.fits 3. a simple text file containing a list '
+                        'of fits files to align, one per line; '
+                        'Example: input_list.txt')
 
     parser.add_argument('-a', '--archive', required=False, action='store_true',
                         help='Turning on this option will retain '
-                             'copies of the downloaded files in the astroquery created sub-directories.')
+                             'copies of the downloaded files in the '
+                             'astroquery created sub-directories.')
 
     parser.add_argument('-c', '--clobber', required=False, action='store_true',
                         help='If this option is turned on, the '
-                             'program will download new copies of the input files, overwriting any existing local copies in the '
-                             'working directory')
+                             'program will download new copies of the input '
+                             'files, overwriting any existing local copies in '
+                             'the working directory')
 
     parser.add_argument('-d', '--debug', required=False, action='store_true',
-                        help='If this option is turned on, the '
-                             'program will attempt to use saved sourcelists stored in a pickle file generated during a previous '
-                             'run. Using a saved sorucelist instead of generating new sourcelists greatly reduces overall run '
-                             'time. If the pickle file does not exist, the program will generate new sourcelists and save them '
-                             'in a pickle file named after the first input file.')
+                        help='If this option is turned on, the program will '
+                             'attempt to use saved sourcelists stored in a '
+                             'pickle file generated during a previous run. '
+                             'Using a saved sorucelist instead of generating '
+                             'new sourcelists greatly reduces overall run '
+                             'time. If the pickle file does not exist, the '
+                             'program will generate new sourcelists and save '
+                             'them in a pickle file named after the first '
+                             'input file.')
 
     parser.add_argument('-g', '--print_git_info', required=False,
                         action='store_true',
                         help='Turning on this option will '
-                             'display git repository information at the start of the run.')
+                             'display git repository information at the start '
+                             'of the run.')
 
     parser.add_argument('-o', '--output', required=False, action='store_true',
                         help='If turned on, '
-                             'utils.astrometric_utils.create_astrometric_catalog() generate file "ref_cat.ecsv", '
-                             'generate_source_catalogs() generate the .reg region files for every chip of every input image and '
-                             'generate_astrometric_catalog() generate file "refcatalog.cat".')
+                             'utils.astrometric_utils.create_astrometric_'
+                             'catalog() generate file "ref_cat.ecsv", '
+                             'generate_source_catalogs() generate the .reg '
+                             'region files for every chip of every input '
+                             'image and generate_astrometric_catalog() '
+                             'generate file "refcatalog.cat".')
 
     parser.add_argument('-p', '--print_fit_parameters', required=False,
                         action='store_true', help='Turning on this option '
-                                                  'will print out fit results for each chip.')
+                               'will print out fit results for each chip.')
 
     parser.add_argument('-u', '--update_hdr_wcs', required=False,
                         action='store_true',
-                        help='Turning on this option will '
-                             'write newly computed WCS information to image image headers and create headerlet files.')
+                        help='Turning on this option will write newly '
+                             'computed WCS information to image image headers '
+                             'and create headerlet files.')
     args = parser.parse_args()
 
     # Build list of input images
@@ -1433,7 +1462,8 @@ if __name__ == '__main__':
     return_value = perform_align(input_list, archive=args.archive,
                                  clobber=args.clobber, debug=args.debug,
                                  update_hdr_wcs=args.update_hdr_wcs,
-                                 print_fit_parameters=args.print_fit_parameters,
+                                 print_fit_parameters=
+                                 args.print_fit_parameters,
                                  print_git_info=args.print_git_info,
                                  output=args.output)
 
