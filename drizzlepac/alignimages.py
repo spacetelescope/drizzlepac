@@ -366,7 +366,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False,
         table = extracted_sources[imgname]["catalog_table"]
 
         # Get the location of the current image in the filtered table
-        index = np.where(filteredTable['imageName']==imgname)[0][0]
+        index = np.where(filteredTable['imageName'] == imgname)[0][0]
 
         # First ensure sources were found
         if table[1] is None:
@@ -496,8 +496,9 @@ def run_align(input_list, archive=False, clobber=False, debug=False,
                     # determine the quality of the fit
                     fit_rms, fit_num, fitQual, filteredTable, fitStatusDict = \
                         determine_fit_quality(imglist,
-                                              filteredTableprint_fit_parameters
-                                              =print_fit_parameters)
+                                              filteredTable,
+                                              print_fit_parameters=
+                                              print_fit_parameters)
 
                     # Figure out which fit solution to go with based on
                     # fitQual value and maybe also total_rms
