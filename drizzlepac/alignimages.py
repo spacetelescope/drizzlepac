@@ -591,7 +591,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False,
         # information
         for item in imglist:
             imgname = item.meta['name']
-            index = np.where(filteredTable['imageName'] is imgname)[0][0]
+            index = np.where(filteredTable['imageName'] == imgname)[0][0]
 
             if not item.meta['fit_info']['status'].startswith("FAILED"):
                 for tweakwcs_info_key in info_keys:
