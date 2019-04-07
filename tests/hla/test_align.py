@@ -14,32 +14,36 @@ import drizzlepac.hlautils.astrometric_utils as amutils
 from ci_watson.artifactory_helpers import get_bigdata
 
 # Nominal acceptable RMS limit for a good solution (IMPROVE THIS)
-RMS_LIMIT = 10.0 
+RMS_LIMIT = 10.0
 
 @pytest.mark.bigdata
 class TestAlignMosaic(BaseHLATest):
     """ Tests which validate whether mosaics can be aligned to an astrometric standard.
 
         Characteristics of these tests:
-          * A single astrometric catalog was obtained with both GAIA and non-GAIA
-            (PanSTARRS?) sources for the entire combined field-of-view using the GSSS
-            server.
-              * These tests assume combined input exposures for each test have enough
-                astrometric sources from the external catalog to perform a high quality
-                fit.
-          * This test only determines the fit between sources
-            extracted from the images by Tweakreg and the source positions included in
-            the astrometric catalog.
-          * The WCS information for the input exposures do not get updated in this test.
-          * No mosaic gets generated.
+          * A reference WCS is generated based upon all the input images for
+            the field.
+          * A source astrometric catalog is created using the Photutils 
+            package to detect explicitly sources in the images.
+          * An astrometric catalog is created to extract astrometric positions
+            for the found sources in the input images' field-of-view using
+            GAIADR2 (preferred) or GAIADR1.
+          * Cross matching/fitting is done between found sources and catalog
+            coordinates with the Tweakwcs package.
+          * The quality of the fit is evaluated against a minimum threshold and
+            potentially another fit algorithm is invoked or an alternative 
+            catalog is used in an effort to obtain a better quality fit.
+          * If the option is set, the WCS information is updated for the 
+            input exposures. The default is False.
+          * No mosaic is generated.
+          * An output table containing characterizations of the process and
+            associated fit is generated.
 
         Success Criteria:
-          * Success criteria hard-coded for this test represents 10mas RMS for the
+          * Success criteria hard-coded for this test represents 10mas RMS for the ACS and
             WFC3 images based on the fit of source positions to the astrometric catalog
             source positions.
-              * RMS values are extracted from optional shiftfile output from `tweakreg`
-              * Number of stars used for the fit and other information is not available
-                with the current version of `tweakreg`.
+              * RMS values are extracted from the table output from `perform_align`
 
         The environment variable needs to be set in the following manner:
             export TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory/
@@ -48,9 +52,8 @@ class TestAlignMosaic(BaseHLATest):
 
         For this test, the TEST_BIGDATA defines the root of the location where the data
         is stored.  The full path is TEST_BIGDATA plus the path components provided
-        in the get_bigdata() invocation.
-     
-        This test file can be executed in the following manner:
+        in the get_bigdata() invocation.  This test file can be executed in the following
+        manner:
             $ pytest -s --bigdata test_align.py >& test_align_output.txt &
             $ tail -f test_align_output.txt
 
@@ -74,17 +77,8 @@ class TestAlignMosaic(BaseHLATest):
         for input_file in input_filenames:
             get_bigdata('hst-hla-pipeline','dev','mosaic_ngc188',input_file)
 
-        try:
-            datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=False,debug=False,
-                update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
-
-            # Examine the output table to extract the RMS for the entire fit and the compromised information
-            if datasetTable:
-                totalRMS = datasetTable['total_rms'][0]
-
-        except Exception:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+        datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=False,debug=False,
+            update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
 
         # Examine the output table to extract the RMS for the entire fit and the compromised information
         if datasetTable:
@@ -111,19 +105,15 @@ class TestAlignMosaic(BaseHLATest):
         for input_file in input_filenames:
             get_bigdata('hst-hla-pipeline','dev','mosaic_47tuc',input_file)
 
-        try:
-            datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=False,debug=False,
-                update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
+        datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=False,debug=False,
+            update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
 
-            # Examine the output table to extract the RMS for the entire fit and the compromised information
-            if datasetTable:
-                totalRMS = datasetTable['total_rms'][0]
-
-        except Exception:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+        # Examine the output table to extract the RMS for the entire fit and the compromised information
+        if datasetTable:
+            totalRMS = datasetTable['total_rms'][0]
 
         assert (0.0 < totalRMS <= RMS_LIMIT)
+
 
     @pytest.mark.parametrize("input_filenames", [['j8ura1j1q_flt.fits','j8ura1j2q_flt.fits',
                                                   'j8ura1j4q_flt.fits','j8ura1j6q_flt.fits',
@@ -173,17 +163,12 @@ class TestAlignMosaic(BaseHLATest):
         for input_file in input_filenames:
             get_bigdata('hst-hla-pipeline','dev','base_tests',input_file)
 
-        try:
-            datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=False,debug=False,
-                update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
+        datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=False,debug=False,
+            update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
 
-            # Examine the output table to extract the RMS for the entire fit and the compromised information
-            if datasetTable:
-                totalRMS = datasetTable['total_rms'][0]
-
-        except Exception:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+        # Examine the output table to extract the RMS for the entire fit and the compromised information
+        if datasetTable:
+            totalRMS = datasetTable['total_rms'][0]
 
         assert (0.0 < totalRMS <= RMS_LIMIT)
 
@@ -196,7 +181,7 @@ class TestAlignMosaic(BaseHLATest):
           * Input exposures include exposures from a number of single visit datasets to explore what impact differing
             observing modes (differing instruments, detectors, filters, subarray size, etc.) have on astrometry.
             This test is known to fail due to "RuntimeError: Number of output coordinates exceeded allocation (475)a".
-            It will exercise the code using both catalogs for each of the three fitting algorithms at this time. Nans 
+            It will exercise the code using both catalogs for each of the three fitting algorithms at this time. Nans
             will be present in the output table.
 
 
@@ -220,17 +205,8 @@ class TestAlignMosaic(BaseHLATest):
         for input_file in input_filenames:
             get_bigdata('hst-hla-pipeline','dev','base_tests',input_file)
 
-        try:
-            datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=False,debug=False,
-                update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
-
-            # Examine the output table to extract the RMS for the entire fit and the compromised information
-            if datasetTable:
-                totalRMS = datasetTable['total_rms'][0]
-
-        except Exception:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+        datasetTable = alignimages.perform_align(input_filenames,archive=False,clobber=False,debug=False,
+            update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
 
         # Examine the output table to extract the RMS for the entire fit and the compromised information
         if datasetTable:
@@ -242,17 +218,12 @@ class TestAlignMosaic(BaseHLATest):
         """Verify that new astroquery interface will work"""
 
         totalRMS = 0.0
-        try:
-            datasetTable = alignimages.perform_align(['IB6V06060'],archive=False,clobber=True,debug=False,
-                update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
 
-            # Examine the output table to extract the RMS for the entire fit and the compromised information
-            if datasetTable:
-                totalRMS = datasetTable['total_rms'][0]
+        datasetTable = alignimages.perform_align(['IB6V06060'],archive=False,clobber=True,debug=False,
+            update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
 
-        except Exception:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-            sys.exit()
+        # Examine the output table to extract the RMS for the entire fit and the compromised information
+        if datasetTable:
+            totalRMS = datasetTable['total_rms'][0]
 
         assert (0.0 < totalRMS <= RMS_LIMIT)
