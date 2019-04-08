@@ -65,7 +65,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
     # table for download. If the table is empty, look for FLT images in lieu
     # of FLC images. Only want one or the other (not both!), so just do the
     # filtering again.
-    if len(data_products_by_id) == 0:
+    if data_products_by_id:
         log.info(
             "WARNING: No FLC files found for {} - will look for FLT files "
             "instead.".format(obsid))
