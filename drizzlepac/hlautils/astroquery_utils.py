@@ -78,7 +78,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
 
         # If still no data, then return.  An exception will eventually be
         # thrown in the higher level code.
-        if len(data_products_by_id) == 0:
+        if data_products_by_id:
             log.info(
                 "WARNING: No FLC or FLT files found for {}.".format(obsid))
             return local_files
