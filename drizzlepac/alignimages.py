@@ -848,24 +848,23 @@ def determine_fit_quality(imglist, filtered_table, print_fit_parameters=True):
 
 
     fit_quality : int
-        fit quality catagory:
-        1 = valid solution with rms < 10 mas;
-        2 = Valid but compromised solution with rms < 10 mas;
-        3 = Valid solution with RMS >= 10 mas;
-        4 = Valid but compromised solution with RMS >= 10 mas;
-        5 = Not valid solution
+        fit quality category:
+            * 1 = valid solution with rms < 10 mas
+            * 2 = Valid but compromised solution with rms < 10 mas
+            * 3 = Valid solution with RMS >= 10 mas
+            * 4 = Valid but compromised solution with RMS >= 10 mas
+            * 5 = Not valid solution
 
     filtered_table : object
-        modified filtered_table objecgt
+        modified filtered_table object
 
     fit_status_dict : dictionary
         Dictionary containing the following:
-            overall fit validity (Boolean)
-            total (visit-level) RMS value in mas (float)
-            number of matched sources (int)
-            fit compromised status (Boolean)
-            reason fit is considered 'compromised' (only populated if
-            'compromised' field is "True")
+            * overall fit validity (Boolean)
+            * total (visit-level) RMS value in mas (float)
+            * number of matched sources (int)
+            * fit compromised status (Boolean)
+            * reason fit is considered 'compromised' (only populated if "compromised" field is "True")
     """
     tweakwcs_info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
     max_rms_val = 1e9
