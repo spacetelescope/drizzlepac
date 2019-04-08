@@ -11,14 +11,11 @@ from .base_test import BaseHLATest
 from drizzlepac import alignimages
 import drizzlepac.hlautils.catalog_utils as catutils
 
-@pytest.mark.bigdata
 class TestAlignMosaic(BaseHLATest):
     """ Process a large sample of ACS and WFC3 datasets to determine if they can be
         aligned to an astrometric standard.
     """
 
-    @pytest.mark.xfail
-    @pytest.mark.slow
     def test_align_randomFields(self):
         """ Wrapper to set up the test for aligning a large number of randomly
             selected fields (aka datasets) from a input ascii file (CSV).
@@ -56,7 +53,6 @@ class TestAlignMosaic(BaseHLATest):
             pass
 
         return(percentSuccess)
-        #assert(0)
 
     def align_randomFields(self, randomTable):
         """ Process randomly selected fields (aka datasets) stored in an Astropy table.
@@ -168,6 +164,7 @@ class TestAlignMosaic(BaseHLATest):
         print('TEST_RANDOM. Number of unsuccessful tests: ', numUnsuccessful)
         print('TEST_RANDOM. Number of exception tests: ', numException)
         print('TEST_RANDOM. Percentage success/numberOfTests: ', numSuccess/numProcessedDatasets*100.0)
+        print('TEST_RANDOM. Percentage success+qualsuccess/numberOfTests: ', (numSuccess+numQualSuccess)/numProcessedDatasets*100.0)
  
         return percentSuccess
 
