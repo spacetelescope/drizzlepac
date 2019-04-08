@@ -42,8 +42,7 @@ MAX_FIT_LIMIT = 1000  # Maximum RMS that a result is useful
 # Maximum number of sources per chip to include in source catalog
 MAX_SOURCES_PER_CHIP = 250
 
-# Module-level dictionary contains instrument/detector-specific parameters
-# used later on in the script.
+# Module-level dictionary contains instrument/detector-specific parameters used later on in the script.
 # NOTE: "fwhmpsf" values below are in units of arcseconds
 detector_specific_params = {"acs": {"hrc": {"fwhmpsf": 0.073,
                                             "classify": True,
@@ -61,8 +60,7 @@ detector_specific_params = {"acs": {"hrc": {"fwhmpsf": 0.073,
                                               "classify": True,
                                               "threshold": None}}}
 
-log = logutil.create_logger('alignimages', level=logutil.logging.INFO,
-                            stream=sys.stdout)
+log = logutil.create_logger('alignimages', level=logutil.logging.INFO, stream=sys.stdout)
 
 __version__ = 0.1
 __version_date__ = '15-Feb-2019'
@@ -190,17 +188,15 @@ def perform_align(input_list, **kwargs):
         List of one or more IPPSSOOTs (rootnames) to align.
 
     archive : Boolean
-        Retain copies of the downloaded files in the astroquery created
-        sub-directories?
+        Retain copies of the downloaded files in the astroquery created sub-directories?
 
     clobber : Boolean
         Download and overwrite existing local copies of input files?
 
     debug : Boolean
-        Attempt to use saved sourcelists stored in pickle files if they exist,
-        or if they do not exist, save sourcelists in pickle files for reuse so
-        that step 4 can be skipped for faster subsequent debug/development
-        runs??
+        Attempt to use saved sourcelists stored in pickle files if they exist, or if they do not exist,
+        save sourcelists in pickle files for reuse so that step 4 can be skipped for faster subsequent
+        debug/development runs??
 
     update_hdr_wcs : Boolean
         Write newly computed WCS information to image image headers?
@@ -215,16 +211,14 @@ def perform_align(input_list, **kwargs):
         Display git repository information?
 
     output : Boolean
-        Should utils.astrometric_utils.create_astrometric_catalog() generate
-        file 'ref_cat.ecsv' and should generate_source_catalogs() generate the
-        .reg region files for every chip of every input image and should
-        generate_astrometric_catalog() generate file 'refcatalog.cat'?
+        Should utils.astrometric_utils.create_astrometric_catalog() generate file 'ref_cat.ecsv' and should
+        generate_source_catalogs() generate the .reg region files for every chip of every input image and
+        should generate_astrometric_catalog() generate file 'refcatalog.cat'?
  
     Updates
     -------
     filtered_table: Astropy Table
-        Table which contains processing information and alignment results for
-        every raw image evaluated
+        Table which contains processing information and alignment results for every raw image evaluated
 
     """
     filtered_table = Table()
@@ -253,10 +247,9 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         Download and overwrite existing local copies of input files?
 
     debug : Boolean
-        Attempt to use saved sourcelists stored in pickle files if they exist,
-        or if they do not exist, save sourcelists in pickle files for reuse so
-        that step 4 can be skipped for faster subsequent debug/development
-        runs??
+        Attempt to use saved sourcelists stored in pickle files if they exist, or if they do not exist, save
+        sourcelists in pickle files for reuse so that step 4 can be skipped for faster subsequent
+        debug/development runs??
 
     update_hdr_wcs : Boolean
         Write newly computed WCS information to image image headers?
@@ -274,16 +267,14 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         Display git repository information?
 
     output : Boolean
-        Should utils.astrometric_utils.create_astrometric_catalog() generate
-        file 'ref_cat.ecsv' and should generate_source_catalogs() generate the
-        .reg region files for every chip of every input image and should
-        generate_astrometric_catalog() generate file 'refcatalog.cat'?
+        Should utils.astrometric_utils.create_astrometric_catalog() generate file 'ref_cat.ecsv' and should
+        generate_source_catalogs() generate the .reg region files for every chip of every input image and
+        should generate_astrometric_catalog() generate file 'refcatalog.cat'?
 
     Updates
     -------
     filtered_table: Astropy Table
-        Table which contains processing information and alignment results for
-        every raw image evaluated
+        Table which contains processing information and alignment results for every raw image evaluated
 
     """
     log.info("*** HLAPIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__,
@@ -694,8 +685,7 @@ def match_relative_fit(imglist, reference_catalog):
     Parameters
     ----------
     imglist : list
-        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata
-        and source catalogs
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     reference_catalog : Table
         Astropy Table of reference sources for this field
@@ -703,8 +693,7 @@ def match_relative_fit(imglist, reference_catalog):
     Returns
     --------
     imglist : list
-        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata
-        and source catalogs
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
     log.info("{} STEP 5b: (match_relative_fit) Cross matching and fitting {}".format("-"*20, "-"*27))
@@ -745,8 +734,7 @@ def match_default_fit(imglist, reference_catalog):
     Parameters
     ----------
     imglist : list
-        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata
-        and source catalogs
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     reference_catalog : Table
         Astropy Table of reference sources for this field
@@ -754,8 +742,7 @@ def match_default_fit(imglist, reference_catalog):
     Returns
     --------
     imglist : list
-        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata
-        and source catalogs
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
     log.info("{} STEP 5b: (match_default_fit) Cross matching and fitting "
@@ -780,8 +767,7 @@ def match_2dhist_fit(imglist, reference_catalog):
     Parameters
     ----------
     imglist : list
-        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata
-        and source catalogs
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     reference_catalog : Table
         Astropy Table of reference sources for this field
@@ -789,8 +775,7 @@ def match_2dhist_fit(imglist, reference_catalog):
     Returns
     --------
     imglist : list
-        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata
-        and source catalogs
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
     log.info("{} STEP 5b: (match_2dhist_fit) Cross matching and fitting "
@@ -815,23 +800,19 @@ def determine_fit_quality(imglist, filtered_table, print_fit_parameters=True):
     Parameters
     ----------
     imglist : list
-        output of interpret_fits. Contains sourcelist tables, newly computed
-        WCS info, etc. for every chip of every valid input image.  This list
-        should have been  updated, in-place, with the new RMS values;
+        output of interpret_fits. Contains sourcelist tables, newly computed WCS info, etc. for every chip of
+        every valid input image. This list should have been  updated, in-place, with the new RMS values;
         specifically,
 
-            * 'FIT_RMS': RMS of the separations between fitted image positions
-              and reference positions
+            * 'FIT_RMS': RMS of the separations between fitted image positions and reference positions
             * 'TOTAL_RMS': mean of the FIT_RMS values for all observations
-            * 'NUM_FITS': number of images/group_id's with successful fits
-              included in the TOTAL_RMS
+            * 'NUM_FITS': number of images/group_id's with successful fits included in the TOTAL_RMS
 
         These entries are added to the 'fit_info' dictionary.
 
     filtered_table : object
-        Astropy Table object containing data pertaining to the associated
-        dataset, including the doProcess bool.  It is intended this table is
-        updated by subsequent functions for bookkeeping purposes.
+        Astropy Table object containing data pertaining to the associated dataset, including the doProcess
+        bool.  It is intended this table is updated by subsequent functions for bookkeeping purposes.
 
     print_fit_parameters : bool
         Specify whether or not to print out FIT results for each chip
@@ -1031,15 +1012,13 @@ def determine_fit_quality(imglist, filtered_table, print_fit_parameters=True):
 
 
 def generate_astrometric_catalog(imglist, **pars):
-    """Generates a catalog of all sources from an existing astrometric catalog
-        are in or near the FOVs of the images in
-        the input list.
+    """Generates a catalog of all sources from an existing astrometric catalog are in or near the FOVs of the
+    images in the input list.
 
     Parameters
     ----------
     imglist : list
-        List of one or more calibrated fits images that will be used for
-        catalog generation.
+        List of one or more calibrated fits images that will be used for catalog generation.
 
     Returns
     =======
@@ -1073,8 +1052,7 @@ def generate_source_catalogs(imglist, **pars):
     Parameters
     ----------
     imglist : list
-        List of one or more calibrated fits images that will be used for
-        source detection.
+        List of one or more calibrated fits images that will be used for source detection.
 
     Returns
     -------
@@ -1150,15 +1128,13 @@ def update_image_wcs_info(tweakwcs_output):
         Parameters
         ----------
         tweakwcs_output : list
-            output of tweakwcs. Contains sourcelist tables, newly computed
-            WCS info, etc. for every chip of every valid
-            input image.
+            output of tweakwcs. Contains sourcelist tables, newly computed WCS info, etc. for every chip of
+            every valid input image.
 
         Returns
         -------
         out_headerlet_list : dictionary
-            a dictionary of the headerlet files created by this subroutine,
-            keyed by flt/flc fits filename.
+            a dictionary of the headerlet files created by this subroutine, keyed by flt/flc fits filename.
         """
     out_headerlet_dict = {}
     for item in tweakwcs_output:
@@ -1223,14 +1199,13 @@ def update_image_wcs_info(tweakwcs_output):
 
 
 def update_headerlet_phdu(tweakwcs_item, headerlet):
-    """Update the primary header data unit keywords of a headerlet object
-        in-place
+    """Update the primary header data unit keywords of a headerlet object in-place
 
     Parameters
     ==========
     tweakwcs_item :
-        Basically the output from tweakwcs which contains the cross match and
-        fit information for every chip of every valid input image.
+        Basically the output from tweakwcs which contains the cross match and fit information for every chip
+        of every valid input image.
 
     headerlet : headerlet object
         object containing WCS information
@@ -1278,9 +1253,8 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
     Parameters
     ----------
     tweakwcs_output : list
-        output of tweakwcs. Contains sourcelist tables, newly computed WCS
-        info, etc. for every chip of every valid input image.  This list gets
-        updated, in-place, with the new RMS values; specifically,
+        output of tweakwcs. Contains sourcelist tables, newly computed WCS info, etc. for every chip of every
+        valid input image.  This list gets updated, in-place, with the new RMS values; specifically,
 
             * 'FIT_RMS': RMS of the separations between fitted image positions and reference positions
             * 'TOTAL_RMS': mean of the FIT_RMS values for all observations
