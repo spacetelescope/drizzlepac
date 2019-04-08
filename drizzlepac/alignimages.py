@@ -1081,10 +1081,9 @@ def generate_source_catalogs(imglist, **pars):
     Returns
     -------
     sourcecatalogdict : dictionary
-        a dictionary (keyed by image name) of two element dictionaries which
-        in tern contain 1) a dictionary of the detector-specific processing
-        parameters and 2) an astropy table of position and photometry
-        information of all detected sources
+        a dictionary (keyed by image name) of two-element dictionaries which contain the following:
+            * a dictionary of the detector-specific processing parameters
+            * an astropy table of position and photometry information of all detected sources
     """
     output = pars.get('output', False)
     sourcecatalogdict = {}
