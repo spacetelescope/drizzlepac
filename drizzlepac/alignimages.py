@@ -207,6 +207,9 @@ def perform_align(input_list, **kwargs):
     update_hdr_wcs : Boolean
         Write newly computed WCS information to image image headers?
 
+    runfile : string
+        log file name
+
     print_fit_parameters : Boolean
         Specify whether or not to print out FIT results for each chip.
 
@@ -237,6 +240,54 @@ def perform_align(input_list, **kwargs):
 @util.with_logging
 def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
               runfile=None, print_fit_parameters=True, print_git_info=False, output=False):
+    """Actual Main calling function.
+
+    Parameters
+    ----------
+    input_list : list
+        List of one or more IPPSSOOTs (rootnames) to align.
+
+    archive : Boolean
+        Retain copies of the downloaded files in the astroquery created
+        sub-directories?
+
+    clobber : Boolean
+        Download and overwrite existing local copies of input files?
+
+    debug : Boolean
+        Attempt to use saved sourcelists stored in pickle files if they exist,
+        or if they do not exist, save sourcelists in pickle files for reuse so
+        that step 4 can be skipped for faster subsequent debug/development
+        runs??
+
+    update_hdr_wcs : Boolean
+        Write newly computed WCS information to image image headers?
+
+    result: Table
+        name of variable to be updated by subroutine run.
+
+    runfile : string
+        log file name
+
+    print_fit_parameters : Boolean
+        Specify whether or not to print out FIT results for each chip.
+
+    print_git_info : Boolean
+        Display git repository information?
+
+    output : Boolean
+        Should utils.astrometric_utils.create_astrometric_catalog() generate
+        file 'ref_cat.ecsv' and should generate_source_catalogs() generate the
+        .reg region files for every chip of every input image and should
+        generate_astrometric_catalog() generate file 'refcatalog.cat'?
+
+    Updates
+    -------
+    filtered_table: Astropy Table
+        Table which contains processing information and alignment results for
+        every raw image evaluated
+
+    """
     log.info("*** HLAPIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__,
                                                                                             __version_date__,
                                                                                             util._ptime()[0]))
