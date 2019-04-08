@@ -691,7 +691,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
 
 def match_relative_fit(imglist, reference_catalog):
-    """Perform cross-matching and final fit using 2dHistogram matching
+    """Perform cross-matching and final fit using relative matching algorithm
 
     Parameters
     ----------
@@ -742,7 +742,7 @@ def match_relative_fit(imglist, reference_catalog):
 
 
 def match_default_fit(imglist, reference_catalog):
-    """Perform cross-matching and final fit using 2dHistogram matching
+    """Perform cross-matching and final fit using default matching algorithm
 
     Parameters
     ----------
@@ -777,7 +777,7 @@ def match_default_fit(imglist, reference_catalog):
 
 
 def match_2dhist_fit(imglist, reference_catalog):
-    """Perform cross-matching and final fit using 2dHistogram matching
+    """Perform cross-matching and final fit using 2dHistogram matching algorithm
 
     Parameters
     ----------
