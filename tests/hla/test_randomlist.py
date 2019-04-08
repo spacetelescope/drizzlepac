@@ -1,5 +1,4 @@
 import pytest
-import drizzlepac
 from .process_randomlist import TestAlignMosaic
 
 @pytest.mark.bigdata
@@ -51,5 +50,5 @@ def test_randomlist(self):
     """
     run_random_test = TestAlignMosaic()
 
-    assert run_random_test.test_align_randomFields() > 0.7
+    assert run_random_test.test_align_randomfields() > 0.7
 
