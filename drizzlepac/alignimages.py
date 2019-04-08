@@ -104,7 +104,7 @@ def check_and_get_data(input_list, **pars):
             suffix = lc_input_item[indx + 1:indx + 4]
             print('file: ', lc_input_item)
             # For an association, need to open the table and read the image
-            # names as this couldv be a custom association.  The assumption is
+            # names as this could be a custom association.  The assumption is
             # this file is on local disk when specified in this manner (vs.
             # just the ipppssoot of the association). This "if" block just
             # collects the wanted full file names.
@@ -525,7 +525,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                     # Figure out which fit solution to go with based on
                     # fit_quality value and maybe also total_rms
                     if fit_quality < 5:
-                        # valid, non-comprimised solution with total
+                        # valid, non-compromised solution with total
                         # rms < 10 mas...go with this solution.
                         if fit_quality is 1:
                             best_fit_rms = fit_rms
