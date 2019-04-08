@@ -68,7 +68,7 @@ __version__ = 0.1
 __version_date__ = '15-Feb-2019'
 
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def check_and_get_data(input_list, **pars):
@@ -182,7 +182,7 @@ def check_and_get_data(input_list, **pars):
     return (total_input_list)
 
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 def perform_align(input_list, **kwargs):
     """Main calling function.
 
@@ -229,6 +229,9 @@ def perform_align(input_list, **kwargs):
     filtered_table = Table()
     run_align(input_list, result=filtered_table, **kwargs)
     return filtered_table
+
+
+# ------------------------------------------------------------------------------------------------------------
 
 
 @util.with_logging
@@ -634,7 +637,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False,
     filtered_table.pprint(max_width=-1)
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def match_relative_fit(imglist, reference_catalog):
@@ -685,7 +688,7 @@ def match_relative_fit(imglist, reference_catalog):
     return imglist
 
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def match_default_fit(imglist, reference_catalog):
@@ -720,7 +723,7 @@ def match_default_fit(imglist, reference_catalog):
     return imglist
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def match_2dhist_fit(imglist, reference_catalog):
@@ -755,7 +758,7 @@ def match_2dhist_fit(imglist, reference_catalog):
     return imglist
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def determine_fit_quality(imglist, filtered_table, print_fit_parameters=True):
@@ -977,7 +980,7 @@ def determine_fit_quality(imglist, filtered_table, print_fit_parameters=True):
     return max_rms_val, num_xmatches, fit_quality, filtered_table, fit_status_dict
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def generate_astrometric_catalog(imglist, **pars):
@@ -1014,7 +1017,7 @@ def generate_astrometric_catalog(imglist, **pars):
     return (out_catalog)
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def generate_source_catalogs(imglist, **pars):
@@ -1092,7 +1095,7 @@ def generate_source_catalogs(imglist, **pars):
     return (sourcecatalogdict)
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def update_image_wcs_info(tweakwcs_output):
@@ -1171,7 +1174,9 @@ def update_image_wcs_info(tweakwcs_output):
     return (out_headerlet_dict)
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
+
+
 def update_headerlet_phdu(tweakwcs_item, headerlet):
     """Update the primary header data unit keywords of a headerlet object
         in-place
@@ -1219,7 +1224,7 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
     primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('skew', skew)
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def interpret_fit_rms(tweakwcs_output, reference_catalog):
