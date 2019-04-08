@@ -72,14 +72,12 @@ __version_date__ = '15-Feb-2019'
 
 
 def check_and_get_data(input_list, **pars):
-    """Verify that all specified files are present. If not, retrieve them from
-    MAST.
+    """Verify that all specified files are present. If not, retrieve them from MAST.
 
     Parameters
     ----------
     input_list : list
-        List of one or more calibrated fits images that will be used for
-        catalog generation.
+        List of one or more calibrated fits images that will be used for catalog generation.
 
     Returns
     =======
@@ -1147,8 +1145,7 @@ def generate_source_catalogs(imglist, **pars):
 
 
 def update_image_wcs_info(tweakwcs_output):
-    """Write newly computed WCS information to image headers and write
-        headerlet files
+    """Write newly computed WCS information to image headers and write headerlet files
 
         Parameters
         ----------
@@ -1231,11 +1228,11 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
 
     Parameters
     ==========
-    tweakwc_item :
+    tweakwcs_item :
         Basically the output from tweakwcs which contains the cross match and
         fit information for every chip of every valid input image.
 
-    headerlet :
+    headerlet : headerlet object
         object containing WCS information
     """
 
@@ -1285,11 +1282,9 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
         info, etc. for every chip of every valid input image.  This list gets
         updated, in-place, with the new RMS values; specifically,
 
-            * 'FIT_RMS': RMS of the separations between fitted image positions
-               and reference positions
+            * 'FIT_RMS': RMS of the separations between fitted image positions and reference positions
             * 'TOTAL_RMS': mean of the FIT_RMS values for all observations
-            * 'NUM_FITS': number of images/group_id's with successful fits
-               included in the TOTAL_RMS
+            * 'NUM_FITS': number of images/group_id's with successful fits included in the TOTAL_RMS
 
         These entries are added to the 'fit_info' dictionary.
 
