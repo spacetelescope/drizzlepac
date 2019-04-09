@@ -530,8 +530,11 @@ class baseImageObject:
         # The use of fileutil.osfn interprets any environment variable, such as
         # jref$, used in the specification of the reference filename
         filename = fileutil.osfn(self._image["PRIMARY"].header[self.flatkey])
+        hdulist = None
         try:
-            data = fits.getdata(filename, ext=(self.scienceExt, chip))
+            hdulist = fileutil.openImage(filename, mode='readonly',
+                                         memmap=False)
+            data = hdulist[(self.scienceExt, chip)].data
 
             if data.shape[0] != sci_chip.image_shape[0]:
                 ltv2 = int(np.round(sci_chip.ltv2))
@@ -550,7 +553,11 @@ class baseImageObject:
         except FileNotFoundError:
             flat = np.ones(sci_chip.image_shape, dtype=sci_chip.image_dtype)
             log.warning("Cannot find flat field file '{}'".format(filename))
-            log.warning("Treating flatfield constant value of '1'.")
+            log.warning("Treating flatfield as a constant value of '1'.")
+
+        finally:
+            if hdulist is not None:
+                hdulist.close()
 
         return flat
 
