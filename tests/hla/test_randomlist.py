@@ -46,6 +46,7 @@ def test_randomlist(self):
         output from a database and lists associations and singletons for ACS
         and WFC3 instruments randomly sorted.  The actual data files are
         downloaded from MAST via astroquery.
+
         This test file can be executed in the following manner:
             $ pytest -s --bigdata test_randomlist.py >& test_random_output.txt &
             $ tail -f test_random_output.txt
