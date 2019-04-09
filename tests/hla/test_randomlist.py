@@ -2,14 +2,66 @@ import sys
 import traceback
 import os
 import datetime
+import random
 import pytest
+
 import numpy as np
 from astropy.table import Table, vstack
 from astropy.io import ascii
 
 from .base_test import BaseHLATest
 from drizzlepac import alignimages
-import drizzlepac.hlautils.catalog_utils as catutils
+
+
+def _random_select_from_csv(table_name, num_entries, seed_value):
+    """
+    Function to extract random entries (lines) from a CSV file
+
+    The function, _random_select_from_csv, allows the user to specify the
+    desired number of entries to obtain from a comma-separated values (CSV)
+    file which contains data extracted from the STScI archive for ACS, WFC3,
+    and WFPC2 instruments. The data are comprised of the following information
+    as identified by the database name: observationID, trgName, trgposRA,
+    trgPosDec, detector, aperture, filters, enrBandpassName, timMin, timMax,
+    timExposure,and asnID.  The entries from the input table are chosen
+    at random with no duplication, and returned as an Astropy table.
+
+    Parameters
+    ==========
+    table_name: str
+        Filename of the input master CSV file containing individual
+        images or association names, as well as observational
+        information regarding the images
+
+    num_entries : int
+        Number of entries/rows to extract from the master input CSV file
+
+    seed_value : int
+        Value used to initialize the random number generator for the
+        selection of random entries
+
+    Returns
+    =======
+    output_table : object
+        Astropy Table object
+
+    """
+    # Initialize the random number generator
+    random.seed(seed_value)
+
+    # Get the contents of the table
+    data_table = Table.read(table_name, format='ascii.csv')
+
+    # Generate a sequence of integers the size of the table, and then
+    # obtain a random subset of the sequence with no duplicate selections
+    subset = random.sample(range(len(data_table)), num_entries)
+
+    # Extract the subset rows...
+    output_table = data_table[subset]
+
+    # Returns the outputTable which is an Astropy Table object
+    return output_table
+
 
 @pytest.mark.bigdata
 class TestAlignMosaic(BaseHLATest):
@@ -41,12 +93,12 @@ class TestAlignMosaic(BaseHLATest):
             OR
             export TEST_BIGDATA=/Users/YourNameHere/TestDataDirectory/
 
-        For this test, the TEST_BIGDATA defines the root of the location  where the CSV 
+        For this test, the TEST_BIGDATA defines the root of the location  where the CSV
         file is stored.  The full path is TEST_BIGDATA/self.input_repo/self.tree/self.input_loc.
-        The CSV is output from a database and lists associations and singletons for ACS 
+        The CSV is output from a database and lists associations and singletons for ACS
         and WFC3 instruments randomly sorted.  The actual data files are downloaded from MAST
         via astroquery.
-     
+
         This test file can be executed in the following manner:
             $ pytest -s --bigdata test_randomlist.py >& test_random_output.txt &
             $ tail -f test_random_output.txt
@@ -79,8 +131,9 @@ class TestAlignMosaic(BaseHLATest):
 
         # Randomly select a subset of field names (each field represented by a row) from
         # the master CSV file and return as an Astropy table
-        randomCandidateTable = catutils.randomSelectFromCSV(input_file_path[0],
-            inputNumEntries, inputSeedValue)
+        randomCandidateTable = _random_select_from_csv(
+            input_file_path[0], inputNumEntries, inputSeedValue
+        )
 
         # Invoke the methods which will handle acquiring/downloading the data from
         # MAST and perform the alignment
@@ -131,9 +184,9 @@ class TestAlignMosaic(BaseHLATest):
             print("TEST_RANDOM. Dataset: ", dataset)
             currentDT = datetime.datetime.now()
             print(str(currentDT))
-            
+
             try:
-                
+
                 datasetTable = alignimages.perform_align([dataset],archive=False,clobber=True,debug=False,
                     update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
 
@@ -153,7 +206,7 @@ class TestAlignMosaic(BaseHLATest):
                     datasetTable['completed'][:] = True
                     datasetTable.write(outputName, format='ascii.ecsv')
                     #datasetTable.pprint(max_width=-1)
-   
+
                     # Successful datasets
                     if (sumOfStatus == 0):
                         print("TEST_RANDOM. Successful Dataset: ", dataset, "\n")
@@ -163,14 +216,14 @@ class TestAlignMosaic(BaseHLATest):
                         print("TEST_RANDOM. Unsuccessful Dataset: ", dataset, "\n")
                         numUnsuccessful += 1
 
-                # Append the latest dataset table to the summary table 
+                # Append the latest dataset table to the summary table
                 allDatasetTable = vstack([allDatasetTable, datasetTable])
 
             # Catch anything that happens as this dataset will be considered a failure, but
             # the processing of datasets should continue.  Generate sufficient output exception
             # information so problems can be addressed.
             except Exception:
-           
+
                 exc_type, exc_value, exc_tb = sys.exc_info()
                 traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
                 print("TEST_RANDOM. Exception Dataset: ", dataset, "\n")
@@ -178,9 +231,9 @@ class TestAlignMosaic(BaseHLATest):
                 continue
 
         # Perform some clean up
-        if os.path.isfile('ref_cat.ecsv'): 
+        if os.path.isfile('ref_cat.ecsv'):
             os.remove('ref_cat.ecsv')
-        if os.path.isfile('refcatalog.cat'):  
+        if os.path.isfile('refcatalog.cat'):
             os.remove('refcatalog.cat')
         for filename in os.listdir():
             if filename.endswith('flt.fits') or filename.endswith('flc.fits'):
@@ -197,7 +250,7 @@ class TestAlignMosaic(BaseHLATest):
         print('TEST_RANDOM. Number of unsuccessful tests: ', numUnsuccessful)
         print('TEST_RANDOM. Number of exception tests: ', numException)
         print('TEST_RANDOM. Percentage success/numberOfTests: ', numSuccess/numProcessedDatasets*100.0)
- 
+
         return percentSuccess
 
 def get_dataset_list(tableName):

@@ -100,6 +100,9 @@ of the list).
 - Fixed improper logic caused by nested if statements in analyze.py found
   when testing [#283].
 
+- Fixed a logic bug in alignimages.py to force the run_align() function
+  to always return the filtered table contents. [#302]
+
 
 2.2.6 (02-Nov-2018)
 ===================
