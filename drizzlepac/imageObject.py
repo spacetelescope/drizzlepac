@@ -523,35 +523,35 @@ class baseImageObject:
 
         """
         sci_chip = self._image[self.scienceExt, chip]
-        exten = '%s,%d' % (self.scienceExt, chip)
         # The keyword for ACS flat fields in the primary header of the flt
         # file is pfltfile.  This flat file is already in the required
         # units of electrons.
 
-        # The use of fileutil.osfn interprets any environment variable, such as jref$,
-        # used in the specification of the reference filename
+        # The use of fileutil.osfn interprets any environment variable, such as
+        # jref$, used in the specification of the reference filename
         filename = fileutil.osfn(self._image["PRIMARY"].header[self.flatkey])
         try:
-            handle = fileutil.openImage(filename, mode='readonly', memmap=False)
-            hdu = fileutil.getExtn(handle,extn=exten)
-            if hdu.data.shape[0] != sci_chip.image_shape[0]:
-                _ltv2 = np.round(sci_chip.ltv2)
-            else:
-                _ltv2 = 0
-            _size2 = sci_chip.image_shape[0]+_ltv2
-            if hdu.data.shape[1] != sci_chip.image_shape[1]:
-                _ltv1 = np.round(sci_chip.ltv1)
-            else:
-                _ltv1 = 0
-            _size1 = sci_chip.image_shape[1]+_ltv1
+            data = fits.getdata(filename, ext=(self.scienceExt, chip))
 
-            data = hdu.data[_ltv2:_size2, _ltv1:_size1]
-            handle.close()
-        except:
-            data = np.ones(sci_chip.image_shape, dtype=sci_chip.image_dtype)
-            log.warning("Cannot find file %s.\n    Treating flatfield "
-                        "constant value of '1'." % filename)
-        flat = data
+            if data.shape[0] != sci_chip.image_shape[0]:
+                ltv2 = int(np.round(sci_chip.ltv2))
+            else:
+                ltv2 = 0
+            size2 = sci_chip.image_shape[0] + ltv2
+
+            if data.shape[1] != sci_chip.image_shape[1]:
+                ltv1 = int(np.round(sci_chip.ltv1))
+            else:
+                ltv1 = 0
+            size1 = sci_chip.image_shape[1] + ltv1
+
+            flat = data[ltv2:size2, ltv1:size1]
+
+        except FileNotFoundError:
+            flat = np.ones(sci_chip.image_shape, dtype=sci_chip.image_dtype)
+            log.warning("Cannot find flat field file '{}'".format(filename))
+            log.warning("Treating flatfield constant value of '1'.")
+
         return flat
 
     def getReadNoiseImage(self, chip):

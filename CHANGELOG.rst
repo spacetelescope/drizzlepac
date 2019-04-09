@@ -18,6 +18,9 @@ of the list).
 3.0.2 (unreleased)
 ==================
 
+- Fixed a bug in the automatic computation of the IVM weights when IVM
+  was not provided by the user. [#320]
+
 - Added test code to validate astrometric solutions from the database. [#294]
 
 - Fixed a bug in the 2D histogram code used for estimating shifts for
@@ -93,7 +96,7 @@ of the list).
 - Ensure singletons do not use the match_relative_fit algorithm [#259]
 
 - Entirely re-wrote check_and_get_data function in alignimages.py.
-  Updates to the overall hlapipeline alignment code and updates/clean-up 
+  Updates to the overall hlapipeline alignment code and updates/clean-up
   to the associated regression tests migrated from the original hlapipeline
   package [#283].
 
