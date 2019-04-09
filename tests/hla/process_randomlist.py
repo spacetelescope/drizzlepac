@@ -37,6 +37,11 @@ def _random_select_from_csv(table_name, num_entries, seed_value):
     =======
     output_table : object
         Astropy Table object
+
+    Notes
+    =====
+    The nature of this routine has changed to return an output table
+    culled sequentially from the input table.
     """
     # Initialize the random number generator
     random.seed(seed_value)
@@ -44,16 +49,13 @@ def _random_select_from_csv(table_name, num_entries, seed_value):
     # Get the contents of the table
     data_table = Table.read(table_name, format='ascii.csv')
 
-    # Generate a sequence of integers the size of the table, and then
-    # obtain a random subset of the sequence with no duplicate selections
-    subset = random.sample(range(len(data_table)), num_entries)
-
-    # Extract the subset rows...
-    output_table = data_table[subset]
+    # Since the table is already randomized and to make it easier
+    # to start up new tests from the last dataset processed, just
+    # process the requested number of rows.
+    output_table = data_table[0:numEntries]
 
     # Returns the outputTable which is an Astropy Table object
     return output_table
-
 
 class TestAlignMosaic(BaseHLATest):
     """ Process a large sample of ACS and WFC3 datasets to determine if they can be
@@ -73,7 +75,6 @@ class TestAlignMosaic(BaseHLATest):
 
         # Desired number of random entries for testing
         input_num_entries = 50
-        input_num_entries = 2
 
         # Seed for random number generator
         input_seed_value = 1
