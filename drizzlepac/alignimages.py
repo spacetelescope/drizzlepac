@@ -670,14 +670,18 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         log.info('TOTAL Processing time of {} sec'.format((current_dt - zero_dt).total_seconds()))
         log.info(best_fit_status_dict)
         log.info("-"*104)
+    except:
+        print("\a\a\a")
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
 
     finally:
 
         # Now update the result with the filteredTable contents
-        result.meta = filteredTable.meta
-        for col in filteredTable.colnames:
-            result.add_column(filteredTable[col], name=col)
-        filteredTable.pprint(max_width=-1)
+        result.meta = filtered_table.meta
+        for col in filtered_table.colnames:
+            result.add_column(filtered_table[col], name=col)
+        filtered_table.pprint(max_width=-1)
 
 # ------------------------------------------------------------------------------------------------------------
 
