@@ -307,374 +307,377 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
     print(input_list)
 
-    # 1: Interpret input data and optional parameters
-    log.info("{} STEP 1: Get data {}".format("-" * 20, "-" * 66))
-    zero_dt = starting_dt = datetime.datetime.now()
-    log.info(str(starting_dt))
-    imglist = check_and_get_data(input_list, archive=archive, clobber=clobber)
-    log.info("SUCCESS")
+    try:
 
-    current_dt = datetime.datetime.now()
-    delta_dt = (current_dt - starting_dt).total_seconds()
-    log.info('Processing time of [STEP 1]: {} sec'.format(delta_dt))
-    starting_dt = current_dt
-    # 2: Apply filter to input observations to insure that they meet minimum
-    # criteria for being able to be aligned
-    log.info(
-        "{} STEP 2: Filter data {}".format("-" * 20, "-" * 63))
-    filtered_table = filter.analyze_data(imglist)
+        # 1: Interpret input data and optional parameters
+        log.info("{} STEP 1: Get data {}".format("-" * 20, "-" * 66))
+        zero_dt = starting_dt = datetime.datetime.now()
+        log.info(str(starting_dt))
+        imglist = check_and_get_data(input_list, archive=archive, clobber=clobber)
+        log.info("SUCCESS")
 
-    # Check the table to determine if there is any viable data to be aligned.
-    # The 'doProcess' column (bool) indicates the image/file should or should
-    # not be used for alignment purposes.  For filtered data, 'doProcess=0'
-    # and 'status=9999' in the table (the status value by default), so there
-    # is no need to update the filtered_table here.
+        current_dt = datetime.datetime.now()
+        delta_dt = (current_dt - starting_dt).total_seconds()
+        log.info('Processing time of [STEP 1]: {} sec'.format(delta_dt))
+        starting_dt = current_dt
+        # 2: Apply filter to input observations to insure that they meet minimum
+        # criteria for being able to be aligned
+        log.info(
+            "{} STEP 2: Filter data {}".format("-" * 20, "-" * 63))
+        filtered_table = filter.analyze_data(imglist)
 
-    if filtered_table['doProcess'].sum() is 0:
-        log.warning(
-            "No viable images in filtered table - no processing done.\n")
+        # Check the table to determine if there is any viable data to be aligned.
+        # The 'doProcess' column (bool) indicates the image/file should or should
+        # not be used for alignment purposes.  For filtered data, 'doProcess=0'
+        # and 'status=9999' in the table (the status value by default), so there
+        # is no need to update the filtered_table here.
+
+        if filtered_table['doProcess'].sum() is 0:
+            log.warning(
+                "No viable images in filtered table - no processing done.\n")
+            current_dt = datetime.datetime.now()
+            delta_dt = (current_dt - starting_dt).total_seconds()
+            log.info('Processing time of [STEP 2]: {} sec'.format(delta_dt))
+            return (filtered_table)
+
+        # Get the list of all "good" files to use for the alignment
+        process_list = filtered_table['imageName'][
+            np.where(filtered_table['doProcess'])]
+        process_list = list(
+            process_list)  # Convert process_list from numpy list to regular python
+        # list
+        log.info("SUCCESS")
+
+        # Define fitting algorithm list in priority order
+        # The match_relative_fit algorithm must have more than one image as the
+        # first image is the reference for the remaining images.
+
+        if len(process_list) > 1:
+            fit_algorithm_list = [match_relative_fit, match_2dhist_fit, match_default_fit]
+        else:
+            fit_algorithm_list = [match_2dhist_fit, match_default_fit]
+
         current_dt = datetime.datetime.now()
         delta_dt = (current_dt - starting_dt).total_seconds()
         log.info('Processing time of [STEP 2]: {} sec'.format(delta_dt))
-        return (filtered_table)
+        starting_dt = current_dt
+        # 3: Build WCS for full set of input observations
+        log.info("{} STEP 3: Build WCS {}".format("-" * 20, "-" * 65))
+        refwcs = amutils.build_reference_wcs(process_list)
+        log.info("SUCCESS")
 
-    # Get the list of all "good" files to use for the alignment
-    process_list = filtered_table['imageName'][
-        np.where(filtered_table['doProcess'])]
-    process_list = list(
-        process_list)  # Convert process_list from numpy list to regular python
-    # list
-    log.info("SUCCESS")
-
-    # Define fitting algorithm list in priority order
-    # The match_relative_fit algorithm must have more than one image as the
-    # first image is the reference for the remaining images.
-
-    if len(process_list) > 1:
-        fit_algorithm_list = [match_relative_fit, match_2dhist_fit, match_default_fit]
-    else:
-        fit_algorithm_list = [match_2dhist_fit, match_default_fit]
-
-    current_dt = datetime.datetime.now()
-    delta_dt = (current_dt - starting_dt).total_seconds()
-    log.info('Processing time of [STEP 2]: {} sec'.format(delta_dt))
-    starting_dt = current_dt
-    # 3: Build WCS for full set of input observations
-    log.info("{} STEP 3: Build WCS {}".format("-" * 20, "-" * 65))
-    refwcs = amutils.build_reference_wcs(process_list)
-    log.info("SUCCESS")
-
-    current_dt = datetime.datetime.now()
-    delta_dt = (current_dt - starting_dt).total_seconds()
-    log.info('Processing time of [STEP 3]: {} sec'.format(delta_dt))
-    starting_dt = current_dt
-    # 4: Extract catalog of observable sources from each input image
-    log.info(
-        "{} STEP 4: Source finding {}".format("-" * 20, "-" * 60))
-    if debug:
-        pickle_filename = "{}.source_catalog.pickle".format(process_list[0])
-        if os.path.exists(pickle_filename):
-            pickle_in = open(pickle_filename, "rb")
-            extracted_sources = pickle.load(pickle_in)
-            log.info(
-                "Using sourcelist extracted from {} generated during the last "
-                "run to save time.".format(
-                    pickle_filename))
+        current_dt = datetime.datetime.now()
+        delta_dt = (current_dt - starting_dt).total_seconds()
+        log.info('Processing time of [STEP 3]: {} sec'.format(delta_dt))
+        starting_dt = current_dt
+        # 4: Extract catalog of observable sources from each input image
+        log.info(
+            "{} STEP 4: Source finding {}".format("-" * 20, "-" * 60))
+        if debug:
+            pickle_filename = "{}.source_catalog.pickle".format(process_list[0])
+            if os.path.exists(pickle_filename):
+                pickle_in = open(pickle_filename, "rb")
+                extracted_sources = pickle.load(pickle_in)
+                log.info(
+                    "Using sourcelist extracted from {} generated during the last "
+                    "run to save time.".format(
+                        pickle_filename))
+            else:
+                extracted_sources = \
+                    generate_source_catalogs(process_list,
+                                             centering_mode='starfind',
+                                             nlargest=MAX_SOURCES_PER_CHIP,
+                                             output=output)
+                pickle_out = open(pickle_filename, "wb")
+                pickle.dump(extracted_sources, pickle_out)
+                pickle_out.close()
+                log.info("Wrote {}".format(pickle_filename))
         else:
             extracted_sources = \
                 generate_source_catalogs(process_list,
                                          centering_mode='starfind',
                                          nlargest=MAX_SOURCES_PER_CHIP,
                                          output=output)
-            pickle_out = open(pickle_filename, "wb")
-            pickle.dump(extracted_sources, pickle_out)
-            pickle_out.close()
-            log.info("Wrote {}".format(pickle_filename))
-    else:
-        extracted_sources = \
-            generate_source_catalogs(process_list,
-                                     centering_mode='starfind',
-                                     nlargest=MAX_SOURCES_PER_CHIP,
-                                     output=output)
 
-    for imgname in extracted_sources.keys():
-        table = extracted_sources[imgname]["catalog_table"]
+        for imgname in extracted_sources.keys():
+            table = extracted_sources[imgname]["catalog_table"]
 
-        # Get the location of the current image in the filtered table
-        index = np.where(filtered_table['imageName'] == imgname)[0][0]
+            # Get the location of the current image in the filtered table
+            index = np.where(filtered_table['imageName'] == imgname)[0][0]
 
-        # First ensure sources were found
-        if table[1] is None:
-            log.warning("No sources found in image {}".format(imgname))
-            filtered_table[:]['status'] = 1
-            filtered_table[:]['processMsg'] = "No sources found"
+            # First ensure sources were found
+            if table[1] is None:
+                log.warning("No sources found in image {}".format(imgname))
+                filtered_table[:]['status'] = 1
+                filtered_table[:]['processMsg'] = "No sources found"
+                current_dt = datetime.datetime.now()
+                delta_dt = (current_dt - starting_dt).total_seconds()
+                log.info('Processing time of [STEP 4]: {} sec'.format(delta_dt))
+                return (filtered_table)
+
+            # The catalog of observable sources must have at least
+            # MIN_OBSERVABLE_THRESHOLD entries to be useful
+            total_num_sources = 0
+            for chipnum in table.keys():
+                total_num_sources += len(table[chipnum])
+
+            # Update filtered table with number of found sources
+            filtered_table[index]['foundSources'] = total_num_sources
+
+            if total_num_sources < MIN_OBSERVABLE_THRESHOLD:
+                log.warning("Not enough sources ({}) found in image {}".format(total_num_sources, imgname))
+                filtered_table[:]['status'] = 1
+                filtered_table[:]['processMsg'] = "Not enough sources found"
+                current_dt = datetime.datetime.now()
+                delta_dt = (current_dt - starting_dt).total_seconds()
+                log.info('Processing time of [STEP 4]: {} sec'.format(delta_dt))
+                return (filtered_table)
+        log.info("SUCCESS")
+        current_dt = datetime.datetime.now()
+        delta_dt = (current_dt - starting_dt).total_seconds()
+        log.info('Processing time of [STEP 4]: {} sec'.format(delta_dt))
+        starting_dt = current_dt
+        # 5: Retrieve list of astrometric sources from database
+
+        # Convert input images to tweakwcs-compatible FITSWCS objects and
+        # attach source catalogs to them.
+        imglist = []
+        for group_id, image in enumerate(process_list):
+            img = amutils.build_wcscat(image, group_id, extracted_sources[image]['catalog_table'])
+            # add the name of the image to the imglist object
+            for im in img:
+                #    im.meta['name'] = image
+                print('im.meta[name] = {}'.format(im.meta['name']))
+            imglist.extend(img)
+        # store mapping of group_id to filename/chip
+        group_id_dict = {}
+        for image in imglist:
+            group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])] = image.meta["group_id"]
+
+        best_fit_rms = -99999.0
+        best_fit_status_dict = {}
+        best_fit_qual = 5
+        # create pristine copy of imglist that will be used to restore imglist
+        # back so it always starts exactly the same
+        # for each run.
+        orig_imglist = copy.deepcopy(imglist)
+        # create dummy list that will be used to preserve imglist best_meta
+        # information through the imglist reset process
+        temp_imglist = []
+        for catalogIndex in range(0, len(
+                catalog_list)):  # loop over astrometric catalog
+            log.info("{} STEP 5: Detect astrometric sources {}".format("-" * 20, "-" * 48))
+            log.info("Astrometric Catalog: %s", str(catalog_list[catalogIndex]))
+            reference_catalog = generate_astrometric_catalog(process_list,
+                                                             catalog=catalog_list[catalogIndex],
+                                                             output=output)
+
             current_dt = datetime.datetime.now()
             delta_dt = (current_dt - starting_dt).total_seconds()
-            log.info('Processing time of [STEP 4]: {} sec'.format(delta_dt))
-            return (filtered_table)
+            log.info('Processing time of [STEP 5]: {} sec'.format(delta_dt))
+            starting_dt = current_dt
 
-        # The catalog of observable sources must have at least
-        # MIN_OBSERVABLE_THRESHOLD entries to be useful
-        total_num_sources = 0
-        for chipnum in table.keys():
-            total_num_sources += len(table[chipnum])
+            if len(reference_catalog) < MIN_CATALOG_THRESHOLD:
+                log.warning("Not enough sources found in catalog {}".format(catalog_list[catalogIndex]))
+                fit_quality = 5
+                if catalogIndex < len(catalog_list) - 1:
+                    log.info("Try again with other catalog")
+                else:
+                    # bail out if not enough sources can be found any of the
+                    # astrometric catalogs
+                    log.warning("ERROR! No astrometric sources found in any catalog. Exiting...")
+                    filtered_table['status'][:] = 1
+                    filtered_table['processMsg'][:] = "No astrometric sources found"
+                    filtered_table['fit_qual'][:] = fit_quality
+                    current_dt = datetime.datetime.now()
+                    delta_dt = (current_dt - starting_dt).total_seconds()
+                    log.info('Processing time of [STEP 5]: {} sec'.format(delta_dt))
+                    return (filtered_table)
+            else:
+                log.info("{} STEP 5b: Cross matching and "
+                         "fitting {}".format("-" * 20, "-" * 47))
+                # loop over fit algorithm type
+                for algorithm_name in fit_algorithm_list:
+                    imglist = copy.deepcopy(orig_imglist)  # reset imglist to pristine state
+                    if temp_imglist:
+                        # migrate best_meta to new imglist
+                        for temp_item, item in zip(temp_imglist, imglist):
+                            item.best_meta = temp_item.best_meta.copy()
 
-        # Update filtered table with number of found sources
-        filtered_table[index]['foundSources'] = total_num_sources
+                    log.info(
+                        "{} Catalog {} matched using {} {}".format("-" * 18,
+                                                                   catalog_list[catalogIndex],
+                                                                   algorithm_name.__name__, "-" * 18))
+                    try:
+                        # restore group IDs to their pristine state prior to each
+                        # run.
+                        for image in imglist:
+                            image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"],
+                                                                                  image.meta["chip"])]
 
-        if total_num_sources < MIN_OBSERVABLE_THRESHOLD:
-            log.warning("Not enough sources ({}) found in image {}".format(total_num_sources, imgname))
-            filtered_table[:]['status'] = 1
-            filtered_table[:]['processMsg'] = "Not enough sources found"
-            current_dt = datetime.datetime.now()
-            delta_dt = (current_dt - starting_dt).total_seconds()
-            log.info('Processing time of [STEP 4]: {} sec'.format(delta_dt))
-            return (filtered_table)
-    log.info("SUCCESS")
-    current_dt = datetime.datetime.now()
-    delta_dt = (current_dt - starting_dt).total_seconds()
-    log.info('Processing time of [STEP 4]: {} sec'.format(delta_dt))
-    starting_dt = current_dt
-    # 5: Retrieve list of astrometric sources from database
+                        # execute the correct fitting/matching algorithm
+                        imglist = algorithm_name(imglist, reference_catalog)
 
-    # Convert input images to tweakwcs-compatible FITSWCS objects and
-    # attach source catalogs to them.
-    imglist = []
-    for group_id, image in enumerate(process_list):
-        img = amutils.build_wcscat(image, group_id, extracted_sources[image]['catalog_table'])
-        # add the name of the image to the imglist object
-        for im in img:
-            #    im.meta['name'] = image
-            print('im.meta[name] = {}'.format(im.meta['name']))
-        imglist.extend(img)
-    # store mapping of group_id to filename/chip
-    group_id_dict = {}
-    for image in imglist:
-        group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])] = image.meta["group_id"]
+                        # determine the quality of the fit
+                        fit_rms, fit_num, fit_quality, filtered_table, fit_status_dict = determine_fit_quality(
+                            imglist,
+                            filtered_table,
+                            print_fit_parameters=print_fit_parameters)
 
-    best_fit_rms = -99999.0
-    best_fit_status_dict = {}
-    best_fit_qual = 5
-    # create pristine copy of imglist that will be used to restore imglist
-    # back so it always starts exactly the same
-    # for each run.
-    orig_imglist = copy.deepcopy(imglist)
-    # create dummy list that will be used to preserve imglist best_meta
-    # information through the imglist reset process
-    temp_imglist = []
-    for catalogIndex in range(0, len(
-            catalog_list)):  # loop over astrometric catalog
-        log.info("{} STEP 5: Detect astrometric sources {}".format("-" * 20, "-" * 48))
-        log.info("Astrometric Catalog: %s", str(catalog_list[catalogIndex]))
-        reference_catalog = generate_astrometric_catalog(process_list,
-                                                         catalog=catalog_list[catalogIndex],
-                                                         output=output)
+                        # Figure out which fit solution to go with based on
+                        # fit_quality value and maybe also total_rms
+                        if fit_quality < 5:
+                            # valid, non-compromised solution with total
+                            # rms < 10 mas...go with this solution.
+                            if fit_quality is 1:
+                                best_fit_rms = fit_rms
+                                best_fit_num = fit_num
+                                for item in imglist:
+                                    item.best_meta = item.meta.copy()
+                                best_fit_status_dict = fit_status_dict.copy()
+                                break  # break out of while loop
+                            elif fit_quality < best_fit_qual:
+                                # better solution found. keep looping but with the
+                                # better solution as "best" for now.
+                                log.info("Better solution found!")
+                                best_fit_rms = fit_rms
+                                best_fit_num = fit_num
+                                for item in imglist:
+                                    item.best_meta = item.meta.copy()
+                                best_fit_status_dict = fit_status_dict.copy()
+                                best_fit_qual = fit_quality
+                            elif fit_quality is best_fit_qual:
+                                # new solution same level of fit_quality. Choose
+                                # whichever one has the lowest total rms as "best"
+                                # and keep looping.
+                                if best_fit_rms >= 0.:
+                                    if fit_rms < best_fit_rms:
+                                        best_fit_rms = fit_rms
+                                        best_fit_num = fit_num
+                                        for item in imglist:
+                                            item.best_meta = item.meta.copy()
+                                        best_fit_status_dict = fit_status_dict.copy()
+                            else:
+                                # new solution has worse fit_quality. discard and
+                                # continue looping.
+                                continue
+                            # preserve best fit solution so that it can be
+                            # inserted into a reinitialized imglist next time
+                            # through.
+                            temp_imglist = copy.deepcopy(imglist)
+                    except Exception:
+                        print("\a\a\a")
+                        exc_type, exc_value, exc_tb = sys.exc_info()
+                        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+                        log.warning("WARNING: Catastrophic fitting failure with catalog {} and matching "
+                                    "algorithm {}.".format(catalog_list[catalogIndex], algorithm_name.__name__))
+                        filtered_table['status'][:] = 1
+                        filtered_table['processMsg'][:] = "Fitting failure"
+                        # It may be there are additional catalogs and algorithms
+                        # to try, so keep going
+                        fit_quality = 5  # Flag this fit with the 'bad' quality value
+                        filtered_table['fit_qual'][:] = fit_quality
+                        continue
+                    if fit_quality is 1:  # break out of inner fit algorithm loop
+                        break
+            if fit_quality is 1:  # break out of outer astrometric catalog loop
+                break
+        current_dt = datetime.datetime.now()
+        delta_dt = (current_dt - starting_dt).total_seconds()
+        log.info('Processing time of [STEP 5b]: {} sec'.format(delta_dt))
+        starting_dt = current_dt
+        # 6: Populate the filtered_table
+        log.info(
+            "{} STEP 6: Collect up information and populate the filtered table "
+            "{}".format("-" * 20, "-" * 20))
+        if 0 < best_fit_rms < MAX_FIT_RMS:
+            log.info("The fitting process was successful with a best fit total "
+                     "rms of {} mas".format(best_fit_rms))
+        else:
+            log.info(
+                "The fitting process was unsuccessful with a best fit total rms "
+                "of {} mas".format(best_fit_rms))
+        if 0 < best_fit_rms < MAX_FIT_LIMIT:
+            # update to the meta information with the lowest rms if it is
+            # reasonable
+            for item in imglist:
+                item.meta.update(item.best_meta)
+            filtered_table['status'][:] = 0
+            fit_status_dict = best_fit_status_dict.copy()
+
+            # Protect the writing of the table within the best_fit_rms
+            info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
+            # Update filtered table with number of matched sources and other
+            # information
+            for item in imglist:
+                imgname = item.meta['name']
+                index = np.where(filtered_table['imageName'] == imgname)[0][0]
+
+                if not item.meta['fit_info']['status'].startswith("FAILED"):
+                    for tweakwcs_info_key in info_keys:
+                        if not tweakwcs_info_key.startswith("matched"):
+                            if tweakwcs_info_key.lower() is 'rms':
+                                filtered_table[index]['rms_x'] = item.meta['fit_info'][tweakwcs_info_key][0]
+                                filtered_table[index]['rms_y'] = item.meta['fit_info'][tweakwcs_info_key][1]
+
+                    filtered_table[index]['catalog'] = item.meta['fit_info']['catalog']
+                    filtered_table[index]['catalogSources'] = len(reference_catalog)
+                    filtered_table[index]['matchSources'] = item.meta['fit_info']['nmatches']
+                    filtered_table[index]['rms_ra'] = item.meta['fit_info']['RMS_RA'].value
+                    filtered_table[index]['rms_dec'] = item.meta['fit_info']['RMS_DEC'].value
+                    filtered_table[index]['fit_rms'] = item.meta['fit_info']['FIT_RMS']
+                    filtered_table[index]['total_rms'] = item.meta['fit_info']['TOTAL_RMS']
+                    filtered_table[index]['offset_x'], filtered_table[index]['offset_y'] = \
+                        item.meta['fit_info']['shift']
+                    filtered_table[index]['scale'] = item.meta['fit_info']['scale'][0]
+                    filtered_table[index]['rotation'] = item.meta['fit_info']['rot']
+
+                    # populate filtered_table fields "status", "compromised" and
+                    # "processMsg" with fit_status_dict fields "valid", "compromised"
+                    # and "reason".
+                    explicit_dict_key = "{},{}".format(item.meta['name'], item.meta['chip'])
+                    if fit_status_dict[explicit_dict_key]['valid'] is True:
+                        filtered_table[index]['status'] = 0
+                    else:
+                        filtered_table[index]['status'] = 1
+                    if fit_status_dict[explicit_dict_key]['compromised'] is False:
+                        filtered_table['compromised'] = 0
+                    else:
+                        filtered_table['compromised'] = 1
+                    if fit_status_dict[explicit_dict_key]['reason'] != "":
+                        filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
+                    filtered_table['fit_qual'][index] = fit_quality
 
         current_dt = datetime.datetime.now()
         delta_dt = (current_dt - starting_dt).total_seconds()
-        log.info('Processing time of [STEP 5]: {} sec'.format(delta_dt))
+        log.info('Processing time of [STEP 6]: {} sec'.format(delta_dt))
         starting_dt = current_dt
-
-        if len(reference_catalog) < MIN_CATALOG_THRESHOLD:
-            log.warning("Not enough sources found in catalog {}".format(catalog_list[catalogIndex]))
-            fit_quality = 5
-            if catalogIndex < len(catalog_list) - 1:
-                log.info("Try again with other catalog")
-            else:
-                # bail out if not enough sources can be found any of the
-                # astrometric catalogs
-                log.warning("ERROR! No astrometric sources found in any catalog. Exiting...")
-                filtered_table['status'][:] = 1
-                filtered_table['processMsg'][:] = "No astrometric sources found"
-                filtered_table['fit_qual'][:] = fit_quality
-                current_dt = datetime.datetime.now()
-                delta_dt = (current_dt - starting_dt).total_seconds()
-                log.info('Processing time of [STEP 5]: {} sec'.format(delta_dt))
-                return (filtered_table)
+        # 7: Write new fit solution to input image headers
+        log.info("{} STEP 7: Update image headers with new WCS information "
+                 "{}".format("-"*20, "-"*29))
+        if (0 < best_fit_rms < 9999.) and update_hdr_wcs:
+            headerlet_dict = update_image_wcs_info(imglist)
+            for tableIndex in range(0, len(filtered_table)):
+                filtered_table[tableIndex]['headerletFile'] = headerlet_dict[
+                    filtered_table[tableIndex]['imageName']]
+            log.info("SUCCESS")
         else:
-            log.info("{} STEP 5b: Cross matching and "
-                     "fitting {}".format("-" * 20, "-" * 47))
-            # loop over fit algorithm type
-            for algorithm_name in fit_algorithm_list:
-                imglist = copy.deepcopy(orig_imglist)  # reset imglist to pristine state
-                if temp_imglist:
-                    # migrate best_meta to new imglist
-                    for temp_item, item in zip(temp_imglist, imglist):
-                        item.best_meta = temp_item.best_meta.copy()
+            log.info(" STEP SKIPPED")
 
-                log.info(
-                    "{} Catalog {} matched using {} {}".format("-" * 18,
-                                                               catalog_list[catalogIndex],
-                                                               algorithm_name.__name__, "-" * 18))
-                try:
-                    # restore group IDs to their pristine state prior to each
-                    # run.
-                    for image in imglist:
-                        image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"],
-                                                                              image.meta["chip"])]
+        current_dt = datetime.datetime.now()
+        delta_dt = (current_dt - starting_dt).total_seconds()
+        log.info('Processing time of [STEP 7]: {} sec'.format(delta_dt))
+        log.info('TOTAL Processing time of {} sec'.format((current_dt - zero_dt).total_seconds()))
+        log.info(best_fit_status_dict)
+        log.info("-"*104)
 
-                    # execute the correct fitting/matching algorithm
-                    imglist = algorithm_name(imglist, reference_catalog)
+    finally:
 
-                    # determine the quality of the fit
-                    fit_rms, fit_num, fit_quality, filtered_table, fit_status_dict = determine_fit_quality(
-                        imglist,
-                        filtered_table,
-                        print_fit_parameters=print_fit_parameters)
-
-                    # Figure out which fit solution to go with based on
-                    # fit_quality value and maybe also total_rms
-                    if fit_quality < 5:
-                        # valid, non-compromised solution with total
-                        # rms < 10 mas...go with this solution.
-                        if fit_quality is 1:
-                            best_fit_rms = fit_rms
-                            best_fit_num = fit_num
-                            for item in imglist:
-                                item.best_meta = item.meta.copy()
-                            best_fit_status_dict = fit_status_dict.copy()
-                            break  # break out of while loop
-                        elif fit_quality < best_fit_qual:
-                            # better solution found. keep looping but with the
-                            # better solution as "best" for now.
-                            log.info("Better solution found!")
-                            best_fit_rms = fit_rms
-                            best_fit_num = fit_num
-                            for item in imglist:
-                                item.best_meta = item.meta.copy()
-                            best_fit_status_dict = fit_status_dict.copy()
-                            best_fit_qual = fit_quality
-                        elif fit_quality is best_fit_qual:
-                            # new solution same level of fit_quality. Choose
-                            # whichever one has the lowest total rms as "best"
-                            # and keep looping.
-                            if best_fit_rms >= 0.:
-                                if fit_rms < best_fit_rms:
-                                    best_fit_rms = fit_rms
-                                    best_fit_num = fit_num
-                                    for item in imglist:
-                                        item.best_meta = item.meta.copy()
-                                    best_fit_status_dict = fit_status_dict.copy()
-                        else:
-                            # new solution has worse fit_quality. discard and
-                            # continue looping.
-                            continue
-                        # preserve best fit solution so that it can be
-                        # inserted into a reinitialized imglist next time
-                        # through.
-                        temp_imglist = copy.deepcopy(imglist)
-                except Exception:
-                    print("\a\a\a")
-                    exc_type, exc_value, exc_tb = sys.exc_info()
-                    traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-                    log.warning("WARNING: Catastrophic fitting failure with catalog {} and matching "
-                                "algorithm {}.".format(catalog_list[catalogIndex], algorithm_name.__name__))
-                    filtered_table['status'][:] = 1
-                    filtered_table['processMsg'][:] = "Fitting failure"
-                    # It may be there are additional catalogs and algorithms
-                    # to try, so keep going
-                    fit_quality = 5  # Flag this fit with the 'bad' quality value
-                    filtered_table['fit_qual'][:] = fit_quality
-                    continue
-                if fit_quality is 1:  # break out of inner fit algorithm loop
-                    break
-        if fit_quality is 1:  # break out of outer astrometric catalog loop
-            break
-    current_dt = datetime.datetime.now()
-    delta_dt = (current_dt - starting_dt).total_seconds()
-    log.info('Processing time of [STEP 5b]: {} sec'.format(delta_dt))
-    starting_dt = current_dt
-    # 6: Populate the filtered_table
-    log.info(
-        "{} STEP 6: Collect up information and populate the filtered table "
-        "{}".format("-" * 20, "-" * 20))
-    if 0 < best_fit_rms < MAX_FIT_RMS:
-        log.info("The fitting process was successful with a best fit total "
-                 "rms of {} mas".format(best_fit_rms))
-    else:
-        log.info(
-            "The fitting process was unsuccessful with a best fit total rms "
-            "of {} mas".format(best_fit_rms))
-    if 0 < best_fit_rms < MAX_FIT_LIMIT:
-        # update to the meta information with the lowest rms if it is
-        # reasonable
-        for item in imglist:
-            item.meta.update(item.best_meta)
-        filtered_table['status'][:] = 0
-        fit_status_dict = best_fit_status_dict.copy()
-
-        # Protect the writing of the table within the best_fit_rms
-        info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
-        # Update filtered table with number of matched sources and other
-        # information
-        for item in imglist:
-            imgname = item.meta['name']
-            index = np.where(filtered_table['imageName'] == imgname)[0][0]
-
-            if not item.meta['fit_info']['status'].startswith("FAILED"):
-                for tweakwcs_info_key in info_keys:
-                    if not tweakwcs_info_key.startswith("matched"):
-                        if tweakwcs_info_key.lower() is 'rms':
-                            filtered_table[index]['rms_x'] = item.meta['fit_info'][tweakwcs_info_key][0]
-                            filtered_table[index]['rms_y'] = item.meta['fit_info'][tweakwcs_info_key][1]
-
-                filtered_table[index]['catalog'] = item.meta['fit_info']['catalog']
-                filtered_table[index]['catalogSources'] = len(reference_catalog)
-                filtered_table[index]['matchSources'] = item.meta['fit_info']['nmatches']
-                filtered_table[index]['rms_ra'] = item.meta['fit_info']['RMS_RA'].value
-                filtered_table[index]['rms_dec'] = item.meta['fit_info']['RMS_DEC'].value
-                filtered_table[index]['fit_rms'] = item.meta['fit_info']['FIT_RMS']
-                filtered_table[index]['total_rms'] = item.meta['fit_info']['TOTAL_RMS']
-                filtered_table[index]['offset_x'], filtered_table[index]['offset_y'] = \
-                    item.meta['fit_info']['shift']
-                filtered_table[index]['scale'] = item.meta['fit_info']['scale'][0]
-                filtered_table[index]['rotation'] = item.meta['fit_info']['rot']
-
-                # populate filtered_table fields "status", "compromised" and
-                # "processMsg" with fit_status_dict fields "valid", "compromised"
-                # and "reason".
-                explicit_dict_key = "{},{}".format(item.meta['name'], item.meta['chip'])
-                if fit_status_dict[explicit_dict_key]['valid'] is True:
-                    filtered_table[index]['status'] = 0
-                else:
-                    filtered_table[index]['status'] = 1
-                if fit_status_dict[explicit_dict_key]['compromised'] is False:
-                    filtered_table['compromised'] = 0
-                else:
-                    filtered_table['compromised'] = 1
-                if fit_status_dict[explicit_dict_key]['reason'] != "":
-                    filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
-                filtered_table['fit_qual'][index] = fit_quality
-
-    current_dt = datetime.datetime.now()
-    delta_dt = (current_dt - starting_dt).total_seconds()
-    log.info('Processing time of [STEP 6]: {} sec'.format(delta_dt))
-    starting_dt = current_dt
-    # 7: Write new fit solution to input image headers
-    log.info("{} STEP 7: Update image headers with new WCS information "
-             "{}".format("-"*20, "-"*29))
-    if (0 < best_fit_rms < 9999.) and update_hdr_wcs:
-        headerlet_dict = update_image_wcs_info(imglist)
-        for tableIndex in range(0, len(filtered_table)):
-            filtered_table[tableIndex]['headerletFile'] = headerlet_dict[
-                filtered_table[tableIndex]['imageName']]
-        log.info("SUCCESS")
-    else:
-        log.info(" STEP SKIPPED")
-
-    current_dt = datetime.datetime.now()
-    delta_dt = (current_dt - starting_dt).total_seconds()
-    log.info('Processing time of [STEP 7]: {} sec'.format(delta_dt))
-    log.info('TOTAL Processing time of {} sec'.format((current_dt - zero_dt).total_seconds()))
-    log.info(best_fit_status_dict)
-    log.info("-"*104)
-
-    # Now update the result with the filtered_table contents
-    result.meta = filtered_table.meta
-    for col in filtered_table.colnames:
-        result.add_column(filtered_table[col], name=col)
-    filtered_table.pprint(max_width=-1)
-
+        # Now update the result with the filteredTable contents
+        result.meta = filteredTable.meta
+        for col in filteredTable.colnames:
+            result.add_column(filteredTable[col], name=col)
+        filteredTable.pprint(max_width=-1)
 
 # ------------------------------------------------------------------------------------------------------------
 
