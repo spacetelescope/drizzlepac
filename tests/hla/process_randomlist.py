@@ -1,14 +1,15 @@
-import sys
-import traceback
+""" This module processes a test on a list of input datasets to collect
+    statistics on the quality of the alignment of each dataset to an
+    astrometric catalog."""
 import os
 import datetime
 import time
 import numpy as np
 from astropy.table import Table, vstack
 
-from .base_test import BaseHLATest
 from drizzlepac import alignimages
 import drizzlepac.hlautils.catalog_utils as catutils
+from .base_test import BaseHLATest
 
 class TestAlignMosaic(BaseHLATest):
     """ Process a large sample of ACS and WFC3 datasets to determine if they can be
@@ -42,17 +43,19 @@ class TestAlignMosaic(BaseHLATest):
         # Randomly select a subset of field names (each field represented by a row) from
         # the master CSV file and return as an Astropy table
         random_candidate_table = catutils.randomSelectFromCSV(input_file_path[0],
-            input_num_entries, input_seed_value)
+                                                              input_num_entries,
+                                                              input_seed_value)
 
         # Invoke the methods which will handle acquiring/downloading the data from
-        # MAST and perform the alignment
+        # MAST and perform the alignment.  If an exception happens, just abort
+        # out - no further analysis needed.
         percent_success = 0.0
         try:
-            percent_success = self.align_randomfields (random_candidate_table)
+            percent_success = self.align_randomfields(random_candidate_table)
         except Exception:
             pass
 
-        return(percent_success)
+        return percent_success
 
     def align_randomfields(self, random_table):
         """ Process randomly selected fields (aka datasets) stored in an Astropy table.
@@ -93,67 +96,71 @@ class TestAlignMosaic(BaseHLATest):
             print("TEST_RANDOM. Dataset: ", dataset)
             current_dt = datetime.datetime.now()
             print(str(current_dt))
-            
+
             try:
-                
-                dataset_table = alignimages.perform_align([dataset],archive=False,clobber=True,debug=False,
-                    update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
+
+                dataset_table = alignimages.perform_align([dataset], archive=False,
+                                                          clobber=True, debug=False,
+                                                          update_hdr_wcs=False,
+                                                          print_fit_parameters=True,
+                                                          print_git_info=False,
+                                                          output=False)
 
                 # Filtered datasets
                 if dataset_table['doProcess'].sum() == 0:
                     print("TEST_RANDOM. Filtered Dataset: ", dataset, "\n")
-                    num_processed_datasets -= 1;
+                    num_processed_datasets -= 1
                 # Datasets to process
                 elif dataset_table['doProcess'].sum() > 0:
                     # Determine images in dataset to be processed and the number of images
                     # This is in case an image was filtered out (e.g., expotime = 0)
-                    index = np.where(dataset_table['doProcess']==1)[0]
+                    index = np.where(dataset_table['doProcess'] == 1)[0]
                     fit_qual = dataset_table['fit_qual'][index[0]]
 
                     # Update the table with the dataset_key which is really just a counter
                     dataset_table['datasetKey'][:] = dataset_key
                     dataset_table['completed'][:] = True
                     dataset_table.write(output_name, format='ascii.ecsv')
-                    #dataset_table.pprint(max_width=-1)
-   
+
                     # Successful datasets
-                    if (fit_qual <= 2):
+                    if fit_qual <= 2:
                         print("TEST_RANDOM. Successful Dataset (fit_qual <= 2): ", dataset, "\n")
                         num_success += 1
                     elif 2 < fit_qual <= 4:
-                        print("TEST_RANDOM. Qualified Successful Dataset (2 < fit_qual <= 4): ", dataset, "\n")
+                        print("TEST_RANDOM. Qualified Successful Dataset (2 < fit_qual <= 4): ",
+                              dataset, "\n")
                         num_qual_success += 1
                     # Unsuccessful datasets
                     else:
                         print("TEST_RANDOM. Unsuccessful Dataset (fit_qual = 5): ", dataset, "\n")
                         num_unsuccessful += 1
 
-                # Append the latest dataset table to the summary table 
+                # Append the latest dataset table to the summary table
                 all_dataset_table = vstack([all_dataset_table, dataset_table])
 
             # Catch anything that happens as this dataset will be considered a failure, but
-            # the processing of datasets should continue.  Generate sufficient output exception
-            # information so problems can be addressed.
-            except Exception:
-           
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+            # the processing of datasets should continue.  This is meant to catch
+            # unexpected errors and generate sufficient output exception
+            # information so algorithmic problems can be addressed.
+            except Exception as except_details:
+                print(except_details)
                 print("TEST_RANDOM. Exception Dataset: ", dataset, "\n")
                 num_exception += 1
                 continue
 
         # Perform some clean up
-        if os.path.isfile('ref_cat.ecsv'): 
+        if os.path.isfile('ref_cat.ecsv'):
             os.remove('ref_cat.ecsv')
-        if os.path.isfile('refcatalog.cat'):  
+        if os.path.isfile('refcatalog.cat'):
             os.remove('refcatalog.cat')
         for filename in os.listdir():
             if filename.endswith('flt.fits') or filename.endswith('flc.fits'):
                 os.remove(filename)
 
-        # Write out the summary table for all processed datasets - generate a unique output 
+        # Write out the summary table for all processed datasets - generate a unique output
         # name based on seconds since the epoch in units of seconds
-        all_dataset_table.write('randomResults{}.ecsv'.format(int(time.time())), format='ascii.ecsv')
+        all_dataset_table.write('randomResults{}.ecsv'.format(int(time.time())),
+                                format='ascii.ecsv')
 
         # Determine the percent success over all datasets processed
         percent_success = num_success/num_processed_datasets
@@ -162,9 +169,11 @@ class TestAlignMosaic(BaseHLATest):
         print('TEST_RANDOM. Number of qualified successful tests: ', num_qual_success)
         print('TEST_RANDOM. Number of unsuccessful tests: ', num_unsuccessful)
         print('TEST_RANDOM. Number of exception tests: ', num_exception)
-        print('TEST_RANDOM. Percentage success/numberOfTests: ', num_success/num_processed_datasets*100.0)
-        print('TEST_RANDOM. Percentage success+qualsuccess/numberOfTests: ', (num_success+num_qual_success)/num_processed_datasets*100.0)
- 
+        print('TEST_RANDOM. Percentage success/numberOfTests: ',
+              num_success/num_processed_datasets*100.0)
+        print('TEST_RANDOM. Percentage success+qualsuccess/numberOfTests: ',
+              (num_success+num_qual_success)/num_processed_datasets*100.0)
+
         return percent_success
 
 def get_dataset_list(table_name):
@@ -186,12 +195,12 @@ def get_dataset_list(table_name):
     dataset_names = []
 
     # Determine if the data is part of an association or is an individual image
-    for imgid,asnid in zip(table_name['observationID'],table_name['asnID']):
+    for imgid, asnid in zip(table_name['observationID'], table_name['asnID']):
 
         # If the asnID is the string NONE, this is an individual image,
         # and it is necessary to get the individual image dataset name.
         # Otherwise, this is an association dataset, so just add the asnID.
-        if (asnid.upper() == "NONE"):
+        if asnid.upper() == "NONE":
             dataset_names.append(imgid)
         else:
             dataset_names.append(asnid)
