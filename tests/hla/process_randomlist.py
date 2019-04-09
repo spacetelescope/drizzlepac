@@ -4,12 +4,56 @@
 import os
 import datetime
 import time
+import random
 import numpy as np
 from astropy.table import Table, vstack
 
 from drizzlepac import alignimages
-import drizzlepac.hlautils.catalog_utils as catutils
 from .base_test import BaseHLATest
+
+def _random_select_from_csv(table_name, num_entries, seed_value):
+    """
+    Function to extract random entries (lines) from a CSV file
+    The function, _random_select_from_csv, allows the user to specify the
+    desired number of entries to obtain from a comma-separated values (CSV)
+    file which contains data extracted from the STScI archive for ACS, WFC3,
+    and WFPC2 instruments. The data are comprised of the following information
+    as identified by the database name: observationID, trgName, trgposRA,
+    trgPosDec, detector, aperture, filters, enrBandpassName, timMin, timMax,
+    timExposure,and asnID.  The entries from the input table are chosen
+    at random with no duplication, and returned as an Astropy table.
+    Parameters
+    ==========
+    table_name: str
+        Filename of the input master CSV file containing individual
+        images or association names, as well as observational
+        information regarding the images
+    num_entries : int
+        Number of entries/rows to extract from the master input CSV file
+    seed_value : int
+        Value used to initialize the random number generator for the
+        selection of random entries
+    Returns
+    =======
+    output_table : object
+        Astropy Table object
+    """
+    # Initialize the random number generator
+    random.seed(seed_value)
+
+    # Get the contents of the table
+    data_table = Table.read(table_name, format='ascii.csv')
+
+    # Generate a sequence of integers the size of the table, and then
+    # obtain a random subset of the sequence with no duplicate selections
+    subset = random.sample(range(len(data_table)), num_entries)
+
+    # Extract the subset rows...
+    output_table = data_table[subset]
+
+    # Returns the outputTable which is an Astropy Table object
+    return output_table
+
 
 class TestAlignMosaic(BaseHLATest):
     """ Process a large sample of ACS and WFC3 datasets to determine if they can be
@@ -42,7 +86,7 @@ class TestAlignMosaic(BaseHLATest):
 
         # Randomly select a subset of field names (each field represented by a row) from
         # the master CSV file and return as an Astropy table
-        random_candidate_table = catutils.randomSelectFromCSV(input_file_path[0],
+        random_candidate_table = _random_select_from_csv(input_file_path[0],
                                                               input_num_entries,
                                                               input_seed_value)
 
@@ -163,16 +207,16 @@ class TestAlignMosaic(BaseHLATest):
                                 format='ascii.ecsv')
 
         # Determine the percent success over all datasets processed
-        percent_success = num_success/num_processed_datasets
+        percent_success = num_success / num_processed_datasets
         print('TEST_RANDOM. Number of tests (excluding filtered): ', num_processed_datasets)
         print('TEST_RANDOM. Number of successful tests: ', num_success)
         print('TEST_RANDOM. Number of qualified successful tests: ', num_qual_success)
         print('TEST_RANDOM. Number of unsuccessful tests: ', num_unsuccessful)
         print('TEST_RANDOM. Number of exception tests: ', num_exception)
         print('TEST_RANDOM. Percentage success/numberOfTests: ',
-              num_success/num_processed_datasets*100.0)
+              num_success / num_processed_datasets * 100.0)
         print('TEST_RANDOM. Percentage success+qualsuccess/numberOfTests: ',
-              (num_success+num_qual_success)/num_processed_datasets*100.0)
+              (num_success + num_qual_success) / num_processed_datasets * 100.0)
 
         return percent_success
 
