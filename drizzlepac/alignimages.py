@@ -519,10 +519,11 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         imglist = algorithm_name(imglist, reference_catalog)
 
                         # determine the quality of the fit
-                        fit_rms, fit_num, fit_quality, filtered_table, fit_status_dict = determine_fit_quality(
-                            imglist,
-                            filtered_table,
-                            print_fit_parameters=print_fit_parameters)
+                        fit_rms, fit_num, fit_quality, filtered_table, fit_status_dict = \
+                            determine_fit_quality(
+                                imglist,
+                                filtered_table,
+                                print_fit_parameters=print_fit_parameters)
 
                         # Figure out which fit solution to go with based on
                         # fit_quality value and maybe also total_rms
@@ -570,7 +571,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         exc_type, exc_value, exc_tb = sys.exc_info()
                         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
                         log.warning("WARNING: Catastrophic fitting failure with catalog {} and matching "
-                                    "algorithm {}.".format(catalog_list[catalogIndex], algorithm_name.__name__))
+                                    "algorithm {}.".format(catalog_list[catalogIndex],
+                                                           algorithm_name.__name__))
                         filtered_table['status'][:] = 1
                         filtered_table['processMsg'][:] = "Fitting failure"
                         # It may be there are additional catalogs and algorithms
@@ -670,7 +672,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         log.info('TOTAL Processing time of {} sec'.format((current_dt - zero_dt).total_seconds()))
         log.info(best_fit_status_dict)
         log.info("-"*104)
-    except:
+
+    except Exception:
         print("\a\a\a")
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
