@@ -252,7 +252,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         imglist = check_and_get_data(input_list, archive=archive, clobber=clobber)
         log.info("SUCCESS")
 
-        currentDT = datetime.datetime.now()3
+        currentDT = datetime.datetime.now()
         deltaDT = (currentDT - startingDT).total_seconds()
         log.info('Processing time of [STEP 1]: {} sec'.format(deltaDT))
         startingDT = currentDT
@@ -365,7 +365,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             # add the name of the image to the imglist object
             for im in img:
             #    im.meta['name'] = image
-                print('im.meta[name] = {}'.format(im.meta['name']))
+                log.info('im.meta[name] = {}'.format(im.meta['name']))
             imglist.extend(img)
         #store mapping of group_id to filename/chip
         group_id_dict={}
@@ -387,46 +387,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
             currentDT = datetime.datetime.now()
             deltaDT = (currentDT - startingDT).total_seconds()
-<<<<<<< HEAD
-            log.info('Processing time of [STEP 4]: {} sec'.format(deltaDT))
-            return(filteredTable)
-    log.info("SUCCESS")
-    currentDT = datetime.datetime.now()
-    deltaDT = (currentDT - startingDT).total_seconds()
-    log.info('Processing time of [STEP 4]: {} sec'.format(deltaDT))
-    startingDT = currentDT
-    # 5: Retrieve list of astrometric sources from database
-
-    # Convert input images to tweakwcs-compatible FITSWCS objects and
-    # attach source catalogs to them.
-    imglist = []
-    for group_id, image in enumerate(processList):
-        img = amutils.build_wcscat(image, group_id,
-                                   extracted_sources[image]['catalog_table'])
-        # add the name of the image to the imglist object
-        for im in img:
-        #    im.meta['name'] = image
-            log.info('im.meta[name] = {}'.format(im.meta['name']))
-        imglist.extend(img)
-    #store mapping of group_id to filename/chip
-    group_id_dict={}
-    for image in imglist:
-        group_id_dict["{}_{}".format(image.meta["filename"],image.meta["chip"])] = image.meta["group_id"]
-
-    best_fit_rms = -99999.0
-    best_fitStatusDict={}
-    best_fitQual = 5
-    # create pristine copy of imglist that will be used to restore imglist back so it always starts exactly the same
-    # for each run.
-    orig_imglist = copy.deepcopy(imglist)
-    # create dummy list that will be used to preserve imglist best_meta information through the imglist reset process
-    temp_imglist = []
-    for catalogIndex in range(0, len(catalogList)): #loop over astrometric catalog
-        log.info("-------------------- STEP 5: Detect astrometric sources ------------------------------------------------")
-        log.info("Astrometric Catalog: %s",str(catalogList[catalogIndex]))
-        reference_catalog = generate_astrometric_catalog(processList, catalog=catalogList[catalogIndex], output=output)
-
-=======
             log.info('Processing time of [STEP 5]: {} sec'.format(deltaDT))
             startingDT = currentDT
 
@@ -493,7 +453,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                 continue
                             temp_imglist = copy.deepcopy(imglist) # preserve best fit solution so that it can be inserted into a reinitialized imglist next time through.
                     except Exception:
-                        print("\a\a\a")
                         exc_type, exc_value, exc_tb = sys.exc_info()
                         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
                         log.warning(
@@ -509,7 +468,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         break
             if fitQual == 1: #break out of outer astrometric catalog loop
                 break
->>>>>>> hla-staging
         currentDT = datetime.datetime.now()
         deltaDT = (currentDT - startingDT).total_seconds()
         log.info('Processing time of [STEP 5b]: {} sec'.format(deltaDT))
@@ -580,155 +538,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 filteredTable[tableIndex]['headerletFile'] = headerlet_dict[filteredTable[tableIndex]['imageName']]
             log.info("SUCCESS")
         else:
-<<<<<<< HEAD
-            log.info("-------------------- STEP 5b: Cross matching and fitting -----------------------------------------------")
-            for algorithm_name in fit_algorithm_list: #loop over fit algorithm type
-                imglist = copy.deepcopy(orig_imglist) #reset imglist to pristine state
-                if temp_imglist:
-                    for temp_item,item in zip(temp_imglist,imglist): # migrate best_meta to new imglist
-                        item.best_meta = temp_item.best_meta.copy()
-
-                log.info("------------------ Catalog {} matched using {} ------------------ ".format(catalogList[catalogIndex],algorithm_name.__name__))
-                try:
-                    # restore group IDs to their pristine state prior to each run.
-                    for image in imglist:
-                        image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])]
-
-                    #execute the correct fitting/matching algorithm
-                    imglist = algorithm_name(imglist, reference_catalog)
-
-                    # determine the quality of the fit
-                    fit_rms, fit_num, fitQual, filteredTable, fitStatusDict = determine_fit_quality(imglist,filteredTable, print_fit_parameters=print_fit_parameters)
-
-                    # Figure out which fit solution to go with based on fitQual value and maybe also total_rms
-                    if fitQual < 5:
-                        if fitQual == 1: #valid, non-comprimised solution with total rms < 10 mas...go with this solution.
-                            best_fit_rms = fit_rms
-                            best_fit_num = fit_num
-                            for item in imglist:
-                                item.best_meta = item.meta.copy()
-                            best_fitStatusDict = fitStatusDict.copy()
-                            break #break out of while loop
-                        elif fitQual < best_fitQual: # better solution found. keep looping but with the better solution as "best" for now.
-                            log.info("Better solution found!")
-                            best_fit_rms = fit_rms
-                            best_fit_num = fit_num
-                            for item in imglist:
-                                item.best_meta = item.meta.copy()
-                            best_fitStatusDict = fitStatusDict.copy()
-                            best_fitQual = fitQual
-                        elif fitQual == best_fitQual: # new solution same level of fitQual. Choose whichever one has the lowest total rms as "best" and keep looping.
-                            if best_fit_rms >= 0.:
-                                if fit_rms < best_fit_rms:
-                                    best_fit_rms = fit_rms
-                                    best_fit_num = fit_num
-                                    for item in imglist:
-                                        item.best_meta = item.meta.copy()
-                                    best_fitStatusDict = fitStatusDict.copy()
-                        else: # new solution has worse fitQual. discard and continue looping.
-                            continue
-                        temp_imglist = copy.deepcopy(imglist) # preserve best fit solution so that it can be inserted into a reinitialized imglist next time through.
-                except Exception:
-                    exc_type, exc_value, exc_tb = sys.exc_info()
-                    traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-                    log.warning(
-                        "WARNING: Catastrophic fitting failure with catalog {} and matching algorithm {}.".format(
-                            catalogList[catalogIndex], algorithm_name.__name__))
-                    filteredTable['status'][:] = 1
-                    filteredTable['processMsg'][:] = "Fitting failure"
-                    # It may be there are additional catalogs and algorithms to try, so keep going
-                    fitQual = 5 # Flag this fit with the 'bad' quality value
-                    filteredTable['fit_qual'][:] = fitQual
-                    continue
-                if fitQual == 1:  # break out of inner fit algorithm loop
-                    break
-        if fitQual == 1: #break out of outer astrometric catalog loop
-            break
-    currentDT = datetime.datetime.now()
-    deltaDT = (currentDT - startingDT).total_seconds()
-    log.info('Processing time of [STEP 5b]: {} sec'.format(deltaDT))
-    startingDT = currentDT
-    # 6: Populate the filteredTable
-    log.info("-------------------- STEP 6: Collect up information and populate the filtered table --------------------")
-    if 0 < best_fit_rms < MAX_FIT_RMS:
-        log.info("The fitting process was successful with a best fit total rms of {} mas".format(best_fit_rms))
-    else:
-        log.info("The fitting process was unsuccessful with a best fit total rms of {} mas".format(best_fit_rms))
-    if 0 < best_fit_rms < MAX_FIT_LIMIT:
-        # update to the meta information with the lowest rms if it is reasonable
-        for item in imglist:
-            item.meta.update(item.best_meta)
-        filteredTable['status'][:] = 0
-        fitStatusDict = best_fitStatusDict.copy()
-
-        # Protect the writing of the table within the best_fit_rms
-        info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
-        # Update filtered table with number of matched sources and other information
-        for item in imglist:
-            imgname = item.meta['name']
-            index = np.where(filteredTable['imageName'] == imgname)[0][0]
-
-            if not item.meta['fit_info']['status'].startswith("FAILED"):
-                for tweakwcs_info_key in info_keys:
-                    if not tweakwcs_info_key.startswith("matched"):
-                        if tweakwcs_info_key.lower() == 'rms':
-                            filteredTable[index]['rms_x'] = item.meta['fit_info'][tweakwcs_info_key][0]
-                            filteredTable[index]['rms_y'] = item.meta['fit_info'][tweakwcs_info_key][1]
-
-                filteredTable[index]['catalog'] = item.meta['fit_info']['catalog']
-                filteredTable[index]['catalogSources'] = len(reference_catalog)
-                filteredTable[index]['matchSources'] = item.meta['fit_info']['nmatches']
-                filteredTable[index]['rms_ra'] = item.meta['fit_info']['RMS_RA'].value
-                filteredTable[index]['rms_dec'] = item.meta['fit_info']['RMS_DEC'].value
-                filteredTable[index]['fit_rms'] = item.meta['fit_info']['FIT_RMS']
-                filteredTable[index]['total_rms'] = item.meta['fit_info']['TOTAL_RMS']
-                filteredTable[index]['offset_x'], filteredTable[index]['offset_y'] = item.meta['fit_info']['shift']
-                filteredTable[index]['scale'] = item.meta['fit_info']['scale'][0]
-                filteredTable[index]['rotation'] = item.meta['fit_info']['rot']
-
-                # populate filteredTable fields "status", "compromised" and
-                # "processMsg" with fitStatusDict fields "valid", "compromised"
-                # and "reason".
-                explicitDictKey ="{},{}".format(item.meta['name'], item.meta['chip'])
-                if fitStatusDict[explicitDictKey]['valid'] == True:
-                    filteredTable[index]['status'] = 0
-                else:
-                    filteredTable[index]['status'] = 1
-                if fitStatusDict[explicitDictKey]['compromised'] == False:
-                    filteredTable['compromised'] = 0
-                else:
-                    filteredTable['compromised'] = 1
-                if fitStatusDict[explicitDictKey]['reason'] != "":
-                    filteredTable[index]['processMsg'] = fitStatusDict[explicitDictKey]['reason']
-                filteredTable['fit_qual'][index] = fitQual
-
-    currentDT = datetime.datetime.now()
-    deltaDT = (currentDT - startingDT).total_seconds()
-    log.info('Processing time of [STEP 6]: {} sec'.format(deltaDT))
-    startingDT = currentDT
-    # 7: Write new fit solution to input image headers
-    log.info("-------------------- STEP 7: Update image headers with new WCS information -----------------------------")
-    if (0 < best_fit_rms < 9999.) and update_hdr_wcs:
-        headerlet_dict = update_image_wcs_info(imglist)
-        for tableIndex in range(0,len(filteredTable)):
-            filteredTable[tableIndex]['headerletFile'] = headerlet_dict[filteredTable[tableIndex]['imageName']]
-        log.info("SUCCESS")
-    else:
-        log.info(" STEP SKIPPED")
-
-    currentDT = datetime.datetime.now()
-    deltaDT = (currentDT - startingDT).total_seconds()
-    log.info('Processing time of [STEP 7]: {} sec'.format(deltaDT))
-    log.info('TOTAL Processing time of {} sec'.format((currentDT- zeroDT).total_seconds()))
-    log.info(best_fitStatusDict)
-    log.info("--------------------------------------------------------------------------------------------------------")
-
-    # Now update the result with the filteredTable contents
-    result.meta = filteredTable.meta
-    for col in filteredTable.colnames:
-        result.add_column(filteredTable[col], name=col)
-    filteredTable.pprint(max_width=-1)
-=======
             log.info(" STEP SKIPPED")
 
         currentDT = datetime.datetime.now()
@@ -745,7 +554,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         for col in filteredTable.colnames:
             result.add_column(filteredTable[col], name=col)
         filteredTable.pprint(max_width=-1)
->>>>>>> hla-staging
 
 # ----------------------------------------------------------------------------------------------------------------------
 
