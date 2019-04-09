@@ -1,7 +1,7 @@
 .. hla:
 
-HLA alignment API
------------------
+Enhanced Pipeline Products API
+------------------------------
 
 
 .. automodule:: drizzlepac.hlautils.astrometric_utils

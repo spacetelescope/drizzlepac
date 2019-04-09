@@ -72,7 +72,7 @@ VEGASPEC = os.path.join(os.path.dirname(MODULE_PATH),
 
 __all__ = ['create_astrometric_catalog', 'compute_radius', 'find_gsc_offset',
            'extract_sources', 'find_hist2d_offset', 'generate_source_catalog',
-           'classify_sources', 'countExtn']
+           'classify_sources']
 
 
 def buildRotMatrix(theta):
@@ -168,7 +168,7 @@ def create_astrometric_catalog(inputs, **pars):
             if gaia_only and g.strip() == '':
                 continue
         else:
-            g = -1  # indicator for no source ID extracted
+            g = "-1"  # indicator for no source ID extracted
         r = float(source['ra'])
         d = float(source['dec'])
         m = -999.9  # float(source['mag'])
