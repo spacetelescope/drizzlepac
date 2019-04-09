@@ -99,7 +99,7 @@ def check_and_get_data(input_list,**pars):
     # (*_asn.fits), a full individual image file (aka singleton, *_flt.fits), or a root name specification 
     # (association or singleton, ipppssoot).
     for input_item in input_list:
-        log.info('Input item: ', input_item)
+        log.info('Input item: {}'.format(input_item))
         indx = input_item.find('_')
         
         # Input with a suffix (_xxx.fits)
