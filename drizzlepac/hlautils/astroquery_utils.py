@@ -93,14 +93,11 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
 
     if not clobber:
         for rownum in rows_to_remove[::-1]:
-            if not manifest:
-                return all_images
-            else:
+            if manifest:
                 manifest.insert_row(rownum,
-                                    vals=[all_images[rownum],
-                                          "LOCAL",
-                                          "None",
-                                          "None"])
+                                    vals=[all_images[rownum], "LOCAL", "None", "None"])
+            else:
+                return all_images
 
     download_dir = None
     for file, file_status in zip(manifest['Local Path'], manifest['Status']):
