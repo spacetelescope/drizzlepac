@@ -2,9 +2,7 @@
 import shutil
 import os
 from astroquery.mast import Observations
-from astropy.table import Table
 
-import logging
 import sys
 from stsci.tools import logutil
 
