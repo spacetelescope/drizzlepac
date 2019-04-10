@@ -53,11 +53,10 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
         return local_files
 
     dpobs = Observations.get_product_list(obs_table)
-    data_products_by_id = \
-        Observations.filter_products(dpobs,
-                                     productSubGroupDescription=suffix, 
-                                     extension='fits',
-                                     mrp_only=False)
+    data_products_by_id = Observations.filter_products(dpobs,
+                                                       productSubGroupDescription=suffix,
+                                                       extension='fits',
+                                                       mrp_only=False)
 
     # After the filtering has been done, ensure there is still data in the
     # table for download. If the table is empty, look for FLT images in lieu
