@@ -50,7 +50,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
     # "calibration"
     obs_table = Observations.query_criteria(obs_id=obsid, obstype='all')
     # Catch the case where no files are found for download
-    if obs_table:
+    if not obs_table:
         log.info("WARNING: Query for {} returned NO RESULTS!".format(obsid))
         return local_files
 
