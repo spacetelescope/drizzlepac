@@ -87,9 +87,8 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
                     data_products_by_id[rowCtr]['productFilename']))
                 rows_to_remove.append(rowCtr)
         if rows_to_remove:
-            rows_to_remove.reverse()
-            for rowNum in rows_to_remove:
-                data_products_by_id.remove_row(rowNum)
+            for rownum in rows_to_remove[::-1]:
+                data_products_by_id.remove_row(rownum)
 
     manifest = Observations.download_products(data_products_by_id, 
                                               mrp_only=False)
