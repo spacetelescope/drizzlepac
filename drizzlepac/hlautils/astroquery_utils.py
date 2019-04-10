@@ -112,8 +112,8 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
                                           "None"])
 
     download_dir = None
-    for file, fileStatus in zip(manifest['Local Path'], manifest['Status']):
-        if fileStatus != "LOCAL":
+    for file, file_status in zip(manifest['Local Path'], manifest['Status']):
+        if file_status != "LOCAL":
             # Identify what sub-directory was created by astroquery for the
             # download
             if download_dir is None:
