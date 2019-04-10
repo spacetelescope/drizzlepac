@@ -95,8 +95,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
                                               mrp_only=False)
 
     if not clobber:
-        rows_to_remove.reverse()
-        for rownum in rows_to_remove:
+        for rownum in rows_to_remove[::-1]:
             if not manifest:
                 return all_images
             else:
