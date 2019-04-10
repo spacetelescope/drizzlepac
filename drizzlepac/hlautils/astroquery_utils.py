@@ -81,14 +81,12 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
     log.info(all_images)
     if not clobber:
         rows_to_remove = []
-        for rowCtr in range(0, len(data_products_by_id)):
-            if os.path.exists(data_products_by_id[rowCtr]['productFilename']):
-                log.info("{} already exists. File download skipped.".format(
-                    data_products_by_id[rowCtr]['productFilename']))
-                rows_to_remove.append(rowCtr)
-        if rows_to_remove:
-            for rownum in rows_to_remove[::-1]:
-                data_products_by_id.remove_row(rownum)
+        for row_idx, row in enumerate(data_products_by_id):
+            fname = row['productFilename']
+            if os.path.isfile(fname):
+                log.info(fname + " already exists. File download skipped.")
+                rows_to_remove.append(row_idx)
+        data_products_by_id.remove_rows(rows_to_remove)
 
     manifest = Observations.download_products(data_products_by_id, 
                                               mrp_only=False)
