@@ -103,11 +103,12 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
         rows_to_remove.reverse()
         for rownum in rows_to_remove:
             if not manifest:
-                local_files = all_images
-                return local_files
+                return all_images
             else:
                 manifest.insert_row(rownum,
-                                    vals=[all_images[rownum], "LOCAL", "None",
+                                    vals=[all_images[rownum],
+                                          "LOCAL",
+                                          "None",
                                           "None"])
 
     download_dir = None
