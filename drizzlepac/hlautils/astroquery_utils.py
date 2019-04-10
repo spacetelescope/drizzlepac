@@ -77,7 +77,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
             log.info(
                 "WARNING: No FLC or FLT files found for {}.".format(obsid))
             return local_files
-    all_images = [row['productFilename'] for row in data_products_by_id]
+    all_images = data_products_by_id['productFilename'].tolist()
     log.info(all_images)
     if not clobber:
         rows_to_remove = []
