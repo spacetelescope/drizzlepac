@@ -1003,14 +1003,18 @@ def update_image_wcs_info(tweakwcs_output):
             num_sci_ext = amutils.countExtn(hdulist)
 
             # generate wcs name for updated image header, headerlet
+            if item.meta['fit method'] is 'match_relative_fit':
+                fit_method = 'REL'
+            else:
+                fit_method = 'IMG'
             if not hdulist['SCI',1].header['WCSNAME'] or hdulist['SCI',1].header['WCSNAME'] =="": #Just in case header value 'wcsname' is empty.
-                wcsName = "FIT_{}".format(item.meta['catalog_name'])
+                wcsName = "FIT_{}_{}".format(fit_method,item.meta['catalog_name'])
             else:
                 wname = hdulist['sci', 1].header['wcsname']
                 if "-" in wname:
-                    wcsName = '{}-FIT_{}'.format(wname[:wname.index('-')], item.meta['fit_info']['catalog'])
+                    wcsName = '{}-FIT_{}_{}'.format(wname[:wname.index('-')], fit_method, item.meta['fit_info']['catalog'])
                 else:
-                    wcsName = '{}-FIT_{}'.format(wname, item.meta['fit_info']['catalog'])
+                    wcsName = '{}-FIT_{}_{}'.format(wname, fit_method, item.meta['fit_info']['catalog'])
 
             # establish correct mapping to the science extensions
             sciExtDict = {}
@@ -1068,6 +1072,7 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
     fit_rms = tweakwcs_item.meta['fit_info']['FIT_RMS']
     nmatch = tweakwcs_item.meta['fit_info']['nmatches']
     catalog = tweakwcs_item.meta['fit_info']['catalog']
+    fit_method = tweakwcs_item.meta['fit method']
 
     x_shift = (tweakwcs_item.meta['fit_info']['shift'])[0]
     y_shift = (tweakwcs_item.meta['fit_info']['shift'])[1]
@@ -1081,6 +1086,7 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
     primary_header['RMS_DEC'] = rms_dec
     primary_header['NMATCH'] = nmatch
     primary_header['CATALOG'] = catalog
+    primary_header['FITMETH'] = fit_method
 
     # Create a new FITS keyword
     primary_header['FIT_RMS'] = (fit_rms, 'RMS (mas) of the 2D fit of the headerlet solution')
