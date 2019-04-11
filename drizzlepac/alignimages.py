@@ -418,15 +418,15 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         # restore group IDs to their pristine state prior to each run.
                         for image in imglist:
                             image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])]
-
                         #execute the correct fitting/matching algorithm
                         imglist = algorithm_name(imglist, reference_catalog)
 
                         # determine the quality of the fit
                         fit_rms, fit_num, fitQual, filteredTable, fitStatusDict = determine_fit_quality(imglist,filteredTable, print_fit_parameters=print_fit_parameters)
+                        for imglist_ctr in range(0, len(imglist)):
+                            imglist[imglist_ctr].meta['fit method'] = algorithm_name.__name__
                         fit_info_dict["{} {}".format(catalogList[catalogIndex], algorithm_name.__name__)] = \
                         fitStatusDict[next(iter(fitStatusDict))]
-
                         # Figure out which fit solution to go with based on fitQual value and maybe also total_rms
                         if fitQual < 5:
                             if fitQual == 1: #valid, non-comprimised solution with total rms < 10 mas...go with this solution.
@@ -503,6 +503,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                 filteredTable[index]['rms_x'] = item.meta['fit_info'][tweakwcs_info_key][0]
                                 filteredTable[index]['rms_y'] = item.meta['fit_info'][tweakwcs_info_key][1]
 
+                    filteredTable[index]['fit_method'] = item.meta['fit method']
                     filteredTable[index]['catalog'] = item.meta['fit_info']['catalog']
                     filteredTable[index]['catalogSources'] = len(reference_catalog)
                     filteredTable[index]['matchSources'] = item.meta['fit_info']['nmatches']
