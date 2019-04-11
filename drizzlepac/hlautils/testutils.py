@@ -6,6 +6,7 @@ from astropy.io import fits
 from stsci.tools import logutil
 from stwcs import updatewcs
 from stwcs.wcsutil import headerlet
+from ci_watson.hst_helpers import ref_from_image, download_crds
 
 from .. import alignimages
 
@@ -51,6 +52,7 @@ def compare_wcs_alignment(dataset, force=False):
         ASSUMPTIONS
         -----------
             - All images in dataset have the same set of a priori solutions
+            - All images in dataset have the same setting for the IDCTAB file
     """
     # Setup
     # Remember what state the environment was in before this code runs
@@ -76,6 +78,11 @@ def compare_wcs_alignment(dataset, force=False):
         default_wcsname = fits.getval(imglist[0], 'wcsname', ext=1)
         log.info("Default WCSNAME: {}".format(default_wcsname))
         alignment = {default_wcsname:extract_results(results)}
+
+        # Download the calibration reference files to ensure availability
+        ref_files = ref_from_image(imglist[0], ['IDCTAB','DGEOFILE','NPOLFILE'])
+        for file in ref_files:
+            download_crds(file, verbose=True)
 
         # Step 3:
         #   Update inputs with latest distortion model and pull in solutions from dB
