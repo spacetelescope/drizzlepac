@@ -30,7 +30,7 @@ from drizzlepac.hlautils import astrometric_utils as amutils
 from drizzlepac.hlautils import astroquery_utils as aqutils
 from drizzlepac.hlautils import analyze as filter
 from drizzlepac.hlautils import get_git_rev_info
-
+import pdb
 
 __taskname__ = 'alignimages'
 
@@ -380,6 +380,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         orig_imglist = copy.deepcopy(imglist)
         # create dummy list that will be used to preserve imglist best_meta information through the imglist reset process
         temp_imglist = []
+        fit_info_dict = OrderedDict()
         for catalogIndex in range(0, len(catalogList)): #loop over astrometric catalog
             log.info("-------------------- STEP 5: Detect astrometric sources ------------------------------------------------")
             log.info("Astrometric Catalog: %s",str(catalogList[catalogIndex]))
@@ -423,6 +424,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
                         # determine the quality of the fit
                         fit_rms, fit_num, fitQual, filteredTable, fitStatusDict = determine_fit_quality(imglist,filteredTable, print_fit_parameters=print_fit_parameters)
+                        fit_info_dict["{} {}".format(catalogList[catalogIndex], algorithm_name.__name__)] = \
+                        fitStatusDict[next(iter(fitStatusDict))]
 
                         # Figure out which fit solution to go with based on fitQual value and maybe also total_rms
                         if fitQual < 5:
@@ -464,6 +467,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         fitQual = 5 # Flag this fit with the 'bad' quality value
                         filteredTable['fit_qual'][:] = fitQual
                         continue
+
                     if fitQual == 1:  # break out of inner fit algorithm loop
                         break
             if fitQual == 1: #break out of outer astrometric catalog loop
@@ -545,8 +549,12 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         log.info('Processing time of [STEP 7]: {} sec'.format(deltaDT))
         log.info('TOTAL Processing time of {} sec'.format((currentDT- zeroDT).total_seconds()))
         log.info(best_fitStatusDict)
-        log.info("--------------------------------------------------------------------------------------------------------")
 
+        log.info("--------------------------------------------------------------------------------------------------------")
+        log.info("                             SUMMARY OF ALL FIT ATTEMPTS")
+        for item in fit_info_dict.keys():
+            log.info("{} {}".format(item, fit_info_dict[item]))
+        log.info("--------------------------------------------------------------------------------------------------------")
     finally:
 
         # Now update the result with the filteredTable contents
