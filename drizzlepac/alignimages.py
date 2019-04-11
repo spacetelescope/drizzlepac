@@ -100,11 +100,11 @@ def check_and_get_data(input_list, **pars):
         if indx != -1:
             lc_input_item = input_item.lower()
             suffix = lc_input_item[indx + 1:indx + 4]
-            log.info('file: ', lc_input_item)
-            # For an association, need to open the table and read the image names as this could be a custom
-            # association.  The assumption is this file is on local disk when specified in this manner
-            # (vs. just the ipppssoot of the association). This "if" block just collects the wanted full file
-            # names.
+            log.info('file: {}'.format(lc_input_item))
+            # For an association, need to open the table and read the image names as this could
+            # be a custom association.  The assumption is this file is on local disk when specified
+            # in this manner (vs just the ipppssoot of the association).
+            # This "if" block just collects the wanted full file names.
             if suffix is 'asn':
                 try:
                     asntab = Table.read(input_item, format='fits')
