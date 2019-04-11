@@ -12,7 +12,6 @@ import math
 import os
 import pickle
 from collections import OrderedDict
-import logging
 import traceback
 
 import numpy as np
@@ -205,7 +204,7 @@ def perform_align(input_list, **kwargs):
         Should utils.astrometric_utils.create_astrometric_catalog() generate file 'ref_cat.ecsv' and should
         generate_source_catalogs() generate the .reg region files for every chip of every input image and
         should generate_astrometric_catalog() generate file 'refcatalog.cat'?
- 
+
     Updates
     -------
     filtered_table: Astropy Table
@@ -351,7 +350,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         starting_dt = current_dt
         # 3: Build WCS for full set of input observations
         log.info("{} STEP 3: Build WCS {}".format("-" * 20, "-" * 65))
-        refwcs = amutils.build_reference_wcs(process_list)
+        # refwcs = amutils.build_reference_wcs(process_list)
         log.info("SUCCESS")
 
         current_dt = datetime.datetime.now()
@@ -508,6 +507,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                             determine_fit_quality(
                                 imglist,
                                 filtered_table,
+                                (catalogIndex < (len(catalog_list) - 1)),
                                 print_fit_parameters=print_fit_parameters)
 
                         # Figure out which fit solution to go with based on fit_quality value and maybe also
@@ -516,7 +516,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                             # valid, non-compromised solution with total rms < 10 mas...go with this solution.
                             if fit_quality is 1:
                                 best_fit_rms = fit_rms
-                                best_fit_num = fit_num
                                 for item in imglist:
                                     item.best_meta = item.meta.copy()
                                 best_fit_status_dict = fit_status_dict.copy()
@@ -526,7 +525,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                 # for now.
                                 log.info("Better solution found!")
                                 best_fit_rms = fit_rms
-                                best_fit_num = fit_num
                                 for item in imglist:
                                     item.best_meta = item.meta.copy()
                                 best_fit_status_dict = fit_status_dict.copy()
@@ -537,7 +535,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                 if best_fit_rms >= 0.:
                                     if fit_rms < best_fit_rms:
                                         best_fit_rms = fit_rms
-                                        best_fit_num = fit_num
                                         for item in imglist:
                                             item.best_meta = item.meta.copy()
                                         best_fit_status_dict = fit_status_dict.copy()
@@ -632,7 +629,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         starting_dt = current_dt
         # 7: Write new fit solution to input image headers
         log.info("{} STEP 7: Update image headers with new WCS information "
-                 "{}".format("-"*20, "-"*29))
+                 "{}".format("-" * 20, "-" * 29))
         if (0 < best_fit_rms < 9999.) and update_hdr_wcs:
             headerlet_dict = update_image_wcs_info(imglist)
             for tableIndex in range(0, len(filtered_table)):
@@ -647,7 +644,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         log.info('Processing time of [STEP 7]: {} sec'.format(delta_dt))
         log.info('TOTAL Processing time of {} sec'.format((current_dt - zero_dt).total_seconds()))
         log.info(best_fit_status_dict)
-        log.info("-"*104)
+        log.info("-" * 104)
 
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -681,7 +678,7 @@ def match_relative_fit(imglist, reference_catalog):
         List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
-    log.info("{} STEP 5b: (match_relative_fit) Cross matching and fitting {}".format("-"*20, "-"*27))
+    log.info("{} STEP 5b: (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(searchrad=75, separation=0.1, tolerance=2, use2dhist=True)
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
@@ -729,7 +726,7 @@ def match_default_fit(imglist, reference_catalog):
 
     """
     log.info("{} STEP 5b: (match_default_fit) Cross matching and fitting "
-             "{}".format("-"*20, "-"*27))
+             "{}".format("-" * 20, "-" * 27))
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(searchrad=250, separation=0.1, tolerance=100, use2dhist=False)
     # Align images and correct WCS
@@ -762,7 +759,7 @@ def match_2dhist_fit(imglist, reference_catalog):
 
     """
     log.info("{} STEP 5b: (match_2dhist_fit) Cross matching and fitting "
-             "{}".format("-"*20, "-"*28))
+             "{}".format("-" * 20, "-" * 28))
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(searchrad=75, separation=0.1, tolerance=2.0, use2dhist=True)
     # Align images and correct WCS
@@ -777,7 +774,7 @@ def match_2dhist_fit(imglist, reference_catalog):
 # ------------------------------------------------------------------------------------------------------------
 
 
-def determine_fit_quality(imglist, filtered_table, print_fit_parameters=True):
+def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit_parameters=True):
     """Determine the quality of the fit to the data
 
     Parameters
@@ -799,6 +796,9 @@ def determine_fit_quality(imglist, filtered_table, print_fit_parameters=True):
 
     print_fit_parameters : bool
         Specify whether or not to print out FIT results for each chip
+
+    catalogs_remaining : bool
+        Specify whether additional catalogs remain to be fit against.
 
     Returns
     -------
@@ -865,7 +865,7 @@ def determine_fit_quality(imglist, filtered_table, print_fit_parameters=True):
         fit_status_dict[dict_key]['num_matches'] = num_xmatches
 
         if num_xmatches < MIN_CROSS_MATCHES:
-            if catalogIndex < numCatalogs - 1:
+            if catalogs_remaining:
                 log.warning(
                     "Not enough cross matches found between astrometric "
                     "catalog and sources found in {}".format(image_name))
@@ -933,14 +933,14 @@ def determine_fit_quality(imglist, filtered_table, print_fit_parameters=True):
                                          num_xmatches))
         # print fit params to screen
         if print_fit_parameters:
-            log.info("{} FIT PARAMETERS {}".format("~"*35, "~"*34))
+            log.info("{} FIT PARAMETERS {}".format("~" * 35, "~" * 34))
             log.info("image: {}".format(image_name))
             log.info("chip: {}".format(item.meta['chip']))
             log.info("group_id: {}".format(item.meta['group_id']))
             for tweakwcs_info_key in tweakwcs_info_keys:
                 if not tweakwcs_info_key.startswith("matched"):
                     log.info("{} : {}".format(tweakwcs_info_key, item.meta['fit_info'][tweakwcs_info_key]))
-            log.info("~"*84)
+            log.info("~" * 84)
             log.info("nmatches_check: {} radial_offset_check: {} "
                      "large_rms_check: {}, "
                      "consistency_check: {}".format(nmatches_check,
