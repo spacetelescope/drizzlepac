@@ -195,7 +195,7 @@ def build_reference_wcs(inputs, sciname='sci'):
     return outwcs
 
 
-def get_catalog(ra, dec, sr=0.1, fmt='CSV', catalog='GSC241'):
+def get_catalog(ra, dec, sr=0.1, catalog='GSC241'):
     """ Extract catalog from VO web service.
 
     Parameters
@@ -210,11 +210,6 @@ def get_catalog(ra, dec, sr=0.1, fmt='CSV', catalog='GSC241'):
         Search radius (in decimal degrees) from field-of-view center to use
         for sources from catalog.  Default: 0.1 degrees
 
-    fmt : str, optional
-        Format of output catalog to be returned.  Options are determined by
-        web-service, and currently include (Default: CSV):
-        VOTABLE(default) | HTML | KML | CSV | TSV | JSON | TEXT
-
     catalog : str, optional
         Name of catalog to query, as defined by web-service.  Default: 'GSC241'
 
@@ -227,6 +222,7 @@ def get_catalog(ra, dec, sr=0.1, fmt='CSV', catalog='GSC241'):
     serviceType = 'vo/CatalogSearch.aspx'
     spec_str = 'RA={}&DEC={}&SR={}&FORMAT={}&CAT={}&MINDET=5'
     headers = {'Content-Type': 'text/csv'}
+    fmt = 'CSV'
 
     spec = spec_str.format(ra, dec, sr, fmt, catalog)
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
@@ -301,6 +297,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
 
     Parameters
     ----------
+    img : ndarray
+        Numpy array of the science extension from the observations FITS file.
     dqmask : ndarray
         Bitmask which identifies whether a pixel should be used (1) in source
         identification or not(0). If provided, this mask will be applied to the
@@ -328,13 +326,15 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
     nlargest : int, None
         Number of largest (brightest) sources in each chip/array to measure
         when using 'starfind' mode.
-    outroot : str
+    outroot : str, optional
         If specified, write out the catalog of sources to the file with this name rootname.
-    plot : bool
+    plot : bool, optional
         Specify whether or not to create a plot of the sources on a view of the image.
-    vmax : float
+    vmax : float, optional
         If plotting the sources, scale the image to this maximum value.
-
+    deblend : bool, optional
+        Specify whether or not to apply photutils deblending algorithm when
+        evaluating each of the identified segments (sources) from the chip.
     """
     # apply any provided dqmask for segmentation only
     if dqmask is not None:
@@ -713,6 +713,8 @@ def filter_catalog(catalog, bright_limit=1.0, max_bright=None, min_bright=20, co
 
     Parameters
     ----------
+    catalog : `~astropy.table.Table`
+        Table containing the full set of identified sources.
     bright_limit : float
         Fraction of catalog based on brightness that should be retained.
         Value of 1.00 means full catalog.
