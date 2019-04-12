@@ -450,39 +450,36 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         # reset process
         temp_imglist = []
         fit_info_dict = OrderedDict()
-        for catalogIndex in range(0, len(
-                catalog_list)):  # loop over astrometric catalog
-            log.info("{} STEP 5: Detect astrometric sources {}".format("-" * 20, "-" * 48))
-            log.info("Astrometric Catalog: %s", str(catalog_list[catalogIndex]))
-            reference_catalog = generate_astrometric_catalog(process_list,
-                                                             catalog=catalog_list[catalogIndex],
-                                                             output=output)
+        for algorithm_name in fit_algorithm_list:  # loop over fit algorithm type
+            for catalogIndex in range(0, len(catalog_list)):  # loop over astrometric catalog
+                log.info("{} STEP 5: Detect astrometric sources {}".format("-" * 20, "-" * 48))
+                log.info("Astrometric Catalog: %s", str(catalog_list[catalogIndex]))
+                reference_catalog = generate_astrometric_catalog(process_list,
+                                                                 catalog=catalog_list[catalogIndex],
+                                                                 output=output)
 
-            current_dt = datetime.datetime.now()
-            delta_dt = (current_dt - starting_dt).total_seconds()
-            log.info('Processing time of [STEP 5]: {} sec'.format(delta_dt))
-            starting_dt = current_dt
+                current_dt = datetime.datetime.now()
+                delta_dt = (current_dt - starting_dt).total_seconds()
+                log.info('Processing time of [STEP 5]: {} sec'.format(delta_dt))
+                starting_dt = current_dt
 
-            if len(reference_catalog) < MIN_CATALOG_THRESHOLD:
-                log.warning("Not enough sources found in catalog {}".format(catalog_list[catalogIndex]))
-                fit_quality = 5
-                if catalogIndex < len(catalog_list) - 1:
-                    log.info("Try again with other catalog")
+                if len(reference_catalog) < MIN_CATALOG_THRESHOLD:
+                    log.warning("Not enough sources found in catalog {}".format(catalog_list[catalogIndex]))
+                    fit_quality = 5
+                    if catalogIndex < len(catalog_list) - 1:
+                        log.info("Try again with other catalog")
+                    else:
+                        # bail out if not enough sources can be found any of the astrometric catalogs
+                        log.warning("ERROR! No astrometric sources found in any catalog. Exiting...")
+                        filtered_table['status'][:] = 1
+                        filtered_table['processMsg'][:] = "No astrometric sources found"
+                        filtered_table['fit_qual'][:] = fit_quality
+                        current_dt = datetime.datetime.now()
+                        delta_dt = (current_dt - starting_dt).total_seconds()
+                        log.info('Processing time of [STEP 5]: {} sec'.format(delta_dt))
+                        return (filtered_table)
                 else:
-                    # bail out if not enough sources can be found any of the astrometric catalogs
-                    log.warning("ERROR! No astrometric sources found in any catalog. Exiting...")
-                    filtered_table['status'][:] = 1
-                    filtered_table['processMsg'][:] = "No astrometric sources found"
-                    filtered_table['fit_qual'][:] = fit_quality
-                    current_dt = datetime.datetime.now()
-                    delta_dt = (current_dt - starting_dt).total_seconds()
-                    log.info('Processing time of [STEP 5]: {} sec'.format(delta_dt))
-                    return (filtered_table)
-            else:
-                log.info("{} STEP 5b: Cross matching and "
-                         "fitting {}".format("-" * 20, "-" * 47))
-                # loop over fit algorithm type
-                for algorithm_name in fit_algorithm_list:
+                    log.info("{} STEP 5b: Cross matching and fitting {}".format("-" * 20, "-" * 47))
                     imglist = copy.deepcopy(orig_imglist)  # reset imglist to pristine state
                     if temp_imglist:
                         # migrate best_meta to new imglist
@@ -565,9 +562,9 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         fit_quality = 5  # Flag this fit with the 'bad' quality value
                         filtered_table['fit_qual'][:] = fit_quality
                         continue
-                    if fit_quality is 1:  # break out of inner fit algorithm loop
-                        break
-            if fit_quality is 1:  # break out of outer astrometric catalog loop
+                if fit_quality is 1:  # break out of inner astrometric catalog loop
+                    break
+            if fit_quality is 1:  # break out of outer fit algorithm  loop
                 break
         current_dt = datetime.datetime.now()
         delta_dt = (current_dt - starting_dt).total_seconds()
