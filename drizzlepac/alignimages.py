@@ -119,7 +119,7 @@ def check_and_get_data(input_list, **pars):
                         candidate_list.append(memname)
                     else:
                         candidate_list.append(memname + '_flc.fits')
-            elif suffix is 'flc' or suffix is 'flt':
+            elif suffix in ['flc', 'flt']:
                 if lc_input_item not in candidate_list:
                     candidate_list.append(lc_input_item)
             else:
