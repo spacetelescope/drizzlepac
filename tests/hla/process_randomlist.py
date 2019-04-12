@@ -1,9 +1,9 @@
 """ This module processes a test on a list of input datasets to collect
     statistics on the quality of the alignment of each dataset to an
     astrometric catalog."""
-import os
 import datetime
 import time
+import os
 import random
 import numpy as np
 from astropy.table import Table, vstack
@@ -37,6 +37,11 @@ def _random_select_from_csv(table_name, num_entries, seed_value):
     =======
     output_table : object
         Astropy Table object
+
+    Notes
+    =====
+    This routine is for future use.
+
     """
     # Initialize the random number generator
     random.seed(seed_value)
@@ -54,13 +59,12 @@ def _random_select_from_csv(table_name, num_entries, seed_value):
     # Returns the outputTable which is an Astropy Table object
     return output_table
 
-
 class TestAlignMosaic(BaseHLATest):
     """ Process a large sample of ACS and WFC3 datasets to determine if they can be
         aligned to an astrometric standard.
     """
 
-    def test_align_randomfields(self):
+    def test_align_randomfields(self, start_row, num_rows):
         """ Wrapper to set up the test for aligning a large number of randomly
             selected fields (aka datasets) from a input ascii file (CSV).
 
@@ -71,24 +75,34 @@ class TestAlignMosaic(BaseHLATest):
 
         input_list_file = 'ACSWFC3List.csv'
 
-        # Desired number of random entries for testing
-        input_num_entries = 50
-        input_num_entries = 2
-
-        # Seed for random number generator
-        input_seed_value = 1
-
         # Obtain the full path to the file containing the dataset field names
         self.input_repo = 'hst-hla-pipeline'
         self.tree = 'dev'
         self.input_loc = 'master_lists'
         input_file_path = self.get_data(input_list_file)
 
+        # FOR FUTURE
+        # Desired number of random entries for testing
+        # num_rows = 50
+
+        # Seed for random number generator
+        # input_seed_value = 1
+
         # Randomly select a subset of field names (each field represented by a row) from
         # the master CSV file and return as an Astropy table
-        random_candidate_table = _random_select_from_csv(input_file_path[0],
-                                                              input_num_entries,
-                                                              input_seed_value)
+        # NOTE: Preserved for use in the future.
+        # random_candidate_table = _random_select_from_csv(input_file_path[0],
+        #                                                 num_rows,
+        #                                                 input_seed_value)
+
+        # Read a randomized table
+        data_table = Table.read(input_file_path[0], format='ascii.csv')
+
+        # Extract the subset rows
+        start_row = int(start_row)
+        end_row = start_row + int(num_rows)
+        print("\nTEST_RANDOM. Start row: {}   Number of rows to process: {}.".format(start_row, num_rows))
+        random_candidate_table = data_table[start_row:end_row]
 
         # Invoke the methods which will handle acquiring/downloading the data from
         # MAST and perform the alignment.  If an exception happens, just abort
@@ -167,7 +181,7 @@ class TestAlignMosaic(BaseHLATest):
                     dataset_table.write(output_name, format='ascii.ecsv')
 
                     # Successful datasets
-                    if fit_qual <= 2:
+                    if 0 < fit_qual <= 2:
                         print("TEST_RANDOM. Successful Dataset (fit_qual <= 2): ", dataset, "\n")
                         num_success += 1
                     elif 2 < fit_qual <= 4:

@@ -7,7 +7,8 @@ from .process_randomlist import TestAlignMosaic
 @pytest.mark.bigdata
 @pytest.mark.xfail
 @pytest.mark.slow
-def test_randomlist(self):
+@pytest.mark.unit
+def test_randomlist(start_row, num_rows):
     """ Tests which validate whether mosaics can be aligned to an astrometric standard.
 
         Characteristics of these tests:
@@ -53,4 +54,4 @@ def test_randomlist(self):
     """
     run_random_test = TestAlignMosaic()
 
-    assert run_random_test.test_align_randomfields() > 0.7
+    assert run_random_test.test_align_randomfields(start_row, num_rows) > 0.7
