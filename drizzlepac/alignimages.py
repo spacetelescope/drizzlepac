@@ -450,13 +450,24 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         # reset process
         temp_imglist = []
         fit_info_dict = OrderedDict()
+        reference_catalog_dict={}
         for algorithm_name in fit_algorithm_list:  # loop over fit algorithm type
             for catalogIndex in range(0, len(catalog_list)):  # loop over astrometric catalog
                 log.info("{} STEP 5: Detect astrometric sources {}".format("-" * 20, "-" * 48))
-                log.info("Astrometric Catalog: %s", str(catalog_list[catalogIndex]))
-                reference_catalog = generate_astrometric_catalog(process_list,
-                                                                 catalog=catalog_list[catalogIndex],
-                                                                 output=output)
+                catalog_name = str(catalog_list[catalogIndex])
+                log.info("Astrometric Catalog: {}".format(catalog_name))
+                # store reference catalogs in a dictionary so that generate_astrometric_catalog() doesn't
+                #  execute unnecessarily after it's been run once for a given astrometric catalog.
+                if catalog_name in reference_catalog_dict.keys():
+                    log.info("Using {} reference catalog from earlier this run.".format(catalog_name))
+                    reference_catalog = reference_catalog_dict[catalog_name]
+                else:
+                    log.info("Generating new reference catalog for {};"
+                             " Storing it for potential re-use later this run.".format(catalog_name))
+                    reference_catalog = generate_astrometric_catalog(process_list,
+                                                                     catalog=catalog_list[catalogIndex],
+                                                                     output=output)
+                    reference_catalog_dict[catalog_name] = reference_catalog
 
                 current_dt = datetime.datetime.now()
                 delta_dt = (current_dt - starting_dt).total_seconds()
