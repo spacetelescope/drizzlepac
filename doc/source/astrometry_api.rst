@@ -1,30 +1,30 @@
-.. _astrometry_api:
+.. _enhanced_products:
 
-Generating Astrometrically Aligned products
-============================================
-The code described here gets used in the automated HST calibration pipeline to align images to an absolute astrometric standard using a number of methods.
-
+Enhanced Pipeline Products code API
+-------------------------------------
 
 .. automodule:: drizzlepac.alignimages
-  :members:
-  :undoc-members:
+.. autofunction:: drizzlepac.alignimages.perform_align
+.. autofunction:: drizzlepac.alignimages.generate_source_catalogs
+
 
 .. automodule:: drizzlepac.hlautils.astrometric_utils
-  :members:
-  :undoc-members:
+.. autofunction:: drizzlepac.hlautils.astrometric_utils.create_astrometric_catalog
+.. autofunction:: drizzlepac.hlautils.astrometric_utils.get_catalog
+.. autofunction:: drizzlepac.hlautils.astrometric_utils.find_gsc_offset
+.. autofunction:: drizzlepac.hlautils.astrometric_utils.extract_sources
+.. autofunction:: drizzlepac.hlautils.astrometric_utils.classify_sources
+.. autofunction:: drizzlepac.hlautils.astrometric_utils.generate_source_catalog
+.. autofunction:: drizzlepac.hlautils.astrometric_utils.generate_sky_catalog
+.. autofunction:: drizzlepac.hlautils.astrometric_utils.compute_photometry
+.. autofunction:: drizzlepac.hlautils.astrometric_utils.filter_catalog
+.. autofunction:: drizzlepac.hlautils.astrometric_utils.build_self_reference
+.. autofunction:: drizzlepac.hlautils.astrometric_utils.within_footprint
+.. autofunction:: drizzlepac.hlautils.astrometric_utils.find_hist2d_offset
+.. autofunction:: drizzlepac.hlautils.astrometric_utils.build_wcscat
 
 .. automodule:: drizzlepac.hlautils.astroquery_utils
-  :members:
-  :undoc-members:
-
-.. automodule:: drizzlepac.hlautils.catalog_utils
-  :members:
-  :undoc-members:
-
-.. automodule:: drizzlepac.hlautils.analyze
-  :members:
-  :undoc-members:
+.. autofunction:: drizzlepac.hlautils.astroquery_utils.retrieve_observation
 
 .. automodule:: drizzlepac.hlautils.testutils
-  :members:
-  :undoc-members:
+.. autofunction:: drizzlepac.hlautils.testutils.compare_wcs_alignment

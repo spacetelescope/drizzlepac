@@ -65,6 +65,8 @@ The first WCS solution listed, OPUS, corresponds to the default WCS defined by t
 
 Additional WCS solutions will then be based on either the original **OPUS** WCS or the distortion-corrected **IDC_** WCS solutions.  Two types of solutions can be defined for images; namely, *a priori* and *a posteriori* solutions.
 
+a priori solutions
+^^^^^^^^^^^^^^^^^^
 The *a priori* solutions have been determined for **ALL HST data** by correcting the coordinates of the guide stars that were used from the originally specified coordinates to the coordinates of those guide stars as determined by GAIA.  The naming convention for these *a priori* solutions are::
 
   <Starting WCS>-<Astrometric Catalog>
@@ -74,7 +76,9 @@ The *a priori* solutions have been determined for **ALL HST data** by correcting
 
 where the *Astrometric Catalog* refers the exact astrometric catalog used to correct the guide star positions.
 
-The *a posteriori*, on the other hand, gets determined from measuring sources in each image, finding overlapping sources from an astrometric catalog, identifying and cross-matching image sources with sources from the astrometric catalog and performing a fit to correct the WCS.  These type of solutions can not be determined for all datasets due to a number of reasons, such as lack of sources in the image and/or lack of overlapping sources from an astrometric catalog.  When these solutions can be determined for an observation, they are given a name which follows the convention::
+a posteriori solutions
+^^^^^^^^^^^^^^^^^^^^^^^
+The *a posteriori* solutions, on the other hand, get determined from measuring sources in each image, finding overlapping sources from an astrometric catalog, identifying and cross-matching image sources with sources from the astrometric catalog and performing a fit to correct the WCS.  These type of solutions can not be determined for all datasets due to a number of reasons, such as lack of sources in the image and/or lack of overlapping sources from an astrometric catalog.  When these solutions can be determined for an observation, they are given a name which follows the convention::
 
   <Starting WCS>-FIT_<Astrometric Catalog>
 

@@ -69,20 +69,11 @@ else:
 
 MODULE_PATH = os.path.dirname(inspect.getfile(inspect.currentframe()))
 VEGASPEC = os.path.join(os.path.dirname(MODULE_PATH),
-                        'data','alpha_lyr_stis_008.fits')
+                        'data', 'alpha_lyr_stis_008.fits')
 
 __all__ = ['create_astrometric_catalog', 'compute_radius', 'find_gsc_offset',
            'extract_sources', 'find_hist2d_offset', 'generate_source_catalog',
            'classify_sources']
-
-
-def buildRotMatrix(theta):
-    _theta = np.deg2rad(theta)
-    _mrot = np.zeros(shape=(2,2), dtype=np.float64)
-    _mrot[0] = (np.cos(_theta), np.sin(_theta))
-    _mrot[1] = (-np.sin(_theta), np.cos(_theta))
-
-    return _mrot
 
 
 """
@@ -147,7 +138,7 @@ def create_astrometric_catalog(inputs, **pars):
 
     # perform query for this field-of-view
     ref_dict = get_catalog(ra, dec, sr=radius, catalog=catalog)
-    colnames = ('ra','dec', 'mag', 'objID', 'GaiaID')
+    colnames = ('ra', 'dec', 'mag', 'objID', 'GaiaID')
     col_types = ('f8', 'f8', 'f4', 'U25', 'U25')
     ref_table = Table(names=colnames, dtype=col_types)
 
@@ -240,7 +231,7 @@ def get_catalog(ra, dec, sr=0.1, fmt='CSV', catalog='GSC241'):
     headers = {'Content-Type': 'text/csv'}
 
     spec = spec_str.format(ra, dec, sr, fmt, catalog)
-    serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType,spec)
+    serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
     rstr = r_contents.split('\r\n')
@@ -287,7 +278,7 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
         ippssoot = fu.buildNewRootname(image).upper()
 
     spec = spec_str.format(input_catalog, output_catalog, ippssoot)
-    serviceUrl = "{}/{}?{}".format(SERVICELOCATION, serviceType,spec)
+    serviceUrl = "{}/{}?{}".format(SERVICELOCATION, serviceType, spec)
     rawcat = requests.get(serviceUrl)
     if not rawcat.ok:
         log.info("Problem accessing service with:\n{{}".format(serviceUrl))
@@ -295,13 +286,13 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
 
     delta_ra = delta_dec = None
     tree = BytesIO(rawcat.content)
-    for _,element in etree.iterparse(tree):
+    for _, element in etree.iterparse(tree):
         if element.tag == 'deltaRA':
             delta_ra = float(element.text)
         elif element.tag == 'deltaDEC':
             delta_dec = float(element.text)
 
-    return delta_ra,delta_dec
+    return delta_ra, delta_dec
 
 
 def extract_sources(img, **pars):
@@ -353,8 +344,8 @@ def extract_sources(img, **pars):
         If plotting the sources, scale the image to this maximum value.
 
     """
-    fwhm= pars.get('fwhm', 3.0)
-    threshold= pars.get('threshold', None)
+    fwhm = pars.get('fwhm', 3.0)
+    threshold = pars.get('threshold', None)
     source_box = pars.get('source_box', 7)
     classify = pars.get('classify', True)
     output = pars.get('output', None)
@@ -362,7 +353,7 @@ def extract_sources(img, **pars):
     vmax = pars.get('vmax', None)
     centering_mode = pars.get('centering_mode', 'starfind')
     deblend = pars.get('deblend', False)
-    dqmask = pars.get('dqmask',None)
+    dqmask = pars.get('dqmask', None)
     nlargest = pars.get('nlargest', None)
     # apply any provided dqmask for segmentation only
     if dqmask is not None:
@@ -426,7 +417,6 @@ def extract_sources(img, **pars):
     # convert segm to mask for daofind
     if centering_mode == 'starfind':
         src_table = None
-        #daofind = IRAFStarFinder(fwhm=fwhm, threshold=5.*bkg.background_rms_median)
         log.info("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, bkg_rms_mean))
         daofind = DAOStarFinder(fwhm=fwhm, threshold=bkg_rms_mean)
         # Identify nbrightest/largest sources
@@ -438,13 +428,13 @@ def extract_sources(img, **pars):
 
         for label in segm.labels:
             if nlargest is not None and label not in large_labels:
-                continue # Move on to the next segment
+                continue  # Move on to the next segment
             # Get slice definition for the segment with this label
             seg_slice = segm.segments[label - 1].slices
             seg_yoffset = seg_slice[0].start
             seg_xoffset = seg_slice[1].start
 
-            #Define raw data from this slice
+            # Define raw data from this slice
             detection_img = img[seg_slice]
             # zero out any pixels which do not have this segments label
             detection_img[np.where(segm.data[seg_slice] == 0)] = 0
@@ -531,16 +521,16 @@ def classify_sources(catalog, sources=None):
     """
     moments = catalog.moments_central
     if sources is None:
-        sources = (0,len(moments))
+        sources = (0, len(moments))
     num_sources = sources[1] - sources[0]
-    srctype = np.zeros((num_sources,),np.int32)
-    for src in range(sources[0],sources[1]):
+    srctype = np.zeros((num_sources,), np.int32)
+    for src in range(sources[0], sources[1]):
         # Protect against spurious detections
         src_x = catalog[src].xcentroid
         src_y = catalog[src].ycentroid
         if np.isnan(src_x) or np.isnan(src_y):
             continue
-        x,y = np.where(moments[src] == moments[src].max())
+        x, y = np.where(moments[src] == moments[src].max())
         if (x[0] > 1) and (y[0] > 1):
             srctype[src] = 1
 
@@ -591,8 +581,8 @@ def generate_source_catalog(image, **kwargs):
     """
     if not isinstance(image, pf.HDUList):
         raise ValueError("Input {} not fits.HDUList object".format(image))
-    dqname = kwargs.get('dqname','DQ')
-    output = kwargs.get('output',None)
+    dqname = kwargs.get('dqname', 'DQ')
+    output = kwargs.get('output', None)
     # Build source catalog for entire image
     source_cats = {}
     numSci = countExtn(image, extname='SCI')
@@ -604,12 +594,12 @@ def generate_source_catalog(image, **kwargs):
             rootname = image[0].header['rootname']
             outroot = '{}_sci{}_src'.format(rootname, chip)
             kwargs['output'] = outroot
-        imgarr = image['sci',chip].data
+        imgarr = image['sci', chip].data
 
         # apply any DQ array, if available
         dqmask = None
         if image.index_of(dqname):
-            dqarr = image[dqname,chip].data
+            dqarr = image[dqname, chip].data
 
             # "grow out" regions in DQ mask flagged as saturated by several
             # pixels in every direction to prevent the
@@ -704,10 +694,10 @@ def generate_sky_catalog(image, refwcs, **kwargs):
         if seg_tab_phot is None:
             continue
         # Convert pixel coordinates from this chip to sky coordinates
-        chip_wcs = wcsutil.HSTWCS(image,ext=('sci',chip))
-        seg_ra,seg_dec = chip_wcs.all_pix2world(seg_tab_phot['xcentroid'],seg_tab_phot['ycentroid'],1)
+        chip_wcs = wcsutil.HSTWCS(image, ext=('sci', chip))
+        seg_ra, seg_dec = chip_wcs.all_pix2world(seg_tab_phot['xcentroid'], seg_tab_phot['ycentroid'], 1)
         # Convert sky positions to pixel positions in the reference WCS frame
-        seg_xy_out = refwcs.all_world2pix(seg_ra,seg_dec,1)
+        seg_xy_out = refwcs.all_world2pix(seg_ra, seg_dec, 1)
         seg_tab_phot['xcentroid'] = seg_xy_out[0]
         seg_tab_phot['ycentroid'] = seg_xy_out[1]
         if master_cat is None:
@@ -775,10 +765,10 @@ def filter_catalog(catalog, **kwargs):
         New table which only has the sources that meet the selection criteria.
     """
     # interpret input pars
-    bright_limit = kwargs.get('bright_limit',1.00)
-    max_bright = kwargs.get('max_bright',None)
-    min_bright = kwargs.get('min_bright',20)
-    colname = kwargs.get('colname','vegamag')
+    bright_limit = kwargs.get('bright_limit', 1.00)
+    max_bright = kwargs.get('max_bright', None)
+    min_bright = kwargs.get('min_bright', 20)
+    colname = kwargs.get('colname', 'vegamag')
 
     # sort by magnitude
     phot_column = catalog[colname]
@@ -841,7 +831,8 @@ def build_self_reference(filename, clean_wcs=False):
 
     if clean_wcs:
         wcsbase = wcslin.wcs
-        customwcs = build_hstwcs(wcsbase.crval[0],wcsbase.crval[1],wcsbase.crpix[0],wcsbase.crpix[1],wcslin._naxis1,wcslin._naxis2,wcslin.pscale,wcslin.orientat)
+        customwcs = build_hstwcs(wcsbase.crval[0], wcsbase.crval[1], wcsbase.crpix[0], wcsbase.crpix[1],
+                                 wcslin._naxis1, wcslin._naxis2, wcslin.pscale, wcslin.orientat)
     else:
         customwcs = wcslin
     return customwcs
@@ -865,16 +856,16 @@ def build_hstwcs(crval1, crval2, crpix1, crpix2, naxis1, naxis2, pscale, orienta
     distortion based on user provided parameter values.
     """
     wcsout = wcsutil.HSTWCS()
-    wcsout.wcs.crval = np.array([crval1,crval2])
-    wcsout.wcs.crpix = np.array([crpix1,crpix2])
+    wcsout.wcs.crval = np.array([crval1, crval2])
+    wcsout.wcs.crpix = np.array([crpix1, crpix2])
     wcsout.naxis1 = naxis1
     wcsout.naxis2 = naxis2
-    wcsout.wcs.cd = buildRotMatrix(orientat) * [-1, 1] * pscale / 3600.0
+    wcsout.wcs.cd = fu.buildRotMatrix(orientat) * [-1, 1] * pscale / 3600.0
     # Synchronize updates with astropy.wcs objects
     wcsout.wcs.set()
     wcsout.setPscale()
     wcsout.setOrient()
-    wcsout.wcs.ctype = ['RA---TAN','DEC--TAN']
+    wcsout.wcs.ctype = ['RA---TAN', 'DEC--TAN']
 
     return wcsout
 
@@ -916,10 +907,10 @@ def within_footprint(img, wcs, x, y):
 
     # Now, confirm that these points fall within actual science area of WCS
     img_mask = create_image_footprint(img, wcs, border=1.0)
-    inmask = np.where(img_mask[y.astype(np.int32),x.astype(np.int32)])[0]
+    inmask = np.where(img_mask[y.astype(np.int32), x.astype(np.int32)])[0]
     x = x[inmask]
     y = y[inmask]
-    return x,y
+    return x, y
 
 def create_image_footprint(image, refwcs, border=0.):
     """ Create the footprint of the image in the reference WCS frame.
@@ -947,7 +938,7 @@ def create_image_footprint(image, refwcs, border=0.):
     # convert border value into pixels
     border_pixels = int(border / refwcs.pscale)
 
-    mask_arr = np.zeros((ref_y,ref_x),dtype=int)
+    mask_arr = np.zeros((ref_y, ref_x), dtype=int)
 
     for chip in range(numSci):
         chip += 1
@@ -965,7 +956,7 @@ def create_image_footprint(image, refwcs, border=0.):
         mask_arr[edge_y_out, edge_x_out] = 1
 
     # Fill in outline of each chip
-    mask_arr = ndimage.binary_fill_holes(ndimage.binary_dilation(mask_arr,iterations=2))
+    mask_arr = ndimage.binary_fill_holes(ndimage.binary_dilation(mask_arr, iterations=2))
 
     if border > 0.:
         mask_arr = ndimage.binary_erosion(mask_arr, iterations=border_pixels)
@@ -1064,7 +1055,7 @@ def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
 
     # Build source catalog for entire image
     img_cat = generate_source_catalog(image, refwcs, output=chip_catalog, classify=classify)
-    img_cat.write(filename.replace(".fits","_xy.cat"), format='ascii.no_header',
+    img_cat.write(filename.replace(".fits", "_xy.cat"), format='ascii.no_header',
                     overwrite=True)
 
     # Retrieve source XY positions in reference frame
@@ -1082,8 +1073,8 @@ def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
 
     # write out astrometric reference catalog that was actually used
     ref_ra_img, ref_dec_img = refwcs.all_pix2world(xref, yref, 1)
-    ref_tab = Table([ref_ra_img,ref_dec_img, xref, yref],names=['ra','dec', 'x', 'y'])
-    ref_tab.write(reference.replace('.cat','_{}.cat'.format(rootname)),
+    ref_tab = Table([ref_ra_img, ref_dec_img, xref, yref], names=['ra', 'dec', 'x', 'y'])
+    ref_tab.write(reference.replace('.cat', '_{}.cat'.format(rootname)),
                   format='ascii.fast_commented_header', overwrite=True)
     searchrad = search_radius / refwcs.pscale
 
