@@ -449,6 +449,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         # create dummy list that will be used to preserve imglist best_meta information through the imglist
         # reset process
         temp_imglist = []
+        fit_info_dict = OrderedDict()
         for catalogIndex in range(0, len(
                 catalog_list)):  # loop over astrometric catalog
             log.info("{} STEP 5: Detect astrometric sources {}".format("-" * 20, "-" * 48))
@@ -509,6 +510,14 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                 filtered_table,
                                 (catalogIndex < (len(catalog_list) - 1)),
                                 print_fit_parameters=print_fit_parameters)
+
+                        # save fit algorithm name to dictionary key "fit method" in imglist.
+                        for imglist_ctr in range(0, len(imglist)):
+                            imglist[imglist_ctr].meta['fit method'] = algorithm_name.__name__
+
+                        # populate fit_info_dict
+                        fit_info_dict["{} {}".format(catalog_list[catalogIndex], algorithm_name.__name__)] = \
+                            fit_status_dict[next(iter(fit_status_dict))]
 
                         # Figure out which fit solution to go with based on fit_quality value and maybe also
                         # total_rms
@@ -596,6 +605,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                 filtered_table[index]['rms_x'] = item.meta['fit_info'][tweakwcs_info_key][0]
                                 filtered_table[index]['rms_y'] = item.meta['fit_info'][tweakwcs_info_key][1]
 
+                    filtered_table[index]['fit_method'] = item.meta['fit method']
                     filtered_table[index]['catalog'] = item.meta['fit_info']['catalog']
                     filtered_table[index]['catalogSources'] = len(reference_catalog)
                     filtered_table[index]['matchSources'] = item.meta['fit_info']['nmatches']
@@ -644,6 +654,12 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         log.info('Processing time of [STEP 7]: {} sec'.format(delta_dt))
         log.info('TOTAL Processing time of {} sec'.format((current_dt - zero_dt).total_seconds()))
         log.info(best_fit_status_dict)
+        log.info("-" * 104)
+
+        log.info("-" * 104)
+        log.info("                             SUMMARY OF ALL FIT ATTEMPTS")
+        for item in fit_info_dict.keys():
+            log.info("{} {}".format(item, fit_info_dict[item]))
         log.info("-" * 104)
 
     except Exception:
@@ -1125,14 +1141,21 @@ def update_image_wcs_info(tweakwcs_output):
 
             # generate wcs name for updated image header, headerlet
             # Just in case header value 'wcsname' is empty.
+            if item.meta['fit method'] is 'match_relative_fit':
+                fit_method = 'REL'
+            else:
+                fit_method = 'IMG'
+
             if not hdulist['SCI', 1].header['WCSNAME'] or hdulist['SCI', 1].header['WCSNAME'] is "":
-                wcs_name = "FIT_{}".format(item.meta['catalog_name'])
+                wcs_name = "FIT_{}_{}".format(fit_method,item.meta['catalog_name'])
             else:
                 wname = hdulist['sci', 1].header['wcsname']
                 if "-" in wname:
-                    wcs_name = '{}-FIT_{}'.format(wname[:wname.index('-')], item.meta['fit_info']['catalog'])
+                    wcs_name = '{}-FIT_{}_{}'.format(wname[:wname.index('-')],
+                                                    fit_method,
+                                                    item.meta['fit_info']['catalog'])
                 else:
-                    wcs_name = '{}-FIT_{}'.format(wname, item.meta['fit_info']['catalog'])
+                    wcs_name = '{}-FIT_{}_{}'.format(wname, fit_method, item.meta['fit_info']['catalog'])
 
             # establish correct mapping to the science extensions
             sci_ext_dict = {}
@@ -1195,6 +1218,7 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
     fit_rms = tweakwcs_item.meta['fit_info']['FIT_RMS']
     nmatch = tweakwcs_item.meta['fit_info']['nmatches']
     catalog = tweakwcs_item.meta['fit_info']['catalog']
+    fit_method = tweakwcs_item.meta['fit method']
 
     x_shift = (tweakwcs_item.meta['fit_info']['shift'])[0]
     y_shift = (tweakwcs_item.meta['fit_info']['shift'])[1]
@@ -1208,6 +1232,7 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
     primary_header['RMS_DEC'] = rms_dec
     primary_header['NMATCH'] = nmatch
     primary_header['CATALOG'] = catalog
+    primary_header['FITMETH'] = fit_method
 
     # Create a new FITS keyword
     primary_header['FIT_RMS'] = (fit_rms, 'RMS (mas) of the 2D fit of the headerlet solution')
