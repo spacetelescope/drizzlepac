@@ -321,7 +321,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         # data, 'doProcess=0' and 'status=9999' in the table (the status value by default), so there is no
         # need to update the filtered_table here.
 
-        if filtered_table['doProcess'].sum() is 0:
+        if filtered_table['doProcess'].sum() == 0:
             log.warning(
                 "No viable images in filtered table - no processing done.\n")
             current_dt = datetime.datetime.now()
