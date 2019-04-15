@@ -12,6 +12,7 @@ def pytest_addoption(parser):
     """Support options for the pytest test_randomlist.py."""
     parser.addoption("--start_row", action="store", default=0)
     parser.addoption("--num_rows", action="store", default=50)
+    parser.addoption("--master_list", action="store", default="Masterlist.csv")
 
 def pytest_generate_tests(metafunc):
     """Get the command line option."""
