@@ -452,9 +452,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         fit_info_dict = OrderedDict()
         reference_catalog_dict={}
         for algorithm_name in fit_algorithm_list:  # loop over fit algorithm type
-            for catalogIndex in range(0, len(catalog_list)):  # loop over astrometric catalog
+            for catalogIndex, catalog_name in enumerate(catalog_list):  # loop over astrometric catalog
                 log.info("{} STEP 5: Detect astrometric sources {}".format("-" * 20, "-" * 48))
-                catalog_name = str(catalog_list[catalogIndex])
                 log.info("Astrometric Catalog: {}".format(catalog_name))
                 # store reference catalogs in a dictionary so that generate_astrometric_catalog() doesn't
                 #  execute unnecessarily after it's been run once for a given astrometric catalog.
@@ -465,7 +464,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                     log.info("Generating new reference catalog for {};"
                              " Storing it for potential re-use later this run.".format(catalog_name))
                     reference_catalog = generate_astrometric_catalog(process_list,
-                                                                     catalog=catalog_list[catalogIndex],
+                                                                     catalog=catalog_name,
                                                                      output=output)
                     reference_catalog_dict[catalog_name] = reference_catalog
 
@@ -475,7 +474,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 starting_dt = current_dt
 
                 if len(reference_catalog) < MIN_CATALOG_THRESHOLD:
-                    log.warning("Not enough sources found in catalog {}".format(catalog_list[catalogIndex]))
+                    log.warning("Not enough sources found in catalog {}".format(catalog_name))
                     fit_quality = 5
                     if catalogIndex < len(catalog_list) - 1:
                         log.info("Try again with other catalog")
@@ -499,7 +498,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
                     log.info(
                         "{} Catalog {} matched using {} {}".format("-" * 18,
-                                                                   catalog_list[catalogIndex],
+                                                                   catalog_name,
                                                                    algorithm_name.__name__, "-" * 18))
                     try:
                         # restore group IDs to their pristine state prior to each
@@ -524,7 +523,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                             imglist[imglist_ctr].meta['fit method'] = algorithm_name.__name__
 
                         # populate fit_info_dict
-                        fit_info_dict["{} {}".format(catalog_list[catalogIndex], algorithm_name.__name__)] = \
+                        fit_info_dict["{} {}".format(catalog_name, algorithm_name.__name__)] = \
                             fit_status_dict[next(iter(fit_status_dict))]
 
                         # Figure out which fit solution to go with based on fit_quality value and maybe also
@@ -565,7 +564,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         exc_type, exc_value, exc_tb = sys.exc_info()
                         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
                         log.warning("WARNING: Catastrophic fitting failure with catalog {} and matching "
-                                    "algorithm {}.".format(catalog_list[catalogIndex],
+                                    "algorithm {}.".format(catalog_name,
                                                            algorithm_name.__name__))
                         filtered_table['status'][:] = 1
                         filtered_table['processMsg'][:] = "Fitting failure"
