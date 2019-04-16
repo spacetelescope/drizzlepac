@@ -131,7 +131,7 @@ def check_and_get_data(input_list, **pars):
 
         # Input is an ipppssoot (association or singleton), nine characters by definition.
         # This "else" block actually downloads the data specified as ipppssoot.
-        elif len(input_item) is 9:
+        elif len(input_item) == 9:
             try:
                 if input_item not in ipppssoot_list:
                     # An ipppssoot of an individual file which is part of an association cannot be retrieved
@@ -321,7 +321,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         # data, 'doProcess=0' and 'status=9999' in the table (the status value by default), so there is no
         # need to update the filtered_table here.
 
-        if filtered_table['doProcess'].sum() is 0:
+        if filtered_table['doProcess'].sum() == 0:
             log.warning(
                 "No viable images in filtered table - no processing done.\n")
             current_dt = datetime.datetime.now()
@@ -530,7 +530,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         # total_rms
                         if fit_quality < 5:
                             # valid, non-compromised solution with total rms < 10 mas...go with this solution.
-                            if fit_quality is 1:
+                            if fit_quality == 1:
                                 best_fit_rms = fit_rms
                                 for item in imglist:
                                     item.best_meta = item.meta.copy()
@@ -545,7 +545,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                     item.best_meta = item.meta.copy()
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
-                            elif fit_quality is best_fit_qual:
+                            elif fit_quality == best_fit_qual:
                                 # new solution same level of fit_quality. Choose whichever one has the lowest
                                 # total rms as "best" and keep looping.
                                 if best_fit_rms >= 0.:
@@ -1142,7 +1142,7 @@ def update_image_wcs_info(tweakwcs_output):
     for item in tweakwcs_output:
         img_name = item.meta['filename']
         chipnum = item.meta['chip']
-        if chipnum is 1:
+        if chipnum == 1:
             chipctr = 1
             hdulist = fits.open(img_name, mode='update')
             num_sci_ext = amutils.countExtn(hdulist)
@@ -1177,7 +1177,7 @@ def update_image_wcs_info(tweakwcs_output):
                              wcsname=wcs_name,
                              reusename=True,
                              verbose=True)
-        if chipctr is num_sci_ext:
+        if chipctr == num_sci_ext:
             # Close updated flc.fits or flt.fits file
             hdulist.flush()
             hdulist.close()
@@ -1294,7 +1294,7 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
             if item.meta['fit_info']['status'] != 'SUCCESS':
                 continue
             # Make sure to store data for any particular group_id only once.
-            if item.meta['group_id'] is group_id and \
+            if item.meta['group_id'] == group_id and \
                     group_id not in group_dict:
                 group_dict[group_id] = {'ref_idx': None, 'FIT_RMS': None}
                 log.info("fit_info: {}".format(item.meta['fit_info']))
