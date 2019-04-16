@@ -30,6 +30,8 @@ from drizzlepac.hlautils import astroquery_utils as aqutils
 from drizzlepac.hlautils import analyze as filter
 from drizzlepac.hlautils import get_git_rev_info
 
+import pdb
+
 __taskname__ = 'alignimages'
 
 MIN_CATALOG_THRESHOLD = 3
@@ -526,6 +528,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         # populate fit_info_dict
                         fit_info_dict["{} {}".format(catalog_list[catalogIndex], algorithm_name.__name__)] = \
                             fit_status_dict[next(iter(fit_status_dict))]
+                        fit_info_dict["{} {}".format(catalog_list[catalogIndex],
+                                                     algorithm_name.__name__)]['fit_qual'] = fit_quality
 
                         # Figure out which fit solution to go with based on fit_quality value and maybe also
                         # total_rms
@@ -682,7 +686,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         for col in filtered_table.colnames:
             result.add_column(filtered_table[col], name=col)
         filtered_table.pprint(max_width=-1)
-
 # ------------------------------------------------------------------------------------------------------------
 
 
