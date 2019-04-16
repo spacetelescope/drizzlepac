@@ -644,7 +644,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                     filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
 
                     filtered_table['fit_qual'][index] = item.meta['fit quality']
-                    # pdb.set_trace()
         current_dt = datetime.datetime.now()
         delta_dt = (current_dt - starting_dt).total_seconds()
         log.info('Processing time of [STEP 6]: {} sec'.format(delta_dt))
