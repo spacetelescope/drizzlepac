@@ -457,7 +457,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 log.info("Astrometric Catalog: {}".format(catalog_name))
                 # store reference catalogs in a dictionary so that generate_astrometric_catalog() doesn't
                 #  execute unnecessarily after it's been run once for a given astrometric catalog.
-                if catalog_name in reference_catalog_dict.keys():
+                if catalog_name in reference_catalog_dict:
                     log.info("Using {} reference catalog from earlier this run.".format(catalog_name))
                     reference_catalog = reference_catalog_dict[catalog_name]
                 else:
