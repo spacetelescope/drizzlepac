@@ -17,13 +17,14 @@ def pytest_generate_tests(metafunc):
 
     # Read a randomized table
     data_table = Table.read(master_list, format='ascii.csv')
+    data_list = get_dataset_list(data_table)
 
     # Extract the subset rows
     start_row = int(start_row)
     end_row = start_row + int(num_rows)
     print("\nTEST_RANDOM. Start row: {}   Number of rows to process: {}.".format(start_row, num_rows))
     print("MASTER_TABLE: {}".format(master_list))
-    random_candidate_table = data_table[start_row:end_row]['observationID'].tolist()
+    random_candidate_table = data_list[start_row:end_row]
     print(random_candidate_table)
     metafunc.parametrize('dataset', random_candidate_table)
 
@@ -123,3 +124,43 @@ def test_randomlist(dataset):
         for filename in os.listdir():
             if filename.endswith('flt.fits') or filename.endswith('flc.fits'):
                 os.remove(filename)
+
+def get_dataset_list(table_name):
+    """ Standalone function to read the Astropy table and get the dataset names
+
+    Parameters
+    ==========
+    table_name : str
+        Filename of the input master CSV file containing individual
+        images or association names, as well as observational
+        information regarding the images
+
+    Returns
+    =======
+    dataset_names: list
+        List of individual image or association base (IPPSSOOT) names
+    """
+
+    dataset_names = [""] * len(table_name)
+
+    # Determine if the data is part of an association or is an individual image
+    for indx, imgid, asnid in zip(range(len(table_name)), table_name['observationID'], table_name['asnID']):
+
+        # Protect against incomplete lines, missing asnID values, ...
+        # Happens when lines like "(236319 rows affected)" are included
+        if isinstance(asnid, np.ma.core.MaskedConstant):
+            continue
+
+        # If the asnID is the string NONE, this is an individual image,
+        # and it is necessary to get the individual image dataset name.
+        # Otherwise, this is an association dataset, so just add the asnID.
+        if asnid.upper() == "NONE":
+            dataset_names[indx] = imgid
+        else:
+            dataset_names[indx] = asnid
+    # Turn into a set to remove duplicate ASNID entries, only want 1 per ASN
+    dataset = set(dataset_names)
+    # Remove empty element for each extra image from an ASN
+    dataset.remove("")
+    # Return results as a list for easier use in subsequent code
+    return list(dataset)
