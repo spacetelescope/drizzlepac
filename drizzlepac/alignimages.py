@@ -30,9 +30,7 @@ from drizzlepac.hlautils import astroquery_utils as aqutils
 from drizzlepac.hlautils import analyze as filter
 from drizzlepac.hlautils import get_git_rev_info
 
-
 __taskname__ = 'alignimages'
-
 
 MIN_CATALOG_THRESHOLD = 3
 MIN_OBSERVABLE_THRESHOLD = 10
@@ -43,28 +41,32 @@ MAX_FIT_LIMIT = 1000  # Maximum RMS that a result is useful
 MAX_SOURCES_PER_CHIP = 250  # Maximum number of sources per chip to include in source catalog
 
 # Module-level dictionary contains instrument/detector-specific parameters used later on in the script.
-detector_specific_params = {"acs": {"hrc": {"fwhmpsf": 0.073,
+# NOTE: "fwhmpsf" values below are in units of arcseconds
+detector_specific_params = {"acs": {"hrc": {"fwhmpsf": 0.152,  # 0.073
                                             "classify": True,
                                             "threshold": None},
-                                    "sbc": {"fwhmpsf": 0.065,
+                                    "sbc": {"fwhmpsf": 0.13,  # 0.065
                                             "classify": False,
                                             "threshold": 2.0},
                                     "wfc": {"fwhmpsf": 0.13,  # 0.076,
                                             "classify": True,
                                             "threshold": -1.1}},
-                                    "wfc3": {"ir": {"fwhmpsf": 0.14,
-                                                    "classify": False,
-                                                    "threshold": None},
-                                             "uvis": {"fwhmpsf": 0.076,
-                                                      "classify": True,
-                                                      "threshold": None}}}  # fwhmpsf in units of arcsec
+                            "wfc3": {"ir": {"fwhmpsf": 0.25,  # 0.14
+                                            "classify": False,
+                                            "threshold": None},
+                                     "uvis": {"fwhmpsf": 0.152,  # 0.076
+                                              "classify": True,
+                                              "threshold": None}}}
 
 log = logutil.create_logger('alignimages', level=logutil.logging.INFO, stream=sys.stdout)
 
 __version__ = 0.1
 __version_date__ = '15-Feb-2019'
 
-# ----------------------------------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------------------------------------
+
+
 def check_and_get_data(input_list, **pars):
     """Verify that all specified files are present. If not, retrieve them from MAST.
 
@@ -80,9 +82,9 @@ def check_and_get_data(input_list, **pars):
 
     """
     empty_list = []
-    retrieve_list = []    # Actual files retrieved via astroquery and resident on disk
-    candidate_list = []   # File names gathered from *_asn.fits file
-    ipppssoot_list = []   # ipppssoot names used to avoid duplicate downloads
+    retrieve_list = []  # Actual files retrieved via astroquery and resident on disk
+    candidate_list = []  # File names gathered from *_asn.fits file
+    ipppssoot_list = []  # ipppssoot names used to avoid duplicate downloads
     total_input_list = []  # Output full filename list of data on disk
 
     # Loop over the input_list to determine if the item in the input_list is a full association file
@@ -106,7 +108,7 @@ def check_and_get_data(input_list, **pars):
                     asntab = Table.read(input_item, format='fits')
                 except FileNotFoundError:
                     log.error('File {} not found.'.format(input_item))
-                    return(empty_list)
+                    return (empty_list)
                 for row in asntab:
                     if row['MEMTYPE'].startswith('PROD'):
                         continue
@@ -131,8 +133,8 @@ def check_and_get_data(input_list, **pars):
         elif len(input_item) == 9:
             try:
                 if input_item not in ipppssoot_list:
-                    # An ipppssoot of an individual file which is part of an association cannot be
-                    # retrieved from MAST
+                    # An ipppssoot of an individual file which is part of an association cannot be retrieved
+                    # from MAST
                     retrieve_list = aqutils.retrieve_observation(input_item, **pars)
 
                     # If the retrieved list is not empty, add filename(s) to the total_input_list.
@@ -144,7 +146,7 @@ def check_and_get_data(input_list, **pars):
                         ipppssoot_list.append(input_item)
                     else:
                         log.error('File {} cannot be retrieved from MAST.'.format(input_item))
-                        return(empty_list)
+                        return (empty_list)
             except Exception:
                 exc_type, exc_value, exc_tb = sys.exc_info()
                 traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
@@ -157,13 +159,15 @@ def check_and_get_data(input_list, **pars):
             total_input_list.append(file)
             continue
         else:
-            log.error('File {} cannot be found on the local disk.'.format(file))
-            return(empty_list)
+            log.error(
+                'File {} cannot be found on the local disk.'.format(file))
+            return (empty_list)
 
     log.info("TOTAL INPUT LIST: {}".format(total_input_list))
-    return(total_input_list)
+    return (total_input_list)
 
-# -------------------------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------------------------------------
 def perform_align(input_list, **kwargs):
     """Main calling function.
 
@@ -216,7 +220,7 @@ def perform_align(input_list, **kwargs):
 
 @util.with_logging
 def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
-              runfile=None, print_fit_parameters=True, print_git_info=False, output=False):
+              runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=250):
     """Actual Main calling function.
 
     Parameters
@@ -256,13 +260,19 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         generate_source_catalogs() generate the .reg region files for every chip of every input image and
         should generate_astrometric_catalog() generate file 'refcatalog.cat'?
 
+    num_sources : int, optional
+        Maximum number of sources **per chip** which will be used for cross-matching and fitting.  If set to
+        None, all sources will be used.
+
     Updates
     -------
     filtered_table: Astropy Table
         Table which contains processing information and alignment results for every raw image evaluated
 
     """
-    log.info("*** HLAPIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__, __version_date__, util._ptime()[0]))
+    log.info("*** HLAPIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__,
+                                                                                            __version_date__,
+                                                                                            util._ptime()[0]))
 
     # Define astrometric catalog list in priority order
     catalog_list = ['GAIADR2', 'GAIADR1']
@@ -278,11 +288,14 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             repo_path = full_path.split("drizzlepac")[0] + "drizzlepac"
         else:
             pass
-        if not os.path.exists(repo_path): repo_path = None  # protect against non-existent paths
+        if not os.path.exists(repo_path):
+            repo_path = None  # protect against non-existent paths
         if repo_path:
-            get_git_rev_info.print_rev_id(repo_path)  # Display git repository information
+            get_git_rev_info.print_rev_id(
+                repo_path)  # Display git repository information
         else:
-            log.warning("WARNING: Unable to display Git repository revision information.")
+            log.warning(
+                "WARNING: Unable to display Git repository revision information.")
 
     log.info(input_list)
 
@@ -309,15 +322,18 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         # for alignment purposes.  For filtered data, 'doProcess=0' and 'status=9999' in the table
         # (the status value by default), so there is no need to update the filtered_table here.
         if filtered_table['doProcess'].sum() == 0:
-            log.warning("No viable images in filtered table - no processing done.\n")
+            log.warning(
+                "No viable images in filtered table - no processing done.\n")
             current_dt = datetime.datetime.now()
             delta_dt = (current_dt - starting_dt).total_seconds()
             log.info('Processing time of [STEP 2]: {} sec'.format(delta_dt))
             return
 
         # Get the list of all "good" files to use for the alignment
-        process_list = filtered_table['imageName'][np.where(filtered_table['doProcess'])]
-        process_list = list(process_list)  # Convert process_list from numpy list to regular python list
+        process_list = filtered_table['imageName'][
+            np.where(filtered_table['doProcess'])]
+        process_list = list(
+            process_list)  # Convert process_list from numpy list to regular python list
         log.info("SUCCESS")
 
         # Define fitting algorithm list in priority order
@@ -352,19 +368,21 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 log.info("Using sourcelist extracted from {} generated during the last run to save time.".format(
                     pickle_filename))
             else:
-                extracted_sources = generate_source_catalogs(process_list,
-                                                             centering_mode='starfind',
-                                                             nlargest=MAX_SOURCES_PER_CHIP,
-                                                             output=output)
+                extracted_sources = \
+                    generate_source_catalogs(process_list,
+                                             centering_mode='starfind',
+                                             nlargest=num_sources,
+                                             output=output)
                 pickle_out = open(pickle_filename, "wb")
                 pickle.dump(extracted_sources, pickle_out)
                 pickle_out.close()
                 log.info("Wrote {}".format(pickle_filename))
         else:
-            extracted_sources = generate_source_catalogs(process_list,
-                                                         centering_mode='starfind',
-                                                         nlargest=MAX_SOURCES_PER_CHIP,
-                                                         output=output)
+            extracted_sources = \
+                generate_source_catalogs(process_list,
+                                         centering_mode='starfind',
+                                         nlargest=num_sources,
+                                         output=output)
 
         for imgname in extracted_sources.keys():
             table = extracted_sources[imgname]["catalog_table"]
@@ -409,11 +427,10 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         # attach source catalogs to them.
         imglist = []
         for group_id, image in enumerate(process_list):
-            img = amutils.build_wcscat(image, group_id,
-                                       extracted_sources[image]['catalog_table'])
+            img = amutils.build_wcscat(image, group_id, extracted_sources[image]['catalog_table'])
             # add the name of the image to the imglist object
             for im in img:
-            #    im.meta['name'] = image
+                #    im.meta['name'] = image
                 log.info('im.meta[name] = {}'.format(im.meta['name']))
             imglist.extend(img)
         # store mapping of group_id to filename/chip
@@ -483,7 +500,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                     try:
                         # restore group IDs to their pristine state prior to each run.
                         for image in imglist:
-                            image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])]
+                            image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"],
+                                                                                  image.meta["chip"])]
 
                         # execute the correct fitting/matching algorithm
                         imglist = algorithm_name(imglist, reference_catalog)
@@ -529,26 +547,26 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                         for item in imglist:
                                             item.best_meta = item.meta.copy()
                                         best_fit_status_dict = fit_status_dict.copy()
-                            else:  # new solution has worse fit_quality. discard and continue looping.
+                            else:
+                                # new solution has worse fit_quality. discard and continue looping.
                                 continue
                             # preserve best fit solution so that it can be inserted into a reinitialized imglist next time through.
                             temp_imglist = copy.deepcopy(imglist)
                     except Exception:
                         exc_type, exc_value, exc_tb = sys.exc_info()
                         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-                        log.warning(
-                            "WARNING: Catastrophic fitting failure with catalog {} and matching "
-                            "algorithm {}.".format(catalog_name,
-                                                   algorithm_name.__name__))
+                        log.warning("WARNING: Catastrophic fitting failure with catalog {} and matching "
+                                    "algorithm {}.".format(catalog_name,
+                                                           algorithm_name.__name__))
                         filtered_table['status'][:] = 1
                         filtered_table['processMsg'][:] = "Fitting failure"
                         # It may be there are additional catalogs and algorithms to try, so keep going
                         fit_quality = 5  # Flag this fit with the 'bad' quality value
                         filtered_table['fit_qual'][:] = fit_quality
                         continue
-                    if fit_quality == 1:  # break out of inner  astrometric catalog loop
-                        break
-            if fit_quality == 1:  # break out of outer fit algorithm loop
+                if fit_quality == 1:  # break out of inner astrometric catalog loop
+                    break
+            if fit_quality == 1:  # break out of outer fit algorithm  loop
                 break
         current_dt = datetime.datetime.now()
         delta_dt = (current_dt - starting_dt).total_seconds()
@@ -570,7 +588,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             for item in imglist:
                 item.meta.update(item.best_meta)
             filtered_table['status'][:] = 0
-            fit_status_dict = best_fit_status_dict .copy()
+            fit_status_dict = best_fit_status_dict.copy()
 
             # Protect the writing of the table within the best_fit_rms
             info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
@@ -578,7 +596,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             for item in imglist:
                 imgname = item.meta['name']
                 index = np.where(filtered_table['imageName'] == imgname)[0][0]
-
                 if not item.meta['fit_info']['status'].startswith("FAILED"):
                     for tweakwcs_info_key in info_keys:
                         if not tweakwcs_info_key.startswith("matched"):
@@ -606,14 +623,15 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         filtered_table[index]['status'] = 0
                     else:
                         filtered_table[index]['status'] = 1
+
                     if fit_status_dict[explicit_dict_key]['compromised'] is False:
                         filtered_table['compromised'] = 0
                     else:
                         filtered_table['compromised'] = 1
 
                     filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
-                    filtered_table['fit_qual'][index] = item.meta['fit quality']
 
+                    filtered_table['fit_qual'][index] = item.meta['fit quality']
         current_dt = datetime.datetime.now()
         delta_dt = (current_dt - starting_dt).total_seconds()
         log.info('Processing time of [STEP 6]: {} sec'.format(delta_dt))
@@ -651,13 +669,12 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
     finally:
 
-        # Now update the result with the filtered_table contents
+        # Now update the result with the filteredTable contents
         result.meta = filtered_table.meta
         for col in filtered_table.colnames:
             result.add_column(filtered_table[col], name=col)
         filtered_table.pprint(max_width=-1)
-
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def match_relative_fit(imglist, reference_catalog):
@@ -703,7 +720,8 @@ def match_relative_fit(imglist, reference_catalog):
 
     return imglist
 
-# ----------------------------------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------------------------------------
 
 
 def match_default_fit(imglist, reference_catalog):
@@ -726,8 +744,7 @@ def match_default_fit(imglist, reference_catalog):
     log.info("{} STEP 5b: (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
     # Specify matching algorithm to use
-    match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
-                             tolerance=100, use2dhist=False)
+    match = tweakwcs.TPMatch(searchrad=250, separation=0.1, tolerance=100, use2dhist=False)
     # Align images and correct WCS
     tweakwcs.align_wcs(imglist, reference_catalog, match=match, expand_refcat=False)
 
@@ -737,7 +754,7 @@ def match_default_fit(imglist, reference_catalog):
     return imglist
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def match_2dhist_fit(imglist, reference_catalog):
@@ -770,7 +787,7 @@ def match_2dhist_fit(imglist, reference_catalog):
     return imglist
 
 
-# ----------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit_parameters=True):
@@ -848,10 +865,10 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         # Build fit_status_dict entry
         dict_key = "{},{}".format(image_name, chip_num)
         fit_status_dict[dict_key] = {'valid': False,
-                                  'max_rms': max_rms_val,
-                                  'num_matches': num_xmatches,
-                                  'compromised': False,
-                                  'reason': ""}
+                                     'max_rms': max_rms_val,
+                                     'num_matches': num_xmatches,
+                                     'compromised': False,
+                                     'reason': ""}
         # Handle fitting failures (no matches found)
         if item.meta['fit_info']['status'].startswith("FAILED") is True:
             log.warning("No cross matches found in any catalog for {} "
@@ -893,7 +910,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         consistency_check = True
         rms_limit = max(item.meta['fit_info']['TOTAL_RMS'], 10.)
         if not math.sqrt(np.std(np.asarray(xshifts)) ** 2 + np.std(
-                         np.asarray(yshifts)) ** 2) <= (rms_limit / 1000.0) / (item.wcs.pscale):
+                np.asarray(yshifts)) ** 2) <= (rms_limit / 1000.0) / (item.wcs.pscale):
             consistency_check = False
 
         # Decide if fit solutions are valid based on checks
@@ -917,19 +934,19 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
             fit_status_dict[dict_key]['valid'] = True
             fit_status_dict[dict_key]['compromised'] = False
             fit_status_dict[dict_key]['reason'] = ""
-        # for now, generate overall valid and compromised values. Basically, if any of the entries for "valid" is False,
+        # for now, generate overall valid and compromised values. Basically, if any of the entries for
         # "valid" is False, treat the whole dataset as not valid. Same goes for compromised.
         if not fit_status_dict[dict_key]['valid']:
             overall_valid = False
         if fit_status_dict[dict_key]['compromised']:
             overall_comp = True
 
-        log.info('RESULTS FOR {} Chip {}: FIT_RMS = {} mas, TOTAL_RMS = {}'
-                 ' mas, NUM =  {}'.format(image_name,
-                                          item.meta['chip'],
-                                          fit_rms_val,
-                                          max_rms_val,
-                                          num_xmatches))
+        log.info('RESULTS FOR {} Chip {}: FIT_RMS = {} mas, TOTAL_RMS = {} '
+                 'mas, NUM =  {}'.format(image_name,
+                                         item.meta['chip'],
+                                         fit_rms_val,
+                                         max_rms_val,
+                                         num_xmatches))
         # print fit params to screen
         if print_fit_parameters:
             log.info("{} FIT PARAMETERS {}".format("~" * 35, "~" * 34))
@@ -946,7 +963,6 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
                                                     radial_offset_check,
                                                     large_rms_check,
                                                     consistency_check))
-
 
     # determine which fit quality category this latest fit falls into
     if overall_valid is False:
@@ -972,7 +988,8 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
             fit_quality = 4
 
     if print_fit_parameters:
-        for item in imglist: log.info(fit_status_dict["{},{}".format(item.meta['name'], item.meta['chip'])])
+        for item in imglist:
+            log.info(fit_status_dict["{},{}".format(item.meta['name'], item.meta['chip'])])
 
     if max_rms_val > MAX_FIT_RMS:
         log.info("Total fit RMS value = {} mas greater than the maximum threshold value {}.".format(max_rms_val, MAX_FIT_RMS))
@@ -985,7 +1002,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
     return max_rms_val, num_xmatches, fit_quality, filtered_table, fit_status_dict
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def generate_astrometric_catalog(imglist, **pars):
@@ -1017,10 +1034,10 @@ def generate_astrometric_catalog(imglist, **pars):
         out_catalog.write(catalog_filename, format="ascii.fast_commented_header")
         log.info("Wrote reference catalog {}.".format(catalog_filename))
 
-    return(out_catalog)
+    return (out_catalog)
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def generate_source_catalogs(imglist, **pars):
@@ -1083,15 +1100,18 @@ def generate_source_catalogs(imglist, **pars):
                 if chip_cat and len(chip_cat) > 0:
                     regfilename = "{}_sci{}_src.reg".format(imgroot, chip)
                     out_table = Table(chip_cat)
+                    # To align with positions of sources in DS9/IRAF
+                    out_table['xcentroid'] += 1
+                    out_table['ycentroid'] += 1
                     out_table.write(regfilename,
                                     include_names=["xcentroid", "ycentroid"],
                                     format="ascii.fast_commented_header")
                     log.info("Wrote region file {}\n".format(regfilename))
         imghdu.close()
-    return(sourcecatalogdict)
+    return (sourcecatalogdict)
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 def update_image_wcs_info(tweakwcs_output):
@@ -1141,8 +1161,12 @@ def update_image_wcs_info(tweakwcs_output):
                 sci_ext_dict["{}".format(sci_ext_ctr)] = fileutil.findExtname(hdulist, 'sci', extver=sci_ext_ctr)
 
         # update header with new WCS info
-        updatehdr.update_wcs(hdulist, sci_ext_dict["{}".format(item.meta['chip'])], item.wcs, wcsname=wcs_name,
-                                 reusename=True, verbose=True)
+        updatehdr.update_wcs(hdulist,
+                             sci_ext_dict["{}".format(item.meta['chip'])],
+                             item.wcs,
+                             wcsname=wcs_name,
+                             reusename=True,
+                             verbose=True)
         if chipctr == num_sci_ext:
             # Close updated flc.fits or flt.fits file
             # log.info("CLOSE {}\n".format(image_name))  # TODO: Remove before deployment
@@ -1171,7 +1195,9 @@ def update_image_wcs_info(tweakwcs_output):
     return (out_headerlet_dict)
 
 
-# --------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
+
+
 def update_headerlet_phdu(tweakwcs_item, headerlet):
     """Update the primary header data unit keywords of a headerlet object in-place
 
