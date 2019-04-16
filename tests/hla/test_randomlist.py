@@ -32,7 +32,7 @@ def pytest_generate_tests(metafunc):
 @pytest.mark.bigdata
 @pytest.mark.slow
 @pytest.mark.unit
-def test_randomlist(dataset):
+def test_randomlist(tmpdir, dataset):
     """ Tests which validate whether mosaics can be aligned to an astrometric standard.
 
         Characteristics of these tests:
@@ -78,6 +78,16 @@ def test_randomlist(dataset):
 
     current_dt = datetime.datetime.now()
     print(str(current_dt))
+
+    subdir = ""
+    prevdir = os.getcwd()
+
+    # create working directory specified for the test
+    if not tmpdir.ensure(subdir, dir=True):
+        curdir = tmpdir.mkdir(subdir).strpath
+    else:
+        curdir = tmpdir.join(subdir).strpath
+    os.chdir(curdir)
 
     try:
 
@@ -125,6 +135,10 @@ def test_randomlist(dataset):
             if filename.endswith('flt.fits') or filename.endswith('flc.fits'):
                 os.remove(filename)
 
+    # Return to original directory
+    os.chdir(prevdir)
+
+
 def get_dataset_list(table_name):
     """ Standalone function to read the Astropy table and get the dataset names
 
@@ -141,10 +155,10 @@ def get_dataset_list(table_name):
         List of individual image or association base (IPPSSOOT) names
     """
 
-    dataset_names = [""] * len(table_name)
+    dataset_names = []
 
     # Determine if the data is part of an association or is an individual image
-    for indx, imgid, asnid in zip(range(len(table_name)), table_name['observationID'], table_name['asnID']):
+    for imgid, asnid in zip(table_name['observationID'], table_name['asnID']):
 
         # Protect against incomplete lines, missing asnID values, ...
         # Happens when lines like "(236319 rows affected)" are included
@@ -155,12 +169,11 @@ def get_dataset_list(table_name):
         # and it is necessary to get the individual image dataset name.
         # Otherwise, this is an association dataset, so just add the asnID.
         if asnid.upper() == "NONE":
-            dataset_names[indx] = imgid
+            dataset_names.append(imgid)
         else:
-            dataset_names[indx] = asnid
+            dataset_names.append(asnid)
+
     # Turn into a set to remove duplicate ASNID entries, only want 1 per ASN
-    dataset = set(dataset_names)
-    # Remove empty element for each extra image from an ASN
-    dataset.remove("")
-    # Return results as a list for easier use in subsequent code
-    return list(dataset)
+    dataset = set()
+    # Return results as a list of unique dataset names while retaining the original order
+    return [x for x in dataset_names if x not in dataset and not dataset.add(x)]

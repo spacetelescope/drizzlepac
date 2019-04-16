@@ -1,6 +1,4 @@
 """Project default for pytest"""
-
-from astropy.tests.plugins.display import PYTEST_HEADER_MODULES
 from astropy.tests.helper import enable_deprecations_as_exceptions
 
 
@@ -13,13 +11,3 @@ def pytest_addoption(parser):
     parser.addoption("--start_row", action="store", default=0)
     parser.addoption("--num_rows", action="store", default=50)
     parser.addoption("--master_list", action="store", default="Masterlist.csv")
-
-def pytest_generate_tests(metafunc):
-    """Get the command line option."""
-    option_value1 = metafunc.config.option.start_row
-    if 'start_row' in metafunc.fixturenames and option_value1 is not None:
-        metafunc.parametrize("start_row", [option_value1])
-
-    option_value2 = metafunc.config.option.num_rows
-    if 'num_rows' in metafunc.fixturenames and option_value2 is not None:
-        metafunc.parametrize("num_rows", [option_value2])
