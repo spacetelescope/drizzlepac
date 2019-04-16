@@ -30,8 +30,6 @@ from drizzlepac.hlautils import astroquery_utils as aqutils
 from drizzlepac.hlautils import analyze as filter
 from drizzlepac.hlautils import get_git_rev_info
 
-import pdb
-
 __taskname__ = 'alignimages'
 
 MIN_CATALOG_THRESHOLD = 3
@@ -629,7 +627,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         item.meta['fit_info']['shift']
                     filtered_table[index]['scale'] = item.meta['fit_info']['scale'][0]
                     filtered_table[index]['rotation'] = item.meta['fit_info']['rot']
-                    # pdb.set_trace()
+
                     # populate filtered_table fields "status", "compromised" and "processMsg" with
                     # fit_status_dict fields "valid", "compromised" and "reason".
                     explicit_dict_key = "{},{}".format(item.meta['name'], item.meta['chip'])
@@ -637,12 +635,14 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         filtered_table[index]['status'] = 0
                     else:
                         filtered_table[index]['status'] = 1
+
                     if fit_status_dict[explicit_dict_key]['compromised'] is False:
                         filtered_table['compromised'] = 0
                     else:
                         filtered_table['compromised'] = 1
-                    if fit_status_dict[explicit_dict_key]['reason'] != "":
-                        filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
+
+                    filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
+
                     filtered_table['fit_qual'][index] = item.meta['fit quality']
                     # pdb.set_trace()
         current_dt = datetime.datetime.now()
