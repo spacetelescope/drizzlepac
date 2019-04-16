@@ -572,7 +572,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         fit_quality = 5  # Flag this fit with the 'bad' quality value
                         filtered_table['fit_qual'][:] = fit_quality
                         continue
-                if fit_quality is 1:  # break out of inner astrometric catalog loop
+                if fit_quality == 1:  # break out of inner astrometric catalog loop
                     break
             if fit_quality is 1:  # break out of outer fit algorithm  loop
                 break
