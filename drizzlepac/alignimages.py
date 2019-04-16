@@ -524,6 +524,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         # save fit algorithm name to dictionary key "fit method" in imglist.
                         for imglist_ctr in range(0, len(imglist)):
                             imglist[imglist_ctr].meta['fit method'] = algorithm_name.__name__
+                            imglist[imglist_ctr].meta['fit quality'] = fit_quality
 
                         # populate fit_info_dict
                         fit_info_dict["{} {}".format(catalog_list[catalogIndex], algorithm_name.__name__)] = \
@@ -628,7 +629,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         item.meta['fit_info']['shift']
                     filtered_table[index]['scale'] = item.meta['fit_info']['scale'][0]
                     filtered_table[index]['rotation'] = item.meta['fit_info']['rot']
-
+                    # pdb.set_trace()
                     # populate filtered_table fields "status", "compromised" and "processMsg" with
                     # fit_status_dict fields "valid", "compromised" and "reason".
                     explicit_dict_key = "{},{}".format(item.meta['name'], item.meta['chip'])
@@ -642,8 +643,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         filtered_table['compromised'] = 1
                     if fit_status_dict[explicit_dict_key]['reason'] != "":
                         filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
-                    filtered_table['fit_qual'][index] = fit_quality
-
+                    filtered_table['fit_qual'][index] = item.meta['fit quality']
+                    # pdb.set_trace()
         current_dt = datetime.datetime.now()
         delta_dt = (current_dt - starting_dt).total_seconds()
         log.info('Processing time of [STEP 6]: {} sec'.format(delta_dt))
