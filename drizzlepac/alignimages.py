@@ -204,6 +204,10 @@ def perform_align(input_list, **kwargs):
         generate_source_catalogs() generate the .reg region files for every chip of every input image and
         should generate_astrometric_catalog() generate file 'refcatalog.cat'?
 
+    num_sources : int, optional
+        Maximum number of **brightest sources per chip** which will be used for cross-matching and fitting.
+        If set to None, all sources will be used.
+
     Updates
     -------
     filtered_table: Astropy Table
@@ -261,8 +265,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         should generate_astrometric_catalog() generate file 'refcatalog.cat'?
 
     num_sources : int, optional
-        Maximum number of sources **per chip** which will be used for cross-matching and fitting.  If set to
-        None, all sources will be used.
+        Maximum number of **brightest sources per chip** which will be used for cross-matching and fitting.
+        If set to None, all sources will be used.
 
     Updates
     -------
