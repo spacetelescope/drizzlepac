@@ -574,7 +574,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         continue
                 if fit_quality == 1:  # break out of inner astrometric catalog loop
                     break
-            if fit_quality is 1:  # break out of outer fit algorithm  loop
+            if fit_quality == 1:  # break out of outer fit algorithm  loop
                 break
         current_dt = datetime.datetime.now()
         delta_dt = (current_dt - starting_dt).total_seconds()
