@@ -1,3 +1,5 @@
+""" This module computes alignment solutions between all "a priori" solutions for
+    a dataset and GAIA.  """
 import pytest
 
 import numpy as np
@@ -6,11 +8,13 @@ from drizzlepac.hlautils import testutils
 
 from ..resources import BaseACS
 
-
 class TestAcsApriori(BaseACS):
+    """ Tests which validate whether mosaics can be aligned to an astrometric standard,
+        evaluate the quality of the fit, and generate a new WCS.
+    """
 
     @pytest.mark.parametrize('dataset', ['j95y04010', 'J9I408010',
-                                         'ica9t3020', 'icnw34040','ID6Y05010'])
+                                         'ica9t3020', 'icnw34040', 'ID6Y05010'])
     def test_acs_apriori(self, dataset):
         """This test will perform fits between ALL a priori solutions and GAIA.
 
@@ -57,7 +61,7 @@ class TestAcsApriori(BaseACS):
             # Check that fit for this WCS was successful
             status = (results['status'] == 0).all()
             # check that fit was not compromised or otherwise invalid
-            fit_qual =  (results['fit_qual'] < 5).all()
+            fit_qual = (results['fit_qual'] < 5).all()
 
             # Check radial offset for this WCS compared to radial offset for IDC* WCS
             offset = np.sqrt(results['offset_x']**2+results['offset_y']**2)

@@ -82,6 +82,7 @@ def analyze_data(inputFileList, **kwargs):
 
     acsFiltNameList = [FILKEY1, FILKEY2]
 
+    fit_method = None  # Fit algorithm used for alignment
     catalog = None     # Astrometric catalog used for alignment
     catalogSources = 0 # Number of astrometric catalog sources determined based upon coordinate overlap with image WCS
     foundSources = 0   # Number of sources detected in images
@@ -110,15 +111,14 @@ def analyze_data(inputFileList, **kwargs):
     total_rms = -1.0
     datasetKey = -1.0
 
-    namesArray = ('imageName', 'instrument', 'detector', 'filter', 'aperture', 'obstype',
-            'subarray', 'dateObs', 'mjdutc', 'doProcess', 'processMsg', 'catalog', 'foundSources',
-            'catalogSources','matchSources',
-            'offset_x', 'offset_y', 'rotation','scale',
-            'rms_x', 'rms_y', 'rms_ra', 'rms_dec', 'completed',
-            'fit_rms', 'total_rms', 'datasetKey', 'status', 'fit_qual', 'headerletFile')
-    dataType = ('S20', 'S20', 'S20', 'S20', 'S20', 'S20', 'b', 'S20', 'f8', 'b', 'S30',
-            'S20', 'i4', 'i4', 'i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8',
-            'b', 'f8', 'f8', 'i8', 'i4', 'i4', 'S30')
+    namesArray = ('imageName', 'instrument', 'detector', 'filter', 'aperture', 'obstype', 'subarray',
+                  'dateObs', 'mjdutc', 'doProcess', 'processMsg', 'fit_method', 'catalog', 'foundSources',
+                  'catalogSources','matchSources', 'offset_x', 'offset_y', 'rotation','scale', 'rms_x',
+                  'rms_y', 'rms_ra', 'rms_dec', 'completed', 'fit_rms', 'total_rms', 'datasetKey', 'status',
+                  'fit_qual', 'headerletFile', 'compromised')
+    dataType = ('S20', 'S20', 'S20', 'S20', 'S20', 'S20', 'b', 'S20', 'f8', 'b', 'S30', 'S20', 'S20', 'i4',
+                'i4', 'i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'b', 'f8', 'f8', 'i8', 'i4',
+                'i4', 'S30', 'i4')
 
     # Create an astropy table
     outputTable = Table(names=namesArray,dtype=dataType)
@@ -252,12 +252,11 @@ def analyze_data(inputFileList, **kwargs):
             generate_msg(inputFile, msgType, noProcKey, noProcValue)
 
         # Populate a row of the table
-        outputTable.add_row([inputFile, instrume, detector, sfilter, aperture, obstype,
-                             subarray, dateObs, mjdutc, doProcess, processMsg, catalog,
-                             foundSources, catalogSources, matchSources,
-                             offset_x, offset_y, rot, scale, rms_x, rms_y,
-                             rms_ra, rms_dec, completed, fit_rms, total_rms, datasetKey,
-                             status, fit_qual, headerletFile])
+        outputTable.add_row([inputFile, instrume, detector, sfilter, aperture, obstype, subarray, dateObs,
+                             mjdutc, doProcess, processMsg, fit_method, catalog, foundSources,
+                             catalogSources, matchSources, offset_x, offset_y, rot, scale, rms_x, rms_y,
+                             rms_ra, rms_dec, completed, fit_rms, total_rms, datasetKey, status, fit_qual,
+                             headerletFile, compromised])
         processMsg = None
     #outputTable.pprint(max_width=-1)
 
