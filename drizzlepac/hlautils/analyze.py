@@ -115,10 +115,10 @@ def analyze_data(inputFileList, **kwargs):
                   'dateObs', 'mjdutc', 'doProcess', 'processMsg', 'fit_method', 'catalog', 'foundSources',
                   'catalogSources','matchSources', 'offset_x', 'offset_y', 'rotation','scale', 'rms_x',
                   'rms_y', 'rms_ra', 'rms_dec', 'completed', 'fit_rms', 'total_rms', 'datasetKey', 'status',
-                  'fit_qual', 'headerletFile')
+                  'fit_qual', 'headerletFile', 'compromised')
     dataType = ('S20', 'S20', 'S20', 'S20', 'S20', 'S20', 'b', 'S20', 'f8', 'b', 'S30', 'S20', 'S20', 'i4',
                 'i4', 'i4', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'b', 'f8', 'f8', 'i8', 'i4',
-                'i4', 'S30')
+                'i4', 'S30', 'i4')
 
     # Create an astropy table
     outputTable = Table(names=namesArray,dtype=dataType)
@@ -256,7 +256,7 @@ def analyze_data(inputFileList, **kwargs):
                              mjdutc, doProcess, processMsg, fit_method, catalog, foundSources,
                              catalogSources, matchSources, offset_x, offset_y, rot, scale, rms_x, rms_y,
                              rms_ra, rms_dec, completed, fit_rms, total_rms, datasetKey, status, fit_qual,
-                             headerletFile])
+                             headerletFile, compromised])
         processMsg = None
     #outputTable.pprint(max_width=-1)
 
