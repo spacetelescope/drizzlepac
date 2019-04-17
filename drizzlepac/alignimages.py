@@ -521,10 +521,13 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         # save fit algorithm name to dictionary key "fit method" in imglist.
                         for imglist_ctr in range(0, len(imglist)):
                             imglist[imglist_ctr].meta['fit method'] = algorithm_name.__name__
+                            imglist[imglist_ctr].meta['fit quality'] = fit_quality
 
                         # populate fit_info_dict
                         fit_info_dict["{} {}".format(catalog_name, algorithm_name.__name__)] = \
                             fit_status_dict[next(iter(fit_status_dict))]
+                        fit_info_dict["{} {}".format(catalog_list[catalogIndex],
+                                                     algorithm_name.__name__)]['fit_qual'] = fit_quality
 
                         # Figure out which fit solution to go with based on fit_quality value and maybe also
                         # total_rms
@@ -631,14 +634,15 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         filtered_table[index]['status'] = 0
                     else:
                         filtered_table[index]['status'] = 1
+
                     if fit_status_dict[explicit_dict_key]['compromised'] is False:
                         filtered_table['compromised'] = 0
                     else:
                         filtered_table['compromised'] = 1
-                    if fit_status_dict[explicit_dict_key]['reason'] != "":
-                        filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
-                    filtered_table['fit_qual'][index] = fit_quality
 
+                    filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
+
+                    filtered_table['fit_qual'][index] = item.meta['fit quality']
         current_dt = datetime.datetime.now()
         delta_dt = (current_dt - starting_dt).total_seconds()
         log.info('Processing time of [STEP 6]: {} sec'.format(delta_dt))
@@ -681,7 +685,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         for col in filtered_table.colnames:
             result.add_column(filtered_table[col], name=col)
         filtered_table.pprint(max_width=-1)
-
 # ------------------------------------------------------------------------------------------------------------
 
 
