@@ -26,6 +26,7 @@ import os, sys
 import logging
 from drizzlepac import util
 from stsci.tools import logutil
+import traceback
 
 __taskname__ = 'get_git_rev_info'
 
@@ -50,19 +51,27 @@ def print_rev_id(localRepoPath):
     try:
         log.info("Local repository path: {}".format(localRepoPath))
         os.chdir(localRepoPath)
-        log.info("\n== Remote URL")
-        os.system('git remote -v')
 
-        # log.info("\n== Remote Branches")
-        # os.system("git branch -r")
+        log.info("\n===== Remote URL INFO =====")
+        instream = os.popen('git remote -v')
+        for streamline in instream:
+            log.info("{}".format(streamline.strip()))
 
-        log.info("\n== Local Branches")
-        os.system("git branch")
+        log.info("\n===== Local Branches =====")
+        instream = os.popen('git branch')
+        for streamline in instream:
+            log.info("{}".format(streamline.strip()))
 
-        log.info("\n== Most Recent Commit")
-        os.system("git log |head -1")
+        log.info("\n===== Most Recent Commit =====")
+        instream = os.popen('git log |head -1')
+        for streamline in instream:
+            log.info("{}\n".format(streamline.strip()))
+
         rv = 0
-    except:
+
+    except Exception:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         rv = 111
         log.info("WARNING! get_git_rev_info.print_rev_id() encountered a problem and cannot continue.")
     finally:

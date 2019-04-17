@@ -131,7 +131,7 @@ def check_and_get_data(input_list, **pars):
 
         # Input is an ipppssoot (association or singleton), nine characters by definition.
         # This "else" block actually downloads the data specified as ipppssoot.
-        elif len(input_item) is 9:
+        elif len(input_item) == 9:
             try:
                 if input_item not in ipppssoot_list:
                     # An ipppssoot of an individual file which is part of an association cannot be retrieved
@@ -321,7 +321,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         # data, 'doProcess=0' and 'status=9999' in the table (the status value by default), so there is no
         # need to update the filtered_table here.
 
-        if filtered_table['doProcess'].sum() is 0:
+        if filtered_table['doProcess'].sum() == 0:
             log.warning(
                 "No viable images in filtered table - no processing done.\n")
             current_dt = datetime.datetime.now()
@@ -452,20 +452,19 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         fit_info_dict = OrderedDict()
         reference_catalog_dict={}
         for algorithm_name in fit_algorithm_list:  # loop over fit algorithm type
-            for catalogIndex in range(0, len(catalog_list)):  # loop over astrometric catalog
+            for catalogIndex, catalog_name in enumerate(catalog_list):  # loop over astrometric catalog
                 log.info("{} STEP 5: Detect astrometric sources {}".format("-" * 20, "-" * 48))
-                catalog_name = str(catalog_list[catalogIndex])
                 log.info("Astrometric Catalog: {}".format(catalog_name))
                 # store reference catalogs in a dictionary so that generate_astrometric_catalog() doesn't
                 #  execute unnecessarily after it's been run once for a given astrometric catalog.
-                if catalog_name in reference_catalog_dict.keys():
+                if catalog_name in reference_catalog_dict:
                     log.info("Using {} reference catalog from earlier this run.".format(catalog_name))
                     reference_catalog = reference_catalog_dict[catalog_name]
                 else:
                     log.info("Generating new reference catalog for {};"
                              " Storing it for potential re-use later this run.".format(catalog_name))
                     reference_catalog = generate_astrometric_catalog(process_list,
-                                                                     catalog=catalog_list[catalogIndex],
+                                                                     catalog=catalog_name,
                                                                      output=output)
                     reference_catalog_dict[catalog_name] = reference_catalog
 
@@ -475,7 +474,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 starting_dt = current_dt
 
                 if len(reference_catalog) < MIN_CATALOG_THRESHOLD:
-                    log.warning("Not enough sources found in catalog {}".format(catalog_list[catalogIndex]))
+                    log.warning("Not enough sources found in catalog {}".format(catalog_name))
                     fit_quality = 5
                     if catalogIndex < len(catalog_list) - 1:
                         log.info("Try again with other catalog")
@@ -499,7 +498,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
                     log.info(
                         "{} Catalog {} matched using {} {}".format("-" * 18,
-                                                                   catalog_list[catalogIndex],
+                                                                   catalog_name,
                                                                    algorithm_name.__name__, "-" * 18))
                     try:
                         # restore group IDs to their pristine state prior to each
@@ -525,7 +524,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                             imglist[imglist_ctr].meta['fit quality'] = fit_quality
 
                         # populate fit_info_dict
-                        fit_info_dict["{} {}".format(catalog_list[catalogIndex], algorithm_name.__name__)] = \
+                        fit_info_dict["{} {}".format(catalog_name, algorithm_name.__name__)] = \
                             fit_status_dict[next(iter(fit_status_dict))]
                         fit_info_dict["{} {}".format(catalog_list[catalogIndex],
                                                      algorithm_name.__name__)]['fit_qual'] = fit_quality
@@ -534,7 +533,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         # total_rms
                         if fit_quality < 5:
                             # valid, non-compromised solution with total rms < 10 mas...go with this solution.
-                            if fit_quality is 1:
+                            if fit_quality == 1:
                                 best_fit_rms = fit_rms
                                 for item in imglist:
                                     item.best_meta = item.meta.copy()
@@ -549,7 +548,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                     item.best_meta = item.meta.copy()
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
-                            elif fit_quality is best_fit_qual:
+                            elif fit_quality == best_fit_qual:
                                 # new solution same level of fit_quality. Choose whichever one has the lowest
                                 # total rms as "best" and keep looping.
                                 if best_fit_rms >= 0.:
@@ -568,7 +567,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         exc_type, exc_value, exc_tb = sys.exc_info()
                         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
                         log.warning("WARNING: Catastrophic fitting failure with catalog {} and matching "
-                                    "algorithm {}.".format(catalog_list[catalogIndex],
+                                    "algorithm {}.".format(catalog_name,
                                                            algorithm_name.__name__))
                         filtered_table['status'][:] = 1
                         filtered_table['processMsg'][:] = "Fitting failure"
@@ -576,9 +575,9 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         fit_quality = 5  # Flag this fit with the 'bad' quality value
                         filtered_table['fit_qual'][:] = fit_quality
                         continue
-                if fit_quality is 1:  # break out of inner astrometric catalog loop
+                if fit_quality == 1:  # break out of inner astrometric catalog loop
                     break
-            if fit_quality is 1:  # break out of outer fit algorithm  loop
+            if fit_quality == 1:  # break out of outer fit algorithm  loop
                 break
         current_dt = datetime.datetime.now()
         delta_dt = (current_dt - starting_dt).total_seconds()
@@ -1146,7 +1145,7 @@ def update_image_wcs_info(tweakwcs_output):
     for item in tweakwcs_output:
         img_name = item.meta['filename']
         chipnum = item.meta['chip']
-        if chipnum is 1:
+        if chipnum == 1:
             chipctr = 1
             hdulist = fits.open(img_name, mode='update')
             num_sci_ext = amutils.countExtn(hdulist)
@@ -1181,7 +1180,7 @@ def update_image_wcs_info(tweakwcs_output):
                              wcsname=wcs_name,
                              reusename=True,
                              verbose=True)
-        if chipctr is num_sci_ext:
+        if chipctr == num_sci_ext:
             # Close updated flc.fits or flt.fits file
             hdulist.flush()
             hdulist.close()
@@ -1298,7 +1297,7 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
             if item.meta['fit_info']['status'] != 'SUCCESS':
                 continue
             # Make sure to store data for any particular group_id only once.
-            if item.meta['group_id'] is group_id and \
+            if item.meta['group_id'] == group_id and \
                     group_id not in group_dict:
                 group_dict[group_id] = {'ref_idx': None, 'FIT_RMS': None}
                 log.info("fit_info: {}".format(item.meta['fit_info']))
