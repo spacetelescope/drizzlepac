@@ -22,9 +22,8 @@ Get git revision info on git repository "foo"::
 
     hlapipeline/hlapipeline/utils/get_git_rev_info.py foo
 """
-import os, sys
-import logging
-from drizzlepac import util
+import os
+import sys
 from stsci.tools import logutil
 import traceback
 
@@ -32,7 +31,7 @@ __taskname__ = 'get_git_rev_info'
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
-#-----------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 def print_rev_id(localRepoPath):
     """prints information about the specified local repository to STDOUT. Expected method of execution: command-line or
     shell script call
@@ -78,7 +77,7 @@ def print_rev_id(localRepoPath):
         os.chdir(start_path)
         if rv != 0:
             sys.exit(rv)
-#-----------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 def get_rev_id(localRepoPath):
     """returns the current full git revision id of the specified local repository. Expected method of execution: python
     subroutine call
@@ -101,16 +100,16 @@ def get_rev_id(localRepoPath):
         for streamline in instream.readlines():
             streamline = streamline.strip()
             if streamline.startswith("commit "):
-                rv = streamline.replace("commit ","")
+                rv = streamline.replace("commit ", "")
             else:
                 raise
-    except:
+    except Exception:
         rv = "FAILURE: git revision info not found"
     finally:
         os.chdir(start_path)
 
     return(rv)
-#-----------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 if(__name__ == '__main__'):
     localRepoPath = sys.argv[1]
     print_rev_id(localRepoPath)

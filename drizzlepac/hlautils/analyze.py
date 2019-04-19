@@ -10,8 +10,8 @@ from astropy.io.fits import getheader
 from astropy.table import Table
 import math
 import sys
+from enum import Enum
 
-import logging
 from stsci.tools import logutil
 
 __taskname__ = 'analyze'
@@ -20,7 +20,6 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 __all__ = ['analyze_data']
 
-from enum import Enum
 # Annotates level to which image can be aligned according observational parameters
 # as described through FITS keywords
 class Messages(Enum):
@@ -69,12 +68,12 @@ def analyze_data(inputFileList, **kwargs):
     FIX: improve robustness when analyzing filter and aperture names, possibly use PHOTMODE instead
     """
     OBSKEY = 'OBSTYPE'
-    MTKEY  = 'MTFLAG'
+    MTKEY = 'MTFLAG'
     SCNKEY = 'SCAN_TYP'
     FILKEY = 'FILTER'
     FILKEY1 = 'FILTER1'
     FILKEY2 = 'FILTER2'
-    APKEY  = 'APERTURE'
+    APKEY = 'APERTURE'
     TARKEY = 'TARGNAME'
     EXPKEY = 'EXPTIME'
     FGSKEY = 'FGSLOCK'
@@ -84,7 +83,7 @@ def analyze_data(inputFileList, **kwargs):
 
     fit_method = None  # Fit algorithm used for alignment
     catalog = None     # Astrometric catalog used for alignment
-    catalogSources = 0 # Number of astrometric catalog sources determined based upon coordinate overlap with image WCS
+    catalogSources = 0  # Number of astrometric catalog sources determined based upon coordinate overlap with image WCS
     foundSources = 0   # Number of sources detected in images
     matchSources = 0   # Number of sources cross matched between astrometric catalog and detected in image
     offset_x = None
@@ -95,9 +94,7 @@ def analyze_data(inputFileList, **kwargs):
     rms_y = -1.0
     rms_ra = -1.0
     rms_dec = -1.0
-    chisq_x = -1.0
-    chisq_y = -1.0
-    completed = False # If true, there was no exception and the processing completed all logic
+    completed = False  # If true, there was no exception and the processing completed all logic
     dateObs = None     # Human readable date
     mjdutc = -1.0      # MJD UTC start of exposure
     fgslock = None
@@ -113,7 +110,7 @@ def analyze_data(inputFileList, **kwargs):
 
     namesArray = ('imageName', 'instrument', 'detector', 'filter', 'aperture', 'obstype', 'subarray',
                   'dateObs', 'mjdutc', 'doProcess', 'processMsg', 'fit_method', 'catalog', 'foundSources',
-                  'catalogSources','matchSources', 'offset_x', 'offset_y', 'rotation','scale', 'rms_x',
+                  'catalogSources', 'matchSources', 'offset_x', 'offset_y', 'rotation', 'scale', 'rms_x',
                   'rms_y', 'rms_ra', 'rms_dec', 'completed', 'fit_rms', 'total_rms', 'datasetKey', 'status',
                   'fit_qual', 'headerletFile', 'compromised')
     dataType = ('S20', 'S20', 'S20', 'S20', 'S20', 'S20', 'b', 'S20', 'f8', 'b', 'S30', 'S20', 'S20', 'i4',
@@ -121,7 +118,7 @@ def analyze_data(inputFileList, **kwargs):
                 'i4', 'S30', 'i4')
 
     # Create an astropy table
-    outputTable = Table(names=namesArray,dtype=dataType)
+    outputTable = Table(names=namesArray, dtype=dataType)
 
     # Loop over the list of images to determine viability for alignment processing
     #
@@ -131,26 +128,26 @@ def analyze_data(inputFileList, **kwargs):
 
     for inputFile in inputFileList:
 
-        header_hdu  = 0
+        header_hdu = 0
         header_data = getheader(inputFile, header_hdu)
 
         # Keywords to use potentially for downstream analysis
         instrume = (header_data['INSTRUME']).upper()
         detector = (header_data['DETECTOR']).upper()
         subarray = header_data['SUBARRAY']
-        dateObs  = header_data['DATE-OBS']
-        mjdutc  = header_data['EXPSTART']
+        dateObs = header_data['DATE-OBS']
+        mjdutc = header_data['EXPSTART']
 
         # Obtain keyword values for analysis of viability
-        obstype  = (header_data[OBSKEY]).upper()
-        mtflag   = (header_data[MTKEY]).upper()
+        obstype = (header_data[OBSKEY]).upper()
+        mtflag = (header_data[MTKEY]).upper()
         scan_typ = ''
         if instrume == 'WFC3':
             scan_typ = (header_data[SCNKEY]).upper()
 
         sfilter = ''
         if instrume == 'WFC3':
-            sfilter  = (header_data[FILKEY]).upper()
+            sfilter = (header_data[FILKEY]).upper()
         # Concatenate the two ACS filter names together with an underscore
         # If the filter name is blank, skip it
         if instrume == 'ACS':
@@ -178,53 +175,53 @@ def analyze_data(inputFileList, **kwargs):
         # Determine if the image has one of these conditions.  The routine
         # will exit processing upon the first satisfied condition.
 
-        noProcKey   = None
+        noProcKey = None
         noProcValue = None
         doProcess = True
         # Imaging vs spectroscopic or coronagraphic
         if obstype != 'IMAGING':
-            noProcKey   = OBSKEY
+            noProcKey = OBSKEY
             noProcValue = obstype
 
         # Moving target
         elif mtflag == 'T':
-            noProcKey   = MTKEY
+            noProcKey = MTKEY
             noProcValue = mtflag
 
         # Bostrophidon without or with dwell (WFC3 only)
-        elif any ([scan_typ == 'C', scan_typ == 'D']):
-            noProcKey   = SCNKEY
+        elif any([scan_typ == 'C', scan_typ == 'D']):
+            noProcKey = SCNKEY
             noProcValue = scan_typ
 
         # Ramp, polarizer, grism, or prism
-        elif any (x in aperture for x in ['RAMP', 'POL', 'GRISM', '-REF', 'PRISM']):
-            noProcKey   = APKEY
+        elif any(x in aperture for x in ['RAMP', 'POL', 'GRISM', '-REF', 'PRISM']):
+            noProcKey = APKEY
             noProcValue = aperture
 
         # Calibration target
-        elif any (x in targname for x in ['DARK', 'TUNG', 'BIAS', 'FLAT', 'DEUT', 'EARTH-CAL']):
-            noProcKey   = TARKEY
+        elif any(x in targname for x in ['DARK', 'TUNG', 'BIAS', 'FLAT', 'DEUT', 'EARTH-CAL']):
+            noProcKey = TARKEY
             noProcValue = targname
 
         # Exposure time of effectively zero
         elif math.isclose(exptime, 0.0, abs_tol=1e-5):
-            noProcKey   = EXPKEY
+            noProcKey = EXPKEY
             noProcValue = exptime
 
         # Commanded FGS lock
-        elif any (x in fgslock for x in ['GY', 'COARSE']):
-            noProcKey   = FGSKEY
+        elif any(x in fgslock for x in ['GY', 'COARSE']):
+            noProcKey = FGSKEY
             noProcValue = fgslock
 
         # Charge injection mode
         elif chinject != 'NONE':
-            noProcKey   = CHINKEY
+            noProcKey = CHINKEY
             noProcValue = chinject
 
         # Filter which does not begin with: 'F'(F###), 'C'(CLEAR), 'N'(N/A), and is not blank
         # The sfilter variable may be the concatenation of two filters (F160_CLEAR)
         elif sfilter and not sfilter.startswith(('F', 'C', 'N')):
-            noProcKey   = FILKEY
+            noProcKey = FILKEY
             noProcValue = sfilter
 
         elif '_' in sfilter:
@@ -232,7 +229,7 @@ def analyze_data(inputFileList, **kwargs):
             pos += 1
 
             if sfilter[pos] != 'F' and sfilter[pos] != '' and sfilter[pos] != 'C' and sfilter[pos] != 'N':
-                noProcKey   = FILKEY
+                noProcKey = FILKEY
                 noProcValue = sfilter
 
         # If noProcKey is set to a keyword, then this image has been found to not be viable for
@@ -258,7 +255,7 @@ def analyze_data(inputFileList, **kwargs):
                              rms_ra, rms_dec, completed, fit_rms, total_rms, datasetKey, status, fit_qual,
                              headerletFile, compromised])
         processMsg = None
-    #outputTable.pprint(max_width=-1)
+    # outputTable.pprint(max_width=-1)
 
     return(outputTable)
 

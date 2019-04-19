@@ -1,6 +1,5 @@
 """Project default for pytest"""
 
-from astropy.tests.plugins.display import PYTEST_HEADER_MODULES
 from astropy.tests.helper import enable_deprecations_as_exceptions
 
 
