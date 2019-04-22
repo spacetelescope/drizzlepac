@@ -269,7 +269,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
     # 0: print git info
     if print_git_info:
-        log.info("-------------------- STEP 0: Display Git revision info  ------------------------------------------------")
+        log.info("{} STEP 0: Display Git revision info  {}".format("-" * 20, "-" * 49))
         full_path = os.path.dirname(__file__)
         repo_path = None
         if "drizzlepac/drizzlepac" in full_path:
@@ -316,7 +316,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             return
 
         # Get the list of all "good" files to use for the alignment
-        process_list = filtered_table['image_name'][np.where(filtered_table['doProcess'])]
+        process_list = filtered_table['imageName'][np.where(filtered_table['doProcess'])]
         process_list = list(process_list)  # Convert process_list from numpy list to regular python list
         log.info("SUCCESS")
 
@@ -370,7 +370,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             table = extracted_sources[imgname]["catalog_table"]
 
             # Get the location of the current image in the filtered table
-            index = np.where(filtered_table['image_name'] == imgname)[0][0]
+            index = np.where(filtered_table['imageName'] == imgname)[0][0]
 
             # First ensure sources were found
             if table[1] is None:
@@ -577,7 +577,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             # Update filtered table with number of matched sources and other information
             for item in imglist:
                 imgname = item.meta['name']
-                index = np.where(filtered_table['image_name'] == imgname)[0][0]
+                index = np.where(filtered_table['imageName'] == imgname)[0][0]
 
                 if not item.meta['fit_info']['status'].startswith("FAILED"):
                     for tweakwcs_info_key in info_keys:
@@ -625,7 +625,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             headerlet_dict = update_image_wcs_info(imglist)
             for tableIndex in range(0, len(filtered_table)):
                 filtered_table[tableIndex]['headerletFile'] = headerlet_dict[
-                    filtered_table[tableIndex]['image_name']]
+                    filtered_table[tableIndex]['imageName']]
             log.info("SUCCESS")
         else:
             log.info(" STEP SKIPPED")
@@ -954,7 +954,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         log.info("FIT SOLUTION REJECTED")
         filtered_table['status'][:] = 1
         for ctr in range(0, len(filtered_table)):
-            filtered_table[ctr]['processMsg'] = fit_status_dict[filtered_table[ctr]['image_name'] + ",1"]["reason"]
+            filtered_table[ctr]['processMsg'] = fit_status_dict[filtered_table[ctr]['imageName'] + ",1"]["reason"]
     else:
         for ctr in range(0, len(filtered_table)):
             filtered_table[ctr]['processMsg'] = ""
@@ -1150,7 +1150,7 @@ def update_image_wcs_info(tweakwcs_output):
             hdulist.close()
 
             # Create headerlet
-            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, wcs_name=wcs_name)
+            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, wcsname=wcs_name)
 
             # Update headerlet
             update_headerlet_phdu(item, out_headerlet)
