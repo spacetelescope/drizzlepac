@@ -88,7 +88,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
                 rows_to_remove.append(row_idx)
         data_products_by_id.remove_rows(rows_to_remove)
 
-    manifest = Observations.download_products(data_products_by_id, 
+    manifest = Observations.download_products(data_products_by_id,
                                               mrp_only=False)
 
     if not clobber:
