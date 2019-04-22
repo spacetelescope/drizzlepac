@@ -1137,8 +1137,8 @@ def update_image_wcs_info(tweakwcs_output):
 
             # establish correct mapping to the science extensions
             sci_ext_dict = {}
-            for sciExtCtr in range(1, num_sci_ext + 1):
-                sci_ext_dict["{}".format(sciExtCtr)] = fileutil.findExtname(hdulist, 'sci', extver=sciExtCtr)
+            for sci_ext_ctr in range(1, num_sci_ext + 1):
+                sci_ext_dict["{}".format(sci_ext_ctr)] = fileutil.findExtname(hdulist, 'sci', extver=sci_ext_ctr)
 
         # update header with new WCS info
         updatehdr.update_wcs(hdulist, sci_ext_dict["{}".format(item.meta['chip'])], item.wcs, wcsname=wcs_name,
