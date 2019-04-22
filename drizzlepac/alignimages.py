@@ -1141,7 +1141,7 @@ def update_image_wcs_info(tweakwcs_output):
                 sci_ext_dict["{}".format(sciExtCtr)] = fileutil.findExtname(hdulist, 'sci', extver=sciExtCtr)
 
         # update header with new WCS info
-        updatehdr.update_wcs(hdulist, sci_ext_dict["{}".format(item.meta['chip'])], item.wcs, wcs_name=wcs_name,
+        updatehdr.update_wcs(hdulist, sci_ext_dict["{}".format(item.meta['chip'])], item.wcs, wcsname=wcs_name,
                                  reusename=True, verbose=True)
         if chipctr == num_sci_ext:
             # Close updated flc.fits or flt.fits file
