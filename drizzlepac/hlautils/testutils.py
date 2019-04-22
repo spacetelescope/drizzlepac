@@ -80,7 +80,7 @@ def compare_wcs_alignment(dataset, force=False):
         alignment = {default_wcsname: extract_results(results)}
 
         # Download the calibration reference files to ensure availability
-        ref_files = ref_from_image(imglist[0], ['IDCTAB', 'DGEOFILE', 'NPOLFILE', 'DXYFILE'])
+        ref_files = ref_from_image(imglist[0], ['IDCTAB', 'DGEOFILE', 'NPOLFILE', 'D2IMFILE'])
         for file in ref_files:
             download_crds(file, verbose=True)
 
