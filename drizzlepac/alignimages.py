@@ -432,7 +432,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         fit_info_dict = OrderedDict()
         reference_catalog_dict = {}
         for algorithm_name in fit_algorithm_list:  # loop over fit algorithm type
-            for catalogIndex, catalog_name in enumerate(catalog_list):  # loop over astrometric catalog
+            for catalog_index, catalog_name in enumerate(catalog_list):  # loop over astrometric catalog
                 log.info("{} STEP 5: Detect astrometric sources {}".format("-" * 20, "-" * 48))
                 log.info("Astrometric Catalog: {}".format(catalog_name))
                 # store reference catalogs in a dictionary so that generate_astrometric_catalog() doesn't
@@ -456,7 +456,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 if len(reference_catalog) < MIN_CATALOG_THRESHOLD:
                     log.warning("Not enough sources found in catalog {}".format(catalog_name))
                     fit_quality = 5
-                    if catalogIndex < len(catalog_list) - 1:
+                    if catalog_index < len(catalog_list) - 1:
                         log.info("Try again with other catalog")
                     else:
                         # bail out if not enough sources can be found any of the astrometric catalogs
@@ -493,7 +493,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                             determine_fit_quality(
                                 imglist,
                                 filtered_table,
-                                (catalogIndex < (len(catalog_list) - 1)),
+                                (catalog_index < (len(catalog_list) - 1)),
                                 print_fit_parameters=print_fit_parameters)
 
                         # save fit algorithm name to dictionary key "fit method" in imglist.
@@ -623,9 +623,9 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                  "{}".format("-" * 20, "-" * 29))
         if (0 < best_fit_rms < 9999.) and update_hdr_wcs:
             headerlet_dict = update_image_wcs_info(imglist)
-            for tableIndex in range(0, len(filtered_table)):
-                filtered_table[tableIndex]['headerletFile'] = headerlet_dict[
-                    filtered_table[tableIndex]['imageName']]
+            for table_index in range(0, len(filtered_table)):
+                filtered_table[table_index]['headerletFile'] = headerlet_dict[
+                    filtered_table[table_index]['imageName']]
             log.info("SUCCESS")
         else:
             log.info(" STEP SKIPPED")
