@@ -602,11 +602,11 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                     # "processMsg" with fit_status_dict fields "valid", "compromised"
                     # and "reason".
                     explicit_dict_key = "{},{}".format(item.meta['name'], item.meta['chip'])
-                    if fit_status_dict[explicit_dict_key]['valid'] == True:
+                    if fit_status_dict[explicit_dict_key]['valid'] is True:
                         filtered_table[index]['status'] = 0
                     else:
                         filtered_table[index]['status'] = 1
-                    if fit_status_dict[explicit_dict_key]['compromised'] == False:
+                    if fit_status_dict[explicit_dict_key]['compromised'] is False:
                         filtered_table['compromised'] = 0
                     else:
                         filtered_table['compromised'] = 1
@@ -837,7 +837,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
     overall_valid = True
     overall_comp = False
     for item in imglist:
-        if item.meta['fit_info']['status'].startswith('FAILED') != True:
+        if item.meta['fit_info']['status'].startswith('FAILED') is False:
             xshifts.append(item.meta['fit_info']['shift'][0])
             yshifts.append(item.meta['fit_info']['shift'][1])
 
@@ -846,8 +846,8 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         chip_num = item.meta['chip']
 
         # Build fit_status_dict entry
-        dictKey = "{},{}".format(image_name, chip_num)
-        fit_status_dict[dictKey] = {'valid': False,
+        dict_key = "{},{}".format(image_name, chip_num)
+        fit_status_dict[dict_key] = {'valid': False,
                                   'max_rms': max_rms_val,
                                   'num_matches': num_xmatches,
                                   'compromised': False,
@@ -860,8 +860,8 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         fit_rms_val = item.meta['fit_info']['FIT_RMS']
         max_rms_val = item.meta['fit_info']['TOTAL_RMS']
         num_xmatches = item.meta['fit_info']['nmatches']
-        fit_status_dict[dictKey]['max_rms'] = max_rms_val
-        fit_status_dict[dictKey]['num_matches'] = num_xmatches
+        fit_status_dict[dict_key]['max_rms'] = max_rms_val
+        fit_status_dict[dict_key]['num_matches'] = num_xmatches
 
         if num_xmatches < MIN_CROSS_MATCHES:
             if catalogs_remaining:
@@ -871,16 +871,16 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
                 continue
 
         # Execute checks
-        nmatchesCheck = False
+        nmatches_check = False
         if num_xmatches > 4:
-            nmatchesCheck = True
+            nmatches_check = True
 
-        radialOffsetCheck = False
-        radialOffset = math.sqrt(
+        radial_offset_check = False
+        radial_offset = math.sqrt(
             float(item.meta['fit_info']['shift'][0])**2 +
             float(item.meta['fit_info']['shift'][0])**2) * item.wcs.pscale  # radial offset in arssec
-        if float(num_xmatches) * 0.36 > 0.8 + (radialOffset / 10.0)**8:
-            radialOffsetCheck = True
+        if float(num_xmatches) * 0.36 > 0.8 + (radial_offset / 10.0)**8:
+            radial_offset_check = True
 
         large_rms_check = True
         if fit_rms_val > 150. or max_rms_val > 150.:
@@ -890,38 +890,38 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         # if fit_rms_val < max_rms_val:
         #     fitRmsCheck = True
 
-        consistencyCheck = True
+        consistency_check = True
         rms_limit = max(item.meta['fit_info']['TOTAL_RMS'], 10.)
         if not math.sqrt(np.std(np.asarray(xshifts)) ** 2 + np.std(
                          np.asarray(yshifts)) ** 2) <= (rms_limit / 1000.0) / (item.wcs.pscale):
-            consistencyCheck = False
+            consistency_check = False
 
         # Decide if fit solutions are valid based on checks
-        if consistencyCheck == False:  # Failed consistency check
-            fit_status_dict[dictKey]['valid'] = False
-            fit_status_dict[dictKey]['compromised'] = False
-            fit_status_dict[dictKey]['reason'] = "Consistency violation!"
-        elif large_rms_check == False:  # RMS value(s) too large
-            fit_status_dict[dictKey]['valid'] = False
-            fit_status_dict[dictKey]['compromised'] = False
-            fit_status_dict[dictKey]['reason'] = "RMS too large (>150 mas)!"
-        elif radialOffsetCheck == False:  # Failed radial offset check
-            fit_status_dict[dictKey]['valid'] = False
-            fit_status_dict[dictKey]['compromised'] = False
-            fit_status_dict[dictKey]['reason'] = "Radial offset value too large!"
-        elif nmatchesCheck == False:  # Too few matches
-            fit_status_dict[dictKey]['valid'] = True
-            fit_status_dict[dictKey]['compromised'] = True
-            fit_status_dict[dictKey]['reason'] = "Too few matches!"
+        if not consistency_check:  # Failed consistency check
+            fit_status_dict[dict_key]['valid'] = False
+            fit_status_dict[dict_key]['compromised'] = False
+            fit_status_dict[dict_key]['reason'] = "Consistency violation!"
+        elif not large_rms_check:  # RMS value(s) too large
+            fit_status_dict[dict_key]['valid'] = False
+            fit_status_dict[dict_key]['compromised'] = False
+            fit_status_dict[dict_key]['reason'] = "RMS too large (>150 mas)!"
+        elif not radial_offset_check:  # Failed radial offset check
+            fit_status_dict[dict_key]['valid'] = False
+            fit_status_dict[dict_key]['compromised'] = False
+            fit_status_dict[dict_key]['reason'] = "Radial offset value too large!"
+        elif not nmatches_check:  # Too few matches
+            fit_status_dict[dict_key]['valid'] = True
+            fit_status_dict[dict_key]['compromised'] = True
+            fit_status_dict[dict_key]['reason'] = "Too few matches!"
         else:  # all checks passed. Valid solution.
-            fit_status_dict[dictKey]['valid'] = True
-            fit_status_dict[dictKey]['compromised'] = False
-            fit_status_dict[dictKey]['reason'] = ""
+            fit_status_dict[dict_key]['valid'] = True
+            fit_status_dict[dict_key]['compromised'] = False
+            fit_status_dict[dict_key]['reason'] = ""
         # for now, generate overall valid and compromised values. Basically, if any of the entries for "valid" is False,
         # "valid" is False, treat the whole dataset as not valid. Same goes for compromised.
-        if fit_status_dict[dictKey]['valid'] is False:
+        if not fit_status_dict[dict_key]['valid']:
             overall_valid = False
-        if fit_status_dict[dictKey]['compromised'] is True:
+        if fit_status_dict[dict_key]['compromised']:
             overall_comp = True
 
         log.info('RESULTS FOR {} Chip {}: FIT_RMS = {} mas, TOTAL_RMS = {}'
@@ -940,12 +940,12 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
                 if not tweakwcs_info_key.startswith("matched"):
                     log.info("{} : {}".format(tweakwcs_info_key, item.meta['fit_info'][tweakwcs_info_key]))
             log.info("~" * 84)
-            log.info("nmatchesCheck: {} radialOffsetCheck: {}"
+            log.info("nmatches_check: {} radial_offset_check: {}"
                      " large_rms_check: {},"
-                     " consistencyCheck: {}".format(nmatchesCheck,
-                                                    radialOffsetCheck,
+                     " consistency_check: {}".format(nmatches_check,
+                                                    radial_offset_check,
                                                     large_rms_check,
-                                                    consistencyCheck))
+                                                    consistency_check))
 
 
     # determine which fit quality category this latest fit falls into
@@ -978,7 +978,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         log.info("Total fit RMS value = {} mas greater than the maximum threshold value {}.".format(max_rms_val, MAX_FIT_RMS))
     if not overall_valid:
         log.info("The fit solution for some or all of the images is not valid.")
-    if max_rms_val > MAX_FIT_RMS or overall_valid == False:
+    if max_rms_val > MAX_FIT_RMS or not overall_valid:
         log.info("Try again with the next catalog")
     else:
         log.info("Fit calculations successful.")
