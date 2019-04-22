@@ -43,21 +43,21 @@ MAX_FIT_LIMIT = 1000  # Maximum RMS that a result is useful
 MAX_SOURCES_PER_CHIP = 250  # Maximum number of sources per chip to include in source catalog
 
 # Module-level dictionary contains instrument/detector-specific parameters used later on in the script.
-detector_specific_params = {"acs": {"hrc": {"fwhmpsf": 0.073,
+detector_specific_params = {"acs": {"hrc": {"fwhmpsf": 0.152,  # 0.073
                                             "classify": True,
                                             "threshold": None},
-                                    "sbc": {"fwhmpsf": 0.065,
+                                    "sbc": {"fwhmpsf": 0.13,  # 0.065
                                             "classify": False,
                                             "threshold": 2.0},
                                     "wfc": {"fwhmpsf": 0.13,  # 0.076,
                                             "classify": True,
                                             "threshold": -1.1}},
-                                    "wfc3": {"ir": {"fwhmpsf": 0.14,
-                                                    "classify": False,
-                                                    "threshold": None},
-                                             "uvis": {"fwhmpsf": 0.076,
-                                                      "classify": True,
-                                                      "threshold": None}}}  # fwhmpsf in units of arcsec
+                            "wfc3": {"ir": {"fwhmpsf": 0.25,  # 0.14
+                                            "classify": False,
+                                            "threshold": None},
+                                     "uvis": {"fwhmpsf": 0.152,  # 0.076
+                                              "classify": True,
+                                              "threshold": None}}}
 
 log = logutil.create_logger('alignimages', level=logutil.logging.INFO, stream=sys.stdout)
 
@@ -200,6 +200,10 @@ def perform_align(input_list, **kwargs):
         generate_source_catalogs() generate the .reg region files for every chip of every input image and
         should generate_astrometric_catalog() generate file 'refcatalog.cat'?
 
+    num_sources : int, optional
+        Maximum number of **brightest sources per chip** which will be used for cross-matching and fitting.
+        If set to None, all sources will be used.
+
     Updates
     -------
     filtered_table: Astropy Table
@@ -216,7 +220,7 @@ def perform_align(input_list, **kwargs):
 
 @util.with_logging
 def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
-              runfile=None, print_fit_parameters=True, print_git_info=False, output=False):
+              runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=250):
     """Actual Main calling function.
 
     Parameters
@@ -255,6 +259,10 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         Should utils.astrometric_utils.create_astrometric_catalog() generate file 'ref_cat.ecsv' and should
         generate_source_catalogs() generate the .reg region files for every chip of every input image and
         should generate_astrometric_catalog() generate file 'refcatalog.cat'?
+
+    num_sources : int, optional
+        Maximum number of **brightest sources per chip** which will be used for cross-matching and fitting.
+        If set to None, all sources will be used.
 
     Updates
     -------
@@ -354,7 +362,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             else:
                 extracted_sources = generate_source_catalogs(process_list,
                                                              centering_mode='starfind',
-                                                             nlargest=MAX_SOURCES_PER_CHIP,
+                                                             nlargest=num_sources,
                                                              output=output)
                 pickle_out = open(pickle_filename, "wb")
                 pickle.dump(extracted_sources, pickle_out)
@@ -363,7 +371,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         else:
             extracted_sources = generate_source_catalogs(process_list,
                                                          centering_mode='starfind',
-                                                         nlargest=MAX_SOURCES_PER_CHIP,
+                                                         nlargest=num_sources,
                                                          output=output)
 
         for imgname in extracted_sources.keys():
@@ -1083,6 +1091,9 @@ def generate_source_catalogs(imglist, **pars):
                 if chip_cat and len(chip_cat) > 0:
                     regfilename = "{}_sci{}_src.reg".format(imgroot, chip)
                     out_table = Table(chip_cat)
+                    # To align with positions of sources in DS9/IRAF
+                    out_table['xcentroid'] += 1
+                    out_table['ycentroid'] += 1
                     out_table.write(regfilename,
                                     include_names=["xcentroid", "ycentroid"],
                                     format="ascii.fast_commented_header")
