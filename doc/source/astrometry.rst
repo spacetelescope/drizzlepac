@@ -74,16 +74,53 @@ The *a priori* solutions have been determined for **ALL HST data** by correcting
   For example,
   'IDC_0461802ej-GSC240'
 
-where the *Astrometric Catalog* refers the exact astrometric catalog used to correct the guide star positions.
+where the *Astrometric Catalog* refers the exact astrometric catalog used to correct the guide star positions.  A number of *Astrometric Catalogs* are available through MAST for aligning images.  Solutions generated for the database were initially based on catalogs which were based on the GAIA catalog.  These GAIA-based catalogs include::
+
+  * GSC240
+    * This catalog contains version 2.4.0 of the *Guide Star Coordinates* (GSC) catalog,
+    * All guide stars in the catalog were cross-matched with the GAIA DR1 catalog and corrected to the coordinates reported in GAIA DR1.
+  * HSC30
+    * This catalog contains version 3.0 the *Hubble Source Catalog* (HSC)
+    * Sources in the HSC were cross-matched with the GAIA DR1 catalog.
+    * Those cross-matched sources were then used to determine a fit to the GAIA catalog.
+    * The fit to GAIA was then applied to all remaining sources in the catalog.
+  * GAIADR1
+    * A MAST-provided version of the first data release (DR1) version of the official GAIA astrometric catalog.
+    * This version does not have proper motions for a majority of the sources in the catalog.
+  * GAIADR2
+    * A MAST-provided version of the second data release version of the official GAIA astrometric catalog.
+    * This catalog contains initial proper motion measurements (and errors) for most sources in the catalog.
+
 
 a posteriori solutions
 ^^^^^^^^^^^^^^^^^^^^^^^
 The *a posteriori* solutions, on the other hand, get determined from measuring sources in each image, finding overlapping sources from an astrometric catalog, identifying and cross-matching image sources with sources from the astrometric catalog and performing a fit to correct the WCS.  These type of solutions can not be determined for all datasets due to a number of reasons, such as lack of sources in the image and/or lack of overlapping sources from an astrometric catalog.  When these solutions can be determined for an observation, they are given a name which follows the convention::
 
-  <Starting WCS>-FIT_<Astrometric Catalog>
+  <Starting WCS>-FIT_<REL|IMG>_<Astrometric Catalog>
 
   For example,
-  'IDC_0461802ej-FIT_GAIADR2'
+  'IDC_0461802ej-FIT_REL_GAIADR2'
+
+The terms are defined as::
+
+  * <Starting WCS>
+    * Value of WCSNAME for the exposure prior to applying any astrometric Solutions
+    * IDC_<rootname> (like `IDC_041802ej`) refers to a distortion-corrected model based on the IDCTAB reference file `0461802ej_idc.fits`
+  * `FIT`
+    * This term refers to the fact that sources from the image were identified, cross-matched and fit to sources from an astrometric catalog
+  * `<REL|IMG>`
+    * The term `REL` denotes the fact that all images were aligned relative (REL) to each and then aligned to an astrometric catalog.  This attempts to maintain the original relative alignment between the imaeges in a given visit.
+    * The term `IMG` denotes the fact the the images were fit individually to the astrometric catalog.  These solutions are applied only when relative alignment does not yield a viable fit to the astrometric catalog.
+  * <Astrometric Catalog>
+    * This term describes the astrometric catalog, as listed for use with the a priori solutions, which was used for the cross-matching and fitting sources identified in the image(s).
+
+
+These separate terms provide as succinct a description of the solution determined for and applied to the exposure as possible. Additional keywords have been written out to the headerlet extension for the a posteriori fit which further describe the solution, including::
+
+  * number of sources used in the fit
+  * RMS in RA and Dec of the fit
+  * parameters determined for the fit
+  * and more...
 
 
 Choosing a WCS
