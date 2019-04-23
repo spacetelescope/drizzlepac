@@ -69,13 +69,16 @@ def test_randomlist(tmpdir, dataset):
 
         This test file can be executed in the following manner:
             $ pytest -n # -s --basetemp=/internal/hladata/yourUniqueDirectoryHere --bigdata --slow
-              --master_list ACSWFC3List.csv --start_row 0 --num_rows 50 test_randomlist.py >&
+              --master_list ACSWFC3ListDefault50.csv --start_row 0 --num_rows 50 test_randomlist.py >&
               test_random_output.txt &
             $ tail -f test_random_output.txt
           * The `-n #` option can be used to run tests in parallel if `pytest-xdist` has
             been installed where `#` is the number of cpus to use.
           * Note: When running this test, the `--basetemp` directory should be set to a unique
             existing directory to avoid deleting previous test output.
+          * The default master list exists in the tests/hla directory and contains 50 datasets.  The
+            full master list of thousands of datasets resides in Artifactory as ACSWFC3List.csv
+            (https://bytesalad.stsci.edu/artifactory/hst-hla-pipeline/dev/master_lists).
 
     """
     print("TEST_RANDOM. Dataset: ", dataset)

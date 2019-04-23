@@ -9,4 +9,4 @@ def pytest_addoption(parser):
     """Support options for the pytest test_randomlist.py."""
     parser.addoption("--start_row", action="store", default=0)
     parser.addoption("--num_rows", action="store", default=5)
-    parser.addoption("--master_list", action="store", default="ACSWFC3List.csv")
+    parser.addoption("--master_list", action="store", default="ACSWFC3ListDefault50.csv")
