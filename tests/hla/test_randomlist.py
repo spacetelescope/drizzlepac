@@ -2,7 +2,7 @@
     datasets in order to collect statistics on alignment of each dataset to an
     astrometric catalog."""
 import datetime
-import os
+import os, shutil
 import numpy as np
 from astropy.table import Table
 import pytest
@@ -14,6 +14,16 @@ def pytest_generate_tests(metafunc):
     start_row = metafunc.config.option.start_row
     num_rows = metafunc.config.option.num_rows
     master_list = metafunc.config.option.master_list
+
+    # Check to see if the specified file exists in the current working directory
+    if not os.path.exists(master_list):
+        # If not, copy the default file from the installation directory
+        # Find where this module has been installed.
+        install_dir = os.path.dirname(__file__)
+        default_file = os.path.join(install_dir, master_list)
+        if os.path.exists(default_file):
+            # Copy the file
+            shutil.copy2(default_file, os.getcwd())
 
     # Read a randomized table
     data_table = Table.read(master_list, format='ascii.csv')
