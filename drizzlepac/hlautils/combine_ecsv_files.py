@@ -53,24 +53,25 @@ def generate_output_file(ecsv_file_list,output_filename,clobber):
     try:
         file_start = True
         for ecsv_filename in ecsv_file_list:
-            dataset = os.path.basename(ecsv_filename)[:-5].lower()
-            print(ecsv_filename,dataset)
             table_data = ascii.read(ecsv_filename, format='ecsv') # Read ecsv file
-            dataset_column=Table.Column(name='datasetName', data=[dataset]*len(table_data))
-            table_data.add_column(dataset_column,index=0)
+
+            dataset = os.path.basename(ecsv_filename)[:-5].lower() # scrape dataset name out of ecsv filename
+            dataset_column=Table.Column(name='datasetName', data=[dataset]*len(table_data)) # make new column
+            table_data.add_column(dataset_column,index=0) # add dataset column to table data to append.
+
             if not file_start: #append out_data with ecsv file data for all files after the first in the list.
                 out_data = vstack([out_data, table_data])
-
             else: # use the data from the first ecsv file to initialize out_data
                 file_start = False
                 out_data = table_data.copy()
-        ascii.write(out_data,output_filename,format='ecsv',overwrite=clobber)
+
+        ascii.write(out_data,output_filename,format='ecsv',overwrite=clobber) #write output file.
         print("Wrote {}".format(output_filename))
         out_data.pprint(max_width=-1)
 
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
-        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout) #display traceback
 
 
 # ------------------------------------------------------------------------------------------------------------
