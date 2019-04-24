@@ -26,7 +26,7 @@ def find_files(input_file_basepath):
     file_list: list
         List of ecsv full filenames
     """
-    search_string = "{}popen-gw?/*[!current]/*.ecsv".format(input_file_basepath)
+    search_string = "{}popen-gw?/*[!current]/*.ecsv".format(input_file_basepath) #ignore '_current' sym links to existing directories
     file_list = glob.glob(search_string)
 
     if len(file_list) == 0: sys.exit("No .ecsv files found. Exiting...")
