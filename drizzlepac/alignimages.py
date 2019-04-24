@@ -381,7 +381,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             index = np.where(filtered_table['imageName'] == imgname)[0][0]
 
             # First ensure sources were found
-            if table[1] is None:
+            if table is None or table[1] == None: 
                 log.warning("No sources found in image {}".format(imgname))
                 filtered_table[:]['status'] = 1
                 filtered_table[:]['processMsg'] = "No sources found"

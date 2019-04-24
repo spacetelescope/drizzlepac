@@ -406,14 +406,14 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
         # Identify nbrightest/largest sources
         if nlargest is not None:
             nlargest = min(nlargest, len(segm.labels))
-            large_labels = np.flip(np.argsort(segm.areas) + 1)[: nlargest]
+            large_labels = segm.labels[np.flip(np.argsort(segm.areas))[: nlargest]]
         log.info("Looking for sources in {} segments".format(len(segm.labels)))
 
-        for label in segm.labels:
-            if nlargest is not None and label not in large_labels:
+        for segment in segm.segments:
+            if nlargest is not None and segment.label not in large_labels:
                 continue  # Move on to the next segment
             # Get slice definition for the segment with this label
-            seg_slice = segm.segments[label - 1].slices
+            seg_slice = segment.slices
             seg_yoffset = seg_slice[0].start
             seg_xoffset = seg_slice[1].start
 
