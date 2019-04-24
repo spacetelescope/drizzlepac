@@ -82,7 +82,7 @@ setup(
         'fitsblender',
         'nictools',
         'nose',
-        'numpy',
+        'numpy>=1.16',
         'scipy',
         'matplotlib',
         'acstools',
