@@ -53,10 +53,12 @@ def generate_output_file(ecsv_file_list,output_filename,clobber):
     try:
         file_start = True
         for ecsv_filename in ecsv_file_list:
+            dataset = os.path.basename(ecsv_filename)[:-5].lower()
+            print(ecsv_filename,dataset)
             table_data = ascii.read(ecsv_filename, format='ecsv') # Read ecsv file
+            dataset_column=Table.Column(name='datasetName', data=[dataset]*len(table_data))
+            table_data.add_column(dataset_column,index=0)
             if not file_start: #append out_data with ecsv file data for all files after the first in the list.
-                # for row in table_data:
-                #     out_data.add_row(row) # append out_data with data from each ecsv file, row by row
                 out_data = vstack([out_data, table_data])
 
             else: # use the data from the first ecsv file to initialize out_data
@@ -64,6 +66,7 @@ def generate_output_file(ecsv_file_list,output_filename,clobber):
                 out_data = table_data.copy()
         ascii.write(out_data,output_filename,format='ecsv',overwrite=clobber)
         print("Wrote {}".format(output_filename))
+        out_data.pprint(max_width=-1)
 
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
