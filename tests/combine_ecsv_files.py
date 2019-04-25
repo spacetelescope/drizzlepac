@@ -54,6 +54,9 @@ def generate_output_file(ecsv_file_list, output_filename, startingDT, clobber):
     output_filename : string
          Name of the output combined .ecsv file.
 
+    startingDT : datetime object
+        starting date/time
+
     clobber : Boolean
         Overwrite existing files with the same name as output_filename?
 
