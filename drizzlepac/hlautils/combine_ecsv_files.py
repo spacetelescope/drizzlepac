@@ -60,6 +60,9 @@ def generate_output_file(ecsv_file_list,output_filename,clobber):
     output_filename: string
          Name of the output combined .ecsv file.
 
+    clobber : Boolean
+        Overwrite existing files with the same name as output_filename?
+
     Returns
     -------
     Nothing.
