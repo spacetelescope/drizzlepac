@@ -5,6 +5,7 @@ review.
 
 """
 import argparse
+import datetime
 import glob
 import os
 import sys
@@ -42,7 +43,7 @@ def find_files(input_file_basepath):
 # ------------------------------------------------------------------------------------------------------------
 
 
-def generate_output_file(ecsv_file_list, output_filename, clobber):
+def generate_output_file(ecsv_file_list, output_filename, startingDT, clobber):
     """Generate combined output ecsv file.
 
     Parameters
@@ -105,6 +106,9 @@ def generate_output_file(ecsv_file_list, output_filename, clobber):
                                                                          n_found,
                                                                          file_plural_string,
                                                                          output_filename))
+    total_runtime=(datetime.datetime.now() - startingDT).total_seconds()
+    print('Total processing time: {} seconds'.format(total_runtime))
+    print('Average time per row:  {} seconds'.format(total_runtime/total_rows))
     # out_data.pprint(max_width=-1)
 
 
@@ -129,6 +133,7 @@ def run_ecsv_combine(clobber=False, input_file_basepath=None, output_filename=No
     -------
     Nothing.
     """
+    startingDT = datetime.datetime.now()
     # 0a: set up input arg defaults,
 
     if not input_file_basepath:
@@ -149,7 +154,7 @@ def run_ecsv_combine(clobber=False, input_file_basepath=None, output_filename=No
     ecsv_file_list = find_files(input_file_basepath)
 
     # 2: combine individual ecsv files into a single monolithic file.
-    generate_output_file(ecsv_file_list, output_filename, clobber)
+    generate_output_file(ecsv_file_list, output_filename, startingDT, clobber)
 
 
 # ------------------------------------------------------------------------------------------------------------
