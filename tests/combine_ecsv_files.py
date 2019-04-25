@@ -47,10 +47,10 @@ def generate_output_file(ecsv_file_list, output_filename, clobber):
 
     Parameters
     ----------
-    ecsv_file_list: list
+    ecsv_file_list : list
         List of ecsv full filenames
 
-    output_filename: string
+    output_filename : string
          Name of the output combined .ecsv file.
 
     clobber : Boolean
@@ -123,7 +123,7 @@ def run_ecsv_combine(clobber=False, input_file_basepath=None, output_filename=No
     input_file_basepath : string
         Path to start recursive search for the .ecsv files.
 
-    output_filename: string
+    output_filename : string
          Name of the output combined .ecsv file.
 
     Returns
