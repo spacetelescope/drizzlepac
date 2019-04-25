@@ -131,8 +131,8 @@ def run_ecsv_combine(clobber=False,input_file_basepath=None,output_filename=None
         output_filename = "{}/{}.ecsv".format(os.getcwd(),os.getcwd().split("/")[-1])
 
     if clobber == False and os.path.exists(output_filename) == True:
-        sys.exit("Output file {} already exists. Rename the file or rerun with the clobber option on (-c) to "
-              "overwrite.".format(output_filename))
+        sys.exit("Output file {} already exists. Please rename the existing file and rerun or rerun with the "
+                 "'clobber' option turned on (-c) to overwrite the existing file.".format(output_filename))
 
     # 0c: make sure input_file_basepath always ends with a "/".
     if not input_file_basepath.endswith("/"):
