@@ -382,7 +382,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
             # First ensure sources were found
 
-            if table is None or table[1] == None: 
+            if table is None or not table[1]: 
                 log.warning("No sources found in image {}".format(imgname))
                 filtered_table[:]['status'] = 1
                 filtered_table[:]['processMsg'] = "No sources found"
