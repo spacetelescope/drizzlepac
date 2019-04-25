@@ -9,15 +9,12 @@ from astropy.io import ascii
 from astropy.table import Table, vstack
 import glob
 import os
-from stsci.tools import logutil
 import sys
 import traceback
 
 
 
 __taskname__ = 'combine_ecsv_files'
-
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -38,12 +35,11 @@ def find_files(input_file_basepath):
     file_list = glob.glob("{}**/*[!current]/*.ecsv".format(input_file_basepath), recursive=True)
     n_found = len(file_list)
     if n_found == 0:
-        log.info("No .ecsv files found. Exiting...")
         sys.exit("No .ecsv files found. Exiting...")
     elif n_found == 1:
-        log.info("{} ecsv file found.".format(n_found))
+        print("{} ecsv file found.".format(n_found))
     else:
-        log.info("{} ecsv files found.".format(n_found))
+        print("{} ecsv files found.".format(n_found))
     return(file_list)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -68,9 +64,22 @@ def generate_output_file(ecsv_file_list,output_filename,clobber):
     """
     try:
         file_start = True
+        n_found = len(ecsv_file_list)
+        filectr = 1
         for ecsv_filename in ecsv_file_list:
             table_data = ascii.read(ecsv_filename, format='ecsv') # Read ecsv file
-
+            padding = " "*(len(str(n_found))-len(str(filectr)))
+            if len(table_data) < 2:
+                plural_string = ""
+            else:
+                plural_string = "s"
+            print("{}{}/{}: added {} row{} from {}.".format(padding,
+                                                            filectr,
+                                                            n_found,
+                                                            len(table_data),
+                                                            plural_string,
+                                                            ecsv_filename))
+            filectr+=1
             dataset = os.path.basename(ecsv_filename)[:-5].lower() # scrape dataset name out of ecsv filename
             dataset_column=Table.Column(name='datasetName', data=[dataset]*len(table_data)) # make new column
             table_data.add_column(dataset_column,index=0) # add dataset column to table data to append.
@@ -82,7 +91,7 @@ def generate_output_file(ecsv_file_list,output_filename,clobber):
                 out_data = table_data.copy()
 
         ascii.write(out_data,output_filename,format='ecsv',overwrite=clobber) #write output file.
-        n_found = len(ecsv_file_list)
+
         if n_found == 1:
             file_plural_string = ""
         else:
@@ -92,11 +101,11 @@ def generate_output_file(ecsv_file_list,output_filename,clobber):
             row_plural_string = ""
         else:
             row_plural_string = "s"
-        log.info("Wrote {} row{} from {} input file{} to output file {}".format(total_rows,
-                                                                                row_plural_string,
-                                                                                n_found,
-                                                                                file_plural_string,
-                                                                                output_filename))
+        print("Wrote {} row{} from {} input file{} to output file {}".format(total_rows,
+                                                                             row_plural_string,
+                                                                             n_found,
+                                                                             file_plural_string,
+                                                                             output_filename))
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout) #display traceback
