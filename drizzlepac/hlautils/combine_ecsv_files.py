@@ -9,9 +9,17 @@ from astropy.io import ascii
 from astropy.table import Table, vstack
 import glob
 import os
-import pdb
+from stsci.tools import logutil
 import sys
 import traceback
+
+
+
+__taskname__ = 'combine_ecsv_files'
+
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+
+# ------------------------------------------------------------------------------------------------------------
 
 def find_files(input_file_basepath):
     """Find the ecsv files.
@@ -26,10 +34,16 @@ def find_files(input_file_basepath):
     file_list: list
         List of ecsv full filenames
     """
-    search_string = "{}popen-gw?/*[!current]/*.ecsv".format(input_file_basepath) #ignore '_current' sym links to existing directories
-    file_list = glob.glob(search_string)
-
-    if len(file_list) == 0: sys.exit("No .ecsv files found. Exiting...")
+    #Search for ecsv files ignoring '_current' sym links to existing directories
+    file_list = glob.glob("{}popen-gw?/*[!current]/*.ecsv".format(input_file_basepath))
+    n_found = len(file_list)
+    if n_found == 0:
+        log.info("No .ecsv files found. Exiting...")
+        sys.exit("No .ecsv files found. Exiting...")
+    elif n_found == 1:
+        log.info("{} ecsv file found.".format(n_found))
+    else:
+        log.info("{} ecsv files found.".format(n_found))
 
     return(file_list)
 
@@ -66,9 +80,21 @@ def generate_output_file(ecsv_file_list,output_filename,clobber):
                 out_data = table_data.copy()
 
         ascii.write(out_data,output_filename,format='ecsv',overwrite=clobber) #write output file.
-        print("Wrote {}".format(output_filename))
-        out_data.pprint(max_width=-1)
-
+        n_found = len(ecsv_file_list)
+        if n_found == 1:
+            file_plural_string = ""
+        else:
+            file_plural_string = "s"
+        total_rows = len(out_data) #display total number of rows in output file.
+        if total_rows == 1:
+            row_plural_string = ""
+        else:
+            row_plural_string = "s"
+        log.info("Wrote {} row{} from {} input file{} to output file {}".format(total_rows,
+                                                                                row_plural_string,
+                                                                                n_found,
+                                                                                file_plural_string,
+                                                                                output_filename))
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout) #display traceback
@@ -76,7 +102,7 @@ def generate_output_file(ecsv_file_list,output_filename,clobber):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def run_combine(clobber=False,input_file_basepath="",output_filename=""):
+def run_ecsv_combine(clobber=False,input_file_basepath=None,output_filename=None):
     """Main calling subroutine.
 
     Parameters
@@ -94,15 +120,21 @@ def run_combine(clobber=False,input_file_basepath="",output_filename=""):
     -------
     Nothing.
     """
-    # 0: set up input arg defaults, make sure input_file_basepath always ends with a "/".
-    if input_file_basepath == "":
+    # 0a: set up input arg defaults,
+
+    if not input_file_basepath:
         input_file_basepath = os.getcwd()
 
+    if not output_filename:
+        output_filename = "{}/{}.ecsv".format(os.getcwd(),os.getcwd().split("/")[-1])
+
+    if clobber == False and os.path.exists(output_filename) == True:
+        sys.exit("Output file {} already exists. Rename the file or rerun with the clobber option on (-c) to "
+              "overwrite.".format(output_filename))
+
+    # 0c: make sure input_file_basepath always ends with a "/".
     if not input_file_basepath.endswith("/"):
         input_file_basepath += "/"
-
-    if output_filename == "":
-        output_filename = "{}/{}.ecsv".format(os.getcwd(),os.getcwd().split("/")[-1])
 
     # 1: create list of ecsv files to be combined.
     ecsv_file_list = find_files(input_file_basepath)
@@ -115,7 +147,6 @@ def run_combine(clobber=False,input_file_basepath="",output_filename=""):
 # ------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------
 
-
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Find and combine all individual ecsv files into a single '
@@ -123,14 +154,16 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--clobber', required=False, action='store_true',help='If this option is turned '
                         'on, any existing file with same name as the output_fileanme will be overwritten.')
 
-    parser.add_argument('-i', '--input_file_basepath', required=False, default="",help='path to '
+    parser.add_argument('-i', '--input_file_basepath', required=False, default=None,help='path to '
                         'start recursive search for the .ecsv files. If not specified, the current working '
                         'directory will be used.')
 
-    parser.add_argument('-o', '--output_filename', required=False, default="",help='Name of the '
+    parser.add_argument('-o', '--output_filename', required=False, default=None,help='Name of the '
                         'output combined .ecsv file. This may include a full file path. If not specified, the '
                         'file be named "<CURRENT WORKING DIRECTORY>/<CURRENT WORKING DIRECTORY>.ecsv".')
     args = parser.parse_args()
 
 
-    run_combine(clobber=args.clobber,input_file_basepath=args.input_file_basepath,output_filename=args.output_filename)
+    run_ecsv_combine(clobber=args.clobber,
+                     input_file_basepath=args.input_file_basepath,
+                     output_filename=args.output_filename)
