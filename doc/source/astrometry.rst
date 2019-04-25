@@ -10,7 +10,7 @@ Calibration of the distortion model for each instrument has been done well enoug
 
 Therefore, multiple efforts have been undertaken to improve the absolute astrometry to match the accuracy of the relative astrometry.  These efforts have resulted in multiple new world coordinate systems (WCS) solutions to be developed for HST observations, starting with ACS, WFC3, and WFPC2.
 
-Each solution has its own advantages and errors, making some good for one use but inadequate for others.  As a result,  all new WCS solutions which are approved by STScI are being offered with HST data provided by MAST with headerlets serving as the mechanism for providing and applying all WCS solutions.
+Each solution has its own advantages and errors, making some good for one use but inadequate for others.  As a result,  **all new WCS solutions which are approved by STScI** are being offered with HST data provided by MAST with headerlets serving as the mechanism for providing and applying all WCS solutions.
 
 
 Where are all the WCS solutions?
@@ -80,13 +80,16 @@ where the **Astrometric Catalog** refers the exact astrometric catalog used to c
 
     - This catalog contains version 2.4.0 of the *Guide Star Coordinates* (GSC) catalog,
     - All guide stars in the catalog were cross-matched with the GAIA DR1 catalog and corrected to the coordinates reported in GAIA DR1.
+    - **APPLIES TO**:  All HST datasets which had a successful guide star acquisition, which is nearly all data in the archive.
 
   * **HSC30**
 
-    - This catalog contains version 3.0 the *Hubble Source Catalog* (HSC)
+    - This catalog contains version 3.0 of the *Hubble Source Catalog* (HSC)
+    - Technically, this is an *a posteriori* solution, but it is applied blindly without further verification that the correction fully aligns the image to GAIA;hence, it is included as an *a priori* solution.
     - Sources in the HSC were cross-matched with the GAIA DR1 catalog.
     - Those cross-matched sources were then used to determine a fit to the GAIA catalog.
     - The fit to GAIA was then applied to all remaining sources in the catalog.
+    - **APPLIES TO**:  Only datasets which had a sufficient number of sources in the exposure to be aligned to GAIA by the *Hubble Legacy Archive(HLA)* project.
 
   * **GAIADR1**
 
@@ -98,6 +101,15 @@ where the **Astrometric Catalog** refers the exact astrometric catalog used to c
     - A MAST-provided version of the second data release version of the official GAIA astrometric catalog.
     - This catalog contains initial proper motion measurements (and errors) for most sources in the catalog.
 
+Although all solutions are appended to each FITS file, only 1 WCS (referred to as the **'active' WCS**) can be used at a time to represent the transformation from pixel coordinates to world coordinates. The active WCS is defined by the standard WCS keywords found in the header of the science extension for each chip in the exposure; *e.g.*, CRVAL1, CRVAL2, CRPIX1, CRPIX2, and so on.
+
+The *a priori* solution which gets selected to replace the active WCS solution represents the most accurate solution available in the astrometry database at the time, and will be chosen based on the following hierarchy (as of Summer 2019):
+
+  #. HSC30
+  #. GSC240
+  #. IDC_<rootname> (distortion-corrected pipeline default WCS)
+
+If the first type of solution is not available, the next solution in the list is selected. As new solutions are added to the astrometry database, these rules will be modified to always try to return the WCS correction which best aligns the data to the GAIA catalog.
 
 a posteriori solutions
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -136,6 +148,10 @@ These separate terms provide as succinct a description of the solution determine
   * RMS in RA and Dec of the fit
   * parameters determined for the fit
   * and more...
+
+.. note::
+
+    A successfully determined *a posteriori* solution will **always** be used to replace the active WCS (after insuring the previous WCS has been saved as a headerlet extension already) regardless of the original solution.
 
 
 Choosing a WCS
