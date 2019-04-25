@@ -79,7 +79,7 @@ def generate_output_file(ecsv_file_list, output_filename, clobber):
                                                             plural_string,
                                                             ecsv_filename))
             filectr += 1
-            dataset = os.path.basename(ecsv_filename)[:-5].lower()  # scrape dataset name out of ecsv filename
+            dataset = os.path.basename(ecsv_filename)[:-5]  # scrape dataset name out of ecsv filename
             dataset_column = Table.Column(name='datasetName', data=[dataset]*len(table_data))  # make new col
             table_data.add_column(dataset_column, index=0)  # add dataset column to table data to append.
 
@@ -105,6 +105,7 @@ def generate_output_file(ecsv_file_list, output_filename, clobber):
                                                                              n_found,
                                                                              file_plural_string,
                                                                              output_filename))
+        # out_data.pprint(max_width=-1)
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)  # display traceback
