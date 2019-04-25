@@ -117,8 +117,8 @@ The task 'runastrodriz' can be used to reproduce the same Drizzle processing tha
 
    Running Astrodriz <runastrodriz.rst>
 
-Enhanced Pipeline Products API
-------------------------------
+HLA API
+-------
 .. toctree::
    :maxdepth: 2
 
