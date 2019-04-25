@@ -32,15 +32,12 @@ def compare_apriori(dataset):
     # in improving the astrometry compared to default telescope pointing
     # reported by pipeline-defined WCS (IDC_* solution)
     wcsnames = list(results_dict.keys())
-    idc_name = None
-    for wcs in wcsnames:
-        if 'IDC' in wcs and '-' not in wcs:
-            idc_name = wcs
+    for idc_name in wcsnames:
+        if 'IDC' in idc_name and '-' not in idc_name:
             wcsnames.remove(idc_name)
             break
-    if idc_name is None:
+    else:
         raise ValueError
-
     # Define pipeline-default fit
     pipeline_results = results_dict[idc_name]
     pipeline_offset = np.sqrt(pipeline_results['offset_x']**2 + pipeline_results['offset_y']**2)
@@ -58,18 +55,14 @@ def compare_apriori(dataset):
 
         # Check radial offset for this WCS compared to radial offset for IDC* WCS
         offset = np.sqrt(results['offset_x']**2 + results['offset_y']**2)
-        delta = (np.abs(offset - pipeline_offset) < 1).all() and (offset > pipeline_offset).all()
-        delta = delta or (offset < pipeline_offset).all()
+        delta = (offset < pipeline_offset).all() or np.allclose(offset, pipeline_offset, rtol=0, atol=1)
 
         # Check that rotation and scale are within
-        delta_rot = np.abs(results['rotation'] - pipeline_results['rotation']) / pipeline_results['rotation']
-        delta_scale = np.abs(results['scale'] - pipeline_results['scale']) / pipeline_results['scale']
-        rot = (delta_rot < limit).all()
-        scale = (delta_scale < limit).all()
+        rot = np.allclose(results['rotation'], pipeline_results['rotation'], rtol=limit, atol=0)
+        scale = np.allclose(results['scale'], pipeline_results['scale'], rtol=limit, atol=0)
 
         # Determine success/failure of this dataset's fit
-        wcs_success = status and fit_qual and delta and rot and scale
-        if wcs_success:
+        if all([status, fit_qual, delta, rot, scale]):
             # If at least one WCS succeeds, overall success needs to be set to True
             success = True
             print("SUCCESS")
