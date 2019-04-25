@@ -8,7 +8,6 @@ import argparse
 import glob
 import os
 import sys
-import traceback
 
 from astropy.io import ascii
 from astropy.table import Table, vstack
@@ -61,54 +60,50 @@ def generate_output_file(ecsv_file_list, output_filename, clobber):
     -------
     Nothing.
     """
-    try:
-        file_start = True
-        n_found = len(ecsv_file_list)
-        filectr = 1
-        for ecsv_filename in ecsv_file_list:
-            table_data = ascii.read(ecsv_filename, format='ecsv')  # Read ecsv file
-            padding = " "*(len(str(n_found))-len(str(filectr)))
-            if len(table_data) < 2:
-                plural_string = ""
-            else:
-                plural_string = "s"
-            print("{}{}/{}: added {} row{} from {}.".format(padding,
-                                                            filectr,
-                                                            n_found,
-                                                            len(table_data),
-                                                            plural_string,
-                                                            ecsv_filename))
-            filectr += 1
-            dataset = os.path.basename(ecsv_filename)[:-5]  # scrape dataset name out of ecsv filename
-            dataset_column = Table.Column(name='datasetName', data=[dataset]*len(table_data))  # make new col
-            table_data.add_column(dataset_column, index=0)  # add dataset column to table data to append.
-
-            if not file_start:  # append out_data with ecsv file data for all files after the list item.
-                out_data = vstack([out_data, table_data])
-            else:  # use the data from the first ecsv file to initialize out_data
-                file_start = False
-                out_data = table_data.copy()
-
-        ascii.write(out_data, output_filename, format='ecsv', overwrite=clobber)  # write output file.
-
-        if n_found == 1:
-            file_plural_string = ""
+    file_start = True
+    n_found = len(ecsv_file_list)
+    filectr = 1
+    for ecsv_filename in ecsv_file_list:
+        table_data = ascii.read(ecsv_filename, format='ecsv')  # Read ecsv file
+        padding = " "*(len(str(n_found))-len(str(filectr)))
+        if len(table_data) < 2:
+            plural_string = ""
         else:
-            file_plural_string = "s"
-        total_rows = len(out_data)  # display total number of rows in output file.
-        if total_rows == 1:
-            row_plural_string = ""
-        else:
-            row_plural_string = "s"
-        print("Wrote {} row{} from {} input file{} to output file {}".format(total_rows,
-                                                                             row_plural_string,
-                                                                             n_found,
-                                                                             file_plural_string,
-                                                                             output_filename))
-        # out_data.pprint(max_width=-1)
-    except Exception:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)  # display traceback
+            plural_string = "s"
+        print("{}{}/{}: added {} row{} from {}.".format(padding,
+                                                        filectr,
+                                                        n_found,
+                                                        len(table_data),
+                                                        plural_string,
+                                                        ecsv_filename))
+        filectr += 1
+        dataset = os.path.basename(ecsv_filename)[:-5]  # scrape dataset name out of ecsv filename
+        dataset_column = Table.Column(name='datasetName', data=[dataset]*len(table_data))  # make new column
+        table_data.add_column(dataset_column, index=0)  # add dataset column to table data to append.
+
+        if not file_start:  # append out_data with ecsv file data for all files after the list item.
+            out_data = vstack([out_data, table_data])
+        else:  # use the data from the first ecsv file to initialize out_data
+            file_start = False
+            out_data = table_data.copy()
+
+    ascii.write(out_data, output_filename, format='ecsv', overwrite=clobber)  # write output file.
+
+    if n_found == 1:
+        file_plural_string = ""
+    else:
+        file_plural_string = "s"
+    total_rows = len(out_data)  # display total number of rows in output file.
+    if total_rows == 1:
+        row_plural_string = ""
+    else:
+        row_plural_string = "s"
+    print("Wrote {} row{} from {} input file{} to output file {}".format(total_rows,
+                                                                         row_plural_string,
+                                                                         n_found,
+                                                                         file_plural_string,
+                                                                         output_filename))
+    # out_data.pprint(max_width=-1)
 
 
 # ------------------------------------------------------------------------------------------------------------
