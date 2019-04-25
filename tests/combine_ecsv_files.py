@@ -34,9 +34,9 @@ def find_files(input_file_basepath):
     if n_found == 0:
         sys.exit("No .ecsv files found. Exiting...")
     elif n_found == 1:
-        print("{} ecsv file found.".format(n_found))
+        print("{} ecsv file found.\n".format(n_found))
     else:
-        print("{} ecsv files found.".format(n_found))
+        print("{} ecsv files found.\n".format(n_found))
     return(file_list)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -60,11 +60,11 @@ def generate_output_file(ecsv_file_list, output_filename, clobber):
     -------
     Nothing.
     """
-    file_start = True
     n_found = len(ecsv_file_list)
-    filectr = 1
-    for ecsv_filename in ecsv_file_list:
+    for filectr, ecsv_filename in enumerate(ecsv_file_list, start=1):
         table_data = ascii.read(ecsv_filename, format='ecsv')  # Read ecsv file
+
+        # print incremental status update msg
         padding = " "*(len(str(n_found))-len(str(filectr)))
         if len(table_data) < 2:
             plural_string = ""
@@ -76,16 +76,18 @@ def generate_output_file(ecsv_file_list, output_filename, clobber):
                                                         len(table_data),
                                                         plural_string,
                                                         ecsv_filename))
-        filectr += 1
+        # add new column with dataset name info to the 0th (left most) position in the table.
         dataset = os.path.basename(ecsv_filename)[:-5]  # scrape dataset name out of ecsv filename
         dataset_column = Table.Column(name='datasetName', data=[dataset]*len(table_data))  # make new column
         table_data.add_column(dataset_column, index=0)  # add dataset column to table data to append.
 
-        if not file_start:  # append out_data with ecsv file data for all files after the list item.
-            out_data = vstack([out_data, table_data])
-        else:  # use the data from the first ecsv file to initialize out_data
-            file_start = False
+
+
+        if filectr == 1:  # append out_data with ecsv file data for all files after the list item.
             out_data = table_data.copy()
+
+        else:  # use the data from the first ecsv file to initialize out_data
+            out_data = vstack([out_data, table_data])
 
     ascii.write(out_data, output_filename, format='ecsv', overwrite=clobber)  # write output file.
 
@@ -98,7 +100,7 @@ def generate_output_file(ecsv_file_list, output_filename, clobber):
         row_plural_string = ""
     else:
         row_plural_string = "s"
-    print("Wrote {} row{} from {} input file{} to output file {}".format(total_rows,
+    print("\nWrote {} row{} from {} input file{} to output file {}".format(total_rows,
                                                                          row_plural_string,
                                                                          n_found,
                                                                          file_plural_string,
