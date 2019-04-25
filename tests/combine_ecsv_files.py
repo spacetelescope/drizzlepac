@@ -5,12 +5,13 @@ review.
 
 """
 import argparse
-from astropy.io import ascii
-from astropy.table import Table, vstack
 import glob
 import os
 import sys
 import traceback
+
+from astropy.io import ascii
+from astropy.table import Table, vstack
 
 # ------------------------------------------------------------------------------------------------------------
 
