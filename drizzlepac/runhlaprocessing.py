@@ -6,16 +6,17 @@
 import argparse
 import collections
 import datetime
+import os
+import pdb
+import sys
+import traceback
+
 import drizzlepac
 from drizzlepac import alignimages
 from drizzlepac import generate_final_product_filenames
 from drizzlepac import util
 from drizzlepac import wcs_functions
-import os
-import pdb
 from stsci.tools import logutil
-import sys
-import traceback
 
 __taskname__ = 'runhlaprocessing'
 
