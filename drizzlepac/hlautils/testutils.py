@@ -36,6 +36,7 @@ def compare_wcs_alignment(dataset, force=False):
         results : dict
             A dictionary whose keys are the WCS's found and fit to GAIA.
             Each WCS has entries for:
+            
                 * imageName - filenames of input exposures included in the fit
                 * offset_x - offset in X (pixels)
                 * offset_y - offset in X (pixels)
