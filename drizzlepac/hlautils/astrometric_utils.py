@@ -6,7 +6,7 @@ should fall within the field-of-view of all the input images.
 
 This module relies on the definition of an environment variable to specify
 the URL of the astrometric catalog to use for generating this
-reference catalog.
+reference catalog. ::
 
     ASTROMETRIC_CATALOG_URL  -- URL of web service that can be queried to
                                 obtain listing of astrometric sources,
