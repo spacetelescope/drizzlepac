@@ -84,8 +84,15 @@ def compare_apriori(dataset):
 class TestAcsApriori(BaseACS):
     """ Tests which validate whether mosaics can be aligned to an astrometric standard,
         evaluate the quality of the fit, and generate a new WCS.
+
+        * These can only be run using the pytest option:
+
+            pytest --bigdata
+
+        * This test is also compatible with pytest-xdist.
     """
 
+    @pytest.mark.bigdata
     @pytest.mark.parametrize('dataset', ['jb1601020', 'J9I408010'])
     def test_apriori(self, dataset):
         compare_apriori(dataset)
@@ -93,8 +100,16 @@ class TestAcsApriori(BaseACS):
 class TestWFC3Apriori(BaseWFC3):
     """ Tests which validate whether mosaics can be aligned to an astrometric standard,
         evaluate the quality of the fit, and generate a new WCS.
+
+        * These can only be run using the pytest option:
+
+            pytest --bigdata
+
+        * This test is also compatible with pytest-xdist.
+
     """
 
+    @pytest.mark.bigdata
     @pytest.mark.parametrize('dataset', ['ic0g0l010', 'icnw34040', 'ID6Y05010'])
     def test_apriori(self, dataset):
         compare_apriori(dataset)
