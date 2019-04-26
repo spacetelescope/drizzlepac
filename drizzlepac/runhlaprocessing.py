@@ -27,7 +27,7 @@ __version_date__ = '19-Mar-2019'
 
 # ----------------------------------------------------------------------------------------------------------------------
 # set up instrument/detector-specific astrodrizzle params
-astrodrizzle_param_dict={
+astrodrizzle_param_dict = {
     "ACS HRC": {
         "SCALE": 0.025,
         "PIXFRAC": 1.0,
@@ -85,15 +85,15 @@ def convert_base10_base36(in_number):
         converted base 36 value
     """
     if in_number < 100:
-        out_val = "{}{}".format("0"*(2-len(str(in_number))),in_number)
-    elif (in_number > 99) and (in_number<360) :
+        out_val = "{}{}".format("0"*(2-len(str(in_number))), in_number)
+    elif (in_number > 99) and (in_number < 360):
         alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         alphadict = {}
         for item in enumerate(list(alphabet)):
             alphadict[item[0]] = item[1]
         c1 = (in_number - 100)//26
-        c2 = (in_number - 100)%26
-        out_val = "{}{}".format(c1,alphadict[c2])
+        c2 = (in_number - 100) % 26
+        out_val = "{}{}".format(c1, alphadict[c2])
     else:
 
         chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -118,8 +118,9 @@ def generate_test_data(file_name):
     -------
     obs_info_dict,filelist
     """
-    if file_name == "ib4604.out": # WFC3 UVIS/IR visit 11665_04
-         obs_info_dict = {'total detection product 00': # full visit
+    # WFC3 UVIS/IR visit 11665_04, full visit
+    if file_name == "ib4604.out":
+         obs_info_dict = {'total detection product 00':
                              {'info': '11665 B46 WFC3 UVIS',
                               'files': ['ib4604fmq_flc.fits',
                                         'ib4604fxq_flc.fits',
