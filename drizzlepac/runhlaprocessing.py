@@ -435,8 +435,8 @@ def run_astrodrizzle(filelist,adriz_param_dict,outfilename,custom_wcs=None):
 # ----------------------------------------------------------------------------------------------------------------------
 @util.with_logging
 def run_hla_processing(input_filename, result=None, debug=True):
-    startingDT = datetime.datetime.now()
-    log.info("Run start time: {}".format(str(startingDT)))
+    starting_dt = datetime.datetime.now()
+    log.info("Run start time: {}".format(str(starting_dt)))
     try:
         # 1: Interpret input csv file as an astropy table with defined column names (HLA-211)
         log.info("1: (TODO) Interpret input csv file as an astropy table with defined column names")
@@ -535,7 +535,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
 
-    log.info('Total processing time: {} sec'.format((datetime.datetime.now() - startingDT).total_seconds()))
+    log.info('Total processing time: {} sec'.format((datetime.datetime.now() - starting_dt).total_seconds()))
     log.info("7: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition")
     result.append(return_value)
 
