@@ -573,14 +573,15 @@ def run_perform_align(filelist):
 # ----------------------------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    PARSER = argparse.ArgumentParser(description='Process images, produce drizzled images and sourcelists')
-    PARSER.add_argument('input_filename',help = 'Name of the input csv file containing information about the files to be processed')
-    PARSER.add_argument( '-d', '--debug', required=False,choices=['True','False'],default='True',help='display all tracebacks, and debug information? If not otherwise specifed, the default value is "True".')
-    ARGS = PARSER.parse_args()
-
-    if ARGS.debug == "True":
-        ARGS.debug = True
-    else:
-        ARGS.debug = False
+    parser = argparse.ArgumentParser(description='Process images, produce drizzled images and sourcelists')
+    parser.add_argument('input_filename',help = 'Name of the input csv file containing information about the files to '
+                        'be processed')
+    parser.add_argument('-d', '--debug', required=False, action='store_true', help='If this option is turned on, the '
+                        'align_images.perform_align() will attempt to use saved sourcelists stored in a pickle file '
+                        'generated during a previous run. Using a saved sorucelist instead of generating new '
+                        'sourcelists greatly reduces overall run time. If the pickle file does not exist, the program '
+                        'will generate new sourcelists and save them in a pickle file named after the first input '
+                        'file.')
+    ARGS = parser.parse_args()
 
     rv = perform_processing(ARGS.input_filename,debug=ARGS.debug)
