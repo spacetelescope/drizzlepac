@@ -8,7 +8,10 @@ The astrometry for any given observation relies upon accurate pointing informati
 
 Calibration of the distortion model for each instrument has been done well enough to allow observations to be combined (relative astrometry) with an accuracy of better than 5 milli-arcseconds.  This has made the absolute astrometry inaccuracy stand out even more, making it more difficult to compare observations taken at different times or to compare HST data with observations from other telescopes (like Chandra).
 
-Therefore, multiple efforts have been undertaken to improve the absolute astrometry to match the accuracy of the relative astrometry.  These efforts have resulted in multiple new world coordinate systems (WCS) solutions to be developed for HST observations, starting with ACS, WFC3, and WFPC2.
+Therefore, multiple efforts have been undertaken to improve the absolute astrometry to match the accuracy of the relative astrometry.  These efforts have resulted in multiple new world coordinate systems (WCS) solutions to be developed for HST observations, starting with ACS, WFC3, and WFPC2.  Complete details of the results of calibrating the distortion models and astrometry for each instrument can be found in each of the instruments web pages; namely,
+
+    * **ACS**: `ACS Distortion <http://www.stsci.edu/hst/acs/analysis/distortion/>`_
+    * **WFC3**: WFC3 Data Handbook `Chapter 4: WFC3 Images: Distortion Correction and AstroDrizzle <http://www.stsci.edu/hst/wfc3/documents/handbooks/currentDHB/Chapter4_astrometry1.html#>`_
 
 Each solution has its own advantages and errors, making some good for one use but inadequate for others.  As a result,  **all new WCS solutions which are approved by STScI** are being offered with HST data provided by MAST with headerlets serving as the mechanism for providing and applying all WCS solutions.
 
@@ -134,7 +137,7 @@ The terms are defined as:
 
   * **`<REL|IMG>`**
 
-    - The term `REL` denotes the fact that all images were aligned relative (REL) to each and then aligned to an astrometric catalog.  This attempts to maintain the original relative alignment between the imaeges in a given visit.
+    - The term `REL` denotes the fact that all images were aligned relative (REL) to each other and then aligned to an astrometric catalog.  This attempts to maintain the original relative alignment between the images in a given visit.
     - The term `IMG` denotes the fact the the images were fit individually to the astrometric catalog.  These solutions are applied only when relative alignment does not yield a viable fit to the astrometric catalog.
 
   * **<Astrometric Catalog>**
@@ -156,11 +159,11 @@ These separate terms provide as succinct a description of the solution determine
 
 Choosing a WCS
 ---------------
-The **only** WCS solution that gets used to perform coordinate transformations on the pixel values will be the 'active' or 'primary' WCS associated with the WCSNAME keyword.  The pipeline generated products will include an active WCS which the pipeline specifies as the *best* available WCS as the 'active' given the information used at the time of processing.  However, this default 'active' WCS may not be appropriate for all science, so this WCS may need to be replaced by one of the other WCSs instead to best support the analysis necessary for the research.
+The **only** WCS solution that gets used to perform coordinate transformations on the pixel values will be the 'active' or 'primary' WCS associated with the WCSNAME keyword.  The pipeline generated products will include an active WCS which the pipeline specifies as the *best* available WCS given the information used at the time of processing.  However, this default 'active' WCS may not be appropriate for all science, so this WCS may need to be replaced by one of the other WCSs instead to best support the analysis necessary for the research.
 
 Dependent Packages
 ^^^^^^^^^^^^^^^^^^^^
-Working with the WCS solutions and headerlets gets performed using `STWCS package <https://stwcs.readthedocs.io/en/latest/>`_.  Examples of how to work with this package will assume that the user has already installed this package into their working Python environment and have started a python shell.  In addition, the following example relies on the Astropy IO package to work with the FITS headers and extensions.
+Working with the WCS solutions and headerlets gets performed using `STWCS package <https://stwcs.readthedocs.io/en/latest/>`_.  Examples of how to work with this package will assume that the user has already installed this package into their working Python environment and has started a python shell.  In addition, the following example relies on the Astropy IO package to work with the FITS headers and extensions.
 
 Finally, the example described here will rely on additional functionality included in the V3.2.0 or later of the Drizzlepac package.  These new functions support the generation of drizzle combined products which have been aligned to an astrometric standard catalog such as GAIA DR2.
 
