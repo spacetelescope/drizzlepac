@@ -121,8 +121,7 @@ class TestWFC3Apriori(BaseWFC3):
 
     @pytest.mark.bigdata
     @pytest.mark.parametrize(
-        'dataset',
-        ['ic0g0l010', 'icnw34040', 'ID6Y05010']
+        'dataset', ['ic0g0l010', 'icnw34040', 'ID6Y05010']
     )
     def test_apriori(self, dataset):
         compare_apriori(dataset)
