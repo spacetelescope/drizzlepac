@@ -292,6 +292,8 @@ def perform_processing(input_filename, **kwargs):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+
 def rename_subproduct_files(obs_info_dict_item):
     """
     renames subproduct images (single-exposure products)
@@ -317,11 +319,12 @@ def rename_subproduct_files(obs_info_dict_item):
                 imgname_root = dest_imgname.split("_")[-2]
                 src_imgname = "{}_single_sci.fits".format(imgname_root)
 
-                #rename single_sci.fits image
-                os.rename(src_imgname,dest_imgname)
-                log.info("RENAME {} ~~> {}".format(src_imgname,dest_imgname))
+                # rename single_sci.fits image
+                os.rename(src_imgname, dest_imgname)
+                log.info("RENAME {} ~~> {}".format(src_imgname, dest_imgname))
 
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def restructure_obs_info_dict(obs_info_dict):
     """
@@ -347,14 +350,14 @@ def restructure_obs_info_dict(obs_info_dict):
                      'multivisit mosaic product']
     # 1: reorder dictionary from most complicated product to least complicated product
     for obs_category in priority_list:
-        for ctr_b10 in range(0,10000):
-            ctr_b36=convert_base10_base36(ctr_b10)
-            category_to_search = "{} {}".format(obs_category,ctr_b36)
+        for ctr_b10 in range(0, 10000):
+            ctr_b36 = convert_base10_base36(ctr_b10)
+            category_to_search = "{} {}".format(obs_category, ctr_b36)
             if category_to_search in obs_info_dict.keys():
                 print("{} FOUND.".format(category_to_search))
                 restructured_dict[category_to_search] = obs_info_dict[category_to_search]
                 if obs_category.startswith("single"):
-                    single_exposure_dict[obs_info_dict[category_to_search]['files'][0]]=category_to_search
+                    single_exposure_dict[obs_info_dict[category_to_search]['files'][0]] = category_to_search
             else:
                 print("{} not found.".format(category_to_search))
                 break
@@ -366,9 +369,11 @@ def restructure_obs_info_dict(obs_info_dict):
     for category in temp_restructured_dict.keys():
         if not category.startswith('single exposure product'):
             try:
-                for subprod_ctr,imgname in zip(range(0,len(temp_restructured_dict[category]['files'])),temp_restructured_dict[category]['files']):
-                    single_exp_dict_key=single_exposure_dict[imgname]
-                    restructured_dict[category]["subproduct #{} filenames".format(subprod_ctr)]=temp_restructured_dict[single_exp_dict_key]['product filenames']
+                for subprod_ctr, imgname in zip(range(0, len(temp_restructured_dict[category]['files'])),
+                                                temp_restructured_dict[category]['files']):
+                    single_exp_dict_key = single_exposure_dict[imgname]
+                    restructured_dict[category]["subproduct #{} filenames".format(subprod_ctr)] = \
+                        temp_restructured_dict[single_exp_dict_key]['product filenames']
                     del restructured_dict[single_exp_dict_key]
                     del single_exposure_dict[imgname]
             except:
@@ -377,7 +382,8 @@ def restructure_obs_info_dict(obs_info_dict):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def run_astrodrizzle(filelist,adriz_param_dict,outfilename,custom_wcs=None):
+
+def run_astrodrizzle(filelist, adriz_param_dict, outfilename, custom_wcs=None):
     """
     Run astrodrizzle on user-specified file(s) with specified parameters.
 
@@ -411,7 +417,7 @@ def run_astrodrizzle(filelist,adriz_param_dict,outfilename,custom_wcs=None):
 
     # splice in parameters from instrument/detector-specific astrodrizzle dictionary
     for key in adriz_param_dict.keys():
-        if key in ["SCALE","PIXFRAC","KERNEL","OUTNX","OUTNY","ROT","BITS"]:
+        if key in ["SCALE", "PIXFRAC", "KERNEL", "OUTNX", "OUTNY", "ROT", "BITS"]:
             pipeline_pars["final_{}".format(key.lower())] = adriz_param_dict[key]
             pipeline_pars["driz_sep_{}".format(key.lower())] = adriz_param_dict[key]
         else:
@@ -419,16 +425,19 @@ def run_astrodrizzle(filelist,adriz_param_dict,outfilename,custom_wcs=None):
     # prep custom_wcs values
     if custom_wcs:
         custom_pars = wcs_functions.create_mosaic_pars(custom_wcs)
-    #merge custom_pars into pipeline_pars
+    # merge custom_pars into pipeline_pars
         log.info("Recombobulating Astrodrizzle input parameters")
-        pipeline_keys=pipeline_pars.keys()
+        pipeline_keys = pipeline_pars.keys()
         for custom_key in custom_pars.keys():
             if custom_key in pipeline_keys:
                 if custom_pars[custom_key] != pipeline_pars[custom_key]:
-                    log.info("Updating pipeline_pars value '{}' from {} to {}".format(custom_key,pipeline_pars[custom_key],custom_pars[custom_key]))
+                    log.info("Updating pipeline_pars value '{}' from {} to {}".format(custom_key,
+                                                                                      pipeline_pars[custom_key],
+                                                                                      custom_pars[custom_key]))
                     pipeline_pars[custom_key] = custom_pars[custom_key]
             else:
-                log.info("Inserting custom_pars value '{}' = {} into pipeline_pars.".format(custom_key,custom_pars[custom_key]))
+                log.info("Inserting custom_pars value '{}' = {} into pipeline_pars.".format(custom_key,
+                                                                                            custom_pars[custom_key]))
                 pipeline_pars[custom_key] = custom_pars[custom_key]
         log.info("AstroDrizzle parameter recombobulation successful.")
 
@@ -438,6 +447,8 @@ def run_astrodrizzle(filelist,adriz_param_dict,outfilename,custom_wcs=None):
                                              num_cores=None, **pipeline_pars)
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+
 @util.with_logging
 def run_hla_processing(input_filename, result=None, debug=True):
     starting_dt = datetime.datetime.now()
@@ -447,15 +458,17 @@ def run_hla_processing(input_filename, result=None, debug=True):
         log.info("1: (TODO) Interpret input csv file as an astropy table with defined column names")
         # TODO: SUBROUTINE CALL GOES HERE.
 
-        # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new ticket if necessary)
+        # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new
+        # ticket if necessary)
         log.info("2: Apply rules to determine what exposures need to be combined into separate products")
         # TODO: SUBROUTINE CALL GOES HERE.
-        obs_info_dict = generate_test_data(input_filename) #TODO: REMOVE once all previous steps are up and running
+        obs_info_dict = generate_test_data(input_filename)  # TODO: REMOVE once all previous steps are up and running
 
         # 3: generate an output names for each defined product...
         log.info("3: generate an output names for each defined product")
         for obs_category in obs_info_dict.keys():
-            obs_info_dict[obs_category]['product filenames'] = generate_final_product_filenames.run_generator(obs_category, obs_info_dict[obs_category]["info"])
+            obs_info_dict[obs_category]['product filenames'] = \
+                generate_final_product_filenames.run_generator(obs_category, obs_info_dict[obs_category]["info"])
             for key in obs_info_dict[obs_category].keys():
                 log.info("{}: {}".format(key, obs_info_dict[obs_category][key]))
 
@@ -465,7 +478,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
 
         # 5: run alignimages.py on images on a filter-by-filter basis.
         log.info("5: run alignimages.py on images on a filter-by-filter basis for {}".format(obs_category))
-        wcs_input_list=[]
+        wcs_input_list = []
         for obs_category in obs_info_dict.keys():
             if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
 
@@ -475,11 +488,13 @@ def run_hla_processing(input_filename, result=None, debug=True):
             else:
                 log.info("{}: Alignimages step skipped.".format(obs_category))
 
-        #6: run meta wcs code to get common WCS for all images.
+        # 6: run meta wcs code to get common WCS for all images.
         log.info("6: run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
         log.info("The following images will be used: ")
-        for imgname in wcs_input_list:log.info("{}".format(imgname))
-        if wcs_input_list: meta_wcs = wcs_functions.make_mosaic_wcs(wcs_input_list)
+        for imgname in wcs_input_list:
+            log.info("{}".format(imgname))
+        if wcs_input_list:
+            meta_wcs = wcs_functions.make_mosaic_wcs(wcs_input_list)
 
         # 7: Run AstroDrizzle to produce filter-level products.
         log.info("7: Run AstroDrizzle to produce filter-level products.")
@@ -488,12 +503,15 @@ def run_hla_processing(input_filename, result=None, debug=True):
                 adriz_param_dict = {}
                 for inst_det in astrodrizzle_param_dict.keys():
                         if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
-                            adriz_param_dict=astrodrizzle_param_dict[inst_det].copy()
-                            log.info("Using {} AstroDrizzle parameters for {}.".format(inst_det,obs_category))
+                            adriz_param_dict = astrodrizzle_param_dict[inst_det].copy()
+                            log.info("Using {} AstroDrizzle parameters for {}.".format(inst_det, obs_category))
                             break
                 # Turn on astrodrizzle step 7a: Custom WCS for final output
                 adriz_param_dict["final_wcs"] = True
-                run_astrodrizzle(obs_info_dict[obs_category]['files'],adriz_param_dict,obs_info_dict[obs_category]['product filenames']['image'],custom_wcs=meta_wcs)
+                run_astrodrizzle(obs_info_dict[obs_category]['files'],
+                                 adriz_param_dict,
+                                 obs_info_dict[obs_category]['product filenames']['image'],
+                                 custom_wcs=meta_wcs)
                 rename_subproduct_files(obs_info_dict[obs_category])
             else:
                 log.info("{}: Filter-by-Filter AstroDrizzle step skipped.".format(obs_category))
@@ -505,8 +523,8 @@ def run_hla_processing(input_filename, result=None, debug=True):
                 adriz_param_dict = {}
                 for inst_det in astrodrizzle_param_dict.keys():
                         if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
-                            adriz_param_dict=astrodrizzle_param_dict[inst_det].copy()
-                            log.info("Using {} AstroDrizzle parameters for {}.".format(inst_det,obs_category))
+                            adriz_param_dict = astrodrizzle_param_dict[inst_det].copy()
+                            log.info("Using {} AstroDrizzle parameters for {}.".format(inst_det, obs_category))
                             break
                 # Turn off all astrodrizzle steps EXCEPT steps 7 and 7a.
                 adriz_param_dict["static"] = False
@@ -517,7 +535,10 @@ def run_hla_processing(input_filename, result=None, debug=True):
                 adriz_param_dict["blot"] = False
                 adriz_param_dict["driz_combine"] = True
                 adriz_param_dict["final_wcs"] = True
-                run_astrodrizzle(obs_info_dict[obs_category]['files'],adriz_param_dict,obs_info_dict[obs_category]['product filenames']['image'],custom_wcs=meta_wcs)
+                run_astrodrizzle(obs_info_dict[obs_category]['files'],
+                                 adriz_param_dict,
+                                 obs_info_dict[obs_category]['product filenames']['image'],
+                                 custom_wcs=meta_wcs)
             else:
                 log.info("{}: Total detection AstroDrizzle step skipped.".format(obs_category))
 
@@ -526,10 +547,12 @@ def run_hla_processing(input_filename, result=None, debug=True):
         # TODO: SOURCELIST GENERATION SUBROUTINE CALL GOES HERE.
 
         # 10: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
-        log.info("10: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of product")
+        log.info("10: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of "
+                 "product")
         # TODO: QUALITY CONTROL SUBROUTINE CALL GOES HERE.
 
-        # 11: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate the new product.
+        # 11: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate
+        # the new product.
 
     # 12: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
@@ -541,10 +564,12 @@ def run_hla_processing(input_filename, result=None, debug=True):
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
 
     log.info('Total processing time: {} sec'.format((datetime.datetime.now() - starting_dt).total_seconds()))
-    log.info("7: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition")
+    log.info("7: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
+             "condition")
     result.append(return_value)
 
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def run_perform_align(filelist):
     """
@@ -561,7 +586,7 @@ def run_perform_align(filelist):
     Nothing.
     """
     try:
-        align_table = alignimages.perform_align(filelist,debug=True,runfile= 'alignimages.log' ,update_hdr_wcs=True)
+        align_table = alignimages.perform_align(filelist, debug=True, runfile='alignimages.log', update_hdr_wcs=True)
         for row in align_table:
             if row['status'] == 0:
                 log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
@@ -578,9 +603,10 @@ def run_perform_align(filelist):
 # ----------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process images, produce drizzled images and sourcelists')
-    parser.add_argument('input_filename',help = 'Name of the input csv file containing information about the files to '
+    parser.add_argument('input_filename', help='Name of the input csv file containing information about the files to '
                         'be processed')
     parser.add_argument('-d', '--debug', required=False, action='store_true', help='If this option is turned on, the '
                         'align_images.perform_align() will attempt to use saved sourcelists stored in a pickle file '
@@ -590,4 +616,4 @@ if __name__ == '__main__':
                         'file.')
     ARGS = parser.parse_args()
 
-    rv = perform_processing(ARGS.input_filename,debug=ARGS.debug)
+    rv = perform_processing(ARGS.input_filename, debug=ARGS.debug)
