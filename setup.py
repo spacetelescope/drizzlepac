@@ -56,7 +56,6 @@ TESTS_REQUIRE = [
     'ci_watson',
     'crds',
     'pytest'
-    'pytest-remotedata'
 ]
 
 setup(
@@ -79,11 +78,11 @@ setup(
     ],
     python_requires='>=3.5',
     install_requires=[
-        'astropy>=3.1.2',
+        'astropy>=3.1',
         'fitsblender',
         'nictools',
         'nose',
-        'numpy>=1.16.2',
+        'numpy>=1.16',
         'scipy',
         'matplotlib',
         'acstools',
@@ -93,8 +92,8 @@ setup(
         'stsci.imagestats',
         'stsci.skypac',
         'stsci.stimage',
-        'stwcs>=1.5.0',
-        'tweakwcs>=0.4.6',
+        'stwcs',
+        'tweakwcs>=0.4.0',
         'stregion',
         'requests',
         # HLA-pipeline specific:
