@@ -16,6 +16,7 @@ from drizzlepac import alignimages
 from drizzlepac import generate_final_product_filenames
 from drizzlepac import util
 from drizzlepac import wcs_functions
+from drizzlepac.hlautils import sourcelist_generation
 from stsci.tools import logutil
 
 __taskname__ = 'runhlaprocessing'
@@ -543,8 +544,8 @@ def run_hla_processing(input_filename, result=None, debug=True):
                 log.info("{}: Total detection AstroDrizzle step skipped.".format(obs_category))
 
         # 9: Create source catalogs from newly defined products (HLA-204)
-        log.info("9: (TODO) Create source catalog from newly defined product")
-        # TODO: SOURCELIST GENERATION SUBROUTINE CALL GOES HERE.
+        log.info("9: (WIP) Create source catalog from newly defined product")
+        sourcelist_generation.create_sourcelists()
 
         # 10: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
         log.info("10: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of "
