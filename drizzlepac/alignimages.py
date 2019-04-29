@@ -655,8 +655,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-        if debug:
-            foo = input("Hit any key to continue\n")
 
     finally:
 
