@@ -70,6 +70,7 @@ astrodrizzle_param_dict = {
         "BITS": 256}}
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def convert_base10_base36(in_number):
     """
     Convert base-10 numbers to base-36ish, in the same style that HST visits are named
@@ -110,6 +111,7 @@ def convert_base10_base36(in_number):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def generate_test_data(file_name):
     """
     Generates test data for use during development
@@ -120,14 +122,14 @@ def generate_test_data(file_name):
     """
     # WFC3 UVIS/IR visit 11665_04, full visit
     if file_name == "ib4604.out":
-         obs_info_dict = {'total detection product 00':
-                             {'info': '11665 B46 WFC3 UVIS',
-                              'files': ['ib4604fmq_flc.fits',
-                                        'ib4604fxq_flc.fits',
-                                        'ib4604fnq_flc.fits',
-                                        'ib4604fuq_flc.fits',
-                                        'ib4604fqq_flc.fits',
-                                        'ib4604fvq_flc.fits']},
+        obs_info_dict = {'total detection product 00':
+                         {'info': '11665 B46 WFC3 UVIS',
+                          'files': ['ib4604fmq_flc.fits',
+                                    'ib4604fxq_flc.fits',
+                                    'ib4604fnq_flc.fits',
+                                    'ib4604fuq_flc.fits',
+                                    'ib4604fqq_flc.fits',
+                                    'ib4604fvq_flc.fits']},
                          'total detection product 01':
                              {'info': '11665 B46 WFC3 IR',
                               'files': ['ib4604g2q_flt.fits',
@@ -176,15 +178,15 @@ def generate_test_data(file_name):
                          'single exposure product 09':
                              {'info': '11665 B46 WFC3 IR F160W IB4604G8Q',
                               'files': ['ib4604g8q_flt.fits']}}
-    if file_name == "ib4604uvis.out": # WFC3 UVIS/IR visit 11665_04
-         obs_info_dict = {'total detection product 00': # full visit
-                             {'info': '11665 B46 WFC3 UVIS',
-                              'files': ['ib4604fmq_flc.fits',
-                                        'ib4604fxq_flc.fits',
-                                        'ib4604fnq_flc.fits',
-                                        'ib4604fuq_flc.fits',
-                                        'ib4604fqq_flc.fits',
-                                        'ib4604fvq_flc.fits']},
+    if file_name == "ib4604uvis.out":  # WFC3 UVIS/IR visit 11665_04
+        obs_info_dict = {'total detection product 00':  # full visit
+                         {'info': '11665 B46 WFC3 UVIS',
+                          'files': ['ib4604fmq_flc.fits',
+                                    'ib4604fxq_flc.fits',
+                                    'ib4604fnq_flc.fits',
+                                    'ib4604fuq_flc.fits',
+                                    'ib4604fqq_flc.fits',
+                                    'ib4604fvq_flc.fits']},
                          'single exposure product 00':
                              {'info': '11665 B46 WFC3 UVIS F555W IB4604FMQ',
                               'files': ['ib4604fmq_flc.fits']},
@@ -208,12 +210,12 @@ def generate_test_data(file_name):
                              {'info': '11665 B46 WFC3 UVIS F555W IB4604FVQ',
                               'files': ['ib4604fvq_flc.fits']}}
     if file_name == "ib4604ir.out":
-        obs_info_dict = {'total detection product 00': #Just the WFC3/IR portion of 11665_04
-                             {'info': '11665 B46 WFC3 IR',
-                              'files': ['ib4604g2q_flt.fits',
-                                        'ib4604g6q_flt.fits',
-                                        'ib4604g3q_flt.fits',
-                                        'ib4604g8q_flt.fits']},
+        obs_info_dict = {'total detection product 00':  # Just the WFC3/IR portion of 11665_04
+                         {'info': '11665 B46 WFC3 IR',
+                          'files': ['ib4604g2q_flt.fits',
+                                    'ib4604g6q_flt.fits',
+                                    'ib4604g3q_flt.fits',
+                                    'ib4604g8q_flt.fits']},
                          'filter product 00':
                              {'info': '11665 B46 WFC3 IR F110W',
                               'files': ['ib4604g2q_flt.fits',
@@ -234,34 +236,36 @@ def generate_test_data(file_name):
                          'single exposure product 03':
                              {'info': '11665 B46 WFC3 IR F160W IB4604G8Q',
                               'files': ['ib4604g8q_flt.fits']}}
-    if file_name == "j92c01.out":# obs_info_dict/filelist definition for ACS/WFC visit 10265_01
-        obs_info_dict={"single exposure product 00":
-                           {"info": "10265 01S ACS WFC F606W j92c01b4q",
-                            "files":["j92c01b4q_flc.fits"]},
-                       "single exposure product 01":
-                           {"info": "10265 01S ACS WFC F606W j92c01b5q",
-                            "files":["j92c01b5q_flc.fits"]},
-                       "single exposure product 02":
-                           {"info": "10265 01S ACS WFC F606W j92c01b7q",
-                            "files":["j92c01b7q_flc.fits"]},
-                       "single exposure product 03":
-                           {"info": "10265 01S ACS WFC F606W j92c01b9q",
-                            "files":["j92c01b9q_flc.fits"]},
-                       "filter product 00":
-                           {"info": "10265 01S ACS WFC F606W",
-                            "files":['j92c01b4q_flc.fits',
-                                     'j92c01b5q_flc.fits',
-                                     'j92c01b7q_flc.fits',
-                                     'j92c01b9q_flc.fits']},
-                       "total detection product 00":
-                           {"info": "10265 01S ACS WFC",
-                            "files":['j92c01b4q_flc.fits',
-                                     'j92c01b5q_flc.fits',
-                                     'j92c01b7q_flc.fits',
-                                     'j92c01b9q_flc.fits']}}
+    if file_name == "j92c01.out":  # obs_info_dict/filelist definition for ACS/WFC visit 10265_01
+        obs_info_dict = {"single exposure product 00":
+                         {"info": "10265 01S ACS WFC F606W j92c01b4q",
+                             "files": ["j92c01b4q_flc.fits"]},
+                         "single exposure product 01":
+                             {"info": "10265 01S ACS WFC F606W j92c01b5q",
+                              "files": ["j92c01b5q_flc.fits"]},
+                         "single exposure product 02":
+                             {"info": "10265 01S ACS WFC F606W j92c01b7q",
+                              "files": ["j92c01b7q_flc.fits"]},
+                         "single exposure product 03":
+                             {"info": "10265 01S ACS WFC F606W j92c01b9q",
+                              "files": ["j92c01b9q_flc.fits"]},
+                         "filter product 00":
+                             {"info": "10265 01S ACS WFC F606W",
+                              "files": ['j92c01b4q_flc.fits',
+                                        'j92c01b5q_flc.fits',
+                                        'j92c01b7q_flc.fits',
+                                        'j92c01b9q_flc.fits']},
+                         "total detection product 00":
+                             {"info": "10265 01S ACS WFC",
+                              "files": ['j92c01b4q_flc.fits',
+                                        'j92c01b5q_flc.fits',
+                                        'j92c01b7q_flc.fits',
+                                        'j92c01b9q_flc.fits']}}
     return(obs_info_dict)
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+
 def perform_processing(input_filename, **kwargs):
     """
     Main calling subroutine.
@@ -282,7 +286,7 @@ def perform_processing(input_filename, **kwargs):
         run
     """
     return_value = []
-    run_hla_processing(input_filename,result=return_value,**kwargs)
+    run_hla_processing(input_filename, result=return_value, **kwargs)
     return(return_value[0])
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -557,7 +561,7 @@ def run_perform_align(filelist):
     Nothing.
     """
     try:
-        align_table = alignimages.perform_align(filelist,debug=True,runfile='alignimages.log',update_hdr_wcs=True)
+        align_table = alignimages.perform_align(filelist,debug=True,runfile= 'alignimages.log' ,update_hdr_wcs=True)
         for row in align_table:
             if row['status'] == 0:
                 log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
