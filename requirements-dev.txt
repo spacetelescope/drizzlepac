@@ -1,0 +1,3 @@
+git+https://github.com/spacetelescope/stwcs.git@e1da1f11736b2507afd92cf045eedba717d9e820#egg=stwcs
+git+https://github.com/astropy/photutils.git@da9fa2423160c0acfc7ac4c7d7a29461dbc0e534#egg=photutils
+git+https://github.com/spacetelescope/stsci.tools@9a022503ad24ca54ce83331482dfa3ff6de9f403#egg=stsci.tools
