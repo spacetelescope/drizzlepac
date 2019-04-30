@@ -96,6 +96,8 @@ def create_daophot_like_sourcelists(obs_info_dict):
 
     log.info("DAOPHOT-LIKE SOURCELIST CREATION OCCURS HERE!")
 
+    for item in [foo for foo in obs_info_dict.keys() if foo.startswith('total detection product')]:
+        print(item)
 
     # ### (1) ### Collect applicable parameters
 
