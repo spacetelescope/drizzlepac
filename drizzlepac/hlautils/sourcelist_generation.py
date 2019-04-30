@@ -3,6 +3,7 @@
 """This script contains code to support creation of source extractor-like and daophot-like sourcelists.
 
 """
+import pdb
 import sys
 
 from stsci.tools import logutil
