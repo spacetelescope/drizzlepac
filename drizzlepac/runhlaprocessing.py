@@ -30,6 +30,12 @@ __version_date__ = '19-Mar-2019'
 # set up instrument/detector-specific params
 param_dict = {
     "ACS HRC": {
+        "dao": {
+            "TWEAK_FWHMPSF": 0.073,
+            "TWEAK_THRESHOLD": 3.0,
+            "aperture_1": 0.03,
+            "aperture_2": 0.125,
+            "bthresh": 5.0},
         "drizzlepac": {
             "SCALE": 0.025,
             "PIXFRAC": 1.0,
@@ -39,6 +45,12 @@ param_dict = {
             "ROT": 0.0,
             "BITS": 256}},
     "ACS SBC": {
+        "dao": {
+            "TWEAK_FWHMPSF": 0.065,
+            "TWEAK_THRESHOLD": 3.0,
+            "aperture_1": 0.07,
+            "aperture_2": 0.125,
+            "bthresh": 5.0},
         "drizzlepac": {
             "SCALE": 0.03,
             "PIXFRAC": 1.0,
@@ -48,6 +60,12 @@ param_dict = {
             "ROT": 0.0,
             "BITS": 256}},
     "ACS WFC": {
+        "dao": {
+            "TWEAK_FWHMPSF": 0.076,
+            "TWEAK_THRESHOLD": 3.0,
+            "aperture_1": 0.05,  # update from 0.15
+            "aperture_2": 0.15,  # update from 0.25
+            "bthresh": 5.0},
         "drizzlepac": {
             "SCALE": 0.05,
             "PIXFRAC": 1.0,
@@ -57,6 +75,12 @@ param_dict = {
             "ROT": 0.0,
             "BITS": 256}},
     "WFC3 IR": {
+        "dao": {
+            "TWEAK_FWHMPSF": 0.14,
+            "TWEAK_THRESHOLD": 3.0,
+            "aperture_1": 0.15,
+            "aperture_2": 0.45,
+            "bthresh": 5.0},
         "drizzlepac": {
             "SCALE": 0.09,
             "PIXFRAC": 1.0,
@@ -66,6 +90,12 @@ param_dict = {
             "ROT": 0.0,
             "BITS": 768}},
     "WFC3 UVIS": {
+        "dao": {
+            "TWEAK_FWHMPSF": 0.076,
+            "TWEAK_THRESHOLD": 3.0,
+            "aperture_1": 0.05,
+            "aperture_2": 0.15,
+            "bthresh": 5.0},
         "drizzlepac": {
             "SCALE": 0.04,
             "PIXFRAC": 1.0,
