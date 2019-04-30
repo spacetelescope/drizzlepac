@@ -3,15 +3,13 @@ acs_10265_01 values. This will speed development of sourcelist_generation.py bec
 without having to run runhlaprocessing.py first.
 
 """
-import sourcelist_generation
+
 import collections
 
+import sourcelist_generation
 
-collections.OrderedDict()
-obs_info_dict = collections.OrderedDict()
-
-obs_info_dict = \
-    [('filter product 00',
+obs_info_dict = collections.OrderedDict(
+    {'filter product 00':
       {'info': '10265 01S ACS WFC F606W',
        'files': ['j92c01b4q_flc.fits', 'j92c01b5q_flc.fits', 'j92c01b7q_flc.fits', 'j92c01b9q_flc.fits'],
        'product filenames': {'image': 'hst_10265_01S_ACS_WFC_F606W.fits',
@@ -23,10 +21,10 @@ obs_info_dict = \
        'subproduct #2 filenames': {'image': 'hst_10265_01S_ACS_WFC_F606W_j92c01b7q_02.fits',
                                    'source catalog': 'hst_10265_01S_ACS_WFC_F606W_j92c01b7q_02.cat'},
        'subproduct #3 filenames': {'image': 'hst_10265_01S_ACS_WFC_F606W_j92c01b9q_03.fits',
-                                   'source catalog': 'hst_10265_01S_ACS_WFC_F606W_j92c01b9q_03.cat'}}),
-     ('total detection product 00',
+                                   'source catalog': 'hst_10265_01S_ACS_WFC_F606W_j92c01b9q_03.cat'}},
+     'total detection product 00':
       {'info': '10265 01S ACS WFC',
        'files': ['j92c01b4q_flc.fits', 'j92c01b5q_flc.fits', 'j92c01b7q_flc.fits', 'j92c01b9q_flc.fits'],
        'product filenames': {'image': 'hst_10265_01S_ACS_WFC.fits',
-                             'source catalog': 'hst_10265_01S_ACS_WFC.cat'}})]
+                             'source catalog': 'hst_10265_01S_ACS_WFC.cat'}}})
 sourcelist_generation.create_sourcelists(obs_info_dict)
