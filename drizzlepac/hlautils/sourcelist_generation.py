@@ -13,23 +13,29 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def create_sourcelists(obs_info_dict):
+def create_sourcelists(obs_info_dict,param_dict):
     """Make sourcelists
 
     Parameters
     ----------
     obs_info_dict : dictionary
-        Dictionary contianing all information about the images being processed
+        Dictionary containing all information about the images being processed
+
+    param_dict : dictionary
+        Dictionary containing instrument/detector-specific values for source identification and photometry ops
 
     Returns
     -------
     """
-
     log.info("SOURCELIST CREATION OCCURS HERE!")
 
-    create_daophot_like_sourcelists(obs_info_dict)
+    # 0: Generate daophot-like sourcelists
+    create_daophot_like_sourcelists(obs_info_dict,param_dict)
 
-    create_se_like_sourcelists(obs_info_dict)
+    # 1: Generate source extractor-like sourcelists
+    create_se_like_sourcelists(obs_info_dict,param_dict)
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 

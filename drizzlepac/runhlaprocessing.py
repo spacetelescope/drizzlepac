@@ -579,7 +579,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
         # 9: Create source catalogs from newly defined products (HLA-204)
         log.info("9: (WIP) Create source catalog from newly defined product")
 
-        sourcelist_generation.create_sourcelists(obs_info_dict)
+        sourcelist_generation.create_sourcelists(obs_info_dict,param_dict)
 
         # 10: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
         log.info("10: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of "
