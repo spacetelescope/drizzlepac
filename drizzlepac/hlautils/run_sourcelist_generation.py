@@ -1,3 +1,8 @@
+""" script that directly calls sourcelist_generation.create_sourcelists() using an obs_info_dict hardcoded to
+acs_10265_01 values. This will speed development of sourcelist_generation.py becasue it allows the user to just run it
+without having to run runhlaprocessing.py first.
+
+"""
 import sourcelist_generation
 import collections
 
