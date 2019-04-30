@@ -27,13 +27,13 @@ jobs:
         architecture: 'x64'
 
     - bash: |
-        export PIP_INSTALL='pip install -r requirements-dev.txt --upgrade'
+        export PIP_INSTALL='pip install --upgrade'
         echo "##vso[task.setvariable variable=PIP_INSTALL]$PIP_INSTALL"
       condition: ne( variables['Agent.OS'], 'Windows_NT' )
       displayName: Pip on Linux/Darwin
 
     - powershell: |
-        Set-Variable -Name PIP_INSTALL -Value 'python -m pip install -r requirements-dev.txt --upgrade'
+        Set-Variable -Name PIP_INSTALL -Value 'python -m pip install --upgrade'
         Write-Host "##vso[task.setvariable variable=PIP_INSTALL]$PIP_INSTALL"
       condition: eq( variables['Agent.OS'], 'Windows_NT' )
       displayName: Pip on Windows
@@ -44,7 +44,7 @@ jobs:
       displayName: install dependencies
 
     - script: |
-        $(PIP_INSTALL) -e .[test]
+        $(PIP_INSTALL) -r requirements-dev.txt -e .[test]
       displayName: build package
 
     # TODO: Clean up doctest and enable --doctest-modules
