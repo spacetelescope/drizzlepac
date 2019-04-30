@@ -10,9 +10,9 @@ matrix_python = ["3.6", "3.7"]
 matrix_astropy = [">=3.1.0"]
 matrix_numpy = ["<1.15", "<1.16"]
 */
-matrix_python = ["3.7"]
+matrix_python = ["3.6"]
 matrix_astropy = [">=3.1.0"]
-matrix_numpy = ["<1.16"]
+matrix_numpy = ["1.16"]
 matrix = []
 
 // Configure artifactory ingest
@@ -31,7 +31,7 @@ for (numpy_ver in matrix_numpy) {
     MATRIX_TITLE = "mtx-${MATRIX_SUFFIX}"
 
     bc = new BuildConfig()
-    bc.nodetype = "linux"
+    bc.nodetype = "linux-noconda"
     bc.name = MATRIX_TITLE
     bc.env_vars = ['BUILD_MATRIX_SUFFIX=' + MATRIX_SUFFIX,
                    'BUILD_MATRIX_ID=' + matrix_id,
@@ -76,7 +76,7 @@ for (numpy_ver in matrix_numpy) {
 // RUN ONCE:
 //    "sdist" is agnostic enough to work without any big dependencies
 sdist = new BuildConfig()
-sdist.nodetype = "linux"
+sdist.nodetype = "linux-noconda"
 sdist.name = "sdist"
 sdist.conda_packages = ['astropy',
                         'numpy']
@@ -86,7 +86,7 @@ matrix += sdist
 
 //    "build_sphinx" with default python
 //docs = new BuildConfig()
-//docs.nodetype = "linux"
+//docs.nodetype = "linux-noconda"
 //docs.name = "docs"
 //sdist.conda_packages = ['astropy',
 //                        'numpy']
