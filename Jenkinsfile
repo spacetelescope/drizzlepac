@@ -12,7 +12,7 @@ matrix_numpy = ["<1.15", "<1.16"]
 */
 matrix_python = ["3.6"]
 matrix_astropy = [">=3.1.0"]
-matrix_numpy = ["1.16"]
+matrix_numpy = ["==1.16"]
 matrix = []
 
 // Configure artifactory ingest
@@ -31,41 +31,14 @@ for (numpy_ver in matrix_numpy) {
     MATRIX_TITLE = "mtx-${MATRIX_SUFFIX}"
 
     bc = new BuildConfig()
-    bc.nodetype = "linux-noconda"
+    bc.nodetype = "python${python_ver}"
     bc.name = MATRIX_TITLE
     bc.env_vars = ['BUILD_MATRIX_SUFFIX=' + MATRIX_SUFFIX,
                    'BUILD_MATRIX_ID=' + matrix_id,
                    'TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
-    bc.conda_channels = ['http://ssb.stsci.edu/astroconda']
-    bc.conda_packages = ['acstools',
-                         'fitsblender',
-                         'graphviz',
-                         'nictools',
-                         'numpydoc',
-                         'crds',
-                         'scipy',
-                         'spherical-geometry',
-                         'sphinx',
-                         'sphinx_rtd_theme',
-                         'stsci_rtd_theme',
-                         'stsci.image',
-                         'stsci.imagestats',
-                         'stsci.skypac',
-                         'stregion',
-                         'stsci.stimage',
-                         'setuptools',
-                         // test dependencies
-                         'ci-watson',
-                         'pytest',
-                         'pytest-remotedata',
-                         'crds']
-    // Dependencies that change based on build matrix entry.
-    bc.conda_packages += ["astropy${astropy_ver}",
-                          "numpy${numpy_ver}",
-                          "python=${python_ver}"]
-    bc.build_cmds = ["pip install codecov pytest-cov",
+    bc.build_cmds = ["pip install codecov pytest-cov numpy${numpy_ver} astropy${astropy_ver}",
                      "pip install --upgrade -r requirements-dev.txt -e '.[test]'"]
-    bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any",
+    bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata",
                     "codecov --token=${codecov_token}"]
     bc.test_configs = [data_config]
     matrix += bc
@@ -74,19 +47,18 @@ for (numpy_ver in matrix_numpy) {
 
 
 // RUN ONCE:
-//    "sdist" is agnostic enough to work without any big dependencies
+//    "sdist" is agnostic enough to work without any big, or targeted dependencies
 sdist = new BuildConfig()
-sdist.nodetype = "linux-noconda"
+sdist.nodetype = "python${matrix_python[0]}"
 sdist.name = "sdist"
-sdist.conda_packages = ['astropy',
-                        'numpy']
-sdist.build_cmds = ["python setup.py sdist"]
+sdist.build_cmds = ["pip install numpy astropy",
+                    "python setup.py sdist"]
 matrix += sdist
 
 
 //    "build_sphinx" with default python
 //docs = new BuildConfig()
-//docs.nodetype = "linux-noconda"
+//docs.nodetype = "python${matrix_python[0]}"
 //docs.name = "docs"
 //sdist.conda_packages = ['astropy',
 //                        'numpy']
