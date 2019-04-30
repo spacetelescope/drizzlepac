@@ -27,48 +27,53 @@ __version__ = 0.1
 __version_date__ = '19-Mar-2019'
 
 # ----------------------------------------------------------------------------------------------------------------------
-# set up instrument/detector-specific astrodrizzle params
-astrodrizzle_param_dict = {
+# set up instrument/detector-specific params
+param_dict = {
     "ACS HRC": {
-        "SCALE": 0.025,
-        "PIXFRAC": 1.0,
-        "KERNEL": "square",
-        "OUTNX": None,
-        "OUTNY": None,
-        "ROT": 0.0,
-        "BITS": 256},
+        "drizzlepac": {
+            "SCALE": 0.025,
+            "PIXFRAC": 1.0,
+            "KERNEL": "square",
+            "OUTNX": None,
+            "OUTNY": None,
+            "ROT": 0.0,
+            "BITS": 256}},
     "ACS SBC": {
-        "SCALE": 0.03,
-        "PIXFRAC": 1.0,
-        "KERNEL": "square",
-        "OUTNX": None,
-        "OUTNY": None,
-        "ROT": 0.0,
-        "BITS": 256},
+        "drizzlepac": {
+            "SCALE": 0.03,
+            "PIXFRAC": 1.0,
+            "KERNEL": "square",
+            "OUTNX": None,
+            "OUTNY": None,
+            "ROT": 0.0,
+            "BITS": 256}},
     "ACS WFC": {
-        "SCALE": 0.05,
-        "PIXFRAC": 1.0,
-        "KERNEL": "square",
-        "OUTNX": None,
-        "OUTNY": None,
-        "ROT": 0.0,
-        "BITS": 256},
+        "drizzlepac": {
+            "SCALE": 0.05,
+            "PIXFRAC": 1.0,
+            "KERNEL": "square",
+            "OUTNX": None,
+            "OUTNY": None,
+            "ROT": 0.0,
+            "BITS": 256}},
     "WFC3 IR": {
-        "SCALE": 0.09,
-        "PIXFRAC": 1.0,
-        "KERNEL": "square",
-        "OUTNX": None,
-        "OUTNY": None,
-        "ROT": 0.0,
-        "BITS": 768},
+        "drizzlepac": {
+            "SCALE": 0.09,
+            "PIXFRAC": 1.0,
+            "KERNEL": "square",
+            "OUTNX": None,
+            "OUTNY": None,
+            "ROT": 0.0,
+            "BITS": 768}},
     "WFC3 UVIS": {
-        "SCALE": 0.04,
-        "PIXFRAC": 1.0,
-        "KERNEL": "square",
-        "OUTNX": None,
-        "OUTNY": None,
-        "ROT": 0.0,
-        "BITS": 256}}
+        "drizzlepac": {
+            "SCALE": 0.04,
+            "PIXFRAC": 1.0,
+            "KERNEL": "square",
+            "OUTNX": None,
+            "OUTNY": None,
+            "ROT": 0.0,
+            "BITS": 256}}}
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -292,8 +297,6 @@ def perform_processing(input_filename, **kwargs):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-# ----------------------------------------------------------------------------------------------------------------------
-
 
 def rename_subproduct_files(obs_info_dict_item):
     """
@@ -502,9 +505,9 @@ def run_hla_processing(input_filename, result=None, debug=True):
         for obs_category in obs_info_dict.keys():
             if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
                 adriz_param_dict = {}
-                for inst_det in astrodrizzle_param_dict.keys():
+                for inst_det in param_dict.keys():
                         if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
-                            adriz_param_dict = astrodrizzle_param_dict[inst_det].copy()
+                            adriz_param_dict = param_dict[inst_det]['drizzlepac'].copy()
                             log.info("Using {} AstroDrizzle parameters for {}.".format(inst_det, obs_category))
                             break
                 # Turn on astrodrizzle step 7a: Custom WCS for final output
@@ -522,9 +525,9 @@ def run_hla_processing(input_filename, result=None, debug=True):
         for obs_category in obs_info_dict.keys():
             if obs_category.startswith("total detection product"):
                 adriz_param_dict = {}
-                for inst_det in astrodrizzle_param_dict.keys():
+                for inst_det in param_dict.keys():
                         if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
-                            adriz_param_dict = astrodrizzle_param_dict[inst_det].copy()
+                            adriz_param_dict = param_dict[inst_det]['drizzlepac'].copy()
                             log.info("Using {} AstroDrizzle parameters for {}.".format(inst_det, obs_category))
                             break
                 # Turn off all astrodrizzle steps EXCEPT steps 7 and 7a.
@@ -545,7 +548,8 @@ def run_hla_processing(input_filename, result=None, debug=True):
 
         # 9: Create source catalogs from newly defined products (HLA-204)
         log.info("9: (WIP) Create source catalog from newly defined product")
-        sourcelist_generation.create_sourcelists()
+
+        sourcelist_generation.create_sourcelists(obs_info_dict)
 
         # 10: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
         log.info("10: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of "
