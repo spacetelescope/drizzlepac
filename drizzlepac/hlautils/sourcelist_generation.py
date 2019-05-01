@@ -5,6 +5,10 @@
 """
 import pdb
 import sys
+import traceback
+
+import numpy
+from astropy.io import fits
 
 from stsci.tools import logutil
 
@@ -96,10 +100,24 @@ def create_daophot_like_sourcelists(obs_info_dict):
 
     log.info("DAOPHOT-LIKE SOURCELIST CREATION OCCURS HERE!")
 
-    for item in [foo for foo in obs_info_dict.keys() if foo.startswith('total detection product')]:
-        print(item)
+    for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if oid_key.startswith('total detection product')]:  # loop over total filtered products
+        # create list of total filter products associated with the current total drizzled product
+        totfiltprod_filename_list = []
+        for keyname in obs_info_dict[tdp_keyname]['associated filter products']:
+            totfiltprod_filename_list.append(obs_info_dict[keyname]['product filenames']['image'])
 
     # ### (1) ### Collect applicable parameters
+        inst_det = "{} {}".format(obs_info_dict[tdp_keyname]['info'].split()[-2],obs_info_dict[tdp_keyname]['info'].split()[-1])
+        fwhm = float(phot_param_dict[inst_det]["dao"]["TWEAK_FWHMPSF"])
+        thresh = float(phot_param_dict[inst_det]["dao"]["TWEAK_THRESHOLD"])
+        ap_diameter1 = float(phot_param_dict[inst_det]["dao"]["aperture_1"])
+        ap_diameter2 = float(phot_param_dict[inst_det]["dao"]["aperture_2"])
+        daofind_basic_param = [fwhm, thresh, ap_diameter1, ap_diameter2]
+
+        # ----------------------------------------
+        # Calculate mean readnoise value (float):
+        # ----------------------------------------
+        readnoise_dictionary_drzs = get_readnoise(totfiltprod_filename_list)
 
     # ### (2) ###  White-light source list
     # Create source lists (Returns: name of white-light source-list with path (string)):
@@ -132,3 +150,100 @@ def create_se_like_sourcelists(obs_info_dict):
     log.info("SOURCE EXTRACTOR-LIKE SOURCELIST CREATION OCCURS HERE!")
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+#~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-
+
+def extract_name(stringWpath):
+    """
+    This task will extract just the name of a specific filename that includes the path in the name: 'stringWpath'.
+
+    Tested.
+
+    :param stringWpath: filename with full path
+    :type stringWpath: string
+    :returns: naked filename stripped of its path
+    """
+    while "/" == stringWpath[-1]:
+        stringWpath = stringWpath[:-1]
+    stringname = stringWpath.split("/")[-1]
+
+    return stringname
+
+# ......................................................................................................................
+
+def get_readnoise(listofimages):
+    """
+    This task will grab the average readnoise for HST
+    data from the header.  This task is known to call the
+    correct header keys for ACS UVIS data as well as WFC3
+    UVIS and IR data, and WFPC2 data.
+
+    Tested.
+
+    :param listofimages: list of images that will be used to get readnoise values
+    :type listofimages: list
+    :returns: A dictionary of read noise values keyed by image name
+    """
+    dictionary_output = {}
+    for individual_image in listofimages:
+        try:
+            ref_readnoise = get_mean_readnoise(individual_image)
+        except:  # XXX what kind of exception here?
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+            log.info("ALERT: Readnoise could not be gathered from the header for image {}".format(extract_name(individual_image)))
+            ref_readnoise = 0.0
+        dictionary_output[individual_image] = ref_readnoise
+    return dictionary_output
+
+# ......................................................................................................................
+
+def get_mean_readnoise(image):
+    """
+    This subroutine computes mean readnoise values
+
+    :param image: image filename
+    :type image: string
+    :return: mean readnoise
+    """
+    imghdu = fits.open(image)
+    header = imghdu[0].header
+    filename = image.split('/')[-1]
+    if filename.startswith('hst_'):
+        inst = filename.split('_')[3]
+        detect = filename.split('_')[4]
+    else:
+        inst = header['instrume'].lower()
+        if inst != 'wfpc2': detect = header['DETECTOR']
+        if inst == 'wfpc2':
+            rn = header['ROOTNAME'].lower()
+            rn = rn.split("/")[-1].split("_")[0]
+            if rn[len(rn) - 1] != 'x': detect = 'wfpc2'
+            if rn[len(rn) - 1] == 'x': detect = 'pc'
+
+    if inst != 'wfpc2':
+        readnsea = header['READNSEA']
+        readnseb = header['READNSEB']
+        readnsec = header['READNSEC']
+        readnsed = header['READNSED']
+        readnoise = numpy.mean([readnsea, readnseb, readnsec, readnsed])
+    else:
+        gain_val = header['ATODGAIN']
+        # below values taken from WFPC2 instrument handbook, Table 4.2, Page 81
+        if gain_val == 15.0:
+            readnsea = 7.02  # PC1
+            readnseb = 7.84  # WF2
+            readnsec = 6.99  # WF3
+            readnsed = 8.32  # WF4
+        else:
+            # gain = 7 (default)
+            readnsea = 5.24  # PC1
+            readnseb = 5.51  # WF2
+            readnsec = 5.22  # WF3
+            readnsed = 5.19  # WF4
+        if detect == 'pc':
+            readnoise = readnsea
+        else:
+            readnoise = numpy.mean([readnsea, readnseb, readnsec, readnsed])
+    return (readnoise)
