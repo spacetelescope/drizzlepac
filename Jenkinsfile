@@ -5,11 +5,6 @@ withCredentials([string(
     credentialsId: 'drizzlepac-codecov',
     variable: 'codecov_token')]) {
 // Generate installation compatibility matrix
-/*
-matrix_python = ["3.6", "3.7"]
-matrix_astropy = [">=3.1.0"]
-matrix_numpy = ["<1.15", "<1.16"]
-*/
 matrix_python = ["3.6"]
 matrix_astropy = [">=3.1,<3.2"]
 matrix_numpy = [">=1.16,<1.17"]
@@ -54,16 +49,6 @@ sdist.name = "sdist"
 sdist.build_cmds = ["pip install numpy astropy",
                     "python setup.py sdist"]
 matrix += sdist
-
-
-//    "build_sphinx" with default python
-//docs = new BuildConfig()
-//docs.nodetype = "python${matrix_python[0]}"
-//docs.name = "docs"
-//sdist.conda_packages = ['astropy',
-//                        'numpy']
-//docs.build_cmds = ["python setup.py install build_sphinx"]
-//matrix += docs
 
 
 // Iterate over configurations that define the (distibuted) build matrix.
