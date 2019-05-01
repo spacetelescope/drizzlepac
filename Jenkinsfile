@@ -37,7 +37,8 @@ for (numpy_ver in matrix_numpy) {
                    'BUILD_MATRIX_ID=' + matrix_id,
                    'TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
     bc.build_cmds = ["pip install codecov pytest-cov numpy${numpy_ver} astropy${astropy_ver}",
-                     "pip install --upgrade -r requirements-dev.txt -e '.[test]'"]
+                     "pip install --upgrade -r requirements-dev.txt -e '.[test]'",
+                     "pip freeze"]
     bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata",
                     "codecov --token=${codecov_token}"]
     bc.test_configs = [data_config]
