@@ -19,45 +19,17 @@ bc.nodetype = 'linux'
 bc.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
 bc.name = '3.6'
 bc.conda_channels = ['http://ssb.stsci.edu/astroconda']
-bc.conda_packages = ['acstools',
-                     'astroquery',
-                     'numpy',
-                     'fitsblender',
-                     'graphviz',
-                     'nictools',
-                     'numpydoc',
-                     'photutils',
-                     'pyregion',
-                     'pysynphot',
-                     'pytest',
-                     'pytest-remotedata',
-                     'crds',
-                     'scipy',
-                     'spherical-geometry',
-                     'sphinx',
-                     'sphinx_rtd_theme',
-                     'stsci_rtd_theme',
-                     'stsci.image',
-                     'stsci.imagestats',
-                     'stsci.skypac',
-                     'stregion',
-                     'stsci.tools',
-                     'stwcs',
-                     'astropy',
-                     'stsci.stimage',
-                     'tweakwcs',
-		     'ci-watson',
-                     'setuptools',
-                     'pip',
-                     'python=3.6']
-bc.build_cmds = ["pip install --no-deps -r requirements-dev.txt -e ."]
-bc.test_cmds = ["pytest --basetemp=tests_output --junitxml results.xml --bigdata --remote-data=any"]
+bc.conda_packages = ['python=3.6']
+bc.build_cmds = ["pip install numpy astropy",
+		 "pip install --upgrade -e '.[test]'",
+                 "pip freeze"]
+bc.test_cmds = ["pytest --basetemp=tests_output --junitxml results.xml --bigdata"]
 bc.test_configs = [data_config]
 
 bc1 = utils.copy(bc)
 bc1.name = '3.6-dev'
 bc1.conda_channels = ['http://ssb.stsci.edu/conda-dev']
-bc1.build_cmds = ["pip install -r requirements-dev.txt --upgrade -e ."]
+bc1.build_cmds[1] = ["pip install -r requirements-dev.txt --upgrade -e '.[test]'"]
 
 // Iterate over configurations that define the (distributed) build matrix.
 // Spawn a host (or workdir) for each combination and run in parallel.
