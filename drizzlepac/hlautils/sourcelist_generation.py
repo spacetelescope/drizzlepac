@@ -119,6 +119,15 @@ def create_daophot_like_sourcelists(obs_info_dict):
         # ----------------------------------------
         readnoise_dictionary_drzs = get_readnoise(totfiltprod_filename_list)
 
+        # -----------------------------
+        # Get scale arcseconds / pixel
+        # -----------------------------
+        scale_dict_drzs = stwcs_get_scale(totfiltprod_filename_list)
+
+        for img in readnoise_dictionary_drzs.keys():
+            print(img,readnoise_dictionary_drzs[img],scale_dict_drzs[img])
+
+
     # ### (2) ###  White-light source list
     # Create source lists (Returns: name of white-light source-list with path (string)):
 
@@ -247,3 +256,33 @@ def get_mean_readnoise(image):
         else:
             readnoise = numpy.mean([readnsea, readnseb, readnsec, readnsed])
     return (readnoise)
+
+# ......................................................................................................................
+
+def stwcs_get_scale(listofimages):
+    """
+    This task will grab the arcsec/pixel scale for HST
+    data from the WCS information of the header.
+
+    Note: Assumes science image is extension: "[1]".
+
+    Tested.
+
+    :param listofimages: list of images that will be used to get scale values
+    :type listofimages: list
+    :returns: A dictionary of scale values keyed by image name
+    """
+    import stwcs
+    from stwcs import wcsutil
+    dictionary_output = {}
+    for individual_image in listofimages:
+        try:
+            wcs1 = stwcs.wcsutil.HSTWCS(individual_image + "[1]")
+            scale2return = wcs1.pscale
+        except:  # XXX what kind of exception here?
+            print
+            "ALERT: Pixel-scale could not be gathered from the header for image %s." % (extract_name(individual_image))
+            scale2return = False
+        dictionary_output[individual_image] = scale2return
+
+    return dictionary_output
