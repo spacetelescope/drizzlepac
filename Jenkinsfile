@@ -11,8 +11,8 @@ matrix_astropy = [">=3.1.0"]
 matrix_numpy = ["<1.15", "<1.16"]
 */
 matrix_python = ["3.6"]
-matrix_astropy = [">=3.1.0"]
-matrix_numpy = ["==1.16"]
+matrix_astropy = [">=3.1,<3.2"]
+matrix_numpy = [">=1.16,<1.17"]
 matrix = []
 
 // Configure artifactory ingest
@@ -26,8 +26,7 @@ for (python_ver in matrix_python) {
 for (astropy_ver in matrix_astropy) {
 for (numpy_ver in matrix_numpy) {
 
-    MATRIX_SUFFIX = "${matrix_id}_py${python_ver}_np${numpy_ver}_ap${astropy_ver}"
-                    .replaceAll("[<>=\\!\\.]", "")
+    MATRIX_SUFFIX = utils.convert_specifiers("${matrix_id}_py${python_ver}_np${numpy_ver}_ap${astropy_ver}")
     MATRIX_TITLE = "mtx-${MATRIX_SUFFIX}"
 
     bc = new BuildConfig()
@@ -36,7 +35,7 @@ for (numpy_ver in matrix_numpy) {
     bc.env_vars = ['BUILD_MATRIX_SUFFIX=' + MATRIX_SUFFIX,
                    'BUILD_MATRIX_ID=' + matrix_id,
                    'TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
-    bc.build_cmds = ["pip install codecov pytest-cov numpy${numpy_ver} astropy${astropy_ver}",
+    bc.build_cmds = ["pip install codecov pytest-cov 'numpy${numpy_ver}' 'astropy${astropy_ver}'",
                      "pip install --upgrade -r requirements-dev.txt -e '.[test]'",
                      "pip freeze"]
     bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata",
