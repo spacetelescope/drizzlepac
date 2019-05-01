@@ -8,6 +8,7 @@ import collections
 import datetime
 import os
 import pdb
+import pickle
 import sys
 import traceback
 
@@ -377,6 +378,11 @@ def restructure_obs_info_dict(obs_info_dict):
                     del single_exposure_dict[imgname]
             except:
                 continue
+    # 3: add field "associated 
+    for total_driz_product in [x for x in restructured_dict.keys() if x.startswith('total detection product')]:
+        restructured_dict[total_driz_product]['associated filter products'] = [y for y in restructured_dict.keys() if
+        restructured_dict[y]['info'].startswith(restructured_dict[total_driz_product]['info']) and not
+                                                                               y.startswith('total detection product')]
     return(restructured_dict)
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -543,8 +549,17 @@ def run_hla_processing(input_filename, result=None, debug=True):
 
         # 9: Create source catalogs from newly defined products (HLA-204)
         log.info("9: (WIP) Create source catalog from newly defined product")
+        pickle_filename = input_filename.replace(".out",".pickle")
+        if os.path.exists(pickle_filename):
+            os.remove(pickle_filename)
+        pickle_out = open(pickle_filename, "wb")
+        pickle.dump(obs_info_dict, pickle_out)
+        pickle_out.close()
+        print("Wrote obs_info_dict to pickle file {}".format(pickle_filename))
         if 'total detection product 00' in obs_info_dict.keys():
             sourcelist_generation.create_sourcelists(obs_info_dict)
+
+
         else:
             print("Sourcelist generation step skipped.")
 
