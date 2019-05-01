@@ -90,7 +90,7 @@ def compare_apriori(dataset):
 
     assert success
 
-
+    
 class TestAcsApriori(BaseACS):
     """ Tests which validate whether mosaics can be aligned to an astrometric standard,
         evaluate the quality of the fit, and generate a new WCS.
