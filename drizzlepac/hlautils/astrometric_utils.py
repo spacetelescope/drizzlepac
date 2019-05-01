@@ -425,11 +425,11 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
             # Detect sources in this specific segment
             seg_table = daofind(detection_img)
             # Pick out brightest source only
-            if src_table is None and len(seg_table) > 0:
+            if src_table is None and seg_table:
                 # Initialize final master source list catalog
                 src_table = Table(names=seg_table.colnames,
                                   dtype=[dt[1] for dt in seg_table.dtype.descr])
-            if len(seg_table) > 0:
+            if seg_table:
                 max_row = np.where(seg_table['peak'] == seg_table['peak'].max())[0][0]
                 # Add row for detected source to master catalog
                 # apply offset to slice to convert positions into full-frame coordinates
