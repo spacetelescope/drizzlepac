@@ -88,7 +88,7 @@ def create_daophot_like_sourcelists(obs_info_dict):
     Parameters
     ----------
     obs_info_dict : dictionary
-        Dictionary contianing all information about the images being processed
+        Dictionary containing all information about the images being processed
 
     Returns
     -------
@@ -123,7 +123,7 @@ def create_se_like_sourcelists(obs_info_dict):
     Parameters
     ----------
     obs_info_dict : dictionary
-        Dictionary contianing all information about the images being processed
+        Dictionary containing all information about the images being processed
 
     Returns
     -------
