@@ -10,10 +10,6 @@ jobs:
 
   strategy:
     matrix:
-      # spherical_geometry will not build on windows:py35
-      # py35 is mostly dead at this point anyway
-      #Python35:
-      #  python.version: '3.5'
       Python36:
         python.version: '3.6'
       Python37:
@@ -46,6 +42,10 @@ jobs:
     - script: |
         $(PIP_INSTALL) -r requirements-dev.txt -e .[test]
       displayName: build package
+
+    - script: |
+        python -m pip freeze
+      displayName: freeze output
 
     # TODO: Clean up doctest and enable --doctest-modules
     - script: |
