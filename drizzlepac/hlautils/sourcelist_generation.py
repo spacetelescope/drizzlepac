@@ -98,7 +98,7 @@ def create_sourcelists(obs_info_dict):
         create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det)
 
         # 2: Generate source extractor-like sourcelist(s)
-        create_se_like_sourcelists(obs_info_dict)
+        create_se_like_sourcelists()
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -165,13 +165,11 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_se_like_sourcelists(obs_info_dict):
+def create_se_like_sourcelists():
     """Make source extractor-like sourcelists
 
     Parameters
     ----------
-    obs_info_dict : dictionary
-        Dictionary containing all information about the images being processed
 
     Returns
     -------
