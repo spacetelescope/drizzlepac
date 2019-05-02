@@ -3,13 +3,13 @@
 """This script contains code to support creation of source extractor-like and daophot-like sourcelists.
 
 """
+import os
 import pdb
 import sys
 import traceback
 
-import numpy
 from astropy.io import fits
-
+import numpy
 from stsci.tools import logutil
 
 __taskname__ = 'sourcelist_generation'
@@ -74,25 +74,49 @@ def create_sourcelists(obs_info_dict):
     Returns
     -------
     """
+    print("----------------------------------------------------------------------------------------------------------------------")
+    os.system("clear")
+    for key1 in obs_info_dict.keys():
+        for key2 in obs_info_dict[key1].keys():
+            print(key1,key2,obs_info_dict[key1][key2])   # TODO: REMOVE THIS SECTION BEFORE ACTUAL USE
+        print()
+    print("----------------------------------------------------------------------------------------------------------------------")
     log.info("SOURCELIST CREATION OCCURS HERE!")
 
-    # 0: Generate daophot-like sourcelists
-    create_daophot_like_sourcelists(obs_info_dict)
+    for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
+                        oid_key.startswith('total detection product')]:  # loop over total filtered products
+        # 0: Map image filename to correspoinding catalog filename for total detection product and the associated filter products
+        totdet_product_cat_dict = {}
+        filter_product_cat_dict = {}
+        totdet_product_cat_dict[obs_info_dict[tdp_keyname]['product filenames']['image']] = obs_info_dict[tdp_keyname]['product filenames']['source catalog']
+        for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
+            filter_product_cat_dict[obs_info_dict[fp_keyname]['product filenames']['image']] = obs_info_dict[fp_keyname]['product filenames']['source catalog']
 
-    # 1: Generate source extractor-like sourcelists
-    create_se_like_sourcelists(obs_info_dict)
+        inst_det = "{} {}".format(obs_info_dict[tdp_keyname]['info'].split()[-2],
+                                  obs_info_dict[tdp_keyname]['info'].split()[-1])
+        # 1: Generate daophot-like sourcelist(s)
+        create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det)
+
+        # 2: Generate source extractor-like sourcelist(s)
+        create_se_like_sourcelists(obs_info_dict)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_daophot_like_sourcelists(obs_info_dict):
+def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det):
     """Make daophot-like sourcelists
 
     Parameters
     ----------
-    obs_info_dict : dictionary
-        Dictionary containing all information about the images being processed
+    totdet_product_cat_dict : dictionary
+        Dictionary mapping image filename to corresponding catalog filename for total detection product
+
+    filter_product_cat_dict : dictionary
+        Dictionary mapping image filename to corresponding catalog filename for total detection product
+
+    inst_det : string
+        Text string containing space-deliminated instrument name, detector name (upper case) (i.e. WFC3_UVIS)
 
     Returns
     -------
@@ -100,43 +124,40 @@ def create_daophot_like_sourcelists(obs_info_dict):
 
     log.info("DAOPHOT-LIKE SOURCELIST CREATION OCCURS HERE!")
 
-    for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if oid_key.startswith('total detection product')]:  # loop over total filtered products
-        # create list of total filter products associated with the current total drizzled product
-        totfiltprod_filename_list = []
-        for keyname in obs_info_dict[tdp_keyname]['associated filter products']:
-            totfiltprod_filename_list.append(obs_info_dict[keyname]['product filenames']['image'])
+    totfiltprod_filename_list = filter_product_cat_dict.keys()
 
-    # ### (1) ### Collect applicable parameters
-        inst_det = "{} {}".format(obs_info_dict[tdp_keyname]['info'].split()[-2],obs_info_dict[tdp_keyname]['info'].split()[-1])
-        fwhm = float(phot_param_dict[inst_det]["dao"]["TWEAK_FWHMPSF"])
-        thresh = float(phot_param_dict[inst_det]["dao"]["TWEAK_THRESHOLD"])
-        ap_diameter1 = float(phot_param_dict[inst_det]["dao"]["aperture_1"])
-        ap_diameter2 = float(phot_param_dict[inst_det]["dao"]["aperture_2"])
-        daofind_basic_param = [fwhm, thresh, ap_diameter1, ap_diameter2]
+    # ### (0) ### Collect applicable parameters
+    log.info("### (0) ### Collect applicable parameters")
 
-        # ----------------------------------------
-        # Calculate mean readnoise value (float):
-        # ----------------------------------------
-        readnoise_dictionary_drzs = get_readnoise(totfiltprod_filename_list)
+    fwhm = float(phot_param_dict[inst_det]["dao"]["TWEAK_FWHMPSF"])
+    thresh = float(phot_param_dict[inst_det]["dao"]["TWEAK_THRESHOLD"])
+    ap_diameter1 = float(phot_param_dict[inst_det]["dao"]["aperture_1"])
+    ap_diameter2 = float(phot_param_dict[inst_det]["dao"]["aperture_2"])
+    daofind_basic_param = [fwhm, thresh, ap_diameter1, ap_diameter2]
 
-        # -----------------------------
-        # Get scale arcseconds / pixel
-        # -----------------------------
-        scale_dict_drzs = stwcs_get_scale(totfiltprod_filename_list)
+    # ----------------------------------------
+    # Calculate mean readnoise value (float):
+    # ----------------------------------------
+    readnoise_dictionary_drzs = get_readnoise(totfiltprod_filename_list)
 
-        for img in readnoise_dictionary_drzs.keys():
-            print(img,readnoise_dictionary_drzs[img],scale_dict_drzs[img])
+    # -----------------------------
+    # Get scale arcseconds / pixel
+    # -----------------------------
+    scale_dict_drzs = stwcs_get_scale(totfiltprod_filename_list)
+
+    for img in readnoise_dictionary_drzs.keys():
+        print(img,readnoise_dictionary_drzs[img],scale_dict_drzs[img])
 
 
-    # ### (2) ###  White-light source list
+    # ### (1) ###  White-light source list
     # Create source lists (Returns: name of white-light source-list with path (string)):
 
-    # ### (3) ###  Extract sources that fall "close" to 'INDEF' regions.
+    # ### (2) ###  Extract sources that fall "close" to 'INDEF' regions.
     # Take out any sources from the white-light source list falling within 'remove_radius' of a flag.
 
-    # ### (4) ### Feed corrected whitelight source lists into daophot with science images
+    # ### (3) ### Feed corrected whitelight source lists into daophot with science images
 
-    # ### (5) ### Gather columns and put in nice format (dictated by: "column_keys_phot.cfg")
+    # ### (4) ### Gather columns and put in nice format (dictated by: "column_keys_phot.cfg")
     # This will convert columns from xy to ra and dec (controlled by: "column_keys_phot.cfg")
 
 
