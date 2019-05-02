@@ -77,7 +77,8 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
         Dictionary mapping image filename to corresponding catalog filename for total detection product
 
     inst_det : string
-        Text string containing space-deliminated instrument name, detector name (upper case) (i.e. WFC3_UVIS)
+        Space-separated text string containing instrument name, detector name (upper case) of the products being
+        processed.(i.e. WFC3_UVIS)
 
     Returns
     -------
@@ -331,44 +332,64 @@ def run_daofind(config_file, filelist=None, source_match=50000., verbose=True,
                 daofind_basic_param=None, readnoise_dictionary_drzs=None, scale_dict_drzs=None,
                 exp_dictionary_scis=None, working_dir=None, detector=None, sl_ext = 0,
                 sharphi=None, sharplo=None, edgemask=5):
-    """
-    Generates sourcelists using DAOfind.
+    """Generates sourcelists using DAOfind.
 
-    :param config_file:  name of the detector-specific configuration file to use.
-    :param filelist: Default value is 'None'.
-    :param source_match: Source matching list length threshold. Default value is '50000.'.
-    :param verbose: Print verbose output? Default value is 'True'.
-    :param sourcelist_create: Create DAOphot sourcelists? Default value is 'False'.
-    :param whitelightimage: Name of the multi-filter composite image produced by hla_reduction.py. Default value is 'None'.
-    :param whitelightrms: Name of the multi-filter composite RMS image produced by hla_reduction.py.Default value is 'None'.
-    :param daofind_basic_param: **UNUSED** List of values that will be used for daofind parameters 'fwhm', 'thresh', 'ap_diameter1', 'ap_diameter2'. Default value is 'None'.
-    :param readnoise_dictionary_drzs: Dictionary containing readnoise values keyed by filter-specific drizzled image filename. Default value is 'None'.
-    :param scale_dict_drzs: **UNUSED** Dictionary containing scale values keyed by filter-specific drizzled image filename. Default value is 'None'.
-    :param exp_dictionary_scis: Dictionary containing exposure time values keyed by filter-specific drizzled image filename. Default value is 'None'.
-    :param working_dir: Working directory. Default value is 'None'.
-    :param detector: **UNUSED** Detector name. Default value is 'None'.
-    :param sl_ext: FITS image extension to perform DAOfind on. Default value is '0'.
-    :param sharphi: Upper limit on SHARPNESS parameter. Default value is 'None'.
-    :param sharplo: Lower limit on SHARPNESS parameter. Default value is 'None'.
-    :param edgemask: Remove sources within edgemask pixels of image edge. Default value is '5.'.
-    :type config_file: string
-    :type filelist: list
-    :type source_match: float
-    :type verbose: Boolean
-    :type sourcelist_create: Boolean
-    :type whitelightimage: string
-    :type whitelightrms: string
-    :type daofind_basic_param: List
-    :type readnoise_dictionary_drzs: Dictionary
-    :type scale_dict_drzs: Dictionary
-    :type exp_dictionary_scis: Dictionary
-    :type working_dir: string
-    :type detector: string
-    :type sl_ext: integer
-    :type sharphi: float
-    :type sharplo: float
-    :type edgemask: integer
-    :returns: if *sourcelist_create* is True, the name of daofind output coordinate file. If False, a dictionary of coo filenames, keyed by image name.
+    Parameters
+    ----------
+    config_file : string
+        name of the detector-specific configuration file to use.
+
+    filelist : list
+        Default value is 'None'.
+
+    source_match : float
+        Source matching list length threshold. Default value is '50000.'.
+
+    verbose : Boolean
+        Print verbose output? Default value is 'True'.
+
+    sourcelist_create : Boolean
+        Create DAOphot sourcelists? Default value is 'False'.
+
+    whitelightimage : string
+        Name of the multi-filter composite image produced by hla_reduction.py. Default value is 'None'.
+
+    whitelightrms : string
+        Name of the multi-filter composite RMS image produced by hla_reduction.py.Default value is 'None'.
+
+    daofind_basic_param : List
+        **UNUSED** List of values that will be used for daofind parameters 'fwhm', 'thresh', 'ap_diameter1', 'ap_diameter2'. Default value is 'None'.
+
+    readnoise_dictionary_drzs : Dictionary
+        Dictionary containing readnoise values keyed by filter-specific drizzled image filename. Default value is 'None'.
+
+    scale_dict_drzs : Dictionary
+        **UNUSED** Dictionary containing scale values keyed by filter-specific drizzled image filename. Default value is 'None'.
+
+    exp_dictionary_scis : Dictionary
+        Dictionary containing exposure time values keyed by filter-specific drizzled image filename. Default value is 'None'.
+
+    working_dir : string
+        Working directory. Default value is 'None'.
+
+    detector : string
+        **UNUSED** Detector name. Default value is 'None'.
+
+    sl_ext : integer
+        FITS image extension to perform DAOfind on. Default value is '0'.
+
+    sharphi : float
+        Upper limit on SHARPNESS parameter. Default value is 'None'.
+
+    sharplo : float
+        Lower limit on SHARPNESS parameter. Default value is 'None'.
+
+    edgemask : integer
+        Remove sources within edgemask pixels of image edge. Default value is '5.'.
+
+    Returns
+    -------
+    if *sourcelist_create* is True, the name of daofind output coordinate file. If False, a dictionary of coo filenames, keyed by image name.
     """
 
 
