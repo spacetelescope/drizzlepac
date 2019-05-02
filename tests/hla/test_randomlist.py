@@ -1,236 +1,197 @@
-import sys
-import traceback
-import os
+""" This module is the high-level wrapper for running a test on a list of input
+    datasets in order to collect statistics on alignment of each dataset to an
+    astrometric catalog."""
 import datetime
-import pytest
+import os, shutil
 import numpy as np
-from astropy.table import Table, vstack
-from astropy.io import ascii
+from astropy.table import Table
+import pytest
 
-from .base_test import BaseHLATest
 from drizzlepac import alignimages
-import drizzlepac.hlautils.catalog_utils as catutils
+
+def pytest_generate_tests(metafunc):
+    """Get the command line option."""
+    start_row = metafunc.config.option.start_row
+    num_rows = metafunc.config.option.num_rows
+    master_list = metafunc.config.option.master_list
+
+    # Check to see if the specified file exists in the current working directory
+    if not os.path.exists(master_list):
+        # If not, copy the default file from the installation directory
+        # Find where this module has been installed.
+        install_dir = os.path.dirname(__file__)
+        default_file = os.path.join(install_dir, master_list)
+        if os.path.exists(default_file):
+            # Copy the file
+            shutil.copy2(default_file, os.getcwd())
+
+    # Read a randomized table
+    data_table = Table.read(master_list, format='ascii.csv')
+    data_list = get_dataset_list(data_table)
+
+    # Extract the subset rows
+    start_row = int(start_row)
+    end_row = start_row + int(num_rows)
+    print("\nTEST_RANDOM. Start row: {}   Number of rows to process: {}.".format(start_row, num_rows))
+    print("MASTER_TABLE: {}".format(master_list))
+    random_candidate_table = data_list[start_row:end_row]
+    print(random_candidate_table)
+    metafunc.parametrize('dataset', random_candidate_table)
+
 
 @pytest.mark.bigdata
-class TestAlignMosaic(BaseHLATest):
+@pytest.mark.slow
+@pytest.mark.unit
+def test_randomlist(tmpdir, dataset):
     """ Tests which validate whether mosaics can be aligned to an astrometric standard.
 
-        Characeteristics of these tests:
-          * A single astrometric catalog was obtained with both GAIA and non-GAIA
-            (PanSTARRS?) sources for the entire combined field-of-view using the GSSS
-            server.
-              * These tests assume combined input exposures for each test have enough
-                astrometric sources from the external catalog to perform a high quality
-                fit.
-          * This test only determines the fit between sources
-            extracted from the images by Tweakreg and the source positions included in
-            the astrometric catalog.
-          * The WCS information for the input exposures do not get updated in this test.
-          * No mosaic gets generated.
+        Characteristics of these tests:
+          * A reference WCS is generated based upon all the input images for
+            the field.
+          * A source astrometric catalog is created using the Photutils
+            package to detect explicitly sources in the images.
+          * An astrometric catalog is created to extract astrometric positions
+            for the found sources in the input images' field-of-view using
+            GAIADR2 (preferred) or GAIADR1.
+          * Cross matching/fitting is done between found sources and catalog
+            coordinates with the Tweakwcs package.
+          * The quality of the fit is evaluated against a minimum threshold and
+            potentially another fit algorithm is invoked or an alternative
+            catalog is used in an effort to obtain a better quality fit.
+          * If the option is set, the WCS information is updated for the
+            input exposures. The default is False.
+          * No mosaic is generated.
+          * An output table containing characterizations of the process and
+            associated fit is generated.
 
         Success Criteria:
-          * Success criteria hard-coded for this test represents 10mas RMS for the
-            WFC3 images based on the fit of source positions to the astrometric catalog
-            source positions.
-              * RMS values are extracted from optional shiftfile output from `tweakreg`
-              * Number of stars used for the fit and other information is not available
-                with the current version of `tweakreg`.
+          * Success criterion hard-coded for this test represents whether a
+            statistical sample (70%) of ACS and WFC3 datasets were able to be
+            aligned to within 10mas RMS.
+              * RMS values are extracted from the table output from `perform_align`
+              * This criterion will need to be determined by the user after the test has been
+                run based on how many datasets were run and skipped.
 
-        The environment variable needs to be set in the following manner:
-            export TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory/
-            OR
-            export TEST_BIGDATA=/Users/YourNameHere/TestDataDirectory/
+        The input master_list CSV file is
+        output from a database and lists associations and singletons for ACS
+        and WFC3 instruments randomly sorted.  The actual data files are
+        downloaded from MAST via astroquery.
 
-        For this test, the TEST_BIGDATA defines the root of the location  where the CSV 
-        file is stored.  The full path is TEST_BIGDATA/self.input_repo/self.tree/self.input_loc.
-        The CSV is output from a database and lists associations and singletons for ACS 
-        and WFC3 instruments randomly sorted.  The actual data files are downloaded from MAST
-        via astroquery.
-     
         This test file can be executed in the following manner:
-            $ pytest -s --bigdata test_randomlist.py >& test_random_output.txt &
+            $ pytest -n # -s --basetemp=/internal/hladata/yourUniqueDirectoryHere --bigdata --slow
+              --master_list ACSWFC3ListDefault50.csv --start_row 0 --num_rows 50 test_randomlist.py >&
+              test_random_output.txt &
             $ tail -f test_random_output.txt
+          * The `-n #` option can be used to run tests in parallel if `pytest-xdist` has
+            been installed where `#` is the number of cpus to use.
+          * Note: When running this test, the `--basetemp` directory should be set to a unique
+            existing directory to avoid deleting previous test output.
+          * The default master list exists in the tests/hla directory and contains 50 datasets.  The
+            full master list of thousands of datasets resides in Artifactory as ACSWFC3List.csv
+            (https://bytesalad.stsci.edu/artifactory/hst-hla-pipeline/dev/master_lists).
+
     """
+    print("TEST_RANDOM. Dataset: ", dataset)
+    output_name = dataset + '.ecsv'
 
-    @pytest.mark.xfail
-    @pytest.mark.slow
-    def test_align_randomFields(self):
-        """ Wrapper to set up the test for aligning a large number of randomly
-            selected fields (aka datasets) from a input ascii file (CSV).
+    current_dt = datetime.datetime.now()
+    print(str(current_dt))
 
-            The wrapper provides the parameter settings for the underlying test,
-            as well as implements the criterion for the overall success or failure
-            of the test.
-        """
+    subdir = ""
+    prevdir = os.getcwd()
 
-        inputListFile = 'ACSWFC3List.csv'
+    # create working directory specified for the test
+    if not tmpdir.ensure(subdir, dir=True):
+        curdir = tmpdir.mkdir(subdir).strpath
+    else:
+        curdir = tmpdir.join(subdir).strpath
+    os.chdir(curdir)
 
-        # Desired number of random entries for testing
-        inputNumEntries = 50
+    try:
 
-        # Seed for random number generator
-        inputSeedValue = 1
+        dataset_table = alignimages.perform_align([dataset], archive=False,
+                                                  clobber=True, debug=False,
+                                                  update_hdr_wcs=False,
+                                                  print_fit_parameters=True,
+                                                  print_git_info=False,
+                                                  output=False)
 
-        # Obtain the full path to the file containing the dataset field names
-        self.input_repo = 'hst-hla-pipeline'
-        self.tree = 'dev'
-        self.input_loc = 'master_lists'
-        input_file_path = self.get_data(inputListFile)
+        # Filtered datasets
+        if dataset_table['doProcess'].sum() == 0:
+            pytest.skip("TEST_RANDOM. Filtered Dataset: {}.".format(dataset))
+        # Datasets to process
+        elif dataset_table['doProcess'].sum() > 0:
+            # Determine images in dataset to be processed and the number of images
+            # This is in case an image was filtered out (e.g., expotime = 0)
+            index = np.where(dataset_table['doProcess'] == 1)[0]
+            fit_qual = dataset_table['fit_qual'][index[0]]
 
-        # Randomly select a subset of field names (each field represented by a row) from
-        # the master CSV file and return as an Astropy table
-        randomCandidateTable = catutils.randomSelectFromCSV(input_file_path[0],
-            inputNumEntries, inputSeedValue)
+            # Update the table with the dataset_key which is really just a counter
+            dataset_table['completed'][:] = True
+            dataset_table.write(output_name, format='ascii.ecsv')
 
-        # Invoke the methods which will handle acquiring/downloading the data from
-        # MAST and perform the alignment
-        percentSuccess = 0.0
-        try:
-            percentSuccess = self.align_randomFields (randomCandidateTable)
-        except Exception:
-            pass
+            if fit_qual > 4:
+                pytest.fail("TEST_RANDOM. Unsuccessful Dataset (fit_qual = 5): {}.".format(dataset))
+            else:
+                assert 0 < fit_qual <= 4
 
-        assert(percentSuccess >= 0.70)
+    # Catch anything that happens as this dataset will be considered a failure, but
+    # the processing of datasets should continue.  This is meant to catch
+    # unexpected errors and generate sufficient output exception
+    # information so algorithmic problems can be addressed.
+    except Exception as except_details:
+        print(except_details)
+        pytest.fail("TEST_RANDOM. Exception Dataset: {}\n", dataset)
 
-    def align_randomFields(self, randomTable):
-        """ Process randomly selected fields (aka datasets) stored in an Astropy table.
-
-            Each field is used as input to determine if it can be aligned to an
-            astrometric standard.  The success or fail status for each test is retained
-            as the overall success or fail statistic is the necessary output from
-            this test.
-        """
-
-        numSuccess = 0
-        numUnsuccessful = 0
-        numException = 0
-        numProcessedDatasets = 0
-
-        # Read the table and extract a list of each dataset name in IPPSSOOT format
-        # which is either an association ID or an individual filename
-        dataset_list = get_dataset_list(randomTable)
-
-        numProcessedDatasets = len(dataset_list)
-        numStartTests  = numProcessedDatasets
-
-        # Process the dataset names in the list
-        #
-        # If the dataset name represents an association ID, the multiplicity
-        # of images within the association need to be processed.  Otherwise,
-        # the dataset is a single image.
-        #
-        # If the "alignment" of a field/dataset fails for any reason, trap
-        # the exception and keep going.
-        allDatasetTable = Table()
-        datasetKey = -1
-        print("TEST_RANDOM. Dataset List: ", dataset_list)
-        for dataset in dataset_list:
-            datasetKey += 1
-            outputName = dataset + '.ecsv'
-
-            print("TEST_RANDOM. Dataset: ", dataset)
-            currentDT = datetime.datetime.now()
-            print(str(currentDT))
-            
-            try:
-                
-                datasetTable = alignimages.perform_align([dataset],archive=False,clobber=True,debug=False,
-                    update_hdr_wcs=False,print_fit_parameters=True,print_git_info=False,output=False)
-
-                # Filtered datasets
-                if datasetTable['doProcess'].sum() == 0:
-                    print("TEST_RANDOM. Filtered Dataset: ", dataset, "\n")
-                    numProcessedDatasets -= 1;
-                # Datasets to process
-                elif datasetTable['doProcess'].sum() > 0:
-                    # Determine images in dataset to be processed and the number of images
-                    # This is in case an image was filtered out (e.g., expotime = 0)
-                    index = np.where(datasetTable['doProcess']==1)[0]
-                    sumOfStatus = datasetTable['status'][index].sum()
-
-                    # Update the table with the datasetKey which is really just a counter
-                    datasetTable['datasetKey'][:] = datasetKey
-                    datasetTable['completed'][:] = True
-                    datasetTable.write(outputName, format='ascii.ecsv')
-                    #datasetTable.pprint(max_width=-1)
-   
-                    # Successful datasets
-                    if (sumOfStatus == 0):
-                        print("TEST_RANDOM. Successful Dataset: ", dataset, "\n")
-                        numSuccess += 1
-                    # Unsuccessful datasets
-                    else:
-                        print("TEST_RANDOM. Unsuccessful Dataset: ", dataset, "\n")
-                        numUnsuccessful += 1
-
-                # Append the latest dataset table to the summary table 
-                allDatasetTable = vstack([allDatasetTable, datasetTable])
-
-            # Catch anything that happens as this dataset will be considered a failure, but
-            # the processing of datasets should continue.  Generate sufficient output exception
-            # information so problems can be addressed.
-            except Exception:
-           
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-                print("TEST_RANDOM. Exception Dataset: ", dataset, "\n")
-                numException += 1
-                continue
-
+    finally:
         # Perform some clean up
-        if os.path.isfile('ref_cat.ecsv'): 
+        if os.path.isfile('ref_cat.ecsv'):
             os.remove('ref_cat.ecsv')
-        if os.path.isfile('refcatalog.cat'):  
+        if os.path.isfile('refcatalog.cat'):
             os.remove('refcatalog.cat')
         for filename in os.listdir():
             if filename.endswith('flt.fits') or filename.endswith('flc.fits'):
-                os.unlink(filename)
+                os.remove(filename)
 
-        # Write out the table
-        allDatasetTable.write('resultsBigTest.ecsv', format='ascii.ecsv')
+    # Return to original directory
+    os.chdir(prevdir)
 
-        # Determine the percent success over all datasets processed
-        percentSuccess = numSuccess/numProcessedDatasets
-        print('TEST_RANDOM. Number of tests started: ', numStartTests)
-        print('TEST_RANDOM. Number of tests (excluding filtered): ', numProcessedDatasets)
-        print('TEST_RANDOM. Number of successful tests: ', numSuccess)
-        print('TEST_RANDOM. Number of unsuccessful tests: ', numUnsuccessful)
-        print('TEST_RANDOM. Number of exception tests: ', numException)
-        print('TEST_RANDOM. Percentage success/numberOfTests: ', numSuccess/numProcessedDatasets*100.0)
- 
-        return percentSuccess
 
-def get_dataset_list(tableName):
+def get_dataset_list(table_name):
     """ Standalone function to read the Astropy table and get the dataset names
 
     Parameters
     ==========
-    tableName : str
+    table_name : str
         Filename of the input master CSV file containing individual
         images or association names, as well as observational
         information regarding the images
 
     Returns
     =======
-    datasetNames: list
+    dataset_names: list
         List of individual image or association base (IPPSSOOT) names
     """
 
-    #dataFromTable = Table.read(filename, format='ascii')
-    datasetIDs = tableName['observationID']
-    asnIDs     = tableName['asnID']
-
-    datasetNames = []
+    dataset_names = []
 
     # Determine if the data is part of an association or is an individual image
-    for imgid,asnid in zip(datasetIDs,asnIDs):
+    for imgid, asnid in zip(table_name['observationID'], table_name['asnID']):
+
+        # Protect against incomplete lines, missing asnID values, ...
+        # Happens when lines like "(236319 rows affected)" are included
+        if isinstance(asnid, np.ma.core.MaskedConstant):
+            continue
 
         # If the asnID is the string NONE, this is an individual image,
         # and it is necessary to get the individual image dataset name.
         # Otherwise, this is an association dataset, so just add the asnID.
-        if (asnid.upper() == "NONE"):
-            datasetNames.append(imgid)
+        if asnid.upper() == "NONE":
+            dataset_names.append(imgid)
         else:
-            datasetNames.append(asnid)
+            dataset_names.append(asnid)
 
-    return datasetNames
+    # Turn into a set to remove duplicate ASNID entries, only want 1 per ASN
+    dataset = set()
+    # Return results as a list of unique dataset names while retaining the original order
+    return [x for x in dataset_names if x not in dataset and not dataset.add(x)]

@@ -10,6 +10,7 @@ from drizzlepac.hlautils import testutils
 
 from ..resources import BaseACS, BaseWFC3
 
+
 def compare_apriori(dataset):
     """This test will perform fits between ALL a priori solutions and GAIA.
 
@@ -89,7 +90,7 @@ def compare_apriori(dataset):
 
     assert success
 
-@pytest.mark.skip(reason="either non-working test or pipeline code")
+    
 class TestAcsApriori(BaseACS):
     """ Tests which validate whether mosaics can be aligned to an astrometric standard,
         evaluate the quality of the fit, and generate a new WCS.
@@ -106,7 +107,7 @@ class TestAcsApriori(BaseACS):
     def test_apriori(self, dataset):
         compare_apriori(dataset)
 
-@pytest.mark.skip(reason="either non-working test or pipeline code")
+
 class TestWFC3Apriori(BaseWFC3):
     """ Tests which validate whether mosaics can be aligned to an astrometric
         standard, evaluate the quality of the fit, and generate a new WCS.

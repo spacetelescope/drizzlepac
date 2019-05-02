@@ -82,7 +82,7 @@ setup(
         'fitsblender',
         'nictools',
         'nose',
-        'numpy',
+        'numpy>=1.16',
         'scipy',
         'matplotlib',
         'acstools',
@@ -93,7 +93,7 @@ setup(
         'stsci.skypac',
         'stsci.stimage',
         'stwcs',
-        'tweakwcs>=0.4.0',
+        'tweakwcs>=0.5.0',
         'stregion',
         'requests',
         # HLA-pipeline specific:

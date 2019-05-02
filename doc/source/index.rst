@@ -117,12 +117,19 @@ The task 'runastrodriz' can be used to reproduce the same Drizzle processing tha
 
    Running Astrodriz <runastrodriz.rst>
 
-Enhanced Pipeline Products API
-------------------------------
-.. toctree::
-   :maxdepth: 2
 
-   hla
+Astrometry and Enhanced Pipeline Products
+------------------------------------------
+The `drizzlepac` package can be used for many purposes, all related to aligning and combining images to create products which can provide the deepest available views of the data.  Combining the data with `drizzlepac` relies on the WCS solution specified in the input image headers.  These WCS solutions are expected to align the images to each other (relative astrometry) as well as align the image to the correct position on the sky (absolute astrometry).  The telemetry from HST allows the relative astrometry to be known extremely accurately (sub-milli-arcsecond level) when all images use the same guide stars and when the images were taken in the same visit.  However, data taken at different times using different guide stars have historically had errors in the alignment with a sigma of 1 arc-second (or more).  As a result, corrections to the alignment need to be made in order to successfully combine the images.
+
+The code being used in the automated HST calibration pipeline to generate the products served by the HST Archive through the MAST Portal relies on multiple methods to do the best job possible in aligning and combining data regardless of whether they came from the same visit (or instrument) or not.
+
+.. toctree::
+  :maxdepth: 2
+
+  Astrometry and Headerlets <astrometry.rst>
+  astrometry_api.rst
+
 
 Indices and tables
 ==================
@@ -130,6 +137,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-
-
