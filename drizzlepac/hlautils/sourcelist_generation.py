@@ -61,45 +61,6 @@ phot_param_dict = {
             "aperture_1": 0.05,
             "aperture_2": 0.15,
             "bthresh": 5.0}}}
-# ----------------------------------------------------------------------------------------------------------------------
-
-def create_sourcelists(obs_info_dict):
-    """Make sourcelists
-
-    Parameters
-    ----------
-    obs_info_dict : dictionary
-        Dictionary containing all information about the images being processed
-
-    Returns
-    -------
-    """
-    print("----------------------------------------------------------------------------------------------------------------------")
-    os.system("clear")
-    for key1 in obs_info_dict.keys():
-        for key2 in obs_info_dict[key1].keys():
-            print(key1,key2,obs_info_dict[key1][key2])   # TODO: REMOVE THIS SECTION BEFORE ACTUAL USE
-        print()
-    print("----------------------------------------------------------------------------------------------------------------------")
-    log.info("SOURCELIST CREATION OCCURS HERE!")
-
-    for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
-                        oid_key.startswith('total detection product')]:  # loop over total filtered products
-        # 0: Map image filename to correspoinding catalog filename for total detection product and the associated filter products
-        totdet_product_cat_dict = {}
-        filter_product_cat_dict = {}
-        totdet_product_cat_dict[obs_info_dict[tdp_keyname]['product filenames']['image']] = obs_info_dict[tdp_keyname]['product filenames']['source catalog']
-        for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
-            filter_product_cat_dict[obs_info_dict[fp_keyname]['product filenames']['image']] = obs_info_dict[fp_keyname]['product filenames']['source catalog']
-
-        inst_det = "{} {}".format(obs_info_dict[tdp_keyname]['info'].split()[-2],
-                                  obs_info_dict[tdp_keyname]['info'].split()[-1])
-        # 1: Generate daophot-like sourcelist(s)
-        create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det)
-
-        # 2: Generate source extractor-like sourcelist(s)
-        create_se_like_sourcelists()
-
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -161,7 +122,6 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
     # This will convert columns from xy to ra and dec (controlled by: "column_keys_phot.cfg")
 
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -177,10 +137,50 @@ def create_se_like_sourcelists():
 
     log.info("SOURCE EXTRACTOR-LIKE SOURCELIST CREATION OCCURS HERE!")
 
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-#~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-=~-
+def create_sourcelists(obs_info_dict):
+    """Make sourcelists
+
+    Parameters
+    ----------
+    obs_info_dict : dictionary
+        Dictionary containing all information about the images being processed
+
+    Returns
+    -------
+    """
+    print("----------------------------------------------------------------------------------------------------------------------")
+    os.system("clear")
+    for key1 in obs_info_dict.keys():
+        for key2 in obs_info_dict[key1].keys():
+            print(key1,key2,obs_info_dict[key1][key2])   # TODO: REMOVE THIS SECTION BEFORE ACTUAL USE
+        print()
+    print("----------------------------------------------------------------------------------------------------------------------")
+    log.info("SOURCELIST CREATION OCCURS HERE!")
+
+    for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
+                        oid_key.startswith('total detection product')]:  # loop over total filtered products
+        # 0: Map image filename to correspoinding catalog filename for total detection product and the associated filter products
+        totdet_product_cat_dict = {}
+        filter_product_cat_dict = {}
+        totdet_product_cat_dict[obs_info_dict[tdp_keyname]['product filenames']['image']] = obs_info_dict[tdp_keyname]['product filenames']['source catalog']
+        for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
+            filter_product_cat_dict[obs_info_dict[fp_keyname]['product filenames']['image']] = obs_info_dict[fp_keyname]['product filenames']['source catalog']
+
+        inst_det = "{} {}".format(obs_info_dict[tdp_keyname]['info'].split()[-2],
+                                  obs_info_dict[tdp_keyname]['info'].split()[-1])
+        # 1: Generate daophot-like sourcelist(s)
+        create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det)
+
+        # 2: Generate source extractor-like sourcelist(s)
+        create_se_like_sourcelists()
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
 
 def extract_name(stringWpath):
     """
@@ -198,7 +198,9 @@ def extract_name(stringWpath):
 
     return stringname
 
-# ......................................................................................................................
+
+# ----------------------------------------------------------------------------------------------------------------------
+
 
 def get_readnoise(listofimages):
     """
@@ -225,7 +227,9 @@ def get_readnoise(listofimages):
         dictionary_output[individual_image] = ref_readnoise
     return dictionary_output
 
-# ......................................................................................................................
+
+# ----------------------------------------------------------------------------------------------------------------------
+
 
 def get_mean_readnoise(image):
     """
@@ -276,7 +280,9 @@ def get_mean_readnoise(image):
             readnoise = numpy.mean([readnsea, readnseb, readnsec, readnsed])
     return (readnoise)
 
-# ......................................................................................................................
+
+# ----------------------------------------------------------------------------------------------------------------------
+
 
 def stwcs_get_scale(listofimages):
     """
