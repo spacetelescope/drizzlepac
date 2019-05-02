@@ -358,16 +358,20 @@ def run_daofind(config_file, filelist=None, source_match=50000., verbose=True,
         Name of the multi-filter composite RMS image produced by hla_reduction.py.Default value is 'None'.
 
     daofind_basic_param : List
-        **UNUSED** List of values that will be used for daofind parameters 'fwhm', 'thresh', 'ap_diameter1', 'ap_diameter2'. Default value is 'None'.
+        **UNUSED** List of values that will be used for daofind parameters 'fwhm', 'thresh', 'ap_diameter1',
+        'ap_diameter2'. Default value is 'None'.
 
     readnoise_dictionary_drzs : Dictionary
-        Dictionary containing readnoise values keyed by filter-specific drizzled image filename. Default value is 'None'.
+        Dictionary containing readnoise values keyed by filter-specific drizzled image filename. Default value is
+        'None'.
 
     scale_dict_drzs : Dictionary
-        **UNUSED** Dictionary containing scale values keyed by filter-specific drizzled image filename. Default value is 'None'.
+        **UNUSED** Dictionary containing scale values keyed by filter-specific drizzled image filename. Default value
+        is 'None'.
 
     exp_dictionary_scis : Dictionary
-        Dictionary containing exposure time values keyed by filter-specific drizzled image filename. Default value is 'None'.
+        Dictionary containing exposure time values keyed by filter-specific drizzled image filename. Default value is '
+        None'.
 
     working_dir : string
         Working directory. Default value is 'None'.
@@ -389,7 +393,8 @@ def run_daofind(config_file, filelist=None, source_match=50000., verbose=True,
 
     Returns
     -------
-    if *sourcelist_create* is True, the name of daofind output coordinate file. If False, a dictionary of coo filenames, keyed by image name.
+        if *sourcelist_create* is True, the name of daofind output coordinate file. If False, a dictionary of coo
+    filenames, keyed by image name.
     """
 
 
