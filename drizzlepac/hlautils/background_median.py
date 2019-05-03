@@ -100,18 +100,36 @@ def aperture_stats_tbl(data, apertures, method='exact', sigma_clip=True):
     return stats_tbl
 
 def calc_aperture_mmm(data, mask, sigma_clip):
-    """
-      Helper function to actually calculate the stats for pixels
-        falling within some Photutils aperture mask on some array
-        of data.
+    """Helper function to actually calculate the stats for pixels falling within some Photutils aperture mask on some
+    array of data.
 
-    :param data: The data for the image to be measured.
-    :param mask: mask that will be used to identify our desired pixels
-    :param sigma_clip: Flag to activate sigma clipping of background pixels
-    :type data: array
-    :type mask: array
-    :type sigma_clip: Boolean
-    :return: Values for mean, median, mode, std, actual_area
+    Parameters
+    ----------
+    data : array
+        The data for the image to be measured.
+
+    mask : array
+        mask that will be used to identify our desired pixels
+
+    sigma_clip: Boolean
+        Flag to activate sigma clipping of background pixels
+
+    Returns
+    -------
+    mean : flaot
+        Mean pixel value
+
+    median : float
+        Median pixel value
+
+    mode : float
+        mode pixel value
+
+    std : float
+        Standard deviation of pixel values
+
+    actual_area : float
+        Calculated enclosed area
     """
     cutout = mask.cutout(data, fill_value=np.nan)
     if cutout is None:
