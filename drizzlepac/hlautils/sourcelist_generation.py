@@ -200,9 +200,13 @@ def extract_name(stringWpath):
 
     Tested.
 
-    :param stringWpath: filename with full path
-    :type stringWpath: string
-    :returns: naked filename stripped of its path
+    stringWpath : string
+        filename with full path
+
+    Returns
+    -------
+    stringname : string
+        naked filename stripped of its path
     """
     while "/" == stringWpath[-1]:
         stringWpath = stringWpath[:-1]
