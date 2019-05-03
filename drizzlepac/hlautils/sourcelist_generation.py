@@ -101,13 +101,12 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
     log.info('### (2) ###  Use daostarfinder to create a sourcelist from the total detection image {}'
              .format(tdp_imagename))
     daofind_white_sources = run_daofind(param_dict,
-                                        whitelightimage = whitelightimage_string,
+                                        whitelightimage = tdp_imagename,
                                         whitelightrms = whitelightrms_string,
                                         readnoise_dictionary_drzs = readnoise_dictionary_drzs,
                                         scale_dict_drzs = scale_dict_drzs,
                                         exp_dictionary_scis = exp_dictionary_scis,
-                                        working_dir = working_hla_red,
-                                        detector = detector)
+                                        working_dir = os.getcwd())
     # ### (3) ###  Extract sources that fall "close" to 'INDEF' regions.
     # Take out any sources from the white-light source list falling within 'remove_radius' of a flag.
 
@@ -330,7 +329,7 @@ def stwcs_get_scale(listofimages):
 
 def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whitelightimage=None, whitelightrms=None,
                 readnoise_dictionary_drzs=None, scale_dict_drzs=None,exp_dictionary_scis=None, working_dir=None,
-                detector=None, sl_ext = 0,sharphi=None, sharplo=None,edgemask=5):
+                sl_ext = 0,sharphi=None, sharplo=None,edgemask=5):
     """Generates sourcelists using DAOfind.
 
     Parameters
@@ -367,9 +366,6 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whi
 
     working_dir : string
         Working directory. Default value is 'None'.
-
-    detector : string
-        **UNUSED** Detector name. Default value is 'None'.
 
     sl_ext : integer
         FITS image extension to perform DAOfind on. Default value is '0'.
