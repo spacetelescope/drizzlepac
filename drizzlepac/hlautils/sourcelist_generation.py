@@ -268,16 +268,18 @@ def get_mean_readnoise(image):
 
 def get_readnoise(listofimages):
     """
-    This task will grab the average readnoise for HST
-    data from the header.  This task is known to call the
-    correct header keys for ACS UVIS data as well as WFC3
-    UVIS and IR data, and WFPC2 data.
+    This task will grab the average readnoise for HST data from the header.  This task is known to call the correct
+    header keys for ACS UVIS data as well as WFC3 UVIS and IR data, and WFPC2 data.
 
     Tested.
 
-    :param listofimages: list of images that will be used to get readnoise values
-    :type listofimages: list
-    :returns: A dictionary of read noise values keyed by image name
+    listofimages : list
+        list of images that will be used to get readnoise values
+
+    Returns
+    -------
+    dictionary_output : dictionary
+        A dictionary of readnoise values keyed by image name
     """
     dictionary_output = {}
     for individual_image in listofimages:
