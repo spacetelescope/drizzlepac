@@ -236,6 +236,69 @@ def extract_name(stringWpath):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def filter_daolist(infile, outfile, mask_image, edgemask=0):
+    """Read DAOfind source list and filter out images beyond edge of mask. Returns new count of sources in file
+
+    Parameters
+    ----------
+    infile : string
+        Name of .coo input file to read
+
+    outfile : string
+        Name of .coo filtered output file to write (may be same as infile to replace infile)
+
+    mask_image : numpy.ndarray
+        boolean image with true values in pixels to reject
+
+    edgemask : int
+        expand masked region by edgemask pixels
+
+    Returns
+    -------
+    count : int
+        Updated count of the number of sources in file
+    """
+
+    ny, nx = mask_image.shape
+    if edgemask:
+        # use binary dilation to expand mask
+        ky, kx = numpy.ogrid[-edgemask:edgemask + 1, -edgemask:edgemask + 1]
+        kernel = kx * kx + ky * ky <= edgemask * edgemask
+        mask_image = scipy.ndimage.morphology.binary_dilation(mask_image, structure=kernel)
+
+    src_infile = open(infile, 'r')
+    src_lines = src_infile.readlines()
+    src_infile.close()
+
+    if outfile == infile:
+        mod_outfile = infile + ".mod"
+    else:
+        mod_outfile = outfile
+    src_outfile = open(mod_outfile, 'w')
+
+    count = 0
+    for i, src_line in enumerate(src_lines):
+        if src_line.startswith('#'):
+            src_outfile.write(src_line)
+        else:
+            src_line_split = src_line.strip().split()
+            if len(src_line_split) > 3:
+                mag_value = src_line_split[2]
+                if mag_value != "INDEF":
+                    x_cen = int(float(src_line_split[0])) - 1
+                    y_cen = int(float(src_line_split[1])) - 1
+                    if x_cen >= 0 and x_cen < nx and y_cen >= 0 and y_cen < ny and not mask_image[y_cen, x_cen]:
+                        src_outfile.write(src_line)
+                        count += 1
+    src_outfile.close()
+    if outfile != mod_outfile:
+        os.rename(mod_outfile, outfile)
+    return count
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def get_mean_readnoise(image):
     """This subroutine computes mean readnoise values
 
