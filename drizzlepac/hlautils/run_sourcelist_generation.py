@@ -11,7 +11,7 @@ import sys
 import sourcelist_generation
 
 pickle_in = open(sys.argv[1], "rb")
-obs_info_dict = pickle.load(pickle_in)
+[obs_info_dict,param_dict] = pickle.load(pickle_in)
 pickle_in.close()
 
-sourcelist_generation.create_sourcelists(obs_info_dict)
+sourcelist_generation.create_sourcelists(obs_info_dict,param_dict)

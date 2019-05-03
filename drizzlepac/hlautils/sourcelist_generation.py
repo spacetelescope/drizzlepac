@@ -338,13 +338,13 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whi
     param_dict : dictionary
         dictionary of drizzle, source finding and photometric parameters
 
-    filelist : list
+    X filelist : list
         Default value is 'None'.
 
-    source_match : float
+    X source_match : float
         Source matching list length threshold. Default value is '50000.'.
 
-    verbose : Boolean
+    X verbose : Boolean
         Print verbose output? Default value is 'True'.
 
     whitelightimage : string
@@ -357,7 +357,7 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whi
         Dictionary containing readnoise values keyed by filter-specific drizzled image filename. Default value is
         'None'.
 
-    scale_dict_drzs : Dictionary
+    X scale_dict_drzs : Dictionary
         **UNUSED** Dictionary containing scale values keyed by filter-specific drizzled image filename. Default value
         is 'None'.
 

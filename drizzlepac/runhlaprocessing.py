@@ -595,7 +595,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
         if os.path.exists(pickle_filename):
             os.remove(pickle_filename)
         pickle_out = open(pickle_filename, "wb")
-        pickle.dump(obs_info_dict, pickle_out)
+        pickle.dump([obs_info_dict,param_dict], pickle_out)
         pickle_out.close()
         print("Wrote obs_info_dict to pickle file {}".format(pickle_filename))
         if 'total detection product 00' in obs_info_dict.keys():
