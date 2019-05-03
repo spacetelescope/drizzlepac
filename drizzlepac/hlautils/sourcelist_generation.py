@@ -9,7 +9,9 @@ import sys
 import traceback
 
 from astropy.io import fits
+from astropy.stats import sigma_clipped_stats
 import numpy
+from photutils import detection, findstars
 from stsci.tools import logutil
 
 __taskname__ = 'sourcelist_generation'
@@ -334,15 +336,24 @@ def run_DAOStarFinder(imgName,outFilename,daoParams,debug=False):
         * G-Round
         * Source ID number
 
+    Parameters
+    ----------
+    imgName : string
+        Input image name and (optionally) the extension  in square brackets. Can be in the form
+        [<EXT_NAME>,<GROUP_NUM>] or simply [<EXT_NUM>].
 
-    :param imgName: Input image name and (optionally) the extension  in square brackets. Can be in the form [<EXT_NAME>,<GROUP_NUM>] or simply [<EXT_NUM>].
-    :param outFilename: name of the file that information on the detected sources will be written to.
-    :param daoParams: dictionary of floating point values passed to DAOStarFinder. Values are as follows:
+    outFilename : string
+        name of the file that information on the detected sources will be written to.
+
+    daoParams : dictionary
+        dictionary of floating point values passed to DAOStarFinder. Values are as follows:
 
         * fwhm: The full-width at half-maximum of the point spread function in scale units. Default value = 2.5
-        * scale: Image scale in units per pixel. Used to convert *in_fwhm* value from arcseconds to pixels. Default value = 1.0
+        * scale: Image scale in units per pixel. Used to convert *in_fwhm* value from arcseconds to pixels.
+        Default value = 1.0
         * threshold: Threshold in sigma for feature detection. Default value = 4.0
-        * sigma: Standard deviation of background in counts. Used to convert *in_threshold* to counts. Default value = 0.0
+        * sigma: Standard deviation of background in counts. Used to convert *in_threshold* to counts.
+        Default value = 0.0
         * ratio: Ratio of minor to major axis of Gaussian kernel. Default value = 1.0
         * theta: Position angle of major axis of Gaussian kernel. Default value = 0.0
         * sharplo: Minimum bound on sharpness for feature detection. Default value = 0.0
@@ -350,17 +361,14 @@ def run_DAOStarFinder(imgName,outFilename,daoParams,debug=False):
         * roundlo: Minimum bound on roundness for feature detection. Default value = -1.0
         * roundhi: Minimum bound on roundness for feature detection. Default value = 1.0
 
-    :param debug: write out 'xcentroid' and 'ycentroid' values to separate file for troubleshooting purposes (True/False)? Default value is 'False'.
-    :type imgName: string
-    :type outFilename: string
-    :type daoParams: dictionary of floats
-    :type debug: Boolean
-    :return: nothing.
-    """
-    from astropy.io import fits
-    from astropy.stats import sigma_clipped_stats
-    from photutils import detection, findstars
+    debug : Boolean
+        write out 'xcentroid' and 'ycentroid' values to separate file for troubleshooting purposes (True/False)?
+        Default value is 'False'.
 
+    Returns
+    -------
+    Nothing.
+    """
     if imgName.endswith("]"):
         parse_imgname=imgName.split("fits[")
         imgName=parse_imgname[0]+"fits"
