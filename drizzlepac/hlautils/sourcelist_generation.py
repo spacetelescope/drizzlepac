@@ -382,7 +382,7 @@ def run_DAOStarFinder(imgName,outFilename,daoParams,debug=False):
 
     if os.path.exists(outFilename):
         cmd="rm -f "+outFilename
-        print cmd
+        log.info(cmd)
         os.system(cmd)
     fout = open(outFilename, 'w')
     fout.write("#N XCENTER   YCENTER   MAG      SHARPNESS   SROUND      GROUND      ID         \ \n")
@@ -392,19 +392,19 @@ def run_DAOStarFinder(imgName,outFilename,daoParams,debug=False):
     for line in sources:
         fout.write("   %-13.3f%-10.3f%-9.3f%-12.3f%-12.3f%-12.3f%-6d\n"%(line["xcentroid"]+1.0, line["ycentroid"]+1.0,line["mag"],line["sharpness"],line["roundness1"],line["roundness2"],line["id"]))
     fout.close()
-    print "Wrote "+outFilename
+    log.info("Wrote {}".format(outFilename))
 
     if debug:
         outfilename=outFilename+".xy"
         if os.path.exists(outfilename):
             cmd="rm -f "+outfilename
-            print cmd
+            log.info(cmd)
             os.system(cmd)
         fout = open(outfilename, 'w')
         for line in sources:
             fout.write("%f %f\n"%(line["xcentroid"]+1.0, line["ycentroid"]+1.0)) #Write only X and Y coords to file.
         fout.close()
-        print "Wrote "+outfilename
+        log.info("Wrote {}".format(outFilename))
     return()
 
 
