@@ -17,55 +17,9 @@ __taskname__ = 'sourcelist_generation'
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 # ----------------------------------------------------------------------------------------------------------------------
-# set up instrument/detector-specific params
-# Params imported from the following HLA classic parameter files:
-# - https://grit.stsci.edu/HLA/hla/tree/master/software/trunk/HLApipeline/HLApipe/param/parameter_acs_hrc.cfg
-# - https://grit.stsci.edu/HLA/hla/tree/master/software/trunk/HLApipeline/HLApipe/param/parameter_acs_sbc.cfg
-# - https://grit.stsci.edu/HLA/hla/tree/master/software/trunk/HLApipeline/HLApipe/param/parameter_acs_wfc.cfg
-# - https://grit.stsci.edu/HLA/hla/tree/master/software/trunk/HLApipeline/HLApipe/param/parameter_wfc3_ir.cfg
-# - https://grit.stsci.edu/HLA/hla/tree/master/software/trunk/HLApipeline/HLApipe/param/parameter_wfc3_uvis.cfg
-
-phot_param_dict = {
-    "ACS HRC": {
-        "dao": {
-            "TWEAK_FWHMPSF": 0.073,
-            "TWEAK_THRESHOLD": 3.0,
-            "aperture_1": 0.03,
-            "aperture_2": 0.125,
-            "bthresh": 5.0}},
-    "ACS SBC": {
-        "dao": {
-            "TWEAK_FWHMPSF": 0.065,
-            "TWEAK_THRESHOLD": 3.0,
-            "aperture_1": 0.07,
-            "aperture_2": 0.125,
-            "bthresh": 5.0}},
-    "ACS WFC": {
-        "dao":{
-            "TWEAK_FWHMPSF": 0.076,
-            "TWEAK_THRESHOLD": 3.0,
-            "aperture_1": 0.05,  # update from 0.15
-            "aperture_2": 0.15,  # update from 0.25
-            "bthresh": 5.0}},
-    "WFC3 IR": {
-        "dao": {
-            "TWEAK_FWHMPSF": 0.14,
-            "TWEAK_THRESHOLD": 3.0,
-            "aperture_1": 0.15,
-            "aperture_2": 0.45,
-            "bthresh": 5.0}},
-    "WFC3 UVIS": {
-        "dao": {
-            "TWEAK_FWHMPSF": 0.076,
-            "TWEAK_THRESHOLD": 3.0,
-            "aperture_1": 0.05,
-            "aperture_2": 0.15,
-            "bthresh": 5.0}}}
-
-# ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det):
+def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det,param_dict):
     """Make daophot-like sourcelists
 
     Parameters
@@ -80,6 +34,9 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
         Space-separated text string containing instrument name, detector name (upper case) of the products being
         processed.(i.e. WFC3_UVIS)
 
+    param_dict : dictionary
+        dictionary of drizzle, source finding and photometric parameters
+
     Returns
     -------
     """
@@ -92,10 +49,10 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
     # ### (1) ### Collect applicable parameters
     log.info("### (1) ### Collect applicable parameters")
 
-    fwhm = float(phot_param_dict[inst_det]["dao"]["TWEAK_FWHMPSF"])
-    thresh = float(phot_param_dict[inst_det]["dao"]["TWEAK_THRESHOLD"])
-    ap_diameter1 = float(phot_param_dict[inst_det]["dao"]["aperture_1"])
-    ap_diameter2 = float(phot_param_dict[inst_det]["dao"]["aperture_2"])
+    fwhm = float(param_dict["dao"]["TWEAK_FWHMPSF"])
+    thresh = float(param_dict["dao"]["TWEAK_THRESHOLD"])
+    ap_diameter1 = float(param_dict["dao"]["aperture_1"])
+    ap_diameter2 = float(param_dict["dao"]["aperture_2"])
     daofind_basic_param = [fwhm, thresh, ap_diameter1, ap_diameter2]
 
     # ----------------------------------------
@@ -114,17 +71,18 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
 
     # ### (2) ###  Use daostarfinder to create a sourcelist from the total detection image.
 
-    log.info('### (2) ###  Use daostarfinder to create a sourcelist from the total detection image {}'.format(tdp_imagename))
-    daofind_white_sources = run_daofind(config_file,
-                                        sourcelist_create = True,
-                                        whitelightimage = whitelightimage_string,
-                                        whitelightrms = whitelightrms_string,
-                                        daofind_basic_param = daofind_basic_param,
-                                        readnoise_dictionary_drzs = readnoise_dictionary_drzs,
-                                        scale_dict_drzs = scale_dict_drzs,
-                                        exp_dictionary_scis = exp_dictionary_scis,
-                                        working_dir = working_hla_red,
-                                        detector = detector)
+    log.info('### (2) ###  Use daostarfinder to create a sourcelist from the total detection image {}'
+             .format(tdp_imagename))
+    # daofind_white_sources = run_daofind(config_file,
+    #                                     sourcelist_create = True,
+    #                                     whitelightimage = whitelightimage_string,
+    #                                     whitelightrms = whitelightrms_string,
+    #                                     daofind_basic_param = daofind_basic_param,
+    #                                     readnoise_dictionary_drzs = readnoise_dictionary_drzs,
+    #                                     scale_dict_drzs = scale_dict_drzs,
+    #                                     exp_dictionary_scis = exp_dictionary_scis,
+    #                                     working_dir = working_hla_red,
+    #                                     detector = detector)
     # ### (3) ###  Extract sources that fall "close" to 'INDEF' regions.
     # Take out any sources from the white-light source list falling within 'remove_radius' of a flag.
 
@@ -153,13 +111,16 @@ def create_se_like_sourcelists():
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_sourcelists(obs_info_dict):
-    """Make sourcelists
+def create_sourcelists(obs_info_dict, param_dict):
+    """Main calling code. Make sourcelists
 
     Parameters
     ----------
     obs_info_dict : dictionary
         Dictionary containing all information about the images being processed
+
+    param_dict : dictionary
+        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
 
     Returns
     -------
@@ -175,17 +136,21 @@ def create_sourcelists(obs_info_dict):
 
     for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
                         oid_key.startswith('total detection product')]:  # loop over total filtered products
-        # 0: Map image filename to correspoinding catalog filename for total detection product and the associated filter products
+        # 0: Map image filename to correspoinding catalog filename for total detection product and the associated
+        # filter products
         totdet_product_cat_dict = {}
         filter_product_cat_dict = {}
-        totdet_product_cat_dict[obs_info_dict[tdp_keyname]['product filenames']['image']] = obs_info_dict[tdp_keyname]['product filenames']['source catalog']
+        totdet_product_cat_dict[obs_info_dict[tdp_keyname]['product filenames']['image']] = \
+            obs_info_dict[tdp_keyname]['product filenames']['source catalog']
         for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
-            filter_product_cat_dict[obs_info_dict[fp_keyname]['product filenames']['image']] = obs_info_dict[fp_keyname]['product filenames']['source catalog']
+            filter_product_cat_dict[obs_info_dict[fp_keyname]['product filenames']['image']] = \
+                obs_info_dict[fp_keyname]['product filenames']['source catalog']
 
         inst_det = "{} {}".format(obs_info_dict[tdp_keyname]['info'].split()[-2],
                                   obs_info_dict[tdp_keyname]['info'].split()[-1])
+
         # 1: Generate daophot-like sourcelist(s)
-        create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det)
+        create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det,param_dict[inst_det])
 
         # 2: Generate source extractor-like sourcelist(s)
         create_se_like_sourcelists()
