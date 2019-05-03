@@ -40,11 +40,10 @@ of the list).
   instead). [#225]
 
 - Added ``'Enhanced Pipeline Products'`` alignment code to ``drizzlepac``
-  package. [#200, #216, #223, #234, #235, #244, #248, #249, #250, #251, #259,
-  #260, #268, #271, #283, #294, #302]
-
-- Update ``runastrodriz`` to compute and apply absolute astrometric corrections
-  to GAIA (or related) frame to images where possible. [#213]
+  package. Enhance ``runastrodriz`` to compute and apply absolute astrometric
+  corrections to GAIA (or related) frame to images where possible.
+  [#200, #213, #216, #223, #234, #235, #244, #248, #249, #250, #251,
+  #259, #260, #268, #271, #283, #294, #302]
 
 - Add computation and reporting of the fit's
   `Root-Mean-Square Error (RMSE) <https://en.wikipedia.org/wiki/Root-mean-square_deviation>`_
