@@ -389,147 +389,6 @@ def get_readnoise(listofimages):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_DAOStarFinder(imgName,outFilename,daoParams,debug=False):
-    """runs astropy.photutils.DAOStarFinder() to identify sources in *imgName*.
-
-    Writes the following information to file *outFileName* for each detected source:
-        * X centroid
-        * Y centroid
-        * Magnitude
-        * Sharpness
-        * S-Round
-        * G-Round
-        * Source ID number
-
-    Parameters
-    ----------
-    imgName : string
-        Input image name and (optionally) the extension  in square brackets. Can be in the form
-        [<EXT_NAME>,<GROUP_NUM>] or simply [<EXT_NUM>].
-
-    outFilename : string
-        name of the file that information on the detected sources will be written to.
-
-    daoParams : dictionary
-        dictionary of floating point values passed to DAOStarFinder. Values are as follows:
-
-        * fwhm: The full-width at half-maximum of the point spread function in scale units. Default value = 2.5
-        * scale: Image scale in units per pixel. Used to convert *in_fwhm* value from arcseconds to pixels.
-        Default value = 1.0
-        * threshold: Threshold in sigma for feature detection. Default value = 4.0
-        * sigma: Standard deviation of background in counts. Used to convert *in_threshold* to counts.
-        Default value = 0.0
-        * ratio: Ratio of minor to major axis of Gaussian kernel. Default value = 1.0
-        * theta: Position angle of major axis of Gaussian kernel. Default value = 0.0
-        * sharplo: Minimum bound on sharpness for feature detection. Default value = 0.0
-        * sharphi: Maximum bound on sharpness for feature detection. Default value = 1.0
-        * roundlo: Minimum bound on roundness for feature detection. Default value = -1.0
-        * roundhi: Minimum bound on roundness for feature detection. Default value = 1.0
-
-    debug : Boolean
-        write out 'xcentroid' and 'ycentroid' values to separate file for troubleshooting purposes (True/False)?
-        Default value is 'False'.
-
-    Returns
-    -------
-    Nothing.
-    """
-    if imgName.endswith("]"):
-        parse_imgname=imgName.split("fits[")
-        imgName=parse_imgname[0]+"fits"
-        imgHDU = fits.open(imgName)
-        rawext=parse_imgname[1][:-1]
-        parse_rawext=rawext.split(",")
-        if len(parse_rawext) == 1:
-            extnum = int(parse_rawext[0])
-        else:
-            extName=parse_rawext[0]
-            extGroupNum=int(parse_rawext[1])
-            extname_ctr=0
-            for extctr in range(0, len(imgHDU)):
-                if imgHDU[extctr].name.upper() == extName.upper(): extname_ctr += 1
-                if ((imgHDU[extctr].name.upper() == extName.upper()) and (extname_ctr == extGroupNum)):
-                    extnum = extctr
-                    break
-    else:
-        imgHDU = fits.open(imgName)
-        extnum=0
-
-    imgData = imgHDU[extnum].data
-
-    mean, median, std = sigma_clipped_stats(imgData, sigma=3.0, iters=5)
-
-    daofind = findstars.DAOStarFinder(fwhm=daoParams["fwhm"] / daoParams["scale"], threshold=daoParams["threshold"] * daoParams["sigma"], ratio=daoParams["ratio"], theta=daoParams["theta"], sharplo=daoParams["sharplo"], sharphi=daoParams["sharphi"], roundlo=daoParams["roundlo"], roundhi=daoParams["roundhi"])
-    sources = daofind(imgData - median)
-
-    if os.path.exists(outFilename):
-        cmd="rm -f "+outFilename
-        log.info(cmd)
-        os.system(cmd)
-    fout = open(outFilename, 'w')
-    fout.write("#N XCENTER   YCENTER   MAG      SHARPNESS   SROUND      GROUND      ID         \ \n")
-    fout.write("#U pixels    pixels    #        #           #           #           #          \ \n")
-    fout.write("#F %-13.3f   %-10.3f   %-9.3f   %-12.3f     %-12.3f     %-12.3f     %-6d       \ \n")
-    fout.write("#\n")
-    for line in sources:
-        fout.write("   %-13.3f%-10.3f%-9.3f%-12.3f%-12.3f%-12.3f%-6d\n"%(line["xcentroid"]+1.0, line["ycentroid"]+1.0,line["mag"],line["sharpness"],line["roundness1"],line["roundness2"],line["id"]))
-    fout.close()
-    log.info("Wrote {}".format(outFilename))
-
-    if debug:
-        outfilename=outFilename+".xy"
-        if os.path.exists(outfilename):
-            cmd="rm -f "+outfilename
-            log.info(cmd)
-            os.system(cmd)
-        fout = open(outfilename, 'w')
-        for line in sources:
-            fout.write("%f %f\n"%(line["xcentroid"]+1.0, line["ycentroid"]+1.0)) #Write only X and Y coords to file.
-        fout.close()
-        log.info("Wrote {}".format(outFilename))
-    return()
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-def stwcs_get_scale(listofimages):
-    """
-    This task will grab the arcsec/pixel scale for HST data from the WCS information of the header.
-
-    Note: Assumes science image is extension: "[1]".
-
-    Tested.
-
-    Parameters
-    ----------
-    listofimages : list
-        list of images that will be used to get scale values
-
-    Returns
-    -------
-    dictionary_output : dictionary
-        A dictionary of scale values keyed by image name
-    """
-    import stwcs
-    from stwcs import wcsutil
-    dictionary_output = {}
-    for individual_image in listofimages:
-        try:
-            wcs1 = stwcs.wcsutil.HSTWCS(individual_image + "[1]")
-            scale2return = wcs1.pscale
-        except:  # XXX what kind of exception here?
-            log.info("ALERT: Pixel-scale could not be gathered from the header for image {}."
-                     .format(extract_name(individual_image)))
-            scale2return = False
-        dictionary_output[individual_image] = scale2return
-
-    return dictionary_output
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
 def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whitelightimage=None, whitelightrms=None,
                 readnoise_dictionary_drzs=None, scale_dict_drzs=None,exp_dictionary_scis=None, working_dir=None,
                 sl_ext = 0,sharphi=None, sharplo=None,edgemask=5):
@@ -684,3 +543,147 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whi
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+def run_DAOStarFinder(imgName,outFilename,daoParams,debug=False):
+    """runs astropy.photutils.DAOStarFinder() to identify sources in *imgName*.
+
+    Writes the following information to file *outFileName* for each detected source:
+        * X centroid
+        * Y centroid
+        * Magnitude
+        * Sharpness
+        * S-Round
+        * G-Round
+        * Source ID number
+
+    Parameters
+    ----------
+    imgName : string
+        Input image name and (optionally) the extension  in square brackets. Can be in the form
+        [<EXT_NAME>,<GROUP_NUM>] or simply [<EXT_NUM>].
+
+    outFilename : string
+        name of the file that information on the detected sources will be written to.
+
+    daoParams : dictionary
+        dictionary of floating point values passed to DAOStarFinder. Values are as follows:
+
+        * fwhm: The full-width at half-maximum of the point spread function in scale units. Default value = 2.5
+        * scale: Image scale in units per pixel. Used to convert *in_fwhm* value from arcseconds to pixels.
+        Default value = 1.0
+        * threshold: Threshold in sigma for feature detection. Default value = 4.0
+        * sigma: Standard deviation of background in counts. Used to convert *in_threshold* to counts.
+        Default value = 0.0
+        * ratio: Ratio of minor to major axis of Gaussian kernel. Default value = 1.0
+        * theta: Position angle of major axis of Gaussian kernel. Default value = 0.0
+        * sharplo: Minimum bound on sharpness for feature detection. Default value = 0.0
+        * sharphi: Maximum bound on sharpness for feature detection. Default value = 1.0
+        * roundlo: Minimum bound on roundness for feature detection. Default value = -1.0
+        * roundhi: Minimum bound on roundness for feature detection. Default value = 1.0
+
+    debug : Boolean
+        write out 'xcentroid' and 'ycentroid' values to separate file for troubleshooting purposes (True/False)?
+        Default value is 'False'.
+
+    Returns
+    -------
+    Nothing.
+    """
+    if imgName.endswith("]"):
+        parse_imgname=imgName.split("fits[")
+        imgName=parse_imgname[0]+"fits"
+        imgHDU = fits.open(imgName)
+        rawext=parse_imgname[1][:-1]
+        parse_rawext=rawext.split(",")
+        if len(parse_rawext) == 1:
+            extnum = int(parse_rawext[0])
+        else:
+            extName=parse_rawext[0]
+            extGroupNum=int(parse_rawext[1])
+            extname_ctr=0
+            for extctr in range(0, len(imgHDU)):
+                if imgHDU[extctr].name.upper() == extName.upper(): extname_ctr += 1
+                if ((imgHDU[extctr].name.upper() == extName.upper()) and (extname_ctr == extGroupNum)):
+                    extnum = extctr
+                    break
+    else:
+        imgHDU = fits.open(imgName)
+        extnum=0
+
+    imgData = imgHDU[extnum].data
+
+    mean, median, std = sigma_clipped_stats(imgData, sigma=3.0, iters=5)
+
+    daofind = findstars.DAOStarFinder(fwhm=daoParams["fwhm"] / daoParams["scale"], threshold=daoParams["threshold"] * daoParams["sigma"], ratio=daoParams["ratio"], theta=daoParams["theta"], sharplo=daoParams["sharplo"], sharphi=daoParams["sharphi"], roundlo=daoParams["roundlo"], roundhi=daoParams["roundhi"])
+    sources = daofind(imgData - median)
+
+    if os.path.exists(outFilename):
+        cmd="rm -f "+outFilename
+        log.info(cmd)
+        os.system(cmd)
+    fout = open(outFilename, 'w')
+    fout.write("#N XCENTER   YCENTER   MAG      SHARPNESS   SROUND      GROUND      ID         \ \n")
+    fout.write("#U pixels    pixels    #        #           #           #           #          \ \n")
+    fout.write("#F %-13.3f   %-10.3f   %-9.3f   %-12.3f     %-12.3f     %-12.3f     %-6d       \ \n")
+    fout.write("#\n")
+    for line in sources:
+        fout.write("   %-13.3f%-10.3f%-9.3f%-12.3f%-12.3f%-12.3f%-6d\n"%(line["xcentroid"]+1.0, line["ycentroid"]+1.0,line["mag"],line["sharpness"],line["roundness1"],line["roundness2"],line["id"]))
+    fout.close()
+    log.info("Wrote {}".format(outFilename))
+
+    if debug:
+        outfilename=outFilename+".xy"
+        if os.path.exists(outfilename):
+            cmd="rm -f "+outfilename
+            log.info(cmd)
+            os.system(cmd)
+        fout = open(outfilename, 'w')
+        for line in sources:
+            fout.write("%f %f\n"%(line["xcentroid"]+1.0, line["ycentroid"]+1.0)) #Write only X and Y coords to file.
+        fout.close()
+        log.info("Wrote {}".format(outFilename))
+    return()
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def stwcs_get_scale(listofimages):
+    """
+    This task will grab the arcsec/pixel scale for HST data from the WCS information of the header.
+
+    Note: Assumes science image is extension: "[1]".
+
+    Tested.
+
+    Parameters
+    ----------
+    listofimages : list
+        list of images that will be used to get scale values
+
+    Returns
+    -------
+    dictionary_output : dictionary
+        A dictionary of scale values keyed by image name
+    """
+    import stwcs
+    from stwcs import wcsutil
+    dictionary_output = {}
+    for individual_image in listofimages:
+        try:
+            wcs1 = stwcs.wcsutil.HSTWCS(individual_image + "[1]")
+            scale2return = wcs1.pscale
+        except:  # XXX what kind of exception here?
+            log.info("ALERT: Pixel-scale could not be gathered from the header for image {}."
+                     .format(extract_name(individual_image)))
+            scale2return = False
+        dictionary_output[individual_image] = scale2return
+
+    return dictionary_output
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+
