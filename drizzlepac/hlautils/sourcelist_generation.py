@@ -100,9 +100,12 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
 
     log.info('### (2) ###  Use daostarfinder to create a sourcelist from the total detection image {}'
              .format(tdp_imagename))
+
+    whitelightrms_image = create_rms_image()
+
     daofind_white_sources = run_daofind(param_dict,
                                         whitelightimage = tdp_imagename,
-                                        whitelightrms = whitelightrms_string,
+                                        whitelightrms = whitelightrms_image,
                                         readnoise_dictionary_drzs = readnoise_dictionary_drzs,
                                         scale_dict_drzs = scale_dict_drzs,
                                         exp_dictionary_scis = exp_dictionary_scis,
@@ -114,6 +117,26 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
 
     # ### (5) ### Gather columns and put in nice format (dictated by: "column_keys_phot.cfg")
     # This will convert columns from xy to ra and dec (controlled by: "column_keys_phot.cfg")
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def create_rms_image():
+    """Creates RMS image for use by source-finding code.
+
+    Parameters
+    ----------
+
+
+    Returns
+    -------
+    rms_imgname : string
+        filename of freshly computed RMS image
+    """
+    rms_img_filename = "foo_rms.fits"
+
+    return(rms_img_filename)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
