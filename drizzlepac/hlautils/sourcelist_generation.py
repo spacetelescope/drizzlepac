@@ -363,6 +363,8 @@ def get_readnoise(listofimages):
 
     Tested.
 
+    Parameters
+    ----------
     listofimages : list
         list of images that will be used to get readnoise values
 
