@@ -32,7 +32,7 @@ for file_line in file_lines:
             param_dict[param_name]["type"] = file_line.replace(":type {}:".format(param_name),"")
 
         if last_line != "":
-            if last_line.startswith(":param ") and file_line.startswith(":param ") == False and file_line.startswith(":type "):
+            if last_line.startswith(":param ") and file_line.startswith(":param ") == False and file_line.startswith(":type ")==False:
                 print("*********",file_line)
 
         # if line
