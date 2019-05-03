@@ -76,23 +76,39 @@ def iraf_style_photometry(
     """
     Computes photometry with PhotUtils apertures, with IRAF formulae
 
-    :param phot_apertures: The PhotUtils apertures object to compute the photometry. i.e. the object returned via CirularAperture.
-    :type phot_apertures: photutils PixelAperture object (or subclass)
-    :param bg_apertures: The phoutils aperture object to measure the background in. i.e. the object returned via CircularAnnulus.
-    :type bg_apertures: photutils PixelAperture object (or subclass)
-    :param data: The data for the image to be measured.
-    :type data: array
-    :param platescale: instrument platescale in arcseconds per pixel.
-    :type platescale: float
-    :param error_array: (Optional) The array of pixelwise error of the data.  If none, the Poisson noise term in the error computation will just be the square root of the flux/epadu. If not none, the aperture_sum_err column output by aperture_photometry (divided by epadu) will be used as the Poisson noise term.
-    :type error_array: array
-    :param bg_method: {'mean', 'median', 'mode'}, optional. The statistic used to calculate the background. All measurements are sigma clipped. Default value is 'mode'. NOTE: From DAOPHOT, mode = 3 * median - 2 * mean.
-    :type bg_method: string
-    :param epadu: (optional) Gain in electrons per adu (only use if image units aren't e-). Default value is 1.0
-    :type epadu: float
-    :param zero_point: (optional) Photometric zeropoint used to compute magnitude values from flux values. Default value is 0.0
-    :type zero_point: float
-    :returns: An astropy Table with 'XCENTER', 'YCENTER', 'ID', 'FLUX_0.05', 'FERR_0.05', 'MAG_0.05', 'MERR_0.05', 'FLUX_0.15', 'FERR_0.15', 'MAG_0.15', 'MERR_0.15', 'MSKY', and 'STDEV' values for each of the sources.
+    Parameters
+    ----------
+    phot_apertures : photutils PixelAperture object (or subclass)
+        The PhotUtils apertures object to compute the photometry. i.e. the object returned via CirularAperture.
+
+    bg_apertures : photutils PixelAperture object (or subclass)
+        The phoutils aperture object to measure the background in. i.e. the object returned via CircularAnnulus.
+
+    data : array
+        The data for the image to be measured.
+
+    platescale : float
+        instrument platescale in arcseconds per pixel.
+
+    error_array : array
+        (Optional) The array of pixelwise error of the data.  If none, the Poisson noise term in the error computation
+        will just be the square root of the flux/epadu. If not none, the aperture_sum_err column output by
+        aperture_photometry (divided by epadu) will be used as the Poisson noise term.
+
+    bg_method: string
+        {'mean', 'median', 'mode'}, optional. The statistic used to calculate the background. All measurements are
+        sigma clipped. Default value is 'mode'. NOTE: From DAOPHOT, mode = 3 * median - 2 * mean.
+
+    epadu : float
+        (optional) Gain in electrons per adu (only use if image units aren't e-). Default value is 1.0
+
+    zero_point: float
+        (optional) Photometric zeropoint used to compute magnitude values from flux values. Default value is 0.0
+
+    Returns
+    -------
+        An astropy Table with 'XCENTER', 'YCENTER', 'ID', 'FLUX_0.05', 'FERR_0.05', 'MAG_0.05', 'MERR_0.05',
+        'FLUX_0.15', 'FERR_0.15', 'MAG_0.15', 'MERR_0.15', 'MSKY', and 'STDEV' values for each of the sources.
     """
     if bg_method not in ['mean', 'median', 'mode']:
         raise ValueError('Invalid background method, choose either \
