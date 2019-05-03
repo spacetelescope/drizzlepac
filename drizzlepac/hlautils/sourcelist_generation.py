@@ -31,8 +31,10 @@ def average_values_from_dict(Dictionary):
     Dictionary : dictionary
         Input dictionary containing values to average
 
-    :returns: The average value of the input dictionary (float)
-
+    Returns
+    -------
+    final : float
+        The average value of the input dictionary
     """
     import numpy
     all_vL = list(Dictionary.values())
@@ -212,6 +214,8 @@ def extract_name(stringWpath):
 
     Tested.
 
+    Parameters
+    ----------
     stringWpath : string
         filename with full path
 
@@ -231,12 +235,17 @@ def extract_name(stringWpath):
 
 
 def get_mean_readnoise(image):
-    """
-    This subroutine computes mean readnoise values
+    """This subroutine computes mean readnoise values
 
-    :param image: image filename
-    :type image: string
-    :return: mean readnoise
+    Parameters
+    ----------
+    image : string
+        image filename
+
+    Returns
+    -------
+    readnoise : float
+        average readnoise value
     """
     imghdu = fits.open(image)
     header = imghdu[0].header
@@ -314,8 +323,7 @@ def get_readnoise(listofimages):
 
 
 def run_DAOStarFinder(imgName,outFilename,daoParams,debug=False):
-    """
-    runs astropy.photutils.DAOStarFinder() to identify sources in *imgName*.
+    """runs astropy.photutils.DAOStarFinder() to identify sources in *imgName*.
 
     Writes the following information to file *outFileName* for each detected source:
         * X centroid
@@ -325,6 +333,7 @@ def run_DAOStarFinder(imgName,outFilename,daoParams,debug=False):
         * S-Round
         * G-Round
         * Source ID number
+
 
     :param imgName: Input image name and (optionally) the extension  in square brackets. Can be in the form [<EXT_NAME>,<GROUP_NUM>] or simply [<EXT_NUM>].
     :param outFilename: name of the file that information on the detected sources will be written to.
@@ -599,8 +608,6 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whi
     os.rename(mod_output_dao, output_dao)
 
     return output_dao
-
-
 
 
 # ----------------------------------------------------------------------------------------------------------------------
