@@ -42,8 +42,7 @@ def average_values_from_dict(Dictionary):
             num_tot = num_tot + item
         final = float(num_tot / len(all_vL))
     except:  # XXX what kind of exception here?
-        print()
-        "ALERT: Cannot average dictionary, passing first value instead."
+        log.info("ALERT: Cannot average dictionary, passing first value instead.")
         final = all_vL[0]
 
     return final
@@ -152,13 +151,13 @@ def create_sourcelists(obs_info_dict, param_dict):
     Returns
     -------
     """
-    print("----------------------------------------------------------------------------------------------------------------------")
+    log.info("----------------------------------------------------------------------------------------------------------------------")
     os.system("clear")
     for key1 in list(obs_info_dict.keys()):
         for key2 in list(obs_info_dict[key1].keys()):
-            print(key1,key2,obs_info_dict[key1][key2])  # TODO: REMOVE THIS SECTION BEFORE ACTUAL USE
+            log.info(key1,key2,obs_info_dict[key1][key2])  # TODO: REMOVE THIS SECTION BEFORE ACTUAL USE
 
-    print("----------------------------------------------------------------------------------------------------------------------")
+    log.info("----------------------------------------------------------------------------------------------------------------------")
     log.info("SOURCELIST CREATION OCCURS HERE!")
 
     for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
@@ -319,8 +318,8 @@ def stwcs_get_scale(listofimages):
             wcs1 = stwcs.wcsutil.HSTWCS(individual_image + "[1]")
             scale2return = wcs1.pscale
         except:  # XXX what kind of exception here?
-            print()
-            "ALERT: Pixel-scale could not be gathered from the header for image %s." % (extract_name(individual_image))
+            log.info("ALERT: Pixel-scale could not be gathered from the header for image {}."
+                     .format(extract_name(individual_image)))
             scale2return = False
         dictionary_output[individual_image] = scale2return
 
@@ -422,18 +421,18 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,sou
     daoParams["threshold"] = thresh
     daoParams["scale"] = scale
     daoParams["ratio"] = 0.8
-    print(' ')
-    print('run_daofind INPUT PARAMETERS:')
-    print('-----------------------------')
-    print('fwhm = ',fwhm)
-    print('thresh = ',thresh)
-    print('scale = ',scale)
+    log.info(' ')
+    log.info('run_daofind INPUT PARAMETERS:')
+    log.info('-----------------------------')
+    log.info('fwhm = {}'.format(fwhm))
+    log.info('thresh = {}'.format(thresh))
+    log.info('scale = {}'.format(scale))
     if sharphi:
-        print('sharphi = ',sharphi)
+        log.info('sharphi = {}'.format(sharphi))
         daoParams["sharphi"] = sharphi
 
     if sharplo:
-        print('sharplo = ',sharplo)
+        log.info('sharplo = ',sharplo)
         daoParams["sharplo"] = sharplo
     if sourcelist_create:
 
@@ -447,34 +446,34 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,sou
         rms_array = pyfits.getdata(whitelightrms,0)
         rms_image_median = Util.binmode(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])[0]
         #rms_image_median = numpy.median(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])
-        print("Median from RMS image = ",rms_image_median)
+        log.info("Median from RMS image = {}".format(rms_image_median))
 
         daoParams["sigma"] = rms_image_median
 
-        print('white light rms image = ',whitelightrms)
-        print('sigma = ',rms_image_median)
-        print('readnoise = ',readnoise)
-        print('exptime = ',exptime)
-        print(' ')
+        log.info('white light rms image = {}'.format(whitelightrms))
+        log.info('sigma = {}'.format(rms_image_median))
+        log.info('readnoise = {}'.format(readnoise))
+        log.info('exptime = {}'.format(exptime))
+        log.info(' ')
 
         name_daoOUT = extract_name(whitelightimage)
         name_daoOUT = Rename.unique_name(name_daoOUT + ".coo", suffix=".coo")
         output_dao = os.path.join(working_dir, name_daoOUT)
 
         try:
-            print("image = ",medDivImg)
-            print("output = ",output_dao)
+            log.info("image = {}".format(medDivImg))
+            log.info("output = {}".format(output_dao))
 
             run_DAOStarFinder(medDivImg,output_dao,daoParams,debug=False)
         except: #XXX what kind of exception here?
-            print(' ')
-            print('****************************************************************')
-            print('WARNING: THE MEDIAN-DIVIDED IMAGE CONTAINS MULTIPLE EXTENSIONS; ')
-            print('                  STARTING FLAG AND FILTER PROCESSING.          ')
-            print('****************************************************************')
-            print(' ')
-            print("image = ",medDivImg+"[1]")
-            print("output = ",output_dao)
+            log.info(' ')
+            log.info('****************************************************************')
+            log.info('WARNING: THE MEDIAN-DIVIDED IMAGE CONTAINS MULTIPLE EXTENSIONS; ')
+            log.info('                  STARTING FLAG AND FILTER PROCESSING.          ')
+            log.info('****************************************************************')
+            log.info(' ')
+            log.info("image = {}".format(medDivImg+"[1]"))
+            log.info("output = {}".format(output_dao))
             run_DAOStarFinder(medDivImg + "[1]", output_dao, daoParams, debug=False)
         reject_image = numpy.zeros(wht_data.shape,dtype=numpy.int16)
         reject_image[numpy.where(wht_data <= 0.)] = 1
@@ -499,7 +498,7 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,sou
         try:
             readnoise = Headers.get_mean_readnoise(image)
         except (KeyError, IndexError):
-            print(("ALERT: Readnoise could not be gathered from the header for image %s."%(image)))
+            log.info("ALERT: Readnoise could not be gathered from the header for image {}.".format(image))
             readnoise = 0.0
 
         exptime = pyfits.getheader(image)['EXPTIME']
@@ -507,27 +506,27 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,sou
         # estimate rms directly from image
         rms_array = pyfits.getdata(image,0)
         rms_image_median = rms_from_image(rms_array)
-        print(("Median from RMS MAD estimate = ",rms_image_median))
+        log.info("Median from RMS MAD estimate = {}".format(rms_image_median))
 
         daoParams["sigma"] = rms_image_median
         daoParams["threshold"] = thresh
         daoParams["ratio"] = 0.8
 
-        print(('sigma = ',rms_image_median))
-        print(('readnoise = ',readnoise))
-        print(('exptime = ',exptime))
-        print(('image = ',image))
+        log.info('sigma = {}'.format(rms_image_median))
+        log.info('readnoise = {}'.format(readnoise))
+        log.info('exptime = {}'.format(exptime))
+        log.info('image = {}'.format(image))
 
-        if verbose: print(("Finding sources in %s" %(image.split('/')[-1])))
+        if verbose: log.info("Finding sources in {}".format(image.split('/')[-1]))
         outcoo=image.split('/')[-1]+'.coo'
 
         thresh = orig_thresh
         thresh1 = ns1 = None  # previous threshold and source count
         while True:
             daoParams["threshold"] = thresh
-            print(("image = ",image+'[%d]' %sl_ext))
-            print(("output = ",outcoo))
-            print("verify = no")
+            log.info(("image = {}".format(image+'[%d]' %sl_ext))
+            log.info(("output = {}".format(outcoo))
+            log.info("verify = no")
             run_DAOStarFinder(image+'[%d]' %sl_ext, outcoo, daoParams, debug=False)
 
             infile = open(outcoo,'r')
@@ -538,7 +537,7 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,sou
                 if edgemask:
                     # create a mask that is true for bad pixels
                     if verbose:
-                        print(("Masking within",edgemask,"pixels of edge"))
+                        log.info("Masking within",edgemask,"pixels of edge")
                     fh = pyfits.open(image)
                     mask = fh[sl_ext].data == 0
                     fh.close()
@@ -559,14 +558,14 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,sou
                 # linear projection from last 2 values with a little acceleration to get better threshold
                 # shoot for 5% below the maximum threshold
                 thresh = thresh0 + 1.3 * (thresh1-thresh0)/(ns1-ns0) * (0.95*source_match-ns0)
-            print(("# of stars %d > source match %d, upping threshold from %3.2f to %3.2f" %(ns1,
+            log.info("# of stars {} > source match {}, upping threshold from {} to {}".format(ns1,
                                                                                             source_match,
                                                                                             thresh1,
-                                                                                            thresh)))
+                                                                                            thresh))
             os.remove(outcoo)
 
         if verbose:
-            print(('%d sources above %5.2f-sigma added to %s\n' %(len(image_coo),float(thresh), outcoo)))
+            log.info('{} sources above {}-sigma added to {}\n'.format((len(image_coo),float(thresh), outcoo))
         coo_dict[outcoo] = len(image_coo)
     return(coo_dict)
 
