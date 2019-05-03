@@ -297,16 +297,21 @@ def get_readnoise(listofimages):
 
 def stwcs_get_scale(listofimages):
     """
-    This task will grab the arcsec/pixel scale for HST
-    data from the WCS information of the header.
+    This task will grab the arcsec/pixel scale for HST data from the WCS information of the header.
 
     Note: Assumes science image is extension: "[1]".
 
     Tested.
 
-    :param listofimages: list of images that will be used to get scale values
-    :type listofimages: list
-    :returns: A dictionary of scale values keyed by image name
+    Parameters
+    ----------
+    listofimages : list
+        list of images that will be used to get scale values
+
+    Returns
+    -------
+    dictionary_output : dictionary
+        A dictionary of scale values keyed by image name
     """
     import stwcs
     from stwcs import wcsutil
