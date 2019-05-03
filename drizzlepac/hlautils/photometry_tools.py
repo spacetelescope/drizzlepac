@@ -64,15 +64,8 @@ from photutils import aperture_photometry
 import pdb
 
 
-def iraf_style_photometry(
-        phot_apertures,
-        bg_apertures,
-        data,
-        platescale,
-        error_array=None,
-        bg_method='mode',
-        epadu=1.0,
-        zero_point=0.0):
+def iraf_style_photometry(phot_apertures,bg_apertures,data,platescale,
+                          error_array=None,bg_method='mode',epadu=1.0,zero_point=0.0):
     """
     Computes photometry with PhotUtils apertures, with IRAF formulae
 
@@ -174,26 +167,30 @@ def iraf_style_photometry(
 
     return final_tbl
 
-def compute_phot_error(
-        flux_variance,
-        bg_phot,
-        bg_method,
-        ap_area,
-        epadu=1.0):
-    """
-    Computes the flux errors using the DAOPHOT style computation
+def compute_phot_error( flux_variance, bg_phot, bg_method, ap_area, epadu=1.0):
+    """Computes the flux errors using the DAOPHOT style computation
 
-    :param flux_variance: flux values
-    :param bg_phot: background brightness values.
-    :param bg_method: background method
-    :param ap_area: the area of the aperture in square pixels
-    :param epadu: (optional) Gain in electrons per adu (only use if image units aren't e-). Default value is 1.0
-    :type flux_variance: array
-    :type bg_phot: array
-    :type bg_method: string
-    :type ap_area: array
-    :type epadu: float
-    :return: an array of flux errors
+    Parameters
+    ----------
+    flux_variance : array
+        flux values
+
+    bg_phot : array
+        background brightness values.
+
+    bg_method : string
+        background method
+
+    ap_area : array
+        the area of the aperture in square pixels
+
+    epadu : float
+        (optional) Gain in electrons per adu (only use if image units aren't e-). Default value is 1.0
+
+    Returns
+    -------
+    flux_error : array
+        an array of flux errors
     """
     bg_variance_terms = (ap_area * bg_phot['aperture_std'] ** 2. ) \
                         * (1. + ap_area/bg_phot['aperture_area'])
