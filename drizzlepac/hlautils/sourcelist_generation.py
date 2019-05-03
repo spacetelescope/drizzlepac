@@ -19,6 +19,39 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def average_values_from_dict(Dictionary):
+    """Average all values within a dictionary.  This task is used for the 'hla_reduction.py' source listing procedure
+    in estimating DAOFind parameters for the white-light image from the parameters for each of  the composite images of
+    the white-light.
+
+    Tested.
+
+    Parameters
+    ----------
+    Dictionary : dictionary
+        Input dictionary containing values to average
+
+    :returns: The average value of the input dictionary (float)
+
+    """
+    import numpy
+    all_vL = list(Dictionary.values())
+    try:
+        num_tot = 0.0
+        for item in all_vL:
+            num_tot = num_tot + item
+        final = float(num_tot / len(all_vL))
+    except:  # XXX what kind of exception here?
+        print()
+        "ALERT: Cannot average dictionary, passing first value instead."
+        final = all_vL[0]
+
+    return final
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det,param_dict):
     """Make daophot-like sourcelists
 
@@ -49,11 +82,6 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
     # ### (1) ### Collect applicable parameters
     log.info("### (1) ### Collect applicable parameters")
 
-    fwhm = float(param_dict["dao"]["TWEAK_FWHMPSF"])
-    thresh = float(param_dict["dao"]["TWEAK_THRESHOLD"])
-    ap_diameter1 = float(param_dict["dao"]["aperture_1"])
-    ap_diameter2 = float(param_dict["dao"]["aperture_2"])
-    daofind_basic_param = [fwhm, thresh, ap_diameter1, ap_diameter2]
 
     # ----------------------------------------
     # Calculate mean readnoise value (float):
@@ -73,16 +101,15 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
 
     log.info('### (2) ###  Use daostarfinder to create a sourcelist from the total detection image {}'
              .format(tdp_imagename))
-    # daofind_white_sources = run_daofind(config_file,
-    #                                     sourcelist_create = True,
-    #                                     whitelightimage = whitelightimage_string,
-    #                                     whitelightrms = whitelightrms_string,
-    #                                     daofind_basic_param = daofind_basic_param,
-    #                                     readnoise_dictionary_drzs = readnoise_dictionary_drzs,
-    #                                     scale_dict_drzs = scale_dict_drzs,
-    #                                     exp_dictionary_scis = exp_dictionary_scis,
-    #                                     working_dir = working_hla_red,
-    #                                     detector = detector)
+    daofind_white_sources = run_daofind(param_dict,
+                                        sourcelist_create = True,
+                                        whitelightimage = whitelightimage_string,
+                                        whitelightrms = whitelightrms_string,
+                                        readnoise_dictionary_drzs = readnoise_dictionary_drzs,
+                                        scale_dict_drzs = scale_dict_drzs,
+                                        exp_dictionary_scis = exp_dictionary_scis,
+                                        working_dir = working_hla_red,
+                                        detector = detector)
     # ### (3) ###  Extract sources that fall "close" to 'INDEF' regions.
     # Take out any sources from the white-light source list falling within 'remove_radius' of a flag.
 
@@ -129,8 +156,8 @@ def create_sourcelists(obs_info_dict, param_dict):
     os.system("clear")
     for key1 in list(obs_info_dict.keys()):
         for key2 in list(obs_info_dict[key1].keys()):
-            print((key1,key2,obs_info_dict[key1][key2]))   # TODO: REMOVE THIS SECTION BEFORE ACTUAL USE
-        print()
+            print(key1,key2,obs_info_dict[key1][key2])  # TODO: REMOVE THIS SECTION BEFORE ACTUAL USE
+
     print("----------------------------------------------------------------------------------------------------------------------")
     log.info("SOURCELIST CREATION OCCURS HERE!")
 
@@ -303,17 +330,16 @@ def stwcs_get_scale(listofimages):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_daofind(config_file, filelist=None, source_match=50000., verbose=True,
-                sourcelist_create=False, whitelightimage=None, whitelightrms=None,
-                daofind_basic_param=None, readnoise_dictionary_drzs=None, scale_dict_drzs=None,
-                exp_dictionary_scis=None, working_dir=None, detector=None, sl_ext = 0,
-                sharphi=None, sharplo=None, edgemask=5):
+def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,sourcelist_create=False,
+                whitelightimage=None, whitelightrms=None, readnoise_dictionary_drzs=None, scale_dict_drzs=None,
+                exp_dictionary_scis=None, working_dir=None, detector=None, sl_ext = 0,sharphi=None, sharplo=None,
+                edgemask=5):
     """Generates sourcelists using DAOfind.
 
     Parameters
     ----------
-    config_file : string
-        name of the detector-specific configuration file to use.
+    param_dict : dictionary
+        dictionary of drizzle, source finding and photometric parameters
 
     filelist : list
         Default value is 'None'.
@@ -332,10 +358,6 @@ def run_daofind(config_file, filelist=None, source_match=50000., verbose=True,
 
     whitelightrms : string
         Name of the multi-filter composite RMS image produced by hla_reduction.py.Default value is 'None'.
-
-    daofind_basic_param : List
-        **UNUSED** List of values that will be used for daofind parameters 'fwhm', 'thresh', 'ap_diameter1',
-        'ap_diameter2'. Default value is 'None'.
 
     readnoise_dictionary_drzs : Dictionary
         Dictionary containing readnoise values keyed by filter-specific drizzled image filename. Default value is
@@ -390,11 +412,11 @@ def run_daofind(config_file, filelist=None, source_match=50000., verbose=True,
     daoParams=daoParams_default #set up dictionary and get default values.
 
     ### get daofind parameters
-    config.read(software+'/param/'+config_file)
-    fwhm = float(Configs.loadcfgs(config,'DAOFIND PARAMETERS','TWEAK_FWHMPSF'))
-    thresh = float(Configs.loadcfgs(config,'DAOFIND PARAMETERS','TWEAK_THRESHOLD'))
-    scale = float(Configs.loadcfgs(config,'ASTRODRIZZLE PARAMETERS','PIXSCALE'))
-
+    fwhm = float(param_dict["dao"]["TWEAK_FWHMPSF"])
+    thresh = float(param_dict["dao"]["TWEAK_THRESHOLD"])
+    ap_diameter1 = float(param_dict["dao"]["aperture_1"])
+    ap_diameter2 = float(param_dict["dao"]["aperture_2"])
+    scale = float(para_dict['astrodrizzle']['SCALE'])
 
     daoParams["fwhm"] = fwhm
     daoParams["threshold"] = thresh
@@ -403,7 +425,6 @@ def run_daofind(config_file, filelist=None, source_match=50000., verbose=True,
     print(' ')
     print('run_daofind INPUT PARAMETERS:')
     print('-----------------------------')
-    print('config_file = ',software+'/param/'+config_file)
     print('fwhm = ',fwhm)
     print('thresh = ',thresh)
     print('scale = ',scale)
@@ -478,7 +499,7 @@ def run_daofind(config_file, filelist=None, source_match=50000., verbose=True,
         try:
             readnoise = Headers.get_mean_readnoise(image)
         except (KeyError, IndexError):
-            print("ALERT: Readnoise could not be gathered from the header for image %s."%(image))
+            print(("ALERT: Readnoise could not be gathered from the header for image %s."%(image)))
             readnoise = 0.0
 
         exptime = pyfits.getheader(image)['EXPTIME']
@@ -486,26 +507,26 @@ def run_daofind(config_file, filelist=None, source_match=50000., verbose=True,
         # estimate rms directly from image
         rms_array = pyfits.getdata(image,0)
         rms_image_median = rms_from_image(rms_array)
-        print("Median from RMS MAD estimate = ",rms_image_median)
+        print(("Median from RMS MAD estimate = ",rms_image_median))
 
         daoParams["sigma"] = rms_image_median
         daoParams["threshold"] = thresh
         daoParams["ratio"] = 0.8
 
-        print('sigma = ',rms_image_median)
-        print('readnoise = ',readnoise)
-        print('exptime = ',exptime)
-        print('image = ',image)
+        print(('sigma = ',rms_image_median))
+        print(('readnoise = ',readnoise))
+        print(('exptime = ',exptime))
+        print(('image = ',image))
 
-        if verbose: print("Finding sources in %s" %(image.split('/')[-1]))
+        if verbose: print(("Finding sources in %s" %(image.split('/')[-1])))
         outcoo=image.split('/')[-1]+'.coo'
 
         thresh = orig_thresh
         thresh1 = ns1 = None  # previous threshold and source count
         while True:
             daoParams["threshold"] = thresh
-            print("image = ",image+'[%d]' %sl_ext)
-            print("output = ",outcoo)
+            print(("image = ",image+'[%d]' %sl_ext))
+            print(("output = ",outcoo))
             print("verify = no")
             run_DAOStarFinder(image+'[%d]' %sl_ext, outcoo, daoParams, debug=False)
 
@@ -517,7 +538,7 @@ def run_daofind(config_file, filelist=None, source_match=50000., verbose=True,
                 if edgemask:
                     # create a mask that is true for bad pixels
                     if verbose:
-                        print("Masking within",edgemask,"pixels of edge")
+                        print(("Masking within",edgemask,"pixels of edge"))
                     fh = pyfits.open(image)
                     mask = fh[sl_ext].data == 0
                     fh.close()
@@ -538,14 +559,14 @@ def run_daofind(config_file, filelist=None, source_match=50000., verbose=True,
                 # linear projection from last 2 values with a little acceleration to get better threshold
                 # shoot for 5% below the maximum threshold
                 thresh = thresh0 + 1.3 * (thresh1-thresh0)/(ns1-ns0) * (0.95*source_match-ns0)
-            print("# of stars %d > source match %d, upping threshold from %3.2f to %3.2f" %(ns1,
+            print(("# of stars %d > source match %d, upping threshold from %3.2f to %3.2f" %(ns1,
                                                                                             source_match,
                                                                                             thresh1,
-                                                                                            thresh))
+                                                                                            thresh)))
             os.remove(outcoo)
 
         if verbose:
-            print('%d sources above %5.2f-sigma added to %s\n' %(len(image_coo),float(thresh), outcoo))
+            print(('%d sources above %5.2f-sigma added to %s\n' %(len(image_coo),float(thresh), outcoo)))
         coo_dict[outcoo] = len(image_coo)
     return(coo_dict)
 
