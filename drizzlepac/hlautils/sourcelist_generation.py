@@ -101,7 +101,6 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
     log.info('### (2) ###  Use daostarfinder to create a sourcelist from the total detection image {}'
              .format(tdp_imagename))
     daofind_white_sources = run_daofind(param_dict,
-                                        sourcelist_create = True,
                                         whitelightimage = whitelightimage_string,
                                         whitelightrms = whitelightrms_string,
                                         readnoise_dictionary_drzs = readnoise_dictionary_drzs,
@@ -329,10 +328,9 @@ def stwcs_get_scale(listofimages):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,sourcelist_create=False,
-                whitelightimage=None, whitelightrms=None, readnoise_dictionary_drzs=None, scale_dict_drzs=None,
-                exp_dictionary_scis=None, working_dir=None, detector=None, sl_ext = 0,sharphi=None, sharplo=None,
-                edgemask=5):
+def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whitelightimage=None, whitelightrms=None,
+                readnoise_dictionary_drzs=None, scale_dict_drzs=None,exp_dictionary_scis=None, working_dir=None,
+                detector=None, sl_ext = 0,sharphi=None, sharplo=None,edgemask=5):
     """Generates sourcelists using DAOfind.
 
     Parameters
@@ -348,9 +346,6 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,sou
 
     verbose : Boolean
         Print verbose output? Default value is 'True'.
-
-    sourcelist_create : Boolean
-        Create DAOphot sourcelists? Default value is 'False'.
 
     whitelightimage : string
         Name of the multi-filter composite image produced by hla_reduction.py. Default value is 'None'.
@@ -390,8 +385,8 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,sou
 
     Returns
     -------
-        if *sourcelist_create* is True, the name of daofind output coordinate file. If False, a dictionary of coo
-    filenames, keyed by image name.
+    output_dao : string
+        daofind output coordinate filename.
     """
 
 
@@ -434,140 +429,61 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,sou
     if sharplo:
         log.info('sharplo = ',sharplo)
         daoParams["sharplo"] = sharplo
-    if sourcelist_create:
 
-        readnoise = average_values_from_dict(readnoise_dictionary_drzs)
-        exptime = average_values_from_dict(exp_dictionary_scis)
+    readnoise = average_values_from_dict(readnoise_dictionary_drzs)
+    exptime = average_values_from_dict(exp_dictionary_scis)
 
-        # ----------------------------
-        # Create Median-Divided Image
-        # ----------------------------
-        medDivImg,wht_data = Create_MedDivImage(whitelightimage)
-        rms_array = pyfits.getdata(whitelightrms,0)
-        rms_image_median = Util.binmode(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])[0]
-        #rms_image_median = numpy.median(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])
-        log.info("Median from RMS image = {}".format(rms_image_median))
+    # ----------------------------
+    # Create Median-Divided Image
+    # ----------------------------
+    medDivImg,wht_data = Create_MedDivImage(whitelightimage)
+    rms_array = pyfits.getdata(whitelightrms,0)
+    rms_image_median = Util.binmode(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])[0]
+    #rms_image_median = numpy.median(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])
+    log.info("Median from RMS image = {}".format(rms_image_median))
 
-        daoParams["sigma"] = rms_image_median
+    daoParams["sigma"] = rms_image_median
 
-        log.info('white light rms image = {}'.format(whitelightrms))
-        log.info('sigma = {}'.format(rms_image_median))
-        log.info('readnoise = {}'.format(readnoise))
-        log.info('exptime = {}'.format(exptime))
+    log.info('white light rms image = {}'.format(whitelightrms))
+    log.info('sigma = {}'.format(rms_image_median))
+    log.info('readnoise = {}'.format(readnoise))
+    log.info('exptime = {}'.format(exptime))
+    log.info(' ')
+
+    name_daoOUT = extract_name(whitelightimage)
+    name_daoOUT = Rename.unique_name(name_daoOUT + ".coo", suffix=".coo")
+    output_dao = os.path.join(working_dir, name_daoOUT)
+
+    try:
+        log.info("image = {}".format(medDivImg))
+        log.info("output = {}".format(output_dao))
+
+        run_DAOStarFinder(medDivImg,output_dao,daoParams,debug=False)
+    except: #XXX what kind of exception here?
         log.info(' ')
+        log.info('****************************************************************')
+        log.info('WARNING: THE MEDIAN-DIVIDED IMAGE CONTAINS MULTIPLE EXTENSIONS; ')
+        log.info('                  STARTING FLAG AND FILTER PROCESSING.          ')
+        log.info('****************************************************************')
+        log.info(' ')
+        log.info("image = {}".format(medDivImg+"[1]"))
+        log.info("output = {}".format(output_dao))
+        run_DAOStarFinder(medDivImg + "[1]", output_dao, daoParams, debug=False)
+    reject_image = numpy.zeros(wht_data.shape,dtype=numpy.int16)
+    reject_image[numpy.where(wht_data <= 0.)] = 1
 
-        name_daoOUT = extract_name(whitelightimage)
-        name_daoOUT = Rename.unique_name(name_daoOUT + ".coo", suffix=".coo")
-        output_dao = os.path.join(working_dir, name_daoOUT)
+    rej_img = whitelightimage+'_rej_img.fits'
+    pyfits.append(rej_img, numpy.float32(reject_image))
 
-        try:
-            log.info("image = {}".format(medDivImg))
-            log.info("output = {}".format(output_dao))
+    mod_output_dao = output_dao+".mod"
+    filter_daolist(output_dao, mod_output_dao, reject_image, edgemask)
 
-            run_DAOStarFinder(medDivImg,output_dao,daoParams,debug=False)
-        except: #XXX what kind of exception here?
-            log.info(' ')
-            log.info('****************************************************************')
-            log.info('WARNING: THE MEDIAN-DIVIDED IMAGE CONTAINS MULTIPLE EXTENSIONS; ')
-            log.info('                  STARTING FLAG AND FILTER PROCESSING.          ')
-            log.info('****************************************************************')
-            log.info(' ')
-            log.info("image = {}".format(medDivImg+"[1]"))
-            log.info("output = {}".format(output_dao))
-            run_DAOStarFinder(medDivImg + "[1]", output_dao, daoParams, debug=False)
-        reject_image = numpy.zeros(wht_data.shape,dtype=numpy.int16)
-        reject_image[numpy.where(wht_data <= 0.)] = 1
+    os.rename(output_dao, output_dao+".OLD ")
+    os.rename(mod_output_dao, output_dao)
 
-        rej_img = whitelightimage+'_rej_img.fits'
-        pyfits.append(rej_img, numpy.float32(reject_image))
+    return output_dao
 
-        mod_output_dao = output_dao+".mod"
-        filter_daolist(output_dao, mod_output_dao, reject_image, edgemask)
 
-        os.rename(output_dao, output_dao+".OLD ")
-        os.rename(mod_output_dao, output_dao)
-
-        return output_dao
-
-    # ---------------------------------------------------
-    # Run DAOFIND For The Creation of AstroDrizzle Input
-    # ---------------------------------------------------
-    coo_dict={}
-    orig_thresh = thresh
-    for image in filelist:
-        try:
-            readnoise = Headers.get_mean_readnoise(image)
-        except (KeyError, IndexError):
-            log.info("ALERT: Readnoise could not be gathered from the header for image {}.".format(image))
-            readnoise = 0.0
-
-        exptime = pyfits.getheader(image)['EXPTIME']
-
-        # estimate rms directly from image
-        rms_array = pyfits.getdata(image,0)
-        rms_image_median = rms_from_image(rms_array)
-        log.info("Median from RMS MAD estimate = {}".format(rms_image_median))
-
-        daoParams["sigma"] = rms_image_median
-        daoParams["threshold"] = thresh
-        daoParams["ratio"] = 0.8
-
-        log.info('sigma = {}'.format(rms_image_median))
-        log.info('readnoise = {}'.format(readnoise))
-        log.info('exptime = {}'.format(exptime))
-        log.info('image = {}'.format(image))
-
-        if verbose: log.info("Finding sources in {}".format(image.split('/')[-1]))
-        outcoo=image.split('/')[-1]+'.coo'
-
-        thresh = orig_thresh
-        thresh1 = ns1 = None  # previous threshold and source count
-        while True:
-            daoParams["threshold"] = thresh
-            log.info(("image = {}".format(image+'[%d]' %sl_ext))
-            log.info(("output = {}".format(outcoo))
-            log.info("verify = no")
-            run_DAOStarFinder(image+'[%d]' %sl_ext, outcoo, daoParams, debug=False)
-
-            infile = open(outcoo,'r')
-            image_coo = infile.readlines()
-            infile.close()
-
-            if len(image_coo) <= source_match:
-                if edgemask:
-                    # create a mask that is true for bad pixels
-                    if verbose:
-                        log.info("Masking within",edgemask,"pixels of edge")
-                    fh = pyfits.open(image)
-                    mask = fh[sl_ext].data == 0
-                    fh.close()
-                    count = filter_daolist(outcoo, outcoo, mask, edgemask)
-                    infile = open(outcoo,'r')
-                    image_coo = infile.readlines()
-                    infile.close()
-                break
-
-            # if number of sources > source_match, increase threshold
-            thresh0 = thresh1
-            ns0 = ns1
-            thresh1 = thresh
-            ns1 = len(image_coo)
-            if thresh0 is None:
-                thresh = thresh*1.1
-            else:
-                # linear projection from last 2 values with a little acceleration to get better threshold
-                # shoot for 5% below the maximum threshold
-                thresh = thresh0 + 1.3 * (thresh1-thresh0)/(ns1-ns0) * (0.95*source_match-ns0)
-            log.info("# of stars {} > source match {}, upping threshold from {} to {}".format(ns1,
-                                                                                            source_match,
-                                                                                            thresh1,
-                                                                                            thresh))
-            os.remove(outcoo)
-
-        if verbose:
-            log.info('{} sources above {}-sigma added to {}\n'.format((len(image_coo),float(thresh), outcoo))
-        coo_dict[outcoo] = len(image_coo)
-    return(coo_dict)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
