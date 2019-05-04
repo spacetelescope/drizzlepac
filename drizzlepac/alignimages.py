@@ -137,7 +137,7 @@ def check_and_get_data(files, **pars):
                     # Need to check if the MEMNAME is a full filename
                     # or an ipppssoot
                     if memname.find('_') == -1:
-                        memname += + '_flc.fits'
+                        memname += '_flc.fits'
                     candidate_files.append(memname)
 
             elif suffix in ['flc', 'flt']:
@@ -1098,8 +1098,8 @@ def generate_source_catalogs(imglist, **pars):
     Returns
     -------
     src_cat : dictionary
-        a dictionary (keyed by image name) of two-element dictionaries which
-        contain the following:
+        A dictionary (keyed by image name) of two-element dictionaries which
+        contains the following:
             * a dictionary of the detector-specific processing parameters;
             * an astropy table of position and photometry information of
               all detected sources.
