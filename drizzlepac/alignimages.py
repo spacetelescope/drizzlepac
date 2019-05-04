@@ -1132,19 +1132,19 @@ def generate_source_catalogs(imglist, **pars):
                     src_cat[imgname]["params"] = detector_pars
 
                 except KeyError:
-                    log.exit(
+                    log.error(
                         "ERROR! Unrecognized detector '{}'. Exiting..."
                         .format(detector)
                     )
-                    os.error(
+                    sys.exit(
                         "ERROR! Unrecognized detector '{}'. Exiting..."
                         .format(detector)
                     )
 
             except KeyError:
-                log.exit("ERROR! Unrecognized instrument '{}'. Exiting..."
-                         .format(instrument))
-                os.error("ERROR! Unrecognized instrument '{}'. Exiting..."
+                log.error("ERROR! Unrecognized instrument '{}'. Exiting..."
+                          .format(instrument))
+                sys.exit("ERROR! Unrecognized instrument '{}'. Exiting..."
                          .format(instrument))
 
             # Identify sources in image, convert coords from chip x, y form
