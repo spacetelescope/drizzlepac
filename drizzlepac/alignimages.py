@@ -83,13 +83,13 @@ def check_and_get_data(files, **pars):
 
     Parameters
     ----------
-    files: list
+    files : list
         List of one or more calibrated fits images that will be used for
         catalog generation.
 
     Returns
     -------
-    globbed_files: list
+    globbed_files : list
         list of full filenames
 
     """
@@ -255,7 +255,7 @@ def perform_align(images, archive=False, clobber=False, debug=False,
 
     Updates
     -------
-    fitab: astropy.table.Table
+    fitab : astropy.table.Table
         Table which contains processing information and alignment results for
         every raw image evaluated.
 
@@ -712,10 +712,10 @@ def match_relative_fit(imglist, reference_catalog):
     ----------
     imglist : list
         List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata
-        and source catalogs
+        and source catalogs.
 
     reference_catalog : astropy.table.Table
-        `~astropy.table.Table` of reference sources for this field
+        `~astropy.table.Table` of reference sources for this field.
 
     Returns
     --------
@@ -829,7 +829,7 @@ def determine_fit_quality(imglist, fitab, catalogs_remaining,
 
     Parameters
     ----------
-    imglist: list
+    imglist : list
         output of ``interpret_fits``. Contains sourcelist tables,
         newly computed WCS info, etc. for every chip of every valid input
         image. This list should have been  updated, in-place, with the new
@@ -856,13 +856,13 @@ def determine_fit_quality(imglist, fitab, catalogs_remaining,
 
     Returns
     -------
-    max_rms_val: float
+    max_rms_val : float
         The best Total rms determined from all of the images
 
-    num_xmatches: int
+    num_xmatches : int
         The number of stars used in matching the data
 
-    fit_quality: int
+    fit_quality : int
         fit quality category:
             * 1 = valid solution with rms < 10 mas
             * 2 = Valid but compromised solution with rms < 10 mas
@@ -870,10 +870,10 @@ def determine_fit_quality(imglist, fitab, catalogs_remaining,
             * 4 = Valid but compromised solution with RMS >= 10 mas
             * 5 = Not valid solution
 
-    fitab: astropy.table.Table
+    fitab : astropy.table.Table
         modified fitab object
 
-    fit_status: dict
+    fit_status : dict
         Dictionary containing the following (per image and chip number):
             * overall fit validity (Boolean)
             * total (visit-level) RMS value in mas (float)
@@ -1067,7 +1067,7 @@ def generate_astrometric_catalog(imglist, **pars):
         catalog generation.
 
     Returns
-    =======
+    -------
     ref_table : astropy.table.Table
         Catalog as a `~astropy.table.Table`
 
@@ -1185,13 +1185,13 @@ def update_image_wcs_info(tweakwcs_output):
 
     Parameters
     ----------
-    tweakwcs_output: list
+    tweakwcs_output : list
         output of ``tweakwcs``. Contains sourcelist tables, newly computed WCS
         info, etc. for every chip of every valid every valid input image.
 
     Returns
     -------
-    out_headerlet: dict
+    out_headerlet : dict
         a dictionary of the headerlet files created by this subroutine,
         keyed by ``flt/flc`` FITS filename.
 
@@ -1280,11 +1280,11 @@ def update_headerlet_phdu(tpwcs, headerlet):
 
     Parameters
     ----------
-    tpwcs: tweakwcs.tpwcs.TPWCS
+    tpwcs : tweakwcs.tpwcs.TPWCS
         Basically the output from ``tweakwcs`` which contains the cross
         match and fit information as well as an aligned WCS.
 
-    headerlet: stwcs.wcsutil.headerlet.Headerlet
+    headerlet : stwcs.wcsutil.headerlet.Headerlet
         Headerlet containing WCS information.
 
     """
@@ -1358,7 +1358,7 @@ def interpret_fit_rms(tpwcs_lst, reference_catalog):
             * ``'NUM_FITS'``: number of images/group_id's with successful fits
               included in the ``'TOTAL_RMS'``
 
-        These entries are added to the 'fit_info' dictionary.
+        These entries are added to the ``'fit_info'`` dictionary.
 
     reference_catalog : astropy.table.Table
         Table of reference source positions used for the fit.
