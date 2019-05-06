@@ -1,4 +1,4 @@
-"""Wrappers for astroquery-related functionality"""
+""" Wrappers for astroquery-related functionality. """
 import shutil
 import os
 try:
@@ -11,39 +11,39 @@ from stsci.tools import logutil
 
 __taskname__ = 'astroquery_utils'
 
-log = logutil.create_logger(__name__,
-                            level=logutil.logging.INFO,
-                            stream=sys.stdout)
+log = logutil.create_logger(
+    __name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 
 def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
     """Simple interface for retrieving an observation from the MAST archive
 
-    If the input obsid is for an association, it will request all members with
-    the specified suffixes.
+    If the input ``obsid`` is for an association, it will request all
+    members with the specified suffixes.
 
     Parameters
     -----------
-    obsid : string
+    obsid : str
         ID for observation to be retrieved from the MAST archive.  Only the
-        IPPSSOOT (rootname) of exposure or ASN needs to be provided; eg.,
-        ib6v06060.
+        ``IPPSSOOT`` (rootname) of exposure or ASN needs to be provided; eg.,
+        ``ib6v06060``.
 
     suffix : list, optional
         List containing suffixes of files which should be requested from MAST.
-        Default value  "['FLC']".
+        Default value ``['FLC']``.
 
     archive : Boolean, optional
         Retain copies of the downloaded files in the astroquery created
-        sub-directories? Default is "False".
+        sub-directories? Default is ``False``.
 
-    clobber : Boolean, optional
-        Download and Overwrite existing files? Default is "False".
+    clobber : bool, optional
+        Download and overwrite existing files? Default is ``False``.
 
     Returns
     -------
     local_files : list
-        List of filenames
+        List of filenames.
+
     """
     local_files = []
 
@@ -60,10 +60,10 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
         return local_files
 
     dpobs = Observations.get_product_list(obs_table)
-    data_products_by_id = Observations.filter_products(dpobs,
-                                                       productSubGroupDescription=suffix,
-                                                       extension='fits',
-                                                       mrp_only=False)
+    data_products_by_id = Observations.filter_products(
+        dpobs, productSubGroupDescription=suffix,
+        extension='fits', mrp_only=False
+    )
 
     # After the filtering has been done, ensure there is still data in the
     # table for download. If the table is empty, look for FLT images in lieu
@@ -72,20 +72,21 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
     if not data_products_by_id:
         log.info("WARNING: No FLC files found for {} - will look for FLT "
                  "files instead.".format(obsid))
-        suffix = ['FLT']
-        data_products_by_id = Observations.filter_products(dpobs,
-                                                           productSubGroupDescription=suffix,
-                                                           extension='fits',
-                                                           mrp_only=False)
+        data_products_by_id = Observations.filter_products(
+            dpobs, productSubGroupDescription=['FLT'],
+            extension='fits', mrp_only=False
+        )
 
         # If still no data, then return.  An exception will eventually be
         # thrown in the higher level code.
         if not data_products_by_id:
-            log.info(
-                "WARNING: No FLC or FLT files found for {}.".format(obsid))
+            log.info("WARNING: No FLC or FLT files found for {}."
+                     .format(obsid))
             return local_files
+
     all_images = data_products_by_id['productFilename'].tolist()
     log.info(all_images)
+
     if not clobber:
         rows_to_remove = []
         for row_idx, row in enumerate(data_products_by_id):
@@ -101,8 +102,9 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
     if not clobber:
         for rownum in rows_to_remove[::-1]:
             if manifest:
-                manifest.insert_row(rownum,
-                                    vals=[all_images[rownum], "LOCAL", "None", "None"])
+                manifest.insert_row(
+                    rownum, vals=[all_images[rownum], "LOCAL", "None", "None"]
+                )
             else:
                 return all_images
 
@@ -125,7 +127,9 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
             local_files.append(os.path.basename(local_file))
         else:
             local_files.append(file)
+
     if not archive:
         # Remove astroquery created sub-directories
         shutil.rmtree(download_dir)
+
     return local_files

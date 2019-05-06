@@ -96,7 +96,7 @@ setup(
         'tweakwcs>=0.5.0',
         'stregion',
         'requests',
-        # HLA-pipeline specific:
+        # APP specific:
         'astroquery',
         'photutils',
         'pysynphot',

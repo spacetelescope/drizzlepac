@@ -23,21 +23,16 @@ from stsci.tools import fileutil, logutil
 from stwcs.wcsutil import headerlet, HSTWCS
 import tweakwcs
 
-from drizzlepac import updatehdr
-from drizzlepac import util
+from drizzlepac import updatehdr, util, __version__, __version_date__
 from drizzlepac.hlautils.astrometric_utils import (
     build_wcscat, create_astrometric_catalog, generate_source_catalog,
     countExtn
 )
-from drizzlepac.hlautils import astroquery_utils as aqutils
-from drizzlepac.hlautils import analyze
-from drizzlepac.hlautils import get_git_rev_info
+from drizzlepac.hlautils import (astroquery_utils as aqutils, analyze,
+                                 get_git_rev_info)
 
 
 __taskname__ = 'alignimages'
-
-__version__ = 0.2
-__version_date__ = '04-May-2019'
 
 
 _MIN_CATALOG_THRESHOLD = 3
@@ -93,18 +88,10 @@ def check_and_get_data(files, **pars):
         list of full filenames
 
     """
-<<<<<<< HEAD
-    retrieve_list = []  # Files retrieved via astroquery and resident on disk
-    candidate_list = []  # File names gathered from *_asn.fits file
-    ipppssoot_list = []  # ipppssoot names used to avoid duplicate downloads
-    total_input_list = []  # Output full filename list of data on disk
-    member_suffix = '_flc.fits'
-=======
     retrieved_obs = []  # Files retrieved via astroquery and resident on disk
     candidate_files = []  # File names gathered from *_asn.fits file
     ipppssoot_files = []  # ipppssoot names used to avoid duplicate downloads
     globbed_files = []  # Output full filename list of data on disk
->>>>>>> Remove container type from var name
 
     # Loop over the `files` to determine if the item in the `files` is a
     # full association file (*_asn.fits), a full individual image file
@@ -261,7 +248,8 @@ def perform_align(images, archive=False, clobber=False, debug=False,
 
     """
     log.info(
-        "*** HLAPIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n"
+        "*** Advanced Pipeline Processing Version {!s} ({!s}) started at: "
+        "{!s} ***\n"
         .format(__version__, __version_date__, util._ptime()[0])
     )
     fitab = Table()

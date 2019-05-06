@@ -1,6 +1,6 @@
 .. hla:
 
-Enhanced Pipeline Products API
+Advanced Pipeline Products API
 ------------------------------
 
 

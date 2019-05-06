@@ -57,42 +57,32 @@ from ..tweakutils import build_xy_zeropoint
 
 __taskname__ = 'astrometric_utils'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
-
+log = logutil.create_logger(
+    __name__, level=logutil.logging.INFO, stream=sys.stdout
+)
 
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
 DEF_CAT_URL = 'http://gsss.stsci.edu/webservices'
-
-if ASTROMETRIC_CAT_ENVVAR in os.environ:
-    SERVICELOCATION = os.environ[ASTROMETRIC_CAT_ENVVAR]
-else:
-    SERVICELOCATION = DEF_CAT_URL
-
+SERVICELOCATION = os.environ.get(ASTROMETRIC_CAT_ENVVAR, DEF_CAT_URL)
 MODULE_PATH = os.path.dirname(inspect.getfile(inspect.currentframe()))
 VEGASPEC = os.path.join(os.path.dirname(MODULE_PATH),
                         'data', 'alpha_lyr_stis_008.fits')
 
-__all__ = ['build_reference_wcs', 'create_astrometric_catalog', 'compute_radius',
-           'find_gsc_offset', 'get_catalog',
+__all__ = ['build_reference_wcs', 'create_astrometric_catalog',
+           'compute_radius', 'find_gsc_offset', 'get_catalog',
            'extract_sources', 'find_hist2d_offset', 'generate_source_catalog',
            'classify_sources']
 
-"""
 
-Primary function for creating an astrometric reference catalog.
-
-"""
-
-
-def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
-                               gaia_only=False, table_format="ascii.ecsv",
-                               existing_wcs=None):
+def create_astrometric_catalog(inputs, catalog="GAIADR2",
+                               output="ref_cat.ecsv", gaia_only=False,
+                               table_format="ascii.ecsv", existing_wcs=None):
     """Create an astrometric catalog that covers the inputs' field-of-view.
 
     Parameters
     ----------
-    input : str, list
-        Filenames of images to be aligned to astrometric catalog
+    inputs : str, list
+        Filenames of images to be aligned to astrometric catalog.
 
     catalog : str, optional
         Name of catalog to extract astrometric positions for sources in the
@@ -107,7 +97,7 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
         Specify whether or not to only use sources from GAIA in output catalog
 
     existing_wcs : `~stwcs.wcsutil.HSTWCS`
-        existing WCS object specified by the user
+        Existing WCS object specified by the user.
 
     Notes
     -----
@@ -116,8 +106,8 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
 
     Returns
     -------
-    ref_table : `~astropy.table.Table`
-        Astropy Table object of the catalog
+    ref_table : astropy.table.Table
+        Catalog.
 
     """
     inputs, _ = parseinput.parseinput(inputs)
@@ -127,10 +117,11 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
     # as the first chip in the list, which for WFPC2 data means the PC.
     # Fortunately, for alignment, this doesn't matter since no resampling of
     # data will be performed
-    if existing_wcs is not None:
-        outwcs = existing_wcs
-    else:
+    if existing_wcs is None:
         outwcs = build_reference_wcs(inputs)
+    else:
+        outwcs = existing_wcs
+
     radius = compute_radius(outwcs)
     ra, dec = outwcs.wcs.crval
 
@@ -167,7 +158,8 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
     # Write out table to a file, if specified
     if output:
         ref_table.write(output, format=table_format)
-        log.info("Created catalog '{}' with {} sources".format(output, num_sources))
+        log.info("Created catalog '{}' with {} sources"
+                 .format(output, num_sources))
 
     return ref_table
 
@@ -217,18 +209,17 @@ def get_catalog(ra, dec, sr=0.1, catalog='GSC241'):
 
     Returns
     -------
-    csv : CSV object
-        CSV object of returned sources with all columns as provided by catalog
+    r_csv : csv.DictReader
+        `csv.DictReader` of returned sources with all columns as provided by
+        catalog.
 
     """
     serviceType = 'vo/CatalogSearch.aspx'
-    spec_str = 'RA={}&DEC={}&SR={}&FORMAT={}&CAT={}&MINDET=5'
-    headers = {'Content-Type': 'text/csv'}
-    fmt = 'CSV'
-
-    spec = spec_str.format(ra, dec, sr, fmt, catalog)
+    spec = 'RA={}&DEC={}&SR={}&FORMAT={}&CAT={}&MINDET=5'.format(
+        ra, dec, sr, 'CSV', catalog
+    )
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
-    rawcat = requests.get(serviceUrl, headers=headers)
+    rawcat = requests.get(serviceUrl, headers={'Content-Type': 'text/csv'})
     r_contents = rawcat.content.decode()  # convert from bytes to a String
     rstr = r_contents.split('\r\n')
     # remove initial line describing the number of sources returned
@@ -241,14 +232,12 @@ def get_catalog(ra, dec, sr=0.1, catalog='GSC241'):
 
 def compute_radius(wcs):
     """Compute the radius from the center to the furthest edge of the WCS."""
-
     ra, dec = wcs.wcs.crval
     img_center = SkyCoord(ra=ra * u.degree, dec=dec * u.degree)
     wcs_foot = wcs.calc_footprint()
     img_corners = SkyCoord(ra=wcs_foot[:, 0] * u.degree,
                            dec=wcs_foot[:, 1] * u.degree)
     radius = img_center.separation(img_corners).max().value
-
     return radius
 
 
@@ -301,42 +290,58 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
     ----------
     img : ndarray
         Numpy array of the science extension from the observations FITS file.
-    dqmask : ndarray
+
+    dqmask : ndarray, optional
         Bitmask which identifies whether a pixel should be used (1) in source
         identification or not(0). If provided, this mask will be applied to the
         input array prior to source identification.
-    fwhm : float
+
+    fwhm : float, optional
         Full-width half-maximum (fwhm) of the PSF in pixels.
-    threshold : float or None
+
+    threshold : float, None, optional
         Value from the image which serves as the limit for determining sources.
         If None, compute a default value of (background+5*rms(background)).
-        If threshold < 0.0, use absolute value as scaling factor for default value.
-    source_box : int
-        Size of box (in pixels) which defines the minimum size of a valid source.
-    classify : bool
-        Specify whether or not to apply classification based on invarient moments
-        of each source to determine whether or not a source is likely to be a
-        cosmic-ray, and not include those sources in the final catalog.
-    centering_mode : str
-        "segmentaton" or "starfind"
-        Algorithm to use when computing the positions of the detected sources.
-        Centering will only take place after `threshold` has been determined, and
-        sources are identified using segmentation.  Centering using `segmentation`
-        will rely on `photutils.segmentation.source_properties` to generate the
+        If threshold < 0.0, use absolute value as scaling factor for default
+        value.
+
+    source_box : int, optional
+        Size of box (in pixels) which defines the minimum size of a valid
+        source.
+
+    classify : bool, optional
+        Specify whether or not to apply classification based on invarient
+        moments of each source to determine whether or not a source is likely
+        to be a cosmic-ray, and not include those sources in the final catalog.
+
+    centering_mode : str, optional
+        "segmentaton" or "starfind" Algorithm to use when computing the
+        positions of the detected sources. Centering will only take place after
+        ``threshold`` has been determined, and sources are identified using
+        segmentation.  Centering using ``segmentation`` will rely on
+        `photutils.segmentation.source_properties` to generate the
         properties for the source catalog.  Centering using `starfind` will use
         `photutils.IRAFStarFinder` to characterize each source in the catalog.
-    nlargest : int, None
+
+    nlargest : int, None, optional
         Number of largest (brightest) sources in each chip/array to measure
         when using 'starfind' mode.
+
     outroot : str, optional
-        If specified, write out the catalog of sources to the file with this name rootname.
+        If specified, write out the catalog of sources to the file with this
+        name rootname.
+
     plot : bool, optional
-        Specify whether or not to create a plot of the sources on a view of the image.
+        Specify whether or not to create a plot of the sources on a view
+        of the image.
+
     vmax : float, optional
         If plotting the sources, scale the image to this maximum value.
+
     deblend : bool, optional
         Specify whether or not to apply photutils deblending algorithm when
         evaluating each of the identified segments (sources) from the chip.
+
     """
     # apply any provided dqmask for segmentation only
     if dqmask is not None:
@@ -346,7 +351,6 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
         imgarr = img
 
     bkg_estimator = MedianBackground()
-    bkg = None
 
     exclude_percentiles = [10, 25, 50, 75]
     for percentile in exclude_percentiles:
@@ -355,26 +359,29 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
                                bkg_estimator=bkg_estimator,
                                exclude_percentile=percentile)
         except Exception:
-            bkg = None
             continue
 
-        if bkg is not None:
-            # If it succeeds, stop and use that value
-            bkg_rms = (5. * bkg.background_rms)
-            bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
-            default_threshold = bkg.background + bkg_rms
-            if threshold is None:
-                threshold = default_threshold
-            elif threshold < 0:
-                threshold = -1 * threshold * default_threshold
-                log.info("{} based on {}".format(threshold.max(), default_threshold.max()))
-                bkg_rms_mean = threshold.max()
-            else:
-                bkg_rms_mean = 3. * threshold
+        # If it succeeds, stop and use that value
+        bkg_rms = (5. * bkg.background_rms)
+        bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
+        default_threshold = bkg.background + bkg_rms
 
-            if bkg_rms_mean < 0:
-                bkg_rms_mean = 0.
-            break
+        if threshold is None:
+            threshold = default_threshold
+
+        elif threshold < 0:
+            threshold = -1 * threshold * default_threshold
+            log.info("{} based on {}".format(threshold.max(),
+                                             default_threshold.max()))
+            bkg_rms_mean = threshold.max()
+
+        else:
+            bkg_rms_mean = 3. * threshold
+
+        if bkg_rms_mean < 0:
+            bkg_rms_mean = 0.
+
+        break
 
     # If Background2D does not work at all, define default scalar values for
     # the background to be used in source identification
@@ -393,9 +400,9 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
         return None, None
 
     if deblend:
-        segm = deblend_sources(imgarr, segm, npixels=5,
-                               filter_kernel=kernel, nlevels=16,
-                               contrast=0.01)
+        segm = deblend_sources(imgarr, segm, npixels=5, filter_kernel=kernel,
+                               nlevels=16, contrast=0.01)
+
     # If classify is turned on, it should modify the segmentation map
     if classify:
         cat = source_properties(imgarr, segm)
@@ -417,8 +424,9 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
     # convert segm to mask for daofind
     if centering_mode == 'starfind':
         src_table = None
-        # daofind = IRAFStarFinder(fwhm=fwhm, threshold=5.*bkg.background_rms_median)
-        log.info("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, bkg_rms_mean))
+        log.info("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}"
+                 .format(fwhm, bkg_rms_mean))
+
         daofind = DAOStarFinder(fwhm=fwhm, threshold=bkg_rms_mean)
 
         # Identify nbrightest/largest sources
@@ -429,7 +437,10 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
                     np.flip(np.argsort(segm.areas))[: nlargest]]
             else:
                 # for photutils < 0.7
-                areas = np.array([area for area in np.bincount(segm.data.ravel())[1:] if area != 0])
+                areas = np.array([
+                    area for area in np.bincount(segm.data.ravel())[1:]
+                    if area != 0
+                ])
                 large_labels = segm.labels[
                     np.flip(np.argsort(areas))[: nlargest]]
 
@@ -441,7 +452,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
             if segment is None:
                 continue
             if nlargest is not None and segment.label not in large_labels:
-                continue  # Move on to the next segment
+                continue
+
             # Get slice definition for the segment with this label
             seg_slice = segment.slices
             seg_yoffset = seg_slice[0].start
@@ -449,6 +461,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
 
             # Define raw data from this slice
             detection_img = img[seg_slice]
+
             # zero out any pixels which do not have this segments label
             detection_img[segm.data[seg_slice] == 0] = 0
 
@@ -458,13 +471,16 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
             # Pick out brightest source only
             if src_table is None and seg_table:
                 # Initialize final master source list catalog
-                src_table = Table(names=seg_table.colnames,
-                                  dtype=[dt[1] for dt in seg_table.dtype.descr])
+                src_table = Table(
+                    names=seg_table.colnames,
+                    dtype=[dt[1] for dt in seg_table.dtype.descr]
+                )
 
-            if seg_table and seg_table['peak'].max() == detection_img.max():
-                max_row = np.where(seg_table['peak'] == seg_table['peak'].max())[0][0]
-                # Add row for detected source to master catalog
-                # apply offset to slice to convert positions into full-frame coordinates
+            if seg_table:
+                max_peak = seg_table['peak'].max()
+                max_row = np.where(seg_table['peak'] == max_peak)[0][0]
+                # Add row for detected source to master catalog apply offset
+                # to slice to convert positions into full-frame coordinates
                 seg_table['xcentroid'] += seg_xoffset
                 seg_table['ycentroid'] += seg_yoffset
                 src_table.add_row(seg_table[max_row])
@@ -503,12 +519,15 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
         if vmax is None:
             norm = ImageNormalize(stretch=SqrtStretch())
         fig, ax = plt.subplots(2, 2, figsize=(8, 8))
-        ax[0][0].imshow(imgarr, origin='lower', cmap='Greys_r', norm=norm, vmax=vmax)
-        ax[0][1].imshow(segm, origin='lower', cmap=segm.cmap(random_state=12345))
+        ax[0][0].imshow(imgarr, origin='lower', cmap='Greys_r', norm=norm,
+                        vmax=vmax)
+        ax[0][1].imshow(segm, origin='lower',
+                        cmap=segm.cmap(random_state=12345))
         ax[0][1].set_title('Segmentation Map')
         ax[1][0].imshow(bkg.background, origin='lower')
         if not isinstance(threshold, float):
             ax[1][1].imshow(threshold, origin='lower')
+
     return tbl, segm
 
 
@@ -525,15 +544,16 @@ def classify_sources(catalog, sources=None):
     catalog : `~photutils.SourceCatalog`
         The photutils catalog for the image/chip.
 
-    sources : tuple
+    sources : tuple, optional
         Range of objects from catalog to process as a tuple of (min, max).
-        If None (default) all sources are processed.
+        If `None` (default) all sources are processed.
 
     Returns
     -------
     srctype : ndarray
         An ndarray where a value of 1 indicates a likely valid, non-cosmic-ray
         source, and a value of 0 indicates a likely cosmic-ray.
+
     """
     moments = catalog.moments_central
     if sources is None:
@@ -546,14 +566,16 @@ def classify_sources(catalog, sources=None):
         src_y = catalog[src].ycentroid
         if np.isnan(src_x) or np.isnan(src_y):
             continue
+
         x, y = np.where(moments[src] == moments[src].max())
-        if (x[0] > 1) and (y[0] > 1):
+        if x[0] > 1 and y[0] > 1:
             srctype[src] = 1
 
     return srctype
 
 
-def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detector_pars):
+def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
+                            **detector_pars):
     """ Build source catalogs for each chip using photutils.
 
     The catalog returned by this function includes sources found in all chips
@@ -569,14 +591,17 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
     Parameters
     ----------
     image : `~astropy.io.fits.HDUList`
-        Input image as an astropy.io.fits HDUList.
-    dqname : str
-        EXTNAME for the DQ array, if present, in
-        the input image HDUList.
-    output : bool
+        Input image as an `~astropy.io.fits HDUList`.
+
+    dqname : str, optional
+        ``EXTNAME`` for the DQ array, if present, in the input image
+        ``HDUList``.
+
+    output : bool, optional
         Specify whether or not to write out a separate catalog file for all the
         sources found in each chip.
-    fwhm : float
+
+    fwhm : float, optional
         Full-width half-maximum (fwhm) of the PSF in pixels.
 
     Returns
@@ -594,11 +619,10 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
 
     # Build source catalog for entire image
     source_cats = {}
-    numSci = countExtn(image, extname='SCI')
+    num_sci = countExtn(image, extname='SCI')
     outroot = None
 
-    for chip in range(numSci):
-        chip += 1
+    for chip in range(1, num_sci + 1):
         # find sources in image
         if output:
             rootname = image[0].header['rootname']
@@ -616,7 +640,8 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
             # source match algorithm from trying to match multiple sources
             # from one image to a single source in the
             # other or vice-versa.
-            # Create temp DQ mask containing all pixels flagged with any value EXCEPT 256
+            # Create temp DQ mask containing all pixels flagged with any value
+            # EXCEPT 256
             non_sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=256)
 
             # Create temp DQ mask containing saturated pixels ONLY
@@ -625,14 +650,17 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
             # Grow out saturated pixels by a few pixels in every direction
             grown_sat_mask = ndimage.binary_dilation(sat_mask, iterations=5)
 
-            # combine the two temporary DQ masks into a single composite DQ mask.
+            # combine the two temporary DQ masks into a single composite DQ
+            # mask.
             dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
 
             # dqmask = bitfield_to_boolean_mask(dqarr, good_mask_value=False)
             # TODO: <---Remove this old no-sat bit grow line once this
             # thing works
 
-        seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, outroot=outroot, fwhm=fwhm, **detector_pars)
+        seg_tab, segmap = extract_sources(
+            imgarr, dqmask=dqmask, outroot=outroot, fwhm=fwhm, **detector_pars
+        )
         seg_tab_phot = seg_tab
 
         source_cats[chip] = seg_tab_phot
@@ -659,10 +687,13 @@ def generate_sky_catalog(image, refwcs, dqname="DQ", output=False):
     ----------
     image : `~astropy.io.fits.HDUList`
         Input image.
+
     refwcs : `~stwcs.wcsutil.HSTWCS`
         Definition of the reference frame WCS.
+
     dqname : str, optional
         EXTNAME for the DQ array, if present, in the input image.
+
     output : bool, optional
         Specify whether or not to write out a separate catalog file for all the
         sources found in each chip.
@@ -680,23 +711,28 @@ def generate_sky_catalog(image, refwcs, dqname="DQ", output=False):
 
     # Build source catalog for entire image
     master_cat = None
-    numSci = countExtn(image, extname='SCI')
+    num_sci = countExtn(image, extname='SCI')
+
     # if no refwcs specified, build one now...
     if refwcs is None:
         refwcs = build_reference_wcs([image])
-    for chip in range(numSci):
-        chip += 1
+
+    for chip in range(1, num_sci + 1):
         # work with sources identified from this specific chip
         seg_tab_phot = source_cats[chip]
         if seg_tab_phot is None:
             continue
+
         # Convert pixel coordinates from this chip to sky coordinates
         chip_wcs = wcsutil.HSTWCS(image, ext=('sci', chip))
-        seg_ra, seg_dec = chip_wcs.all_pix2world(seg_tab_phot['xcentroid'], seg_tab_phot['ycentroid'], 1)
+        seg_ra, seg_dec = chip_wcs.all_pix2world(seg_tab_phot['xcentroid'],
+                                                 seg_tab_phot['ycentroid'], 1)
+
         # Convert sky positions to pixel positions in the reference WCS frame
         seg_xy_out = refwcs.all_world2pix(seg_ra, seg_dec, 1)
         seg_tab_phot['xcentroid'] = seg_xy_out[0]
         seg_tab_phot['ycentroid'] = seg_xy_out[1]
+
         if master_cat is None:
             master_cat = seg_tab_phot
         else:
@@ -706,22 +742,26 @@ def generate_sky_catalog(image, refwcs, dqname="DQ", output=False):
 
 
 def compute_photometry(catalog, photmode):
-    """ Compute magnitudes for sources from catalog based on observations photmode.
+    """ Compute magnitudes for sources from catalog based on observations
+    photmode.
 
     Parameters
     ----------
-    catalog : `~astropy.table.Table`
-        Astropy Table with 'source_sum' column for the measured flux for each source.
+    catalog : astropy.table.Table
+        `~astropy.table.Table` with ``'source_sum'`` column for the measured
+        flux for each source.
 
     photmode : str
-        Specification of the observation filter configuration used for the exposure
-        as reported by the 'PHOTMODE' keyword from the PRIMARY header.
+        Specification of the observation filter configuration used for
+        the exposure as reported by the ``'PHOTMODE'`` keyword from the
+        PRIMARY header.
 
     Returns
     -------
-    phot_cat : `~astropy.table.Table`
-        Astropy Table object of input source catalog with added column for
+    phot_cat : astropy.table.Table
+        `~astropy.table.Table` of input source catalog with added column for
         VEGAMAG photometry (in magnitudes).
+
     """
     # Determine VEGAMAG zero-point using pysynphot for this photmode
     photmode = photmode.replace(' ', ', ')
@@ -740,29 +780,34 @@ def compute_photometry(catalog, photmode):
     return catalog
 
 
-def filter_catalog(catalog, bright_limit=1.0, max_bright=None, min_bright=20, colname="vegamag"):
+def filter_catalog(catalog, bright_limit=1.0, max_bright=None, min_bright=20,
+                   colname="vegamag"):
     """ Create a new catalog selected from input based on photometry.
 
     Parameters
     ----------
     catalog : `~astropy.table.Table`
         Table containing the full set of identified sources.
-    bright_limit : float
+
+    bright_limit : float, optional
         Fraction of catalog based on brightness that should be retained.
         Value of 1.00 means full catalog.
-    max_bright : int
+
+    max_bright : int, optional
         Maximum number of sources to keep regardless of `bright_limit`.
-    min_bright : int
+
+    min_bright : int, optional
         Minimum number of sources to keep regardless of `bright_limit`.
-    colname : str
+
+    colname : str, optional
         Name of column to use for selection/sorting.
 
     Returns
     -------
     new_catalog : `~astropy.table.Table`
         New table which only has the sources that meet the selection criteria.
-    """
 
+    """
     # sort by magnitude
     phot_column = catalog[colname]
     num_sources = len(phot_column)
@@ -787,24 +832,25 @@ def build_self_reference(filename, clean_wcs=False):
     Parameters
     ----------
     filename : str
-        Filename of image which will be corrected, and which will form the basis
-        of the undistorted WCS.
+        Filename of image which will be corrected, and which will form the
+        basis of the undistorted WCS.
 
-    clean_wcs : bool
+    clean_wcs : bool, optional
         Specify whether or not to return the WCS object without any distortion
         information, or any history of the original input image.  This converts
-        the output from `utils.output_wcs()` into a pristine `~stwcs.wcsutil.HSTWCS` object.
+        the output from `utils.output_wcs()` into a pristine
+        `~stwcs.wcsutil.HSTWCS` object.
 
     Returns
     -------
-    customwcs : `~stwcs.wcsutil.HSTWCS`
-        HSTWCS object which contains the undistorted WCS representing the entire
-        field-of-view for the input image.
+    customwcs : stwcs.wcsutil.HSTWCS
+        `~stwcs.wcsutil.HSTWCS` object which contains the undistorted WCS
+        representing the entire field-of-view for the input image.
 
     Examples
     --------
-    This function can be used with the following syntax to apply a shift/rot/scale
-    change to the same image:
+    This function can be used with the following syntax to apply
+    a shift/rot/scale change to the same image:
 
     >>> import buildref
     >>> from drizzlepac import updatehdr
@@ -814,11 +860,7 @@ def build_self_reference(filename, clean_wcs=False):
     ... ysh=19.2203, rot = 359.998, scale = 0.9999964)
 
     """
-    if 'sipwcs' in filename:
-        sciname = 'sipwcs'
-    else:
-        sciname = 'sci'
-
+    sciname = 'sipwcs' if 'sipwcs' in filename else 'sci'
     wcslin = build_reference_wcs([filename], sciname=sciname)
 
     if clean_wcs:
@@ -828,26 +870,31 @@ def build_self_reference(filename, clean_wcs=False):
                                  wcslin.pscale, wcslin.orientat)
     else:
         customwcs = wcslin
+
     return customwcs
 
 
 def read_hlet_wcs(filename, ext):
-    """Insure `~stwcs.wcsutil.HSTWCS` includes all attributes of a full image WCS.
+    """Insure `~stwcs.wcsutil.HSTWCS` includes all attributes of a full image
+    WCS.
 
     For headerlets, the WCS does not contain information about the size of the
     image, as the image array is not present in the headerlet.
+
     """
     hstwcs = wcsutil.HSTWCS(filename, ext=ext)
     if hstwcs.naxis1 is None:
-        hstwcs.naxis1 = int(hstwcs.wcs.crpix[0] * 2.)  # Assume crpix is center of chip
+        # Assume crpix is center of chip:
+        hstwcs.naxis1 = int(hstwcs.wcs.crpix[0] * 2.)
         hstwcs.naxis2 = int(hstwcs.wcs.crpix[1] * 2.)
 
     return hstwcs
 
 
 def build_hstwcs(crval, crpix, naxis1, naxis2, pscale, orientat):
-    """ Create an `~stwcs.wcsutil.HSTWCS` object for a default instrument without
-    distortion based on user provided parameter values.
+    """ Create an `~stwcs.wcsutil.HSTWCS` object for a default instrument
+    without distortion based on user provided parameter values.
+
     """
     wcsout = wcsutil.HSTWCS()
     wcsout.wcs.crval = crval.copy()
@@ -855,6 +902,7 @@ def build_hstwcs(crval, crpix, naxis1, naxis2, pscale, orientat):
     wcsout.naxis1 = naxis1
     wcsout.naxis2 = naxis2
     wcsout.wcs.cd = fu.buildRotMatrix(orientat) * [-1, 1] * pscale / 3600.0
+
     # Synchronize updates with astropy.wcs objects
     wcsout.wcs.set()
     wcsout.setPscale()
@@ -872,8 +920,9 @@ def within_footprint(img, wcsobj, x, y):
     img : ndarray
         ndarray of image where non-science areas are marked with value of NaN.
 
-    wcsobj : `~stwcs.wcsutil.HSTWCS`
-        HSTWCS or WCS object with naxis terms defined.
+    wcsobj : stwcs.wcsutil.HSTWCS, astropy.wcs.WCS
+        `~stwcs.wcsutil.HSTWCS` or `~astropy.wcs.WCS` object with naxis terms
+        defined.
 
     x, y : ndarray
         arrays of x, y positions for sources to be checked.
@@ -885,8 +934,6 @@ def within_footprint(img, wcsobj, x, y):
         the science areas of the image
 
     """
-    # start with limits of WCS shape
-
     sky = wcsobj.pixel_to_world(x, y, 1)
     inmask = wcsobj.footprint_contains(sky)
     x = x[inmask]
@@ -894,50 +941,51 @@ def within_footprint(img, wcsobj, x, y):
     return x, y
 
 
-def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
-                       match_tolerance=5., chip_catalog=True, search_radius=15.0,
+def find_hist2d_offset(filename, reference, refwcs=None,
+                       refnames=['ra', 'dec'], match_tolerance=5.,
+                       chip_catalog=True, search_radius=15.0,
                        min_match=10, classify=True):
     """Iteratively look for the best cross-match between the catalog and ref.
 
     Parameters
     ----------
-    filename : `~astropy.io.fits.HDUList` or str
+    filename : astropy.io.fits.HDUList, str
         Single image to extract sources for matching to
         the external astrometric catalog.
 
-    reference : str or `~astropy.table.Table`
-        Reference catalog, either as a filename or ``astropy.Table``
+    reference : str, astropy.table.Table
+        Reference catalog, either as a filename or a `~astropy.table.Table`
         containing astrometrically accurate sky coordinates for astrometric
         standard sources.
 
-    refwcs : `~stwcs.wcsutil.HSTWCS`
+    refwcs : stwcs.wcsutil.HSTWCS, None, optional
         This WCS will define the coordinate frame which will
         be used to determine the offset. If None is specified, use the
-        WCS from the input image `filename` to build this WCS using
-        `build_self_reference()`.
+        WCS from the input image ``filename`` to build this WCS using
+        `build_self_reference`.
 
-    refnames : list
+    refnames : list, optional
         List of table column names for sky coordinates of astrometric
         standard sources from reference catalog.
 
-    match_tolerance : float
+    match_tolerance : float, optional
         Tolerance (in pixels) for recognizing that a source position matches
         an astrometric catalog position.  Larger values allow for lower
         accuracy source positions to be compared to astrometric catalog
 
-    chip_catalog : bool
+    chip_catalog : bool, optional
         Specify whether or not to write out individual source catalog for
         each chip in the image.
 
-    search_radius : float
+    search_radius : float, optional
         Maximum separation (in arcseconds) from source positions to look
         for valid cross-matches with reference source positions.
 
-    min_match : int
+    min_match : int, optional
         Minimum number of cross-matches for an acceptable determination of
         the offset.
 
-    classify : bool
+    classify : bool, optional
         Specify whether or not to use central_moments classification to
         ignore likely cosmic-rays/bad-pixels when generating the source
         catalog.
@@ -951,12 +999,14 @@ def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
 
         seg_xy, ref_xy : `~astropy.table.Table`
             Source catalog and reference catalog, respectively, used for
-            determining the offset.  Each catalog includes sources for the entire
-            field-of-view, not just a single chip.
+            determining the offset.  Each catalog includes sources for the
+            entire field-of-view, not just a single chip.
+
     """
     # Interpret input image to generate initial source catalog and WCS
     if isinstance(filename, str):
-        image = fits.open(filename)
+        image = fits.open(filename, lazy_load_hdus=False)
+        image.close()
         rootname = filename.split("_")[0]
     else:
         image = filename
@@ -964,7 +1014,8 @@ def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
 
     # check to see whether reference catalog can be found
     if not os.path.exists(reference):
-        log.info("Could not find input reference catalog: {}".format(reference))
+        log.info("Could not find input reference catalog: {}"
+                 .format(reference))
         raise FileNotFoundError
 
     # Extract reference WCS from image
@@ -978,15 +1029,17 @@ def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
         refcat = ascii.read(reference)
     else:
         refcat = reference
-    log.info("\nRead in reference catalog with {} sources.".format(len(refcat)))
+    log.info("\nRead in reference catalog with {} sources."
+             .format(len(refcat)))
 
     ref_ra = refcat[refnames[0]]
     ref_dec = refcat[refnames[1]]
 
     # Build source catalog for entire image
-    img_cat = generate_source_catalog(image, refwcs, output=chip_catalog, classify=classify)
-    img_cat.write(filename.replace(".fits", "_xy.cat"), format='ascii.no_header',
-                  overwrite=True)
+    img_cat = generate_source_catalog(image, refwcs, output=chip_catalog,
+                                      classify=classify)
+    img_cat.write(filename.replace(".fits", "_xy.cat"),
+                  format='ascii.no_header', overwrite=True)
 
     # Retrieve source XY positions in reference frame
     seg_xy = np.column_stack((img_cat['xcentroid'], img_cat['ycentroid']))
@@ -999,37 +1052,36 @@ def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
     # determine the offset
     xref, yref = within_footprint(image, refwcs, xref, yref)
     ref_xy = np.column_stack((xref, yref))
-    log.info("\nWorking with {} astrometric sources for this field".format(len(ref_xy)))
+    log.info("\nWorking with {} astrometric sources for this field"
+             .format(len(ref_xy)))
 
     # write out astrometric reference catalog that was actually used
     ref_ra_img, ref_dec_img = refwcs.all_pix2world(xref, yref, 1)
-    ref_tab = Table([ref_ra_img, ref_dec_img, xref, yref], names=['ra', 'dec', 'x', 'y'])
+    ref_tab = Table([ref_ra_img, ref_dec_img, xref, yref],
+                    names=['ra', 'dec', 'x', 'y'])
     ref_tab.write(reference.replace('.cat', '_{}.cat'.format(rootname)),
                   format='ascii.fast_commented_header', overwrite=True)
     searchrad = search_radius / refwcs.pscale
 
     # Use 2d-Histogram builder from drizzlepac.tweakreg -- for demo only...
-    xp, yp, nmatches, zpqual = build_xy_zeropoint(seg_xy, ref_xy,
-                                                  searchrad=searchrad,
-                                                  histplot=False, figure_id=1,
-                                                  plotname=None, interactive=False)
+    xp, yp, nmatches, zpqual = build_xy_zeropoint(
+        seg_xy, ref_xy, searchrad=searchrad, histplot=False, figure_id=1,
+        plotname=None, interactive=False
+    )
     hist2d_offset = (xp, yp)
-    log.info('best offset {} based on {} cross-matches'.format(hist2d_offset, nmatches))
+    log.info('best offset {} based on {} cross-matches'
+             .format(hist2d_offset, nmatches))
 
     return hist2d_offset, seg_xy, ref_xy
 
 
-##############################
-#
-# Functions to support working with Tweakwcs
-#
-##############################
 def build_wcscat(image, group_id, source_catalog):
-    """ Return a list of `~tweakwcs.tpwcs.FITSWCS` objects for all chips in an image.
+    """ Return a list of `~tweakwcs.tpwcs.FITSWCS` objects for all chips
+    in an image.
 
     Parameters
     ----------
-    image : str, `~astropy.io.fits.HDUList`
+    image : str, astropy.io.fits.HDUList
         Either filename or HDUList of a single HST observation.
 
     group_id : int
@@ -1046,18 +1098,21 @@ def build_wcscat(image, group_id, source_catalog):
 
     Returns
     -------
-    wcs_catalogs : list of `~tweakwcs.tpwcs.FITSWCS`
-        List of `~tweakwcs.tpwcs.FITSWCS` objects defined for all chips in input image.
+    wcs_catalogs : list of tweakwcs.tpwcs.FITSWCS
+        List of `~tweakwcs.tpwcs.FITSWCS` objects defined for all chips in
+        input image.
 
     """
-    open_file = False
     if isinstance(image, str):
-        hdulist = fits.open(image)
-        open_file = True
+        hdulist = fits.open(image, lazy_load_hdus=False)
+        hdulist.close()
+
     elif isinstance(image, fits.HDUList):
         hdulist = image
+
     else:
-        log.info("Wrong type of input, {}, for build_wcscat...".format(type(image)))
+        log.info("Wrong type of input, {}, for build_wcscat..."
+                 .format(type(image)))
         raise ValueError
 
     wcs_catalogs = []
@@ -1066,7 +1121,8 @@ def build_wcscat(image, group_id, source_catalog):
         w = wcsutil.HSTWCS(hdulist, ('SCI', chip))
 
         imcat = source_catalog[chip]
-        # rename xcentroid/ycentroid columns, if necessary, to be consistent with tweakwcs
+        # rename xcentroid/ycentroid columns, if necessary,
+        # to be consistent with tweakwcs
         if 'xcentroid' in imcat.colnames:
             imcat.rename_column('xcentroid', 'x')
             imcat.rename_column('ycentroid', 'y')
@@ -1083,8 +1139,5 @@ def build_wcscat(image, group_id, source_catalog):
         )
 
         wcs_catalogs.append(wcscat)
-
-    if open_file:
-        hdulist.close()
 
     return wcs_catalogs

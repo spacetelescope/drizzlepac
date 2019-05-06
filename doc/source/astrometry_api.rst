@@ -1,7 +1,7 @@
-.. _enhanced_products:
+.. _advanced_products:
 
-Enhanced Pipeline Products code API
--------------------------------------
+Advanced Pipeline Products API
+------------------------------
 
 .. automodule:: drizzlepac.alignimages
 .. autofunction:: drizzlepac.alignimages.perform_align
