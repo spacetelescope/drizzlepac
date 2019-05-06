@@ -6,7 +6,7 @@ if (utils.scm_checkout()) return
 // Pass this object in the argument list to the`run()` function below
 // to apply these settings to the job's execution.
 jobconfig = new JobConfig()
-jobconfig.post_test_summary = true
+// jobconfig.post_test_summary = true
 
 // Configure artifactory ingest
 data_config = new DataConfig()
