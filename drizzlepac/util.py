@@ -145,6 +145,8 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None, level=logging.INFO):
     else:
         print('No trailer file created...')
 
+    return logname
+
 
 def end_logging(filename=None):
     """
@@ -177,14 +179,15 @@ class WithLogging:
             filename = None
             if self.depth == 0:
                 # Setup logging for this task; otherwise we're being called as
-                # a subtask and will use the existing log
-                # The first arg must be the configobj
+                # a subtask and will use the existing log. The first arg must
+                # be the configobj
                 try:
-                    configobj = args[0]
-                    if 'input' in configobj:
-                        # We are working with a fully defined configobj instance
-                        input = processFilenames(configobj['input'])
-                        inputs, output, _, _ = input
+                    configobj = args[0] if args else args
+                    if isinstance(configobj, dict) and 'input' in configobj:
+                        # We are working with a fully defined configobj
+                        # instance
+                        images = processFilenames(configobj['input'])
+                        inputs, output, _, _ = images
                         if output is not None:
                             default = output
                         elif inputs:
@@ -192,30 +195,28 @@ class WithLogging:
                         else:
                             default = None
 
-                        if default is not None:
-                            # astrodrizzle and tweakreg have this parameter.
-                            # Could we do away with it altogether?
-                            if 'runfile' in configobj:
-                                filename = configobj['runfile']
-                            else:
-                                filename = default
-                        verbose_level=logging.INFO
-                        if 'verbose' in configobj and configobj['verbose']:
-                            verbose_level=logging.DEBUG
+                        filename = configobj.get('runfile', default)
+
+                        if configobj.get('verbose', False):
+                            verbose_level = logging.DEBUG
+                        else:
+                            verbose_level = logging.INFO
+
                     else:
                         # Calling this for a non-teal function
                         filename = "{}.log".format(func.__name__)
-                        logfile = kwargs.get('runfile', None)
-                        if logfile:
-                            filename = logfile
-                        verbose_level = logging.INFO  # Default level
-                        # If either `debug` or `verbose` are set to True in kwargs
-                        # set logging level to DEBUG
-                        debug = kwargs.get('debug',False)
+                        filename = kwargs.get('runfile', filename)
+                        # If either `debug` or `verbose` are set to True in
+                        # kwargs set logging level to DEBUG
+                        debug = kwargs.get('debug', False)
                         verbose = kwargs.get('verbose', False)
                         if debug or verbose:
                             verbose_level = logging.DEBUG
-                    init_logging(filename, level=verbose_level)
+                        else:
+                            verbose_level = logging.INFO
+
+                    filename = init_logging(filename, level=verbose_level)
+
                 except (KeyError, IndexError, TypeError):
                     pass
 
@@ -238,11 +239,12 @@ class WithLogging:
                 self.depth -= 1
                 if self.depth == 0:
                     end_logging(filename)
-                    # Insure that any exception raised by the code gets passed on
-                    # (hope that end_logging didn't change the last exception raised)
+                    # Insure that any exception raised by the code gets passed
+                    # on (hope that end_logging didn't change the last
+                    # exception raised)
                     if errorobj:
                         raise errorobj
-                return result
+            return result
 
         return wrapper
 
