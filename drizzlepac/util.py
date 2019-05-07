@@ -208,10 +208,10 @@ class WithLogging:
                         logfile = kwargs.get('runfile', None)
                         if logfile:
                             filename = logfile
-                        verbose_level = logging.INFO  # Default level 
+                        verbose_level = logging.INFO  # Default level
                         # If either `debug` or `verbose` are set to True in kwargs
                         # set logging level to DEBUG
-                        debug = kwargs.get('debug',False)   
+                        debug = kwargs.get('debug',False)
                         verbose = kwargs.get('verbose', False)
                         if debug or verbose:
                             verbose_level = logging.DEBUG
@@ -228,10 +228,12 @@ class WithLogging:
             # under it, Python discards the sys.exc_info() data by the time the
             # finally clause is reached.
             try:
-                func(*args, **kwargs)
+                result = func(*args, **kwargs)
             except Exception as e:
                 errorobj = e
+                result = None
                 raise
+
             finally:
                 self.depth -= 1
                 if self.depth == 0:
@@ -240,6 +242,7 @@ class WithLogging:
                     # (hope that end_logging didn't change the last exception raised)
                     if errorobj:
                         raise errorobj
+                return result
 
         return wrapper
 

@@ -18,6 +18,9 @@ of the list).
 3.0.2 (unreleased)
 ==================
 
+- Improved ``util.WithLogging`` decorator to handle functions that return
+  values. [#364]
+
 - Fixed a bug in the automatic computation of the IVM weights when IVM
   was not provided by the user. [#320]
 
