@@ -18,6 +18,12 @@ of the list).
 3.0.2 (unreleased)
 ==================
 
+- Fixed a bug in the ``util.WithLogging`` decorator due to which incorrect
+  log file was reported when user-supplied log file name does not have ``.log``
+  extension. [#365]
+
+- Fixed a bug introduced in #364 returning in ``finally`` block. [#365]
+
 - Improved ``util.WithLogging`` decorator to handle functions that return
   values. [#364]
 
