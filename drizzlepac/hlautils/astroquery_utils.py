@@ -1,7 +1,10 @@
 """Wrappers for astroquery-related functionality"""
 import shutil
 import os
-from astroquery.mast import Observations
+try:
+    from astroquery.mast import Observations
+except FileExistsError:
+    Observations = None
 
 import sys
 from stsci.tools import logutil
@@ -43,6 +46,10 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
         List of filenames
     """
     local_files = []
+
+    if Observations is None:
+        log.warning("The astroquery package was not found.  No files retrieved!")
+        return local_files
 
     # Query MAST for the data with an observation type of either "science" or
     # "calibration"
