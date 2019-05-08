@@ -341,7 +341,6 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
             _trlmsg = ""
 
             # Create an empty astropy table so it can be used as input/output for the perform_align function
-            # align_table = Table()
             try:
                 align_table = alignimages.perform_align(align_files, update_hdr_wcs=True, runfile=_alignlog,
                                                         clobber=False)
