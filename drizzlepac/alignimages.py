@@ -84,6 +84,7 @@ def check_and_get_data(input_list, **pars):
     candidate_list = []   # File names gathered from *_asn.fits file
     ipppssoot_list = []   # ipppssoot names used to avoid duplicate downloads
     total_input_list = []  # Output full filename list of data on disk
+    member_suffix = '_flc.fits'
 
     # Loop over the input_list to determine if the item in the input_list is a full association file
     # (*_asn.fits), a full individual image file (aka singleton, *_flt.fits), or a root name specification
@@ -115,7 +116,11 @@ def check_and_get_data(input_list, **pars):
                     if memname.find('_') != -1:
                         candidate_list.append(memname)
                     else:
-                        candidate_list.append(memname + '_flc.fits')
+                        # Define suffix for all members based on what files are present
+                        if not os.path.exists(memname + member_suffix):
+                            member_suffix = '_flt.fits'
+
+                        candidate_list.append(memname + member_suffix)
             elif suffix in ['flc', 'flt']:
                 if lc_input_item not in candidate_list:
                     candidate_list.append(lc_input_item)
@@ -382,7 +387,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
             # First ensure sources were found
 
-            if table is None or not table[1]: 
+            if table is None or not table[1]:
                 log.warning("No sources found in image {}".format(imgname))
                 filtered_table[:]['status'] = 1
                 filtered_table[:]['processMsg'] = "No sources found"
