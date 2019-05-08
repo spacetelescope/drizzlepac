@@ -403,6 +403,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
         # daofind = IRAFStarFinder(fwhm=fwhm, threshold=5.*bkg.background_rms_median)
         log.info("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, bkg_rms_mean))
         daofind = DAOStarFinder(fwhm=fwhm, threshold=bkg_rms_mean)
+
         # Identify nbrightest/largest sources
         if nlargest is not None:
             nlargest = min(nlargest, len(segm.labels))
@@ -423,13 +424,15 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
             detection_img[np.where(segm.data[seg_slice] == 0)] = 0
 
             # Detect sources in this specific segment
-            seg_table = daofind(detection_img)
+            seg_table = daofind.find_stars(detection_img)
+
             # Pick out brightest source only
             if src_table is None and seg_table:
                 # Initialize final master source list catalog
                 src_table = Table(names=seg_table.colnames,
                                   dtype=[dt[1] for dt in seg_table.dtype.descr])
-            if seg_table:
+
+            if seg_table and seg_table['peak'].max() == detection_img.max():
                 max_row = np.where(seg_table['peak'] == seg_table['peak'].max())[0][0]
                 # Add row for detected source to master catalog
                 # apply offset to slice to convert positions into full-frame coordinates

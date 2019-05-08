@@ -39,8 +39,10 @@ MIN_OBSERVABLE_THRESHOLD = 10
 MIN_CROSS_MATCHES = 3
 MIN_FIT_MATCHES = 6
 MAX_FIT_RMS = 10  # RMS now in mas, 1.0
-MAX_FIT_LIMIT = 1000  # Maximum RMS that a result is useful
+MAX_FIT_LIMIT = 150  # Maximum RMS that a result is useful
 MAX_SOURCES_PER_CHIP = 250  # Maximum number of sources per chip to include in source catalog
+MAX_RMS_RATIO = 0.1  # Maximum ratio between RMS in RA and DEC which still represents a valid fit
+MAS_TO_ARCSEC = 1000.  # Conversion factor from milli-arcseconds to arcseconds
 
 # Module-level dictionary contains instrument/detector-specific parameters used later on in the script.
 detector_specific_params = {"acs": {"hrc": {"fwhmpsf": 0.152,  # 0.073
@@ -871,6 +873,9 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
             continue
         fit_rms_val = item.meta['fit_info']['FIT_RMS']
         max_rms_val = item.meta['fit_info']['TOTAL_RMS']
+        fit_rms_ra = item.meta['fit_info']['RMS_RA']
+        fit_rms_dec = item.meta['fit_info']['RMS_DEC']
+        rms_ratio = abs(fit_rms_ra - fit_rms_dec) / min(fit_rms_ra, fit_rms_dec)
         num_xmatches = item.meta['fit_info']['nmatches']
         fit_status_dict[dict_key]['max_rms'] = max_rms_val
         fit_status_dict[dict_key]['num_matches'] = num_xmatches
@@ -905,7 +910,8 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         consistency_check = True
         rms_limit = max(item.meta['fit_info']['TOTAL_RMS'], 10.)
         if not math.sqrt(np.std(np.asarray(xshifts)) ** 2 + np.std(
-                         np.asarray(yshifts)) ** 2) <= (rms_limit / 1000.0) / (item.wcs.pscale):
+                         np.asarray(yshifts)) ** 2) <= (rms_limit / MAS_TO_ARCSEC) / (item.wcs.pscale) or \
+                         rms_ratio > MAX_RMS_RATIO:
             consistency_check = False
 
         # Decide if fit solutions are valid based on checks
