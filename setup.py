@@ -101,6 +101,7 @@ setup(
         'photutils',
         'pysynphot',
         'lxml',
+        'scikit-image>=0.14.2',
     ],
     extras_require={
         'test': TESTS_REQUIRE

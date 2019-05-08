@@ -45,9 +45,9 @@ running AstroDrizzle.
 The '-g' option allows the user to TURN OFF alignment of the images to an external
 astrometric catalog, such as GAIA, as accessible through the MAST interface.
 
-Additional control over whether or not to attempt to align to an external 
-astrometric catalog, such as GAIA, is provided through the use of the 
-environment variables:  
+Additional control over whether or not to attempt to align to an external
+astrometric catalog, such as GAIA, is provided through the use of the
+environment variables:
 
     - ASTROMETRY_COMPUTE_APOSTERIORI : Turn on/off alignment step.
       This environment variable will ALWAYS override any setting of the '-g' switch.
@@ -58,7 +58,7 @@ environment variables:
       solutions from the astrometry database should be applied to the data.
       If this is set, it will override any value set in the old variable.
       Values (case-insensitive) can be 'on','off','yes','no'.
-      
+
 *** INITIAL VERSION
 W.J. Hack  12 Aug 2011: Initial version based on Version 1.2.0 of
                         STSDAS$pkg/hst_calib/wfc3/runwf3driz.py
@@ -88,17 +88,17 @@ __version_date__ = "(01-Mar-2019)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
-pipeline_pars = {'mdriztab':True,
-                 'stepsize':10,
-                 'output':'',
-                 'preserve':False,
-                 'resetbits':4096}
+pipeline_pars = {'mdriztab': True,
+                 'stepsize': 10,
+                 'output': '',
+                 'preserve': False,
+                 'resetbits': 4096}
 
-#default marker for trailer files
-__trlmarker__ = '*** astrodrizzle Processing Version '+__version__+__version_date__+'***\n'
+# default marker for trailer files
+__trlmarker__ = '*** astrodrizzle Processing Version ' + __version__ + __version_date__ + '***\n'
 
-envvar_bool_dict = {'off': False, 'on': True, 'no':False, 'yes':True, 'false':False, 'true':True}
-envvar_dict = {'off':'off', 'on':'on', 'yes':'on', 'no':'off', 'true':'on', 'false':'off'}
+envvar_bool_dict = {'off': False, 'on': True, 'no': False, 'yes': True, 'false': False, 'true': True}
+envvar_dict = {'off': 'off', 'on': 'on', 'yes': 'on', 'no': 'off', 'true': 'on', 'false': 'off'}
 
 envvar_compute_name = 'ASTROMETRY_COMPUTE_APOSTERIORI'
 # Replace ASTROMETRY_STEP_CONTROL with this new related name
@@ -109,10 +109,10 @@ envvar_old_apriori_name = "ASTROMETRY_STEP_CONTROL"
 # Version 1.0.0 - Derived from v1.2.0 of wfc3.runwf3driz to run astrodrizzle
 
 
-#### TEAL Interfaces
+# TEAL Interfaces
 def getHelpAsString():
-    helpString = 'runastrodriz Version '+__version__+__version_date__+'\n'
-    helpString += __doc__+'\n'
+    helpString = 'runastrodriz Version ' + __version__ + __version_date__ + '\n'
+    helpString += __doc__ + '\n'
 
     return helpString
 
@@ -122,30 +122,30 @@ def help():
 
 
 def run(configobj=None):
-    process(configobj['input'],force=configobj['force'],
-                newpath=configobj['newpath'],inmemory=configobj['in_memory'],
-                num_cores=configobj['num_cores'],headerlets=configobj['headerlets'])
+    process(configobj['input'], force=configobj['force'],
+                newpath=configobj['newpath'], inmemory=configobj['in_memory'],
+                num_cores=configobj['num_cores'], headerlets=configobj['headerlets'])
 
 
-#### Primary user interface
-def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
+# Primary user interface
+def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
             headerlets=True, align_to_gaia=True):
     """ Run astrodrizzle on input file/ASN table
         using default values for astrodrizzle parameters.
     """
     # We only need to import this package if a user run the task
     import drizzlepac
-    from drizzlepac import processInput # used for creating new ASNs for _flc inputs
+    from drizzlepac import processInput  # used for creating new ASNs for _flc inputs
     from stwcs import updatewcs
     from drizzlepac import alignimages
-    
+
     # interpret envvar variable, if specified
     if envvar_compute_name in os.environ:
         val = os.environ[envvar_compute_name].lower()
         if val not in envvar_bool_dict:
             msg = "ERROR: invalid value for {}.".format(envvar_compute_name)
             msg += "  \n    Valid Values: on, off, yes, no, true, false"
-            raise ValueError(msg)            
+            raise ValueError(msg)
         align_to_gaia = envvar_bool_dict[val]
 
     if envvar_new_apriori_name in os.environ:
@@ -166,7 +166,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     # Open the input file
     try:
         # Make sure given filename is complete and exists...
-        inFilename = fileutil.buildRootname(inFile,ext=['.fits'])
+        inFilename = fileutil.buildRootname(inFile, ext=['.fits'])
         if not os.path.exists(inFilename):
             print("ERROR: Input file - %s - does not exist." % inFilename)
             return
@@ -174,11 +174,11 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         print("ERROR: Inappropriate input file.")
         return
 
-    #If newpath was specified, move all files to that directory for processing
+    # If newpath was specified, move all files to that directory for processing
     if newpath:
         orig_processing_dir = os.getcwd()
-        new_processing_dir = _createWorkingDir(newpath,inFilename)
-        _copyToNewWorkingDir(new_processing_dir,inFilename)
+        new_processing_dir = _createWorkingDir(newpath, inFilename)
+        _copyToNewWorkingDir(new_processing_dir, inFilename)
         os.chdir(new_processing_dir)
 
     # Initialize for later use...
@@ -196,9 +196,9 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         # Use asnutil code to extract filename
         inFilename = _lowerAsn(inFilename)
         _new_asn = [inFilename]
-        _asndict = asnutil.readASNTable(inFilename,None,prodonly=False)
+        _asndict = asnutil.readASNTable(inFilename, None, prodonly=False)
         _cal_prodname = _asndict['output'].lower()
-        #_fname = fileutil.buildRootname(_cal_prodname,ext=['_drz.fits'])
+        # _fname = fileutil.buildRootname(_cal_prodname,ext=['_drz.fits'])
 
         # Retrieve the first member's rootname for possible use later
         _fimg = fits.open(inFilename, memmap=False)
@@ -257,8 +257,8 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     if force:
         dcorr = 'PERFORM'
     else:
-        if _mname :
-            _fimg = fits.open(fileutil.buildRootname(_mname,ext=['_raw.fits']), memmap=False)
+        if _mname:
+            _fimg = fits.open(fileutil.buildRootname(_mname, ext=['_raw.fits']), memmap=False)
             _phdr = _fimg['PRIMARY'].header
             if dkey in _phdr:
                 dcorr = _phdr[dkey]
@@ -272,7 +272,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
     time_str = _getTime()
     _tmptrl = _trlroot + '_tmp.tra'
     _drizfile = _trlroot + '_pydriz'
-    _drizlog = _drizfile + ".log" # the '.log' gets added automatically by astrodrizzle
+    _drizlog = _drizfile + ".log"  # the '.log' gets added automatically by astrodrizzle
     _alignlog = _trlroot + '_align.log'
     if dcorr == 'PERFORM':
         if '_asn.fits' not in inFilename:
@@ -280,7 +280,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
             # However, we always want to make sure we always use
             # a calibrated product as input, if available.
             _infile = fileutil.buildRootname(_cal_prodname, ext=cal_ext)
-            _infile_flc = fileutil.buildRootname(_cal_prodname,ext=['_flc.fits'])
+            _infile_flc = fileutil.buildRootname(_cal_prodname, ext=['_flc.fits'])
 
             _cal_prodname = _infile
             _inlist = _calfiles = [_infile]
@@ -292,23 +292,23 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         else:
             # Working with an ASN table...
             _infile = inFilename
-            flist,duplist = processInput.checkForDuplicateInputs(_asndict['order'])
+            flist, duplist = processInput.checkForDuplicateInputs(_asndict['order'])
             _calfiles = flist
             if len(duplist) > 0:
-                origasn = processInput.changeSuffixinASN(inFilename,'flt')
-                dupasn = processInput.changeSuffixinASN(inFilename,'flc')
-                _inlist = [origasn,dupasn]
+                origasn = processInput.changeSuffixinASN(inFilename, 'flt')
+                dupasn = processInput.changeSuffixinASN(inFilename, 'flc')
+                _inlist = [origasn, dupasn]
             else:
                 _inlist = [_infile]
             # We want to keep the original specification of the calibration
             # product name, though, not a lower-case version...
             _cal_prodname = inFilename
-            _new_asn.extend(_inlist) # kept so we can delete it when finished
+            _new_asn.extend(_inlist)  # kept so we can delete it when finished
 
         # check to see whether FLC files are also present, and need to be updated
         # generate list of FLC files
         align_files = None
-        _calfiles_flc = [f.replace('_flt.fits','_flc.fits') for f in _calfiles]
+        _calfiles_flc = [f.replace('_flt.fits', '_flc.fits') for f in _calfiles]
         # insure these files exist, if not, blank them out
         # Also pick out what files will be used for additional alignment to GAIA
         if not os.path.exists(_calfiles_flc[0]):
@@ -334,16 +334,17 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
             # Create trailer marker message for start of align_to_GAIA processing
             _trlmsg = _timestamp("Align_to_GAIA started ")
             print(_trlmsg)
-            ftmp = open(_tmptrl,'w')
+            ftmp = open(_tmptrl, 'w')
             ftmp.writelines(_trlmsg)
             ftmp.close()
-            _appendTrlFile(_trlfile,_tmptrl)
+            _appendTrlFile(_trlfile, _tmptrl)
             _trlmsg = ""
 
             # Create an empty astropy table so it can be used as input/output for the perform_align function
-            #align_table = Table()
+            # align_table = Table()
             try:
-                align_table = alignimages.perform_align(align_files,update_hdr_wcs=True, runfile=_alignlog)
+                align_table = alignimages.perform_align(align_files, update_hdr_wcs=True, runfile=_alignlog,
+                                                        clobber=False)
                 for row in align_table:
                     if row['status'] == 0:
                         trlstr = "Successfully aligned {} to {} astrometric frame\n"
@@ -359,21 +360,21 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
                 _trlmsg += "   No correction to absolute astrometric frame applied!\n"
 
             # Write the perform_align log to the trailer file...(this will delete the _alignlog)
-            _appendTrlFile(_trlfile,_alignlog)
+            _appendTrlFile(_trlfile, _alignlog)
 
             # Append messages from this calling routine post-perform_align
-            ftmp = open(_tmptrl,'w')
+            ftmp = open(_tmptrl, 'w')
             ftmp.writelines(_trlmsg)
             ftmp.close()
-            _appendTrlFile(_trlfile,_tmptrl)
+            _appendTrlFile(_trlfile, _tmptrl)
             _trlmsg = ""
 
-            #Check to see whether there are any additional input files that need to
+            # Check to see whether there are any additional input files that need to
             # be aligned (namely, FLT images)
             if align_update_files and align_table:
                 # Apply headerlets from alignment to FLT version of the files
                 for fltfile, flcfile in zip(align_update_files, align_files):
-                    row = align_table[align_table['imageName']==flcfile]
+                    row = align_table[align_table['imageName'] == flcfile]
                     headerletFile = row['headerletFile'][0]
                     if headerletFile != "None":
                         headerlet.apply_headerlet_as_primary(fltfile, headerletFile,
@@ -387,39 +388,39 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
             # Finally, append any further messages associated with alignement from this calling routine
             _trlmsg += _timestamp('Align_to_GAIA completed ')
             print(_trlmsg)
-            ftmp = open(_tmptrl,'w')
+            ftmp = open(_tmptrl, 'w')
             ftmp.writelines(_trlmsg)
             ftmp.close()
-            _appendTrlFile(_trlfile,_tmptrl)
+            _appendTrlFile(_trlfile, _tmptrl)
 
         # Run astrodrizzle and send its processing statements to _trlfile
         _pyver = drizzlepac.astrodrizzle.__version__
 
-        for _infile in _inlist: # Run astrodrizzle for all inputs
+        for _infile in _inlist:  # Run astrodrizzle for all inputs
             # Create trailer marker message for start of astrodrizzle processing
             _trlmsg = _timestamp('astrodrizzle started ')
             _trlmsg += __trlmarker__
-            _trlmsg += '%s: Processing %s with astrodrizzle Version %s\n' % (time_str,_infile,_pyver)
+            _trlmsg += '%s: Processing %s with astrodrizzle Version %s\n' % (time_str, _infile, _pyver)
             print(_trlmsg)
 
             # Write out trailer comments to trailer file...
-            ftmp = open(_tmptrl,'w')
+            ftmp = open(_tmptrl, 'w')
             ftmp.writelines(_trlmsg)
             ftmp.close()
-            _appendTrlFile(_trlfile,_tmptrl)
+            _appendTrlFile(_trlfile, _tmptrl)
 
-            _pyd_err = _trlroot+'_pydriz.stderr'
+            _pyd_err = _trlroot + '_pydriz.stderr'
 
             try:
-                b = drizzlepac.astrodrizzle.AstroDrizzle(input=_infile,runfile=_drizfile,
-                                            configobj='defaults',in_memory=inmemory,
+                drizzlepac.astrodrizzle.AstroDrizzle(input=_infile, runfile=_drizfile,
+                                            configobj='defaults', in_memory=inmemory,
                                             num_cores=num_cores, **pipeline_pars)
             except Exception as errorobj:
-                _appendTrlFile(_trlfile,_drizlog)
-                _appendTrlFile(_trlfile,_pyd_err)
-                _ftrl = open(_trlfile,'a')
+                _appendTrlFile(_trlfile, _drizlog)
+                _appendTrlFile(_trlfile, _pyd_err)
+                _ftrl = open(_trlfile, 'a')
                 _ftrl.write('ERROR: Could not complete astrodrizzle processing of %s.\n' % _infile)
-                _ftrl.write(str(sys.exc_info()[0])+': ')
+                _ftrl.write(str(sys.exc_info()[0]) + ': ')
                 _ftrl.writelines(str(errorobj))
                 _ftrl.write('\n')
                 _ftrl.close()
@@ -428,7 +429,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
 
             # Now, append comments created by PyDrizzle to CALXXX trailer file
             print('Updating trailer file %s with astrodrizzle comments.' % _trlfile)
-            _appendTrlFile(_trlfile,_drizlog)
+            _appendTrlFile(_trlfile, _drizlog)
 
         # Save this for when astropy.io.fits can modify a file 'in-place'
         # Update calibration switch
@@ -442,7 +443,7 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         _prodlist = glob.glob('*drz.fits')
         for _prodname in _prodlist:
             _plower = _prodname.lower()
-            if _prodname != _plower:  os.rename(_prodname,_plower)
+            if _prodname != _plower: os.rename(_prodname, _plower)
 
     else:
         # Create default trailer file messages when astrodrizzle is not
@@ -451,24 +452,24 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         # Start by building up the message...
         _trlmsg = _timestamp('astrodrizzle skipped ')
         _trlmsg = _trlmsg + __trlmarker__
-        _trlmsg = _trlmsg + '%s: astrodrizzle processing not requested for %s.\n' % (time_str,inFilename)
+        _trlmsg = _trlmsg + '%s: astrodrizzle processing not requested for %s.\n' % (time_str, inFilename)
         _trlmsg = _trlmsg + '       astrodrizzle will not be run at this time.\n'
         print(_trlmsg)
 
         # Write message out to temp file and append it to full trailer file
-        ftmp = open(_tmptrl,'w')
+        ftmp = open(_tmptrl, 'w')
         ftmp.writelines(_trlmsg)
         ftmp.close()
-        _appendTrlFile(_trlfile,_tmptrl)
+        _appendTrlFile(_trlfile, _tmptrl)
 
     # Append final timestamp to trailer file...
-    _final_msg = '%s: Finished processing %s \n' % (time_str,inFilename)
+    _final_msg = '%s: Finished processing %s \n' % (time_str, inFilename)
     _final_msg += _timestamp('astrodrizzle completed ')
     _trlmsg += _final_msg
-    ftmp = open(_tmptrl,'w')
+    ftmp = open(_tmptrl, 'w')
     ftmp.writelines(_trlmsg)
     ftmp.close()
-    _appendTrlFile(_trlfile,_tmptrl)
+    _appendTrlFile(_trlfile, _tmptrl)
 
     # If we created a new ASN table, we need to remove it
     if _new_asn is not None:
@@ -490,27 +491,27 @@ def process(inFile,force=False,newpath=None, inmemory=False, num_cores=None,
         hlet_msg = _timestamp("Writing Headerlets started")
         for fname in _calfiles:
             frootname = fileutil.buildNewRootname(fname)
-            hname = "%s_flt_hlet.fits"%frootname
+            hname = "%s_flt_hlet.fits" % frootname
             # Write out headerlet file used by astrodrizzle, however,
             # do not overwrite any that was already written out by alignimages
             if not os.path.exists(hname):
-                hlet_msg += "Created Headerlet file %s \n"%hname
+                hlet_msg += "Created Headerlet file %s \n" % hname
                 try:
-                    headerlet.write_headerlet(fname,'OPUS',output='flt', wcskey='PRIMARY',
-                        author="OPUS",descrip="Default WCS from Pipeline Calibration",
-                        attach=False,clobber=True,logging=False)
+                    headerlet.write_headerlet(fname, 'OPUS', output='flt', wcskey='PRIMARY',
+                        author="OPUS", descrip="Default WCS from Pipeline Calibration",
+                        attach=False, clobber=True, logging=False)
                 except ValueError:
-                    hlet_msg += _timestamp("SKIPPED: Headerlet not created for %s \n"%fname)
+                    hlet_msg += _timestamp("SKIPPED: Headerlet not created for %s \n" % fname)
                     # update trailer file to log creation of headerlet files
         hlet_msg += _timestamp("Writing Headerlets completed")
-        ftrl = open(_trlfile,'a')
+        ftrl = open(_trlfile, 'a')
         ftrl.write(hlet_msg)
         ftrl.close()
 
     # If processing was done in a temp working dir, restore results to original
     # processing directory, return to original working dir and remove temp dir
     if newpath:
-        _restoreResults(new_processing_dir,orig_processing_dir)
+        _restoreResults(new_processing_dir, orig_processing_dir)
         os.chdir(orig_processing_dir)
         _removeWorkingDir(new_processing_dir)
 
@@ -523,27 +524,27 @@ def _lowerAsn(asnfile):
     """
     # Start by creating a new name for the ASN table
     _indx = asnfile.find('_asn.fits')
-    _new_asn = asnfile[:_indx]+'_pipeline'+asnfile[_indx:]
+    _new_asn = asnfile[:_indx] + '_pipeline' + asnfile[_indx:]
     if os.path.exists(_new_asn):
         os.remove(_new_asn)
     # copy original ASN table to new table
-    shutil.copy(asnfile,_new_asn)
+    shutil.copy(asnfile, _new_asn)
 
     # Open up the new copy and convert all MEMNAME's to lower-case
     fasn = fits.open(_new_asn, mode='update', memmap=False)
     for i in range(len(fasn[1].data)):
-        fasn[1].data[i].setfield('MEMNAME',fasn[1].data[i].field('MEMNAME').lower())
+        fasn[1].data[i].setfield('MEMNAME', fasn[1].data[i].field('MEMNAME').lower())
     fasn.close()
 
     return _new_asn
 
-def _appendTrlFile(trlfile,drizfile):
+def _appendTrlFile(trlfile, drizfile):
     """ Append drizfile to already existing trlfile from CALXXX.
     """
     if not os.path.exists(drizfile):
         return
     # Open already existing CALWF3 trailer file for appending
-    ftrl = open(trlfile,'a')
+    ftrl = open(trlfile, 'a')
     # Open astrodrizzle trailer file
     fdriz = open(drizfile)
 
@@ -563,30 +564,30 @@ def _appendTrlFile(trlfile,drizfile):
 
 def _timestamp(_process_name):
     """Create formatted time string recognizable by OPUS."""
-    _prefix= time.strftime("%Y%j%H%M%S-I-----",time.localtime())
+    _prefix = time.strftime("%Y%j%H%M%S-I-----", time.localtime())
     _lenstr = 60 - len(_process_name)
-    return _prefix+_process_name+(_lenstr*'-')+'\n'
+    return _prefix + _process_name + (_lenstr * '-') + '\n'
 
 def _getTime():
     # Format time values for keywords IRAF-TLM, and DATE
     _ltime = time.localtime(time.time())
-    time_str = time.strftime('%H:%M:%S (%d-%b-%Y)',_ltime)
+    time_str = time.strftime('%H:%M:%S (%d-%b-%Y)', _ltime)
 
     return time_str
 
-#### Functions used to manage processing in a separate directory/ramdisk
-def _createWorkingDir(rootdir,input):
+# Functions used to manage processing in a separate directory/ramdisk
+def _createWorkingDir(rootdir, input):
     """
     Create a working directory based on input name under the parent directory specified as rootdir
     """
     # extract rootname from input
     rootname = input[:input.find('_')]
-    newdir = os.path.join(rootdir,rootname)
+    newdir = os.path.join(rootdir, rootname)
     if not os.path.exists(newdir):
         os.mkdir(newdir)
     return newdir
 
-def _copyToNewWorkingDir(newdir,input):
+def _copyToNewWorkingDir(newdir, input):
     """ Copy input file and all related files necessary for processing to the new working directory.
 
         This function works in a greedy manner, in that all files associated
@@ -595,7 +596,7 @@ def _copyToNewWorkingDir(newdir,input):
     """
     flist = []
     if '_asn.fits' in input:
-        asndict = asnutil.readASNTable(input,None)
+        asndict = asnutil.readASNTable(input, None)
         flist.append(input[:input.find('_')])
         flist.extend(asndict['order'])
         flist.append(asndict['output'])
@@ -603,14 +604,14 @@ def _copyToNewWorkingDir(newdir,input):
         flist.append(input[:input.find('_')])
     # copy all files related to these rootnames into new dir
     for rootname in flist:
-        for fname in glob.glob(rootname+'*'):
-            shutil.copy(fname,os.path.join(newdir,fname))
+        for fname in glob.glob(rootname + '*'):
+            shutil.copy(fname, os.path.join(newdir, fname))
 
-def _restoreResults(newdir,origdir):
+def _restoreResults(newdir, origdir):
     """ Move (not copy) all files from newdir back to the original directory
     """
-    for fname in glob.glob(os.path.join(newdir,'*')):
-        shutil.move(fname,os.path.join(origdir,os.path.basename(fname)))
+    for fname in glob.glob(os.path.join(newdir, '*')):
+        shutil.move(fname, os.path.join(origdir, os.path.basename(fname)))
 
 def _removeWorkingDir(newdir):
     """ Delete working directory
@@ -618,7 +619,7 @@ def _removeWorkingDir(newdir):
     os.rmdir(newdir)
 
 
-#### Functions to support execution from the shell.
+# Functions to support execution from the shell.
 def main():
 
     import getopt
@@ -636,7 +637,7 @@ def main():
     newdir = None
     inmemory = False
     num_cores = None
-    headerlets= True
+    headerlets = True
     align_to_gaia = True
 
     # read options
@@ -656,7 +657,7 @@ def main():
             num_cores = int(value)
         if opt == '-b':
             # turn off writing headerlets
-            headerlets=False
+            headerlets = False
     if len(args) < 1:
         print("syntax: runastrodriz.py [-fhibng] inputFilename [newpath]")
         sys.exit()
@@ -664,10 +665,10 @@ def main():
         newdir = args[-1]
     if (help):
         print(__doc__)
-        print("\t", __version__+'('+__version_date__+')')
+        print("\t", __version__ + '(' + __version_date__ + ')')
     else:
         try:
-            process(args[0],force=force,newpath=newdir, inmemory=inmemory,
+            process(args[0], force=force, newpath=newdir, inmemory=inmemory,
                     num_cores=num_cores, headerlets=headerlets,
                     align_to_gaia=align_to_gaia)
         except Exception as errorobj:
