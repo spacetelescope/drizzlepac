@@ -408,12 +408,11 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
             # this is the photutils >= 0.7 fast code for removing labels
             segm.check_labels(bad_srcs)
             bad_srcs = np.atleast_1d(bad_srcs)
-            if len(bad_srcs) == 0:
-                return
-            idx = np.zeros(segm.max_label + 1, dtype=int)
-            idx[segm.labels] = segm.labels
-            idx[bad_srcs] = 0
-            segm.data = idx[segm.data]
+            if len(bad_srcs) != 0:
+                idx = np.zeros(segm.max_label + 1, dtype=int)
+                idx[segm.labels] = segm.labels
+                idx[bad_srcs] = 0
+                segm.data = idx[segm.data]
 
     # convert segm to mask for daofind
     if centering_mode == 'starfind':
