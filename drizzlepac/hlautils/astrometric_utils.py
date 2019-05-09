@@ -385,6 +385,10 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
     kernel.normalize()
     segm = detect_sources(imgarr, threshold, npixels=source_box,
                           filter_kernel=kernel)
+    if segm is None:
+        log.info("No detected sources!")
+        return None, None
+
     if deblend:
         segm = deblend_sources(imgarr, segm, npixels=5,
                                filter_kernel=kernel, nlevels=16,
@@ -392,10 +396,9 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
     # If classify is turned on, it should modify the segmentation map
     if classify:
         cat = source_properties(imgarr, segm)
-        if len(cat) > 0:
-            # Remove likely cosmic-rays based on central_moments classification
-            bad_srcs = np.where(classify_sources(cat) == 0)[0] + 1
-            segm.remove_labels(bad_srcs)  # CAUTION: May be time-consuming!!!
+        # Remove likely cosmic-rays based on central_moments classification
+        bad_srcs = np.where(classify_sources(cat) == 0)[0] + 1
+        segm.remove_labels(bad_srcs)  # CAUTION: May be time-consuming!!!
 
     # convert segm to mask for daofind
     if centering_mode == 'starfind':
