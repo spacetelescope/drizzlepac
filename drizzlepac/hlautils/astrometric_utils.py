@@ -387,7 +387,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
     kernel.normalize()
     segm = detect_sources(imgarr, threshold, npixels=source_box,
                           filter_kernel=kernel)
-    if segm is None:
+    # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
+    if segm is None or segm.nlabels == 0:
         log.info("No detected sources!")
         return None, None
 
