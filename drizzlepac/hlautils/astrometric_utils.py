@@ -428,7 +428,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
             # Define raw data from this slice
             detection_img = img[seg_slice]
             # zero out any pixels which do not have this segments label
-            detection_img[np.where(segm.data[seg_slice] == 0)] = 0
+            detection_img[segm.data[seg_slice] == 0] = 0
 
             # Detect sources in this specific segment
             seg_table = daofind.find_stars(detection_img)
