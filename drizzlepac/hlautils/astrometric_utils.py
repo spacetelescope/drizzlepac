@@ -414,6 +414,10 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
         log.info("Looking for sources in {} segments".format(len(segm.labels)))
 
         for segment in segm.segments:
+            # check needed for photutils <= 0.6; it can be removed when
+            # the drizzlepac depends on photutils >= 0.7
+            if segment is None:
+                continue
             if nlargest is not None and segment.label not in large_labels:
                 continue  # Move on to the next segment
             # Get slice definition for the segment with this label
