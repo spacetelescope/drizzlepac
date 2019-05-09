@@ -41,7 +41,7 @@ MIN_FIT_MATCHES = 6
 MAX_FIT_RMS = 10  # RMS now in mas, 1.0
 MAX_FIT_LIMIT = 150  # Maximum RMS that a result is useful
 MAX_SOURCES_PER_CHIP = 250  # Maximum number of sources per chip to include in source catalog
-MAX_RMS_RATIO = 0.1  # Maximum ratio between RMS in RA and DEC which still represents a valid fit
+MAX_RMS_RATIO = 1.0 # Maximum ratio between RMS in RA and DEC which still represents a valid fit
 MAS_TO_ARCSEC = 1000.  # Conversion factor from milli-arcseconds to arcseconds
 
 # Module-level dictionary contains instrument/detector-specific parameters used later on in the script.
