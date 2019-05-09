@@ -424,7 +424,15 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
         # Identify nbrightest/largest sources
         if nlargest is not None:
             nlargest = min(nlargest, len(segm.labels))
-            large_labels = segm.labels[np.flip(np.argsort(segm.areas))[: nlargest]]
+            if LooseVersion(photutils.__version__) >= '0.7':
+                large_labels = segm.labels[
+                    np.flip(np.argsort(segm.areas))[: nlargest]]
+            else:
+                # for photutils < 0.7
+                areas = np.array([area for area in np.bincount(segm.data.ravel())[1:] if area != 0])
+                large_labels = segm.labels[
+                    np.flip(np.argsort(areas))[: nlargest]]
+
         log.info("Looking for sources in {} segments".format(len(segm.labels)))
 
         for segment in segm.segments:
