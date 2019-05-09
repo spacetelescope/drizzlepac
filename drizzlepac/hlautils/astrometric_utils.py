@@ -19,6 +19,7 @@ import csv
 import requests
 import inspect
 import sys
+from distutils.version import LooseVersion
 
 import numpy as np
 from scipy import ndimage
@@ -39,6 +40,7 @@ from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 
+import photutils  # needed to check version
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import Background2D, MedianBackground
 from photutils import DAOStarFinder
@@ -398,7 +400,19 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
         cat = source_properties(imgarr, segm)
         # Remove likely cosmic-rays based on central_moments classification
         bad_srcs = np.where(classify_sources(cat) == 0)[0] + 1
-        segm.remove_labels(bad_srcs)  # CAUTION: May be time-consuming!!!
+
+        if LooseVersion(photutils.__version__) >= 0.7:
+            segm.remove_labels(bad_srcs)
+        else:
+            # this is the photutils >= 0.7 fast code for removing labels
+            segm.check_labels(bad_srcs)
+            bad_srcs = np.atleast_1d(bad_srcs)
+            if len(bad_srcs) == 0:
+                return
+            idx = np.zeros(segm.max_label + 1, dtype=int)
+            idx[segm.labels] = segm.labels
+            idx[bad_srcs] = 0
+            segm.data = idx[segm.data]
 
     # convert segm to mask for daofind
     if centering_mode == 'starfind':
