@@ -402,7 +402,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
         # Remove likely cosmic-rays based on central_moments classification
         bad_srcs = np.where(classify_sources(cat) == 0)[0] + 1
 
-        if LooseVersion(photutils.__version__) >= 0.7:
+        if LooseVersion(photutils.__version__) >= '0.7':
             segm.remove_labels(bad_srcs)
         else:
             # this is the photutils >= 0.7 fast code for removing labels
