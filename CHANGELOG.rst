@@ -48,7 +48,7 @@ of the list).
 - Removed the dependency on ``stsci.ndimage`` (using ``scipy`` routines
   instead). [#225]
 
-- Added ``'Enhanced Pipeline Products'`` alignment code to ``drizzlepac``
+- Added ``'Advanced Pipeline Products'`` alignment code to ``drizzlepac``
   package. Enhance ``runastrodriz`` to compute and apply absolute astrometric
   corrections to GAIA (or related) frame to images where possible.
   [#200, #213, #216, #223, #234, #235, #244, #248, #249, #250, #251,
