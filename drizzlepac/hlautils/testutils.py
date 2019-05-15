@@ -6,6 +6,7 @@ from astropy.io import fits
 from stsci.tools import logutil
 from stwcs import updatewcs
 from stwcs.wcsutil import headerlet
+from ci_watson.hst_helpers import ref_from_image, download_crds
 
 from .. import alignimages
 
@@ -35,6 +36,7 @@ def compare_wcs_alignment(dataset, force=False):
         results : dict
             A dictionary whose keys are the WCS's found and fit to GAIA.
             Each WCS has entries for:
+            
                 * imageName - filenames of input exposures included in the fit
                 * offset_x - offset in X (pixels)
                 * offset_y - offset in X (pixels)
@@ -51,6 +53,7 @@ def compare_wcs_alignment(dataset, force=False):
         ASSUMPTIONS
         -----------
             - All images in dataset have the same set of a priori solutions
+            - All images in dataset have the same setting for the IDCTAB file
     """
     # Setup
     # Remember what state the environment was in before this code runs
@@ -75,7 +78,12 @@ def compare_wcs_alignment(dataset, force=False):
         #   Create results output organized by WCSNAME
         default_wcsname = fits.getval(imglist[0], 'wcsname', ext=1)
         log.info("Default WCSNAME: {}".format(default_wcsname))
-        alignment = {default_wcsname:extract_results(results)}
+        alignment = {default_wcsname: extract_results(results)}
+
+        # Download the calibration reference files to ensure availability
+        ref_files = ref_from_image(imglist[0], ['IDCTAB', 'DGEOFILE', 'NPOLFILE', 'D2IMFILE'])
+        for file in ref_files:
+            download_crds(file, verbose=True)
 
         # Step 3:
         #   Update inputs with latest distortion model and pull in solutions from dB
@@ -92,7 +100,7 @@ def compare_wcs_alignment(dataset, force=False):
         for wcs in wcsnames:
             log.info("Starting with {}".format(wcs))
             if 'OPUS' in wcs or wcs == default_wcsname:
-                continue # skip default pipeline solutions, since we have already aligned it
+                continue  # skip default pipeline solutions, since we have already aligned it
             # apply WCS from headerlet
             for img in imglist:
                 wnames = headerlet.get_headerlet_kw_names(img, kw='WCSNAME')
@@ -121,15 +129,15 @@ def compare_wcs_alignment(dataset, force=False):
 
 def extract_results(results):
     """Return dict with select columns from alignment results Table."""
-    results_dict = {'images':results['imageName'].astype(str).tolist(),
-                                  'offset_x':results['offset_x'],
-                                  'offset_y':results['offset_y'],
-                                  'rotation':results['rotation'],
-                                  'scale':results['scale'],
-                                  'rms_x': results['rms_x'], # RMS in pixels
-                                  'rms_y':results['rms_y'],
-                                  'fit_rms':results['fit_rms'], # RMS in arcsec
-                                  'total_rms':results['total_rms'],
+    results_dict = {'images': results['imageName'].astype(str).tolist(),
+                                  'offset_x': results['offset_x'],
+                                  'offset_y': results['offset_y'],
+                                  'rotation': results['rotation'],
+                                  'scale': results['scale'],
+                                  'rms_x': results['rms_x'],  # RMS in pixels
+                                  'rms_y': results['rms_y'],
+                                  'fit_rms': results['fit_rms'],  # RMS in arcsec
+                                  'total_rms': results['total_rms'],
                                   'status': results['status'],
                                   'fit_qual': results['fit_qual'],
                                   'matched_sources': results['matchSources']}
