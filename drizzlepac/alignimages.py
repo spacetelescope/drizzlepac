@@ -41,7 +41,7 @@ MIN_FIT_MATCHES = 6
 MAX_FIT_RMS = 10  # RMS now in mas, 1.0
 MAX_FIT_LIMIT = 150  # Maximum RMS that a result is useful
 MAX_SOURCES_PER_CHIP = 250  # Maximum number of sources per chip to include in source catalog
-MAX_RMS_RATIO = 1.0 # Maximum ratio between RMS in RA and DEC which still represents a valid fit
+# MAX_RMS_RATIO = 1.0  # Maximum ratio between RMS in RA and DEC which still represents a valid fit
 MAS_TO_ARCSEC = 1000.  # Conversion factor from milli-arcseconds to arcseconds
 
 # Module-level dictionary contains instrument/detector-specific parameters used later on in the script.
@@ -444,7 +444,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         # for each run.
         orig_imglist = copy.deepcopy(imglist)
         # create dummy list that will be used to preserve imglist best_meta information through the imglist reset process
-        temp_imglist = []
+        best_imglist = []
         fit_info_dict = OrderedDict()
         reference_catalog_dict = {}
         for algorithm_name in fit_algorithm_list:  # loop over fit algorithm type
@@ -488,9 +488,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                     log.info("{} STEP 5b: Cross matching and "
                          "fitting {}".format("-" * 20, "-" * 47))
                     imglist = copy.deepcopy(orig_imglist)  # reset imglist to pristine state
-                    if temp_imglist:
-                        for temp_item, item in zip(temp_imglist, imglist):  # migrate best_meta to new imglist
-                            item.best_meta = temp_item.best_meta.copy()
 
                     log.info(
                         "{} Catalog {} matched using {} {}".format("-" * 18,
@@ -527,28 +524,33 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         if fit_quality < 5:
                             if fit_quality == 1:  # valid, non-comprimised solution with total rms < 10 mas...go with this solution.
                                 best_fit_rms = fit_rms
-                                for item in imglist:
-                                    item.best_meta = item.meta.copy()
+
+                                best_imglist = copy.deepcopy(imglist)
+
                                 best_fit_status_dict = fit_status_dict.copy()
+                                best_fit_qual = fit_quality
                                 break  # break out of while loop
                             elif fit_quality < best_fit_qual:  # better solution found. keep looping but with the better solution as "best" for now.
                                 log.info("Better solution found!")
                                 best_fit_rms = fit_rms
-                                for item in imglist:
-                                    item.best_meta = item.meta.copy()
+
+                                best_imglist = copy.deepcopy(imglist)
+
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
                             elif fit_quality == best_fit_qual:  # new solution same level of fit_quality. Choose whichever one has the lowest total rms as "best" and keep looping.
                                 if best_fit_rms >= 0.:
                                     if fit_rms < best_fit_rms:
                                         best_fit_rms = fit_rms
-                                        for item in imglist:
-                                            item.best_meta = item.meta.copy()
+
+                                        best_imglist = copy.deepcopy(imglist)
+
                                         best_fit_status_dict = fit_status_dict.copy()
+                                        best_fit_qual = fit_quality
                             else:  # new solution has worse fit_quality. discard and continue looping.
                                 continue
                             # preserve best fit solution so that it can be inserted into a reinitialized imglist next time through.
-                            temp_imglist = copy.deepcopy(imglist)
+                            best_imglist = copy.deepcopy(imglist)
                     except Exception:
                         exc_type, exc_value, exc_tb = sys.exc_info()
                         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
@@ -566,10 +568,16 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         break
             if fit_quality == 1:  # break out of outer fit algorithm loop
                 break
+
+        # Reset imglist to point to best solution...
+        imglist = copy.deepcopy(best_imglist)
+
+        # Report processing time for this step
         current_dt = datetime.datetime.now()
         delta_dt = (current_dt - starting_dt).total_seconds()
         log.info('Processing time of [STEP 5b]: {} sec'.format(delta_dt))
         starting_dt = current_dt
+
         # 6: Populate the filtered_table
         log.info(
             "{} STEP 6: Collect up information and populate the filtered table "
@@ -581,12 +589,11 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             log.info(
                 "The fitting process was unsuccessful with a best fit total rms "
                 "of {} mas".format(best_fit_rms))
+
         if 0 < best_fit_rms < MAX_FIT_LIMIT:
-            # update to the meta information with the lowest rms if it is reasonable
-            for item in imglist:
-                item.meta.update(item.best_meta)
+            # Update filtered table with best fit results
             filtered_table['status'][:] = 0
-            fit_status_dict = best_fit_status_dict .copy()
+            fit_status_dict = best_fit_status_dict.copy()
 
             # Protect the writing of the table within the best_fit_rms
             info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
@@ -638,6 +645,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         log.info("{} STEP 7: Update image headers with new WCS information "
                  "{}".format("-" * 20, "-" * 29))
         if (0 < best_fit_rms < 9999.) and update_hdr_wcs:
+            # determine the quality of the fit
             headerlet_dict = update_image_wcs_info(imglist)
             for table_index in range(0, len(filtered_table)):
                 filtered_table[table_index]['headerletFile'] = headerlet_dict[
@@ -873,9 +881,9 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
             continue
         fit_rms_val = item.meta['fit_info']['FIT_RMS']
         max_rms_val = item.meta['fit_info']['TOTAL_RMS']
-        fit_rms_ra = item.meta['fit_info']['RMS_RA']
-        fit_rms_dec = item.meta['fit_info']['RMS_DEC']
-        rms_ratio = abs(fit_rms_ra - fit_rms_dec) / min(fit_rms_ra, fit_rms_dec)
+        # fit_rms_ra = item.meta['fit_info']['RMS_RA']
+        # fit_rms_dec = item.meta['fit_info']['RMS_DEC']
+        # rms_ratio = abs(fit_rms_ra - fit_rms_dec) / min(fit_rms_ra, fit_rms_dec)
         num_xmatches = item.meta['fit_info']['nmatches']
         fit_status_dict[dict_key]['max_rms'] = max_rms_val
         fit_status_dict[dict_key]['num_matches'] = num_xmatches
@@ -910,8 +918,8 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         consistency_check = True
         rms_limit = max(item.meta['fit_info']['TOTAL_RMS'], 10.)
         if not math.sqrt(np.std(np.asarray(xshifts)) ** 2 + np.std(
-                         np.asarray(yshifts)) ** 2) <= (rms_limit / MAS_TO_ARCSEC) / (item.wcs.pscale) or \
-                         rms_ratio > MAX_RMS_RATIO:
+                         np.asarray(yshifts)) ** 2) <= (rms_limit / MAS_TO_ARCSEC) / (item.wcs.pscale):  # \
+                         # or rms_ratio > MAX_RMS_RATIO:
             consistency_check = False
 
         # Decide if fit solutions are valid based on checks
@@ -1130,6 +1138,7 @@ def update_image_wcs_info(tweakwcs_output):
             a dictionary of the headerlet files created by this subroutine, keyed by flt/flc fits filename.
         """
     out_headerlet_dict = {}
+
     for item in tweakwcs_output:
         image_name = item.meta['filename']
         chipnum = item.meta['chip']
