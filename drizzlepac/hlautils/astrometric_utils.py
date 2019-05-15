@@ -19,6 +19,7 @@ import csv
 import requests
 import inspect
 import sys
+from distutils.version import LooseVersion
 
 import numpy as np
 from scipy import ndimage
@@ -39,6 +40,7 @@ from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 
+import photutils  # needed to check version
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import Background2D, MedianBackground
 from photutils import DAOStarFinder
@@ -154,7 +156,7 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
             if gaia_only and g.strip() == '':
                 continue
         else:
-            g = -1  # indicator for no source ID extracted
+            g = "-1"  # indicator for no source ID extracted
         r = float(source['ra'])
         d = float(source['dec'])
         m = -999.9  # float(source['mag'])
@@ -385,6 +387,11 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
     kernel.normalize()
     segm = detect_sources(imgarr, threshold, npixels=source_box,
                           filter_kernel=kernel)
+    # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
+    if segm is None or segm.nlabels == 0:
+        log.info("No detected sources!")
+        return None, None
+
     if deblend:
         segm = deblend_sources(imgarr, segm, npixels=5,
                                filter_kernel=kernel, nlevels=16,
@@ -392,10 +399,20 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
     # If classify is turned on, it should modify the segmentation map
     if classify:
         cat = source_properties(imgarr, segm)
-        if len(cat) > 0:
-            # Remove likely cosmic-rays based on central_moments classification
-            bad_srcs = np.where(classify_sources(cat) == 0)[0] + 1
-            segm.remove_labels(bad_srcs)  # CAUTION: May be time-consuming!!!
+        # Remove likely cosmic-rays based on central_moments classification
+        bad_srcs = np.where(classify_sources(cat) == 0)[0] + 1
+
+        if LooseVersion(photutils.__version__) >= '0.7':
+            segm.remove_labels(bad_srcs)
+        else:
+            # this is the photutils >= 0.7 fast code for removing labels
+            segm.check_labels(bad_srcs)
+            bad_srcs = np.atleast_1d(bad_srcs)
+            if len(bad_srcs) != 0:
+                idx = np.zeros(segm.max_label + 1, dtype=int)
+                idx[segm.labels] = segm.labels
+                idx[bad_srcs] = 0
+                segm.data = idx[segm.data]
 
     # convert segm to mask for daofind
     if centering_mode == 'starfind':
@@ -403,13 +420,26 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
         # daofind = IRAFStarFinder(fwhm=fwhm, threshold=5.*bkg.background_rms_median)
         log.info("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, bkg_rms_mean))
         daofind = DAOStarFinder(fwhm=fwhm, threshold=bkg_rms_mean)
+
         # Identify nbrightest/largest sources
         if nlargest is not None:
             nlargest = min(nlargest, len(segm.labels))
-            large_labels = segm.labels[np.flip(np.argsort(segm.areas))[: nlargest]]
+            if LooseVersion(photutils.__version__) >= '0.7':
+                large_labels = segm.labels[
+                    np.flip(np.argsort(segm.areas))[: nlargest]]
+            else:
+                # for photutils < 0.7
+                areas = np.array([area for area in np.bincount(segm.data.ravel())[1:] if area != 0])
+                large_labels = segm.labels[
+                    np.flip(np.argsort(areas))[: nlargest]]
+
         log.info("Looking for sources in {} segments".format(len(segm.labels)))
 
         for segment in segm.segments:
+            # check needed for photutils <= 0.6; it can be removed when
+            # the drizzlepac depends on photutils >= 0.7
+            if segment is None:
+                continue
             if nlargest is not None and segment.label not in large_labels:
                 continue  # Move on to the next segment
             # Get slice definition for the segment with this label
@@ -420,16 +450,18 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
             # Define raw data from this slice
             detection_img = img[seg_slice]
             # zero out any pixels which do not have this segments label
-            detection_img[np.where(segm.data[seg_slice] == 0)] = 0
+            detection_img[segm.data[seg_slice] == 0] = 0
 
             # Detect sources in this specific segment
-            seg_table = daofind(detection_img)
+            seg_table = daofind.find_stars(detection_img)
+
             # Pick out brightest source only
-            if src_table is None and len(seg_table) > 0:
+            if src_table is None and seg_table:
                 # Initialize final master source list catalog
                 src_table = Table(names=seg_table.colnames,
                                   dtype=[dt[1] for dt in seg_table.dtype.descr])
-            if len(seg_table) > 0:
+
+            if seg_table and seg_table['peak'].max() == detection_img.max():
                 max_row = np.where(seg_table['peak'] == seg_table['peak'].max())[0][0]
                 # Add row for detected source to master catalog
                 # apply offset to slice to convert positions into full-frame coordinates

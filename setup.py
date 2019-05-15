@@ -83,7 +83,7 @@ setup(
         'fitsblender',
         'nictools',
         'nose',
-        'numpy>=1.16.2',
+        'numpy>=1.16',
         'scipy',
         'matplotlib',
         'acstools',
@@ -93,8 +93,8 @@ setup(
         'stsci.imagestats',
         'stsci.skypac',
         'stsci.stimage',
-        'stwcs>=1.5.0',
-        'tweakwcs>=0.4.6',
+        'stwcs',
+        'tweakwcs>=0.5.0',
         'stregion',
         'requests',
         # HLA-pipeline specific:
@@ -102,6 +102,7 @@ setup(
         'photutils',
         'pysynphot',
         'lxml',
+        'scikit-image>=0.14.2',
     ],
     extras_require={
         'test': TESTS_REQUIRE

@@ -4,6 +4,7 @@ from astropy.tests.helper import enable_deprecations_as_exceptions
 # Uncomment the following line to treat all DeprecationWarnings as exceptions
 enable_deprecations_as_exceptions()
 
+
 # Utilities to support command line passing of arguments to test_randomlist.py
 def pytest_addoption(parser):
     """Support options for the pytest test_randomlist.py."""

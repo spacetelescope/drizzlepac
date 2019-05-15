@@ -18,7 +18,17 @@ of the list).
 3.0.2 (unreleased)
 ==================
 
-- Added test code to validate astrometric solutions from the database. [#294]
+- Fixed a bug in the ``util.WithLogging`` decorator due to which incorrect
+  log file was reported when user-supplied log file name does not have ``.log``
+  extension. [#365]
+
+- Fixed a bug introduced in #364 returning in ``finally`` block. [#365]
+
+- Improved ``util.WithLogging`` decorator to handle functions that return
+  values. [#364]
+
+- Fixed a bug in the automatic computation of the IVM weights when IVM
+  was not provided by the user. [#320]
 
 - Fixed a bug in the 2D histogram code used for estimating shifts for
   catalog pre-matching. This may result in better matching. [#286]
@@ -28,28 +38,8 @@ of the list).
 
 - Fixed VS compiler errors with pointer artithmetic on void pointers. [#273]
 
-- Added relative fit source matching algorithm to alignimages. [#271]
-
-- Added code to iteratively "grow out" saturated pixels in the DQ binary bitmask [#268]
-
-- Implement environment variable control, and command-line control, over running
-  alignment step in runastrodriz. [#251]
-
-- Insure a posteriori headerlet does not get overwritten by runastrodriz, so that
-  info about fit is preserved. [#250]
-
-- Trap problems importing astroquery with any problems leading to not trying to
-  get any remote data through astroquery. [#248]
-
-- Insure new a posteriori solution gets appended to FLC file as well as FLT file
-  as a HDRLET extension. [#249]
-
-- Restore logic to flag failed fits with a fit quality of 5 in an except block. [#244]
-
 - Fix logic so that code no longer tries to update headers when no valid fit
   could be determined. [#241]
-
-- Updated code that relies on ``tweakwcs`` to use new API. [#234]
 
 - Fixed a bug in the computation of interpolated large scale flat field
   for STIS data. The bug was inconsequential in practice.
@@ -58,10 +48,11 @@ of the list).
 - Removed the dependency on ``stsci.ndimage`` (using ``scipy`` routines
   instead). [#225]
 
-- Added ``hlapipeline`` alignment code to package. [#216]
-
-- Update ``runastrodriz`` to compute and apply absolute astrometric corrections
-  to GAIA (or related) frame to images where possible. [#213]
+- Added ``'Advanced Pipeline Products'`` alignment code to ``drizzlepac``
+  package. Enhance ``runastrodriz`` to compute and apply absolute astrometric
+  corrections to GAIA (or related) frame to images where possible.
+  [#200, #213, #216, #223, #234, #235, #244, #248, #249, #250, #251,
+  #259, #260, #268, #271, #283, #294, #302]
 
 - Add computation and reporting of the fit's
   `Root-Mean-Square Error (RMSE) <https://en.wikipedia.org/wiki/Root-mean-square_deviation>`_
@@ -81,27 +72,6 @@ of the list).
   after applying the fit. [#200, #202]
 
 - Simplify logic for determining the chip ID for each source. [#200]
-
-- Added hlapipeline alignment code to package. [#216]
-
-- Added logging to the hlapipeline alignment code [#223]
-
-- Improved the logging to write to STDOUT, as well as a file [#235]
-
-- Modified the check on the tweakwcs_output to be more robust[#260]
-
-- Ensure singletons do not use the match_relative_fit algorithm [#259]
-
-- Entirely re-wrote check_and_get_data function in alignimages.py.
-  Updates to the overall hlapipeline alignment code and updates/clean-up 
-  to the associated regression tests migrated from the original hlapipeline
-  package [#283].
-
-- Fixed improper logic caused by nested if statements in analyze.py found
-  when testing [#283].
-
-- Fixed a logic bug in alignimages.py to force the run_align() function
-  to always return the filtered table contents. [#302]
 
 
 2.2.6 (02-Nov-2018)
