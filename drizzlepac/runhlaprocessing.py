@@ -51,6 +51,10 @@ param_dict = {
             "TWEAK_THRESHOLD": 3.0,
             "aperture_1": 0.03,
             "aperture_2": 0.125,
+            "bthresh": 5.0},
+        "sourcex": {
+            "fwhm": 0.073,
+            "thresh": 1.4,
             "bthresh": 5.0}},
     "ACS SBC": {
         "astrodrizzle": {
@@ -66,6 +70,10 @@ param_dict = {
             "TWEAK_THRESHOLD": 3.0,
             "aperture_1": 0.07,
             "aperture_2": 0.125,
+            "bthresh": 5.0},
+        "sourcex": {
+            "fwhm": 0.065,
+            "thresh": 1.4,
             "bthresh": 5.0}},
     "ACS WFC": {
         "astrodrizzle": {
@@ -81,6 +89,10 @@ param_dict = {
             "TWEAK_THRESHOLD": 3.0,
             "aperture_1": 0.05,  # update from 0.15
             "aperture_2": 0.15,  # update from 0.25
+            "bthresh": 5.0},
+        "sourcex": {
+            "fwhm": 0.076,
+            "thresh": 1.4,
             "bthresh": 5.0}},
     "WFC3 IR": {
         "astrodrizzle": {
@@ -96,6 +108,10 @@ param_dict = {
             "TWEAK_THRESHOLD": 3.0,
             "aperture_1": 0.15,
             "aperture_2": 0.45,
+            "bthresh": 5.0},
+        "sourcex": {
+            "fwhm": 0.14,
+            "thresh": 1.4,
             "bthresh": 5.0}},
     "WFC3 UVIS": {
         "astrodrizzle": {
@@ -111,6 +127,10 @@ param_dict = {
             "TWEAK_THRESHOLD": 3.0,
             "aperture_1": 0.05,
             "aperture_2": 0.15,
+            "bthresh": 5.0},
+        "sourcex": {
+            "fwhm": 0.076,
+            "thresh": 1.4,
             "bthresh": 5.0}}}
 # ----------------------------------------------------------------------------------------------------------------------
 
