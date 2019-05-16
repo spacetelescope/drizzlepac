@@ -92,7 +92,15 @@ param_dict = {
         "sourcex": {
             "fwhm": 0.065,
             "thresh": 1.4,
-            "bthresh": 5.0}},
+            "bthresh": 5.0},
+        "swarm filter": {
+            "upper_epp_limit": 70000.,
+            "lower_epp_limit": 2000.,
+            "eppsky_limit": 1000.,
+            "swarm_thresh": 1.,
+            "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
+            "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
+            "proximity_binary": "no"}},
     "ACS WFC": {
         "astrodrizzle": {
             "SCALE": 0.05,
@@ -116,7 +124,15 @@ param_dict = {
         "sourcex": {
             "fwhm": 0.076,
             "thresh": 1.4,
-            "bthresh": 5.0}},
+            "bthresh": 5.0},
+        "swarm filter": {
+            "upper_epp_limit": 70000.,
+            "lower_epp_limit": 2000.,
+            "eppsky_limit": 1000.,
+            "swarm_thresh": 1.,
+            "clip_radius_list": [120., 100., 80., 60., 40., 30., 20., 10., 5., 2., 0.],
+            "scale_factor_list": [0.0, 0.000000e+00, 6.498530e-06, 3.687270e-05, 1.412972e-04, 3.151877e-04, 1.023391e-03, 3.134859e-03, 2.602436e-02, 1.820539e-01, 1.000000e+00],
+            "proximity_binary": "no"}},
     "WFC3 IR": {
         "astrodrizzle": {
             "SCALE": 0.09,
@@ -140,7 +156,17 @@ param_dict = {
         "sourcex": {
             "fwhm": 0.14,
             "thresh": 1.4,
-            "bthresh": 5.0}},
+            "bthresh": 5.0},
+        "swarm filter": {
+            "upper_epp_limit": 70000.,
+            "lower_epp_limit": 2000.,
+            "eppsky_limit": 100.,
+            "swarm_thresh": 1.,
+            "clip_radius_list": [140., 120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
+            #                   x10    x10    x10   x10   x10   x10    x10   x10  x10  x2,
+            "scale_factor_list": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.015, 0.05, 0.15, 0.9, 1.],
+            # "scale_factor_list_orig": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.005, 0.05, 0.15, 0.9, 1.],
+            "proximity_binary": "yes"}},
     "WFC3 UVIS": {
         "astrodrizzle": {
             "SCALE": 0.04,
@@ -164,7 +190,16 @@ param_dict = {
         "sourcex": {
             "fwhm": 0.076,
             "thresh": 1.4,
-            "bthresh": 5.0}}}
+            "bthresh": 5.0},
+        "swarm filter": {
+            "upper_epp_limit": 70000.,
+            "lower_epp_limit": 2000.,
+            "eppsky_limit": 1000.,
+            "swarm_thresh": 1.,
+            "clip_radius_list": [120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
+            "scale_factor_list": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 0.0005, 0.005, 0.005, 0.015, 0.45, 1.],
+            # "scale_factor_list_orig": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 6.e-5, 0.0005, 0.005, 0.015, 0.45, 1.],
+            "proximity_binary": "yes"}}}
 # ----------------------------------------------------------------------------------------------------------------------
 
 
