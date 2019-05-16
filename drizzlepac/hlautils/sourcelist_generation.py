@@ -55,6 +55,41 @@ def average_values_from_dict(Dictionary):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def conv_nan_zero(img_arr, replace_val=0.0, reverse=False):
+    """Replace NaNs in an image arr with zeros
+
+    Parameters
+    ----------
+    img_arr : numpy array of floating-point values
+        image array to process
+
+    replace_val : float
+        replacement value. If not explicitly specified, the default value is '0.0'.
+
+    reverse : Boolean
+        perform the reverse operation instead (replace zeros with NaNs) (True/False)? If not explicitly specified, the
+        default value is 'False'.
+
+    Returns
+    -------
+    out_arr : numpy array
+        de-NaNed (or de-zeroed if reverse = True) version of input array.
+    """
+    import numpy
+
+    if reverse:
+        Zeros = numpy.where(img_arr == replace_val)
+        out_arr = numpy.copy(img_arr)
+        out_arr[Zeros] = numpy.nan
+    else:
+        NaNs = numpy.where(img_arr != img_arr)
+        out_arr = numpy.copy(img_arr)
+        out_arr[NaNs] = replace_val
+    return (out_arr)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det,param_dict):
     """Make daophot-like sourcelists
 
@@ -150,9 +185,12 @@ def Create_MedDivImage(whitelightimage):
     medImg = whitelightimage + '_med.fits'
     medDivImg = whitelightimage + '_med_div.fits'
 
-    wl_data = fits.open(whitelightimage)[1].data
-    wht_data = fits.open(whitelightimage)[2].data
-    wht_data = Util.conv_nan_zero(wht_data)
+    white_light_hdu = fits.open(whitelightimage)
+
+    wl_data = white_light_hdu[1].data
+    wht_data = white_light_hdu[2].data
+
+    wht_data = conv_nan_zero(wht_data)
     wl_sm = signal.medfilt2d(wl_data, 13)
 
     wl_med_val = numpy.median(wl_data[wl_data > 0.0])
