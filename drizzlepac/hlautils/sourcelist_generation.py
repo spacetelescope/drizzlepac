@@ -200,11 +200,11 @@ def create_sourcelists(obs_info_dict, param_dict):
         inst_det = "{} {}".format(obs_info_dict[tdp_keyname]['info'].split()[-2],
                                   obs_info_dict[tdp_keyname]['info'].split()[-1])
 
-        # 1: Generate daophot-like sourcelist(s)
-        create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det,param_dict[inst_det])
-
-        # 2: Generate source extractor-like sourcelist(s)
+        # 1: Generate source extractor-like sourcelist(s)
         create_se_like_sourcelists()
+
+        # 2: Generate daophot-like sourcelist(s)
+        create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det,param_dict[inst_det])
 
 
 # ----------------------------------------------------------------------------------------------------------------------
