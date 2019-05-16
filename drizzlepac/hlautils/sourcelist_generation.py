@@ -107,6 +107,7 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
 
     whitelightrms_image = create_rms_image()
 
+    exp_dictionary_scis = {tdp_imagename: fits.getval(tdp_imagename,keyword='exptime')} # TODO: Quick and dirty hack for testing. FIND BETTER WAY TO DO THIS BEFORE DEPLOYMENT
     daofind_white_sources = run_daofind(param_dict,
                                         whitelightimage = tdp_imagename,
                                         whitelightrms = whitelightrms_image,
@@ -121,6 +122,53 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
 
     # ### (5) ### Gather columns and put in nice format (dictated by: "column_keys_phot.cfg")
     # This will convert columns from xy to ra and dec (controlled by: "column_keys_phot.cfg")
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def Create_MedDivImage(whitelightimage):
+    """Computes a median-divided image.
+
+    Parameters
+    ----------
+
+    whitelightimage : string
+        Name of the drizzled image to process
+
+    Returns
+    -------
+    medDivImg : basestring
+        Name of the newly created median-divided image
+    wht_data : numpy array
+        WHT extension of the whitelightimage image *medDivImg*
+    """
+    from scipy import signal
+
+    # ----------------------------
+    # Create Median-Divided Image
+    # ----------------------------
+    medImg = whitelightimage + '_med.fits'
+    medDivImg = whitelightimage + '_med_div.fits'
+
+    wl_data = fits.open(whitelightimage)[1].data
+    wht_data = fits.open(whitelightimage)[2].data
+    wht_data = Util.conv_nan_zero(wht_data)
+    wl_sm = signal.medfilt2d(wl_data, 13)
+
+    wl_med_val = numpy.median(wl_data[wl_data > 0.0])
+
+    wl_sm_norm = wl_sm / wl_med_val
+
+    wl_sm_norm = numpy.maximum(wl_sm_norm, 1.0)
+
+    med_div = wl_data / wl_sm_norm
+
+    med_div[numpy.where(wht_data <= 0.)] = -1
+
+    pri_hdr = fits.getheader(whitelightimage, 0)
+    fits.append(medDivImg, numpy.float32(med_div), pri_hdr)
+
+    return medDivImg, wht_data
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -468,7 +516,7 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whi
     thresh = float(param_dict["dao"]["TWEAK_THRESHOLD"])
     ap_diameter1 = float(param_dict["dao"]["aperture_1"])
     ap_diameter2 = float(param_dict["dao"]["aperture_2"])
-    scale = float(para_dict['astrodrizzle']['SCALE'])
+    scale = float(param_dict['astrodrizzle']['SCALE'])
 
     daoParams["fwhm"] = fwhm
     daoParams["threshold"] = thresh
@@ -495,7 +543,7 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whi
     # Create Median-Divided Image
     # ----------------------------
     medDivImg,wht_data = Create_MedDivImage(whitelightimage)
-    rms_array = pyfits.getdata(whitelightrms,0)
+    rms_array = fits.getdata(whitelightrms,0)
     rms_image_median = Util.binmode(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])[0]
     #rms_image_median = numpy.median(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])
     log.info("Median from RMS image = {}".format(rms_image_median))
@@ -531,7 +579,7 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whi
     reject_image[numpy.where(wht_data <= 0.)] = 1
 
     rej_img = whitelightimage+'_rej_img.fits'
-    pyfits.append(rej_img, numpy.float32(reject_image))
+    fits.append(rej_img, numpy.float32(reject_image))
 
     mod_output_dao = output_dao+".mod"
     filter_daolist(output_dao, mod_output_dao, reject_image, edgemask)
