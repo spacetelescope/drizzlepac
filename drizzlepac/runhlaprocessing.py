@@ -46,6 +46,11 @@ param_dict = {
             "OUTNY": None,
             "ROT": 0.0,
             "BITS": 256},
+        "ci filter": {
+            "ci_daolower_limit": 0.9,
+            "ci_daoupper_limit": 1.6,
+            "ci_selower_limit": 0.9,
+            "ci_seupper_limit": 1.6},
         "dao": {
             "TWEAK_FWHMPSF": 0.073,
             "TWEAK_THRESHOLD": 3.0,
@@ -65,6 +70,11 @@ param_dict = {
             "OUTNY": None,
             "ROT": 0.0,
             "BITS": 256},
+        "ci filter": {
+            "ci_daolower_limit": 0.15,
+            "ci_daoupper_limit": 0.45,
+            "ci_selower_limit": 0.15,
+            "ci_seupper_limit": 0.45},
         "dao": {
             "TWEAK_FWHMPSF": 0.065,
             "TWEAK_THRESHOLD": 3.0,
@@ -84,6 +94,11 @@ param_dict = {
             "OUTNY": None,
             "ROT": 0.0,
             "BITS": 256},
+        "ci filter": {
+            "ci_daolower_limit": 0.9,
+            "ci_daoupper_limit": 1.23,
+            "ci_selower_limit": 0.9,
+            "ci_seupper_limit": 1.23},
         "dao": {
             "TWEAK_FWHMPSF": 0.076,
             "TWEAK_THRESHOLD": 3.0,
@@ -103,6 +118,11 @@ param_dict = {
             "OUTNY": None,
             "ROT": 0.0,
             "BITS": 768},
+        "ci filter": {
+            "ci_daolower_limit": 0.25,
+            "ci_daoupper_limit": 0.55,
+            "ci_selower_limit": 0.25,
+            "ci_seupper_limit": 0.55},
         "dao": {
             "TWEAK_FWHMPSF": 0.14,
             "TWEAK_THRESHOLD": 3.0,
@@ -122,6 +142,11 @@ param_dict = {
             "OUTNY": None,
             "ROT": 0.0,
             "BITS": 256},
+        "ci filter": {
+            "ci_daolower_limit": 0.75,
+            "ci_daoupper_limit": 1.0,
+            "ci_selower_limit": 0.75,
+            "ci_seupper_limit": 1.0},
         "dao": {
             "TWEAK_FWHMPSF": 0.076,
             "TWEAK_THRESHOLD": 3.0,
