@@ -150,6 +150,16 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
                                         scale_dict_drzs = scale_dict_drzs,
                                         exp_dictionary_scis = exp_dictionary_scis,
                                         working_dir = os.getcwd())
+
+    # ~~~~~~~~~~~~~Bail out if daofind can't locate a single source~~~~~~~~~~~~~~
+    with open(daofind_white_sources) as f:
+        sl_lines = f.readlines()
+        if len(sl_lines) <= 4:
+            log.info("*** WARNING: DAOFIND was unable to locate any sources in the detection image. No _daophot.txt sourcelist will be produced. ***")
+            return()
+
+
+
     # ### (3) ###  Extract sources that fall "close" to 'INDEF' regions.
     # Take out any sources from the white-light source list falling within 'remove_radius' of a flag.
 
@@ -273,6 +283,7 @@ def create_sourcelists(obs_info_dict, param_dict):
 
     for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
                         oid_key.startswith('total detection product')]:  # loop over total filtered products
+        log.info("=====> {} <======".format(tdp_keyname))
         # 0: Map image filename to correspoinding catalog filename for total detection product and the associated
         # filter products
         totdet_product_cat_dict = {}

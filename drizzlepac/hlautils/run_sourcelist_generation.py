@@ -29,19 +29,22 @@ def confirm_execution():
 
 
 # ------------------------------------------------------------------------------
-
+print("Current path: ",os.getcwd())
 confirm_execution()
 os.system("clear")
-cmd = "rm -f *.*"
-print(cmd)
-os.system(cmd)
+try:
+    cmd = "rm -f *.*"
+    print(cmd)
+    os.system(cmd)
 
-cmd = "cp sl_gen_orig/* ."
-print(cmd)
-os.system(cmd)
+    cmd = "cp sl_gen_orig/* ."
+    print(cmd)
+    os.system(cmd)
 
-pickle_in = open(sys.argv[1], "rb")
-[obs_info_dict,param_dict] = pickle.load(pickle_in)
-pickle_in.close()
+    pickle_in = open(sys.argv[1], "rb")
+    [obs_info_dict,param_dict] = pickle.load(pickle_in)
+    pickle_in.close()
 
-sourcelist_generation.create_sourcelists(obs_info_dict,param_dict)
+    sourcelist_generation.create_sourcelists(obs_info_dict,param_dict)
+except:
+    print("Error! exiting...")
