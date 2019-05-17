@@ -5,10 +5,40 @@ without having to run runhlaprocessing.py first.
 Test dir: /Users/dulude/Documents/HLAtransition/runhlaprocessing_testing/acs_wfc3_11665_04
 /Users/dulude/Documents/HLAtransition/runhlaprocessing_testing/acs_10265_01
 """
+import os
 import pickle
 import sys
 
 import sourcelist_generation
+
+
+# ------------------------------------------------------------------------------
+def confirm_execution():
+    """
+    This subroutine prevents accidental execution by requiring the user to type in a randomly generated 6-character
+    confirmation string. If the string is typed in incorrectly, the script will simply exit to the command line.
+
+    :return: Nothing
+    """
+    import string
+    import random
+    confirm_string = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+    foo = input("Confirm execution by entering the following randomized text string: %s \n" % (confirm_string))
+    if foo != confirm_string: sys.exit("Execution aborted.")
+    if foo == confirm_string: print("Execution confirmed.")
+
+
+# ------------------------------------------------------------------------------
+
+confirm_execution()
+
+cmd = "rm -f *.*"
+print(cmd)
+os.system(cmd)
+
+cmd = "cp sl_gen_orig/* ."
+print(cmd)
+os.system(cmd)
 
 pickle_in = open(sys.argv[1], "rb")
 [obs_info_dict,param_dict] = pickle.load(pickle_in)
