@@ -111,7 +111,6 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
     Returns
     -------
     """
-
     log.info("DAOPHOT-LIKE SOURCELIST CREATION OCCURS HERE!")
 
     totfiltprod_filename_list = list(filter_product_cat_dict.keys())
@@ -581,22 +580,26 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whi
     # ----------------------------
     # Create Median-Divided Image
     # ----------------------------
-    medDivImg,wht_data = Create_MedDivImage(whitelightimage)
-    rms_array = fits.getdata(whitelightrms,0)
-    rms_image_median = Util.binmode(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])[0]
-    #rms_image_median = numpy.median(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])
-    log.info("Median from RMS image = {}".format(rms_image_median))
+    # medDivImg,wht_data = Create_MedDivImage(whitelightimage)
+    # rms_array = fits.getdata(whitelightrms,0)
+    # rms_image_median = Util.binmode(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])[0]
+    # #rms_image_median = numpy.median(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])
+    # log.info("Median from RMS image = {}".format(rms_image_median))
+    #
+    # daoParams["sigma"] = rms_image_median
 
-    daoParams["sigma"] = rms_image_median
+    whitelightdata = fits.getdata(whitelightimage, 1)
+    mean, median, std = sigma_clipped_stats(whitelightdata, sigma=3.0) # TODO: Quick and dirty estimation of background RMS to move things along. ** REFINE PRIOR TO DEPLOYMENT **
+    daoParams["sigma"] = std
 
     log.info('white light rms image = {}'.format(whitelightrms))
-    log.info('sigma = {}'.format(rms_image_median))
+    log.info('sigma = {}'.format(std))
     log.info('readnoise = {}'.format(readnoise))
     log.info('exptime = {}'.format(exptime))
     log.info(' ')
 
     name_daoOUT = extract_name(whitelightimage)
-    name_daoOUT = Rename.unique_name(name_daoOUT + ".coo", suffix=".coo")
+    name_daoOUT = unique_name(name_daoOUT + ".coo", suffix=".coo")
     output_dao = os.path.join(working_dir, name_daoOUT)
 
     try:
@@ -773,4 +776,42 @@ def stwcs_get_scale(listofimages):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def unique_name(path, suffix='', dbg=False):
+    """If path name exists, append with count, or incremented count
+
+    Parameters
+    ----------
+    path : string
+        file path
+
+    suffix : string
+        file suffix
+
+    dbg : Boolean
+        Turn debug mode on? (True/False)
+
+    Returns
+    -------
+    outstr : string
+        a unique filename
+    """
+    check = True
+    k = 0
+    namestr = path.split('_')
+    try:
+        k = int(namestr[-1])
+    except:
+        k = int(1)
+    if dbg: pdb.set_trace()
+    while check:
+        outstr = ''
+        for ll in namestr[:-1]:
+            outstr += ll + '_'
+        outstr += str(k) + suffix
+        if not os.path.exists(outstr):
+            check = False
+        else:
+            k += 1
+    if dbg: pdb.set_trace()
+    return (outstr)
 
