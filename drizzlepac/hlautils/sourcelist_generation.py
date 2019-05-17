@@ -12,6 +12,7 @@ from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
 import numpy
 from photutils import detection, findstars
+import scipy
 from stsci.tools import logutil
 
 __taskname__ = 'sourcelist_generation'
@@ -263,7 +264,6 @@ def create_sourcelists(obs_info_dict, param_dict):
     -------
     """
     log.info("----------------------------------------------------------------------------------------------------------------------")
-    os.system("clear")
     for key1 in list(obs_info_dict.keys()):
         for key2 in list(obs_info_dict[key1].keys()):
             log.info("obs_info_dict[{}][{}]: {}".format(key1,key2,obs_info_dict[key1][key2]))  # TODO: REMOVE THIS SECTION BEFORE ACTUAL USE
@@ -580,12 +580,12 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whi
     # ----------------------------
     # Create Median-Divided Image
     # ----------------------------
-    # medDivImg,wht_data = Create_MedDivImage(whitelightimage)
+    medDivImg,wht_data = Create_MedDivImage(whitelightimage)
+
     # rms_array = fits.getdata(whitelightrms,0)
     # rms_image_median = Util.binmode(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])[0]
     # #rms_image_median = numpy.median(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])
     # log.info("Median from RMS image = {}".format(rms_image_median))
-    #
     # daoParams["sigma"] = rms_image_median
 
     whitelightdata = fits.getdata(whitelightimage, 1)

@@ -31,7 +31,7 @@ def confirm_execution():
 # ------------------------------------------------------------------------------
 
 confirm_execution()
-
+os.system("clear")
 cmd = "rm -f *.*"
 print(cmd)
 os.system(cmd)
