@@ -174,6 +174,7 @@ def Create_MedDivImage(whitelightimage):
     -------
     medDivImg : basestring
         Name of the newly created median-divided image
+
     wht_data : numpy array
         WHT extension of the whitelightimage image *medDivImg*
     """
