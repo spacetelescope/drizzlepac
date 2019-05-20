@@ -91,8 +91,8 @@ def conv_nan_zero(img_arr, replace_val=0.0, reverse=False):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det,param_dict):
-    """Make daophot-like sourcelists
+def create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,inst_det,param_dict):
+    """Make daophot-like coordinate lists
 
     Parameters
     ----------
@@ -111,6 +111,8 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
 
     Returns
     -------
+    daofind_white_sources : string
+        Coordinate list filename
     """
     log.info("DAOPHOT-LIKE SOURCELIST CREATION OCCURS HERE!")
 
@@ -156,9 +158,26 @@ def create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_d
         sl_lines = f.readlines()
         if len(sl_lines) <= 4:
             log.info("*** WARNING: DAOFIND was unable to locate any sources in the detection image. No _daophot.txt sourcelist will be produced. ***")
-            return()
+            return("NO DAO SOURCES")
 
 
+    return(daofind_white_sources)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def create_dao_like_sourcelists():
+    """Make source extractor-like sourcelists
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    """
+
+    log.info("DAOPHOT-LIKE SOURCELIST CREATION OCCURS HERE!")
 
     # ### (3) ###  Extract sources that fall "close" to 'INDEF' regions.
     # Take out any sources from the white-light source list falling within 'remove_radius' of a flag.
@@ -243,6 +262,22 @@ def create_rms_image():
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def create_se_like_coordlists():
+    """Make source extractor-like coordinate lists
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    """
+
+    log.info("SOURCE EXTRACTOR-LIKE COORDINATE LIST CREATION OCCURS HERE!")
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def create_se_like_sourcelists():
     """Make source extractor-like sourcelists
 
@@ -298,10 +333,19 @@ def create_sourcelists(obs_info_dict, param_dict):
                                   obs_info_dict[tdp_keyname]['info'].split()[-1])
 
         # 1: Generate source extractor-like sourcelist(s)
-        create_se_like_sourcelists()
+        create_se_like_coordlists()
 
         # 2: Generate daophot-like sourcelist(s)
-        create_daophot_like_sourcelists(totdet_product_cat_dict,filter_product_cat_dict,inst_det,param_dict[inst_det])
+        dao_coord_list_name = create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,inst_det,param_dict[inst_det])
+
+        # 3: Generate daophot-like and source extractor-like sourcelists from coordinate lists for each filter
+        # assocatied with the current total detection product
+        for filter_img_name in filter_product_cat_dict.keys():
+            print(filter_img_name,filter_product_cat_dict[filter_img_name])
+
+            create_se_like_sourcelists()
+
+            create_dao_like_sourcelists()
 
 
 # ----------------------------------------------------------------------------------------------------------------------
