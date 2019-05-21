@@ -14,7 +14,7 @@ __taskname__ = 'processing_utils'
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
-def refine_product_headers(product, **header_dict):
+def refine_product_headers(product, level=None):
     """Refines output product headers to include values not available to AstroDrizzle.
 
     A few header keywords need to have values computed to reflect the type of product being
@@ -27,9 +27,10 @@ def refine_product_headers(product, **header_dict):
     product : str or object
         Filename or HDUList object for product to be updated
 
-    header_dict : dict, optional
-        Additional inputs necessary for computing keyword values which require information not
-        available to AstroDrizzle.
+    level : int, optional
+        If defined, will add the 'LEVEL' keyword to the header of the product as defined by the calling
+        routine. For example, 'level=2' to add/update the 'LEVEL' keyword for a level 2 (filter image)
+        product.
     """
 
     hdu, closefits = _process_input(product)
@@ -53,11 +54,11 @@ def refine_product_headers(product, **header_dict):
         phdu['filter'] = acs_filters
 
     # Apply any additional inputs to drizzle product header
-    product_level = header_dict.get('level', None)
-    if product_level:
-        hdu[0].header['level'] = product_level
+    if level:
+        hdu[0].header['level'] = (level, "Classification level of this product")
+
         # Reset filter specification for total detection images which combine filters
-        if product_level > 2:
+        if level > 2:
             phdu['filter'] = 'detection'
 
     # close file if opened by this function
