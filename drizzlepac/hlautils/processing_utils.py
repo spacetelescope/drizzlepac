@@ -43,8 +43,8 @@ def refine_product_headers(product, **header_dict):
     phdu['numexp'] = len(input_exposures)
 
     # Convert dates to ISO format
-    phdu['date-beg'] = Time(phdu['expstart'], format='mjd').iso
-    phdu['date-end'] = Time(phdu['expend'], format='mjd').iso
+    phdu['date-beg'] = (Time(phdu['expstart'], format='mjd').iso, "Starting Date and Time")
+    phdu['date-end'] = (Time(phdu['expend'], format='mjd').iso, "Ending Date and Time")
 
     # Re-format ACS filter specification
     if phdu['instrume'] == 'ACS':
