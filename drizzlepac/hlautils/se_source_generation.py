@@ -85,28 +85,56 @@ where is DAOPHOT or SEXTRACTOR?
 
 """
 
-#def create_sextractor_like_sourcelists(totdet_product_cat_dict, inst_det, param_dict):
+#def create_sextractor_like_sourcelists(totdet_product_cat_dict, param_dict):
 def create_sextractor_like_sourcelists(imgarr, fwhm=3.0, threshold=None, size_source_box=3,
                         vmax=None, plt_debug=False):
     """Use photutils to find sources in image based on segmentation.
 
     Parameters
     ----------
-    imgarr : ndarray
+    totdet_product_cat_dict : dictionary
+        Dictionary which maps the image filename for a total detection product to the associate catalog filename
+
+    param_dict : dictionary
+        dictionary of drizzle, source finding, and photometric parameters
+
+    Ximgarr : ndarray
         Numpy array of the science extension from the observations FITS file.
-    fwhm : float
+
+    Xfwhm : float
         Full-width half-maximum (fwhm) of the PSF in pixels.
-    threshold : float or None
+
+    Xthreshold : float or None
         Value from the image which serves as the limit for determining sources.
         If None, compute a default value of (background+5*rms(background)).
         If threshold < 0.0, use absolute value as scaling factor for default value.
+
     size_source_box : int
         Size of box (in pixels) which defines the minimum size of a valid source.
+
     vmax : float, optional
         If plotting the sources, scale the image to this maximum value.
+
     plt_debug : bool, optional
         Specify whether or not to plot the image and segmentation image for
         visualization and debugging purposes
+
+    Returns
+    -------
+    return src_table, segm, bkg, bkg_rms, bkg_rms_mean
+    src_table : `~astropy.table.QTable`
+        Table where each row represents a source
+  
+    segm : `photutils.segmentation.SegmentationImage`
+        Two-dimensional segmentation image where found source regions are labeled with 
+        unique, non-zero positive integers.
+
+    bkg : float
+
+    bkg_rms : float
+
+    bkg_rms_mean : float
+
     """
 
     # Only use a single kernel for now
