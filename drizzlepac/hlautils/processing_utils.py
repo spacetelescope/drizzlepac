@@ -48,7 +48,7 @@ def refine_product_headers(product, **header_dict):
 
     # Re-format ACS filter specification
     if phdu['instrume'] == 'ACS':
-        acs_filters = [kw[1] for kw in phdu['filter*'].items()]
+        acs_filters = [kw[1] for kw in phdu['filter?'].items()]
         acs_filters = ';'.join(acs_filters)
         phdu['filter'] = acs_filters
 
