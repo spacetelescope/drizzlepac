@@ -69,10 +69,10 @@ def compute_abmag_zeropoint(imgname,inst_det):
 
     Returns
     -------
-    zpt_dict : dictionary
-        dictionary of photometric zeropoint values
+    zpt_value : float
+        AB magnitude photometric zeropoint value
     """
-    zpt_dict={}
+
     if inst_det.lower().startswith('acs'):
         exten=1
     if inst_det.lower().startswith('wfc3'):
@@ -80,17 +80,17 @@ def compute_abmag_zeropoint(imgname,inst_det):
     if inst_det.lower().startswith('wfpc2'):
         exten=1
     try:
-        photFlam = float(fits.getheader(image_drz, exten)['PHOTFLAM'])
-        photPlam = float(fits.getheader(image_drz, exten)['PHOTPLAM'])
+        photFlam = float(fits.getheader(ingname, exten)['PHOTFLAM'])
+        photPlam = float(fits.getheader(ingname, exten)['PHOTPLAM'])
     except:
         exten = 1
-        photFlam = float(fits.getheader(image_drz, exten)['PHOTFLAM'])
-        photPlam = float(fits.getheader(image_drz, exten)['PHOTPLAM'])
+        photFlam = float(fits.getheader(imgname, exten)['PHOTFLAM'])
+        photPlam = float(fits.getheader(imgname, exten)['PHOTPLAM'])
 
     ref_stmag_zpt = -2.5 * (numpy.log10(photFlam)) - 21.10
-    zpt_dict[imgname] = ref_stmag_zpt - (5 * numpy.log10(photPlam)) + 18.6921
+    zpt_value = ref_stmag_zpt - (5 * numpy.log10(photPlam)) + 18.6921
 
-    return(zpt_dict)
+    return(zpt_value)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -235,20 +235,58 @@ def create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,i
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_sourcelists():
+def create_dao_like_sourcelists(img_name,inst_det,param_dict):
     """Make source extractor-like sourcelists
 
     Parameters
     ----------
+    img_name : string
+        drizzled total filter image to be processed
+
+    inst_det : string
+        Space-separated text string containing instrument name, detector name (upper case) of the products being
+        processed.(i.e. WFC3_UVIS)
+
+    param_dict : dictionary
+        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
 
     Returns
     -------
     """
-
+    # ### 4a ### compute daophot_process inputs
     log.info("DAOPHOT-LIKE SOURCELIST CREATION OCCURS HERE!")
+    img_list = [img_name]
 
+    readnoise_dict = get_readnoise([img_name])
+    log.info("{} readnoise: {}".format(img_name, readnoise_dict[img_name]))
+
+    scale_dict = {}
+    scale_dict[img_name] = param_dict['astrodrizzle']['SCALE']
+    log.info("{} Scale: {}".format(img_name, scale_dict[img_name]))
+
+    abmag_zpt_dict = {}
+    abmag_zpt_dict[img_name] = compute_abmag_zeropoint(img_name, inst_det)
+    log.info("{} AB magnitude zeropoint: {}".format(img_name, abmag_zpt_dict[img_name]))
+
+    exptime_dict = {}
+    exptime_dict[img_name] = fits.getval(img_name, keyword='exptime')
+    log.info("{} Exposure time: {}".format(img_name, exptime_dict[img_name]))
+
+    #dao_output = run_daophot_processing([img_name],
     # ### (4) ### Feed corrected whitelight source lists into daophot with science images
 
+
+    # dict_newTAB_matched2drz = daophot_process(
+    #                                 X all_drizzled_filelist,
+    #                                 dict_source_lists_filtered,
+    #                                 daofind_basic_param,
+    #                                 X readnoise_dictionary_drzs,
+    #                                 X scale_dict_drzs,
+    #                                 X zero_point_AB_dict,
+    #                                 X exp_dictionary_scis,
+    #                                 working_hla_red,
+    #                                 rms_dict,
+    #                                 rms_image,config_file)
     # ### (5) ### Gather columns and put in nice format (dictated by: "column_keys_phot.cfg")
     # This will convert columns from xy to ra and dec (controlled by: "column_keys_phot.cfg")
 
@@ -412,10 +450,7 @@ def create_sourcelists(obs_info_dict, param_dict):
             create_se_like_sourcelists()
 
             if dao_coord_list_name != "NO DAO SOURCES":
-                zpt_dict = compute_abmag_zeropoint(img_name,inst_det)
-                print("zeropoint: ",zpt_dict)
-                pdb.set_trace()
-                #dao_output = run_daophot_processing([img_name],
+                create_dao_like_sourcelists(img_name,inst_det,param_dict[inst_det])
             else:
                 log.info("Empty coordinate file. DAO sourcelist {} NOT created.".format(sourcelist_name))
 
