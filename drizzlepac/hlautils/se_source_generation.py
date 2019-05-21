@@ -39,7 +39,7 @@ from astropy.visualization.mpl_normalize import ImageNormalize
 
 import photutils
 from photutils import detect_sources, source_properties, deblend_sources
-from photutils import Background2D, MedianBackground, SExtractorBackground
+from photutils import Background2D, MedianBackground, SExtractorBackground, StdBackgroundRMS
 from tweakwcs import FITSWCS
 from stwcs.distortion import utils
 from stwcs import wcsutil
@@ -72,8 +72,7 @@ detector_specific_params = {"acs": {"hrc": {"fwhmpsf": 0.152,  # 0.073
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 
-#__all__ = ['run_photutils', 'create_sextractor_like_sourcelists', 'generate_se_catalog', 
-           'classify_sources']
+#__all__ = ['run_photutils', 'create_sextractor_like_sourcelists', 'generate_se_catalog', 'classify_sources']
 
 """
 
@@ -84,7 +83,7 @@ where is DAOPHOT or SEXTRACTOR?
 """
 
 #def create_sextractor_like_sourcelists(totdet_product_cat_dict, param_dict):
-def create_sextractor_like_sourcelists(imgarr, vmax=None, plt_debug=False):
+def create_sextractor_like_sourcelists(filename, vmax=None, se_debug=False):
     """Use photutils to find sources in image based on segmentation.
 
     Parameters
@@ -101,7 +100,7 @@ def create_sextractor_like_sourcelists(imgarr, vmax=None, plt_debug=False):
     vmax : float, optional
         If plotting the sources, scale the image to this maximum value.
 
-    plt_debug : bool, optional
+    se_debug : bool, optional
         Specify whether or not to plot the image and segmentation image for
         visualization and debugging purposes
 
@@ -128,24 +127,25 @@ def create_sextractor_like_sourcelists(imgarr, vmax=None, plt_debug=False):
     """
 
     # Get the image data
-    filename = list(totdet_product_cat_dict.keys())[0]
-    imgarr = fits.open(filename)
-    imgwcs = HSTWCS(imgarr, 1)
+    #filename = list(totdet_product_cat_dict.keys())[0]
+    imghdu = fits.open(filename)
+    imgarr = imghdu[1].data
+    imgheader = imghdu[0].header
+    instr_det = imgheader['INSTRUME'].upper() + ' ' + imgheader['DETECTOR'].upper()
 
-    # Default parameters
-    seParams_default = {}
-    seParams_default['fwhm'] = 3.0
-    seParams_default['size_source_box'] = 3.0
-    seParams_default['threshold'] = None
-    seParams = seParams_default
-    
-    fwhm = float(param_dict['se']['TWEAK_FWHMPSF'])
-    size_source_box = float(param_dict['se']['TWEAK_SOURCE_BOX'])
-    threshold = float(param_dict['se']['TWEAK_THRESHOLD'])
+    # Get the HSTWCS object from the first extension
+    imgwcs = HSTWCS(filename, 1)
 
-    seParams['fwhm'] = fwhm
-    seParams['size_source_box'] = size_source_box
-    seParams['threshold'] = threshold
+    # Get the instrument/detector-specific values from the
+    # param_dict for now - will eventually come from a 
+    # configuration file.
+    #fwhm = float(param_dict[instr_det]['sourcex']['fwhm'])
+    #size_source_box = float(param_dict[instr_det]['sourcex']['source_box'])
+    #threshold = float(param_dict[instr_det]['sourcex']['threshold'])
+    fwhm = 0.073
+    size_source_box = 7
+    #threshold = 1.4
+    threshold = None
 
     # Report configuration values to log
     log.info('====================')
@@ -161,7 +161,9 @@ def create_sextractor_like_sourcelists(imgarr, vmax=None, plt_debug=False):
     kernel_list = [Gaussian2DKernel, MexicanHat2DKernel]
     kernel_in_use = kernel_list[0]
 
-    bkg, bkg_rms, bkg_rms_mean, threshold = compute_background(imgarr, threshold=threshold)
+    bkg, bkg_rms, bkg_dao_rms, threshold = compute_background(imgarr, threshold=threshold)
+    print('bkg: ', bkg)
+    print('bkg_dao_rms: ', bkg_dao_rms)
 
     # FIX imgarr should be background subtracted, sextractor uses the filtered_data image
     # Can input wcs to source_properties to have sky coords
@@ -169,7 +171,8 @@ def create_sextractor_like_sourcelists(imgarr, vmax=None, plt_debug=False):
     imgarr_bkgsub = imgarr - bkg.background
 
     # *** FIX: should size_source_box size be used in all these places? ***
-    # Create a 2D filter kernel
+    # Create a 2D filter kernel - this will be used to smooth the input 
+    # image prior to thresholding in detect_sources().
     sigma = fwhm * gaussian_fwhm_to_sigma
     kernel = kernel_in_use(sigma, x_size=size_source_box, y_size=size_source_box)
     kernel.normalize()
@@ -182,25 +185,27 @@ def create_sextractor_like_sourcelists(imgarr, vmax=None, plt_debug=False):
                           filter_kernel=kernel)
     print(segm)
 
-    # TESTING
     # Move 'id' column from first to last position
     # Makes it consistent for remainder of code
     # Overlay on image looks good - yeah.
-    cat = source_properties(imgarr_bkgsub, segm, filter_kernel=kernel)
-    table = cat.to_table()
-    cnames = table.colnames
-    cnames.append(cnames[0])
-    del cnames[0]
-    tbl = table[cnames[0:2]]
+    if se_debug:
+        # Write out a catalog which can be used as an overlay for image in ds9
+        cat = source_properties(imgarr_bkgsub, segm, filter_kernel=kernel, wcs=imgwcs)
+        table = cat.to_table()
+        cnames = table.colnames
+        cnames.append(cnames[0])
+        del cnames[0]
+        tbl = table[cnames[0:2]]
 
-    outname = 'md_segm.reg'
-    tbl['xcentroid'].info.format = '.10f'  # optional format
-    tbl['ycentroid'].info.format = '.10f'
-    tbl.write(outname, format='ascii.commented_header')
-    log.info("Wrote source catalog: {}".format(outname))
-    # END TESTING
+        print('column names:',cnames)
+        outname = 'md_segm.reg'
+        tbl['xcentroid'].info.format = '.10f'  # optional format
+        tbl['ycentroid'].info.format = '.10f'
+        tbl.write(outname, format='ascii.commented_header')
+        log.info("Wrote debug source catalog: {}".format(outname))
 
-    if plt_debug:
+        """
+        # Generate a graphic of the image and the segmented image
         norm = ImageNormalize(stretch=SqrtStretch())
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12.5))
         ax1.imshow(imgarr, origin='lower', cmap='Greys_r', norm=norm)
@@ -208,7 +213,9 @@ def create_sextractor_like_sourcelists(imgarr, vmax=None, plt_debug=False):
         ax2.imshow(segm, origin='lower', cmap=segm.cmap(random_state=12345))
         ax2.set_title('Segmentation Image')
         plt.show()
+        """
 
+    # TROUBLESOME at this time
     # Deblending is a combination of multi-thresholding and watershed
     # segmentation. Sextractor uses a multi-thresholding technique.
     # npixels = number of connected pixels in source
@@ -218,24 +225,40 @@ def create_sextractor_like_sourcelists(imgarr, vmax=None, plt_debug=False):
     #                       contrast=0.01)
     #print('after deblend. ', segm)
 
-    # If classify is turned on, it should modify the segmentation map
+    # Modify the segmentation map
     # Should imgarr be imgarr_bkg here?  I think so!
     segm = modify_segmentation_map(imgarr_bkgsub, segm, kernel)
 
     # Regenerate the source catalog with presumably now only good sources
-    src_cat = source_properties(imgarr_bkgsub, segm, filter_kernel=kernel)
-    src_table = src_cat.to_table()
+    seg_cat = source_properties(imgarr_bkgsub, segm, filter_kernel=kernel, wcs=imgwcs)
+    seg_table = seg_cat.to_table()
     print("segm: ", segm)
-    print("tbl: ", src_table)
+    print("tbl: ", seg_table)
+    seg_tbl = seg_table[cnames[0:2]]
 
-    return src_table, segm, bkg, bkg_rms, bkg_rms_mean
+    # Write out the official total detection product source catalog
+    seg_tbl['xcentroid'].info.format = '.10f' 
+    seg_tbl['ycentroid'].info.format = '.10f'
+    #seg_table['xcentroid'].info.format = '.10f' 
+    #seg_table['ycentroid'].info.format = '.10f'
+    #seg_table['flux'].info.format = '.10f'
+    outroot = 'hst'
+    if not outroot.endswith('_segment-cat.ecsv'):
+        outroot += '_segment-cat.ecsv'
+    seg_tbl.write(outroot, format='ascii.commented_header')
+    #seg_table.write(outroot, format='ascii.commented_header')
+    log.info("Wrote source catalog: {}".format(outroot))
+
+    #catalog_name = hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_cat.ecsv 
+
+    return seg_table, segm, bkg, bkg_rms, bkg_dao_rms
 
 
 """
-#def measure_source_properties(totdet_product_cat_dict, filter_product_cat_dict,
+#defemeasure_source_properties(totdet_product_cat_dict, filter_product_cat_dict,
 #                                       inst_det, param_dict):
 def measure_source_properties(imgarr, fwhm=3.0, threshold=None, size_source_box=7,
-                       classify=True, vmax=None, deblend=True, plt_debug=False):
+                       classify=True, vmax=None, deblend=True, se_debug=False):
 
     # Regenerate the source catalog with presumably now good sources
     src_cat = source_properties(imgarr_bkgsub, segm, filter_kernel=kernel)
@@ -262,19 +285,21 @@ def measure_source_properties(imgarr, fwhm=3.0, threshold=None, size_source_box=
 """
 
 def compute_background (image, threshold=None):
-    #Previous: bkg_estimator = MedianBackground()
     bkg_estimator = SExtractorBackground()
-    print('bkg estimator: ', bkg_estimator)
-    #bkgrms_estimator = StdBackgroundRMS()
+    bkgrms_estimator = StdBackgroundRMS()
     bkg = None
+    bkg_dao_rms = None
 
     exclude_percentiles = [10, 25, 50, 75]
     for percentile in exclude_percentiles:
         log.info("Percentile in use: {}".format(percentile))
         try:
-            bkg = Background2D(image, (50, 50), filter_size=(3, 3),
+            bkg = Background2D(image, (50, 50), 
+                               filter_size=(3, 3),
                                bkg_estimator=bkg_estimator,
-                               exclude_percentile=percentile)
+                               bkgrms_estimator=bkgrms_estimator,
+                               exclude_percentile=percentile,
+                               edge_method='pad')
             print('bkg: ', bkg)
         except Exception:
             bkg = None
@@ -285,6 +310,7 @@ def compute_background (image, threshold=None):
             bkg_rms = (5. * bkg.background_rms)
             bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
             default_threshold = bkg.background + bkg_rms
+            bkg_dao_rms = bkg.background_rms
             if threshold is None:
                 threshold = default_threshold
             elif threshold < 0:
@@ -303,8 +329,9 @@ def compute_background (image, threshold=None):
     if bkg is None:
         bkg_rms_mean = max(0.01, image.min())
         bkg_rms = bkg_rms_mean * 5
+        bkg_dao_rms = bkg_rms_mean
 
-    return bkg, bkg_rms, bkg_rms_mean, threshold
+    return bkg, bkg_rms, bkg_dao_rms, threshold
 
 # do not get confused between SourceProperties the class and source_properties the method.
 # cat = SourceProperties(imgarr_bkgsub, segm, filtered_data=?) for Sextractor
@@ -371,7 +398,7 @@ def classify_sources(catalog, sources=None):
 
 # Main entry point to the SExtractor-like analysis and source catalog 
 # generation
-def generate_se_catalogs(image, dbg_output=False, **detector_pars):
+def generate_se_catalogs(imagename, dbg_output=False):
     """ Build SExtractor-like source catalogs using photutils.
 
     This function is essentially a high-level controller for the generation
@@ -410,98 +437,22 @@ def generate_se_catalogs(image, dbg_output=False, **detector_pars):
         each table containing sources from image extension ``('sci', chip)``.
 
     """
-    if not isinstance(image, fits.HDUList):
-        raise ValueError("Input {} not fits.HDUList object".format(image))
-
     # Build source catalog for entire image
     source_cats = {}
     outname = None
 
-    seg_table, segmap, bkg, bkg_rms, bkg_rms_mean = create_sextractor_like_sourcelists(imgarr, 
-                                                                                           vmax=None, 
-                                                                                           plt_debug=False)
-        
-        """
-        # If requested, write out a catalog which can be used as an overlay region in DS9
-        if dbg_output:
-            # Move 'id' column from first to last position
-            # Makes it consistent for remainder of code
-            cnames = seg_table.colnames
-            cnames.append(cnames[0])
-            del cnames[0]
-            tbl = seg_table[cnames[0:2]]
-
-            outname = 'hst_{}_segm.reg'.format(image[0].header['rootname'])
-            tbl['xcentroid'].info.format = '.10f'  # optional format
-            tbl['ycentroid'].info.format = '.10f'
-            #tbl['flux'].info.format = '.10f'
-            tbl.write(outname, format='ascii.commented_header')
-            log.info("Wrote source catalog: {}".format(outname))
-
-        if plot and plt is not None:
-            norm = len(segm.labels)
-            if vmax is None:
-                norm = ImageNormalize(stretch=SqrtStretch())
-            fig, ax = plt.subplots(2, 2, figsize=(8, 8))
-            ax[0][0].imshow(imgarr, origin='lower', cmap='Greys_r', norm=norm, vmax=vmax)
-            ax[0][1].imshow(segm, origin='lower', cmap=segm.cmap(random_state=12345))
-            ax[0][1].set_title('Segmentation Map')
-            ax[1][0].imshow(bkg.background, origin='lower')
-            if not isinstance(threshold, float):
-                ax[1][1].imshow(threshold, origin='lower')
-
-        # Write out the official source catalog
-        seg_table['xcentroid'].info.format = '.10f'  # optional format
-        seg_table['ycentroid'].info.format = '.10f'
-        seg_table['flux'].info.format = '.10f'
-        outroot = 'hst'
-        if not outroot.endswith('_segment-cat.ecsv'):
-            outroot += '_segment-cat.ecsv'
-        seg_table.write(outroot, format='ascii.commented_header')
-        log.info("Wrote source catalog: {}".format(outroot))
-
-        seg_tab_phot = seg_table
-
-        source_cats[chip] = seg_tab_phot
-
-        #catalog_name = hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_cat.ecsv 
-        """
-
+    seg_table, segmap, bkg, bkg_rms, bkg_dao_rms = create_sextractor_like_sourcelists(imagename,
+                                                                                      vmax=None, 
+                                                                                      se_debug=True)
     return source_cats
 
 # Driver with functions or actions cribbed from alignimages/generate_source_catalogs or 
 # astrometric_utils/generate_source_catalog (generate_se_catalog in this file)
 def run_photutils(imgname):
-    imghdu = fits.open(imgname)
-
-    imgprimaryheader = imghdu[0].header
-    instrument = imgprimaryheader['INSTRUME'].lower()
-    detector = imgprimaryheader['DETECTOR'].lower()
-
     sourcecatalogdict = {}
     sourcecatalogdict[imgname] = {}
-
-    # get instrument/detector-specific image alignment parameters
-    if instrument in detector_specific_params.keys():
-        if detector in detector_specific_params[instrument].keys():
-            detector_pars = detector_specific_params[instrument][detector]
-            # to allow generate_source_catalog to get detector specific parameters
-            #detector_pars.update(pars)
-            sourcecatalogdict[imgname]["params"] = detector_pars
-        else:
-            sys.error("ERROR! Unrecognized detector '{}'. Exiting...".format(detector))
-            log.exit("ERROR! Unrecognized detector '{}'. Exiting...".format(detector))
-    else:
-        sys.error("ERROR! Unrecognized instrument '{}'. Exiting...".format(instrument))
-        log.exit("ERROR! Unrecognized instrument '{}'. Exiting...".format(instrument))
-
-    # Identify sources in image, convert coords from chip x, y form to reference WCS sky RA, Dec form.
-    imgwcs = HSTWCS(imghdu, 1)
-    # Convert fwhmpsf from arsec to pixels
-    fwhmpsf_pix = sourcecatalogdict[imgname]["params"]['fwhmpsf'] / imgwcs.pscale
-
     sourcecatalogdict[imgname]["catalog_table"] = \
-        generate_se_catalogs(imghdu, fwhm=fwhmpsf_pix, dbg_output=True, **detector_pars)
+        generate_se_catalogs(imgname, dbg_output=True)
 
     return
     
