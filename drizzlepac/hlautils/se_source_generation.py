@@ -50,7 +50,7 @@ from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
 
 
-#__taskname__ = 'photutils_se_utils'
+__taskname__ = 'se_source_generation'
 
 # Module-level dictionary contains instrument/detector-specific parameters used later on in the script.
 detector_specific_params = {"acs": {"hrc": {"fwhmpsf": 0.152,  # 0.073
@@ -72,10 +72,8 @@ detector_specific_params = {"acs": {"hrc": {"fwhmpsf": 0.152,  # 0.073
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 
-"""
-__all__ = ['run_photutils', 'create_sextractor_like_sourcelists', 'generate_se_catalog', 
+#__all__ = ['run_photutils', 'create_sextractor_like_sourcelists', 'generate_se_catalog', 
            'classify_sources']
-"""
 
 """
 
@@ -86,8 +84,7 @@ where is DAOPHOT or SEXTRACTOR?
 """
 
 #def create_sextractor_like_sourcelists(totdet_product_cat_dict, param_dict):
-def create_sextractor_like_sourcelists(imgarr, fwhm=3.0, threshold=None, size_source_box=3,
-                        vmax=None, plt_debug=False):
+def create_sextractor_like_sourcelists(imgarr, vmax=None, plt_debug=False):
     """Use photutils to find sources in image based on segmentation.
 
     Parameters
@@ -100,17 +97,6 @@ def create_sextractor_like_sourcelists(imgarr, fwhm=3.0, threshold=None, size_so
 
     Ximgarr : ndarray
         Numpy array of the science extension from the observations FITS file.
-
-    Xfwhm : float
-        Full-width half-maximum (fwhm) of the PSF in pixels.
-
-    Xthreshold : float or None
-        Value from the image which serves as the limit for determining sources.
-        If None, compute a default value of (background+5*rms(background)).
-        If threshold < 0.0, use absolute value as scaling factor for default value.
-
-    size_source_box : int
-        Size of box (in pixels) which defines the minimum size of a valid source.
 
     vmax : float, optional
         If plotting the sources, scale the image to this maximum value.
@@ -129,13 +115,47 @@ def create_sextractor_like_sourcelists(imgarr, fwhm=3.0, threshold=None, size_so
         Two-dimensional segmentation image where found source regions are labeled with 
         unique, non-zero positive integers.
 
-    bkg : float
+    bkg : `~photutils.background.Background2D` or None 
+        A background map based upon the `~photutils.background.SExtractorBackground` 
+        estimator
 
     bkg_rms : float
-
+        N times the bkg.background_rms where N = 5 FIX
+        
     bkg_rms_mean : float
+        Mean bkg.background FIX
 
     """
+
+    # Get the image data
+    filename = list(totdet_product_cat_dict.keys())[0]
+    imgarr = fits.open(filename)
+    imgwcs = HSTWCS(imgarr, 1)
+
+    # Default parameters
+    seParams_default = {}
+    seParams_default['fwhm'] = 3.0
+    seParams_default['size_source_box'] = 3.0
+    seParams_default['threshold'] = None
+    seParams = seParams_default
+    
+    fwhm = float(param_dict['se']['TWEAK_FWHMPSF'])
+    size_source_box = float(param_dict['se']['TWEAK_SOURCE_BOX'])
+    threshold = float(param_dict['se']['TWEAK_THRESHOLD'])
+
+    seParams['fwhm'] = fwhm
+    seParams['size_source_box'] = size_source_box
+    seParams['threshold'] = threshold
+
+    # Report configuration values to log
+    log.info('====================')
+    log.info('')
+    log.info('SExtractor-like source finding settings for Photutils segmentation')
+    log.info('FWHM: {}'.format(fwhm))
+    log.info('size_source_box: {}'.format(size_source_box))
+    log.info('threshold: {}'.format(threshold))
+    log.info('')
+    log.info('====================')
 
     # Only use a single kernel for now
     kernel_list = [Gaussian2DKernel, MexicanHat2DKernel]
@@ -281,7 +301,7 @@ def compute_background (image, threshold=None):
     # If Background2D does not work at all, define default scalar values for
     # the background to be used in source identification
     if bkg is None:
-        bkg_rms_mean = max(0.01, imgarr.min())
+        bkg_rms_mean = max(0.01, image.min())
         bkg_rms = bkg_rms_mean * 5
 
     return bkg, bkg_rms, bkg_rms_mean, threshold
@@ -351,7 +371,7 @@ def classify_sources(catalog, sources=None):
 
 # Main entry point to the SExtractor-like analysis and source catalog 
 # generation
-def generate_se_catalogs(image, fwhm=3.0, dbg_output=False, **detector_pars):
+def generate_se_catalogs(image, dbg_output=False, **detector_pars):
     """ Build SExtractor-like source catalogs using photutils.
 
     This function is essentially a high-level controller for the generation
@@ -395,19 +415,9 @@ def generate_se_catalogs(image, fwhm=3.0, dbg_output=False, **detector_pars):
 
     # Build source catalog for entire image
     source_cats = {}
-    numSci = countExtn(image, extname='SCI')
     outname = None
 
-    for chip in range(numSci):
-        chip += 1
-        # find sources in image
-        imgarr = image['sci', chip].data
-
-        # classify=True causes a ValueError when removing bad sources
-        seg_table, segmap, bkg, bkg_rms, bkg_rms_mean = create_sextractor_like_sourcelists(imgarr, 
-                                                                                           fwhm=fwhm, 
-                                                                                           threshold=None, 
-                                                                                           size_source_box=7,
+    seg_table, segmap, bkg, bkg_rms, bkg_rms_mean = create_sextractor_like_sourcelists(imgarr, 
                                                                                            vmax=None, 
                                                                                            plt_debug=False)
         
