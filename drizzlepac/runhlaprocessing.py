@@ -60,7 +60,8 @@ param_dict = {
         "sourcex": {
             "fwhm": 0.073,
             "thresh": 1.4,
-            "bthresh": 5.0},
+            "bthresh": 5.0,
+            "source_box": 7},
         "swarm filter": {
             "upper_epp_limit": 70000.,
             "lower_epp_limit": 2000.,
@@ -92,7 +93,8 @@ param_dict = {
         "sourcex": {
             "fwhm": 0.065,
             "thresh": 1.4,
-            "bthresh": 5.0},
+            "bthresh": 5.0,
+            "source_box": 7},
         "swarm filter": {
             "upper_epp_limit": 70000.,
             "lower_epp_limit": 2000.,
@@ -124,7 +126,8 @@ param_dict = {
         "sourcex": {
             "fwhm": 0.076,
             "thresh": 1.4,
-            "bthresh": 5.0},
+            "bthresh": 5.0,
+            "source_box": 7},
         "swarm filter": {
             "upper_epp_limit": 70000.,
             "lower_epp_limit": 2000.,
@@ -156,7 +159,8 @@ param_dict = {
         "sourcex": {
             "fwhm": 0.14,
             "thresh": 1.4,
-            "bthresh": 5.0},
+            "bthresh": 5.0,
+            "source_box": 7},
         "swarm filter": {
             "upper_epp_limit": 70000.,
             "lower_epp_limit": 2000.,
@@ -190,7 +194,8 @@ param_dict = {
         "sourcex": {
             "fwhm": 0.076,
             "thresh": 1.4,
-            "bthresh": 5.0},
+            "bthresh": 5.0,
+            "source_box": 7},
         "swarm filter": {
             "upper_epp_limit": 70000.,
             "lower_epp_limit": 2000.,
