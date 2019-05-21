@@ -8,7 +8,7 @@ Test dir: /Users/dulude/Documents/HLAtransition/runhlaprocessing_testing/acs_wfc
 import os
 import pickle
 import sys
-
+import traceback
 import sourcelist_generation
 
 
@@ -46,5 +46,8 @@ try:
     pickle_in.close()
 
     sourcelist_generation.create_sourcelists(obs_info_dict,param_dict)
-except:
+except Exception:
+    exc_type, exc_value, exc_tb = sys.exc_info()
+    traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
     print("Error! exiting...")
+print("\a")

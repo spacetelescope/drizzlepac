@@ -55,6 +55,46 @@ def average_values_from_dict(Dictionary):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+def compute_abmag_zeropoint(imgname,inst_det):
+    """Compute photometric AB mag zeropoint
+
+    Parameters
+    ----------
+    imgname : string
+        Name of the image to use in calculations
+
+    inst_det : string
+        Space-separated text string containing instrument name, detector name (upper case) of the products being
+        processed.(i.e. WFC3_UVIS)
+
+    Returns
+    -------
+    zpt_dict : dictionary
+        dictionary of photometric zeropoint values
+    """
+    zpt_dict={}
+    if inst_det.lower().startswith('acs'):
+        exten=1
+    if inst_det.lower().startswith('wfc3'):
+        exten=0
+    if inst_det.lower().startswith('wfpc2'):
+        exten=1
+    try:
+        photFlam = float(fits.getheader(image_drz, exten)['PHOTFLAM'])
+        photPlam = float(fits.getheader(image_drz, exten)['PHOTPLAM'])
+    except:
+        exten = 1
+        photFlam = float(fits.getheader(image_drz, exten)['PHOTFLAM'])
+        photPlam = float(fits.getheader(image_drz, exten)['PHOTPLAM'])
+
+    ref_stmag_zpt = -2.5 * (numpy.log10(photFlam)) - 21.10
+    zpt_dict[imgname] = ref_stmag_zpt - (5 * numpy.log10(photPlam)) + 18.6921
+
+    return(zpt_dict)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
 
 def conv_nan_zero(img_arr, replace_val=0.0, reverse=False):
     """Replace NaNs in an image arr with zeros
@@ -162,30 +202,32 @@ def create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,i
 
     # ### (3) ###  Extract sources that fall "close" to 'INDEF' regions.
     # Take out any sources from the white-light source list falling within 'remove_radius' of a flag.
-    log.info("\n(3) phot")
-
-    dict_source_lists_filtered = {}
-    for drzimage in totfiltprod_filename_list:
-        flag_image = flag_dictionary4allscis[drzimage]
-
-        daofind_white_open = open(daofind_white_sources)
-        daofind_white_lines = daofind_white_open.readlines()
-        daofind_white_open.close()
-
-        sci_sources = Rename.find_unique_name(extract_name(flag_image) + ".coo", os.path.dirname(flag_white), 'yes')
-        #        sci_sources = Rename.unique_name(extract_name(flag_image) + ".coo", suffix = ".coo")
-
-        sci_sources = os.path.join(os.path.dirname(flag_image), sci_sources)
-        # -------------------------------------
-        #        save(sci_sources, daofind_white_lines)
-        newfile = open(sci_sources, "w")
-        rows = len(daofind_white_lines)
-        for row in range(0, rows):
-            newfile.write(daofind_white_lines[row])
-        newfile.close()
-        # -------------------------------------
-
-        dict_source_lists_filtered[drzimage] = sci_sources
+    # log.info("\n(3) phot")
+    #
+    #
+    #
+    # dict_source_lists_filtered = {}
+    # for drzimage in totfiltprod_filename_list:
+    #     flag_image = flag_dictionary4allscis[drzimage]
+    #
+    #     daofind_white_open = open(daofind_white_sources)
+    #     daofind_white_lines = daofind_white_open.readlines()
+    #     daofind_white_open.close()
+    #
+    #     sci_sources = Rename.find_unique_name(extract_name(flag_image) + ".coo", os.path.dirname(flag_white), 'yes')
+    #     #        sci_sources = Rename.unique_name(extract_name(flag_image) + ".coo", suffix = ".coo")
+    #
+    #     sci_sources = os.path.join(os.path.dirname(flag_image), sci_sources)
+    #     # -------------------------------------
+    #     #        save(sci_sources, daofind_white_lines)
+    #     newfile = open(sci_sources, "w")
+    #     rows = len(daofind_white_lines)
+    #     for row in range(0, rows):
+    #         newfile.write(daofind_white_lines[row])
+    #     newfile.close()
+    #     # -------------------------------------
+    #
+    #     dict_source_lists_filtered[drzimage] = sci_sources
 
     return(daofind_white_sources)
 
@@ -366,10 +408,14 @@ def create_sourcelists(obs_info_dict, param_dict):
         for img_name in filter_product_cat_dict.keys():
             sourcelist_name = filter_product_cat_dict[img_name]
 
+
             create_se_like_sourcelists()
 
-            if dao_coord_list_name not "NO DAO SOURCES":
-                create_dao_like_sourcelists()
+            if dao_coord_list_name != "NO DAO SOURCES":
+                zpt_dict = compute_abmag_zeropoint(img_name,inst_det)
+                print("zeropoint: ",zpt_dict)
+                pdb.set_trace()
+                #dao_output = run_daophot_processing([img_name],
             else:
                 log.info("Empty coordinate file. DAO sourcelist {} NOT created.".format(sourcelist_name))
 
