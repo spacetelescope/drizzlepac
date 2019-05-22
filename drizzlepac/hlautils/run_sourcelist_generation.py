@@ -29,9 +29,9 @@ def confirm_execution():
 
 
 # ------------------------------------------------------------------------------
+print("\n"*25)
 print("Current path: ",os.getcwd())
 confirm_execution()
-os.system("clear")
 try:
     cmd = "rm -f *.*"
     print(cmd)
