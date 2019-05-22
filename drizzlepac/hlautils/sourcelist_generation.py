@@ -12,6 +12,7 @@ from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
 import numpy
 from photutils import detection, findstars
+from photutils import Background2D, MedianBackground, SExtractorBackground, StdBackgroundRMS
 import scipy
 from stsci.tools import logutil
 
@@ -55,6 +56,54 @@ def average_values_from_dict(Dictionary):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+
+def binmode(data, bins=None):
+    """Compute statistical mode of values in input data array
+
+    Parameters
+    ----------
+    data : numpy array
+        input values used to compute statistical mode
+
+    bins : int
+        number of bins to use for histogram generation. If not explicitly specified, the default value is 'None'.
+
+    Returns
+    -------
+    mbin : float
+        midpoint of the histogram bin with the largest value
+
+    mbins : array
+        array of bin edge values
+    """
+    from scipy import array, where, isinf, isnan, sort, zeros
+    from scipy import arange, histogram, stats
+    data = array(data)
+    mdx = where(~isnan(data))
+    data = data[mdx]
+    mmdx = where(~isinf(data))
+    data = data[mmdx]
+    if bins != None:
+        m, mbins = histogram(data, bins=bins)
+    else:
+        step = 1 / 100.
+        splits = arange(0, 1 + step, step)
+        bin_edges = stats.mstats.mquantiles(data, splits)
+        bins = sort(list(set(bin_edges)))
+        rebins = arange(min(bins[1:]), max(bins[:-1]), (max(bins[:-1]) - min(bins[1:])) * step)
+        if len(rebins) > 0:
+            m, mbins = histogram(data, bins=rebins)
+        else:
+            m = zeros(1);
+            mbins = zeros(2)
+    mdx = where(m == max(m))
+    mbin = 0.5 * (mbins[mdx[0][0] + 1] + mbins[mdx[0][0]])
+    return (mbin, mbins)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def compute_abmag_zeropoint(imgname,inst_det):
     """Compute photometric AB mag zeropoint
 
@@ -94,6 +143,60 @@ def compute_abmag_zeropoint(imgname,inst_det):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+def compute_background (image, threshold=None):
+    bkg_estimator = SExtractorBackground()
+    bkgrms_estimator = StdBackgroundRMS()
+    bkg = None
+    bkg_dao_rms = None
+
+    exclude_percentiles = [10, 25, 50, 75]
+    for percentile in exclude_percentiles:
+        log.info("Percentile in use: {}".format(percentile))
+        try:
+            bkg = Background2D(image, (50, 50),
+                               filter_size=(3, 3),
+                               bkg_estimator=bkg_estimator,
+                               bkgrms_estimator=bkgrms_estimator,
+                               exclude_percentile=percentile,
+                               edge_method='pad')
+            print('bkg: ', bkg)
+        except Exception:
+            bkg = None
+            continue
+
+        if bkg is not None:
+            # If it succeeds, stop and use that value
+            bkg_rms = (5. * bkg.background_rms)
+            bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
+            default_threshold = bkg.background + bkg_rms
+            bkg_dao_rms = bkg.background_rms
+            if threshold is None:
+                threshold = default_threshold
+            elif threshold < 0:
+                threshold = -1 * threshold * default_threshold
+                log.info("{} based on {}".format(threshold.max(), default_threshold.max()))
+                bkg_rms_mean = threshold.max()
+            else:
+                bkg_rms_mean = 3. * threshold
+
+            if bkg_rms_mean < 0:
+                bkg_rms_mean = 0.
+            break
+
+    # If Background2D does not work at all, define default scalar values for
+    # the background to be used in source identification
+    if bkg is None:
+        bkg_rms_mean = max(0.01, image.min())
+        bkg_rms = bkg_rms_mean * 5
+        bkg_dao_rms = bkg_rms_mean
+
+    return bkg, bkg_rms, bkg_dao_rms, threshold
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
 
 
 def conv_nan_zero(img_arr, replace_val=0.0, reverse=False):
@@ -908,19 +1011,23 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whi
     # Create Median-Divided Image
     # ----------------------------
     medDivImg,wht_data = Create_MedDivImage(whitelightimage)
+    white_light_hdu = fits.open(whitelightimage)
+
+    wl_data = white_light_hdu[1].data
+
+    bkg, bkg_rms, rms_array, threshold = compute_background(wl_data,param_dict['sourcex']['thresh'])
 
     # rms_array = fits.getdata(whitelightrms,0)
-    # rms_image_median = Util.binmode(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])[0]
-    # #rms_image_median = numpy.median(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])
-    # log.info("Median from RMS image = {}".format(rms_image_median))
-    # daoParams["sigma"] = rms_image_median
+    rms_image_median = binmode(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])[0]
+    log.info("Median from RMS image = {}".format(rms_image_median))
+    daoParams["sigma"] = rms_image_median
 
-    whitelightdata = fits.getdata(whitelightimage, 1)
-    mean, median, std = sigma_clipped_stats(whitelightdata, sigma=3.0) # TODO: Quick and dirty estimation of background RMS to move things along. ** REFINE PRIOR TO DEPLOYMENT **
-    daoParams["sigma"] = std
+    # whitelightdata = fits.getdata(whitelightimage, 1)
+    # mean, median, std = sigma_clipped_stats(whitelightdata, sigma=3.0) # TODO: Quick and dirty estimation of background RMS to move things along. ** REFINE PRIOR TO DEPLOYMENT **
+    # # daoParams["sigma"] = std
 
     log.info('white light rms image = {}'.format(whitelightrms))
-    log.info('sigma = {}'.format(std))
+    log.info('sigma = {}'.format(daoParams["sigma"]))
     log.info('readnoise = {}'.format(readnoise))
     log.info('exptime = {}'.format(exptime))
     log.info(' ')
