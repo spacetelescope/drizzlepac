@@ -2,8 +2,8 @@
 acs_10265_01 values. This will speed development of sourcelist_generation.py becasue it allows the user to just run it
 without having to run runhlaprocessing.py first.
 
-Test dir: /Users/dulude/Documents/HLAtransition/runhlaprocessing_testing/acs_wfc3_11665_04
-/Users/dulude/Documents/HLAtransition/runhlaprocessing_testing/acs_10265_01
+Test dir: /Users/dulude/Documents/HLAtransition/runhlaprocessing_testing/acs_10265_01
+
 """
 import os
 import pickle

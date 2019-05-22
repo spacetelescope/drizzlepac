@@ -234,7 +234,7 @@ def conv_nan_zero(img_arr, replace_val=0.0, reverse=False):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,inst_det,param_dict):
+def create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,inst_det,param_dict,rms_dict):
     """Make daophot-like coordinate lists
 
     Parameters
@@ -251,6 +251,9 @@ def create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,i
 
     param_dict : dictionary
         dictionary of drizzle, source finding and photometric parameters
+
+    rms_dict : dictionary
+        dictionary containing 2d rms frames keyed by image name
 
     Returns
     -------
@@ -285,12 +288,11 @@ def create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,i
     log.info('### (2) ###  Use daostarfinder to create a sourcelist from the total detection image {}'
              .format(tdp_imagename))
 
-    whitelightrms_image = create_rms_image()
-
     exp_dictionary_scis = {tdp_imagename: fits.getval(tdp_imagename,keyword='exptime')} # TODO: Quick and dirty hack for testing. FIND BETTER WAY TO DO THIS BEFORE DEPLOYMENT
+
     daofind_white_sources = run_daofind(param_dict,
                                         whitelightimage = tdp_imagename,
-                                        whitelightrms = whitelightrms_image,
+                                        rms_array = rms_dict[tdp_imagename],
                                         readnoise_dictionary_drzs = readnoise_dictionary_drzs,
                                         scale_dict_drzs = scale_dict_drzs,
                                         exp_dictionary_scis = exp_dictionary_scis,
@@ -305,44 +307,50 @@ def create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,i
 
     # ### (3) ###  Extract sources that fall "close" to 'INDEF' regions.
     # Take out any sources from the white-light source list falling within 'remove_radius' of a flag.
-    # log.info("\n(3) phot")
-    #
-    #
-    #
-    # dict_source_lists_filtered = {}
-    # for drzimage in totfiltprod_filename_list:
-    #     flag_image = flag_dictionary4allscis[drzimage]
-    #
-    #     daofind_white_open = open(daofind_white_sources)
-    #     daofind_white_lines = daofind_white_open.readlines()
-    #     daofind_white_open.close()
-    #
-    #     sci_sources = Rename.find_unique_name(extract_name(flag_image) + ".coo", os.path.dirname(flag_white), 'yes')
-    #     #        sci_sources = Rename.unique_name(extract_name(flag_image) + ".coo", suffix = ".coo")
-    #
-    #     sci_sources = os.path.join(os.path.dirname(flag_image), sci_sources)
-    #     # -------------------------------------
-    #     #        save(sci_sources, daofind_white_lines)
-    #     newfile = open(sci_sources, "w")
-    #     rows = len(daofind_white_lines)
-    #     for row in range(0, rows):
-    #         newfile.write(daofind_white_lines[row])
-    #     newfile.close()
-    #     # -------------------------------------
-    #
-    #     dict_source_lists_filtered[drzimage] = sci_sources
+    log.info("\n(3) phot")
+    flag_white = replace_NaN_w_flag_whitelight(tdp_imagename, rms_dict[tdp_imagename],os.getcwd())
+    dict_source_lists_filtered = {}
+    for drzimage in totfiltprod_filename_list:
+        print("DRZIMAGE: ",drzimage)
+        drzrootname = drzimage.replace(".fits", "")
+        flag_image,rms_data = replace_NaN_w_flag_whitelight(drzimage,
+                                                   rms_dict[drzimage],
+                                                   os.getcwd(),sci_ind=1,
+                                                   flag_name = drzrootname+"_01_sexflag.fits",
+                                                   root_n = drzrootname + "_")
+        rms_dict[drzimage] = rms_data
+        daofind_white_open = open(daofind_white_sources)
+        daofind_white_lines = daofind_white_open.readlines()
+        daofind_white_open.close()
+        #sci_sources = find_unique_name(extract_name(flag_image) + ".coo", os.path.dirname(flag_white), 'yes')
+        sci_sources = Rename.unique_name(extract_name(flag_image) + ".coo", suffix = ".coo")
 
-    return(daofind_white_sources)
+        sci_sources = os.path.join(os.path.dirname(flag_image), sci_sources)
+        # -------------------------------------
+        #        save(sci_sources, daofind_white_lines)
+        newfile = open(sci_sources, "w")
+        rows = len(daofind_white_lines)
+        for row in range(0, rows):
+            newfile.write(daofind_white_lines[row])
+        newfile.close()
+        # -------------------------------------
+
+        dict_source_lists_filtered[drzimage] = sci_sources
+
+    return(dict_source_lists_filtered)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_sourcelists(img_name,inst_det,param_dict):
+def create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,param_dict):
     """Make source extractor-like sourcelists
 
     Parameters
     ----------
+    dict_source_lists_filtered : dictionary
+        Dictionary containing source extractor sourcelist file path keyed by total_drz.fits image
+
     img_name : string
         drizzled total filter image to be processed
 
@@ -389,7 +397,7 @@ def create_dao_like_sourcelists(img_name,inst_det,param_dict):
 
     # dict_newTAB_matched2drz = daophot_process(
     #                                 X all_drizzled_filelist,
-    #                                 dict_source_lists_filtered,
+    #                                 X dict_source_lists_filtered,
     #                                 daofind_basic_param,
     #                                 X readnoise_dictionary_drzs,
     #                                 X scale_dict_drzs,
@@ -457,21 +465,30 @@ def Create_MedDivImage(whitelightimage):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_rms_image():
+def create_rms_image(img_list,thresh):
     """Creates RMS image for use by source-finding code.
 
     Parameters
     ----------
+    img_list : list
+        list of images to process
 
+    thresh : float
+        source extractor 'thresh' value
 
     Returns
     -------
-    rms_imgname : string
-        filename of freshly computed RMS image
+    rms_dict : dictionary
+        dictionary of rms images (numpy.ndarrays) keyed by the imagename listed in img_list
     """
-    rms_img_filename = "foo_rms.fits"
+    rms_dict = {}
 
-    return(rms_img_filename)
+    for imgname in img_list:
+        img_data = fits.getdata(imgname, 1)
+        bkg, bkg_rms, rms_array, threshold = compute_background(img_data,thresh)
+        rms_dict[imgname] = rms_array
+
+    return(rms_dict)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -551,7 +568,9 @@ def create_sourcelists(obs_info_dict, param_dict):
         create_se_like_coordlists()
 
         # 2: Generate daophot-like sourcelist(s)
-        dao_coord_list_name = create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,inst_det,param_dict[inst_det])
+        drz_img_list = list(totdet_product_cat_dict.keys())+list(filter_product_cat_dict.keys())
+        rms_dict = create_rms_image(drz_img_list,param_dict[inst_det]['sourcex']['thresh'])
+        dict_source_lists_filtered = create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,inst_det,param_dict[inst_det],rms_dict)
 
         # 3: Generate daophot-like and source extractor-like sourcelists from coordinate lists for each filter
         # assocatied with the current total detection product
@@ -562,7 +581,9 @@ def create_sourcelists(obs_info_dict, param_dict):
             create_se_like_sourcelists()
 
             if dao_coord_list_name != "NO DAO SOURCES":
-                create_dao_like_sourcelists(img_name,inst_det,param_dict[inst_det])
+                print("\a")
+                pdb.set_trace()
+                #create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,param_dict[inst_det])
             else:
                 log.info("Empty coordinate file. DAO sourcelist {} NOT created.".format(sourcelist_name))
 
@@ -815,6 +836,64 @@ def filter_daolist(infile, outfile, mask_image, edgemask=0):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def find_unique_name(beginname, dir, isdir, FITS_file_rootname=False, Suffix=False):
+    """Generates a unique filename based on the input rootname/directory name/filename and path.
+
+    Parameters
+    ----------
+    beginname: string
+        input rootname/directory name/filename
+
+    dir : string
+        path used for the unique filename search
+
+    isdir : string
+        is **beginname** a directory (yes/no)?
+
+    FITS_file_rootname : string/boolean
+        If specified, this value will interpreted as a fits file rootname. This rootname will be used as basis for the
+        output filename. Default value is Boolean 'False'.
+
+    Suffix : string/boolean
+        Output filename suffix. Default value is Boolean 'False'.
+
+    Returns
+    -------
+    filename : string
+        unique filename
+    """
+    directory4file = os.listdir(dir)
+
+    if FITS_file_rootname:
+        filename = beginname
+        p = 1
+        while filename in directory4file:
+            p = p + 1
+            k = str(p)
+            if p < 10:
+                filename = FITS_file_rootname + "0" + k + "_" + Suffix
+            else:
+                filename = FITS_file_rootname + k + "_" + Suffix
+    elif isdir == "yes":
+        filename = beginname + "_1"
+        p = 1
+        while filename in directory4file:
+            p = p + 1
+            k = "_" + str(p)
+            filename = beginname + k
+    else:
+        filename = beginname + "_1.txt"
+        p = 1
+        while filename in directory4file:
+            p = p + 1
+            k = "_" + str(p) + ".txt"
+            filename = beginname + k
+
+    return filename
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def get_mean_readnoise(image):
     """This subroutine computes mean readnoise values
 
@@ -905,7 +984,87 @@ def get_readnoise(listofimages):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whitelightimage=None, whitelightrms=None,
+def replace_NaN_w_flag_whitelight(whitelight_im, white_rms_data, working_dir, sci_ind=1, rms_ind=0,
+                                  flag_name="white_sexflag.fits", root_n="white"):
+    """Take the white light image and the RMS image and replace all NaN values with 'replace_val', and output flag-map
+    for Source Extractor built off of the 'OR' comparison of the flag-map for the white light image and the flag-map
+    for the white-RMS:
+
+    "External flags come from 'flag-maps': these are images with the same size as the one where objects are detected,
+    where integer numbers can be used to flag some pixels" - Source Extractor manual, section 9.
+
+    Tested.
+
+    Parameters
+    ----------
+    whitelight_im : string
+        White-light image filename
+
+    white_rms_data : numpy.ndarray
+        White-light RMS image filename
+
+    working_dir : string
+        Path where products are saved.
+
+    sci_ind : int
+        White-light image fits file extension to operate on. Default value is 0.
+
+    rms_ind : int
+        RMS image fits file extension to operate on.Default value is 0.
+
+    flag_name : string
+        Name of the flag-map output image produced by this subroutine. Default value is 'white_sexflag.fits'.
+
+    root_n : string
+        Fits file rootname to be used as basis for output filename. Default value is 'white'.
+
+    Returns
+    -------
+    flag_imageWpath: string
+        Full filename (with path) of the 'de-NaNed' image.
+    """
+    log.info(" Working on white light - replace_NaN_w_flag_whitelight 1 ")
+
+
+    whitearray = fits.open(whitelight_im, mode='update')
+
+
+    whitearray_data = whitearray[sci_ind].data
+
+
+    # ----------------
+    # Make flag array
+    # ----------------
+    new_flag_array = numpy.zeros(numpy.shape(whitearray_data), dtype=int)
+    where_NaNs_r = numpy.where(whitearray_data != whitearray_data)
+    new_flag_array[where_NaNs_r] = 1
+    where_NaNs_r_in_rms = numpy.where(white_rms_data != white_rms_data)
+    new_flag_array[where_NaNs_r_in_rms] = 1
+
+    flag_name = find_unique_name(flag_name, working_dir, 'no', FITS_file_rootname=root_n, Suffix="sexflag.fits")
+    #    flag_name = Rename.unique_name(flag_name, suffix = "sexflag.fits")
+
+    flag_imageWpath = os.path.join(working_dir, flag_name)
+    fits.writeto(flag_imageWpath, numpy.int32(new_flag_array))
+
+    log.info(" Working on white light - replace_NaN_w_flag_whitelight 2 ")
+
+    # -----------------------------
+    # Replace NaN's in white-light
+    # -----------------------------
+    whitearray_data = conv_nan_zero(whitearray_data)
+    whitearray[sci_ind].data = whitearray_data
+    whitearray.flush()
+
+    log.info(" Working on white light - replace_NaN_w_flag_whitelight 3 ")
+
+    return flag_imageWpath,white_rms_data
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whitelightimage=None, rms_array=None,
                 readnoise_dictionary_drzs=None, scale_dict_drzs=None,exp_dictionary_scis=None, working_dir=None,
                 sl_ext = 0,sharphi=None, sharplo=None,edgemask=5):
     """Generates sourcelists using DAOfind.
@@ -927,8 +1086,8 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whi
     whitelightimage : string
         Name of the multi-filter composite image produced by hla_reduction.py. Default value is 'None'.
 
-    whitelightrms : string
-        Name of the multi-filter composite RMS image produced by hla_reduction.py.Default value is 'None'.
+    rms_array : numpy.ndarray
+        Multi-filter composite RMS image. Default value is 'None'.
 
     readnoise_dictionary_drzs : Dictionary
         Dictionary containing readnoise values keyed by filter-specific drizzled image filename. Default value is
@@ -1011,22 +1170,15 @@ def run_daofind(param_dict, filelist=None, source_match=50000., verbose=True,whi
     # Create Median-Divided Image
     # ----------------------------
     medDivImg,wht_data = Create_MedDivImage(whitelightimage)
-    white_light_hdu = fits.open(whitelightimage)
 
-    wl_data = white_light_hdu[1].data
 
-    bkg, bkg_rms, rms_array, threshold = compute_background(wl_data,param_dict['sourcex']['thresh'])
 
     # rms_array = fits.getdata(whitelightrms,0)
     rms_image_median = binmode(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])[0]
     log.info("Median from RMS image = {}".format(rms_image_median))
     daoParams["sigma"] = rms_image_median
 
-    # whitelightdata = fits.getdata(whitelightimage, 1)
-    # mean, median, std = sigma_clipped_stats(whitelightdata, sigma=3.0) # TODO: Quick and dirty estimation of background RMS to move things along. ** REFINE PRIOR TO DEPLOYMENT **
-    # # daoParams["sigma"] = std
-
-    log.info('white light rms image = {}'.format(whitelightrms))
+    # log.info('white light rms image = {}'.format(whitelightrms))
     log.info('sigma = {}'.format(daoParams["sigma"]))
     log.info('readnoise = {}'.format(readnoise))
     log.info('exptime = {}'.format(exptime))
