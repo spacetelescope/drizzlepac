@@ -191,7 +191,6 @@ def run_generator(product_category, obs_info):
     for ikey in category_generator_mapping.keys():
         if product_category.startswith(ikey):
             generator_name = category_generator_mapping[ikey]
-            category_num = product_category.replace(ikey+" ", "")
             category_key = ikey
             break
 
