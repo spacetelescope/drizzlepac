@@ -11,7 +11,7 @@ dependencies:
     - graphviz
     - pip:
       - -e ..
-      - sphinx
+      - "sphinx<=1.8.5"
       - sphinx_rtd_theme
       - stsci_rtd_theme
       - sphinx_automodapi
