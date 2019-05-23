@@ -18,6 +18,10 @@ of the list).
 3.0.2 (unreleased)
 ==================
 
+- Fixed a bug in the ``astrodrizzle.sky`` module due to which sky matching
+  fails with "Keyword 'MDRIZSKY' not found" error when some of the
+  input images do not overlap at all with the other images. [#380]
+
 - Fixed a bug in the ``util.WithLogging`` decorator due to which incorrect
   log file was reported when user-supplied log file name does not have ``.log``
   extension. [#365]
