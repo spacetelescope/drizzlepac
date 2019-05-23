@@ -66,7 +66,7 @@ def read_ci_apcorr_file(debug=False, infile_name='ci_ap_cor_table_ap_20_2016.txt
             ci_table[obs_config] = (eff_wave, ci_lower, ci_peak, ci_upper, ap_corr)
     if debug:
         for key in sorted(ci_table.keys()):
-            print(key,ci_table[key])
+            log.info(key,ci_table[key])
     return ci_table
 
 
@@ -79,28 +79,28 @@ def get_ci_info(inst, detect, filt, debug=False,
     ----------
     inst : string
         Instrument name
-    
+
     detect : string
         Detector name
-    
+
     filt : string
         Filter name
-    
+
     debug : Boolean
         Print information to screen (True/False)? If not specified, default value = False
-    
+
     eff_wave : float
         Effective wavelength. If not specified, default value = -999.0
-    
+
     ci_lower : float
         Lower CI limit. If not specified, default value = -999.0
-    
+
     ci_peak : float
         CI peak. If not specified, default value = -999.0
-    
+
     ci_upper : float
         Upper CI limit. If not specified, default value = -999.0
-    
+
     ap_corr : float
         Aperture correction. If not specified, default value = -999.0
 
@@ -115,32 +115,34 @@ def get_ci_info(inst, detect, filt, debug=False,
         ci_table = read_ci_apcorr_file(debug=debug)
 
     obs_config=("%s_%s_%s"%(inst,detect,filt)).upper()
-    if debug: print("obs_config: ",obs_config)
+    if debug:
+        log.info("obs_config: {}".format(obs_config))
     if obs_config in ci_table:
-        if debug: print("CI values found.")
+        if debug:
+            log.info("CI values found.")
         eff_wave, ci_lower, ci_peak, ci_upper, ap_corr = ci_table[obs_config]
     else:
-        print("get_ci_info: CI values not found for %s, using default values" % obs_config)
+        log.info("get_ci_info: CI values not found for %s, using default values" % obs_config)
     return_dict={'eff_wave':eff_wave,'ci_lower_limit':ci_lower,'ci_peak':ci_peak,'ci_upper_limit':ci_upper,'ap_corr':ap_corr}
     return return_dict
 
 
 def parse_file(drzfile):
     """Parse drizzled file name and return inst, detect, filt
-    
+
     Parameters
     ----------
     drzfile : string
         name of drizzled fits file
-    
+
     Returns
     -------
     instrument : string
         instrument
-    
+
     detector : string
         detector
-    
+
     filter : string
         filter
     """
@@ -170,7 +172,7 @@ def parse_file(drzfile):
 def get_ci_from_file(drzfile, **kw):
 
     """Return dictionary with CI info for given filename
-    
+
     Parameters
     ----------
     drzfile : string
@@ -187,31 +189,31 @@ def get_ci_from_file(drzfile, **kw):
 if __name__=='__main__':
     inst, detect, filt = ('wfc3','uvis','f606w')
     ciap_dict = get_ci_info(inst,detect,filt)
-    print("configuration:  ",inst,detect,filt)
-    print("eff_wave:       ",ciap_dict['eff_wave'])
-    print("ci_lower:       ",ciap_dict['ci_lower_limit'])
-    print("ci_peak:        ",ciap_dict['ci_peak'])
-    print("ci_upper:       ",ciap_dict['ci_upper_limit'])
-    print("ap_corr:        ",ciap_dict['ap_corr'])
+    log.info("configuration:  {}".format(inst,detect,filt))
+    log.info("eff_wave:       {}".format(ciap_dict['eff_wave']))
+    log.info("ci_lower:       {}".format(ciap_dict['ci_lower_limit']))
+    log.info("ci_peak:        {}".format(ciap_dict['ci_peak']))
+    log.info("ci_upper:       {}".format(ciap_dict['ci_upper_limit']))
+    log.info("ap_corr:        {}".format(ciap_dict['ap_corr']))
 
     drizzled_image='hst_12311_03_wfc3_uvis_f275w_drz.fits'
     inst, detect, filt = parse_file(drizzled_image)
     ciap_dict = get_ci_from_file(drizzled_image)
-    print("drizzled image: ",drizzled_image)
-    print("configuration:  ",inst,detect,filt)
-    print("eff_wave:       ",ciap_dict['eff_wave'])
-    print("ci_lower:       ",ciap_dict['ci_lower_limit'])
-    print("ci_peak:        ",ciap_dict['ci_peak'])
-    print("ci_upper:       ",ciap_dict['ci_upper_limit'])
-    print("ap_corr:        ",ciap_dict['ap_corr'])
+    log.info("drizzled image: {}".format(drizzled_image))
+    log.info("configuration:  {}".format(inst,detect,filt))
+    log.info("eff_wave:       {}".format(ciap_dict['eff_wave']))
+    log.info("ci_lower:       {}".format(ciap_dict['ci_lower_limit']))
+    log.info("ci_peak:        {}".format(ciap_dict['ci_peak']))
+    log.info("ci_upper:       {}".format(ciap_dict['ci_upper_limit']))
+    log.info("ap_corr:        {}".format(ciap_dict['ap_corr']))
 
     drizzled_image='hst_11969_04_wfpc2_f606w_pc_drz.fits'
     inst, detect, filt = parse_file(drizzled_image)
     ciap_dict = get_ci_from_file(drizzled_image)
-    print("drizzled image: ",drizzled_image)
-    print("configuration:  ",inst,detect,filt)
-    print("eff_wave:       ",ciap_dict['eff_wave'])
-    print("ci_lower:       ",ciap_dict['ci_lower_limit'])
-    print("ci_peak:        ",ciap_dict['ci_peak'])
-    print("ci_upper:       ",ciap_dict['ci_upper_limit'])
-    print("ap_corr:        ",ciap_dict['ap_corr'])
+    log.info("drizzled image: {}".format(drizzled_image))
+    log.info("configuration:  {}".format(inst,detect,filt))
+    log.info("eff_wave:       {}".format(ciap_dict['eff_wave']))
+    log.info("ci_lower:       {}".format(ciap_dict['ci_lower_limit']))
+    log.info("ci_peak:        {}".format(ciap_dict['ci_peak']))
+    log.info("ci_upper:       {}".format(ciap_dict['ci_upper_limit']))
+    log.info("ap_corr:        {}".format(ciap_dict['ap_corr']))
