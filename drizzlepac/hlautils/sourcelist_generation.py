@@ -3,6 +3,7 @@
 """This script contains code to support creation of source extractor-like and daophot-like sourcelists.
 
 """
+import datetime
 import os
 import pdb
 import sys
@@ -48,7 +49,7 @@ def add_header_phot_tab(phot_table, drz_image, param_dict):
     -------
     nothing.
     """
-    loaded_fits = pyfits.open(drz_image)
+    loaded_fits = fits.open(drz_image)
 
     # -------------------------------
     # FITS-compliant UTC time string
@@ -68,15 +69,15 @@ def add_header_phot_tab(phot_table, drz_image, param_dict):
     prop = get_head_val_opened_fits(loaded_fits, "proposid")
     tname = get_head_val_opened_fits(loaded_fits, "targname")
     inst = get_head_val_opened_fits(loaded_fits, "instrume")
-    detect = return_detector(drz_image)
-    filt = return_filter_for_single_file(drz_image)
+    detect = drz_image.split("_")[-2].lower() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+    filt = drz_image.split("_")[-1].replace(".fits","").lower() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
     im_ra = get_head_val_opened_fits(loaded_fits, "crval1", ext=1)
     im_dec = get_head_val_opened_fits(loaded_fits, "crval2", ext=1)
     orient = get_head_val_opened_fits(loaded_fits, "pa_aper", ext=1)
 
     fwhm = param_dict['dao']['TWEAK_FWHMPSF']
     thresh = param_dict['dao']['TWEAK_THRESHOLD']
-    scale = param_dict['astrodrizzle']['PIXSCALE']
+    scale = param_dict['astrodrizzle']['SCALE']
 
     # --------------------
     # Fill in the header:
@@ -503,18 +504,6 @@ def create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,par
                                  rms_dict,
                                  "foo.bar")
 
-    # dict_newTAB_matched2drz = daophot_process(
-    #                                 X all_drizzled_filelist,
-    #                                 X dict_source_lists_filtered,
-    #                                 X daofind_basic_param,
-    #                                 X readnoise_dictionary_drzs,
-    #                                 X scale_dict_drzs,
-    #                                 X zero_point_AB_dict,
-    #                                 X exp_dictionary_scis,
-    #                                 X working_hla_red,
-    #                                 rms_dict,
-    #                                 X rms_image,
-    #                                 config_file)
 
     # ### (5) ### Gather columns and put in nice format (dictated by: "column_keys_phot.cfg")
     # This will convert columns from xy to ra and dec (controlled by: "column_keys_phot.cfg")
@@ -874,7 +863,7 @@ def daophot_process(all_drizzled_filelist, dict_source_lists_filtered, param_dic
 
 
 def daophot_style_photometry(imgFile, errFile, cooFile, outFile, platescale, radiiArcsec, skyAnnulus, dSkyAnnulus,
-                             salgorithm, gain, zeroPoint, param_file):
+                             salgorithm, gain, zeroPoint, param_dict):
     """generates iraf.daophot-like photometric sourcelist using spacetelescope.wfc3_photometry and astropy.photutils
 
     Parameters
