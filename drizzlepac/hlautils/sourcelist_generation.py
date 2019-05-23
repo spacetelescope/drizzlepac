@@ -303,7 +303,7 @@ def create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,i
         sl_lines = f.readlines()
         if len(sl_lines) <= 4:
             log.info("*** WARNING: DAOFIND was unable to locate any sources in the detection image. No _daophot.txt sourcelist will be produced. ***")
-            return("NO DAO SOURCES")
+            return(None)
 
     # ### (3) ###  Extract sources that fall "close" to 'INDEF' regions.
     # Take out any sources from the white-light source list falling within 'remove_radius' of a flag.
@@ -313,19 +313,20 @@ def create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,i
     for drzimage in totfiltprod_filename_list:
         print("DRZIMAGE: ",drzimage)
         drzrootname = drzimage.replace(".fits", "")
+        flag_name = drzrootname+"_01_sexflag.fits"
         flag_image,rms_data = replace_NaN_w_flag_whitelight(drzimage,
                                                    rms_dict[drzimage],
                                                    os.getcwd(),sci_ind=1,
-                                                   flag_name = drzrootname+"_01_sexflag.fits",
+                                                   flag_name = flag_name,
                                                    root_n = drzrootname + "_")
         rms_dict[drzimage] = rms_data
         daofind_white_open = open(daofind_white_sources)
         daofind_white_lines = daofind_white_open.readlines()
         daofind_white_open.close()
         #sci_sources = find_unique_name(extract_name(flag_image) + ".coo", os.path.dirname(flag_white), 'yes')
-        sci_sources = Rename.unique_name(extract_name(flag_image) + ".coo", suffix = ".coo")
+        sci_sources = unique_name(extract_name(flag_name) + "A.coo", suffix = ".coo")
 
-        sci_sources = os.path.join(os.path.dirname(flag_image), sci_sources)
+        sci_sources = os.path.join(os.path.dirname(flag_name), sci_sources)
         # -------------------------------------
         #        save(sci_sources, daofind_white_lines)
         newfile = open(sci_sources, "w")
@@ -337,13 +338,14 @@ def create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,i
 
         dict_source_lists_filtered[drzimage] = sci_sources
 
+
     return(dict_source_lists_filtered)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,param_dict):
+def create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,param_dict,rms_dict):
     """Make source extractor-like sourcelists
 
     Parameters
@@ -360,6 +362,9 @@ def create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,par
 
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+
+    rms_dict : dictionary
+        dictionary of rms images (numpy.ndarrays) keyed by the imagename listed in img_list
 
     Returns
     -------
@@ -393,12 +398,12 @@ def create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,par
                                  exptime_dict,
                                  os.getcwd(),
                                  rms_dict,
-                                 rms_img)
+                                 "foo.bar")
 
     # dict_newTAB_matched2drz = daophot_process(
     #                                 X all_drizzled_filelist,
     #                                 X dict_source_lists_filtered,
-    #                                 daofind_basic_param,
+    #                                 X daofind_basic_param,
     #                                 X readnoise_dictionary_drzs,
     #                                 X scale_dict_drzs,
     #                                 X zero_point_AB_dict,
@@ -407,6 +412,7 @@ def create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,par
     #                                 rms_dict,
     #                                 X rms_image,
     #                                 config_file)
+
     # ### (5) ### Gather columns and put in nice format (dictated by: "column_keys_phot.cfg")
     # This will convert columns from xy to ra and dec (controlled by: "column_keys_phot.cfg")
 
@@ -580,10 +586,10 @@ def create_sourcelists(obs_info_dict, param_dict):
 
             create_se_like_sourcelists()
 
-            if dao_coord_list_name != "NO DAO SOURCES":
+            if dict_source_lists_filtered != None:
                 print("\a")
                 pdb.set_trace()
-                #create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,param_dict[inst_det])
+                create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,param_dict[inst_det])
             else:
                 log.info("Empty coordinate file. DAO sourcelist {} NOT created.".format(sourcelist_name))
 
@@ -591,120 +597,139 @@ def create_sourcelists(obs_info_dict, param_dict):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def daophot_process(all_drizzled_filelist, dict_source_lists_filtered, daofind_basic_param, readnoise_dictionary_drzs,
+def daophot_process(all_drizzled_filelist, dict_source_lists_filtered, param_dict, readnoise_dictionary_drzs,
                     scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis, working_dir, rms_dict, rms_image,
                     config_file, ext=1, Verbose=True, WHT=False):
     """
-    This task will run the photometric calculations on a list of drizzled
-    images.  The coordinates for the sources are found in the
-    'dict_source_lists_filtered' dictionary.  This dictionary has keys
-    that match the images inside 'all_drizzled_filelist', and values
-    corresponding to the source list.
+    This task will run the photometric calculations on a list of drizzled images. The coordinates for the sources are 
+    found in the 'dict_source_lists_filtered' dictionary. This dictionary has keys that match the images inside '
+    all_drizzled_filelist', and values corresponding to the source list.
 
     Tested.
 
-    :param all_drizzled_filelist: List of images to process
-    :param dict_source_lists_filtered: Dictionary containing source extractor sourcelist file path keyed by total_drz.fits image
-    :param daofind_basic_param: List of parameters used by daofind. Values are fwhm, thresh, ap_diameter1, ap_diameter2.
-    :param readnoise_dictionary_drzs: dictionary of readnoise values matched to the science images.
-    :param scale_dict_drzs: dictionary of pixel scale arcsecs/pixel values matched to the science images.
-    :param zero_point_AB_dict: dictionary of AB magnitude zeropoint as values matched to the science images.
-    :param exp_dictionary_scis: dictionary of exposure time values matched to the science images.
-    :param working_dir: where to store temporary products.
-    :param rms_dict: dictionary of RMS values
-    :param rms_image: **UNUSED** filename of the rms image.
-    :param config_file: instrument-specific param file
-    :param ext: extension of the science image inside the drizzled stack of each science image inside 'all_drizzled_filelist'. Default value is '1'.
-    :param Verbose: Generate verbose output? Default value is 'True'.
-    :param WHT: Process weight image? Default value is 'False'.
-    :type all_drizzled_filelist: list of strings
-    :type dict_source_lists_filtered: dictionary
-    :type daofind_basic_param: list of floats
-    :type readnoise_dictionary_drzs: dictionary
-    :type scale_dict_drzs: dictionary
-    :type zero_point_AB_dict: dictionary
-    :type exp_dictionary_scis: dictionary
-    :type working_dir: string
-    :type rms_dict: dictionary
-    :type rms_image: string
-    :type config_file: string
-    :type ext: integer
-    :type Verbose: Boolean
-    :type WHT: Boolean
-    :returns: dictionary with the drizzled images as values matched to the photometric catalog generated by daophot_style_photometry().
+    Parameters
+    ----------
+    all_drizzled_filelist : list
+        List of images to process
+        
+    dict_source_lists_filtered : dictionary
+        Dictionary containing source extractor sourcelist file path keyed by total_drz.fits image
+        
+    param_dict : dictionary
+        dictionary of drizzle, source finding and photometric parameters
+        
+    readnoise_dictionary_drzs : dictionary
+        dictionary of readnoise values matched to the science images.
+        
+    scale_dict_drzs : dictionary
+        dictionary of pixel scale arcsecs/pixel values matched to the science images.
+    
+    zero_point_AB_dict : dictionary
+        dictionary of AB magnitude zeropoint as values matched to the science images.
+    
+    exp_dictionary_scis : dictionary
+        dictionary of exposure time values matched to the science images.
+        
+    working_dir : string
+        where to store temporary products.
+        
+    rms_dict : dictionary
+        dictionary of RMS values
+        
+    rms_image : string
+        **UNUSED** filename of the rms image.
+        
+    config_file : string? 
+        instrument-specific param file
+    
+    ext : int
+        extension of the science image inside the drizzled stack of each science image inside 'all_drizzled_filelist'. 
+        Default value is '1'.
+    
+    Verbose : Boolean
+        Generate verbose output? Default value is 'True'.
+        
+    WHT : Boolean
+        Process weight image? Default value is 'False'.
+        
+    Returns
+    -------
+    return_dict : dictionary
+        dictionary with the drizzled images as values matched to the photometric catalog generated by 
+        daophot_style_photometry().
     """
 
-    print(' ')
-    print('**********************************')
-    print('DAOPHOT FUNCTION INPUT PARAMETERS:')
-    print('**********************************')
-    print('ALL DRIZZLED FILE LIST: ', all_drizzled_filelist)
+    log.info(' ')
+    log.info('**********************************')
+    log.info('DAOPHOT FUNCTION INPUT PARAMETERS:')
+    log.info('**********************************')
+    log.info('ALL DRIZZLED FILE LIST: {}'.format(all_drizzled_filelist))
 
     # Gather basics:
-    fwhm = daofind_basic_param[0]
-    print('FWHM = ', fwhm)
-    thresh = daofind_basic_param[1]
-    print('THRESH = ', thresh)
-    aps_like = "%s,%s" % (daofind_basic_param[2], daofind_basic_param[3])
-    print('APS_LIKE = ', aps_like)
-    apertures_sort = [daofind_basic_param[2], daofind_basic_param[3]]
-    print('APERTURES_SORT = ', apertures_sort)
+    fwhm = param_dict['dao']['TWEAK_FWHMPSF']
+    log.info('FWHM = {}'.format(fwhm))
+    thresh = param_dict['dao']['TWEAK_THRESHOLD']
+    log.info('THRESH = {}'.format(thresh))
+    aps_like = "%s,%s" % (param_dict['dao']['aperture_1'], param_dict['dao']['aperture_2'])
+    log.info('APS_LIKE = {}'.format(aps_like))
+    apertures_sort = [param_dict['dao']['aperture_1'], param_dict['dao']['aperture_2']]
+    log.info('APERTURES_SORT = {}'.format(apertures_sort))
     apertures_sort.sort()  # Sort smallest to largest.
-    print('APERTURES_SORT = ', apertures_sort)
+    log.info('APERTURES_SORT = {}'.format(apertures_sort))
     largest_ap = apertures_sort[-1]
-    print('LARGEST_AP = ', largest_ap)
+    log.info('LARGEST_AP = {}'.format(largest_ap))
 
     # Format image specific parameters:
     return_dict = {}
     for image_drz in all_drizzled_filelist:
-        print('IMAGE_DRZ = ', image_drz)
+        log.info('IMAGE_DRZ = {}'.format(image_drz))
         readnoise = readnoise_dictionary_drzs[image_drz]
-        print('READNOISE = ', readnoise)
+        log.info('READNOISE = {}'.format(readnoise))
         scale = scale_dict_drzs[image_drz]
-        print('SCALE = ', scale)
+        log.info('SCALE = {}'.format(scale))
         annulus = scale * 5.
-        print('ANNULUS = ', annulus)
+        log.info('ANNULUS = {}'.format(annulus))
         dannulus = scale * 5.
-        print('DANNULUS = ', dannulus)
+        log.info('DANNULUS = {}'.format(dannulus))
         zeropt = zero_point_AB_dict[image_drz]
-        print('ZEROPT = ', zeropt)
+        log.info('ZEROPT = {}'.format(zeropt))
         exptime = exp_dictionary_scis[image_drz]
-        print('EXPTIME = ', exptime)
+        log.info('EXPTIME = {}'.format(exptime))
 
-        single_rms = rms_dict[image_drz]
-        rms_array = pyfits.getdata(single_rms, 0)
+        rms_array = rms_dict[image_drz]
+        #rms_array = pyfits.getdata(single_rms, 0)
         rms_image_median = Util.binmode(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])[0]
-        print(' ')
-        print('single rms image = ', single_rms)
-        print("Median from RMS image = ", rms_image_median)
-        print(' ')
+        log.info(' ')
+        # log.info('single rms image = {}'.format(single_rms))
+        log.info("Median from RMS image = {}".format(rms_image_median))
+        log.info(' ')
 
         # Define image input
         image2run = image_drz + "[%s]" % (ext)
-        print('IMAGE2RUN = ', image2run)
+        log.info('IMAGE2RUN = {}'.format(image2run))
         coordinates_filtered = dict_source_lists_filtered[image_drz]
-        print('COORDINATES_FILTERED = ', coordinates_filtered)
+        log.info('COORDINATES_FILTERED = {}'.format(coordinates_filtered))
 
         if Verbose:
-            print("     Performing daophot_style_photometry on sources in %s.\n" % (extract_name(image2run)))
+            log.info("     Performing daophot_style_photometry on sources in {}\n".format(extract_name(image2run)))
 
         # ------------
         # Run DAOPhot
         # ------------
         name_daoOUT = extract_name(image_drz)  # (Want name to look like: "HST_10048_a1_ACS_HRC_F344N_daophot_tmp.txt".)
-        print('NAME_DAOOUT = ', name_daoOUT)
+        log.info('NAME_DAOOUT = {}'.format(name_daoOUT))
         name_daoOUT = name_daoOUT.replace(".fits", "")
-        print('NAME_DAOOUT = ', name_daoOUT)
+        log.info('NAME_DAOOUT = {}'.format(name_daoOUT))
         name_daoOUT = name_daoOUT.replace("_drz", "")
-        print('NAME_DAOOUT = ', name_daoOUT)
+        log.info('NAME_DAOOUT = {}'.format(name_daoOUT))
 
         name_daoOUT = Rename.find_unique_name(name_daoOUT + "_daophot_tmp.txt", working_dir, 'no',
                                               FITS_file_rootname=name_daoOUT, Suffix="daophot_tmp.txt")
-        print('NAME_DAOOUT = ', name_daoOUT)
+        log.info('NAME_DAOOUT = {}'.format(name_daoOUT))
 
         output_dao = os.path.join(working_dir, name_daoOUT)
-        print('OUTPUT_DAO = ', output_dao)
-        print(' ')
+        log.info('OUTPUT_DAO = {}'.format(output_dao))
+        log.info(' ')
 
         # -----------------------------------------
         # PLATE SCALES & APERTURES
@@ -724,24 +749,208 @@ def daophot_process(all_drizzled_filelist, dict_source_lists_filtered, daofind_b
             wht_image2run = image_drz + "[2]"
             wht_name_daoOUT = string.split(name_daoOUT, '.')[0] + '_WHT.txt'
             wht_output_dao = os.path.join(working_dir, wht_name_daoOUT)
-            print("WEIGHT EXT")
-            print("image = ", wht_image2run)
-            print("coords = ", coordinates_filtered)
-            print("output = ", wht_output_dao)
+            log.info("WEIGHT EXT")
+            log.info('image = {}'.format(wht_image2run))
+            log.info('coords = {}'.format(coordinates_filtered))
+            log.info('output = {}'.format(wht_output_dao))
             daophot_style_photometry(wht_image2run, None, coordinates_filtered, wht_output_dao, scale, apertures_sort,
                                      annulus, dannulus, 'mode', exptime, zeropt, config_file)
             return_dict[image_drz] = wht_output_dao
         else:
-            print("SCI EXT")
-            print("image = ", image2run)
-            print("coords = ", coordinates_filtered)
-            print("output = ", output_dao)
+            log.info("SCI EXT")
+            log.info('image = {}'.format(image2run))
+            log.info('coords = {}'.format(coordinates_filtered))
+            log.info('output = {}'.format(output_dao))
             output_dao = output_dao.replace("daophot_tmp.txt", "daophot.txt")
             daophot_style_photometry(image2run, None, coordinates_filtered, output_dao, scale, apertures_sort, annulus,
                                      dannulus, 'mode', exptime, zeropt, config_file)
             return_dict[image_drz] = output_dao
-        print("return_dict: ", return_dict)
+        log.info('return_dict: {}'.format(return_dict))
     return return_dict
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def daophot_style_photometry(imgFile, errFile, cooFile, outFile, platescale, radiiArcsec, skyAnnulus, dSkyAnnulus,
+                             salgorithm, gain, zeroPoint, config_file):
+    """generates iraf.daophot-like photometric sourcelist using spacetelescope.wfc3_photometry and astropy.photutils
+
+    Parameters
+    ----------
+    imgFile : string
+        name of the fits file that was used to generate the x,y coordinates stored in cooFile.
+
+    errFile : string
+        name of the fits file that contains the corresponding RMS map for imgFile
+
+    cooFile : string
+        name of the file that contains the x,y coordinates for photometry
+
+    outFile : string
+        name of the output sourcelist file
+
+    platescale : float
+        instrument platescale in arcseconds per pixel.
+
+    radiiArcsec : list of floats
+        list of photometric aperture radii (in units of arcseconds) to use
+
+    skyAnnulus : float
+        inner radius (in arcseconds) of the annulus that will be used to compute the background sky value.
+
+    dskyannulus : float
+        width (in arcseconds) of the annulus that will be used to compute the background sky value.
+
+    salgorithm : string
+        the statistic used to calculate the background. Choices are 'mean', 'median', or 'mode'. All measurements are
+        sigma clipped. NOTE: From DAOPHOT, mode = 3 * median - 2 * mean.
+
+    gain : float
+        gain in electrons per adu (only use if image units aren't e-).
+
+    zeroPoint : float
+        photometric zeropoint used to compute magnitude values from flux values
+
+    config_file : string
+        name of instrument-specific configuration file
+
+    Returns
+    -------
+    Nothing!
+    """
+    from photutils import CircularAperture, CircularAnnulus, aperture_photometry
+    from .photometry_tools import iraf_style_photometry
+    from astropy.io import fits, ascii
+    import numpy as np
+    from astropy.table import Table, Column, MaskedColumn
+
+    # convert input values whose units are arcseconds to pixles
+    radii = []
+    for ctr in range(0, len(radiiArcsec)):
+        radii.append(radiiArcsec[ctr] / platescale)  # radii.append(round(radiiArcsec[ctr] / platescale))
+    skyAnnulus /= platescale
+    dSkyAnnulus /= platescale
+
+    verbose = True
+    if verbose:
+        log.info("SUMMARY OF INPUT PARAMETERS")
+        log.info("imgFile:          {}".format(imgFile))
+        log.info("errFile:          {}".format(errFile))
+        log.info("cooFile:          {}".format(cooFile))
+        log.info("outFile:          {}".format(outFile))
+        log.info("platescale:       {}".format(platescale))
+        log.info("radii (pixels):   {}".format(radii))
+        log.info("radii (arcsec):   {}".format(radiiArcsec))
+        log.info("annulus:          {}".format(skyAnnulus))
+        log.info("dSkyAnnulus:      {}".format(dSkyAnnulus))
+        log.info("salgorithm:       {}".format(salgorithm))
+        log.info("gain:             {}".format(gain))
+        log.info("zeropoint:        {}".format(zeroPoint))
+
+    # read in data from  image, err and coo files
+    # read in image data
+    parse_imgFile = imgFile.split("[")
+    imgFile = parse_imgFile[0]
+    if len(parse_imgFile) == 2:
+        fitsExt = int(parse_imgFile[1].replace("]", ""))
+        imgData = fits.getdata(imgFile, ext=fitsExt)
+    if len(parse_imgFile) == 2:
+        imgData = fits.getdata(imgFile)
+
+    # read in rms data
+    if errFile:
+        parse_errFile = errFile.split("[")
+        errFile = parse_errFile[0]
+        if len(parse_errFile) == 2:
+            fitsExt = int(parse_errFile[1].replace("]", ""))
+            errData = fits.getdata(errFile, ext=fitsExt)
+        if len(parse_errFile) == 1:
+            errData = fits.getdata(errFile)
+    if not errFile:
+        errData = None
+
+    # read in coordinate data
+    x, y = np.loadtxt(cooFile, skiprows=4, usecols=(0, 1), unpack=True)
+
+    # Do photometry
+    # adjust coods for calculations that assume origin value of 0, rather than 1.
+    x = x - 1.
+    y = y - 1.
+
+    bgAps = CircularAnnulus((x, y), r_in=skyAnnulus, r_out=skyAnnulus + dSkyAnnulus)  # compute background
+
+    photAps = [CircularAperture((x, y), r=r) for r in radii]
+    photometry_tbl = iraf_style_photometry(photAps, bgAps, data=imgData, platescale=platescale, error_array=errData,
+                                           bg_method=salgorithm, epadu=gain, zero_point=zeroPoint)
+
+    # convert coords back to origin value = 1 rather than 0
+    photometry_tbl["XCENTER"] = photometry_tbl["XCENTER"] + 1.
+    photometry_tbl["YCENTER"] = photometry_tbl["YCENTER"] + 1.
+
+    # calculate and add RA and DEC columns to table
+    ra, dec = Transform_list_xy_to_RA_Dec(photometry_tbl["XCENTER"], photometry_tbl["YCENTER"], imgFile)
+    raCol = Column(name="RA", data=ra, dtype=np.float64)
+    DecCol = Column(name="DEC", data=dec, dtype=np.float64)
+    photometry_tbl.add_column(raCol, index=2)
+    photometry_tbl.add_column(DecCol, index=3)
+
+    # TODO: Execute Daophot_ap_correct() here!
+    photometry_tbl.write("photometry_tbl.csv", format='ascii.csv', overwrite=True)
+    log.info("WROTE photometry_tbl.csv !")
+    # Calculate and add concentration index (CI) column to table
+    ci_data = photometry_tbl["MAG_{}".format(radiiArcsec[0])].data - photometry_tbl[
+        "MAG_{}".format(radiiArcsec[1])].data
+    ciMask = np.logical_and(np.abs(ci_data) > 0.0, np.abs(ci_data) < 1.0e-30)
+    bigBadIndex = np.where(abs(ci_data) > 1.0e20)
+    ciMask[bigBadIndex] = True
+    ciCol = MaskedColumn(name="CI", data=ci_data, dtype=np.float64, mask=ciMask)
+    photometry_tbl.add_column(ciCol)
+
+    # Add zero-value "Flags" column in preparation for source flagging
+    flagCol = Column(name="Flags", data=np.zeros_like(photometry_tbl['ID']), dtype=np.int64)
+    photometry_tbl.add_column(flagCol)
+
+    # Add null-value "TotMag(<outer radiiArc>)" and "TotMag(<outer radiiArc>)" columns
+    emptyTotMag = MaskedColumn(name="TotMag({})".format(radiiArcsec[1]), fill_value=None, mask=True,
+                               length=len(photometry_tbl["XCENTER"].data), dtype=np.int64)
+    emptyTotMagErr = MaskedColumn(name="TotMagErr({})".format(radiiArcsec[1]), fill_value=None, mask=True,
+                                  length=len(photometry_tbl["XCENTER"].data), dtype=np.int64)
+    photometry_tbl.add_column(emptyTotMag)
+    photometry_tbl.add_column(emptyTotMagErr)
+
+    # build final output table
+    finalColOrder = ["XCENTER", "YCENTER", "RA", "DEC", "ID", "MAG_{}".format(radiiArcsec[0]),
+                     "MAG_{}".format(radiiArcsec[1]), "MERR_{}".format(radiiArcsec[0]),
+                     "MERR_{}".format(radiiArcsec[1]), "MSKY", "STDEV", "FLUX_{}".format(radiiArcsec[1]),
+                     "TotMag({})".format(radiiArcsec[1]), "TotMagErr({})".format(radiiArcsec[1]), "CI", "Flags"]
+    outputPhotometryTable = photometry_tbl[finalColOrder]
+
+    # format output table columns
+    finalColFormat = {"RA": "13.10f", "DEC": "13.10f", "MAG_{}".format(radiiArcsec[0]): '6.3f',
+                      "MAG_{}".format(radiiArcsec[1]): '6.3f', "MERR_{}".format(radiiArcsec[0]): '6.3f',
+                      "MERR_{}".format(radiiArcsec[1]): '6.3f', "MSKY": '10.8f', "STDEV": '10.8f',
+                      "FLUX_{}".format(radiiArcsec[1]): '10.8f', "CI": "7.3f"}
+    for fcf_key in list(finalColFormat.keys()):
+        outputPhotometryTable[fcf_key].format = finalColFormat[fcf_key]
+
+    # change some column titles to match old daophot.txt files
+    rename_dict = {"XCENTER": "X-Center", "YCENTER": "Y-Center",
+                   "MAG_{}".format(radiiArcsec[0]): "MagAp({})".format(radiiArcsec[0]),
+                   "MAG_{}".format(radiiArcsec[1]): "MagAp({})".format(radiiArcsec[1]),
+                   "MERR_{}".format(radiiArcsec[0]): "MagErr({})".format(radiiArcsec[0]),
+                   "MERR_{}".format(radiiArcsec[1]): "MagErr({})".format(radiiArcsec[1]),
+                   "MSKY": "MSky({})".format(radiiArcsec[1]), "STDEV": "Stdev({})".format(radiiArcsec[1]),
+                   "FLUX_{}".format(radiiArcsec[1]): "Flux({})".format(radiiArcsec[1])}
+    for oldColTitle in rename_dict:
+        outputPhotometryTable.rename_column(oldColTitle, rename_dict[oldColTitle])
+        log.info("Column '{}' renamed '{}'".format(oldColTitle, rename_dict[oldColTitle]))
+
+    outputPhotometryTable.write(outFile, format='ascii.csv', overwrite=True)
+
+    log.info("Wrote {}".format(outFile))
+
+    add_header_phot_tab(outFile, imgFile, config_file)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
