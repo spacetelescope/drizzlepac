@@ -140,7 +140,7 @@ def parse_obset_tree(det_tree):
                         filetype = "drz"
                     prev_det_indx = det_indx
                 sep = SEP_STR.format(sep_indx)  # keep 80 char wide code
-                sep_info = (filename[0]+" "+filetype).lower()
+                sep_info = (filename[0] + " " + filetype).lower()
                 obset_products[sep] = {'info': sep_info,
                                        'files': [filename[1]]}
                 # Initialize `info` key for this filter product
