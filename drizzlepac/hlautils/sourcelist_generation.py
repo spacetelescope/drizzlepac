@@ -8,13 +8,17 @@ import pdb
 import sys
 import traceback
 
-from astropy.io import fits
+from astropy.io import fits, ascii
 from astropy.stats import sigma_clipped_stats
+from astropy.table import Table, Column, MaskedColumn
 import numpy
+from photutils import CircularAperture, CircularAnnulus, aperture_photometry
 from photutils import detection, findstars
 from photutils import Background2D, MedianBackground, SExtractorBackground, StdBackgroundRMS
 import scipy
 from stsci.tools import logutil
+
+from .photometry_tools import iraf_style_photometry
 
 __taskname__ = 'sourcelist_generation'
 
@@ -23,7 +27,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def add_header_phot_tab(phot_table, drz_image, config_file):
+def add_header_phot_tab(phot_table, drz_image, param_dict):
     """
     This task will make a header for a DAOPhot table based on information contained in the header of the 'drz_image'.
 
@@ -37,8 +41,8 @@ def add_header_phot_tab(phot_table, drz_image, config_file):
     drz_image : string
         filename of drizzled image whose header information will be used to populate the DAOPhot table header.
 
-    config_file : string
-        name of the detector-specific configuration file to use.
+    param_dict : dictionary
+        dictionary of drizzle, source finding and photometric parameters
 
     Returns
     -------
@@ -64,18 +68,15 @@ def add_header_phot_tab(phot_table, drz_image, config_file):
     prop = get_head_val_opened_fits(loaded_fits, "proposid")
     tname = get_head_val_opened_fits(loaded_fits, "targname")
     inst = get_head_val_opened_fits(loaded_fits, "instrume")
-    detect = Headers.return_detector(drz_image)
-    filt = Headers.return_filter_for_single_file(drz_image)
+    detect = return_detector(drz_image)
+    filt = return_filter_for_single_file(drz_image)
     im_ra = get_head_val_opened_fits(loaded_fits, "crval1", ext=1)
     im_dec = get_head_val_opened_fits(loaded_fits, "crval2", ext=1)
     orient = get_head_val_opened_fits(loaded_fits, "pa_aper", ext=1)
 
-    config.read(software + '/param/' + config_file)
-    print()
-    "CONFIG FILE: " + software + '/param/' + config_file  # TODO: REMOVE BEFORE ACTUAL USE
-    fwhm = float(Configs.loadcfgs(config, 'DAOFIND PARAMETERS', 'TWEAK_FWHMPSF'))
-    thresh = float(Configs.loadcfgs(config, 'DAOFIND PARAMETERS', 'TWEAK_THRESHOLD'))
-    scale = float(Configs.loadcfgs(config, 'ASTRODRIZZLE PARAMETERS', 'PIXSCALE'))
+    fwhm = param_dict['dao']['TWEAK_FWHMPSF']
+    thresh = param_dict['dao']['TWEAK_THRESHOLD']
+    scale = param_dict['astrodrizzle']['PIXSCALE']
 
     # --------------------
     # Fill in the header:
@@ -143,7 +144,6 @@ def average_values_from_dict(Dictionary):
     final : float
         The average value of the input dictionary
     """
-    import numpy
     all_vL = list(Dictionary.values())
     try:
         num_tot = 0.0
@@ -857,7 +857,7 @@ def daophot_process(all_drizzled_filelist, dict_source_lists_filtered, param_dic
             log.info('coords = {}'.format(coordinates_filtered))
             log.info('output = {}'.format(wht_output_dao))
             daophot_style_photometry(wht_image2run, None, coordinates_filtered, wht_output_dao, scale, apertures_sort,
-                                     annulus, dannulus, 'mode', exptime, zeropt, config_file)
+                                     annulus, dannulus, 'mode', exptime, zeropt, param_dict)
             return_dict[image_drz] = wht_output_dao
         else:
             log.info("SCI EXT")
@@ -866,7 +866,7 @@ def daophot_process(all_drizzled_filelist, dict_source_lists_filtered, param_dic
             log.info('output = {}'.format(output_dao))
             output_dao = output_dao.replace("daophot_tmp.txt", "daophot.txt")
             daophot_style_photometry(image2run, None, coordinates_filtered, output_dao, scale, apertures_sort, annulus,
-                                     dannulus, 'mode', exptime, zeropt, config_file)
+                                     dannulus, 'mode', exptime, zeropt, param_dict)
             return_dict[image_drz] = output_dao
         log.info('return_dict: {}'.format(return_dict))
     return return_dict
@@ -876,7 +876,7 @@ def daophot_process(all_drizzled_filelist, dict_source_lists_filtered, param_dic
 
 
 def daophot_style_photometry(imgFile, errFile, cooFile, outFile, platescale, radiiArcsec, skyAnnulus, dSkyAnnulus,
-                             salgorithm, gain, zeroPoint, config_file):
+                             salgorithm, gain, zeroPoint, param_file):
     """generates iraf.daophot-like photometric sourcelist using spacetelescope.wfc3_photometry and astropy.photutils
 
     Parameters
@@ -915,19 +915,13 @@ def daophot_style_photometry(imgFile, errFile, cooFile, outFile, platescale, rad
     zeroPoint : float
         photometric zeropoint used to compute magnitude values from flux values
 
-    config_file : string
-        name of instrument-specific configuration file
+    param_dict : dictionary
+        dictionary of drizzle, source finding and photometric parameters
 
     Returns
     -------
     Nothing!
     """
-    from photutils import CircularAperture, CircularAnnulus, aperture_photometry
-    from .photometry_tools import iraf_style_photometry
-    from astropy.io import fits, ascii
-    import numpy as np
-    from astropy.table import Table, Column, MaskedColumn
-
     # convert input values whose units are arcseconds to pixles
     radii = []
     for ctr in range(0, len(radiiArcsec)):
@@ -974,7 +968,7 @@ def daophot_style_photometry(imgFile, errFile, cooFile, outFile, platescale, rad
         errData = None
 
     # read in coordinate data
-    x, y = np.loadtxt(cooFile, skiprows=4, usecols=(0, 1), unpack=True)
+    x, y = numpy.loadtxt(cooFile, skiprows=4, usecols=(0, 1), unpack=True)
 
     # Do photometry
     # adjust coods for calculations that assume origin value of 0, rather than 1.
@@ -993,8 +987,8 @@ def daophot_style_photometry(imgFile, errFile, cooFile, outFile, platescale, rad
 
     # calculate and add RA and DEC columns to table
     ra, dec = Transform_list_xy_to_RA_Dec(photometry_tbl["XCENTER"], photometry_tbl["YCENTER"], imgFile)
-    raCol = Column(name="RA", data=ra, dtype=np.float64)
-    DecCol = Column(name="DEC", data=dec, dtype=np.float64)
+    raCol = Column(name="RA", data=ra, dtype=numpy.float64)
+    DecCol = Column(name="DEC", data=dec, dtype=numpy.float64)
     photometry_tbl.add_column(raCol, index=2)
     photometry_tbl.add_column(DecCol, index=3)
 
@@ -1004,21 +998,21 @@ def daophot_style_photometry(imgFile, errFile, cooFile, outFile, platescale, rad
     # Calculate and add concentration index (CI) column to table
     ci_data = photometry_tbl["MAG_{}".format(radiiArcsec[0])].data - photometry_tbl[
         "MAG_{}".format(radiiArcsec[1])].data
-    ciMask = np.logical_and(np.abs(ci_data) > 0.0, np.abs(ci_data) < 1.0e-30)
-    bigBadIndex = np.where(abs(ci_data) > 1.0e20)
+    ciMask = numpy.logical_and(numpy.abs(ci_data) > 0.0, numpy.abs(ci_data) < 1.0e-30)
+    bigBadIndex = numpy.where(abs(ci_data) > 1.0e20)
     ciMask[bigBadIndex] = True
-    ciCol = MaskedColumn(name="CI", data=ci_data, dtype=np.float64, mask=ciMask)
+    ciCol = MaskedColumn(name="CI", data=ci_data, dtype=numpy.float64, mask=ciMask)
     photometry_tbl.add_column(ciCol)
 
     # Add zero-value "Flags" column in preparation for source flagging
-    flagCol = Column(name="Flags", data=np.zeros_like(photometry_tbl['ID']), dtype=np.int64)
+    flagCol = Column(name="Flags", data=numpy.zeros_like(photometry_tbl['ID']), dtype=numpy.int64)
     photometry_tbl.add_column(flagCol)
 
     # Add null-value "TotMag(<outer radiiArc>)" and "TotMag(<outer radiiArc>)" columns
     emptyTotMag = MaskedColumn(name="TotMag({})".format(radiiArcsec[1]), fill_value=None, mask=True,
-                               length=len(photometry_tbl["XCENTER"].data), dtype=np.int64)
+                               length=len(photometry_tbl["XCENTER"].data), dtype=numpy.int64)
     emptyTotMagErr = MaskedColumn(name="TotMagErr({})".format(radiiArcsec[1]), fill_value=None, mask=True,
-                                  length=len(photometry_tbl["XCENTER"].data), dtype=np.int64)
+                                  length=len(photometry_tbl["XCENTER"].data), dtype=numpy.int64)
     photometry_tbl.add_column(emptyTotMag)
     photometry_tbl.add_column(emptyTotMagErr)
 
@@ -1053,7 +1047,7 @@ def daophot_style_photometry(imgFile, errFile, cooFile, outFile, platescale, rad
 
     log.info("Wrote {}".format(outFile))
 
-    add_header_phot_tab(outFile, imgFile, config_file)
+    add_header_phot_tab(outFile, imgFile, param_dict)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
