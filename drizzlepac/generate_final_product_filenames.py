@@ -48,7 +48,7 @@ def interpret_obset_input(results):
     # Add INSTRUMENT column
     instr = INSTRUMENT_DICT[obset_table['filename'][0][0]]
     # convert input to an Astropy Table for parsing
-    obset_table.add_column(Column([instr]*len(obset_table)), name='instrument')
+    obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
     # parse Table into a tree-like dict
     obset_tree = build_obset_tree(obset_table)
     # Now create final dict
