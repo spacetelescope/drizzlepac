@@ -63,16 +63,6 @@ sys.path.append(software)
 import util,scripts,configparser
 from util import ci_table
 
-
-# PyRAF/IRAF Imports
-# -------------------
-# import pyraf
-# from pyraf import iraf
-# from iraf import stsdas
-#
-# #Clean Iraf tasks used
-# iraf.unlearn("hedit")
-
 config = configparser.ConfigParser()
 Configs=util.toolbox.Configs()
 Rename=util.toolbox.Rename()
@@ -89,36 +79,54 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
                             detection_image, dict_newTAB_matched2drz, proc_type, config,
                             drz_root_dir, rms_dict):
     """Simple calling subroutine that executes the other flagging subroutines.
-
-    all_drizzled_filelist: List of drizzled images to process
-    working_hla_red: full path to working directory
-    filter_sorted_flt_dict: dictionary containing lists of calibrated images sorted (also keyed) by filter name.
-    daofind_basic_param: list of parameters used by daofind. Values are fwhm, thresh, ap_diameter1, ap_diameter2.
-    readnoise_dictionary_drzs: dictionary of readnoise values keyed by drizzled image.
-    scale_dict_drzs: dictionary of scale values keyed by drizzled image name.
-    zero_point_AB_dict: ***UNUSED*** dictionary of zeropoint values keyed by drizzled image name.
-    exp_dictionary_scis: dictionary of exposure time values keyed by drizzled image name.
-    detection_image: name of drizzled image.
-    dict_newTAB_matched2drz: dictionary of source lists keyed by drizzled image name.
-    proc_type: sourcelist generation type.
-    config: contents of config file read in at start of hla_sourcelist.py run.
-    drz_root_dir: Root directory of drizzled images.
-    rms_dict: dictionary of RMS image counterparts to drizzled images. Keyed by drizzled image name.
-    :type all_drizzled_filelist: list of strings
-    :type working_hla_red: string
-    :type filter_sorted_flt_dict: dictionary
-    :type daofind_basic_param: list of floats
-    :type readnoise_dictionary_drzs: dictionary
-    :type scale_dict_drzs: dictionary
-    :type zero_point_AB_dict: dictionary
-    :type exp_dictionary_scis: dictionary
-    :type detection_image: string
-    :type dict_newTAB_matched2drz: dictionary
-    :type proc_type: string
-    :type config: instance
-    :type drz_root_dir: string
-    :type rms_dict: dictionary
-    :returns: Nothing. 
+    
+    Parameters
+    ----------
+    all_drizzled_filelist : list
+        List of drizzled images to process
+        
+    working_hla_red : string
+        full path to working directory
+    
+    filter_sorted_flt_dict : dictionary
+        dictionary containing lists of calibrated images sorted (also keyed) by filter name.
+    
+    daofind_basic_param : list
+        list of parameters used by daofind. Values are fwhm, thresh, ap_diameter1, ap_diameter2.
+    
+    readnoise_dictionary_drzs : dictionary
+        dictionary of readnoise values keyed by drizzled image.
+        
+    scale_dict_drzs : dictionary
+        dictionary of scale values keyed by drizzled image name.
+    
+    zero_point_AB_dict : dictionary
+        ***UNUSED*** dictionary of zeropoint values keyed by drizzled image name.
+    
+    exp_dictionary_scis : dictionary
+        dictionary of exposure time values keyed by drizzled image name.
+    
+    detection_image : string
+        name of drizzled image.
+    
+    dict_newTAB_matched2drz : dictionary
+        dictionary of source lists keyed by drizzled image name.
+    
+    proc_type : string
+        sourcelist generation type.
+    
+    config : object
+        contents of config file read in at start of hla_sourcelist.py run.
+    
+    drz_root_dir : string
+        Root directory of drizzled images.
+    
+    rms_dict : dictionary
+        dictionary of RMS image counterparts to drizzled images. Keyed by drizzled image name.
+    
+    Returns
+    -------
+    Nothing! 
     """
 
 
@@ -147,22 +155,30 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
 
 
 def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, config=config):
-    """
-    This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
+    """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
     It also flags sources below the detection limit in mag_aper2 (flag=8).
-   
-    :param all_drizzled_filelist: list of drizzled images
-    :param dict_newTAB_matched2drz: dictionary of source lists keyed by drizzled image name.
-    :param working_hla_red: ***UNUSED*** full path of working directory.
-    :param proc_type: Sourcelist generation type
-    :param config: contents of config file read in at start of hla_sourcelist.py run.
-    :type all_drizzled_filelist: list of strings
-    :type dict_newTAB_matched2drz: dictionary
-    :type working_hla_red: string
-    :type proc_type: string
-    :type config: contents of config file read in at start of hla_sourcelist.py run.
-    :returns: nothing.
+    
+    Parameters
+    ----------
+    all_drizzled_filelist : list
+        list of drizzled images
+
+    dict_newTAB_matched2drz : dictionary
+        dictionary of source lists keyed by drizzled image name.
+
+    working_hla_red : string
+        ***UNUSED*** full path of working directory.
+
+    proc_type : string
+        Sourcelist generation type
+
+    config : object
+        contents of config file read in at start of hla_sourcelist.py run.
+    
+    Returns
+    -------
+    Nothing! 
     """
 
     # column indices for SE and DAO catalogs
@@ -270,30 +286,43 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
                        scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz,
                        proc_type, config=config):
 
-    """
-    Identifies and flags saturated sources.
+    """Identifies and flags saturated sources.
 
-    :param all_drizzled_filelist: List of drizzled images to process.
-    :param working_hla_red: ***UNUSED*** full path to working directory
-    :param filter_sorted_flt_dict: dictionary containing lists of calibrated images sorted (also keyed) by filter name.
-    :param daofind_basic_param: list of parameters used by daofind. Values are fwhm, thresh, ap_diameter1, ap_diameter2.
-    :param readnoise_dictionary_drzs: ***UNUSED*** dictionary of readnoise values keyed by drizzled image.
-    :param scale_dict_drzs: ***UNUSED*** dictionary of scale values keyed by drizzled image.
-    :param exp_dictionary_scis: ***UNUSED*** dictionary of exposure time values keyed by drizzled image.
-    :param dict_newTAB_matched2drz: dictionary of source lists keyed by drizzled image name.
-    :param proc_type: sourcelist generation type.
-    :param config: ***UNUSED*** contents of config file read in at start of hla_sourcelist.py run.
-    :type all_drizzled_filelist: list of strings
-    :type working_hla_red: string
-    :type filter_sorted_flt_dict: dictionary
-    :type daofind_basic_param: list of floats.
-    :type readnoise_dictionary_drzs: dictionary
-    :type scale_dict_drzs: dictionary
-    :type exp_dictionary_scis: dictionary
-    :type dict_newTAB_matched2drz: dictionary
-    :type proc_type: string
-    :type config: instance
-    :returns: Nothing.
+    Parameters
+    ----------
+    all_drizzled_filelist : list
+        List of drizzled images to process.
+    
+    working_hla_red : string
+        ***UNUSED*** full path to working directory
+    
+    filter_sorted_flt_dict : dictionary
+        dictionary containing lists of calibrated images sorted (also keyed) by filter name.
+    
+    daofind_basic_param : list
+        list of parameters used by daofind. Values are fwhm, thresh, ap_diameter1, ap_diameter2.
+    
+    readnoise_dictionary_drzs : dictionary
+        ***UNUSED*** dictionary of readnoise values keyed by drizzled image.
+    
+    scale_dict_drzs : dictionary
+        ***UNUSED*** dictionary of scale values keyed by drizzled image.
+    
+    exp_dictionary_scis : dictionary
+        ***UNUSED*** dictionary of exposure time values keyed by drizzled image.
+    
+    dict_newTAB_matched2drz : dictionary
+        dictionary of source lists keyed by drizzled image name.
+    
+    proc_type : string
+        sourcelist generation type.
+    
+    config : object
+        ***UNUSED*** contents of config file read in at start of hla_sourcelist.py run.
+    
+    Returns
+    -------
+    Nothing!
     """
     for drizzled_image in all_drizzled_filelist:
         image_split = drizzled_image.split('/')[-1]
@@ -581,30 +610,43 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
                   exp_dictionary_scis, daofind_basic_param, filter_sorted_flt_dict,
                   detection_image, proc_type, rms_dict, config=config):
 
-    """
-    Identifies and flags swarm sources.
+    """Identifies and flags swarm sources.
 
-    :param all_drizzled_filelist: List of drizzled images to process
-    :param dict_newTAB_matched2drz: dictionary of source lists keyed by drizzled image name.
-    :param working_hla_red: full path to working directory.
-    :param exp_dictionary_scis: dictionary of exposure time values keyed by drizzled image.
-    :param daofind_basic_param: list of parameters used by daofind. Values are fwhm, thresh, ap_diameter1, ap_diameter2.
-    :param filter_sorted_flt_dict: dictionary containing lists of calibrated images sorted (also keyed) by filter name.
-    :param detection_image: Name of multi-filter composite 'detection' image
-    :param proc_type: sourcelist generation type.
-    :param rms_dict: dictionary of RMS image counterparts to drizzled images. Keyed by drizzled image name.
-    :param config: contents of config file read in at start of hla_sourcelist.py run.
-    :type all_drizzled_filelist: list of strings
-    :type dict_newTAB_matched2drz: dictionary
-    :type working_hla_red: string
-    :type exp_dictionary_scis: dictionary
-    :type daofind_basic_param: list of floats
-    :type filter_sorted_flt_dict: dictionary
-    :type detection_image: string
-    :type proc_type: string
-    :type rms_dict: dictionary
-    :type config: instance
-    :returns: Nothing.
+    Parameters
+    ----------
+    all_drizzled_filelist : list
+        List of drizzled images to process
+    
+    dict_newTAB_matched2drz : dictionary
+        dictionary of source lists keyed by drizzled image name.
+    
+    working_hla_red : string
+        full path to working directory.
+    
+    exp_dictionary_scis : dictionary
+        dictionary of exposure time values keyed by drizzled image.
+    
+    daofind_basic_param : list
+        list of parameters used by daofind. Values are fwhm, thresh, ap_diameter1, ap_diameter2.
+    
+    filter_sorted_flt_dict : dictionary
+        dictionary containing lists of calibrated images sorted (also keyed) by filter name.
+    
+    detection_image : string
+        Name of multi-filter composite 'detection' image
+    
+    proc_type : string
+        sourcelist generation type.
+    
+    rms_dict : dictionary
+        dictionary of RMS image counterparts to drizzled images. Keyed by drizzled image name.
+    
+    config : object
+        contents of config file read in at start of hla_sourcelist.py run.
+    
+    Returns
+    -------
+    Nothing!
     """
     for drizzled_image in all_drizzled_filelist:
 
@@ -627,10 +669,10 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         # ============================= SKY COMPUTATION ==============================
 
         median_sky = get_median_sky(drizzled_image)
-#        single_rms = rms_dict[drizzled_image]
-#        rms_array = pyfits.getdata(single_rms,0)
-#        rms_subarray = rms_array[rms_array > 0.0]
-#        median_sky = Util.binmode(rms_subarray[rms_subarray < 5000.])[0]
+       # single_rms = rms_dict[drizzled_image]
+       # rms_array = pyfits.getdata(single_rms,0)
+       # rms_subarray = rms_array[rms_array > 0.0]
+       # median_sky = Util.binmode(rms_subarray[rms_subarray < 5000.])[0]
 
         print(' ')
         print('MEDIAN SKY VALUE = ',median_sky)
@@ -1240,28 +1282,37 @@ def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
                  daofind_basic_param, readnoise_dictionary_drzs,
                  scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz,
                  drz_root_dir):
-    """
-    flags out sources from regions where there are a low (or a null) number of contributing exposures
+    """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
-    :param all_drizzled_filelist: List of drizzled images to process
-    :param working_hla_red: ***UNUSED*** full path to working directory.
-    :param filter_sorted_flt_dict: dictionary containing lists of calibrated images sorted (also keyed) by filter name.
-    :param daofind_basic_param: list of parameters used by daofind. Values are fwhm, thresh, ap_diameter1, ap_diameter2.
-    :param readnoise_dictionary_drzs: ***UNUSED*** dictionary of readnoise values keyed by drizzled image.
-    :param scale_dict_drzs: ***UNUSED*** dictionary of scale values keyed by drizzled image.
-    :param exp_dictionary_scis:  ***UNUSED*** dictionary of exposure time values keyed by drizzled image.
-    :param dict_newTAB_matched2drz: 
-    :param drz_root_dir: dictionary of source lists keyed by drizzled image name.
-    :type all_drizzled_filelist: list of strings
-    :type working_hla_red: string
-    :type filter_sorted_flt_dict: dictionary
-    :type daofind_basic_param: list of floats
-    :type readnoise_dictionary_drzs: dictionary
-    :type scale_dict_drzs: dictionary
-    :type exp_dictionary_scis: dictionary
-    :type dict_newTAB_matched2drz: dictionary
-    :type drz_root_dir: string
-    :returns: nothing.
+    all_drizzled_filelist : list
+        List of drizzled images to process
+
+    working_hla_red : string
+        ***UNUSED*** full path to working directory.
+
+    filter_sorted_flt_dict : dictionary
+        dictionary containing lists of calibrated images sorted (also keyed) by filter name.
+
+    daofind_basic_param : list
+        list of parameters used by daofind. Values are fwhm, thresh, ap_diameter1, ap_diameter2.
+
+    readnoise_dictionary_drzs : dictionary
+        ***UNUSED*** dictionary of readnoise values keyed by drizzled image.
+
+    scale_dict_drzs : dictionary
+        ***UNUSED*** dictionary of scale values keyed by drizzled image.
+
+    exp_dictionary_scis :  dictionary
+        ***UNUSED*** dictionary of exposure time values keyed by drizzled image.
+
+    dict_newTAB_matched2drz : dictionary
+        dictionary of source lists keyed by drizzled image name.
+
+    drz_root_dir : dictionary of source lists keyed by drizzled image name.
+
+    Returns
+    -------
+    nothing!
     
     """
     # ------------------
@@ -1446,20 +1497,25 @@ def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
 
 def get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict):
 
-    """
-    Get a list of the drizzled exposure images associated with this combined drizzled image
+    """Get a list of the drizzled exposure images associated with this combined drizzled image
 
     Usually this can just use glob to get a list of all the drizzled exposures for this
     filter, but it also handles the case where some exposures were not used (e.g., for
     scan mode images).
 
-    :param drizzled_image: Name of combined (level 2) drizzled image
-    :param drz_root_dir: Location of drizzled exposures
-    :param filter_sorted_flt_dict: dictionary containing lists of calibrated images sorted (also keyed) by filter name.
-    :type drizzled_image: string
-    :type drz_root_dir: string
-    :type filter_sorted_flt_dict: dictionary
-    :returns: a list of drizzled exposure images associated with the specified combined drizzled image
+    drizzled_image : string
+        Name of combined (level 2) drizzled image
+
+    drz_root_dir : string
+        Location of drizzled exposures
+
+    filter_sorted_flt_dict : dictionary
+        dictionary containing lists of calibrated images sorted (also keyed) by filter name.
+
+    Returns
+    -------
+    rv : list
+        a list of drizzled exposure images associated with the specified combined drizzled image
     """
 
     drz_img_split = drizzled_image.split('/')[-1].split('drz')
@@ -1514,9 +1570,7 @@ def get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict)
 
 
 def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
-
-    """
-    Routine to match two lists of objects by position using 2-D Cartesian distances.
+    """Routine to match two lists of objects by position using 2-D Cartesian distances.
 
     Matches positions in cat1 with positions in cat2, for matches within separation (sep).
     If more than one match is found, the nearest is returned.
@@ -1551,21 +1605,30 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
 
     Marcel Haas, 2012-06-29, after IDL routine xymatch.pro by Rick White
     With some tweaks by Rick White
+    
+    Parameters
+    ----------
+    cat1 : numpy.ndarray
+        list of x,y source coords to match.
+    
+    cat2 : numpy.ndarray
+        list of x,y source coords to match.
+    
+    sep : float
+        maximum separation (in pixels) allowed for source matching.
+    
+    multiple : Boolean
+        If multiple is true, returns a tuple (p1,p2) such that cat1[p1] and cat2[p2] are within sep.  p1 and p2 may include multiple pointers to the same objects in cat1 or cat2.  In this case objects that don't match are simply omitted from the lists. Default value is 'False'.
+    
+    stack : Boolean
+        If stack is true, the returned matching pointers are stacked into a single big array, so both p1 and p2 are 1-D arrays of length nmatches. Default value is 'True'.
+    
+    verbose : Boolean
+        print verbose output? Default value is 'True'.
 
-    :param cat1: list of x,y source coords to match.
-    :param cat2: list of x,y source coords to match.
-    :param sep: maximum separation (in pixels) allowed for source matching.
-    :param multiple: If multiple is true, returns a tuple (p1,p2) such that cat1[p1] and cat2[p2] are within sep.  p1 and p2 may include multiple pointers to the same objects in cat1 or cat2.  In this case objects that don't match are simply omitted from the lists. Default value is 'False'.
-    :param stack: If stack is true, the returned matching pointers are stacked into a single big array, so both p1 and p2 are 1-D arrays of length nmatches. Default value is 'True'.
-    :param verbose: print verbose output? Default value is 'True'.
-    :type cat1: numpy.ndarray
-    :type cat2: numpy.ndarray
-    :type sep: float
-    :type multiple: Boolean
-    :type stack: Boolean
-    :type verbose: Boolean
-    :returns: Depending on inputs, either just 'p2', or 'p1' and 'p2'.
-
+    Returns
+    -------
+    Varies; Depending on inputs, either just 'p2', or 'p1' and 'p2'. p1 and p2 are lists of matched indicies
     """
     if not (isinstance(cat1, numpy.ndarray) and len(cat1.shape)==2 and cat1.shape[1]==2):
         raise ValueError("cat1 must be a [N,2] array")
@@ -1648,13 +1711,17 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
 
 
 def sorted_median(a):
+    """Compute the median for a 1-D numpy array that is already sorted
 
-    """
-    Compute the median for a 1-D numpy array that is already sorted
-
-    :param a: list of values what will be processed.
-    :type a: numpy.ndarray
-    :returns: numpy.float32 median value
+    Parameters
+    ----------
+    a : numpy.ndarray
+        list of values what will be processed.
+     
+    Returns
+    -------
+    med : numpy.float32
+        median value
     """
 
     ll = len(a)
@@ -1666,13 +1733,17 @@ def sorted_median(a):
 
 
 def get_median_sky(drizzled_image):
+    """Read drizzled image from FITS file and compute sky
+    
+    Parameters
+    ----------
+    drizzled_image : string
+        name of image that will be used to compute median sky value.
 
-    """
-    Read drizzled image from FITS file and compute sky
-
-    :param drizzled_image: name of image that will be used to compute median sky value.
-    :type drizzled_image: string
-    :returns: median sky value for image specified by 'drizzled_image'. 
+    Returns
+    -------
+    median_sky : float
+        median sky value for image specified by 'drizzled_image'. 
     """
 
     driz_img_data = getdata(drizzled_image,1).ravel()
@@ -1705,16 +1776,20 @@ def get_median_sky(drizzled_image):
 
 
 def rdtoxy(rd_coord_array, image, image_ext):
-    """
-    converts RA and dec to x,y image coords.
+    """converts RA and dec to x,y image coords.
 
-    :param rd_coord_array: array containing RA and dec values to convert.
-    :param image: drizzled image whose WCS info will be used in the coordinate conversion. 
-    :param image_ext: fits image extension to be used in the conversion.
-    :type rd_coord_array: numpy.ndarray
-    :type image: string
-    :type image_ext: string
-    :returns: array of converted x,y coordinate value pairs
+    rd_coord_array : numpy.ndarray
+        array containing RA and dec values to convert.
+    
+    image : string
+        drizzled image whose WCS info will be used in the coordinate conversion. 
+    
+    image_ext : string
+        fits image extension to be used in the conversion.
+    
+    Returns
+    xy_arr: array
+        array of converted x,y coordinate value pairs
     """
 
     scifile = image + image_ext
@@ -1727,16 +1802,21 @@ def rdtoxy(rd_coord_array, image, image_ext):
 
 
 def xytord(xy_coord_array, image, image_ext):
-    """
-    converts x,y image coords to RA and dec.
+    """converts x,y image coords to RA and dec.
 
-    :param xy_coord_array: array containing image x,y coord values to convert.
-    :param image: drizzled image whose WCS info will be used in the coordinate conversion. 
-    :param image_ext: fits image extension to be used in the conversion.
-    :type xy_coord_array: numpy.ndarray
-    :type image: string
-    :type image_ext: string
-    :returns: an array of converted RA and dec value pairs
+    xy_coord_array : numpy.ndarray
+        array containing image x,y coord values to convert.
+
+    image : string
+        drizzled image whose WCS info will be used in the coordinate conversion.
+
+    image_ext : string
+        fits image extension to be used in the conversion.
+
+    Returns
+    -------
+    rd_arr : array
+        an array of converted RA and dec value pairs
     """
 
     scifile = image + image_ext
@@ -1751,15 +1831,17 @@ def xytord(xy_coord_array, image, image_ext):
 # ========================================= NEW FUNCTIONS 131002 =========================================
 # ========================================================================================================
 def extract_name(stringWpath):
-    """
-    This task will extract just the name of  specific
-    filename that includes the path in the name: 'stringWpath'.
+    """This task will extract just the name of  specific filename that includes the path in the name: 'stringWpath'.
     
     Tested.
     
-    :param stringWpath: input path to be processed
-    :type stringWpath: string
-    :returns: name of string
+    stringWpath : string
+        input path to be processed
+
+    Returns
+    -------
+    stringname : string
+        name of string
     """
     while "/" == stringWpath[-1]:
         stringWpath = stringWpath[:-1]
@@ -1768,8 +1850,7 @@ def extract_name(stringWpath):
 
 def arrayfy_ctx(ctx, maxindex):
 
-    """
-    Function to turn the context array returned by AstroDrizzle
+    """Function to turn the context array returned by AstroDrizzle
     into a bit datacube with the third dimension equal to maxindex.
     Requires care since vanilla python seems to be a bit loose with
     data types, while arrays in numpy are strictly typed.
@@ -1786,11 +1867,18 @@ def arrayfy_ctx(ctx, maxindex):
     ctx[:,:,0] contains the bit values for images 1-32, ctx[:,:,1] for images
     33-64, and so forth.
 
-    :param ctx: input context array to be converted
-    :param maxindex: maximum index value to process
-    :type ctx: numpy.ndarray
-    :type maxindex: integer
-    :returns: ctxarray, The input context array converted to datacube form.
+    Parameters
+    ----------
+    ctx : numpy.ndarray
+        input context array to be converted
+
+    maxindex : int
+        maximum index value to process
+
+    Returns
+    -------
+    ctxarray : numpy.ndarray
+        ctxarray, The input context array converted to datacube form.
     """
     nx = ctx.shape[0]
     ny = ctx.shape[1]
@@ -1814,14 +1902,18 @@ def arrayfy_ctx(ctx, maxindex):
     return ctxarray
 
 def HLA_flag4and8_hunter_killer(photfilename):
-    """
-    This function searches through photometry catalogs for sources whose flags contain 
+    """This function searches through photometry catalogs for sources whose flags contain
     both bits 4 (multi-pixel saturation), and 8 (faint magnitude limit).
     If found, the subroutine removes the "8" bit value from the set of flags for that source.
 
-    :param photfilename: name of sourcelist to process
-    :type photfilename: string
-    :returns: nothing
+    Parameters
+    ----------
+    photfilename : string
+        name of sourcelist to process
+
+    Returns
+    -------
+    nothing!
     """
     inf=open(photfilename)
     phot_lines=inf.readlines()
