@@ -1,23 +1,23 @@
 """
 return CI limits as a function of detector and filter using table
 
-Path
-----
-HLApipeline/HLApipe/util/ci_table.py
+
 
 Dependencies
 ------------
-* HLApipeline/HLApipe/util/ci_ap_cor_table_ap_20_2016.txt
+ci_ap_cor_table_ap_20_2016.txt
 
-Inputs
-------
-None.
 
-Classes and Functions
----------------------
 """
 import os, sys
 import pdb
+
+from stsci.tools import logutil
+
+__taskname__ = 'ci_table'
+
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+
 ci_table = None
 
 def read_ci_apcorr_file(debug=False, infile_name='ci_ap_cor_table_ap_20_2016.txt'):
@@ -55,12 +55,12 @@ def read_ci_apcorr_file(debug=False, infile_name='ci_ap_cor_table_ap_20_2016.txt
                 ci_peak = float(parse_cil[3])
                 ci_upper = float(parse_cil[4])
                 ap_corr = float(parse_cil[5])
-            except ValueError, e:
+            except ValueError as e:
                 raise ValueError("Illegal line in %s (bad value):\n%s" % (infile_name, ci_line))
             ci_table[obs_config] = (eff_wave, ci_lower, ci_peak, ci_upper, ap_corr)
     if debug:
         for key in sorted(ci_table.keys()):
-            print key,ci_table[key]
+            print(key,ci_table[key])
     return ci_table
 
 
@@ -96,12 +96,12 @@ def get_ci_info(inst, detect, filt, debug=False,
         ci_table = read_ci_apcorr_file(debug=debug)
 
     obs_config=("%s_%s_%s"%(inst,detect,filt)).upper()
-    if debug: print "obs_config: ",obs_config
+    if debug: print("obs_config: ",obs_config)
     if obs_config in ci_table:
-        if debug: print "CI values found."
+        if debug: print("CI values found.")
         eff_wave, ci_lower, ci_peak, ci_upper, ap_corr = ci_table[obs_config]
     else:
-        print "get_ci_info: CI values not found for %s, using default values" % obs_config
+        print("get_ci_info: CI values not found for %s, using default values" % obs_config)
     return_dict={'eff_wave':eff_wave,'ci_lower_limit':ci_lower,'ci_peak':ci_peak,'ci_upper_limit':ci_upper,'ap_corr':ap_corr}
     return return_dict
 
@@ -155,31 +155,31 @@ def get_ci_from_file(drzfile, **kw):
 if __name__=='__main__':
     inst, detect, filt = ('wfc3','uvis','f606w')
     ciap_dict = get_ci_info(inst,detect,filt)
-    print "configuration:  ",inst,detect,filt
-    print "eff_wave:       ",ciap_dict['eff_wave']
-    print "ci_lower:       ",ciap_dict['ci_lower_limit']
-    print "ci_peak:        ",ciap_dict['ci_peak']
-    print "ci_upper:       ",ciap_dict['ci_upper_limit']
-    print "ap_corr:        ",ciap_dict['ap_corr']
+    print("configuration:  ",inst,detect,filt)
+    print("eff_wave:       ",ciap_dict['eff_wave'])
+    print("ci_lower:       ",ciap_dict['ci_lower_limit'])
+    print("ci_peak:        ",ciap_dict['ci_peak'])
+    print("ci_upper:       ",ciap_dict['ci_upper_limit'])
+    print("ap_corr:        ",ciap_dict['ap_corr'])
 
     drizzled_image='hst_12311_03_wfc3_uvis_f275w_drz.fits'
     inst, detect, filt = parse_file(drizzled_image)
     ciap_dict = get_ci_from_file(drizzled_image)
-    print "drizzled image: ",drizzled_image
-    print "configuration:  ",inst,detect,filt
-    print "eff_wave:       ",ciap_dict['eff_wave']
-    print "ci_lower:       ",ciap_dict['ci_lower_limit']
-    print "ci_peak:        ",ciap_dict['ci_peak']
-    print "ci_upper:       ",ciap_dict['ci_upper_limit']
-    print "ap_corr:        ",ciap_dict['ap_corr']
+    print("drizzled image: ",drizzled_image)
+    print("configuration:  ",inst,detect,filt)
+    print("eff_wave:       ",ciap_dict['eff_wave'])
+    print("ci_lower:       ",ciap_dict['ci_lower_limit'])
+    print("ci_peak:        ",ciap_dict['ci_peak'])
+    print("ci_upper:       ",ciap_dict['ci_upper_limit'])
+    print("ap_corr:        ",ciap_dict['ap_corr'])
 
     drizzled_image='hst_11969_04_wfpc2_f606w_pc_drz.fits'
     inst, detect, filt = parse_file(drizzled_image)
     ciap_dict = get_ci_from_file(drizzled_image)
-    print "drizzled image: ",drizzled_image
-    print "configuration:  ",inst,detect,filt
-    print "eff_wave:       ",ciap_dict['eff_wave']
-    print "ci_lower:       ",ciap_dict['ci_lower_limit']
-    print "ci_peak:        ",ciap_dict['ci_peak']
-    print "ci_upper:       ",ciap_dict['ci_upper_limit']
-    print "ap_corr:        ",ciap_dict['ap_corr']
+    print("drizzled image: ",drizzled_image)
+    print("configuration:  ",inst,detect,filt)
+    print("eff_wave:       ",ciap_dict['eff_wave'])
+    print("ci_lower:       ",ciap_dict['ci_lower_limit'])
+    print("ci_peak:        ",ciap_dict['ci_peak'])
+    print("ci_upper:       ",ciap_dict['ci_upper_limit'])
+    print("ap_corr:        ",ciap_dict['ap_corr'])
