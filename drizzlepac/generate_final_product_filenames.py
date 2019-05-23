@@ -152,7 +152,7 @@ def parse_obset_tree(det_tree):
                 obset_products[fprod]['files'].append(filename[1])
                 # Initialize `info` key for total detection product
                 if not obset_products[tdp]['info']:
-                    tdp_info = (" ".join(filename[0].split()[:-2])+" "+filename[0].split()[-1]+" "+filetype).lower()
+                    tdp_info = (" ".join(filename[0].split()[:-2]) + " " + filename[0].split()[-1] + " " + filetype).lower()
                     obset_products[tdp]['info'] = tdp_info
                 # Append exposure filename to input list for total detection product
                 obset_products[tdp]['files'].append(filename[1])
