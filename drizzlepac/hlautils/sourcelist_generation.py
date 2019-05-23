@@ -23,6 +23,109 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def add_header_phot_tab(phot_table, drz_image, config_file):
+    """
+    This task will make a header for a DAOPhot table based on information contained in the header of the 'drz_image'.
+
+    Tested.
+
+    Parameters
+    ----------
+    phot_table : string
+        DAOPhot sourcelist filename.
+
+    drz_image : string
+        filename of drizzled image whose header information will be used to populate the DAOPhot table header.
+
+    config_file : string
+        name of the detector-specific configuration file to use.
+
+    Returns
+    -------
+    nothing.
+    """
+    loaded_fits = pyfits.open(drz_image)
+
+    # -------------------------------
+    # FITS-compliant UTC time string
+    # -------------------------------
+    fits_string_date = datetime.datetime.utcnow().strftime("%A-%m-%dT%H:%M:%S")
+
+    # ---------------------------------
+    # Human-friendly local time string
+    # ---------------------------------
+    string_date = datetime.datetime.now().strftime("%A %B %d %H:%M:%S %Y")
+    fname = extract_name(drz_image)
+
+    # ---------------------------------------------------
+    # Get available header keywords from drizzled image:
+    # ("not available" is returned if not found)
+    # ---------------------------------------------------
+    prop = get_head_val_opened_fits(loaded_fits, "proposid")
+    tname = get_head_val_opened_fits(loaded_fits, "targname")
+    inst = get_head_val_opened_fits(loaded_fits, "instrume")
+    detect = Headers.return_detector(drz_image)
+    filt = Headers.return_filter_for_single_file(drz_image)
+    im_ra = get_head_val_opened_fits(loaded_fits, "crval1", ext=1)
+    im_dec = get_head_val_opened_fits(loaded_fits, "crval2", ext=1)
+    orient = get_head_val_opened_fits(loaded_fits, "pa_aper", ext=1)
+
+    config.read(software + '/param/' + config_file)
+    print()
+    "CONFIG FILE: " + software + '/param/' + config_file  # TODO: REMOVE BEFORE ACTUAL USE
+    fwhm = float(Configs.loadcfgs(config, 'DAOFIND PARAMETERS', 'TWEAK_FWHMPSF'))
+    thresh = float(Configs.loadcfgs(config, 'DAOFIND PARAMETERS', 'TWEAK_THRESHOLD'))
+    scale = float(Configs.loadcfgs(config, 'ASTRODRIZZLE PARAMETERS', 'PIXSCALE'))
+
+    # --------------------
+    # Fill in the header:
+    # --------------------
+    head_outfile = "#DAOPhot Catalog\n#  Processed by the HLA pipeline\n#\n"
+    head_outfile = head_outfile + "#---------------------------------------------------#\n"
+    head_outfile = head_outfile + "# Data Release Version: %s (DAOPHOT COMPLETE CATALOG)\n" % (
+        os.getenv("HLA_BUILD_VER"))
+    head_outfile = head_outfile + "# Processed On:         %s\n" % string_date
+    head_outfile = head_outfile + "# Proposal ID:          %s\n" % prop
+    head_outfile = head_outfile + "# File Name:            %s\n" % fname
+    head_outfile = head_outfile + "# Target Name:          %s\n" % tname
+    head_outfile = head_outfile + "# Instrument:           %s\n" % inst
+    head_outfile = head_outfile + "# Detector:             %s\n" % detect
+    head_outfile = head_outfile + "# Image Center RA:      %s\n" % im_ra
+    head_outfile = head_outfile + "# Image Center Dec:     %s\n" % im_dec
+    head_outfile = head_outfile + "# Filter:               %s\n" % filt
+    head_outfile = head_outfile + "# Orientation:          %s\n" % orient
+    head_outfile = head_outfile + "# Aperture Correction:  Not Available\n"
+    head_outfile = head_outfile + "# CTE_Corr:             No\n"
+    head_outfile = head_outfile + "# CTE_Date:             Not Applicable\n"
+    head_outfile = head_outfile + "# FWHM:                 %f\n" % fwhm
+    head_outfile = head_outfile + "# Threshold:            %f\n" % thresh
+    head_outfile = head_outfile + "# Scale:                %f\n" % scale
+    head_outfile = head_outfile + "#---------------------------------------------------#\n#\n"
+
+    # -----------------
+    # Append to table:
+    # -----------------
+    dirname = os.path.dirname(os.path.abspath(phot_table))
+    rootname = extract_name(phot_table).split("_daophot")[0]
+    phot_table_new = Rename.find_unique_name(rootname + "_daohead.cat", dirname, 'no', FITS_file_rootname=rootname,
+                                             Suffix="daohead.cat")
+    #    phot_table_new = Rename.unique_name(rootname + "_daohead.cat",suffix = "daohead.cat")
+    phot_table_new = os.path.join(dirname, phot_table_new)
+    readlines = [head_outfile]
+
+    # ----------------------------------
+    #    save(phot_table_new, readlines)
+    newfile = open(phot_table_new, "w")
+    rows = len(readlines)
+    for row in range(0, rows):
+        newfile.write(readlines[row])
+    newfile.close()
+    # ----------------------------------
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def average_values_from_dict(Dictionary):
     """Average all values within a dictionary.  This task is used for the 'hla_reduction.py' source listing procedure
     in estimating DAOFind parameters for the white-light image from the parameters for each of  the composite images of
@@ -1159,6 +1262,49 @@ def get_mean_readnoise(image):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_head_val_opened_fits(loaded_fits, key_word, ext=0):
+    """
+    Return a specific header value for an image loaded already with pyfits.
+    Used in the header creation of the DAOPhot catalog.
+
+    Tested.
+
+
+    Parameters
+    ----------
+    loaded_fits : HDUList object
+        A previously opened fits file already in memory
+
+    key_word : string
+        Name of the header field to be returned
+
+    ext : int
+        extension of **loaded_fits** to query. If not specified, the default value is 0, the primary header.
+
+    Returns
+    -------
+    hd_value : type varies
+        If found, the header value specified by input parameters will be returned. If the header keyword specified
+        can't be found, text string 'not available' will be returned.
+    """
+    # if loaded_fits[ext].header.has_key(key_word): .has_key depricated
+    #     hd_value = loaded_fits[ext].header[key_word]
+    # else:
+    #     hd_value = "not available"
+
+    hval_check = key_word in loaded_fits[ext].header
+    if hval_check:
+        hd_value = loaded_fits[ext].header[key_word]
+    else:
+        hd_value = "not available"
+
+    return hd_value
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
 
 def get_readnoise(listofimages):
     """
