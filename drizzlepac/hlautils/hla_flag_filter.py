@@ -63,6 +63,12 @@ sys.path.append(software)
 import util,scripts,configparser
 from util import ci_table
 
+from stsci.tools import logutil
+
+__taskname__ = 'hla_flag_filter'
+
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+
 config = configparser.ConfigParser()
 Configs=util.toolbox.Configs()
 Rename=util.toolbox.Rename()
@@ -214,11 +220,11 @@ def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, p
         ci_lower_limit = cidict['ci_lower_limit']
         ci_upper_limit = cidict['ci_upper_limit']
         
-        print(' ')
-        print('ci limits for', drizzled_image)
-        print('ci_lower_limit = ',ci_lower_limit)
-        print('ci_upper_limit = ',ci_upper_limit)
-        print(' ')
+        log.info(' ')
+        log.info('ci limits for {}'.format(drizzled_image))
+        log.info('ci_lower_limit = {}'.format(ci_lower_limit))
+        log.info('ci_upper_limit = {}'.format(ci_upper_limit))
+        log.info(' ')
 
         phot_table = dict_newTAB_matched2drz[drizzled_image]
         phot_table_root = phot_table.split('.')[0]
@@ -351,13 +357,13 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         num_flts_in_main_driz = len(list_of_flts_in_main_driz)
         list_of_flts_in_main_driz.sort()
 
-        print(' ')
-        print("Current Working Directory: ",os.getcwd())
-        print(' ')
-        print('LIST OF FLTS IN '+drizzled_image.split('/')[-1]+': ',list_of_flts_in_main_driz)
-        print(' ')
-        print('NUMBER OF FLTS IN '+drizzled_image.split('/')[-1]+': ',num_flts_in_main_driz)
-        print(' ')
+        log.info(' ')
+        log.info("Current Working Directory: {}".format(os.getcwd()))
+        log.info(' ')
+        log.info('LIST OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1],list_of_flts_in_main_driz))
+        log.info(' ')
+        log.info('NUMBER OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1],num_flts_in_main_driz))
+        log.info(' ')
 
         # ----------------------------------------------------
         # EXTRACT DQ DATA FROM FLT IMAGE AND CREATE A LIST 
@@ -383,9 +389,9 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
                     if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')): flt_data = getdata(flt_image,'DQ',int(ext_part))
                     if ((channel.lower() == 'wfpc2') or (channel.lower() == 'pc')): flt_data = getdata(flt_image.replace("_c0m","_c1m"),'SCI',int(ext_part))
                 except KeyError:
-                    print(' ')
-                    print('WARNING: There is only one set of file extensions in '+flt_image)
-                    print(' ')
+                    log.info(' ')
+                    log.info('WARNING: There is only one set of file extensions in {}'.format(flt_image))
+                    log.info(' ')
 
                     continue
 
@@ -441,21 +447,21 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
                 # -------------------------------------------------
                 drz_sat_xy_coords_list.append(rdtoxy(flt_ra_dec_coords, drizzled_image, "[sci,1]"))
 
-                print(' ')
-                print('FLT IMAGE = ',flt_image.split('/')[-1])
-                print('IMAGE EXT = ',image_ext)
-                print(' ')
+                log.info(' ')
+                log.info('FLT IMAGE = {}'.format(flt_image.split('/')[-1]))
+                log.info('IMAGE EXT = {}'.format(image_ext))
+                log.info(' ')
 
         # ----------------------------------------------------------------
         # IF NO SATURATION FLAGS EXIST IN ANY OF THE FLT FILES, THEN SKIP
         # ----------------------------------------------------------------
         if len(drz_sat_xy_coords_list) == 0:
-            print(' ')
-            print('*******************************************************************************************')
-            print('NO SATURATION FLAGGED PIXELS EXIST IN ANY OF THE FLT FILES FOR:')
-            print('     --> '+drizzled_image.split('/')[-1])
-            print('*******************************************************************************************')
-            print(' ')
+            log.info(' ')
+            log.info('*******************************************************************************************')
+            log.info('NO SATURATION FLAGGED PIXELS EXIST IN ANY OF THE FLT FILES FOR:')
+            log.info('     --> {}'.format(drizzled_image.split('/')[-1]))
+            log.info('*******************************************************************************************')
+            log.info(' ')
 
             continue
 
@@ -494,9 +500,9 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         # CREATE SUB-GROUPS OF SATURATION-FLAGGED COORDINATES
         # ----------------------------------------------------
         proc_time1=time.ctime()
-        print(' ')
-        print('PROC_TIME_1: ',proc_time1)
-        print(' ')
+        log.info(' ')
+        log.info('PROC_TIME_1: {}'.format(proc_time1))
+        log.info(' ')
 
         # ----------------------------------
         # Convert aperture radius to pixels
@@ -532,21 +538,21 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
                 radius = round((ap2 / 0.046) + 0.5) * 2.
 
 
-        print(' ')
-        print('THE RADIAL DISTANCE BEING USED IS '+str(radius)+' PIXELS')
-        print(' ')
+        log.info(' ')
+        log.info('THE RADIAL DISTANCE BEING USED IS {} PIXELS'.format(str(radius)))
+        log.info(' ')
 
         # do the cross-match using xymatch
-        print('Matching',len(full_satList),'saturated pixels with',len(full_coordList),'catalog sources')
+        log.info('Matching {} saturated pixels with {} catalog sources'.format(len(full_satList),len(full_coordList)))
         psat, pfull = xymatch(full_satList, full_coordList, radius, multiple=True, verbose=False)
-        print('Found',len(psat),'cross-matches (including duplicates)')
+        log.info('Found cross-matches (including duplicates)'.format(len(psat)))
         saturation_flag = numpy.zeros(len(full_coordList),dtype=bool)
         saturation_flag[pfull] = True
 
         proc_time2=time.ctime()
-        print(' ')
-        print('PROC_TIME_2: ',proc_time2)
-        print(' ')
+        log.info(' ')
+        log.info('PROC_TIME_2: {}'.format(proc_time2))
+        log.info(' ')
 
         # ------------------------------------------------------------------
         # REMOVE DUPLICATE DETECTIONS FROM THE LIST, "group", CREATTED FROM
@@ -555,18 +561,18 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
 
         nsaturated = saturation_flag.sum()
         if nsaturated == 0:
-            print(' ')
-            print('**************************************************************************************')
-            print('NOTE: NO SATURATED SOURCES WERE FOUND FOR: '+image_split)
-            print('**************************************************************************************')
-            print(' ')
+            log.info(' ')
+            log.info('**************************************************************************************')
+            log.info('NOTE: NO SATURATED SOURCES WERE FOUND FOR: {}'.format(image_split))
+            log.info('**************************************************************************************')
+            log.info(' ')
             
             continue
 
         else:
-            print(' ')
-            print('FLAGGED',nsaturated,'SOURCES')
-            print(' ')
+            log.info(' ')
+            log.info('FLAGGED {} SOURCES'.format(nsaturated))
+            log.info(' ')
 
             sat_coord_file = drizzled_image.split('/')[-1].split('.')[0]+'_INTERMEDIATE.txt'
             sat_coord_out = open(sat_coord_file,'w')
@@ -601,9 +607,9 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
             os.system('mv '+phot_table+' '+phot_table+'.PreSatFilt')
             os.system('mv '+phot_table_temp+' '+phot_table)
 
-            print(' ')
-            print('FINAL SAT-FILT PHOT_TABLE: ',phot_table)
-            print(' ')
+            log.info(' ')
+            log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
+            log.info(' ')
             HLA_flag4and8_hunter_killer(phot_table)
 
 def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red,
@@ -674,9 +680,9 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
        # rms_subarray = rms_array[rms_array > 0.0]
        # median_sky = Util.binmode(rms_subarray[rms_subarray < 5000.])[0]
 
-        print(' ')
-        print('MEDIAN SKY VALUE = ',median_sky)
-        print(' ')
+        log.info(' ')
+        log.info('MEDIAN SKY VALUE = {}'.format(median_sky))
+        log.info(' ')
 
         # ==========================================
         # ------------------------------------------
@@ -699,14 +705,14 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         # Convert aperture radius to pixels
         # ----------------------------------
         radius = ap2 / float(Configs.loadcfgs(config, "ASTRODRIZZLE PARAMETERS", "PIXSCALE"))
-        print(' ')
-        print('Aperture Size = ',ap2)
-        print('Pixel Scale = ',Configs.loadcfgs(config, "ASTRODRIZZLE PARAMETERS", "PIXSCALE"),' arcsec per pixel')
-        print(' ')
+        log.info(' ')
+        log.info('Aperture Size = {}'.format(ap2))
+        log.info('Pixel Scale = {}'.format(Configs.loadcfgs(config, "ASTRODRIZZLE PARAMETERS", "PIXSCALE"),' arcsec per pixel'))
+        log.info(' ')
         area = math.pi * radius**2
         exptime = exp_dictionary_scis[drizzled_image]
 
-        print('Reading catalog from', phot_table)
+        log.info('Reading catalog from{}'.format(phot_table))
         phot_table_in = open(phot_table,'r')
         phot_table_rows = phot_table_in.readlines()
         phot_table_in.close()
@@ -989,8 +995,8 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         clip_radius_list = list(map(float, clip_radius_list))
         scale_factor_list = Configs.loadcfgs(config, "SWARM FILTER", "scale_factor_list").split(',')
         scale_factor_list = list(map(float, scale_factor_list))
-        print("SWARM FILTER CLIP_RADIUS_LIST: ",clip_radius_list)
-        print("SWARM FILTER SCALE_FACTOR_LIST: ",scale_factor_list)
+        log.info('SWARM FILTER CLIP_RADIUS_LIST: {}'.format(clip_radius_list))
+        log.info('SWARM FILTER SCALE_FACTOR_LIST: {}'.format(scale_factor_list))
 
         # get list of objects not in the central pixel list
         keep = numpy.ones(nrows, dtype=bool)
@@ -1008,7 +1014,7 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         # ---------------------------------------------------------------------
 
         # do the cross-match using xymatch
-        print('Matching',len(final_flag_src_central_pixel_list),'swarm centers with',len(swarm_listB),'catalog sources')
+        log.info('Matching {} swarm centers with {} catalog sources'.format(len(final_flag_src_central_pixel_list),len(swarm_listB)))
         pcentral, pfull = xymatch(final_flag_src_central_pixel_list[:,0:2], swarm_listB[:,0:2], clip_radius_list[0], multiple=True, stack=False, verbose=False)
 
         #XXX RLW: the ring list is needed only for testing, get rid of it when code works
@@ -1022,9 +1028,9 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         for pindex, ii in enumerate(pcentral):
 
             central_pixel_value = final_flag_src_central_pixel_list[ii,:]
-            print(' ')
-            print('CENTRAL PIXEL VALUE: ',central_pixel_value)
-            print(' ')
+            log.info(' ')
+            log.info('CENTRAL PIXEL VALUE: {}'.format(central_pixel_value))
+            log.info(' ')
 
             base_epp = central_pixel_value[3]
             coords = central_pixel_value[0:2]
@@ -1033,11 +1039,11 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
 
             if len(allmatches) == 0:
                 # (this should not happen using xymatch)
-                print(' ')
-                print('------------------------------------------')
-                print('NOTE: NO SWARM CANDIDATES FOR THIS SOURCE ')
-                print('------------------------------------------')
-                print(' ')
+                log.info(' ')
+                log.info('------------------------------------------')
+                log.info('NOTE: NO SWARM CANDIDATES FOR THIS SOURCE ')
+                log.info('------------------------------------------')
+                log.info(' ')
                 continue
 
             distsq = (swarm_xListB[allmatches]-coords[0])**2 + (swarm_yListB[allmatches]-coords[1])**2
@@ -1054,12 +1060,12 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
                 matches = allmatches[rcut[radius_cnt]:rcut[radius_cnt-1]]
 
                 if len(matches) == 0:
-                    print(' ')
-                    print('------------------------------------------')
-                    print('NOTE: ALL MATCHES/DETECTIONS IN THIS RING ')
-                    print('      HAVE PREVIOUSLY BEEN ACCOUNTED FOR  ')
-                    print('------------------------------------------')
-                    print(' ')
+                    log.info(' ')
+                    log.info('------------------------------------------')
+                    log.info('NOTE: ALL MATCHES/DETECTIONS IN THIS RING ')
+                    log.info('      HAVE PREVIOUSLY BEEN ACCOUNTED FOR  ')
+                    log.info('------------------------------------------')
+                    log.info(' ')
 
                     continue
 
@@ -1184,7 +1190,7 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
                     pcentral, pfull = xymatch(ctr_list_cut1[:,0:2], swarm_listB[:,0:2], radius, multiple=True, verbose=False)
                     proximity_flag[notcentral_index[pfull]] = True
 
-            print("Proximity filter flagged", proximity_flag.sum(),"sources")
+            log.info("Proximity filter flagged {} sources".format(proximity_flag.sum()))
 
             # --------------------------------------------------------------------------
             # WRITE NEAR CENTRAL POSITION SWARM LIST TO AN OUTPUT FILE FOR VERIFICATION
@@ -1207,17 +1213,17 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         final_swarm_list = complete_src_list[combined_flag, :]
         final_source_list = complete_src_list[numpy.logical_not(combined_flag), :]
 
-        print(' ')
-        print('************************************************')
-        print('INITIAL LENGTH OF complete_src_list = ',len(complete_src_list))
-        print(' ')
-        print('LENGTH OF final_source_list = ',len(final_source_list))
-        print('LENGTH OF final_swarm_list = ',len(final_swarm_list))
-        print('TOTAL LENGTH = ',len(final_source_list) + len(final_swarm_list))
-        print(' ')
-        print('MEDIAN SKY VALUE = ',median_sky)
-        print('************************************************')
-        print(' ')
+        log.info(' ')
+        log.info('************************************************')
+        log.info('INITIAL LENGTH OF complete_src_list = {}'.format(len(complete_src_list)))
+        log.info(' ')
+        log.info('LENGTH OF final_source_list = {}'.format(len(final_source_list)))
+        log.info('LENGTH OF final_swarm_list = {}'.format(len(final_swarm_list)))
+        log.info('TOTAL LENGTH = {}'.format(len(final_source_list) + len(final_swarm_list)))
+        log.info(' ')
+        log.info('MEDIAN SKY VALUE = {}'.format(median_sky))
+        log.info('************************************************')
+        log.info(' ')
 
         # ----------------------------------------------------
         # WRITE SWARM LIST TO AN OUTPUT FILE FOR VERIFICATION
@@ -1271,9 +1277,9 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         os.system('mv '+phot_table+' '+phot_table+'.PreSwarmFilt')
         os.system('mv '+phot_table_temp+' '+phot_table)
 
-        print(' ')
-        print('FINAL SWAR-FILT PHOT_TABLE: ',phot_table)
-        print(' ')
+        log.info(' ')
+        log.info('FINAL SWAR-FILT PHOT_TABLE: {}'.format(phot_table))
+        log.info(' ')
 
 
 
@@ -1367,13 +1373,13 @@ def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
             try:
                 nexp_array += comp_drz_data
             except ValueError:
-                print("WARNING: Astrodrizzle added an extra-row/column...")
+                log.info("WARNING: Astrodrizzle added an extra-row/column...")
                 nexp_array += comp_drz_data[0:nx,0:ny]
 
         if os.path.isfile(maskfile):
             nexp_array = nexp_array * mask_array
         else:
-            print("something's wrong: maskfile",maskfile,"is not a file")
+            log.info("something's wrong: maskfile {} is not a file".format(maskfile))
             sys.exit()
         nexp_image = drizzled_image.split('.')[0]+'_NEXP.fits'
         if not os.path.isfile(nexp_image):
@@ -1461,7 +1467,7 @@ def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
         gy = (gy[:,numpy.newaxis] + iy).clip(0,nexp_array.shape[1]-1)
         artifact_flag = nexp_array[gx,gy].min(axis=0) < artifact_filt
 
-        print('FLAGGING',artifact_flag.sum(),'OF',nrows,'SOURCES')
+        log.info('FLAGGING {} OF {} SOURCES'.format(artifact_flag.sum(),nrows))
 
         # -------------------------------------------------------------------
         # WRITE NEXP FLAGS TO OUTPUT PHOT TABLE BASED ON nexp_phot_data_list
@@ -1492,7 +1498,7 @@ def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
         os.system('mv '+phot_table+' '+phot_table+'.PreNexpFilt')
         os.system('mv '+phot_table_temp+' '+phot_table)
 
-        print('Created new version of',phot_table)
+        log.info('Created new version of {}'.format(phot_table))
 
 
 def get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict):
@@ -1529,12 +1535,10 @@ def get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict)
         return component_drz_img_list
     elif len(list_of_flts) > len(component_drz_img_list):
         # this must be a bug?
-        print("ERROR: too few drizzled exposures for", drz_filter, file=sys.stderr)
-        print("Drizzled exposure list:", file=sys.stderr)
-        print("\n".join(component_drz_img_list), file=sys.stderr)
-        print("flt exposure list:", file=sys.stderr)
-        print("\n".join(list_of_flts), file=sys.stderr)
-        print("Plowing ahead with the full drizzled list", file=sys.stderr)
+        log.info("ERROR: too few drizzled exposures for {}".format(drz_filter))
+        log.info("Drizzled exposure list: {}".format("\n".join(component_drz_img_list)))
+        log.info("flt exposure list: {}".format("\n".join(list_of_flts)))
+        log.info("Plowing ahead with the full drizzled list")
         return component_drz_img_list
     # check the drz headers to see which ipppssoots are included
     ipdict = {}
@@ -1553,12 +1557,10 @@ def get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict)
             rv.append(drzfile)
     if len(list_of_flts) != len(rv):
         # this must be a bug?
-        print("ERROR: mismatch after filtering in exposure lists for", drz_filter, file=sys.stderr)
-        print("Filtered drizzled exposure list:", file=sys.stderr)
-        print("\n".join(rv), file=sys.stderr)
-        print("flt exposure list:", file=sys.stderr)
-        print("\n".join(list_of_flts_in_main_driz), file=sys.stderr)
-        print("Plowing ahead with the filtered drizzled list", file=sys.stderr)
+        log.info("ERROR: mismatch after filtering in exposure lists for {}".format(drz_filter))
+        log.info("Filtered drizzled exposure list: {}".format("\n".join(rv)))
+        log.info("flt exposure list: {}".format("\n".join(list_of_flts_in_main_driz)))
+        log.info("Plowing ahead with the filtered drizzled list")
     return rv
 
 
@@ -1692,10 +1694,10 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
                     nnomatch += 1
 
         if verbose and (i+1) % 10000 == 0:
-            print("%.1f s: Finished %d of %d (%d unmatched)" % (time.time()-t0, i+1, n1, nnomatch))
+            log.info("%.1f s: Finished %d of %d (%d unmatched)" % (time.time()-t0, i+1, n1, nnomatch))
 
     if verbose:
-        print("%.1f s: Finished %d (%d unmatched)" % (time.time()-t0, n1, nnomatch))
+        log.info("%.1f s: Finished %d (%d unmatched)" % (time.time()-t0, n1, nnomatch))
     if multiple:
         if stack:
             if len(p1) == 0:
@@ -1920,7 +1922,7 @@ def HLA_flag4and8_hunter_killer(photfilename):
     inf.close()
     fout=open(photfilename,'w')
     conf_ctr=0
-    print("Searching {} for flag 4 + flag 8 conflicts....".format(photfilename))
+    log.info("Searching {} for flag 4 + flag 8 conflicts....".format(photfilename))
     for phot_line in phot_lines:
         phot_line=phot_line.strip()
         parse_pl=phot_line.split(',')
@@ -1936,6 +1938,6 @@ def HLA_flag4and8_hunter_killer(photfilename):
             out_line=out_line[:-1]
         fout.write("%s\n"%(out_line))
     fout.close()
-    if conf_ctr == 0: print("No conflicts found.")
-    if conf_ctr == 1: print("{} conflict fixed.".format(conf_ctr))
-    if conf_ctr > 1:  print("{} conflicts fixed.".format(conf_ctr))
+    if conf_ctr == 0: log.info("No conflicts found.")
+    if conf_ctr == 1: log.info("{} conflict fixed.".format(conf_ctr))
+    if conf_ctr > 1:  log.info("{} conflicts fixed.".format(conf_ctr))
