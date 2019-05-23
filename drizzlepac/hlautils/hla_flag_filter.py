@@ -58,10 +58,7 @@ import pywcs
 from stwcs import wcsutil
 from scipy import spatial
 
-software = os.path.dirname('/'.join(os.path.realpath(__file__).split('/')[:-1]))
-sys.path.append(software)
-import util,scripts,configparser
-from util import ci_table
+import ci_table
 
 from stsci.tools import logutil
 
