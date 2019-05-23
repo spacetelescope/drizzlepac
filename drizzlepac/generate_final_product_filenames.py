@@ -333,7 +333,7 @@ def multivisit_mosaic_product_filename_generator(obs_info):
     filetype    = obs_info[4]
     """
 
-    basename = 'hst_mos'+'_'.join(map(str, obs_info[:4]))
+    basename = 'hst_mos' + '_'.join(map(str, obs_info[:4]))
     product_filename_dict = {}
     product_filename_dict["image"] = basename + " " + obs_info[5] + ".fits"
     product_filename_dict["point source catalog"] = basename + "_point-cat.ecsv"
