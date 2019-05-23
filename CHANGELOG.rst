@@ -18,6 +18,10 @@ of the list).
 3.0.2 (unreleased)
 ==================
 
+- Implemented the routines which interpret the visit information during
+  pipeline processing.  The routines generate the output files names for
+  the FITS files and source catalogs. [#379]
+
 - Fixed a bug in the ``util.WithLogging`` decorator due to which incorrect
   log file was reported when user-supplied log file name does not have ``.log``
   extension. [#365]
