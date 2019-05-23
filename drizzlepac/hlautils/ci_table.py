@@ -22,14 +22,20 @@ ci_table = None
 
 def read_ci_apcorr_file(debug=False, infile_name='ci_ap_cor_table_ap_20_2016.txt'):
 
-    """
-    Read the table of CI values
+    """Read the table of CI values
     
-    :param debug: print CI info to screen (True/False)? Default value = False
-    :param infile_name: Name of the CI file to use. If not specified, default value = ci_ap_cor_table_ap_20_2016.txt
-    :type debug: Boolean
-    :type infile_name: string
-    :return: CI information
+    Parameters
+    ----------
+    debug : Boolean
+        print CI info to screen (True/False)? Default value = False
+        
+    infile_name : string
+        Name of the CI file to use. If not specified, default value = ci_ap_cor_table_ap_20_2016.txt
+
+    Returns
+    -------
+    ci_table : dicitonary
+        CI information
     """
 
     # assume data file is in same directory with this module
@@ -67,28 +73,41 @@ def read_ci_apcorr_file(debug=False, infile_name='ci_ap_cor_table_ap_20_2016.txt
 def get_ci_info(inst, detect, filt, debug=False,
         eff_wave=-999, ci_lower=-999.0, ci_peak=-999.0, ci_upper=-999.0, ap_corr=-999.0):
 
-    """
-    Return dictionary with CI info for given detector/filter
+    """Return dictionary with CI info for given detector/filter
+
+    Parameters
+    ----------
+    inst : string
+        Instrument name
     
-    :param inst: Instrument name
-    :param detect: Detector name
-    :param filt: Filter name
-    :param debug: Print information to screen (True/False)? If not specified, default value = False
-    :param eff_wave: Effective wavelength. If not specified, default value = -999.0
-    :param ci_lower: Lower CI limit. If not specified, default value = -999.0
-    :param ci_peak: CI peak. If not specified, default value = -999.0
-    :param ci_upper: Upper CI limit. If not specified, default value = -999.0
-    :param ap_corr: Aperture correction. If not specified, default value = -999.0
-    :type inst: string
-    :type detect: string
-    :type filt: string
-    :type debug: Boolean 
-    :type eff_wave: float
-    :type ci_lower: float
-    :type ci_peak: float
-    :type ci_upper: float
-    :type ap_corr: float
-    :return: A dictionary with CI info for given detector/filter
+    detect : string
+        Detector name
+    
+    filt : string
+        Filter name
+    
+    debug : Boolean
+        Print information to screen (True/False)? If not specified, default value = False
+    
+    eff_wave : float
+        Effective wavelength. If not specified, default value = -999.0
+    
+    ci_lower : float
+        Lower CI limit. If not specified, default value = -999.0
+    
+    ci_peak : float
+        CI peak. If not specified, default value = -999.0
+    
+    ci_upper : float
+        Upper CI limit. If not specified, default value = -999.0
+    
+    ap_corr : float
+        Aperture correction. If not specified, default value = -999.0
+
+    Returns
+    -------
+    return_dict : dictionary
+        A dictionary with CI info for given detector/filter
     """
 
     global ci_table
@@ -107,12 +126,23 @@ def get_ci_info(inst, detect, filt, debug=False,
 
 
 def parse_file(drzfile):
-    """
-    Parse drizzled file name and return inst, detect, filt
+    """Parse drizzled file name and return inst, detect, filt
     
-    :param drzfile: name of drizzled fits file
-    :type drzfile: string
-    :return: instrument, detector, filter
+    Parameters
+    ----------
+    drzfile : string
+        name of drizzled fits file
+    
+    Returns
+    -------
+    instrument : string
+        instrument
+    
+    detector : string
+        detector
+    
+    filter : string
+        filter
     """
 
     dir, fname = os.path.split(drzfile)
@@ -139,14 +169,16 @@ def parse_file(drzfile):
 
 def get_ci_from_file(drzfile, **kw):
 
-    """
-    Return dictionary with CI info for given filename
+    """Return dictionary with CI info for given filename
     
-    :param drzfile: name of drizzled fits file
-    :param kw: input parameters for **get_ci_info**
-    :type drzfile: string
-    :type kw: various
-    :return: a dictionary with CI info for given filename
+    Parameters
+    ----------
+    drzfile : string
+        name of drizzled fits file
+
+    Returns
+    -------
+    a dictionary with CI info for given filename
     """
 
     inst, detect, filt = parse_file(drzfile)
