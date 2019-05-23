@@ -81,7 +81,6 @@ def build_obset_tree(obset_table):
             if filt not in det_node:
                 det_node[filt] = [(row_info, filename)]
             else:
-                filt_node = det_node[filt]
                 det_node[filt].append((row_info, filename))
 
     return obset_tree
