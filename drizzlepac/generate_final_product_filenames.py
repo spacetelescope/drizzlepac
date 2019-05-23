@@ -200,7 +200,7 @@ def run_generator(product_category, obs_info):
     # pad 4-character proposal_id values with leading 0s so that proposal_id is
     # a 5-character string.
     if category_key != "multivisit mosaic product":  # pad
-        obs_info[0] = "{}{}".format("0"*(5-len(obs_info[0])), obs_info[0])
+        obs_info[0] = "{}{}".format("0" * (5 - len(obs_info[0])), obs_info[0])
 
     # generate and return filenames
     product_filename_dict = generator_name(obs_info)
