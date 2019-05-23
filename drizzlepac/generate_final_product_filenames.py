@@ -188,7 +188,7 @@ def run_generator(product_category, obs_info):
 
     # Determine which name generator to use based on input product_category
     category_key = ""
-    for ikey in category_generator_mapping.keys():
+    for ikey in category_generator_mapping:
         if product_category.startswith(ikey):
             generator_name = category_generator_mapping[ikey]
             category_key = ikey
