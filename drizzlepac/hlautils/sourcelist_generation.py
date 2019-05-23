@@ -18,7 +18,7 @@ from photutils import Background2D, MedianBackground, SExtractorBackground, StdB
 import scipy
 from stsci.tools import logutil
 
-from .photometry_tools import iraf_style_photometry
+from photometry_tools import iraf_style_photometry
 
 __taskname__ = 'sourcelist_generation'
 
@@ -108,7 +108,7 @@ def add_header_phot_tab(phot_table, drz_image, param_dict):
     # -----------------
     dirname = os.path.dirname(os.path.abspath(phot_table))
     rootname = extract_name(phot_table).split("_daophot")[0]
-    phot_table_new = Rename.find_unique_name(rootname + "_daohead.cat", dirname, 'no', FITS_file_rootname=rootname,
+    phot_table_new = find_unique_name(rootname + "_daohead.cat", dirname, 'no', FITS_file_rootname=rootname,
                                              Suffix="daohead.cat")
     #    phot_table_new = Rename.unique_name(rootname + "_daohead.cat",suffix = "daohead.cat")
     phot_table_new = os.path.join(dirname, phot_table_new)
@@ -690,9 +690,7 @@ def create_sourcelists(obs_info_dict, param_dict):
             create_se_like_sourcelists()
 
             if dict_source_lists_filtered != None:
-                print("\a")
-                pdb.set_trace()
-                create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,param_dict[inst_det])
+                create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,param_dict[inst_det],rms_dict)
             else:
                 log.info("Empty coordinate file. DAO sourcelist {} NOT created.".format(sourcelist_name))
 
@@ -702,7 +700,7 @@ def create_sourcelists(obs_info_dict, param_dict):
 
 def daophot_process(all_drizzled_filelist, dict_source_lists_filtered, param_dict, readnoise_dictionary_drzs,
                     scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis, working_dir, rms_dict, rms_image,
-                    config_file, ext=1, Verbose=True, WHT=False):
+                    ext=1, Verbose=True, WHT=False):
     """
     This task will run the photometric calculations on a list of drizzled images. The coordinates for the sources are 
     found in the 'dict_source_lists_filtered' dictionary. This dictionary has keys that match the images inside '
@@ -801,7 +799,7 @@ def daophot_process(all_drizzled_filelist, dict_source_lists_filtered, param_dic
 
         rms_array = rms_dict[image_drz]
         #rms_array = pyfits.getdata(single_rms, 0)
-        rms_image_median = Util.binmode(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])[0]
+        rms_image_median = binmode(rms_array[numpy.isfinite(rms_array) & (rms_array > 0.0)])[0]
         log.info(' ')
         # log.info('single rms image = {}'.format(single_rms))
         log.info("Median from RMS image = {}".format(rms_image_median))
@@ -826,7 +824,7 @@ def daophot_process(all_drizzled_filelist, dict_source_lists_filtered, param_dic
         name_daoOUT = name_daoOUT.replace("_drz", "")
         log.info('NAME_DAOOUT = {}'.format(name_daoOUT))
 
-        name_daoOUT = Rename.find_unique_name(name_daoOUT + "_daophot_tmp.txt", working_dir, 'no',
+        name_daoOUT = find_unique_name(name_daoOUT + "_daophot_tmp.txt", working_dir, 'no',
                                               FITS_file_rootname=name_daoOUT, Suffix="daophot_tmp.txt")
         log.info('NAME_DAOOUT = {}'.format(name_daoOUT))
 
@@ -1408,6 +1406,48 @@ def replace_NaN_w_flag_whitelight(whitelight_im, white_rms_data, working_dir, sc
     log.info(" Working on white light - replace_NaN_w_flag_whitelight 3 ")
 
     return flag_imageWpath,white_rms_data
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def Transform_list_xy_to_RA_Dec(list_of_x,list_of_y, drizzled_image):
+    """Transform lists of X and Y coordinates to lists of RA and Dec coordinates
+
+    Tested.
+
+    list_of_x : list
+        list of x coordinates to convert
+
+    list_of_y : list
+        list of y coordinates to convert
+
+    drizzled_image : string
+        Name of the image that corresponds to the table from DAOPhot. This image is used to re-write x and y coordinates in RA and Dec.
+
+    Returns
+    -------
+    RA : list
+        A list of right ascension values
+
+    Dec : list
+        A list declination values.
+    """
+    import stwcs
+
+    wcs1_drz = stwcs.wcsutil.HSTWCS(drizzled_image + "[1]")
+    origin = 1
+    # *origin* is the coordinate in the upper left corner of the
+    # image.  In FITS and Fortran standards, this is 1.  In Numpy and C
+    # standards this is 0.
+    try:
+        skyposish = wcs1_drz.all_pix2sky(list_of_x, list_of_y, origin)
+    except AttributeError:
+        skyposish = wcs1_drz.all_pix2world(list_of_x, list_of_y, origin)
+    RA = skyposish[0]
+    Dec = skyposish[1]
+
+    return RA,Dec
 
 
 # ----------------------------------------------------------------------------------------------------------------------
