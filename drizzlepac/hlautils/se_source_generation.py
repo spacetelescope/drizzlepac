@@ -162,8 +162,6 @@ def create_sextractor_like_sourcelists(filename, vmax=None, se_debug=False):
     kernel_in_use = kernel_list[0]
 
     bkg, bkg_rms, bkg_dao_rms, threshold = compute_background(imgarr, threshold=threshold)
-    print('bkg: ', bkg)
-    print('bkg_dao_rms: ', bkg_dao_rms)
 
     # FIX imgarr should be background subtracted, sextractor uses the filtered_data image
     # Can input wcs to source_properties to have sky coords
@@ -180,13 +178,14 @@ def create_sextractor_like_sourcelists(filename, vmax=None, se_debug=False):
     # Source segmentation/extraction
     # If the threshold includes the background level, then the input image
     # should NOT be background subtracted.
+    # FIX: This currently generates a bad: detect.py:132: RuntimeWarning: invalid value 
+    # encountered in greater check_normalization=True) > threshold)
     print('Threshold: {}'.format(threshold))
     segm = detect_sources(imgarr, threshold, npixels=size_source_box,
                           filter_kernel=kernel)
-    print(segm)
 
+    # For debugging purposes...
     # Move 'id' column from first to last position
-    # Makes it consistent for remainder of code
     # Overlay on image looks good - yeah.
     if se_debug:
         # Write out a catalog which can be used as an overlay for image in ds9
@@ -232,26 +231,33 @@ def create_sextractor_like_sourcelists(filename, vmax=None, se_debug=False):
     # Regenerate the source catalog with presumably now only good sources
     seg_cat = source_properties(imgarr_bkgsub, segm, filter_kernel=kernel, wcs=imgwcs)
     seg_table = seg_cat.to_table()
-    print("segm: ", segm)
-    print("tbl: ", seg_table)
-    seg_tbl = seg_table[cnames[0:2]]
+    radec_data = seg_table['sky_centroid_icrs']
+    ra_icrs = radec_data.ra.degree
+    dec_icrs = radec_data.dec.degree
+
+    # [x|y]centroid are in pixels, physical data coordinates
+    seg_tbl = seg_table['xcentroid','ycentroid']
+    # RA and Dec are decimal degrees ICRS
+    seg_tbl['RA_icrs'] = ra_icrs
+    seg_tbl['Dec_icrs'] = dec_icrs
 
     # Write out the official total detection product source catalog
+    # Only write xcentroid, ycentroid, RA_icrs, Dec_icrs
     seg_tbl['xcentroid'].info.format = '.10f' 
     seg_tbl['ycentroid'].info.format = '.10f'
-    #seg_table['xcentroid'].info.format = '.10f' 
-    #seg_table['ycentroid'].info.format = '.10f'
-    #seg_table['flux'].info.format = '.10f'
-    outroot = 'hst'
-    if not outroot.endswith('_segment-cat.ecsv'):
-        outroot += '_segment-cat.ecsv'
-    seg_tbl.write(outroot, format='ascii.commented_header')
-    #seg_table.write(outroot, format='ascii.commented_header')
-    log.info("Wrote source catalog: {}".format(outroot))
+    seg_tbl['RA_icrs'].info.format = '.10f' 
+    seg_tbl['Dec_icrs'].info.format = '.10f'
+    print("tbl: ", seg_table)
 
-    #catalog_name = hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_cat.ecsv 
+    # FIX: the output_catalog variable will be filled properlywhen this routine
+    # invokes `total_detection_product_filename_generator` using the
+    # `info` string in the input `totdet_product_cat_dict`
+    output_catalog = 'hst_segment-cat.ecsv'
+    seg_tbl.write(output_catalog, format='ascii.commented_header')
+    #seg_table.write(output_catalog, format='ascii.commented_header')
+    log.info("Wrote source catalog: {}".format(output_catalog))
 
-    return seg_table, segm, bkg, bkg_rms, bkg_dao_rms
+    return seg_tbl, segm, bkg, bkg_rms, bkg_dao_rms
 
 
 """
@@ -455,4 +461,3 @@ def run_photutils(imgname):
         generate_se_catalogs(imgname, dbg_output=True)
 
     return
-    
