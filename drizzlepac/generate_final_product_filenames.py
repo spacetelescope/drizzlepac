@@ -265,7 +265,7 @@ def filter_product_filename_generator(obs_info):
     filetype    = obs_info[6]
     """
 
-    basename = 'hst_'+'_'.join(map(str, obs_info[:5]))+"_"+obs_info[5][:6]
+    basename = 'hst_' + '_'.join(map(str, obs_info[:5])) + "_" + obs_info[5][:6]
     product_filename_dict = {}
     product_filename_dict["image"] = basename + "_" + obs_info[6] + ".fits"
     product_filename_dict["point source catalog"] = basename + "_point-cat.ecsv"
