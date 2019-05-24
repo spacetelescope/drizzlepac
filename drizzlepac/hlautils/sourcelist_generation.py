@@ -459,7 +459,8 @@ def create_dao_like_sourcelists(dict_source_lists_filtered,filter_sorted_flt_dic
         Dictionary containing source extractor sourcelist file path keyed by total_drz.fits image
 
     filter_sorted_flt_dict : dictionary
-        Dictionary of input flc/flt images used to create total drizzle-combined filter image 'img_name'.
+        Dictionary of input flc/flt images used to create total drizzle-combined filter image 'img_name' sorted by
+        filter name (lowercase).
 
     img_name : string
         drizzled total filter image to be processed
@@ -669,7 +670,7 @@ def create_sourcelists(obs_info_dict, param_dict):
         for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
             filter_product_cat_dict[obs_info_dict[fp_keyname]['product filenames']['image']] = \
                 obs_info_dict[fp_keyname]['product filenames']['source catalog']
-            filter_component_dict[obs_info_dict[fp_keyname]['product filenames']['image']] = \
+            filter_component_dict[obs_info_dict['filter product 00']['info'].split()[-1].lower()] = \
                 obs_info_dict[fp_keyname]['files']
 
         inst_det = "{} {}".format(obs_info_dict[tdp_keyname]['info'].split()[-2],
