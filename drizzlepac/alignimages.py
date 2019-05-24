@@ -61,6 +61,10 @@ detector_specific_params = {"acs": {"hrc": {"fwhmpsf": 0.152,  # 0.073
                                               "classify": True,
                                               "threshold": None}}}
 
+SEARCH_RELATIVE = {'radius': 250, 'tolerance': 2.0, 'separation':0.1, 'use2dhist':True}
+SEARCH_2DHIST = {'radius': 250, 'tolerance': 2.0, 'separation':0.1, 'use2dhist':True}
+SEARCH_TOLERANCE = {'radius': 250, 'tolerance': 100.0, 'separation':0.1, 'use2dhist':False}
+
 log = logutil.create_logger('alignimages', level=logutil.logging.INFO, stream=sys.stdout)
 
 __version__ = 0.1
@@ -700,7 +704,10 @@ def match_relative_fit(imglist, reference_catalog):
     """
     log.info("{} STEP 5b: (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
     # 0: Specify matching algorithm to use
-    match = tweakwcs.TPMatch(searchrad=75, separation=0.1, tolerance=2, use2dhist=True)
+    match = tweakwcs.TPMatch(searchrad=SEARCH_RELATIVE['radius'], 
+                            separation=SEARCH_RELATIVE['separation'],  # 0.1, 
+                             tolerance=SEARCH_RELATIVE['tolerance'],  # 2,
+                             use2dhist=SEARCH_RELATIVE['use2dhist'])
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
     #                          tolerance=100, use2dhist=False)
 
@@ -747,8 +754,10 @@ def match_default_fit(imglist, reference_catalog):
     log.info("{} STEP 5b: (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
     # Specify matching algorithm to use
-    match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
-                             tolerance=100, use2dhist=False)
+    match = tweakwcs.TPMatch(searchrad=SEARCH_TOLERANCE['radius'], 
+                             separation=SEARCH_TOLERANCE['separation'],
+                             tolerance=SEARCH_TOLERANCE['tolerance'], 
+                             use2dhist=SEARCH_TOLERANCE['use2dhist'])
     # Align images and correct WCS
     tweakwcs.align_wcs(imglist, reference_catalog, match=match, expand_refcat=False)
 
@@ -781,7 +790,10 @@ def match_2dhist_fit(imglist, reference_catalog):
     log.info("{} STEP 5b: (match_2dhist_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 28))
     # Specify matching algorithm to use
-    match = tweakwcs.TPMatch(searchrad=75, separation=0.1, tolerance=2.0, use2dhist=True)
+    match = tweakwcs.TPMatch(searchrad=SEARCH_2DHIST['radius'],
+                             separation=SEARCH_2DHIST['separation'],
+                             tolerance=SEARCH_2DHIST['tolerance'], 
+                             use2dhist=SEARCH_2DHIST['use2dhist'])
     # Align images and correct WCS
     tweakwcs.align_wcs(imglist, reference_catalog, match=match, expand_refcat=False)
 
@@ -896,7 +908,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
 
         # Execute checks
         nmatches_check = False
-        if num_xmatches > 4:
+        if num_xmatches > 5:
             nmatches_check = True
 
         radial_offset_check = False
