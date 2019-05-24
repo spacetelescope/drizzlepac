@@ -45,7 +45,7 @@ try:
     [obs_info_dict,param_dict] = pickle.load(pickle_in)
     pickle_in.close()
 
-    sourcelist_generation.create_sourcelists(obs_info_dict,param_dict)
+    sourcelist_generation.run_create_sourcelists(obs_info_dict,param_dict)
 except Exception:
     exc_type, exc_value, exc_tb = sys.exc_info()
     traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)

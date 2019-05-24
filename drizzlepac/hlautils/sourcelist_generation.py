@@ -18,6 +18,7 @@ from photutils import MedianBackground, SExtractorBackground, StdBackgroundRMS
 import scipy
 from stsci.tools import logutil
 
+from drizzlepac import util
 import hla_flag_filter
 from photometry_tools import iraf_style_photometry
 
@@ -1449,6 +1450,29 @@ def Transform_list_xy_to_RA_Dec(list_of_x,list_of_y, drizzled_image):
     Dec = skyposish[1]
 
     return RA,Dec
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@util.with_logging
+def run_create_sourcelists(obs_info_dict, param_dict):
+    """ subroutine to run create_sourcelists and produce log file when not run sourcelist_generation is not run from
+    hlaprocessing.py.
+
+    Parameters
+    ----------
+    obs_info_dict : dictionary
+        Dictionary containing all information about the images being processed
+
+    param_dict : dictionary
+        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+
+    Returns
+    -------
+    """
+
+    create_sourcelists(obs_info_dict, param_dict)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
