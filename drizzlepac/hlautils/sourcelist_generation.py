@@ -13,12 +13,12 @@ from astropy.io import fits, ascii
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table, Column, MaskedColumn
 import numpy
-from photutils import CircularAperture, CircularAnnulus, aperture_photometry
-from photutils import detection, findstars
-from photutils import Background2D, MedianBackground, SExtractorBackground, StdBackgroundRMS
+from photutils import aperture_photometry, Background2D, CircularAperture, CircularAnnulus, detection, findstars
+from photutils import MedianBackground, SExtractorBackground, StdBackgroundRMS
 import scipy
 from stsci.tools import logutil
 
+import hla_flag_filter
 from photometry_tools import iraf_style_photometry
 
 __taskname__ = 'sourcelist_generation'
@@ -449,7 +449,8 @@ def create_dao_like_coordlists(totdet_product_cat_dict,filter_product_cat_dict,i
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,param_dict,rms_dict):
+def create_dao_like_sourcelists(dict_source_lists_filtered,filter_sorted_flt_dict,img_name,detection_image,inst_det,
+                                param_dict,rms_dict):
     """Make source extractor-like sourcelists
 
     Parameters
@@ -457,8 +458,14 @@ def create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,par
     dict_source_lists_filtered : dictionary
         Dictionary containing source extractor sourcelist file path keyed by total_drz.fits image
 
+    filter_sorted_flt_dict : dictionary
+        Dictionary of input flc/flt images used to create total drizzle-combined filter image 'img_name'.
+
     img_name : string
         drizzled total filter image to be processed
+
+    detection_image : string
+        total detection product filename
 
     inst_det : string
         Space-separated text string containing instrument name, detector name (upper case) of the products being
@@ -493,7 +500,7 @@ def create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,par
 
 
     # ### (4) ### Feed corrected whitelight source lists into daophot with science images
-    dao_output = daophot_process([img_name],
+    dict_newTAB_matched2drz = daophot_process([img_name],
                                  dict_source_lists_filtered,
                                  param_dict,
                                  readnoise_dict,
@@ -501,12 +508,15 @@ def create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,par
                                  abmag_zpt_dict,
                                  exptime_dict,
                                  os.getcwd(),
-                                 rms_dict,
-                                 "foo.bar")
-
+                                 rms_dict)
 
     # ### (5) ### Gather columns and put in nice format (dictated by: "column_keys_phot.cfg")
     # This will convert columns from xy to ra and dec (controlled by: "column_keys_phot.cfg")
+    log.info("dict_newTAB_matched2drz: {}".format(dict_newTAB_matched2drz))
+
+    hla_flag_filter.run_source_list_flaging([img_name], os.getcwd(), filter_sorted_flt_dict, param_dict,
+                                            readnoise_dict, scale_dict, abmag_zpt_dict, exptime_dict, detection_image,
+                                            dict_newTAB_matched2drz, 'daophot', os.getcwd(), rms_dict)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -653,15 +663,17 @@ def create_sourcelists(obs_info_dict, param_dict):
         # filter products
         totdet_product_cat_dict = {}
         filter_product_cat_dict = {}
+        filter_component_dict = {}
         totdet_product_cat_dict[obs_info_dict[tdp_keyname]['product filenames']['image']] = \
             obs_info_dict[tdp_keyname]['product filenames']['source catalog']
         for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
             filter_product_cat_dict[obs_info_dict[fp_keyname]['product filenames']['image']] = \
                 obs_info_dict[fp_keyname]['product filenames']['source catalog']
+            filter_component_dict[obs_info_dict[fp_keyname]['product filenames']['image']] = \
+                obs_info_dict[fp_keyname]['files']
 
         inst_det = "{} {}".format(obs_info_dict[tdp_keyname]['info'].split()[-2],
                                   obs_info_dict[tdp_keyname]['info'].split()[-1])
-
         # 1: Generate source extractor-like sourcelist(s)
         create_se_like_coordlists()
 
@@ -679,7 +691,9 @@ def create_sourcelists(obs_info_dict, param_dict):
             create_se_like_sourcelists()
 
             if dict_source_lists_filtered != None:
-                create_dao_like_sourcelists(dict_source_lists_filtered,img_name,inst_det,param_dict[inst_det],rms_dict)
+                create_dao_like_sourcelists(dict_source_lists_filtered,filter_component_dict,img_name,
+                                            obs_info_dict[tdp_keyname]['product filenames']['image'],inst_det,
+                                            param_dict[inst_det],rms_dict)
             else:
                 log.info("Empty coordinate file. DAO sourcelist {} NOT created.".format(sourcelist_name))
 
@@ -688,8 +702,8 @@ def create_sourcelists(obs_info_dict, param_dict):
 
 
 def daophot_process(all_drizzled_filelist, dict_source_lists_filtered, param_dict, readnoise_dictionary_drzs,
-                    scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis, working_dir, rms_dict, rms_image,
-                    ext=1, Verbose=True, WHT=False):
+                    scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis, working_dir, rms_dict, ext=1,
+                    Verbose=True, WHT=False):
     """
     This task will run the photometric calculations on a list of drizzled images. The coordinates for the sources are 
     found in the 'dict_source_lists_filtered' dictionary. This dictionary has keys that match the images inside '
@@ -725,10 +739,7 @@ def daophot_process(all_drizzled_filelist, dict_source_lists_filtered, param_dic
         
     rms_dict : dictionary
         dictionary of RMS values
-        
-    rms_image : string
-        **UNUSED** filename of the rms image.
-        
+
     config_file : string? 
         instrument-specific param file
     
