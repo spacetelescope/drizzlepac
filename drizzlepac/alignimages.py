@@ -61,8 +61,10 @@ detector_specific_params = {"acs": {"hrc": {"fwhmpsf": 0.152,  # 0.073
                                               "classify": True,
                                               "threshold": None}}}
 
-SEARCH_RELATIVE = {'radius': 250, 'tolerance': 2.0, 'separation':0.1, 'use2dhist':True}
-SEARCH_2DHIST = {'radius': 250, 'tolerance': 2.0, 'separation':0.1, 'use2dhist':True}
+SEARCH_RELATIVE = {'radius':75, 'blind_radius': 250, 'tolerance': 2.0, 
+                   'separation':0.1, 'use2dhist':True}
+SEARCH_2DHIST = {'radius':75, 'blind_radius': 250, 'tolerance': 2.0, 
+                 'separation':0.1, 'use2dhist':True}
 SEARCH_TOLERANCE = {'radius': 250, 'tolerance': 100.0, 'separation':0.1, 'use2dhist':False}
 
 log = logutil.create_logger('alignimages', level=logutil.logging.INFO, stream=sys.stdout)
@@ -703,10 +705,20 @@ def match_relative_fit(imglist, reference_catalog):
 
     """
     log.info("{} STEP 5b: (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
+    # Find out what WCS we are starting with...
+    wcsname = imglist[0].wcs.wcs.name
+    # Determine search radius to use based on initial WCS 
+    if '-' in wcsname:
+        # WCS updated with a priori or a posteriori solution
+        radius = SEARCH_RELATIVE['radius']
+    else:
+        # WCS is pipeline default with unknown pedigree, look for larger offsets
+        radius = SEARCH_RELATIVE['blind_radius']
+  
     # 0: Specify matching algorithm to use
-    match = tweakwcs.TPMatch(searchrad=SEARCH_RELATIVE['radius'], 
-                            separation=SEARCH_RELATIVE['separation'],  # 0.1, 
-                             tolerance=SEARCH_RELATIVE['tolerance'],  # 2,
+    match = tweakwcs.TPMatch(searchrad=radius, 
+                            separation=SEARCH_RELATIVE['separation'],
+                             tolerance=SEARCH_RELATIVE['tolerance'],
                              use2dhist=SEARCH_RELATIVE['use2dhist'])
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
     #                          tolerance=100, use2dhist=False)
@@ -787,10 +799,20 @@ def match_2dhist_fit(imglist, reference_catalog):
         List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
+    # Find out what WCS we are starting with...
+    wcsname = imglist[0].wcs.wcs.name
+    # Determine search radius to use based on initial WCS 
+    if '-' in wcsname:
+        # WCS updated with a priori or a posteriori solution
+        radius = SEARCH_2DHIST['radius']
+    else:
+        # WCS is pipeline default with unknown pedigree, look for larger offsets
+        radius = SEARCH_2DHIST['blind_radius']
+
     log.info("{} STEP 5b: (match_2dhist_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 28))
     # Specify matching algorithm to use
-    match = tweakwcs.TPMatch(searchrad=SEARCH_2DHIST['radius'],
+    match = tweakwcs.TPMatch(searchrad=radius,
                              separation=SEARCH_2DHIST['separation'],
                              tolerance=SEARCH_2DHIST['tolerance'], 
                              use2dhist=SEARCH_2DHIST['use2dhist'])
