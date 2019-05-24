@@ -261,7 +261,7 @@ def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, p
                     flag_value |= 1
 
                 row_split[-1] = '%d\n' % flag_value
-                table_row = string.join(row_split,',')
+                table_row = ','.join(row_split)
                 phot_table_out.write(table_row)
                 if ci_value == '':
                     failed_ci_table_out.write(table_row)
@@ -313,7 +313,7 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
     """
     for drizzled_image in all_drizzled_filelist:
         image_split = drizzled_image.split('/')[-1]
-        channel = Headers.return_detector(drizzled_image)
+        channel = drizzled_image.split("_")[-2] # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
 
         if channel == 'IR':
             continue
@@ -332,8 +332,7 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         main_drizzled_filelist = [drizzled_image]
         main_drizzled_filelist_orig = [drizzled_image]
 
-        drz_filter = Headers.return_filter_for_single_file(drizzled_image)
-
+        drz_filter = drizzled_image.split("_")[-1].replace(".fits","").lower() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
         list_of_flts_in_main_driz = filter_sorted_flt_dict[drz_filter.lower()]
         num_flts_in_main_driz = len(list_of_flts_in_main_driz)
         list_of_flts_in_main_driz.sort()
@@ -580,7 +579,7 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
                     row_split = table_row.split(',')
                     sat_flag = int(row_split[-1]) | 4
                     row_split[-1] = str(sat_flag)+'\n'
-                    table_row = string.join(row_split,',')
+                    table_row = ','.join(row_split)
                 phot_table_out.write(table_row)
 
             phot_table_out.close()
@@ -672,7 +671,7 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         phot_table_root = phot_table.split('/')[-1].split('.')[0]
 
         image_split = drizzled_image.split('/')[-1]
-        channel = Headers.return_detector(drizzled_image)
+        channel = drizzled_image.split("_")[-2].lower() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
 
         ap2 = param_dict['dao']['aperture_2']
         if proc_type not in ('sexphot', 'daophot'):
@@ -775,27 +774,27 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         lower_epp_limit = float(param_dict["swarm filter"]["lower_epp_limit"])
         eppsky_limit_cfg =float(param_dict["swarm filter"]["eppsky_limit"])
 
-        if string.upper(data_type) == 'UVIS':
+        if data_type.upper() == 'UVIS':
             eppsky_limit = eppsky_limit_cfg * median_sky
             selfradius = 20.0
 
-        if string.upper(data_type) == 'IR':
+        if data_type.upper() == 'IR':
             eppsky_limit = eppsky_limit_cfg * median_sky
             selfradius = 10.0
 
-        if string.upper(data_type) == 'WFC':#acs/wfc
+        if data_type.upper() == 'WFC':#acs/wfc
             eppsky_limit = eppsky_limit_cfg * median_sky
             selfradius = 20.0
 
-        if string.upper(data_type) == 'HRC':
+        if data_type.upper() == 'HRC':
             eppsky_limit = eppsky_limit_cfg * median_sky
             selfradius = 20.0 # JUST USING ACS/WFC VALUE. PROBABLY NEEDS TO BE OPTIMIZED FOR HRC.
 
-        if string.upper(data_type) == 'WFPC2':
+        if data_type.upper() == 'WFPC2':
             eppsky_limit = eppsky_limit_cfg * median_sky
             selfradius = 20.0 #JUST USING ACS/WFC VALUE PROBABLY NEEDS TO BE OPTIMIZED FOR WFPC2.
 
-        if string.upper(data_type) == 'PC':
+        if data_type.upper() == 'PC':
             eppsky_limit = eppsky_limit_cfg * median_sky
             selfradius = 20.0 #JUST USING ACS/WFC VALUE PROBABLY NEEDS TO BE OPTIMIZED FOR PC.
 
@@ -824,7 +823,7 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
             # -------------------------------------------
             # match initial central pixel list to itself
             # -------------------------------------------
-            if string.upper(data_type) == 'IR':
+            if data_type.upper() == 'IR':
 
                 # -------------------------------------------------------
                 # Define EPP cut values for filtering multiple detections
@@ -968,9 +967,9 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         # ==========================================================================
 
         swarm_thresh = float(param_dict["swarm filter"]["swarm_thresh"])
-        clip_radius_list = param_dict["swarm filter"]["clip_radius_list"].split(',')
+        clip_radius_list = param_dict["swarm filter"]["clip_radius_list"]
         clip_radius_list = list(map(float, clip_radius_list))
-        scale_factor_list = param_dict["swarm filter"]["scale_factor_list"].split(',')
+        scale_factor_list = param_dict["swarm filter"]["scale_factor_list"]
         scale_factor_list = list(map(float, scale_factor_list))
         log.info('SWARM FILTER CLIP_RADIUS_LIST: {}'.format(clip_radius_list))
         log.info('SWARM FILTER SCALE_FACTOR_LIST: {}'.format(scale_factor_list))
@@ -1301,7 +1300,7 @@ def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
     # ------------------
     for drizzled_image in all_drizzled_filelist:
         image_split = drizzled_image.split('/')[-1]
-        channel = Headers.return_detector(drizzled_image)
+        channel = drizzled_image.split("_")[-2] # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
 
         #if channel == 'IR':
         #    continue
@@ -1463,7 +1462,7 @@ def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
                 row_split = table_row.split(',')
                 nexp_flag = int(row_split[-1]) | 64
                 row_split[-1] = str(nexp_flag)+'\n'
-                table_row = string.join(row_split,',')
+                table_row = ','.join(row_split)
             phot_table_out.write(table_row)
 
         phot_table_out.close()
@@ -1503,7 +1502,7 @@ def get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict)
     component_drz_img_list = glob.glob(drz_root_dir+drz_img_split[0]+'*_drz.fits')
     component_drz_img_list.sort()
 
-    drz_filter = Headers.return_filter_for_single_file(drizzled_image)
+    drz_filter = drizzled_image.split("_")[-1].replace(".fits","").lower() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
     list_of_flts = filter_sorted_flt_dict[drz_filter.lower()]
     if len(list_of_flts) == len(component_drz_img_list):
         # length match means we use them all
