@@ -519,8 +519,22 @@ def create_dao_like_sourcelists(dict_source_lists_filtered,filter_sorted_flt_dic
     hla_flag_filter.run_source_list_flaging([img_name], os.getcwd(), filter_sorted_flt_dict, param_dict,
                                             readnoise_dict, scale_dict, abmag_zpt_dict, exptime_dict, detection_image,
                                             dict_newTAB_matched2drz, 'daophot', os.getcwd(), rms_dict)
-
-
+    # TODO: This bit of code still needs to be adapted. it's been converted. just have to make sure all the variables line up properly
+    reject_count = 0
+    for file in drz_list:
+        sgm_map = file.replace('_drz.fits', '_SGM_sex.fits')
+        sources = file.replace('_drz.fits', '_sexphot.txt')
+        if seg_rejection2(sgm_map, file, sources, big_island_only=True, max_biggest_source=0.05):
+            reject_count += 1
+    if reject_count == len(drz_list):
+        log.info("WARNING: all SE catalogs failed big island test, renaming to sexphot_failed.txt")
+        for file in drz_list:
+            sources = file.replace('_drz.fits', '_sexphot.txt')
+            os.rename(sources, sources.replace('_sexphot.txt', '_sexphot_failed.txt'))
+            log.info("{} -> {}".format(sources, sources.replace('_sexphot.txt', '_sexphot_failed.txt')))
+    elif reject_count > 0:
+        log.info("Warning: {} of {} SE catalogs failed big island test".format(reject_count, len(drz_list)))
+        log.info("WARNING: Because some passed the test, all are being kept")
 # ----------------------------------------------------------------------------------------------------------------------
 
 def Create_MedDivImage(whitelightimage):
