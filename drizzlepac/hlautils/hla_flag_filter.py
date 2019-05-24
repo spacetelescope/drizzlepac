@@ -39,7 +39,6 @@ import pdb
 import glob
 import time
 import shutil
-import exceptions
 import math
 import numpy
 import datetime
@@ -54,7 +53,7 @@ if not hasattr(pyfits,'__version__'):
 getheader = pyfits.getheader
 getdata = pyfits.getdata
 
-import pywcs
+# import pywcs
 from stwcs import wcsutil
 from scipy import spatial
 
@@ -66,21 +65,20 @@ __taskname__ = 'hla_flag_filter'
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
-config = configparser.ConfigParser()
-Configs=util.toolbox.Configs()
-Rename=util.toolbox.Rename()
-Headers=util.toolbox.Headers()
-Util = util.toolbox.Util()
+# config = configparser.ConfigParser()
+# Configs=util.toolbox.Configs()
+# Rename=util.toolbox.Rename()
+# Headers=util.toolbox.Headers()
+# Util = util.toolbox.Util()
 
 x_limit = 4096.
 y_limit = 2051.
 
 
 def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
-                            daofind_basic_param, readnoise_dictionary_drzs,
+                            param_dict, readnoise_dictionary_drzs,
                             scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
-                            detection_image, dict_newTAB_matched2drz, proc_type, config,
-                            drz_root_dir, rms_dict):
+                            detection_image, dict_newTAB_matched2drz, proc_type, drz_root_dir, rms_dict):
     """Simple calling subroutine that executes the other flagging subroutines.
     
     Parameters
@@ -94,8 +92,8 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     filter_sorted_flt_dict : dictionary
         dictionary containing lists of calibrated images sorted (also keyed) by filter name.
     
-    daofind_basic_param : list
-        list of parameters used by daofind. Values are fwhm, thresh, ap_diameter1, ap_diameter2.
+    param_dict : dictionary
+        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
     
     readnoise_dictionary_drzs : dictionary
         dictionary of readnoise values keyed by drizzled image.
@@ -117,10 +115,7 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     
     proc_type : string
         sourcelist generation type.
-    
-    config : object
-        contents of config file read in at start of hla_sourcelist.py run.
-    
+
     drz_root_dir : string
         Root directory of drizzled images.
     
@@ -138,26 +133,20 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     # -----------------------
     # FLAG FILTER PROCESSING
     # -----------------------
-    ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type,
-              config=config)
+    ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict)
 
-    HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
-                       daofind_basic_param, readnoise_dictionary_drzs,
-                       scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz,
-                       proc_type, config=config)
+    HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
+                       scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict)
 
-    HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red,
-                  exp_dictionary_scis, daofind_basic_param, filter_sorted_flt_dict,
-                  detection_image, proc_type, rms_dict, config=config)
+    HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
+                  filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict)
 
-    HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
-                 daofind_basic_param, readnoise_dictionary_drzs,
-                 scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz,
-                 drz_root_dir)
+    HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
+                 scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir)
 
 
 
-def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, config=config):
+def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
     It also flags sources below the detection limit in mag_aper2 (flag=8).
@@ -176,8 +165,8 @@ def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, p
     proc_type : string
         Sourcelist generation type
 
-    config : object
-        contents of config file read in at start of hla_sourcelist.py run.
+    param_dict : dictionary
+        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
     
     Returns
     -------
@@ -202,14 +191,14 @@ def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, p
         phot_table = dict_newTAB_matched2drz[drizzled_image]
         phot_table_root = phot_table.split('.')[0]
         if proc_type == 'sexphot':
-            ci_lower_limit = float(Configs.loadcfgs(config,'CI FILTER','ci_selower_limit'))
-            ci_upper_limit = float(Configs.loadcfgs(config,'CI FILTER','ci_seupper_limit'))
-            snr = float(Configs.loadcfgs(config,'SExtractor','bthresh'))
+            ci_lower_limit = float(param_dict['ci filter']['ci_selower_limit'])
+            ci_upper_limit = float(param_dict['ci filter']['ci_seupper_limit'])
+            snr = float(param_dict['sourcex']['bthresh'])
 
         if proc_type == 'daophot':
-            ci_lower_limit = float(Configs.loadcfgs(config, 'CI FILTER', 'ci_daolower_limit'))
-            ci_upper_limit = float(Configs.loadcfgs(config, 'CI FILTER', 'ci_daoupper_limit'))
-            snr = float(Configs.loadcfgs(config,'DAOFIND PARAMETERS','bthresh'))
+            ci_lower_limit = float(param_dict['ci filter']['ci_daolower_limit'])
+            ci_upper_limit = float(param_dict['ci filter']['ci_daoupper_limit'])
+            snr = float(param_dict['dao']['bthresh'])
 
 
         # replace CI limits with values from table if possible
@@ -284,10 +273,8 @@ def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, p
         os.system('mv '+phot_table_temp+' '+phot_table)
 
 
-def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
-                       daofind_basic_param, readnoise_dictionary_drzs,
-                       scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz,
-                       proc_type, config=config):
+def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
+                       scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict):
 
     """Identifies and flags saturated sources.
 
@@ -301,10 +288,7 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
     
     filter_sorted_flt_dict : dictionary
         dictionary containing lists of calibrated images sorted (also keyed) by filter name.
-    
-    daofind_basic_param : list
-        list of parameters used by daofind. Values are fwhm, thresh, ap_diameter1, ap_diameter2.
-    
+
     readnoise_dictionary_drzs : dictionary
         ***UNUSED*** dictionary of readnoise values keyed by drizzled image.
     
@@ -320,8 +304,8 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
     proc_type : string
         sourcelist generation type.
     
-    config : object
-        ***UNUSED*** contents of config file read in at start of hla_sourcelist.py run.
+    param_dict : dictionary
+        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
     
     Returns
     -------
@@ -504,7 +488,7 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         # ----------------------------------
         # Convert aperture radius to pixels
         # ----------------------------------
-        ap2 = daofind_basic_param[3]
+        ap2 = param_dict['dao']['aperture_2']
         if proc_type == 'daophot':
             if channel == 'IR':
                 radius = round((ap2 / 0.09) + 0.5) * 2.
@@ -609,9 +593,8 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
             log.info(' ')
             HLA_flag4and8_hunter_killer(phot_table)
 
-def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red,
-                  exp_dictionary_scis, daofind_basic_param, filter_sorted_flt_dict,
-                  detection_image, proc_type, rms_dict, config=config):
+def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
+                  filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict):
 
     """Identifies and flags swarm sources.
 
@@ -628,10 +611,7 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
     
     exp_dictionary_scis : dictionary
         dictionary of exposure time values keyed by drizzled image.
-    
-    daofind_basic_param : list
-        list of parameters used by daofind. Values are fwhm, thresh, ap_diameter1, ap_diameter2.
-    
+
     filter_sorted_flt_dict : dictionary
         dictionary containing lists of calibrated images sorted (also keyed) by filter name.
     
@@ -644,8 +624,8 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
     rms_dict : dictionary
         dictionary of RMS image counterparts to drizzled images. Keyed by drizzled image name.
     
-    config : object
-        contents of config file read in at start of hla_sourcelist.py run.
+    param_dict : dictionary
+        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
     
     Returns
     -------
@@ -694,17 +674,17 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         image_split = drizzled_image.split('/')[-1]
         channel = Headers.return_detector(drizzled_image)
 
-        ap2 = daofind_basic_param[3]
+        ap2 = param_dict['dao']['aperture_2']
         if proc_type not in ('sexphot', 'daophot'):
             raise ValueError("Unknown catalog type '%s'" % proc_type)
 
         # ----------------------------------
         # Convert aperture radius to pixels
         # ----------------------------------
-        radius = ap2 / float(Configs.loadcfgs(config, "ASTRODRIZZLE PARAMETERS", "PIXSCALE"))
+        radius = ap2 / float(param_dict['astrodrizzle']['SCALE'])
         log.info(' ')
         log.info('Aperture Size = {}'.format(ap2))
-        log.info('Pixel Scale = {}'.format(Configs.loadcfgs(config, "ASTRODRIZZLE PARAMETERS", "PIXSCALE"),' arcsec per pixel'))
+        log.info('Pixel Scale = {} arcsec per pixel'.format(float(param_dict['astrodrizzle']['SCALE'])))
         log.info(' ')
         area = math.pi * radius**2
         exptime = exp_dictionary_scis[drizzled_image]
@@ -791,9 +771,9 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         # ----------------------------------------------------------------------
         # ----------------------------------------------------------------------
         # ======================================================================
-        upper_epp_limit = float(Configs.loadcfgs(config, "SWARM FILTER", "upper_epp_limit"))
-        lower_epp_limit = float(Configs.loadcfgs(config, "SWARM FILTER", "lower_epp_limit"))
-        eppsky_limit_cfg = float(Configs.loadcfgs(config, "SWARM FILTER", "eppsky_limit"))
+        upper_epp_limit = float(param_dict["swarm filter"]["upper_epp_limit"])
+        lower_epp_limit = float(param_dict["swarm filter"]["lower_epp_limit"])
+        eppsky_limit_cfg =float(param_dict["swarm filter"]["eppsky_limit"])
 
         if string.upper(data_type) == 'UVIS':
             eppsky_limit = eppsky_limit_cfg * median_sky
@@ -987,10 +967,10 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         # --------------------------------------------------------------------------
         # ==========================================================================
 
-        swarm_thresh = float(Configs.loadcfgs(config, "SWARM FILTER", "swarm_thresh"))
-        clip_radius_list = Configs.loadcfgs(config, "SWARM FILTER", "clip_radius_list").split(',')
+        swarm_thresh = float(param_dict["swarm filter"]["swarm_thresh"])
+        clip_radius_list = param_dict["swarm filter"]["clip_radius_list"].split(',')
         clip_radius_list = list(map(float, clip_radius_list))
-        scale_factor_list = Configs.loadcfgs(config, "SWARM FILTER", "scale_factor_list").split(',')
+        scale_factor_list = param_dict["swarm filter"]["scale_factor_list"].split(',')
         scale_factor_list = list(map(float, scale_factor_list))
         log.info('SWARM FILTER CLIP_RADIUS_LIST: {}'.format(clip_radius_list))
         log.info('SWARM FILTER SCALE_FACTOR_LIST: {}'.format(scale_factor_list))
@@ -1149,7 +1129,7 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
 
         proximity_flag = numpy.zeros(nrows, dtype=bool)
 
-        proximity_choice = Configs.loadcfgs(config, "SWARM FILTER", "proximity_binary")
+        proximity_choice = param_dict["swarm filter"]["proximity_binary"]
 
         if proximity_choice == 'yes':
             if len(final_flag_src_central_pixel_list) > 0:
@@ -1281,10 +1261,8 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
 
 
 
-def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
-                 daofind_basic_param, readnoise_dictionary_drzs,
-                 scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz,
-                 drz_root_dir):
+def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
+                 scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
     all_drizzled_filelist : list
@@ -1296,8 +1274,8 @@ def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
     filter_sorted_flt_dict : dictionary
         dictionary containing lists of calibrated images sorted (also keyed) by filter name.
 
-    daofind_basic_param : list
-        list of parameters used by daofind. Values are fwhm, thresh, ap_diameter1, ap_diameter2.
+    param_dict : dictionary
+        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
 
     readnoise_dictionary_drzs : dictionary
         ***UNUSED*** dictionary of readnoise values keyed by drizzled image.
@@ -1410,7 +1388,7 @@ def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
         # Convert aperture radius to pixels
         # ----------------------------------
 
-        ap2 = daofind_basic_param[3]
+        ap2 = param_dict['dao']['aperture_2']
 
         if channel == 'IR':
             radius = ap2 / 0.09
