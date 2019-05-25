@@ -18,6 +18,9 @@ of the list).
 3.0.2 (unreleased)
 ==================
 
+- Fixed a compatibility issue in ``tweakutils`` that would result in crash in
+  ``skytopix`` when converting coordinates in ``hms`` format. [#385]
+
 - Fixed a bug in the ``astrodrizzle.sky`` module due to which sky matching
   fails with "Keyword 'MDRIZSKY' not found" error when some of the
   input images do not overlap at all with the other images. [#380]
