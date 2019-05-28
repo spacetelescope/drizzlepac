@@ -567,7 +567,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         break
             # break out of outer fit algorithm loop
             # either with a fit_rms < 10 or a 'valid' relative fit
-            if fit_quality == 1 or (fit_quality < 5 and
+            if fit_quality == 1 or (0 < fit_quality < 5 and
                 "relative" in algorithm_name.__name__):  
                 break
 
