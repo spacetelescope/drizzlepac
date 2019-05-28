@@ -935,7 +935,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
             fit_status_dict[dict_key]['compromised'] = False
             fit_status_dict[dict_key]['reason'] = "Radial offset value too large!"
         elif not nmatches_check:  # Too few matches
-            fit_status_dict[dict_key]['valid'] = True
+            fit_status_dict[dict_key]['valid'] = False
             fit_status_dict[dict_key]['compromised'] = True
             fit_status_dict[dict_key]['reason'] = "Too few matches!"
         else:  # all checks passed. Valid solution.
