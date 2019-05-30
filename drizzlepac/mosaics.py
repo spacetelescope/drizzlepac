@@ -63,12 +63,14 @@ class Product(object):
         self._define_members()
 
         # define product name
-        proposal_id = obs_info[0]
-        visit_id = obs_info[1]
-        instrument = obs_info[2]
-        detector = obs_info[3]
+        self.proposal_id = obs_info[0]
+        self.visit_id = obs_info[1]
+        self.instrument = obs_info[2]
+        self.detector = obs_info[3]
+        self.obs_date = None  # need to define this somehow...
 
         self.basename = "hst_{}_{}_{}_{}.fits".format(proposal_id, visit_id, instrument, detector)
+        self.cellname_fmt = "cell_{}_hst_{}_{}_{}.fits"
 
     def _define_exposures(self):
         """Define exposures attributes of Product."""
@@ -115,15 +117,10 @@ class Product(object):
         pass
 
     def populate_cell(self):
-        """Identify sky cell this product overlaps and create new sky cell
-        based on exposures.
-        """
-        # call function to identify sky cell mosaic_wcs overlaps.
-        # run astrodrizzle on self.exposures with output WCS defined by cell WCS
-        # output will be defined by self
+        """Only to be defined for sub-classes."""
         pass
 
-    def process_members(self, mosaic=True, cell=True):
+    def process_members(self, mosaic=True):
         """Generate additional products defined for this obset"""
         for member in self.members:
             if mosaic:
@@ -138,12 +135,17 @@ class Mosaic(Product):
         self.mosaic_wcs = mosaic_wcs
 
         # Now define product level product name
-        proposal_id = obs_info[0]
-        visit_id = obs_info[1]
-        instrument = obs_info[2]
-        detector = obs_info[3]
-        filter = obs_info[4]
-        self.basename = "hst_{}_{}_{}_{}_{}.fits".format(proposal_id,visit_id,instrument,detector,filter)
+        self.proposal_id = obs_info[0]
+        self.visit_id = obs_info[1]
+        self.instrument = obs_info[2]
+        self.detector = obs_info[3]
+        self.filter = obs_info[4]
+        self.basename = "hst_{}_{}_{}_{}_{}.fits".format(self.proposal_id,
+                                                         self.visit_id,
+                                                         self.instrument,
+                                                         self.detector,
+                                                         self.filter)
+        self.cellname_fmt = "cell_{}_hst_{}_{}_{}_{}.fits"
 
     def generate_mosaic(self):
         """Create mosaic product based on input mosaic_wcs"""
@@ -153,7 +155,27 @@ class Mosaic(Product):
         # create source catalog from product
         pass
 
+    def populate_cell(self):
+        """Identify sky cell this product overlaps and create new sky cell
+        based on exposures.
+        """
+        # call function to identify sky cell mosaic_wcs overlaps.
 
+        # For each cell this mosaic overlaps,
+        # define cell name using cell ID
+        #cellname = self.cellname_fmt.format(cell_id,
+        #                                     self.instrument,
+        #                                     self.detector,
+        #                                     self.filter,
+        #                                     self.obs_date)
+        #
+        # run astrodrizzle on self.exposures with output WCS defined by cell WCS
+        # with 'output=cellname'
+        pass
+
+#
+# Classes which define the total product
+#
 class ACSWFCProduct(Product):
     plate_scale=0.05
 
@@ -185,6 +207,9 @@ class WFC3IRProduct(Product):
     def __init__(self, exposures, info):
         super().__init__(exposures, info)
 
+#
+# Sub-classes which define the filter products, both mosaics and cells
+#
 class ACSWFCMosaic(Mosaic):
     plate_scale=0.05
 
@@ -216,6 +241,11 @@ class WFC3IRMosaic(Mosaic):
     def __init__(self, exposures, info, mosaic_wcs):
         super().__init__(exposures, info, mosaic_wcs=mosaic_wcs)
 
+#
+#
+# Primary user interface for processing an obset
+#
+#
 def process_obset(obs_info, mosaic=True, cell=True):
 
     # find total product, regardless of exact label
