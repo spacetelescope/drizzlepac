@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 """Utility to create the Sextractor-like source catalog using PhotUtils
 
-The function, create_astrometric_catalog, allows the user to query an
-astrometric catalog online to generate a catalog of astrometric sources that
-should fall within the field-of-view of all the input images.
+The function, create_sextractor_like_sourcelists, processes the provided
+input file (presumptively a drizzled, white-light image) looking for sources.
+A segmentation map and the total detection product catalog are the critical 
+outputs of this routine.
 
-This module relies on the definition of an environment variable to specify
-the URL of the astrometric catalog to use for generating this
-reference catalog. ::
-
-    ASTROMETRIC_CATALOG_URL  -- URL of web service that can be queried to
-                                obtain listing of astrometric sources,
-                                sky coordinates, and magnitudes.
+The function, measure_source_properties, uses the segmentation map generated
+by create_sextractor_like_sourcelists, and tries to measure various properties
+of the objects at the location of the found sources.  The measurements are
+done in the drizzled, specific filter images of the visit. The filter product
+is the output of the routine.
 
 """
 import sys
@@ -35,11 +34,9 @@ from stsci.tools import logutil
 
 __taskname__ = 'se_source_generation'
 
-
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
-
-# _all__ = ['run_photutils', 'create_sextractor_like_sourcelists', classify_sources']
+_all__ = ['create_sextractor_like_sourcelists', 'measure_source_properties']
 
 # def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_dict, se_debug=False):
 def create_sextractor_like_sourcelists(source_filename, catalog_filename, se_debug=False):
