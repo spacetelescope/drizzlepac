@@ -519,22 +519,6 @@ def create_dao_like_sourcelists(dict_source_lists_filtered,filter_sorted_flt_dic
     hla_flag_filter.run_source_list_flaging([img_name], os.getcwd(), filter_sorted_flt_dict, param_dict,
                                             readnoise_dict, scale_dict, abmag_zpt_dict, exptime_dict, detection_image,
                                             dict_newTAB_matched2drz, 'daophot', os.getcwd(), rms_dict)
-    # TODO: This bit of code still needs to be adapted. it's been converted. just have to make sure all the variables line up properly
-    reject_count = 0
-    for file in drz_list:
-        sgm_map = file.replace('_drz.fits', '_SGM_sex.fits')
-        sources = file.replace('_drz.fits', '_sexphot.txt')
-        if seg_rejection2(sgm_map, file, sources, big_island_only=True, max_biggest_source=0.05):
-            reject_count += 1
-    if reject_count == len(drz_list):
-        log.info("WARNING: all SE catalogs failed big island test, renaming to sexphot_failed.txt")
-        for file in drz_list:
-            sources = file.replace('_drz.fits', '_sexphot.txt')
-            os.rename(sources, sources.replace('_sexphot.txt', '_sexphot_failed.txt'))
-            log.info("{} -> {}".format(sources, sources.replace('_sexphot.txt', '_sexphot_failed.txt')))
-    elif reject_count > 0:
-        log.info("Warning: {} of {} SE catalogs failed big island test".format(reject_count, len(drz_list)))
-        log.info("WARNING: Because some passed the test, all are being kept")
 # ----------------------------------------------------------------------------------------------------------------------
 
 def Create_MedDivImage(whitelightimage):
@@ -1753,82 +1737,6 @@ def run_DAOStarFinder(imgName,outFilename,daoParams,debug=False):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def seg_rejection2(seg_map, file, sources, big_island_only=False, plotit=False, max_biggest_source=0.015,
-                   max_source_frac=0.075):
-    """Identify situations where the largest source exceeds a user-specified fraction of all image pixels and / or
-    situations were the total source fraction exceeds a user-specified fraction of the image (aka 'big islands')
-
-    Parameters
-    ----------
-    seg_map : string
-        name of segmentation map fits file.
-
-    file : string
-        filename of the white light image
-
-    sources : string
-        Source Extractor .cat catalog filename
-
-    big_island_only : Boolean
-        Test for 'big island' situations only? (True/False) Default value is False.
-
-    plotit : Boolean
-        Generate plot? (True/False) Default value is False.
-
-    max_biggest_source : float
-        maximum limit. Default value is 0.015
-
-    max_source_frac : float
-        max source fraction. Default value is 0.075.
-
-    Returns
-    -------
-    rv : Boolean
-        True/False value indicating if the largest source or the total combination of all detected sources took up an
-        abnormally high portion of the image (aka 'big islands').
-    """
-    seg_data = fits.getdata(seg_map)
-    nbins = seg_data.max()
-    log.info("NUMBER OF SOURCES FROM SEGMENTATION MAP: {}".format(nbins))
-    log.info("{} {} {}".format(seg_map, file, sources))
-
-    if nbins == 0:
-        return False
-
-    n, binedges = numpy.histogram(seg_data, range=(1, nbins))
-    real_pixels = (fits.getdata(file, ext=1) != 0).sum()
-
-    if plotit:
-        ax = subplot(211)
-        ax.bar(binedges[:-1], n, 1., ec='b')
-        ax.set_xlim(0, nbins)
-        ax2 = subplot(212)
-        # ax2.bar(binedges[:-1],n/float(sum(n)),1.,ec='b')
-        ax2.bar(binedges[:-1], n / float(real_pixels), 1., ec='b')
-        ax2.set_xlim(0, nbins)
-        ax.set_ylabel('N_pix')
-        ax2.set_ylabel('Fraction of pixels')
-        ax2.set_xlabel('Segmentation Source')
-        savefig(seg_map.replace('_sex.fits', '_sex.png'))
-
-    rv = False
-    biggest_source = n.max() / float(real_pixels)
-    log.info("biggest_source: {}".format(biggest_source))
-    if biggest_source > max_biggest_source:
-        log.info("Biggest source %.4f percent exceeds %f percent of the image" % (
-        100.0 * biggest_source, 100.0 * max_biggest_source))
-        rv = True
-    if big_island_only == False:
-        source_frac = n.sum() / float(real_pixels)
-        log.info("Source_frac: {}".format(source_frac))
-        if source_frac > max_source_frac:
-            log.info("Total source fraction %.4f percent exceeds %f percent of the image" % (
-            100.0 * source_frac, 100.0 * max_source_frac))
-            rv = True
-    return rv
-
-
-# ----------------------------------------------------------------------------------------------------------------------
 def stwcs_get_scale(listofimages):
     """
     This task will grab the arcsec/pixel scale for HST data from the WCS information of the header.
