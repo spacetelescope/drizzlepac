@@ -22,7 +22,10 @@ try:
 except Exception:
     plt = None
 
+import astropy.units as u
+from astropy.io import ascii
 from astropy.io import fits as fits
+from astropy.table import Column
 from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel
 from astropy.stats import gaussian_fwhm_to_sigma
 import photutils
@@ -70,9 +73,6 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, se_deb
         A background map based upon the `~photutils.background.SExtractorBackground`
         estimator
 
-    bkg_rms : float
-        N times the bkg.background_rms where N = 5 FIX
-
     bkg_rms_mean : float
         Mean bkg.background FIX
 
@@ -91,9 +91,12 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, se_deb
     # fwhm = float(param_dict['sourcex']['fwhm'])
     # size_source_box = float(param_dict['sourcex']['source_box'])
     # threshold = float(param_dict['sourcex']['threshold'])
-    fwhm = 0.073
+    # fwhm = 0.073
+    # size_source_box = 7
+    # threshold = 1.4
+    fwhm = 0.25
     size_source_box = 7
-    threshold = 1.4
+    threshold = None
 
     # Report configuration values to log
     log.info('====================')
@@ -110,7 +113,7 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, se_deb
     kernel_list = [Gaussian2DKernel, MexicanHat2DKernel]
     kernel_in_use = kernel_list[0]
 
-    bkg, bkg_rms, bkg_dao_rms, threshold = compute_background(imgarr, threshold=threshold)
+    bkg, bkg_dao_rms, threshold = compute_background(imgarr, threshold=threshold)
 
     # FIX imgarr should be background subtracted, sextractor uses the filtered_data image
     imgarr_bkgsub = imgarr - bkg.background
@@ -125,8 +128,6 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, se_deb
     # Source segmentation/extraction
     # If the threshold includes the background level, then the input image
     # should NOT be background subtracted.
-    # FIX: This currently generates a bad: detect.py:132: RuntimeWarning: invalid value
-    # encountered in greater check_normalization=True) > threshold)
     print('Threshold: {}'.format(threshold))
     segm = detect_sources(imgarr, threshold, npixels=size_source_box,
                           filter_kernel=kernel)
@@ -136,12 +137,9 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, se_deb
         # Write out a catalog which can be used as an overlay for image in ds9
         cat = source_properties(imgarr_bkgsub, segm, filter_kernel=kernel, wcs=imgwcs)
         table = cat.to_table()
-        cnames = table.colnames
 
-        # Move `id` column from the first to the last column for ds9
-        cnames.append(cnames[0])
-        del cnames[0]
-        tbl = table[cnames[0:2]]
+        # Copy out only the X and Y coordinates to a "debug table" 
+        tbl = table['xcentroid', 'ycentroid']
 
         # Construct the debug output filename and write the catalog
         indx = catalog_filename.find('ecsv')
@@ -152,8 +150,8 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, se_deb
         tbl.write(outname, format='ascii.commented_header')
         log.info("Wrote debug source catalog: {}".format(outname))
 
-        """
         # Generate a graphic of the image and the segmented image
+        """
         norm = ImageNormalize(stretch=SqrtStretch())
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12.5))
         ax1.imshow(imgarr, origin='lower', cmap='Greys_r', norm=norm)
@@ -168,22 +166,21 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, se_deb
     # segmentation. Sextractor uses a multi-thresholding technique.
     # npixels = number of connected pixels in source
     # npixels and filter_kernel should match those used by detect_sources()
-    # segm = deblend_sources(imgarr, segm, npixels=size_source_box,
-    #                       filter_kernel=kernel, nlevels=16,
-    #                       contrast=0.01)
-    # print('after deblend. ', segm)
-
-    # Modify the segmentation map to clean out possible cosmic rays
-    # Should imgarr be imgarr_bkg here?
-    segm = modify_segmentation_map(imgarr_bkgsub, segm, kernel)
+    segm = deblend_sources(imgarr, segm, npixels=size_source_box,
+                           filter_kernel=kernel, nlevels=16,
+                           contrast=0.01)
+    print('after deblend. ', segm)
 
     # Regenerate the source catalog with presumably now only good sources
     seg_cat = source_properties(imgarr_bkgsub, segm, filter_kernel=kernel, wcs=imgwcs)
+
+    write_catalog(seg_cat, catalog_filename)
+
+    """
     seg_table = seg_cat.to_table()
     radec_data = seg_table['sky_centroid_icrs']
     ra_icrs = radec_data.ra.degree
     dec_icrs = radec_data.dec.degree
-    print('seg_table (white): ', seg_table)
 
     # Construct a table with every value in its own column, rename columns to
     # map to SExtractor output, and possibly only write out a subset of all
@@ -191,25 +188,31 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, se_deb
     #
     # [x|y]centroid are in pixels, physical data coordinates
     seg_subset_table = seg_table['xcentroid', 'ycentroid']
+    seg_subset_table.rename_column('xcentroid', 'x_image')
+    seg_subset_table.rename_column('ycentroid', 'y_image')
     # RA and Dec are decimal degrees ICRS
     seg_subset_table['RA_icrs'] = ra_icrs
     seg_subset_table['Dec_icrs'] = dec_icrs
 
     # Write out the official total detection product source catalog
-    seg_subset_table['xcentroid'].info.format = '.10f'
-    seg_subset_table['ycentroid'].info.format = '.10f'
+    seg_subset_table['x_image'].info.format = '.10f'
+    seg_subset_table['y_image'].info.format = '.10f'
     seg_subset_table['RA_icrs'].info.format = '.10f'
     seg_subset_table['Dec_icrs'].info.format = '.10f'
+    seg_subset_table['RA_icrs'].unit = u.deg
+    seg_subset_table['Dec_icrs'].unit = u.deg
+    print('seg_subset_table (white): ', seg_subset_table)
 
-    seg_subset_table.write(catalog_filename, format='ascii.commented_header')
+    seg_subset_table.write(catalog_filename, format='ascii.ecsv')
     log.info("Wrote source catalog: {}".format(catalog_filename))
+    """
 
     # FIX: All of these may not be needed so clean up
-    return segm, kernel, bkg, bkg_rms, bkg_dao_rms
+    return segm, kernel, bkg, bkg_dao_rms, imgarr_bkgsub
 
 
 # def measure_source_properties(segm, kernel, source_filename, catalog_filename, param_dict):
-def measure_source_properties(segm, kernel, source_filename, catalog_filename):
+def measure_source_properties(segm, imgarr_bkgsub, kernel, source_filename, catalog_filename):
     """Use the positions of the sources identified in the white light image to
     measure properties of these sources in the filter images
 
@@ -256,9 +259,12 @@ def measure_source_properties(segm, kernel, source_filename, catalog_filename):
     # fwhm = float(param_dict['sourcex']['fwhm'])
     # size_source_box = float(param_dict['sourcex']['source_box'])
     # threshold = float(param_dict['sourcex']['threshold'])
-    fwhm = 0.073
+    # fwhm = 0.073
+    # size_source_box = 7
+    # threshold = 1.4
+    fwhm = 0.25
     size_source_box = 7
-    threshold = 1.4
+    threshold = None
 
     # Report configuration values to log
     log.info('====================')
@@ -272,12 +278,16 @@ def measure_source_properties(segm, kernel, source_filename, catalog_filename):
     log.info('====================')
 
     # The data needs to be background subtracted when computing the source properties
-    bkg, _, _, _ = compute_background(imgarr, threshold=threshold)
-    imgarr_bkgsub = imgarr - bkg.background
+    bkg, _, _ = compute_background(imgarr, threshold=threshold)
+    imgarr_bkgsubX = imgarr - bkg.background
 
     # Compute source properties...
-    seg_cat = source_properties(imgarr_bkgsub, segm, filter_kernel=kernel, wcs=imgwcs)
+    seg_cat = source_properties(imgarr_bkgsubX, segm, filter_kernel=kernel, wcs=imgwcs)
 
+    # Write the source catalog
+    write_catalog(seg_cat, catalog_filename, product='fdp')
+
+    """
     # ...and convert the output to a table
     seg_table = seg_cat.to_table()
     radec_data = seg_table['sky_centroid_icrs']
@@ -285,10 +295,13 @@ def measure_source_properties(segm, kernel, source_filename, catalog_filename):
     dec_icrs = radec_data.dec.degree
 
     # RA and Dec are decimal degrees ICRS
+    del seg_table['id']
     del seg_table['sky_centroid']
     del seg_table['sky_centroid_icrs']
-    seg_table['RA_icrs'] = ra_icrs
-    seg_table['Dec_icrs'] = dec_icrs
+    rr = Column(ra_icrs, name='RA_icrs')
+    dd = Column(dec_icrs, name='Dec_icrs')
+    seg_table.add_column(dd, index=2)
+    seg_table.add_column(rr, index=2)
 
     # Rename column names to be more consistent with Sextractor column names
     seg_table.rename_column('xcentroid', 'x_image')
@@ -308,24 +321,33 @@ def measure_source_properties(segm, kernel, source_filename, catalog_filename):
     seg_table['y_image'].info.format = '.10f'
     seg_table['RA_icrs'].info.format = '.10f'
     seg_table['Dec_icrs'].info.format = '.10f'
+    seg_table['RA_icrs'].unit = u.deg
+    seg_table['Dec_icrs'].unit =  u.deg
     print('seg_table (filter): {}'.format(seg_table))
 
-    seg_table.write(catalog_filename, format='ascii.commented_header')
+    seg_table.write(catalog_filename, format='ascii.ecsv')
     log.info("Wrote filter source catalog: {}".format(catalog_filename))
+    """
 
 
 def compute_background(image, threshold=None):
+
+    # SExtractorBackground ans StdBackgroundRMS are the defaults
     bkg_estimator = SExtractorBackground()
     bkgrms_estimator = StdBackgroundRMS()
     bkg = None
     bkg_dao_rms = None
 
+    # Size of box along each axis
+    box_size = 50
+    # Window size of the 2D filter to apply to the background image
+    win_size = 3
     exclude_percentiles = [10, 25, 50, 75]
     for percentile in exclude_percentiles:
         log.info("Percentile in use: {}".format(percentile))
         try:
-            bkg = Background2D(image, (50, 50),
-                               filter_size=(3, 3),
+            bkg = Background2D(image, box_size,
+                               filter_size=win_size,
                                bkg_estimator=bkg_estimator,
                                bkgrms_estimator=bkgrms_estimator,
                                exclude_percentile=percentile,
@@ -335,10 +357,10 @@ def compute_background(image, threshold=None):
             continue
 
         if bkg is not None:
-            # If it succeeds, stop and use that value
-            bkg_rms = (5. * bkg.background_rms)
-            bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
+            # Set the bkg_rms at 5 sigma above background
+            bkg_rms = 5. * bkg.background_rms
             default_threshold = bkg.background + bkg_rms
+            bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
             bkg_dao_rms = bkg.background_rms
             if threshold is None:
                 threshold = default_threshold
@@ -352,96 +374,113 @@ def compute_background(image, threshold=None):
             if bkg_rms_mean < 0:
                 bkg_rms_mean = 0.
             break
+    print("compute. mean bkg: ",bkg.background.mean(), default_threshold.mean())
 
     # If Background2D does not work at all, define default scalar values for
     # the background to be used in source identification
     if bkg is None:
         bkg_rms_mean = max(0.01, image.min())
-        bkg_rms = bkg_rms_mean * 5
+        bkg_rms = 5. * bkg_rms_mean
         bkg_dao_rms = bkg_rms_mean
+        threshold = bkg_rms_mean + bkg_rms
 
-    return bkg, bkg_rms, bkg_dao_rms, threshold
+    return bkg, bkg_dao_rms, threshold
 
-def modify_segmentation_map(image, segm, kernel):
-    cat = source_properties(image, segm, filter_kernel=kernel)
-    if len(cat) > 0:
-        print('Original length of catalog: ', segm.nlabels)
-        # Remove likely cosmic-rays based on central_moments classification
-        bad_srcs = np.where(classify_sources(cat) == 0)[0] + 1
+def write_catalog(seg_cat, catalog_filename, product='tdp'):
 
-        if LooseVersion(photutils.__version__) >= '0.7':
-            segm.remove_labels(bad_srcs)
-        else:
-            # this is the photutils >= 0.7 fast code for removing labels
-            segm.check_labels(bad_srcs)
-            bad_srcs = np.atleast_1d(bad_srcs)
-            if len(bad_srcs) != 0:
-                idx = np.zeros(segm.max_label + 1, dtype=int)
-                idx[segm.labels] = segm.labels
-                idx[bad_srcs] = 0
-                segm.data = idx[segm.data]
+    # Convert the list of SourceProperties objects to a QTable and
+    # manipulate and rename columns to match SExtractor output
+    seg_table = seg_cat.to_table()
+    radec_data = seg_table['sky_centroid_icrs']
+    ra_icrs = radec_data.ra.degree
+    dec_icrs = radec_data.dec.degree
 
-        print('Modified length of catalog: ', segm.nlabels)
-    return segm
+    # If the output is for the total detection product, then only
+    # a subset of the full catalog is needed.
+    if product.lower() == 'tdp':
 
-def classify_sources(catalog, sources=None):
-    """ Convert moments_central attribute for source catalog into star/cr flag.
+        # [x|y]centroid are in pixels, physical data coordinates
+        seg_subset_table = seg_table['xcentroid', 'ycentroid']
+        seg_subset_table.rename_column('xcentroid', 'x_image')
+        seg_subset_table.rename_column('ycentroid', 'y_image')
+        seg_subset_table['RA_icrs'] = ra_icrs
+        seg_subset_table['Dec_icrs'] = dec_icrs
 
-    This algorithm interprets the central_moments from the source_properties
-    generated for the sources as more-likely a star or a cosmic-ray.  It is not
-    intended or expected to be precise, merely a means of making a first cut at
-    removing likely cosmic-rays or other artifacts.
+        # Write out the official total detection product source catalog
+        seg_subset_table['x_image'].info.format = '.10f'
+        seg_subset_table['y_image'].info.format = '.10f'
+        seg_subset_table['RA_icrs'].info.format = '.10f'
+        seg_subset_table['Dec_icrs'].info.format = '.10f'
+        seg_subset_table['RA_icrs'].unit = u.deg
+        seg_subset_table['Dec_icrs'].unit = u.deg
+        print('seg_subset_table (white): ', seg_subset_table)
 
-    Parameters
-    ----------
-    catalog : `~photutils.SourceCatalog`
-        The photutils catalog for the image/chip.
+        seg_subset_table.write(catalog_filename, format='ascii.ecsv')
+        log.info("Wrote source catalog: {}".format(catalog_filename))
 
-    sources : tuple
-        Range of objects from catalog to process as a tuple of (min, max).
-        If None (default) all sources are processed.
+    else:
 
-    Returns
-    -------
-    srctype : ndarray
-        An ndarray where a value of 1 indicates a likely valid, non-cosmic-ray
-        source, and a value of 0 indicates a likely cosmic-ray.
-    """
-    moments = catalog.moments_central
-    if sources is None:
-        sources = (0, len(moments))
-    num_sources = sources[1] - sources[0]
-    srctype = np.zeros((num_sources,), np.int32)
-    for src in range(sources[0], sources[1]):
-        # Protect against spurious detections
-        src_x = catalog[src].xcentroid
-        src_y = catalog[src].ycentroid
-        if np.isnan(src_x) or np.isnan(src_y):
-            continue
-        x, y = np.where(moments[src] == moments[src].max())
-        if (x[0] > 1) and (y[0] > 1):
-            srctype[src] = 1
+        # Rework the current table for output
+        del seg_table['id']
+        del seg_table['sky_centroid']
+        del seg_table['sky_centroid_icrs']
+        rr = Column(ra_icrs, name='RA_icrs')
+        dd = Column(dec_icrs, name='Dec_icrs')
+        seg_table.add_column(dd, index=2)
+        seg_table.add_column(rr, index=2)
 
-    return srctype
+        # Rename column names to be more consistent with Sextractor column names
+        seg_table.rename_column('xcentroid', 'x_image')
+        seg_table.rename_column('ycentroid', 'y_image')
+        seg_table.rename_column('background_at_centroid', 'background')
+        seg_table.rename_column('source_sum', 'flux')
+        seg_table.rename_column('source_sum_err', 'flux_err')
+        seg_table.rename_column('cxx', 'cxx_image')
+        seg_table.rename_column('cxy', 'cxy_image')
+        seg_table.rename_column('cyy', 'cyy_image')
+        seg_table.rename_column('covar_sigx2', 'x2_image')
+        seg_table.rename_column('covar_sigy2', 'y2_image')
+        seg_table.rename_column('covar_sigxy', 'xy_image')
+
+        # Write out the official total detection product source catalog
+        seg_table['x_image'].info.format = '.10f'
+        seg_table['y_image'].info.format = '.10f'
+        seg_table['RA_icrs'].info.format = '.10f'
+        seg_table['Dec_icrs'].info.format = '.10f'
+        seg_table['RA_icrs'].unit = u.deg
+        seg_table['Dec_icrs'].unit =  u.deg
+        print('seg_table (filter): {}'.format(seg_table))
+
+        seg_table.write(catalog_filename, format='ascii.ecsv')
+        log.info("Wrote filter source catalog: {}".format(catalog_filename))
 
 def run_photutils():
 
-    white_light_filename = "j92c01010_drc.fits"
+    # white_light_filename = "j92c01010_drc.fits"
+    white_light_filename = "hst_11150_70_wfc3_ir_total_ia1s70_drz.fits"
+    tdp_catalog_filename = "hst_11150_70_wfc3_ir_total_ia1s70_segment-cat.ecsv"
+    fp_filename_1 = "hst_11150_70_wfc3_ir_f110w_ia1s70_drz.fits"
+    fp_catalog_filename_1 = "hst_11150_70_wfc3_ir_f110w_ia1s70_segment-cat.ecsv"
+    fp_filename_2 = "hst_11150_70_wfc3_ir_f160w_ia1s70_drz.fits"
+    fp_catalog_filename_2 = "hst_11150_70_wfc3_ir_f160w_ia1s70_segment-cat.ecsv"
+
+    """
+    white_light_filename = "hst_10595_06_acs_wfc_total_drc.fits"
     tdp_catalog_filename = "hst_10265_01s_acs_wfc_total_j92c01_segment-cat.ecsv"
     fp_filename_1 = "hst_10265_01s_acs_wfc_f606w_j92c01_drc.fits"
     fp_catalog_filename_1 = "hst_10265_01s_acs_wfc_f606w_j92c01_segment-cat.ecsv"
     fp_filename_2 = "hst_10265_01s_acs_wfc_f888w_j92c01_drc.fits"
     fp_catalog_filename_2 = "hst_10265_01s_acs_wfc_f888w_j92c01_segment-cat.ecsv"
+    """
 
-    segmap, kernel, bkg, bkg_rms, bkg_dao_rms = create_sextractor_like_sourcelists(white_light_filename,
-                                                                                   tdp_catalog_filename,
-                                                                                   se_debug=True)
-
+    segmap, kernel, bkg, bkg_dao_rms, bkgsub  = create_sextractor_like_sourcelists(white_light_filename,
+                                                                                            tdp_catalog_filename,
+                                                                                            se_debug=True)
     # measure_source_properties(segmap, source_filename, catalog_filename, param_dict)
-    measure_source_properties(segmap, kernel, fp_filename_1, fp_catalog_filename_1)
+    measure_source_properties(segmap, bkgsub, kernel, fp_filename_1, fp_catalog_filename_1)
     print("Measured filter 1")
 
-    measure_source_properties(segmap, kernel, fp_filename_2, fp_catalog_filename_2)
+    measure_source_properties(segmap, bkgsub, kernel, fp_filename_2, fp_catalog_filename_2)
     print("Measured filter 2")
 
     return
