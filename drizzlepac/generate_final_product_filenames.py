@@ -28,7 +28,7 @@ def interpret_obset_input(results):
     Output dict will have format (as needed by further code for creating the
         product filenames) of:
 
-        obs_info_dict["single exposure product 00"] = {'info': '11150 A1S WFC3 IR F110W IA1S70JTQ',
+        obs_info_dict["single exposure product 00"] = {'info': '11150 70 WFC3 IR F110W IA1S70JTQ',
                                                         'files':['ia1s70jtq_flt.fits']}
         obs_info_dict["single exposure product 01"] = {'info': '11150 A1S WFC3 IR F160W IA1S70JWQ',
                                                         'files':['ia1s70jwq_flt.fits']}
