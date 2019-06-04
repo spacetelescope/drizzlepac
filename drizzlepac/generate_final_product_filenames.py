@@ -87,7 +87,7 @@ def build_obset_tree(obset_table):
 
 def create_row_info(row):
     """Build info string for a row from the obset table"""
-    info_list = [str(row['proposal_id']), row['program_id'], row['instrument'],
+    info_list = [str(row['proposal_id']), "{:02d}".format(row['obset_id']), row['instrument'],
                  row['detector'], row['filters'], row['filename'][:row['filename'].find('_')]]
     return ' '.join(map(str.upper, info_list)), row['filename']
 
