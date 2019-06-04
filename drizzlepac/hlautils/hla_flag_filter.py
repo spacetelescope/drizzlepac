@@ -133,6 +133,18 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     # -----------------------
     # FLAG FILTER PROCESSING
     # -----------------------
+    print("************************** * * * HLA_FLAG_FILTER * * * **************************")
+    print("ci_filter: ",all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict,"\n")
+
+    print("HLASaturationFlags: ",all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
+                       scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict,"\n")
+
+    print("HLASwarmFlags: ",all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
+                  filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict,"\n")
+
+    print("HLANexpFlags: ",all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
+                 scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir,"\n")
+
     ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict)
 
     HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
@@ -488,7 +500,7 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         # Convert aperture radius to pixels
         # ----------------------------------
         ap2 = param_dict['dao']['aperture_2']
-        if proc_type == 'daophot':
+        if proc_type == 'daophot': #TODO: WHY ARE THESE HARDCODED IN HERE??? MOVE TO MAIN PARAM_DICT DEFINITINON, RUNSHLAPROCESSING.PY, LINE 39.
             if channel == 'IR':
                 radius = round((ap2 / 0.09) + 0.5) * 2.
             if channel == 'UVIS':
@@ -1389,7 +1401,7 @@ def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
 
         ap2 = param_dict['dao']['aperture_2']
 
-        if channel == 'IR':
+        if channel == 'IR': #TODO: PLATESCALE SHOULDN"T BE HARD-CODED HERE. SHOULD USE PARAM_DICT VALUE.
             radius = ap2 / 0.09
         if channel == 'UVIS':
             radius = ap2 / 0.04
