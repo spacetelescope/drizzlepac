@@ -35,7 +35,7 @@ def interpret_obset_input(results):
 
         obs_info_dict["filter product 00"] = {"info": '11150 70 WFC3 IR F110W',
                                               "files":['ia1s70jtq_flt.fits']}
-        obs_info_dict["filter product 01"] = {"info": '11150 A1S WFC3 IR F160W',
+        obs_info_dict["filter product 01"] = {"info": '11150 70 WFC3 IR F160W',
                                               "files":['ia1s70jwq_flt.fits']}
         obs_info_dict["total detection product 00"] = {'info': '11150 A1S WFC3 IR',
                                                        'files':['ia1s70jtq_flt.fits',
