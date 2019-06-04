@@ -6,6 +6,7 @@
 """
 import string
 import os
+import sys
 
 import numpy as np
 from scipy import signal, ndimage
@@ -31,6 +32,8 @@ __all__ = [
     'build_xy_zeropoint', 'build_pos_grid'
 ]
 
+_ASCII_LETTERS = string.ascii_letters
+_NASCII = len(string.ascii_letters)
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
@@ -231,8 +234,10 @@ def radec_hmstodd(ra, dec):
         astropy.coordinates
 
     """
-    hmstrans = string.maketrans(string.ascii_letters,
-                                ' ' * len(string.ascii_letters))
+    if sys.hexversion >= 196864:
+        hmstrans = str.maketrans(_ASCII_LETTERS, _NASCII * ' ')
+    else:
+        hmstrans = string.maketrans(_ASCII_LETTERS, _NASCII * ' ')
 
     if isinstance(ra, list):
         rastr = ':'.join(ra)

@@ -697,8 +697,6 @@ def addWCSKeywords(wcs,hdr,blot=False,single=False,after=None):
     """ Update input header 'hdr' with WCS keywords.
     """
     wname = wcs.wcs.name
-    if not single:
-        wname = 'DRZWCS'
 
     # Update WCS Keywords based on PyDrizzle product's value
     # since 'drizzle' itself doesn't update that keyword.
