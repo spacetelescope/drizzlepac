@@ -3,18 +3,25 @@
 """
 import sys
 
+import numpy as np
+
 from astropy.io import fits as fits
+from astropy.io.fits import Column
 from astropy.time import Time
 from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
 from stwcs import wcsutil
 
 
+LEVEL_DEFS = {1: 'single exposure product', 2: 'filter product', 3: 'total detection product'}
+HAPCOLNAME = 'HAPEXPNAME'
+
+
 __taskname__ = 'processing_utils'
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
-def refine_product_headers(product, level=None):
+def refine_product_headers(product, obs_dict_info, level=None):
     """Refines output product headers to include values not available to AstroDrizzle.
 
     A few header keywords need to have values computed to reflect the type of product being
@@ -27,6 +34,9 @@ def refine_product_headers(product, level=None):
     product : str or object
         Filename or HDUList object for product to be updated
 
+    obs_dict_info : dict
+        Dictionary describing relationship between input and output exposures.
+
     level : int, optional
         If defined, will add the 'LEVEL' keyword to the header of the product as defined by the calling
         routine. For example, 'level=2' to add/update the 'LEVEL' keyword for a level 2 (filter image)
@@ -35,35 +45,97 @@ def refine_product_headers(product, level=None):
 
     hdu, closefits = _process_input(product)
     phdu = hdu[0].header
+    # Insure rootname and filename keywords matches actual filename
+    phdu['rootname'] = '_'.join(product.split('_')[:-1])
+    phdu['filename'] = product
+
+    # Update PINAME keyword
+    phdu['piname'] = phdu['pr_inv_l']
 
     # Start by updating the S_REGION keyword.
     compute_sregion(hdu)
 
     # Compute numexp as number of exposures NOT chips
-    input_exposures = set([kw[1].split('[')[0] for kw in phdu['d*data'].items()])
+    input_exposures = list(set([kw[1].split('[')[0] for kw in phdu['d*data'].items()]))
+    if level == 1:
+        ipppssoots = [fname.split('_')[0] for fname in input_exposures]
+        phdu['ipppssoo'] = ';'.join(ipppssoots)
     phdu['numexp'] = len(input_exposures)
 
     # Convert dates to ISO format
     phdu['date-beg'] = (Time(phdu['expstart'], format='mjd').iso, "Starting Date and Time")
     phdu['date-end'] = (Time(phdu['expend'], format='mjd').iso, "Ending Date and Time")
 
+    phdu['equinox'] = 2000.0
+
     # Re-format ACS filter specification
     if phdu['instrume'] == 'ACS':
-        acs_filters = [kw[1] for kw in phdu['filter?'].items()]
-        acs_filters = ';'.join(acs_filters)
-        phdu['filter'] = acs_filters
+        phdu['filter'] = get_acs_filters(hdu, delimiter=';')
 
     # Apply any additional inputs to drizzle product header
     if level:
-        hdu[0].header['level'] = (level, "Classification level of this product")
+        hdu[0].header['haplevel'] = (level, "Classification level of this product")
 
         # Reset filter specification for total detection images which combine filters
-        if level > 2:
+        if 'total' in phdu['rootname']:
             phdu['filter'] = 'detection'
+
+        # Build HAP table
+        if 'total' in product: level = 3
+        update_hdrtab(hdu, level, obs_dict_info, input_exposures)
 
     # close file if opened by this function
     if closefits:
         hdu.close()
+
+def get_acs_filters(image, delimiter=';'):
+    hdu, closefits = _process_input(image)
+    filters = [kw[1] for kw in hdu[0].header['filter?'].items()]
+    acs_filters = []
+    for f in filters:
+        if 'clear' not in f.lower():
+            acs_filters.append(f)
+    if not acs_filters:
+        acs_filters = ['CLEAR']
+    acs_filters = delimiter.join(acs_filters)
+
+    return acs_filters
+
+
+def update_hdrtab(image, level, obs_dict_info, input_exposures):
+    """Build HAP entry table extension for product"""
+    # Convert input_exposure filenames into HAP product filenames
+    name_col = []
+    orig_tab = image['hdrtab'].data
+
+    for row in orig_tab:
+        rootname = str(row['rootname'])
+        for expname in input_exposures:
+            if rootname in expname:
+                if level == 1:
+                    # Intrepret inputs as exposures (FLT/FLC) filename not HAP names
+                    name_col.append(expname)
+                else:
+                    # Convert input exposure names into HAP names
+                    for haptype, hapdict in obs_dict_info.items():
+                        if LEVEL_DEFS[level - 1] in haptype and expname in hapdict['files']:
+                            name = hapdict['product filenames']['image']
+                            name = name.replace(';', '-')
+                            name_col.append(name)
+
+    # define new column with HAP expname
+    max_len = min(max([len(name) for name in name_col]), 51)
+    hapcol = Column(array=np.array(name_col, dtype=np.str), name=HAPCOLNAME, format='{}A'.format(max_len + 4))
+    newcol = fits.ColDefs([hapcol])
+
+    # define new extension
+    haphdu = fits.BinTableHDU.from_columns(orig_tab.columns + newcol)
+    haphdu.header['extname'] = 'HDRTAB'
+    haphdu.header['extver'] = 1
+    # remove old extension
+    del image['hdrtab']
+    # replace with new extension
+    image.append(haphdu)
 
 
 def compute_sregion(image, extname='SCI'):
