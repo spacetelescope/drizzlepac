@@ -3,24 +3,12 @@
 """This script contains code to support creation of source extractor-like and daophot-like sourcelists.
 
 """
-import datetime
-import os
 import pdb
 import sys
-import traceback
 
-from astropy.io import fits, ascii
-from astropy.stats import sigma_clipped_stats
-from astropy.table import Table, Column, MaskedColumn
-import numpy
-from photutils import aperture_photometry, Background2D, CircularAperture, CircularAnnulus, detection, findstars
-from photutils import MedianBackground, SExtractorBackground, StdBackgroundRMS
-import scipy
 from stsci.tools import logutil
 
 from drizzlepac import util
-import hla_flag_filter
-from photometry_tools import iraf_style_photometry
 
 __taskname__ = 'sourcelist_generation'
 
