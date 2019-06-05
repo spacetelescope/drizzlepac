@@ -96,7 +96,7 @@ def get_acs_filters(image, delimiter=';'):
         if 'clear' not in f.lower():
             acs_filters.append(f)
     if not acs_filters:
-        acs_filters = ['CLEAR']
+        acs_filters = ['clear']
     acs_filters = delimiter.join(acs_filters)
 
     return acs_filters
