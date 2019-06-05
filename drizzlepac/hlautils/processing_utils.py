@@ -2,6 +2,8 @@
 
 """
 import sys
+import os
+import shutil
 
 import numpy as np
 
@@ -20,6 +22,18 @@ HAPCOLNAME = 'HAPEXPNAME'
 __taskname__ = 'processing_utils'
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+
+def get_rules_file(product):
+    """Copies default HLA rules file to local directory."""
+    hdu, closefits = _process_input(product)
+    phdu = hdu[0].header
+    instrument = phdu['instrume']
+    code_dir = os.path.abspath(__file__)
+    base_dir = os.path.dirname(os.path.dirname(code_dir))
+    rules_name = "{}_header_hla.rules".format(instrument.lower())
+    rules_dir = os.path.join(base_dir, 'pars', rules_name)
+    if rules_name not in os.listdir('.'):
+        shutil.copy(rules_dir, os.getcwd())
 
 def refine_product_headers(product, obs_dict_info, level=None):
     """Refines output product headers to include values not available to AstroDrizzle.
