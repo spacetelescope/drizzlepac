@@ -55,7 +55,7 @@ if sys.platform == 'win32':
 TESTS_REQUIRE = [
     'ci_watson',
     'crds',
-    'pytest'
+    'pytest',
     'pytest-remotedata'
 ]
 
