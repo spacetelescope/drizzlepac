@@ -478,7 +478,7 @@ def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
         idchdr = False
     # Open the file for updating the WCS
     try:
-        logstr = 'Updating header for %s[%s]'%(fimg.filename(),str(extnum))
+        logstr = 'Updating header for %s[%s]' % (fimg.filename(), str(extnum))
         if verbose:
             print(logstr)
         else:
@@ -508,15 +508,15 @@ def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
         if fimg_update:
             if not reusename:
                 # Save the newly updated WCS as an alternate WCS as well
-                wkey = wcsutil.altwcs.next_wcskey(fimg,ext=extnum)
+                wkey = wcsutil.altwcs.next_wcskey(fimg, ext=extnum)
             else:
-                wkey = wcsutil.altwcs.getKeyFromName(hdr,wcsname)
+                wkey = wcsutil.altwcs.getKeyFromName(hdr, wcsname)
 
             # wcskey needs to be specified so that archiveWCS will create a
             # duplicate WCS with the same WCSNAME as the Primary WCS
-            wcsutil.altwcs.archiveWCS(fimg,[extnum],wcsname=wcsname,
+            wcsutil.altwcs.archiveWCS(fimg, [extnum], wcsname=wcsname,
                 wcskey=wkey, reusekey=reusename)
-            fimg[extnum].header['WCSTYPE'+wkey] = wcstype
+            fimg[extnum].header['WCSTYPE' + wkey] = wcstype
     finally:
         if fimg_open:
             # finish up by closing the file now
