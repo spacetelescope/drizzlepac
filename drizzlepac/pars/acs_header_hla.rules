@@ -342,6 +342,8 @@ WCSCDATE
 WFCMPRSD
 WRTERR
 XTENSION
+WCSNAME
+WCSTYPE
 #
 # WCS Related Keyword Rules
 #     These move any OPUS-generated WCS values to the table
