@@ -50,7 +50,7 @@ def create_dao_like_coordlists(fitsfile):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_sourcelists(fitsfile,sl_filename,sources,phot_aper=4.):
+def create_dao_like_sourcelists(fitsfile,sl_filename,sources,aper_radius=4.):
     """Make DAOphot-like sourcelists
 
     Parameters
@@ -65,8 +65,8 @@ def create_dao_like_sourcelists(fitsfile,sl_filename,sources,phot_aper=4.):
     sources : astropy table
         Table containing x, y coordinates of identified sources
 
-    phot_aper : float
-        Aperture size (in pixels) used for photometry. Default value is 4.
+    aper_radius : float
+        Aperture radius (in pixels) used for photometry. Default value is 4.
 
     Returns
     -------
@@ -80,7 +80,7 @@ def create_dao_like_sourcelists(fitsfile,sl_filename,sources,phot_aper=4.):
 
     # Aperture Photometry
     positions = (sources['xcentroid'], sources['ycentroid'])
-    apertures = CircularAperture(positions, r=phot_aper)
+    apertures = CircularAperture(positions, r=aper_radius)
     phot_table = aperture_photometry(image, apertures)
     
     for col in phot_table.colnames: phot_table[col].info.format = '%.8g'  # for consistent table output
