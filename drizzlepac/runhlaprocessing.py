@@ -601,8 +601,9 @@ def run_hla_processing(input_filename, result=None, debug=True):
         # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new
         # ticket if necessary)
         log.info("2: Apply rules to determine what exposures need to be combined into separate products")
-        # TODO: SUBROUTINE CALL GOES HERE.
-        obs_info_dict = generate_test_data(input_filename)  # TODO: REMOVE once all previous steps are up and running
+        #obs_info_dict = generate_test_data(input_filename)  # TODO: REMOVE once all previous steps are up and running
+        obs_info_dict = pipeline_poller_utils.interpret_obset_input(input_filename)
+        print(obs_info_dict)
 
         # 3: generate an output names for each defined product...
         log.info("3: generate an output names for each defined product")
@@ -769,3 +770,4 @@ if __name__ == '__main__':
     ARGS = parser.parse_args()
 
     rv = perform_processing(ARGS.input_filename, debug=ARGS.debug)
+    print("Return Value: ",rv)
