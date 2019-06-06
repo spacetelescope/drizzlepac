@@ -14,9 +14,9 @@ import traceback
 
 import drizzlepac
 from drizzlepac import alignimages
-from drizzlepac import generate_final_product_filenames
 from drizzlepac import util
 from drizzlepac import wcs_functions
+from drizzlepac.hlautils import pipeline_poller_utils
 from drizzlepac.hlautils import sourcelist_generation
 from stsci.tools import logutil
 
@@ -608,7 +608,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
         log.info("3: generate an output names for each defined product")
         for obs_category in obs_info_dict.keys():
             obs_info_dict[obs_category]['product filenames'] = \
-                generate_final_product_filenames.run_generator(obs_category, obs_info_dict[obs_category]["info"])
+                pipeline_poller_utils.run_generator(obs_category, obs_info_dict[obs_category]["info"])
             for key in obs_info_dict[obs_category].keys():
                 log.info("{}: {}".format(key, obs_info_dict[obs_category][key]))
 
