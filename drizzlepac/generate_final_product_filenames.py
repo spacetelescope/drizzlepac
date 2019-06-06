@@ -70,7 +70,11 @@ def build_obset_tree(obset_table):
         # for multiple instruments as data from different instruments will
         # not be combined.
         det = row['detector']
-        filt = row['filters']
+        orig_filt = row['filters']
+        # Potentially need to manipulate the 'filters' string for instruments
+        # with two filter wheels
+        filt = determine_filter_name(orig_filt)
+        row['filters'] = filt
         row_info, filename = create_row_info(row)
         # Initial population of the obset tree for this detector
         if det not in obset_tree:
@@ -339,3 +343,53 @@ def multivisit_mosaic_product_filename_generator(obs_info):
     product_filename_dict["segment source catalog"] = basename + "_segment-cat.ecsv"
 
     return product_filename_dict
+
+# ----------------------------------------------------------------------------------------------------------
+
+def determine_filter_name(raw_filter):
+    """
+    Generate the final filter name to be used for an observation.
+
+    Parameters
+    ----------
+    raw_filter : string
+        filters component one exposure from an input observation visit
+
+    Returns
+    -------
+    filter_name : string
+        final filter name
+
+    If the raw_filter is actually a combination of two filter names, as
+    can be true for instruments with two filter wheels, then generate
+    a new filter string according the following rules:
+    - If one filter name is 'clear*', then use the other filter name.
+    - If both filter names are 'clear*', then use 'clear'.
+    - If there are two filters in use, then use 'filter1-filter2'.
+    - If one filter is a polarizer ('pol*'), then always put the polarizer
+      name second (e.g., 'f606w-pol60').
+    - NOTE: There should always be at least one filter name provided to
+      this routine or this input is invalid.
+    """
+
+    raw_filter.lower()
+
+    # There might be two filters, so split the filter names into a list
+    filter_list = raw_filter.split(';')
+    output_filter_list = []
+
+    for filt in filter_list:
+        # Get the names of the non-clear filters
+        if 'clear' not in filt:
+            output_filter_list.append(filt)
+
+    if not output_filter_list:
+        filter_name = 'clear'
+    else:
+        if output_filter_list[0].startswith('pol'):
+            output_filter_list.reverse()
+
+        delimiter = '-'
+        filter_name = delimiter.join(output_filter_list)
+
+    return filter_name
