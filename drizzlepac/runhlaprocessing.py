@@ -515,7 +515,9 @@ def restructure_obs_info_dict(obs_info_dict):
                     del single_exposure_dict[imgname]
             except:
                 continue
-    # 3: add field "associated 
+    # 3: add field "associated filter products"
+    print("\a")
+    pdb.set_trace()
     for total_driz_product in [x for x in restructured_dict.keys() if x.startswith('total detection product')]:
         restructured_dict[total_driz_product]['associated filter products'] = [y for y in restructured_dict.keys() if
         restructured_dict[y]['info'].startswith(restructured_dict[total_driz_product]['info']) and not
