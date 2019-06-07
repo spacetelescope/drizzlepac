@@ -377,7 +377,7 @@ def determine_filter_name(raw_filter):
       this routine or this input is invalid.
     """
 
-    raw_filter.lower()
+    raw_filter = raw_filter.lower()
 
     # There might be two filters, so split the filter names into a list
     filter_list = raw_filter.split(';')
