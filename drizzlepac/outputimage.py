@@ -11,18 +11,19 @@ from stsci.tools import fileutil, readgeis, logutil
 
 from . import wcs_functions
 from . import version
+from . import updatehdr
 
 from fitsblender import blendheaders
 
 yes = True
 no = False
 
-RESERVED_KEYS = ['NAXIS','BITPIX','DATE','IRAF-TLM','XTENSION','EXTNAME','EXTVER']
+RESERVED_KEYS = ['NAXIS', 'BITPIX', 'DATE', 'IRAF-TLM', 'XTENSION', 'EXTNAME',' EXTVER']
 
 EXTLIST = ('SCI', 'WHT', 'CTX')
 
-WCS_KEYWORDS=['CD1_1','CD1_2', 'CD2_1', 'CD2_2', 'CRPIX1',
-'CRPIX2','CRVAL1', 'CRVAL2', 'CTYPE1', 'CTYPE2','WCSNAME']
+WCS_KEYWORDS = ['CD1_1', 'CD1_2', 'CD2_1', 'CD2_2', 'CRPIX1',
+'CRPIX2', 'CRVAL1', 'CRVAL2', 'CTYPE1', 'CTYPE2', 'WCSNAME']
 
 # fits.CompImageHDU() crashes with default arguments.
 # Instead check that fits module has *attribute* 'CompImageHDU':
@@ -697,10 +698,12 @@ def addWCSKeywords(wcs,hdr,blot=False,single=False,after=None):
     """ Update input header 'hdr' with WCS keywords.
     """
     wname = wcs.wcs.name
+    wtype = updatehdr.interpret_wcsname_type(wname)
 
     # Update WCS Keywords based on PyDrizzle product's value
     # since 'drizzle' itself doesn't update that keyword.
     hdr['WCSNAME'] = wname
+    hdr['WCSTYPE'] = wtype
     hdr.set('VAFACTOR', value=1.0, after=after)
     hdr.set('ORIENTAT', value=wcs.orientat, after=after)
 
