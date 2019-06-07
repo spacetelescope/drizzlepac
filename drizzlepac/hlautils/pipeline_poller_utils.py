@@ -390,7 +390,6 @@ def determine_filter_name(raw_filter):
         # Get the names of the non-clear filters
         if 'clear' not in filt:
             output_filter_list.append(filt)
-    print('output: ', output_filter_list)
 
     if not output_filter_list:
         filter_name = 'clear'
