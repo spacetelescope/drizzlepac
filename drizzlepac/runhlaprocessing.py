@@ -458,8 +458,7 @@ def rename_subproduct_files(obs_info_dict_item):
                 # rename single_sci.fits image
                 os.rename(src_imgname, dest_imgname)
                 log.info("RENAME {} ~~> {}".format(src_imgname, dest_imgname))
-                print("\a")
-                pdb.set_trace()
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
