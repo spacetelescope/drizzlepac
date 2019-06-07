@@ -603,7 +603,6 @@ def run_hla_processing(input_filename, result=None, debug=True):
         log.info("2: Apply rules to determine what exposures need to be combined into separate products")
         obs_info_dict_old = generate_test_data(input_filename)  # TODO: REMOVE once all previous steps are up and running
         obs_info_dict = pipeline_poller_utils.interpret_obset_input(input_filename)
-        pdb.set_trace()
         # 3: generate an output names for each defined product...
         log.info("3: generate an output names for each defined product")
         for obs_category in obs_info_dict.keys():
@@ -652,6 +651,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
                                  adriz_param_dict,
                                  obs_info_dict[obs_category]['product filenames']['image'],
                                  custom_wcs=meta_wcs)
+                pdb.set_trace()
                 rename_subproduct_files(obs_info_dict[obs_category])
             else:
                 log.info("{}: Filter-by-Filter AstroDrizzle step skipped.".format(obs_category))
