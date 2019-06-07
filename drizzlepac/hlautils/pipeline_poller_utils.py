@@ -8,6 +8,7 @@ generator routines produce the specific image product and source catalog files.
 """
 
 from astropy.table import Table, Column
+import numpy as np
 
 # Define information/formatted strings to be included in output dict
 SEP_STR = 'single exposure product {:02d}'
@@ -76,9 +77,11 @@ def build_obset_tree(obset_table):
         # not be combined.
         det = row['detector']
         orig_filt = row['filters']
+        lc_filt = str(orig_filt)
         # Potentially need to manipulate the 'filters' string for instruments
         # with two filter wheels
-        filt = determine_filter_name(orig_filt)
+        #filt = determine_filter_name(orig_filt)
+        filt = determine_filter_name(lc_filt)
         row['filters'] = filt
         row_info, filename = create_row_info(row)
         # Initial population of the obset tree for this detector
@@ -377,7 +380,7 @@ def determine_filter_name(raw_filter):
       this routine or this input is invalid.
     """
 
-    raw_filter.lower()
+    raw_filter = raw_filter.lower()
 
     # There might be two filters, so split the filter names into a list
     filter_list = raw_filter.split(';')
@@ -387,6 +390,7 @@ def determine_filter_name(raw_filter):
         # Get the names of the non-clear filters
         if 'clear' not in filt:
             output_filter_list.append(filt)
+    print('output: ', output_filter_list)
 
     if not output_filter_list:
         filter_name = 'clear'
