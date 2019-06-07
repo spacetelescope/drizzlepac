@@ -452,8 +452,10 @@ def rename_subproduct_files(obs_info_dict_item):
             if key.startswith("subproduct"):
                 dest_imgname = obs_info_dict_item[key]["image"]
                 imgname_root = dest_imgname.split("_")[-2]
+                image_rootname = [i for i in obs_info_dict_item['files'] if i.startswith("{}".format(imgname_root))][0].split("_")[0]
+                print("\a")
                 pdb.set_trace()
-                src_imgname = "{}_single_sci.fits".format(imgname_root)
+                src_imgname = "{}_single_sci.fits".format(image_rootname)
 
                 # rename single_sci.fits image
                 os.rename(src_imgname, dest_imgname)
