@@ -22,13 +22,21 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_coordlists(fitsfile):
+def create_dao_like_coordlists(fitsfile,dao_fwhm=3.5,bkgsig_sf=2.):
     """Make daofind-like coordinate lists
 
     Parameters
     ----------
     fitsfile : string
         Name of the drizzle-combined filter product to used to generate photometric sourcelists.
+
+    dao_fwhm : float
+        (photutils.DAOstarfinder param 'fwhm') The full-width half-maximum (FWHM) of the major axis of the
+        Gaussian kernel in units of pixels. Default value = 3.5.
+
+    bkgsig_sf : float
+        multiplictive scale factor applied to background sigma value to compute DAOfind input parameter
+        'threshold'. Default value = 2.
 
     Returns
     -------
@@ -38,9 +46,10 @@ def create_dao_like_coordlists(fitsfile):
     hdulist = fits.open(fitsfile)
     image = hdulist['SCI'].data
     image -= np.nanmedian(image)
-    bkg_sigma = mad_std(image,ignore_nan = True)
-    daofind = DAOStarFinder(fwhm=3.5,threshold=2. * bkg_sigma)
+    bkg_sigma = mad_std(image, ignore_nan=True)
+    daofind = DAOStarFinder(fwhm=dao_fwhm, threshold=bkgsig_sf * bkg_sigma)
     sources = daofind(image)
+    hdulist.close()
 
     for col in sources.colnames:
         sources[col].info.format = '%.8g'  # for consistent table output
@@ -66,7 +75,7 @@ def create_dao_like_sourcelists(fitsfile,sl_filename,sources,aper_radius=4.):
         Table containing x, y coordinates of identified sources
 
     aper_radius : float
-        Aperture radius (in pixels) used for photometry. Default value is 4.
+        Aperture radius (in pixels) used for photometry. Default value = 4.
 
     Returns
     -------
