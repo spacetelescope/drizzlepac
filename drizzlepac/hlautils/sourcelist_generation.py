@@ -153,7 +153,7 @@ def create_sourcelists(obs_info_dict, param_dict):
     -------
     """
     log.info("-" * 118)
-    for key1 in list(obs_info_dict.keys()):
+    for product_type in obs_info_dict:
         for key2 in list(obs_info_dict[key1].keys()):
             log.info("obs_info_dict[{}][{}]: {}".format(key1,key2,obs_info_dict[key1][key2]))  # TODO: REMOVE THIS SECTION BEFORE ACTUAL USE
     log.info("-"*118)
