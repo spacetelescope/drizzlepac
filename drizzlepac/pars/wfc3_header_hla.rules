@@ -325,6 +325,8 @@ WCSAXES
 WCSCDATE
 ZOFFCORR
 ZSIGCORR
+WCSNAME
+WCSTYPE
 ################################################################################
 #
 # Header Keyword Rules REQUIRED for CAOM

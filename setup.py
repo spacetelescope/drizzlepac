@@ -55,7 +55,8 @@ if sys.platform == 'win32':
 TESTS_REQUIRE = [
     'ci_watson',
     'crds',
-    'pytest'
+    'pytest',
+    'pytest-remotedata'
 ]
 
 setup(
@@ -78,7 +79,7 @@ setup(
     ],
     python_requires='>=3.5',
     install_requires=[
-        'astropy>=3.1',
+        'astropy>=3.1.2',
         'fitsblender',
         'nictools',
         'nose',

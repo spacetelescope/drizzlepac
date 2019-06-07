@@ -478,7 +478,7 @@ def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
         idchdr = False
     # Open the file for updating the WCS
     try:
-        logstr = 'Updating header for %s[%s]'%(fimg.filename(),str(extnum))
+        logstr = 'Updating header for %s[%s]' % (fimg.filename(), str(extnum))
         if verbose:
             print(logstr)
         else:
@@ -489,7 +489,7 @@ def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
         if verbose:
             log.info('    with WCS of')
             new_wcs.printwcs()
-            print("WCSNAME  : ",wcsname)
+            print("WCSNAME  : ", wcsname)
 
         # Insure that if a copy of the WCS has not been created yet, it will be now
         wcs_hdr = new_wcs.wcs2header(idc2hdr=idchdr, relax=True)
@@ -498,6 +498,8 @@ def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
             hdr[key] = wcs_hdr[key]
         hdr['ORIENTAT'] = new_wcs.orientat
         hdr['WCSNAME'] = wcsname
+        wcstype = interpret_wcsname_type(wcsname)
+        hdr['WCSTYPE'] = wcstype
         util.updateNEXTENDKw(fimg)
 
         # Only if this image was opened in update mode should this
@@ -506,19 +508,48 @@ def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
         if fimg_update:
             if not reusename:
                 # Save the newly updated WCS as an alternate WCS as well
-                wkey = wcsutil.altwcs.next_wcskey(fimg,ext=extnum)
+                wkey = wcsutil.altwcs.next_wcskey(fimg, ext=extnum)
             else:
-                wkey = wcsutil.altwcs.getKeyFromName(hdr,wcsname)
+                wkey = wcsutil.altwcs.getKeyFromName(hdr, wcsname)
 
             # wcskey needs to be specified so that archiveWCS will create a
             # duplicate WCS with the same WCSNAME as the Primary WCS
-            wcsutil.altwcs.archiveWCS(fimg,[extnum],wcsname=wcsname,
+            wcsutil.altwcs.archiveWCS(fimg, [extnum], wcsname=wcsname,
                 wcskey=wkey, reusekey=reusename)
+            fimg[extnum].header['WCSTYPE' + wkey] = wcstype
     finally:
         if fimg_open:
             # finish up by closing the file now
             fimg.close()
 
+def interpret_wcsname_type(wcsname):
+    """Interpret WCSNAME as a standardized human-understandable description """
+    wcstype = ''
+    fit_terms = {'REL': 'relatively aligned to {}',
+                 'IMG': 'aligned image-by-image to {}'}
+    post_fit = 'a posteriori solution '
+    default_fit = 'a priori solution based on {}'
+    base_terms = {'IDC': 'distortion-corrected ',
+                  'OPU': 'pipeline default '}
+    no_fit = 'not aligned'
+
+    wcsname_list = wcsname.split('-')
+
+    # Interpret base terms
+    wcstype += base_terms[wcsname_list[0][:3]]
+
+    # Interpret fit term (if any)
+    if len(wcsname_list) == 1:
+        wcstype += no_fit
+    else:
+        fit_term = wcsname_list[1]
+        if 'FIT' not in fit_term:
+            wcstype += default_fit.format(fit_term)
+        else:
+            wcstype += post_fit
+            postfit_type = fit_term.split('_')
+            wcstype += fit_terms[postfit_type[1]].format(postfit_type[2])
+    return wcstype
 
 def create_unique_wcsname(fimg, extnum, wcsname):
     """
