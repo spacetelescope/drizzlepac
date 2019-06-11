@@ -618,10 +618,10 @@ def run_hla_processing(input_filename, result=None, debug=True):
         # 4: restructure obs_info_dict so that it's ready for processing.
         log.info("4: restructure obs_info_dict so that it's ready for processing.")
         # obs_info_dict_old = restructure_obs_info_dict(obs_info_dict_old)
-        obs_info_dict = restructure_obs_info_dict2(obs_info_dict)
-        for key in obs_info_dict.keys():
-            print(key,obs_info_dict[key])
-        pdb.set_trace()
+        obs_info_dict = restructure_obs_info_dict(obs_info_dict)
+        # for key in obs_info_dict.keys():
+        #     print(key,obs_info_dict[key])
+        # pdb.set_trace()
 
         # 5: run alignimages.py on images on a filter-by-filter basis.
         log.info("5: run alignimages.py on images on a filter-by-filter basis for {}".format(obs_category))
