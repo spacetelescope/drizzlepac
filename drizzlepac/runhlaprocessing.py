@@ -515,12 +515,14 @@ def restructure_obs_info_dict(obs_info_dict):
                     del single_exposure_dict[imgname]
             except:
                 continue
+
     # 3: add field "associated filter products"
     for total_driz_product in [x for x in restructured_dict.keys() if x.startswith('total detection product')]:
         restructured_dict[total_driz_product]['associated filter products'] = [y for y in restructured_dict.keys() if
-        restructured_dict[y]['info'].startswith(restructured_dict[total_driz_product]['info']) and not
+        set(restructured_dict[y]['files']).issubset(restructured_dict[total_driz_product]['files']) and not
                                                                                y.startswith('total detection product')]
     return(restructured_dict)
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -615,7 +617,11 @@ def run_hla_processing(input_filename, result=None, debug=True):
 
         # 4: restructure obs_info_dict so that it's ready for processing.
         log.info("4: restructure obs_info_dict so that it's ready for processing.")
-        obs_info_dict = restructure_obs_info_dict(obs_info_dict)
+        # obs_info_dict_old = restructure_obs_info_dict(obs_info_dict_old)
+        obs_info_dict = restructure_obs_info_dict2(obs_info_dict)
+        for key in obs_info_dict.keys():
+            print(key,obs_info_dict[key])
+        pdb.set_trace()
 
         # 5: run alignimages.py on images on a filter-by-filter basis.
         log.info("5: run alignimages.py on images on a filter-by-filter basis for {}".format(obs_category))
