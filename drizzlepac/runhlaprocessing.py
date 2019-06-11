@@ -516,8 +516,6 @@ def restructure_obs_info_dict(obs_info_dict):
             except:
                 continue
     # 3: add field "associated filter products"
-    print("\a")
-    pdb.set_trace()
     for total_driz_product in [x for x in restructured_dict.keys() if x.startswith('total detection product')]:
         restructured_dict[total_driz_product]['associated filter products'] = [y for y in restructured_dict.keys() if
         restructured_dict[y]['info'].startswith(restructured_dict[total_driz_product]['info']) and not
@@ -605,7 +603,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
         # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new
         # ticket if necessary)
         log.info("2: Apply rules to determine what exposures need to be combined into separate products")
-        obs_info_dict_old = generate_test_data(input_filename)  # TODO: REMOVE once all previous steps are up and running
+        # obs_info_dict_old = generate_test_data(input_filename)  # TODO: REMOVE once all previous steps are up and running
         obs_info_dict = pipeline_poller_utils.interpret_obset_input(input_filename)
         # 3: generate an output names for each defined product...
         log.info("3: generate an output names for each defined product")
