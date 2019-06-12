@@ -161,29 +161,22 @@ def create_sourcelists(obs_info_dict, param_dict):
     for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
                         oid_key.startswith('total detection product')]:  # loop over total filtered products
         log.info("=====> {} <======".format(tdp_keyname))
-        # 0: Map image filename to correspoinding catalog filename for total detection product and the associated
-        # filter products
-        # totdet_product_cat_dict = {}
-        # filter_product_cat_dict = {}
-        # filter_component_dict = {}
-        # totdet_product_cat_dict[obs_info_dict[tdp_keyname]['product filenames']['image']] = \
-        #     obs_info_dict[tdp_keyname]['product filenames']['source catalog']
-        # for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
-        #     filter_product_cat_dict[obs_info_dict[fp_keyname]['product filenames']['image']] = \
-        #         obs_info_dict[fp_keyname]['product filenames']['source catalog']
-        #     filter_component_dict[obs_info_dict['filter product 00']['info'].split()[-1].lower()] = \
-        #         obs_info_dict[fp_keyname]['files']
+        detection_image = obs_info_dict[tdp_keyname]['product filenames']['image']
 
         create_se_like_coordlists()
-        dao_coord_list = create_dao_like_coordlists(obs_info_dict[tdp_keyname]['product filenames']['image'])
+        dao_coord_list = create_dao_like_coordlists(detection_image)
 
         for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
+            filter_combined_imagename = obs_info_dict[fp_keyname]['product filenames']['image']
+            point_source_catalog_name = obs_info_dict[fp_keyname]['product filenames']['point source catalog']
+            seg_source_catalog_name = obs_info_dict[fp_keyname]['product filenames']['segment source catalog']
+
+            print("Filter combined image... ",filter_combined_imagename)
+            print("Point source catalog.... ",point_source_catalog_name)
+            print("Segment source catalog.. ",seg_source_catalog_name)
 
             create_se_like_sourcelists()
-            print("IMAGE NAME: ",obs_info_dict[fp_keyname]['product filenames']['image'])
-            print("SOURCELIST: ",obs_info_dict[fp_keyname]['product filenames']['point source catalog'])
-
-            create_dao_like_sourcelists(obs_info_dict[fp_keyname]['product filenames']['image'],obs_info_dict[fp_keyname]['product filenames']['point source catalog'],dao_coord_list)
+            create_dao_like_sourcelists(filter_combined_imagename, point_source_catalog_name, dao_coord_list)
             
 
 # ----------------------------------------------------------------------------------------------------------------------
