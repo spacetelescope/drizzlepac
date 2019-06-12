@@ -77,17 +77,20 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_
 
     """
 
-    # Open the "white light" image and get the image data
+    # Open the "white light" image and get the SCI image data
     imghdu = fits.open(source_filename)
     imgarr = imghdu[1].data
 
     # Get the HSTWCS object from the first extension
-    imgwcs = HSTWCS(source_filename, 1)
+    imgwcs = HSTWCS(imghdu, 1)
 
+    # Get header information to annotate the output catalogs
+    keyword_dict = get_header_data(imghdu)
+   
     # Get the instrument/detector-specific values from the param_dict 
     fwhm = param_dict["sourcex"]["fwhm"]
     size_source_box = param_dict["sourcex"]["size_source_box"]
-    threshold = param_dict["sourcex"]["threshold"]
+    threshold_flag = param_dict["sourcex"]["threshold_flag"]
 
     # Report configuration values to log
     log.info("{}".format("=" * 80))
@@ -96,7 +99,7 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_
     log.info("Total Detection Product - Input Parameters")
     log.info("FWHM: {}".format(fwhm))
     log.info("size_source_box: {}".format(size_source_box))
-    log.info("threshold: {}".format(threshold))
+    log.info("threshold_flag: {}".format(threshold_flag))
     log.info("")
     log.info("{}".format("=" * 80))
 
@@ -104,7 +107,7 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_
     kernel_list = [Gaussian2DKernel, MexicanHat2DKernel]
     kernel_in_use = kernel_list[0]
 
-    bkg, bkg_dao_rms, threshold = compute_background(imgarr, nsigma=5., threshold=threshold)
+    bkg, bkg_dao_rms, threshold = compute_background(imgarr, nsigma=5., threshold_flag=threshold_flag)
 
     # FIX imgarr should be background subtracted, sextractor uses the filtered_data image
     imgarr_bkgsub = imgarr - bkg.background
@@ -119,6 +122,7 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_
     # Source segmentation/extraction
     # If the threshold includes the background level, then the input image
     # should NOT be background subtracted.
+    # Note: SExtractor has "connectivity=8" which is the default for this function
     segm = detect_sources(imgarr, threshold, npixels=size_source_box,
                           filter_kernel=kernel)
 
@@ -156,6 +160,7 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_
     # segmentation. Sextractor uses a multi-thresholding technique.
     # npixels = number of connected pixels in source
     # npixels and filter_kernel should match those used by detect_sources()
+    # Note: SExtractor has "connectivity=8" which is the default for this function
     """
     segm = deblend_sources(imgarr, segm, npixels=size_source_box,
                            filter_kernel=kernel, nlevels=32,
@@ -178,7 +183,7 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_
     # Regenerate the source catalog with presumably now only good sources
     seg_cat = source_properties(imgarr_bkgsub, segm, filter_kernel=kernel, wcs=imgwcs)
 
-    write_catalog(seg_cat, catalog_filename)
+    write_catalog(seg_cat, keyword_dict, catalog_filename)
 
     # FIX: All of these may not be needed so clean up
     return segm, kernel, bkg, bkg_dao_rms, imgarr_bkgsub
@@ -204,11 +209,11 @@ def measure_source_properties(segm, imgarr_bkgsub, kernel, source_filename, cata
         source properties (this routine)
 
     source_filename : string
-        Filename of the filter drizzled image (aka the filter data product) which
+        Filename of the filter drizzled image (aka the filter detection product) which
         is used for the measurement of properties of the previously found sources
 
     catalog_filename : string
-        Name of the output source catalog for the filter data product
+        Name of the output source catalog for the filter detection product
 
     param_dict : dictionary
         dictionary of drizzle, source finding, and photometric parameters
@@ -223,12 +228,15 @@ def measure_source_properties(segm, imgarr_bkgsub, kernel, source_filename, cata
     imgarr = imghdu[1].data
 
     # Get the HSTWCS object from the first extension
-    imgwcs = HSTWCS(source_filename, 1)
+    imgwcs = HSTWCS(imghdu, 1)
+
+    # Get header information to annotate the output catalogs
+    keyword_dict = get_header_data(imghdu)
 
     # Get the instrument/detector-specific values from the param_dict 
     fwhm = param_dict["sourcex"]["fwhm"]
     size_source_box = param_dict["sourcex"]["size_source_box"]
-    threshold = param_dict["sourcex"]["threshold"]
+    threshold_flag = param_dict["sourcex"]["threshold_flag"]
 
     # Report configuration values to log
     log.info("{}".format("=" * 80))
@@ -237,23 +245,24 @@ def measure_source_properties(segm, imgarr_bkgsub, kernel, source_filename, cata
     log.info("Filter Level Product - Input Parameters")
     log.info("FWHM: {}".format(fwhm))
     log.info("size_source_box: {}".format(size_source_box))
-    log.info("threshold: {}".format(threshold))
+    log.info("threshold_flag: {}".format(threshold_flag))
     log.info("")
     log.info("{}".format("=" * 80))
 
     # The data needs to be background subtracted when computing the source properties
-    bkg, _, _ = compute_background(imgarr, nsigma=5., threshold=threshold)
+    bkg, _, _ = compute_background(imgarr, nsigma=5., threshold_flag=threshold_flag)
+
     imgarr_bkgsubX = imgarr - bkg.background
 
     # Compute source properties...
     seg_cat = source_properties(imgarr_bkgsubX, segm, filter_kernel=kernel, wcs=imgwcs)
 
     # Write the source catalog
-    write_catalog(seg_cat, catalog_filename, product="fdp")
+    write_catalog(seg_cat, keyword_dict, catalog_filename, product="fdp")
 
 
-def compute_background(image, box_size=50, win_size=3, nsigma=5., threshold=None):
-    """Use photutils to find sources in image based on segmentation.
+def compute_background(image, box_size=50, win_size=3, nsigma=5., threshold_flag=None):
+    """Use Background2D to determine the background of the input image.
 
     Parameters
     ----------
@@ -268,6 +277,12 @@ def compute_background(image, box_size=50, win_size=3, nsigma=5., threshold=None
 
     nsigma : float
         Number of sigma above background
+
+    threshold_flag : float or None
+        Value from the image which serves as the limit for determining sources.
+        If None, compute a default value of (background+5*rms(background)).
+        If threshold < 0.0, use absolute value as scaling factor for default value.
+
 
     Returns
     -------
@@ -315,14 +330,14 @@ def compute_background(image, box_size=50, win_size=3, nsigma=5., threshold=None
             default_threshold = bkg.background + bkg_rms
             bkg_rms_mean = bkg.background.mean() + nsigma * bkg_rms.std()
             bkg_dao_rms = bkg.background_rms
-            if threshold is None:
+            if threshold_flag is None:
                 threshold = default_threshold
-            elif threshold < 0:
-                threshold = -1 * threshold * default_threshold
+            elif threshold_flag < 0:
+                threshold = -1 * threshold_flag * default_threshold
                 log.info("{} based on {}".format(threshold.max(), default_threshold.max()))
                 bkg_rms_mean = threshold.max()
             else:
-                bkg_rms_mean = 3. * threshold
+                bkg_rms_mean = 3. * threshold_flag
 
             if bkg_rms_mean < 0:
                 bkg_rms_mean = 0.
@@ -345,10 +360,11 @@ def compute_background(image, box_size=50, win_size=3, nsigma=5., threshold=None
 
     return bkg, bkg_dao_rms, threshold
 
-def write_catalog(seg_cat, catalog_filename, product="tdp"):
+
+def write_catalog(seg_cat, keyword_dict, catalog_filename, product="tdp"):
 
     # Convert the list of SourceProperties objects to a QTable and
-    # manipulate and rename columns to match SExtractor output
+    # document in column metadata Photutils columns which map to SExtractor columns
     seg_table = seg_cat.to_table()
     radec_data = seg_table["sky_centroid_icrs"]
     ra_icrs = radec_data.ra.degree
@@ -360,24 +376,33 @@ def write_catalog(seg_cat, catalog_filename, product="tdp"):
 
         # [x|y]centroid are in pixels, physical data coordinates
         seg_subset_table = seg_table["xcentroid", "ycentroid"]
-        seg_subset_table.rename_column("xcentroid", "x_image")
-        seg_subset_table.rename_column("ycentroid", "y_image")
+
+        # Add metadata to the output subset table
+        seg_subset_table = annotate_table(seg_subset_table, keyword_dict, product=product)
+
+        seg_subset_table["xcentroid"].description = "SExtractor Column x_image "
+        seg_subset_table["ycentroid"].description = "SExtractor Column y_image "
         seg_subset_table["RA_icrs"] = ra_icrs
         seg_subset_table["Dec_icrs"] = dec_icrs
-
-        # Write out the official total detection product source catalog
-        seg_subset_table["x_image"].info.format = ".10f"
-        seg_subset_table["y_image"].info.format = ".10f"
-        seg_subset_table["RA_icrs"].info.format = ".10f"
-        seg_subset_table["Dec_icrs"].info.format = ".10f"
+        seg_subset_table["RA_icrs"].description = "SExtractor Column RA"
+        seg_subset_table["Dec_icrs"].description = "SExtractor Column Dec"
         seg_subset_table["RA_icrs"].unit = u.deg
         seg_subset_table["Dec_icrs"].unit = u.deg
-        print("seg_subset_table (white): ", seg_subset_table)
+
+        # Write out the official total detection product source catalog
+        seg_subset_table["xcentroid"].info.format = ".10f"
+        seg_subset_table["ycentroid"].info.format = ".10f"
+        seg_subset_table["RA_icrs"].info.format = ".10f"
+        seg_subset_table["Dec_icrs"].info.format = ".10f"
+        print("seg_subset_table (white light image): ", seg_subset_table)
 
         seg_subset_table.write(catalog_filename, format="ascii.ecsv")
         log.info("Wrote source catalog: {}".format(catalog_filename))
 
+    # else the product is the "filter detection product"
     else:
+
+        seg_table = annotate_table(seg_table, keyword_dict, product=product)
 
         # Rework the current table for output
         del seg_table["id"]
@@ -387,37 +412,111 @@ def write_catalog(seg_cat, catalog_filename, product="tdp"):
         dd = Column(dec_icrs, name="Dec_icrs")
         seg_table.add_column(dd, index=2)
         seg_table.add_column(rr, index=2)
+        seg_table["RA_icrs"].description = "SExtractor Column RA"
+        seg_table["Dec_icrs"].description = "SExtractor Column Dec"
+        seg_table["RA_icrs"].unit = u.deg
+        seg_table["Dec_icrs"].unit = u.deg
 
-        # Rename column names to be more consistent with Sextractor column names
-        seg_table.rename_column("xcentroid", "x_image")
-        seg_table.rename_column("ycentroid", "y_image")
-        seg_table.rename_column("background_at_centroid", "background")
-        seg_table.rename_column("source_sum", "flux")
-        seg_table.rename_column("source_sum_err", "flux_err")
-        seg_table.rename_column("cxx", "cxx_image")
-        seg_table.rename_column("cxy", "cxy_image")
-        seg_table.rename_column("cyy", "cyy_image")
-        seg_table.rename_column("covar_sigx2", "x2_image")
-        seg_table.rename_column("covar_sigy2", "y2_image")
-        seg_table.rename_column("covar_sigxy", "xy_image")
+        # Add a description for columns which map to SExtractor catalog columns
+        seg_table["xcentroid"].description = "SExtractor Column x_image "
+        seg_table["ycentroid"].description = "SExtractor Column y_image "
+        seg_table["background_at_centroid"].description = "SExtractor Column background"
+        seg_table["source_sum"].description = "SExtractor Column flux_iso"
+        seg_table["source_sum_err"].description = "SExtractor Column fluxerr_iso"
+        # FIX: is mapping to _image or _world?  _image
+        seg_table["cxx"].description = "SExtractor Column cxx_image, ellipse parameter"
+        seg_table["cyy"].description = "SExtractor Column cyy_image, ellipse parameter"
+        seg_table["cxy"].description = "SExtractor Column cxy_image, ellipse parameter"
+        # FIX: is the mapping to _image or _world?
+        seg_table["covar_sigx2"].description = "SExtractor Column x2_image, (0,0) element of covariance matrix"
+        seg_table["covar_sigy2"].description = "SExtractor Column y2_image, (1,1) element of covariance matrix"
+        seg_table["covar_sigxy"].description = "SExtractor Column xy_image, (0,1) and (1,0) elements of covariance matrix"
 
-        # Write out the official total detection product source catalog
-        seg_table["x_image"].info.format = ".10f"
-        seg_table["y_image"].info.format = ".10f"
+        seg_table["xmin"].description = "SExtractor Column xmin_image"
+        seg_table["xmax"].description = "SExtractor Column xmax_image"
+        seg_table["ymin"].description = "SExtractor Column ymin_image"
+        seg_table["ymin"].description = "SExtractor Column ymax_image"
+
+        # Write out the official filter detection product source catalog
+        seg_table["xcentroid"].info.format = ".10f"
+        seg_table["ycentroid"].info.format = ".10f"
         seg_table["RA_icrs"].info.format = ".10f"
         seg_table["Dec_icrs"].info.format = ".10f"
-        seg_table["RA_icrs"].unit = u.deg
-        seg_table["Dec_icrs"].unit =  u.deg
         print("seg_table (filter): {}".format(seg_table))
 
         seg_table.write(catalog_filename, format="ascii.ecsv")
         log.info("Wrote filter source catalog: {}".format(catalog_filename))
 
+def get_header_data(imghdu):
+
+    keyword_dict = {}
+
+    # Get the HSTWCS object from the primary header
+    keyword_dict["proposal_id"] = imghdu[0].header["PROPOSID"]
+    keyword_dict["image_file_name"] = imghdu[0].header['FILENAME']
+    keyword_dict["target_name"] = imghdu[0].header["TARGNAME"] 
+    keyword_dict["date_obs"] = imghdu[0].header["DATE-OBS"]
+    keyword_dict["instrument"] = imghdu[0].header["INSTRUME"]
+    keyword_dict["detector"] = imghdu[0].header["DETECTOR"]
+    keyword_dict["target_ra"] = imghdu[0].header["RA_TARG"]
+    keyword_dict["target_dec"] = imghdu[0].header["DEC_TARG"]
+    keyword_dict["expo_start"] = imghdu[0].header["EXPSTART"]
+    keyword_dict["expo_time"] = imghdu[0].header["EXPTIME"]
+    keyword_dict["ccd_gain"] = imghdu[0].header["CCDGAIN"]
+    keyword_dict["filter_tdp"] = imghdu[0].header["FILTER"]
+    keyword_dict["filter1"] = imghdu[0].header["FILTER1"]
+    keyword_dict["filter2"] = imghdu[0].header["FILTER2"]
+
+    # Get the HSTWCS object from the first extension
+    keyword_dict["wcs_name"] = imghdu[1].header["WCSNAME"]
+    keyword_dict["orientation"] = imghdu[1].header["ORIENTAT"]
+    keyword_dict["aperture_ra"] = imghdu[1].header["RA_APER"]
+    keyword_dict["aperture_dec"] = imghdu[1].header["DEC_APER"]
+    keyword_dict["aperture_pa"] = imghdu[1].header[" "]
+
+    return(keyword_dict)
+
+def annotate_table(input_table, keyword_dict, product="tdp"):
+
+    input_table.meta["WCSNAME"] = keyword_dict["wcs_name"]
+    input_table.meta["Proposal ID"] = keyword_dict["proposal_id"]
+    input_table.meta["Image File Name"] = keyword_dict['image_file_name']
+    input_table.meta["Target Name"] = keyword_dict["target_name"] 
+    input_table.meta["Date Observed"] = keyword_dict["date_obs"]
+    # FIX 
+    if product.lower() == "tdp":
+        input_table.meta["Time Observed"] = " "
+    else:
+        input_table.meta["Time Observed"] = "FIX ME"
+    input_table.meta["Instrument"] = keyword_dict["instrument"]
+    input_table.meta["Detector"] = keyword_dict["detector"]
+    input_table.meta["Target RA"] = keyword_dict["target_ra"]
+    input_table.meta["Target DEC"] = keyword_dict["target_dec"]
+    input_table.meta["Orientation"] = keyword_dict["orientation"]
+    input_table.meta["Aperture RA"] = keyword_dict["aperture_ra"]
+    input_table.meta["Aperture DEC"] = keyword_dict["aperture_dec"]
+    input_table.meta["Aperture PA"] = keyword_dict["aperture_pa"]
+    if product.lower() == "tdp":
+        input_table.meta["Exposure Start"] = 0.000000 
+        input_table.meta["Exposure Time"] = 0.000
+    else:
+        input_table.meta["Exposure Start"] = keyword_dict["expo_start"]
+        input_table.meta["Exposure Time"] = keyword_dict["expo_time"]
+    input_table.meta["CCD Gain"] = keyword_dict["ccd_gain"]
+
+    if product.lower() == "tdp":
+        input_table.meta["Filter"] = keyword_dict["filter_tdp"]
+    else:
+        input_table.meta["Filter 1"] = keyword_dict["filter1"]
+        input_table.meta["Filter 2"] = keyword_dict["filter2"]
+
+    return(input_table)
+
+
 def run_photutils():
 
-    # white_light_filename = "j92c01010_drc.fits"
     """
-    param_dict = {"sourcex" : {"fwhm" : 0.25, "size_source_box" : 5, "threshold" : None}}
+    param_dict = {"sourcex" : {"fwhm" : 0.25, "size_source_box" : 5, "threshold_flag" : None}}
     white_light_filename = "hst_11150_70_wfc3_ir_total_ia1s70_drz.fits"
     tdp_catalog_filename = "hst_11150_70_wfc3_ir_total_ia1s70_segment-cat.ecsv"
     fp_filename_1 = "hst_11150_70_wfc3_ir_f110w_ia1s70_drz.fits"
@@ -425,8 +524,7 @@ def run_photutils():
     fp_filename_2 = "hst_11150_70_wfc3_ir_f160w_ia1s70_drz.fits"
     fp_catalog_filename_2 = "hst_11150_70_wfc3_ir_f160w_ia1s70_segment-cat.ecsv"
 
-    """
-    param_dict = {"sourcex" : {"fwhm" : 0.13, "size_source_box" : 5, "threshold" : None}}
+    param_dict = {"sourcex" : {"fwhm" : 0.13, "size_source_box" : 5, "threshold_flag" : None}}
     white_light_filename = "hst_10595_06_acs_wfc_total_j9es06_drc.fits"
     tdp_catalog_filename = "hst_10595_06_acs_wfc_total_j9es06_segment-cat.ecsv"
 
@@ -438,6 +536,15 @@ def run_photutils():
 
     fp_filename_3 = "hst_10595_06_acs_wfc_f814w_j9es06_drc.fits"
     fp_catalog_filename_3 = "hst_10595_06_acs_wfc_f814w_j9es06_segment-cat.ecsv"
+    """
+
+    param_dict = {"sourcex" : {"fwhm" : 0.13, "size_source_box" : 5, "threshold_flag" : None}}
+    white_light_filename = "hst_10265_01_acs_wfc_total_j92c01_drc.fits"
+    tdp_catalog_filename = "hst_10265_01_acs_wfc_total_j92c01_segment-cat.ecsv"
+
+    fp_filename_1 = "hst_10265_01_acs_wfc_f606w_j92c01_drc.fits"
+    fp_catalog_filename_1 = "hst_10265_01_acs_wfc_f606w_j92c01_segment-cat.ecsv"
+
 
     segmap, kernel, bkg, bkg_dao_rms, bkgsub  = create_sextractor_like_sourcelists(white_light_filename,
                                                                                             tdp_catalog_filename,
@@ -446,10 +553,12 @@ def run_photutils():
     measure_source_properties(segmap, bkgsub, kernel, fp_filename_1, fp_catalog_filename_1, param_dict)
     print("Measured filter 1")
 
+    """
     measure_source_properties(segmap, bkgsub, kernel, fp_filename_2, fp_catalog_filename_2, param_dict)
     print("Measured filter 2")
 
     measure_source_properties(segmap, bkgsub, kernel, fp_filename_3, fp_catalog_filename_3, param_dict)
     print("Measured filter 3")
+    """
 
     return
