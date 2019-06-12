@@ -59,7 +59,7 @@ def create_dao_like_coordlists(fitsfile,dao_fwhm=3.5,bkgsig_sf=2.):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_sourcelists(fitsfile,sl_filename,sources,aper_radius=4.):
+def create_dao_like_sourcelists(fitsfile,sl_filename,sources,aper_radius=4.,make_region_file=False):
     """Make DAOphot-like sourcelists
 
     Parameters
@@ -76,6 +76,9 @@ def create_dao_like_sourcelists(fitsfile,sl_filename,sources,aper_radius=4.):
 
     aper_radius : float
         Aperture radius (in pixels) used for photometry. Default value = 4.
+
+    make_region_file : Boolean
+        Generate ds9-compatible region file(s) along with the sourcelist? Default value = False
 
     Returns
     -------
@@ -95,13 +98,20 @@ def create_dao_like_sourcelists(fitsfile,sl_filename,sources,aper_radius=4.):
     for col in phot_table.colnames: phot_table[col].info.format = '%.8g'  # for consistent table output
     hdulist.close()
 
-    # Write out preliminary sourcelist
-    out_table = phot_table.copy()
-    out_table['xcenter'].data = out_table['xcenter'].data + np.float64(1.0)
-    out_table['ycenter'].data = out_table['ycenter'].data + np.float64(1.0)
-    out_table.remove_column('id')
-    out_table.write(sl_filename, format="ascii")
-    log.info("Created catalog '{}' with {} sources".format(sl_filename, len(out_table)))
+    # Write out sourcelist
+    tbl_length = len(phot_table)
+    phot_table.write(sl_filename, format="ascii.ecsv")
+    log.info("Created sourcelist file '{}' with {} sources".format(sl_filename, tbl_length))
+
+    # Write out ds9-compatable .reg file
+    if make_region_file:
+        reg_filename = sl_filename.replace(".ecsv",".reg")
+        out_table = phot_table.copy()
+        out_table['xcenter'].data = out_table['xcenter'].data + np.float64(1.0)
+        out_table['ycenter'].data = out_table['ycenter'].data + np.float64(1.0)
+        out_table.remove_column('id')
+        out_table.write(reg_filename, format="ascii")
+        log.info("Created region file '{}' with {} sources".format(reg_filename, tbl_length))
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -171,9 +181,9 @@ def create_sourcelists(obs_info_dict, param_dict):
             point_source_catalog_name = obs_info_dict[fp_keyname]['product filenames']['point source catalog']
             seg_source_catalog_name = obs_info_dict[fp_keyname]['product filenames']['segment source catalog']
 
-            print("Filter combined image... ",filter_combined_imagename)
-            print("Point source catalog.... ",point_source_catalog_name)
-            print("Segment source catalog.. ",seg_source_catalog_name)
+            log.info("Filter combined image... {}".format(filter_combined_imagename))
+            log.info("Point source catalog.... {}".format(point_source_catalog_name))
+            log.info("Segment source catalog.. {}".format(seg_source_catalog_name))
 
             create_se_like_sourcelists()
             create_dao_like_sourcelists(filter_combined_imagename, point_source_catalog_name, dao_coord_list)
