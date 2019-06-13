@@ -14,6 +14,7 @@ from photutils import aperture_photometry, CircularAperture, DAOStarFinder
 from stsci.tools import logutil
 
 from drizzlepac import util
+import se_source_generation
 
 __taskname__ = 'sourcelist_generation'
 
@@ -113,6 +114,7 @@ def create_dao_like_sourcelists(fitsfile,sl_filename,sources,aper_radius=4.,make
         out_table.write(reg_filename, format="ascii")
         log.info("Created region file '{}' with {} sources".format(reg_filename, tbl_length))
 
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -162,6 +164,7 @@ def create_sourcelists(obs_info_dict, param_dict):
     Returns
     -------
     """
+
     log.info("-" * 118)
     for product_type in obs_info_dict:
         for item_type in obs_info_dict[product_type]:
@@ -171,13 +174,21 @@ def create_sourcelists(obs_info_dict, param_dict):
     for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
                         oid_key.startswith('total detection product')]:  # loop over total filtered products
         log.info("=====> {} <======".format(tdp_keyname))
-        detection_image = obs_info_dict[tdp_keyname]['product filenames']['image']
+        parse_tdp_info = obs_info_dict[tdp_keyname]['info'].split()
+        inst_det = "{} {}".format(parse_tdp_info[2].upper(),parse_tdp_info[3].upper())
 
-        create_se_like_coordlists()
+        detection_image = obs_info_dict[tdp_keyname]['product filenames']['image']
+        tdp_catalog_filename = obs_info_dict[tdp_keyname]['product filenames']['segment source catalog']
+
+        segmap, kernel, bkg, bkg_dao_rms, bkgsub = se_source_generation.create_sextractor_like_sourcelists(
+            detection_image, tdp_catalog_filename, param_dict[inst_det], se_debug=True)
+
         dao_coord_list = create_dao_like_coordlists(detection_image)
+
 
         for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
             filter_combined_imagename = obs_info_dict[fp_keyname]['product filenames']['image']
+
             point_source_catalog_name = obs_info_dict[fp_keyname]['product filenames']['point source catalog']
             seg_source_catalog_name = obs_info_dict[fp_keyname]['product filenames']['segment source catalog']
 
@@ -185,7 +196,9 @@ def create_sourcelists(obs_info_dict, param_dict):
             log.info("Point source catalog.... {}".format(point_source_catalog_name))
             log.info("Segment source catalog.. {}".format(seg_source_catalog_name))
 
-            create_se_like_sourcelists()
+            se_source_generation.measure_source_properties(segmap, bkgsub, kernel, filter_combined_imagename,
+                                                           seg_source_catalog_name, param_dict[inst_det])
+
             create_dao_like_sourcelists(filter_combined_imagename, point_source_catalog_name, dao_coord_list)
             
 

@@ -37,7 +37,7 @@ try:
     print(cmd)
     os.system(cmd)
 
-    cmd = "cp sl_gen_orig/* ."
+    cmd = "cp sl_gen_orig2/* ."
     print(cmd)
     os.system(cmd)
 
@@ -46,8 +46,8 @@ try:
     pickle_in.close()
 
     #copy Warren's custom-created f606W and total drizzle images in for testing!
-    cmdlist = ["cp -f artif_orig/hst_10265_01_acs_wfc_f606w_j92c01_drc.fits hst_10265_01S_ACS_WFC_F606W.fits"]
-    cmdlist.append("cp -f artif_orig/hst_10265_01_acs_wfc_total_j92c01_drc.fits hst_10265_01S_ACS_WFC.fits")
+    cmdlist = ["cp -f artif_orig/hst_10265_01_acs_wfc_f606w_j92c01_drc.fits ."]
+    cmdlist.append("cp -f artif_orig/hst_10265_01_acs_wfc_total_j92c01_drc.fits .")
     for cmd in cmdlist:
         print(cmd)
         os.system(cmd)
