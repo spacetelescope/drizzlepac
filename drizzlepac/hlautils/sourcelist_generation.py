@@ -60,7 +60,7 @@ def create_dao_like_coordlists(fitsfile,dao_fwhm=3.5,bkgsig_sf=2.):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_sourcelists(fitsfile,sl_filename,sources,aper_radius=4.,make_region_file=False):
+def create_dao_like_sourcelists(fitsfile,sl_filename,sources,aper_radius=4.,make_region_file=True):
     """Make DAOphot-like sourcelists
 
     Parameters
