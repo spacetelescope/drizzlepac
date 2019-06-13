@@ -57,6 +57,7 @@ try:
     param_dict["ACS WFC"]["sourcex"]["thresh"] = None
     sourcelist_generation.run_create_sourcelists(obs_info_dict,param_dict)
 except Exception:
+    print("\a\a\a")
     exc_type, exc_value, exc_tb = sys.exc_info()
     traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
     print("Error! exiting...")

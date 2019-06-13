@@ -23,7 +23,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_coordlists(fitsfile,dao_fwhm=3.5,bkgsig_sf=2.):
+def create_dao_like_coordlists(fitsfile,sourcelist_filename,make_region_file=True,dao_fwhm=3.5,bkgsig_sf=2.):
     """Make daofind-like coordinate lists
 
     Parameters
@@ -31,9 +31,15 @@ def create_dao_like_coordlists(fitsfile,dao_fwhm=3.5,bkgsig_sf=2.):
     fitsfile : string
         Name of the drizzle-combined filter product to used to generate photometric sourcelists.
 
+    sourcelist_filename : string
+        Name of optionally generated ds9-compatible region file
+
     dao_fwhm : float
         (photutils.DAOstarfinder param 'fwhm') The full-width half-maximum (FWHM) of the major axis of the
         Gaussian kernel in units of pixels. Default value = 3.5.
+
+    make_region_file : Boolean
+        Generate ds9-compatible region file? Default value = True
 
     bkgsig_sf : float
         multiplictive scale factor applied to background sigma value to compute DAOfind input parameter
@@ -54,6 +60,20 @@ def create_dao_like_coordlists(fitsfile,dao_fwhm=3.5,bkgsig_sf=2.):
 
     for col in sources.colnames:
         sources[col].info.format = '%.8g'  # for consistent table output
+
+    if make_region_file:
+        out_table = sources.copy()
+        # Remove all other columns besides xcentroid and ycentroid
+        out_table.keep_columns(['xcentroid','ycentroid'])
+
+        # Add offset of 1.0 in X and Y to line up sources in region file with image displayed in ds9.
+        out_table['xcentroid'].data[:] += np.float64(1.0)
+        out_table['ycentroid'].data[:] += np.float64(1.0)
+
+        reg_filename = sourcelist_filename.replace(".ecsv",".reg")
+        out_table.write(reg_filename, format="ascii")
+        log.info("Created region file '{}' with {} sources".format(reg_filename, len(out_table)))
+
     return(sources)
 
 
@@ -118,38 +138,6 @@ def create_dao_like_sourcelists(fitsfile,sl_filename,sources,aper_radius=4.,make
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_se_like_coordlists():
-    """Make source extractor-like coordinate lists
-
-    Parameters
-    ----------
-
-    Returns
-    -------
-    """
-
-    log.info("SOURCE EXTRACTOR-LIKE COORDINATE LIST CREATION OCCURS HERE!")
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-def create_se_like_sourcelists():
-    """Make source extractor-like sourcelists
-
-    Parameters
-    ----------
-
-    Returns
-    -------
-    """
-
-    log.info("SOURCE EXTRACTOR-LIKE SOURCELIST CREATION OCCURS HERE!")
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
 def create_sourcelists(obs_info_dict, param_dict):
     """Main calling code. Make sourcelists
 
@@ -178,12 +166,13 @@ def create_sourcelists(obs_info_dict, param_dict):
         inst_det = "{} {}".format(parse_tdp_info[2].upper(),parse_tdp_info[3].upper())
 
         detection_image = obs_info_dict[tdp_keyname]['product filenames']['image']
-        tdp_catalog_filename = obs_info_dict[tdp_keyname]['product filenames']['segment source catalog']
+        tdp_seg_catalog_filename = obs_info_dict[tdp_keyname]['product filenames']['segment source catalog']
+        tdp_ps_catalog_filename = obs_info_dict[tdp_keyname]['product filenames']['point source catalog']
 
         segmap, kernel, bkg, bkg_dao_rms, bkgsub = se_source_generation.create_sextractor_like_sourcelists(
-            detection_image, tdp_catalog_filename, param_dict[inst_det], se_debug=True)
+            detection_image, tdp_seg_catalog_filename, param_dict[inst_det], se_debug=True)
 
-        dao_coord_list = create_dao_like_coordlists(detection_image)
+        dao_coord_list = create_dao_like_coordlists(detection_image,tdp_ps_catalog_filename,)
 
 
         for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
