@@ -553,11 +553,13 @@ def run_astrodrizzle(filelist, adriz_param_dict, outfilename, custom_wcs=None):
     log.info("Processing with astrodrizzle version {}".format(drizzlepac.astrodrizzle.__version__))
     # Define parameters which need to be set specifically for
     #    pipeline use of astrodrizzle
-    pipeline_pars = {'mdriztab': True,
+    pipeline_pars = {'mdriztab': False,
                      'stepsize': 10,
                      'output': outfilename,
                      'preserve': False,
-                     'resetbits': 4096}
+                     'resetbits': 4096,
+                     'driz_combine': True,
+                     'in_memory': True}
 
     # splice in parameters from instrument/detector-specific astrodrizzle dictionary
     for key in adriz_param_dict.keys():
@@ -587,8 +589,7 @@ def run_astrodrizzle(filelist, adriz_param_dict, outfilename, custom_wcs=None):
 
     # Execute astrodrizzle
     b = drizzlepac.astrodrizzle.AstroDrizzle(input=filelist, runfile="astrodrizzle.log",
-                                             configobj='defaults', in_memory=None,
-                                             num_cores=None, **pipeline_pars)
+                                             configobj='defaults', num_cores=None, **pipeline_pars)
 
 # ----------------------------------------------------------------------------------------------------------------------
 

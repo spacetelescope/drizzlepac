@@ -14,7 +14,7 @@ from photutils import aperture_photometry, CircularAperture, DAOStarFinder
 from stsci.tools import logutil
 
 from drizzlepac import util
-import se_source_generation
+from drizzlepac.hlautils import se_source_generation
 
 __taskname__ = 'sourcelist_generation'
 
