@@ -52,6 +52,9 @@ try:
         print(cmd)
         os.system(cmd)
 
+    param_dict["ACS WFC"]["sourcex"]["fwhm"] = 0.13
+    param_dict["ACS WFC"]["sourcex"]["source_box"] = 5
+    param_dict["ACS WFC"]["sourcex"]["thresh"] = None
     sourcelist_generation.run_create_sourcelists(obs_info_dict,param_dict)
 except Exception:
     exc_type, exc_value, exc_tb = sys.exc_info()

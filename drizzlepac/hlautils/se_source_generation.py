@@ -86,8 +86,8 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_
 
     # Get the instrument/detector-specific values from the param_dict 
     fwhm = param_dict["sourcex"]["fwhm"]
-    size_source_box = param_dict["sourcex"]["size_source_box"]
-    threshold = param_dict["sourcex"]["threshold"]
+    size_source_box = param_dict["sourcex"]["source_box"]
+    threshold = param_dict["sourcex"]["thresh"]
 
     # Report configuration values to log
     log.info("{}".format("=" * 80))
@@ -227,8 +227,8 @@ def measure_source_properties(segm, imgarr_bkgsub, kernel, source_filename, cata
 
     # Get the instrument/detector-specific values from the param_dict 
     fwhm = param_dict["sourcex"]["fwhm"]
-    size_source_box = param_dict["sourcex"]["size_source_box"]
-    threshold = param_dict["sourcex"]["threshold"]
+    size_source_box = param_dict["sourcex"]["source_box"]
+    threshold = param_dict["sourcex"]["thresh"]
 
     # Report configuration values to log
     log.info("{}".format("=" * 80))
@@ -426,7 +426,7 @@ def run_photutils():
     fp_catalog_filename_2 = "hst_11150_70_wfc3_ir_f160w_ia1s70_segment-cat.ecsv"
 
     """
-    param_dict = {"sourcex" : {"fwhm" : 0.13, "size_source_box" : 5, "threshold" : None}}
+    param_dict = {"sourcex" : {"fwhm" : 0.13, "source_box" : 5, "thresh" : None}}
     white_light_filename = "hst_10595_06_acs_wfc_total_j9es06_drc.fits"
     tdp_catalog_filename = "hst_10595_06_acs_wfc_total_j9es06_segment-cat.ecsv"
 
