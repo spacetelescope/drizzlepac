@@ -124,10 +124,10 @@ param_dict = {
             "aperture_2": 0.15,  # update from 0.25
             "bthresh": 5.0},
         "sourcex": {
-            "fwhm": 0.076,
-            "thresh": 1.4,
+            "fwhm": 0.13,
+            "thresh": None,
             "bthresh": 5.0,
-            "source_box": 7},
+            "source_box": 5},
         "swarm filter": {
             "upper_epp_limit": 70000.,
             "lower_epp_limit": 2000.,
