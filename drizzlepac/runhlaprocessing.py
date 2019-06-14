@@ -559,7 +559,9 @@ def run_astrodrizzle(filelist, adriz_param_dict, outfilename, custom_wcs=None):
                      'preserve': False,
                      'resetbits': 4096,
                      'driz_combine': True,
-                     'in_memory': True}
+                     'in_memory': False,
+                     'build': True,
+                     'num_cores': None}
 
     # splice in parameters from instrument/detector-specific astrodrizzle dictionary
     for key in adriz_param_dict.keys():
@@ -587,9 +589,13 @@ def run_astrodrizzle(filelist, adriz_param_dict, outfilename, custom_wcs=None):
                 pipeline_pars[custom_key] = custom_pars[custom_key]
         log.info("AstroDrizzle parameter recombobulation successful.")
 
+
+    for key in pipeline_pars.keys():
+        log.info("PIPELINE_PARS>>>>>> {}:  {}".format(key,pipeline_pars[key]))
+
     # Execute astrodrizzle
     b = drizzlepac.astrodrizzle.AstroDrizzle(input=filelist, runfile="astrodrizzle.log",
-                                             configobj='defaults', num_cores=None, **pipeline_pars)
+                                             configobj='defaults', **pipeline_pars)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -606,8 +612,8 @@ def run_hla_processing(input_filename, result=None, debug=True):
         # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new
         # ticket if necessary)
         log.info("2: Apply rules to determine what exposures need to be combined into separate products")
-        # obs_info_dict_old = generate_test_data(input_filename)  # TODO: REMOVE once all previous steps are up and running
         obs_info_dict = pipeline_poller_utils.interpret_obset_input(input_filename)
+
         # 3: generate an output names for each defined product...
         log.info("3: generate an output names for each defined product")
         for obs_category in obs_info_dict.keys():
@@ -691,6 +697,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
             else:
                 log.info("{}: Total detection AstroDrizzle step skipped.".format(obs_category))
 
+        # sys.exit()
         # 9: Create source catalogs from newly defined products (HLA-204)
         log.info("9: (WIP) Create source catalog from newly defined product")
         pickle_filename = input_filename.replace(".out",".pickle")
