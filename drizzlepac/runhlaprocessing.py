@@ -14,9 +14,9 @@ import traceback
 
 import drizzlepac
 from drizzlepac import alignimages
-from drizzlepac import generate_final_product_filenames
 from drizzlepac import util
 from drizzlepac import wcs_functions
+from drizzlepac.hlautils import pipeline_poller_utils
 from drizzlepac.hlautils import sourcelist_generation
 from stsci.tools import logutil
 
@@ -452,11 +452,13 @@ def rename_subproduct_files(obs_info_dict_item):
             if key.startswith("subproduct"):
                 dest_imgname = obs_info_dict_item[key]["image"]
                 imgname_root = dest_imgname.split("_")[-2]
-                src_imgname = "{}_single_sci.fits".format(imgname_root)
+                image_rootname = [i for i in obs_info_dict_item['files'] if i.startswith("{}".format(imgname_root))][0].split("_")[0]
+                src_imgname = "{}_single_sci.fits".format(image_rootname)
 
                 # rename single_sci.fits image
                 os.rename(src_imgname, dest_imgname)
                 log.info("RENAME {} ~~> {}".format(src_imgname, dest_imgname))
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -513,12 +515,14 @@ def restructure_obs_info_dict(obs_info_dict):
                     del single_exposure_dict[imgname]
             except:
                 continue
-    # 3: add field "associated 
+
+    # 3: add field "associated filter products"
     for total_driz_product in [x for x in restructured_dict.keys() if x.startswith('total detection product')]:
         restructured_dict[total_driz_product]['associated filter products'] = [y for y in restructured_dict.keys() if
-        restructured_dict[y]['info'].startswith(restructured_dict[total_driz_product]['info']) and not
+        set(restructured_dict[y]['files']).issubset(restructured_dict[total_driz_product]['files']) and not
                                                                                y.startswith('total detection product')]
     return(restructured_dict)
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -601,20 +605,23 @@ def run_hla_processing(input_filename, result=None, debug=True):
         # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new
         # ticket if necessary)
         log.info("2: Apply rules to determine what exposures need to be combined into separate products")
-        # TODO: SUBROUTINE CALL GOES HERE.
-        obs_info_dict = generate_test_data(input_filename)  # TODO: REMOVE once all previous steps are up and running
-
+        # obs_info_dict_old = generate_test_data(input_filename)  # TODO: REMOVE once all previous steps are up and running
+        obs_info_dict = pipeline_poller_utils.interpret_obset_input(input_filename)
         # 3: generate an output names for each defined product...
         log.info("3: generate an output names for each defined product")
         for obs_category in obs_info_dict.keys():
             obs_info_dict[obs_category]['product filenames'] = \
-                generate_final_product_filenames.run_generator(obs_category, obs_info_dict[obs_category]["info"])
+                pipeline_poller_utils.run_generator(obs_category, obs_info_dict[obs_category]["info"])
             for key in obs_info_dict[obs_category].keys():
                 log.info("{}: {}".format(key, obs_info_dict[obs_category][key]))
 
         # 4: restructure obs_info_dict so that it's ready for processing.
         log.info("4: restructure obs_info_dict so that it's ready for processing.")
+        # obs_info_dict_old = restructure_obs_info_dict(obs_info_dict_old)
         obs_info_dict = restructure_obs_info_dict(obs_info_dict)
+        # for key in obs_info_dict.keys():
+        #     print(key,obs_info_dict[key])
+        # pdb.set_trace()
 
         # 5: run alignimages.py on images on a filter-by-filter basis.
         log.info("5: run alignimages.py on images on a filter-by-filter basis for {}".format(obs_category))
@@ -652,6 +659,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
                                  adriz_param_dict,
                                  obs_info_dict[obs_category]['product filenames']['image'],
                                  custom_wcs=meta_wcs)
+
                 rename_subproduct_files(obs_info_dict[obs_category])
             else:
                 log.info("{}: Filter-by-Filter AstroDrizzle step skipped.".format(obs_category))
@@ -769,3 +777,4 @@ if __name__ == '__main__':
     ARGS = parser.parse_args()
 
     rv = perform_processing(ARGS.input_filename, debug=ARGS.debug)
+    print("Return Value: ",rv)

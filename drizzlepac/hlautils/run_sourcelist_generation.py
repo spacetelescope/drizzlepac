@@ -45,12 +45,12 @@ try:
     [obs_info_dict,param_dict] = pickle.load(pickle_in)
     pickle_in.close()
 
-    # #copy hla classic f606W and total drizzle images in for testing1!
-    # cmdlist = ["cp -f hla_groundtruth/hst_10265_01_acs_wfc_f606w_drz.fits hst_10265_01S_ACS_WFC_F606W.fits"]
-    # cmdlist.append("cp -f hla_groundtruth/hst_10265_01_acs_wfc_total_drz.fits hst_10265_01S_ACS_WFC.fits")
-    # for cmd in cmdlist:
-    #     print(cmd)
-    #     os.system(cmd)
+    #copy Warren's custom-created f606W and total drizzle images in for testing!
+    cmdlist = ["cp -f artif_orig/hst_10265_01_acs_wfc_f606w_j92c01_drc.fits hst_10265_01S_ACS_WFC_F606W.fits"]
+    cmdlist.append("cp -f artif_orig/hst_10265_01_acs_wfc_total_j92c01_drc.fits hst_10265_01S_ACS_WFC.fits")
+    for cmd in cmdlist:
+        print(cmd)
+        os.system(cmd)
 
     sourcelist_generation.run_create_sourcelists(obs_info_dict,param_dict)
 except Exception:

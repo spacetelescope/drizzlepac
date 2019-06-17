@@ -31,11 +31,11 @@ def get_rules_file(product):
     code_dir = os.path.abspath(__file__)
     base_dir = os.path.dirname(os.path.dirname(code_dir))
     rules_name = "{}_header_hla.rules".format(instrument.lower())
-    rules_dir = os.path.join(base_dir, 'pars', rules_name)
+    rules_filename = os.path.join(base_dir, 'pars', rules_name)
     if rules_name not in os.listdir('.'):
-        shutil.copy(rules_dir, os.getcwd())
+        shutil.copy(rules_filename, os.getcwd())
 
-def refine_product_headers(product, obs_dict_info, level=None):
+def refine_product_headers(product, obs_dict_info):
     """Refines output product headers to include values not available to AstroDrizzle.
 
     A few header keywords need to have values computed to reflect the type of product being
@@ -51,17 +51,15 @@ def refine_product_headers(product, obs_dict_info, level=None):
     obs_dict_info : dict
         Dictionary describing relationship between input and output exposures.
 
-    level : int, optional
-        If defined, will add the 'LEVEL' keyword to the header of the product as defined by the calling
-        routine. For example, 'level=2' to add/update the 'LEVEL' keyword for a level 2 (filter image)
-        product.
     """
-
     hdu, closefits = _process_input(product)
     phdu = hdu[0].header
     # Insure rootname and filename keywords matches actual filename
     phdu['rootname'] = '_'.join(product.split('_')[:-1])
     phdu['filename'] = product
+
+    # Determine level of the product
+    level = 1 if len(phdu['rootname'].split('_')[-1]) > 6 else 2
 
     # Update PINAME keyword
     phdu['piname'] = phdu['pr_inv_l']
@@ -132,7 +130,7 @@ def update_hdrtab(image, level, obs_dict_info, input_exposures):
                 else:
                     # Convert input exposure names into HAP names
                     for haptype, hapdict in obs_dict_info.items():
-                        if LEVEL_DEFS[level - 1] in haptype and expname in hapdict['files']:
+                        if LEVEL_DEFS[1] in haptype and expname in hapdict['files']:
                             name = hapdict['product filenames']['image']
                             name = name.replace(';', '-')
                             name_col.append(name)
