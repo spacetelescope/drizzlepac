@@ -89,8 +89,8 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_
    
     # Get the instrument/detector-specific values from the param_dict 
     fwhm = param_dict["sourcex"]["fwhm"]
-    size_source_box = param_dict["sourcex"]["size_source_box"]
-    threshold_flag = param_dict["sourcex"]["threshold_flag"]
+    size_source_box = param_dict["sourcex"]["source_box"]
+    threshold_flag = param_dict["sourcex"]["thresh"]
 
     # Report configuration values to log
     log.info("{}".format("=" * 80))
@@ -144,7 +144,8 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_
         tbl["xcentroid"].info.format = ".10f"  # optional format
         tbl["ycentroid"].info.format = ".10f"
 
-        # Add one to the X and Y table values to put the data onto a one-based system
+        # Add one to the X and Y table values to put the data onto a one-based system,
+        # particularly for display with DS9
         tbl["xcentroid"] = tbl["xcentroid"] + 1
         tbl["ycentroid"] = tbl["ycentroid"] + 1
         tbl.write(outname, format="ascii.commented_header")
@@ -246,8 +247,8 @@ def measure_source_properties(segm, imgarr_bkgsub, background, kernel, source_fi
 
     # Get the instrument/detector-specific values from the param_dict 
     fwhm = param_dict["sourcex"]["fwhm"]
-    size_source_box = param_dict["sourcex"]["size_source_box"]
-    threshold_flag = param_dict["sourcex"]["threshold_flag"]
+    size_source_box = param_dict["sourcex"]["source_box"]
+    threshold_flag = param_dict["sourcex"]["thresh"]
 
     # Report configuration values to log
     log.info("{}".format("=" * 80))
@@ -414,8 +415,8 @@ def _write_catalog(seg_cat, keyword_dict, catalog_filename, product="tdp"):
         # Add metadata to the output subset table
         seg_subset_table = _annotate_table(seg_subset_table, keyword_dict, num_sources, product=product)
 
-        seg_subset_table["xcentroid"].description = "SExtractor Column x_image, One-Based coordinates"
-        seg_subset_table["ycentroid"].description = "SExtractor Column y_image, One-Based coordinates"
+        seg_subset_table["xcentroid"].description = "SExtractor Column x_image"
+        seg_subset_table["ycentroid"].description = "SExtractor Column y_image"
         seg_subset_table["RA_icrs"] = ra_icrs
         seg_subset_table["Dec_icrs"] = dec_icrs
         seg_subset_table["RA_icrs"].description = "SExtractor Column RA"
@@ -429,10 +430,6 @@ def _write_catalog(seg_cat, keyword_dict, catalog_filename, product="tdp"):
         seg_subset_table["RA_icrs"].info.format = ".10f"
         seg_subset_table["Dec_icrs"].info.format = ".10f"
         print("seg_subset_table (white light image): ", seg_subset_table)
-
-        # Add one to the X and Y table values to put the data onto a one-based system
-        seg_subset_table["xcentroid"] = seg_subset_table["xcentroid"] + 1
-        seg_subset_table["ycentroid"] = seg_subset_table["ycentroid"] + 1
 
         seg_subset_table.write(catalog_filename, format="ascii.ecsv")
         log.info("Wrote source catalog: {}".format(catalog_filename))
@@ -452,8 +449,8 @@ def _write_catalog(seg_cat, keyword_dict, catalog_filename, product="tdp"):
         seg_table.add_column(rr, index=2)
 
         # Add a description for columns which map to SExtractor catalog columns
-        seg_table["xcentroid"].description = "SExtractor Column x_image, One-Based coordinates"
-        seg_table["ycentroid"].description = "SExtractor Column y_image, One-Based coordinates"
+        seg_table["xcentroid"].description = "SExtractor Column x_image"
+        seg_table["ycentroid"].description = "SExtractor Column y_image"
         seg_table["background_at_centroid"].description = "SExtractor Column background"
         seg_table["source_sum"].description = "SExtractor Column flux_iso"
         seg_table["source_sum_err"].description = "SExtractor Column fluxerr_iso"
@@ -477,10 +474,6 @@ def _write_catalog(seg_cat, keyword_dict, catalog_filename, product="tdp"):
         seg_table["RA_icrs"].info.format = ".10f"
         seg_table["Dec_icrs"].info.format = ".10f"
         print("seg_table (filter): {}".format(seg_table))
-
-        # Add one to the X and Y table values to put the data onto a one-based system
-        seg_table["xcentroid"] = seg_table["xcentroid"] + 1
-        seg_table["ycentroid"] = seg_table["ycentroid"] + 1
 
         seg_table.write(catalog_filename, format="ascii.ecsv")
         log.info("Wrote filter source catalog: {}".format(catalog_filename))
@@ -588,6 +581,8 @@ def _annotate_table(data_table, keyword_dict, num_sources, product="tdp"):
     data_table.meta["Total Exposure Time"] = keyword_dict["texpo_time"]
     data_table.meta["CCD Gain"] = keyword_dict["ccd_gain"]
     data_table.meta["Number of sources"] = num_sources
+    data_table.meta[""] = " "
+    data_table.meta[""] = "Absolute coordinates are in a zero-based coordinate system."
 
     return(data_table)
 
@@ -595,7 +590,7 @@ def _annotate_table(data_table, keyword_dict, num_sources, product="tdp"):
 def run_photutils():
 
     """
-    param_dict = {"sourcex" : {"fwhm" : 0.25, "size_source_box" : 5, "threshold_flag" : None}}
+    param_dict = {"sourcex" : {"fwhm" : 0.25, "source_box" : 5, "thresh" : None}}
     white_light_filename = "hst_11150_70_wfc3_ir_total_ia1s70_drz.fits"
     tdp_catalog_filename = "hst_11150_70_wfc3_ir_total_ia1s70_segment-cat.ecsv"
     fp_filename_1 = "hst_11150_70_wfc3_ir_f110w_ia1s70_drz.fits"
@@ -603,7 +598,7 @@ def run_photutils():
     fp_filename_2 = "hst_11150_70_wfc3_ir_f160w_ia1s70_drz.fits"
     fp_catalog_filename_2 = "hst_11150_70_wfc3_ir_f160w_ia1s70_segment-cat.ecsv"
 
-    param_dict = {"sourcex" : {"fwhm" : 0.13, "size_source_box" : 5, "threshold_flag" : None}}
+    param_dict = {"sourcex" : {"fwhm" : 0.13, "source_box" : 5, "thresh" : None}}
     white_light_filename = "hst_10595_06_acs_wfc_total_j9es06_drc.fits"
     tdp_catalog_filename = "hst_10595_06_acs_wfc_total_j9es06_segment-cat.ecsv"
 
@@ -617,7 +612,7 @@ def run_photutils():
     fp_catalog_filename_3 = "hst_10595_06_acs_wfc_f814w_j9es06_segment-cat.ecsv"
     """
 
-    param_dict = {"sourcex" : {"fwhm" : 0.13, "size_source_box" : 5, "threshold_flag" : None}}
+    param_dict = {"sourcex" : {"fwhm" : 0.13, "source_box" : 5, "thresh" : None}}
     white_light_filename = "hst_10265_01_acs_wfc_total_j92c01_drc.fits"
     tdp_catalog_filename = "hst_10265_01_acs_wfc_total_j92c01_segment-cat.ecsv"
 
