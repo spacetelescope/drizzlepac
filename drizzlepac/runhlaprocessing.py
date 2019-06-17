@@ -6,6 +6,7 @@
 import argparse
 import collections
 import datetime
+import glob
 import os
 import pdb
 import pickle
@@ -14,9 +15,11 @@ import traceback
 
 import drizzlepac
 from drizzlepac import alignimages
+from drizzlepac import astrodrizzle
 from drizzlepac import util
 from drizzlepac import wcs_functions
 from drizzlepac.hlautils import pipeline_poller_utils
+from drizzlepac.hlautils import processing_utils as dpu
 from drizzlepac.hlautils import sourcelist_generation
 from stsci.tools import logutil
 
@@ -372,75 +375,84 @@ def restructure_obs_info_dict(obs_info_dict):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_astrodrizzle(filelist, adriz_param_dict, outfilename, custom_wcs=None):
+def run_astrodrizzle(obs_info_dict):
     """
-    Run astrodrizzle on user-specified file(s) with specified parameters.
+    Run astrodrizzle to produce products specified in obs_info_dict.
 
     Parameters
     ----------
-    filelist : list
-        List of files to be processed by astrodrizzle.
-
-    adriz_param_dict : dictionary
-        Dictionary containing instrument/specific values for astrodrizzle paramters "PIXSCALE", "PIXFRAC":, "KERNEL",
-        "OUTNX", "OUTNY", "ROT", and "DRIZ_BITS".
-
-    outfilename : string
-        name of the output drizzle-combined image.
-
-    custom_wcs : HSTWCS object
-        The composite WCS created by wcs_functions.make_mosaic_wcs()
+    obs_info_dict : dictionary
+        Dictionary containing all relevant information required to process the dataset.
 
     RETURNS
     -------
     Nothing.
     """
     log.info("Processing with astrodrizzle version {}".format(drizzlepac.astrodrizzle.__version__))
-    # Define parameters which need to be set specifically for
-    #    pipeline use of astrodrizzle
-    pipeline_pars = {'mdriztab': False,
-                     'stepsize': 10,
-                     'output': outfilename,
-                     'preserve': False,
-                     'resetbits': 4096,
-                     'driz_combine': True,
-                     'in_memory': False,
-                     'build': True,
-                     'num_cores': None}
+    cfgfile_path = os.path.dirname(sys.argv[0])+"/"
+    for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
+                        oid_key.startswith('total detection product')]:  # loop over total filtered products
+        log.info("=====> {} <======".format(tdp_keyname))
 
-    # splice in parameters from instrument/detector-specific astrodrizzle dictionary
-    for key in adriz_param_dict.keys():
-        if key in ["SCALE", "PIXFRAC", "KERNEL", "OUTNX", "OUTNY", "ROT", "BITS"]:
-            pipeline_pars["final_{}".format(key.lower())] = adriz_param_dict[key]
-            pipeline_pars["driz_sep_{}".format(key.lower())] = adriz_param_dict[key]
-        else:
-            pipeline_pars[key] = adriz_param_dict[key]
-    # prep custom_wcs values
-    if custom_wcs:
-        custom_pars = wcs_functions.create_mosaic_pars(custom_wcs)
-    # merge custom_pars into pipeline_pars
-        log.info("Recombobulating Astrodrizzle input parameters")
-        pipeline_keys = pipeline_pars.keys()
-        for custom_key in custom_pars.keys():
-            if custom_key in pipeline_keys:
-                if custom_pars[custom_key] != pipeline_pars[custom_key]:
-                    log.info("Updating pipeline_pars value '{}' from {} to {}".format(custom_key,
-                                                                                      pipeline_pars[custom_key],
-                                                                                      custom_pars[custom_key]))
-                    pipeline_pars[custom_key] = custom_pars[custom_key]
-            else:
-                log.info("Inserting custom_pars value '{}' = {} into pipeline_pars.".format(custom_key,
-                                                                                            custom_pars[custom_key]))
-                pipeline_pars[custom_key] = custom_pars[custom_key]
-        log.info("AstroDrizzle parameter recombobulation successful.")
+        # 1: Create temp. total drizzled image used to align all subsequent products
+        log.info("~" * 118)
+        log.info("CREATE TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")
+        ref_total_combined_image = "{}ref_{}".format(obs_info_dict[tdp_keyname]['product filenames']['image'][:-8],
+                                                     obs_info_dict[tdp_keyname]['product filenames']['image'][-8:])
+        adriz_in_list = obs_info_dict[tdp_keyname]['files']
+        log.info("Ref total combined image. {} {}".format(ref_total_combined_image,adriz_in_list,ref_total_combined_image))
+        astrodrizzle.AstroDrizzle(input=adriz_in_list,output=ref_total_combined_image,
+                                  configobj='{}astrodrizzle_total.cfg'.format(cfgfile_path))
 
+        for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
+            # 2: Create drizzle-combined filter image using the temp ref image as astrodrizzle param 'final_refimage'
+            log.info("~" * 118)
+            log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE\n")
+            filter_combined_imagename = obs_info_dict[fp_keyname]['product filenames']['image']
+            adriz_in_list = obs_info_dict[fp_keyname]['files']
+            log.info("Filter combined image.... {} {}".format(filter_combined_imagename,adriz_in_list))
+            astrodrizzle.AstroDrizzle(input=adriz_in_list, output=filter_combined_imagename,
+                                      final_refimage=ref_total_combined_image,
+                                      configobj='{}astrodrizzle_filter.cfg'.format(cfgfile_path))
 
-    for key in pipeline_pars.keys():
-        log.info("PIPELINE_PARS>>>>>> {}:  {}".format(key,pipeline_pars[key]))
+            # 3: Create individual singly-drizzled images using the temp ref image as astrodrizzle param 'final_refimage'
+            for sp_name in [sp_key for sp_key in list(obs_info_dict[fp_keyname].keys()) if
+                            sp_key.startswith('subproduct #')]:
+                log.info("~" * 118)
+                log.info("CREATE SINGLY DRIZZLED IMAGE")
+                single_drizzled_filename = obs_info_dict[fp_keyname][sp_name]["image"]
+                imgname_root = single_drizzled_filename.split("_")[-2]
+                adriz_in_file = [i for i in obs_info_dict[fp_keyname]['files'] if i.startswith(imgname_root)][0]
+                log.info("Single drizzled image.... {} {}".format(single_drizzled_filename,adriz_in_file))
+                astrodrizzle.AstroDrizzle(input=adriz_in_file, output=single_drizzled_filename,
+                                          final_refimage=ref_total_combined_image,
+                                          configobj='{}astrodrizzle_single.cfg'.format(cfgfile_path))
 
-    # Execute astrodrizzle
-    b = drizzlepac.astrodrizzle.AstroDrizzle(input=filelist, runfile="astrodrizzle.log",
-                                             configobj='defaults', **pipeline_pars)
+        # 4 Create total image using the temp ref image as astrodrizzle param 'final_refimage'
+        log.info("~" * 118)
+        log.info("CREATE TOTAL DRIZZLE-COMBINED IMAGE\n")
+        total_combined_image = obs_info_dict[tdp_keyname]['product filenames']['image']
+        adriz_in_list = obs_info_dict[tdp_keyname]['files']
+        log.info("Total combined image..... {} {}".format(total_combined_image,adriz_in_list))
+        astrodrizzle.AstroDrizzle(input=adriz_in_list,output=total_combined_image,
+                                  final_refimage=ref_total_combined_image,
+                                  configobj='{}astrodrizzle_total.cfg'.format(cfgfile_path))
+
+        # 5: remove reference total temp file
+        log.info("Remove temp ref file {}".format(ref_total_combined_image))
+        os.remove(ref_total_combined_image)
+
+    # 6: Ensure that all drizzled products is have headers that are to spec.
+    # drcfiles = sorted(glob.glob('*drc.fits'))
+    # for d in drcfiles:
+    #     print(">>>>> ",d)
+    #     iplen = len(d.split('_')[6])
+    #     if 'total' in d or iplen == 6:
+    #         level = 2
+    #     else:
+    #         level = 1
+    #     dpu.refine_product_headers(d, obs_info_dict, level=level)
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -495,56 +507,12 @@ def run_hla_processing(input_filename, result=None, debug=True):
         if wcs_input_list:
             meta_wcs = wcs_functions.make_mosaic_wcs(wcs_input_list)
 
-        # 7: Run AstroDrizzle to produce filter-level products.
-        log.info("7: Run AstroDrizzle to produce filter-level products.")
-        for obs_category in obs_info_dict.keys():
-            if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
-                adriz_param_dict = {}
-                for inst_det in param_dict.keys():
-                        if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
-                            adriz_param_dict = param_dict[inst_det]['astrodrizzle'].copy()
-                            log.info("Using {} AstroDrizzle parameters for {}.".format(inst_det, obs_category))
-                            break
-                # Turn on astrodrizzle step 7a: Custom WCS for final output
-                adriz_param_dict["final_wcs"] = True
-                run_astrodrizzle(obs_info_dict[obs_category]['files'],
-                                 adriz_param_dict,
-                                 obs_info_dict[obs_category]['product filenames']['image'],
-                                 custom_wcs=meta_wcs)
+        # 7: Run AstroDrizzle to produce drizzle-combined products
+        log.info("6: (WIP) Create drizzled imagery products")
+        run_astrodrizzle(obs_info_dict)
 
-                rename_subproduct_files(obs_info_dict[obs_category])
-            else:
-                log.info("{}: Filter-by-Filter AstroDrizzle step skipped.".format(obs_category))
-
-        # 8: Run AstroDrizzle to produce total detection products
-        log.info("8: Run AstroDrizzle to produce total detection products")
-        for obs_category in obs_info_dict.keys():
-            if obs_category.startswith("total detection product"):
-                adriz_param_dict = {}
-                for inst_det in param_dict.keys():
-                        if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
-                            adriz_param_dict = param_dict[inst_det]['astrodrizzle'].copy()
-                            log.info("Using {} AstroDrizzle parameters for {}.".format(inst_det, obs_category))
-                            break
-                # Turn off all astrodrizzle steps EXCEPT steps 7 and 7a.
-                adriz_param_dict["static"] = False
-                adriz_param_dict["skysub"] = False
-                adriz_param_dict["driz_separate"] = False
-                adriz_param_dict["driz_sep_wcs"] = False
-                adriz_param_dict["median"] = False
-                adriz_param_dict["blot"] = False
-                adriz_param_dict["driz_combine"] = True
-                adriz_param_dict["final_wcs"] = True
-                run_astrodrizzle(obs_info_dict[obs_category]['files'],
-                                 adriz_param_dict,
-                                 obs_info_dict[obs_category]['product filenames']['image'],
-                                 custom_wcs=meta_wcs)
-            else:
-                log.info("{}: Total detection AstroDrizzle step skipped.".format(obs_category))
-
-        # sys.exit()
-        # 9: Create source catalogs from newly defined products (HLA-204)
-        log.info("9: (WIP) Create source catalog from newly defined product")
+        # 8: Create source catalogs from newly defined products (HLA-204)
+        log.info("8: (WIP) Create source catalog from newly defined product")
         pickle_filename = input_filename.replace(".out",".pickle")
         if os.path.exists(pickle_filename):
             os.remove(pickle_filename)
@@ -554,20 +522,18 @@ def run_hla_processing(input_filename, result=None, debug=True):
         print("Wrote obs_info_dict to pickle file {}".format(pickle_filename))
         if 'total detection product 00' in obs_info_dict.keys():
             sourcelist_generation.create_sourcelists(obs_info_dict, param_dict)
-
-
         else:
             print("Sourcelist generation step skipped.")
 
-        # 10: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
-        log.info("10: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of "
+        # 9: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
+        log.info("9: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of "
                  "product")
         # TODO: QUALITY CONTROL SUBROUTINE CALL GOES HERE.
 
-        # 11: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate
+        # 10: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate
         # the new product.
 
-    # 12: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
+    # 11: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
     except:
         return_value = 1
@@ -575,11 +541,11 @@ def run_hla_processing(input_filename, result=None, debug=True):
             log.info("\a\a\a")
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-
-    log.info('Total processing time: {} sec'.format((datetime.datetime.now() - starting_dt).total_seconds()))
-    log.info("7: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
-             "condition")
-    result.append(return_value)
+    finally:
+        log.info('Total processing time: {} sec'.format((datetime.datetime.now() - starting_dt).total_seconds()))
+        log.info("11: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
+                 "condition")
+        result.append(return_value)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
