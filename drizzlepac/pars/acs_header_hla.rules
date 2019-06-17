@@ -417,6 +417,7 @@ SNRMAX    SNRMAX    max
 SNRMEAN   SNRMEAN   mean
 SNRMIN    SNRMIN    min
 TELESCOP  TELESCOP  first
+PA_V3     PA_V3     first
 ### rules below were added 05Jun2012,in response to Dorothy Fraquelli guidance re: DADS
 ATODCORR  ATODCORR  multi
 ATODGNA   ATODGNA   first
