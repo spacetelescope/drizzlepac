@@ -443,15 +443,16 @@ def run_astrodrizzle(obs_info_dict):
         os.remove(ref_total_combined_image)
 
     # 6: Ensure that all drizzled products is have headers that are to spec.
-    # drcfiles = sorted(glob.glob('*drc.fits'))
-    # for d in drcfiles:
-    #     print(">>>>> ",d)
-    #     iplen = len(d.split('_')[6])
-    #     if 'total' in d or iplen == 6:
-    #         level = 2
-    #     else:
-    #         level = 1
-    #     dpu.refine_product_headers(d, obs_info_dict, level=level)
+    drcfiles = sorted(glob.glob('*drc.fits'))
+    for item in drcfiles: log.info("DRCFILES: {}".format(item))
+    for d in drcfiles:
+        log.info("DRC>>> {}".format(d))
+        iplen = len(d.split('_')[6])
+        if 'total' in d or iplen == 6:
+            level = 2
+        else:
+            level = 1
+        dpu.refine_product_headers(d, obs_info_dict, level=level)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
