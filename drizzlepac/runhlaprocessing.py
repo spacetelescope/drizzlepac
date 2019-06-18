@@ -439,7 +439,7 @@ def run_astrodrizzle(obs_info_dict):
         log.info("Total combined image..... {} {}".format(total_combined_image,adriz_in_list))
         astrodrizzle.AstroDrizzle(input=adriz_in_list,output=total_combined_image,
                                   final_refimage=ref_total_combined_image,
-                                  configobj='{}astrodrizzle_total.cfg'.format(cfgfile_path))
+                                  configobj='{}astrodrizzle_total_hap.cfg'.format(cfgfile_path))
 
         # 5: remove reference total temp file
         log.info("Removed temp ref file {}".format(ref_total_combined_image))
