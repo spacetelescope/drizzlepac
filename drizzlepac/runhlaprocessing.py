@@ -394,7 +394,7 @@ def run_astrodrizzle(obs_info_dict):
     for imgname in glob.glob("*fl?.fits"):
         dpu.get_rules_file(imgname)
 
-    cfgfile_path = os.path.dirname(sys.argv[0])+"/"
+    cfgfile_path = os.path.dirname(sys.argv[0])+"/pars/"
     for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
                         oid_key.startswith('total detection product')]:  # loop over total filtered products
         # 1: Create temp. total drizzled image used to align all subsequent products
@@ -405,7 +405,7 @@ def run_astrodrizzle(obs_info_dict):
         adriz_in_list = obs_info_dict[tdp_keyname]['files']
         log.info("Ref total combined image. {} {}".format(ref_total_combined_image,adriz_in_list,ref_total_combined_image))
         astrodrizzle.AstroDrizzle(input=adriz_in_list,output=ref_total_combined_image,
-                                  configobj='{}astrodrizzle_total.cfg'.format(cfgfile_path))
+                                  configobj='{}astrodrizzle_total_hap.cfg'.format(cfgfile_path))
 
         for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
             # 2: Create drizzle-combined filter image using the temp ref image as astrodrizzle param 'final_refimage'
@@ -416,7 +416,7 @@ def run_astrodrizzle(obs_info_dict):
             log.info("Filter combined image.... {} {}".format(filter_combined_imagename,adriz_in_list))
             astrodrizzle.AstroDrizzle(input=adriz_in_list, output=filter_combined_imagename,
                                       final_refimage=ref_total_combined_image,
-                                      configobj='{}astrodrizzle_filter.cfg'.format(cfgfile_path))
+                                      configobj='{}astrodrizzle_filter_hap.cfg'.format(cfgfile_path))
 
             # 3: Create individual singly-drizzled images using the temp ref image as astrodrizzle param 'final_refimage'
             for sp_name in [sp_key for sp_key in list(obs_info_dict[fp_keyname].keys()) if
@@ -429,7 +429,7 @@ def run_astrodrizzle(obs_info_dict):
                 log.info("Single drizzled image.... {} {}".format(single_drizzled_filename,adriz_in_file))
                 astrodrizzle.AstroDrizzle(input=adriz_in_file, output=single_drizzled_filename,
                                           final_refimage=ref_total_combined_image,
-                                          configobj='{}astrodrizzle_single.cfg'.format(cfgfile_path))
+                                          configobj='{}astrodrizzle_single_hap.cfg'.format(cfgfile_path))
 
         # 4 Create total image using the temp ref image as astrodrizzle param 'final_refimage'
         log.info("~" * 118)
