@@ -389,16 +389,14 @@ def run_astrodrizzle(obs_info_dict):
     Nothing.
     """
     log.info("Processing with astrodrizzle version {}".format(drizzlepac.astrodrizzle.__version__))
+
     # 0: get rules files for step #6.
-    img_list = glob.glob("*fl?.fits")
-    for imgname in img_list:
+    for imgname in glob.glob("*fl?.fits"):
         dpu.get_rules_file(imgname)
 
     cfgfile_path = os.path.dirname(sys.argv[0])+"/"
     for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
                         oid_key.startswith('total detection product')]:  # loop over total filtered products
-        log.info("=====> {} <======".format(tdp_keyname))
-
         # 1: Create temp. total drizzled image used to align all subsequent products
         log.info("~" * 118)
         log.info("CREATE TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")
@@ -459,7 +457,7 @@ def run_astrodrizzle(obs_info_dict):
             level = 1
         dpu.refine_product_headers(d, obs_info_dict, level=level)
 
-    # 7: remove rules files copied in in step #0
+    # 7: remove rules files copied to the CWD in step #0
     for rules_filename in glob.glob("*_header_hla.rules"):
         log.info("Removed rules file {}".format(rules_filename))
         os.remove(rules_filename)
