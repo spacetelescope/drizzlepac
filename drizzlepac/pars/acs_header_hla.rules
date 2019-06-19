@@ -383,7 +383,7 @@ DEC_TARG  DEC_TARG  first
 INSTRUME  INSTRUME  first
 DETECTOR  DETECTOR  first
 APERTURE  APERTURE  multi
-PHOTMODE  FILTER    first  # May need to modify this as '-' combined value
+FILTER1   FILTER    first  # May need to modify this as '-' combined value
 EXPEND    EXPEND    max
 EXPSTART  EXPSTART  min
 EXPTIME   TEXPTIME  sum
