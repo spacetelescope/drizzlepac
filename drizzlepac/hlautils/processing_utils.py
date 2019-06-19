@@ -119,7 +119,6 @@ def update_hdrtab(image, level, obs_dict_info, input_exposures):
     # Convert input_exposure filenames into HAP product filenames
     name_col = []
     orig_tab = image['hdrtab'].data
-
     for row in orig_tab:
         rootname = str(row['rootname'])
         for expname in input_exposures:
@@ -129,11 +128,19 @@ def update_hdrtab(image, level, obs_dict_info, input_exposures):
                     name_col.append(expname)
                 else:
                     # Convert input exposure names into HAP names
+                    foundit = False
                     for haptype, hapdict in obs_dict_info.items():
-                        if LEVEL_DEFS[1] in haptype and expname in hapdict['files']:
-                            name = hapdict['product filenames']['image']
-                            name = name.replace(';', '-')
-                            name_col.append(name)
+                        if expname in hapdict['files'] and not haptype.startswith("Total Detection Product"):
+                            for hapitem in hapdict.keys():
+                                if hapitem == "product filenames" or hapitem.startswith("subproduct"):
+                                    if hapdict[hapitem]['image'].find(rootname[:-1]) > 0:
+                                        name = hapdict[hapitem]['image']
+                                        name = name.replace(';', '-')
+                                        name_col.append(name)
+                                        foundit = True
+                                        break
+                            if foundit:
+                                break
 
     # define new column with HAP expname
     max_len = min(max([len(name) for name in name_col]), 51)
