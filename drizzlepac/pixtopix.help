@@ -1,4 +1,4 @@
-`pixtopix` transforms pixel positions given as X,Y values into
+``pixtopix`` transforms pixel positions given as X,Y values into
 positions in another WCS frame based on the WCS information and any
 recognized distortion keywords from the input image header.
 

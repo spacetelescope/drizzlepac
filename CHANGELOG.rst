@@ -18,6 +18,13 @@ of the list).
 3.0.2 (unreleased)
 ==================
 
+- Removed deprecated parameter ``coords`` from the parameter list of
+  ``pixtopix.tran()`` function. [#406]
+
+- Modified the behavior of the ``verbose`` parameter in ``pixtopix.tran()``
+  to not print coordinates when not run as a script and when ``output``
+  is `None`. [#406]
+
 - Fixed a compatibility issue in ``tweakutils`` that would result in crash in
   ``skytopix`` when converting coordinates in ``hms`` format. [#385]
 
