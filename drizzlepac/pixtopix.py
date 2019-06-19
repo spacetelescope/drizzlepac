@@ -240,8 +240,6 @@ def help(file=None):
         print(helpstr)
 
     else:
-        if os.path.exists(file):
-            os.remove(file)
         with open(file, mode='w') as f:
             f.write(helpstr)
 
