@@ -394,6 +394,8 @@ IMAGETYP  IMAGETYP  first
 OBSMODE   OBSMODE   multi
 OBSTYPE   OBSTYPE   first
 EQUINOX   EQUINOX   first
+REFFRAME  REFFRAME  multi
+MTFLAG    MTFLAG    first
 ################################################################################
 #
 # Header Keyword Rules for remaining keywords
@@ -417,6 +419,7 @@ SNRMAX    SNRMAX    max
 SNRMEAN   SNRMEAN   mean
 SNRMIN    SNRMIN    min
 TELESCOP  TELESCOP  first
+PA_V3     PA_V3     first
 ### rules below were added 05Jun2012,in response to Dorothy Fraquelli guidance re: DADS
 ATODCORR  ATODCORR  multi
 ATODGNA   ATODGNA   first
