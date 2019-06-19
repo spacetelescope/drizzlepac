@@ -394,6 +394,8 @@ IMAGETYP  IMAGETYP  first
 OBSMODE   OBSMODE   multi
 OBSTYPE   OBSTYPE   first
 EQUINOX   EQUINOX   first
+REFFRAME  REFFRAME  multi
+MTFLAG    MTFLAG    first
 ################################################################################
 #
 # Header Keyword Rules for remaining keywords
