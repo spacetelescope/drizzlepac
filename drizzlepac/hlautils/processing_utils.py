@@ -17,7 +17,7 @@ from stwcs import wcsutil
 
 LEVEL_DEFS = {1: 'single exposure product', 2: 'filter product', 3: 'total detection product'}
 HAPCOLNAME = 'HAPEXPNAME'
-
+PHOT_KEYWORDS = ['PHOTMODE', 'PHOTFLAM', 'PHOTFNU', 'PHOTZPT', 'PHOTPLAM', 'PHOTBW']
 
 __taskname__ = 'processing_utils'
 
@@ -84,6 +84,12 @@ def refine_product_headers(product, obs_dict_info):
     if phdu['instrume'] == 'ACS':
         phdu['filter'] = get_acs_filters(hdu, delimiter=';')
 
+    # Insure PHOT* keywords are always in SCI extension
+    for pkw in PHOT_KEYWORDS:
+        if pkw in phdu:
+            hdu[('sci', 1)].header[pkw] = (phdu[pkw], phdu.cards[pkw].comment)
+            del phdu[pkw]
+
     # Apply any additional inputs to drizzle product header
     if level:
         hdu[0].header['haplevel'] = (level, "Classification level of this product")
@@ -93,7 +99,7 @@ def refine_product_headers(product, obs_dict_info):
             phdu['filter'] = 'detection'
 
         # Build HAP table
-        if 'total' in product: level = 3
+        # if 'total' in product: level = 3
         update_hdrtab(hdu, level, obs_dict_info, input_exposures)
 
     # close file if opened by this function
@@ -131,9 +137,11 @@ def update_hdrtab(image, level, obs_dict_info, input_exposures):
                     # Convert input exposure names into HAP names
                     for haptype, hapdict in obs_dict_info.items():
                         if LEVEL_DEFS[1] in haptype and expname in hapdict['files']:
-                            name = hapdict['product filenames']['image']
-                            name = name.replace(';', '-')
-                            name_col.append(name)
+                            name = hapdict['product filenames']['image'].replace(';', '-')
+#                            name = name.replace(';', '-')
+                            # strip off <suffix>.fits to convert from filename to exposure name for archive
+                            expname = '_'.join(name.split('_')[:-1])
+                            name_col.append(expname)
 
     # define new column with HAP expname
     max_len = min(max([len(name) for name in name_col]), 51)
