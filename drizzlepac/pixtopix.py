@@ -1,4 +1,4 @@
-""" pixtosky - A module to perform coordinate transformation from pixel
+""" pixtopix - A module to perform coordinate transformation from pixel
     coordinates in one image to pixel coordinates in another frame
 
     :Authors: Warren Hack
