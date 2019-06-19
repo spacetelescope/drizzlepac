@@ -448,11 +448,6 @@ def run_astrodrizzle(obs_info_dict):
     # 6: Ensure that all drizzled products is have headers that are to spec.
     drcfiles = sorted(glob.glob('*drc.fits'))
     for d in drcfiles:
-        iplen = len(d.split('_')[6])
-        if 'total' in d or iplen == 6:
-            level = 2
-        else:
-            level = 1
         dpu.refine_product_headers(d, obs_info_dict)
 
     # 7: remove rules files copied to the CWD in step #0

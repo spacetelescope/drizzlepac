@@ -141,7 +141,6 @@ def update_hdrtab(image, level, obs_dict_info, input_exposures):
                                         break
                             if foundit:
                                 break
-
     # define new column with HAP expname
     max_len = min(max([len(name) for name in name_col]), 51)
     hapcol = Column(array=np.array(name_col, dtype=np.str), name=HAPCOLNAME, format='{}A'.format(max_len + 4))
