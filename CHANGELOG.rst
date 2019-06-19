@@ -22,7 +22,7 @@ of the list).
   ``pixtopix.tran()`` function. [#406]
 
 - Modified the behavior of the ``verbose`` parameter in ``pixtopix.tran()``
-  to not print coordinates when not run as a script when ``output``
+  to not print coordinates when not run as a script and when ``output``
   is `None`. [#406]
 
 - Fixed a compatibility issue in ``tweakutils`` that would result in crash in
