@@ -170,32 +170,51 @@ param_dict = {
             "scale_factor_list": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 0.0005, 0.005, 0.005, 0.015, 0.45, 1.],
             # "scale_factor_list_orig": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 6.e-5, 0.0005, 0.005, 0.015, 0.45, 1.],
             "proximity_binary": "yes"}}}
+#============================================================================================================
 
-for inst_det in param_dict.keys():
-    cfgFilename = "runhlaprocessing_{}.cfg".format(inst_det.replace(" ","_").lower())
-    print("FILENAME: ",cfgFilename)
-    config = ConfigObj(cfgFilename,configspec='config.spec')
+def dict2cfgfile():
+    for inst_det in param_dict.keys():
+        cfgFilename = "runhlaprocessing_{}.cfg".format(inst_det.replace(" ","_").lower())
+        print("FILENAME: ",cfgFilename)
+        config = ConfigObj(cfgFilename,configspec='pars/runhlaprocessing_config.spec')
 
 
-    for section in param_dict[inst_det].keys():
-        config[section] = {}
-        for param in param_dict[inst_det][section].keys():
-            print(inst_det, section,param,">>>>>> ",param_dict[inst_det][section][param])
-            config[section][param] = param_dict[inst_det][section][param]
-        print("\n")
+        for section in param_dict[inst_det].keys():
+            config[section] = {}
+            for param in param_dict[inst_det][section].keys():
+                print(inst_det, section,param,">>>>>> ",param_dict[inst_det][section][param])
+                config[section][param] = param_dict[inst_det][section][param]
+            print("\n")
 
+        validator = Validator()
+        result = config.validate(validator)
+        print("RESULT: ",result)
+        config.write()
+        print("Wrote "+cfgFilename)
+        return()
+
+#============================================================================================================
+
+
+def readcfgfile(inst_dect):
+    cfg_filename ="runhlaprocessing_{}.cfg".format(inst_dect.replace(" ","_"))
+    print("Converting config file {} to parameter dictionary".format(cfg_filename))
+    newconfig = ConfigObj(cfg_filename,configspec='pars/runhlaprocessing_config.spec')
     validator = Validator()
-    result = config.validate(validator)
-    print("RESULT: ",result)
-    config.write()
-    print("Wrote "+cfgFilename)
-    break
-    print("\n")
+    newconfig.validate(validator)
+    param_dict={}
+    for section in newconfig.keys():
+        param_dict[section]={}
+        for parameter in newconfig[section].keys():
+            value = newconfig[section][parameter]
+            print(section,parameter,value,type(value))
+            param_dict[section][parameter] = value
+
+    pdb.set_trace()
+    return(param_dict)
 
 
-
-
-newconfig = ConfigObj(cfgFilename,configspec='config.spec')
-validator = Validator()
-newconfig.validate(validator)
-pdb.set_trace()
+#============================================================================================================
+if __name__ == '__main__':
+    dict2cfgfile()
+    param_dict = readcfgfile("acs hrc")
