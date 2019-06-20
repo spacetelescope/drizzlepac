@@ -169,7 +169,7 @@ def create_sourcelists(obs_info_dict, param_dict):
         tdp_seg_catalog_filename = obs_info_dict[tdp_keyname]['product filenames']['segment source catalog']
         tdp_ps_catalog_filename = obs_info_dict[tdp_keyname]['product filenames']['point source catalog']
 
-        segmap, kernel, bkg, bkg_dao_rms, bkgsub = se_source_generation.create_sextractor_like_sourcelists(
+        segmap, kernel, bkg_dao_rms = se_source_generation.create_sextractor_like_sourcelists(
             detection_image, tdp_seg_catalog_filename, param_dict[inst_det], se_debug=True)
 
         dao_coord_list = create_dao_like_coordlists(detection_image,tdp_ps_catalog_filename,)
@@ -185,7 +185,7 @@ def create_sourcelists(obs_info_dict, param_dict):
             log.info("Point source catalog.... {}".format(point_source_catalog_name))
             log.info("Segment source catalog.. {}".format(seg_source_catalog_name))
 
-            se_source_generation.measure_source_properties(segmap, bkgsub, kernel, filter_combined_imagename,
+            se_source_generation.measure_source_properties(segmap, kernel, filter_combined_imagename,
                                                            seg_source_catalog_name, param_dict[inst_det])
 
             create_dao_like_sourcelists(filter_combined_imagename, point_source_catalog_name, dao_coord_list)
