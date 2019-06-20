@@ -12,7 +12,9 @@ import pdb
 import pickle
 import sys
 import traceback
+import shutil
 
+from astropy.io import fits
 import drizzlepac
 from drizzlepac import alignimages
 from drizzlepac import astrodrizzle
@@ -394,7 +396,7 @@ def run_astrodrizzle(obs_info_dict):
     for imgname in glob.glob("*fl?.fits"):
         dpu.get_rules_file(imgname)
 
-    cfgfile_path = os.path.dirname(sys.argv[0])+"/pars/"
+    cfgfile_path = os.path.join(os.path.dirname(__file__), "pars")
     for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
                         oid_key.startswith('total detection product')]:  # loop over total filtered products
         # 1: Create temp. total drizzled image used to align all subsequent products
@@ -405,18 +407,31 @@ def run_astrodrizzle(obs_info_dict):
         adriz_in_list = obs_info_dict[tdp_keyname]['files']
         log.info("Ref total combined image. {} {}".format(ref_total_combined_image,adriz_in_list,ref_total_combined_image))
         astrodrizzle.AstroDrizzle(input=adriz_in_list,output=ref_total_combined_image,
-                                  configobj='{}astrodrizzle_total_hap.cfg'.format(cfgfile_path))
+                                  configobj='{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep))
 
+        log.info("Finished creating TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")        
+        # Extract shape of ref_total_combined_image for explicit use in AstroDrizzle for all other products.
+        rtci = fits.open(ref_total_combined_image)
+        total_shape = rtci[('sci',1)].data.shape
+        rtci.close()
+        
         for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
             # 2: Create drizzle-combined filter image using the temp ref image as astrodrizzle param 'final_refimage'
             log.info("~" * 118)
             log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE\n")
             filter_combined_imagename = obs_info_dict[fp_keyname]['product filenames']['image']
             adriz_in_list = obs_info_dict[fp_keyname]['files']
+            trlname = '_'.join(filter_combined_imagename.split('_')[:-1]+['trl.log'])
+            print("FILTER PRODUCT trailer file: {}".format(trlname))
             log.info("Filter combined image.... {} {}".format(filter_combined_imagename,adriz_in_list))
             astrodrizzle.AstroDrizzle(input=adriz_in_list, output=filter_combined_imagename,
                                       final_refimage=ref_total_combined_image,
-                                      configobj='{}astrodrizzle_filter_hap.cfg'.format(cfgfile_path))
+                                      final_outnx=total_shape[1],
+                                      final_outny=total_shape[0],
+                                      runfile=trlname,
+                                      configobj='{}{}astrodrizzle_filter_hap.cfg'.format(cfgfile_path, os.path.sep))
+            # Rename Astrodrizzle log file as a trailer file
+            shutil.move(trlname, trlname.replace('.log','.txt'))
 
             # 3: Create individual singly-drizzled images using the temp ref image as astrodrizzle param 'final_refimage'
             for sp_name in [sp_key for sp_key in list(obs_info_dict[fp_keyname].keys()) if
@@ -425,21 +440,33 @@ def run_astrodrizzle(obs_info_dict):
                 log.info("CREATE SINGLY DRIZZLED IMAGE")
                 single_drizzled_filename = obs_info_dict[fp_keyname][sp_name]["image"]
                 imgname_root = single_drizzled_filename.split("_")[-2]
+                trlname = '_'.join(single_drizzled_filename.split('_')[:-1]+['trl.log'])
                 adriz_in_file = [i for i in obs_info_dict[fp_keyname]['files'] if i.startswith(imgname_root)][0]
                 log.info("Single drizzled image.... {} {}".format(single_drizzled_filename,adriz_in_file))
                 astrodrizzle.AstroDrizzle(input=adriz_in_file, output=single_drizzled_filename,
                                           final_refimage=ref_total_combined_image,
-                                          configobj='{}astrodrizzle_single_hap.cfg'.format(cfgfile_path))
+                                          final_outnx=total_shape[1],
+                                          final_outny=total_shape[0],
+                                          runfile=trlname,
+                                          configobj='{}{}astrodrizzle_single_hap.cfg'.format(cfgfile_path, os.path.sep))
+                # Rename Astrodrizzle log file as a trailer file
+                shutil.move(trlname, trlname.replace('.log','.txt'))
 
         # 4 Create total image using the temp ref image as astrodrizzle param 'final_refimage'
         log.info("~" * 118)
         log.info("CREATE TOTAL DRIZZLE-COMBINED IMAGE\n")
         total_combined_image = obs_info_dict[tdp_keyname]['product filenames']['image']
         adriz_in_list = obs_info_dict[tdp_keyname]['files']
+        trlname = '_'.join(total_combined_image.split('_')[:-1]+['trl.log'])
         log.info("Total combined image..... {} {}".format(total_combined_image,adriz_in_list))
         astrodrizzle.AstroDrizzle(input=adriz_in_list,output=total_combined_image,
                                   final_refimage=ref_total_combined_image,
-                                  configobj='{}astrodrizzle_total_hap.cfg'.format(cfgfile_path))
+                                  final_outnx=total_shape[1],
+                                  final_outny=total_shape[0],
+                                  runfile=trlname,
+                                  configobj='{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep))
+        # Rename Astrodrizzle log file as a trailer file
+        shutil.move(trlname, trlname.replace('.log','.txt'))
 
         # 5: remove reference total temp file
         log.info("Removed temp ref file {}".format(ref_total_combined_image))
@@ -459,7 +486,7 @@ def run_astrodrizzle(obs_info_dict):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-@util.with_logging
+#@util.with_logging
 def run_hla_processing(input_filename, result=None, debug=True):
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
@@ -515,13 +542,14 @@ def run_hla_processing(input_filename, result=None, debug=True):
 
         # 8: Create source catalogs from newly defined products (HLA-204)
         log.info("8: (WIP) Create source catalog from newly defined product")
-        pickle_filename = input_filename.replace(".out",".pickle")
-        if os.path.exists(pickle_filename):
-            os.remove(pickle_filename)
-        pickle_out = open(pickle_filename, "wb")
-        pickle.dump([obs_info_dict,param_dict], pickle_out)
-        pickle_out.close()
-        print("Wrote obs_info_dict to pickle file {}".format(pickle_filename))
+        if debug:
+            pickle_filename = input_filename.replace(".out",".pickle")
+            if os.path.exists(pickle_filename):
+                os.remove(pickle_filename)
+            pickle_out = open(pickle_filename, "wb")
+            pickle.dump([obs_info_dict,param_dict], pickle_out)
+            pickle_out.close()
+            print("Wrote obs_info_dict to pickle file {}".format(pickle_filename))
         if 'total detection product 00' in obs_info_dict.keys():
             sourcelist_generation.create_sourcelists(obs_info_dict, param_dict)
         else:
