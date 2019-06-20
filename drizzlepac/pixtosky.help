@@ -22,22 +22,17 @@ Optional Parameters
     y : float, optional
         Y position from input image
 
-    coords : str, deprecated
-        [DEPRECATED] full filename with path of file with x,y coordinates
-        Filename given here will be *ignored* if a file has been specified
-        in `coordfile` parameter.
-
     coordfile : str, optional
-        full filename with path of file with x,y coordinates
+        full filename with path of file with x, y coordinates
 
     colnames : str, optional
-        comma separated list of column names from 'coords' files
-        containing x,y coordinates, respectively. Will default to
+        comma separated list of column names from 'coordfile' file
+        containing x, y coordinates. Will default to
         first two columns if None are specified. Column names for ASCII
         files will use 'c1','c2',... convention.
 
     separator : str, optional
-        non-blank separator used as the column delimiter in the coords file
+        non-blank separator used as the column delimiter in the ``coordfile``
 
     hms : bool, optional  (Default: False)
         Produce output in ``HH:MM:SS.S`` format instead of decimal
