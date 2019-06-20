@@ -174,7 +174,7 @@ param_dict = {
 for inst_det in param_dict.keys():
     cfgFilename = "runhlaprocessing_{}.cfg".format(inst_det.replace(" ","_").lower())
     print("FILENAME: ",cfgFilename)
-    config = ConfigObj(cfgFilename)
+    config = ConfigObj(cfgFilename,configspec='config.spec')
 
 
     for section in param_dict[inst_det].keys():
