@@ -1,5 +1,5 @@
 from configobj import ConfigObj
-
+from validate import Validator
 import pdb
 param_dict = {
     "ACS HRC": {
@@ -183,10 +183,19 @@ for inst_det in param_dict.keys():
             print(inst_det, section,param,">>>>>> ",param_dict[inst_det][section][param])
             config[section][param] = param_dict[inst_det][section][param]
         print("\n")
+
+    validator = Validator()
+    result = config.validate(validator)
+    print("RESULT: ",result)
     config.write()
     print("Wrote "+cfgFilename)
     break
     print("\n")
 
 
+
+
+newconfig = ConfigObj(cfgFilename,configspec='config.spec')
+validator = Validator()
+newconfig.validate(validator)
 pdb.set_trace()
