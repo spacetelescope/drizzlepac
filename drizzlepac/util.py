@@ -77,7 +77,7 @@ def get_pool_size(usr_config_value, num_tasks):
 
 
 DEFAULT_LOGNAME = 'astrodrizzle.log'
-blank_list = [None, '', ' ',"None","INDEF"]
+blank_list = [None, '', ' ', 'None', 'INDEF']
 
 def is_blank(val):
     """ Determines whether or not a value is considered 'blank'.
@@ -85,11 +85,8 @@ def is_blank(val):
     return val in blank_list
 
 def check_blank(cvar):
-    """ Converts blank value (from configObj?) into a value of None.
-    """
-    if cvar in blank_list: val = None
-    else: val = cvar
-    return val
+    """ Converts blank value (from configObj?) into a value of None. """
+    return None if cvar in blank_list else cvar
 
 #
 # Logging routines
