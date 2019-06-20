@@ -1,5 +1,6 @@
 from configobj import ConfigObj
 from validate import Validator
+import os
 import pdb
 param_dict = {
     "ACS HRC": {
@@ -174,9 +175,12 @@ param_dict = {
 
 def dict2cfgfile():
     for inst_det in param_dict.keys():
-        cfgFilename = "runhlaprocessing_{}.cfg".format(inst_det.replace(" ","_").lower())
-        print("FILENAME: ",cfgFilename)
-        config = ConfigObj(cfgFilename,configspec='pars/runhlaprocessing_config.spec')
+
+        cfg_filename = "{}/runhlaprocessing_{}.cfg".format(os.path.join(os.path.dirname(__file__), "pars"),inst_det.replace(" ","_").lower())
+        configspec_filename ="{}/runhlaprocessing_config.spec".format(os.path.join(os.path.dirname(__file__),"pars"))
+        print("FILENAME: ",cfg_filename)
+        print("CONFIGSPEC: ",configspec_filename)
+        config = ConfigObj(cfg_filename,configspec=configspec_filename)
 
 
         for section in param_dict[inst_det].keys():
@@ -190,16 +194,17 @@ def dict2cfgfile():
         result = config.validate(validator)
         print("RESULT: ",result)
         config.write()
-        print("Wrote "+cfgFilename)
+        print("Wrote "+cfg_filename)
         return()
 
 #============================================================================================================
 
 
-def readcfgfile(inst_dect):
-    cfg_filename ="runhlaprocessing_{}.cfg".format(inst_dect.replace(" ","_"))
+def readcfgfile(inst_det):
+    cfg_filename = "{}/runhlaprocessing_{}.cfg".format(os.path.join(os.path.dirname(__file__), "pars"),inst_det.replace(" ", "_").lower())
+    configspec_filename = "{}/runhlaprocessing_config.spec".format(os.path.join(os.path.dirname(__file__),"pars"))
     print("Converting config file {} to parameter dictionary".format(cfg_filename))
-    newconfig = ConfigObj(cfg_filename,configspec='pars/runhlaprocessing_config.spec')
+    newconfig = ConfigObj(cfg_filename,configspec=configspec_filename)
     validator = Validator()
     newconfig.validate(validator)
     param_dict={}
@@ -207,10 +212,13 @@ def readcfgfile(inst_dect):
         param_dict[section]={}
         for parameter in newconfig[section].keys():
             value = newconfig[section][parameter]
-            print(section,parameter,value,type(value))
             param_dict[section][parameter] = value
 
-    pdb.set_trace()
+
+    for section in param_dict.keys():
+        for parameter in param_dict[section].keys():
+            value = param_dict[section][parameter]
+            print(section, parameter, value, type(value))
     return(param_dict)
 
 
