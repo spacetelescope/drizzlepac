@@ -171,6 +171,8 @@ def check_and_get_data(input_list, **pars):
     return(total_input_list)
 
 # -------------------------------------------------------------------------------------------------
+
+
 def perform_align(input_list, **kwargs):
     """Main calling function.
 
@@ -1180,7 +1182,7 @@ def update_image_wcs_info(tweakwcs_output):
             hdulist.close()
 
             # Create headerlet
-            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, wcsname=wcs_name)
+            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, wcsname=wcs_name, logging=False)
 
             # Update headerlet
             update_headerlet_phdu(item, out_headerlet)
@@ -1195,7 +1197,7 @@ def update_image_wcs_info(tweakwcs_output):
             out_headerlet_dict[image_name] = headerlet_filename
 
             # Attach headerlet as HDRLET extension
-            headerlet.attach_headerlet(image_name, headerlet_filename)
+            headerlet.attach_headerlet(image_name, headerlet_filename, logging=False)
 
         chipctr += 1
     return (out_headerlet_dict)

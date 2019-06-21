@@ -26,7 +26,6 @@ from drizzlepac.hlautils import sourcelist_generation
 from stsci.tools import logutil
 
 __taskname__ = 'runhlaprocessing'
-
 log = logutil.create_logger('runhlaprocessing', level=logutil.logging.INFO, stream=sys.stdout)
 
 __version__ = 0.1
@@ -250,6 +249,7 @@ def convert_base10_base36(in_number):
             out_val = chars[remainder] + out_val
 
     return(out_val)
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -486,7 +486,6 @@ def run_astrodrizzle(obs_info_dict):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-#@util.with_logging
 def run_hla_processing(input_filename, result=None, debug=True):
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
@@ -521,7 +520,6 @@ def run_hla_processing(input_filename, result=None, debug=True):
         wcs_input_list = []
         for obs_category in obs_info_dict.keys():
             if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
-
                 run_perform_align(obs_info_dict[obs_category]['files'])
                 for item in obs_info_dict[obs_category]['files']:
                     wcs_input_list.append(item)
@@ -596,6 +594,7 @@ def run_perform_align(filelist):
     """
     try:
         align_table = alignimages.perform_align(filelist, debug=True, runfile='alignimages.log', update_hdr_wcs=True)
+        os.remove("alignimages.log")
         for row in align_table:
             if row['status'] == 0:
                 log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
