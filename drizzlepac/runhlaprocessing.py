@@ -486,7 +486,7 @@ def run_astrodrizzle(obs_info_dict):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_hla_processing(input_filename, result=None, debug=True):
+def run_hla_processing(input_filename, result=None, debug=False):
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
     try:
