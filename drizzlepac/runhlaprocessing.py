@@ -492,27 +492,24 @@ def run_hla_processing(input_filename, result=None, debug=True):
     try:
         # 1: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new
         # ticket if necessary)
-        log.info("2: Apply rules to determine what exposures need to be combined into separate products")
+        log.info("1: Apply rules to determine what exposures need to be combined into separate products")
         obs_info_dict = pipeline_poller_utils.interpret_obset_input(input_filename)
 
-        # 3: generate an output names for each defined product...
-        log.info("3: generate an output names for each defined product")
+        # 2: generate an output names for each defined product...
+        log.info("2: generate an output names for each defined product")
         for obs_category in obs_info_dict.keys():
             obs_info_dict[obs_category]['product filenames'] = \
                 pipeline_poller_utils.run_generator(obs_category, obs_info_dict[obs_category]["info"])
             for key in obs_info_dict[obs_category].keys():
                 log.info("{}: {}".format(key, obs_info_dict[obs_category][key]))
 
-        # 4: restructure obs_info_dict so that it's ready for processing.
+        # 3: restructure obs_info_dict so that it's ready for processing.
         log.info("4: restructure obs_info_dict so that it's ready for processing.")
         # obs_info_dict_old = restructure_obs_info_dict(obs_info_dict_old)
         obs_info_dict = restructure_obs_info_dict(obs_info_dict)
-        # for key in obs_info_dict.keys():
-        #     print(key,obs_info_dict[key])
-        # pdb.set_trace()
 
-        # 5: run alignimages.py on images on a filter-by-filter basis.
-        log.info("5: run alignimages.py on images on a filter-by-filter basis for {}".format(obs_category))
+        # 4: run alignimages.py on images on a filter-by-filter basis.
+        log.info("4: run alignimages.py on images on a filter-by-filter basis for {}".format(obs_category))
         wcs_input_list = []
         for obs_category in obs_info_dict.keys():
             if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
@@ -533,20 +530,20 @@ def run_hla_processing(input_filename, result=None, debug=True):
             else:
                 log.info("{}: Alignimages step skipped.".format(obs_category))
 
-        # 6: run meta wcs code to get common WCS for all images.
-        log.info("6: run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
+        # 5: run meta wcs code to get common WCS for all images.
+        log.info("5: run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
         log.info("The following images will be used: ")
         for imgname in wcs_input_list:
             log.info("{}".format(imgname))
         if wcs_input_list:
             meta_wcs = wcs_functions.make_mosaic_wcs(wcs_input_list)
 
-        # 7: Run AstroDrizzle to produce drizzle-combined products
+        # 6: Run AstroDrizzle to produce drizzle-combined products
         log.info("6: (WIP) Create drizzled imagery products")
         run_astrodrizzle(obs_info_dict)
 
-        # 8: Create source catalogs from newly defined products (HLA-204)
-        log.info("8: (WIP) Create source catalog from newly defined product")
+        # 7: Create source catalogs from newly defined products (HLA-204)
+        log.info("7: (WIP) Create source catalog from newly defined product")
         if debug:
             pickle_filename = input_filename.replace(".out",".pickle")
             if os.path.exists(pickle_filename):
@@ -560,15 +557,12 @@ def run_hla_processing(input_filename, result=None, debug=True):
         else:
             print("Sourcelist generation step skipped.")
 
-        # 9: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
-        log.info("9: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of "
+        # 8: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
+        log.info("8: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of "
                  "product")
         # TODO: QUALITY CONTROL SUBROUTINE CALL GOES HERE.
 
-        # 10: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate
-        # the new product.
-
-    # 11: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
+    # 9: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
     except:
         return_value = 1
@@ -578,7 +572,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
     finally:
         log.info('Total processing time: {} sec'.format((datetime.datetime.now() - starting_dt).total_seconds()))
-        log.info("11: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
+        log.info("9: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
                  "condition")
         result.append(return_value)
 
