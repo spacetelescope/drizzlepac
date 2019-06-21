@@ -504,7 +504,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
                 log.info("{}: {}".format(key, obs_info_dict[obs_category][key]))
 
         # 3: restructure obs_info_dict so that it's ready for processing.
-        log.info("4: restructure obs_info_dict so that it's ready for processing.")
+        log.info("3: restructure obs_info_dict so that it's ready for processing.")
         # obs_info_dict_old = restructure_obs_info_dict(obs_info_dict_old)
         obs_info_dict = restructure_obs_info_dict(obs_info_dict)
 
