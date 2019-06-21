@@ -603,7 +603,7 @@ def run_perform_align(filelist,headerlet_filenames):
     Nothing.
     """
     try:
-        align_table = alignimages.perform_align(filelist, debug=True, runfile='alignimages.log', update_hdr_wcs=True,headerlet_filenames=headerlet_filenames)
+        align_table = alignimages.perform_align(filelist, debug=False, runfile='alignimages.log', update_hdr_wcs=True,headerlet_filenames=headerlet_filenames)
         os.remove("alignimages.log")
         for row in align_table:
             if row['status'] == 0:
