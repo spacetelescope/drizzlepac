@@ -23,7 +23,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_coordlists(fitsfile,sourcelist_filename,make_region_file=True,dao_fwhm=3.5,bkgsig_sf=2.):
+def create_dao_like_coordlists(fitsfile,sourcelist_filename,make_region_file=False,dao_fwhm=3.5,bkgsig_sf=2.):
     """Make daofind-like coordinate lists
 
     Parameters
@@ -170,9 +170,9 @@ def create_sourcelists(obs_info_dict, param_dict):
         tdp_ps_catalog_filename = obs_info_dict[tdp_keyname]['product filenames']['point source catalog']
 
         segmap, kernel, bkg_dao_rms = se_source_generation.create_sextractor_like_sourcelists(
-            detection_image, tdp_seg_catalog_filename, param_dict[inst_det], se_debug=True)
+            detection_image, tdp_seg_catalog_filename, param_dict[inst_det], se_debug=False)
 
-        dao_coord_list = create_dao_like_coordlists(detection_image,tdp_ps_catalog_filename,)
+        dao_coord_list = create_dao_like_coordlists(detection_image,tdp_ps_catalog_filename)
 
 
         for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
