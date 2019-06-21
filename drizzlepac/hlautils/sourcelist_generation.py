@@ -61,6 +61,11 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,make_region_file=Fal
     for col in sources.colnames:
         sources[col].info.format = '%.8g'  # for consistent table output
 
+    # Write out ecsv file
+    tbl_length = len(sources)
+    sources.write(sourcelist_filename, format="ascii.ecsv")
+    log.info("Created coord list  file '{}' with {} sources".format(sourcelist_filename, tbl_length))
+
     if make_region_file:
         out_table = sources.copy()
         # Remove all other columns besides xcentroid and ycentroid
@@ -80,7 +85,7 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,make_region_file=Fal
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_sourcelists(fitsfile,sl_filename,sources,aper_radius=4.,make_region_file=True):
+def create_dao_like_sourcelists(fitsfile,sl_filename,sources,aper_radius=4.,make_region_file=False):
     """Make DAOphot-like sourcelists
 
     Parameters
