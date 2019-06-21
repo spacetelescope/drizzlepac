@@ -78,7 +78,7 @@ def refine_product_headers(product, obs_dict_info):
     phdu['date-beg'] = (Time(phdu['expstart'], format='mjd').iso, "Starting Date and Time")
     phdu['date-end'] = (Time(phdu['expend'], format='mjd').iso, "Ending Date and Time")
 
-    phdu['equinox'] = 2000.0
+    phdu['equinox'] = hdu[('sci',1)].header['equinox'] if 'equinox' in hdu[('sci',1)].header else 2000.0
 
     # Re-format ACS filter specification
     if phdu['instrume'] == 'ACS':
