@@ -346,6 +346,7 @@ def _compute_background(image, box_size=50, win_size=3, nsigma=5., threshold_fla
                 bkg_rms_mean = threshold.max()
             else:
                 bkg_rms_mean = 3. * threshold_flag
+                threshold = bkg_rms_mean
 
             if bkg_rms_mean < 0:
                 bkg_rms_mean = 0.
