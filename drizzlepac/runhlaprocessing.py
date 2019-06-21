@@ -490,11 +490,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
     try:
-        # 1: Interpret input csv file as an astropy table with defined column names (HLA-211)
-        log.info("1: (TODO) Interpret input csv file as an astropy table with defined column names")
-        # TODO: SUBROUTINE CALL GOES HERE.
-
-        # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new
+        # 1: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new
         # ticket if necessary)
         log.info("2: Apply rules to determine what exposures need to be combined into separate products")
         obs_info_dict = pipeline_poller_utils.interpret_obset_input(input_filename)
@@ -520,7 +516,18 @@ def run_hla_processing(input_filename, result=None, debug=True):
         wcs_input_list = []
         for obs_category in obs_info_dict.keys():
             if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
-                run_perform_align(obs_info_dict[obs_category]['files'])
+                #create dictionary mapping flc/flt.fits file names to their corresponding HAP-compatible headerlet
+                # filenames
+                headerlet_filenames={}
+                for fitsname in obs_info_dict[obs_category]['files']:
+                    for dict_item in obs_info_dict[obs_category].keys():
+                        if dict_item.startswith('subproduct #'):
+                            if obs_info_dict[obs_category][dict_item]['image'].find(fitsname[:-10]) > 0:
+                                headerlet_filenames[fitsname] = \
+                                    obs_info_dict[obs_category][dict_item]['image'][:-8]+"hlet.fits"
+
+                run_perform_align(obs_info_dict[obs_category]['files'],headerlet_filenames)
+
                 for item in obs_info_dict[obs_category]['files']:
                     wcs_input_list.append(item)
             else:
@@ -578,7 +585,7 @@ def run_hla_processing(input_filename, result=None, debug=True):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_perform_align(filelist):
+def run_perform_align(filelist,headerlet_filenames):
     """
     executes drizzlepac.alignimages.perform_align(). If run is successful, and a good fit solution is found, the newly
     created headerlets are applied as the primary WCS in the in flc.fits or flt.fits images.
@@ -588,12 +595,15 @@ def run_perform_align(filelist):
     filelist : list
         List of files to be processed by drizzlepac.alignimages.perform_align().
 
+    headerlet_filenames : dictionary
+        dictionary that maps the flt/flc.fits file name to the corresponding custom headerlet filename.
+
     Returns
     -------
     Nothing.
     """
     try:
-        align_table = alignimages.perform_align(filelist, debug=True, runfile='alignimages.log', update_hdr_wcs=True)
+        align_table = alignimages.perform_align(filelist, debug=True, runfile='alignimages.log', update_hdr_wcs=True,headerlet_filenames=headerlet_filenames)
         os.remove("alignimages.log")
         for row in align_table:
             if row['status'] == 0:
