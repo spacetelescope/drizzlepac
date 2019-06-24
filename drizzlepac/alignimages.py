@@ -171,6 +171,8 @@ def check_and_get_data(input_list, **pars):
     return(total_input_list)
 
 # -------------------------------------------------------------------------------------------------
+
+
 def perform_align(input_list, **kwargs):
     """Main calling function.
 
@@ -211,6 +213,9 @@ def perform_align(input_list, **kwargs):
         Maximum number of **brightest sources per chip** which will be used for cross-matching and fitting.
         If set to None, all sources will be used.
 
+    headerlet_filenames : dictionary, optional
+        Dictionary that maps the flt/flc.fits file name to the corresponding custom headerlet filename.
+
     Updates
     -------
     filtered_table: Astropy Table
@@ -227,7 +232,7 @@ def perform_align(input_list, **kwargs):
 
 @util.with_logging
 def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
-              runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=250):
+              runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=250,headerlet_filenames=None):
     """Actual Main calling function.
 
     Parameters
@@ -270,6 +275,9 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     num_sources : int, optional
         Maximum number of **brightest sources per chip** which will be used for cross-matching and fitting.
         If set to None, all sources will be used.
+
+    headerlet_filenames : dictionary, optional
+        dictionary that maps the flt/flc.fits file name to the corresponding custom headerlet filename.
 
     Updates
     -------
@@ -646,7 +654,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                  "{}".format("-" * 20, "-" * 29))
         if (0 < best_fit_rms < 9999.) and update_hdr_wcs:
             # determine the quality of the fit
-            headerlet_dict = update_image_wcs_info(imglist)
+            headerlet_dict = update_image_wcs_info(imglist, headerlet_filenames=headerlet_filenames)
             for table_index in range(0, len(filtered_table)):
                 filtered_table[table_index]['headerletFile'] = headerlet_dict[
                     filtered_table[table_index]['imageName']]
@@ -1123,7 +1131,7 @@ def generate_source_catalogs(imglist, **pars):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def update_image_wcs_info(tweakwcs_output):
+def update_image_wcs_info(tweakwcs_output,headerlet_filenames=None):
     """Write newly computed WCS information to image headers and write headerlet files
 
         Parameters
@@ -1132,13 +1140,15 @@ def update_image_wcs_info(tweakwcs_output):
             output of tweakwcs. Contains sourcelist tables, newly computed WCS info, etc. for every chip of every valid
             every valid input image.
 
+        headerlet_filenames : dictionary, optional
+            dictionary that maps the flt/flc.fits file name to the corresponding custom headerlet filename.
+
         Returns
         -------
         out_headerlet_list : dictionary
             a dictionary of the headerlet files created by this subroutine, keyed by flt/flc fits filename.
         """
     out_headerlet_dict = {}
-
     for item in tweakwcs_output:
         image_name = item.meta['filename']
         chipnum = item.meta['chip']
@@ -1175,27 +1185,29 @@ def update_image_wcs_info(tweakwcs_output):
                                  reusename=True, verbose=True)
         if chipctr == num_sci_ext:
             # Close updated flc.fits or flt.fits file
-            # log.info("CLOSE {}\n".format(image_name))  # TODO: Remove before deployment
             hdulist.flush()
             hdulist.close()
 
             # Create headerlet
-            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, wcsname=wcs_name)
+            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, wcsname=wcs_name, logging=False)
 
             # Update headerlet
             update_headerlet_phdu(item, out_headerlet)
 
             # Write headerlet
-            if image_name.endswith("flc.fits"):
-                headerlet_filename = image_name.replace("flc", "flt_hlet")
-            if image_name.endswith("flt.fits"):
-                headerlet_filename = image_name.replace("flt", "flt_hlet")
+            if headerlet_filenames:
+                headerlet_filename = headerlet_filenames[image_name] # Use HAP-compatible filename defined in runhlaprocessing.py
+            else:
+                if image_name.endswith("flc.fits"):
+                    headerlet_filename = image_name.replace("flc", "flt_hlet")
+                if image_name.endswith("flt.fits"):
+                    headerlet_filename = image_name.replace("flt", "flt_hlet")
             out_headerlet.writeto(headerlet_filename, clobber=True)
             log.info("Wrote headerlet file {}.\n\n".format(headerlet_filename))
             out_headerlet_dict[image_name] = headerlet_filename
 
             # Attach headerlet as HDRLET extension
-            headerlet.attach_headerlet(image_name, headerlet_filename)
+            headerlet.attach_headerlet(image_name, headerlet_filename, logging=False)
 
         chipctr += 1
     return (out_headerlet_dict)

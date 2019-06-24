@@ -346,6 +346,7 @@ def _compute_background(image, box_size=50, win_size=3, nsigma=5., threshold_fla
                 bkg_rms_mean = threshold.max()
             else:
                 bkg_rms_mean = 3. * threshold_flag
+                threshold = bkg_rms_mean
 
             if bkg_rms_mean < 0:
                 bkg_rms_mean = 0.
@@ -618,7 +619,7 @@ def run_photutils():
     segmap, kernel, bkg_dao_rms = create_sextractor_like_sourcelists(white_light_filename,
                                                                      tdp_catalog_filename,
                                                                      param_dict,
-                                                                     se_debug=True)
+                                                                     se_debug=False)
     measure_source_properties(segmap, kernel, fp_filename_1, fp_catalog_filename_1, param_dict)
     print("Measured filter 1")
 
