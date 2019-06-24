@@ -23,7 +23,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_coordlists(fitsfile,sourcelist_filename,make_region_file=False,dao_fwhm=3.5,bkgsig_sf=2.):
+def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_region_file=True,dao_fwhm=3.5,bkgsig_sf=2.):
     """Make daofind-like coordinate lists
 
     Parameters
@@ -33,6 +33,9 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,make_region_file=Fal
 
     sourcelist_filename : string
         Name of optionally generated ds9-compatible region file
+
+    param_dict : dictionary
+        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
 
     dao_fwhm : float
         (photutils.DAOstarfinder param 'fwhm') The full-width half-maximum (FWHM) of the major axis of the
@@ -54,7 +57,18 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,make_region_file=Fal
     image = hdulist['SCI'].data
     image -= np.nanmedian(image)
     bkg_sigma = mad_std(image, ignore_nan=True)
-    daofind = DAOStarFinder(fwhm=dao_fwhm, threshold=bkgsig_sf * bkg_sigma)
+    log.info("bkg sigma: {}".format(bkg_sigma))
+
+
+    #daofind = DAOStarFinder(fwhm=dao_fwhm, threshold=bkgsig_sf * bkg_sigma)
+    pd_fwhm = param_dict['dao']['TWEAK_FWHMPSF']/param_dict['astrodrizzle']['SCALE']
+    pd_thresh = param_dict['dao']['TWEAK_THRESHOLD']*bkg_sigma
+    pd_thresh = 0.05
+    log.info("param_dict fwhm: {}".format(pd_fwhm))
+    log.info("calculated fwhm: {}\n".format("3.5"))
+    log.info("param_dict_thresh: {}".format(pd_thresh))
+    log.info("calculated thresh: {}".format(bkgsig_sf * bkg_sigma))
+    daofind = DAOStarFinder(fwhm=pd_fwhm, threshold=pd_thresh, ratio=0.8)
     sources = daofind(image)
     hdulist.close()
 
@@ -174,10 +188,10 @@ def create_sourcelists(obs_info_dict, param_dict):
         tdp_seg_catalog_filename = obs_info_dict[tdp_keyname]['product filenames']['segment source catalog']
         tdp_ps_catalog_filename = obs_info_dict[tdp_keyname]['product filenames']['point source catalog']
 
-        segmap, kernel, bkg_dao_rms = se_source_generation.create_sextractor_like_sourcelists(
-            detection_image, tdp_seg_catalog_filename, param_dict[inst_det], se_debug=False)
+        # segmap, kernel, bkg_dao_rms = se_source_generation.create_sextractor_like_sourcelists(
+        #     detection_image, tdp_seg_catalog_filename, param_dict[inst_det], se_debug=False) # TODO: UNCOMMENT PRIOR TO DEPLOYMENT
 
-        dao_coord_list = create_dao_like_coordlists(detection_image,tdp_ps_catalog_filename)
+        dao_coord_list = create_dao_like_coordlists(detection_image,tdp_ps_catalog_filename,param_dict[inst_det])
 
 
         for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
@@ -190,8 +204,8 @@ def create_sourcelists(obs_info_dict, param_dict):
             log.info("Point source catalog.... {}".format(point_source_catalog_name))
             log.info("Segment source catalog.. {}".format(seg_source_catalog_name))
 
-            se_source_generation.measure_source_properties(segmap, kernel, filter_combined_imagename,
-                                                           seg_source_catalog_name, param_dict[inst_det])
+            # se_source_generation.measure_source_properties(segmap, kernel, filter_combined_imagename,
+            #                                                seg_source_catalog_name, param_dict[inst_det]) # TODO: UNCOMMENT PRIOR TO DEPLOYMENT
 
             create_dao_like_sourcelists(filter_combined_imagename, point_source_catalog_name, dao_coord_list)
             
