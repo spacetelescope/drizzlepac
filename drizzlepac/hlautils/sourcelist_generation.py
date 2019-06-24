@@ -63,12 +63,12 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_regi
     #daofind = DAOStarFinder(fwhm=dao_fwhm, threshold=bkgsig_sf * bkg_sigma)
     pd_fwhm = param_dict['dao']['TWEAK_FWHMPSF']/param_dict['astrodrizzle']['SCALE']
     pd_thresh = param_dict['dao']['TWEAK_THRESHOLD']*bkg_sigma
-    pd_thresh = 0.05
+    calc_thresh = bkgsig_sf * bkg_sigma
     log.info("param_dict fwhm: {}".format(pd_fwhm))
     log.info("calculated fwhm: {}\n".format("3.5"))
     log.info("param_dict_thresh: {}".format(pd_thresh))
     log.info("calculated thresh: {}".format(bkgsig_sf * bkg_sigma))
-    daofind = DAOStarFinder(fwhm=pd_fwhm, threshold=pd_thresh, ratio=0.8)
+    daofind = DAOStarFinder(fwhm=pd_fwhm, threshold=calc_thresh, ratio=0.8)
     sources = daofind(image)
     hdulist.close()
 
