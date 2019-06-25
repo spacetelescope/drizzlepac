@@ -292,7 +292,7 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
     return delta_ra, delta_dec
 
 
-def build_auto_kernel(imgarr, fwhm=3.0, threshold=None, source_box=7,
+def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
                       isolation_size=50, saturation_limit=70000.):
     """Build kernel for use in source detection based on image PSF
     This algorithm looks for an isolated point-source that is non-saturated to use as a template
@@ -341,9 +341,20 @@ def build_auto_kernel(imgarr, fwhm=3.0, threshold=None, source_box=7,
 
     # Identify position of brightest, non-saturated peak (in numpy index order)
     kernel_pos = [peaks['y_peak'][-1], peaks['x_peak'][-1]]
+    
     kernel = imgarr[kernel_pos[0] - source_box:kernel_pos[0] + source_box + 1,
                     kernel_pos[1] - source_box:kernel_pos[1] + source_box + 1]
+    kernel_wht = whtarr[kernel_pos[0] - source_box:kernel_pos[0] + 5 + 1,
+                    kernel_pos[1] - source_box:kernel_pos[1] + 5 + 1]
+    # TODO: check in kernel_wht for any zero-value pixels with np.where(kernel_wht ==0.). If found, go to the previous item in peaks, and so on until a source with now wht array zero value is found.
     log.info("kernel[{},{}]".format(kernel_pos[1], kernel_pos[0]))
+    import matplotlib.pyplot as plt
+    import pdb
+    plt.imshow(kernel_wht)
+    plt.show()
+    pdb.set_trace()
+
+
     peaks['x_peak'] += 1
     peaks['y_peak'] += 1
 

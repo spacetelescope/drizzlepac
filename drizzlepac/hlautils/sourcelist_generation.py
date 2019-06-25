@@ -57,6 +57,7 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_regi
     """
     hdulist = fits.open(fitsfile)
     image = hdulist['SCI'].data
+    wht_image = hdulist['WHT'].data
     image -= np.nanmedian(image)
     bkg_sigma = mad_std(image, ignore_nan=True)
     log.info("bkg sigma: {}".format(bkg_sigma))
@@ -72,7 +73,7 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_regi
 
 
 
-    kernel = astrometric_utils.build_auto_kernel(image, threshold=calc_thresh, fwhm=pd_fwhm,saturation_limit=60000.)
+    kernel = astrometric_utils.build_auto_kernel(image, wht_image, threshold=calc_thresh, fwhm=pd_fwhm)
     segm = detect_sources(image, calc_thresh, npixels=param_dict["sourcex"]["source_box"], filter_kernel=kernel)
     cat = source_properties(image, segm)
     bad_srcs = np.where(astrometric_utils.classify_sources(cat) == 0)[0] + 1
