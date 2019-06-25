@@ -35,7 +35,7 @@ from astropy.coordinates import SkyCoord
 from astropy.io import fits as fits
 from astropy.io import ascii
 from astropy.convolution import Gaussian2DKernel
-from astropy.stats import gaussian_fwhm_to_sigma
+from astropy.stats import gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm
 from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
@@ -490,10 +490,16 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
 
     # convert segm to mask for daofind
     if centering_mode == 'starfind':
+
+        # Extract the average sigma for detected sources
+        source_table = cat.to_table()
+        smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
+        source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
+
         src_table = None
         # daofind = IRAFStarFinder(fwhm=fwhm, threshold=5.*bkg.background_rms_median)
         log.info("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, bkg_rms_mean))
-        daofind = DAOStarFinder(fwhm=fwhm, threshold=bkg_rms_mean)
+        daofind = DAOStarFinder(fwhm=source_fwhm, threshold=bkg_rms_mean)
 
         # Identify nbrightest/largest sources
         if nlargest is not None:
