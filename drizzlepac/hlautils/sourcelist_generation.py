@@ -8,12 +8,14 @@ import sys
 
 
 from astropy.io import fits
-from astropy.stats import mad_std
+from astropy.stats import mad_std,gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm
 import numpy as np
 from photutils import aperture_photometry, CircularAperture, DAOStarFinder
+from photutils import detect_sources, source_properties
 from stsci.tools import logutil
 
 from drizzlepac import util
+from drizzlepac.hlautils import astrometric_utils
 from drizzlepac.hlautils import se_source_generation
 
 __taskname__ = 'sourcelist_generation'
@@ -59,16 +61,34 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_regi
     bkg_sigma = mad_std(image, ignore_nan=True)
     log.info("bkg sigma: {}".format(bkg_sigma))
 
-
-    #daofind = DAOStarFinder(fwhm=dao_fwhm, threshold=bkgsig_sf * bkg_sigma)
     pd_fwhm = param_dict['dao']['TWEAK_FWHMPSF']/param_dict['astrodrizzle']['SCALE']
     pd_thresh = param_dict['dao']['TWEAK_THRESHOLD']*bkg_sigma
     calc_thresh = bkgsig_sf * bkg_sigma
+
     log.info("param_dict fwhm: {}".format(pd_fwhm))
     log.info("calculated fwhm: {}\n".format("3.5"))
     log.info("param_dict_thresh: {}".format(pd_thresh))
     log.info("calculated thresh: {}".format(bkgsig_sf * bkg_sigma))
-    daofind = DAOStarFinder(fwhm=pd_fwhm, threshold=calc_thresh, ratio=0.8)
+
+
+
+    kernel = astrometric_utils.build_auto_kernel(image, threshold=calc_thresh, fwhm=pd_fwhm,saturation_limit=60000.)
+    segm = detect_sources(image, calc_thresh, npixels=param_dict["sourcex"]["source_box"], filter_kernel=kernel)
+    cat = source_properties(image, segm)
+    bad_srcs = np.where(astrometric_utils.classify_sources(cat) == 0)[0] + 1
+    segm.remove_labels(bad_srcs)
+
+    source_table = cat.to_table()
+    smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
+    source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
+    log.info("SOURCE_FWHM: {}".format(source_fwhm))
+    import matplotlib.pyplot as plt
+    plt.imshow(kernel)
+    plt.show()
+    pdb.set_trace()
+
+    # daofind = DAOStarFinder(fwhm=dao_fwhm, threshold=bkgsig_sf * bkg_sigma)
+    daofind = DAOStarFinder(fwhm=source_fwhm, threshold=calc_thresh, ratio=0.8)
     sources = daofind(image)
     hdulist.close()
 
