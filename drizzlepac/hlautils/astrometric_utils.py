@@ -292,6 +292,74 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
     return delta_ra, delta_dec
 
 
+def build_auto_kernel(imgarr, fwhm=3.0, threshold=None, source_box=7,
+                      isolation_size=50, saturation_limit=70000.):
+    """Build kernel for use in source detection based on image PSF
+    This algorithm looks for an isolated point-source that is non-saturated to use as a template
+    for the source detection kernel.  Failing to find any suitable sources, it will return a
+    Gaussian2DKernel based on the provided FWHM as a default.
+    Parameters
+    ----------
+    imgarr : ndarray
+        Image array (ndarray object) with sources to be identified
+    fwhm : float
+        Value of FWHM to use for creating a Gaussian2DKernel object in case no suitable source
+        can be identified in the image.
+    threshold : float
+        Value from the image which serves as the limit for determining sources.
+        If None, compute a default value of (background+5*rms(background)).
+        If threshold < 0.0, use absolute value as scaling factor for default value.
+    source_box : int
+        Size of box (in pixels) which defines the minimum size of a valid source.
+    isolation_size : int
+        Separation (in pixels) to use to identify sources that are isolated from any other sources
+        in the image.
+    saturation_limit : float
+        Flux in the image that represents the onset of saturation for a pixel.
+    Notes
+    ------
+    Ideally, it would be best to determine the saturation_limit value from the data itself,
+    perhaps by looking at the pixels flagged (in the DQ array) as saturated and selecting
+    the value less than the minimum flux of all those pixels, or maximum pixel value in the
+    image if non-were flagged as saturated (in the DQ array).
+    """
+
+    # Try to use PSF derived from image as detection kernel
+    # Kernel must be derived from well-isolated sources not near the edge of the image
+    kern_img = imgarr.copy()
+    edge = source_box * 2
+    kern_img[:edge, :] = 0.0
+    kern_img[-edge:, :] = 0.0
+    kern_img[:, :edge] = 0.0
+    kern_img[:, -edge:] = 0.0
+    peaks = photutils.detection.find_peaks(kern_img, threshold=threshold, box_size=isolation_size)
+    if len(peaks['peak_value'][peaks['peak_value'] > saturation_limit]):
+        # Make sure only peaks less than saturation limit are evaluated
+        peaks['peak_value'][peaks['peak_value'] >= saturation_limit] = 0.
+    # Sort based on peak_value to identify brightest sources for use as a kernel
+    peaks.sort('peak_value')
+
+    # Identify position of brightest, non-saturated peak (in numpy index order)
+    kernel_pos = [peaks['y_peak'][-1], peaks['x_peak'][-1]]
+    kernel = imgarr[kernel_pos[0] - source_box:kernel_pos[0] + source_box + 1,
+                    kernel_pos[1] - source_box:kernel_pos[1] + source_box + 1]
+    log.info("kernel[{},{}]".format(kernel_pos[1], kernel_pos[0]))
+    peaks['x_peak'] += 1
+    peaks['y_peak'] += 1
+
+    # Normalize the new kernel to a total flux of 1.0
+    if kernel.sum() > 0.0:
+        kernel /= kernel.sum()
+    else:
+        # Generate a default kernel using a simple 2D Gaussian
+        sigma = fwhm * gaussian_fwhm_to_sigma
+        kernel = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
+        kernel.normalize()
+
+    return kernel
+
+
+
 def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
                     classify=True, centering_mode="starfind", nlargest=None,
                     outroot=None, plot=False, vmax=None, deblend=False):
