@@ -64,14 +64,7 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_regi
     log.info("bkg sigma: {}".format(bkg_sigma))
 
     pd_fwhm = param_dict['dao']['TWEAK_FWHMPSF']/param_dict['astrodrizzle']['SCALE']
-    pd_thresh = param_dict['dao']['TWEAK_THRESHOLD']*bkg_sigma
     calc_thresh = bkgsig_sf * bkg_sigma
-
-    log.info("param_dict fwhm: {}".format(pd_fwhm))
-    log.info("calculated fwhm: {}\n".format("3.5"))
-    log.info("param_dict_thresh: {}".format(pd_thresh))
-    log.info("calculated thresh: {}".format(bkgsig_sf * bkg_sigma))
-
 
     # Estimate FWHM from image sources
     kernel = astrometric_utils.build_auto_kernel(image, wht_image, threshold=calc_thresh, fwhm=pd_fwhm)
