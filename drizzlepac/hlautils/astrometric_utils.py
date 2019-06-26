@@ -339,21 +339,25 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     # Sort based on peak_value to identify brightest sources for use as a kernel
     peaks.sort('peak_value')
 
-    # Identify position of brightest, non-saturated peak (in numpy index order)
-    kernel_pos = [peaks['y_peak'][-1], peaks['x_peak'][-1]]
-    
-    kernel = imgarr[kernel_pos[0] - source_box:kernel_pos[0] + source_box + 1,
-                    kernel_pos[1] - source_box:kernel_pos[1] + source_box + 1]
-    kernel_wht = whtarr[kernel_pos[0] - source_box:kernel_pos[0] + 5 + 1,
-                    kernel_pos[1] - source_box:kernel_pos[1] + 5 + 1]
-    # TODO: check in kernel_wht for any zero-value pixels with np.where(kernel_wht ==0.). If found, go to the previous item in peaks, and so on until a source with now wht array zero value is found.
-    log.info("kernel[{},{}]".format(kernel_pos[1], kernel_pos[0]))
-    import matplotlib.pyplot as plt
-    import pdb
-    plt.imshow(kernel_wht)
-    plt.show()
-    pdb.set_trace()
+    wht_box = 2 # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
 
+    # Identify position of brightest, non-saturated peak (in numpy index order)
+    for peak_ctr in range(-1, -1 * len(peaks) - 1, -1):
+        kernel_pos = [peaks['y_peak'][peak_ctr], peaks['x_peak'][peak_ctr]]
+
+        kernel = imgarr[kernel_pos[0] - source_box:kernel_pos[0] + source_box + 1,
+                        kernel_pos[1] - source_box:kernel_pos[1] + source_box + 1]
+
+        kernel_wht = whtarr[kernel_pos[0] - wht_box:kernel_pos[0] + wht_box + 1,
+                        kernel_pos[1] - wht_box:kernel_pos[1] + wht_box + 1]
+
+        # search square cut-out (of size 2 x wht_box + 1 pixels on a side) of weight image centered on peak coords for
+        # zero-value pixels. Reject peak if any are found.
+        if len(np.where(kernel_wht == 0.)[0]) == 0:
+            log.info("kernel[{},{}]".format(kernel_pos[1], kernel_pos[0]))
+            break
+        else:
+            kernel[:] = 0.0 # reset kernel values to zero each time to guard against case where all peaks are saturated.
 
     peaks['x_peak'] += 1
     peaks['y_peak'] += 1
