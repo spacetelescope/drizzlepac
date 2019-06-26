@@ -11,6 +11,7 @@ from astropy.io import fits
 from astropy.stats import mad_std,gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm
 import numpy as np
 from photutils import aperture_photometry, CircularAperture, DAOStarFinder
+from photutils import Background2D, MedianBackground
 from photutils import detect_sources, source_properties
 from stsci.tools import logutil
 
@@ -25,7 +26,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_region_file=True,dao_fwhm=3.5,bkgsig_sf=2.):
+def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_region_file=True,dao_fwhm=3.5,bkgsig_sf=4.):
     """Make daofind-like coordinate lists
 
     Parameters
@@ -72,7 +73,7 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_regi
     log.info("calculated thresh: {}".format(bkgsig_sf * bkg_sigma))
 
 
-
+    # Estimate FWHM from image sources
     kernel = astrometric_utils.build_auto_kernel(image, wht_image, threshold=calc_thresh, fwhm=pd_fwhm)
     segm = detect_sources(image, calc_thresh, npixels=param_dict["sourcex"]["source_box"], filter_kernel=kernel)
     cat = source_properties(image, segm)
@@ -83,13 +84,46 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_regi
     smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
     source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
     log.info("SOURCE_FWHM: {}".format(source_fwhm))
-    import matplotlib.pyplot as plt
-    plt.imshow(kernel)
-    plt.show()
-    pdb.set_trace()
 
-    # daofind = DAOStarFinder(fwhm=dao_fwhm, threshold=bkgsig_sf * bkg_sigma)
-    daofind = DAOStarFinder(fwhm=source_fwhm, threshold=calc_thresh, ratio=0.8)
+    # Estimate background for DaoStarfinder 'threshold' input.
+    bkg_estimator = MedianBackground()
+    bkg = None
+    threshold = param_dict['dao']['TWEAK_THRESHOLD']
+    exclude_percentiles = [10, 25, 50, 75]
+    for percentile in exclude_percentiles:
+        try:
+            bkg = Background2D(image, (50, 50), filter_size=(3, 3),
+                               bkg_estimator=bkg_estimator,
+                               exclude_percentile=percentile)
+        except Exception:
+            bkg = None
+            continue
+        if bkg is not None:
+            # If it succeeds, stop and use that value
+            bkg_rms = (5. * bkg.background_rms)
+            bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
+            default_threshold = bkg.background + bkg_rms
+            if threshold is None:
+                threshold = default_threshold
+            elif threshold < 0:
+                threshold = -1 * threshold * default_threshold
+                log.info("{} based on {}".format(threshold.max(), default_threshold.max()))
+                bkg_rms_mean = threshold.max()
+            else:
+                bkg_rms_mean = 3. * threshold
+
+            if bkg_rms_mean < 0:
+                bkg_rms_mean = 0.
+            break
+
+    # If Background2D does not work at all, define default scalar values for
+    # the background to be used in source identification
+    if bkg is None:
+        bkg_rms_mean = max(0.01, imgarr.min())
+        bkg_rms = bkg_rms_mean * 5
+
+    log.info("BKG_RMS_MEAN: {}".format(bkg_rms_mean))
+    daofind = DAOStarFinder(fwhm=source_fwhm, threshold=bkg_rms_mean, ratio=0.8)
     sources = daofind(image)
     hdulist.close()
 
