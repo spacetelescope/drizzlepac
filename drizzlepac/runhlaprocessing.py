@@ -123,7 +123,7 @@ param_dict = {
             "ci_seupper_limit": 1.23},
         "dao": {
             "TWEAK_FWHMPSF": 0.076,
-            "TWEAK_THRESHOLD": None,
+            "TWEAK_THRESHOLD": 3.0,
             "aperture_1": 0.05,  # update from 0.15
             "aperture_2": 0.15,  # update from 0.25
             "bthresh": 5.0},
