@@ -1,0 +1,9 @@
+[tool.stsci-bot]
+
+[tool.stsci-bot.milestones]
+
+enabled = false
+
+[tool.stsci-bot.changelog_checker]
+
+filename = "CHANGELOG.rst"
