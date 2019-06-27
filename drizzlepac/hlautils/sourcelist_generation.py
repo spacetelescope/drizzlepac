@@ -111,7 +111,7 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_regi
 
     # Estimate FWHM from image sources
     kernel = astrometric_utils.build_auto_kernel(image, wht_image, threshold=bkg_rms, fwhm=pd_fwhm)
-    segm = detect_sources(image, bkg_rms, npixels=param_dict["sourcex"]["source_box"], filter_kernel=kernel)
+    segm = detect_sources(image, calc_thresh, npixels=param_dict["sourcex"]["source_box"], filter_kernel=kernel)
     cat = source_properties(image, segm)
     bad_srcs = np.where(astrometric_utils.classify_sources(cat) == 0)[0] + 1
     segm.remove_labels(bad_srcs)
