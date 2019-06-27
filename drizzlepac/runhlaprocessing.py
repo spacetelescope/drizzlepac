@@ -409,12 +409,12 @@ def run_astrodrizzle(obs_info_dict):
         astrodrizzle.AstroDrizzle(input=adriz_in_list,output=ref_total_combined_image,
                                   configobj='{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep))
 
-        log.info("Finished creating TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")        
+        log.info("Finished creating TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")
         # Extract shape of ref_total_combined_image for explicit use in AstroDrizzle for all other products.
         rtci = fits.open(ref_total_combined_image)
         total_shape = rtci[('sci',1)].data.shape
         rtci.close()
-        
+
         for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
             # 2: Create drizzle-combined filter image using the temp ref image as astrodrizzle param 'final_refimage'
             log.info("~" * 118)
@@ -628,8 +628,10 @@ def main():
                         'file.')
     ARGS = parser.parse_args()
 
+    print("Single-visit processing started for: {}".format(ARGS.input_filename))
     rv = perform_processing(ARGS.input_filename, debug=ARGS.debug)
-    print("Return Value: ",rv)
-    
+    print("Return Value: ", rv)
+    return rv
+
 if __name__ == '__main__':
     main()
