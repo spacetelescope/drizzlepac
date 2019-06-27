@@ -70,19 +70,6 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_regi
     log.info("calculated fwhm: {}\n".format("3.5"))
     log.info("calculated thresh: {}".format(bkgsig_sf * bkg_sigma))
 
-
-    # Estimate FWHM from image sources
-    kernel = astrometric_utils.build_auto_kernel(image, wht_image, threshold=calc_thresh, fwhm=pd_fwhm)
-    segm = detect_sources(image, calc_thresh, npixels=param_dict["sourcex"]["source_box"], filter_kernel=kernel)
-    cat = source_properties(image, segm)
-    bad_srcs = np.where(astrometric_utils.classify_sources(cat) == 0)[0] + 1
-    segm.remove_labels(bad_srcs)
-
-    source_table = cat.to_table()
-    smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
-    source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
-    log.info("SOURCE_FWHM: {}".format(source_fwhm))
-
     # Estimate background for DaoStarfinder 'threshold' input.
     bkg_estimator = MedianBackground()
     bkg = None
@@ -121,6 +108,19 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_regi
         bkg_rms = bkg_rms_mean * 5
 
     log.info("BKG_RMS_MEAN: {}".format(bkg_rms_mean))
+
+    # Estimate FWHM from image sources
+    kernel = astrometric_utils.build_auto_kernel(image, wht_image, threshold=bkg_rms, fwhm=pd_fwhm)
+    segm = detect_sources(image, calc_thresh, npixels=param_dict["sourcex"]["source_box"], filter_kernel=kernel)
+    cat = source_properties(image, segm)
+    bad_srcs = np.where(astrometric_utils.classify_sources(cat) == 0)[0] + 1
+    segm.remove_labels(bad_srcs)
+
+    source_table = cat.to_table()
+    smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
+    source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
+    log.info("SOURCE_FWHM: {}".format(source_fwhm))
+
     daofind = DAOStarFinder(fwhm=source_fwhm, threshold=bkg_rms_mean, ratio=0.8)
     sources = daofind(image)
     hdulist.close()
