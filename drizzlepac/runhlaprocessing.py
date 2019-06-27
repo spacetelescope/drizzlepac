@@ -616,7 +616,7 @@ def run_perform_align(filelist,headerlet_filenames):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Process images, produce drizzled images and sourcelists')
     parser.add_argument('input_filename', help='Name of the input csv file containing information about the files to '
                         'be processed')
@@ -630,3 +630,6 @@ if __name__ == '__main__':
 
     rv = perform_processing(ARGS.input_filename, debug=ARGS.debug)
     print("Return Value: ",rv)
+    
+if __name__ == '__main__':
+    main()
