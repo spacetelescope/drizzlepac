@@ -26,7 +26,8 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_region_file=True,dao_fwhm=3.5,bkgsig_sf=4.):
+def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_region_file=False,bkgsig_sf=4.,
+                               dao_ratio=0.8):
     """Make daofind-like coordinate lists
 
     Parameters
@@ -51,24 +52,24 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_regi
         multiplictive scale factor applied to background sigma value to compute DAOfind input parameter
         'threshold'. Default value = 2.
 
+    dao_ratio : float
+        The ratio of the minor to major axis standard deviations of the Gaussian kernel.
+
     Returns
     -------
     sources : astropy table
         Table containing x, y coordinates of identified sources
     """
+    # read in sci, wht extensions of drizzled product
     hdulist = fits.open(fitsfile)
     image = hdulist['SCI'].data
-    wht_image = hdulist['WHT'].data
     image -= np.nanmedian(image)
+    wht_image = hdulist['WHT'].data
+
     bkg_sigma = mad_std(image, ignore_nan=True)
-    log.info("bkg sigma: {}".format(bkg_sigma))
 
-    pd_fwhm = param_dict['dao']['TWEAK_FWHMPSF']/param_dict['astrodrizzle']['SCALE']
-    calc_thresh = bkgsig_sf * bkg_sigma
-
-    log.info("param_dict fwhm: {}".format(pd_fwhm))
-    log.info("calculated fwhm: {}\n".format("3.5"))
-    log.info("calculated thresh: {}".format(bkgsig_sf * bkg_sigma))
+    detect_sources_thresh = bkgsig_sf * bkg_sigma
+    default_fwhm = param_dict['dao']['TWEAK_FWHMPSF'] / param_dict['astrodrizzle']['SCALE']
 
     # Estimate background for DaoStarfinder 'threshold' input.
     bkg_estimator = MedianBackground()
@@ -107,11 +108,11 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_regi
         bkg_rms_mean = max(0.01, imgarr.min())
         bkg_rms = bkg_rms_mean * 5
 
-    log.info("BKG_RMS_MEAN: {}".format(bkg_rms_mean))
+
 
     # Estimate FWHM from image sources
-    kernel = astrometric_utils.build_auto_kernel(image, wht_image, threshold=bkg_rms, fwhm=pd_fwhm)
-    segm = detect_sources(image, calc_thresh, npixels=param_dict["sourcex"]["source_box"], filter_kernel=kernel)
+    kernel = astrometric_utils.build_auto_kernel(image, wht_image, threshold=bkg_rms, fwhm=default_fwhm)
+    segm = detect_sources(image, detect_sources_thresh, npixels=param_dict["sourcex"]["source_box"], filter_kernel=kernel)
     cat = source_properties(image, segm)
     bad_srcs = np.where(astrometric_utils.classify_sources(cat) == 0)[0] + 1
     segm.remove_labels(bad_srcs)
@@ -119,9 +120,9 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_regi
     source_table = cat.to_table()
     smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
     source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
-    log.info("SOURCE_FWHM: {}".format(source_fwhm))
 
-    daofind = DAOStarFinder(fwhm=source_fwhm, threshold=bkg_rms_mean, ratio=0.8)
+    log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm,bkg_rms_mean,bkg_rms_mean))
+    daofind = DAOStarFinder(fwhm=source_fwhm, threshold=bkg_rms_mean, ratio=dao_ratio)
     sources = daofind(image)
     hdulist.close()
 

@@ -354,7 +354,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
         # search square cut-out (of size 2 x wht_box + 1 pixels on a side) of weight image centered on peak coords for
         # zero-value pixels. Reject peak if any are found.
         if len(np.where(kernel_wht == 0.)[0]) == 0:
-            log.info("kernel[{},{}]".format(kernel_pos[1], kernel_pos[0]))
+            log.info("Kernel source PSF located at [{},{}]".format(kernel_pos[1], kernel_pos[0]))
             break
         else:
             kernel[:] = 0.0 # reset kernel values to zero each time to guard against case where all peaks are saturated.
