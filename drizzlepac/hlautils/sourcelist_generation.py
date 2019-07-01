@@ -114,9 +114,6 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,param_dict,make_regi
     kernel = astrometric_utils.build_auto_kernel(image, wht_image, threshold=bkg_rms, fwhm=default_fwhm)
     segm = detect_sources(image, detect_sources_thresh, npixels=param_dict["sourcex"]["source_box"], filter_kernel=kernel)
     cat = source_properties(image, segm)
-    bad_srcs = np.where(astrometric_utils.classify_sources(cat) == 0)[0] + 1
-    segm.remove_labels(bad_srcs)
-
     source_table = cat.to_table()
     smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
     source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
