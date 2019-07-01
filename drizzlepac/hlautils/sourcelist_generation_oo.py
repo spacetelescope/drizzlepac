@@ -23,18 +23,21 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-class Point_source_photometry(object):
+class Do_photometry(object):
     """Using aperture photometry, generate photometric sourcelist for specified image(s).
     """
-    def __init__(self):
-        self.label="Point_source_photometry"
+    def __init__(self,fitsfile):
+        self.label="Do_photometry"
         self.description="A set of routines to generate photometric sourcelists using aperture photometry"
+        self.imgname = fitsfile
+        self.point_sourcelist_filename = fitsfile.replace(fitsfile[-9:],"_point-cat.ecsv")
+        self.seg_sourcelist_filename = fitsfile.replace(fitsfile[-9:], "_segment-cat.ecsv")
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def identify_sources(self,fitsfile,sourcelist_filename,make_region_file=False,dao_fwhm=3.5,bkgsig_sf=2.):
+    def identify_point_sources(self,fitsfile,sourcelist_filename,make_region_file=False,dao_fwhm=3.5,bkgsig_sf=2.):
         """Create a master coordinate list of sources identified in the specified total detection product image
 
         Parameters
@@ -96,7 +99,7 @@ class Point_source_photometry(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def perform_photometry(self,fitsfile,sl_filename,sources,aper_radius=4.,make_region_file=False):
+    def perform_point_photometry(self,fitsfile,sl_filename,sources,aper_radius=4.,make_region_file=False):
         """Perform aperture photometry on identified sources
 
         Parameters
@@ -150,21 +153,6 @@ class Point_source_photometry(object):
             log.info("Created region file '{}' with {} sources".format(reg_filename, tbl_length))
 
 
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-class Segment_photometry(object):
-    """Create the Sextractor-like source catalog using PhotUtils"""
-
-    def __init__(self):
-        self.label = "Segment_photometry"
-        self.description ="A set of routines to generate photometric sourcelists using segment maps"
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    def placeholder(self):
-        pass
 
 # ----------------------------------------------------------------------------------------------------------------------
 
