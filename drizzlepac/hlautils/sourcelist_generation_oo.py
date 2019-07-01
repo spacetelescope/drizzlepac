@@ -30,7 +30,9 @@ class Point_source_photometry(object):
         self.label="Point_source_photometry"
         self.description="A set of routines to generate photometric sourcelists using aperture photometry"
 
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
     def identify_sources(self,fitsfile,sourcelist_filename,make_region_file=False,dao_fwhm=3.5,bkgsig_sf=2.):
         """Create a master coordinate list of sources identified in the specified total detection product image
@@ -92,6 +94,7 @@ class Point_source_photometry(object):
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
     def perform_photometry(self,fitsfile,sl_filename,sources,aper_radius=4.,make_region_file=False):
         """Perform aperture photometry on identified sources
