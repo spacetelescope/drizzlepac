@@ -6,18 +6,41 @@ segmentation-map based photometry.
 import pdb
 import sys
 
-
-from astropy.io import fits
-from astropy.stats import mad_std,gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm
+import astropy.units as u
+from astropy.io import ascii
+from astropy.io import fits as fits
+from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel
+from astropy.stats import mad_std, gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm
+from astropy.table import Column, Table
 import numpy as np
+import photutils
 from photutils import aperture_photometry, CircularAperture, DAOStarFinder
-from photutils import Background2D, MedianBackground
-from photutils import detect_sources, source_properties
+from photutils import Background2D, MedianBackground, SExtractorBackground, StdBackgroundRMS
+from photutils import detect_sources, source_properties, deblend_sources
 from stsci.tools import logutil
 
 from drizzlepac import util
 from drizzlepac.hlautils import astrometric_utils
 from drizzlepac.hlautils import se_source_generation
+
+
+try:
+    from matplotlib import pyplot as plt
+except Exception:
+    plt = None
+
+# import astropy.units as u
+# from astropy.io import ascii
+# from astropy.io import fits as fits
+# from astropy.table import Column, Table
+# from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel
+# from astropy.stats import gaussian_fwhm_to_sigma
+# import photutils
+# from photutils import detect_sources, source_properties, deblend_sources
+# from photutils import Background2D, MedianBackground, SExtractorBackground, StdBackgroundRMS
+
+# from stwcs.wcsutil import HSTWCS
+# from stsci.tools import logutil
 
 __taskname__ = 'sourcelist_generation_oo'
 
@@ -308,7 +331,6 @@ class build_catalogs(object):
         return(sources)
 
 
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
@@ -428,6 +450,8 @@ if __name__ == '__main__':
                                         total_product.point_sourcelist_filename,
                                         write_region_file=True)
 
+    total_product.segmap, total_product.kernel, total_product.bkg_dao_rms = se_source_generation.create_sextractor_like_sourcelists(total_product.imgname,total_product.seg_sourcelist_filename, total_product.param_dict, se_debug=False)
+
     for filter_img_name in args.filter_product_list:
         filter_product = build_catalogs(filter_img_name)
         filter_product.ps_phot_cat = filter_product.perform_point_photometry(filter_product.imgname,
@@ -435,3 +459,5 @@ if __name__ == '__main__':
         filter_product.write_catalog_to_file(filter_product.ps_phot_cat,
                                              filter_product.point_sourcelist_filename,
                                              write_region_file=True)
+
+        se_source_generation.measure_source_properties(total_product.segmap, total_product.kernel, filter_product.imgname,filter_product.seg_sourcelist_filename, filter_product.param_dict)
