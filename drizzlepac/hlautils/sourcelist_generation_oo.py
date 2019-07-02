@@ -396,5 +396,15 @@ class build_catalogs(object):
 
 
 if __name__ == '__main__':
-    blarg = build_catalogs()
-    pdb.set_trace()
+    import argparse
+
+    parser = argparse.ArgumentParser(description='test interface for sourcelist_generation')
+    parser.add_argument('total_product_name',help="total product filename")
+    parser.add_argument('-f', '--filter_product_list',args='+',help="list of one or more total filter products")
+    args = parser.parse_args()
+
+    total = build_catalogs(args.total_product_name)
+    total.ps_sources = total.identify_point_sources(total.imgname,total.point_sourcelist_filename,total.param_dict,make_region_file=True)
+    for filter_img_name in args.filter_product_list:
+        filt = build_catalogs(filter_img_name)
+        filt.perform_point_photometry(filt.imgname,filt.point_sourcelist_filename,total.ps_sources,make_region_file=True)
