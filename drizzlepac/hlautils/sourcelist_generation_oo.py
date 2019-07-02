@@ -33,8 +33,8 @@ class build_catalogs(object):
         self.label="build_catalogs"
         self.description="A set of routines to generate photometric sourcelists using aperture photometry"
         self.imgname = fitsfile
-        self.point_sourcelist_filename = fitsfile.replace(fitsfile[-9:],"_point-cat.ecsv")
-        self.seg_sourcelist_filename = fitsfile.replace(fitsfile[-9:], "_segment-cat.ecsv")
+        self.point_sourcelist_filename = self.imgname.replace(self.imgname[-9:],"_point-cat.ecsv")
+        self.seg_sourcelist_filename = self.imgname.replace(self.imgname[-9:], "_segment-cat.ecsv")
         self.param_dict = {
         "ACS HRC": {
             "astrodrizzle": {
