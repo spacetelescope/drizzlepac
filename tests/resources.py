@@ -9,7 +9,6 @@ from os.path import splitext
 from difflib import unified_diff
 
 import pytest
-import request
 from astropy.io import fits
 from astropy.io.fits import FITSDiff
 from astropy.utils.data import conf
@@ -22,8 +21,8 @@ from ci_watson.artifactory_helpers import get_bigdata, generate_upload_schema
 from ci_watson.hst_helpers import download_crds, ref_from_image
 
 
-INPUTS_ROOT = request.config.getini('inputs_root')[0]
-RESULTS_ROOT = request.config.getini('results_root')[0]
+INPUTS_ROOT = pytest.config.getini('inputs_root')[0]
+RESULTS_ROOT = pytest.config.getini('results_root')[0]
 
 
 # Base classes for actual tests.
