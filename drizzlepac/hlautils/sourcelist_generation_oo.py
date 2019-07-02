@@ -29,19 +29,6 @@ try:
 except Exception:
     plt = None
 
-# import astropy.units as u
-# from astropy.io import ascii
-# from astropy.io import fits as fits
-# from astropy.table import Column, Table
-# from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel
-# from astropy.stats import gaussian_fwhm_to_sigma
-# import photutils
-# from photutils import detect_sources, source_properties, deblend_sources
-# from photutils import Background2D, MedianBackground, SExtractorBackground, StdBackgroundRMS
-
-# from stwcs.wcsutil import HSTWCS
-# from stsci.tools import logutil
-
 __taskname__ = 'sourcelist_generation_oo'
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
@@ -314,7 +301,8 @@ class build_catalogs(object):
 
         # Estimate FWHM from image sources
         kernel = astrometric_utils.build_auto_kernel(image, wht_image, threshold=bkg_rms, fwhm=default_fwhm)
-        segm = detect_sources(image, detect_sources_thresh, npixels=param_dict["sourcex"]["source_box"], filter_kernel=kernel)
+        segm = detect_sources(image, detect_sources_thresh, npixels=param_dict["sourcex"]["source_box"],
+                              filter_kernel=kernel)
         cat = source_properties(image, segm)
         source_table = cat.to_table()
         smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
@@ -367,20 +355,6 @@ class build_catalogs(object):
         for col in phot_table.colnames: phot_table[col].info.format = '%.8g'  # for consistent table output
         hdulist.close()
         return(phot_table)
-        # # Write out sourcelist
-        # tbl_length = len(phot_table)
-        # phot_table.write(sl_filename, format="ascii.ecsv")
-        # log.info("Created sourcelist file '{}' with {} sources".format(sl_filename, tbl_length))
-        #
-        # # Write out ds9-compatable .reg file
-        # if make_region_file:
-        #     reg_filename = sl_filename.replace(".ecsv",".reg")
-        #     out_table = phot_table.copy()
-        #     out_table['xcenter'].data = out_table['xcenter'].data + np.float64(1.0)
-        #     out_table['ycenter'].data = out_table['ycenter'].data + np.float64(1.0)
-        #     out_table.remove_column('id')
-        #     out_table.write(reg_filename, format="ascii")
-        #     log.info("Created region file '{}' with {} sources".format(reg_filename, tbl_length))
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
