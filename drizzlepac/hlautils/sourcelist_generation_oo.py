@@ -396,15 +396,22 @@ class build_catalogs(object):
 
 
 if __name__ == '__main__':
+    """Super simple testing interface for the above code."""
     import argparse
-
     parser = argparse.ArgumentParser(description='test interface for sourcelist_generation')
     parser.add_argument('total_product_name',help="total product filename")
-    parser.add_argument('-f', '--filter_product_list',args='+',help="list of one or more total filter products")
+    parser.add_argument('-f', '--filter_product_list',nargs='+',
+                        help="Space-seperated list of one or more total filter products")
     args = parser.parse_args()
 
-    total = build_catalogs(args.total_product_name)
-    total.ps_sources = total.identify_point_sources(total.imgname,total.point_sourcelist_filename,total.param_dict,make_region_file=True)
+    total_product = build_catalogs(args.total_product_name)
+    total_product.ps_sources = total_product.identify_point_sources(total_product.imgname,
+                                                                    total_product.point_sourcelist_filename,
+                                                                    total_product.param_dict,
+                                                                    make_region_file=True)
     for filter_img_name in args.filter_product_list:
-        filt = build_catalogs(filter_img_name)
-        filt.perform_point_photometry(filt.imgname,filt.point_sourcelist_filename,total.ps_sources,make_region_file=True)
+        filter_product = build_catalogs(filter_img_name)
+        filter_product.perform_point_photometry(filter_product.imgname,
+                                                filter_product.point_sourcelist_filename,
+                                                total_product.ps_sources,
+                                                make_region_file=True)
