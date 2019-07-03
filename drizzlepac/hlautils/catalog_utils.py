@@ -963,6 +963,10 @@ if __name__ == '__main__':
         args.debug = True
     else:
         args.debug = False
+    log.info("python {} {} -f {} -d {}".format(os.path.realpath(__file__),
+                                               args.total_product_name,
+                                               " ".join(args.filter_product_list),
+                                               args.debug))
 
     total_product = build_catalogs(args.total_product_name)
     # total_product.ps_source_cat = total_product.identify_point_sources()
