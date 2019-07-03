@@ -42,9 +42,17 @@ class build_catalogs(object):
     def __init__(self,fitsfile):
         self.label="build_catalogs"
         self.description="A set of routines to generate photometric sourcelists using aperture photometry"
+        
+        # Filename stuff
         self.imgname = fitsfile
         self.point_sourcelist_filename = self.imgname.replace(self.imgname[-9:],"_point-cat.ecsv")
         self.seg_sourcelist_filename = self.imgname.replace(self.imgname[-9:], "_segment-cat.ecsv")
+        
+        # Fits file read
+        self.imghdu = fits.open(self.imgname)
+        
+        # Parameter dictionary definition
+        self.inst_det = "{} {}".format(self.imgname.split("_")[3].upper(), self.imgname.split("_")[4].upper())
         self.param_dict = {
         "ACS HRC": {
             "astrodrizzle": {
@@ -214,21 +222,17 @@ class build_catalogs(object):
                 "scale_factor_list": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 0.0005, 0.005, 0.005, 0.015, 0.45, 1.],
                 # "scale_factor_list_orig": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 6.e-5, 0.0005, 0.005, 0.015, 0.45, 1.],
                 "proximity_binary": "yes"}}} # TODO: remove para_dict definition once we have fleshed out the config object
-        self.inst_det = "{} {}".format(self.imgname.split("_")[3].upper(),self.imgname.split("_")[4].upper())
         self.param_dict = self.param_dict[self.inst_det] # TODO: remove para_dict redefinition once we have fleshed out the config object
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def identify_point_sources(self,fitsfile,param_dict,bkgsig_sf=4.,dao_ratio=0.8):
+    def identify_point_sources(self,bkgsig_sf=4.,dao_ratio=0.8):
         """Create a master coordinate list of sources identified in the specified total detection product image
 
         Parameters
         ----------
-        fitsfile : string
-            Name of the drizzle-combined filter product to used to generate photometric sourcelists.
-
         param_dict : dictionary
             Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
 
@@ -250,20 +254,20 @@ class build_catalogs(object):
         """
         # read in sci, wht extensions of drizzled product
 
-        hdulist = fits.open(fitsfile)
-        image = hdulist['SCI'].data
+        
+        image = self.imghdu['SCI'].data
         image -= np.nanmedian(image)
-        wht_image = hdulist['WHT'].data
+        wht_image = self.imghdu['WHT'].data
 
         bkg_sigma = mad_std(image, ignore_nan=True)
 
         detect_sources_thresh = bkgsig_sf * bkg_sigma
-        default_fwhm = param_dict['dao']['TWEAK_FWHMPSF'] / param_dict['astrodrizzle']['SCALE']
+        default_fwhm = self.param_dict['dao']['TWEAK_FWHMPSF'] / self.param_dict['astrodrizzle']['SCALE']
 
         # Estimate background for DaoStarfinder 'threshold' input.
         bkg_estimator = MedianBackground()
         bkg = None
-        threshold = param_dict['dao']['TWEAK_THRESHOLD']
+        threshold = self.param_dict['dao']['TWEAK_THRESHOLD']
         exclude_percentiles = [10, 25, 50, 75]
         for percentile in exclude_percentiles:
             try:
@@ -301,7 +305,7 @@ class build_catalogs(object):
 
         # Estimate FWHM from image sources
         kernel = astrometric_utils.build_auto_kernel(image, wht_image, threshold=bkg_rms, fwhm=default_fwhm)
-        segm = detect_sources(image, detect_sources_thresh, npixels=param_dict["sourcex"]["source_box"],
+        segm = detect_sources(image, detect_sources_thresh, npixels=self.param_dict["sourcex"]["source_box"],
                               filter_kernel=kernel)
         cat = source_properties(image, segm)
         source_table = cat.to_table()
@@ -311,7 +315,6 @@ class build_catalogs(object):
         log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm,bkg_rms_mean,bkg_rms_mean))
         daofind = DAOStarFinder(fwhm=source_fwhm, threshold=bkg_rms_mean, ratio=dao_ratio)
         sources = daofind(image)
-        hdulist.close()
 
         for col in sources.colnames:
             sources[col].info.format = '%.8g'  # for consistent table output
@@ -322,14 +325,11 @@ class build_catalogs(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def perform_point_photometry(self,fitsfile,sources,aper_radius=4.):
+    def perform_point_photometry(self,sources,aper_radius=4.):
         """Perform aperture photometry on identified sources
 
         Parameters
         ----------
-        fitsfile : string
-            Name of the drizzle-combined filter product to used to generate photometric sourcelists.
-
         sources : astropy table
             Table containing x, y coordinates of identified sources
 
@@ -342,8 +342,8 @@ class build_catalogs(object):
             Table containing photometric information for specified sources based on image data in the specified image.
         """
         # Open and background subtract image
-        hdulist = fits.open(fitsfile)
-        image = hdulist['SCI'].data
+
+        image = self.imghdu['SCI'].data
         image -= np.nanmedian(image)
 
 
@@ -353,23 +353,19 @@ class build_catalogs(object):
         phot_table = aperture_photometry(image, apertures)
 
         for col in phot_table.colnames: phot_table[col].info.format = '%.8g'  # for consistent table output
-        hdulist.close()
         return(phot_table)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def write_catalog_to_file(self,catalog,catalog_filename,write_region_file=False):
+    def write_catalog_to_file(self,catalog,write_region_file=False):
         """Write specified catalog to file on disk
 
         Parameters
         ----------
         catalog : astropy table
             table data to write to disk
-
-        catalog_filename : string
-            output filename that catalog data will be written to.
 
         write_region_file : Boolean
            Write ds9-compatible region file along with the catalog file? Default value = False
@@ -380,8 +376,8 @@ class build_catalogs(object):
 
         """
         # Write out catalog to ecsv file
-        catalog.write(catalog_filename, format="ascii.ecsv")
-        log.info("Wrote catalog file '{}' containing {} sources".format(catalog_filename, len(catalog)))
+        catalog.write(self.point_sourcelist_filename, format="ascii.ecsv")
+        log.info("Wrote catalog file '{}' containing {} sources".format(self.point_sourcelist_filename, len(catalog)))
 
         # Write out region file if input 'write_region_file' is turned on.
         if write_region_file:
@@ -401,7 +397,7 @@ class build_catalogs(object):
             else: # Bail out if anything else is encountered.
                 log.info("Error: unrecognized catalog format. Skipping region file generation.")
                 return()
-            reg_filename = catalog_filename.replace(".ecsv",".reg")
+            reg_filename = self.point_sourcelist_filename.replace(".ecsv",".reg")
             out_table.write(reg_filename, format="ascii")
             log.info("Wrote region file '{}' containing {} sources".format(reg_filename, len(out_table)))
 
@@ -978,28 +974,23 @@ if __name__ == '__main__':
         args.debug = False
 
     total_product = build_catalogs(args.total_product_name)
-    total_product.ps_source_cat = total_product.identify_point_sources(total_product.imgname,total_product.param_dict)
-    total_product.write_catalog_to_file(total_product.ps_source_cat,
-                                        total_product.point_sourcelist_filename,
-                                        write_region_file=args.debug)
+    total_product.ps_source_cat = total_product.identify_point_sources()
+    total_product.write_catalog_to_file(total_product.ps_source_cat,write_region_file=args.debug)
 
-    total_product.segmap, \
-    total_product.kernel, \
-    total_product.bkg_dao_rms = total_product.create_sextractor_like_sourcelists(total_product.imgname,
-                                                                                 total_product.seg_sourcelist_filename,
-                                                                                 total_product.param_dict,
-                                                                                 se_debug=args.debug)
+    # total_product.segmap, \
+    # total_product.kernel, \
+    # total_product.bkg_dao_rms = total_product.create_sextractor_like_sourcelists(total_product.imgname,
+    #                                                                              total_product.seg_sourcelist_filename,
+    #                                                                              total_product.param_dict,
+    #                                                                              se_debug=args.debug)
 
     for filter_img_name in args.filter_product_list:
         filter_product = build_catalogs(filter_img_name)
-        filter_product.ps_phot_cat = filter_product.perform_point_photometry(filter_product.imgname,
-                                                                             total_product.ps_source_cat)
-        filter_product.write_catalog_to_file(filter_product.ps_phot_cat,
-                                             filter_product.point_sourcelist_filename,
-                                             write_region_file=args.debug)
+        filter_product.ps_phot_cat = filter_product.perform_point_photometry(total_product.ps_source_cat)
+        filter_product.write_catalog_to_file(filter_product.ps_phot_cat,write_region_file=args.debug)
 
-        filter_product.measure_source_properties(total_product.segmap,
-                                                 total_product.kernel,
-                                                 filter_product.imgname,
-                                                 filter_product.seg_sourcelist_filename,
-                                                 filter_product.param_dict)
+        # filter_product.measure_source_properties(total_product.segmap,
+        #                                          total_product.kernel,
+        #                                          filter_product.imgname,
+        #                                          filter_product.seg_sourcelist_filename,
+        #                                          filter_product.param_dict)
