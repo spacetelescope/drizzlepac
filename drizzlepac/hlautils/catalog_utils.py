@@ -944,6 +944,11 @@ class build_catalogs(object):
 if __name__ == '__main__':
     """Super simple testing interface for the above code."""
     import argparse
+    import datetime
+    log.info("python {} {} -f {} -d {}".format(os.path.realpath(__file__),args.total_product_name," ".join(args.filter_product_list),args.debug))
+    starting_dt = datetime.datetime.now()
+
+    log.info("Run start time: {}".format(str(starting_dt)))
     parser = argparse.ArgumentParser(description='test interface for sourcelist_generation')
     parser.add_argument('total_product_name',help="total product filename")
     parser.add_argument('-f', '--filter_product_list',nargs='+',required=True,
@@ -955,9 +960,10 @@ if __name__ == '__main__':
     else:
         args.debug = False
 
+
     total_product = build_catalogs(args.total_product_name)
-    # total_product.ps_source_cat = total_product.identify_point_sources()
-    # total_product.write_catalog_to_file(total_product.ps_source_cat,write_region_file=args.debug)
+    total_product.ps_source_cat = total_product.identify_point_sources()
+    total_product.write_catalog_to_file(total_product.ps_source_cat,write_region_file=args.debug)
 
     total_product.segmap, \
     total_product.kernel, \
@@ -966,9 +972,11 @@ if __name__ == '__main__':
 
     for filter_img_name in args.filter_product_list:
         filter_product = build_catalogs(filter_img_name)
-        # filter_product.ps_phot_cat = filter_product.perform_point_photometry(total_product.ps_source_cat)
-        # filter_product.write_catalog_to_file(filter_product.ps_phot_cat,write_region_file=args.debug)
+        filter_product.ps_phot_cat = filter_product.perform_point_photometry(total_product.ps_source_cat)
+        filter_product.write_catalog_to_file(filter_product.ps_phot_cat,write_region_file=args.debug)
 
         filter_product.measure_source_properties(total_product.segmap,
                                                  total_product.kernel,
                                                  filter_product.seg_sourcelist_filename)
+
+    log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))
