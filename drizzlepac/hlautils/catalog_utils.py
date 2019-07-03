@@ -250,8 +250,6 @@ class build_catalogs(object):
             Table containing x, y coordinates of identified sources
         """
         # read in sci, wht extensions of drizzled product
-
-        
         image = self.imghdu['SCI'].data
         image -= np.nanmedian(image)
         wht_image = self.imghdu['WHT'].data
