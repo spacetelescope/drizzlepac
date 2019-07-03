@@ -405,15 +405,11 @@ class build_catalogs(object):
 # ----------------------------------------------------------------------------------------------------------------------
 #       Contents of Michele's se_source_generation.py, as of commit b2db3ec9c918188cea2d3b0e4b64e39cc79c4146
 # ----------------------------------------------------------------------------------------------------------------------
-    def create_sextractor_like_sourcelists(self,source_filename, catalog_filename, param_dict, se_debug=False):
+    def create_sextractor_like_sourcelists(self,catalog_filename, param_dict, se_debug=False):
         """Use photutils to find sources in image based on segmentation.
 
         Parameters
         ----------
-        source_filename : string
-            Filename of the "white light" drizzled image (aka the total detection product) which
-            is used for the detection of sources
-
         catalog_filename : string
             Name of the output source catalog for the total detection product
 
@@ -441,15 +437,15 @@ class build_catalogs(object):
 
         """
 
-        # Open the "white light" image and get the SCI image data
-        imghdu = fits.open(source_filename)
-        imgarr = imghdu['sci', 1].data
+        # get the TDP SCI image data
+
+        imgarr = self.imghdu['sci', 1].data
 
         # Get the HSTWCS object from the first extension
-        imgwcs = HSTWCS(imghdu, 1)
+        imgwcs = HSTWCS(self.imghdu, 1)
 
         # Get header information to annotate the output catalogs
-        keyword_dict = self._get_header_data(imghdu)
+        keyword_dict = self._get_header_data()
 
         # Get the instrument/detector-specific values from the param_dict
         fwhm = param_dict["sourcex"]["fwhm"]
@@ -559,7 +555,7 @@ class build_catalogs(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def measure_source_properties(self,segm, kernel, source_filename, catalog_filename, param_dict):
+    def measure_source_properties(self,segm, kernel, catalog_filename, param_dict):
         """Use the positions of the sources identified in the white light image to
         measure properties of these sources in the filter images
 
@@ -578,10 +574,6 @@ class build_catalogs(object):
             used in the detection of sources as well as for the determination of the
             source properties (this routine)
 
-        source_filename : string
-            Filename of the filter drizzled image (aka the filter detection product) which
-            is used for the measurement of properties of the previously found sources
-
         catalog_filename : string
             Name of the output source catalog for the filter detection product
 
@@ -593,15 +585,15 @@ class build_catalogs(object):
 
         """
 
-        # Open the filter-level image
-        imghdu = fits.open(source_filename)
-        imgarr = imghdu['sci', 1].data
+        # get filter-level science data
+
+        imgarr = self.imghdu['sci', 1].data
 
         # Get the HSTWCS object from the first extension
-        imgwcs = HSTWCS(imghdu, 1)
+        imgwcs = HSTWCS(self.imghdu, 1)
 
         # Get header information to annotate the output catalogs
-        keyword_dict = self._get_header_data(imghdu, product="fdp")
+        keyword_dict = self._get_header_data(product="fdp")
 
         # Get the instrument/detector-specific values from the param_dict
         fwhm = param_dict["sourcex"]["fwhm"]
@@ -843,30 +835,29 @@ class build_catalogs(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def _get_header_data(self,imghdu, product="tdp"):
+    def _get_header_data(self,product="tdp"):
         """Read FITS keywords from the primary or extension header and store the
         information in a dictionary
 
         Parameters
         ----------
-        imghdu : HDUList
-            An HDU object pertaining to the FITS file being processed
+        None.
         """
 
         keyword_dict = {}
 
-        keyword_dict["proposal_id"] = imghdu[0].header["PROPOSID"]
-        keyword_dict["image_file_name"] = imghdu[0].header['FILENAME'].upper()
-        keyword_dict["target_name"] = imghdu[0].header["TARGNAME"].upper()
-        keyword_dict["date_obs"] = imghdu[0].header["DATE-OBS"]
-        keyword_dict["instrument"] = imghdu[0].header["INSTRUME"].upper()
-        keyword_dict["detector"] = imghdu[0].header["DETECTOR"].upper()
-        keyword_dict["target_ra"] = imghdu[0].header["RA_TARG"]
-        keyword_dict["target_dec"] = imghdu[0].header["DEC_TARG"]
-        keyword_dict["expo_start"] = imghdu[0].header["EXPSTART"]
-        keyword_dict["texpo_time"] = imghdu[0].header["TEXPTIME"]
-        keyword_dict["ccd_gain"] = imghdu[0].header["CCDGAIN"]
-        keyword_dict["aperture_pa"] = imghdu[0].header["PA_V3"]
+        keyword_dict["proposal_id"] = self.imghdu[0].header["PROPOSID"]
+        keyword_dict["image_file_name"] = self.imghdu[0].header['FILENAME'].upper()
+        keyword_dict["target_name"] = self.imghdu[0].header["TARGNAME"].upper()
+        keyword_dict["date_obs"] = self.imghdu[0].header["DATE-OBS"]
+        keyword_dict["instrument"] = self.imghdu[0].header["INSTRUME"].upper()
+        keyword_dict["detector"] = self.imghdu[0].header["DETECTOR"].upper()
+        keyword_dict["target_ra"] = self.imghdu[0].header["RA_TARG"]
+        keyword_dict["target_dec"] = self.imghdu[0].header["DEC_TARG"]
+        keyword_dict["expo_start"] = self.imghdu[0].header["EXPSTART"]
+        keyword_dict["texpo_time"] = self.imghdu[0].header["TEXPTIME"]
+        keyword_dict["ccd_gain"] = self.imghdu[0].header["CCDGAIN"]
+        keyword_dict["aperture_pa"] = self.imghdu[0].header["PA_V3"]
 
         # The total detection product has the FILTER keyword in
         # the primary header - read it for any instrument.
@@ -875,23 +866,23 @@ class build_catalogs(object):
         # WFC3 only has FILTER, but ACS has FILTER1 and FILTER2
         # in the primary header.
         if product.lower() == "tdp":
-            keyword_dict["filter"] = imghdu[0].header["FILTER"]
+            keyword_dict["filter"] = self.imghdu[0].header["FILTER"]
         # The filter detection product...
         else:
             if keyword_dict["instrument"] == "ACS":
-                keyword_dict["filter1"] = imghdu[0].header["FILTER1"]
-                keyword_dict["filter2"] = imghdu[0].header["FILTER2"]
+                keyword_dict["filter1"] = self.imghdu[0].header["FILTER1"]
+                keyword_dict["filter2"] = self.imghdu[0].header["FILTER2"]
             else:
-                keyword_dict["filter1"] = imghdu[0].header["FILTER"]
+                keyword_dict["filter1"] = self.imghdu[0].header["FILTER"]
                 keyword_dict["filter2"] = ""
 
         # Get the HSTWCS object from the first extension
-        keyword_dict["wcs_name"] = imghdu[1].header["WCSNAME"]
-        keyword_dict["wcs_type"] = imghdu[1].header["WCSTYPE"]
+        keyword_dict["wcs_name"] = self.imghdu[1].header["WCSNAME"]
+        keyword_dict["wcs_type"] = self.imghdu[1].header["WCSTYPE"]
         print('WCSTYPE: {}'.format(keyword_dict["wcs_type"]))
-        keyword_dict["orientation"] = imghdu[1].header["ORIENTAT"]
-        keyword_dict["aperture_ra"] = imghdu[1].header["RA_APER"]
-        keyword_dict["aperture_dec"] = imghdu[1].header["DEC_APER"]
+        keyword_dict["orientation"] = self.imghdu[1].header["ORIENTAT"]
+        keyword_dict["aperture_ra"] = self.imghdu[1].header["RA_APER"]
+        keyword_dict["aperture_dec"] = self.imghdu[1].header["DEC_APER"]
 
         return (keyword_dict)
 
@@ -974,23 +965,21 @@ if __name__ == '__main__':
         args.debug = False
 
     total_product = build_catalogs(args.total_product_name)
-    total_product.ps_source_cat = total_product.identify_point_sources()
-    total_product.write_catalog_to_file(total_product.ps_source_cat,write_region_file=args.debug)
+    # total_product.ps_source_cat = total_product.identify_point_sources()
+    # total_product.write_catalog_to_file(total_product.ps_source_cat,write_region_file=args.debug)
 
-    # total_product.segmap, \
-    # total_product.kernel, \
-    # total_product.bkg_dao_rms = total_product.create_sextractor_like_sourcelists(total_product.imgname,
-    #                                                                              total_product.seg_sourcelist_filename,
-    #                                                                              total_product.param_dict,
-    #                                                                              se_debug=args.debug)
+    total_product.segmap, \
+    total_product.kernel, \
+    total_product.bkg_dao_rms = total_product.create_sextractor_like_sourcelists(total_product.seg_sourcelist_filename,
+                                                                                 total_product.param_dict,
+                                                                                 se_debug=args.debug)
 
     for filter_img_name in args.filter_product_list:
         filter_product = build_catalogs(filter_img_name)
-        filter_product.ps_phot_cat = filter_product.perform_point_photometry(total_product.ps_source_cat)
-        filter_product.write_catalog_to_file(filter_product.ps_phot_cat,write_region_file=args.debug)
+        # filter_product.ps_phot_cat = filter_product.perform_point_photometry(total_product.ps_source_cat)
+        # filter_product.write_catalog_to_file(filter_product.ps_phot_cat,write_region_file=args.debug)
 
-        # filter_product.measure_source_properties(total_product.segmap,
-        #                                          total_product.kernel,
-        #                                          filter_product.imgname,
-        #                                          filter_product.seg_sourcelist_filename,
-        #                                          filter_product.param_dict)
+        filter_product.measure_source_properties(total_product.segmap,
+                                                 total_product.kernel,
+                                                 filter_product.seg_sourcelist_filename,
+                                                 filter_product.param_dict)
