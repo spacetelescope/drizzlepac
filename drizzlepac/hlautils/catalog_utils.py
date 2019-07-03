@@ -29,7 +29,7 @@ try:
 except Exception:
     plt = None
 
-__taskname__ = 'sourcelist_utils'
+__taskname__ = 'catalog_utils'
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
