@@ -233,9 +233,6 @@ class build_catalogs(object):
 
         Parameters
         ----------
-        param_dict : dictionary
-            Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
-
         dao_fwhm : float
             (photutils.DAOstarfinder param 'fwhm') The full-width half-maximum (FWHM) of the major axis of the
             Gaussian kernel in units of pixels. Default value = 3.5.
@@ -405,16 +402,13 @@ class build_catalogs(object):
 # ----------------------------------------------------------------------------------------------------------------------
 #       Contents of Michele's se_source_generation.py, as of commit b2db3ec9c918188cea2d3b0e4b64e39cc79c4146
 # ----------------------------------------------------------------------------------------------------------------------
-    def create_sextractor_like_sourcelists(self,catalog_filename, param_dict, se_debug=False):
+    def create_sextractor_like_sourcelists(self,catalog_filename, se_debug=False):
         """Use photutils to find sources in image based on segmentation.
 
         Parameters
         ----------
         catalog_filename : string
             Name of the output source catalog for the total detection product
-
-        param_dict : dictionary
-            dictionary of drizzle, source finding, and photometric parameters
 
         se_debug : bool, optional
             Specify whether or not to plot the image and segmentation image for
@@ -447,10 +441,10 @@ class build_catalogs(object):
         # Get header information to annotate the output catalogs
         keyword_dict = self._get_header_data()
 
-        # Get the instrument/detector-specific values from the param_dict
-        fwhm = param_dict["sourcex"]["fwhm"]
-        size_source_box = param_dict["sourcex"]["source_box"]
-        threshold_flag = param_dict["sourcex"]["thresh"]
+        # Get the instrument/detector-specific values from the self.param_dict
+        fwhm = self.param_dict["sourcex"]["fwhm"]
+        size_source_box = self.param_dict["sourcex"]["source_box"]
+        threshold_flag = self.param_dict["sourcex"]["thresh"]
 
         # Report configuration values to log
         log.info("{}".format("=" * 80))
@@ -555,7 +549,7 @@ class build_catalogs(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def measure_source_properties(self,segm, kernel, catalog_filename, param_dict):
+    def measure_source_properties(self,segm, kernel, catalog_filename):
         """Use the positions of the sources identified in the white light image to
         measure properties of these sources in the filter images
 
@@ -567,7 +561,7 @@ class build_catalogs(object):
         Parameters
         ----------
         segm : `~astropy.photutils.segmentation` Segmentation image
-            Two-dimensional image of labeled source regions based on the "white light" drizzed product
+            Two-dimensional image of labeled source regions based on the "white light" drizzled product
 
         kernel : `~astropy.convolution`
             Two dimensional function of a specified FWHM used to smooth the image and
@@ -576,9 +570,6 @@ class build_catalogs(object):
 
         catalog_filename : string
             Name of the output source catalog for the filter detection product
-
-        param_dict : dictionary
-            dictionary of drizzle, source finding, and photometric parameters
 
         Returns
         -------
@@ -595,10 +586,10 @@ class build_catalogs(object):
         # Get header information to annotate the output catalogs
         keyword_dict = self._get_header_data(product="fdp")
 
-        # Get the instrument/detector-specific values from the param_dict
-        fwhm = param_dict["sourcex"]["fwhm"]
-        size_source_box = param_dict["sourcex"]["source_box"]
-        threshold_flag = param_dict["sourcex"]["thresh"]
+        # Get the instrument/detector-specific values from the self.param_dict
+        fwhm = self.param_dict["sourcex"]["fwhm"]
+        size_source_box = self.param_dict["sourcex"]["source_box"]
+        threshold_flag = self.param_dict["sourcex"]["thresh"]
 
         # Report configuration values to log
         log.info("{}".format("=" * 80))
@@ -971,7 +962,6 @@ if __name__ == '__main__':
     total_product.segmap, \
     total_product.kernel, \
     total_product.bkg_dao_rms = total_product.create_sextractor_like_sourcelists(total_product.seg_sourcelist_filename,
-                                                                                 total_product.param_dict,
                                                                                  se_debug=args.debug)
 
     for filter_img_name in args.filter_product_list:
@@ -981,5 +971,4 @@ if __name__ == '__main__':
 
         filter_product.measure_source_properties(total_product.segmap,
                                                  total_product.kernel,
-                                                 filter_product.seg_sourcelist_filename,
-                                                 filter_product.param_dict)
+                                                 filter_product.seg_sourcelist_filename)
