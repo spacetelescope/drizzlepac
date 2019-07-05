@@ -453,7 +453,7 @@ def run_astrodrizzle(obs_info_dict):
                                           runfile=trlname,
                                           configobj='{}{}astrodrizzle_single_hap.cfg'.format(cfgfile_path, os.path.sep))
                 # Rename Astrodrizzle log file as a trailer file
-                shutil.move(trlname, trlname.replace('.log','.txt'))
+                shutil.move(trlname, trlname.replace('.log', '.txt'))
 
         # 4 Create total image using the temp ref image as astrodrizzle param 'final_refimage'
         log.info("~" * 118)
@@ -461,8 +461,8 @@ def run_astrodrizzle(obs_info_dict):
         total_combined_image = obs_info_dict[tdp_keyname]['product filenames']['image']
         product_list.append(total_combined_image)
         adriz_in_list = obs_info_dict[tdp_keyname]['files']
-        trlname = '_'.join(total_combined_image.split('_')[:-1]+['trl.log'])
-        log.info("Total combined image..... {} {}".format(total_combined_image,adriz_in_list))
+        trlname = '_'.join(total_combined_image.split('_')[:-1] + ['trl.log'])
+        log.info("Total combined image..... {} {}".format(total_combined_image, adriz_in_list))
         astrodrizzle.AstroDrizzle(input=adriz_in_list, output=total_combined_image,
                                   final_refimage=ref_total_combined_image,
                                   final_outnx=total_shape[1],
@@ -470,7 +470,7 @@ def run_astrodrizzle(obs_info_dict):
                                   runfile=trlname,
                                   configobj='{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep))
         # Rename Astrodrizzle log file as a trailer file
-        shutil.move(trlname, trlname.replace('.log','.txt'))
+        shutil.move(trlname, trlname.replace('.log', '.txt'))
 
         # 5: remove reference total temp file
         log.info("Removed temp ref file {}".format(ref_total_combined_image))
@@ -479,7 +479,9 @@ def run_astrodrizzle(obs_info_dict):
     # 6: Ensure that all drizzled products is have headers that are to spec.
     # drcfiles = sorted(glob.glob('*drc.fits'))
     # for d in drcfiles:
+    log.info("Updating these drizzle products for CAOM compatibility:")
     for d in product_list:
+        log.info("    {}".format(d))
         dpu.refine_product_headers(d, obs_info_dict)
 
     # 7: remove rules files copied to the CWD in step #0
