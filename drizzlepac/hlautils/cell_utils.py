@@ -203,10 +203,13 @@ class AllSky(object):
         bands = np.unique(np.searchsorted(rings.field('dec_max'), dec))
 
         # special handling at pole where overlap is complicated
-        # do extra checks for top 2 rings
-        # always start with the ring just below the pole
-        nearpole = np.where(bands >= len(rings) - 2)
-        bands[nearpole] = len(rings) - 2
+        # do extra checks for northern-most 2 rings
+        # always start with the ring just below the North pole
+        near_npole = np.where(bands >= len(rings) - 2)
+        bands[near_npole] = len(rings) - 2
+        # do check for southern-most 2 rings
+        near_spole = np.where(bands <= 2)
+        bands[near_spole] = 2
 
         # Identify how may projection cells are in each overlapping band
         nbands = rings[bands].field('nband')
@@ -214,6 +217,7 @@ class AllSky(object):
         # Record these values as attributes for use in other methods
         self.bands = bands
         self.nbands = nbands
+        self.nearpole = near_spole.tolist() + near_npole.tolist()
 
     def get_sky_cells(self, footprint):
 
