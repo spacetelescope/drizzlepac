@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from scipy import ndimage
 from scipy.ndimage import morphology
@@ -6,13 +7,15 @@ import numpy as np
 import astropy
 from astropy.io import fits
 from astropy.table import Table
+from spherical_geometry.polygon import SphericalPolygon
+
 from stwcs.wcsutil import HSTWCS
 
 from .. import wcs_functions
 
 
 # Default grid definition file
-PCELL_FILENAME = 'allsky_grid.fits'
+PCELL_FILENAME = 'allsky_cells.fits'
 
 def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     """Return all sky cells that overlap the exposures in the input.
@@ -79,54 +82,97 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     meta_wcs = wcs_functions.make_mosaic_wcs(expnames, scale=sky_grid.scale)
 
     # create footprint on the sky (as a tangent plane array) for all input exposures using meta_wcs
-    footprint_hdu = build_footprint(expnames, meta_wcs)
+    footprint = SkyFootprint(meta_wcs).build(expnames)
+    footprint_hdu = footprint.get_footprint_hdu()
 
     # Use this footprint to identify overlapping sky cells
     sky_cells = sky_grid.find_sky_cells(footprint_hdu)
 
     return sky_cells
 
-def build_footprint(expnames, meta_wcs, mask_only=True, fill=True, output=None):
 
-    total_footprint = np.zeros(meta_wcs.array_shape, dtype=np.int16)
-    if fill:
-        struct2 = ndimage.generate_binary_structure(2, 2)
+class SkyFootprint(object):
 
-    for exposure in expnames:
-        blank = np.zeros(meta_wcs.array_shape, dtype=np.int16)
-        exp = fits.open(exposure)
-        sci_extns = wcs_functions.get_extns(exp)
-        for sci in sci_extns:
-            wcs = HSTWCS(exp, ext=sci)
-            edges = []
-            edges += [[0, i] for i in range(wcs.naxis2)]
-            edges += [[wcs.naxis1, i] for i in range(wcs.naxis2)]
-            edges += [[i, 0] for i in range(wcs.naxis1)]
-            edges += [[i, wcs.naxis2] for i in range(wcs.naxis1)]
+    def __init__(self, meta_wcs):
 
-            sky_edges = wcs.pixel_to_world_values(edges)
-            meta_edges = meta_wcs.world_to_pixel_values(sky_edges).astype(np.int32)
-            blank[meta_edges[:, 0], meta_edges[:, 1]] = 1
+        self.struct2 = ndimage.generate_binary_structure(2, 2)
+        self.meta_wcs = meta_wcs
 
-            # Fill in outline of each chip
-            if fill:
-                blank = morphology.binary_dilation(blank, structure=struct2)
-                blank = morphology.binary_fill_holes(blank, structure=struct2)
-                blank = morphology.binary_erosion(blank, structure=struct2)
+        self.total_mask = np.zeros(meta_wcs.array_shape, dtype=np.int16)
+        self.footprint = None
 
-        total_footprint += blank.copy()
+        self.edges = None
+        self.edges_ra = None
+        self.edges_dec = None
+        self.polygon = None
 
-    if mask_only:
-        total_footprint = np.clip(total_footprint, 0, 1)
+    def build(self, expnames):
+        for exposure in expnames:
+            blank = np.zeros(self.meta_wcs.array_shape, dtype=np.int16)
+            exp = fits.open(exposure)
+            sci_extns = wcs_functions.get_extns(exp)
+            for sci in sci_extns:
+                wcs = HSTWCS(exp, ext=sci)
+                edges = []
+                edges += [[0, i] for i in range(wcs.naxis2)]
+                edges += [[wcs.naxis1, i] for i in range(wcs.naxis2)]
+                edges += [[i, 0] for i in range(wcs.naxis1)]
+                edges += [[i, wcs.naxis2] for i in range(wcs.naxis1)]
 
-    hdulist = fits.HDUList()
-    phdu = fits.PrimaryHDU(data=total_footprint, header=meta_wcs.to_header())
-    hdulist.append(phdu)
-    if output:
-        hdulist.writeto(output)
+                sky_edges = wcs.pixel_to_world_values(edges)
+                meta_edges = self.meta_wcs.world_to_pixel_values(sky_edges).astype(np.int32)
+                blank[meta_edges[:, 0], meta_edges[:, 1]] = 1
 
-    return hdulist
+                # Fill in outline of each chip
+                blank = morphology.binary_dilation(blank, structure=self.struct2)
+                blank = morphology.binary_fill_holes(blank)
+                blank = morphology.binary_erosion(blank, structure=self.struct2)
 
+            self.total_mask += blank.astype(np.int16)
+
+    # Methods with 'find' compute values
+    # Methods with 'get' return values
+    def find_footprint(self):
+        self.footprint = np.clip(self.total_mask, 0, 1)
+
+    def find_edges(self):
+        if not self.footprint:
+            self.find_footprint()
+        edges = morphology.binary_erosion(self.footprint).astype(np.int16)
+        self.edges = self.footprint - edges
+
+    def get_edges_sky(self):
+        if not self.edges:
+            self.find_edges()
+        edges = np.where(self.edges)
+        self.edges_ra, self.edges_dec = self.meta_wcs.pixel_to_world_values(edges[0], edges[1])
+        return self.edges_ra, self.edges_dec
+
+    def find_polygon(self):
+        if not self.edges_ra:
+            self.get_edges_sky()
+        self.polygon = SphericalPolygon.from_radec(self.edges_ra, self.edges_dec, self.meta_wcs.wcs.crval)
+
+    def _get_fits_hdu(self, data, filename=None, overwrite=True):
+        hdulist = fits.HDUList()
+        phdu = fits.PrimaryHDU(data=data, header=self.meta_wcs.to_header())
+        hdulist.append(phdu)
+        if filename:
+            hdulist.writeto(filename, overwrite=overwrite)
+        return hdulist
+
+    def get_footprint_hdu(self, filename=None, overwrite=True):
+        if not self.footprint:
+            self.find_footprint()
+        return self._get_fits_hdu(self.footprint, filename=filename, overwrite=overwrite)
+
+    def get_edges_hdu(self, filename=None, overwrite=True):
+        if not self.edges:
+            self.find_edges()
+        return self._get_fits_hdu(self.edges, filename=filename, overwrite=overwrite)
+
+    def get_mask_hdu(self, filename=None, overwrite=True):
+        return self._get_fits_hdu(self.total_mask, filename=filename, overwrite=overwrite)
 
 
 class AllSky(object):
@@ -137,9 +183,9 @@ class AllSky(object):
         froot = os.path.join(os.path.dirname(fpath), 'pars')
         fname = os.path.join(froot, PCELL_FILENAME)
 
-        self.grid_file = fits.open(fname)
-        self.scale = scale if scale else self.grid_file[0].header['PCSCALE']
-        self.cell_size = cell_size if cell_size else self.grid_file[0].header['PCSIZE']
+        self.hdu = fits.open(fname)
+        self.scale = scale if scale else self.hdu[0].header['PCSCALE']
+        self.cell_size = cell_size if cell_size else self.hdu[0].header['PCSIZE']
 
     def _find_bands(self, footprint):
         """ Select the band or bands which encompass the provided footprint.
@@ -148,10 +194,26 @@ class AllSky(object):
         and with a fully defined WCS to convert pixel positions to sky coordinates.
 
         """
+        # Interpret footprint to get range of declination in mask
+        ra, dec = footprint.get_edges_sky()
+
         # Select band with projection cell
-        cell_defs = self.grid_file[1].data
-        self.bands = []
-        # band = cell_defs[cell_defs['PROJCELL'] <= self.projection_cell_id]][-1]
+        rings = self.hdu[1].data
+        # find dec zone where rings.dec_min <= dec < rings.dec_max
+        bands = np.unique(np.searchsorted(rings.field('dec_max'), dec))
+
+        # special handling at pole where overlap is complicated
+        # do extra checks for top 2 rings
+        # always start with the ring just below the pole
+        nearpole = np.where(bands >= len(rings) - 2)
+        bands[nearpole] = len(rings) - 2
+
+        # Identify how may projection cells are in each overlapping band
+        nbands = rings[bands].field('nband')
+
+        # Record these values as attributes for use in other methods
+        self.bands = bands
+        self.nbands = nbands
 
     def get_sky_cells(self, footprint):
 
