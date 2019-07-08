@@ -965,26 +965,6 @@ class build_catalogs(object):
 # ======================================================================================================================
 
 
-if __name__ == '__main__':
-    """Super simple testing interface for the above code."""
-
-    starting_dt = datetime.datetime.now()
-
-
-    parser = argparse.ArgumentParser(description='test interface for sourcelist_generation')
-    parser.add_argument('total_product_name',help="total product filename")
-    parser.add_argument('-f', '--filter_product_list',nargs='+',required=True,
-                        help="Space-separated list of one or more total filter products")
-    parser.add_argument('-d', '--debug',required=False,choices=['True','False'],default='False',help='debug mode on? (generate region files?)')
-    parser.add_argument('-m', '--phot_mode',required=False,choices=['point','seg','both'],default='both',help="which photometry mode should be run? 'point' for point-soruce only; 'seg' for segment only, and 'both' for both point-source and segment photometry. ")
-    args = parser.parse_args()
-    if args.debug == "True":
-        args.debug = True
-    else:
-        args.debug = False
-
-    run_catalog_utils(args, starting_dt)
-
 @util.with_logging
 def run_catalog_utils(args,starting_dt):
     log.info("Run start time: {}".format(str(starting_dt)))
@@ -1007,8 +987,8 @@ def run_catalog_utils(args,starting_dt):
         total_product.ps_source_cat = total_product.identify_point_sources()
         total_product.write_catalog_to_file(total_product.ps_source_cat, write_region_file=args.debug)
 
-        print("\a\a")
-        sys.exit()
+    print("\a\a")
+    sys.exit()
 
     for filter_img_name in args.filter_product_list:
         filter_product = build_catalogs(filter_img_name)
@@ -1023,3 +1003,28 @@ def run_catalog_utils(args,starting_dt):
                                                      filter_product.param_dict)
 
     log.info('Total processing time: {} sec'.format((datetime.datetime.now() - starting_dt).total_seconds()))
+
+
+# ======================================================================================================================
+
+
+
+if __name__ == '__main__':
+    """Super simple testing interface for the above code."""
+
+    starting_dt = datetime.datetime.now()
+
+
+    parser = argparse.ArgumentParser(description='test interface for sourcelist_generation')
+    parser.add_argument('total_product_name',help="total product filename")
+    parser.add_argument('-f', '--filter_product_list',nargs='+',required=True,
+                        help="Space-separated list of one or more total filter products")
+    parser.add_argument('-d', '--debug',required=False,choices=['True','False'],default='False',help='debug mode on? (generate region files?)')
+    parser.add_argument('-m', '--phot_mode',required=False,choices=['point','seg','both'],default='both',help="which photometry mode should be run? 'point' for point-soruce only; 'seg' for segment only, and 'both' for both point-source and segment photometry. ")
+    args = parser.parse_args()
+    if args.debug == "True":
+        args.debug = True
+    else:
+        args.debug = False
+
+    run_catalog_utils(args, starting_dt)
