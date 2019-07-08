@@ -53,176 +53,176 @@ class build_catalogs(object):
         
         # Parameter dictionary definition
         self.inst_det = "{} {}".format(self.imgname.split("_")[3].upper(), self.imgname.split("_")[4].upper())
-        self.param_dict = {
-        "ACS HRC": {
-            "astrodrizzle": {
-                "SCALE": 0.025,
-                "PIXFRAC": 1.0,
-                "KERNEL": "square",
-                "OUTNX": None,
-                "OUTNY": None,
-                "ROT": 0.0,
-                "BITS": 256},
-            "ci filter": {
-                "ci_daolower_limit": 0.9,
-                "ci_daoupper_limit": 1.6,
-                "ci_selower_limit": 0.9,
-                "ci_seupper_limit": 1.6},
-            "dao": {
-                "TWEAK_FWHMPSF": 0.073,
-                "TWEAK_THRESHOLD": 3.0,
-                "aperture_1": 0.03,
-                "aperture_2": 0.125,
-                "bthresh": 5.0},
-            "sourcex": {
-                "fwhm": 0.073,
-                "thresh": 1.4,
-                "bthresh": 5.0,
-                "source_box": 7},
-            "swarm filter": {
-                "upper_epp_limit": 70000.,
-                "lower_epp_limit": 2000.,
-                "eppsky_limit": 1000.,
-                "swarm_thresh": 1.,
-                "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
-                "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
-                "proximity_binary": "no"}},
-        "ACS SBC": {
-            "astrodrizzle": {
-                "SCALE": 0.03,
-                "PIXFRAC": 1.0,
-                "KERNEL": "square",
-                "OUTNX": None,
-                "OUTNY": None,
-                "ROT": 0.0,
-                "BITS": 256},
-            "ci filter": {
-                "ci_daolower_limit": 0.15,
-                "ci_daoupper_limit": 0.45,
-                "ci_selower_limit": 0.15,
-                "ci_seupper_limit": 0.45},
-            "dao": {
-                "TWEAK_FWHMPSF": 0.065,
-                "TWEAK_THRESHOLD": 3.0,
-                "aperture_1": 0.07,
-                "aperture_2": 0.125,
-                "bthresh": 5.0},
-            "sourcex": {
-                "fwhm": 0.065,
-                "thresh": 1.4,
-                "bthresh": 5.0,
-                "source_box": 7},
-            "swarm filter": {
-                "upper_epp_limit": 70000.,
-                "lower_epp_limit": 2000.,
-                "eppsky_limit": 1000.,
-                "swarm_thresh": 1.,
-                "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
-                "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
-                "proximity_binary": "no"}},
-        "ACS WFC": {
-            "astrodrizzle": {
-                "SCALE": 0.05,
-                "PIXFRAC": 1.0,
-                "KERNEL": "square",
-                "OUTNX": None,
-                "OUTNY": None,
-                "ROT": 0.0,
-                "BITS": 256},
-            "ci filter": {
-                "ci_daolower_limit": 0.9,
-                "ci_daoupper_limit": 1.23,
-                "ci_selower_limit": 0.9,
-                "ci_seupper_limit": 1.23},
-            "dao": {
-                "TWEAK_FWHMPSF": 0.076,
-                "TWEAK_THRESHOLD": None,
-                "aperture_1": 0.05,  # update from 0.15
-                "aperture_2": 0.15,  # update from 0.25
-                "bthresh": 5.0},
-            "sourcex": {
-                "fwhm": 0.13,
-                "thresh": None,
-                "bthresh": 5.0,
-                "source_box": 5},
-            "swarm filter": {
-                "upper_epp_limit": 70000.,
-                "lower_epp_limit": 2000.,
-                "eppsky_limit": 1000.,
-                "swarm_thresh": 1.,
-                "clip_radius_list": [120., 100., 80., 60., 40., 30., 20., 10., 5., 2., 0.],
-                "scale_factor_list": [0.0, 0.000000e+00, 6.498530e-06, 3.687270e-05, 1.412972e-04, 3.151877e-04, 1.023391e-03, 3.134859e-03, 2.602436e-02, 1.820539e-01, 1.000000e+00],
-                "proximity_binary": "no"}},
-        "WFC3 IR": {
-            "astrodrizzle": {
-                "SCALE": 0.09,
-                "PIXFRAC": 1.0,
-                "KERNEL": "square",
-                "OUTNX": None,
-                "OUTNY": None,
-                "ROT": 0.0,
-                "BITS": 768},
-            "ci filter": {
-                "ci_daolower_limit": 0.25,
-                "ci_daoupper_limit": 0.55,
-                "ci_selower_limit": 0.25,
-                "ci_seupper_limit": 0.55},
-            "dao": {
-                "TWEAK_FWHMPSF": 0.14,
-                "TWEAK_THRESHOLD": 3.0,
-                "aperture_1": 0.15,
-                "aperture_2": 0.45,
-                "bthresh": 5.0},
-            "sourcex": {
-                "fwhm": 0.14,
-                "thresh": 1.4,
-                "bthresh": 5.0,
-                "source_box": 7},
-            "swarm filter": {
-                "upper_epp_limit": 70000.,
-                "lower_epp_limit": 2000.,
-                "eppsky_limit": 100.,
-                "swarm_thresh": 1.,
-                "clip_radius_list": [140., 120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
-                #                   x10    x10    x10   x10   x10   x10    x10   x10  x10  x2,
-                "scale_factor_list": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.015, 0.05, 0.15, 0.9, 1.],
-                # "scale_factor_list_orig": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.005, 0.05, 0.15, 0.9, 1.],
-                "proximity_binary": "yes"}},
-        "WFC3 UVIS": {
-            "astrodrizzle": {
-                "SCALE": 0.04,
-                "PIXFRAC": 1.0,
-                "KERNEL": "square",
-                "OUTNX": None,
-                "OUTNY": None,
-                "ROT": 0.0,
-                "BITS": 256},
-            "ci filter": {
-                "ci_daolower_limit": 0.75,
-                "ci_daoupper_limit": 1.0,
-                "ci_selower_limit": 0.75,
-                "ci_seupper_limit": 1.0},
-            "dao": {
-                "TWEAK_FWHMPSF": 0.076,
-                "TWEAK_THRESHOLD": 3.0,
-                "aperture_1": 0.05,
-                "aperture_2": 0.15,
-                "bthresh": 5.0},
-            "sourcex": {
-                "fwhm": 0.076,
-                "thresh": 1.4,
-                "bthresh": 5.0,
-                "source_box": 7},
-            "swarm filter": {
-                "upper_epp_limit": 70000.,
-                "lower_epp_limit": 2000.,
-                "eppsky_limit": 1000.,
-                "swarm_thresh": 1.,
-                "clip_radius_list": [120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
-                "scale_factor_list": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 0.0005, 0.005, 0.005, 0.015, 0.45, 1.],
-                # "scale_factor_list_orig": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 6.e-5, 0.0005, 0.005, 0.015, 0.45, 1.],
-                "proximity_binary": "yes"}}} # TODO: remove para_dict definition once we have fleshed out the config object
-        self.param_dict = self.param_dict[self.inst_det] # TODO: remove para_dict redefinition once we have fleshed out the config object
+        self.full_param_dict = {
+            "ACS HRC": {
+                "astrodrizzle": {
+                    "SCALE": 0.025,
+                    "PIXFRAC": 1.0,
+                    "KERNEL": "square",
+                    "OUTNX": None,
+                    "OUTNY": None,
+                    "ROT": 0.0,
+                    "BITS": 256},
+                "ci filter": {
+                    "ci_daolower_limit": 0.9,
+                    "ci_daoupper_limit": 1.6,
+                    "ci_selower_limit": 0.9,
+                    "ci_seupper_limit": 1.6},
+                "dao": {
+                    "TWEAK_FWHMPSF": 0.073,
+                    "TWEAK_THRESHOLD": 3.0,
+                    "aperture_1": 0.03,
+                    "aperture_2": 0.125,
+                    "bthresh": 5.0},
+                "sourcex": {
+                    "fwhm": 0.073,
+                    "thresh": 1.4,
+                    "bthresh": 5.0,
+                    "source_box": 7},
+                "swarm filter": {
+                    "upper_epp_limit": 70000.,
+                    "lower_epp_limit": 2000.,
+                    "eppsky_limit": 1000.,
+                    "swarm_thresh": 1.,
+                    "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
+                    "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
+                    "proximity_binary": "no"}},
+            "ACS SBC": {
+                "astrodrizzle": {
+                    "SCALE": 0.03,
+                    "PIXFRAC": 1.0,
+                    "KERNEL": "square",
+                    "OUTNX": None,
+                    "OUTNY": None,
+                    "ROT": 0.0,
+                    "BITS": 256},
+                "ci filter": {
+                    "ci_daolower_limit": 0.15,
+                    "ci_daoupper_limit": 0.45,
+                    "ci_selower_limit": 0.15,
+                    "ci_seupper_limit": 0.45},
+                "dao": {
+                    "TWEAK_FWHMPSF": 0.065,
+                    "TWEAK_THRESHOLD": 3.0,
+                    "aperture_1": 0.07,
+                    "aperture_2": 0.125,
+                    "bthresh": 5.0},
+                "sourcex": {
+                    "fwhm": 0.065,
+                    "thresh": 1.4,
+                    "bthresh": 5.0,
+                    "source_box": 7},
+                "swarm filter": {
+                    "upper_epp_limit": 70000.,
+                    "lower_epp_limit": 2000.,
+                    "eppsky_limit": 1000.,
+                    "swarm_thresh": 1.,
+                    "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
+                    "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
+                    "proximity_binary": "no"}},
+            "ACS WFC": {
+                "astrodrizzle": {
+                    "SCALE": 0.05,
+                    "PIXFRAC": 1.0,
+                    "KERNEL": "square",
+                    "OUTNX": None,
+                    "OUTNY": None,
+                    "ROT": 0.0,
+                    "BITS": 256},
+                "ci filter": {
+                    "ci_daolower_limit": 0.9,
+                    "ci_daoupper_limit": 1.23,
+                    "ci_selower_limit": 0.9,
+                    "ci_seupper_limit": 1.23},
+                "dao": {
+                    "TWEAK_FWHMPSF": 0.076,
+                    "TWEAK_THRESHOLD": None,
+                    "aperture_1": 0.05,  # update from 0.15
+                    "aperture_2": 0.15,  # update from 0.25
+                    "bthresh": 5.0},
+                "sourcex": {
+                    "fwhm": 0.13,
+                    "thresh": None,
+                    "bthresh": 5.0,
+                    "source_box": 5},
+                "swarm filter": {
+                    "upper_epp_limit": 70000.,
+                    "lower_epp_limit": 2000.,
+                    "eppsky_limit": 1000.,
+                    "swarm_thresh": 1.,
+                    "clip_radius_list": [120., 100., 80., 60., 40., 30., 20., 10., 5., 2., 0.],
+                    "scale_factor_list": [0.0, 0.000000e+00, 6.498530e-06, 3.687270e-05, 1.412972e-04, 3.151877e-04, 1.023391e-03, 3.134859e-03, 2.602436e-02, 1.820539e-01, 1.000000e+00],
+                    "proximity_binary": "no"}},
+            "WFC3 IR": {
+                "astrodrizzle": {
+                    "SCALE": 0.09,
+                    "PIXFRAC": 1.0,
+                    "KERNEL": "square",
+                    "OUTNX": None,
+                    "OUTNY": None,
+                    "ROT": 0.0,
+                    "BITS": 768},
+                "ci filter": {
+                    "ci_daolower_limit": 0.25,
+                    "ci_daoupper_limit": 0.55,
+                    "ci_selower_limit": 0.25,
+                    "ci_seupper_limit": 0.55},
+                "dao": {
+                    "TWEAK_FWHMPSF": 0.14,
+                    "TWEAK_THRESHOLD": 3.0,
+                    "aperture_1": 0.15,
+                    "aperture_2": 0.45,
+                    "bthresh": 5.0},
+                "sourcex": {
+                    "fwhm": 0.14,
+                    "thresh": 1.4,
+                    "bthresh": 5.0,
+                    "source_box": 7},
+                "swarm filter": {
+                    "upper_epp_limit": 70000.,
+                    "lower_epp_limit": 2000.,
+                    "eppsky_limit": 100.,
+                    "swarm_thresh": 1.,
+                    "clip_radius_list": [140., 120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
+                    #                   x10    x10    x10   x10   x10   x10    x10   x10  x10  x2,
+                    "scale_factor_list": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.015, 0.05, 0.15, 0.9, 1.],
+                    # "scale_factor_list_orig": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.005, 0.05, 0.15, 0.9, 1.],
+                    "proximity_binary": "yes"}},
+            "WFC3 UVIS": {
+                "astrodrizzle": {
+                    "SCALE": 0.04,
+                    "PIXFRAC": 1.0,
+                    "KERNEL": "square",
+                    "OUTNX": None,
+                    "OUTNY": None,
+                    "ROT": 0.0,
+                    "BITS": 256},
+                "ci filter": {
+                    "ci_daolower_limit": 0.75,
+                    "ci_daoupper_limit": 1.0,
+                    "ci_selower_limit": 0.75,
+                    "ci_seupper_limit": 1.0},
+                "dao": {
+                    "TWEAK_FWHMPSF": 0.076,
+                    "TWEAK_THRESHOLD": 3.0,
+                    "aperture_1": 0.05,
+                    "aperture_2": 0.15,
+                    "bthresh": 5.0},
+                "sourcex": {
+                    "fwhm": 0.076,
+                    "thresh": 1.4,
+                    "bthresh": 5.0,
+                    "source_box": 7},
+                "swarm filter": {
+                    "upper_epp_limit": 70000.,
+                    "lower_epp_limit": 2000.,
+                    "eppsky_limit": 1000.,
+                    "swarm_thresh": 1.,
+                    "clip_radius_list": [120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
+                    "scale_factor_list": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 0.0005, 0.005, 0.005, 0.015, 0.45, 1.],
+                    # "scale_factor_list_orig": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 6.e-5, 0.0005, 0.005, 0.015, 0.45, 1.],
+                    "proximity_binary": "yes"}}} # TODO: remove para_dict definition once we have fleshed out the config object
+        self.param_dict=self.full_param_dict[self.inst_det].copy() # TODO: remove para_dict redefinition once we have fleshed out the config object
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -337,7 +337,6 @@ class build_catalogs(object):
             Table containing photometric information for specified sources based on image data in the specified image.
         """
         # Open and background subtract image
-
         image = self.imghdu['SCI'].data
         image -= np.nanmedian(image)
 
@@ -396,6 +395,28 @@ class build_catalogs(object):
             out_table.write(reg_filename, format="ascii")
             log.info("Wrote region file '{}' containing {} sources".format(reg_filename, len(out_table)))
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def check_param_dict(self):
+        print("="*100)
+        print("=" * 100)
+        print("                                 param_dict check!")
+        overall_status = "ALL PARAMS OK"
+        for key1 in self.param_dict.keys():
+            for key2 in self.param_dict[key1].keys():
+                if self.param_dict[key1][key2] == self.full_param_dict["ACS WFC"][key1][key2]:
+                    status = "OK  "
+                else:
+                    status = "BAD!"
+                    overall_status = "PROBLEMS FOUND\a"
+                print(status,key1,key2,self.param_dict[key1][key2],self.full_param_dict["ACS WFC"][key1][key2])
+
+            print("\n")
+        print(overall_status)
+        if overall_status.startswith("PROBLEMS"):
+            pdb.set_trace()
+        print("=" * 100)
+        print("=" * 100)
 
 # ----------------------------------------------------------------------------------------------------------------------
 #       Contents of Michele's se_source_generation.py, as of commit b2db3ec9c918188cea2d3b0e4b64e39cc79c4146
@@ -431,7 +452,6 @@ class build_catalogs(object):
             Mean bkg.background FIX
 
         """
-
         # get the TDP SCI image data
 
         imgarr = self.imghdu['sci', 1].data
@@ -970,11 +990,15 @@ if __name__ == '__main__':
     if args.phot_mode in ['point','both']:
         total_product.ps_source_cat = total_product.identify_point_sources()
         total_product.write_catalog_to_file(total_product.ps_source_cat,write_region_file=args.debug)
+    total_product.check_param_dict()
     if args.phot_mode in ['seg', 'both']:
         total_product.segmap, \
         total_product.kernel, \
         total_product.bkg_dao_rms = \
             total_product.create_sextractor_like_sourcelists(total_product.seg_sourcelist_filename,se_debug=args.debug)
+        total_product.check_param_dict()
+        print("\a\a")
+        sys.exit()
 
     for filter_img_name in args.filter_product_list:
         filter_product = build_catalogs(filter_img_name)
