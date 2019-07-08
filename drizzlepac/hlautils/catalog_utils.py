@@ -401,9 +401,9 @@ class build_catalogs(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def check_param_dict(self):
-        print("="*100)
-        print("=" * 100)
-        print("                                 param_dict check!")
+        log.info(""="*100)
+        log.info("=" * 100)
+        log.info("                                 param_dict check!")
         overall_status = "ALL PARAMS OK"
         for key1 in self.param_dict.keys():
             for key2 in self.param_dict[key1].keys():
@@ -412,14 +412,14 @@ class build_catalogs(object):
                 else:
                     status = "BAD!"
                     overall_status = "PROBLEMS FOUND\a"
-                print(status,key1,key2,self.param_dict[key1][key2],self.full_param_dict["ACS WFC"][key1][key2])
+                log.info(status,key1,key2,self.param_dict[key1][key2],self.full_param_dict["ACS WFC"][key1][key2])
 
-            print("\n")
-        print(overall_status)
+            log.info("\n")
+        log.info(overall_status)
         if overall_status.startswith("PROBLEMS"):
             pdb.set_trace()
-        print("=" * 100)
-        print("=" * 100)
+        log.info("=" * 100)
+        log.info("=" * 100)
 
 # ----------------------------------------------------------------------------------------------------------------------
 #       Contents of Michele's se_source_generation.py, as of commit b2db3ec9c918188cea2d3b0e4b64e39cc79c4146
@@ -796,7 +796,7 @@ class build_catalogs(object):
             seg_subset_table["ycentroid"].info.format = ".10f"
             seg_subset_table["RA_icrs"].info.format = ".10f"
             seg_subset_table["Dec_icrs"].info.format = ".10f"
-            print("seg_subset_table (white light image): ", seg_subset_table)
+            log.info("seg_subset_table (white light image): {}".format(seg_subset_table))
 
             seg_subset_table.write(catalog_filename, format="ascii.ecsv")
             log.info("Wrote source catalog: {}".format(catalog_filename))
@@ -841,7 +841,7 @@ class build_catalogs(object):
             seg_table["ycentroid"].info.format = ".10f"
             seg_table["RA_icrs"].info.format = ".10f"
             seg_table["Dec_icrs"].info.format = ".10f"
-            print("seg_table (filter): {}".format(seg_table))
+            log.info("seg_table (filter): {}".format(seg_table))
 
             seg_table.write(catalog_filename, format="ascii.ecsv")
             log.info("Wrote filter source catalog: {}".format(catalog_filename))
@@ -894,7 +894,7 @@ class build_catalogs(object):
         # Get the HSTWCS object from the first extension
         keyword_dict["wcs_name"] = self.imghdu[1].header["WCSNAME"]
         keyword_dict["wcs_type"] = self.imghdu[1].header["WCSTYPE"]
-        print('WCSTYPE: {}'.format(keyword_dict["wcs_type"]))
+        log.info('WCSTYPE: {}'.format(keyword_dict["wcs_type"]))
         keyword_dict["orientation"] = self.imghdu[1].header["ORIENTAT"]
         keyword_dict["aperture_ra"] = self.imghdu[1].header["RA_APER"]
         keyword_dict["aperture_dec"] = self.imghdu[1].header["DEC_APER"]
@@ -975,19 +975,17 @@ def run_catalog_utils(args,starting_dt):
 
     total_product = build_catalogs(args.total_product_name)
 
-    total_product.check_param_dict()
+    if args.phot_mode in ['point', 'both']:
+        total_product.ps_source_cat = total_product.identify_point_sources()
+        total_product.write_catalog_to_file(total_product.ps_source_cat, write_region_file=args.debug)
+
     if args.phot_mode in ['seg', 'both']:
         total_product.segmap, \
         total_product.kernel, \
         total_product.bkg_dao_rms = \
             total_product.create_sextractor_like_sourcelists(total_product.seg_sourcelist_filename,se_debug=args.debug)
 
-
-    if args.phot_mode in ['point', 'both']:
-        total_product.ps_source_cat = total_product.identify_point_sources()
-        total_product.write_catalog_to_file(total_product.ps_source_cat, write_region_file=args.debug)
-
-    print("\a\a")
+    log.info("\a\a")
     sys.exit()
 
     for filter_img_name in args.filter_product_list:
