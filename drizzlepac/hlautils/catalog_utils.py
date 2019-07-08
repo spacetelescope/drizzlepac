@@ -398,28 +398,6 @@ class build_catalogs(object):
             out_table.write(reg_filename, format="ascii")
             log.info("Wrote region file '{}' containing {} sources".format(reg_filename, len(out_table)))
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    def check_param_dict(self):
-        log.info("="*100)
-        log.info("=" * 100)
-        log.info("                                 param_dict check!")
-        overall_status = "ALL PARAMS OK"
-        for key1 in self.param_dict.keys():
-            for key2 in self.param_dict[key1].keys():
-                if self.param_dict[key1][key2] == self.full_param_dict["ACS WFC"][key1][key2]:
-                    status = "OK  "
-                else:
-                    status = "BAD!"
-                    overall_status = "PROBLEMS FOUND\a"
-                log.info(status,key1,key2,self.param_dict[key1][key2],self.full_param_dict["ACS WFC"][key1][key2])
-
-            log.info("\n")
-        log.info(overall_status)
-        if overall_status.startswith("PROBLEMS"):
-            pdb.set_trace()
-        log.info("=" * 100)
-        log.info("=" * 100)
 
 # ----------------------------------------------------------------------------------------------------------------------
 #       Contents of Michele's se_source_generation.py, as of commit b2db3ec9c918188cea2d3b0e4b64e39cc79c4146
@@ -975,20 +953,15 @@ def run_catalog_utils(args,starting_dt):
 
     total_product = build_catalogs(args.total_product_name)
 
+    if args.phot_mode in ['point', 'both']:
+        total_product.ps_source_cat = total_product.identify_point_sources()
+        total_product.write_catalog_to_file(total_product.ps_source_cat, write_region_file=args.debug)
+
     if args.phot_mode in ['seg', 'both']:
         total_product.segmap, \
         total_product.kernel, \
         total_product.bkg_dao_rms = \
             total_product.create_sextractor_like_sourcelists(total_product.seg_sourcelist_filename,se_debug=args.debug)
-
-    if args.phot_mode in ['point', 'both']:
-        total_product.ps_source_cat = total_product.identify_point_sources()
-        total_product.write_catalog_to_file(total_product.ps_source_cat, write_region_file=args.debug)
-
-
-
-    log.info("\a\a")
-    sys.exit()
 
     for filter_img_name in args.filter_product_list:
         filter_product = build_catalogs(filter_img_name)
