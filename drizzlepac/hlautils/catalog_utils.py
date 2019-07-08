@@ -400,7 +400,7 @@ class build_catalogs(object):
 # ----------------------------------------------------------------------------------------------------------------------
 #       Contents of Michele's se_source_generation.py, as of commit b2db3ec9c918188cea2d3b0e4b64e39cc79c4146
 # ----------------------------------------------------------------------------------------------------------------------
-    def create_sextractor_like_sourcelists(self,catalog_filename, param_dict, se_debug=False):
+    def create_sextractor_like_sourcelists(self,catalog_filename, se_debug=False):
         """Use photutils to find sources in image based on segmentation.
 
         Parameters
@@ -408,7 +408,7 @@ class build_catalogs(object):
         catalog_filename : string
             Name of the output source catalog for the total detection product
 
-        param_dict : dictionary
+        self.param_dict : dictionary
             dictionary of drizzle, source finding, and photometric parameters
 
         se_debug : bool, optional
@@ -442,10 +442,10 @@ class build_catalogs(object):
         # Get header information to annotate the output catalogs
         keyword_dict = self._get_header_data()
 
-        # Get the instrument/detector-specific values from the param_dict
-        fwhm = param_dict["sourcex"]["fwhm"]
-        size_source_box = param_dict["sourcex"]["source_box"]
-        threshold_flag = param_dict["sourcex"]["thresh"]
+        # Get the instrument/detector-specific values from the self.param_dict
+        fwhm = self.param_dict["sourcex"]["fwhm"]
+        size_source_box = self.param_dict["sourcex"]["source_box"]
+        threshold_flag = self.param_dict["sourcex"]["thresh"]
 
         # Report configuration values to log
         log.info("{}".format("=" * 80))
@@ -970,12 +970,11 @@ if __name__ == '__main__':
     if args.phot_mode in ['point','both']:
         total_product.ps_source_cat = total_product.identify_point_sources()
         total_product.write_catalog_to_file(total_product.ps_source_cat,write_region_file=args.debug)
-
-    total_product.segmap, \
-    total_product.kernel, \
-    total_product.bkg_dao_rms = total_product.create_sextractor_like_sourcelists(total_product.seg_sourcelist_filename,
-                                                                                 total_product.param_dict,
-                                                                                 se_debug=args.debug)
+    if args.phot_mode in ['seg', 'both']:
+        total_product.segmap, \
+        total_product.kernel, \
+        total_product.bkg_dao_rms = \
+            total_product.create_sextractor_like_sourcelists(total_product.seg_sourcelist_filename,se_debug=args.debug)
 
     for filter_img_name in args.filter_product_list:
         filter_product = build_catalogs(filter_img_name)
@@ -983,9 +982,10 @@ if __name__ == '__main__':
             filter_product.ps_phot_cat = filter_product.perform_point_photometry(total_product.ps_source_cat)
             filter_product.write_catalog_to_file(filter_product.ps_phot_cat,write_region_file=args.debug)
 
-        filter_product.measure_source_properties(total_product.segmap,
-                                                 total_product.kernel,
-                                                 filter_product.seg_sourcelist_filename,
-                                                 filter_product.param_dict)
+        if args.phot_mode in ['seg', 'both']:
+            filter_product.measure_source_properties(total_product.segmap,
+                                                     total_product.kernel,
+                                                     filter_product.seg_sourcelist_filename,
+                                                     filter_product.param_dict)
 
     log.info('Total processing time: {} sec'.format((datetime.datetime.now() - starting_dt).total_seconds()))
