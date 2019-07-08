@@ -340,7 +340,7 @@ class build_catalogs(object):
             Table containing photometric information for specified sources based on image data in the specified image.
         """
         # Open and background subtract image
-        image = self.imghdu['SCI'].data
+        image = self.imghdu['SCI'].data.copy()
         image -= np.nanmedian(image)
 
 
@@ -457,7 +457,7 @@ class build_catalogs(object):
         """
         # get the TDP SCI image data
 
-        imgarr = self.imghdu['sci', 1].data
+        imgarr = self.imghdu['sci', 1].data.copy()
 
         # Get the HSTWCS object from the first extension
         imgwcs = HSTWCS(self.imghdu, 1)
@@ -602,7 +602,7 @@ class build_catalogs(object):
 
         # get filter-level science data
 
-        imgarr = self.imghdu['sci', 1].data
+        imgarr = self.imghdu['sci', 1].data.copy()
 
         # Get the HSTWCS object from the first extension
         imgwcs = HSTWCS(self.imghdu, 1)
