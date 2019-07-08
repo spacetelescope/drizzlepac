@@ -3,6 +3,9 @@
 """This script contains code to support creation of photometric sourcelists using two techniques: aperture photometry
 segmentation-map based photometry.
 """
+import argparse
+import datetime
+import os
 import pdb
 import sys
 
@@ -961,14 +964,12 @@ class build_catalogs(object):
 
 # ======================================================================================================================
 
-@util.with_logging
+
 if __name__ == '__main__':
     """Super simple testing interface for the above code."""
-    import argparse
-    import datetime
-    import os
+
     starting_dt = datetime.datetime.now()
-    log.info("Run start time: {}".format(str(starting_dt)))
+
 
     parser = argparse.ArgumentParser(description='test interface for sourcelist_generation')
     parser.add_argument('total_product_name',help="total product filename")
@@ -981,6 +982,12 @@ if __name__ == '__main__':
         args.debug = True
     else:
         args.debug = False
+
+    run_catalog_utils(args, starting_dt)
+
+@util.with_logging
+def run_catalog_utils(args,starting_dt):
+    log.info("Run start time: {}".format(str(starting_dt)))
     log.info("python {} {} -f {} -d {} -m {}".format(os.path.realpath(__file__),
                                                args.total_product_name,
                                                " ".join(args.filter_product_list),
