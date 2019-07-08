@@ -987,15 +987,18 @@ if __name__ == '__main__':
                                                args.debug,args.phot_mode))
 
     total_product = build_catalogs(args.total_product_name)
-    if args.phot_mode in ['point','both']:
-        total_product.ps_source_cat = total_product.identify_point_sources()
-        total_product.write_catalog_to_file(total_product.ps_source_cat,write_region_file=args.debug)
+
     total_product.check_param_dict()
     if args.phot_mode in ['seg', 'both']:
         total_product.segmap, \
         total_product.kernel, \
         total_product.bkg_dao_rms = \
             total_product.create_sextractor_like_sourcelists(total_product.seg_sourcelist_filename,se_debug=args.debug)
+        total_product.check_param_dict()
+
+    if args.phot_mode in ['point', 'both']:
+        total_product.ps_source_cat = total_product.identify_point_sources()
+        total_product.write_catalog_to_file(total_product.ps_source_cat, write_region_file=args.debug)
         total_product.check_param_dict()
         print("\a\a")
         sys.exit()
