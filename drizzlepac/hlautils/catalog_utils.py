@@ -402,17 +402,11 @@ class build_catalogs(object):
 # ----------------------------------------------------------------------------------------------------------------------
 #       Contents of Michele's se_source_generation.py, as of commit b2db3ec9c918188cea2d3b0e4b64e39cc79c4146
 # ----------------------------------------------------------------------------------------------------------------------
-    def create_sextractor_like_sourcelists(self,catalog_filename, se_debug=False):
+    def create_sextractor_like_sourcelists(self,se_debug=False):
         """Use photutils to find sources in image based on segmentation.
 
         Parameters
         ----------
-        catalog_filename : string
-            Name of the output source catalog for the total detection product
-
-        self.param_dict : dictionary
-            dictionary of drizzle, source finding, and photometric parameters
-
         se_debug : bool, optional
             Specify whether or not to plot the image and segmentation image for
             visualization and debugging purposes
@@ -492,8 +486,8 @@ class build_catalogs(object):
             tbl = Table(table["xcentroid", "ycentroid"])
 
             # Construct the debug output filename and write the catalog
-            indx = catalog_filename.find("ecsv")
-            outname = catalog_filename[0:indx] + "reg"
+            indx = self.seg_sourcelist_filename.find("ecsv")
+            outname = self.seg_sourcelist_filename[0:indx] + "reg"
 
             tbl["xcentroid"].info.format = ".10f"  # optional format
             tbl["ycentroid"].info.format = ".10f"
@@ -544,7 +538,7 @@ class build_catalogs(object):
         # Regenerate the source catalog with presumably now only good sources
         seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=imgwcs)
 
-        self._write_catalog(seg_cat, keyword_dict, catalog_filename)
+        self._write_catalog(seg_cat, keyword_dict, self.seg_sourcelist_filename)
 
         return segm, kernel, bkg_dao_rms
 
@@ -961,8 +955,10 @@ def run_catalog_utils(args,starting_dt):
         total_product.segmap, \
         total_product.kernel, \
         total_product.bkg_dao_rms = \
-            total_product.create_sextractor_like_sourcelists(total_product.seg_sourcelist_filename,se_debug=args.debug)
+            total_product.create_sextractor_like_sourcelists(se_debug=args.debug)
 
+    print("\a")
+    sys.exit()
     for filter_img_name in args.filter_product_list:
         filter_product = build_catalogs(filter_img_name)
         if args.phot_mode in ['point', 'both']:
