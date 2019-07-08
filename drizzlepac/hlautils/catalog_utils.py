@@ -253,9 +253,9 @@ class build_catalogs(object):
             Table containing x, y coordinates of identified sources
         """
         # read in sci, wht extensions of drizzled product
-        image = self.imghdu['SCI'].data
+        image = self.imghdu['SCI'].data.copy()
         image -= np.nanmedian(image)
-        wht_image = self.imghdu['WHT'].data
+        wht_image = self.imghdu['WHT'].data.copy()
 
         bkg_sigma = mad_std(image, ignore_nan=True)
 
