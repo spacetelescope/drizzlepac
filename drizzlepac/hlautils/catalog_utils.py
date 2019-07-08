@@ -401,7 +401,7 @@ class build_catalogs(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def check_param_dict(self):
-        log.info(""="*100)
+        log.info("="*100)
         log.info("=" * 100)
         log.info("                                 param_dict check!")
         overall_status = "ALL PARAMS OK"
