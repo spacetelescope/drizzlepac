@@ -46,11 +46,18 @@ class build_catalogs(object):
         self.label="build_catalogs"
         self.description="A set of routines to generate photometric sourcelists using aperture photometry"
         
-        # Filename stuff
+        # Generate output sourcelist catalog filenames
         self.imgname = fitsfile
         self.point_sourcelist_filename = self.imgname.replace(self.imgname[-9:],"_point-cat.ecsv")
         self.seg_sourcelist_filename = self.imgname.replace(self.imgname[-9:], "_segment-cat.ecsv")
-        
+
+        # Get header information to annotate the output catalogs
+        if self.imgname.find("total") > -1:
+            ghd_product = "fdp"
+        else:
+            ghd_product = "tdp"
+        self.keyword_dict = self._get_header_data()
+
         # Fits file read
         self.imghdu = fits.open(self.imgname)
         
@@ -434,8 +441,8 @@ class build_catalogs(object):
         # Get the HSTWCS object from the first extension
         imgwcs = HSTWCS(self.imghdu, 1)
 
-        # Get header information to annotate the output catalogs
-        keyword_dict = self._get_header_data()
+        # # Get header information to annotate the output catalogs
+        # keyword_dict = self._get_header_data()
 
         # Get the instrument/detector-specific values from the self.param_dict
         fwhm = self.param_dict["sourcex"]["fwhm"]
@@ -538,7 +545,7 @@ class build_catalogs(object):
         # Regenerate the source catalog with presumably now only good sources
         seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=imgwcs)
 
-        self._write_catalog(seg_cat, keyword_dict, self.seg_sourcelist_filename)
+        self._write_catalog(seg_cat, self.keyword_dict, self.seg_sourcelist_filename)
 
         return segm, kernel, bkg_dao_rms
 
@@ -579,8 +586,8 @@ class build_catalogs(object):
         # Get the HSTWCS object from the first extension
         imgwcs = HSTWCS(self.imghdu, 1)
 
-        # Get header information to annotate the output catalogs
-        keyword_dict = self._get_header_data(product="fdp")
+        # # Get header information to annotate the output catalogs
+        # keyword_dict = self._get_header_data(product="fdp")
 
         # Get the instrument/detector-specific values from the param_dict
         fwhm = param_dict["sourcex"]["fwhm"]
@@ -607,7 +614,7 @@ class build_catalogs(object):
         seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=imgwcs)
 
         # Write the source catalog
-        self._write_catalog(seg_cat, keyword_dict, catalog_filename, product="fdp")
+        self._write_catalog(seg_cat, self.keyword_dict, catalog_filename, product="fdp")
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
