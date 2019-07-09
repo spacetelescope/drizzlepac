@@ -54,6 +54,9 @@ class build_catalogs(object):
         # Fits file read
         self.imghdu = fits.open(self.imgname)
 
+        # Get the HSTWCS object from the first extension
+        self.imgwcs = HSTWCS(self.imghdu, 1)
+
         # Get header information to annotate the output catalogs
         if self.imgname.find("total") > -1:
             ghd_product = "tdp"
@@ -438,9 +441,6 @@ class build_catalogs(object):
 
         imgarr = self.imghdu['sci', 1].data.copy()
 
-        # Get the HSTWCS object from the first extension
-        imgwcs = HSTWCS(self.imghdu, 1)
-
         # Get the instrument/detector-specific values from the self.param_dict
         fwhm = self.param_dict["sourcex"]["fwhm"]
         size_source_box = self.param_dict["sourcex"]["source_box"]
@@ -482,7 +482,7 @@ class build_catalogs(object):
         # For debugging purposes...
         if se_debug:
             # Write out a catalog which can be used as an overlay for image in ds9
-            cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=imgwcs)
+            cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=self.imgwcs)
             table = cat.to_table()
 
             # Copy out only the X and Y coordinates to a "debug table" and
@@ -540,7 +540,7 @@ class build_catalogs(object):
         """
 
         # Regenerate the source catalog with presumably now only good sources
-        seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=imgwcs)
+        seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=self.imgwcs)
 
         self._write_catalog(seg_cat)
 
@@ -577,11 +577,7 @@ class build_catalogs(object):
         """
 
         # get filter-level science data
-
         imgarr = self.imghdu['sci', 1].data.copy()
-
-        # Get the HSTWCS object from the first extension
-        imgwcs = HSTWCS(self.imghdu, 1)
 
         # Get the instrument/detector-specific values from the param_dict
         fwhm = self.param_dict["sourcex"]["fwhm"]
@@ -605,7 +601,11 @@ class build_catalogs(object):
         imgarr_bkgsub = imgarr - bkg.background
 
         # Compute source properties...
-        seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=imgwcs)
+        seg_cat = source_properties(imgarr_bkgsub,
+                                    segm,
+                                    background=bkg.background,
+                                    filter_kernel=kernel,
+                                    wcs=self.imgwcs)
 
         # Write the source catalog
         self._write_catalog(seg_cat, product="fdp")
