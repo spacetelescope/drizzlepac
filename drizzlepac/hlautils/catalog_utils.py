@@ -51,15 +51,15 @@ class build_catalogs(object):
         self.point_sourcelist_filename = self.imgname.replace(self.imgname[-9:],"_point-cat.ecsv")
         self.seg_sourcelist_filename = self.imgname.replace(self.imgname[-9:], "_segment-cat.ecsv")
 
+        # Fits file read
+        self.imghdu = fits.open(self.imgname)
+
         # Get header information to annotate the output catalogs
         if self.imgname.find("total") > -1:
             ghd_product = "tdp"
         else:
             ghd_product = "fdp"
         self.keyword_dict = self._get_header_data(product=ghd_product)
-
-        # Fits file read
-        self.imghdu = fits.open(self.imgname)
         
         # Parameter dictionary definition
         self.inst_det = "{} {}".format(self.imgname.split("_")[3].upper(), self.imgname.split("_")[4].upper())
