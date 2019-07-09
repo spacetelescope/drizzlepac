@@ -37,14 +37,15 @@ __taskname__ = 'catalog_utils'
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ======================================================================================================================
+
 
 class build_catalogs(object):
     """Using aperture photometry, generate photometric sourcelist for specified image(s).
     """
     def __init__(self,fitsfile):
-        self.label="build_catalogs"
-        self.description="A set of routines to generate photometric sourcelists using aperture photometry"
+        self.label = "build_catalogs"
+        self.description = "A set of routines to generate photometric sourcelists using aperture photometry"
         
         # Generate output sourcelist catalog filenames
         self.imgname = fitsfile
@@ -410,8 +411,10 @@ class build_catalogs(object):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-#       Contents of Michele's se_source_generation.py, as of commit b2db3ec9c918188cea2d3b0e4b64e39cc79c4146
+#       Modified contents of Michele's se_source_generation.py, as of commit b2db3ec9c918188cea2d3b0e4b64e39cc79c4146
 # ----------------------------------------------------------------------------------------------------------------------
+
+
     def create_sextractor_like_sourcelists(self,se_debug=False):
         """Use photutils to find sources in image based on segmentation.
 
@@ -545,6 +548,7 @@ class build_catalogs(object):
         self._write_catalog(seg_cat)
 
         return segm, kernel, bkg_dao_rms
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -938,6 +942,20 @@ class build_catalogs(object):
 
 @util.with_logging
 def run_catalog_utils(args,starting_dt):
+    """Super simple testing interface for the above code.
+
+    Parameters
+    ----------
+    args : argparse.Namespace object
+        command-line input arguments
+
+    starting_dt : datetime.datetime object
+        start date/time of current run.
+
+    Returns
+    -------
+    Nothing.
+    """
     log.info("Run start time: {}".format(str(starting_dt)))
     log.info("python {} {} -f {} -d {} -m {}".format(os.path.realpath(__file__),
                                                args.total_product_name,
