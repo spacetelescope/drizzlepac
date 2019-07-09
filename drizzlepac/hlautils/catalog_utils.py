@@ -549,7 +549,7 @@ class build_catalogs(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def measure_source_properties(self,segm, kernel, catalog_filename, param_dict):
+    def measure_source_properties(self,segm, kernel, catalog_filename):
         """Use the positions of the sources identified in the white light image to
         measure properties of these sources in the filter images
 
@@ -584,9 +584,9 @@ class build_catalogs(object):
         imgwcs = HSTWCS(self.imghdu, 1)
 
         # Get the instrument/detector-specific values from the param_dict
-        fwhm = param_dict["sourcex"]["fwhm"]
-        size_source_box = param_dict["sourcex"]["source_box"]
-        threshold_flag = param_dict["sourcex"]["thresh"]
+        fwhm = self.param_dict["sourcex"]["fwhm"]
+        size_source_box = self.param_dict["sourcex"]["source_box"]
+        threshold_flag = self.param_dict["sourcex"]["thresh"]
 
         # Report configuration values to log
         log.info("{}".format("=" * 80))
@@ -968,8 +968,7 @@ def run_catalog_utils(args,starting_dt):
         if args.phot_mode in ['seg', 'both']:
             filter_product.measure_source_properties(total_product.segmap,
                                                      total_product.kernel,
-                                                     filter_product.seg_sourcelist_filename,
-                                                     filter_product.param_dict)
+                                                     filter_product.seg_sourcelist_filename)
 
     log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))
 
