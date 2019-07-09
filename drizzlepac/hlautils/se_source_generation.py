@@ -193,11 +193,10 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_
 
     _write_catalog(seg_cat, keyword_dict, catalog_filename)
 
-    # FIX: All of these may not be needed so clean up
-    return segm, kernel, bkg, bkg_dao_rms, imgarr_bkgsub
+    return segm, kernel, bkg_dao_rms
 
 
-def measure_source_properties(segm, imgarr_bkgsub, background, kernel, source_filename, catalog_filename, param_dict):
+def measure_source_properties(segm, kernel, source_filename, catalog_filename, param_dict):
     """Use the positions of the sources identified in the white light image to
     measure properties of these sources in the filter images
 
@@ -210,10 +209,6 @@ def measure_source_properties(segm, imgarr_bkgsub, background, kernel, source_fi
     ----------
     segm : `~astropy.photutils.segmentation` Segmentation image
         Two-dimensional image of labeled source regions based on the "white light" drizzed product
-
-    imgarr_bkg :
-
-    background : 
 
     kernel : `~astropy.convolution`
         Two dimensional function of a specified FWHM used to smooth the image and
@@ -237,7 +232,7 @@ def measure_source_properties(segm, imgarr_bkgsub, background, kernel, source_fi
 
     # Open the filter-level image
     imghdu = fits.open(source_filename)
-    imgarr = imghdu[1].data
+    imgarr = imghdu['sci',1].data
 
     # Get the HSTWCS object from the first extension
     imgwcs = HSTWCS(imghdu, 1)
@@ -264,10 +259,10 @@ def measure_source_properties(segm, imgarr_bkgsub, background, kernel, source_fi
     # The data needs to be background subtracted when computing the source properties
     bkg, _, _ = _compute_background(imgarr, nsigma=5., threshold_flag=threshold_flag)
 
-    imgarr_bkgsubX = imgarr - bkg.background
+    imgarr_bkgsub = imgarr - bkg.background
 
     # Compute source properties...
-    seg_cat = source_properties(imgarr_bkgsubX, segm, background=bkg.background,
+    seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background,
                                 filter_kernel=kernel, wcs=imgwcs)
 
     # Write the source catalog
@@ -351,6 +346,7 @@ def _compute_background(image, box_size=50, win_size=3, nsigma=5., threshold_fla
                 bkg_rms_mean = threshold.max()
             else:
                 bkg_rms_mean = 3. * threshold_flag
+                threshold = bkg_rms_mean
 
             if bkg_rms_mean < 0:
                 bkg_rms_mean = 0.
@@ -620,18 +616,18 @@ def run_photutils():
     fp_catalog_filename_1 = "hst_10265_01_acs_wfc_f606w_j92c01_segment-cat.ecsv"
 
 
-    segmap, kernel, bkg, bkg_dao_rms, bkgsub  = create_sextractor_like_sourcelists(white_light_filename,
-                                                                                            tdp_catalog_filename,
-                                                                                            param_dict,
-                                                                                            se_debug=True)
-    measure_source_properties(segmap, bkgsub, bkg.background, kernel, fp_filename_1, fp_catalog_filename_1, param_dict)
+    segmap, kernel, bkg_dao_rms = create_sextractor_like_sourcelists(white_light_filename,
+                                                                     tdp_catalog_filename,
+                                                                     param_dict,
+                                                                     se_debug=False)
+    measure_source_properties(segmap, kernel, fp_filename_1, fp_catalog_filename_1, param_dict)
     print("Measured filter 1")
 
     """
-    measure_source_properties(segmap, bkgsub, bkg.background, kernel, fp_filename_2, fp_catalog_filename_2, param_dict)
+    measure_source_properties(segmap, kernel, fp_filename_2, fp_catalog_filename_2, param_dict)
     print("Measured filter 2")
 
-    measure_source_properties(segmap, bkgsub, bkg.background, kernel, fp_filename_3, fp_catalog_filename_3, param_dict)
+    measure_source_properties(segmap, kernel, fp_filename_3, fp_catalog_filename_3, param_dict)
     print("Measured filter 3")
     """
 
