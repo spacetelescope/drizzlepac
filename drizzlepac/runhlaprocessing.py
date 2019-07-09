@@ -409,17 +409,19 @@ def run_astrodrizzle(obs_info_dict):
         astrodrizzle.AstroDrizzle(input=adriz_in_list,output=ref_total_combined_image,
                                   configobj='{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep))
 
-        log.info("Finished creating TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")        
+        log.info("Finished creating TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")
         # Extract shape of ref_total_combined_image for explicit use in AstroDrizzle for all other products.
         rtci = fits.open(ref_total_combined_image)
         total_shape = rtci[('sci',1)].data.shape
         rtci.close()
-        
+        product_list = []
+
         for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
             # 2: Create drizzle-combined filter image using the temp ref image as astrodrizzle param 'final_refimage'
             log.info("~" * 118)
             log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE\n")
             filter_combined_imagename = obs_info_dict[fp_keyname]['product filenames']['image']
+            product_list.append(filter_combined_imagename)
             adriz_in_list = obs_info_dict[fp_keyname]['files']
             trlname = '_'.join(filter_combined_imagename.split('_')[:-1]+['trl.log'])
             print("FILTER PRODUCT trailer file: {}".format(trlname))
@@ -439,6 +441,7 @@ def run_astrodrizzle(obs_info_dict):
                 log.info("~" * 118)
                 log.info("CREATE SINGLY DRIZZLED IMAGE")
                 single_drizzled_filename = obs_info_dict[fp_keyname][sp_name]["image"]
+                product_list.append(single_drizzled_filename)
                 imgname_root = single_drizzled_filename.split("_")[-2]
                 trlname = '_'.join(single_drizzled_filename.split('_')[:-1]+['trl.log'])
                 adriz_in_file = [i for i in obs_info_dict[fp_keyname]['files'] if i.startswith(imgname_root)][0]
@@ -450,31 +453,35 @@ def run_astrodrizzle(obs_info_dict):
                                           runfile=trlname,
                                           configobj='{}{}astrodrizzle_single_hap.cfg'.format(cfgfile_path, os.path.sep))
                 # Rename Astrodrizzle log file as a trailer file
-                shutil.move(trlname, trlname.replace('.log','.txt'))
+                shutil.move(trlname, trlname.replace('.log', '.txt'))
 
         # 4 Create total image using the temp ref image as astrodrizzle param 'final_refimage'
         log.info("~" * 118)
         log.info("CREATE TOTAL DRIZZLE-COMBINED IMAGE\n")
         total_combined_image = obs_info_dict[tdp_keyname]['product filenames']['image']
+        product_list.append(total_combined_image)
         adriz_in_list = obs_info_dict[tdp_keyname]['files']
-        trlname = '_'.join(total_combined_image.split('_')[:-1]+['trl.log'])
-        log.info("Total combined image..... {} {}".format(total_combined_image,adriz_in_list))
-        astrodrizzle.AstroDrizzle(input=adriz_in_list,output=total_combined_image,
+        trlname = '_'.join(total_combined_image.split('_')[:-1] + ['trl.log'])
+        log.info("Total combined image..... {} {}".format(total_combined_image, adriz_in_list))
+        astrodrizzle.AstroDrizzle(input=adriz_in_list, output=total_combined_image,
                                   final_refimage=ref_total_combined_image,
                                   final_outnx=total_shape[1],
                                   final_outny=total_shape[0],
                                   runfile=trlname,
                                   configobj='{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep))
         # Rename Astrodrizzle log file as a trailer file
-        shutil.move(trlname, trlname.replace('.log','.txt'))
+        shutil.move(trlname, trlname.replace('.log', '.txt'))
 
         # 5: remove reference total temp file
         log.info("Removed temp ref file {}".format(ref_total_combined_image))
         os.remove(ref_total_combined_image)
 
     # 6: Ensure that all drizzled products is have headers that are to spec.
-    drcfiles = sorted(glob.glob('*drc.fits'))
-    for d in drcfiles:
+    # drcfiles = sorted(glob.glob('*drc.fits'))
+    # for d in drcfiles:
+    log.info("Updating these drizzle products for CAOM compatibility:")
+    for d in product_list:
+        log.info("    {}".format(d))
         dpu.refine_product_headers(d, obs_info_dict)
 
     # 7: remove rules files copied to the CWD in step #0
@@ -616,7 +623,7 @@ def run_perform_align(filelist,headerlet_filenames):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Process images, produce drizzled images and sourcelists')
     parser.add_argument('input_filename', help='Name of the input csv file containing information about the files to '
                         'be processed')
@@ -628,5 +635,10 @@ if __name__ == '__main__':
                         'file.')
     ARGS = parser.parse_args()
 
+    print("Single-visit processing started for: {}".format(ARGS.input_filename))
     rv = perform_processing(ARGS.input_filename, debug=ARGS.debug)
-    print("Return Value: ",rv)
+    print("Return Value: ", rv)
+    return rv
+
+if __name__ == '__main__':
+    main()
