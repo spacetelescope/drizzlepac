@@ -542,14 +542,14 @@ class build_catalogs(object):
         # Regenerate the source catalog with presumably now only good sources
         seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=imgwcs)
 
-        self._write_catalog(seg_cat, self.seg_sourcelist_filename)
+        self._write_catalog(seg_cat)
 
         return segm, kernel, bkg_dao_rms
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def measure_source_properties(self,segm, kernel, catalog_filename):
+    def measure_source_properties(self,segm, kernel):
         """Use the positions of the sources identified in the white light image to
         measure properties of these sources in the filter images
 
@@ -608,7 +608,7 @@ class build_catalogs(object):
         seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=imgwcs)
 
         # Write the source catalog
-        self._write_catalog(seg_cat, catalog_filename, product="fdp")
+        self._write_catalog(seg_cat, product="fdp")
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -716,7 +716,7 @@ class build_catalogs(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def _write_catalog(self,seg_cat, catalog_filename, product="tdp"):
+    def _write_catalog(self,seg_cat, product="tdp"):
         """Actually write the specified source catalog out to disk
 
         Parameters
@@ -724,9 +724,6 @@ class build_catalogs(object):
         seg_cat : list of `~photutils.SourceProperties` objects
             List of SourceProperties objects, one for each source found in the
             specified detection product
-
-        catalog_filename : str
-            Official generated name for the output catalog
 
         product : str, optional
             Identification string for the catalog product being written.  This
@@ -768,8 +765,8 @@ class build_catalogs(object):
             seg_subset_table["Dec_icrs"].info.format = ".10f"
             log.info("seg_subset_table (white light image): {}".format(seg_subset_table))
 
-            seg_subset_table.write(catalog_filename, format="ascii.ecsv")
-            log.info("Wrote source catalog: {}".format(catalog_filename))
+            seg_subset_table.write(self.seg_sourcelist_filename, format="ascii.ecsv")
+            log.info("Wrote source catalog: {}".format(self.seg_sourcelist_filename))
 
         # else the product is the "filter detection product"
         else:
@@ -813,8 +810,8 @@ class build_catalogs(object):
             seg_table["Dec_icrs"].info.format = ".10f"
             log.info("seg_table (filter): {}".format(seg_table))
 
-            seg_table.write(catalog_filename, format="ascii.ecsv")
-            log.info("Wrote filter source catalog: {}".format(catalog_filename))
+            seg_table.write(self.seg_sourcelist_filename, format="ascii.ecsv")
+            log.info("Wrote filter source catalog: {}".format(self.seg_sourcelist_filename))
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -966,9 +963,7 @@ def run_catalog_utils(args,starting_dt):
             filter_product.write_catalog_to_file(filter_product.ps_phot_cat,write_region_file=args.debug)
 
         if args.phot_mode in ['seg', 'both']:
-            filter_product.measure_source_properties(total_product.segmap,
-                                                     total_product.kernel,
-                                                     filter_product.seg_sourcelist_filename)
+            filter_product.measure_source_properties(total_product.segmap,total_product.kernel)
 
     log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))
 
