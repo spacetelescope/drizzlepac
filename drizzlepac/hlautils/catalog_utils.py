@@ -56,7 +56,7 @@ class build_catalogs(object):
             ghd_product = "fdp"
         else:
             ghd_product = "tdp"
-        self.keyword_dict = self._get_header_data()
+        self.keyword_dict = self._get_header_data(product=ghd_product)
 
         # Fits file read
         self.imghdu = fits.open(self.imgname)
