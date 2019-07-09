@@ -441,9 +441,6 @@ class build_catalogs(object):
         # Get the HSTWCS object from the first extension
         imgwcs = HSTWCS(self.imghdu, 1)
 
-        # # Get header information to annotate the output catalogs
-        # keyword_dict = self._get_header_data()
-
         # Get the instrument/detector-specific values from the self.param_dict
         fwhm = self.param_dict["sourcex"]["fwhm"]
         size_source_box = self.param_dict["sourcex"]["source_box"]
@@ -545,7 +542,7 @@ class build_catalogs(object):
         # Regenerate the source catalog with presumably now only good sources
         seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=imgwcs)
 
-        self._write_catalog(seg_cat, self.keyword_dict, self.seg_sourcelist_filename)
+        self._write_catalog(seg_cat, self.seg_sourcelist_filename)
 
         return segm, kernel, bkg_dao_rms
 
@@ -586,9 +583,6 @@ class build_catalogs(object):
         # Get the HSTWCS object from the first extension
         imgwcs = HSTWCS(self.imghdu, 1)
 
-        # # Get header information to annotate the output catalogs
-        # keyword_dict = self._get_header_data(product="fdp")
-
         # Get the instrument/detector-specific values from the param_dict
         fwhm = param_dict["sourcex"]["fwhm"]
         size_source_box = param_dict["sourcex"]["source_box"]
@@ -614,7 +608,7 @@ class build_catalogs(object):
         seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=imgwcs)
 
         # Write the source catalog
-        self._write_catalog(seg_cat, self.keyword_dict, catalog_filename, product="fdp")
+        self._write_catalog(seg_cat, catalog_filename, product="fdp")
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -722,7 +716,7 @@ class build_catalogs(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def _write_catalog(self,seg_cat, keyword_dict, catalog_filename, product="tdp"):
+    def _write_catalog(self,seg_cat, catalog_filename, product="tdp"):
         """Actually write the specified source catalog out to disk
 
         Parameters
@@ -730,9 +724,6 @@ class build_catalogs(object):
         seg_cat : list of `~photutils.SourceProperties` objects
             List of SourceProperties objects, one for each source found in the
             specified detection product
-
-        keyword_dict : dict
-            Dictionary containing FITS keyword values pertaining to the data product
 
         catalog_filename : str
             Official generated name for the output catalog
@@ -759,7 +750,7 @@ class build_catalogs(object):
             seg_subset_table = seg_table["xcentroid", "ycentroid"]
 
             # Add metadata to the output subset table
-            seg_subset_table = self._annotate_table(seg_subset_table, keyword_dict, num_sources, product=product)
+            seg_subset_table = self._annotate_table(seg_subset_table, num_sources, product=product)
 
             seg_subset_table["xcentroid"].description = "SExtractor Column x_image"
             seg_subset_table["ycentroid"].description = "SExtractor Column y_image"
@@ -783,7 +774,7 @@ class build_catalogs(object):
         # else the product is the "filter detection product"
         else:
 
-            seg_table = self._annotate_table(seg_table, keyword_dict, num_sources, product=product)
+            seg_table = self._annotate_table(seg_table, num_sources, product=product)
 
             # Rework the current table for output
             del seg_table["id"]
@@ -835,7 +826,14 @@ class build_catalogs(object):
 
         Parameters
         ----------
-        None.
+        product : str, optional
+            product type. either 'tdp' for total detection product or 'fdp' for filter detection product. Default value
+            is 'tdp'.
+
+        Returns
+        -------
+        keyword_dict : dictionary
+            dictionary of keyword values
         """
 
         keyword_dict = {}
@@ -884,16 +882,13 @@ class build_catalogs(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def _annotate_table(self,data_table, keyword_dict, num_sources, product="tdp"):
+    def _annotate_table(self,data_table, num_sources, product="tdp"):
         """Add state metadata to the output source catalog
 
         Parameters
         ----------
         data_table : QTable
             Table of source properties
-
-        keyword_dict : dict
-            Dictionary containing FITS keyword values pertaining to the data product
 
         num_sources : int
             Number of sources (items) in table
@@ -909,31 +904,31 @@ class build_catalogs(object):
 
         """
 
-        data_table.meta["WCSNAME"] = keyword_dict["wcs_name"]
-        data_table.meta["WCSTYPE"] = keyword_dict["wcs_type"]
-        data_table.meta["Proposal ID"] = keyword_dict["proposal_id"]
-        data_table.meta["Image File Name"] = keyword_dict['image_file_name']
-        data_table.meta["Target Name"] = keyword_dict["target_name"]
-        data_table.meta["Date Observed"] = keyword_dict["date_obs"]
+        data_table.meta["WCSNAME"] = self.keyword_dict["wcs_name"]
+        data_table.meta["WCSTYPE"] = self.keyword_dict["wcs_type"]
+        data_table.meta["Proposal ID"] = self.keyword_dict["proposal_id"]
+        data_table.meta["Image File Name"] = self.keyword_dict['image_file_name']
+        data_table.meta["Target Name"] = self.keyword_dict["target_name"]
+        data_table.meta["Date Observed"] = self.keyword_dict["date_obs"]
         # FIX
         if product.lower() == "tdp":
             data_table.meta["Time Observed"] = " "
-            data_table.meta["Filter"] = keyword_dict["filter"]
+            data_table.meta["Filter"] = self.keyword_dict["filter"]
         else:
             data_table.meta["Time Observed"] = "FIX ME"
-            data_table.meta["Filter 1"] = keyword_dict["filter1"]
-            data_table.meta["Filter 2"] = keyword_dict["filter2"]
-        data_table.meta["Instrument"] = keyword_dict["instrument"]
-        data_table.meta["Detector"] = keyword_dict["detector"]
-        data_table.meta["Target RA"] = keyword_dict["target_ra"]
-        data_table.meta["Target DEC"] = keyword_dict["target_dec"]
-        data_table.meta["Orientation"] = keyword_dict["orientation"]
-        data_table.meta["Aperture RA"] = keyword_dict["aperture_ra"]
-        data_table.meta["Aperture DEC"] = keyword_dict["aperture_dec"]
-        data_table.meta["Aperture PA"] = keyword_dict["aperture_pa"]
-        data_table.meta["Exposure Start"] = keyword_dict["expo_start"]
-        data_table.meta["Total Exposure Time"] = keyword_dict["texpo_time"]
-        data_table.meta["CCD Gain"] = keyword_dict["ccd_gain"]
+            data_table.meta["Filter 1"] = self.keyword_dict["filter1"]
+            data_table.meta["Filter 2"] = self.keyword_dict["filter2"]
+        data_table.meta["Instrument"] = self.keyword_dict["instrument"]
+        data_table.meta["Detector"] = self.keyword_dict["detector"]
+        data_table.meta["Target RA"] = self.keyword_dict["target_ra"]
+        data_table.meta["Target DEC"] = self.keyword_dict["target_dec"]
+        data_table.meta["Orientation"] = self.keyword_dict["orientation"]
+        data_table.meta["Aperture RA"] = self.keyword_dict["aperture_ra"]
+        data_table.meta["Aperture DEC"] = self.keyword_dict["aperture_dec"]
+        data_table.meta["Aperture PA"] = self.keyword_dict["aperture_pa"]
+        data_table.meta["Exposure Start"] = self.keyword_dict["expo_start"]
+        data_table.meta["Total Exposure Time"] = self.keyword_dict["texpo_time"]
+        data_table.meta["CCD Gain"] = self.keyword_dict["ccd_gain"]
         data_table.meta["Number of sources"] = num_sources
         data_table.meta[""] = " "
         data_table.meta[""] = "Absolute coordinates are in a zero-based coordinate system."
@@ -964,8 +959,6 @@ def run_catalog_utils(args,starting_dt):
         total_product.bkg_dao_rms = \
             total_product.create_sextractor_like_sourcelists(se_debug=args.debug)
 
-    print("\a")
-    sys.exit()
     for filter_img_name in args.filter_product_list:
         filter_product = build_catalogs(filter_img_name)
         if args.phot_mode in ['point', 'both']:
@@ -978,7 +971,7 @@ def run_catalog_utils(args,starting_dt):
                                                      filter_product.seg_sourcelist_filename,
                                                      filter_product.param_dict)
 
-    log.info('Total processing time: {} sec'.format((datetime.datetime.now() - starting_dt).total_seconds()))
+    log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))
 
 
 # ======================================================================================================================
