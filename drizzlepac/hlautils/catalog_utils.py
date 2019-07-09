@@ -53,9 +53,9 @@ class build_catalogs(object):
 
         # Get header information to annotate the output catalogs
         if self.imgname.find("total") > -1:
-            ghd_product = "fdp"
-        else:
             ghd_product = "tdp"
+        else:
+            ghd_product = "fdp"
         self.keyword_dict = self._get_header_data(product=ghd_product)
 
         # Fits file read
