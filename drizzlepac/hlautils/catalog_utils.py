@@ -265,8 +265,9 @@ class build_catalogs(object):
         """
         # read in sci, wht extensions of drizzled product
         image = self.imghdu['SCI'].data.copy()
-        image -= np.nanmedian(image)
         wht_image = self.imghdu['WHT'].data.copy()
+
+        image -= np.nanmedian(image)
 
         bkg_sigma = mad_std(image, ignore_nan=True)
 
