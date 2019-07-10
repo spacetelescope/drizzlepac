@@ -269,11 +269,6 @@ class build_catalogs(object):
 
         image -= np.nanmedian(image)
 
-        bkg_sigma = mad_std(image, ignore_nan=True)
-
-        detect_sources_thresh = bkgsig_sf * bkg_sigma
-        default_fwhm = self.param_dict['dao']['TWEAK_FWHMPSF'] / self.param_dict['astrodrizzle']['SCALE']
-
         # Estimate background for DaoStarfinder 'threshold' input.
         bkg_estimator = MedianBackground()
         bkg = None
@@ -314,6 +309,11 @@ class build_catalogs(object):
 
 
         # Estimate FWHM from image sources
+
+        bkg_sigma = mad_std(image, ignore_nan=True)
+        detect_sources_thresh = bkgsig_sf * bkg_sigma
+
+        default_fwhm = self.param_dict['dao']['TWEAK_FWHMPSF'] / self.param_dict['astrodrizzle']['SCALE']
         kernel = astrometric_utils.build_auto_kernel(image, wht_image, threshold=bkg_rms, fwhm=default_fwhm)
         segm = detect_sources(image, detect_sources_thresh, npixels=self.param_dict["sourcex"]["source_box"],
                               filter_kernel=kernel)
