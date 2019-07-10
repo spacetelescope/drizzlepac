@@ -128,7 +128,7 @@ param_dict = {
             "bthresh": 5.0},
         "sourcex": {
             "fwhm": 0.13,
-            "thresh": 1.4,
+            "thresh": -1.2,
             "bthresh": 5.0,
             "source_box": 5},
         "swarm filter": {
@@ -636,6 +636,7 @@ def run_perform_align(filelist, headerlet_filenames):
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         log.info("   No correction to absolute astrometric frame applied!\n")
+        hdrlet_list = []
 
     return hdrlet_list
 # ----------------------------------------------------------------------------------------------------------------------
