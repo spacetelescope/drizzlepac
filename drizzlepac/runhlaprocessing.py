@@ -8,7 +8,7 @@ import collections
 import datetime
 import glob
 import os
-import pdb
+# import pdb
 import pickle
 import sys
 import traceback
@@ -18,8 +18,7 @@ from astropy.io import fits
 import drizzlepac
 from drizzlepac import alignimages
 from drizzlepac import astrodrizzle
-from drizzlepac import util
-from drizzlepac import wcs_functions
+# from drizzlepac import wcs_functions
 from drizzlepac.hlautils import pipeline_poller_utils
 from drizzlepac.hlautils import processing_utils as dpu
 from drizzlepac.hlautils import sourcelist_generation
@@ -129,7 +128,7 @@ param_dict = {
             "bthresh": 5.0},
         "sourcex": {
             "fwhm": 0.13,
-            "thresh": None,
+            "thresh": 1.4,
             "bthresh": 5.0,
             "source_box": 5},
         "swarm filter": {
@@ -227,20 +226,20 @@ def convert_base10_base36(in_number):
         converted base 36 value
     """
     if in_number < 100:
-        out_val = "{}{}".format("0"*(2-len(str(in_number))), in_number)
+        out_val = "{}{}".format("0" * (2 - len(str(in_number))), in_number)
     elif (in_number > 99) and (in_number < 360):
         alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         alphadict = {}
         for item in enumerate(list(alphabet)):
             alphadict[item[0]] = item[1]
-        c1 = (in_number - 100)//26
+        c1 = (in_number - 100) // 26
         c2 = (in_number - 100) % 26
         out_val = "{}{}".format(c1, alphadict[c2])
     else:
 
         chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
-        sign = '-' if in_number < 0 else ''
+        # sign = '-' if in_number < 0 else ''
         in_number = abs(in_number)
         out_val = ''
 
@@ -363,7 +362,7 @@ def restructure_obs_info_dict(obs_info_dict):
                         temp_restructured_dict[single_exp_dict_key]['product filenames']
                     del restructured_dict[single_exp_dict_key]
                     del single_exposure_dict[imgname]
-            except:
+            except Exception:
                 continue
 
     # 3: add field "associated filter products"
@@ -405,14 +404,14 @@ def run_astrodrizzle(obs_info_dict):
         ref_total_combined_image = "{}ref_{}".format(obs_info_dict[tdp_keyname]['product filenames']['image'][:-8],
                                                      obs_info_dict[tdp_keyname]['product filenames']['image'][-8:])
         adriz_in_list = obs_info_dict[tdp_keyname]['files']
-        log.info("Ref total combined image. {} {}".format(ref_total_combined_image,adriz_in_list,ref_total_combined_image))
-        astrodrizzle.AstroDrizzle(input=adriz_in_list,output=ref_total_combined_image,
+        log.info("Ref total combined image. {} {}".format(ref_total_combined_image, adriz_in_list, ref_total_combined_image))
+        astrodrizzle.AstroDrizzle(input=adriz_in_list, output=ref_total_combined_image,
                                   configobj='{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep))
 
         log.info("Finished creating TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")
         # Extract shape of ref_total_combined_image for explicit use in AstroDrizzle for all other products.
         rtci = fits.open(ref_total_combined_image)
-        total_shape = rtci[('sci',1)].data.shape
+        total_shape = rtci[('sci', 1)].data.shape
         rtci.close()
         product_list = []
 
@@ -423,9 +422,9 @@ def run_astrodrizzle(obs_info_dict):
             filter_combined_imagename = obs_info_dict[fp_keyname]['product filenames']['image']
             product_list.append(filter_combined_imagename)
             adriz_in_list = obs_info_dict[fp_keyname]['files']
-            trlname = '_'.join(filter_combined_imagename.split('_')[:-1]+['trl.log'])
+            trlname = '_'.join(filter_combined_imagename.split('_')[:-1] + ['trl.log'])
             print("FILTER PRODUCT trailer file: {}".format(trlname))
-            log.info("Filter combined image.... {} {}".format(filter_combined_imagename,adriz_in_list))
+            log.info("Filter combined image.... {} {}".format(filter_combined_imagename, adriz_in_list))
             astrodrizzle.AstroDrizzle(input=adriz_in_list, output=filter_combined_imagename,
                                       final_refimage=ref_total_combined_image,
                                       final_outnx=total_shape[1],
@@ -433,7 +432,7 @@ def run_astrodrizzle(obs_info_dict):
                                       runfile=trlname,
                                       configobj='{}{}astrodrizzle_filter_hap.cfg'.format(cfgfile_path, os.path.sep))
             # Rename Astrodrizzle log file as a trailer file
-            shutil.move(trlname, trlname.replace('.log','.txt'))
+            shutil.move(trlname, trlname.replace('.log', '.txt'))
 
             # 3: Create individual singly-drizzled images using the temp ref image as astrodrizzle param 'final_refimage'
             for sp_name in [sp_key for sp_key in list(obs_info_dict[fp_keyname].keys()) if
@@ -443,9 +442,9 @@ def run_astrodrizzle(obs_info_dict):
                 single_drizzled_filename = obs_info_dict[fp_keyname][sp_name]["image"]
                 product_list.append(single_drizzled_filename)
                 imgname_root = single_drizzled_filename.split("_")[-2]
-                trlname = '_'.join(single_drizzled_filename.split('_')[:-1]+['trl.log'])
+                trlname = '_'.join(single_drizzled_filename.split('_')[:-1] + ['trl.log'])
                 adriz_in_file = [i for i in obs_info_dict[fp_keyname]['files'] if i.startswith(imgname_root)][0]
-                log.info("Single drizzled image.... {} {}".format(single_drizzled_filename,adriz_in_file))
+                log.info("Single drizzled image.... {} {}".format(single_drizzled_filename, adriz_in_file))
                 astrodrizzle.AstroDrizzle(input=adriz_in_file, output=single_drizzled_filename,
                                           final_refimage=ref_total_combined_image,
                                           final_outnx=total_shape[1],
@@ -476,9 +475,7 @@ def run_astrodrizzle(obs_info_dict):
         log.info("Removed temp ref file {}".format(ref_total_combined_image))
         os.remove(ref_total_combined_image)
 
-    # 6: Ensure that all drizzled products is have headers that are to spec.
-    # drcfiles = sorted(glob.glob('*drc.fits'))
-    # for d in drcfiles:
+    # 6: Ensure that all drizzled products have headers that are to spec.
     log.info("Updating these drizzle products for CAOM compatibility:")
     for d in product_list:
         log.info("    {}".format(d))
@@ -489,6 +486,8 @@ def run_astrodrizzle(obs_info_dict):
         log.info("Removed rules file {}".format(rules_filename))
         os.remove(rules_filename)
 
+    # 8: Return product list for creation of pipeline manifest file
+    return product_list
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -496,6 +495,7 @@ def run_astrodrizzle(obs_info_dict):
 def run_hla_processing(input_filename, result=None, debug=False):
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
+    product_list = []
     try:
         # 1: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new
         # ticket if necessary)
@@ -509,6 +509,9 @@ def run_hla_processing(input_filename, result=None, debug=False):
                 pipeline_poller_utils.run_generator(obs_category, obs_info_dict[obs_category]["info"])
             for key in obs_info_dict[obs_category].keys():
                 log.info("{}: {}".format(key, obs_info_dict[obs_category][key]))
+        # That includes generating the name of the manifest file
+        info = obs_info_dict['total detection product 00']['info'].split()
+        manifest_name = "{}_{}_{}_manifest.txt".format(info[2], info[4][1:4], info[1])
 
         # 3: restructure obs_info_dict so that it's ready for processing.
         log.info("3: restructure obs_info_dict so that it's ready for processing.")
@@ -520,58 +523,70 @@ def run_hla_processing(input_filename, result=None, debug=False):
         wcs_input_list = []
         for obs_category in obs_info_dict.keys():
             if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
-                #create dictionary mapping flc/flt.fits file names to their corresponding HAP-compatible headerlet
+                # create dictionary mapping flc/flt.fits file names to their corresponding HAP-compatible headerlet
                 # filenames
-                headerlet_filenames={}
+                headerlet_filenames = {}
                 for fitsname in obs_info_dict[obs_category]['files']:
                     for dict_item in obs_info_dict[obs_category].keys():
                         if dict_item.startswith('subproduct #'):
                             if obs_info_dict[obs_category][dict_item]['image'].find(fitsname[:-10]) > 0:
                                 headerlet_filenames[fitsname] = \
-                                    obs_info_dict[obs_category][dict_item]['image'][:-8]+"hlet.fits"
+                                    obs_info_dict[obs_category][dict_item]['image'][:-8] + "hlet.fits"
 
-                run_perform_align(obs_info_dict[obs_category]['files'],headerlet_filenames)
+                hdrlet_list = run_perform_align(obs_info_dict[obs_category]['files'], headerlet_filenames)
+                product_list += hdrlet_list
 
                 for item in obs_info_dict[obs_category]['files']:
                     wcs_input_list.append(item)
             else:
                 log.info("{}: Alignimages step skipped.".format(obs_category))
 
+        """
         # 5: run meta wcs code to get common WCS for all images.
         log.info("5: run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
         log.info("The following images will be used: ")
         for imgname in wcs_input_list:
             log.info("{}".format(imgname))
-        if wcs_input_list:
+         if wcs_input_list:
             meta_wcs = wcs_functions.make_mosaic_wcs(wcs_input_list)
+        """
 
         # 6: Run AstroDrizzle to produce drizzle-combined products
         log.info("6: (WIP) Create drizzled imagery products")
-        run_astrodrizzle(obs_info_dict)
+        driz_list = run_astrodrizzle(obs_info_dict)
+        product_list += driz_list
 
         # 7: Create source catalogs from newly defined products (HLA-204)
         log.info("7: (WIP) Create source catalog from newly defined product")
         if debug:
-            pickle_filename = input_filename.replace(".out",".pickle")
+            pickle_filename = input_filename.replace(".out", ".pickle")
             if os.path.exists(pickle_filename):
                 os.remove(pickle_filename)
             pickle_out = open(pickle_filename, "wb")
-            pickle.dump([obs_info_dict,param_dict], pickle_out)
+            pickle.dump([obs_info_dict, param_dict], pickle_out)
             pickle_out.close()
             print("Wrote obs_info_dict to pickle file {}".format(pickle_filename))
+
         if 'total detection product 00' in obs_info_dict.keys():
-            sourcelist_generation.create_sourcelists(obs_info_dict, param_dict)
+            catalog_list = sourcelist_generation.create_sourcelists(obs_info_dict, param_dict)
+            product_list += catalog_list
         else:
             print("Sourcelist generation step skipped.")
 
         # 8: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
-        log.info("8: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of "
-                 "product")
+        log.info("8: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry"
+                 "of product")
         # TODO: QUALITY CONTROL SUBROUTINE CALL GOES HERE.
 
-    # 9: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
+        # 9: Write out manifest file listing all products generated during processing
+        log.info("Creating manifest file {}".format(manifest_name))
+        log.info("  Manifest contains the names of products generated during processing.")
+        with open(manifest_name, mode='w') as catfile:
+            [catfile.write("{}\n".format(name)) for name in product_list]
+
+        # 10: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
-    except:
+    except Exception:
         return_value = 1
         if debug:
             log.info("\a\a\a")
@@ -586,7 +601,7 @@ def run_hla_processing(input_filename, result=None, debug=False):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_perform_align(filelist,headerlet_filenames):
+def run_perform_align(filelist, headerlet_filenames):
     """
     executes drizzlepac.alignimages.perform_align(). If run is successful, and a good fit solution is found, the newly
     created headerlets are applied as the primary WCS in the in flc.fits or flt.fits images.
@@ -604,13 +619,16 @@ def run_perform_align(filelist,headerlet_filenames):
     Nothing.
     """
     try:
-        align_table = alignimages.perform_align(filelist, debug=False, runfile='alignimages.log', update_hdr_wcs=True,headerlet_filenames=headerlet_filenames)
-        os.remove("alignimages.log")
+        align_table = alignimages.perform_align(filelist, debug=False, runfile='alignimages.log', update_hdr_wcs=True, headerlet_filenames=headerlet_filenames)
+        log.info("ALIGN_TABLE: {}".format(align_table))
+        os.remove("alignimages.log")  # This log needs to be included in total product trailer file
         for row in align_table:
             if row['status'] == 0:
                 log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
             else:
                 log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
+
+        hdrlet_list = align_table['headerletFile'].tolist()
 
     except Exception:
         # Something went wrong with alignment to GAIA, so report this
@@ -619,6 +637,7 @@ def run_perform_align(filelist,headerlet_filenames):
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         log.info("   No correction to absolute astrometric frame applied!\n")
 
+    return hdrlet_list
 # ----------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 
