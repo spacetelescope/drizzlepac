@@ -78,7 +78,7 @@ def refine_product_headers(product, obs_dict_info):
     phdu['date-beg'] = (Time(phdu['expstart'], format='mjd').iso, "Starting Date and Time")
     phdu['date-end'] = (Time(phdu['expend'], format='mjd').iso, "Ending Date and Time")
 
-    phdu['equinox'] = 2000.0
+    phdu['equinox'] = hdu[('sci',1)].header['equinox'] if 'equinox' in hdu[('sci',1)].header else 2000.0
 
     # Re-format ACS filter specification
     if phdu['instrume'] == 'ACS':
@@ -135,14 +135,19 @@ def update_hdrtab(image, level, obs_dict_info, input_exposures):
                     name_col.append(expname)
                 else:
                     # Convert input exposure names into HAP names
+                    foundit = False
                     for haptype, hapdict in obs_dict_info.items():
-                        if LEVEL_DEFS[1] in haptype and expname in hapdict['files']:
-                            name = hapdict['product filenames']['image'].replace(';', '-')
-#                            name = name.replace(';', '-')
-                            # strip off <suffix>.fits to convert from filename to exposure name for archive
-                            expname = '_'.join(name.split('_')[:-1])
-                            name_col.append(expname)
-
+                        if expname in hapdict['files'] and not haptype.startswith("Total Detection Product"):
+                            for hapitem in hapdict.keys():
+                                if hapitem == "product filenames" or hapitem.startswith("subproduct"):
+                                    if hapdict[hapitem]['image'].find(rootname[:-1]) > 0:
+                                        name = hapdict[hapitem]['image']
+                                        name = name.replace(';', '-')
+                                        name_col.append(name)
+                                        foundit = True
+                                        break
+                            if foundit:
+                                break
     # define new column with HAP expname
     max_len = min(max([len(name) for name in name_col]), 51)
     hapcol = Column(array=np.array(name_col, dtype=np.str), name=HAPCOLNAME, format='{}A'.format(max_len + 4))

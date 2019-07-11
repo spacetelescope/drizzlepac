@@ -6,22 +6,25 @@
 import argparse
 import collections
 import datetime
+import glob
 import os
-import pdb
+# import pdb
 import pickle
 import sys
 import traceback
+import shutil
 
+from astropy.io import fits
 import drizzlepac
 from drizzlepac import alignimages
-from drizzlepac import util
-from drizzlepac import wcs_functions
+from drizzlepac import astrodrizzle
+# from drizzlepac import wcs_functions
 from drizzlepac.hlautils import pipeline_poller_utils
+from drizzlepac.hlautils import processing_utils as dpu
 from drizzlepac.hlautils import sourcelist_generation
 from stsci.tools import logutil
 
 __taskname__ = 'runhlaprocessing'
-
 log = logutil.create_logger('runhlaprocessing', level=logutil.logging.INFO, stream=sys.stdout)
 
 __version__ = 0.1
@@ -124,10 +127,10 @@ param_dict = {
             "aperture_2": 0.15,  # update from 0.25
             "bthresh": 5.0},
         "sourcex": {
-            "fwhm": 0.076,
-            "thresh": 1.4,
+            "fwhm": 0.13,
+            "thresh": -1.2,
             "bthresh": 5.0,
-            "source_box": 7},
+            "source_box": 5},
         "swarm filter": {
             "upper_epp_limit": 70000.,
             "lower_epp_limit": 2000.,
@@ -223,20 +226,20 @@ def convert_base10_base36(in_number):
         converted base 36 value
     """
     if in_number < 100:
-        out_val = "{}{}".format("0"*(2-len(str(in_number))), in_number)
+        out_val = "{}{}".format("0" * (2 - len(str(in_number))), in_number)
     elif (in_number > 99) and (in_number < 360):
         alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         alphadict = {}
         for item in enumerate(list(alphabet)):
             alphadict[item[0]] = item[1]
-        c1 = (in_number - 100)//26
+        c1 = (in_number - 100) // 26
         c2 = (in_number - 100) % 26
         out_val = "{}{}".format(c1, alphadict[c2])
     else:
 
         chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
-        sign = '-' if in_number < 0 else ''
+        # sign = '-' if in_number < 0 else ''
         in_number = abs(in_number)
         out_val = ''
 
@@ -246,162 +249,8 @@ def convert_base10_base36(in_number):
 
     return(out_val)
 
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-def generate_test_data(file_name):
-    """
-    Generates test data for use during development
-
-    Returns
-    -------
-    obs_info_dict,filelist
-    """
-    # WFC3 UVIS/IR visit 11665_04, full visit
-    if file_name == "ib4604.out":
-        obs_info_dict = {'total detection product 00':
-                         {'info': '11665 B46 WFC3 UVIS',
-                          'files': ['ib4604fmq_flc.fits',
-                                    'ib4604fxq_flc.fits',
-                                    'ib4604fnq_flc.fits',
-                                    'ib4604fuq_flc.fits',
-                                    'ib4604fqq_flc.fits',
-                                    'ib4604fvq_flc.fits']},
-                         'total detection product 01':
-                             {'info': '11665 B46 WFC3 IR',
-                              'files': ['ib4604g2q_flt.fits',
-                                        'ib4604g6q_flt.fits',
-                                        'ib4604g3q_flt.fits',
-                                        'ib4604g8q_flt.fits']},
-                         'filter product 00':
-                             {'info': '11665 B46 WFC3 IR F110W',
-                              'files': ['ib4604g2q_flt.fits',
-                                        'ib4604g6q_flt.fits']},
-                         'single exposure product 00':
-                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FMQ',
-                              'files': ['ib4604fmq_flc.fits']},
-                         'single exposure product 01':
-                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FXQ',
-                              'files': ['ib4604fxq_flc.fits']},
-                         'filter product 01':
-                             {'info': '11665 B46 WFC3 IR F160W',
-                              'files': ['ib4604g3q_flt.fits',
-                                        'ib4604g8q_flt.fits']},
-                         'single exposure product 02':
-                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FNQ',
-                              'files': ['ib4604fnq_flc.fits']},
-                         'single exposure product 03':
-                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FUQ',
-                              'files': ['ib4604fuq_flc.fits']},
-                         'filter product 02':
-                             {'info': '11665 B46 WFC3 UVIS F555W',
-                              'files': ['ib4604fqq_flc.fits',
-                                        'ib4604fvq_flc.fits']},
-                         'single exposure product 04':
-                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FQQ',
-                              'files': ['ib4604fqq_flc.fits']},
-                         'single exposure product 05':
-                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FVQ',
-                              'files': ['ib4604fvq_flc.fits']},
-                         'single exposure product 06':
-                             {'info': '11665 B46 WFC3 IR F110W IB4604G2Q',
-                              'files': ['ib4604g2q_flt.fits']},
-                         'single exposure product 07':
-                             {'info': '11665 B46 WFC3 IR F110W IB4604G6Q',
-                              'files': ['ib4604g6q_flt.fits']},
-                         'single exposure product 08':
-                             {'info': '11665 B46 WFC3 IR F160W IB4604G3Q',
-                              'files': ['ib4604g3q_flt.fits']},
-                         'single exposure product 09':
-                             {'info': '11665 B46 WFC3 IR F160W IB4604G8Q',
-                              'files': ['ib4604g8q_flt.fits']}}
-    if file_name == "ib4604uvis.out":  # WFC3 UVIS/IR visit 11665_04
-        obs_info_dict = {'total detection product 00':  # full visit
-                         {'info': '11665 B46 WFC3 UVIS',
-                          'files': ['ib4604fmq_flc.fits',
-                                    'ib4604fxq_flc.fits',
-                                    'ib4604fnq_flc.fits',
-                                    'ib4604fuq_flc.fits',
-                                    'ib4604fqq_flc.fits',
-                                    'ib4604fvq_flc.fits']},
-                         'single exposure product 00':
-                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FMQ',
-                              'files': ['ib4604fmq_flc.fits']},
-                         'single exposure product 01':
-                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FXQ',
-                              'files': ['ib4604fxq_flc.fits']},
-                         'single exposure product 02':
-                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FNQ',
-                              'files': ['ib4604fnq_flc.fits']},
-                         'single exposure product 03':
-                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FUQ',
-                              'files': ['ib4604fuq_flc.fits']},
-                         'filter product 00':
-                             {'info': '11665 B46 WFC3 UVIS F555W',
-                              'files': ['ib4604fqq_flc.fits',
-                                        'ib4604fvq_flc.fits']},
-                         'single exposure product 04':
-                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FQQ',
-                              'files': ['ib4604fqq_flc.fits']},
-                         'single exposure product 05':
-                             {'info': '11665 B46 WFC3 UVIS F555W IB4604FVQ',
-                              'files': ['ib4604fvq_flc.fits']}}
-    if file_name == "ib4604ir.out":
-        obs_info_dict = {'total detection product 00':  # Just the WFC3/IR portion of 11665_04
-                         {'info': '11665 B46 WFC3 IR',
-                          'files': ['ib4604g2q_flt.fits',
-                                    'ib4604g6q_flt.fits',
-                                    'ib4604g3q_flt.fits',
-                                    'ib4604g8q_flt.fits']},
-                         'filter product 00':
-                             {'info': '11665 B46 WFC3 IR F110W',
-                              'files': ['ib4604g2q_flt.fits',
-                                        'ib4604g6q_flt.fits']},
-                         'filter product 01':
-                             {'info': '11665 B46 WFC3 IR F160W',
-                              'files': ['ib4604g3q_flt.fits',
-                                        'ib4604g8q_flt.fits']},
-                         'single exposure product 00':
-                             {'info': '11665 B46 WFC3 IR F110W IB4604G2Q',
-                              'files': ['ib4604g2q_flt.fits']},
-                         'single exposure product 01':
-                             {'info': '11665 B46 WFC3 IR F110W IB4604G6Q',
-                              'files': ['ib4604g6q_flt.fits']},
-                         'single exposure product 02':
-                             {'info': '11665 B46 WFC3 IR F160W IB4604G3Q',
-                              'files': ['ib4604g3q_flt.fits']},
-                         'single exposure product 03':
-                             {'info': '11665 B46 WFC3 IR F160W IB4604G8Q',
-                              'files': ['ib4604g8q_flt.fits']}}
-    if file_name == "j92c01.out":  # obs_info_dict/filelist definition for ACS/WFC visit 10265_01
-        obs_info_dict = {"single exposure product 00":
-                         {"info": "10265 01S ACS WFC F606W j92c01b4q",
-                             "files": ["j92c01b4q_flc.fits"]},
-                         "single exposure product 01":
-                             {"info": "10265 01S ACS WFC F606W j92c01b5q",
-                              "files": ["j92c01b5q_flc.fits"]},
-                         "single exposure product 02":
-                             {"info": "10265 01S ACS WFC F606W j92c01b7q",
-                              "files": ["j92c01b7q_flc.fits"]},
-                         "single exposure product 03":
-                             {"info": "10265 01S ACS WFC F606W j92c01b9q",
-                              "files": ["j92c01b9q_flc.fits"]},
-                         "filter product 00":
-                             {"info": "10265 01S ACS WFC F606W",
-                              "files": ['j92c01b4q_flc.fits',
-                                        'j92c01b5q_flc.fits',
-                                        'j92c01b7q_flc.fits',
-                                        'j92c01b9q_flc.fits']},
-                         "total detection product 00":
-                             {"info": "10265 01S ACS WFC",
-                              "files": ['j92c01b4q_flc.fits',
-                                        'j92c01b5q_flc.fits',
-                                        'j92c01b7q_flc.fits',
-                                        'j92c01b9q_flc.fits']}}
-    return(obs_info_dict)
 
 # ----------------------------------------------------------------------------------------------------------------------
-
 
 def perform_processing(input_filename, **kwargs):
     """
@@ -513,7 +362,7 @@ def restructure_obs_info_dict(obs_info_dict):
                         temp_restructured_dict[single_exp_dict_key]['product filenames']
                     del restructured_dict[single_exp_dict_key]
                     del single_exposure_dict[imgname]
-            except:
+            except Exception:
                 continue
 
     # 3: add field "associated filter products"
@@ -527,211 +376,232 @@ def restructure_obs_info_dict(obs_info_dict):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_astrodrizzle(filelist, adriz_param_dict, outfilename, custom_wcs=None):
+def run_astrodrizzle(obs_info_dict):
     """
-    Run astrodrizzle on user-specified file(s) with specified parameters.
+    Run astrodrizzle to produce products specified in obs_info_dict.
 
     Parameters
     ----------
-    filelist : list
-        List of files to be processed by astrodrizzle.
-
-    adriz_param_dict : dictionary
-        Dictionary containing instrument/specific values for astrodrizzle paramters "PIXSCALE", "PIXFRAC":, "KERNEL",
-        "OUTNX", "OUTNY", "ROT", and "DRIZ_BITS".
-
-    outfilename : string
-        name of the output drizzle-combined image.
-
-    custom_wcs : HSTWCS object
-        The composite WCS created by wcs_functions.make_mosaic_wcs()
+    obs_info_dict : dictionary
+        Dictionary containing all relevant information required to process the dataset.
 
     RETURNS
     -------
     Nothing.
     """
     log.info("Processing with astrodrizzle version {}".format(drizzlepac.astrodrizzle.__version__))
-    # Define parameters which need to be set specifically for
-    #    pipeline use of astrodrizzle
-    pipeline_pars = {'mdriztab': True,
-                     'stepsize': 10,
-                     'output': outfilename,
-                     'preserve': False,
-                     'resetbits': 4096}
 
-    # splice in parameters from instrument/detector-specific astrodrizzle dictionary
-    for key in adriz_param_dict.keys():
-        if key in ["SCALE", "PIXFRAC", "KERNEL", "OUTNX", "OUTNY", "ROT", "BITS"]:
-            pipeline_pars["final_{}".format(key.lower())] = adriz_param_dict[key]
-            pipeline_pars["driz_sep_{}".format(key.lower())] = adriz_param_dict[key]
-        else:
-            pipeline_pars[key] = adriz_param_dict[key]
-    # prep custom_wcs values
-    if custom_wcs:
-        custom_pars = wcs_functions.create_mosaic_pars(custom_wcs)
-    # merge custom_pars into pipeline_pars
-        log.info("Recombobulating Astrodrizzle input parameters")
-        pipeline_keys = pipeline_pars.keys()
-        for custom_key in custom_pars.keys():
-            if custom_key in pipeline_keys:
-                if custom_pars[custom_key] != pipeline_pars[custom_key]:
-                    log.info("Updating pipeline_pars value '{}' from {} to {}".format(custom_key,
-                                                                                      pipeline_pars[custom_key],
-                                                                                      custom_pars[custom_key]))
-                    pipeline_pars[custom_key] = custom_pars[custom_key]
-            else:
-                log.info("Inserting custom_pars value '{}' = {} into pipeline_pars.".format(custom_key,
-                                                                                            custom_pars[custom_key]))
-                pipeline_pars[custom_key] = custom_pars[custom_key]
-        log.info("AstroDrizzle parameter recombobulation successful.")
+    # 0: get rules files for step #6.
+    for imgname in glob.glob("*fl?.fits"):
+        dpu.get_rules_file(imgname)
 
-    # Execute astrodrizzle
-    b = drizzlepac.astrodrizzle.AstroDrizzle(input=filelist, runfile="astrodrizzle.log",
-                                             configobj='defaults', in_memory=None,
-                                             num_cores=None, **pipeline_pars)
+    cfgfile_path = os.path.join(os.path.dirname(__file__), "pars")
+    for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
+                        oid_key.startswith('total detection product')]:  # loop over total filtered products
+        # 1: Create temp. total drizzled image used to align all subsequent products
+        log.info("~" * 118)
+        log.info("CREATE TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")
+        ref_total_combined_image = "{}ref_{}".format(obs_info_dict[tdp_keyname]['product filenames']['image'][:-8],
+                                                     obs_info_dict[tdp_keyname]['product filenames']['image'][-8:])
+        adriz_in_list = obs_info_dict[tdp_keyname]['files']
+        log.info("Ref total combined image. {} {}".format(ref_total_combined_image, adriz_in_list, ref_total_combined_image))
+        astrodrizzle.AstroDrizzle(input=adriz_in_list, output=ref_total_combined_image,
+                                  configobj='{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep))
+
+        log.info("Finished creating TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")
+        # Extract shape of ref_total_combined_image for explicit use in AstroDrizzle for all other products.
+        rtci = fits.open(ref_total_combined_image)
+        total_shape = rtci[('sci', 1)].data.shape
+        rtci.close()
+        product_list = []
+
+        for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
+            # 2: Create drizzle-combined filter image using the temp ref image as astrodrizzle param 'final_refimage'
+            log.info("~" * 118)
+            log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE\n")
+            filter_combined_imagename = obs_info_dict[fp_keyname]['product filenames']['image']
+            product_list.append(filter_combined_imagename)
+            adriz_in_list = obs_info_dict[fp_keyname]['files']
+            trlname = '_'.join(filter_combined_imagename.split('_')[:-1] + ['trl.log'])
+            print("FILTER PRODUCT trailer file: {}".format(trlname))
+            log.info("Filter combined image.... {} {}".format(filter_combined_imagename, adriz_in_list))
+            astrodrizzle.AstroDrizzle(input=adriz_in_list, output=filter_combined_imagename,
+                                      final_refimage=ref_total_combined_image,
+                                      final_outnx=total_shape[1],
+                                      final_outny=total_shape[0],
+                                      runfile=trlname,
+                                      configobj='{}{}astrodrizzle_filter_hap.cfg'.format(cfgfile_path, os.path.sep))
+            # Rename Astrodrizzle log file as a trailer file
+            shutil.move(trlname, trlname.replace('.log', '.txt'))
+
+            # 3: Create individual singly-drizzled images using the temp ref image as astrodrizzle param 'final_refimage'
+            for sp_name in [sp_key for sp_key in list(obs_info_dict[fp_keyname].keys()) if
+                            sp_key.startswith('subproduct #')]:
+                log.info("~" * 118)
+                log.info("CREATE SINGLY DRIZZLED IMAGE")
+                single_drizzled_filename = obs_info_dict[fp_keyname][sp_name]["image"]
+                product_list.append(single_drizzled_filename)
+                imgname_root = single_drizzled_filename.split("_")[-2]
+                trlname = '_'.join(single_drizzled_filename.split('_')[:-1] + ['trl.log'])
+                adriz_in_file = [i for i in obs_info_dict[fp_keyname]['files'] if i.startswith(imgname_root)][0]
+                log.info("Single drizzled image.... {} {}".format(single_drizzled_filename, adriz_in_file))
+                astrodrizzle.AstroDrizzle(input=adriz_in_file, output=single_drizzled_filename,
+                                          final_refimage=ref_total_combined_image,
+                                          final_outnx=total_shape[1],
+                                          final_outny=total_shape[0],
+                                          runfile=trlname,
+                                          configobj='{}{}astrodrizzle_single_hap.cfg'.format(cfgfile_path, os.path.sep))
+                # Rename Astrodrizzle log file as a trailer file
+                shutil.move(trlname, trlname.replace('.log', '.txt'))
+
+        # 4 Create total image using the temp ref image as astrodrizzle param 'final_refimage'
+        log.info("~" * 118)
+        log.info("CREATE TOTAL DRIZZLE-COMBINED IMAGE\n")
+        total_combined_image = obs_info_dict[tdp_keyname]['product filenames']['image']
+        product_list.append(total_combined_image)
+        adriz_in_list = obs_info_dict[tdp_keyname]['files']
+        trlname = '_'.join(total_combined_image.split('_')[:-1] + ['trl.log'])
+        log.info("Total combined image..... {} {}".format(total_combined_image, adriz_in_list))
+        astrodrizzle.AstroDrizzle(input=adriz_in_list, output=total_combined_image,
+                                  final_refimage=ref_total_combined_image,
+                                  final_outnx=total_shape[1],
+                                  final_outny=total_shape[0],
+                                  runfile=trlname,
+                                  configobj='{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep))
+        # Rename Astrodrizzle log file as a trailer file
+        shutil.move(trlname, trlname.replace('.log', '.txt'))
+
+        # 5: remove reference total temp file
+        log.info("Removed temp ref file {}".format(ref_total_combined_image))
+        os.remove(ref_total_combined_image)
+
+    # 6: Ensure that all drizzled products have headers that are to spec.
+    log.info("Updating these drizzle products for CAOM compatibility:")
+    for d in product_list:
+        log.info("    {}".format(d))
+        dpu.refine_product_headers(d, obs_info_dict)
+
+    # 7: remove rules files copied to the CWD in step #0
+    for rules_filename in glob.glob("*_header_hla.rules"):
+        log.info("Removed rules file {}".format(rules_filename))
+        os.remove(rules_filename)
+
+    # 8: Return product list for creation of pipeline manifest file
+    return product_list
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-@util.with_logging
-def run_hla_processing(input_filename, result=None, debug=True):
+def run_hla_processing(input_filename, result=None, debug=False):
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
+    product_list = []
     try:
-        # 1: Interpret input csv file as an astropy table with defined column names (HLA-211)
-        log.info("1: (TODO) Interpret input csv file as an astropy table with defined column names")
-        # TODO: SUBROUTINE CALL GOES HERE.
-
-        # 2: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new
+        # 1: Apply rules to determine what exposures need to be combined into separate products (HLA-211 or a new
         # ticket if necessary)
-        log.info("2: Apply rules to determine what exposures need to be combined into separate products")
-        # obs_info_dict_old = generate_test_data(input_filename)  # TODO: REMOVE once all previous steps are up and running
+        log.info("1: Apply rules to determine what exposures need to be combined into separate products")
         obs_info_dict = pipeline_poller_utils.interpret_obset_input(input_filename)
-        # 3: generate an output names for each defined product...
-        log.info("3: generate an output names for each defined product")
+
+        # 2: generate an output names for each defined product...
+        log.info("2: generate an output names for each defined product")
         for obs_category in obs_info_dict.keys():
             obs_info_dict[obs_category]['product filenames'] = \
                 pipeline_poller_utils.run_generator(obs_category, obs_info_dict[obs_category]["info"])
             for key in obs_info_dict[obs_category].keys():
                 log.info("{}: {}".format(key, obs_info_dict[obs_category][key]))
+        # That includes generating the name of the manifest file
+        info = obs_info_dict['total detection product 00']['info'].split()
+        manifest_name = "{}_{}_{}_manifest.txt".format(info[2], info[4][1:4], info[1])
 
-        # 4: restructure obs_info_dict so that it's ready for processing.
-        log.info("4: restructure obs_info_dict so that it's ready for processing.")
+        # 3: restructure obs_info_dict so that it's ready for processing.
+        log.info("3: restructure obs_info_dict so that it's ready for processing.")
         # obs_info_dict_old = restructure_obs_info_dict(obs_info_dict_old)
         obs_info_dict = restructure_obs_info_dict(obs_info_dict)
-        # for key in obs_info_dict.keys():
-        #     print(key,obs_info_dict[key])
-        # pdb.set_trace()
 
-        # 5: run alignimages.py on images on a filter-by-filter basis.
-        log.info("5: run alignimages.py on images on a filter-by-filter basis for {}".format(obs_category))
+        # 4: run alignimages.py on images on a filter-by-filter basis.
+        log.info("4: run alignimages.py on images on a filter-by-filter basis for {}".format(obs_category))
         wcs_input_list = []
         for obs_category in obs_info_dict.keys():
             if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
+                # create dictionary mapping flc/flt.fits file names to their corresponding HAP-compatible headerlet
+                # filenames
+                headerlet_filenames = {}
+                for fitsname in obs_info_dict[obs_category]['files']:
+                    for dict_item in obs_info_dict[obs_category].keys():
+                        if dict_item.startswith('subproduct #'):
+                            if obs_info_dict[obs_category][dict_item]['image'].find(fitsname[:-10]) > 0:
+                                headerlet_filenames[fitsname] = \
+                                    obs_info_dict[obs_category][dict_item]['image'][:-8] + "hlet.fits"
 
-                run_perform_align(obs_info_dict[obs_category]['files'])
+                hdrlet_list = run_perform_align(obs_info_dict[obs_category]['files'], headerlet_filenames)
+                product_list += hdrlet_list
+
                 for item in obs_info_dict[obs_category]['files']:
                     wcs_input_list.append(item)
             else:
                 log.info("{}: Alignimages step skipped.".format(obs_category))
 
-        # 6: run meta wcs code to get common WCS for all images.
-        log.info("6: run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
+        """
+        # 5: run meta wcs code to get common WCS for all images.
+        log.info("5: run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
         log.info("The following images will be used: ")
         for imgname in wcs_input_list:
             log.info("{}".format(imgname))
-        if wcs_input_list:
+         if wcs_input_list:
             meta_wcs = wcs_functions.make_mosaic_wcs(wcs_input_list)
+        """
 
-        # 7: Run AstroDrizzle to produce filter-level products.
-        log.info("7: Run AstroDrizzle to produce filter-level products.")
-        for obs_category in obs_info_dict.keys():
-            if 'subproduct #0 filenames' in obs_info_dict[obs_category].keys():
-                adriz_param_dict = {}
-                for inst_det in param_dict.keys():
-                        if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
-                            adriz_param_dict = param_dict[inst_det]['astrodrizzle'].copy()
-                            log.info("Using {} AstroDrizzle parameters for {}.".format(inst_det, obs_category))
-                            break
-                # Turn on astrodrizzle step 7a: Custom WCS for final output
-                adriz_param_dict["final_wcs"] = True
-                run_astrodrizzle(obs_info_dict[obs_category]['files'],
-                                 adriz_param_dict,
-                                 obs_info_dict[obs_category]['product filenames']['image'],
-                                 custom_wcs=meta_wcs)
+        # 6: Run AstroDrizzle to produce drizzle-combined products
+        log.info("6: (WIP) Create drizzled imagery products")
+        driz_list = run_astrodrizzle(obs_info_dict)
+        product_list += driz_list
 
-                rename_subproduct_files(obs_info_dict[obs_category])
-            else:
-                log.info("{}: Filter-by-Filter AstroDrizzle step skipped.".format(obs_category))
+        # 7: Create source catalogs from newly defined products (HLA-204)
+        log.info("7: (WIP) Create source catalog from newly defined product")
+        if debug:
+            pickle_filename = input_filename.replace(".out", ".pickle")
+            if os.path.exists(pickle_filename):
+                os.remove(pickle_filename)
+            pickle_out = open(pickle_filename, "wb")
+            pickle.dump([obs_info_dict, param_dict], pickle_out)
+            pickle_out.close()
+            print("Wrote obs_info_dict to pickle file {}".format(pickle_filename))
 
-        # 8: Run AstroDrizzle to produce total detection products
-        log.info("8: Run AstroDrizzle to produce total detection products")
-        for obs_category in obs_info_dict.keys():
-            if obs_category.startswith("total detection product"):
-                adriz_param_dict = {}
-                for inst_det in param_dict.keys():
-                        if obs_info_dict[obs_category]['info'].find(inst_det) != -1:
-                            adriz_param_dict = param_dict[inst_det]['astrodrizzle'].copy()
-                            log.info("Using {} AstroDrizzle parameters for {}.".format(inst_det, obs_category))
-                            break
-                # Turn off all astrodrizzle steps EXCEPT steps 7 and 7a.
-                adriz_param_dict["static"] = False
-                adriz_param_dict["skysub"] = False
-                adriz_param_dict["driz_separate"] = False
-                adriz_param_dict["driz_sep_wcs"] = False
-                adriz_param_dict["median"] = False
-                adriz_param_dict["blot"] = False
-                adriz_param_dict["driz_combine"] = True
-                adriz_param_dict["final_wcs"] = True
-                run_astrodrizzle(obs_info_dict[obs_category]['files'],
-                                 adriz_param_dict,
-                                 obs_info_dict[obs_category]['product filenames']['image'],
-                                 custom_wcs=meta_wcs)
-            else:
-                log.info("{}: Total detection AstroDrizzle step skipped.".format(obs_category))
-
-        # 9: Create source catalogs from newly defined products (HLA-204)
-        log.info("9: (WIP) Create source catalog from newly defined product")
-        pickle_filename = input_filename.replace(".out",".pickle")
-        if os.path.exists(pickle_filename):
-            os.remove(pickle_filename)
-        pickle_out = open(pickle_filename, "wb")
-        pickle.dump([obs_info_dict,param_dict], pickle_out)
-        pickle_out.close()
-        print("Wrote obs_info_dict to pickle file {}".format(pickle_filename))
         if 'total detection product 00' in obs_info_dict.keys():
-            sourcelist_generation.create_sourcelists(obs_info_dict, param_dict)
-
-
+            catalog_list = sourcelist_generation.create_sourcelists(obs_info_dict, param_dict)
+            product_list += catalog_list
         else:
             print("Sourcelist generation step skipped.")
 
-        # 10: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
-        log.info("10: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry of "
-                 "product")
+        # 8: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
+        log.info("8: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry"
+                 "of product")
         # TODO: QUALITY CONTROL SUBROUTINE CALL GOES HERE.
 
-        # 11: (OPTIONAL/TBD) Create trailer file for new product to provide information on processing done to generate
-        # the new product.
+        # 9: Write out manifest file listing all products generated during processing
+        log.info("Creating manifest file {}".format(manifest_name))
+        log.info("  Manifest contains the names of products generated during processing.")
+        with open(manifest_name, mode='w') as catfile:
+            [catfile.write("{}\n".format(name)) for name in product_list]
 
-    # 12: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
+        # 10: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
-    except:
+    except Exception:
         return_value = 1
         if debug:
             log.info("\a\a\a")
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-
-    log.info('Total processing time: {} sec'.format((datetime.datetime.now() - starting_dt).total_seconds()))
-    log.info("7: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
-             "condition")
-    result.append(return_value)
+    finally:
+        log.info('Total processing time: {} sec'.format((datetime.datetime.now() - starting_dt).total_seconds()))
+        log.info("9: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
+                 "condition")
+        result.append(return_value)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_perform_align(filelist):
+def run_perform_align(filelist, headerlet_filenames):
     """
     executes drizzlepac.alignimages.perform_align(). If run is successful, and a good fit solution is found, the newly
     created headerlets are applied as the primary WCS in the in flc.fits or flt.fits images.
@@ -741,17 +611,24 @@ def run_perform_align(filelist):
     filelist : list
         List of files to be processed by drizzlepac.alignimages.perform_align().
 
+    headerlet_filenames : dictionary
+        dictionary that maps the flt/flc.fits file name to the corresponding custom headerlet filename.
+
     Returns
     -------
     Nothing.
     """
     try:
-        align_table = alignimages.perform_align(filelist, debug=True, runfile='alignimages.log', update_hdr_wcs=True)
+        align_table = alignimages.perform_align(filelist, debug=False, runfile='alignimages.log', update_hdr_wcs=True, headerlet_filenames=headerlet_filenames)
+        log.info("ALIGN_TABLE: {}".format(align_table))
+        os.remove("alignimages.log")  # This log needs to be included in total product trailer file
         for row in align_table:
             if row['status'] == 0:
                 log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
             else:
                 log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
+
+        hdrlet_list = align_table['headerletFile'].tolist()
 
     except Exception:
         # Something went wrong with alignment to GAIA, so report this
@@ -759,12 +636,14 @@ def run_perform_align(filelist):
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         log.info("   No correction to absolute astrometric frame applied!\n")
+        hdrlet_list = []
 
+    return hdrlet_list
 # ----------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Process images, produce drizzled images and sourcelists')
     parser.add_argument('input_filename', help='Name of the input csv file containing information about the files to '
                         'be processed')
@@ -776,5 +655,10 @@ if __name__ == '__main__':
                         'file.')
     ARGS = parser.parse_args()
 
+    print("Single-visit processing started for: {}".format(ARGS.input_filename))
     rv = perform_processing(ARGS.input_filename, debug=ARGS.debug)
-    print("Return Value: ",rv)
+    print("Return Value: ", rv)
+    return rv
+
+if __name__ == '__main__':
+    main()

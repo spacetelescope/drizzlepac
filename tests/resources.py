@@ -21,10 +21,6 @@ from ci_watson.artifactory_helpers import get_bigdata, generate_upload_schema
 from ci_watson.hst_helpers import download_crds, ref_from_image
 
 
-INPUTS_ROOT = pytest.config.getini('inputs_root')[0]
-RESULTS_ROOT = pytest.config.getini('results_root')[0]
-
-
 # Base classes for actual tests.
 # NOTE: Named in a way so pytest will not pick them up here.
 @pytest.mark.bigdata
@@ -33,8 +29,6 @@ class BaseCal:
     use_ftp_crds = True
     timeout = 30  # seconds
     tree = 'dev'
-    inputs_root = INPUTS_ROOT
-    results_root = RESULTS_ROOT
 
     # Numpy default for allclose comparison
     rtol = 1e-6
@@ -51,7 +45,7 @@ class BaseCal:
     subdir = ''
 
     @pytest.fixture(autouse=True)
-    def setup_class(self, tmpdir, envopt):
+    def setup_class(self, tmpdir, envopt, pytestconfig):
         """
         Run test in own dir so we can keep results separate from
         other tests.
@@ -79,6 +73,10 @@ class BaseCal:
 
         # Update tree to point to correct environment
         self.tree = envopt
+
+        # Collect pytest configuration values specified in setup.cfg or pytest.ini
+        self.inputs_root = pytestconfig.getini('inputs_root')[0]
+        self.results_root = pytestconfig.getini('results_root')[0]
 
     def teardown_class(self):
         """Reset path and variables."""

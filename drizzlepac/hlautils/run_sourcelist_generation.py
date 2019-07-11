@@ -33,27 +33,31 @@ print("\n"*25)
 print("Current path: ",os.getcwd())
 confirm_execution()
 try:
-    cmd = "rm -f *.*"
-    print(cmd)
-    os.system(cmd)
-
-    cmd = "cp sl_gen_orig/* ."
-    print(cmd)
-    os.system(cmd)
+    # cmd = "rm -f *.*"
+    # print(cmd)
+    # os.system(cmd)
+    #
+    # cmd = "cp sl_gen_orig2/* ."
+    # print(cmd)
+    # os.system(cmd)
 
     pickle_in = open(sys.argv[1], "rb")
     [obs_info_dict,param_dict] = pickle.load(pickle_in)
     pickle_in.close()
 
     #copy Warren's custom-created f606W and total drizzle images in for testing!
-    cmdlist = ["cp -f artif_orig/hst_10265_01_acs_wfc_f606w_j92c01_drc.fits hst_10265_01S_ACS_WFC_F606W.fits"]
-    cmdlist.append("cp -f artif_orig/hst_10265_01_acs_wfc_total_j92c01_drc.fits hst_10265_01S_ACS_WFC.fits")
-    for cmd in cmdlist:
-        print(cmd)
-        os.system(cmd)
+    # cmdlist = ["cp -f artif_orig/hst_10265_01_acs_wfc_f606w_j92c01_drc.fits ."]
+    # cmdlist.append("cp -f artif_orig/hst_10265_01_acs_wfc_total_j92c01_drc.fits .")
+    # for cmd in cmdlist:
+    #     print(cmd)
+    #     os.system(cmd)
 
+    param_dict["ACS WFC"]["sourcex"]["fwhm"] = 0.13
+    param_dict["ACS WFC"]["sourcex"]["source_box"] = 5
+    param_dict["ACS WFC"]["sourcex"]["thresh"] = None
     sourcelist_generation.run_create_sourcelists(obs_info_dict,param_dict)
 except Exception:
+    print("\a\a\a")
     exc_type, exc_value, exc_tb = sys.exc_info()
     traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
     print("Error! exiting...")

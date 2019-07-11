@@ -123,7 +123,8 @@ setup(
             'mdriz=drizzlepac.mdriz:main',
             'resetbits=drizzlepac.resetbits:main',
             'updatenpol=drizzlepac.updatenpol:main',
-            'runastrodriz=drizzlepac.runastrodriz:main'
+            'runastrodriz=drizzlepac.runastrodriz:main',
+            'runhap=drizzlepac.runhlaprocessing:main'
         ],
     },
     ext_modules=[
