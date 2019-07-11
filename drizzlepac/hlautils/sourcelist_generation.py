@@ -120,7 +120,7 @@ def create_dao_like_sourcelists(fitsfile,sl_filename,sources,aper_radius=4.,make
     positions = (sources['xcentroid'], sources['ycentroid'])
     apertures = CircularAperture(positions, r=aper_radius)
     phot_table = aperture_photometry(image, apertures)
-    
+
     for col in phot_table.colnames: phot_table[col].info.format = '%.8g'  # for consistent table output
     hdulist.close()
 
@@ -156,19 +156,22 @@ def create_sourcelists(obs_info_dict, param_dict):
 
     Returns
     -------
+    catalog_list : list
+        List of filenames of all catalogs created
     """
+    catalog_list = []
 
     log.info("-" * 118)
     for product_type in obs_info_dict:
         for item_type in obs_info_dict[product_type]:
-            log.info("obs_info_dict[{}][{}]: {}".format(product_type,item_type,obs_info_dict[product_type][item_type]))  # TODO: REMOVE THIS SECTION BEFORE ACTUAL USE
-    log.info("-"*118)
+            log.info("obs_info_dict[{}][{}]: {}".format(product_type, item_type, obs_info_dict[product_type][item_type]))  # TODO: REMOVE THIS SECTION BEFORE ACTUAL USE
+    log.info("-" * 118)
 
     for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
                         oid_key.startswith('total detection product')]:  # loop over total filtered products
         log.info("=====> {} <======".format(tdp_keyname))
         parse_tdp_info = obs_info_dict[tdp_keyname]['info'].split()
-        inst_det = "{} {}".format(parse_tdp_info[2].upper(),parse_tdp_info[3].upper())
+        inst_det = "{} {}".format(parse_tdp_info[2].upper(), parse_tdp_info[3].upper())
 
         detection_image = obs_info_dict[tdp_keyname]['product filenames']['image']
         tdp_seg_catalog_filename = obs_info_dict[tdp_keyname]['product filenames']['segment source catalog']
@@ -177,8 +180,9 @@ def create_sourcelists(obs_info_dict, param_dict):
         segmap, kernel, bkg_dao_rms = se_source_generation.create_sextractor_like_sourcelists(
             detection_image, tdp_seg_catalog_filename, param_dict[inst_det], se_debug=False)
 
-        dao_coord_list = create_dao_like_coordlists(detection_image,tdp_ps_catalog_filename)
-
+        dao_coord_list = create_dao_like_coordlists(detection_image, tdp_ps_catalog_filename)
+        catalog_list.append(tdp_seg_catalog_filename)
+        catalog_list.append(tdp_ps_catalog_filename)
 
         for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
             filter_combined_imagename = obs_info_dict[fp_keyname]['product filenames']['image']
@@ -194,7 +198,10 @@ def create_sourcelists(obs_info_dict, param_dict):
                                                            seg_source_catalog_name, param_dict[inst_det])
 
             create_dao_like_sourcelists(filter_combined_imagename, point_source_catalog_name, dao_coord_list)
-            
+            catalog_list.append(seg_source_catalog_name)
+            catalog_list.append(point_source_catalog_name)
+
+    return catalog_list
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -216,6 +223,4 @@ def run_create_sourcelists(obs_info_dict, param_dict):
     -------
     """
 
-    create_sourcelists(obs_info_dict, param_dict)
-
-
+    catalog_list = create_sourcelists(obs_info_dict, param_dict)
