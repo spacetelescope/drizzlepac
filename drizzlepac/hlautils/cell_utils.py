@@ -7,6 +7,7 @@ import numpy as np
 import astropy
 from astropy.io import fits
 from astropy.table import Table
+from astropy.coordinates import SkyCoord
 from spherical_geometry.polygon import SphericalPolygon
 
 from stwcs.wcsutil import HSTWCS
@@ -15,6 +16,8 @@ from .. import wcs_functions
 
 
 # Default grid definition file
+_fpath = os.path.abspath(os.path.dirname(__file__))
+PCELL_PATH = os.path.join(os.path.dirname(_fpath), 'pars')
 PCELL_FILENAME = 'allsky_cells.fits'
 
 def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
@@ -179,23 +182,19 @@ class AllSky(object):
 
     def __init__(self, scale=None, cell_size=None):
         """Setup tesselation based on installed definition of grid."""
-        fpath = os.path.abspath(os.path.dirname(__file__))
-        froot = os.path.join(os.path.dirname(fpath), 'pars')
-        fname = os.path.join(froot, PCELL_FILENAME)
+        fname = os.path.join(PCELL_PATH, PCELL_FILENAME)
 
         self.hdu = fits.open(fname)
         self.scale = scale if scale else self.hdu[0].header['PCSCALE']
         self.cell_size = cell_size if cell_size else self.hdu[0].header['PCSIZE']
 
-    def _find_bands(self, footprint):
+    def _find_bands(self, dec):
         """ Select the band or bands which encompass the provided footprint.
 
         The footprint will be a ndarray mask with pixel value of 1 where the exposures are located,
         and with a fully defined WCS to convert pixel positions to sky coordinates.
 
         """
-        # Interpret footprint to get range of declination in mask
-        ra, dec = footprint.get_edges_sky()
 
         # Select band with projection cell
         rings = self.hdu[1].data
@@ -220,20 +219,24 @@ class AllSky(object):
         self.nearpole = near_spole.tolist() + near_npole.tolist()
 
     def get_sky_cells(self, footprint):
+        # Interpret footprint to get range of declination in mask
+        ra, dec = footprint.get_edges_sky()
 
         # Find band[s] that overlap footprint
-        self._find_bands(footprint)
+        self._find_bands(dec)
 
+        self.projection_cells = []
         # Define numerical position in band for projection cell
         # self.band_index = self.projection_cell_id - self.band['PROJCELL']
-        for band in self.bands:
+        for band, nband in zip(self.bands, self.nbands):
             # compute band_index, one for each projection cell that overlaps the footprint
-            band_indices = []
-            pcells = [ProjectionCell(band_index, band) for band_index in band_indices]
+            nra = ra % 360.0
+            band_index = np.unique(np.rint(nra * nband / 360.0).astype(int) % nband)
+            self.projection_cells += [ProjectionCell(index, band) for index in band_index]
 
         # Find sky cells from identified projection cell(s) that overlap footprint
         sky_cells = []
-        for pcell in pcells:
+        for pcell in self.projection_cells:
             sky_indices = pcell.find_sky_cells(footprint)
             sky_cells += [SkyCell(sky_x, sky_y, pcell) for sky_x, sky_y in sky_indices]
         return sky_cells
@@ -258,7 +261,7 @@ class ProjectionCell(object):
         crval2 = self.band['DEC']
         cd = np.array([[-self.scale / 3600., 0], [0, self.scale / 3600.]], dtype=np.float64)
         self.wcs = astropy.wcs.WCS(naxis=2)
-        self.wcs.crpix = [1., 1.]  # 1-based for FITS-compatibility
+        self.wcs.crpix = [0.5, 0.5]
         self.wcs.crval = [crval1, crval2]
         self.wcs.cd = cd
         self.wcs.ctype = ['RA---TAN', 'DEC--TAN']
@@ -285,3 +288,40 @@ class SkyCell(object):
     def rescale(self, scale):
         """Return WCS which has a user-defined scale."""
         pass
+
+#
+# Utility functions used in generating or supporting the grid definitions
+#
+def update_grid_defs(pc_size=5.0, output=None):
+    """Computes updated values for bands and projection cells.
+
+    Parameters
+    -----------
+    pc_size : float
+        Size of each side of the projection cell or width of each band on
+        the sky in degrees.
+
+    output : str, optional
+        Name of output grid definition file.  If `None`, it will write out
+        the updated table with the original filename in the current directory
+        overwriting any previous file.
+
+    """
+    pos_angle = 0.0
+    # read in default grid definition file
+    grid_file = fits.open(os.path.join(PCELL_PATH, PCELL_FILENAME))
+    grid = grid_file[1].data
+
+    # Compute size on the sky of the first cell in each band
+    # Cells at poles need special attention
+    # Compute edges using:
+    band = 0
+    c1 = SkyCoord(ra=0. * u.deg, dec=grid[band]['dec'] * u.deg, frame='icrs')
+    c1_edge = c1.directional_offset_by(pos_angle, pc_size/2.0)
+    pcell = ProjectionCell(index=0, band=band)
+    edge_x, edge_y = np.abs(pcell.wcs.world_to_pixel_values(c1_edge.ra, c1_edge.dec, origin=1))
+    pcell.crpix1 -= edge_x
+    pcell.crpix2 -= edge_y
+    pcell.naxis1 = edge_x * 2
+    pcell.naxis2 = edge_y * 2
+    
