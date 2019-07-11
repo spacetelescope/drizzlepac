@@ -41,30 +41,17 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 
 class hap_catalog(object):
-    """Using aperture photometry, generate photometric sourcelist for specified image(s).
+    """Generate photometric sourcelist for specified image(s).
     """
     def __init__(self,fitsfile):
         self.label = "build_catalogs"
         self.description = "A set of routines to generate photometric sourcelists using aperture photometry"
-        
-        # Generate output sourcelist catalog filenames
+
         self.imgname = fitsfile
-        self.point_sourcelist_filename = self.imgname.replace(self.imgname[-9:], "_point-cat.ecsv")
-        self.seg_sourcelist_filename = self.imgname.replace(self.imgname[-9:], "_segment-cat.ecsv")
 
         # Fits file read
         self.imghdu = fits.open(self.imgname)
 
-        # Get the HSTWCS object from the first extension
-        self.imgwcs = HSTWCS(self.imghdu, 1)
-
-        # Get header information to annotate the output catalogs
-        if self.imgname.find("total") > -1:
-            ghd_product = "tdp"
-        else:
-            ghd_product = "fdp"
-        self.keyword_dict = self._get_header_data(product=ghd_product)
-        
         # Parameter dictionary definition
         self.inst_det = "{} {}".format(self.imgname.split("_")[3].upper(), self.imgname.split("_")[4].upper())
         self.full_param_dict = {
@@ -242,8 +229,13 @@ class hap_catalog(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 class hap_point_catalog(hap_catalog):
+    """Generate photometric sourcelist(s) for specified image(s) using aperture photometry of point sources.
+    """
     def __init__(self, imgname):
         super().__init__(imgname)
+
+        # Generate output sourcelist catalog filename
+        self.point_sourcelist_filename = self.imgname.replace(self.imgname[-9:], "_point-cat.ecsv")
 
 
     def identify_point_sources(self,bkgsig_sf=4.,dao_ratio=0.8):
@@ -419,8 +411,23 @@ class hap_point_catalog(hap_catalog):
 #       Modified contents of Michele's se_source_generation.py, as of commit b2db3ec9c918188cea2d3b0e4b64e39cc79c4146
 # ----------------------------------------------------------------------------------------------------------------------
 class hap_segment_catalog(hap_catalog):
+    """Generate photometric sourcelist(s) for specified image(s) using segment mapping.
+    """
     def __init__(self,imgname):
         super().__init__(imgname)
+
+        # Generate output sourcelist catalog filename
+        self.seg_sourcelist_filename = self.imgname.replace(self.imgname[-9:], "_segment-cat.ecsv")
+
+        # Get the HSTWCS object from the first extension
+        self.imgwcs = HSTWCS(self.imghdu, 1)
+
+        # Get header information to annotate the output catalogs
+        if self.imgname.find("total") > -1:
+            ghd_product = "tdp"
+        else:
+            ghd_product = "fdp"
+        self.keyword_dict = self._get_header_data(product=ghd_product)
 
     def create_sextractor_like_sourcelists(self,se_debug=False):
         """Use photutils to find sources in image based on segmentation.
@@ -973,11 +980,11 @@ def run_catalog_utils(args,starting_dt):
 
     if args.phot_mode in ['point', 'both']:
         total_point_product = hap_point_catalog(args.total_product_name)
-        total_point_product.ps_source_cat = total_product.identify_point_sources()
-        total_total_product.write_catalog_to_file(total_point_product.ps_source_cat, write_region_file=args.debug)
+        total_point_product.ps_source_cat = total_point_product.identify_point_sources()
+        total_point_product.write_catalog_to_file(total_point_product.ps_source_cat, write_region_file=args.debug)
 
     if args.phot_mode in ['seg', 'both']:
-        total_seg_product = hap_seg_catalog(args.total_product_name)
+        total_seg_product = hap_segment_catalog(args.total_product_name)
         total_seg_product.segmap, \
         total_seg_product.kernel, \
         total_seg_product.bkg_dao_rms = \
@@ -991,7 +998,7 @@ def run_catalog_utils(args,starting_dt):
             filter_point_product.write_catalog_to_file(filter_point_product.ps_phot_cat,write_region_file=args.debug)
 
         if args.phot_mode in ['seg', 'both']:
-            filter_seg_product = hap_seg_catalog(filter_img_name)
+            filter_seg_product = hap_segment_catalog(filter_img_name)
             filter_seg_product.measure_source_properties(total_seg_product.segmap,total_seg_product.kernel)
 
     log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))
