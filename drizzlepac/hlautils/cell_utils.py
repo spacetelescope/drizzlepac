@@ -196,32 +196,31 @@ class AllSky(object):
         and with a fully defined WCS to convert pixel positions to sky coordinates.
 
         """
+        if not isinstance(dec, list) and not isinstance(dec, np.ndarray):
+            dec = [dec]
 
-        # Select band with projection cell
+        # Select all bands that overlap 
         rings = self.hdu[1].data
-        # find dec zone where rings.dec_min <= dec < rings.dec_max
-        bands = np.unique(np.searchsorted(rings.field('dec_max'), dec))
-
-        # special handling at pole where overlap is complicated
-        # do extra checks for northern-most 2 rings
-        # always start with the ring just below the North pole
-        near_npole = np.where(bands >= len(rings) - 2)
-        bands[near_npole] = len(rings) - 2
-        # do check for southern-most 2 rings
-        near_spole = np.where(bands <= 2)
-        bands[near_spole] = 2
+        # find dec zones where rings.dec_min <= dec <= rings.dec_max
+        maxb = dec[0] <= rings.field('dec_max')
+        minb = dec[0] >= rings.field('dec_min')
+        for d in dec:
+            maxb = np.bitwise_and(d <= rings.field('dec_max'), maxb)
+            minb = np.bitwise_and(d >= rings.field('dec_min'), minb)
+        
+        band_indx = np.where(np.bitwise_and(maxb, minb))[0]
+        bands = np.sort(np.unique(band_indx))
 
         # Identify how may projection cells are in each overlapping band
-        nbands = rings[bands].field('nband')
+        nbands = [rings[b].field('nband') for b in bands]
 
         # Record these values as attributes for use in other methods
         self.bands = bands
         self.nbands = nbands
-        self.nearpole = near_spole.tolist() + near_npole.tolist()
 
-    def get_sky_cells(self, footprint):
+    def get_sky_cells(self, skyfootprint):
         # Interpret footprint to get range of declination in mask
-        ra, dec = footprint.get_edges_sky()
+        ra, dec = skyfootprint.get_edges_sky()
 
         # Find band[s] that overlap footprint
         self._find_bands(dec)
@@ -238,7 +237,7 @@ class AllSky(object):
         # Find sky cells from identified projection cell(s) that overlap footprint
         sky_cells = []
         for pcell in self.projection_cells:
-            sky_indices = pcell.find_sky_cells(footprint)
+            sky_indices = pcell.find_sky_cells(skyfootprint)
             sky_cells += [SkyCell(sky_x, sky_y, pcell) for sky_x, sky_y in sky_indices]
         return sky_cells
 
@@ -254,8 +253,6 @@ class ProjectionCell(object):
     
         # Generate WCS for projection cell
         self._build_wcs()
-        self._build_tangent_plane()
-
 
     def _build_wcs(self):
         """Create base WCS definition."""
@@ -269,13 +266,16 @@ class ProjectionCell(object):
         self.wcs.wcs.cd = cd
         self.wcs.wcs.ctype = ['RA---TAN', 'DEC--TAN']
 
-    def _build_tangent_plane(self):
-        """Create tangent plane defintion with pixels"""
-        # define how many pixels across this cell will have based on `self.size`
-        # shift CRPIX in WCS to center of projection cell
-        pass
+        # Read in overall size of cell in pixels from grid definitions file
+        naxis1 = self.band['XCELL']
+        naxis2 = self.band['YCELL']
 
-    def find_sky_cells(self, footprint):
+        # apply new definition to cell WCS
+        self.wcs.wcs.crpix = [naxis1/2.+0.5, naxis2/2.+0.5]
+        self.wcs.naxis1 = naxis1
+        self.wcs.naxis2 = naxis2
+
+    def find_sky_cells(self, skyfootprint):
         """Return the sky cell indices from this projection cell that overlap the input footprint"""
         return 1, 1
 
@@ -290,6 +290,9 @@ class SkyCell(object):
 
     def rescale(self, scale):
         """Return WCS which has a user-defined scale."""
+        pass
+
+    def _build_wcs(self, pcell_wcs):
         pass
 
 #
@@ -329,17 +332,28 @@ def update_grid_defs(pc_size=5.0, output=None):
         c1 = SkyCoord(ra=0. * u.deg, dec=grid[nband]['DEC'] * u.deg, frame='icrs')
         pcell = ProjectionCell(index=0, band=grid[nband], scale=pc_scale)
 
+        # Compute offset to center of each edge, +/- RA and +/- Dec
         c1_edges = [c1.directional_offset_by(p, pc_edge) for p in pos_angle]
+        
+        # Convert offset to edge center into distance in pixels from center of cell
         c1_pixels = [np.abs(pcell.wcs.world_to_pixel_values(e.ra, e.dec)) for e in c1_edges]
+
+        # Compute overall size of cell in pixels
         naxis1,naxis2 = (np.array(c1_pixels).sum(axis=0) + 1).astype(np.int)
+        # apply new definition to cell WCS
         pcell.wcs.wcs.crpix = [naxis1/2.+0.5, naxis2/2.+0.5]
         pcell.wcs.naxis1 = naxis1
         pcell.wcs.naxis2 = naxis2
+
+        # Determine extent of band
         min_dec, max_dec = compute_band_height(pcell.wcs)
+        # Account for wrapping over each pole
         if nband == 0:
             min_dec = grid[nband]['DEC']
         if nband == len(grid) - 1:
             max_dec = grid[nband]['DEC']
+
+        # Update definition for this band in table with newly computed values
         grid[nband]['DEC_MIN'] = min_dec
         grid[nband]['DEC_MAX'] = max_dec
         grid[nband]['XCELL'] = naxis1
