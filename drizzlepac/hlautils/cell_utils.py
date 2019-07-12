@@ -5,6 +5,7 @@ from scipy import ndimage
 from scipy.ndimage import morphology
 import numpy as np
 import astropy
+from astropy import units as u
 from astropy.io import fits
 from astropy.table import Table
 from astropy.coordinates import SkyCoord
@@ -244,12 +245,13 @@ class AllSky(object):
 
 class ProjectionCell(object):
 
-    def __init__(self, index, band):
+    def __init__(self, index, band, scale):
         """Build projection cell for cell with name `skycell_NNNNN`"""
         self.band_index = index
         self.band = band
         self.cell_id = str(band['PROJCELL'] + index).zfill(5)
-
+        self.scale = scale
+    
         # Generate WCS for projection cell
         self._build_wcs()
         self._build_tangent_plane()
@@ -260,11 +262,12 @@ class ProjectionCell(object):
         crval1 = self.band_index * 360. / self.band['NBAND']
         crval2 = self.band['DEC']
         cd = np.array([[-self.scale / 3600., 0], [0, self.scale / 3600.]], dtype=np.float64)
+        
         self.wcs = astropy.wcs.WCS(naxis=2)
-        self.wcs.crpix = [0.5, 0.5]
-        self.wcs.crval = [crval1, crval2]
-        self.wcs.cd = cd
-        self.wcs.ctype = ['RA---TAN', 'DEC--TAN']
+        self.wcs.wcs.crpix = [0.5, 0.5]
+        self.wcs.wcs.crval = [crval1, crval2]
+        self.wcs.wcs.cd = cd
+        self.wcs.wcs.ctype = ['RA---TAN', 'DEC--TAN']
 
     def _build_tangent_plane(self):
         """Create tangent plane defintion with pixels"""
@@ -299,7 +302,9 @@ def update_grid_defs(pc_size=5.0, output=None):
     -----------
     pc_size : float
         Size of each side of the projection cell or width of each band on
-        the sky in degrees.
+        the sky in degrees.  If `None`, the default value will be read in 
+        from the `PCSIZE` keyword from the PRIMARY header of the default 
+        grid definitions file.
 
     output : str, optional
         Name of output grid definition file.  If `None`, it will write out
@@ -307,21 +312,58 @@ def update_grid_defs(pc_size=5.0, output=None):
         overwriting any previous file.
 
     """
-    pos_angle = 0.0
+    if not pc_size:
+        pc_size = grid_file[0].header['PCSIZE'] 
+
+    pos_angle = [0.0 * u.deg, 90.0 * u.deg, 180.0 * u.deg, 270.0 * u.deg]
+    pc_edge = pc_size/2.0 * u.deg
+    
     # read in default grid definition file
     grid_file = fits.open(os.path.join(PCELL_PATH, PCELL_FILENAME))
     grid = grid_file[1].data
+    pc_scale = grid_file[0].header['PCSCALE']
 
     # Compute size on the sky of the first cell in each band
-    # Cells at poles need special attention
-    # Compute edges using:
-    band = 0
-    c1 = SkyCoord(ra=0. * u.deg, dec=grid[band]['dec'] * u.deg, frame='icrs')
-    c1_edge = c1.directional_offset_by(pos_angle, pc_size/2.0)
-    pcell = ProjectionCell(index=0, band=band)
-    edge_x, edge_y = np.abs(pcell.wcs.world_to_pixel_values(c1_edge.ra, c1_edge.dec, origin=1))
-    pcell.crpix1 -= edge_x
-    pcell.crpix2 -= edge_y
-    pcell.naxis1 = edge_x * 2
-    pcell.naxis2 = edge_y * 2
+    # Compute edges using:    
+    for nband in range(len(grid)):
+        c1 = SkyCoord(ra=0. * u.deg, dec=grid[nband]['DEC'] * u.deg, frame='icrs')
+        pcell = ProjectionCell(index=0, band=grid[nband], scale=pc_scale)
+
+        c1_edges = [c1.directional_offset_by(p, pc_edge) for p in pos_angle]
+        c1_pixels = [np.abs(pcell.wcs.world_to_pixel_values(e.ra, e.dec)) for e in c1_edges]
+        naxis1,naxis2 = (np.array(c1_pixels).sum(axis=0) + 1).astype(np.int)
+        pcell.wcs.wcs.crpix = [naxis1/2.+0.5, naxis2/2.+0.5]
+        pcell.wcs.naxis1 = naxis1
+        pcell.wcs.naxis2 = naxis2
+        min_dec, max_dec = compute_band_height(pcell.wcs)
+        if nband == 0:
+            min_dec = grid[nband]['DEC']
+        if nband == len(grid) - 1:
+            max_dec = grid[nband]['DEC']
+        grid[nband]['DEC_MIN'] = min_dec
+        grid[nband]['DEC_MAX'] = max_dec
+        grid[nband]['XCELL'] = naxis1
+        grid[nband]['YCELL'] = naxis2
+
+    # write out updated grid definitions file
+    if not output:
+        output = PCELL_FILENAME
+
+    # write to path included in 'output', defaulting to current working dir
+    grid_file.writeto(output, overwrite=True)
+           
+def compute_band_height(wcs):
+    """Compute size in pixels of tangent plane"""
+    edges = []
+    edges += [[0, i] for i in range(wcs.naxis2)]
+    edges += [[wcs.naxis1, i] for i in range(wcs.naxis2)]
+    edges += [[i, 0] for i in range(wcs.naxis1)]
+    edges += [[i, wcs.naxis2] for i in range(wcs.naxis1)]
+    
+    edge_sky = wcs.pixel_to_world_values(edges)
+    return min(edge_sky[:,1]), max(edge_sky[:,1])
+
+    
+    
+    
     
