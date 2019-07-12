@@ -85,7 +85,7 @@ def analyze_data(input_file_list):
 
     acs_filt_name_list = [FILKEY1, FILKEY2]
 
-    # Initialize the column entries which will be populated in successive 
+    # Initialize the column entries which will be populated in successive
     # processing steps
     fit_method = None  # Fit algorithm used for alignment
     catalog = None     # Astrometric catalog used for alignment
@@ -124,7 +124,7 @@ def analyze_data(input_file_list):
     data_type = ('S20', 'S20', 'S20', 'S20', 'S20', 'S20', 'b', 'S20', 'f8', 'b',
                  'S30', 'S20', 'S20', 'i4', 'i4', 'i4', 'f8', 'f8', 'f8', 'f8',
                  'f8', 'f8', 'f8', 'f8', 'b', 'f8', 'f8', 'i8', 'i4', 'i4',
-                 'S30', 'i4')
+                 'S60', 'i4')
 
     # Create an astropy table
     output_table = Table(names=names_array, dtype=data_type)
