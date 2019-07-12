@@ -357,6 +357,8 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
         if len(np.where(kernel_wht == 0.)[0]) == 0:
             log.info("Kernel source PSF located at [{},{}]".format(kernel_pos[1], kernel_pos[0]))
             break
+        else:
+            kernel[:] = 0.0
 
     if kernel.sum() > 0.0:
         kernel /= kernel.sum() # Normalize the new kernel to a total flux of 1.0
