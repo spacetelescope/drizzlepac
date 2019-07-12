@@ -13,12 +13,22 @@ class HAPProduct:
 
         self.basename = "hst_" + "_".join(map(str,[prop_id,obset_id,self.instrument,detector]))
 
-        # exposure_name is the ipppssoot or a portion thereof
+        # exposure_name is the ipppssoo or a portion thereof
         self.exposure_name = filename[0:8]
         self.mjdutc = None
+
+        # class variables to be set later
+        self.param_dict = {}
         
+    def update_config(self, param_dict):
+        pass
+
 
 class TDP(HAPProduct):
+    """ A Total Detection Product (TDP) is a 'white' light mosaic comprised of
+        images acquired with one instrument, one detector, all filters, and all
+        exposure times.
+    """
     def __init__(self, prop_id, obset_id, detector, filename):
         Super().__init__(prop_id, obset_id, detector, filename)
  
@@ -30,12 +40,11 @@ class TDP(HAPProduct):
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = ""
 
-        # need to instantiate HAPConfig per TDP and FDP
-
         # These attributes will be set later
         self.edp_list = []
         self.fdp_list = []
         self.regions_dict = {}
+        self.meta_wcs = None
 
     def add_member(self, edp):
         self.edp_list.append(edp)
@@ -43,19 +52,25 @@ class TDP(HAPProduct):
     def add_product(self, fdp):
         self.fdp_list.append(fdp)
 
-    def create_product_name(self, edp)
+    def create_product_name(self, edp):
         self.drizzle_filename = self.product_basename + "_" + edp.filetype + ".fits"
 
-    # ??? May not need this as getMdriztabParameters in ProcessInput.py needs
-    # list of input files and reads appropriate table
-    def get_mdriztab_name(self.edp_list[0]):
-        # open and edp and read the MDRIZTAB
+    # There is a unique WCS for each TDP product which is generated based upon
+    # the merging of all the EDPs which comprise the specific TDP.
+    # Is the list the flt/flcs or the associated headerlets for generating the wcs?
+    def build_metawcs(self):
+        # image_list = [element.full_filename for element in edp_list]
+        # meta_wcs = wcs_functions.make_mosaic_wcs(image_list)
         pass
 
     # make outnx, outny, and wcs attribute for TDP
 
 
 class FDP(HAPProduct):
+    """ A Filter Detection Product (FDP) is a mosaic comprised of images acquired
+        during a single visit with one instrument, one detector, a single filter,
+        and all exposure times.
+    """
     def __init__(self, prop_id, obset_id, detector, filename, filter):
         Super().__init__(prop_id, obset_id, detector, filename)
  
@@ -75,15 +90,23 @@ class FDP(HAPProduct):
     def add_member(self, edp):
         self.edp_list.append(edp)
 
-    def create_drizzle_name(self, edp)
+    def create_drizzle_name(self, edp):
         self.drizzle_filename = self.product_basename + "_" + edp.filetype + ".fits"
 
+    def align_to_GAIA(self):
+        pass
+
+    def drizzle_fdp(self):
+        # for EDP in edp_list:
+        pass
 
 # May not need this class at all
 class EDP(HAPProduct):
     def __init__(self, prop_id, obset_id, detector, filename, exptime, filter):
         Super().__init__(prop_id, obset_id, detector, filename)
  
+        # ipppssoot_xxx.fits
+        self.full_filename = filename
         self.exptime = exptime
         self.filter = filter
 
