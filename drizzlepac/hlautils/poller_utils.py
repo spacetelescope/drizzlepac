@@ -18,7 +18,7 @@ TDP_STR = 'total detection product {:02d}'
 # Define the mapping between the first character of the filename and the associated instrument
 INSTRUMENT_DICT = {'i': 'WFC3', 'j': 'ACS', 'o': 'STIS', 'u': 'WFPC2', 'x': 'FOC', 'w': 'WFPC'}
 
-__taskname__ = 'pipeline_poller_utils'
+# __taskname__ = 'pipeline_poller_utils'
 
 def interpret_obset_input(results):
     """
