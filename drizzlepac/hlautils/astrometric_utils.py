@@ -343,6 +343,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
 
     # Identify position of brightest, non-saturated peak (in numpy index order)
     for peak_ctr in range(-1, -1 * len(peaks) - 1, -1):
+        log.info(peak_ctr)
         kernel_pos = [peaks['y_peak'][peak_ctr], peaks['x_peak'][peak_ctr]]
 
         kernel = imgarr[kernel_pos[0] - source_box:kernel_pos[0] + source_box + 1,
@@ -353,16 +354,21 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
 
         # search square cut-out (of size 2 x wht_box + 1 pixels on a side) of weight image centered on peak coords for
         # zero-value pixels. Reject peak if any are found.
-        if ((len(np.where(kernel_wht == 0.)[0]) == 0) and (kernel.sum() > 0.0)):
+        if len(np.where(kernel_wht == 0.)[0]) == 0:
             log.info("Kernel source PSF located at [{},{}]".format(kernel_pos[1], kernel_pos[0]))
-            kernel /= kernel.sum() # Normalize the new kernel to a total flux of 1.0
-            return kernel
+            break
+        else:
+            kernel[:] = 0.0 # reset kernel values to zero each time to guard against case where all peaks are saturated.
 
-    # if the for loop ran all the way through and then exited without finding a good kernel and returning,
-    # Generate a default kernel using a simple 2D Gaussian.
-    sigma = fwhm * gaussian_fwhm_to_sigma
-    kernel = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
-    kernel.normalize()
+
+    # Normalize the new kernel to a total flux of 1.0
+    if kernel.sum() > 0.0:
+        kernel /= kernel.sum()
+    else:
+        # Generate a default kernel using a simple 2D Gaussian
+        sigma = fwhm * gaussian_fwhm_to_sigma
+        kernel = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
+        kernel.normalize()
 
     return kernel
 
