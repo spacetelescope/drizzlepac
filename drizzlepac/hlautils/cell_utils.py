@@ -20,6 +20,7 @@ from .. import wcs_functions
 _fpath = os.path.abspath(os.path.dirname(__file__))
 PCELL_PATH = os.path.join(os.path.dirname(_fpath), 'pars')
 PCELL_FILENAME = 'allsky_cells.fits'
+PCELL_STRLEN = 4
 
 def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     """Return all sky cells that overlap the exposures in the input.
@@ -186,8 +187,13 @@ class AllSky(object):
         fname = os.path.join(PCELL_PATH, PCELL_FILENAME)
 
         self.hdu = fits.open(fname)
-        self.scale = scale if scale else self.hdu[0].header['PCSCALE']
-        self.cell_size = cell_size if cell_size else self.hdu[0].header['PCSIZE']
+        # Extract projection cell defaults
+        self.scale = scale if scale else self.hdu[0].header['PC_SCALE']
+        self.cell_size = cell_size if cell_size else self.hdu[0].header['PC_SIZE']
+        # Extract sky cell defaults
+        self.sc_overlap = self.hdu[0].header['SC_OLAP']
+        self.sc_size = self.hdu[0].header['SC_SIZE']
+        self.sc_nxy = int((self.cell_size / self.sc_size)+0.5)
 
     def _find_bands(self, dec):
         """ Select the band or bands which encompass the provided footprint.
@@ -211,12 +217,9 @@ class AllSky(object):
         band_indx = np.where(np.bitwise_and(maxb, minb))[0]
         bands = np.sort(np.unique(band_indx))
 
-        # Identify how may projection cells are in each overlapping band
-        nbands = [rings[b].field('nband') for b in bands]
-
         # Record these values as attributes for use in other methods
-        self.bands = bands
-        self.nbands = nbands
+        self.bands = [rings[b] for b in bands]
+        
 
     def get_sky_cells(self, skyfootprint):
         # Interpret footprint to get range of declination in mask
@@ -228,17 +231,18 @@ class AllSky(object):
         self.projection_cells = []
         # Define numerical position in band for projection cell
         # self.band_index = self.projection_cell_id - self.band['PROJCELL']
-        for band, nband in zip(self.bands, self.nbands):
+        for band in self.bands:
             # compute band_index, one for each projection cell that overlaps the footprint
             nra = ra % 360.0
+            nband = band['NBAND']
             band_index = np.unique(np.rint(nra * nband / 360.0).astype(int) % nband)
-            self.projection_cells += [ProjectionCell(index, band) for index in band_index]
+            self.projection_cells += [ProjectionCell(index, band, self.scale) for index in band_index]
 
         # Find sky cells from identified projection cell(s) that overlap footprint
         sky_cells = []
         for pcell in self.projection_cells:
-            sky_indices = pcell.find_sky_cells(skyfootprint)
-            sky_cells += [SkyCell(sky_x, sky_y, pcell) for sky_x, sky_y in sky_indices]
+            sky_cells += pcell.find_sky_cells(skyfootprint, self.nxy, self.overlap)
+            #sky_cells += [SkyCell(sky_x, sky_y, pcell, self.sc_overlap) for sky_x, sky_y in sky_indices]
         return sky_cells
 
 
@@ -248,9 +252,13 @@ class ProjectionCell(object):
         """Build projection cell for cell with name `skycell_NNNNN`"""
         self.band_index = index
         self.band = band
-        self.cell_id = str(band['PROJCELL'] + index).zfill(5)
+        self.cell_id = str(band['PROJCELL'] + index).zfill(PCELL_STRLEN)
         self.scale = scale
-    
+
+        # Record sky cell defaults
+        self.sc_overlap = 0
+        self.sc_nxy = 0        
+            
         # Generate WCS for projection cell
         self._build_wcs()
 
@@ -261,7 +269,6 @@ class ProjectionCell(object):
         cd = np.array([[-self.scale / 3600., 0], [0, self.scale / 3600.]], dtype=np.float64)
         
         self.wcs = astropy.wcs.WCS(naxis=2)
-        self.wcs.wcs.crpix = [0.5, 0.5]
         self.wcs.wcs.crval = [crval1, crval2]
         self.wcs.wcs.cd = cd
         self.wcs.wcs.ctype = ['RA---TAN', 'DEC--TAN']
@@ -272,30 +279,53 @@ class ProjectionCell(object):
 
         # apply new definition to cell WCS
         self.wcs.wcs.crpix = [naxis1/2.+0.5, naxis2/2.+0.5]
-        self.wcs.naxis1 = naxis1
-        self.wcs.naxis2 = naxis2
+        self.wcs.pixel_shape = (naxis1, naxis2)
 
-    def find_sky_cells(self, skyfootprint):
+    def find_sky_cells(self, skyfootprint, nxy, overlap):
         """Return the sky cell indices from this projection cell that overlap the input footprint"""
+        
         return 1, 1
 
 class SkyCell(object):
 
-    def __init__(self, x, y, projection_cell):
+    def __init__(self, x, y, projection_cell, nxy, overlap):
+        """Define sky cell at position x,y within projection cell.
+        X,Y positions need to be 1-based.
+        """
         self.x_index = x
         self.y_index = y
         self.sky_cell_id = "skycell_{}_x{}y{}".format(projection_cell.cell_id,
                                                       str(x).zfill(3), str(y).zfill(3))
-        self._build_wcs(projection_cell.wcs)
+        self.overlap = overlap  # overlap between sky cells
+        self.nxy = nxy
+        self.projection_cell = projection_cell
+        
+        self._build_wcs()
 
+    def __repr__(self):
+        return self.sky_cell_id
+        
     def rescale(self, scale):
         """Return WCS which has a user-defined scale."""
         pass
 
-    def _build_wcs(self, pcell_wcs):
-        pass
+    def _build_wcs(self):
+        pcell = self.projection_cell
+        pc_nx = pcell.pixel_shape[0]
+        pc_ny = pcell.pixel_shape[1]
+        naxis1 = int((pc_nx - 2*self.overlap)/self.nxy + 0.5)
+        naxis2 = int((pc_ny - 2*self.overlap)/self.nxy + 0.5)
+        crpix1 = pcell.wcs.crpix[0] - (((self.x_index - 1) * naxis1) - self.overlap)
+        crpix2 = pcell.wcs.crpix[1] - (((self.y_index - 1) * naxis2) - self.overlap)
 
-#
+        # apply definitions
+        self.wcs = astropy.wcs.WCS(naxis=2)
+        self.wcs.wcs.crpix = [crpix1, crpix2]
+        self.wcs.wcs.crval = pcell.wcs.crval
+        self.wcs.wcs.cd = pcell.wcs.cd
+        self.wcs.wcs.ctype = ['RA---TAN', 'DEC--TAN']
+        self.wcs.pixel_shape = (naxis1, naxis2)    
+#       
 # Utility functions used in generating or supporting the grid definitions
 #
 def update_grid_defs(pc_size=5.0, output=None):
