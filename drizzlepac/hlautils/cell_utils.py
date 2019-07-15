@@ -151,9 +151,12 @@ class SkyFootprint(object):
             self.find_edges()
         edges = np.where(self.edges)
         self.edges_ra, self.edges_dec = self.meta_wcs.pixel_to_world_values(edges[0], edges[1])
+        # close the polygon
+        self.edges.ra = np.append(self.edges_ra, [self.edges_ra[0]], axis=0)
+        self.edges_dec = np.append(self.edges_dec, [self.edges_dec[0]], axis=0)
         return self.edges_ra, self.edges_dec
 
-    def find_polygon(self):
+    def build_polygon(self):
         if not self.edges_ra:
             self.get_edges_sky()
         self.polygon = SphericalPolygon.from_radec(self.edges_ra, self.edges_dec, self.meta_wcs.wcs.crval)
@@ -239,10 +242,10 @@ class AllSky(object):
             self.projection_cells += [ProjectionCell(index, band, self.scale) for index in band_index]
 
         # Find sky cells from identified projection cell(s) that overlap footprint
-        sky_cells = []
+        sky_cells = {}
         for pcell in self.projection_cells:
-            sky_cells += pcell.find_sky_cells(skyfootprint, self.nxy, self.overlap)
-            #sky_cells += [SkyCell(sky_x, sky_y, pcell, self.sc_overlap) for sky_x, sky_y in sky_indices]
+            sky_cells.update(pcell.find_sky_cells(skyfootprint, self.nxy, self.overlap))
+
         return sky_cells
 
 
@@ -261,7 +264,8 @@ class ProjectionCell(object):
             
         # Generate WCS for projection cell
         self._build_wcs()
-
+        self._build_polygon()
+        
     def _build_wcs(self):
         """Create base WCS definition."""
         crval1 = self.band_index * 360. / self.band['NBAND']
@@ -280,11 +284,28 @@ class ProjectionCell(object):
         # apply new definition to cell WCS
         self.wcs.wcs.crpix = [naxis1/2.+0.5, naxis2/2.+0.5]
         self.wcs.pixel_shape = (naxis1, naxis2)
+    
+    def _build_polygon(self):
+        corners = self.wcs.calc_footprint()
+        # close the polygon
+        corners = np.append(corners, [corners[0]], axis=0)
+        inner_pix = self.wcs.pixel_to_world_values(2,2)
+        # define polygon on the sky
+        self.polygon = SphericalPolygon.from_radec(corners[:,0], corners[:,1], inner_pix)
 
     def find_sky_cells(self, skyfootprint, nxy, overlap):
         """Return the sky cell indices from this projection cell that overlap the input footprint"""
-        
-        return 1, 1
+        skycells = {}
+        # Get the polygon for the input mosaic
+        skypoly = skyfootprint.build_polygon()
+        # for each sky cell, build the polygon and look for overlap with input mosaic poly
+        for xi in range(1,nxy+1):
+            for yi in range(1, nxy+1):
+                skycell = SkyCell(xi, yi, self, nxy, overlap)
+                if skypoly.overlap(skycell.polygon) > 0.0:
+                    skycells[skcell.sky_cell_id] = skycell
+                
+        return skycells
 
 class SkyCell(object):
 
@@ -301,6 +322,7 @@ class SkyCell(object):
         self.projection_cell = projection_cell
         
         self._build_wcs()
+        self._build_polygon()
 
     def __repr__(self):
         return self.sky_cell_id
@@ -325,6 +347,17 @@ class SkyCell(object):
         self.wcs.wcs.cd = pcell.wcs.cd
         self.wcs.wcs.ctype = ['RA---TAN', 'DEC--TAN']
         self.wcs.pixel_shape = (naxis1, naxis2)    
+        self.wcs.ltv1 = pcell.wcs.crpix[0] - crpix1
+        self.wcs.ltv2 = pcell.wcs.crpix[1] - crpix2
+
+    def _build_polygon(self):
+        corners = self.wcs.calc_footprint()
+        # close the polygon
+        corners = np.append(corners, [corners[0]], axis=0)
+        inner_pix = self.wcs.pixel_to_world_values(2,2)
+        # define polygon on the sky
+        self.polygon = SphericalPolygon.from_radec(corners[:,0], corners[:,1], inner_pix)
+
 #       
 # Utility functions used in generating or supporting the grid definitions
 #
