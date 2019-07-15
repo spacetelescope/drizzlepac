@@ -20,7 +20,10 @@ from .. import wcs_functions
 _fpath = os.path.abspath(os.path.dirname(__file__))
 PCELL_PATH = os.path.join(os.path.dirname(_fpath), 'pars')
 PCELL_FILENAME = 'allsky_cells.fits'
-PCELL_STRLEN = 4
+
+SKYCELL_NAME_FMT = "skycell_{:04d}_x{:03d}y{:03d}"
+SKYCELL_NXY = 50
+SKYCELL_OVERLAP = 256
 
 def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     """Return all sky cells that overlap the exposures in the input.
@@ -183,46 +186,29 @@ class SkyFootprint(object):
         return self._get_fits_hdu(self.total_mask, filename=filename, overwrite=overwrite)
 
 
-class AllSky(object):
+class GridDefs(object):
 
     def __init__(self, scale=None, cell_size=None):
         """Setup tesselation based on installed definition of grid."""
         fname = os.path.join(PCELL_PATH, PCELL_FILENAME)
 
         self.hdu = fits.open(fname)
+        self.rings = self.hdu[1].data
+
         # Extract projection cell defaults
         self.scale = scale if scale else self.hdu[0].header['PC_SCALE']
         self.cell_size = cell_size if cell_size else self.hdu[0].header['PC_SIZE']
         # Extract sky cell defaults
         self.sc_overlap = self.hdu[0].header['SC_OLAP']
-        self.sc_size = self.hdu[0].header['SC_SIZE']
-        self.sc_nxy = int((self.cell_size / self.sc_size)+0.5)
+        self.sc_nxy = self.hdu[0].header['SC_NXY']
 
-    def _find_bands(self, dec):
-        """ Select the band or bands which encompass the provided footprint.
+    def find_ring_by_id(self, id):
+        if isinstance(id, list) or isinstance(id, np.ndarray):
+            ones = [1] * len(id)
+        else:
+            ones = 1
 
-        The footprint will be a ndarray mask with pixel value of 1 where the exposures are located,
-        and with a fully defined WCS to convert pixel positions to sky coordinates.
-
-        """
-        if not isinstance(dec, list) and not isinstance(dec, np.ndarray):
-            dec = [dec]
-
-        # Select all bands that overlap 
-        rings = self.hdu[1].data
-        # find dec zones where rings.dec_min <= dec <= rings.dec_max
-        maxb = dec[0] <= rings.field('dec_max')
-        minb = dec[0] >= rings.field('dec_min')
-        for d in dec:
-            maxb = np.bitwise_and(d <= rings.field('dec_max'), maxb)
-            minb = np.bitwise_and(d >= rings.field('dec_min'), minb)
-        
-        band_indx = np.where(np.bitwise_and(maxb, minb))[0]
-        bands = np.sort(np.unique(band_indx))
-
-        # Record these values as attributes for use in other methods
-        self.bands = [rings[b] for b in bands]
-        
+        return self.rings[np.searchsorted(self.rings['projcell'], id) - ones]
 
     def get_sky_cells(self, skyfootprint):
         # Interpret footprint to get range of declination in mask
@@ -244,34 +230,74 @@ class AllSky(object):
         # Find sky cells from identified projection cell(s) that overlap footprint
         sky_cells = {}
         for pcell in self.projection_cells:
-            sky_cells.update(pcell.find_sky_cells(skyfootprint, self.nxy, self.overlap))
+            sky_cells.update(pcell.find_sky_cells(skyfootprint, self.sc_nxy, self.sc_overlap))
 
         return sky_cells
+
+    def _find_bands(self, dec):
+        """ Select the band or bands which encompass the provided footprint.
+
+        The footprint will be a ndarray mask with pixel value of 1 where the exposures are located,
+        and with a fully defined WCS to convert pixel positions to sky coordinates.
+
+        """
+        if not isinstance(dec, list) and not isinstance(dec, np.ndarray):
+            dec = [dec]
+
+        # Select all bands that overlap
+        # find dec zones where rings.dec_min <= dec <= rings.dec_max
+        maxb = dec[0] <= self.rings.field('dec_max')
+        minb = dec[0] >= self.rings.field('dec_min')
+        for d in dec:
+            maxb = np.bitwise_and(d <= self.rings.field('dec_max'), maxb)
+            minb = np.bitwise_and(d >= self.rings.field('dec_min'), minb)
+
+        band_indx = np.where(np.bitwise_and(maxb, minb))[0]
+        bands = np.sort(np.unique(band_indx))
+
+        # Record these values as attributes for use in other methods
+        self.bands = [self.rings[b] for b in bands]
+
 
 
 class ProjectionCell(object):
 
-    def __init__(self, index, band, scale):
+    def __init__(self, index=None, band=None, scale=None,
+                        nxy=None, overlap=None):
         """Build projection cell for cell with name `skycell_NNNNN`"""
-        self.band_index = index
-        self.band = band
-        self.cell_id = str(band['PROJCELL'] + index).zfill(PCELL_STRLEN)
-        self.scale = scale
+        if band:
+            self.band_index = index
+            self.band = band
+            self.cell_id = band['PROJCELL'] + index
+            self.scale = scale
+        else:
+            self._from_index(index)
 
-        # Record sky cell defaults
-        self.sc_overlap = 0
-        self.sc_nxy = 0        
-            
+
+        # Record user-specified sky cell defaults
+        if overlap:
+            self.sc_overlap = overlap
+        if nxy:
+            self.sc_nxy = nxy
+
         # Generate WCS for projection cell
         self._build_wcs()
-        self._build_polygon()
-        
+
+    def _from_index(self, id):
+        grid_defs = GridDefs()
+        self.band = grid_defs.find_ring_by_id(id)
+        self.band_index = id - self.band['projcell'] + 1
+        self.cell_id = id
+        self.scale = grid_defs.scale
+        self.sc_overlap = grid_defs.sc_overlap
+        self.sc_nxy = grid_defs.sc_nxy
+
     def _build_wcs(self):
         """Create base WCS definition."""
         crval1 = self.band_index * 360. / self.band['NBAND']
         crval2 = self.band['DEC']
         cd = np.array([[-self.scale / 3600., 0], [0, self.scale / 3600.]], dtype=np.float64)
-        
+
         self.wcs = astropy.wcs.WCS(naxis=2)
         self.wcs.wcs.crval = [crval1, crval2]
         self.wcs.wcs.cd = cd
@@ -282,94 +308,113 @@ class ProjectionCell(object):
         naxis2 = self.band['YCELL']
 
         # apply new definition to cell WCS
-        self.wcs.wcs.crpix = [naxis1/2.+0.5, naxis2/2.+0.5]
+        self.wcs.wcs.crpix = [naxis1 / 2. + 0.5, naxis2 / 2. + 0.5]
         self.wcs.pixel_shape = (naxis1, naxis2)
-    
-    def _build_polygon(self):
+
+    def build_polygon(self):
         corners = self.wcs.calc_footprint()
         # close the polygon
         corners = np.append(corners, [corners[0]], axis=0)
-        inner_pix = self.wcs.pixel_to_world_values(2,2)
+        inner_pix = self.wcs.pixel_to_world_values(2, 2)
         # define polygon on the sky
-        self.polygon = SphericalPolygon.from_radec(corners[:,0], corners[:,1], inner_pix)
+        self.polygon = SphericalPolygon.from_radec(corners[:, 0], corners[:, 1], inner_pix)
 
-    def find_sky_cells(self, skyfootprint, nxy, overlap):
+    def find_sky_cells(self, skyfootprint, nxy=None, overlap=None):
         """Return the sky cell indices from this projection cell that overlap the input footprint"""
+        # Record values for sky cell definitions provided by user, if any.
+        if nxy:
+            self.sc_nxy = nxy
+        if overlap:
+            self.sc_overlap = overlap
+
         skycells = {}
         # Get the polygon for the input mosaic
         skypoly = skyfootprint.build_polygon()
         # for each sky cell, build the polygon and look for overlap with input mosaic poly
-        for xi in range(1,nxy+1):
-            for yi in range(1, nxy+1):
+        for xi in range(1, nxy + 1):
+            for yi in range(1, nxy + 1):
                 skycell = SkyCell(xi, yi, self, nxy, overlap)
+                skycell.build_polygon()
                 if skypoly.overlap(skycell.polygon) > 0.0:
-                    skycells[skcell.sky_cell_id] = skycell
-                
+                    skycells[skycell.sky_cell_id] = skycell
+
         return skycells
 
 class SkyCell(object):
 
-    def __init__(self, x, y, projection_cell, nxy, overlap):
+    def __init__(self, name=None, projection_cell=None, x=None, y=None):
         """Define sky cell at position x,y within projection cell.
         X,Y positions need to be 1-based.
         """
-        self.x_index = x
-        self.y_index = y
-        self.sky_cell_id = "skycell_{}_x{}y{}".format(projection_cell.cell_id,
-                                                      str(x).zfill(3), str(y).zfill(3))
-        self.overlap = overlap  # overlap between sky cells
-        self.nxy = nxy
-        self.projection_cell = projection_cell
-        
+        if name:
+            self._from_name(name)
+        else:
+            self.x_index = x
+            self.y_index = y
+            self.sky_cell_id = SKYCELL_NAME_FMT.format(projection_cell.cell_id,
+                                                          str(x).zfill(3), str(y).zfill(3))
+            self.projection_cell = projection_cell
+
+        self.overlap = self.projection_cell.sc_overlap  # overlap between sky cells
+        self.nxy = self.projection_cell.sc_nxy
+
         self._build_wcs()
-        self._build_polygon()
+
+    def _from_name(self, name):
+        # parse name into projection cell and sky cell designations
+        sc_names = name.split('_')
+        pcell_id = int(sc_names[1])
+
+        self.x_index = int(sc_names[2][1:4])
+        self.y_index = int(sc_names[2][5:8])
+        self.projection_cell = ProjectionCell(index=pcell_id)
+        self.sky_cell_id = name
 
     def __repr__(self):
         return self.sky_cell_id
-        
+
     def rescale(self, scale):
         """Return WCS which has a user-defined scale."""
         pass
 
     def _build_wcs(self):
-        pcell = self.projection_cell
-        pc_nx = pcell.pixel_shape[0]
-        pc_ny = pcell.pixel_shape[1]
-        naxis1 = int((pc_nx - 2*self.overlap)/self.nxy + 0.5)
-        naxis2 = int((pc_ny - 2*self.overlap)/self.nxy + 0.5)
-        crpix1 = pcell.wcs.crpix[0] - (((self.x_index - 1) * naxis1) - self.overlap)
-        crpix2 = pcell.wcs.crpix[1] - (((self.y_index - 1) * naxis2) - self.overlap)
+        pc_nx = self.projection_cell.wcs.pixel_shape[0]
+        pc_ny = self.projection_cell.wcs.pixel_shape[1]
+        naxis1 = int((pc_nx - 2 * self.overlap) / self.nxy + 0.5)
+        naxis2 = int((pc_ny - 2 * self.overlap) / self.nxy + 0.5)
+        crpix1 = self.projection_cell.wcs.wcs.crpix[0] - (((self.x_index - 1) * naxis1) - self.overlap)
+        crpix2 = self.projection_cell.wcs.wcs.crpix[1] - (((self.y_index - 1) * naxis2) - self.overlap)
 
         # apply definitions
         self.wcs = astropy.wcs.WCS(naxis=2)
         self.wcs.wcs.crpix = [crpix1, crpix2]
-        self.wcs.wcs.crval = pcell.wcs.crval
-        self.wcs.wcs.cd = pcell.wcs.cd
+        self.wcs.wcs.crval = self.projection_cell.wcs.wcs.crval
+        self.wcs.wcs.cd = self.projection_cell.wcs.wcs.cd
         self.wcs.wcs.ctype = ['RA---TAN', 'DEC--TAN']
-        self.wcs.pixel_shape = (naxis1, naxis2)    
-        self.wcs.ltv1 = pcell.wcs.crpix[0] - crpix1
-        self.wcs.ltv2 = pcell.wcs.crpix[1] - crpix2
+        self.wcs.pixel_shape = (naxis1, naxis2)
+        self.wcs.ltv1 = self.projection_cell.wcs.wcs.crpix[0] - crpix1
+        self.wcs.ltv2 = self.projection_cell.wcs.wcs.crpix[1] - crpix2
 
-    def _build_polygon(self):
+    def build_polygon(self):
         corners = self.wcs.calc_footprint()
         # close the polygon
         corners = np.append(corners, [corners[0]], axis=0)
-        inner_pix = self.wcs.pixel_to_world_values(2,2)
+        inner_pix = self.wcs.pixel_to_world_values(2, 2)
         # define polygon on the sky
-        self.polygon = SphericalPolygon.from_radec(corners[:,0], corners[:,1], inner_pix)
+        self.polygon = SphericalPolygon.from_radec(corners[:, 0], corners[:, 1], inner_pix)
 
-#       
+#
 # Utility functions used in generating or supporting the grid definitions
 #
-def update_grid_defs(pc_size=5.0, output=None):
+def update_grid_defs(pc_size=5.0, output=None, grid_file=None):
     """Computes updated values for bands and projection cells.
 
     Parameters
     -----------
     pc_size : float
         Size of each side of the projection cell or width of each band on
-        the sky in degrees.  If `None`, the default value will be read in 
-        from the `PCSIZE` keyword from the PRIMARY header of the default 
+        the sky in degrees.  If `None`, the default value will be read in
+        from the `PCSIZE` keyword from the PRIMARY header of the default
         grid definitions file.
 
     output : str, optional
@@ -378,33 +423,35 @@ def update_grid_defs(pc_size=5.0, output=None):
         overwriting any previous file.
 
     """
+    # read in default grid definition file
+    if not grid_file:
+        grid_file = os.path.join(PCELL_PATH, PCELL_FILENAME)
+    grid_defs = fits.open(grid_file)
+    grid = grid_defs[1].data
+    pc_scale = grid_defs[0].header['PCSCALE']
+
     if not pc_size:
-        pc_size = grid_file[0].header['PCSIZE'] 
+        pc_size = grid_defs[0].header['PCSIZE']
 
     pos_angle = [0.0 * u.deg, 90.0 * u.deg, 180.0 * u.deg, 270.0 * u.deg]
-    pc_edge = pc_size/2.0 * u.deg
-    
-    # read in default grid definition file
-    grid_file = fits.open(os.path.join(PCELL_PATH, PCELL_FILENAME))
-    grid = grid_file[1].data
-    pc_scale = grid_file[0].header['PCSCALE']
+    pc_edge = pc_size / 2.0 * u.deg
 
     # Compute size on the sky of the first cell in each band
-    # Compute edges using:    
+    # Compute edges using:
     for nband in range(len(grid)):
         c1 = SkyCoord(ra=0. * u.deg, dec=grid[nband]['DEC'] * u.deg, frame='icrs')
         pcell = ProjectionCell(index=0, band=grid[nband], scale=pc_scale)
 
         # Compute offset to center of each edge, +/- RA and +/- Dec
         c1_edges = [c1.directional_offset_by(p, pc_edge) for p in pos_angle]
-        
+
         # Convert offset to edge center into distance in pixels from center of cell
         c1_pixels = [np.abs(pcell.wcs.world_to_pixel_values(e.ra, e.dec)) for e in c1_edges]
 
         # Compute overall size of cell in pixels
-        naxis1,naxis2 = (np.array(c1_pixels).sum(axis=0) + 1).astype(np.int)
+        naxis1, naxis2 = (np.array(c1_pixels).sum(axis=0) + 1).astype(np.int)
         # apply new definition to cell WCS
-        pcell.wcs.wcs.crpix = [naxis1/2.+0.5, naxis2/2.+0.5]
+        pcell.wcs.wcs.crpix = [naxis1 / 2. + 0.5, naxis2 / 2. + 0.5]
         pcell.wcs.naxis1 = naxis1
         pcell.wcs.naxis2 = naxis2
 
@@ -419,16 +466,16 @@ def update_grid_defs(pc_size=5.0, output=None):
         # Update definition for this band in table with newly computed values
         grid[nband]['DEC_MIN'] = min_dec
         grid[nband]['DEC_MAX'] = max_dec
-        grid[nband]['XCELL'] = naxis1
-        grid[nband]['YCELL'] = naxis2
+        grid[nband]['XCELL'] = naxis1  # supposed to be sky cell size
+        grid[nband]['YCELL'] = naxis2  # supposed to be sky cell size
 
     # write out updated grid definitions file
     if not output:
         output = PCELL_FILENAME
 
     # write to path included in 'output', defaulting to current working dir
-    grid_file.writeto(output, overwrite=True)
-           
+    grid_defs.writeto(output, overwrite=True)
+
 def compute_band_height(wcs):
     """Compute size in pixels of tangent plane"""
     edges = []
@@ -436,11 +483,6 @@ def compute_band_height(wcs):
     edges += [[wcs.naxis1, i] for i in range(wcs.naxis2)]
     edges += [[i, 0] for i in range(wcs.naxis1)]
     edges += [[i, wcs.naxis2] for i in range(wcs.naxis1)]
-    
-    edge_sky = wcs.pixel_to_world_values(edges)
-    return min(edge_sky[:,1]), max(edge_sky[:,1])
 
-    
-    
-    
-    
+    edge_sky = wcs.pixel_to_world_values(edges)
+    return min(edge_sky[:, 1]), max(edge_sky[:, 1])
