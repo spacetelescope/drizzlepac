@@ -32,7 +32,7 @@ class TDP(HAPProduct):
     def __init__(self, prop_id, obset_id, instrument, detector, filename):
         super().__init__(prop_id, obset_id, instrument, detector, filename)
 
-        # self.exposure_name = filename[0:6]
+        self.exposure_name = filename[0:6]
 
         self.product_basename = self.basename + "_total_" + self.exposure_name
         self.trl_filename = self.product_basename + "trl.txt"
@@ -110,12 +110,6 @@ class EDP(HAPProduct):
         # self.exptime = exptime
         self.filters = filters
         self.filetype = filetype
-
-        # There is an assumption here that all files part of the same TDP/FDP
-        # processed in the same manner
-        # self.filetype = "drc"
-        # if filename[10:13].lower().endswith("flt"):
-        #    self.filetype = "drz"
 
         self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
