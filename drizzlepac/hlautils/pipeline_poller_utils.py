@@ -68,10 +68,8 @@ def interpret_obset_input(results):
     obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
     # parse Table into a tree-like dict
     obset_tree = build_obset_tree(obset_table)
-    print('OBSET TREE: {}'.format(obset_tree))
     # Now create final dict
     obset_dict = parse_obset_tree(obset_tree)
-    print('OBSET DICT: {}'.format(obset_dict))
 
     return obset_dict
 
@@ -111,7 +109,7 @@ def build_obset_tree(obset_table):
 def create_row_info(row):
     """Build info string for a row from the obset table"""
     info_list = [str(row['proposal_id']), "{:02d}".format(row['obset_id']), row['instrument'],
-                 row['detector'], row['filters'], row['filename'][:row['filename'].find('_')]]
+                 row['detector'], row['filename'][:row['filename'].find('_')], row['filters']]
     return ' '.join(map(str.upper, info_list)), row['filename']
 
 def parse_obset_tree(det_tree):
@@ -146,14 +144,6 @@ def parse_obset_tree(det_tree):
     # set the filetype accordingly (flt->drz or flc->drc).
     filetype = ''
 
-    # proposal_id = obs_info[0]
-    # obset_id    = obs_info[1]
-    # instrument  = obs_info[2]
-    # detector    = obs_info[3]
-    # filter      = obs_info[4]
-    # ipppssoot   = obs_info[5]
-    # filetype    = obs_dict[6]
-
     # Setup products for each detector used
     for filt_tree in det_tree.values():
         totprod = TDP_STR.format(det_indx)
@@ -173,256 +163,74 @@ def parse_obset_tree(det_tree):
                     if filename[1][10:13].lower().endswith("flt"):
                         filetype = "drz"
                     prev_det_indx = det_indx
-                sep = SEP_STR.format(sep_indx)  # keep 80 char wide code
-                sep_info = (filename[0] + " " + filetype).lower()
-                obset_products[sep] = {'info': sep_info,
+
+                # Generate the full product information string: 
+                # proposal_id, obset_id, instrument, detector, ipppssoot, filter, and filetype
+                prod_info = (filename[0] + " " + filetype).lower()
+
+                # Set up the single exposure product dictionary
+                sep = SEP_STR.format(sep_indx)
+                obset_products[sep] = {'info': prod_info,
                                        'files': [filename[1]]}
-                # Create the exposure detection product object
-                sep_list = sep_info.split(" ")
-                edp_obj = EDP(sep_list[0], sep_list[1], sep_list[2], sep_list[3], sep_list[5], sep_list[4], sep_list[6])
+
+                # Create a single exposure product object
+                prod_list = prod_info.split(" ")
+                edp_obj = EDP(prod_list[0], prod_list[1], prod_list[2], prod_list[3], prod_list[4], prod_list[5], prod_list[6])
                 EDP_list.append(edp_obj)
+
+                # Set up the filter product dictionary and create a filter product object
                 # Initialize `info` key for this filter product
                 if not obset_products[fprod]['info']:
-                    # Use all but last entry in filter level info
-                    fp_info = (" ".join(filename[0].split()[:])+" "+filetype).lower()
-                    obset_products[fprod]['info'] = fp_info
-                    # Create the filter detection product object
-                    # proposal_id = obs_info[0]
-                    # obset_id    = obs_info[1]
-                    # instrument  = obs_info[2]
-                    # detector    = obs_info[3]
-                    # filter      = obs_info[4]
-                    # ipppssoot   = obs_info[5]
-                    # filetype    = obs_info[6]
-                    fp_list = fp_info.split(" ")
-                    fdp_obj = FDP(fp_list[0], fp_list[1], fp_list[2], fp_list[3], fp_list[5], fp_list[4])
-                # Append exposure filename to input list for total detection product
+                    obset_products[fprod]['info'] = prod_info
+                    # Create a filter product object for this instrument/detector
+                    fdp_obj = FDP(prod_list[0], prod_list[1], prod_list[2], prod_list[3], prod_list[4], prod_list[5])
+                # Append exposure object to the list of exposure objects for this specific filter product
                 fdp_obj.add_member(edp_obj)
                 # Populate filter product with input filename
                 obset_products[fprod]['files'].append(filename[1])
+
+                # Set up the total detection product dictionary and create a total detection product object
                 # Initialize `info` key for total detection product
                 if not obset_products[totprod]['info']:
-                    tdp_info = (" ".join(filename[0].split()[:-2]) + " " + filename[0].split()[-1] + " " + filetype).lower()
-                    obset_products[totprod]['info'] = tdp_info
+                    obset_products[totprod]['info'] = prod_info
                     # Create a total detection product object for this instrument/detector
-                    # proposal_id = obs_info[0]
-                    # obset_id    = obs_info[1]
-                    # instrument  = obs_info[2]
-                    # detector    = obs_info[3]
-                    # ipppssoot   = obs_info[4]
-                    # filetype    = obs_info[5]
-                    tdp_list = tdp_info.split(" ")
-                    tdp_obj = TDP(tdp_list[0], tdp_list[1], tdp_list[2], tdp_list[3], tdp_list[4])
-                # Append exposure filename to input list for total detection product
-                obset_products[totprod]['files'].append(filename[1])
+                    tdp_obj = TDP(prod_list[0], prod_list[1], prod_list[2], prod_list[3], prod_list[4])
+                # Append exposure object to the list of exposure objects for this specific total detection product
                 tdp_obj.add_member(edp_obj)
+                # Populate total detection product with input filename
+                obset_products[totprod]['files'].append(filename[1])
+
                 # Increment single exposure master index
                 sep_indx += 1
 
             # Add the FDP to the list of FDPs
             FDP_list.append(fdp_obj)
-            del fdp_obj
+            # fdp_obj = None
 
         # Add the TDP to the list of TDPs
         TDP_list.append(tdp_obj)
-        del tdp_obj
+        # tdp_obj = None
 
-    ffff_list = [element.full_filename for element in EDP_list]
+    # """
+    # Just for debugging.  
+    ffff_list = [element.product_basename for element in EDP_list]
     print(" ")
     print("ffff_list: {}".format(ffff_list))
     print(" ")
 
-    ffff_list = [element.exposure_name for element in TDP_list]
+    ffff_list = [element.product_basename for element in TDP_list]
     print(" ")
     print("ffff_list: {}".format(ffff_list))
     print(" ")
 
-    ffff_list = [element.exposure_name for element in FDP_list]
+    ffff_list = [element.product_basename for element in FDP_list]
     print(" ")
     print("ffff_list: {}".format(ffff_list))
     print(" ")
+    # """
 
     # Done... return dict
     return obset_products
-
-def run_generator(product_category, obs_info):
-    """
-    This is the main calling subroutine. It decides which filename generation subroutine should be run based
-    on the input product_category, and then passes the information stored in input obs_info to the subroutine
-    so that the appropriate filenames can be generated.
-
-    Parameters
-    ----------
-    product_category : string
-        The type of final output product which filenames will be generated for
-    obs_info : string
-        A string containing space-separated items that will be used to
-        generate the filenames.
-
-    Returns
-    --------
-    product_filename_dict : dictionary
-        A dictionary containing the generated filenames.
-    """
-    category_generator_mapping = {'single exposure product': single_exposure_product_filename_generator,
-                                  'filter product': filter_product_filename_generator,
-                                  'total detection product': total_detection_product_filename_generator,
-                                  'multivisit mosaic product': multivisit_mosaic_product_filename_generator}
-
-    # Determine which name generator to use based on input product_category
-    category_key = ""
-    for ikey in category_generator_mapping:
-        if product_category.startswith(ikey):
-            generator_name = category_generator_mapping[ikey]
-            category_key = ikey
-            break
-
-    # parse out obs_info into a list
-    obs_info = obs_info.split(" ")
-
-    # pad 4-character proposal_id values with leading 0s so that proposal_id is
-    # a 5-character string.
-    if category_key != "multivisit mosaic product":  # pad
-        obs_info[0] = "{}{}".format("0" * (5 - len(obs_info[0])), obs_info[0])
-
-    # generate and return filenames
-    product_filename_dict = generator_name(obs_info)
-    return product_filename_dict
-# ----------------------------------------------------------------------------------------------------------
-
-def single_exposure_product_filename_generator(obs_info):
-    """
-    Generate image and sourcelist filenames for single-exposure products
-
-    Parameters
-    ----------
-    obs_info : list
-        list of items that will be used to generate the filenames: proposal_id,
-        obset_id, instrument, detector, filter, ipppssoot, and filetype
-
-    Returns
-    --------
-    product_filename_dict : dictionary
-        A dictionary containing the generated filenames.
-
-    Clarification of variables:
-    proposal_id = obs_info[0]
-    obset_id    = obs_info[1]
-    instrument  = obs_info[2]
-    detector    = obs_info[3]
-    filter      = obs_info[4]
-    ipppssoot   = obs_info[5]
-    filetype    = obs_info[6]
-    """
-
-    basename = 'hst_' + '_'.join(map(str, obs_info[:5])) + "_" + obs_info[5][:8] + "_" + obs_info[6]
-    product_filename_dict = {}
-    product_filename_dict["image"] = basename + ".fits"
-
-    return product_filename_dict
-
-# ----------------------------------------------------------------------------------------------------------
-
-def filter_product_filename_generator(obs_info):
-    """
-    Generate image and sourcelist filenames for filter products
-
-    Parameters
-    ----------
-    obs_info : list
-        list of items that will be used to generate the filenames: proposal_id,
-        obset_id, instrument, detector, filter, ipppssoot, and filetype
-
-    Returns
-    --------
-    product_filename_dict : dictionary
-        A dictionary containing the generated filenames.
-
-    Clarification of variables:
-    proposal_id = obs_info[0]
-    obset_id    = obs_info[1]
-    instrument  = obs_info[2]
-    detector    = obs_info[3]
-    filter      = obs_info[4]
-    ipppssoot   = obs_info[5]
-    filetype    = obs_info[6]
-    """
-
-    basename = 'hst_' + '_'.join(map(str, obs_info[:5])) + "_" + obs_info[5][:6]
-    product_filename_dict = {}
-    product_filename_dict["image"] = basename + "_" + obs_info[6] + ".fits"
-    product_filename_dict["point source catalog"] = basename + "_point-cat.ecsv"
-    product_filename_dict["segment source catalog"] = basename + "_segment-cat.ecsv"
-
-    return product_filename_dict
-
-
-# ----------------------------------------------------------------------------------------------------------
-
-def total_detection_product_filename_generator(obs_info):
-    """
-    Generate image and sourcelist filenames for total detection products
-
-    Parameters
-    ----------
-    obs_info : list
-        list of items that will be used to generate the filenames: proposal_id,
-        obset_id, instrument, detector, filter, ipppssoot, and filetype
-
-    Returns
-    --------
-    product_filename_dict : dictionary
-        A dictionary containing the generated filenames.
-
-    Clarification of variables:
-    proposal_id = obs_info[0]
-    obset_id    = obs_info[1]
-    instrument  = obs_info[2]
-    detector    = obs_info[3]
-    ipppssoot   = obs_info[4]
-    filetype    = obs_info[5]
-    """
-
-    basename = 'hst_' + '_'.join(map(str, obs_info[:4])) + '_total_' + obs_info[4][:6]
-    product_filename_dict = {}
-    product_filename_dict["image"] = basename + "_" + obs_info[5] + ".fits"
-    product_filename_dict["point source catalog"] = basename + "_point-cat.ecsv"
-    product_filename_dict["segment source catalog"] = basename + "_segment-cat.ecsv"
-
-    return product_filename_dict
-
-# ----------------------------------------------------------------------------------------------------------
-
-def multivisit_mosaic_product_filename_generator(obs_info):
-    """
-    Generate image and sourcelist filenames for multi-visit mosaic products
-
-    Parameters
-    ----------
-    obs_info : list
-        list of items that will be used to generate the filenames: group_id,
-        instrument, detector, filter, and filetype
-
-    Returns
-    --------
-    product_filename_dict : dictionary
-        A dictionary containing the generated filenames.
-
-    Clarification of variables:
-    group_num   = obs_info[0]
-    instrument  = obs_info[1]
-    detector    = obs_info[2]
-    filter      = obs_info[3]
-    filetype    = obs_info[4]
-    """
-
-    basename = 'hst_mos' + '_'.join(map(str, obs_info[:4]))
-    product_filename_dict = {}
-    product_filename_dict["image"] = basename + " " + obs_info[5] + ".fits"
-    product_filename_dict["point source catalog"] = basename + "_point-cat.ecsv"
-    product_filename_dict["segment source catalog"] = basename + "_segment-cat.ecsv"
-
-    return product_filename_dict
 
 # ----------------------------------------------------------------------------------------------------------
 

@@ -1,8 +1,6 @@
 # ia1s70jrq_flt.fits,11150,A1S,70,149.232269,F110W,IR,/ifs/archive/ops/hst/public/ia1s/ia1s70jrq/ia1s70jrq_flt.fits
 # filename,prop_id,prog_id,obset_id,exptime,filters,detector,path
-
-# Define the mapping between the first character of the filename and the associated instrument
-# INSTRUMENT_DICT = {"i": "WFC3", "j": "ACS", "o": "STIS", "u": "WFPC2", "x": "FOC", "w": "WFPC"}
+# Make sure the proposal_id is a 5-character stringj
 
 class HAPProduct:
     def __init__(self, prop_id, obset_id, instrument, detector, filename):
@@ -12,7 +10,7 @@ class HAPProduct:
         self.detector = detector
         # self.instrument = INSTRUMENT_DICT[filename[0])
 
-        self.basename = "hst_" + "_".join(map(str, [prop_id, obset_id, instrument, detector])) + "_"
+        self.basename = "hst_" + "_".join(map(str, [prop_id, obset_id, instrument, detector]))
 
         # exposure_name is the ipppssoo or a portion thereof
         self.exposure_name = filename[0:8]
@@ -35,7 +33,7 @@ class TDP(HAPProduct):
         self.exposure_name = filename[0:6]
 
         self.product_basename = self.basename + "_total_" + self.exposure_name
-        self.trl_filename = self.product_basename + "trl.txt"
+        self.trl_filename = self.product_basename + "_trl.txt"
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = ""
@@ -78,7 +76,7 @@ class FDP(HAPProduct):
         self.filters = filters
 
         self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
-        self.trl_filename = self.product_basename + "trl.txt"
+        self.trl_filename = self.product_basename + "_trl.txt"
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = ""
@@ -114,6 +112,6 @@ class EDP(HAPProduct):
         self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
         self.headerlet_filename = self.product_basename + "_hlet.fits"
-        self.trl_filename = self.product_basename + "trl.txt"
+        self.trl_filename = self.product_basename + "_trl.txt"
 
         self.regions_dict = {}
