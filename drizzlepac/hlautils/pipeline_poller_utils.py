@@ -8,6 +8,7 @@ generator routines produce the specific image product and source catalog files.
 """
 
 from astropy.table import Table, Column
+from drizzlepac.hlautils.Product import EDP, FDP, TDP
 
 # Define information/formatted strings to be included in output dict
 SEP_STR = 'single exposure product {:02d}'
@@ -25,26 +26,37 @@ def interpret_obset_input(results):
     values for use in generating the names of all the expected output products.
 
     Input will have format of:
-        ia1s70jtq_flt.fits,11150,A1S,70,149.232269,F110W,IR,/ifs/archive/ops/hst/public/ia1s/ia1s70jtq/ia1s70jtq_flt.fits
-        ia1s70iwq_flt.fits,11150,A1S,70,0.91161000000000003,F160W,IR,/ifs/archive/ops/hst/public/ia1s/ia1s70iwq/ia1s70iwq_flt.fits
+        ib4606c5q_flc.fits,11665,B46,06,1.0,F555W,UVIS,/ifs/archive/ops/hst/public/ib46/ib4606c5q/ib4606c5q_flc.fits
         which are
         filename, proposal_id, program_id, obset_id, exptime, filters, detector, pathname
 
     Output dict will have format (as needed by further code for creating the
         product filenames) of:
 
-        obs_info_dict["single exposure product 00"] = {'info': '11150 70 WFC3 IR F110W IA1S70JTQ',
-                                                        'files':['ia1s70jtq_flt.fits']}
-        obs_info_dict["single exposure product 01"] = {'info': '11150 70 WFC3 IR F160W IA1S70JWQ',
-                                                        'files':['ia1s70jwq_flt.fits']}
+        obs_info_dict["single exposure product 00": {"info": '11665 06 wfc3 uvis f555w ib4606c5q drc',
+                                                     "files": ['ib4606c5q_flc.fits']}
+        .
+        .
+        .
+        obs_info_dict["single exposure product 08": {"info": '11665 06 wfc3 ir f110w ib4606clq drz',
+                                                     "files": ['ib4606clq_flt.fits']}
 
-        obs_info_dict["filter product 00"] = {"info": '11150 70 WFC3 IR F110W',
-                                              "files":['ia1s70jtq_flt.fits']}
-        obs_info_dict["filter product 01"] = {"info": '11150 70 WFC3 IR F160W',
-                                              "files":['ia1s70jwq_flt.fits']}
-        obs_info_dict["total detection product 00"] = {'info': '11150 70 WFC3 IR',
-                                                       'files':['ia1s70jtq_flt.fits',
-                                                                'ia1s70iwq_flt.fits']}
+        obs_info_dict["filter product 00": {"info": '11665 06 wfc3 uvis f555w ib4606c5q drc',
+                                            "files": ['ib4606c5q_flc.fits', 'ib4606c6q_flc.fits']},
+        .
+        .
+        .
+        obs_info_dict["filter product 01": {"info": '11665 06 wfc3 ir f160w ib4606cmq drz',
+                                            "files": ['ib4606cmq_flt.fits', 'ib4606crq_flt.fits']},
+
+
+        obs_info_dict["total detection product 00": {"info": '11665 06 wfc3 uvis ib4606c5q drc',
+                                                     "files": ['ib4606c5q_flc.fits', 'ib4606c6q_flc.fits']}
+        .
+        .
+        .
+        obs_info_dict["total detection product 01": {"info": '11665 06 wfc3 ir ib4606cmq drz',
+                                                     "files": ['ib4606cmq_flt.fits', 'ib4606crq_flt.fits']}
 
     """
     colnames = ['filename', 'proposal_id', 'program_id', 'obset_id',
@@ -56,8 +68,10 @@ def interpret_obset_input(results):
     obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
     # parse Table into a tree-like dict
     obset_tree = build_obset_tree(obset_table)
+    print('OBSET TREE: {}'.format(obset_tree))
     # Now create final dict
     obset_dict = parse_obset_tree(obset_tree)
+    print('OBSET DICT: {}'.format(obset_dict))
 
     return obset_dict
 
@@ -124,14 +138,26 @@ def parse_obset_tree(det_tree):
     filt_indx = 0
     sep_indx = 0
 
+    TDP_list = []
+    FDP_list = []
+    EDP_list = []
+
     # Determine if the individual files being processed are flt or flc and
     # set the filetype accordingly (flt->drz or flc->drc).
     filetype = ''
 
+    # proposal_id = obs_info[0]
+    # obset_id    = obs_info[1]
+    # instrument  = obs_info[2]
+    # detector    = obs_info[3]
+    # filter      = obs_info[4]
+    # ipppssoot   = obs_info[5]
+    # filetype    = obs_dict[6]
+
     # Setup products for each detector used
     for filt_tree in det_tree.values():
-        tdp = TDP_STR.format(det_indx)
-        obset_products[tdp] = {'info': "", 'files': []}
+        totprod = TDP_STR.format(det_indx)
+        obset_products[totprod] = {'info': "", 'files': []}
         det_indx += 1
         # Find all filters used...
         for filter_files in filt_tree.values():
@@ -151,21 +177,70 @@ def parse_obset_tree(det_tree):
                 sep_info = (filename[0] + " " + filetype).lower()
                 obset_products[sep] = {'info': sep_info,
                                        'files': [filename[1]]}
+                # Create the exposure detection product object
+                sep_list = sep_info.split(" ")
+                edp_obj = EDP(sep_list[0], sep_list[1], sep_list[2], sep_list[3], sep_list[5], sep_list[4], sep_list[6])
+                EDP_list.append(edp_obj)
                 # Initialize `info` key for this filter product
                 if not obset_products[fprod]['info']:
                     # Use all but last entry in filter level info
                     fp_info = (" ".join(filename[0].split()[:])+" "+filetype).lower()
                     obset_products[fprod]['info'] = fp_info
+                    # Create the filter detection product object
+                    # proposal_id = obs_info[0]
+                    # obset_id    = obs_info[1]
+                    # instrument  = obs_info[2]
+                    # detector    = obs_info[3]
+                    # filter      = obs_info[4]
+                    # ipppssoot   = obs_info[5]
+                    # filetype    = obs_info[6]
+                    fp_list = fp_info.split(" ")
+                    fdp_obj = FDP(fp_list[0], fp_list[1], fp_list[2], fp_list[3], fp_list[5], fp_list[4])
+                # Append exposure filename to input list for total detection product
+                fdp_obj.add_member(edp_obj)
                 # Populate filter product with input filename
                 obset_products[fprod]['files'].append(filename[1])
                 # Initialize `info` key for total detection product
-                if not obset_products[tdp]['info']:
+                if not obset_products[totprod]['info']:
                     tdp_info = (" ".join(filename[0].split()[:-2]) + " " + filename[0].split()[-1] + " " + filetype).lower()
-                    obset_products[tdp]['info'] = tdp_info
+                    obset_products[totprod]['info'] = tdp_info
+                    # Create a total detection product object for this instrument/detector
+                    # proposal_id = obs_info[0]
+                    # obset_id    = obs_info[1]
+                    # instrument  = obs_info[2]
+                    # detector    = obs_info[3]
+                    # ipppssoot   = obs_info[4]
+                    # filetype    = obs_info[5]
+                    tdp_list = tdp_info.split(" ")
+                    tdp_obj = TDP(tdp_list[0], tdp_list[1], tdp_list[2], tdp_list[3], tdp_list[4])
                 # Append exposure filename to input list for total detection product
-                obset_products[tdp]['files'].append(filename[1])
+                obset_products[totprod]['files'].append(filename[1])
+                tdp_obj.add_member(edp_obj)
                 # Increment single exposure master index
                 sep_indx += 1
+
+            # Add the FDP to the list of FDPs
+            FDP_list.append(fdp_obj)
+            del fdp_obj
+
+        # Add the TDP to the list of TDPs
+        TDP_list.append(tdp_obj)
+        del tdp_obj
+
+    ffff_list = [element.full_filename for element in EDP_list]
+    print(" ")
+    print("ffff_list: {}".format(ffff_list))
+    print(" ")
+
+    ffff_list = [element.exposure_name for element in TDP_list]
+    print(" ")
+    print("ffff_list: {}".format(ffff_list))
+    print(" ")
+
+    ffff_list = [element.exposure_name for element in FDP_list]
+    print(" ")
+    print("ffff_list: {}".format(ffff_list))
+    print(" ")
 
     # Done... return dict
     return obset_products

@@ -1,17 +1,18 @@
-# ia1s70jrq_flt.fits,11150,A1S,70,70,149.232269,F110W,IR,/ifs/archive/ops/hst/public/ia1s/ia1s70jrq/ia1s70jrq_flt.fits
-# filename,prop_id,prog_id,obset_id,visit_id,exptime,filters,detector,path
+# ia1s70jrq_flt.fits,11150,A1S,70,149.232269,F110W,IR,/ifs/archive/ops/hst/public/ia1s/ia1s70jrq/ia1s70jrq_flt.fits
+# filename,prop_id,prog_id,obset_id,exptime,filters,detector,path
 
 # Define the mapping between the first character of the filename and the associated instrument
-INSTRUMENT_DICT = {"i": "WFC3", "j": "ACS", "o": "STIS", "u": "WFPC2", "x": "FOC", "w": "WFPC"}
+# INSTRUMENT_DICT = {"i": "WFC3", "j": "ACS", "o": "STIS", "u": "WFPC2", "x": "FOC", "w": "WFPC"}
 
 class HAPProduct:
-    def __init__(self, prop_id, obset_id, detector, filename):
+    def __init__(self, prop_id, obset_id, instrument, detector, filename):
         self.prop_id = prop_id.zfill(5)
         self.obset_id = obset_id
+        self.instrument = instrument
         self.detector = detector
-        self.instrument = INSTRUMENT_DICT[filename[0])
+        # self.instrument = INSTRUMENT_DICT[filename[0])
 
-        self.basename = "hst_" + "_".join(map(str,[prop_id,obset_id,self.instrument,detector]))
+        self.basename = "hst_" + "_".join(map(str, [prop_id, obset_id, instrument, detector])) + "_"
 
         # exposure_name is the ipppssoo or a portion thereof
         self.exposure_name = filename[0:8]
@@ -19,20 +20,19 @@ class HAPProduct:
 
         # class variables to be set later
         self.param_dict = {}
-        
+
     def update_config(self, param_dict):
         pass
-
 
 class TDP(HAPProduct):
     """ A Total Detection Product (TDP) is a 'white' light mosaic comprised of
         images acquired with one instrument, one detector, all filters, and all
-        exposure times.
+        exposure times
     """
-    def __init__(self, prop_id, obset_id, detector, filename):
-        Super().__init__(prop_id, obset_id, detector, filename)
- 
-        self.exposure_name = filename[0:6]
+    def __init__(self, prop_id, obset_id, instrument, detector, filename):
+        super().__init__(prop_id, obset_id, instrument, detector, filename)
+
+        # self.exposure_name = filename[0:6]
 
         self.product_basename = self.basename + "_total_" + self.exposure_name
         self.trl_filename = self.product_basename + "trl.txt"
@@ -71,13 +71,13 @@ class FDP(HAPProduct):
         during a single visit with one instrument, one detector, a single filter,
         and all exposure times.
     """
-    def __init__(self, prop_id, obset_id, detector, filename, filter):
-        Super().__init__(prop_id, obset_id, detector, filename)
- 
-        self.exposure_name = filename[0:6]
-        self.filter = filter
+    def __init__(self, prop_id, obset_id, instrument, detector, filename, filters):
+        super().__init__(prop_id, obset_id, instrument, detector, filename)
 
-        self.product_basename = self.basename + "_".join(map(str,[filter,self.exposure_name])) 
+        self.exposure_name = filename[0:6]
+        self.filters = filters
+
+        self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
         self.trl_filename = self.product_basename + "trl.txt"
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
@@ -91,7 +91,8 @@ class FDP(HAPProduct):
         self.edp_list.append(edp)
 
     def create_drizzle_name(self, edp):
-        self.drizzle_filename = self.product_basename + "_" + edp.filetype + ".fits"
+        # self.drizzle_filename = self.product_basename + "_" + edp.filetype + ".fits"
+        pass
 
     def align_to_GAIA(self):
         pass
@@ -100,24 +101,24 @@ class FDP(HAPProduct):
         # for EDP in edp_list:
         pass
 
-# May not need this class at all
 class EDP(HAPProduct):
-    def __init__(self, prop_id, obset_id, detector, filename, exptime, filter):
-        Super().__init__(prop_id, obset_id, detector, filename)
- 
+    def __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype):
+        super().__init__(prop_id, obset_id, instrument, detector, filename)
+
         # ipppssoot_xxx.fits
         self.full_filename = filename
-        self.exptime = exptime
-        self.filter = filter
+        # self.exptime = exptime
+        self.filters = filters
+        self.filetype = filetype
 
         # There is an assumption here that all files part of the same TDP/FDP
         # processed in the same manner
-        self.filetype = "drc"
-        if filename[10:13].lower().endswith("flt"):
-           self.filetype = "drz"
+        # self.filetype = "drc"
+        # if filename[10:13].lower().endswith("flt"):
+        #    self.filetype = "drz"
 
-        self.product_basename = self.basename + "_".join(map(str,[filter,self.exposure_name])) 
-        self.drizzle_filename = self.product_basename + "_" + filetype + ".fits"
+        self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
+        self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
         self.headerlet_filename = self.product_basename + "_hlet.fits"
         self.trl_filename = self.product_basename + "trl.txt"
 
