@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """This script contains code to support creation of photometric sourcelists using two techniques: aperture photometry
 segmentation-map based photometry.
 """
@@ -23,8 +21,8 @@ from photutils import detect_sources, source_properties, deblend_sources
 from stsci.tools import logutil
 from stwcs.wcsutil import HSTWCS
 
-from drizzlepac import util
-from drizzlepac.hlautils import astrometric_utils
+from .. import util
+from . import astrometric_utils
 
 
 try:
@@ -32,18 +30,202 @@ try:
 except Exception:
     plt = None
 
+# Default background determination parameter values
+BKG_BOX_SIZE = (50, 50)
+BKG_FILTER_SIZE = (3, 3)
+
 __taskname__ = 'catalog_utils'
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 
 # ======================================================================================================================
+class ParamDict:
+    full_param_dict = {
+        "ACS HRC": {
+            "astrodrizzle": {
+                "SCALE": 0.025,
+                "PIXFRAC": 1.0,
+                "KERNEL": "square",
+                "OUTNX": None,
+                "OUTNY": None,
+                "ROT": 0.0,
+                "BITS": 256},
+            "ci filter": {
+                "ci_daolower_limit": 0.9,
+                "ci_daoupper_limit": 1.6,
+                "ci_selower_limit": 0.9,
+                "ci_seupper_limit": 1.6},
+            "dao": {
+                "TWEAK_FWHMPSF": 0.073,
+                "TWEAK_THRESHOLD": 3.0,
+                "aperture_1": 0.03,
+                "aperture_2": 0.125,
+                "bthresh": 5.0},
+            "sourcex": {
+                "fwhm": 0.073,
+                "thresh": 1.4,
+                "bthresh": 5.0,
+                "source_box": 7},
+            "swarm filter": {
+                "upper_epp_limit": 70000.,
+                "lower_epp_limit": 2000.,
+                "eppsky_limit": 1000.,
+                "swarm_thresh": 1.,
+                "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
+                "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
+                "proximity_binary": "no"}},
+        "ACS SBC": {
+            "astrodrizzle": {
+                "SCALE": 0.03,
+                "PIXFRAC": 1.0,
+                "KERNEL": "square",
+                "OUTNX": None,
+                "OUTNY": None,
+                "ROT": 0.0,
+                "BITS": 256},
+            "ci filter": {
+                "ci_daolower_limit": 0.15,
+                "ci_daoupper_limit": 0.45,
+                "ci_selower_limit": 0.15,
+                "ci_seupper_limit": 0.45},
+            "dao": {
+                "TWEAK_FWHMPSF": 0.065,
+                "TWEAK_THRESHOLD": 3.0,
+                "aperture_1": 0.07,
+                "aperture_2": 0.125,
+                "bthresh": 5.0},
+            "sourcex": {
+                "fwhm": 0.065,
+                "thresh": 1.4,
+                "bthresh": 5.0,
+                "source_box": 7},
+            "swarm filter": {
+                "upper_epp_limit": 70000.,
+                "lower_epp_limit": 2000.,
+                "eppsky_limit": 1000.,
+                "swarm_thresh": 1.,
+                "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
+                "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
+                "proximity_binary": "no"}},
+        "ACS WFC": {
+            "astrodrizzle": {
+                "SCALE": 0.05,
+                "PIXFRAC": 1.0,
+                "KERNEL": "square",
+                "OUTNX": None,
+                "OUTNY": None,
+                "ROT": 0.0,
+                "BITS": 256},
+            "ci filter": {
+                "ci_daolower_limit": 0.9,
+                "ci_daoupper_limit": 1.23,
+                "ci_selower_limit": 0.9,
+                "ci_seupper_limit": 1.23},
+            "dao": {
+                "TWEAK_FWHMPSF": 0.076,
+                "TWEAK_THRESHOLD": None,
+                "aperture_1": 0.05,  # update from 0.15
+                "aperture_2": 0.15,  # update from 0.25
+                "bthresh": 5.0},
+            "sourcex": {
+                "fwhm": 0.13,
+                "thresh": None,
+                "bthresh": 5.0,
+                "source_box": 5},
+            "swarm filter": {
+                "upper_epp_limit": 70000.,
+                "lower_epp_limit": 2000.,
+                "eppsky_limit": 1000.,
+                "swarm_thresh": 1.,
+                "clip_radius_list": [120., 100., 80., 60., 40., 30., 20., 10., 5., 2., 0.],
+                "scale_factor_list": [0.0, 0.000000e+00, 6.498530e-06, 3.687270e-05, 1.412972e-04, 3.151877e-04, 1.023391e-03, 3.134859e-03, 2.602436e-02, 1.820539e-01, 1.000000e+00],
+                "proximity_binary": "no"}},
+        "WFC3 IR": {
+            "astrodrizzle": {
+                "SCALE": 0.09,
+                "PIXFRAC": 1.0,
+                "KERNEL": "square",
+                "OUTNX": None,
+                "OUTNY": None,
+                "ROT": 0.0,
+                "BITS": 768},
+            "ci filter": {
+                "ci_daolower_limit": 0.25,
+                "ci_daoupper_limit": 0.55,
+                "ci_selower_limit": 0.25,
+                "ci_seupper_limit": 0.55},
+            "dao": {
+                "TWEAK_FWHMPSF": 0.14,
+                "TWEAK_THRESHOLD": 3.0,
+                "aperture_1": 0.15,
+                "aperture_2": 0.45,
+                "bthresh": 5.0},
+            "sourcex": {
+                "fwhm": 0.14,
+                "thresh": 1.4,
+                "bthresh": 5.0,
+                "source_box": 7},
+            "swarm filter": {
+                "upper_epp_limit": 70000.,
+                "lower_epp_limit": 2000.,
+                "eppsky_limit": 100.,
+                "swarm_thresh": 1.,
+                "clip_radius_list": [140., 120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
+                #                   x10    x10    x10   x10   x10   x10    x10   x10  x10  x2,
+                "scale_factor_list": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.015, 0.05, 0.15, 0.9, 1.],
+                # "scale_factor_list_orig": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.005, 0.05, 0.15, 0.9, 1.],
+                "proximity_binary": "yes"}},
+        "WFC3 UVIS": {
+            "astrodrizzle": {
+                "SCALE": 0.04,
+                "PIXFRAC": 1.0,
+                "KERNEL": "square",
+                "OUTNX": None,
+                "OUTNY": None,
+                "ROT": 0.0,
+                "BITS": 256},
+            "ci filter": {
+                "ci_daolower_limit": 0.75,
+                "ci_daoupper_limit": 1.0,
+                "ci_selower_limit": 0.75,
+                "ci_seupper_limit": 1.0},
+            "dao": {
+                "TWEAK_FWHMPSF": 0.076,
+                "TWEAK_THRESHOLD": 3.0,
+                "aperture_1": 0.05,
+                "aperture_2": 0.15,
+                "bthresh": 5.0},
+            "sourcex": {
+                "fwhm": 0.076,
+                "thresh": 1.4,
+                "bthresh": 5.0,
+                "source_box": 7},
+            "swarm filter": {
+                "upper_epp_limit": 70000.,
+                "lower_epp_limit": 2000.,
+                "eppsky_limit": 1000.,
+                "swarm_thresh": 1.,
+                "clip_radius_list": [120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
+                "scale_factor_list": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 0.0005, 0.005, 0.005, 0.015, 0.45, 1.],
+                # "scale_factor_list_orig": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 6.e-5, 0.0005, 0.005, 0.015, 0.45, 1.],
+                "proximity_binary": "yes"}}}  # TODO: remove para_dict definition once we have fleshed out the config object
 
+    def __init__(self, param_file=None):
+        self.param_file = param_file
 
-class hap_catalog(object):
+    def read_param_file(self):
+        pass
+
+    def get_params(self, instrument, detector):
+        inst_det = "{} {}".format(instrument, detector)
+        return self.full_param_dict[inst_det].copy()
+
+class HAPCatalog(object):
     """Generate photometric sourcelist for specified image(s).
     """
-    def __init__(self,fitsfile):
+
+    def __init__(self, fitsfile):
         self.label = "build_catalogs"
         self.description = "A set of routines to generate photometric sourcelists using aperture photometry"
 
@@ -51,184 +233,28 @@ class hap_catalog(object):
 
         # Fits file read
         self.imghdu = fits.open(self.imgname)
+        self.image = self.imghdu['SCI'].data
+        self.wht_image = self.imghdu['WHT'].data.copy()
 
         # Parameter dictionary definition
-        self.inst_det = "{} {}".format(self.imgname.split("_")[3].upper(), self.imgname.split("_")[4].upper())
-        self.full_param_dict = {
-            "ACS HRC": {
-                "astrodrizzle": {
-                    "SCALE": 0.025,
-                    "PIXFRAC": 1.0,
-                    "KERNEL": "square",
-                    "OUTNX": None,
-                    "OUTNY": None,
-                    "ROT": 0.0,
-                    "BITS": 256},
-                "ci filter": {
-                    "ci_daolower_limit": 0.9,
-                    "ci_daoupper_limit": 1.6,
-                    "ci_selower_limit": 0.9,
-                    "ci_seupper_limit": 1.6},
-                "dao": {
-                    "TWEAK_FWHMPSF": 0.073,
-                    "TWEAK_THRESHOLD": 3.0,
-                    "aperture_1": 0.03,
-                    "aperture_2": 0.125,
-                    "bthresh": 5.0},
-                "sourcex": {
-                    "fwhm": 0.073,
-                    "thresh": 1.4,
-                    "bthresh": 5.0,
-                    "source_box": 7},
-                "swarm filter": {
-                    "upper_epp_limit": 70000.,
-                    "lower_epp_limit": 2000.,
-                    "eppsky_limit": 1000.,
-                    "swarm_thresh": 1.,
-                    "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
-                    "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
-                    "proximity_binary": "no"}},
-            "ACS SBC": {
-                "astrodrizzle": {
-                    "SCALE": 0.03,
-                    "PIXFRAC": 1.0,
-                    "KERNEL": "square",
-                    "OUTNX": None,
-                    "OUTNY": None,
-                    "ROT": 0.0,
-                    "BITS": 256},
-                "ci filter": {
-                    "ci_daolower_limit": 0.15,
-                    "ci_daoupper_limit": 0.45,
-                    "ci_selower_limit": 0.15,
-                    "ci_seupper_limit": 0.45},
-                "dao": {
-                    "TWEAK_FWHMPSF": 0.065,
-                    "TWEAK_THRESHOLD": 3.0,
-                    "aperture_1": 0.07,
-                    "aperture_2": 0.125,
-                    "bthresh": 5.0},
-                "sourcex": {
-                    "fwhm": 0.065,
-                    "thresh": 1.4,
-                    "bthresh": 5.0,
-                    "source_box": 7},
-                "swarm filter": {
-                    "upper_epp_limit": 70000.,
-                    "lower_epp_limit": 2000.,
-                    "eppsky_limit": 1000.,
-                    "swarm_thresh": 1.,
-                    "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
-                    "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
-                    "proximity_binary": "no"}},
-            "ACS WFC": {
-                "astrodrizzle": {
-                    "SCALE": 0.05,
-                    "PIXFRAC": 1.0,
-                    "KERNEL": "square",
-                    "OUTNX": None,
-                    "OUTNY": None,
-                    "ROT": 0.0,
-                    "BITS": 256},
-                "ci filter": {
-                    "ci_daolower_limit": 0.9,
-                    "ci_daoupper_limit": 1.23,
-                    "ci_selower_limit": 0.9,
-                    "ci_seupper_limit": 1.23},
-                "dao": {
-                    "TWEAK_FWHMPSF": 0.076,
-                    "TWEAK_THRESHOLD": None,
-                    "aperture_1": 0.05,  # update from 0.15
-                    "aperture_2": 0.15,  # update from 0.25
-                    "bthresh": 5.0},
-                "sourcex": {
-                    "fwhm": 0.13,
-                    "thresh": None,
-                    "bthresh": 5.0,
-                    "source_box": 5},
-                "swarm filter": {
-                    "upper_epp_limit": 70000.,
-                    "lower_epp_limit": 2000.,
-                    "eppsky_limit": 1000.,
-                    "swarm_thresh": 1.,
-                    "clip_radius_list": [120., 100., 80., 60., 40., 30., 20., 10., 5., 2., 0.],
-                    "scale_factor_list": [0.0, 0.000000e+00, 6.498530e-06, 3.687270e-05, 1.412972e-04, 3.151877e-04, 1.023391e-03, 3.134859e-03, 2.602436e-02, 1.820539e-01, 1.000000e+00],
-                    "proximity_binary": "no"}},
-            "WFC3 IR": {
-                "astrodrizzle": {
-                    "SCALE": 0.09,
-                    "PIXFRAC": 1.0,
-                    "KERNEL": "square",
-                    "OUTNX": None,
-                    "OUTNY": None,
-                    "ROT": 0.0,
-                    "BITS": 768},
-                "ci filter": {
-                    "ci_daolower_limit": 0.25,
-                    "ci_daoupper_limit": 0.55,
-                    "ci_selower_limit": 0.25,
-                    "ci_seupper_limit": 0.55},
-                "dao": {
-                    "TWEAK_FWHMPSF": 0.14,
-                    "TWEAK_THRESHOLD": 3.0,
-                    "aperture_1": 0.15,
-                    "aperture_2": 0.45,
-                    "bthresh": 5.0},
-                "sourcex": {
-                    "fwhm": 0.14,
-                    "thresh": 1.4,
-                    "bthresh": 5.0,
-                    "source_box": 7},
-                "swarm filter": {
-                    "upper_epp_limit": 70000.,
-                    "lower_epp_limit": 2000.,
-                    "eppsky_limit": 100.,
-                    "swarm_thresh": 1.,
-                    "clip_radius_list": [140., 120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
-                    #                   x10    x10    x10   x10   x10   x10    x10   x10  x10  x2,
-                    "scale_factor_list": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.015, 0.05, 0.15, 0.9, 1.],
-                    # "scale_factor_list_orig": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.005, 0.05, 0.15, 0.9, 1.],
-                    "proximity_binary": "yes"}},
-            "WFC3 UVIS": {
-                "astrodrizzle": {
-                    "SCALE": 0.04,
-                    "PIXFRAC": 1.0,
-                    "KERNEL": "square",
-                    "OUTNX": None,
-                    "OUTNY": None,
-                    "ROT": 0.0,
-                    "BITS": 256},
-                "ci filter": {
-                    "ci_daolower_limit": 0.75,
-                    "ci_daoupper_limit": 1.0,
-                    "ci_selower_limit": 0.75,
-                    "ci_seupper_limit": 1.0},
-                "dao": {
-                    "TWEAK_FWHMPSF": 0.076,
-                    "TWEAK_THRESHOLD": 3.0,
-                    "aperture_1": 0.05,
-                    "aperture_2": 0.15,
-                    "bthresh": 5.0},
-                "sourcex": {
-                    "fwhm": 0.076,
-                    "thresh": 1.4,
-                    "bthresh": 5.0,
-                    "source_box": 7},
-                "swarm filter": {
-                    "upper_epp_limit": 70000.,
-                    "lower_epp_limit": 2000.,
-                    "eppsky_limit": 1000.,
-                    "swarm_thresh": 1.,
-                    "clip_radius_list": [120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
-                    "scale_factor_list": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 0.0005, 0.005, 0.005, 0.015, 0.45, 1.],
-                    # "scale_factor_list_orig": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 6.e-5, 0.0005, 0.005, 0.015, 0.45, 1.],
-                    "proximity_binary": "yes"}}} # TODO: remove para_dict definition once we have fleshed out the config object
-        self.param_dict=self.full_param_dict[self.inst_det].copy() # TODO: remove para_dict redefinition once we have fleshed out the config object
+        self.instrument = self.imgname.split("_")[3].upper()
+        self.detector = self.imgname.split("_")[4].upper()
+        self.inst_det = "{} {}".format(self.instrument, self.detector)
+        self.full_param_dict = ParamDict()
+        self.param_dict = self.full_param_dict.get_params(self.instrument, self.detector)
+
+
+    def compute_background(self. threshold, bkg_estimator=MedianBackground(),
+                            box_size=BKG_BOX_SIZE, filter_size=BKG_FILTER_SIZE):
+        # Estimate background for DaoStarfinder 'threshold' input.
+        self.image_bkg = ImageBackground(self.image)
+        self.image_bkg.compute_bkg(threshold, bkg_estimator=bkg_estimator,
+                                    box_size=box_size, filter_size=filter_size)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-class hap_point_catalog(hap_catalog):
+class HAPPointCatalog(HAPCatalog):
     """Generate photometric sourcelist(s) for specified image(s) using aperture photometry of point sources.
     """
     def __init__(self, imgname):
@@ -238,7 +264,7 @@ class hap_point_catalog(hap_catalog):
         self.point_sourcelist_filename = self.imgname.replace(self.imgname[-9:], "_point-cat.ecsv")
 
 
-    def identify_point_sources(self,bkgsig_sf=4.,dao_ratio=0.8):
+    def identify_point_sources(self, bkgsig_sf=4., dao_ratio=0.8):
         """Create a master coordinate list of sources identified in the specified total detection product image
 
         Parameters
@@ -259,50 +285,15 @@ class hap_point_catalog(hap_catalog):
         sources : astropy table
             Table containing x, y coordinates of identified sources
         """
+        threshold = self.param_dict['dao']['TWEAK_THRESHOLD']
         # read in sci, wht extensions of drizzled product
-        image = self.imghdu['SCI'].data.copy()
-        wht_image = self.imghdu['WHT'].data.copy()
+        image = self.image.copy()
+        wht_image = self.wht_image.copy()
 
         image -= np.nanmedian(image)
 
-        # Estimate background for DaoStarfinder 'threshold' input.
-        bkg_estimator = MedianBackground()
-        bkg = None
-        threshold = self.param_dict['dao']['TWEAK_THRESHOLD']
-        exclude_percentiles = [10, 25, 50, 75]
-        for percentile in exclude_percentiles:
-            try:
-                bkg = Background2D(image, (50, 50), filter_size=(3, 3),
-                                   bkg_estimator=bkg_estimator,
-                                   exclude_percentile=percentile)
-            except Exception:
-                bkg = None
-                continue
-            if bkg is not None:
-                # If it succeeds, stop and use that value
-                bkg_rms = (5. * bkg.background_rms)
-                bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
-                default_threshold = bkg.background + bkg_rms
-                if threshold is None:
-                    threshold = default_threshold
-                elif threshold < 0:
-                    threshold = -1 * threshold * default_threshold
-                    log.info("{} based on {}".format(threshold.max(), default_threshold.max()))
-                    bkg_rms_mean = threshold.max()
-                else:
-                    bkg_rms_mean = 3. * threshold
-
-                if bkg_rms_mean < 0:
-                    bkg_rms_mean = 0.
-                break
-
-        # If Background2D does not work at all, define default scalar values for
-        # the background to be used in source identification
-        if bkg is None:
-            bkg_rms_mean = max(0.01, imgarr.min())
-            bkg_rms = bkg_rms_mean * 5
-
-
+        # Estimate background
+        self.compute_background(threshold)
 
         # Estimate FWHM from image sources
 
@@ -310,7 +301,8 @@ class hap_point_catalog(hap_catalog):
         detect_sources_thresh = bkgsig_sf * bkg_sigma
 
         default_fwhm = self.param_dict['dao']['TWEAK_FWHMPSF'] / self.param_dict['astrodrizzle']['SCALE']
-        kernel = astrometric_utils.build_auto_kernel(image, wht_image, threshold=bkg_rms, fwhm=default_fwhm)
+        kernel = astrometric_utils.build_auto_kernel(image, wht_image,
+                                                     threshold=image_bkg.bkg_rms, fwhm=default_fwhm)
         segm = detect_sources(image, detect_sources_thresh, npixels=self.param_dict["sourcex"]["source_box"],
                               filter_kernel=kernel)
         cat = source_properties(image, segm)
@@ -318,8 +310,8 @@ class hap_point_catalog(hap_catalog):
         smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
         source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
 
-        log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm,bkg_rms_mean,bkg_rms_mean))
-        daofind = DAOStarFinder(fwhm=source_fwhm, threshold=bkg_rms_mean, ratio=dao_ratio)
+        log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm, image_bkg.bkg_rms_mean, image_bkg.bkg_rms_mean))
+        daofind = DAOStarFinder(fwhm=source_fwhm, threshold=image_bkg.bkg_rms_mean, ratio=dao_ratio)
         sources = daofind(image)
 
         for col in sources.colnames:
@@ -364,7 +356,7 @@ class hap_point_catalog(hap_catalog):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def write_catalog_to_file(self,catalog,write_region_file=False):
+    def write_to(self, catalog, write_region_file=False):
         """Write specified catalog to file on disk
 
         Parameters
@@ -387,22 +379,22 @@ class hap_point_catalog(hap_catalog):
         # Write out region file if input 'write_region_file' is turned on.
         if write_region_file:
             out_table = catalog.copy()
-            if 'xcentroid' in out_table.keys(): # for point-source source catalogs
+            if 'xcentroid' in out_table.keys():  # for point-source source catalogs
                 # Remove all other columns besides xcentroid and ycentroid
-                out_table.keep_columns(['xcentroid','ycentroid'])
+                out_table.keep_columns(['xcentroid', 'ycentroid'])
                 # Add offset of 1.0 in X and Y to line up sources in region file with image displayed in ds9.
                 out_table['xcentroid'].data[:] += np.float64(1.0)
                 out_table['ycentroid'].data[:] += np.float64(1.0)
-            elif 'xcenter' in out_table.keys(): # for point-source photometric catalogs
+            elif 'xcenter' in out_table.keys():  # for point-source photometric catalogs
                 # Remove all other columns besides xcenter and ycenter
                 out_table.keep_columns(['xcenter', 'ycenter'])
                 # Add offset of 1.0 in X and Y to line up sources in region file with image displayed in ds9.
                 out_table['xcenter'].data = out_table['xcenter'].data + np.float64(1.0)
                 out_table['ycenter'].data = out_table['ycenter'].data + np.float64(1.0)
-            else: # Bail out if anything else is encountered.
+            else:  # Bail out if anything else is encountered.
                 log.info("Error: unrecognized catalog format. Skipping region file generation.")
                 return()
-            reg_filename = self.point_sourcelist_filename.replace(".ecsv",".reg")
+            reg_filename = self.point_sourcelist_filename.replace(".ecsv", ".reg")
             out_table.write(reg_filename, format="ascii")
             log.info("Wrote region file '{}' containing {} sources".format(reg_filename, len(out_table)))
 
@@ -410,10 +402,10 @@ class hap_point_catalog(hap_catalog):
 # ----------------------------------------------------------------------------------------------------------------------
 #       Modified contents of Michele's se_source_generation.py, as of commit b2db3ec9c918188cea2d3b0e4b64e39cc79c4146
 # ----------------------------------------------------------------------------------------------------------------------
-class hap_segment_catalog(hap_catalog):
+class HAPSegmentCatalog(HAPCatalog):
     """Generate photometric sourcelist(s) for specified image(s) using segment mapping.
     """
-    def __init__(self,imgname):
+    def __init__(self, imgname):
         super().__init__(imgname)
 
         # Generate output sourcelist catalog filename
@@ -429,7 +421,7 @@ class hap_segment_catalog(hap_catalog):
             ghd_product = "fdp"
         self.keyword_dict = self._get_header_data(product=ghd_product)
 
-    def create_sextractor_like_sourcelists(self,se_debug=False):
+    def create_sextractor_like_sourcelists(self, se_debug=False):
         """Use photutils to find sources in image based on segmentation.
 
         Parameters
@@ -567,7 +559,7 @@ class hap_segment_catalog(hap_catalog):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def measure_source_properties(self,segm, kernel):
+    def measure_source_properties(self, segm, kernel):
         """Use the positions of the sources identified in the white light image to
         measure properties of these sources in the filter images
 
@@ -632,7 +624,7 @@ class hap_segment_catalog(hap_catalog):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def _compute_background(self,image, box_size=50, win_size=3, nsigma=5., threshold_flag=None):
+    def _compute_background(self, image, box_size=50, win_size=3, nsigma=5., threshold_flag=None):
         """Use Background2D to determine the background of the input image.
 
         Parameters
@@ -734,7 +726,7 @@ class hap_segment_catalog(hap_catalog):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def _write_catalog(self,seg_cat, product="tdp"):
+    def _write_catalog(self, seg_cat, product="tdp"):
         """Actually write the specified source catalog out to disk
 
         Parameters
@@ -950,80 +942,50 @@ class hap_segment_catalog(hap_catalog):
 
         return (data_table)
 
+class ImageBackground:
+    exclude_percentiles = [10, 25, 50, 75]
+
+    def __init__(self, array):
+        self.image = array
+
+    def compute_bkg(self, threshold, bkg_estimator=MedianBackground(), box_size=(50, 50), filter_size=(3, 3)):
+        # Estimate background for DaoStarfinder 'threshold' input.
+        bkg = None
+        for percentile in self.exclude_percentiles:
+            try:
+                bkg = Background2D(self.image, box_size, filter_size=filter_size,
+                                   bkg_estimator=bkg_estimator,
+                                   exclude_percentile=percentile)
+            except Exception:
+                bkg = None
+                continue
+
+            if bkg is not None:
+                # If it succeeds, stop and use that value
+                bkg_rms = (5. * bkg.background_rms)
+                bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
+                default_threshold = bkg.background + bkg_rms
+                if threshold is None:
+                    threshold = default_threshold
+                elif threshold < 0:
+                    threshold = -1 * threshold * default_threshold
+                    log.info("{} based on {}".format(threshold.max(), default_threshold.max()))
+                    bkg_rms_mean = threshold.max()
+                else:
+                    bkg_rms_mean = 3. * threshold
+
+                if bkg_rms_mean < 0:
+                    bkg_rms_mean = 0.
+                break
+
+        # If Background2D does not work at all, define default scalar values for
+        # the background to be used in source identification
+        if bkg is None:
+            bkg_rms_mean = max(0.01, self.image.min())
+            bkg_rms = bkg_rms_mean * 5
+        # Remember results
+        self.bkg_rms_mean = bkg_rms_mean
+        self.bkg_rms = bkg_rms
+        self.bkg = bkg
 
 # ======================================================================================================================
-
-
-@util.with_logging
-def run_catalog_utils(args,starting_dt):
-    """Super simple testing interface for the above code.
-
-    Parameters
-    ----------
-    args : argparse.Namespace object
-        command-line input arguments
-
-    starting_dt : datetime.datetime object
-        start date/time of current run.
-
-    Returns
-    -------
-    Nothing.
-    """
-    log.info("Run start time: {}".format(str(starting_dt)))
-    log.info("python {} {} -f {} -d {} -m {}".format(os.path.realpath(__file__),
-                                               args.total_product_name,
-                                               " ".join(args.filter_product_list),
-                                               args.debug,args.phot_mode))
-
-
-
-    if args.phot_mode in ['point', 'both']:
-        total_point_product = hap_point_catalog(args.total_product_name)
-        total_point_product.ps_source_cat = total_point_product.identify_point_sources()
-        total_point_product.write_catalog_to_file(total_point_product.ps_source_cat, write_region_file=args.debug)
-
-    if args.phot_mode in ['seg', 'both']:
-        total_seg_product = hap_segment_catalog(args.total_product_name)
-        total_seg_product.segmap, \
-        total_seg_product.kernel, \
-        total_seg_product.bkg_dao_rms = \
-            total_seg_product.create_sextractor_like_sourcelists(se_debug=args.debug)
-
-    for filter_img_name in args.filter_product_list:
-
-        if args.phot_mode in ['point', 'both']:
-            filter_point_product = hap_point_catalog(filter_img_name)
-            filter_point_product.ps_phot_cat = filter_point_product.perform_point_photometry(total_point_product.ps_source_cat)
-            filter_point_product.write_catalog_to_file(filter_point_product.ps_phot_cat,write_region_file=args.debug)
-
-        if args.phot_mode in ['seg', 'both']:
-            filter_seg_product = hap_segment_catalog(filter_img_name)
-            filter_seg_product.measure_source_properties(total_seg_product.segmap,total_seg_product.kernel)
-
-    log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))
-
-
-# ======================================================================================================================
-
-
-
-if __name__ == '__main__':
-    """Super simple testing interface for the above code."""
-
-    starting_dt = datetime.datetime.now()
-
-
-    parser = argparse.ArgumentParser(description='test interface for sourcelist_generation')
-    parser.add_argument('total_product_name',help="total product filename")
-    parser.add_argument('-f', '--filter_product_list',nargs='+',required=True,
-                        help="Space-separated list of one or more total filter products")
-    parser.add_argument('-d', '--debug',required=False,choices=['True','False'],default='False',help='debug mode on? (generate region files?)')
-    parser.add_argument('-m', '--phot_mode',required=False,choices=['point','seg','both'],default='both',help="which photometry mode should be run? 'point' for point-soruce only; 'seg' for segment only, and 'both' for both point-source and segment photometry. ")
-    args = parser.parse_args()
-    if args.debug == "True":
-        args.debug = True
-    else:
-        args.debug = False
-
-    run_catalog_utils(args, starting_dt)
