@@ -1061,10 +1061,12 @@ def make_mosaic_wcs(filenames, rot=0.0, scale=0.05):
     hstwcs_list = []
     for f in filenames:
         with pyfits.open(f) as hdulist:
-            hstwcs_list.extend([get_hstwcs(f,hdulist,extnum) for extnum in get_extns(f)])
+            hstwcs_list.extend([get_hstwcs(f, hdulist, extnum) for extnum in get_extns(f)])
     # Combine them into a single mosaic WCS
     output_wcs = utils.output_wcs(hstwcs_list, undistort=True)
-    mosaic_wcs = mergeWCS(output_wcs, {'rot':rot, 'scale':scale})
+    output_wcs.wcs.cd = make_perfect_cd(output_wcs)
+
+    mosaic_wcs = mergeWCS(output_wcs, {'rot': rot, 'scale': scale})
     return mosaic_wcs
 
 def create_mosaic_pars(mosaic_wcs):
