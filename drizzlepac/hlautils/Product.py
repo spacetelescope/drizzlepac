@@ -1,14 +1,17 @@
 # ia1s70jrq_flt.fits,11150,A1S,70,149.232269,F110W,IR,/ifs/archive/ops/hst/public/ia1s/ia1s70jrq/ia1s70jrq_flt.fits
 # filename,prop_id,prog_id,obset_id,exptime,filters,detector,path
 # Make sure the proposal_id is a 5-character string
+from drizzlepac import wcs_functions
 
 class HAPProduct:
+    """ HAPProduct is the base class for the various products generated during the
+        astrometry update and mosaicing of image data.
+    """
     def __init__(self, prop_id, obset_id, instrument, detector, filename):
         self.prop_id = prop_id.zfill(5)
         self.obset_id = obset_id
         self.instrument = instrument
         self.detector = detector
-        # self.instrument = INSTRUMENT_DICT[filename[0])
 
         self.basename = "hst_" + "_".join(map(str, [prop_id, obset_id, instrument, detector]))
 
@@ -30,13 +33,16 @@ class TotalProduct(HAPProduct):
     def __init__(self, prop_id, obset_id, instrument, detector, filename):
         super().__init__(prop_id, obset_id, instrument, detector, filename)
 
-        # self.exposure_name = filename[0:6]
+        self.exposure_name = filename[0:6]
 
         self.product_basename = self.basename + "_total_" + self.exposure_name
         self.trl_filename = self.product_basename + "_trl.txt"
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = ""
+        # How exactly is this used as it is set the number of times a TDP is created for
+        # an obset 
+        self.manifest_name = '_'.join([instrument, filename[1:4], obset_id, "manifest.txt"])
 
         # These attributes will be set later
         self.edp_list = []
@@ -55,10 +61,11 @@ class TotalProduct(HAPProduct):
 
     # There is a unique WCS for each TotalProduct product which is generated based upon
     # the merging of all the ExposureProductss which comprise the specific TotalProduct.
-    # Is the list the flt/flcs or the associated headerlets for generating the wcs?
     def build_metawcs(self):
-        # image_list = [element.full_filename for element in edp_list]
-        # meta_wcs = wcs_functions.make_mosaic_wcs(image_list)
+        """
+        image_list = [element.full_filename for element in edp_list]
+        meta_wcs = wcs_functions.make_mosaic_wcs(image_list)
+        """
         pass
 
     # make outnx, outny, and wcs attribute for TotalProduct
@@ -72,7 +79,7 @@ class FilterProduct(HAPProduct):
     def __init__(self, prop_id, obset_id, instrument, detector, filename, filters):
         super().__init__(prop_id, obset_id, instrument, detector, filename)
 
-        # self.exposure_name = filename[0:6]
+        self.exposure_name = filename[0:6]
         self.filters = filters
 
         self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
@@ -100,6 +107,9 @@ class FilterProduct(HAPProduct):
         pass
 
 class ExposureProduct(HAPProduct):
+    """ An Exposure Product is an individual exposure/image acquired during a single
+        visit (observation set).
+    """
     def __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype):
         super().__init__(prop_id, obset_id, instrument, detector, filename)
 

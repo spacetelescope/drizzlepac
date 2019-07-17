@@ -211,7 +211,7 @@ def parse_obset_tree(det_tree):
         tdp_list.append(tdp_obj)
         # tdp_obj = None
 
-    # """
+    """
     # Just for debugging.  
     ffff_list = [element.product_basename for element in sep_list]
     print(" ")
@@ -219,8 +219,8 @@ def parse_obset_tree(det_tree):
     print(" ")
 
     #ffff_list = [element.product_basename for element in tdp_list]
-    ffff_list = tdp_list[0].edp_list[0].full_filename
-    ffff_list = [element.edp_list for element in tdp_list]
+    #ffff_list = tdp_list[1].edp_list[4].full_filename
+    ffff_list = [edp_value.full_filename for element in tdp_list for edp_value in element.edp_list]
     print(" ")
     print("ffff_list: {}".format(ffff_list))
     print(" ")
@@ -229,7 +229,7 @@ def parse_obset_tree(det_tree):
     print(" ")
     print("ffff_list: {}".format(ffff_list))
     print(" ")
-    # """
+    """
 
     # Done... return dict
     return obset_products, sep_list, filt_list, tdp_list
