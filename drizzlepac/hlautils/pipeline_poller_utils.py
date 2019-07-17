@@ -8,7 +8,7 @@ generator routines produce the specific image product and source catalog files.
 """
 
 from astropy.table import Table, Column
-from drizzlepac.hlautils.Product import EDP, FDP, TDP
+from drizzlepac.hlautils.Product import ExposureProduct, FilterProduct, TotalProduct
 
 # Define information/formatted strings to be included in output dict
 SEP_STR = 'single exposure product {:02d}'
@@ -136,9 +136,9 @@ def parse_obset_tree(det_tree):
     filt_indx = 0
     sep_indx = 0
 
-    TDP_list = []
-    FDP_list = []
-    EDP_list = []
+    tdp_list = []
+    filt_list = []
+    sep_list = []
 
     # Determine if the individual files being processed are flt or flc and
     # set the filetype accordingly (flt->drz or flc->drc).
@@ -175,17 +175,17 @@ def parse_obset_tree(det_tree):
 
                 # Create a single exposure product object
                 prod_list = prod_info.split(" ")
-                edp_obj = EDP(prod_list[0], prod_list[1], prod_list[2], prod_list[3], prod_list[4], prod_list[5], prod_list[6])
-                EDP_list.append(edp_obj)
+                sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3], prod_list[4], prod_list[5], prod_list[6])
+                sep_list.append(sep_obj)
 
                 # Set up the filter product dictionary and create a filter product object
                 # Initialize `info` key for this filter product
                 if not obset_products[fprod]['info']:
                     obset_products[fprod]['info'] = prod_info
                     # Create a filter product object for this instrument/detector
-                    fdp_obj = FDP(prod_list[0], prod_list[1], prod_list[2], prod_list[3], prod_list[4], prod_list[5])
+                    filt_obj = FilterProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3], prod_list[4], prod_list[5])
                 # Append exposure object to the list of exposure objects for this specific filter product
-                fdp_obj.add_member(edp_obj)
+                filt_obj.add_member(sep_obj)
                 # Populate filter product with input filename
                 obset_products[fprod]['files'].append(filename[1])
 
@@ -194,43 +194,45 @@ def parse_obset_tree(det_tree):
                 if not obset_products[totprod]['info']:
                     obset_products[totprod]['info'] = prod_info
                     # Create a total detection product object for this instrument/detector
-                    tdp_obj = TDP(prod_list[0], prod_list[1], prod_list[2], prod_list[3], prod_list[4])
+                    tdp_obj = TotalProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3], prod_list[4])
                 # Append exposure object to the list of exposure objects for this specific total detection product
-                tdp_obj.add_member(edp_obj)
+                tdp_obj.add_member(sep_obj)
                 # Populate total detection product with input filename
                 obset_products[totprod]['files'].append(filename[1])
 
-                # Increment single exposure master index
+                # Increment single exposure index
                 sep_indx += 1
 
-            # Add the FDP to the list of FDPs
-            FDP_list.append(fdp_obj)
-            # fdp_obj = None
+            # Add the FilterProduct to the list of FilterProducts
+            filt_list.append(filt_obj)
+            # filt_obj = None
 
-        # Add the TDP to the list of TDPs
-        TDP_list.append(tdp_obj)
+        # Add the TotalProduct to the list of TotalProducts
+        tdp_list.append(tdp_obj)
         # tdp_obj = None
 
     # """
     # Just for debugging.  
-    ffff_list = [element.product_basename for element in EDP_list]
+    ffff_list = [element.product_basename for element in sep_list]
     print(" ")
     print("ffff_list: {}".format(ffff_list))
     print(" ")
 
-    ffff_list = [element.product_basename for element in TDP_list]
+    #ffff_list = [element.product_basename for element in tdp_list]
+    ffff_list = tdp_list[0].edp_list[0].full_filename
+    ffff_list = [element.edp_list for element in tdp_list]
     print(" ")
     print("ffff_list: {}".format(ffff_list))
     print(" ")
 
-    ffff_list = [element.product_basename for element in FDP_list]
+    ffff_list = [element.product_basename for element in filt_list]
     print(" ")
     print("ffff_list: {}".format(ffff_list))
     print(" ")
     # """
 
     # Done... return dict
-    return obset_products
+    return obset_products, sep_list, filt_list, tdp_list
 
 # ----------------------------------------------------------------------------------------------------------
 
