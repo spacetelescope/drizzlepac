@@ -41,7 +41,7 @@ class TotalProduct(HAPProduct):
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = ""
         # How exactly is this used as it is set the number of times a TDP is created for
-        # an obset 
+        # an obset
         self.manifest_name = '_'.join([instrument, filename[1:4], obset_id, "manifest.txt"])
 
         # These attributes will be set later
