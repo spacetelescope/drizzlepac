@@ -448,9 +448,10 @@ def run_hla_processing(input_filename, result=None, debug=False):
         # 2: Run alignimages.py on images on a filter-by-filter basis.
         # Process each filter object which contains a list of exposure objects/products
         log.info("2: Run alignimages.py on images on a filter-by-filter basis.")
+        filt_exposures = []
         for filt_obj in filt_list:
             print("filt_obj: {} filt_obj.filters: {}".format(filt_obj, filt_obj.filters))
-            align_table = filt_obj.align_to_GAIA()
+            align_table, filt_exposures = filt_obj.align_to_GAIA()
 
             # Report results and track the output files
             # FIX - Add info here in the case of alignment working on data that should not be aligned
@@ -471,6 +472,7 @@ def run_hla_processing(input_filename, result=None, debug=False):
             #else:
             #    log.info("{}: Alignimages step skipped.".format(obs_category))
 
+        """
         # 3: Run meta wcs code to get common WCS for all images.
         log.info("5: run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
         log.info("The following images will be used: ")
@@ -478,6 +480,7 @@ def run_hla_processing(input_filename, result=None, debug=False):
             log.info("{}".format(imgname))
          if exposure_filenames:
             meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames)
+        """
 
         # MDD ENDED HERE
 

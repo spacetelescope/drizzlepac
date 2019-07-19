@@ -133,7 +133,11 @@ class FilterProduct(HAPProduct):
             # log.info("No correction to absolute astrometric frame applied.\n")
             align_table = None
 
-        return align_table
+        # Return a table which contains data regarding the alignment, as well as the
+        # list of the flt/flc exposures which were part of the alignment process
+        # FIX - This does not account for individual exposures which might have been
+        # excluded from alignment.
+        return align_table, exposure_filenames
 
     def drizzle_fdp(self):
         # for ExposureProduct in edp_list:
