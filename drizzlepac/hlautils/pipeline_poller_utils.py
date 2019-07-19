@@ -175,7 +175,7 @@ def parse_obset_tree(det_tree):
 
                 # Create a single exposure product object
                 prod_list = prod_info.split(" ")
-                sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3], prod_list[4], prod_list[5], prod_list[6])
+                sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3], filename[1], prod_list[5], prod_list[6])
                 sep_list.append(sep_obj)
 
                 # Set up the filter product dictionary and create a filter product object

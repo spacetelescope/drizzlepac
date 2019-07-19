@@ -1,7 +1,11 @@
 # ia1s70jrq_flt.fits,11150,A1S,70,149.232269,F110W,IR,/ifs/archive/ops/hst/public/ia1s/ia1s70jrq/ia1s70jrq_flt.fits
 # filename,prop_id,prog_id,obset_id,exptime,filters,detector,path
 # Make sure the proposal_id is a 5-character string
+import sys
+import traceback
+
 from drizzlepac import wcs_functions
+from drizzlepac import alignimages
 
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
@@ -100,24 +104,51 @@ class FilterProduct(HAPProduct):
         pass
 
     def align_to_GAIA(self):
-        pass
+        """Extract the flt/flc filenames from the exposure product list, as
+           well as the corresponding headerlet filenames to use legacy alignment
+           routine.
+        """
+        print("Here is filterProduct")
+        exposure_filenames = []
+        headerlet_filenames = {}
+        align_table = None
+        try:
+            if self.edp_list:
+                for edp in self.edp_list:
+                    exposure_filenames.append(edp.full_filename)
+                    headerlet_filenames[edp.full_filename] = edp.headerlet_filename
+                    print("exposure_filenames: {}".format(exposure_filenames))
+                    print("headerlet_filenames: {}".format(headerlet_filenames))
+                align_table = alignimages.perform_align(exposure_filenames,
+                                                        debug=False,
+                                                        runfile="alignimages.log",
+                                                        update_hdr_wcs=True,
+                                                        headerlet_filenames=headerlet_filenames)
+        except Exception:
+            # *** FIX Not sure about the logging here
+            # Report a problem with the alignment
+            # log.info("EXCEPTION encountered in alignimages.\n")
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+            # log.info("No correction to absolute astrometric frame applied.\n")
+            align_table = None
+
+        return align_table
 
     def drizzle_fdp(self):
         # for ExposureProduct in edp_list:
         pass
 
 class ExposureProduct(HAPProduct):
-    """ An Exposure Product is an individual exposure/image acquired during a single
-        visit (observation set).
+    """ An Exposure Product is an individual exposure/image (flt/flc).
     """
     def __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype):
         super().__init__(prop_id, obset_id, instrument, detector, filename)
 
-        # ipppssoot_xxx.fits
-        self.full_filename = filename
         # self.exptime = exptime
         self.filters = filters
         self.filetype = filetype
+        self.full_filename = filename
 
         self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
