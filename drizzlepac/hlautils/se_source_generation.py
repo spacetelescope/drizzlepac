@@ -3,7 +3,7 @@
 
 The function, create_sextractor_like_sourcelists, processes the provided
 input file (presumptively a drizzled, white-light image) looking for sources.
-A segmentation map and the total detection product catalog are the critical 
+A segmentation map and the total detection product catalog are the critical
 outputs of this routine.
 
 The function, measure_source_properties, uses the segmentation map generated
@@ -86,8 +86,8 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_
 
     # Get header information to annotate the output catalogs
     keyword_dict = _get_header_data(imghdu)
-   
-    # Get the instrument/detector-specific values from the param_dict 
+
+    # Get the instrument/detector-specific values from the param_dict
     fwhm = param_dict["sourcex"]["fwhm"]
     size_source_box = param_dict["sourcex"]["source_box"]
     threshold_flag = param_dict["sourcex"]["thresh"]
@@ -129,7 +129,7 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_
     # For debugging purposes...
     if se_debug:
         # Write out a catalog which can be used as an overlay for image in ds9
-        cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, 
+        cat = source_properties(imgarr_bkgsub, segm, background=bkg.background,
                                 filter_kernel=kernel, wcs=imgwcs)
         table = cat.to_table()
 
@@ -232,7 +232,7 @@ def measure_source_properties(segm, kernel, source_filename, catalog_filename, p
 
     # Open the filter-level image
     imghdu = fits.open(source_filename)
-    imgarr = imghdu['sci',1].data
+    imgarr = imghdu['sci', 1].data
 
     # Get the HSTWCS object from the first extension
     imgwcs = HSTWCS(imghdu, 1)
@@ -240,7 +240,7 @@ def measure_source_properties(segm, kernel, source_filename, catalog_filename, p
     # Get header information to annotate the output catalogs
     keyword_dict = _get_header_data(imghdu, product="fdp")
 
-    # Get the instrument/detector-specific values from the param_dict 
+    # Get the instrument/detector-specific values from the param_dict
     fwhm = param_dict["sourcex"]["fwhm"]
     size_source_box = param_dict["sourcex"]["source_box"]
     threshold_flag = param_dict["sourcex"]["thresh"]
@@ -264,6 +264,7 @@ def measure_source_properties(segm, kernel, source_filename, catalog_filename, p
     # Compute source properties...
     seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background,
                                 filter_kernel=kernel, wcs=imgwcs)
+    print(Table(seg_cat.to_table()).colnames)
 
     # Write the source catalog
     _write_catalog(seg_cat, keyword_dict, catalog_filename, product="fdp")
@@ -274,7 +275,7 @@ def _compute_background(image, box_size=50, win_size=3, nsigma=5., threshold_fla
 
     Parameters
     ----------
-    image : ndarray 
+    image : ndarray
         Numpy array of the science extension from the observations FITS file.
 
     box_size : int
@@ -302,7 +303,7 @@ def _compute_background(image, box_size=50, win_size=3, nsigma=5., threshold_fla
 
     threshold : ndarray
         Numpy array representing the background plus RMS
-        
+
     """
     # Report configuration values to log
     log.info("")
@@ -374,10 +375,10 @@ def _compute_background(image, box_size=50, win_size=3, nsigma=5., threshold_fla
 
 def _write_catalog(seg_cat, keyword_dict, catalog_filename, product="tdp"):
     """Actually write the specified source catalog out to disk
- 
+
     Parameters
     ----------
-    seg_cat : list of `~photutils.SourceProperties` objects 
+    seg_cat : list of `~photutils.SourceProperties` objects
         List of SourceProperties objects, one for each source found in the
         specified detection product
 
@@ -389,7 +390,7 @@ def _write_catalog(seg_cat, keyword_dict, catalog_filename, product="tdp"):
 
     product : str, optional
         Identification string for the catalog product being written.  This
-        controls the data being put into the catalog product 
+        controls the data being put into the catalog product
     """
 
     # Convert the list of SourceProperties objects to a QTable and
@@ -459,10 +460,14 @@ def _write_catalog(seg_cat, keyword_dict, catalog_filename, product="tdp"):
         seg_table["covar_sigy2"].description = "SExtractor Column y2_image, (1,1) element of covariance matrix"
         seg_table["covar_sigxy"].description = "SExtractor Column xy_image, (0,1) and (1,0) elements of covariance matrix"
 
-        seg_table["xmin"].description = "SExtractor Column xmin_image"
-        seg_table["xmax"].description = "SExtractor Column xmax_image"
-        seg_table["ymin"].description = "SExtractor Column ymin_image"
-        seg_table["ymin"].description = "SExtractor Column ymax_image"
+        if 'xmin' in seg_table:
+            cols = ['xmin', 'xmax', 'ymin', 'ymax']
+        else:
+            cols = ['bbox_xmin', 'bbox_xmax', 'bbox_ymin', 'bbox_ymax']
+        seg_table[cols[0]].description = "SExtractor Column xmin_image"
+        seg_table[cols[1]].description = "SExtractor Column xmax_image"
+        seg_table[cols[2]].description = "SExtractor Column ymin_image"
+        seg_table[cols[3]].description = "SExtractor Column ymax_image"
 
         # Write out the official filter detection product source catalog
         seg_table["xcentroid"].info.format = ".10f"
@@ -477,7 +482,7 @@ def _write_catalog(seg_cat, keyword_dict, catalog_filename, product="tdp"):
 def _get_header_data(imghdu, product="tdp"):
     """Read FITS keywords from the primary or extension header and store the
     information in a dictionary
- 
+
     Parameters
     ----------
     imghdu : HDUList
@@ -528,7 +533,7 @@ def _get_header_data(imghdu, product="tdp"):
 
 def _annotate_table(data_table, keyword_dict, num_sources, product="tdp"):
     """Add state metadata to the output source catalog
- 
+
     Parameters
     ----------
     data_table : QTable
@@ -542,7 +547,7 @@ def _annotate_table(data_table, keyword_dict, num_sources, product="tdp"):
 
     product : str, optional
         Identification string for the catalog product being written.  This
-        controls the data being put into the catalog product 
+        controls the data being put into the catalog product
 
     Returns
     -------
@@ -555,9 +560,9 @@ def _annotate_table(data_table, keyword_dict, num_sources, product="tdp"):
     data_table.meta["WCSTYPE"] = keyword_dict["wcs_type"]
     data_table.meta["Proposal ID"] = keyword_dict["proposal_id"]
     data_table.meta["Image File Name"] = keyword_dict['image_file_name']
-    data_table.meta["Target Name"] = keyword_dict["target_name"] 
+    data_table.meta["Target Name"] = keyword_dict["target_name"]
     data_table.meta["Date Observed"] = keyword_dict["date_obs"]
-    # FIX 
+    # FIX
     if product.lower() == "tdp":
         data_table.meta["Time Observed"] = " "
         data_table.meta["Filter"] = keyword_dict["filter"]

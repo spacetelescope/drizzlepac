@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=30.3.0", "wheel", "numpy", "astropy"]
+
+[tool.stsci-bot]
+
+[tool.stsci-bot.milestones]
+
+enabled = false
+
+[tool.stsci-bot.changelog_checker]
+
+filename = "CHANGELOG.rst"
