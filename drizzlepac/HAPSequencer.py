@@ -472,15 +472,17 @@ def run_hla_processing(input_filename, result=None, debug=False):
             #else:
             #    log.info("{}: Alignimages step skipped.".format(obs_category))
 
-        """
         # 3: Run meta wcs code to get common WCS for all images.
-        log.info("5: run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
+        # FIX ??? Intended for this to be a method of TotalProduct, but it should be
+        # associated with all the exposures really used in the alignment (the "as built") 
+        # as is done here. This function used based upon WH analysis but make sure to set
+        # the size of the output image..
+        log.info("3: run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
         log.info("The following images will be used: ")
         for imgname in exposure_filenames:
             log.info("{}".format(imgname))
          if exposure_filenames:
             meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames)
-        """
 
         # MDD ENDED HERE
 
