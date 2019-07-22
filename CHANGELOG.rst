@@ -14,6 +14,12 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+3.1.0 (unreleased)
+==================
+
+- Added support for providing HSTWCS object as input to 'final_refimage'
+  or 'single_refimage' parameter.  [#426]
+  
 
 3.0.2 (unreleased)
 ==================
