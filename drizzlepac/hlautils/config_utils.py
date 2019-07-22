@@ -45,6 +45,13 @@ class hap_config(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    def _get_filter_specific_params(self):
+        """Get filter-specific HAP parameters"""
+        pass
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
     def _get_inst_det_specific_params(self):
         """Get instrument/detector-specific HAP parameters"""
