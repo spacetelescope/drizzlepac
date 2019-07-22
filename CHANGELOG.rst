@@ -14,9 +14,14 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-
-3.0.2 (unreleased)
+3.1.0 (unreleased)
 ==================
+
+- Implementation of grid definition interface to support returning SkyCell
+  objects that overlap a mosaic footprint. [#425]
+
+3.0.2 (15-Jul-2019)
+====================
 
 - Removed deprecated parameter ``coords`` from the parameter list of
   ``pixtopix.tran()`` function. [#406]
