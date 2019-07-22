@@ -510,10 +510,14 @@ def verifyRefimage(refimage):
 
     # start by trying to see whether the code can even find the file
     if is_blank(refimage):
-        valid=True
+        valid = True
         return valid
 
-    refroot,extroot = fileutil.parseFilename(refimage)
+    if isinstance(refimage, astropy.wcs.WCS):
+        valid = True
+        return valid
+
+    refroot, extroot = fileutil.parseFilename(refimage)
     if not os.path.exists(refroot):
         valid = False
         return valid
