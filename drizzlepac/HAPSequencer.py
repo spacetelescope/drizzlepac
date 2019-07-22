@@ -313,7 +313,7 @@ def rename_subproduct_files(obs_info_dict_item):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def run_astrodrizzle(obs_info_dict):
+def run_astrodrizzle(obs_info_dict, filt_obj, outnx, outny, meta_wcs):
     """
     Run astrodrizzle to produce products specified in obs_info_dict.
 
@@ -333,64 +333,65 @@ def run_astrodrizzle(obs_info_dict):
         dpu.get_rules_file(imgname)
 
     cfgfile_path = os.path.join(os.path.dirname(__file__), "pars")
-    for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
-                        oid_key.startswith('total detection product')]:  # loop over total filtered products
-        # 1: Create temp. total drizzled image used to align all subsequent products
-        log.info("~" * 118)
-        log.info("CREATE TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")
-        ref_total_combined_image = "{}ref_{}".format(obs_info_dict[tdp_keyname]['product filenames']['image'][:-8],
-                                                     obs_info_dict[tdp_keyname]['product filenames']['image'][-8:])
-        adriz_in_list = obs_info_dict[tdp_keyname]['files']
-        log.info("Ref total combined image. {} {}".format(ref_total_combined_image, adriz_in_list, ref_total_combined_image))
-        astrodrizzle.AstroDrizzle(input=adriz_in_list, output=ref_total_combined_image,
-                                  configobj='{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep))
+    # for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
+    #                     oid_key.startswith('total detection product')]:  # loop over total filtered products
+        # # 1: Create temp. total drizzled image used to align all subsequent products
+        # log.info("~" * 118)
+        # log.info("CREATE TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")
+        # ref_total_combined_image = "{}ref_{}".format(obs_info_dict[tdp_keyname]['product filenames']['image'][:-8],
+        #                                              obs_info_dict[tdp_keyname]['product filenames']['image'][-8:])
+        # adriz_in_list = obs_info_dict[tdp_keyname]['files']
+        # log.info("Ref total combined image. {} {}".format(ref_total_combined_image, adriz_in_list, ref_total_combined_image))
+        # astrodrizzle.AstroDrizzle(input=adriz_in_list, output=ref_total_combined_image,
+        #                           configobj='{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep))
 
-        log.info("Finished creating TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")
-        # Extract shape of ref_total_combined_image for explicit use in AstroDrizzle for all other products.
-        rtci = fits.open(ref_total_combined_image)
-        total_shape = rtci[('sci', 1)].data.shape
-        rtci.close()
-        product_list = []
+        # log.info("Finished creating TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")
+        # # Extract shape of ref_total_combined_image for explicit use in AstroDrizzle for all other products.
+        # rtci = fits.open(ref_total_combined_image)
+        # total_shape = rtci[('sci', 1)].data.shape
+        # rtci.close()
 
-        for fp_keyname in obs_info_dict[tdp_keyname]['associated filter products']:
-            # 2: Create drizzle-combined filter image using the temp ref image as astrodrizzle param 'final_refimage'
+    product_list = []
+       
+    # 2: Create drizzle-combined filter image using the meta_wcs as the reference output 
+    for filt_obj in filt_list:
             log.info("~" * 118)
             log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE\n")
-            filter_combined_imagename = obs_info_dict[fp_keyname]['product filenames']['image']
-            product_list.append(filter_combined_imagename)
-            adriz_in_list = obs_info_dict[fp_keyname]['files']
-            trlname = '_'.join(filter_combined_imagename.split('_')[:-1] + ['trl.log'])
+            filt_obj.create_drizzle_filename()
+            product_list.append(filt_obj.drizzle_filename)
+            adriz_in_list = [element.full_filename for element in filt_obj.edp_list]
+            trlname = filt_obj.trl_filename
             print("FILTER PRODUCT trailer file: {}".format(trlname))
-            log.info("Filter combined image.... {} {}".format(filter_combined_imagename, adriz_in_list))
-            astrodrizzle.AstroDrizzle(input=adriz_in_list, output=filter_combined_imagename,
-                                      final_refimage=ref_total_combined_image,
-                                      final_outnx=total_shape[1],
-                                      final_outny=total_shape[0],
+            log.info("Filter combined image.... {} {}".format(filt_obj.drizzle_filename, adriz_in_list))
+            astrodrizzle.AstroDrizzle(input=adriz_in_list, output=filt_obj.drizzle_filename,
+                                      wcsmap=meta_wcs,
+                                      #final_refimage=ref_total_combined_image,
+                                      final_outnx=outnx
+                                      final_outny=outny
                                       runfile=trlname,
                                       configobj='{}{}astrodrizzle_filter_hap.cfg'.format(cfgfile_path, os.path.sep))
             # Rename Astrodrizzle log file as a trailer file
             shutil.move(trlname, trlname.replace('.log', '.txt'))
 
-            # 3: Create individual singly-drizzled images using the temp ref image as astrodrizzle param 'final_refimage'
-            for sp_name in [sp_key for sp_key in list(obs_info_dict[fp_keyname].keys()) if
-                            sp_key.startswith('subproduct #')]:
+            # 3: Create individual singlely-drizzled images using meta_wcs
+            for exposure_obj in filt_obj.edp_list:
                 log.info("~" * 118)
                 log.info("CREATE SINGLY DRIZZLED IMAGE")
-                single_drizzled_filename = obs_info_dict[fp_keyname][sp_name]["image"]
+                single_drizzled_filename = exposure_obj.drizzle_filename
                 product_list.append(single_drizzled_filename)
-                imgname_root = single_drizzled_filename.split("_")[-2]
-                trlname = '_'.join(single_drizzled_filename.split('_')[:-1] + ['trl.log'])
-                adriz_in_file = [i for i in obs_info_dict[fp_keyname]['files'] if i.startswith(imgname_root)][0]
+                trlname = exposure_obj.trl_filename
+                adriz_in_file = exposure_obj.full_filename
                 log.info("Single drizzled image.... {} {}".format(single_drizzled_filename, adriz_in_file))
                 astrodrizzle.AstroDrizzle(input=adriz_in_file, output=single_drizzled_filename,
                                           final_refimage=ref_total_combined_image,
-                                          final_outnx=total_shape[1],
-                                          final_outny=total_shape[0],
+                                          final_outnx=outnx
+                                          final_outny=outny
                                           runfile=trlname,
                                           configobj='{}{}astrodrizzle_single_hap.cfg'.format(cfgfile_path, os.path.sep))
                 # Rename Astrodrizzle log file as a trailer file
-                shutil.move(trlname, trlname.replace('.log', '.txt'))
+                # shutil.move(trlname, trlname.replace('.log', '.txt'))
 
+        # MDD HERE
         # 4 Create total image using the temp ref image as astrodrizzle param 'final_refimage'
         log.info("~" * 118)
         log.info("CREATE TOTAL DRIZZLE-COMBINED IMAGE\n")
@@ -406,11 +407,8 @@ def run_astrodrizzle(obs_info_dict):
                                   runfile=trlname,
                                   configobj='{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep))
         # Rename Astrodrizzle log file as a trailer file
-        shutil.move(trlname, trlname.replace('.log', '.txt'))
+        # shutil.move(trlname, trlname.replace('.log', '.txt'))
 
-        # 5: remove reference total temp file
-        log.info("Removed temp ref file {}".format(ref_total_combined_image))
-        os.remove(ref_total_combined_image)
 
     # 6: Ensure that all drizzled products have headers that are to spec.
     log.info("Updating these drizzle products for CAOM compatibility:")
@@ -446,9 +444,10 @@ def run_hla_processing(input_filename, result=None, debug=False):
         print("obs_info_dict: {}".format(obs_info_dict))
 
         # 2: Run alignimages.py on images on a filter-by-filter basis.
-        # Process each filter object which contains a list of exposure objects/products
+        # Process each filter object which contains a list of exposure objects/products,
+        # regardless of detector.
         log.info("2: Run alignimages.py on images on a filter-by-filter basis.")
-        filt_exposures = []
+        good_exposure_filenames = []
         for filt_obj in filt_list:
             print("filt_obj: {} filt_obj.filters: {}".format(filt_obj, filt_obj.filters))
             align_table, filt_exposures = filt_obj.align_to_GAIA()
@@ -463,20 +462,26 @@ def run_hla_processing(input_filename, result=None, debug=False):
                     if row['status'] == 0:
                         log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
                     # Alignment did not work for this particular image
+                    # FIX - If alignment did not work for an image, it seems this exposure should
+                    # be removed from the exposure lists.  TotalProduct and FilterProduct need
+                    # methods to do this.
                     else:
                         log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
 
                 hdrlet_list = align_table['headerletFile'].tolist()
                 product_list += hdrlet_list
+                exposure_filenames += filt_exposures
 
-            #else:
-            #    log.info("{}: Alignimages step skipped.".format(obs_category))
+            else:
+                log.info("{}: Alignimages step skipped.".format(obs_category))
 
-        # 3: Run meta wcs code to get common WCS for all images.
-        # FIX ??? Intended for this to be a method of TotalProduct, but it should be
+        # 3: Run meta wcs code to get common WCS for all images in this obset_id, regardless
+        # of detector.
+        # FIX (1) Intended for this to be a method of TotalProduct, but it should be
         # associated with all the exposures really used in the alignment (the "as built") 
-        # as is done here. This function used based upon WH analysis but make sure to set
-        # the size of the output image..
+        # as is done here. 
+        # This function used based upon WH analysis but make sure to set
+        # the size of the output image. This comment is related to the previously mentioned issue.
         log.info("3: run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
         log.info("The following images will be used: ")
         for imgname in exposure_filenames:
@@ -484,12 +489,18 @@ def run_hla_processing(input_filename, result=None, debug=False):
          if exposure_filenames:
             meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames)
 
-        # MDD ENDED HERE
+        # Get the shape of the output image here as the output size must be
+        # set explicitly to ensure no "off by 1" size issues.
+        # FIX - verify this
+        outnx = meta_wcs.naxis2();
+        outny = meta_wcs.naxis1();
 
         # 6: Run AstroDrizzle to produce drizzle-combined products
         log.info("6: (WIP) Create drizzled imagery products")
-        driz_list = run_astrodrizzle(obs_info_dict)
+        driz_list = run_astrodrizzle(obs_info_dict, filt_list, outnx, outny, meta_wcs)
         product_list += driz_list
+
+        # MDD ENDED HERE
 
         # 7: Create source catalogs from newly defined products (HLA-204)
         log.info("7: (WIP) Create source catalog from newly defined product")

@@ -44,8 +44,10 @@ class TotalProduct(HAPProduct):
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = ""
+
         # How exactly is this used as it is set the number of times a TDP is created for
         # an obset
+        # Manifest is created for the obset and instrument, regarding of the detector
         self.manifest_name = '_'.join([instrument, filename[1:4], obset_id, "manifest.txt"])
 
         # These attributes will be set later
@@ -60,7 +62,10 @@ class TotalProduct(HAPProduct):
     def add_product(self, fdp):
         self.fdp_list.append(fdp)
 
-    def create_product_name(self, edp):
+    def create_drizzle_filename(self):
+        self._create_drizzle_helper(self.edp_list[0])
+
+    def _create_drizzle_helper(self, edp):
         self.drizzle_filename = self.product_basename + "_" + edp.filetype + ".fits"
 
     # There is a unique WCS for each TotalProduct product which is generated based upon
@@ -82,16 +87,16 @@ class FilterProduct(HAPProduct):
     """
     def __init__(self, prop_id, obset_id, instrument, detector, filename, filters):
         super().__init__(prop_id, obset_id, instrument, detector, filename)
-
         self.exposure_name = filename[0:6]
         self.filters = filters
 
         self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
+        # Trailer names .txt or .log
         self.trl_filename = self.product_basename + "_trl.txt"
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = ""
-
+        
         # These attributes will be set later
         self.edp_list = []
         self.regions_dict = {}
@@ -99,9 +104,11 @@ class FilterProduct(HAPProduct):
     def add_member(self, edp):
         self.edp_list.append(edp)
 
-    def create_drizzle_name(self, edp):
+    def create_drizzle_filename(self):
+        self._create_drizzle_helper(self.edp_list[0])
+
+    def _create_drizzle_helper(self, edp):
         self.drizzle_filename = self.product_basename + "_" + edp.filetype + ".fits"
-        pass
 
     def align_to_GAIA(self):
         """Extract the flt/flc filenames from the exposure product list, as
@@ -119,11 +126,14 @@ class FilterProduct(HAPProduct):
                     headerlet_filenames[edp.full_filename] = edp.headerlet_filename
                     print("exposure_filenames: {}".format(exposure_filenames))
                     print("headerlet_filenames: {}".format(headerlet_filenames))
+
                 align_table = alignimages.perform_align(exposure_filenames,
                                                         debug=False,
                                                         runfile="alignimages.log",
                                                         update_hdr_wcs=True,
                                                         headerlet_filenames=headerlet_filenames)
+
+                # FIX - Update exposure_filenames here?
         except Exception:
             # *** FIX Not sure about the logging here
             # Report a problem with the alignment
@@ -160,3 +170,6 @@ class ExposureProduct(HAPProduct):
         self.trl_filename = self.product_basename + "_trl.txt"
 
         self.regions_dict = {}
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
