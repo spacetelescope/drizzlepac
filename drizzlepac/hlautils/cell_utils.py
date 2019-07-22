@@ -214,30 +214,32 @@ class GridDefs(object):
         self.sc_nxy = self.hdu[0].header['SC_NXY']
 
     def find_ring_by_id(self, id):
-        if isinstance(id, list) or isinstance(id, np.ndarray):
-            ones = [1] * len(id)
+        return self.rings[np.searchsorted(self.rings['projcell'], id)]
+    
+    def get_projection_cells(self, skyfootprint=None, ra=None, dec=None, id=None):
+        # Interpret footprint to get range of declination in mask
+        if id is None:
+            if ra is None:
+                ra, dec = skyfootprint.get_edges_sky()
+            # Find band[s] that overlap footprint
+            self._find_bands(dec)
+                
+            self.projection_cells = []
+            # Define numerical position in band for projection cell
+            # self.band_index = self.projection_cell_id - self.band['PROJCELL']
+            for band in self.bands:
+                # compute band_index, one for each projection cell that overlaps the footprint
+                nra = ra % 360.0
+                nband = band['NBAND']
+                band_index = np.unique(np.rint(nra * nband / 360.0).astype(int) % nband)
+                self.projection_cells += [ProjectionCell(index, band, self.scale) for index in band_index]        
         else:
-            ones = 1
-
-        return self.rings[np.searchsorted(self.rings['projcell'], id) - ones]
+            self.projection_cells = [ProjectionCell(index=i, scale=self.scale) for i in id]
 
     def get_sky_cells(self, skyfootprint):
-        # Interpret footprint to get range of declination in mask
-        ra, dec = skyfootprint.get_edges_sky()
 
-        # Find band[s] that overlap footprint
-        self._find_bands(dec)
-
-        self.projection_cells = []
-        # Define numerical position in band for projection cell
-        # self.band_index = self.projection_cell_id - self.band['PROJCELL']
-        for band in self.bands:
-            # compute band_index, one for each projection cell that overlaps the footprint
-            nra = ra % 360.0
-            nband = band['NBAND']
-            band_index = np.unique(np.rint(nra * nband / 360.0).astype(int) % nband)
-            self.projection_cells += [ProjectionCell(index, band, self.scale) for index in band_index]
-
+        self.get_projection_cells(skyfootprint)
+        
         # Find sky cells from identified projection cell(s) that overlap footprint
         sky_cells = {}
         for pcell in self.projection_cells:
@@ -269,7 +271,21 @@ class GridDefs(object):
         # Record these values as attributes for use in other methods
         self.bands = [self.rings[b] for b in bands]
 
-
+    def plot(self, projection='aitoff'):
+        if not self.projection_cells:
+            print("Please run `get_projection_cells()' first...")
+            return
+        plt.figure()
+        plt.subplot(111, projection=projection)
+        plt.grid(True)
+        for pc in self.projection_cells:
+            plt.fill(pc.footprint[:,0], pc.footprint[:,1], 
+                     facecolor='green', edgecolor='forestgreen',
+                     alpha=0.25)
+            plt.text(pc.footprint[0,0], pc.footprint[0,1], "{}".format(pc.cell_id),
+                     horizontalalignment='right', verticalalignment='bottom')
+            
+               
 
 class ProjectionCell(object):
 
@@ -325,9 +341,9 @@ class ProjectionCell(object):
         # apply new definition to cell WCS
         self.wcs.wcs.crpix = [naxis1 / 2. + 0.5, naxis2 / 2. + 0.5]
         self.wcs.pixel_shape = (naxis1, naxis2)
-        self.corners = self.wcs.calc_footprint()
+        self.footprint = self.wcs.calc_footprint()
         # close the polygon
-        self.corners = np.append(self.corners, [self.corners[0]], axis=0)
+        self.corners = np.append(self.footprint, [self.footprint[0]], axis=0)
 
     def build_mask(self):
         naxis1, naxis2 = self.wcs.pixel_shape
@@ -406,7 +422,8 @@ class ProjectionCell(object):
     def plot(self, output=None, color='b'):
         fig = plt.figure(figsize=(8, 6))
         ax = fig.add_subplot(111, projection="mollweide")
-        ax.plot(self.corners[:, 0], self.corners[:, 1], color)
+        ax.fill(self.corners[:, 0], self.corners[:, 1], 
+                facecolor='green',edgecolor='forestgreen', alpha=0.25)
         if output:
             fig.write(output)
         return ax
