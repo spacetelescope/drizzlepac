@@ -17,6 +17,9 @@ of the list).
 3.1.0 (unreleased)
 ==================
 
+- Added support for providing HSTWCS object as input to 'final_refimage'
+  or 'single_refimage' parameter.  [#426]
+
 - Implementation of grid definition interface to support returning SkyCell
   objects that overlap a mosaic footprint. [#425]
 
