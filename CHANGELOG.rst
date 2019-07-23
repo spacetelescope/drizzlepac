@@ -20,9 +20,11 @@ of the list).
 - Added support for providing HSTWCS object as input to 'final_refimage'
   or 'single_refimage' parameter.  [#426]
 
+- Implementation of grid definition interface to support returning SkyCell
+  objects that overlap a mosaic footprint. [#425]
 
 3.0.2 (15-Jul-2019)
-===================
+====================
 
 - Removed deprecated parameter ``coords`` from the parameter list of
   ``pixtopix.tran()`` function. [#406]
