@@ -13,7 +13,7 @@ from numpy import linalg
 from stsci.tools import fileutil, logutil
 from . import util
 
-from astropy import wcs as pywcs
+from astropy import wcs
 from stwcs import wcsutil
 from stwcs.distortion import coeff_converter, utils
 from stwcs.wcsutil import altwcs
@@ -25,7 +25,7 @@ DEFAULT_WCS_PARS = {'ra': None, 'dec': None, 'scale': None, 'rot': None,
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
-# Default mapping function based on PyWCS
+# Default mapping function based on astropy.wcs
 class WCSMap:
     """ Sample class to demonstrate how to define a coordinate transformation
     """
@@ -44,9 +44,9 @@ class WCSMap:
 
     def checkWCS(self, obj, name):
         try:
-            assert isinstance(obj, pywcs.WCS)
+            assert isinstance(obj, wcs.WCS)
         except AssertionError:
-            print(name + ' object needs to be an instance or subclass of a PyWCS object.')
+            print(name + ' object needs to be an instance or subclass of a astropy.wcs.WCS object.')
             raise
 
     def forward(self, pixx, pixy):
@@ -141,7 +141,7 @@ def build_hstwcs(crval1, crval2, crpix1, crpix2, naxis1, naxis2, pscale, orienta
     wcsout.naxis1 = naxis1
     wcsout.naxis2 = naxis2
     wcsout.wcs.cd = fileutil.buildRotMatrix(orientat) * [-1, 1] * pscale / 3600.0
-    # Synchronize updates with PyWCS/WCSLIB objects
+    # Synchronize updates with astropy.wcs/WCSLIB objects
     wcsout.wcs.set()
     wcsout.setPscale()
     wcsout.setOrient()
@@ -314,7 +314,7 @@ def make_outputwcs(imageObjectList, output, configObj=None, perfect=False):
         def_wcs = default_wcs.deepcopy()
         single_ref = singleParDict[keyname + 'refimage']
         if single_ref:
-            if isinstance(single_ref, pywcs.WCS):
+            if isinstance(single_ref, wcs.WCS):
                 default_wcs = single_ref
             else:
                 default_wcs = wcsutil.HSTWCS(singleParDict[keyname + 'refimage'])
@@ -338,7 +338,7 @@ def make_outputwcs(imageObjectList, output, configObj=None, perfect=False):
         # Now, account for any user-specified reference image
         final_ref = finalParDict[keyname + 'refimage']
         if final_ref:
-            if isinstance(final_ref, pywcs.WCS):
+            if isinstance(final_ref, wcs.WCS):
                 default_wcs = final_ref
                 if hasattr(final_ref, 'filename'):
                     rootname = final_ref.filename
@@ -459,7 +459,7 @@ def computeEdgesCenter(edges):
 
 #### Utility functions for working with WCSObjects
 def createWCSObject(output,default_wcs,imageObjectList):
-    """Converts a PyWCS WCS object into a WCSObject(baseImageObject) instance."""
+    """Converts a astropy.wcs WCS object into a WCSObject(baseImageObject) instance."""
     from . import imageObject
     outwcs = imageObject.WCSObject(output)
     outwcs.default_wcs = default_wcs
@@ -589,7 +589,7 @@ def _check_close_scale(scale, ref):
 
 def mergeWCS(default_wcs, user_pars):
     """ Merges the user specified WCS values given as dictionary derived from
-        the input configObj object with the output PyWCS object computed
+        the input configObj object with the output astropy.wcs object computed
         using distortion.output_wcs().
 
         The user_pars dictionary needs to have the following set of keys::
@@ -1027,7 +1027,7 @@ def readAltWCS(fobj, ext, wcskey=' ', verbose=False):
     try:
         original_logging_level = log.level
         log.setLevel(logutil.logging.WARNING)
-        nwcs = pywcs.WCS(hdr, fobj=fobj, key=wcskey)
+        nwcs = wcs.WCS(hdr, fobj=fobj, key=wcskey)
 
     except KeyError:
         if verbose:

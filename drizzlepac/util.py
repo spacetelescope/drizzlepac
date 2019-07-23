@@ -19,8 +19,7 @@ import numpy as np
 import astropy
 
 from astropy.io import fits
-from stsci.tools import asnutil, fileutil, teal, cfgpars, logutil
-from stsci.tools import check_files
+from stsci.tools import fileutil, teal, cfgpars, logutil
 from stsci.tools import configobj
 
 from stwcs import wcsutil
@@ -42,7 +41,7 @@ if 'ASTRODRIZ_NO_PARALLEL' not in os.environ:
             # sanity check - do we even have the hardware?
             _cpu_count = multiprocessing.cpu_count()
             can_parallel = _cpu_count > 1
-        except:
+        except Exception:
             can_parallel = False
     except ImportError:
         print('\nCould not import multiprocessing, will only take advantage of a single CPU core')
@@ -510,17 +509,14 @@ def verifyRefimage(refimage):
 
     # start by trying to see whether the code can even find the file
     if is_blank(refimage):
-        valid = True
-        return valid
+        return True
 
     if isinstance(refimage, astropy.wcs.WCS):
-        valid = True
-        return valid
+        return True
 
     refroot, extroot = fileutil.parseFilename(refimage)
     if not os.path.exists(refroot):
-        valid = False
-        return valid
+        return False
 
     # if a MEF has been specified, make sure extension contains a valid WCS
     if valid:
