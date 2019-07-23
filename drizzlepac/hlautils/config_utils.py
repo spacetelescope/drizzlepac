@@ -8,7 +8,7 @@ specified observation conditions and instrument/detector used in the observation
 
 
 class hap_config(object):
-    def __init__(self, condition, inst_det):
+    def __init__(self, condition, inst_det,filter=None):
         """
         A set of routines to generate appropriate set of configuration parameters
 
@@ -24,6 +24,7 @@ class hap_config(object):
         self.description = "A set of routines to generate appropriate set of configuration parameters"
         self.condition = condition
         self.inst_det = inst_det
+        self.filter = filter
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
