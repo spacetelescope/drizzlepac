@@ -3,8 +3,10 @@
 """This script contains code to create the complete set of configuration parameters required to run XXXXX given the
 specified observation conditions and instrument/detector used in the observations"""
 
+import collections
 import json
 import os
+
 
 from stsci.tools import teal
 # ======================================================================================================================
@@ -36,6 +38,14 @@ class hap_config(object):
         self._determine_conditions()
         self._get_cfg_index()
 
+        # Instantiate the parameter set
+        self.pars = {}
+        #step_list = [alignment_pars,astrodrizzle_pars,catalog_generation_pars,quality_control_pars] # TODO: uncomment when everything is working
+        step_list = [catalog_generation_pars] # TODO: Just a placeholder until we add complexity!
+        for step_name in step_list:
+            step_title = step_name.__name__.replace("_pars","").replace("_"," ")
+            self.pars[step_title] = step_name(step_title)
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _determine_conditions(self):
@@ -50,23 +60,14 @@ class hap_config(object):
         """return the contents of the appropriate index cfg file."""
         code_dir = os.path.abspath(__file__)
         base_dir = os.path.dirname(os.path.dirname(code_dir))
-        pars_dir = os.path.join(base_dir, "pars")
+        self.pars_dir = os.path.join(base_dir, "pars")
         cfg_index_fileanme = self.inst_det + "_index.cfg"
-        cfg_index_filename = os.path.join(pars_dir, cfg_index_fileanme)
+        cfg_index_filename = os.path.join(self.pars_dir, cfg_index_fileanme)
 
         with open(cfg_index_filename) as jsonFile:
             jsonString = jsonFile.read()
             self.full_cfg_index = json.loads(jsonString)
         pass
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-    def _determine_conditions(self):
-        """Determine observing condition or conditions present for a given step"""
-        self.conditions = ["default"] #TODO: Just a placeholder until we add complexity!
-        pass
-
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -91,24 +92,31 @@ class hap_config(object):
 
 
 class par(object):
-    def __init__(self):
+    def __init__(self,step_name):
         """INSIGHTFUL SUMMARY HERE"""
-        pass
+        self.step_name = step_name
+        self._get_params()
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def get_params(self):
-        pass
-
+    def _get_params(self):
+        """read in params from config files based on instrument, detector, and condition(s), and return a ordered
+        dictionary of these values."""
+        self.pars_multidict = collections.OrderedDict()
+        pdb.set_trace()
+        for condition in self.conditions:
+            subcfgfilename = os.path.join(self.pars_dir, self.full_cfg_index[self.step_name][condition])
+            print(condition, subcfgfilename)
+            # self.pars_multidict[condition]
 
 
 #-----------------------------------------------------------------------------------------------------------------------
 
 
 class alignment_pars(par):
-    def __init__(self):
+    def __init__(self,step_name):
         """INSIGHTFUL SUMMARY HERE"""
         super().__init__()
         pass
@@ -118,7 +126,7 @@ class alignment_pars(par):
 
 
 class astrodrizzle_pars(par):
-    def __init__(self):
+    def __init__(self,step_name):
         """INSIGHTFUL SUMMARY HERE"""
         super().__init__()
         pass
@@ -128,9 +136,9 @@ class astrodrizzle_pars(par):
 
 
 class catalog_generation_pars(par):
-    def __init__(self):
+    def __init__(self,step_name):
         """INSIGHTFUL SUMMARY HERE"""
-        super().__init__()
+        super().__init__(step_name)
         pass
 
 
@@ -138,7 +146,7 @@ class catalog_generation_pars(par):
 
 
 class quality_control_pars(par):
-    def __init__(self):
+    def __init__(self,step_name):
         """INSIGHTFUL SUMMARY HERE"""
         super().__init__()
         pass
