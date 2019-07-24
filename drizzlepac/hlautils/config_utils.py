@@ -76,7 +76,7 @@ class hap_config(object):
     def get_pars(self,step_name):
         """This method returns the parameter set for a specified step (alignment, drizzle, etc.)"""
 
-        return(foo.pars[step_name].outpars)
+        return(self.pars[step_name].outpars)
 
 
 
