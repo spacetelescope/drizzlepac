@@ -3,9 +3,11 @@
 # Make sure the proposal_id is a 5-character string
 import sys
 import traceback
+import shutil
 
 from drizzlepac import wcs_functions
 from drizzlepac import alignimages
+from drizzlepac import astrodrizzle
 
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
@@ -33,6 +35,8 @@ class TotalProduct(HAPProduct):
     """ A Total Detection Product is a 'white' light mosaic comprised of
         images acquired with one instrument, one detector, all filters, and all
         exposure times
+
+        The "tdp" is short hand for TotalProduct.
     """
     def __init__(self, prop_id, obset_id, instrument, detector, filename):
         super().__init__(prop_id, obset_id, instrument, detector, filename)
@@ -40,7 +44,7 @@ class TotalProduct(HAPProduct):
         self.exposure_name = filename[0:6]
 
         self.product_basename = self.basename + "_total_" + self.exposure_name
-        self.trl_filename = self.product_basename + "_trl.txt"
+        self.trl_filename = self.product_basename + "_trl.log"
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = ""
@@ -63,9 +67,10 @@ class TotalProduct(HAPProduct):
         self.fdp_list.append(fdp)
 
     def create_drizzle_filename(self):
-        self._create_drizzle_helper(self.edp_list[0])
+        self._create_drizzle_filename_helper(self.edp_list[0])
+        return self.drizzle_filename
 
-    def _create_drizzle_helper(self, edp):
+    def _create_drizzle_filename_helper(self, edp):
         self.drizzle_filename = self.product_basename + "_" + edp.filetype + ".fits"
 
     # There is a unique WCS for each TotalProduct product which is generated based upon
@@ -77,13 +82,29 @@ class TotalProduct(HAPProduct):
         """
         pass
 
-    # make outnx, outny, and wcs attribute for TotalProduct
+    def drizzle_product(self, meta_wcs, configobj):
+        """
+        Create the drizzle-combined total image using the meta_wcs as the reference output
+        """
+        edp_filenames = [element.full_filename for element in self.edp_list]
+        astrodrizzle.AstroDrizzle(input=edp_filenames,
+                                  output=self.drizzle_filename,
+                                  final_refimage=meta_wcs,
+                                  runfile=self.trl_filename,
+                                  configobj=configobj)
+
+        # Rename Astrodrizzle log file as a trailer file
+        shutil.move(self.trl_filename, self.trl_filename.replace('.log', '.txt'))
+
+        # log.info("Total combined image... {} {}".format(self.drizzle_filename, edp_filenames))
 
 
 class FilterProduct(HAPProduct):
     """ A Filter Detection Product is a mosaic comprised of images acquired
         during a single visit with one instrument, one detector, a single filter,
         and all exposure times.
+
+        The "fdp" is short hand for FilterProduct.
     """
     def __init__(self, prop_id, obset_id, instrument, detector, filename, filters):
         super().__init__(prop_id, obset_id, instrument, detector, filename)
@@ -92,11 +113,11 @@ class FilterProduct(HAPProduct):
 
         self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
         # Trailer names .txt or .log
-        self.trl_filename = self.product_basename + "_trl.txt"
+        self.trl_filename = self.product_basename + "_trl.log"
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = ""
-        
+
         # These attributes will be set later
         self.edp_list = []
         self.regions_dict = {}
@@ -105,9 +126,10 @@ class FilterProduct(HAPProduct):
         self.edp_list.append(edp)
 
     def create_drizzle_filename(self):
-        self._create_drizzle_helper(self.edp_list[0])
+        self._create_drizzle_filename_helper(self.edp_list[0])
+        return self.drizzle_filename
 
-    def _create_drizzle_helper(self, edp):
+    def _create_drizzle_filename_helper(self, edp):
         self.drizzle_filename = self.product_basename + "_" + edp.filetype + ".fits"
 
     def align_to_GAIA(self):
@@ -115,7 +137,6 @@ class FilterProduct(HAPProduct):
            well as the corresponding headerlet filenames to use legacy alignment
            routine.
         """
-        print("Here is filterProduct")
         exposure_filenames = []
         headerlet_filenames = {}
         align_table = None
@@ -149,27 +170,53 @@ class FilterProduct(HAPProduct):
         # excluded from alignment.
         return align_table, exposure_filenames
 
-    def drizzle_fdp(self):
-        # for ExposureProduct in edp_list:
-        pass
+    def drizzle_product(self, meta_wcs, configobj):
+        """
+        Create the drizzle-combined filter image using the meta_wcs as the reference output
+        """
+        edp_filenames = [element.full_filename for element in self.edp_list]
+        astrodrizzle.AstroDrizzle(input=edp_filenames,
+                                  output=self.drizzle_filename,
+                                  final_refimage=meta_wcs,
+                                  runfile=self.trl_filename,
+                                  configobj=configobj)
+
+        # Rename Astrodrizzle log file as a trailer file
+        shutil.move(self.trl_filename, self.trl_filename.replace('.log', '.txt'))
+
+        # log.info("Filter combined image... {} {}".format(self.drizzle_filename, edp_filenames))
 
 class ExposureProduct(HAPProduct):
     """ An Exposure Product is an individual exposure/image (flt/flc).
+        The "edp" is short hand for ExposureProduct.
     """
     def __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype):
         super().__init__(prop_id, obset_id, instrument, detector, filename)
 
+        self.full_filename = filename
         # self.exptime = exptime
         self.filters = filters
         self.filetype = filetype
-        self.full_filename = filename
 
-        self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
+        self.product_basename = self.basename + "_" + "_".join(map(str, [filters, self.exposure_name]))
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
         self.headerlet_filename = self.product_basename + "_hlet.fits"
-        self.trl_filename = self.product_basename + "_trl.txt"
+        self.trl_filename = self.product_basename + "_trl.log"
 
         self.regions_dict = {}
 
-    def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+    def drizzle_product(self, meta_wcs, configobj):
+        """
+            Create the drizzle-combined exposure image using the meta_wcs as the reference output
+        """
+        # AstroDrizzle will soon take a meta_wcs object which contains outnx, outny
+        astrodrizzle.AstroDrizzle(input=self.full_filename,
+                                  output=self.drizzle_filename,
+                                  final_refimage=meta_wcs,
+                                  runfile=self.trl_filename,
+                                  configobj=configobj)
+
+        # Rename Astrodrizzle log file as a trailer file
+        shutil.move(self.trl_filename, self.trl_filename.replace('.log', '.txt'))
+
+        # log.info("Filter combined image... {} {}".format(self.drizzle_filename, self.full_filename))

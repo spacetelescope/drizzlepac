@@ -3,12 +3,9 @@
 """This script duplicates the functionality of the HLA pipeline.
 
 """
-import argparse
-import collections
 import datetime
 import glob
 import os
-# import pdb
 import pickle
 import sys
 import traceback
@@ -19,7 +16,7 @@ import drizzlepac
 from drizzlepac import alignimages
 from drizzlepac import astrodrizzle
 from drizzlepac import wcs_functions
-from drizzlepac.hlautils import pipeline_poller_utils
+from drizzlepac.hlautils import poller_utils
 from drizzlepac.hlautils import processing_utils as dpu
 from drizzlepac.hlautils import sourcelist_generation
 from stsci.tools import logutil
@@ -212,108 +209,7 @@ param_dict = {
             "proximity_binary": "yes"}}}
 # ----------------------------------------------------------------------------------------------------------------------
 
-
-def convert_base10_base36(in_number):
-    """
-    Convert base-10 numbers to base-36ish, in the same style that HST visits are named
-
-    Parameters
-    ----------
-    in_number : integer
-        base 10 value to convert to base 36.
-
-    Returns
-    --------
-    out_val : string
-        converted base 36 value
-    """
-    if in_number < 100:
-        out_val = "{}{}".format("0" * (2 - len(str(in_number))), in_number)
-    elif (in_number > 99) and (in_number < 360):
-        alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        alphadict = {}
-        for item in enumerate(list(alphabet)):
-            alphadict[item[0]] = item[1]
-        c1 = (in_number - 100) // 26
-        c2 = (in_number - 100) % 26
-        out_val = "{}{}".format(c1, alphadict[c2])
-    else:
-
-        chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-
-        # sign = '-' if in_number < 0 else ''
-        in_number = abs(in_number)
-        out_val = ''
-
-        while in_number > 0:
-            in_number, remainder = divmod(in_number, 36)
-            out_val = chars[remainder] + out_val
-
-    return(out_val)
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-def perform_processing(input_filename, **kwargs):
-    """
-    Main calling subroutine.
-
-    Parameters
-    ----------
-    input_filename : string
-        Name of the input csv file containing information about the files to
-        be processed
-
-    debug : Boolean
-        display all tracebacks, and debug information?
-
-    Updates
-    -------
-    return_value : list
-        a simple status value. '0' for a successful run and '1' for a failed
-        run
-    """
-    return_value = []
-    run_hla_processing(input_filename, result=return_value, **kwargs)
-    return(return_value[0])
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-def rename_subproduct_files(obs_info_dict_item):
-    """
-    renames subproduct images (single-exposure products)
-
-    Parameters
-    ----------
-    obs_info_dict_item : dictionary
-        obs_info_dict singleton that may contain files to be renamed.
-
-    Returns
-    -------
-    Nothing.
-    """
-    # Bail out if there are no subproducts to rename.
-    if "subproduct #0 filenames" not in obs_info_dict_item.keys():
-        log.info("No subproduct image files to rename.")
-        return()
-    else:
-        for key in obs_info_dict_item.keys():
-            log.info("Subproduct image files found.")
-            if key.startswith("subproduct"):
-                dest_imgname = obs_info_dict_item[key]["image"]
-                imgname_root = dest_imgname.split("_")[-2]
-                image_rootname = [i for i in obs_info_dict_item['files'] if i.startswith("{}".format(imgname_root))][0].split("_")[0]
-                src_imgname = "{}_single_sci.fits".format(image_rootname)
-
-                # rename single_sci.fits image
-                os.rename(src_imgname, dest_imgname)
-                log.info("RENAME {} ~~> {}".format(src_imgname, dest_imgname))
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-def run_astrodrizzle(obs_info_dict, filt_obj, outnx, outny, meta_wcs):
+def create_drizzle_products(obs_info_dict, total_list, filt_list, expo_list, meta_wcs):
     """
     Run astrodrizzle to produce products specified in obs_info_dict.
 
@@ -328,100 +224,60 @@ def run_astrodrizzle(obs_info_dict, filt_obj, outnx, outny, meta_wcs):
     """
     log.info("Processing with astrodrizzle version {}".format(drizzlepac.astrodrizzle.__version__))
 
-    # 0: get rules files for step #6.
+    # Get rules files
     for imgname in glob.glob("*fl?.fits"):
         dpu.get_rules_file(imgname)
 
+    # FIX - This will be updated with the new configuration management.
     cfgfile_path = os.path.join(os.path.dirname(__file__), "pars")
-    # for tdp_keyname in [oid_key for oid_key in list(obs_info_dict.keys()) if
-    #                     oid_key.startswith('total detection product')]:  # loop over total filtered products
-        # # 1: Create temp. total drizzled image used to align all subsequent products
-        # log.info("~" * 118)
-        # log.info("CREATE TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")
-        # ref_total_combined_image = "{}ref_{}".format(obs_info_dict[tdp_keyname]['product filenames']['image'][:-8],
-        #                                              obs_info_dict[tdp_keyname]['product filenames']['image'][-8:])
-        # adriz_in_list = obs_info_dict[tdp_keyname]['files']
-        # log.info("Ref total combined image. {} {}".format(ref_total_combined_image, adriz_in_list, ref_total_combined_image))
-        # astrodrizzle.AstroDrizzle(input=adriz_in_list, output=ref_total_combined_image,
-        #                           configobj='{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep))
-
-        # log.info("Finished creating TEMP REFERENCE TOTAL DRIZZLED IMAGE\n")
-        # # Extract shape of ref_total_combined_image for explicit use in AstroDrizzle for all other products.
-        # rtci = fits.open(ref_total_combined_image)
-        # total_shape = rtci[('sci', 1)].data.shape
-        # rtci.close()
-
+    total_configobj = '{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep)
+    filt_configobj = '{}{}astrodrizzle_filter_hap.cfg'.format(cfgfile_path, os.path.sep)
+    expo_configobj = '{}{}astrodrizzle_single_hap.cfg'.format(cfgfile_path, os.path.sep)
     product_list = []
-       
-    # 2: Create drizzle-combined filter image using the meta_wcs as the reference output 
-    for filt_obj in filt_list:
-            log.info("~" * 118)
-            log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE\n")
-            filt_obj.create_drizzle_filename()
-            product_list.append(filt_obj.drizzle_filename)
-            adriz_in_list = [element.full_filename for element in filt_obj.edp_list]
-            trlname = filt_obj.trl_filename
-            print("FILTER PRODUCT trailer file: {}".format(trlname))
-            log.info("Filter combined image.... {} {}".format(filt_obj.drizzle_filename, adriz_in_list))
-            astrodrizzle.AstroDrizzle(input=adriz_in_list, output=filt_obj.drizzle_filename,
-                                      wcsmap=meta_wcs,
-                                      #final_refimage=ref_total_combined_image,
-                                      final_outnx=outnx
-                                      final_outny=outny
-                                      runfile=trlname,
-                                      configobj='{}{}astrodrizzle_filter_hap.cfg'.format(cfgfile_path, os.path.sep))
-            # Rename Astrodrizzle log file as a trailer file
-            shutil.move(trlname, trlname.replace('.log', '.txt'))
 
-            # 3: Create individual singlely-drizzled images using meta_wcs
-            for exposure_obj in filt_obj.edp_list:
-                log.info("~" * 118)
-                log.info("CREATE SINGLY DRIZZLED IMAGE")
-                single_drizzled_filename = exposure_obj.drizzle_filename
-                product_list.append(single_drizzled_filename)
-                trlname = exposure_obj.trl_filename
-                adriz_in_file = exposure_obj.full_filename
-                log.info("Single drizzled image.... {} {}".format(single_drizzled_filename, adriz_in_file))
-                astrodrizzle.AstroDrizzle(input=adriz_in_file, output=single_drizzled_filename,
-                                          final_refimage=ref_total_combined_image,
-                                          final_outnx=outnx
-                                          final_outny=outny
-                                          runfile=trlname,
-                                          configobj='{}{}astrodrizzle_single_hap.cfg'.format(cfgfile_path, os.path.sep))
-                # Rename Astrodrizzle log file as a trailer file
-                # shutil.move(trlname, trlname.replace('.log', '.txt'))
-
-        # MDD HERE
-        # 4 Create total image using the temp ref image as astrodrizzle param 'final_refimage'
+    # Create drizzle-combined total detection image using the meta_wcs as the reference output 
+    # for each instrument/detector combination (single instrument, multiple detectors)
+    for total_obj in total_list:
         log.info("~" * 118)
         log.info("CREATE TOTAL DRIZZLE-COMBINED IMAGE\n")
-        total_combined_image = obs_info_dict[tdp_keyname]['product filenames']['image']
-        product_list.append(total_combined_image)
-        adriz_in_list = obs_info_dict[tdp_keyname]['files']
-        trlname = '_'.join(total_combined_image.split('_')[:-1] + ['trl.log'])
-        log.info("Total combined image..... {} {}".format(total_combined_image, adriz_in_list))
-        astrodrizzle.AstroDrizzle(input=adriz_in_list, output=total_combined_image,
-                                  final_refimage=ref_total_combined_image,
-                                  final_outnx=total_shape[1],
-                                  final_outny=total_shape[0],
-                                  runfile=trlname,
-                                  configobj='{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep))
-        # Rename Astrodrizzle log file as a trailer file
-        # shutil.move(trlname, trlname.replace('.log', '.txt'))
 
+        # Make sure to create the drizzle filename before a call to the drizzle functionality
+        # FIX in pipeline_poller_utils
+        _ = total_obj.create_drizzle_filename()
+        total_obj.drizzle_product(meta_wcs, total_config_obj)
+        product_list.append(total_obj.drizzle_filename)
 
-    # 6: Ensure that all drizzled products have headers that are to spec.
+        # Create drizzle-combined filter image using the meta_wcs as the reference output 
+        for filt_obj in total_obj.fdp_list:
+                log.info("~" * 118)
+                log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE\n")
+
+                # Make sure to create the drizzle filename before a call to the drizzle functionality
+                # FIX in pipeline_poller_utils
+                _ = filt_obj.create_drizzle_filename()
+                filt_obj.drizzle_product(meta_wcs, filt_config_obj)
+                product_list.append(filt_obj.drizzle_filename)
+
+                # Create individual singlely-drizzled images using meta_wcs
+                for exposure_obj in filt_obj.edp_list:
+                    log.info("~" * 118)
+                    log.info("CREATE SINGLY DRIZZLED IMAGE")
+
+                    exposure_obj.drizzle_product(meta_wcs, expo_config_obj)
+                    product_list.append(exposure_obj.drizzle_filename)
+
+    # Ensure that all drizzled products have headers that are to specification
     log.info("Updating these drizzle products for CAOM compatibility:")
-    for d in product_list:
-        log.info("    {}".format(d))
-        dpu.refine_product_headers(d, obs_info_dict)
+    for filename in product_list:
+        log.info("    {}".format(filename))
+        dpu.refine_product_headers(filename, obs_info_dict)
 
-    # 7: remove rules files copied to the CWD in step #0
+    # Remove rules files copied to the current working directory
     for rules_filename in glob.glob("*_header_hla.rules"):
         log.info("Removed rules file {}".format(rules_filename))
         os.remove(rules_filename)
 
-    # 8: Return product list for creation of pipeline manifest file
+    # Return product list for creation of pipeline manifest file
     return product_list
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -440,16 +296,14 @@ def run_hla_processing(input_filename, result=None, debug=False):
         # and total detection product lists which contain the ExposureProduct, FilterProduct, and 
         # TotalProduct objects
         log.info("1: Parse the poller and determine what exposures need to be combined into separate products")
-        obs_info_dict, expo_list, filt_list, total_list = pipeline_poller_utils.interpret_obset_input(input_filename)
-        print("obs_info_dict: {}".format(obs_info_dict))
+        obs_info_dict, expo_list, filt_list, total_list = poller_utils.interpret_obset_input(input_filename)
 
         # 2: Run alignimages.py on images on a filter-by-filter basis.
         # Process each filter object which contains a list of exposure objects/products,
         # regardless of detector.
         log.info("2: Run alignimages.py on images on a filter-by-filter basis.")
-        good_exposure_filenames = []
+        exposure_filenames = []
         for filt_obj in filt_list:
-            print("filt_obj: {} filt_obj.filters: {}".format(filt_obj, filt_obj.filters))
             align_table, filt_exposures = filt_obj.align_to_GAIA()
 
             # Report results and track the output files
@@ -457,7 +311,8 @@ def run_hla_processing(input_filename, result=None, debug=False):
             # as well as outright failure (exception vs msgs)
             if align_table:
                 log.info("ALIGN_TABLE: {}".format(align_table))
-                os.remove("alignimages.log")  # FIX This log needs to be included in total product trailer file
+                # FIX
+                # os.remove("alignimages.log")  # FIX This log needs to be included in total product trailer file
                 for row in align_table:
                     if row['status'] == 0:
                         log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
@@ -470,6 +325,7 @@ def run_hla_processing(input_filename, result=None, debug=False):
 
                 hdrlet_list = align_table['headerletFile'].tolist()
                 product_list += hdrlet_list
+                # print("*********product filenames: {}".format(product_list))
                 exposure_filenames += filt_exposures
 
             else:
@@ -482,26 +338,21 @@ def run_hla_processing(input_filename, result=None, debug=False):
         # as is done here. 
         # This function used based upon WH analysis but make sure to set
         # the size of the output image. This comment is related to the previously mentioned issue.
-        log.info("3: run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
+        log.info("3: Run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
         log.info("The following images will be used: ")
         for imgname in exposure_filenames:
             log.info("{}".format(imgname))
-         if exposure_filenames:
+        if exposure_filenames:
             meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames)
 
-        # Get the shape of the output image here as the output size must be
-        # set explicitly to ensure no "off by 1" size issues.
-        # FIX - verify this
-        outnx = meta_wcs.naxis2();
-        outny = meta_wcs.naxis1();
-
-        # 6: Run AstroDrizzle to produce drizzle-combined products
-        log.info("6: (WIP) Create drizzled imagery products")
-        driz_list = run_astrodrizzle(obs_info_dict, filt_list, outnx, outny, meta_wcs)
+        # 4: Run AstroDrizzle to produce drizzle-combined products
+        log.info("4: (WIP) Create drizzled imagery products")
+        driz_list = create_drizzle_products(obs_info_dict, total_list, filt_list, expo_list, meta_wcs)
         product_list += driz_list
 
         # MDD ENDED HERE
 
+        """
         # 7: Create source catalogs from newly defined products (HLA-204)
         log.info("7: (WIP) Create source catalog from newly defined product")
         if debug:
@@ -530,9 +381,9 @@ def run_hla_processing(input_filename, result=None, debug=False):
         with open(manifest_name, mode='w') as catfile:
             [catfile.write("{}\n".format(name)) for name in product_list]
 
+        """
         # 10: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
-    """
     except Exception:
         return_value = 1
         if debug:
@@ -543,26 +394,5 @@ def run_hla_processing(input_filename, result=None, debug=False):
         log.info('Total processing time: {} sec'.format((datetime.datetime.now() - starting_dt).total_seconds()))
         log.info("9: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
                  "condition")
-        result.append(return_value)
+        return return_value
 
-# ----------------------------------------------------------------------------------------------------------------------
-
-def main():
-    parser = argparse.ArgumentParser(description='Process images, produce drizzled images and sourcelists')
-    parser.add_argument('input_filename', help='Name of the input csv file containing information about the files to '
-                        'be processed')
-    parser.add_argument('-d', '--debug', required=False, action='store_true', help='If this option is turned on, the '
-                        'align_images.perform_align() will attempt to use saved sourcelists stored in a pickle file '
-                        'generated during a previous run. Using a saved sorucelist instead of generating new '
-                        'sourcelists greatly reduces overall run time. If the pickle file does not exist, the program '
-                        'will generate new sourcelists and save them in a pickle file named after the first input '
-                        'file.')
-    ARGS = parser.parse_args()
-
-    print("Single-visit processing started for: {}".format(ARGS.input_filename))
-    rv = perform_processing(ARGS.input_filename, debug=ARGS.debug)
-    print("Return Value: ", rv)
-    return rv
-
-if __name__ == '__main__':
-    main()
