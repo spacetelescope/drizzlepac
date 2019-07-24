@@ -6,68 +6,66 @@
 
 """
 from astropy.io import fits as pyfits
-import os,copy
+import copy
 import numpy as np
 from numpy import linalg
 
-from stsci.tools import fileutil, asnutil, logutil
+from stsci.tools import fileutil, logutil
 from . import util
-import stwcs
 
-from astropy import wcs as pywcs
-from stwcs import distortion, wcsutil
+from astropy import wcs
+from stwcs import wcsutil
 from stwcs.distortion import coeff_converter, utils
 from stwcs.wcsutil import altwcs
 
-DEFAULT_WCS_PARS = {'ra':None,'dec':None,'scale':None,'rot':None,
-                    'outnx':None,'outny':None,
-                    'crpix1':None,'crpix2':None}
+DEFAULT_WCS_PARS = {'ra': None, 'dec': None, 'scale': None, 'rot': None,
+                    'outnx': None, 'outny': None,
+                    'crpix1': None, 'crpix2': None}
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
-# Default mapping function based on PyWCS
+# Default mapping function based on astropy.wcs
 class WCSMap:
     """ Sample class to demonstrate how to define a coordinate transformation
     """
-    def __init__(self,input,output,origin=1):
+    def __init__(self, input, output, origin=1):
         # Verify that we have valid WCS input objects
-        self.checkWCS(input,'Input')
-        self.checkWCS(output,'Output')
+        self.checkWCS(input, 'Input')
+        self.checkWCS(output, 'Output')
 
         self.input = input
         self.output = copy.deepcopy(output)
-        #self.output = output
 
         self.origin = origin
         self.shift = None
         self.rot = None
         self.scale = None
 
-    def checkWCS(self,obj,name):
+    def checkWCS(self, obj, name):
         try:
-            assert isinstance(obj, pywcs.WCS)
+            assert isinstance(obj, wcs.WCS)
         except AssertionError:
-            print(name +' object needs to be an instance or subclass of a PyWCS object.')
+            print(name + ' object needs to be an instance or subclass of a astropy.wcs.WCS object.')
             raise
 
-    def forward(self,pixx,pixy):
+    def forward(self, pixx, pixy):
         """ Transform the input pixx,pixy positions in the input frame
             to pixel positions in the output frame.
 
             This method gets passed to the drizzle algorithm.
         """
         # This matches WTRAXY results to better than 1e-4 pixels.
-        skyx,skyy = self.input.all_pix2world(pixx,pixy,self.origin)
-        result= self.output.wcs_world2pix(skyx,skyy,self.origin)
+        skyx, skyy = self.input.all_pix2world(pixx, pixy, self.origin)
+        result = self.output.wcs_world2pix(skyx, skyy, self.origin)
         return result
 
-    def backward(self,pixx,pixy):
+    def backward(self, pixx, pixy):
         """ Transform pixx,pixy positions from the output frame back onto their
             original positions in the input frame.
         """
-        skyx,skyy = self.output.wcs_pix2world(pixx,pixy,self.origin)
-        result = self.input.all_world2pix(skyx,skyy,self.origin)
+        skyx, skyy = self.output.wcs_pix2world(pixx, pixy, self.origin)
+        result = self.input.all_world2pix(skyx, skyy, self.origin)
         return result
 
     def get_pix_ratio(self):
@@ -76,56 +74,56 @@ class WCSMap:
         """
         return self.output.pscale / self.input.pscale
 
-    def xy2rd(self,wcs,pixx,pixy):
+    def xy2rd(self, wcs, pixx, pixy):
         """ Transform input pixel positions into sky positions in the WCS provided.
         """
-        return wcs.all_pix2world(pixx,pixy,1)
-    def rd2xy(self,wcs,ra,dec):
+        return wcs.all_pix2world(pixx, pixy, 1)
+    def rd2xy(self, wcs, ra, dec):
         """ Transform input sky positions into pixel positions in the WCS provided.
         """
-        return wcs.wcs_world2pix(ra,dec,1)
+        return wcs.wcs_world2pix(ra, dec, 1)
 
-def get_pix_ratio_from_WCS(input,output):
+def get_pix_ratio_from_WCS(input, output):
     """ [Functional form of .get_pix_ratio() method of WCSMap]"""
-    return output.pscale/input.pscale
+    return output.pscale / input.pscale
 ##
 #
-#### Default no-op transformation
+# ### Default no-op transformation
 #
 ##
 class IdentityMap:
-    def __init__(self,input,output):
+    def __init__(self, input, output):
         print('Applying identity transformation...')
         self.input = input
         self.output = output
 
-    def forward(self,pixx,pixy):
-        return pixx,pixy
+    def forward(self, pixx, pixy):
+        return pixx, pixy
 ##
 #
-#### Linear transformation mapper
+# ### Linear transformation mapper
 #
 ##
 class LinearMap:
-    def __init__(self,xsh=0.0,ysh=0.0,rot=0.0,scale=1.0):
+    def __init__(self, xsh=0.0, ysh=0.0, rot=0.0, scale=1.0):
         # Define rotation matrix
         _theta = np.deg2rad(rot)
-        _mrot = np.zeros(shape=(2,2),dtype=np.float64)
-        _mrot[0] = (np.cos(_theta),np.sin(_theta))
-        _mrot[1] = (-np.sin(_theta),np.cos(_theta))
+        _mrot = np.zeros(shape=(2, 2), dtype=np.float64)
+        _mrot[0] = (np.cos(_theta), np.sin(_theta))
+        _mrot[1] = (-np.sin(_theta), np.cos(_theta))
         # apply scaling factor to rotation matrix
-        self.transform = _mrot*scale
+        self.transform = _mrot * scale
         # define offset to be applied to positions after rotation
-        self.offset = [[xsh],[ysh]]
+        self.offset = [[xsh], [ysh]]
 
-    def forward(self,pixx,pixy):
-        return np.dot(self.transform,[pixx,pixy])+self.offset
+    def forward(self, pixx, pixy):
+        return np.dot(self.transform, [pixx, pixy]) + self.offset
 
 
 # Stand-alone functions for WCS handling
-def get_hstwcs(filename,hdulist,extnum):
+def get_hstwcs(filename, hdulist, extnum):
     """ Return the HSTWCS object for a given chip. """
-    hdrwcs = wcsutil.HSTWCS(hdulist,ext=extnum)
+    hdrwcs = wcsutil.HSTWCS(hdulist, ext=extnum)
     hdrwcs.filename = filename
     hdrwcs.expname = hdulist[extnum].header['expname']
     hdrwcs.extver = hdulist[extnum].header['extver']
@@ -138,32 +136,32 @@ def build_hstwcs(crval1, crval2, crpix1, crpix2, naxis1, naxis2, pscale, orienta
         based on user provided parameter values.
     """
     wcsout = wcsutil.HSTWCS()
-    wcsout.wcs.crval = np.array([crval1,crval2])
-    wcsout.wcs.crpix = np.array([crpix1,crpix2])
+    wcsout.wcs.crval = np.array([crval1, crval2])
+    wcsout.wcs.crpix = np.array([crpix1, crpix2])
     wcsout.naxis1 = naxis1
     wcsout.naxis2 = naxis2
-    wcsout.wcs.cd = fileutil.buildRotMatrix(orientat)*[-1,1]*pscale/3600.0
-    # Synchronize updates with PyWCS/WCSLIB objects
+    wcsout.wcs.cd = fileutil.buildRotMatrix(orientat) * [-1, 1] * pscale / 3600.0
+    # Synchronize updates with astropy.wcs/WCSLIB objects
     wcsout.wcs.set()
     wcsout.setPscale()
     wcsout.setOrient()
-    wcsout.wcs.ctype = ['RA---TAN','DEC--TAN']
+    wcsout.wcs.ctype = ['RA---TAN', 'DEC--TAN']
 
     return wcsout
 
 
-def update_linCD(cdmat, delta_rot=0.0, delta_scale=1.0, cx=[0.0,1.0], cy=[1.0,0.0]):
+def update_linCD(cdmat, delta_rot=0.0, delta_scale=1.0, cx=[0.0, 1.0], cy=[1.0, 0.0]):
     """ Modify an existing linear CD matrix with rotation and/or scale changes
         and return a new CD matrix.  If 'cx' and 'cy' are specified, it will
         return a distorted CD matrix.
 
         Only those terms which are varying need to be specified on input.
     """
-    rotmat = fileutil.buildRotMatrix(delta_rot)*delta_scale
-    new_lincd = np.dot(cdmat,rotmat)
+    rotmat = fileutil.buildRotMatrix(delta_rot) * delta_scale
+    new_lincd = np.dot(cdmat, rotmat)
 
-    cxymat = np.array([[cx[1],cx[0]],[cy[1],cy[0]]])
-    new_cd = np.dot(new_lincd,cxymat)
+    cxymat = np.array([[cx[1], cx[0]], [cy[1], cy[0]]])
+    new_cd = np.dot(new_lincd, cxymat)
 
     return new_cd
 
@@ -181,72 +179,70 @@ def create_CD(orient, scale, cx=None, cy=None):
     reference pixel.
 
     """
-    cxymat = np.array([[cx[1],cx[0]],[cy[1],cy[0]]])
-    rotmat = fileutil.buildRotMatrix(orient)*scale/3600.
-    new_cd = np.dot(rotmat,cxymat)
+    cxymat = np.array([[cx[1], cx[0]], [cy[1], cy[0]]])
+    rotmat = fileutil.buildRotMatrix(orient) * scale/3600.
+    new_cd = np.dot(rotmat, cxymat)
     return new_cd
 
-def ddtohms(xsky,ysky,verbose=False,precision=6):
+def ddtohms(xsky, ysky, verbose=False, precision=6):
     """ Convert sky position(s) from decimal degrees to HMS format. """
-    xskyh = xsky /15.
+    xskyh = xsky / 15.
     xskym = (xskyh - np.floor(xskyh)) * 60.
     xskys = (xskym - np.floor(xskym)) * 60.
     yskym = (np.abs(ysky) - np.floor(np.abs(ysky))) * 60.
     yskys = (yskym - np.floor(yskym)) * 60.
 
-    fmt = "%."+repr(precision)+"f"
-    if isinstance(xskyh,np.ndarray):
-        rah,dech = [],[]
+    fmt = "%." + repr(precision) + "f"
+    if isinstance(xskyh, np.ndarray):
+        rah, dech = [], []
         for i in range(len(xskyh)):
-            rastr = repr(int(xskyh[i]))+':'+repr(int(xskym[i]))+':'+fmt%(xskys[i])
-            decstr = repr(int(ysky[i]))+':'+repr(int(yskym[i]))+':'+fmt%(yskys[i])
+            rastr = repr(int(xskyh[i])) + ':' + repr(int(xskym[i])) + ':' + fmt % (xskys[i])
+            decstr = repr(int(ysky[i])) + ':' + repr(int(yskym[i])) + ':' + fmt % (yskys[i])
             rah.append(rastr)
             dech.append(decstr)
             if verbose:
-                print('RA = ',rastr,', Dec = ',decstr)
+                print('RA = ', rastr, ', Dec = ', decstr)
     else:
-        rastr = repr(int(xskyh))+':'+repr(int(xskym))+':'+fmt%(xskys)
-        decstr = repr(int(ysky))+':'+repr(int(yskym))+':'+fmt%(yskys)
+        rastr = repr(int(xskyh)) + ':' + repr(int(xskym)) + ':' + fmt % (xskys)
+        decstr = repr(int(ysky)) + ':' + repr(int(yskym)) + ':' + fmt % (yskys)
         rah = rastr
         dech = decstr
         if verbose:
-            print('RA = ',rastr,', Dec = ',decstr)
+            print('RA = ', rastr, ', Dec = ', decstr)
 
-    return rah,dech
+    return rah, dech
 
 # Functions for applying pixel-based transformations
 #
-def build_pixel_transform(chip,output_wcs):
+def build_pixel_transform(chip, output_wcs):
     driz_pars = {}
-    driz_pars['pxg'] = np.zeros([2,2],dtype=np.float32)
-    driz_pars['pyg'] = np.zeros([2,2],dtype=np.float32)
+    driz_pars['pxg'] = np.zeros([2, 2], dtype=np.float32)
+    driz_pars['pyg'] = np.zeros([2, 2], dtype=np.float32)
     # Use default C mapping function
-    _inwcs = np.zeros([8],dtype=np.float64)
-    driz_pars['inwcs'] = convertWCS(output_wcs.wcs,_inwcs)
+    _inwcs = np.zeros([8], dtype=np.float64)
+    driz_pars['inwcs'] = convertWCS(output_wcs.wcs, _inwcs)
 
     indx = chip.outputNames['data'].find('.fits')
-    driz_pars['coeffs_name'] = chip.outputNames['data'][:indx]+'_coeffs'+str(chip.detnum)+'.dat'
+    driz_pars['coeffs_name'] = chip.outputNames['data'][:indx] + '_coeffs' + str(chip.detnum) + '.dat'
     #
     # Need to compute and write out coeffs files for each chip as well.
     #
-    xcoeffs,ycoeffs = coeff_converter.sip2idc(chip.wcs)
+    xcoeffs, ycoeffs = coeff_converter.sip2idc(chip.wcs)
     # account for the case where no IDCSCALE has been set, due to a
     # lack of IDCTAB or to 'coeffs=False'.
     idcscale = chip.wcs.idcscale
     if idcscale is None: idcscale = chip.wcs.pscale
     xcoeffs /= idcscale
     ycoeffs /= idcscale
-    driz_pars['coeffs'] = [xcoeffs,ycoeffs]
+    driz_pars['coeffs'] = [xcoeffs, ycoeffs]
 
-    abxt,cdyt = wcsfit(chip.wcs,output_wcs)
-    #abxt[2] -= xzero
-    #cdyt[2] -= yzero
+    abxt, cdyt = wcsfit(chip.wcs, output_wcs)
     driz_pars['abxt'] = abxt
     driz_pars['cdyt'] = cdyt
 
-    driz_pars['delta_rot'] = np.rad2deg(np.arctan2(abxt[1],cdyt[0]))
+    driz_pars['delta_rot'] = np.rad2deg(np.arctan2(abxt[1], cdyt[0]))
     # Compute scale from fit to allow WFPC2 (and similar) data to be handled correctly
-    driz_pars['scale'] = 1./np.sqrt(abxt[0]**2 + abxt[1]**2)
+    driz_pars['scale'] = 1. / np.sqrt(abxt[0]**2 + abxt[1]**2)
     driz_pars['tddalpha'] = chip.header['tddalpha']
     driz_pars['tddbeta'] = chip.header['tddbeta']
 
@@ -255,7 +251,7 @@ def build_pixel_transform(chip,output_wcs):
 #
 # Possibly need to generate a stand-alone interface for this function.
 #
-#### Primary interface for creating the output WCS from a list of HSTWCS objects
+# ### Primary interface for creating the output WCS from a list of HSTWCS objects
 def make_outputwcs(imageObjectList, output, configObj=None, perfect=False):
     """ Computes the full output WCS based on the set of input imageObjects
         provided as input, along with the pre-determined output name from
@@ -267,12 +263,12 @@ def make_outputwcs(imageObjectList, output, configObj=None, perfect=False):
         instance.
 
     """
-    if not isinstance(imageObjectList,list):
+    if not isinstance(imageObjectList, list):
         imageObjectList = [imageObjectList]
 
     # Compute default output WCS, replace later if user specifies a refimage
     hstwcs_list = []
-    undistort=True
+    undistort = True
     for img in imageObjectList:
         chip_wcs = copy.deepcopy(img.getKeywordList('wcs'))
         # IF the user turned off use of coeffs (coeffs==False)
@@ -283,7 +279,7 @@ def make_outputwcs(imageObjectList, output, configObj=None, perfect=False):
                 cw.cpdis1 = None
                 cw.cpdis2 = None
                 cw.det2im = None
-            undistort=False
+            undistort = False
         hstwcs_list += chip_wcs
     if not undistort and len(hstwcs_list) == 1:
         default_wcs = hstwcs_list[0].deepcopy()
@@ -316,17 +312,21 @@ def make_outputwcs(imageObjectList, output, configObj=None, perfect=False):
 
         # Now, account for any user-specified reference image
         def_wcs = default_wcs.deepcopy()
-        if singleParDict[keyname + 'refimage']:
-            default_wcs = wcsutil.HSTWCS(singleParDict[keyname + 'refimage'])
+        single_ref = singleParDict[keyname + 'refimage']
+        if single_ref:
+            if isinstance(single_ref, wcs.WCS):
+                default_wcs = single_ref
+            else:
+                default_wcs = wcsutil.HSTWCS(singleParDict[keyname + 'refimage'])
 
-        ### Create single_wcs instance based on user parameters
+        # ## Create single_wcs instance based on user parameters
         outwcs.single_wcs = mergeWCS(default_wcs, single_pars)
         # restore global default WCS to original value so single_drizzle WCS does not
         # influence final_drizzle WCS
         default_wcs = def_wcs.deepcopy()
 
-    final_step = configObj[util.getSectionName(configObj,7)]
-    finalParDict = configObj[util.getSectionName(configObj,'7a')].copy()
+    final_step = configObj[util.getSectionName(configObj, 7)]
+    finalParDict = configObj[util.getSectionName(configObj, '7a')].copy()
     if final_step['driz_combine'] and finalParDict['final_wcs']:
         del finalParDict['final_wcs']
         keyname = 'final_'
@@ -336,13 +336,22 @@ def make_outputwcs(imageObjectList, output, configObj=None, perfect=False):
                 final_pars[k] = finalParDict[key]
 
         # Now, account for any user-specified reference image
-        if finalParDict[keyname + 'refimage']:
-            rootname,extnum = fileutil.parseFilename(finalParDict[keyname+'refimage'])
-            extnum = util.findWCSExtn(finalParDict[keyname+'refimage'])
-            print('Creating OUTPUT WCS from {}[{}]'.format(rootname,extnum))
-            default_wcs = wcsutil.HSTWCS('{}[{}]'.format(rootname,extnum))
+        final_ref = finalParDict[keyname + 'refimage']
+        if final_ref:
+            if isinstance(final_ref, wcs.WCS):
+                default_wcs = final_ref
+                if hasattr(final_ref, 'filename'):
+                    rootname = final_ref.filename
+                else:
+                    rootname = ""
+                print('Creating OUTPUT WCS from WCS object based on {}'.format(rootname))
+            else:
+                rootname, extnum = fileutil.parseFilename(finalParDict[keyname + 'refimage'])
+                extnum = util.findWCSExtn(finalParDict[keyname + 'refimage'])
+                print('Creating OUTPUT WCS from {}[{}]'.format(rootname, extnum))
+                default_wcs = wcsutil.HSTWCS('{}[{}]'.format(rootname, extnum))
 
-        ### Create single_wcs instance based on user parameters
+        # ## Create single_wcs instance based on user parameters
         outwcs.final_wcs = mergeWCS(default_wcs, final_pars)
         outwcs.wcs = outwcs.final_wcs.copy()
 
@@ -450,7 +459,7 @@ def computeEdgesCenter(edges):
 
 #### Utility functions for working with WCSObjects
 def createWCSObject(output,default_wcs,imageObjectList):
-    """Converts a PyWCS WCS object into a WCSObject(baseImageObject) instance."""
+    """Converts a astropy.wcs WCS object into a WCSObject(baseImageObject) instance."""
     from . import imageObject
     outwcs = imageObject.WCSObject(output)
     outwcs.default_wcs = default_wcs
@@ -580,7 +589,7 @@ def _check_close_scale(scale, ref):
 
 def mergeWCS(default_wcs, user_pars):
     """ Merges the user specified WCS values given as dictionary derived from
-        the input configObj object with the output PyWCS object computed
+        the input configObj object with the output astropy.wcs object computed
         using distortion.output_wcs().
 
         The user_pars dictionary needs to have the following set of keys::
@@ -1018,7 +1027,7 @@ def readAltWCS(fobj, ext, wcskey=' ', verbose=False):
     try:
         original_logging_level = log.level
         log.setLevel(logutil.logging.WARNING)
-        nwcs = pywcs.WCS(hdr, fobj=fobj, key=wcskey)
+        nwcs = wcs.WCS(hdr, fobj=fobj, key=wcskey)
 
     except KeyError:
         if verbose:
@@ -1061,10 +1070,12 @@ def make_mosaic_wcs(filenames, rot=0.0, scale=0.05):
     hstwcs_list = []
     for f in filenames:
         with pyfits.open(f) as hdulist:
-            hstwcs_list.extend([get_hstwcs(f,hdulist,extnum) for extnum in get_extns(f)])
+            hstwcs_list.extend([get_hstwcs(f, hdulist, extnum) for extnum in get_extns(f)])
     # Combine them into a single mosaic WCS
     output_wcs = utils.output_wcs(hstwcs_list, undistort=True)
-    mosaic_wcs = mergeWCS(output_wcs, {'rot':rot, 'scale':scale})
+    output_wcs.wcs.cd = make_perfect_cd(output_wcs)
+
+    mosaic_wcs = mergeWCS(output_wcs, {'rot': rot, 'scale': scale})
     return mosaic_wcs
 
 def create_mosaic_pars(mosaic_wcs):
