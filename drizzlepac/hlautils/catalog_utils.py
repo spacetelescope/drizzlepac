@@ -8,22 +8,20 @@ import pdb
 import sys
 
 import astropy.units as u
-from astropy.io import ascii
 from astropy.io import fits as fits
 from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel
 from astropy.stats import mad_std, gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm
 from astropy.table import Column, Table
 import numpy as np
-import photutils
+
 from photutils import aperture_photometry, CircularAperture, DAOStarFinder
 from photutils import Background2D, MedianBackground, SExtractorBackground, StdBackgroundRMS
-from photutils import detect_sources, source_properties, deblend_sources
+from photutils import detect_sources, source_properties  # , deblend_sources
 from stsci.tools import logutil
 from stwcs.wcsutil import HSTWCS
 
-from .. import util
+# from .. import util
 from . import astrometric_utils
-
 
 try:
     from matplotlib import pyplot as plt
@@ -31,8 +29,9 @@ except Exception:
     plt = None
 
 # Default background determination parameter values
-BKG_BOX_SIZE = (50, 50)
-BKG_FILTER_SIZE = (3, 3)
+BKG_BOX_SIZE = 50
+BKG_FILTER_SIZE = 3
+CATALOG_TYPES = ['point', 'segment']
 
 __taskname__ = 'catalog_utils'
 
@@ -221,8 +220,198 @@ class ParamDict:
         inst_det = "{} {}".format(instrument, detector)
         return self.full_param_dict[inst_det].copy()
 
-class HAPCatalog(object):
-    """Generate photometric sourcelist for specified image(s).
+class CatalogImage:
+
+    def __init__(self, filename):
+        if isinstance(filename, str):
+            self.imghdu = fits.open(filename)
+        else:
+            self.imghdu = filename
+
+        # Fits file read
+        self.imghdu = fits.open(self.imgname)
+        self.data = self.imghdu[('SCI', 1)].data
+        self.wht_image = self.imghdu['WHT'].data.copy()
+
+        # Get the HSTWCS object from the first extension
+        self.imgwcs = HSTWCS(self.imghdu, 1)
+
+        self.keyword_dict = self._get_header_data()
+
+        # Get header information to annotate the output catalogs
+        if "total" in self.imgname:
+            self.ghd_product = "tdp"
+        else:
+            self.ghd_product = "fdp"
+
+        self.bkg = None
+
+
+    def close(self):
+        self.imghdu.close()
+
+    def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
+                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS,
+                            nsigma=5., threshold_flag=None):
+        """Use Background2D to determine the background of the input image.
+
+        Parameters
+        ----------
+        image : ndarray
+            Numpy array of the science extension from the observations FITS file.
+
+        box_size : int
+            Size of box along each axis
+
+        win_size : int
+            Size of 2D filter to apply to the background image
+
+        nsigma : float
+            Number of sigma above background
+
+        threshold_flag : float or None
+            Value from the image which serves as the limit for determining sources.
+            If None, compute a default value of (background+5*rms(background)).
+            If threshold < 0.0, use absolute value as scaling factor for default value.
+
+
+        Returns
+        -------
+        bkg : 2D ndarray
+            Background image
+
+        bkg_dao_rms : ndarry
+            Background RMS image
+
+        threshold : ndarray
+            Numpy array representing the background plus RMS
+
+        """
+        # Report configuration values to log
+        log.info("")
+        log.info("Computation of image background - Input Parameters")
+        log.info("Box size: {}".format(box_size))
+        log.info("Window size: {}".format(win_size))
+        log.info("NSigma: {}".format(nsigma))
+
+        if threshold_flag is None:
+            threshold_flag = self.param_dict['sourcex']['thresh']
+
+        # SExtractorBackground ans StdBackgroundRMS are the defaults
+        bkg = None
+        bkg_dao_rms = None
+
+        exclude_percentiles = [10, 25, 50, 75]
+        for percentile in exclude_percentiles:
+            log.info("")
+            log.info("Percentile in use: {}".format(percentile))
+            try:
+                bkg = Background2D(self.image['data'], box_size, filter_size=win_size,
+                                    bkg_estimator=bkg_estimator,
+                                    bkgrms_estimator=rms_estimator,
+                                    exclude_percentile=percentile, edge_method="pad")
+            except Exception:
+                bkg = None
+                continue
+
+            if bkg is not None:
+                # Set the bkg_rms at "nsigma" sigma above background
+                bkg_rms = nsigma * bkg.background_rms
+                default_threshold = bkg.background + bkg_rms
+                bkg_rms_mean = bkg.background.mean() + nsigma * bkg_rms.std()
+                bkg_mean = bkg.background.mean()
+                bkg_dao_rms = bkg.background_rms
+                if threshold_flag is None:
+                    threshold = default_threshold
+                elif threshold_flag < 0:
+                    threshold = -1 * threshold_flag * default_threshold
+                    log.info("Background threshold set to {} based on {}".format(threshold.max(), default_threshold.max()))
+                    bkg_rms_mean = threshold.max()
+                else:
+                    bkg_rms_mean = 3. * threshold_flag
+                    threshold = bkg_rms_mean
+
+                if bkg_rms_mean < 0:
+                    bkg_rms_mean = 0.
+                break
+
+        # If Background2D does not work at all, define default scalar values for
+        # the background to be used in source identification
+        if bkg is None:
+            bkg_mean = bkg_rms_mean = max(0.01, self.image['data'].min())
+            bkg_rms = nsigma * bkg_rms_mean
+            bkg_dao_rms = bkg_rms_mean
+            threshold = bkg_rms_mean + bkg_rms
+
+        # *** FIX: Need to do something for bkg if bkg is None ***
+
+        # Report other useful quantities
+        log.info("")
+        log.info("Mean background: {}".format(bkg_mean))
+        log.info("Mean threshold: {}".format(threshold))
+        log.info("")
+        log.info("{}".format("=" * 80))
+
+        self.bkg = bkg
+        self.bkg_dao_rms = bkg_dao_rms
+        self.bkg_rms_mean = bkg_rms_mean
+        self.threshold = threshold
+
+    def _get_header_data(self):
+        """Read FITS keywords from the primary or extension header and store the
+        information in a dictionary
+
+        Returns
+        -------
+        keyword_dict : dictionary
+            dictionary of keyword values
+        """
+
+        keyword_dict = {}
+
+        keyword_dict["proposal_id"] = self.imghdu[0].header["PROPOSID"]
+        keyword_dict["image_file_name"] = self.imghdu[0].header['FILENAME'].upper()
+        keyword_dict["target_name"] = self.imghdu[0].header["TARGNAME"].upper()
+        keyword_dict["date_obs"] = self.imghdu[0].header["DATE-OBS"]
+        keyword_dict["instrument"] = self.imghdu[0].header["INSTRUME"].upper()
+        keyword_dict["detector"] = self.imghdu[0].header["DETECTOR"].upper()
+        keyword_dict["target_ra"] = self.imghdu[0].header["RA_TARG"]
+        keyword_dict["target_dec"] = self.imghdu[0].header["DEC_TARG"]
+        keyword_dict["expo_start"] = self.imghdu[0].header["EXPSTART"]
+        keyword_dict["texpo_time"] = self.imghdu[0].header["TEXPTIME"]
+        keyword_dict["ccd_gain"] = self.imghdu[0].header["CCDGAIN"]
+        keyword_dict["aperture_pa"] = self.imghdu[0].header["PA_V3"]
+
+        # The total detection product has the FILTER keyword in
+        # the primary header - read it for any instrument.
+        #
+        # For the filter detection product:
+        # WFC3 only has FILTER, but ACS has FILTER1 and FILTER2
+        # in the primary header.
+        if self.ghd_product.lower() == "tdp":
+            keyword_dict["filter"] = self.imghdu[0].header["FILTER"]
+        # The filter detection product...
+        else:
+            if keyword_dict["instrument"] == "ACS":
+                keyword_dict["filter1"] = self.imghdu[0].header["FILTER1"]
+                keyword_dict["filter2"] = self.imghdu[0].header["FILTER2"]
+            else:
+                keyword_dict["filter1"] = self.imghdu[0].header["FILTER"]
+                keyword_dict["filter2"] = ""
+
+        # Get the HSTWCS object from the first extension
+        keyword_dict["wcs_name"] = self.imghdu[1].header["WCSNAME"]
+        keyword_dict["wcs_type"] = self.imghdu[1].header["WCSTYPE"]
+        log.info('WCSTYPE: {}'.format(keyword_dict["wcs_type"]))
+        keyword_dict["orientation"] = self.imghdu[1].header["ORIENTAT"]
+        keyword_dict["aperture_ra"] = self.imghdu[1].header["RA_APER"]
+        keyword_dict["aperture_dec"] = self.imghdu[1].header["DEC_APER"]
+
+        return keyword_dict
+
+
+class HAPCatalogs:
+    """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
 
     def __init__(self, fitsfile):
@@ -231,10 +420,7 @@ class HAPCatalog(object):
 
         self.imgname = fitsfile
 
-        # Fits file read
-        self.imghdu = fits.open(self.imgname)
-        self.image = self.imghdu['SCI'].data
-        self.wht_image = self.imghdu['WHT'].data.copy()
+        self.image = CatalogImage(fitsfile)
 
         # Parameter dictionary definition
         self.instrument = self.imgname.split("_")[3].upper()
@@ -243,25 +429,103 @@ class HAPCatalog(object):
         self.full_param_dict = ParamDict()
         self.param_dict = self.full_param_dict.get_params(self.instrument, self.detector)
 
+        self.keyword_dict = self._get_header_data()
 
-    def compute_background(self. threshold, bkg_estimator=MedianBackground(),
-                            box_size=BKG_BOX_SIZE, filter_size=BKG_FILTER_SIZE):
-        # Estimate background for DaoStarfinder 'threshold' input.
-        self.image_bkg = ImageBackground(self.image)
-        self.image_bkg.compute_bkg(threshold, bkg_estimator=bkg_estimator,
-                                    box_size=box_size, filter_size=filter_size)
+        # Initialize all catalog types here...
+        # This does NOT identify or measure sources to create the catalogs at this point...
+        # The syntax here is EXTREMELY cludgy, but until a more compact way to do this is found,
+        #  it will have to do...
+        self.catalogs = {}
+        for type in CATALOG_TYPES:
+            if type == 'point':
+                self.catalogs[type] = HAPPointCatalog(self.image, self.param_dict)
+            if type == 'segment':
+                self.catalogs[type] = HAPSegmentCatalog(self.image, self.param_dict)
+
+    def identify_sources(self, types=CATALOG_TYPES):
+        """Build catalogs for this image.
+
+        Parameters
+        ----------
+        types : list
+            List of catalog types to be generated.  If None, build all available catalogs.
+            Supported types of catalogs include: 'point', 'segment'.
+        """
+        # Make sure we at least have a default 2D background computed
+        if self.image.bkg_rms_mean is None:
+            self.image.compute_background()
+
+        if any([t not in self.catalogs for t in types]):
+            log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
+            raise ValueError
+        for catalog in types:
+            self.catalogs[catalog].identify_sources()
+
+    def measure_sources(self, types=None):
+        """Perform photometry and other measurements on sources for this image.
+
+        Parameters
+        ----------
+        types : list
+            List of catalog types to be generated.  If None, build all available catalogs.
+            Supported types of catalogs include: 'point', 'segment'.
+        """
+        # Make sure we at least have a default 2D background computed
+        if self.sources is None:
+            self.identify_sources()
+
+        if any([t not in self.catalogs for t in types]):
+            log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
+            raise ValueError
+        for catalog in types:
+            self.catalogs[catalog].measure_sources()
+
+    def write_catalogs(self, types=None):
+        """Write catalogs for this image to output files.
+
+        Parameters
+        ----------
+        types : list
+            List of catalog types to be generated.  If None, build all available catalogs.
+            Supported types of catalogs include: 'point', 'segment'.
+        """
+
+        if any([t not in self.catalogs for t in types]):
+            log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
+            raise ValueError
+        for catalog in types:
+            self.catalogs[catalog].write_to()
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+class HAPCatalogBase:
+    catalog_suffix = ".ecsv"
 
-class HAPPointCatalog(HAPCatalog):
+    def __init__(self, image, param_dict):
+        self.image = image
+        self.imgname = image.imgname
+        self.bkg = image.bkg
+        self.param_dict = param_dict
+
+        self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
+
+    def identify_sources(self):
+        pass
+
+    def measure_sources(self):
+        pass
+
+    def write_catalog(self, keyword_dict):
+        pass
+
+
+class HAPPointCatalog(HAPCatalogBase):
     """Generate photometric sourcelist(s) for specified image(s) using aperture photometry of point sources.
     """
-    def __init__(self, imgname):
-        super().__init__(imgname)
+    catalog_suffix = "_point-cat.ecsv"
 
-        # Generate output sourcelist catalog filename
-        self.point_sourcelist_filename = self.imgname.replace(self.imgname[-9:], "_point-cat.ecsv")
+    def __init__(self, image, param_dict):
+        super().__init__(image, param_dict)
 
 
     def identify_point_sources(self, bkgsig_sf=4., dao_ratio=0.8):
@@ -285,15 +549,15 @@ class HAPPointCatalog(HAPCatalog):
         sources : astropy table
             Table containing x, y coordinates of identified sources
         """
-        threshold = self.param_dict['dao']['TWEAK_THRESHOLD']
+        # threshold = self.param_dict['dao']['TWEAK_THRESHOLD']
         # read in sci, wht extensions of drizzled product
         image = self.image.copy()
         wht_image = self.wht_image.copy()
 
-        image -= np.nanmedian(image)
+        # image -= np.nanmedian(image)
 
         # Estimate background
-        self.compute_background(threshold)
+        # self.compute_background(threshold)
 
         # Estimate FWHM from image sources
 
@@ -302,7 +566,7 @@ class HAPPointCatalog(HAPCatalog):
 
         default_fwhm = self.param_dict['dao']['TWEAK_FWHMPSF'] / self.param_dict['astrodrizzle']['SCALE']
         kernel = astrometric_utils.build_auto_kernel(image, wht_image,
-                                                     threshold=image_bkg.bkg_rms, fwhm=default_fwhm)
+                                                     threshold=self.bkg.bkg_rms, fwhm=default_fwhm)
         segm = detect_sources(image, detect_sources_thresh, npixels=self.param_dict["sourcex"]["source_box"],
                               filter_kernel=kernel)
         cat = source_properties(image, segm)
@@ -310,8 +574,8 @@ class HAPPointCatalog(HAPCatalog):
         smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
         source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
 
-        log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm, image_bkg.bkg_rms_mean, image_bkg.bkg_rms_mean))
-        daofind = DAOStarFinder(fwhm=source_fwhm, threshold=image_bkg.bkg_rms_mean, ratio=dao_ratio)
+        log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm, self.bkg.bkg_rms_mean, self.bkg.bkg_rms_mean))
+        daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.bkg.bkg_rms_mean, ratio=dao_ratio)
         sources = daofind(image)
 
         for col in sources.colnames:
@@ -356,14 +620,11 @@ class HAPPointCatalog(HAPCatalog):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def write_to(self, catalog, write_region_file=False):
+    def write_to(self, write_region_file=False):
         """Write specified catalog to file on disk
 
         Parameters
         ----------
-        catalog : astropy table
-            table data to write to disk
-
         write_region_file : Boolean
            Write ds9-compatible region file along with the catalog file? Default value = False
 
@@ -402,26 +663,21 @@ class HAPPointCatalog(HAPCatalog):
 # ----------------------------------------------------------------------------------------------------------------------
 #       Modified contents of Michele's se_source_generation.py, as of commit b2db3ec9c918188cea2d3b0e4b64e39cc79c4146
 # ----------------------------------------------------------------------------------------------------------------------
-class HAPSegmentCatalog(HAPCatalog):
+class HAPSegmentCatalog(HAPCatalogBase):
     """Generate photometric sourcelist(s) for specified image(s) using segment mapping.
     """
-    def __init__(self, imgname):
-        super().__init__(imgname)
+    catalog_suffix = "_segment-cat.ecsv"
 
-        # Generate output sourcelist catalog filename
-        self.seg_sourcelist_filename = self.imgname.replace(self.imgname[-9:], "_segment-cat.ecsv")
+    def __init__(self, image, param_dict):
+        super().__init__(image, param_dict)
 
-        # Get the HSTWCS object from the first extension
-        self.imgwcs = HSTWCS(self.imghdu, 1)
+        # Get the instrument/detector-specific values from the self.param_dict
+        self.fwhm = self.param_dict["sourcex"]["fwhm"]
+        self.size_source_box = self.param_dict["sourcex"]["source_box"]
+        self.threshold_flag = self.param_dict["sourcex"]["thresh"]
 
-        # Get header information to annotate the output catalogs
-        if self.imgname.find("total") > -1:
-            ghd_product = "tdp"
-        else:
-            ghd_product = "fdp"
-        self.keyword_dict = self._get_header_data(product=ghd_product)
 
-    def create_sextractor_like_sourcelists(self, se_debug=False):
+    def idenfity_sources(self, se_debug=False):
         """Use photutils to find sources in image based on segmentation.
 
         Parameters
@@ -446,23 +702,17 @@ class HAPSegmentCatalog(HAPCatalog):
             Mean bkg.background FIX
 
         """
-        # get the TDP SCI image data
-
-        imgarr = self.imghdu['sci', 1].data.copy()
-
-        # Get the instrument/detector-specific values from the self.param_dict
-        fwhm = self.param_dict["sourcex"]["fwhm"]
-        size_source_box = self.param_dict["sourcex"]["source_box"]
-        threshold_flag = self.param_dict["sourcex"]["thresh"]
+        # get the SCI image data
+        imgarr = self.image.data.copy()
 
         # Report configuration values to log
         log.info("{}".format("=" * 80))
         log.info("")
         log.info("SExtractor-like source finding settings for Photutils segmentation")
         log.info("Total Detection Product - Input Parameters")
-        log.info("FWHM: {}".format(fwhm))
-        log.info("size_source_box: {}".format(size_source_box))
-        log.info("threshold_flag: {}".format(threshold_flag))
+        log.info("FWHM: {}".format(self.fwhm))
+        log.info("size_source_box: {}".format(self.size_source_box))
+        log.info("threshold_flag: {}".format(self.threshold_flag))
         log.info("")
         log.info("{}".format("=" * 80))
 
@@ -470,7 +720,8 @@ class HAPSegmentCatalog(HAPCatalog):
         kernel_list = [Gaussian2DKernel, MexicanHat2DKernel]
         kernel_in_use = kernel_list[0]
 
-        bkg, bkg_dao_rms, threshold = self._compute_background(imgarr, nsigma=5., threshold_flag=threshold_flag)
+        bkg = self.image.bkg
+        threshold = self.image.threshold
 
         # FIX imgarr should be background subtracted, sextractor uses the filtered_data image
         imgarr_bkgsub = imgarr - bkg.background
@@ -478,20 +729,22 @@ class HAPSegmentCatalog(HAPCatalog):
         # *** FIX: should size_source_box size be used in all these places? ***
         # Create a 2D filter kernel - this will be used to smooth the input
         # image prior to thresholding in detect_sources().
-        sigma = fwhm * gaussian_fwhm_to_sigma
-        kernel = kernel_in_use(sigma, x_size=size_source_box, y_size=size_source_box)
+        sigma = self.fwhm * gaussian_fwhm_to_sigma
+        kernel = kernel_in_use(sigma, x_size=self.size_source_box, y_size=self.size_source_box)
         kernel.normalize()
 
         # Source segmentation/extraction
         # If the threshold includes the background level, then the input image
         # should NOT be background subtracted.
         # Note: SExtractor has "connectivity=8" which is the default for this function
-        segm = detect_sources(imgarr, threshold, npixels=size_source_box, filter_kernel=kernel)
+        self.sources = detect_sources(imgarr, threshold, npixels=self.size_source_box, filter_kernel=kernel)
+        self.kernel = kernel
 
         # For debugging purposes...
         if se_debug:
             # Write out a catalog which can be used as an overlay for image in ds9
-            cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=self.imgwcs)
+            cat = source_properties(imgarr_bkgsub, self.sources, background=bkg.background,
+                                    filter_kernel=kernel, wcs=self.image.imgwcs)
             table = cat.to_table()
 
             # Copy out only the X and Y coordinates to a "debug table" and
@@ -499,8 +752,8 @@ class HAPSegmentCatalog(HAPCatalog):
             tbl = Table(table["xcentroid", "ycentroid"])
 
             # Construct the debug output filename and write the catalog
-            indx = self.seg_sourcelist_filename.find("ecsv")
-            outname = self.seg_sourcelist_filename[0:indx] + "reg"
+            indx = self.sourcelist_filename.find("ecsv")
+            outname = self.sourcelist_filename[0:indx] + "reg"
 
             tbl["xcentroid"].info.format = ".10f"  # optional format
             tbl["ycentroid"].info.format = ".10f"
@@ -530,7 +783,7 @@ class HAPSegmentCatalog(HAPCatalog):
         # npixels and filter_kernel should match those used by detect_sources()
         # Note: SExtractor has "connectivity=8" which is the default for this function
         """
-        segm = deblend_sources(imgarr, segm, npixels=size_source_box,
+        segm = deblend_sources(imgarr, self.sources, npixels=size_source_box,
                                filter_kernel=kernel, nlevels=32,
                                contrast=0.005)
         print("after deblend. ", segm)
@@ -548,18 +801,10 @@ class HAPSegmentCatalog(HAPCatalog):
             plt.show()
         """
 
-        # Regenerate the source catalog with presumably now only good sources
-        seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=self.imgwcs)
-
-        self._write_catalog(seg_cat)
-
-        return segm, kernel, bkg_dao_rms
-
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def measure_source_properties(self, segm, kernel):
+    def measure_sources(self):
         """Use the positions of the sources identified in the white light image to
         measure properties of these sources in the filter images
 
@@ -585,148 +830,36 @@ class HAPSegmentCatalog(HAPCatalog):
         -------
 
         """
-
         # get filter-level science data
-        imgarr = self.imghdu['sci', 1].data.copy()
-
-        # Get the instrument/detector-specific values from the param_dict
-        fwhm = self.param_dict["sourcex"]["fwhm"]
-        size_source_box = self.param_dict["sourcex"]["source_box"]
-        threshold_flag = self.param_dict["sourcex"]["thresh"]
+        imgarr = self.image.data.copy()
 
         # Report configuration values to log
         log.info("{}".format("=" * 80))
         log.info("")
         log.info("SExtractor-like source property measurements based on Photutils segmentation")
         log.info("Filter Level Product - Input Parameters")
-        log.info("FWHM: {}".format(fwhm))
-        log.info("size_source_box: {}".format(size_source_box))
-        log.info("threshold_flag: {}".format(threshold_flag))
+        log.info("FWHM: {}".format(self.fwhm))
+        log.info("size_source_box: {}".format(self.size_source_box))
+        log.info("threshold_flag: {}".format(self.threshold_flag))
         log.info("")
         log.info("{}".format("=" * 80))
 
         # The data needs to be background subtracted when computing the source properties
-        bkg, _, _ = self._compute_background(imgarr, nsigma=5., threshold_flag=threshold_flag)
+        bkg = self.image.bkg
 
         imgarr_bkgsub = imgarr - bkg.background
 
         # Compute source properties...
-        seg_cat = source_properties(imgarr_bkgsub,
-                                    segm,
+        self.source_cat = source_properties(imgarr_bkgsub,
+                                    self.sources,
                                     background=bkg.background,
-                                    filter_kernel=kernel,
-                                    wcs=self.imgwcs)
-
-        # Write the source catalog
-        self._write_catalog(seg_cat, product="fdp")
-
+                                    filter_kernel=self.kernel,
+                                    wcs=self.image.imgwcs)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def _compute_background(self, image, box_size=50, win_size=3, nsigma=5., threshold_flag=None):
-        """Use Background2D to determine the background of the input image.
-
-        Parameters
-        ----------
-        image : ndarray
-            Numpy array of the science extension from the observations FITS file.
-
-        box_size : int
-            Size of box along each axis
-
-        win_size : int
-            Size of 2D filter to apply to the background image
-
-        nsigma : float
-            Number of sigma above background
-
-        threshold_flag : float or None
-            Value from the image which serves as the limit for determining sources.
-            If None, compute a default value of (background+5*rms(background)).
-            If threshold < 0.0, use absolute value as scaling factor for default value.
-
-
-        Returns
-        -------
-        bkg : 2D ndarray
-            Background image
-
-        bkg_dao_rms : ndarry
-            Background RMS image
-
-        threshold : ndarray
-            Numpy array representing the background plus RMS
-
-        """
-        # Report configuration values to log
-        log.info("")
-        log.info("Computation of white light image background - Input Parameters")
-        log.info("Box size: {}".format(box_size))
-        log.info("Window size: {}".format(win_size))
-        log.info("NSigma: {}".format(nsigma))
-
-        # SExtractorBackground ans StdBackgroundRMS are the defaults
-        bkg_estimator = SExtractorBackground()
-        bkgrms_estimator = StdBackgroundRMS()
-        bkg = None
-        bkg_dao_rms = None
-
-        exclude_percentiles = [10, 25, 50, 75]
-        for percentile in exclude_percentiles:
-            log.info("")
-            log.info("Percentile in use: {}".format(percentile))
-            try:
-                bkg = Background2D(image, box_size, filter_size=win_size, bkg_estimator=bkg_estimator,
-                                   bkgrms_estimator=bkgrms_estimator, exclude_percentile=percentile, edge_method="pad")
-            except Exception:
-                bkg = None
-                continue
-
-            if bkg is not None:
-                # Set the bkg_rms at "nsigma" sigma above background
-                bkg_rms = nsigma * bkg.background_rms
-                default_threshold = bkg.background + bkg_rms
-                bkg_rms_mean = bkg.background.mean() + nsigma * bkg_rms.std()
-                bkg_dao_rms = bkg.background_rms
-                if threshold_flag is None:
-                    threshold = default_threshold
-                elif threshold_flag < 0:
-                    threshold = -1 * threshold_flag * default_threshold
-                    log.info("Background threshold set to {} based on {}".format(threshold.max(), default_threshold.max()))
-                    bkg_rms_mean = threshold.max()
-                else:
-                    bkg_rms_mean = 3. * threshold_flag
-                    threshold = bkg_rms_mean
-
-                if bkg_rms_mean < 0:
-                    bkg_rms_mean = 0.
-                break
-
-        # If Background2D does not work at all, define default scalar values for
-        # the background to be used in source identification
-        if bkg is None:
-            bkg_rms_mean = max(0.01, image.min())
-            bkg_rms = nsigma * bkg_rms_mean
-            bkg_dao_rms = bkg_rms_mean
-            threshold = bkg_rms_mean + bkg_rms
-
-        # *** FIX: Need to do something for bkg if bkg is None ***
-
-        # Report other useful quantities
-        log.info("")
-        log.info("Mean background: {}".format(bkg.background.mean()))
-        log.info("Mean threshold: {}".format(bkg_rms_mean))
-        log.info("")
-        log.info("{}".format("=" * 80))
-
-        return bkg, bkg_dao_rms, threshold
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-    def _write_catalog(self, seg_cat, product="tdp"):
+    def write_catalog(self):
         """Actually write the specified source catalog out to disk
 
         Parameters
@@ -739,6 +872,7 @@ class HAPSegmentCatalog(HAPCatalog):
             Identification string for the catalog product being written.  This
             controls the data being put into the catalog product
         """
+        seg_cat = self.source_cat
 
         # Convert the list of SourceProperties objects to a QTable and
         # document in column metadata Photutils columns which map to SExtractor columns
@@ -751,7 +885,7 @@ class HAPSegmentCatalog(HAPCatalog):
 
         # If the output is for the total detection product, then only
         # a subset of the full catalog is needed.
-        if product.lower() == "tdp":
+        if self.image.ghd_product.lower() == "tdp":
 
             # [x|y]centroid are in pixels, physical data coordinates
             seg_subset_table = seg_table["xcentroid", "ycentroid"]
@@ -775,13 +909,13 @@ class HAPSegmentCatalog(HAPCatalog):
             seg_subset_table["Dec_icrs"].info.format = ".10f"
             log.info("seg_subset_table (white light image): {}".format(seg_subset_table))
 
-            seg_subset_table.write(self.seg_sourcelist_filename, format="ascii.ecsv")
-            log.info("Wrote source catalog: {}".format(self.seg_sourcelist_filename))
+            seg_subset_table.write(self.sourcelist_filename, format="ascii.ecsv")
+            log.info("Wrote source catalog: {}".format(self.sourcelist_filename))
 
         # else the product is the "filter detection product"
         else:
 
-            seg_table = self._annotate_table(seg_table, num_sources, product=product)
+            seg_table = self._annotate_table(seg_table, num_sources, product=self.image.ghd_product)
 
             # Rework the current table for output
             del seg_table["id"]
@@ -820,76 +954,12 @@ class HAPSegmentCatalog(HAPCatalog):
             seg_table["Dec_icrs"].info.format = ".10f"
             log.info("seg_table (filter): {}".format(seg_table))
 
-            seg_table.write(self.seg_sourcelist_filename, format="ascii.ecsv")
-            log.info("Wrote filter source catalog: {}".format(self.seg_sourcelist_filename))
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-    def _get_header_data(self,product="tdp"):
-        """Read FITS keywords from the primary or extension header and store the
-        information in a dictionary
-
-        Parameters
-        ----------
-        product : str, optional
-            product type. either 'tdp' for total detection product or 'fdp' for filter detection product. Default value
-            is 'tdp'.
-
-        Returns
-        -------
-        keyword_dict : dictionary
-            dictionary of keyword values
-        """
-
-        keyword_dict = {}
-
-        keyword_dict["proposal_id"] = self.imghdu[0].header["PROPOSID"]
-        keyword_dict["image_file_name"] = self.imghdu[0].header['FILENAME'].upper()
-        keyword_dict["target_name"] = self.imghdu[0].header["TARGNAME"].upper()
-        keyword_dict["date_obs"] = self.imghdu[0].header["DATE-OBS"]
-        keyword_dict["instrument"] = self.imghdu[0].header["INSTRUME"].upper()
-        keyword_dict["detector"] = self.imghdu[0].header["DETECTOR"].upper()
-        keyword_dict["target_ra"] = self.imghdu[0].header["RA_TARG"]
-        keyword_dict["target_dec"] = self.imghdu[0].header["DEC_TARG"]
-        keyword_dict["expo_start"] = self.imghdu[0].header["EXPSTART"]
-        keyword_dict["texpo_time"] = self.imghdu[0].header["TEXPTIME"]
-        keyword_dict["ccd_gain"] = self.imghdu[0].header["CCDGAIN"]
-        keyword_dict["aperture_pa"] = self.imghdu[0].header["PA_V3"]
-
-        # The total detection product has the FILTER keyword in
-        # the primary header - read it for any instrument.
-        #
-        # For the filter detection product:
-        # WFC3 only has FILTER, but ACS has FILTER1 and FILTER2
-        # in the primary header.
-        if product.lower() == "tdp":
-            keyword_dict["filter"] = self.imghdu[0].header["FILTER"]
-        # The filter detection product...
-        else:
-            if keyword_dict["instrument"] == "ACS":
-                keyword_dict["filter1"] = self.imghdu[0].header["FILTER1"]
-                keyword_dict["filter2"] = self.imghdu[0].header["FILTER2"]
-            else:
-                keyword_dict["filter1"] = self.imghdu[0].header["FILTER"]
-                keyword_dict["filter2"] = ""
-
-        # Get the HSTWCS object from the first extension
-        keyword_dict["wcs_name"] = self.imghdu[1].header["WCSNAME"]
-        keyword_dict["wcs_type"] = self.imghdu[1].header["WCSTYPE"]
-        log.info('WCSTYPE: {}'.format(keyword_dict["wcs_type"]))
-        keyword_dict["orientation"] = self.imghdu[1].header["ORIENTAT"]
-        keyword_dict["aperture_ra"] = self.imghdu[1].header["RA_APER"]
-        keyword_dict["aperture_dec"] = self.imghdu[1].header["DEC_APER"]
-
-        return (keyword_dict)
-
+            seg_table.write(self.sourcelist_filename, format="ascii.ecsv")
+            log.info("Wrote filter source catalog: {}".format(self.sourcelist_filename))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-
-    def _annotate_table(self,data_table, num_sources, product="tdp"):
+    def _annotate_table(self, data_table, num_sources, product="tdp"):
         """Add state metadata to the output source catalog
 
         Parameters
@@ -942,50 +1012,5 @@ class HAPSegmentCatalog(HAPCatalog):
 
         return (data_table)
 
-class ImageBackground:
-    exclude_percentiles = [10, 25, 50, 75]
-
-    def __init__(self, array):
-        self.image = array
-
-    def compute_bkg(self, threshold, bkg_estimator=MedianBackground(), box_size=(50, 50), filter_size=(3, 3)):
-        # Estimate background for DaoStarfinder 'threshold' input.
-        bkg = None
-        for percentile in self.exclude_percentiles:
-            try:
-                bkg = Background2D(self.image, box_size, filter_size=filter_size,
-                                   bkg_estimator=bkg_estimator,
-                                   exclude_percentile=percentile)
-            except Exception:
-                bkg = None
-                continue
-
-            if bkg is not None:
-                # If it succeeds, stop and use that value
-                bkg_rms = (5. * bkg.background_rms)
-                bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
-                default_threshold = bkg.background + bkg_rms
-                if threshold is None:
-                    threshold = default_threshold
-                elif threshold < 0:
-                    threshold = -1 * threshold * default_threshold
-                    log.info("{} based on {}".format(threshold.max(), default_threshold.max()))
-                    bkg_rms_mean = threshold.max()
-                else:
-                    bkg_rms_mean = 3. * threshold
-
-                if bkg_rms_mean < 0:
-                    bkg_rms_mean = 0.
-                break
-
-        # If Background2D does not work at all, define default scalar values for
-        # the background to be used in source identification
-        if bkg is None:
-            bkg_rms_mean = max(0.01, self.image.min())
-            bkg_rms = bkg_rms_mean * 5
-        # Remember results
-        self.bkg_rms_mean = bkg_rms_mean
-        self.bkg_rms = bkg_rms
-        self.bkg = bkg
 
 # ======================================================================================================================
