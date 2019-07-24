@@ -420,7 +420,6 @@ class HAPCatalogs:
 
         self.imgname = fitsfile
 
-        self.image = CatalogImage(fitsfile)
 
         # Parameter dictionary definition
         self.instrument = self.imgname.split("_")[3].upper()
@@ -429,7 +428,10 @@ class HAPCatalogs:
         self.full_param_dict = ParamDict()
         self.param_dict = self.full_param_dict.get_params(self.instrument, self.detector)
 
-        self.keyword_dict = self._get_header_data()
+        # Compute the background for this image
+        self.image = CatalogImage(fitsfile)
+        self.image.compute_background(nsigma=self.param_dict['sourcex']['bthresh'],
+                                      threshold_flag=self.param_dict['sourcex']['thresh'])
 
         # Initialize all catalog types here...
         # This does NOT identify or measure sources to create the catalogs at this point...
@@ -451,9 +453,6 @@ class HAPCatalogs:
             List of catalog types to be generated.  If None, build all available catalogs.
             Supported types of catalogs include: 'point', 'segment'.
         """
-        # Make sure we at least have a default 2D background computed
-        if self.image.bkg_rms_mean is None:
-            self.image.compute_background()
 
         if any([t not in self.catalogs for t in types]):
             log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
