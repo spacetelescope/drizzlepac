@@ -6,6 +6,7 @@ specified observation conditions and instrument/detector used in the observation
 import collections
 import json
 import os
+import sys
 
 
 from stsci.tools import teal
@@ -48,9 +49,8 @@ class hap_config(object):
         step_list = [catalog_generation_pars] # TODO: Just a placeholder until we add complexity!
         for step_name in step_list:
             step_title = step_name.__name__.replace("_pars","").replace("_"," ")
-            self.pars[step_title] = step_name(self.conditions,self.inst_det,
-                                              self.full_cfg_index[step_title],
-                                              self.pars_dir,step_title,self.use_defaults)
+            cfg_index = self.full_cfg_index[step_title]
+            self.pars[step_title] = step_name(cfg_index,self.conditions,self.pars_dir,step_title,self.use_defaults)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -91,9 +91,25 @@ class hap_config(object):
 
 
     def get_pars(self,step_name):
-        """This method returns the parameter set for a specified step (alignment, drizzle, etc.)"""
+        """This method returns the parameter set for a specified step (alignment, astrodrizzle, etc.)
 
-        return(self.pars[step_name].outpars)
+        Parameters
+        ----------
+        step_name : str
+            Name of the step for which parameters will be returned.
+
+        Returns
+        -------
+        Dictionary of parameter values keyed by parameter name.
+        """
+        step_list = ['alignment', 'astrodrizzle','catalog generation','quality control']
+        if step_name in step_list:
+            return(self.pars[step_name].outpars)
+        else:
+            print("ERROR! '{}' is not a recognized step name.".format(step_name))
+            print("Recognized step names: \n{}".format(str(step_list)[2:-2].replace("', '","\n")))
+            sys.exit(1)
+
 
 
 
@@ -110,11 +126,29 @@ class hap_config(object):
 
 
 class par():
-    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults):
-        """INSIGHTFUL SUMMARY HERE"""
-        self.conditions = conditions
-        self.inst_det = inst_det
+    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults):
+        """Parent class for alignment_pars, astrodrizzle_pars, catalog_generation_pars, and quality_control_pars
+
+        Parameters
+        ----------
+        cfg_index : dictionary
+            portion of the index config file returned for a specific step
+
+        conditions : list
+            list of observing conditions that will be used to build the final composite parameter set.
+
+        pars_dir : str
+            full path of the directory that contains the config files
+
+        step_title : str
+            name of the specified step (alignment, astrodrizzle, catalog generation, or quality control)
+
+        use_defaults : bool
+            Use default values for all configuration parameters?
+
+        """
         self.cfg_index = cfg_index
+        self.conditions = conditions
         self.pars_dir = pars_dir
         self.step_title = step_title
         self.use_defaults = use_defaults
@@ -149,9 +183,9 @@ class par():
 
 
 class alignment_pars(par):
-    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults):
-        """INSIGHTFUL SUMMARY HERE"""
-        super().__init__(conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults)
+    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults):
+        """Configuration parameters for the image alignment step"""
+        super().__init__(cfg_index,conditions,pars_dir,step_title,use_defaults)
         pass
 
 
@@ -159,9 +193,9 @@ class alignment_pars(par):
 
 
 class astrodrizzle_pars(par):
-    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults):
-        """INSIGHTFUL SUMMARY HERE"""
-        super().__init__(conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults)
+    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults):
+        """Configuration parameters for the AstroDrizzle step"""
+        super().__init__(cfg_index,conditions,pars_dir,step_title,use_defaults)
         pass
 
 
@@ -169,9 +203,9 @@ class astrodrizzle_pars(par):
 
 
 class catalog_generation_pars(par):
-    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults):
-        """INSIGHTFUL SUMMARY HERE"""
-        super().__init__(conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults)
+    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults):
+        """Configuration parameters for the photometric catalog generation step"""
+        super().__init__(cfg_index,conditions,pars_dir,step_title,use_defaults)
         self.outpars = {}
         if len(self.pars_multidict.keys()) == 1:
             for mdkey in self.pars_multidict.keys():
@@ -185,9 +219,9 @@ class catalog_generation_pars(par):
 
 
 class quality_control_pars(par):
-    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults):
-        """INSIGHTFUL SUMMARY HERE"""
-        super().__init__(conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults)
+    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults):
+        """Configuration parameters for the quality control step"""
+        super().__init__(cfg_index,conditions,pars_dir,step_title,use_defaults)
         pass
 
 
