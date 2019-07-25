@@ -13,7 +13,7 @@ from stsci.tools import teal
 
 
 class hap_config(object):
-    def __init__(self, instrument,detector,cfg_index_file=None):
+    def __init__(self, instrument,detector,use_defaults=False,cfg_index_file=None):
         """
         A set of routines to generate appropriate set of configuration parameters
 
@@ -25,6 +25,9 @@ class hap_config(object):
         detector : str
             detector name
 
+        use_defaults : bool, optional
+            Use default values for all configuration parameters? Default value is False.
+
         cfg_index_file : str, optional
             Name of the full configuration file (with full path) to use for ALL input params. WARNING: Specifying a
             file will turn off automatic parameter determination.
@@ -35,6 +38,7 @@ class hap_config(object):
         self.detector = detector
         self.inst_det = "{}_{}".format(instrument,detector).lower()
         self.cfg_index_file = cfg_index_file
+        self.use_defaults = use_defaults
         self._determine_conditions()
         self._get_cfg_index()
 
@@ -44,7 +48,9 @@ class hap_config(object):
         step_list = [catalog_generation_pars] # TODO: Just a placeholder until we add complexity!
         for step_name in step_list:
             step_title = step_name.__name__.replace("_pars","").replace("_"," ")
-            self.pars[step_title] = step_name(self.conditions,self.inst_det,self.full_cfg_index[step_title],self.pars_dir,step_title)
+            self.pars[step_title] = step_name(self.conditions,self.inst_det,
+                                              self.full_cfg_index[step_title],
+                                              self.pars_dir,step_title,self.use_defaults)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -104,13 +110,14 @@ class hap_config(object):
 
 
 class par():
-    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title):
+    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults):
         """INSIGHTFUL SUMMARY HERE"""
         self.conditions = conditions
         self.inst_det = inst_det
         self.cfg_index = cfg_index
         self.pars_dir = pars_dir
         self.step_title = step_title
+        self.use_defaults = use_defaults
         self._get_params()
 
 
@@ -132,7 +139,7 @@ class par():
                 self.pars_multidict[condition] = configobj
         if not found_cfg: # if no specific cfg files can be found for the specified conditions, use the generic cfg file.
             subcfgfilename = os.path.join(self.pars_dir, self.cfg_index["all"])
-            configobj = teal.load(subcfgfilename)
+            configobj = teal.load(subcfgfilename,defaults=self.use_defaults,strict=False) # TODO: set strict=True for deployment
             del configobj['_task_name_']
             self.pars_multidict["all"] = configobj
 
@@ -142,9 +149,9 @@ class par():
 
 
 class alignment_pars(par):
-    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title):
+    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults):
         """INSIGHTFUL SUMMARY HERE"""
-        super().__init__(conditions,inst_det,cfg_index,pars_dir,step_title)
+        super().__init__(conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults)
         pass
 
 
@@ -152,9 +159,9 @@ class alignment_pars(par):
 
 
 class astrodrizzle_pars(par):
-    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title):
+    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults):
         """INSIGHTFUL SUMMARY HERE"""
-        super().__init__(conditions,inst_det,cfg_index,pars_dir,step_title)
+        super().__init__(conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults)
         pass
 
 
@@ -162,14 +169,15 @@ class astrodrizzle_pars(par):
 
 
 class catalog_generation_pars(par):
-    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title):
+    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults):
         """INSIGHTFUL SUMMARY HERE"""
-        super().__init__(conditions,inst_det,cfg_index,pars_dir,step_title)
+        super().__init__(conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults)
+        self.outpars = {}
         if len(self.pars_multidict.keys()) == 1:
-            self.outpars = {}
             for mdkey in self.pars_multidict.keys():
                 for key in self.pars_multidict[mdkey].keys():
                     self.outpars[key] = self.pars_multidict[mdkey][key]
+
 
 
 
@@ -177,9 +185,9 @@ class catalog_generation_pars(par):
 
 
 class quality_control_pars(par):
-    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title):
+    def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults):
         """INSIGHTFUL SUMMARY HERE"""
-        super().__init__(conditions,inst_det,cfg_index,pars_dir,step_title)
+        super().__init__(conditions,inst_det,cfg_index,pars_dir,step_title,use_defaults)
         pass
 
 
@@ -193,7 +201,7 @@ if __name__ == '__main__':
 
     import pdb
 
-    foo = hap_config("acs", "wfc")
+    foo = hap_config("acs", "wfc",use_defaults=False)
     blarg = foo.get_pars("catalog generation")
 
     print(blarg)
