@@ -1,10 +1,6 @@
 """This script contains code to support creation of photometric sourcelists using two techniques: aperture photometry
 segmentation-map based photometry.
 """
-import argparse
-import datetime
-import os
-import pdb
 import sys
 
 import astropy.units as u
@@ -15,12 +11,11 @@ from astropy.table import Column, Table
 import numpy as np
 
 from photutils import aperture_photometry, CircularAperture, DAOStarFinder
-from photutils import Background2D, MedianBackground, SExtractorBackground, StdBackgroundRMS
+from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
 from photutils import detect_sources, source_properties  # , deblend_sources
 from stsci.tools import logutil
 from stwcs.wcsutil import HSTWCS
 
-# from .. import util
 from . import astrometric_utils
 
 try:
@@ -444,7 +439,7 @@ class HAPCatalogs:
             if type == 'segment':
                 self.catalogs[type] = HAPSegmentCatalog(self.image, self.param_dict)
 
-    def identify_sources(self, types=None):
+    def identify(self, types=None):
         """Build catalogs for this image.
 
         Parameters
@@ -463,7 +458,7 @@ class HAPCatalogs:
         for catalog in types:
             self.catalogs[catalog].identify_sources()
 
-    def measure_sources(self, types=None):
+    def measure(self, types=None):
         """Perform photometry and other measurements on sources for this image.
 
         Parameters
@@ -486,7 +481,7 @@ class HAPCatalogs:
         for catalog in types:
             self.catalogs[catalog].measure_sources()
 
-    def write_catalogs(self, types=None):
+    def write(self, types=None):
         """Write catalogs for this image to output files.
 
         Parameters
@@ -503,7 +498,7 @@ class HAPCatalogs:
             log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
             raise ValueError
         for catalog in types:
-            self.catalogs[catalog].write_to()
+            self.catalogs[catalog].write_catalog()
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -521,19 +516,22 @@ class HAPCatalogBase:
 
         self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
 
+        self.default_fwhm = self.param_dict['dao']['TWEAK_FWHMPSF'] / self.param_dict['astrodrizzle']['SCALE']
+        self.kernel = astrometric_utils.build_auto_kernel(image, self.image.wht_image,
+                                                     threshold=self.bkg.bkg_rms, fwhm=self.default_fwhm)
+
         # Initialize attributes which get computed by class methods
         self.bkg_used = None  # actual background used for source identification/measurement
         self.sources = None  # list of identified source positions
-        self.kernel = None  # kernel used to measure sources
         self.source_cat = None  # catalog of sources and their properties
 
     def identify_sources(self, **pars):
         pass
 
-    def measure_sources(self):
+    def measure_sources(self, **pars):
         pass
 
-    def write_catalog(self, keyword_dict):
+    def write_catalog(self, **pars):
         pass
 
 
@@ -569,16 +567,11 @@ class HAPPointCatalog(HAPCatalogBase):
         # threshold = self.param_dict['dao']['TWEAK_THRESHOLD']
         # read in sci, wht extensions of drizzled product
         image = self.image.data.copy()
-        wht_image = self.image.wht_image.copy()
 
         # Estimate FWHM from image sources
         # Background statistics need to be computed prior to subtracting background from image
         bkg_sigma = mad_std(image, ignore_nan=True)
         detect_sources_thresh = bkgsig_sf * bkg_sigma
-
-        default_fwhm = self.param_dict['dao']['TWEAK_FWHMPSF'] / self.param_dict['astrodrizzle']['SCALE']
-        kernel = astrometric_utils.build_auto_kernel(image, wht_image,
-                                                     threshold=self.bkg.bkg_rms, fwhm=default_fwhm)
 
         # Input image will be background subtracted using pre-computed background, unless
         # specified explicitly by the user
@@ -592,7 +585,7 @@ class HAPPointCatalog(HAPCatalogBase):
             image -= self.bkg_used
 
         segm = detect_sources(image, detect_sources_thresh, npixels=self.param_dict["sourcex"]["source_box"],
-                              filter_kernel=kernel)
+                              filter_kernel=self.kernel)
         cat = source_properties(image, segm)
         source_table = cat.to_table()
         smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
@@ -606,12 +599,11 @@ class HAPPointCatalog(HAPCatalogBase):
             sources[col].info.format = '%.8g'  # for consistent table output
 
         self.sources = sources
-        self.kernel = kernel
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def measure_sources(self, sources, aper_radius=4.):
+    def measure_sources(self, aper_radius=4.):
         """Perform aperture photometry on identified sources
 
         Parameters
@@ -644,7 +636,7 @@ class HAPPointCatalog(HAPCatalogBase):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def write_to(self, write_region_file=False):
+    def write_catalog(self, write_region_file=False):
         """Write specified catalog to file on disk
 
         Parameters
@@ -1004,31 +996,31 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         """
 
-        data_table.meta["WCSNAME"] = self.keyword_dict["wcs_name"]
-        data_table.meta["WCSTYPE"] = self.keyword_dict["wcs_type"]
-        data_table.meta["Proposal ID"] = self.keyword_dict["proposal_id"]
-        data_table.meta["Image File Name"] = self.keyword_dict['image_file_name']
-        data_table.meta["Target Name"] = self.keyword_dict["target_name"]
-        data_table.meta["Date Observed"] = self.keyword_dict["date_obs"]
+        data_table.meta["WCSNAME"] = self.image.keyword_dict["wcs_name"]
+        data_table.meta["WCSTYPE"] = self.image.keyword_dict["wcs_type"]
+        data_table.meta["Proposal ID"] = self.image.keyword_dict["proposal_id"]
+        data_table.meta["Image File Name"] = self.image.keyword_dict['image_file_name']
+        data_table.meta["Target Name"] = self.image.keyword_dict["target_name"]
+        data_table.meta["Date Observed"] = self.image.keyword_dict["date_obs"]
         # FIX
         if product.lower() == "tdp":
             data_table.meta["Time Observed"] = " "
-            data_table.meta["Filter"] = self.keyword_dict["filter"]
+            data_table.meta["Filter"] = self.image.keyword_dict["filter"]
         else:
             data_table.meta["Time Observed"] = "FIX ME"
-            data_table.meta["Filter 1"] = self.keyword_dict["filter1"]
-            data_table.meta["Filter 2"] = self.keyword_dict["filter2"]
-        data_table.meta["Instrument"] = self.keyword_dict["instrument"]
-        data_table.meta["Detector"] = self.keyword_dict["detector"]
-        data_table.meta["Target RA"] = self.keyword_dict["target_ra"]
-        data_table.meta["Target DEC"] = self.keyword_dict["target_dec"]
-        data_table.meta["Orientation"] = self.keyword_dict["orientation"]
-        data_table.meta["Aperture RA"] = self.keyword_dict["aperture_ra"]
-        data_table.meta["Aperture DEC"] = self.keyword_dict["aperture_dec"]
-        data_table.meta["Aperture PA"] = self.keyword_dict["aperture_pa"]
-        data_table.meta["Exposure Start"] = self.keyword_dict["expo_start"]
-        data_table.meta["Total Exposure Time"] = self.keyword_dict["texpo_time"]
-        data_table.meta["CCD Gain"] = self.keyword_dict["ccd_gain"]
+            data_table.meta["Filter 1"] = self.image.keyword_dict["filter1"]
+            data_table.meta["Filter 2"] = self.image.keyword_dict["filter2"]
+        data_table.meta["Instrument"] = self.image.keyword_dict["instrument"]
+        data_table.meta["Detector"] = self.image.keyword_dict["detector"]
+        data_table.meta["Target RA"] = self.image.keyword_dict["target_ra"]
+        data_table.meta["Target DEC"] = self.image.keyword_dict["target_dec"]
+        data_table.meta["Orientation"] = self.image.keyword_dict["orientation"]
+        data_table.meta["Aperture RA"] = self.image.keyword_dict["aperture_ra"]
+        data_table.meta["Aperture DEC"] = self.image.keyword_dict["aperture_dec"]
+        data_table.meta["Aperture PA"] = self.image.keyword_dict["aperture_pa"]
+        data_table.meta["Exposure Start"] = self.image.keyword_dict["expo_start"]
+        data_table.meta["Total Exposure Time"] = self.image.keyword_dict["texpo_time"]
+        data_table.meta["CCD Gain"] = self.image.keyword_dict["ccd_gain"]
         data_table.meta["Number of sources"] = num_sources
         data_table.meta[""] = " "
         data_table.meta[""] = "Absolute coordinates are in a zero-based coordinate system."
