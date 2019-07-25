@@ -124,8 +124,7 @@ setup(
             'resetbits=drizzlepac.resetbits:main',
             'updatenpol=drizzlepac.updatenpol:main',
             'runastrodriz=drizzlepac.runastrodriz:main',
-            'runhap=drizzlepac.runhlaprocessing:main',
-            'hapcatalog=drizzlepac.hapcatalog:main'
+            'runhap=drizzlepac.runhlaprocessing:main'
         ],
     },
     ext_modules=[
