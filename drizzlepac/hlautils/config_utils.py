@@ -78,7 +78,7 @@ class hap_config(object):
         code_dir = os.path.abspath(__file__)
         base_dir = os.path.dirname(os.path.dirname(code_dir))
         self.pars_dir = os.path.join(base_dir, "pars")
-        cfg_index_fileanme = self.inst_det + "_index.cfg"
+        cfg_index_fileanme = self.inst_det + "_index.config"
         cfg_index_filename = os.path.join(self.pars_dir, cfg_index_fileanme)
 
         with open(cfg_index_filename) as jsonFile:
