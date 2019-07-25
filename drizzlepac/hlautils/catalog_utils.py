@@ -444,7 +444,7 @@ class HAPCatalogs:
             if type == 'segment':
                 self.catalogs[type] = HAPSegmentCatalog(self.image, self.param_dict)
 
-    def identify_sources(self, types=CATALOG_TYPES):
+    def identify_sources(self, types=None):
         """Build catalogs for this image.
 
         Parameters
@@ -453,6 +453,9 @@ class HAPCatalogs:
             List of catalog types to be generated.  If None, build all available catalogs.
             Supported types of catalogs include: 'point', 'segment'.
         """
+        # Support user-input value of 'None' which will trigger generation of all catalog types
+        if types is None:
+            types = CATALOG_TYPES
 
         if any([t not in self.catalogs for t in types]):
             log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
@@ -473,6 +476,10 @@ class HAPCatalogs:
         if self.sources is None:
             self.identify_sources()
 
+        # Support user-input value of 'None' which will trigger generation of all catalog types
+        if types is None:
+            types = CATALOG_TYPES
+
         if any([t not in self.catalogs for t in types]):
             log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
             raise ValueError
@@ -488,6 +495,9 @@ class HAPCatalogs:
             List of catalog types to be generated.  If None, build all available catalogs.
             Supported types of catalogs include: 'point', 'segment'.
         """
+        # Support user-input value of 'None' which will trigger generation of all catalog types
+        if types is None:
+            types = CATALOG_TYPES
 
         if any([t not in self.catalogs for t in types]):
             log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
@@ -498,7 +508,10 @@ class HAPCatalogs:
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class HAPCatalogBase:
+    """Virtual class used to define API for all catalogs"""
     catalog_suffix = ".ecsv"
+    catalog_region_suffix = ".reg"
+    catalog_format = "ascii.ecsv"
 
     def __init__(self, image, param_dict):
         self.image = image
@@ -508,7 +521,13 @@ class HAPCatalogBase:
 
         self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
 
-    def identify_sources(self):
+        # Initialize attributes which get computed by class methods
+        self.bkg_used = None  # actual background used for source identification/measurement
+        self.sources = None  # list of identified source positions
+        self.kernel = None  # kernel used to measure sources
+        self.source_cat = None  # catalog of sources and their properties
+
+    def identify_sources(self, **pars):
         pass
 
     def measure_sources(self):
@@ -526,8 +545,7 @@ class HAPPointCatalog(HAPCatalogBase):
     def __init__(self, image, param_dict):
         super().__init__(image, param_dict)
 
-
-    def identify_point_sources(self, bkgsig_sf=4., dao_ratio=0.8):
+    def identify_sources(self, bkgsig_sf=4., dao_ratio=0.8, simple_bkg=False):
         """Create a master coordinate list of sources identified in the specified total detection product image
 
         Parameters
@@ -550,22 +568,29 @@ class HAPPointCatalog(HAPCatalogBase):
         """
         # threshold = self.param_dict['dao']['TWEAK_THRESHOLD']
         # read in sci, wht extensions of drizzled product
-        image = self.image.copy()
-        wht_image = self.wht_image.copy()
-
-        # image -= np.nanmedian(image)
-
-        # Estimate background
-        # self.compute_background(threshold)
+        image = self.image.data.copy()
+        wht_image = self.image.wht_image.copy()
 
         # Estimate FWHM from image sources
-
+        # Background statistics need to be computed prior to subtracting background from image
         bkg_sigma = mad_std(image, ignore_nan=True)
         detect_sources_thresh = bkgsig_sf * bkg_sigma
 
         default_fwhm = self.param_dict['dao']['TWEAK_FWHMPSF'] / self.param_dict['astrodrizzle']['SCALE']
         kernel = astrometric_utils.build_auto_kernel(image, wht_image,
                                                      threshold=self.bkg.bkg_rms, fwhm=default_fwhm)
+
+        # Input image will be background subtracted using pre-computed background, unless
+        # specified explicitly by the user
+        if simple_bkg:
+            self.bkg_used = np.nanmedian(image)
+            image -= self.bkg_used
+        else:
+        # Estimate background
+        # self.compute_background(threshold)
+            self.bkg_used = self.image.bkg
+            image -= self.bkg_used
+
         segm = detect_sources(image, detect_sources_thresh, npixels=self.param_dict["sourcex"]["source_box"],
                               filter_kernel=kernel)
         cat = source_properties(image, segm)
@@ -580,13 +605,13 @@ class HAPPointCatalog(HAPCatalogBase):
         for col in sources.colnames:
             sources[col].info.format = '%.8g'  # for consistent table output
 
-        return(sources)
-
+        self.sources = sources
+        self.kernel = kernel
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def perform_point_photometry(self,sources,aper_radius=4.):
+    def measure_sources(self, sources, aper_radius=4.):
         """Perform aperture photometry on identified sources
 
         Parameters
@@ -594,7 +619,7 @@ class HAPPointCatalog(HAPCatalogBase):
         sources : astropy table
             Table containing x, y coordinates of identified sources
 
-        aper_radius : float
+        aper_radius : float or list of floats
             Aperture radius (in pixels) used for photometry. Default value = 4.
 
         Returns
@@ -603,17 +628,17 @@ class HAPPointCatalog(HAPCatalogBase):
             Table containing photometric information for specified sources based on image data in the specified image.
         """
         # Open and background subtract image
-        image = self.imghdu['SCI'].data.copy()
-        image -= np.nanmedian(image)
-
+        image = self.image.data.copy()
+        image -= self.bkg_used
 
         # Aperture Photometry
-        positions = (sources['xcentroid'], sources['ycentroid'])
+        positions = (self.sources['xcentroid'], self.sources['ycentroid'])
         apertures = CircularAperture(positions, r=aper_radius)
         phot_table = aperture_photometry(image, apertures)
 
         for col in phot_table.colnames: phot_table[col].info.format = '%.8g'  # for consistent table output
-        return(phot_table)
+
+        self.source_cat = phot_table
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -633,12 +658,12 @@ class HAPPointCatalog(HAPCatalogBase):
 
         """
         # Write out catalog to ecsv file
-        catalog.write(self.point_sourcelist_filename, format="ascii.ecsv")
-        log.info("Wrote catalog file '{}' containing {} sources".format(self.point_sourcelist_filename, len(catalog)))
+        self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
+        log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
         # Write out region file if input 'write_region_file' is turned on.
         if write_region_file:
-            out_table = catalog.copy()
+            out_table = self.source_cat.copy()
             if 'xcentroid' in out_table.keys():  # for point-source source catalogs
                 # Remove all other columns besides xcentroid and ycentroid
                 out_table.keep_columns(['xcentroid', 'ycentroid'])
@@ -654,13 +679,11 @@ class HAPPointCatalog(HAPCatalogBase):
             else:  # Bail out if anything else is encountered.
                 log.info("Error: unrecognized catalog format. Skipping region file generation.")
                 return()
-            reg_filename = self.point_sourcelist_filename.replace(".ecsv", ".reg")
+            reg_filename = self.sourcelist_filename.replace(self.catalog_suffix, self.catalog_region_suffix)
             out_table.write(reg_filename, format="ascii")
             log.info("Wrote region file '{}' containing {} sources".format(reg_filename, len(out_table)))
 
 
-# ----------------------------------------------------------------------------------------------------------------------
-#       Modified contents of Michele's se_source_generation.py, as of commit b2db3ec9c918188cea2d3b0e4b64e39cc79c4146
 # ----------------------------------------------------------------------------------------------------------------------
 class HAPSegmentCatalog(HAPCatalogBase):
     """Generate photometric sourcelist(s) for specified image(s) using segment mapping.
@@ -890,7 +913,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             seg_subset_table = seg_table["xcentroid", "ycentroid"]
 
             # Add metadata to the output subset table
-            seg_subset_table = self._annotate_table(seg_subset_table, num_sources, product=product)
+            seg_subset_table = self._annotate_table(seg_subset_table, num_sources,
+                                                    product=self.image.ghd_product)
 
             seg_subset_table["xcentroid"].description = "SExtractor Column x_image"
             seg_subset_table["ycentroid"].description = "SExtractor Column y_image"
@@ -908,7 +932,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             seg_subset_table["Dec_icrs"].info.format = ".10f"
             log.info("seg_subset_table (white light image): {}".format(seg_subset_table))
 
-            seg_subset_table.write(self.sourcelist_filename, format="ascii.ecsv")
+            seg_subset_table.write(self.sourcelist_filename, format=self.catalog_format)
             log.info("Wrote source catalog: {}".format(self.sourcelist_filename))
 
         # else the product is the "filter detection product"
@@ -953,7 +977,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             seg_table["Dec_icrs"].info.format = ".10f"
             log.info("seg_table (filter): {}".format(seg_table))
 
-            seg_table.write(self.sourcelist_filename, format="ascii.ecsv")
+            seg_table.write(self.sourcelist_filename, format=self.catalog_format)
             log.info("Wrote filter source catalog: {}".format(self.sourcelist_filename))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
