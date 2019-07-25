@@ -49,8 +49,19 @@ class hap_config(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _determine_conditions(self):
-        """Determine observing condition or conditions present for a given step"""
-        self.conditions = ["default"]  # TODO: Just a placeholder until we add complexity!
+        """Determine observing condition or conditions present for a given step
+        List of possible conditions:
+        * n_exp in mosaic >= 4
+        * n_exp in mosaic < 4
+        * total drizzle product
+        * filter drizzle product
+        * single drizzle product
+        * Long/short
+
+        """
+        self.conditions = ["nexpGTE4"]  # TODO: Just a placeholder until we add complexity!
+
+
         pass
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -95,7 +106,6 @@ class hap_config(object):
 class par():
     def __init__(self,conditions,inst_det,cfg_index,pars_dir,step_title):
         """INSIGHTFUL SUMMARY HERE"""
-        print("---->>>>>",conditions,inst_det,cfg_index,pars_dir,step_title)
         self.conditions = conditions
         self.inst_det = inst_det
         self.cfg_index = cfg_index
@@ -112,12 +122,20 @@ class par():
         """read in params from config files based on instrument, detector, and condition(s), and return a ordered
         dictionary of these values."""
         self.pars_multidict = collections.OrderedDict()
+        found_cfg = False
         for condition in self.conditions:
-            subcfgfilename = os.path.join(self.pars_dir, self.cfg_index[condition])
-            print(condition, subcfgfilename)
+            if condition in self.cfg_index.keys():
+                found_cfg = True
+                subcfgfilename = os.path.join(self.pars_dir, self.cfg_index[condition])
+                configobj = teal.load(subcfgfilename)
+                del configobj['_task_name_']
+                self.pars_multidict[condition] = configobj
+        if not found_cfg: # if no specific cfg files can be found for the specified conditions, use the generic cfg file.
+            subcfgfilename = os.path.join(self.pars_dir, self.cfg_index["all"])
             configobj = teal.load(subcfgfilename)
             del configobj['_task_name_']
-            self.pars_multidict[condition] = configobj
+            self.pars_multidict["all"] = configobj
+
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -178,4 +196,6 @@ if __name__ == '__main__':
     foo = hap_config("acs", "wfc")
     blarg = foo.get_pars("catalog generation")
 
-    pdb.set_trace()
+    print(blarg)
+
+
