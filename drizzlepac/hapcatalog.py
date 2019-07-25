@@ -6,14 +6,14 @@ import sys
 
 from stsci.tools import logutil
 
-from .. import util
-from .catalog_utils import HAPPointCatalog, HAPSegmentCatalog
+from drizzlepac import util
+from drizzlepac.hlautils.catalog_utils import HAPCatalogs
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 @util.with_logging
 def run_catalog_utils(args, starting_dt):
-    """Super simple testing interface for the above code.
+    """Super simple testing interface for the catalog generation code.
 
     Parameters
     ----------
@@ -33,29 +33,18 @@ def run_catalog_utils(args, starting_dt):
                                                " ".join(args.filter_product_list),
                                                args.debug, args.phot_mode))
 
-
-    if args.phot_mode in ['point', 'both']:
-        total_point_product = HAPPointCatalog(args.total_product_name)
-        total_point_product.ps_source_cat = total_point_product.identify_point_sources()
-        total_point_product.write_to(total_point_product.ps_source_cat, write_region_file=args.debug)
-
-    if args.phot_mode in ['seg', 'both']:
-        total_seg_product = HAPSegmentCatalog(args.total_product_name)
-        total_seg_product.segmap, \
-        total_seg_product.kernel, \
-        total_seg_product.bkg_dao_rms = \
-            total_seg_product.create_sextractor_like_sourcelists(se_debug=args.debug)
+    total_product_catalogs = HAPCatalogs(args.total_product_name, types=args.phot_mode)
+    total_product_catalogs.identify()
+    total_product_catalogs.measure()
+    total_product_catalogs.write()
 
     for filter_img_name in args.filter_product_list:
 
-        if args.phot_mode in ['point', 'both']:
-            filter_point_product = HAPPointCatalog(filter_img_name)
-            filter_point_product.ps_phot_cat = filter_point_product.perform_point_photometry(total_point_product.ps_source_cat)
-            filter_point_product.write_to(filter_point_product.ps_phot_cat, write_region_file=args.debug)
+        filter_product_catalogs = HAPCatalogs(filter_img_name, types=args.phot_mode)
+        filter_product_catalogs.identify()
+        filter_product_catalogs.measure()
+        filter_product_catalogs.write()
 
-        if args.phot_mode in ['seg', 'both']:
-            filter_seg_product = HAPSegmentCatalog(filter_img_name)
-            filter_seg_product.measure_source_properties(total_seg_product.segmap, total_seg_product.kernel)
 
     log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))
 
@@ -65,6 +54,9 @@ def run_catalog_utils(args, starting_dt):
 
 
 if __name__ == '__main__':
+    main()
+
+def main():
     """Super simple testing interface for the catalog_utils code."""
 
     starting_dt = datetime.datetime.now()
@@ -74,7 +66,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--filter_product_list', nargs='+', required=True,
                         help="Space-separated list of one or more total filter products")
     parser.add_argument('-d', '--debug', required=False, choices=['True', 'False'], default='False', help='debug mode on? (generate region files?)')
-    parser.add_argument('-m', '--phot_mode', required=False, choices=['point', 'seg', 'both'], default='both', help="which photometry mode should be run? 'point' for point-soruce only; 'seg' for segment only, and 'both' for both point-source and segment photometry. ")
+    parser.add_argument('-m', '--phot_mode', required=False, choices=['point', 'segment', 'both'], default='both', help="which photometry mode should be run? 'point' for point-soruce only; 'seg' for segment only, and 'both' for both point-source and segment photometry. ")
     args = parser.parse_args()
     if args.debug == "True":
         args.debug = True

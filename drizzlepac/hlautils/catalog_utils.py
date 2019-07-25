@@ -246,6 +246,15 @@ class CatalogImage:
     def close(self):
         self.imghdu.close()
 
+    def build_kernel(self, fwhmpsf, scale):
+        if self.bkg is None:
+            self.compute_background()
+
+        self.kernel = astrometric_utils.build_auto_kernel(self.data, self.wht_image,
+                                                     threshold=self.bkg.background_rms,
+                                                     fwhm=fwhmpsf / scale)
+
+
     def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
                             bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS,
                             nsigma=5., threshold_flag=None):
@@ -407,12 +416,19 @@ class HAPCatalogs:
     """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
 
-    def __init__(self, fitsfile):
+    def __init__(self, fitsfile, types=None):
         self.label = "HAPCatalogs"
         self.description = "A class used to generate photometric sourcelists using aperture photometry"
 
         self.imgname = fitsfile
 
+        # Determine what types of catalogs have been requested
+        if not isinstance(types, list) and types in [None, 'both']:
+            types = CATALOG_TYPES
+        if any([t not in CATALOG_TYPES for t in types]):
+            log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
+            raise ValueError
+        self.types = types
 
         # Parameter dictionary definition
         self.instrument = self.imgname.split("_")[3].upper()
@@ -426,15 +442,20 @@ class HAPCatalogs:
         self.image.compute_background(nsigma=self.param_dict['sourcex']['bthresh'],
                                       threshold_flag=self.param_dict['sourcex']['thresh'])
 
+        self.image.build_kernel(self.param_dict['dao']['TWEAK_FWHMPSF'],
+                                self.param_dict['astrodrizzle']['SCALE'])
+
         # Initialize all catalog types here...
         # This does NOT identify or measure sources to create the catalogs at this point...
         # The syntax here is EXTREMELY cludgy, but until a more compact way to do this is found,
         #  it will have to do...
         self.catalogs = {}
-        self.catalogs['point'] = HAPPointCatalog(self.image, self.param_dict)
-        self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict)
+        if 'point' in self.types:
+            self.catalogs['point'] = HAPPointCatalog(self.image, self.param_dict)
+        if 'segment' in self.types:
+            self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict)
 
-    def identify(self, types=None):
+    def identify(self, **pars):
         """Build catalogs for this image.
 
         Parameters
@@ -444,17 +465,11 @@ class HAPCatalogs:
             Supported types of catalogs include: 'point', 'segment'.
         """
         # Support user-input value of 'None' which will trigger generation of all catalog types
-        if types is None:
-            types = CATALOG_TYPES
-
-        if any([t not in self.catalogs for t in types]):
-            log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
-            raise ValueError
-        for catalog in types:
+        for catalog in self.catalogs:
             log.info("Identifying {} sources".format(catalog))
-            self.catalogs[catalog].identify_sources()
+            self.catalogs[catalog].identify_sources(**pars)
 
-    def measure(self, types=None):
+    def measure(self, **pars):
         """Perform photometry and other measurements on sources for this image.
 
         Parameters
@@ -466,19 +481,12 @@ class HAPCatalogs:
         # Make sure we at least have a default 2D background computed
         for catalog in self.catalogs.values():
             if catalog.sources is None:
-                catalog.identify_sources()
+                catalog.identify_sources(**pars)
 
-        # Support user-input value of 'None' which will trigger generation of all catalog types
-        if types is None:
-            types = CATALOG_TYPES
+        for catalog in self.catalogs.values():
+            catalog.measure_sources(**pars)
 
-        if any([t not in self.catalogs for t in types]):
-            log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
-            raise ValueError
-        for catalog in types:
-            self.catalogs[catalog].measure_sources()
-
-    def write(self, types=None):
+    def write(self, **pars):
         """Write catalogs for this image to output files.
 
         Parameters
@@ -487,15 +495,14 @@ class HAPCatalogs:
             List of catalog types to be generated.  If None, build all available catalogs.
             Supported types of catalogs include: 'point', 'segment'.
         """
-        # Support user-input value of 'None' which will trigger generation of all catalog types
-        if types is None:
-            types = CATALOG_TYPES
+        # Make sure we at least have a default 2D background computed
+        for catalog in self.catalogs.values():
+            if catalog.source_cat is None:
+                catalog.measure_sources(**pars)
 
-        if any([t not in self.catalogs for t in types]):
-            log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
-            raise ValueError
-        for catalog in types:
-            self.catalogs[catalog].write_catalog()
+        # Support user-input value of 'None' which will trigger generation of all catalog types
+        for catalog in self.catalogs.values():
+            catalog.write_catalog(**pars)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -512,10 +519,6 @@ class HAPCatalogBase:
         self.param_dict = param_dict
 
         self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
-
-        self.default_fwhm = self.param_dict['dao']['TWEAK_FWHMPSF'] / self.param_dict['astrodrizzle']['SCALE']
-        self.kernel = astrometric_utils.build_auto_kernel(image.data, self.image.wht_image,
-                                                     threshold=self.bkg.background_rms, fwhm=self.default_fwhm)
 
         # Initialize attributes which get computed by class methods
         self.bkg_used = None  # actual background used for source identification/measurement
@@ -582,7 +585,7 @@ class HAPPointCatalog(HAPCatalogBase):
             image -= self.bkg_used
 
         segm = detect_sources(image, detect_sources_thresh, npixels=self.param_dict["sourcex"]["source_box"],
-                              filter_kernel=self.kernel)
+                              filter_kernel=self.image.kernel)
         cat = source_properties(image, segm)
         source_table = cat.to_table()
         smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
@@ -727,6 +730,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # get the SCI image data
         imgarr = self.image.data.copy()
 
+        #
+        # Consider whether the auto-generated kernel (self.image.kernel) would work instead
+        #
         # Only use a single kernel for now
         kernel_list = [Gaussian2DKernel, MexicanHat2DKernel]
         kernel_in_use = kernel_list[0]
@@ -749,7 +755,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # should NOT be background subtracted.
         # Note: SExtractor has "connectivity=8" which is the default for this function
         self.sources = detect_sources(imgarr, threshold, npixels=self.size_source_box, filter_kernel=kernel)
-        self.kernel = kernel
+        self.kernel = kernel  # for use in measure_sources()
 
         # For debugging purposes...
         if se_debug:
@@ -934,7 +940,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             rr = Column(ra_icrs, name="RA_icrs", description="SExtractor Column RA", unit=u.deg)
             dd = Column(dec_icrs, name="Dec_icrs", description="SExtractor Column Dec", unit=u.deg)
             log.info("Added RA_icrs, Dec_icrs columns to Segment catalog")
-            seg_table.add_columns([dd, rr], indices=[2, 3])
+            seg_table.add_columns([dd, rr], indexes=[2, 3])
 
             # Add a description for columns which map to SExtractor catalog columns
             seg_table["xcentroid"].description = "SExtractor Column x_image"
@@ -952,10 +958,15 @@ class HAPSegmentCatalog(HAPCatalogBase):
             seg_table[
                 "covar_sigxy"].description = "SExtractor Column xy_image, (0,1) and (1,0) elements of covariance matrix"
 
-            seg_table["xmin"].description = "SExtractor Column xmin_image"
-            seg_table["xmax"].description = "SExtractor Column xmax_image"
-            seg_table["ymin"].description = "SExtractor Column ymin_image"
-            seg_table["ymin"].description = "SExtractor Column ymax_image"
+            xmin_cols_orig = ['xmin', 'xmax', 'ymin', 'ymax']
+            xmin_descr = "SExtractor Column {}_image"
+            if xmin_cols_orig[0] not in seg_table.colnames:
+                xmin_cols = ['bbox_{}'.format(cname) for cname in xmin_cols_orig]
+            else:
+                xmin_cols = xmin_cols_orig
+
+            for cname, oname in zip(xmin_cols, xmin_cols_orig):
+                seg_table[cname].description = xmin_descr.format(oname)
 
             # Write out the official filter detection product source catalog
             seg_table["xcentroid"].info.format = ".10f"
