@@ -220,11 +220,18 @@ class CatalogImage:
     def __init__(self, filename):
         if isinstance(filename, str):
             self.imghdu = fits.open(filename)
+            self.imgname = filename
         else:
             self.imghdu = filename
+            self.imgname = filename.filename()
+
+        # Get header information to annotate the output catalogs
+        if "total" in self.imgname:
+            self.ghd_product = "tdp"
+        else:
+            self.ghd_product = "fdp"
 
         # Fits file read
-        self.imghdu = fits.open(self.imgname)
         self.data = self.imghdu[('SCI', 1)].data
         self.wht_image = self.imghdu['WHT'].data.copy()
 
@@ -232,12 +239,6 @@ class CatalogImage:
         self.imgwcs = HSTWCS(self.imghdu, 1)
 
         self.keyword_dict = self._get_header_data()
-
-        # Get header information to annotate the output catalogs
-        if "total" in self.imgname:
-            self.ghd_product = "tdp"
-        else:
-            self.ghd_product = "fdp"
 
         self.bkg = None
 
@@ -289,9 +290,6 @@ class CatalogImage:
         log.info("Window size: {}".format(win_size))
         log.info("NSigma: {}".format(nsigma))
 
-        if threshold_flag is None:
-            threshold_flag = self.param_dict['sourcex']['thresh']
-
         # SExtractorBackground ans StdBackgroundRMS are the defaults
         bkg = None
         bkg_dao_rms = None
@@ -301,9 +299,9 @@ class CatalogImage:
             log.info("")
             log.info("Percentile in use: {}".format(percentile))
             try:
-                bkg = Background2D(self.image['data'], box_size, filter_size=win_size,
-                                    bkg_estimator=bkg_estimator,
-                                    bkgrms_estimator=rms_estimator,
+                bkg = Background2D(self.data, box_size, filter_size=win_size,
+                                    bkg_estimator=bkg_estimator(),
+                                    bkgrms_estimator=rms_estimator(),
                                     exclude_percentile=percentile, edge_method="pad")
             except Exception:
                 bkg = None
@@ -333,7 +331,7 @@ class CatalogImage:
         # If Background2D does not work at all, define default scalar values for
         # the background to be used in source identification
         if bkg is None:
-            bkg_mean = bkg_rms_mean = max(0.01, self.image['data'].min())
+            bkg_mean = bkg_rms_mean = max(0.01, self.data.min())
             bkg_rms = nsigma * bkg_rms_mean
             bkg_dao_rms = bkg_rms_mean
             threshold = bkg_rms_mean + bkg_rms
@@ -343,7 +341,7 @@ class CatalogImage:
         # Report other useful quantities
         log.info("")
         log.info("Mean background: {}".format(bkg_mean))
-        log.info("Mean threshold: {}".format(threshold))
+        log.info("Mean threshold: {}".format(np.mean(threshold)))
         log.info("")
         log.info("{}".format("=" * 80))
 
@@ -410,8 +408,8 @@ class HAPCatalogs:
     """
 
     def __init__(self, fitsfile):
-        self.label = "build_catalogs"
-        self.description = "A set of routines to generate photometric sourcelists using aperture photometry"
+        self.label = "HAPCatalogs"
+        self.description = "A class used to generate photometric sourcelists using aperture photometry"
 
         self.imgname = fitsfile
 
@@ -433,11 +431,8 @@ class HAPCatalogs:
         # The syntax here is EXTREMELY cludgy, but until a more compact way to do this is found,
         #  it will have to do...
         self.catalogs = {}
-        for type in CATALOG_TYPES:
-            if type == 'point':
-                self.catalogs[type] = HAPPointCatalog(self.image, self.param_dict)
-            if type == 'segment':
-                self.catalogs[type] = HAPSegmentCatalog(self.image, self.param_dict)
+        self.catalogs['point'] = HAPPointCatalog(self.image, self.param_dict)
+        self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict)
 
     def identify(self, types=None):
         """Build catalogs for this image.
@@ -456,6 +451,7 @@ class HAPCatalogs:
             log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
             raise ValueError
         for catalog in types:
+            log.info("Identifying {} sources".format(catalog))
             self.catalogs[catalog].identify_sources()
 
     def measure(self, types=None):
@@ -468,8 +464,9 @@ class HAPCatalogs:
             Supported types of catalogs include: 'point', 'segment'.
         """
         # Make sure we at least have a default 2D background computed
-        if self.sources is None:
-            self.identify_sources()
+        for catalog in self.catalogs.values():
+            if catalog.sources is None:
+                catalog.identify_sources()
 
         # Support user-input value of 'None' which will trigger generation of all catalog types
         if types is None:
@@ -517,8 +514,8 @@ class HAPCatalogBase:
         self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
 
         self.default_fwhm = self.param_dict['dao']['TWEAK_FWHMPSF'] / self.param_dict['astrodrizzle']['SCALE']
-        self.kernel = astrometric_utils.build_auto_kernel(image, self.image.wht_image,
-                                                     threshold=self.bkg.bkg_rms, fwhm=self.default_fwhm)
+        self.kernel = astrometric_utils.build_auto_kernel(image.data, self.image.wht_image,
+                                                     threshold=self.bkg.background_rms, fwhm=self.default_fwhm)
 
         # Initialize attributes which get computed by class methods
         self.bkg_used = None  # actual background used for source identification/measurement
@@ -581,7 +578,7 @@ class HAPPointCatalog(HAPCatalogBase):
         else:
         # Estimate background
         # self.compute_background(threshold)
-            self.bkg_used = self.image.bkg
+            self.bkg_used = self.image.bkg.background
             image -= self.bkg_used
 
         segm = detect_sources(image, detect_sources_thresh, npixels=self.param_dict["sourcex"]["source_box"],
@@ -591,8 +588,8 @@ class HAPPointCatalog(HAPCatalogBase):
         smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
         source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
 
-        log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm, self.bkg.bkg_rms_mean, self.bkg.bkg_rms_mean))
-        daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.bkg.bkg_rms_mean, ratio=dao_ratio)
+        log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm, self.image.bkg_rms_mean, self.image.bkg_rms_mean))
+        daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.image.bkg_rms_mean, ratio=dao_ratio)
         sources = daofind(image)
 
         for col in sources.colnames:
@@ -619,6 +616,7 @@ class HAPPointCatalog(HAPCatalogBase):
         phot_table : astropy table
             Table containing photometric information for specified sources based on image data in the specified image.
         """
+        log.info("Performing point-source photometry on identified point-sources")
         # Open and background subtract image
         image = self.image.data.copy()
         image -= self.bkg_used
@@ -690,8 +688,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self.size_source_box = self.param_dict["sourcex"]["source_box"]
         self.threshold_flag = self.param_dict["sourcex"]["thresh"]
 
-
-    def idenfity_sources(self, se_debug=False):
+    def identify_sources(self, se_debug=False):
         """Use photutils to find sources in image based on segmentation.
 
         Parameters
@@ -716,9 +713,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
             Mean bkg.background FIX
 
         """
-        # get the SCI image data
-        imgarr = self.image.data.copy()
-
         # Report configuration values to log
         log.info("{}".format("=" * 80))
         log.info("")
@@ -726,9 +720,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
         log.info("Total Detection Product - Input Parameters")
         log.info("FWHM: {}".format(self.fwhm))
         log.info("size_source_box: {}".format(self.size_source_box))
-        log.info("threshold_flag: {}".format(self.threshold_flag))
+        log.info("threshold: {}".format(np.mean(self.image.threshold)))
         log.info("")
         log.info("{}".format("=" * 80))
+
+        # get the SCI image data
+        imgarr = self.image.data.copy()
 
         # Only use a single kernel for now
         kernel_list = [Gaussian2DKernel, MexicanHat2DKernel]
@@ -854,7 +851,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         log.info("Filter Level Product - Input Parameters")
         log.info("FWHM: {}".format(self.fwhm))
         log.info("size_source_box: {}".format(self.size_source_box))
-        log.info("threshold_flag: {}".format(self.threshold_flag))
         log.info("")
         log.info("{}".format("=" * 80))
 
@@ -869,6 +865,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                     background=bkg.background,
                                     filter_kernel=self.kernel,
                                     wcs=self.image.imgwcs)
+        log.info("Found {} sources from segmentation map".format(len(self.source_cat)))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -886,11 +883,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
             Identification string for the catalog product being written.  This
             controls the data being put into the catalog product
         """
-        seg_cat = self.source_cat
-
         # Convert the list of SourceProperties objects to a QTable and
         # document in column metadata Photutils columns which map to SExtractor columns
-        seg_table = Table(seg_cat.to_table())
+        seg_table = Table(self.source_cat.to_table())
         radec_data = seg_table["sky_centroid_icrs"]
         ra_icrs = radec_data.ra.degree
         dec_icrs = radec_data.dec.degree
@@ -938,8 +933,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             del seg_table["sky_centroid_icrs"]
             rr = Column(ra_icrs, name="RA_icrs", description="SExtractor Column RA", unit=u.deg)
             dd = Column(dec_icrs, name="Dec_icrs", description="SExtractor Column Dec", unit=u.deg)
-            seg_table.add_column(dd, index=2)
-            seg_table.add_column(rr, index=2)
+            log.info("Added RA_icrs, Dec_icrs columns to Segment catalog")
+            seg_table.add_columns([dd, rr], indices=[2, 3])
 
             # Add a description for columns which map to SExtractor catalog columns
             seg_table["xcentroid"].description = "SExtractor Column x_image"
