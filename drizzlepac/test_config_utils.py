@@ -14,7 +14,7 @@ obs_info_dict, expo_list, filt_list, total_list = poller_utils.interpret_obset_i
 
 
 total_list[0].pars = config_utils.hap_config(total_list[0], use_defaults=False)
-total_list[0].pars.get_pars("catalog generation")
+print(total_list[0].pars.get_pars("catalog generation"))
 pdb.set_trace()
 
 
