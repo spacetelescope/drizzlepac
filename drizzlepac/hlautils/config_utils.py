@@ -70,8 +70,6 @@ class hap_config(object):
         self.conditions = ["nexpGTE4"]  # TODO: Just a placeholder until we add complexity!
 
 
-        pass
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
@@ -80,13 +78,12 @@ class hap_config(object):
         code_dir = os.path.abspath(__file__)
         base_dir = os.path.dirname(os.path.dirname(code_dir))
         self.pars_dir = os.path.join(base_dir, "pars/hap_pars")
-        cfg_index_fileanme = self.inst_det + "_index.config"
+        cfg_index_fileanme = self.inst_det + "_index.json"
         cfg_index_filename = os.path.join(self.pars_dir, cfg_index_fileanme)
 
         with open(cfg_index_filename) as jsonFile:
             jsonString = jsonFile.read()
             self.full_cfg_index = json.loads(jsonString)
-        pass
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -169,16 +166,24 @@ class par():
         for condition in self.conditions:
             if condition in self.cfg_index.keys():
                 found_cfg = True
-                subcfgfilename = os.path.join(self.pars_dir, self.cfg_index[condition])
-                configobj = teal.load(subcfgfilename)
-                del configobj['_task_name_']
-                self.pars_multidict[condition] = configobj
+                self.subcfgfilename = os.path.join(self.pars_dir, self.cfg_index[condition])
+                self.pars_multidict[condition] = self._read_json_file()
         if not found_cfg: # if no specific cfg files can be found for the specified conditions, use the generic cfg file.
-            subcfgfilename = os.path.join(self.pars_dir, self.cfg_index["all"])
-            configobj = teal.load(subcfgfilename,defaults=self.use_defaults,strict=False) # TODO: set strict=True for deployment
-            del configobj['_task_name_']
-            self.pars_multidict["all"] = configobj
+            self.subcfgfilename = os.path.join(self.pars_dir, self.cfg_index["all"])
+            self.pars_multidict["all"] = self._read_json_file()
 
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+    def _read_json_file(self):
+        with open(self.subcfgfilename) as jsonFile:
+            jsonString = jsonFile.read()
+            json_data = json.loads(jsonString)
+            if self.use_defaults:
+                return(json+data['default_params'])
+            else:
+                return(json_data['params'])
 
 
 #-----------------------------------------------------------------------------------------------------------------------
