@@ -14,7 +14,7 @@ from stsci.tools import teal
 
 
 class hap_config(object):
-    def __init__(self, instrument,detector,use_defaults=False,cfg_index_file=None):
+    def __init__(self,prod_obj,use_defaults=False,cfg_index_file=None):
         """
         A set of routines to generate appropriate set of configuration parameters
 
@@ -35,12 +35,12 @@ class hap_config(object):
         """
         self.label = "hap_config"
         self.description = "A set of routines to generate appropriate set of configuration parameters"
-        self.instrument = instrument
-        self.detector = detector
-        self.inst_det = "{}_{}".format(instrument,detector).lower()
+        self.instrument = prod_obj.instrument
+        self.detector = prod_obj.detector
+        self.inst_det = "{}_{}".format(prod_obj.instrument,prod_obj.detector).lower()
         self.cfg_index_file = cfg_index_file
         self.use_defaults = use_defaults
-        self._determine_conditions()
+        self._determine_conditions(prod_obj)
         self._get_cfg_index()
 
         # Instantiate the parameter set
@@ -54,7 +54,7 @@ class hap_config(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _determine_conditions(self):
+    def _determine_conditions(self,prod_obj):
         """Determine observing condition or conditions present for a given step
         List of possible conditions:
         * n_exp in mosaic >= 4
@@ -65,6 +65,8 @@ class hap_config(object):
         * Long/short
 
         """
+
+
         self.conditions = ["nexpGTE4"]  # TODO: Just a placeholder until we add complexity!
 
 
@@ -77,7 +79,7 @@ class hap_config(object):
         """return the contents of the appropriate index cfg file."""
         code_dir = os.path.abspath(__file__)
         base_dir = os.path.dirname(os.path.dirname(code_dir))
-        self.pars_dir = os.path.join(base_dir, "pars")
+        self.pars_dir = os.path.join(base_dir, "pars/hap_pars")
         cfg_index_fileanme = self.inst_det + "_index.config"
         cfg_index_filename = os.path.join(self.pars_dir, cfg_index_fileanme)
 
