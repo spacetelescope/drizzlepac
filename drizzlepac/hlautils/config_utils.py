@@ -9,7 +9,7 @@ import os
 import sys
 
 
-from stsci.tools import teal
+
 # ======================================================================================================================
 
 
@@ -181,9 +181,9 @@ class par():
             jsonString = jsonFile.read()
             json_data = json.loads(jsonString)
             if self.use_defaults:
-                return(json_data['default_params'])
+                return(json_data['default_values'])
             else:
-                return(json_data['params'])
+                return(json_data['parameters'])
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -236,15 +236,49 @@ class quality_control_pars(par):
 # ======================================================================================================================
 
 
+def cfg2json(cfgfilename,outpath):
+    """Convert config files to json format
+
+    PARAMETERS
+    ----------
+    cfgfilename : str
+        Input .cfg file to be converted to json format.
+
+    outpath : str
+        Destination path of the json file.
+
+    RETURNS
+    -------
+    Nothing!
+    """
+    import drizzlepac
+    from stsci.tools import teal
+
+    #open cfg file and load up the output dictionary
+    cfg_data = teal.load(cfgfilename,strict=False)
+    del cfg_data['_task_name_']
+    del cfg_data['_RULES_']
+    out_dict = {"parameters": cfg_data, "default_values": cfg_data}
+
+    # build output filename and write out data.
+    json_filename = cfgfilename.split("/")[-1].replace(".cfg",".json")
+    json_filename = os.path.join(outpath,json_filename)
+    with open(json_filename, 'w') as fp:
+        json.dump(out_dict, fp)
+    print("Wrote {}".format(json_filename))
+
+
+#\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\
 
 if __name__ == '__main__':
     """Super simple testing interface for the above code."""
 
     import pdb
 
-    foo = hap_config("acs", "wfc",use_defaults=False)
-    blarg = foo.get_pars("catalog generation")
+    # foo = hap_config("acs", "wfc",use_defaults=False)
+    # blarg = foo.get_pars("catalog generation")
+    #
+    # print(blarg)
 
-    print(blarg)
-
+    cfg2json(sys.argv[1],sys.argv[2])
 
