@@ -6,7 +6,7 @@
         "all": "acs/wfc/acs_wfc_astrodrizzle_all.cfg"
     },
     "catalog generation": {
-        "all": "acs/wfc/acs_wfc_catalog_generation_all.cfg"
+        "all": "acs/wfc/acs_wfc_catalog_generation_all.json"
     },
     "quality control": {
         "all": "acs/wfc/acs_wfc_quality_control_all.cfg"

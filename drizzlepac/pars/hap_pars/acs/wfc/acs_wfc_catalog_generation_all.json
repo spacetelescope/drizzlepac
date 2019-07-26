@@ -1,0 +1,32 @@
+{
+  "params":
+  {
+    "input": "stuff.txt",
+    "SOURCELIST GENERATION":
+    {
+      "DAO":
+      {
+        "fwhm": 0.8
+      },
+      "SOURCEX":
+      {
+        "fwhm": 0.2
+      }
+    }
+  },
+  "default_params":
+  {
+    "input": "stuff.txt",
+    "SOURCELIST GENERATION":
+    {
+      "DAO":
+      {
+        "fwhm": 80.0
+      },
+      "SOURCEX":
+      {
+        "fwhm": 20.0
+      }
+    }
+  }
+}

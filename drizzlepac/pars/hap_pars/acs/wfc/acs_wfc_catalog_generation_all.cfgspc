@@ -1,8 +1,0 @@
-_task_name_ = string_kw(default="acs_wfc_catalog_generation_all")
-input = string_kw(default="testin.txt", comment="Input filename")
-
-[SOURCELIST GENERATION]
-[[DAO]]
-fwhm = float_kw(default=1.0, comment="DAO Full width half maximum (pixels)")
-[[SOURCEX]]
-fwhm = float_kw(default=2.0, comment="Source Extractor full width half maximum (pixels)")

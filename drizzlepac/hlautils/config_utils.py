@@ -181,7 +181,7 @@ class par():
             jsonString = jsonFile.read()
             json_data = json.loads(jsonString)
             if self.use_defaults:
-                return(json+data['default_params'])
+                return(json_data['default_params'])
             else:
                 return(json_data['params'])
 
