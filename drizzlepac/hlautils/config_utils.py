@@ -236,7 +236,7 @@ class quality_control_pars(par):
 # ======================================================================================================================
 
 
-def cfg2json(cfgfilename,outpath):
+def cfg2json(cfgfilename,outpath=None):
     """Convert config files to json format
 
     PARAMETERS
@@ -260,14 +260,55 @@ def cfg2json(cfgfilename,outpath):
     del cfg_data['_RULES_']
     out_dict = {"parameters": cfg_data, "default_values": cfg_data}
 
-    # build output filename and write out data.
-    json_filename = cfgfilename.split("/")[-1].replace(".cfg",".json")
-    json_filename = os.path.join(outpath,json_filename)
+    #build output json filename
+    json_filename = cfgfilename.split("/")[-1].replace(".cfg", ".json")
+
+    if not outpath:
+        code_dir = os.path.abspath(__file__)
+        base_dir = os.path.dirname(os.path.dirname(code_dir))
+        out_dir = os.path.join(base_dir, "pars/hap_pars")
+        det=json_filename.split("_")[0]
+        json_filename=json_filename.replace(det,det+"_astrodrizzle")
+        if det == "any":
+            json_filename = os.path.join(out_dir,det,json_filename)
+        else:
+            if det in ["hrc","sbc","wfc"]:
+                inst = "acs"
+            if det in ["ir","uvis"]:
+                inst = "wfc3"
+            json_filename = "{}_{}".format(inst,json_filename)
+            json_filename = os.path.join(out_dir, inst, det, json_filename)
+    else:
+        json_filename = os.path.join(outpath,json_filename)
+
+    # write out data.
     with open(json_filename, 'w') as fp:
         json.dump(out_dict, fp)
     print("Wrote {}".format(json_filename))
 
+#-----------------------------------------------------------------------------------------------------------------------
 
+def batch_run_cfg2json():
+
+    cfg_path = "/user/mack/hla_cfgs/"
+
+    cfg_list = ['any_n1.cfg',
+                'ir_grism_n2.cfg',
+                'ir_grism_n4.cfg',
+                'ir_any_n2.cfg',
+                'ir_any_n4.cfg',
+                'uvis_any_n2.cfg',
+                'uvis_any_n4.cfg',
+                'uvis_any_n6.cfg',
+                'uvis_any_pre2012_n2.cfg',
+                'uvis_any_pre2012_n4.cfg',
+                'uvis_any_pre2012_n6.cfg',
+                'wfc_any_n2.cfg',
+                'wfc_any_n4.cfg',
+                'wfc_any_n6.cfg']
+    for cfgfile in cfg_list:
+        cfgfile = os.path.join(cfg_path,cfgfile)
+        cfg2json(cfgfile)
 #\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\
 
 if __name__ == '__main__':
@@ -280,5 +321,5 @@ if __name__ == '__main__':
     #
     # print(blarg)
 
-    cfg2json(sys.argv[1],sys.argv[2])
+    batch_run_cfg2json()
 
