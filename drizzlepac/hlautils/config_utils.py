@@ -83,13 +83,24 @@ class hap_config(object):
                 if self.instrument == "acs":
                     if self.detector == "hrc":
                         if n_exp in [2, 3]:
-                            self.conditions.append("acs_hrc_any_n2") # TODO: Generate this file.
+                            self.conditions.append("acs_hrc_any_n2") # TODO: Generate this json file.
                         if n_exp in [4, 5]:
-                            self.conditions.append("acs_hrc_any_n4") # TODO: Generate this file.
+                            self.conditions.append("acs_hrc_any_n4") # TODO: Generate this json file.
                         if n_exp >= 6:
-                            self.conditions.append("acs_hrc_any_n6") # TODO: Generate this file.
+                            self.conditions.append("acs_hrc_any_n6") # TODO: Generate this json file.
                     elif self.detector == "sbc":
-                        pass # TODO: add ACS/SBC condition(s)
+                        if self.filters.lower() in ["f115lp", "f122m"]:
+                            if n_exp in [2,3,4,5]:
+                                self.conditions.append("acs_sbc_blue_n2") # TODO: Generate this json file.
+                            if n_exp >= 6:
+                                self.conditions.append("acs_sbc_blue_n6") # TODO: Generate this json file.
+                        else:
+                            if n_exp in [2, 3, 4, 5]:
+                                self.conditions.append(
+                                    "acs_sbc_any_n2")  # TODO: Generate this json file.
+                            if n_exp >= 6:
+                                self.conditions.append(
+                                    "acs_sbc_any_n6")  # TODO: Generate this json file.
                     elif self.detector == "wfc":
                         if n_exp in [2,3]:
                             self.conditions.append("acs_wfc_any_n2")
