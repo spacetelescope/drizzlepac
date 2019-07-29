@@ -108,7 +108,7 @@ class hap_config(object):
                                 self.conditions.append("wfc3_ir_any_n4")
                     elif self.detector == "uvis":
                         thresh_time_string = "2012-11-08T02:59:15"
-                        thresh_time_obj = Time(time, format='isot', scale='utc')
+                        thresh_time_obj = Time(time, format='isot', scale='utc') # TODO: Verify that this time is UTC!
 
                         pass # TODO: add WFC3/UVIS condition(s)
                     else:
