@@ -6,6 +6,7 @@ specified observation conditions and instrument/detector used in the observation
 import collections
 import json
 import os
+import pdb
 import sys
 
 
@@ -66,9 +67,23 @@ class hap_config(object):
 
         """
 
+        #determine product type, initialize and build conditions list
+        if (hasattr(prod_obj,"edp_list") and hasattr(prod_obj,"fdp_list")): # For total products
+            prod_type = "total"
+            self.conditions = ["total_basic"]
+        elif (hasattr(prod_obj,"edp_list") and not hasattr(prod_obj,"fdp_list")): # For filter products
+            prod_type = "filter"
+            self.conditions = ["filter_basic"]
+            n_exp = len(prod_obj.edp_list)
+            if n_exp == 1:
+                self.conditions.append("n_exp1")
+
+        else: # For single-exposure products
+            prod_type = "single"
+            self.conditions = ["single_basic"]
 
 
-        self.conditions = ["nexpGTE4"]  # TODO: Just a placeholder until we add complexity!
+
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
