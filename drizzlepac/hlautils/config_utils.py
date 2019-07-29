@@ -77,10 +77,31 @@ class hap_config(object):
             n_exp = len(prod_obj.edp_list)
             if n_exp == 1:
                 self.conditions.append("n_exp1")
+            else:
+                if self.instrument == "acs":
+                    if self.detector == "hrc":
+                        pass
+                    elif self.detector == "sbc":
+                        pass
+                    elif self.detector == "wfc":
+                        pass
+                    else:
+                        sys.exit("INVALID ACS DETECTOR!")
+                elif self.instrument == "wfc3":
+                    if self.detector == "ir":
+                        pass
+                    elif self.detector == "uvis":
+                        pass
+                    else:
+                        sys.exit("INVALID WFC3 DETECTOR!")
+                else:
+                    sys.exit("INVALID HST INSTRUMENT!")
+
 
         else: # For single-exposure products
             prod_type = "single"
             self.conditions = ["single_basic"]
+            self.conditions.append("n_exp1") # TODO: Double check that single-exposure products should use Jen's nexp=1 cfg file.
 
 
 
