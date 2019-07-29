@@ -82,7 +82,12 @@ class hap_config(object):
             else:
                 if self.instrument == "acs":
                     if self.detector == "hrc":
-                        pass # TODO: add ACS/HRC condition(s)
+                        if n_exp in [2, 3]:
+                            self.conditions.append("acs_hrc_any_n2") # TODO: Generate this file.
+                        if n_exp in [4, 5]:
+                            self.conditions.append("acs_hrc_any_n4") # TODO: Generate this file.
+                        if n_exp >= 6:
+                            self.conditions.append("acs_hrc_any_n6") # TODO: Generate this file.
                     elif self.detector == "sbc":
                         pass # TODO: add ACS/SBC condition(s)
                     elif self.detector == "wfc":
