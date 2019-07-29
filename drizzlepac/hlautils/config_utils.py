@@ -9,6 +9,7 @@ import os
 import pdb
 import sys
 
+from astropy.time import Time
 
 
 # ======================================================================================================================
@@ -81,9 +82,9 @@ class hap_config(object):
             else:
                 if self.instrument == "acs":
                     if self.detector == "hrc":
-                        pass
+                        pass # TODO: add ACS/HRC condition(s)
                     elif self.detector == "sbc":
-                        pass
+                        pass # TODO: add ACS/SBC condition(s)
                     elif self.detector == "wfc":
                         if n_exp in [2,3]:
                             self.conditions.append("acs_wfc_any_n2")
@@ -106,7 +107,10 @@ class hap_config(object):
                             if n_exp >= 4:
                                 self.conditions.append("wfc3_ir_any_n4")
                     elif self.detector == "uvis":
-                        pass
+                        thresh_time_string = "2012-11-08T02:59:15"
+                        thresh_time_obj = Time(time, format='isot', scale='utc')
+
+                        pass # TODO: add WFC3/UVIS condition(s)
                     else:
                         sys.exit("INVALID WFC3 DETECTOR!")
                 else:
