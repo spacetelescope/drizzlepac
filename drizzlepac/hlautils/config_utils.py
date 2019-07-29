@@ -58,13 +58,10 @@ class hap_config(object):
 
     def _determine_conditions(self,prod_obj):
         """Determine observing condition or conditions present for a given step
-        List of possible conditions:
-        * n_exp in mosaic >= 4
-        * n_exp in mosaic < 4
-        * total drizzle product
-        * filter drizzle product
-        * single drizzle product
-        * Long/short
+
+        Parameters
+        ----------
+        prod_obj :
 
         """
 
