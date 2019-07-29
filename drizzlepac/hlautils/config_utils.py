@@ -71,6 +71,7 @@ class hap_config(object):
         if (hasattr(prod_obj,"edp_list") and hasattr(prod_obj,"fdp_list")): # For total products
             prod_type = "total"
             self.conditions = ["total_basic"]
+
         elif (hasattr(prod_obj,"edp_list") and not hasattr(prod_obj,"fdp_list")): # For filter products
             prod_type = "filter"
             self.conditions = ["filter_basic"]
@@ -84,12 +85,26 @@ class hap_config(object):
                     elif self.detector == "sbc":
                         pass
                     elif self.detector == "wfc":
-                        pass
+                        if n_exp in [2,3]:
+                            self.conditions.append("acs_wfc_any_n2")
+                        if n_exp in [4,5]:
+                            self.conditions.append("acs_wfc_any_n4")
+                        if n_exp >=6:
+                            self.conditions.append("acs_wfc_any_n6")
                     else:
                         sys.exit("INVALID ACS DETECTOR!")
                 elif self.instrument == "wfc3":
                     if self.detector == "ir":
-                        pass
+                        if self.filters.lower() in ["g102","g141"]: # grisms
+                            if n_exp in [2,3]:
+                                self.conditions.append("wfc3_ir_grism_n2")
+                            if n_exp >= 4:
+                                self.conditions.append("wfc3_ir_grism_n4")
+                        else: # everything else that's not a grism
+                            if n_exp in [2,3]:
+                                self.conditions.append("wfc3_ir_any_n2")
+                            if n_exp >= 4:
+                                self.conditions.append("wfc3_ir_any_n4")
                     elif self.detector == "uvis":
                         pass
                     else:
