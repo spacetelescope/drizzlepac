@@ -67,6 +67,7 @@ class hap_config(object):
         """
 
 
+
         self.conditions = ["nexpGTE4"]  # TODO: Just a placeholder until we add complexity!
 
 
@@ -306,9 +307,12 @@ def batch_run_cfg2json():
                 'wfc_any_n2.cfg',
                 'wfc_any_n4.cfg',
                 'wfc_any_n6.cfg']
+    # cfg_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/"
+    # out_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/hap_pars/any/"
+    # cfg_list = ["astrodrizzle_filter_hap.cfg", "astrodrizzle_single_hap.cfg","astrodrizzle_total_hap.cfg"]
     for cfgfile in cfg_list:
         cfgfile = os.path.join(cfg_path,cfgfile)
-        cfg2json(cfgfile)
+        cfg2json(cfgfile,outpath=out_path)
 #\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\
 
 if __name__ == '__main__':
@@ -321,5 +325,5 @@ if __name__ == '__main__':
     #
     # print(blarg)
 
-    #batch_run_cfg2json()
+    batch_run_cfg2json()
 
