@@ -48,7 +48,7 @@ class hap_config(object):
         # Instantiate the parameter set
         self.pars = {}
         #step_list = [alignment_pars,astrodrizzle_pars,catalog_generation_pars,quality_control_pars] # TODO: uncomment when everything is working
-        step_list = [catalog_generation_pars] # TODO: Just a placeholder until we add complexity!
+        step_list = [astrodrizzle_pars,catalog_generation_pars] # TODO: Just a placeholder until we add complexity!
         for step_name in step_list:
             step_title = step_name.__name__.replace("_pars","").replace("_"," ")
             cfg_index = self.full_cfg_index[step_title]
@@ -147,9 +147,6 @@ class hap_config(object):
             prod_type = "single"
             self.conditions = ["single_basic"]
             self.conditions.append("n_exp1") # TODO: Double check that single-exposure products should use Jen's nexp=1 cfg file.
-
-
-
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
