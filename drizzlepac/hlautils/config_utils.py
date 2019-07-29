@@ -78,7 +78,7 @@ class hap_config(object):
             self.conditions = ["filter_basic"]
             n_exp = len(prod_obj.edp_list)
             if n_exp == 1:
-                self.conditions.append("n_exp1")
+                self.conditions.append("any_n1")
             else:
                 if self.instrument == "acs":
                     if self.detector == "hrc":
@@ -107,8 +107,21 @@ class hap_config(object):
                             if n_exp >= 4:
                                 self.conditions.append("wfc3_ir_any_n4")
                     elif self.detector == "uvis":
-                        thresh_time_string = "2012-11-08T02:59:15"
-                        thresh_time_obj = Time(time, format='isot', scale='utc') # TODO: Verify that this time is UTC!
+                        thresh_time = Time("2012-11-08T02:59:15", format='isot', scale='utc') # TODO: Verify that this time is UTC!
+                        if self.mjd >= thresh_time:
+                            if n_exp in [2, 3]:
+                                self.conditions.append("wfc3_uvis_any_post_n2")
+                            if n_exp in [4, 5]:
+                                self.conditions.append("wfc3_uvis_any_post_n4")
+                            if n_exp >= 6:
+                                self.conditions.append("wfc3_uvis_any_post_n6")
+                        else:
+                            if n_exp in [2, 3]:
+                                self.conditions.append("wfc3_uvis_any_pre_n2")
+                            if n_exp in [4, 5]:
+                                self.conditions.append("wfc3_uvis_any_pre_n4")
+                            if n_exp >= 6:
+                                self.conditions.append("wfc3_uvis_any_pre_n6")
 
                         pass # TODO: add WFC3/UVIS condition(s)
                     else:
