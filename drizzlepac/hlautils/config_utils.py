@@ -296,7 +296,13 @@ class par():
         self.pars_dir = pars_dir
         self.step_title = step_title
         self.use_defaults = use_defaults
-        self._get_params()
+
+        if input_custom_pars_file:
+            with open(self.input_custom_pars_file) as f:
+                json_data = json.load(f)
+
+        else:
+            self._get_params()
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
