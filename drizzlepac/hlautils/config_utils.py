@@ -16,7 +16,7 @@ from astropy.time import Time
 
 
 class hap_config(object):
-    def __init__(self,prod_obj,use_defaults=False,cfg_index_file=None):
+    def __init__(self,prod_obj,use_defaults=False,input_custom_pars_file=None,output_custom_pars_file=None):
         """
         A set of routines to generate appropriate set of configuration parameters
 
@@ -31,34 +31,42 @@ class hap_config(object):
         use_defaults : bool, optional
             Use default values for all configuration parameters? Default value is False.
 
-        cfg_index_file : str, optional
+        input_custom_pars_file: str, optional
             Name of the full configuration file (with full path) to use for ALL input params. WARNING: Specifying a
             file will turn off automatic parameter determination.
+
+        output_custom_pars_file: str, optional
+            Name of the full configuration file (with full path) that all parameters will be written to.
 
         Returns
         -------
         Nothing.
         """
+        if input_custom_pars_file and output_custom_pars_file: sys.exit("CAN'T HAVE BOTH!")
         self.label = "hap_config"
         self.description = "A set of routines to generate appropriate set of configuration parameters"
         self.instrument = prod_obj.instrument
         self.detector = prod_obj.detector
         self.inst_det = "{}_{}".format(prod_obj.instrument,prod_obj.detector).lower()
-        self.cfg_index_file = cfg_index_file
         self.use_defaults = use_defaults
+        self.input_custom_pars_file = input_custom_pars_file
+        self.output_custom_pars_file = output_custom_pars_file
         self._determine_conditions(prod_obj)
         self._get_cfg_index()
 
         # Instantiate the parameter set
         self.pars = {}
-        #step_list = [alignment_pars,astrodrizzle_pars,catalog_generation_pars,quality_control_pars] # TODO: uncomment when everything is working
-        step_list = [astrodrizzle_pars,catalog_generation_pars] # TODO: Just a placeholder until we add complexity!
+        if self.input_custom_pars_file:
+            self.read_pars(prod_obj)
 
-        for step_name in step_list:
-            step_title = step_name.__name__.replace("_pars","").replace("_"," ")
-            cfg_index = self.full_cfg_index[step_title]
-            self.pars[step_title] = step_name(cfg_index,self.conditions,self.pars_dir,step_title,self.use_defaults)
-
+        if self.output_custom_pars_file:
+            #step_list = [alignment_pars,astrodrizzle_pars,catalog_generation_pars,quality_control_pars] # TODO: uncomment when everything is working
+            step_list = [astrodrizzle_pars,catalog_generation_pars] # TODO: Just a placeholder until we add complexity!
+            for step_name in step_list:
+                step_title = step_name.__name__.replace("_pars","").replace("_"," ")
+                cfg_index = self.full_cfg_index[step_title]
+                self.pars[step_title] = step_name(cfg_index,self.conditions,self.pars_dir,step_title,self.use_defaults,self.input_custom_pars_file,self.output_custom_pars_file)
+            self.write_pars(prod_obj)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _determine_conditions(self,prod_obj):
@@ -193,17 +201,43 @@ class hap_config(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def write_pars(self,out_filename):
+    def read_pars(self):
+        "This method reads in parameters for a given product."
+        pass # TODO: Write code for this method
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+    def write_pars(self,prod_obj):
         """This method writes the current parameter set to the specified file."""
 
-        pass
+        new_json_data = {}
+        for stepname in self.pars.keys():
+            new_json_data[stepname] = self.pars[stepname].outpars
+        new_json_data = {prod_obj.product_basename: new_json_data}
+
+        if os.path.exists(self.custom_pars_file):
+            with open(self.custom_pars_file) as f:
+                json_data = json.load(f)
+
+            json_data.update(new_json_data)
+
+            with open(self.custom_pars_file, 'w') as f:
+                json.dump(json_data, f)
+            print("Updated custom pars file {}".format(self.custom_pars_file))
+        else:
+            with open(self.custom_pars_file, 'w') as f:
+                json.dump(new_json_data, f)
+            print("Wrote custom pars file {}".format(self.custom_pars_file))
+
 
 
 #-----------------------------------------------------------------------------------------------------------------------
 
 
 class par():
-    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults):
+    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults,input_custom_pars_file=None,output_custom_pars_file=None):
         """Parent class for alignment_pars, astrodrizzle_pars, catalog_generation_pars, and quality_control_pars
 
         Parameters
@@ -347,9 +381,9 @@ class par():
 
 
 class alignment_pars(par):
-    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults):
+    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults,input_custom_pars_file,output_custom_pars_file):
         """Configuration parameters for the image alignment step"""
-        super().__init__(cfg_index,conditions,pars_dir,step_title,use_defaults)
+        super().__init__(cfg_index,conditions,pars_dir,step_title,use_defaults,input_custom_pars_file,output_custom_pars_file)
         self._combine_conditions()
 
 
@@ -357,9 +391,9 @@ class alignment_pars(par):
 
 
 class astrodrizzle_pars(par):
-    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults):
+    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults,input_custom_pars_file,output_custom_pars_file):
         """Configuration parameters for the AstroDrizzle step"""
-        super().__init__(cfg_index,conditions,pars_dir,step_title,use_defaults)
+        super().__init__(cfg_index,conditions,pars_dir,step_title,use_defaults,input_custom_pars_file,output_custom_pars_file)
         self._combine_conditions()
 
 
@@ -367,9 +401,9 @@ class astrodrizzle_pars(par):
 
 
 class catalog_generation_pars(par):
-    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults):
+    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults,input_custom_pars_file,output_custom_pars_file):
         """Configuration parameters for the photometric catalog generation step"""
-        super().__init__(cfg_index,conditions,pars_dir,step_title,use_defaults)
+        super().__init__(cfg_index,conditions,pars_dir,step_title,use_defaults,input_custom_pars_file,output_custom_pars_file)
         self._combine_conditions()
 
 
@@ -379,9 +413,9 @@ class catalog_generation_pars(par):
 
 
 class quality_control_pars(par):
-    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults):
+    def __init__(self,cfg_index,conditions,pars_dir,step_title,use_defaults,input_custom_pars_file,output_custom_pars_file):
         """Configuration parameters for the quality control step"""
-        super().__init__(cfg_index,conditions,pars_dir,step_title,use_defaults)
+        super().__init__(cfg_index,conditions,pars_dir,step_title,use_defaults,input_custom_pars_file,output_custom_pars_file)
         self._combine_conditions()
 
 
