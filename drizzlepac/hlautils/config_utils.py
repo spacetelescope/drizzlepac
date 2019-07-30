@@ -121,7 +121,7 @@ class hap_config(object):
                             if n_exp >= 4:
                                 self.conditions.append("wfc3_ir_any_n4")
                     elif self.detector == "uvis":
-                        thresh_time = Time("2012-11-08T02:59:15", format='isot', scale='utc') # TODO: Verify that this time is UTC!
+                        thresh_time = Time("2012-11-08T02:59:15", format='isot', scale='utc').mjd # TODO: Verify that this time is UTC!
                         if self.mjd >= thresh_time:
                             if n_exp in [2, 3]:
                                 self.conditions.append("wfc3_uvis_any_post_n2")
@@ -190,8 +190,6 @@ class hap_config(object):
             sys.exit(1)
 
 
-
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
@@ -238,20 +236,11 @@ class par():
 
 
     def _combine_conditions(self):
+        """Combine parameters from multiple conditions into a single parameter set.
+        """
         self.outpars = {}
-        if len(self.pars_multidict.keys()) == 1:
-            for mdkey in self.pars_multidict.keys():
-                for key in self.pars_multidict[mdkey].keys():
-                    self.outpars[key] = self.pars_multidict[mdkey][key]
-        else:
-            key_a = list(self.pars_multidict.keys())[0]
-            key_b = list(self.pars_multidict.keys())[1]
-            self.outpars = self._dict_merge(self.pars_multidict[key_a],self.pars_multidict[key_b])
-            if len(self.pars_multidict.keys()) >= 3:
-                for cfg_key in list(self.pars_multidict.keys())[2:]:
-                    self.outpars = self._dict_merge(self.outpars,self.pars_multidict[cfg_key])
-
-
+        for cfg_key in self.pars_multidict.keys():
+            self.outpars = self._dict_merge(self.outpars, self.pars_multidict[cfg_key])
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -270,13 +259,25 @@ class par():
         present in ``merge_dict`` but not ``dct`` should be included in the
         new dict.
 
-        Args:
-            dct (dict) onto which the merge is executed
-            merge_dct (dict): dct merged into dct
-            add_keys (bool): whether to add new keys
+        NOTE: this method was found on stack overflow
+        (URL: https://gist.github.com/angstwad/bf22d1822c38a92ec0a9)
+        It was written by user "DomWeldon".
 
-        Returns:
-            dict: updated dict
+        PARMETERS
+        ---------
+        dct : dictionary
+            dictionary onto which the merge is executed
+
+        merge_dct : dictionary
+            dictionary merged into dct
+
+        add_keys : Boolean, optional
+            whether to add new keys if they don't exist in dct. Default value is True
+
+        RETURNS
+        -------
+            dict: dictionary
+                updated dictionary
         """
         import collections
         dct = dct.copy()
@@ -294,6 +295,7 @@ class par():
                 dct[k] = merge_dct[k]
 
         return dct
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -425,7 +427,9 @@ def cfg2json(cfgfilename,outpath=None):
     else:
         print("Skipped writing {}. File already exists.".format(json_filename))
 
+
 #-----------------------------------------------------------------------------------------------------------------------
+
 
 def batch_run_cfg2json():
 
@@ -463,7 +467,6 @@ def batch_run_cfg2json():
 #\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\
 
 
-
 if __name__ == '__main__':
     """Super simple testing interface for the above code."""
 
@@ -475,8 +478,3 @@ if __name__ == '__main__':
     # print(blarg)
 
     # batch_run_cfg2json()
-    x = {"foo": {"a": 1, "b": 2}}
-    y = {"foo": {"b": 666, "c": 9}}
-
-    z = dict_merge(x,y)
-    print(z)
