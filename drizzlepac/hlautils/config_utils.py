@@ -34,6 +34,10 @@ class hap_config(object):
         cfg_index_file : str, optional
             Name of the full configuration file (with full path) to use for ALL input params. WARNING: Specifying a
             file will turn off automatic parameter determination.
+
+        Returns
+        -------
+        Nothing.
         """
         self.label = "hap_config"
         self.description = "A set of routines to generate appropriate set of configuration parameters"
@@ -62,17 +66,20 @@ class hap_config(object):
 
         Parameters
         ----------
-        prod_obj :
+        prod_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
+        drizzlepac.hlautils.Product.ExposureProduct, depending on input
+            Product to get configuration values for.
+
+        Returns
+        -------
+        Nothing.
 
         """
 
         #determine product type, initialize and build conditions list
         if (hasattr(prod_obj,"edp_list") and hasattr(prod_obj,"fdp_list")): # For total products
-            prod_type = "total"
             self.conditions = ["total_basic"]
-
         elif (hasattr(prod_obj,"edp_list") and not hasattr(prod_obj,"fdp_list")): # For filter products
-            prod_type = "filter"
             self.conditions = ["filter_basic"]
             n_exp = len(prod_obj.edp_list)
             if n_exp == 1:
@@ -81,24 +88,22 @@ class hap_config(object):
                 if self.instrument == "acs":
                     if self.detector == "hrc":
                         if n_exp in [2, 3]:
-                            self.conditions.append("acs_hrc_any_n2") # TODO: Generate this json file.
+                            self.conditions.append("acs_hrc_any_n2")
                         if n_exp in [4, 5]:
-                            self.conditions.append("acs_hrc_any_n4") # TODO: Generate this json file.
+                            self.conditions.append("acs_hrc_any_n4")
                         if n_exp >= 6:
-                            self.conditions.append("acs_hrc_any_n6") # TODO: Generate this json file.
+                            self.conditions.append("acs_hrc_any_n6")
                     elif self.detector == "sbc":
                         if self.filters.lower() in ["f115lp", "f122m"]:
                             if n_exp in [2,3,4,5]:
-                                self.conditions.append("acs_sbc_blue_n2") # TODO: Generate this json file.
+                                self.conditions.append("acs_sbc_blue_n2")
                             if n_exp >= 6:
-                                self.conditions.append("acs_sbc_blue_n6") # TODO: Generate this json file.
+                                self.conditions.append("acs_sbc_blue_n6")
                         else:
                             if n_exp in [2, 3, 4, 5]:
-                                self.conditions.append(
-                                    "acs_sbc_any_n2")  # TODO: Generate this json file.
+                                self.conditions.append("acs_sbc_any_n2")
                             if n_exp >= 6:
-                                self.conditions.append(
-                                    "acs_sbc_any_n6")  # TODO: Generate this json file.
+                                self.conditions.append("acs_sbc_any_n6")
                     elif self.detector == "wfc":
                         if n_exp in [2,3]:
                             self.conditions.append("acs_wfc_any_n2")
@@ -136,18 +141,13 @@ class hap_config(object):
                                 self.conditions.append("wfc3_uvis_any_pre_n4")
                             if n_exp >= 6:
                                 self.conditions.append("wfc3_uvis_any_pre_n6")
-
-                        pass # TODO: add WFC3/UVIS condition(s)
                     else:
                         sys.exit("INVALID WFC3 DETECTOR!")
                 else:
                     sys.exit("INVALID HST INSTRUMENT!")
-
-
         else: # For single-exposure products
-            prod_type = "single"
             self.conditions = ["single_basic"]
-            self.conditions.append("n_exp1") # TODO: Double check that single-exposure products should use Jen's nexp=1 cfg file.
+            self.conditions.append("any_n1") # TODO: Double check that single-exposure products should use Jen's nexp=1 cfg file.
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -223,6 +223,10 @@ class par():
         use_defaults : bool
             Use default values for all configuration parameters?
 
+        Returns
+        -------
+        Nothing.
+
         """
         self.cfg_index = cfg_index
         self.conditions = conditions
@@ -263,8 +267,8 @@ class par():
         (URL: https://gist.github.com/angstwad/bf22d1822c38a92ec0a9)
         It was written by user "DomWeldon".
 
-        PARMETERS
-        ---------
+        Parameters
+        ----------
         dct : dictionary
             dictionary onto which the merge is executed
 
@@ -274,10 +278,10 @@ class par():
         add_keys : Boolean, optional
             whether to add new keys if they don't exist in dct. Default value is True
 
-        RETURNS
+        Returns
         -------
-            dict: dictionary
-                updated dictionary
+        dict: dictionary
+            updated dictionary
         """
         import collections
         dct = dct.copy()
@@ -319,6 +323,17 @@ class par():
 
 
     def _read_json_file(self):
+        """read in json file, return read-in information as dictionary of values
+
+        Parameters
+        ----------
+        None.
+
+        Returns
+        -------
+        json_data : dictionary
+            information from json file
+        """
         with open(self.subcfgfilename) as jsonFile:
             jsonString = jsonFile.read()
             json_data = json.loads(jsonString)
@@ -377,7 +392,7 @@ class quality_control_pars(par):
 def cfg2json(cfgfilename,outpath=None):
     """Convert config files to json format
 
-    PARAMETERS
+    Parameters
     ----------
     cfgfilename : str
         Input .cfg file to be converted to json format.
@@ -385,9 +400,9 @@ def cfg2json(cfgfilename,outpath=None):
     outpath : str
         Destination path of the json file.
 
-    RETURNS
+    Returns
     -------
-    Nothing!
+    Nothing
     """
     import drizzlepac
     from stsci.tools import teal
@@ -432,7 +447,7 @@ def cfg2json(cfgfilename,outpath=None):
 
 
 def batch_run_cfg2json():
-
+    """run cfg2json() on a predefined list of .cfg files"""
     cfg_path = "/user/mack/hla_cfgs/"
 
     cfg_list = ['any_n1.cfg',
