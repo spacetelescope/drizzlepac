@@ -56,17 +56,22 @@ class hap_config(object):
 
         # Instantiate the parameter set
         self.pars = {}
+        
         if self.input_custom_pars_file:
-            self.read_pars(prod_obj)
-
-        if self.output_custom_pars_file:
+            self.read_pars(prod_obj) # Read in custom params instead of using defaults
+        else:
             #step_list = [alignment_pars,astrodrizzle_pars,catalog_generation_pars,quality_control_pars] # TODO: uncomment when everything is working
             step_list = [astrodrizzle_pars,catalog_generation_pars] # TODO: Just a placeholder until we add complexity!
             for step_name in step_list:
                 step_title = step_name.__name__.replace("_pars","").replace("_"," ")
                 cfg_index = self.full_cfg_index[step_title]
                 self.pars[step_title] = step_name(cfg_index,self.conditions,self.pars_dir,step_title,self.use_defaults,self.input_custom_pars_file,self.output_custom_pars_file)
-            self.write_pars(prod_obj)
+            if output_custom_pars_file:
+                self.write_pars(prod_obj)
+            pdb.set_trace()
+
+
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _determine_conditions(self,prod_obj):
@@ -201,36 +206,60 @@ class hap_config(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def read_pars(self):
-        "This method reads in parameters for a given product."
-        pass # TODO: Write code for this method
+    def read_pars(self,prod_obj):
+        """This method reads in parameters for a given product.
+
+        Parameters
+        ----------
+        prod_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
+        drizzlepac.hlautils.Product.ExposureProduct, depending on input
+            Product to get configuration values for.
+
+        Returns
+        -------
+        Nothing.
+        """
+        with open(self.input_custom_pars_file) as f:
+            json_data = json.load(f)
+        pdb.set_trace()
+        for step_name in json_data[prod_obj.product_basename].keys():
+            self.pars.pars[step_name].outpars=json_data[prod_obj.product_basename][step_name]
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
     def write_pars(self,prod_obj):
-        """This method writes the current parameter set to the specified file."""
+        """This method writes the current parameter set to the specified file.
 
+        Parameters
+        ----------
+        prod_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
+        drizzlepac.hlautils.Product.ExposureProduct, depending on input
+            Product to write configuration values for.
+
+        Returns
+        -------
+        Nothing.
+        """
         new_json_data = {}
         for stepname in self.pars.keys():
             new_json_data[stepname] = self.pars[stepname].outpars
         new_json_data = {prod_obj.product_basename: new_json_data}
 
-        if os.path.exists(self.custom_pars_file):
-            with open(self.custom_pars_file) as f:
+        if os.path.exists(self.output_custom_pars_file):
+            with open(self.output_custom_pars_file) as f:
                 json_data = json.load(f)
 
             json_data.update(new_json_data)
 
-            with open(self.custom_pars_file, 'w') as f:
+            with open(self.output_custom_pars_file, 'w') as f:
                 json.dump(json_data, f)
-            print("Updated custom pars file {}".format(self.custom_pars_file))
+            print("Updated custom pars file {}".format(self.output_custom_pars_file))
         else:
-            with open(self.custom_pars_file, 'w') as f:
+            with open(self.output_custom_pars_file, 'w') as f:
                 json.dump(new_json_data, f)
-            print("Wrote custom pars file {}".format(self.custom_pars_file))
-
+            print("Wrote custom pars file {}".format(self.output_custom_pars_file))
 
 
 #-----------------------------------------------------------------------------------------------------------------------
