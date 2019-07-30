@@ -246,14 +246,54 @@ class par():
         else:
             key_a = list(self.pars_multidict.keys())[0]
             key_b = list(self.pars_multidict.keys())[1]
-
+            self.outpars = self._dict_merge(self.pars_multidict[key_a],self.pars_multidict[key_b])
             if len(self.pars_multidict.keys()) >= 3:
-                cfg_list = list(self.pars_multidict.keys())[1:]
-
-            pdb.set_trace()
-            # TODO: see https://stackoverflow.com/questions/38987/how-to-merge-two-dictionaries-in-a-single-expression for how to merge dictionaries
+                for cfg_key in list(self.pars_multidict.keys())[2:]:
+                    self.outpars = self._dict_merge(self.outpars,self.pars_multidict[cfg_key])
 
 
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+    def _dict_merge(self,dct, merge_dct, add_keys=True):
+        """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
+        updating only top-level keys, dict_merge recurses down into dicts nested
+        to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
+        ``dct``.
+
+        This version will return a copy of the dictionary and leave the original
+        arguments untouched.
+
+        The optional argument ``add_keys``, determines whether keys which are
+        present in ``merge_dict`` but not ``dct`` should be included in the
+        new dict.
+
+        Args:
+            dct (dict) onto which the merge is executed
+            merge_dct (dict): dct merged into dct
+            add_keys (bool): whether to add new keys
+
+        Returns:
+            dict: updated dict
+        """
+        import collections
+        dct = dct.copy()
+        if not add_keys:
+            merge_dct = {
+                k: merge_dct[k]
+                for k in set(dct).intersection(set(merge_dct))
+            }
+
+        for k, v in merge_dct.items():
+            if (k in dct and isinstance(dct[k], dict)
+                    and isinstance(merge_dct[k], collections.Mapping)):
+                dct[k] = self._dict_merge(dct[k], merge_dct[k], add_keys=add_keys)
+            else:
+                dct[k] = merge_dct[k]
+
+        return dct
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -418,47 +458,9 @@ def batch_run_cfg2json():
     for cfgfile in cfg_list:
         cfgfile = os.path.join(cfg_path,cfgfile)
         cfg2json(cfgfile)
+
+
 #\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\
-
-
-def dict_merge(dct, merge_dct, add_keys=True):
-    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
-    updating only top-level keys, dict_merge recurses down into dicts nested
-    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
-    ``dct``.
-
-    This version will return a copy of the dictionary and leave the original
-    arguments untouched.
-
-    The optional argument ``add_keys``, determines whether keys which are
-    present in ``merge_dict`` but not ``dct`` should be included in the
-    new dict.
-
-    Args:
-        dct (dict) onto which the merge is executed
-        merge_dct (dict): dct merged into dct
-        add_keys (bool): whether to add new keys
-
-    Returns:
-        dict: updated dict
-    """
-    import collections
-    dct = dct.copy()
-    if not add_keys:
-        merge_dct = {
-            k: merge_dct[k]
-            for k in set(dct).intersection(set(merge_dct))
-        }
-
-    for k, v in merge_dct.items():
-        if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], collections.Mapping)):
-            dct[k] = dict_merge(dct[k], merge_dct[k], add_keys=add_keys)
-        else:
-            dct[k] = merge_dct[k]
-
-    return dct
-
 
 
 
