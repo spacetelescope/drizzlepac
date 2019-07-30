@@ -244,7 +244,14 @@ class par():
                 for key in self.pars_multidict[mdkey].keys():
                     self.outpars[key] = self.pars_multidict[mdkey][key]
         else:
-            pass # TODO: see https://stackoverflow.com/questions/38987/how-to-merge-two-dictionaries-in-a-single-expression for how to merge dictionaries
+            key_a = list(self.pars_multidict.keys())[0]
+            key_b = list(self.pars_multidict.keys())[1]
+
+            if len(self.pars_multidict.keys()) >= 3:
+                cfg_list = list(self.pars_multidict.keys())[1:]
+
+            pdb.set_trace()
+            # TODO: see https://stackoverflow.com/questions/38987/how-to-merge-two-dictionaries-in-a-single-expression for how to merge dictionaries
 
 
 
@@ -371,9 +378,12 @@ def cfg2json(cfgfilename,outpath=None):
         json_filename = os.path.join(outpath,json_filename)
 
     # write out data.
-    with open(json_filename, 'w') as fp:
-        json.dump(out_dict, fp)
-    print("Wrote {}".format(json_filename))
+    if not os.path.exists(json_filename):
+        with open(json_filename, 'w') as fp:
+            json.dump(out_dict, fp)
+        print("Wrote {}".format(json_filename))
+    else:
+        print("Skipped writing {}. File already exists.".format(json_filename))
 
 #-----------------------------------------------------------------------------------------------------------------------
 
@@ -394,14 +404,63 @@ def batch_run_cfg2json():
                 'uvis_any_pre2012_n6.cfg',
                 'wfc_any_n2.cfg',
                 'wfc_any_n4.cfg',
-                'wfc_any_n6.cfg']
+                'wfc_any_n6.cfg',
+                'sbc_blue_n2.cfg',
+                'sbc_blue_n6.cfg',
+                'sbc_any_n2.cfg',
+                'sbc_any_n6.cfg',
+                'hrc_any_n2.cfg',
+                'hrc_any_n4.cfg',
+                'hrc_any_n6.cfg']
     # cfg_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/"
     # out_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/hap_pars/any/"
     # cfg_list = ["astrodrizzle_filter_hap.cfg", "astrodrizzle_single_hap.cfg","astrodrizzle_total_hap.cfg"]
     for cfgfile in cfg_list:
         cfgfile = os.path.join(cfg_path,cfgfile)
-        cfg2json(cfgfile,outpath=out_path)
+        cfg2json(cfgfile)
 #\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\
+
+
+def dict_merge(dct, merge_dct, add_keys=True):
+    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
+    updating only top-level keys, dict_merge recurses down into dicts nested
+    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
+    ``dct``.
+
+    This version will return a copy of the dictionary and leave the original
+    arguments untouched.
+
+    The optional argument ``add_keys``, determines whether keys which are
+    present in ``merge_dict`` but not ``dct`` should be included in the
+    new dict.
+
+    Args:
+        dct (dict) onto which the merge is executed
+        merge_dct (dict): dct merged into dct
+        add_keys (bool): whether to add new keys
+
+    Returns:
+        dict: updated dict
+    """
+    import collections
+    dct = dct.copy()
+    if not add_keys:
+        merge_dct = {
+            k: merge_dct[k]
+            for k in set(dct).intersection(set(merge_dct))
+        }
+
+    for k, v in merge_dct.items():
+        if (k in dct and isinstance(dct[k], dict)
+                and isinstance(merge_dct[k], collections.Mapping)):
+            dct[k] = dict_merge(dct[k], merge_dct[k], add_keys=add_keys)
+        else:
+            dct[k] = merge_dct[k]
+
+    return dct
+
+
+
 
 if __name__ == '__main__':
     """Super simple testing interface for the above code."""
@@ -413,5 +472,9 @@ if __name__ == '__main__':
     #
     # print(blarg)
 
-    batch_run_cfg2json()
+    # batch_run_cfg2json()
+    x = {"foo": {"a": 1, "b": 2}}
+    y = {"foo": {"b": 666, "c": 9}}
 
+    z = dict_merge(x,y)
+    print(z)
