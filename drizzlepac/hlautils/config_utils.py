@@ -276,7 +276,6 @@ class Par():
         Nothing.
 
         """
-        pdb.set_trace()
         self.cfg_index = cfg_index
         self.conditions = conditions
         self.pars_dir = pars_dir
