@@ -1,10 +1,10 @@
 {
   "parameters":
   {
-    "placeholder":"placeholder"
+    "placeholder":"alignment"
   },
   "default_values":
   {
-    "placeholder":"placeholder"
+    "placeholder":"alignment"
   }
 }
