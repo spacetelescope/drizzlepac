@@ -147,7 +147,7 @@ class HapConfig(object):
                             if n_exp >= 4:
                                 self.conditions.append("wfc3_ir_any_n4")
                     elif self.detector == "uvis":
-                        thresh_time = Time("2012-11-08T02:59:15", format='isot', scale='utc').mjd  # TODO: Is this UTC?
+                        thresh_time = Time("2012-11-08T02:59:15", format='isot', scale='utc').mjd
                         if self.mjd >= thresh_time:
                             if n_exp in [2, 3]:
                                 self.conditions.append("wfc3_uvis_any_post_n2")
