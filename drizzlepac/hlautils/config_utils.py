@@ -235,11 +235,11 @@ class HapConfig(object):
             json_data.update(new_json_data)
 
             with open(self.output_custom_pars_file, 'w') as f:
-                json.dump(json_data, f)
+                json.dump(json_data, f, indent=4)
             print("Updated custom pars file {}".format(self.output_custom_pars_file))
         else:
             with open(self.output_custom_pars_file, 'w') as f:
-                json.dump(new_json_data, f)
+                json.dump(new_json_data, f, indent=4)
             print("Wrote custom pars file {}".format(self.output_custom_pars_file))
 
 
