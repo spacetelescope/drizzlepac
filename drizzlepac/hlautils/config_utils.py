@@ -18,15 +18,13 @@ from astropy.time import Time
 class HapConfig(object):
     def __init__(self, prod_obj, use_defaults=False, input_custom_pars_file=None, output_custom_pars_file=None):
         """
-        A set of routines to generate appropriate set of configuration parameters
+        A set of routines to generate appropriate set of configuration parameters.
 
         Parameters
         ----------
-        instrument : str
-            instrument name
-
-        detector : str
-            detector name
+        prod_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
+        drizzlepac.hlautils.Product.ExposureProduct, depending on input
+            Product to get configuration values for.
 
         use_defaults : bool, optional
             Use default values for all configuration parameters? Default value is False.
@@ -42,8 +40,8 @@ class HapConfig(object):
         -------
         Nothing.
         """
-        if input_custom_pars_file and output_custom_pars_file:
-            sys.exit("CAN'T HAVE BOTH!")
+        if input_custom_pars_file == output_custom_pars_file:
+            sys.exit("ERROR: Input and output parameter files must have unique names!")
         self.label = "hap_config"
         self.description = "A set of routines to generate appropriate set of configuration parameters"
         self.instrument = prod_obj.instrument
@@ -57,13 +55,15 @@ class HapConfig(object):
 
         # Instantiate the parameter set
         self.pars = {}
-        
+
+        # open input parameter file if specified by user
         if self.input_custom_pars_file:
             with open(self.input_custom_pars_file) as f_cfg:
                 self.input_cfg_json_data = json.load(f_cfg)[prod_obj.product_basename]
         else:
             self.input_cfg_json_data = None
 
+        # generate parameter sets for each pipeline step
         step_name_list = [AlignmentPars, AstrodrizzlePars, CatalogGenerationPars, QualityControlPars]
         step_title_list = ['alignment', 'astrodrizzle', 'catalog generation', 'quality control']
         for step_title, step_name in zip(step_title_list, step_name_list):
@@ -74,6 +74,8 @@ class HapConfig(object):
                                               step_title,
                                               self.use_defaults,
                                               self.input_cfg_json_data)
+
+        # write out all parameters to file if specified by user
         if output_custom_pars_file:
             self.write_pars(prod_obj)
 
@@ -134,12 +136,12 @@ class HapConfig(object):
                         sys.exit("INVALID ACS DETECTOR!")
                 elif self.instrument == "wfc3":
                     if self.detector == "ir":
-                        if self.filters.lower() in ["g102", "g141"]:  # grisms
+                        if self.filters.lower() in ["g102", "g141"]:
                             if n_exp in [2, 3]:
                                 self.conditions.append("wfc3_ir_grism_n2")
                             if n_exp >= 4:
                                 self.conditions.append("wfc3_ir_grism_n4")
-                        else:  # everything else that's not a grism
+                        else:
                             if n_exp in [2, 3]:
                                 self.conditions.append("wfc3_ir_any_n2")
                             if n_exp >= 4:
@@ -265,11 +267,16 @@ class Par():
         use_defaults : bool
             Use default values for all configuration parameters?
 
+        input_cfg_json_data : dict
+            dictionary containing custom parameter settings from input custom parameter file. NOTE: if no custom input
+            parameter file was specified, *input_cfg_json_data* is set to None.
+
         Returns
         -------
         Nothing.
 
         """
+        pdb.set_trace()
         self.cfg_index = cfg_index
         self.conditions = conditions
         self.pars_dir = pars_dir
@@ -388,7 +395,7 @@ class Par():
 
 class AlignmentPars(Par):
     def __init__(self, cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data):
-        """Configuration parameters for the image alignment step"""
+        """Configuration parameters for the image alignment step. See Par.__init__() for input argument definitions."""
         super().__init__(cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data)
         self.set_name = "alignment"
         if input_cfg_json_data:
@@ -402,7 +409,7 @@ class AlignmentPars(Par):
 
 class AstrodrizzlePars(Par):
     def __init__(self, cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data):
-        """Configuration parameters for the AstroDrizzle step"""
+        """Configuration parameters for the AstroDrizzle step. See Par.__init__() for input argument definitions."""
         super().__init__(cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data)
         if input_cfg_json_data:
             self.outpars = self.input_cfg_json_data[self.step_title]
@@ -415,7 +422,8 @@ class AstrodrizzlePars(Par):
 
 class CatalogGenerationPars(Par):
     def __init__(self, cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data):
-        """Configuration parameters for the photometric catalog generation step"""
+        """Configuration parameters for the photometric catalog generation step. See Par.__init__() for input argument
+        definitions."""
         super().__init__(cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data)
         if input_cfg_json_data:
             self.outpars = self.input_cfg_json_data[self.step_title]
@@ -428,7 +436,7 @@ class CatalogGenerationPars(Par):
 
 class QualityControlPars(Par):
     def __init__(self, cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data):
-        """Configuration parameters for the quality control step"""
+        """Configuration parameters for the quality control step. See Par.__init__() for input argument definitions."""
         super().__init__(cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data)
         if input_cfg_json_data:
             self.outpars = self.input_cfg_json_data[self.step_title]
@@ -447,7 +455,7 @@ def cfg2json(cfgfilename, outpath=None):
     cfgfilename : str
         Input .cfg file to be converted to json format.
 
-    outpath : str
+    outpath : str, optional
         Destination path of the json file.
 
     Returns
@@ -529,17 +537,4 @@ def batch_run_cfg2json():
         cfg2json(cfgfile)
 
 
-# \\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\
-
-
-if __name__ == '__main__':
-    """Super simple testing interface for the above code."""
-
-    import pdb
-
-    # foo = hap_config("acs", "wfc",use_defaults=False)
-    # blarg = foo.get_pars("catalog generation")
-    #
-    # print(blarg)
-
-    # batch_run_cfg2json()
+# ----------------------------------------------------------------------------------------------------------------------
