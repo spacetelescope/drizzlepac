@@ -373,7 +373,6 @@ class Par():
             param_set = "default_values"
         else:
             param_set = "parameters"
-        pdb.set_trace()
         self.outpars = self.input_cfg_json_data[param_set][self.step_title]
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
