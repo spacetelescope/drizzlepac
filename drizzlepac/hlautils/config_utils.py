@@ -498,15 +498,16 @@ def cfg2json(cfgfilename, outpath=None):
             json_filename = "{}_{}".format(inst, json_filename)
             json_filename = os.path.join(out_dir, inst, det, json_filename)
     else:
-        json_filename = os.path.join(outpath, json_filename)
+        json_filename = os.path.join(outpath, "any_"+json_filename)
+        json_filename = json_filename.replace("hap.json","hap_basic.json")
 
     # write out data.
-    if not os.path.exists(json_filename):
-        with open(json_filename, 'w') as fp:
-            json.dump(out_dict, fp)
-        print("Wrote {}".format(json_filename))
-    else:
-        print("Skipped writing {}. File already exists.".format(json_filename))
+    if os.path.exists(json_filename):
+        os.remove(json_filename)
+    with open(json_filename, 'w') as fp:
+        json.dump(out_dict, fp, indent=4)
+    print("Wrote {}".format(json_filename))
+
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -515,7 +516,6 @@ def cfg2json(cfgfilename, outpath=None):
 def batch_run_cfg2json():
     """run cfg2json() on a predefined list of .cfg files"""
     cfg_path = "/user/mack/hla_cfgs/"
-
     cfg_list = ['any_n1.cfg',
                 'ir_grism_n2.cfg',
                 'ir_grism_n4.cfg',
@@ -537,12 +537,16 @@ def batch_run_cfg2json():
                 'hrc_any_n2.cfg',
                 'hrc_any_n4.cfg',
                 'hrc_any_n6.cfg']
-    # cfg_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/"
-    # out_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/hap_pars/any/"
-    # cfg_list = ["astrodrizzle_filter_hap.cfg", "astrodrizzle_single_hap.cfg","astrodrizzle_total_hap.cfg"]
     for cfgfile in cfg_list:
         cfgfile = os.path.join(cfg_path, cfgfile)
         cfg2json(cfgfile)
+
+    cfg_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/"
+    out_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/hap_pars/any/"
+    cfg_list = ["astrodrizzle_filter_hap.cfg", "astrodrizzle_single_hap.cfg","astrodrizzle_total_hap.cfg"]
+    for cfgfile in cfg_list:
+        cfgfile = os.path.join(cfg_path, cfgfile)
+        cfg2json(cfgfile,out_path)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
