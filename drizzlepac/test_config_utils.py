@@ -15,7 +15,7 @@ obs_info_dict, expo_list, filt_list, total_list = poller_utils.interpret_obset_i
 param_filename = "superparamfile.json"
 
 for item in expo_list+filt_list+total_list:
-    item.pars = config_utils.HapConfig(item,output_custom_pars_file=param_filename)
+    item.pars = config_utils.HapConfig(item,input_custom_pars_file=param_filename,use_defaults=True)
 
 
 
@@ -27,10 +27,10 @@ for item in expo_list+filt_list+total_list:
 # # print(total_list[0].pars.get_pars("astrodrizzle"))
 #
 # filt_list[0].pars = config_utils.hap_config(filt_list[0],input_custom_pars_file = param_filename)
-print(total_list[0].pars.get_pars("catalog generation"))
+print(expo_list[0].pars.get_pars("alignment"))
 
 
 
 
 
-pdb.set_trace()
+# pdb.set_trace()

@@ -11,12 +11,12 @@ import sys
 
 from astropy.time import Time
 
-
+# TODO: Does this module require logging?
 # ======================================================================================================================
 
 
 class HapConfig(object):
-    def __init__(self, prod_obj, use_defaults=False, input_custom_pars_file=None, output_custom_pars_file=None):
+    def __init__(self, prod_obj, use_defaults=True, input_custom_pars_file=None, output_custom_pars_file=None):
         """
         A set of routines to generate appropriate set of configuration parameters.
 
@@ -27,7 +27,7 @@ class HapConfig(object):
             Product to get configuration values for.
 
         use_defaults : bool, optional
-            Use default values for all configuration parameters? Default value is False.
+            Use default configuration parameters? Default value is True.
 
         input_custom_pars_file: str, optional
             Name of the full configuration file (with full path) to use for ALL input params. WARNING: Specifying a
@@ -226,7 +226,7 @@ class HapConfig(object):
         new_json_data = {}
         for stepname in self.pars.keys():
             new_json_data[stepname] = self.pars[stepname].outpars
-        new_json_data = {prod_obj.product_basename: new_json_data}
+        new_json_data = {prod_obj.product_basename: {"parameters": new_json_data, "default_values": new_json_data}}
 
         if os.path.exists(self.output_custom_pars_file):
             with open(self.output_custom_pars_file) as f:
@@ -365,6 +365,16 @@ class Par():
             self.subcfgfilename = os.path.join(self.pars_dir, self.cfg_index["all"])
             self.pars_multidict["all"] = self._read_json_file()
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def _read_custom_pars(self):
+        """process parameters from user-specified input pars file"""
+        if self.use_defaults:
+            param_set = "default_values"
+        else:
+            param_set = "parameters"
+        pdb.set_trace()
+        self.outpars = self.input_cfg_json_data[param_set][self.step_title]
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -398,7 +408,7 @@ class AlignmentPars(Par):
         super().__init__(cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data)
         self.set_name = "alignment"
         if input_cfg_json_data:
-            self.outpars = self.input_cfg_json_data[self.step_title]
+            self._read_custom_pars()
         else:
             self._combine_conditions()
 
@@ -411,7 +421,7 @@ class AstrodrizzlePars(Par):
         """Configuration parameters for the AstroDrizzle step. See Par.__init__() for input argument definitions."""
         super().__init__(cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data)
         if input_cfg_json_data:
-            self.outpars = self.input_cfg_json_data[self.step_title]
+            self._read_custom_pars()
         else:
             self._combine_conditions()
 
@@ -425,7 +435,7 @@ class CatalogGenerationPars(Par):
         definitions."""
         super().__init__(cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data)
         if input_cfg_json_data:
-            self.outpars = self.input_cfg_json_data[self.step_title]
+            self._read_custom_pars()
         else:
             self._combine_conditions()
 
@@ -438,7 +448,7 @@ class QualityControlPars(Par):
         """Configuration parameters for the quality control step. See Par.__init__() for input argument definitions."""
         super().__init__(cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data)
         if input_cfg_json_data:
-            self.outpars = self.input_cfg_json_data[self.step_title]
+            self._read_custom_pars()
         else:
             self._combine_conditions()
 
