@@ -1,7 +1,18 @@
 {
   "parameters":
   {
-    "placeholder":"alignment"
+    "MIN_CATALOG_THRESHOLD": 3,
+    "MIN_OBSERVABLE_THRESHOLD": 10,
+    "MIN_CROSS_MATCHES": 3,
+    "MIN_FIT_MATCHES": 6,
+    "MAX_FIT_RMS": 10,
+    "MAX_FIT_LIMIT": 150,
+    "MAX_SOURCES_PER_CHIP": 250,
+    "MAS_TO_ARCSEC": 1000,
+    "fwhmpsf": 0.13,
+    "classify": True,
+    "threshold": -1.1,
+
   },
   "default_values":
   {
