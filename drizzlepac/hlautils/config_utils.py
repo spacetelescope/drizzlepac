@@ -66,6 +66,8 @@ class HapConfig(object):
         # generate parameter sets for each pipeline step
         step_name_list = [AlignmentPars, AstrodrizzlePars, CatalogGenerationPars, QualityControlPars]
         step_title_list = ['alignment', 'astrodrizzle', 'catalog generation', 'quality control']
+        # step_name_list = [AstrodrizzlePars, CatalogGenerationPars, QualityControlPars]
+        # step_title_list = ['astrodrizzle', 'catalog generation', 'quality control']
         for step_title, step_name in zip(step_title_list, step_name_list):
             cfg_index = self.full_cfg_index[step_title]
             self.pars[step_title] = step_name(cfg_index,
@@ -350,6 +352,23 @@ class Par():
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    def _fix_json_data(self,json_data,key_path=None):
+        "fix datatypes of params that are not strings or numbers"
+        for k, v in json_data.items():
+            if not key_path:
+                key_path=[k]
+            if isinstance(v, dict):
+                key_path.append(v)
+                self._fix_json_data(v,key_path=key_path)
+            else:
+
+                key_path_str =""
+                for item in key_path:key_path_str="{}>>>{}".format(key_path_str,item)
+                print("----+ {} : {},{}\n\n".format(key_path_str, v,type(v)))
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     def _get_params(self):
         """read in params from config files based on instrument, detector, and condition(s), and return a ordered
         dictionary of these values."""
@@ -392,6 +411,8 @@ class Par():
         with open(self.subcfgfilename) as json_file:
             json_string = json_file.read()
             json_data = json.loads(json_string)
+            self._fix_json_data(json_data)
+            pdb.set_trace()
             if self.use_defaults:
                 return json_data['default_values']
             else:
