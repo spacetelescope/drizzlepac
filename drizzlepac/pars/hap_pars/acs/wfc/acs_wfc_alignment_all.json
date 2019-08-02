@@ -12,6 +12,33 @@
     "fwhmpsf": 0.13,
     "classify": True,
     "threshold": -1.1,
+    "num_sources": 250,
+    "catalog_list": ['GAIADR2', 'GAIADR1'],
+    "fit_algorithm_list": [match_relative_fit, match_2dhist_fit, match_default_fit],
+    "centering_mode": 'starfind',
+    "match_relative_fit":
+      {
+        "searchrad": 75,
+        "separation": 0.1,
+        "tolerance": 2,
+        "use2dhist": True
+      },
+    "match_default_fit":
+      {
+        "searchrad": 250,
+        "separation": 0.1,
+        "tolerance": 100,
+        "use2dhist": False
+      },
+    "match_2dhist_fit":
+      {
+        "searchrad": 75,
+        "separation": 0.1,
+        "tolerance": 2,
+        "use2dhist": True
+      },
+
+
 
   },
   "default_values":
