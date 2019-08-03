@@ -355,16 +355,28 @@ class Par():
     def _fix_json_data(self,json_data,key_path=None):
         "fix datatypes of params that are not strings or numbers"
         for k, v in json_data.items():
-            if not key_path:
-                key_path=[k]
+
             if isinstance(v, dict):
-                key_path.append(v)
+                if not key_path:
+                    key_path = []
+                key_path.append(k)
                 self._fix_json_data(v,key_path=key_path)
             else:
-
+                if not key_path:
+                    key_path = [k]
+                pdb.set_trace()
                 key_path_str =""
-                for item in key_path:key_path_str="{}>>>{}".format(key_path_str,item)
-                print("----+ {} : {},{}\n\n".format(key_path_str, v,type(v)))
+                eval_string="print(json_data"
+                for item in key_path:
+                    key_path_str="{}>>>{}".format(key_path_str,item)
+                    eval_string = "{}['{}']".format(eval_string,item)
+                eval_string = "{}['{}'])".format(eval_string,k)
+                print("----+ {} : {}{},{}\n\n".format(key_path_str, k, v, type(v)))
+                print(eval_string)
+                eval(eval_string)
+
+                print("\n\n")
+
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -412,7 +424,7 @@ class Par():
             json_string = json_file.read()
             json_data = json.loads(json_string)
             self._fix_json_data(json_data)
-            pdb.set_trace()
+
             if self.use_defaults:
                 return json_data['default_values']
             else:
