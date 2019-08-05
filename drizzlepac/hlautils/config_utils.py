@@ -551,3 +551,41 @@ def batch_run_cfg2json():
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+def reformat_json_file(infilename, outfilename, clobber=False):
+    """Reformat user-specifed input json file to use standard (indent = 4) format
+
+    Parameters
+    ----------
+    infilename: str
+        name of json file to reformat
+
+    outfilename : str
+        name of output reformatted json file
+
+    clobber : bool, optional
+        if file named in outfilename already exists, should it be overwritten? Default value is False.
+
+    Returns
+    -------
+    Nothing.
+    """
+    # open input json file
+    with open(infilename) as json_file:
+        json_string = json_file.read()
+        json_data = json.loads(json_string)
+
+    # see if output file already exists and determine course of action
+    if os.path.exists(outfilename):
+        if clobber:
+            os.remove(outfilename)
+        else:
+            sys.exit("Error: output file {} already exists and would be overwritten!".format(outfilename))
+
+    # write out reformatted json file
+    with open(outfilename, 'w') as f:
+        json.dump(json_data, f, indent=4)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
