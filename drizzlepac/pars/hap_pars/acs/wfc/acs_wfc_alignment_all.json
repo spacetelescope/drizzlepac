@@ -28,7 +28,7 @@
     "generate_astrometric_catalog":
       {
         "gaia_only": false,
-        "existing_wcs": "None"
+        "existing_wcs": null
       },
     "match_relative_fit":
       {
@@ -86,7 +86,7 @@
     "generate_astrometric_catalog":
       {
         "gaia_only": false,
-        "existing_wcs": "None"
+        "existing_wcs": null
       },
     "match_relative_fit":
       {
