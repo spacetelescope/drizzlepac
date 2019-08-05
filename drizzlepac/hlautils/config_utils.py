@@ -349,36 +349,6 @@ class Par():
 
         return dct
 
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    def _fix_json_data(self,json_data,key_path=None):
-        "fix datatypes of params that are not strings or numbers"
-        for k, v in json_data.items():
-
-            if isinstance(v, dict):
-                if not key_path:
-                    key_path = []
-                key_path.append(k)
-                self._fix_json_data(v,key_path=key_path)
-            else:
-                if not key_path:
-                    key_path = [k]
-                pdb.set_trace()
-                key_path_str =""
-                eval_string="print(json_data"
-                for item in key_path:
-                    key_path_str="{}>>>{}".format(key_path_str,item)
-                    eval_string = "{}['{}']".format(eval_string,item)
-                eval_string = "{}['{}'])".format(eval_string,k)
-                print("----+ {} : {}{},{}\n\n".format(key_path_str, k, v, type(v)))
-                print(eval_string)
-                eval(eval_string)
-
-                print("\n\n")
-
-
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _get_params(self):
@@ -423,8 +393,6 @@ class Par():
         with open(self.subcfgfilename) as json_file:
             json_string = json_file.read()
             json_data = json.loads(json_string)
-            self._fix_json_data(json_data)
-
             if self.use_defaults:
                 return json_data['default_values']
             else:
@@ -488,7 +456,7 @@ class QualityControlPars(Par):
 # ======================================================================================================================
 
 
-def cfg2json(cfgfilename, outpath=None, cfgspc=None):
+def cfg2json(cfgfilename, outpath=None):
     """Convert config files to json format
 
     Parameters
@@ -505,45 +473,13 @@ def cfg2json(cfgfilename, outpath=None, cfgspc=None):
     """
     import drizzlepac
     from stsci.tools import teal
+
     # open cfg file and load up the output dictionary
     cfg_data = teal.load(cfgfilename, strict=False)
     del cfg_data['_task_name_']
     del cfg_data['_RULES_']
 
-    # optionally read in configspc
-    if cfgspc:
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        cfgspcfile = os.path.join(base_dir, "pars/{}".format(cfgspc))
-        with open(cfgspcfile) as csf:
-            cfgspc_dict={}
-            subsection_title = None
-            cfgspc_data=csf.readlines()
-            for cfgspc_item in cfgspc_data:
-                cfgspc_item = cfgspc_item.strip()
-                if cfgspc_item.startswith("["):
-                    subsection_title = cfgspc_item[1:-1]
-                    cfgspc_dict[subsection_title] = {}
-                elif len(cfgspc_item) == 0:
-                    subsection_title = None
-                else:
-                    if not cfgspc_item.startswith("#"):
-                        parse_item = cfgspc_item.split("=")
-                        par_title = parse_item[0].strip()
-                        par_value = parse_item[1].strip().split("(")[0][:-3]
-                        if par_value == "option":
-                            par_value = "string"
-                        if subsection_title:
-                            cfgspc_dict[subsection_title][par_title] = par_value
-                        else:
-                            cfgspc_dict[par_title] = par_value
-        del cfgspc_dict['_task_name_']
-        del cfgspc_dict[' _RULES_ ']
-
-    # build output dictionary
-    if cfgspc:
-        out_dict = {"parameters": cfg_data, "default_values": cfg_data, "cfgspc":cfgspc_dict}
-    else:
-        out_dict = {"parameters": cfg_data, "default_values": cfg_data}
+    out_dict = {"parameters": cfg_data, "default_values": cfg_data}
 
     # build output json filename
     json_filename = cfgfilename.split("/")[-1].replace(".cfg", ".json")
@@ -565,7 +501,7 @@ def cfg2json(cfgfilename, outpath=None, cfgspc=None):
             json_filename = os.path.join(out_dir, inst, det, json_filename)
     else:
         json_filename = os.path.join(outpath, "any_"+json_filename)
-        json_filename = json_filename.replace("hap.json","hap_basic.json")
+        json_filename = json_filename.replace("hap.json", "hap_basic.json")
 
     # write out data.
     if os.path.exists(json_filename):
@@ -573,7 +509,6 @@ def cfg2json(cfgfilename, outpath=None, cfgspc=None):
     with open(json_filename, 'w') as fp:
         json.dump(out_dict, fp, indent=4)
     print("Wrote {}".format(json_filename))
-
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -604,15 +539,15 @@ def batch_run_cfg2json():
                 'hrc_any_n4.cfg',
                 'hrc_any_n6.cfg']
     for cfgfile in cfg_list:
-        cfgfile = os.path.join(cfg_path, cfgspc="astrodrizzle.cfgspc")
+        cfgfile = os.path.join(cfg_path, cfgfile)
         cfg2json(cfgfile)
 
     cfg_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/"
     out_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/hap_pars/any/"
-    cfg_list = ["astrodrizzle_filter_hap.cfg", "astrodrizzle_single_hap.cfg","astrodrizzle_total_hap.cfg"]
+    cfg_list = ["astrodrizzle_filter_hap.cfg", "astrodrizzle_single_hap.cfg", "astrodrizzle_total_hap.cfg"]
     for cfgfile in cfg_list:
         cfgfile = os.path.join(cfg_path, cfgfile)
-        cfg2json(cfgfile,outpath=out_path,cfgspc="astrodrizzle.cfgspc")
+        cfg2json(cfgfile, outpath=out_path)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
