@@ -488,7 +488,7 @@ class QualityControlPars(Par):
 # ======================================================================================================================
 
 
-def cfg2json(cfgfilename, outpath=None):
+def cfg2json(cfgfilename, outpath=None, cfgspc=None):
     """Convert config files to json format
 
     Parameters
@@ -505,12 +505,45 @@ def cfg2json(cfgfilename, outpath=None):
     """
     import drizzlepac
     from stsci.tools import teal
-
     # open cfg file and load up the output dictionary
     cfg_data = teal.load(cfgfilename, strict=False)
     del cfg_data['_task_name_']
     del cfg_data['_RULES_']
-    out_dict = {"parameters": cfg_data, "default_values": cfg_data}
+
+    # optionally read in configspc
+    if cfgspc:
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        cfgspcfile = os.path.join(base_dir, "pars/{}".format(cfgspc))
+        with open(cfgspcfile) as csf:
+            cfgspc_dict={}
+            subsection_title = None
+            cfgspc_data=csf.readlines()
+            for cfgspc_item in cfgspc_data:
+                cfgspc_item = cfgspc_item.strip()
+                if cfgspc_item.startswith("["):
+                    subsection_title = cfgspc_item[1:-1]
+                    cfgspc_dict[subsection_title] = {}
+                elif len(cfgspc_item) == 0:
+                    subsection_title = None
+                else:
+                    if not cfgspc_item.startswith("#"):
+                        parse_item = cfgspc_item.split("=")
+                        par_title = parse_item[0].strip()
+                        par_value = parse_item[1].strip().split("(")[0][:-3]
+                        if par_value == "option":
+                            par_value = "string"
+                        if subsection_title:
+                            cfgspc_dict[subsection_title][par_title] = par_value
+                        else:
+                            cfgspc_dict[par_title] = par_value
+        del cfgspc_dict['_task_name_']
+        del cfgspc_dict[' _RULES_ ']
+
+    # build output dictionary
+    if cfgspc:
+        out_dict = {"parameters": cfg_data, "default_values": cfg_data, "cfgspc":cfgspc_dict}
+    else:
+        out_dict = {"parameters": cfg_data, "default_values": cfg_data}
 
     # build output json filename
     json_filename = cfgfilename.split("/")[-1].replace(".cfg", ".json")
@@ -570,16 +603,17 @@ def batch_run_cfg2json():
                 'hrc_any_n2.cfg',
                 'hrc_any_n4.cfg',
                 'hrc_any_n6.cfg']
-    for cfgfile in cfg_list:
-        cfgfile = os.path.join(cfg_path, cfgfile)
-        cfg2json(cfgfile)
+    # for cfgfile in cfg_list:
+    #     cfgfile = os.path.join(cfg_path, cfgfile)
+    #     cfg2json(cfgfile)
 
     cfg_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/"
-    out_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/hap_pars/any/"
-    cfg_list = ["astrodrizzle_filter_hap.cfg", "astrodrizzle_single_hap.cfg","astrodrizzle_total_hap.cfg"]
+    out_path = "."#""/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/hap_pars/any/"
+    #cfg_list = ["astrodrizzle_filter_hap.cfg", "astrodrizzle_single_hap.cfg","astrodrizzle_total_hap.cfg"]
+    cfg_list = ["astrodrizzle_filter_hap.cfg"]
     for cfgfile in cfg_list:
         cfgfile = os.path.join(cfg_path, cfgfile)
-        cfg2json(cfgfile,out_path)
+        cfg2json(cfgfile,outpath=out_path,cfgspc="astrodrizzle.cfgspc")
 
 
 # ----------------------------------------------------------------------------------------------------------------------
