@@ -603,14 +603,13 @@ def batch_run_cfg2json():
                 'hrc_any_n2.cfg',
                 'hrc_any_n4.cfg',
                 'hrc_any_n6.cfg']
-    # for cfgfile in cfg_list:
-    #     cfgfile = os.path.join(cfg_path, cfgfile)
-    #     cfg2json(cfgfile)
+    for cfgfile in cfg_list:
+        cfgfile = os.path.join(cfg_path, cfgspc="astrodrizzle.cfgspc")
+        cfg2json(cfgfile)
 
     cfg_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/"
-    out_path = "."#""/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/hap_pars/any/"
-    #cfg_list = ["astrodrizzle_filter_hap.cfg", "astrodrizzle_single_hap.cfg","astrodrizzle_total_hap.cfg"]
-    cfg_list = ["astrodrizzle_filter_hap.cfg"]
+    out_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/hap_pars/any/"
+    cfg_list = ["astrodrizzle_filter_hap.cfg", "astrodrizzle_single_hap.cfg","astrodrizzle_total_hap.cfg"]
     for cfgfile in cfg_list:
         cfgfile = os.path.join(cfg_path, cfgfile)
         cfg2json(cfgfile,outpath=out_path,cfgspc="astrodrizzle.cfgspc")
