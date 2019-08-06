@@ -1041,5 +1041,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 
 # ======================================================================================================================
-# TODO: fix phot_mode functionality so that it doesn't crash when something other than "both" is specified
+
 # TODO: fix code so that debug functionality actually works, and region files are produced.
+# TODO: fix bug that causes code to not use source lists from total images for photometry of filter images
