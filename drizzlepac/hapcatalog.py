@@ -33,14 +33,14 @@ def run_catalog_utils(args, starting_dt):
                                                " ".join(args.filter_product_list),
                                                args.debug, args.phot_mode))
 
-    total_product_catalogs = HAPCatalogs(args.total_product_name, types=args.phot_mode)
+    total_product_catalogs = HAPCatalogs(args.total_product_name, types=args.phot_mode, debug=args.debug)
     total_product_catalogs.identify()
     total_product_catalogs.measure()
     total_product_catalogs.write()
 
     for filter_img_name in args.filter_product_list:
 
-        filter_product_catalogs = HAPCatalogs(filter_img_name, types=args.phot_mode)
+        filter_product_catalogs = HAPCatalogs(filter_img_name, types=args.phot_mode, debug=args.debug)
         filter_product_catalogs.identify()
         filter_product_catalogs.measure()
         filter_product_catalogs.write()

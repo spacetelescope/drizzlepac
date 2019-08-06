@@ -417,11 +417,12 @@ class HAPCatalogs:
     """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
 
-    def __init__(self, fitsfile, types=None):
+    def __init__(self, fitsfile, debug=False, types=None):
         self.label = "HAPCatalogs"
         self.description = "A class used to generate photometric sourcelists using aperture photometry"
 
         self.imgname = fitsfile
+        self.debug = debug
 
         # Determine what types of catalogs have been requested
         if not isinstance(types, list) and types in [None, 'both']:
@@ -457,7 +458,7 @@ class HAPCatalogs:
         #  it will have to do...
         self.catalogs = {}
         if 'point' in self.types:
-            self.catalogs['point'] = HAPPointCatalog(self.image, self.param_dict)
+            self.catalogs['point'] = HAPPointCatalog(self.image, self.param_dict, self.debug)
         if 'segment' in self.types:
             self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict)
 
@@ -518,11 +519,12 @@ class HAPCatalogBase:
     catalog_region_suffix = ".reg"
     catalog_format = "ascii.ecsv"
 
-    def __init__(self, image, param_dict):
+    def __init__(self, image, param_dict, debug):
         self.image = image
         self.imgname = image.imgname
         self.bkg = image.bkg
         self.param_dict = param_dict
+        self.debug = debug
 
         self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
 
@@ -546,8 +548,8 @@ class HAPPointCatalog(HAPCatalogBase):
     """
     catalog_suffix = "_point-cat.ecsv"
 
-    def __init__(self, image, param_dict):
-        super().__init__(image, param_dict)
+    def __init__(self, image, param_dict,debug):
+        super().__init__(image, param_dict,debug)
 
     def identify_sources(self, bkgsig_sf=4., dao_ratio=0.8, simple_bkg=False):
         """Create a master coordinate list of sources identified in the specified total detection product image
@@ -643,7 +645,7 @@ class HAPPointCatalog(HAPCatalogBase):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def write_catalog(self, write_region_file=False):
+    def write_catalog(self, debug=False):
         """Write specified catalog to file on disk
 
         Parameters
@@ -661,7 +663,7 @@ class HAPPointCatalog(HAPCatalogBase):
         log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
         # Write out region file if input 'write_region_file' is turned on.
-        if write_region_file:
+        if self.debug:
             out_table = self.source_cat.copy()
             if 'xcentroid' in out_table.keys():  # for point-source source catalogs
                 # Remove all other columns besides xcentroid and ycentroid
@@ -678,11 +680,12 @@ class HAPPointCatalog(HAPCatalogBase):
             else:  # Bail out if anything else is encountered.
                 log.info("Error: unrecognized catalog format. Skipping region file generation.")
                 return()
-            reg_filename = self.sourcelist_filename.replace(self.catalog_suffix, self.catalog_region_suffix)
+            reg_filename = self.sourcelist_filename.replace("."+self.catalog_suffix.split(".")[1], self.catalog_region_suffix)
             out_table.write(reg_filename, format="ascii")
             log.info("Wrote region file '{}' containing {} sources".format(reg_filename, len(out_table)))
 
-
+        print("\a")
+        pdb.set_trace()
 # ----------------------------------------------------------------------------------------------------------------------
 class HAPSegmentCatalog(HAPCatalogBase):
     """Generate photometric sourcelist(s) for specified image(s) using segment mapping.
