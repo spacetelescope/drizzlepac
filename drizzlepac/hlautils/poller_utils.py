@@ -8,7 +8,7 @@ generator routines produce the specific image product and source catalog files.
 """
 
 from astropy.table import Table, Column
-from drizzlepac.hlautils.Product import ExposureProduct, FilterProduct, TotalProduct
+from drizzlepac.hlautils.product import ExposureProduct, FilterProduct, TotalProduct
 
 # Define information/formatted strings to be included in output dict
 SEP_STR = 'single exposure product {:02d}'
@@ -18,7 +18,7 @@ TDP_STR = 'total detection product {:02d}'
 # Define the mapping between the first character of the filename and the associated instrument
 INSTRUMENT_DICT = {'i': 'WFC3', 'j': 'ACS', 'o': 'STIS', 'u': 'WFPC2', 'x': 'FOC', 'w': 'WFPC'}
 
-# __taskname__ = 'pipeline_poller_utils'
+__taskname__ = 'poller_utils'
 
 def interpret_obset_input(results):
     """
@@ -70,6 +70,7 @@ def interpret_obset_input(results):
     obset_tree = build_obset_tree(obset_table)
     # Now create final dict
     obset_dict = parse_obset_tree(obset_tree)
+    print("obset_dict: {}".format(obset_dict))
 
     return obset_dict
 
@@ -157,6 +158,7 @@ def parse_obset_tree(det_tree):
             filt_indx += 1
             # Populate single exposure entry now as well
             for filename in filter_files:
+                print("filt_indx: {} POLLER Filename: {}".format(filt_indx, filename))
                 # Parse the first filename[1] to determine if the products are flt or flc
                 if det_indx != prev_det_indx:
                     filetype = "drc"
@@ -203,16 +205,17 @@ def parse_obset_tree(det_tree):
                 # Increment single exposure index
                 sep_indx += 1
 
+            # Append filter object to the list of filter objects for this specific total detection product
+            tdp_obj.add_product(filt_obj)
+
             # Add the FilterProduct to the list of FilterProducts
             filt_list.append(filt_obj)
-            # filt_obj = None
 
         # Add the TotalProduct to the list of TotalProducts
         tdp_list.append(tdp_obj)
-        # tdp_obj = None
 
-    """
     # Just for debugging.  
+    """
     ffff_list = [element.product_basename for element in sep_list]
     print(" ")
     print("ffff_list: {}".format(ffff_list))
@@ -229,6 +232,33 @@ def parse_obset_tree(det_tree):
     print(" ")
     print("ffff_list: {}".format(ffff_list))
     print(" ")
+    """
+
+    """
+    print("First TDP")
+    ffff_list = tdp_list[0].fdp_list[0].edp_list[0].full_filename
+    print("ffff_list: {}".format(ffff_list))
+    ffff_list = tdp_list[0].fdp_list[0].edp_list[1].full_filename
+    print("ffff_list: {}".format(ffff_list))
+    ffff_list = tdp_list[0].fdp_list[0].edp_list[2].full_filename
+    print("ffff_list: {}".format(ffff_list))
+    ffff_list = tdp_list[0].fdp_list[0].edp_list[3].full_filename
+    print("ffff_list: {}".format(ffff_list))
+    ffff_list = tdp_list[0].fdp_list[0].edp_list[4].full_filename
+    print("ffff_list: {}".format(ffff_list))
+    ffff_list = tdp_list[0].fdp_list[0].edp_list[5].full_filename
+    print("ffff_list: {}".format(ffff_list))
+
+    print("Next TDP")
+    ffff_list = tdp_list[1].fdp_list[0].edp_list[0].full_filename
+    print("ffff_list: {}".format(ffff_list))
+    ffff_list = tdp_list[1].fdp_list[0].edp_list[1].full_filename
+    print("ffff_list: {}".format(ffff_list))
+    print("       Next FDP")
+    ffff_list = tdp_list[1].fdp_list[1].edp_list[0].full_filename
+    print("ffff_list: {}".format(ffff_list))
+    ffff_list = tdp_list[1].fdp_list[1].edp_list[1].full_filename
+    print("ffff_list: {}".format(ffff_list))
     """
 
     # Done... return dict
