@@ -52,10 +52,6 @@ def run_catalog_utils(args, starting_dt):
 # ======================================================================================================================
 
 
-
-if __name__ == '__main__':
-    main()
-
 def main():
     """Super simple testing interface for the catalog_utils code."""
 
@@ -74,3 +70,11 @@ def main():
         args.debug = False
 
     run_catalog_utils(args, starting_dt)
+
+
+# ======================================================================================================================
+
+
+if __name__ == '__main__':
+    main()
+
