@@ -9,6 +9,7 @@ from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel
 from astropy.stats import mad_std, gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm
 from astropy.table import Column, Table
 import numpy as np
+import pdb
 
 from photutils import aperture_photometry, CircularAperture, DAOStarFinder
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
@@ -425,9 +426,14 @@ class HAPCatalogs:
         # Determine what types of catalogs have been requested
         if not isinstance(types, list) and types in [None, 'both']:
             types = CATALOG_TYPES
-        if any([t not in CATALOG_TYPES for t in types]):
-            log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
-            raise ValueError
+
+        elif types == 'point' or types == 'segment':
+            types=[types]
+        else:
+            if any([t not in CATALOG_TYPES for t in types]):
+                log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
+                raise ValueError
+
         self.types = types
 
         # Parameter dictionary definition
