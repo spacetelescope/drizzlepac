@@ -1,36 +1,32 @@
-#!/usr/bin/env python
-
 """This script contains code to support creation of photometric sourcelists using two techniques: aperture photometry
 segmentation-map based photometry.
 """
-import argparse
-import datetime
-import os
-import pdb
 import sys
 
 import astropy.units as u
-from astropy.io import ascii
 from astropy.io import fits as fits
 from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel
 from astropy.stats import mad_std, gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm
 from astropy.table import Column, Table
 import numpy as np
-import photutils
+
 from photutils import aperture_photometry, CircularAperture, DAOStarFinder
-from photutils import Background2D, MedianBackground, SExtractorBackground, StdBackgroundRMS
-from photutils import detect_sources, source_properties, deblend_sources
+from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
+from photutils import detect_sources, source_properties  # , deblend_sources
 from stsci.tools import logutil
 from stwcs.wcsutil import HSTWCS
 
-from drizzlepac import util
-from drizzlepac.hlautils import astrometric_utils
-
+from . import astrometric_utils
 
 try:
     from matplotlib import pyplot as plt
 except Exception:
     plt = None
+
+# Default background determination parameter values
+BKG_BOX_SIZE = 50
+BKG_FILTER_SIZE = 3
+CATALOG_TYPES = ['point', 'segment']
 
 __taskname__ = 'catalog_utils'
 
@@ -38,601 +34,230 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 
 # ======================================================================================================================
+class ParamDict:
+    full_param_dict = {
+        "ACS HRC": {
+            "astrodrizzle": {
+                "SCALE": 0.025,
+                "PIXFRAC": 1.0,
+                "KERNEL": "square",
+                "OUTNX": None,
+                "OUTNY": None,
+                "ROT": 0.0,
+                "BITS": 256},
+            "ci filter": {
+                "ci_daolower_limit": 0.9,
+                "ci_daoupper_limit": 1.6,
+                "ci_selower_limit": 0.9,
+                "ci_seupper_limit": 1.6},
+            "dao": {
+                "TWEAK_FWHMPSF": 0.073,
+                "TWEAK_THRESHOLD": 3.0,
+                "aperture_1": 0.03,
+                "aperture_2": 0.125,
+                "bthresh": 5.0},
+            "sourcex": {
+                "fwhm": 0.073,
+                "thresh": 1.4,
+                "bthresh": 5.0,
+                "source_box": 7},
+            "swarm filter": {
+                "upper_epp_limit": 70000.,
+                "lower_epp_limit": 2000.,
+                "eppsky_limit": 1000.,
+                "swarm_thresh": 1.,
+                "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
+                "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
+                "proximity_binary": "no"}},
+        "ACS SBC": {
+            "astrodrizzle": {
+                "SCALE": 0.03,
+                "PIXFRAC": 1.0,
+                "KERNEL": "square",
+                "OUTNX": None,
+                "OUTNY": None,
+                "ROT": 0.0,
+                "BITS": 256},
+            "ci filter": {
+                "ci_daolower_limit": 0.15,
+                "ci_daoupper_limit": 0.45,
+                "ci_selower_limit": 0.15,
+                "ci_seupper_limit": 0.45},
+            "dao": {
+                "TWEAK_FWHMPSF": 0.065,
+                "TWEAK_THRESHOLD": 3.0,
+                "aperture_1": 0.07,
+                "aperture_2": 0.125,
+                "bthresh": 5.0},
+            "sourcex": {
+                "fwhm": 0.065,
+                "thresh": 1.4,
+                "bthresh": 5.0,
+                "source_box": 7},
+            "swarm filter": {
+                "upper_epp_limit": 70000.,
+                "lower_epp_limit": 2000.,
+                "eppsky_limit": 1000.,
+                "swarm_thresh": 1.,
+                "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
+                "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
+                "proximity_binary": "no"}},
+        "ACS WFC": {
+            "astrodrizzle": {
+                "SCALE": 0.05,
+                "PIXFRAC": 1.0,
+                "KERNEL": "square",
+                "OUTNX": None,
+                "OUTNY": None,
+                "ROT": 0.0,
+                "BITS": 256},
+            "ci filter": {
+                "ci_daolower_limit": 0.9,
+                "ci_daoupper_limit": 1.23,
+                "ci_selower_limit": 0.9,
+                "ci_seupper_limit": 1.23},
+            "dao": {
+                "TWEAK_FWHMPSF": 0.076,
+                "TWEAK_THRESHOLD": None,
+                "aperture_1": 0.05,  # update from 0.15
+                "aperture_2": 0.15,  # update from 0.25
+                "bthresh": 5.0},
+            "sourcex": {
+                "fwhm": 0.13,
+                "thresh": None,
+                "bthresh": 5.0,
+                "source_box": 5},
+            "swarm filter": {
+                "upper_epp_limit": 70000.,
+                "lower_epp_limit": 2000.,
+                "eppsky_limit": 1000.,
+                "swarm_thresh": 1.,
+                "clip_radius_list": [120., 100., 80., 60., 40., 30., 20., 10., 5., 2., 0.],
+                "scale_factor_list": [0.0, 0.000000e+00, 6.498530e-06, 3.687270e-05, 1.412972e-04, 3.151877e-04, 1.023391e-03, 3.134859e-03, 2.602436e-02, 1.820539e-01, 1.000000e+00],
+                "proximity_binary": "no"}},
+        "WFC3 IR": {
+            "astrodrizzle": {
+                "SCALE": 0.09,
+                "PIXFRAC": 1.0,
+                "KERNEL": "square",
+                "OUTNX": None,
+                "OUTNY": None,
+                "ROT": 0.0,
+                "BITS": 768},
+            "ci filter": {
+                "ci_daolower_limit": 0.25,
+                "ci_daoupper_limit": 0.55,
+                "ci_selower_limit": 0.25,
+                "ci_seupper_limit": 0.55},
+            "dao": {
+                "TWEAK_FWHMPSF": 0.14,
+                "TWEAK_THRESHOLD": 3.0,
+                "aperture_1": 0.15,
+                "aperture_2": 0.45,
+                "bthresh": 5.0},
+            "sourcex": {
+                "fwhm": 0.14,
+                "thresh": 1.4,
+                "bthresh": 5.0,
+                "source_box": 7},
+            "swarm filter": {
+                "upper_epp_limit": 70000.,
+                "lower_epp_limit": 2000.,
+                "eppsky_limit": 100.,
+                "swarm_thresh": 1.,
+                "clip_radius_list": [140., 120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
+                #                   x10    x10    x10   x10   x10   x10    x10   x10  x10  x2,
+                "scale_factor_list": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.015, 0.05, 0.15, 0.9, 1.],
+                # "scale_factor_list_orig": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.005, 0.05, 0.15, 0.9, 1.],
+                "proximity_binary": "yes"}},
+        "WFC3 UVIS": {
+            "astrodrizzle": {
+                "SCALE": 0.04,
+                "PIXFRAC": 1.0,
+                "KERNEL": "square",
+                "OUTNX": None,
+                "OUTNY": None,
+                "ROT": 0.0,
+                "BITS": 256},
+            "ci filter": {
+                "ci_daolower_limit": 0.75,
+                "ci_daoupper_limit": 1.0,
+                "ci_selower_limit": 0.75,
+                "ci_seupper_limit": 1.0},
+            "dao": {
+                "TWEAK_FWHMPSF": 0.076,
+                "TWEAK_THRESHOLD": 3.0,
+                "aperture_1": 0.05,
+                "aperture_2": 0.15,
+                "bthresh": 5.0},
+            "sourcex": {
+                "fwhm": 0.076,
+                "thresh": 1.4,
+                "bthresh": 5.0,
+                "source_box": 7},
+            "swarm filter": {
+                "upper_epp_limit": 70000.,
+                "lower_epp_limit": 2000.,
+                "eppsky_limit": 1000.,
+                "swarm_thresh": 1.,
+                "clip_radius_list": [120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
+                "scale_factor_list": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 0.0005, 0.005, 0.005, 0.015, 0.45, 1.],
+                # "scale_factor_list_orig": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 6.e-5, 0.0005, 0.005, 0.015, 0.45, 1.],
+                "proximity_binary": "yes"}}}  # TODO: remove para_dict definition once we have fleshed out the config object
 
+    def __init__(self, param_file=None):
+        self.param_file = param_file
 
-class hap_catalog(object):
-    """Generate photometric sourcelist for specified image(s).
-    """
-    def __init__(self,fitsfile):
-        self.label = "build_catalogs"
-        self.description = "A set of routines to generate photometric sourcelists using aperture photometry"
+    def read_param_file(self):
+        pass
 
-        self.imgname = fitsfile
+    def get_params(self, instrument, detector):
+        inst_det = "{} {}".format(instrument, detector)
+        return self.full_param_dict[inst_det].copy()
+
+class CatalogImage:
+
+    def __init__(self, filename):
+        if isinstance(filename, str):
+            self.imghdu = fits.open(filename)
+            self.imgname = filename
+        else:
+            self.imghdu = filename
+            self.imgname = filename.filename()
+
+        # Get header information to annotate the output catalogs
+        if "total" in self.imgname:
+            self.ghd_product = "tdp"
+        else:
+            self.ghd_product = "fdp"
 
         # Fits file read
-        self.imghdu = fits.open(self.imgname)
-
-        # Parameter dictionary definition
-        self.inst_det = "{} {}".format(self.imgname.split("_")[3].upper(), self.imgname.split("_")[4].upper())
-        self.full_param_dict = {
-            "ACS HRC": {
-                "astrodrizzle": {
-                    "SCALE": 0.025,
-                    "PIXFRAC": 1.0,
-                    "KERNEL": "square",
-                    "OUTNX": None,
-                    "OUTNY": None,
-                    "ROT": 0.0,
-                    "BITS": 256},
-                "ci filter": {
-                    "ci_daolower_limit": 0.9,
-                    "ci_daoupper_limit": 1.6,
-                    "ci_selower_limit": 0.9,
-                    "ci_seupper_limit": 1.6},
-                "dao": {
-                    "TWEAK_FWHMPSF": 0.073,
-                    "TWEAK_THRESHOLD": 3.0,
-                    "aperture_1": 0.03,
-                    "aperture_2": 0.125,
-                    "bthresh": 5.0},
-                "sourcex": {
-                    "fwhm": 0.073,
-                    "thresh": 1.4,
-                    "bthresh": 5.0,
-                    "source_box": 7},
-                "swarm filter": {
-                    "upper_epp_limit": 70000.,
-                    "lower_epp_limit": 2000.,
-                    "eppsky_limit": 1000.,
-                    "swarm_thresh": 1.,
-                    "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
-                    "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
-                    "proximity_binary": "no"}},
-            "ACS SBC": {
-                "astrodrizzle": {
-                    "SCALE": 0.03,
-                    "PIXFRAC": 1.0,
-                    "KERNEL": "square",
-                    "OUTNX": None,
-                    "OUTNY": None,
-                    "ROT": 0.0,
-                    "BITS": 256},
-                "ci filter": {
-                    "ci_daolower_limit": 0.15,
-                    "ci_daoupper_limit": 0.45,
-                    "ci_selower_limit": 0.15,
-                    "ci_seupper_limit": 0.45},
-                "dao": {
-                    "TWEAK_FWHMPSF": 0.065,
-                    "TWEAK_THRESHOLD": 3.0,
-                    "aperture_1": 0.07,
-                    "aperture_2": 0.125,
-                    "bthresh": 5.0},
-                "sourcex": {
-                    "fwhm": 0.065,
-                    "thresh": 1.4,
-                    "bthresh": 5.0,
-                    "source_box": 7},
-                "swarm filter": {
-                    "upper_epp_limit": 70000.,
-                    "lower_epp_limit": 2000.,
-                    "eppsky_limit": 1000.,
-                    "swarm_thresh": 1.,
-                    "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
-                    "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
-                    "proximity_binary": "no"}},
-            "ACS WFC": {
-                "astrodrizzle": {
-                    "SCALE": 0.05,
-                    "PIXFRAC": 1.0,
-                    "KERNEL": "square",
-                    "OUTNX": None,
-                    "OUTNY": None,
-                    "ROT": 0.0,
-                    "BITS": 256},
-                "ci filter": {
-                    "ci_daolower_limit": 0.9,
-                    "ci_daoupper_limit": 1.23,
-                    "ci_selower_limit": 0.9,
-                    "ci_seupper_limit": 1.23},
-                "dao": {
-                    "TWEAK_FWHMPSF": 0.076,
-                    "TWEAK_THRESHOLD": None,
-                    "aperture_1": 0.05,  # update from 0.15
-                    "aperture_2": 0.15,  # update from 0.25
-                    "bthresh": 5.0},
-                "sourcex": {
-                    "fwhm": 0.13,
-                    "thresh": None,
-                    "bthresh": 5.0,
-                    "source_box": 5},
-                "swarm filter": {
-                    "upper_epp_limit": 70000.,
-                    "lower_epp_limit": 2000.,
-                    "eppsky_limit": 1000.,
-                    "swarm_thresh": 1.,
-                    "clip_radius_list": [120., 100., 80., 60., 40., 30., 20., 10., 5., 2., 0.],
-                    "scale_factor_list": [0.0, 0.000000e+00, 6.498530e-06, 3.687270e-05, 1.412972e-04, 3.151877e-04, 1.023391e-03, 3.134859e-03, 2.602436e-02, 1.820539e-01, 1.000000e+00],
-                    "proximity_binary": "no"}},
-            "WFC3 IR": {
-                "astrodrizzle": {
-                    "SCALE": 0.09,
-                    "PIXFRAC": 1.0,
-                    "KERNEL": "square",
-                    "OUTNX": None,
-                    "OUTNY": None,
-                    "ROT": 0.0,
-                    "BITS": 768},
-                "ci filter": {
-                    "ci_daolower_limit": 0.25,
-                    "ci_daoupper_limit": 0.55,
-                    "ci_selower_limit": 0.25,
-                    "ci_seupper_limit": 0.55},
-                "dao": {
-                    "TWEAK_FWHMPSF": 0.14,
-                    "TWEAK_THRESHOLD": 3.0,
-                    "aperture_1": 0.15,
-                    "aperture_2": 0.45,
-                    "bthresh": 5.0},
-                "sourcex": {
-                    "fwhm": 0.14,
-                    "thresh": 1.4,
-                    "bthresh": 5.0,
-                    "source_box": 7},
-                "swarm filter": {
-                    "upper_epp_limit": 70000.,
-                    "lower_epp_limit": 2000.,
-                    "eppsky_limit": 100.,
-                    "swarm_thresh": 1.,
-                    "clip_radius_list": [140., 120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
-                    #                   x10    x10    x10   x10   x10   x10    x10   x10  x10  x2,
-                    "scale_factor_list": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.015, 0.05, 0.15, 0.9, 1.],
-                    # "scale_factor_list_orig": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.005, 0.05, 0.15, 0.9, 1.],
-                    "proximity_binary": "yes"}},
-            "WFC3 UVIS": {
-                "astrodrizzle": {
-                    "SCALE": 0.04,
-                    "PIXFRAC": 1.0,
-                    "KERNEL": "square",
-                    "OUTNX": None,
-                    "OUTNY": None,
-                    "ROT": 0.0,
-                    "BITS": 256},
-                "ci filter": {
-                    "ci_daolower_limit": 0.75,
-                    "ci_daoupper_limit": 1.0,
-                    "ci_selower_limit": 0.75,
-                    "ci_seupper_limit": 1.0},
-                "dao": {
-                    "TWEAK_FWHMPSF": 0.076,
-                    "TWEAK_THRESHOLD": 3.0,
-                    "aperture_1": 0.05,
-                    "aperture_2": 0.15,
-                    "bthresh": 5.0},
-                "sourcex": {
-                    "fwhm": 0.076,
-                    "thresh": 1.4,
-                    "bthresh": 5.0,
-                    "source_box": 7},
-                "swarm filter": {
-                    "upper_epp_limit": 70000.,
-                    "lower_epp_limit": 2000.,
-                    "eppsky_limit": 1000.,
-                    "swarm_thresh": 1.,
-                    "clip_radius_list": [120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
-                    "scale_factor_list": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 0.0005, 0.005, 0.005, 0.015, 0.45, 1.],
-                    # "scale_factor_list_orig": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 6.e-5, 0.0005, 0.005, 0.015, 0.45, 1.],
-                    "proximity_binary": "yes"}}} # TODO: remove para_dict definition once we have fleshed out the config object
-        self.param_dict=self.full_param_dict[self.inst_det].copy() # TODO: remove para_dict redefinition once we have fleshed out the config object
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-class hap_point_catalog(hap_catalog):
-    """Generate photometric sourcelist(s) for specified image(s) using aperture photometry of point sources.
-    """
-    def __init__(self, imgname):
-        super().__init__(imgname)
-
-        # Generate output sourcelist catalog filename
-        self.point_sourcelist_filename = self.imgname.replace(self.imgname[-9:], "_point-cat.ecsv")
-
-
-    def identify_point_sources(self,bkgsig_sf=4.,dao_ratio=0.8):
-        """Create a master coordinate list of sources identified in the specified total detection product image
-
-        Parameters
-        ----------
-        dao_fwhm : float
-            (photutils.DAOstarfinder param 'fwhm') The full-width half-maximum (FWHM) of the major axis of the
-            Gaussian kernel in units of pixels. Default value = 3.5.
-
-        bkgsig_sf : float
-            multiplictive scale factor applied to background sigma value to compute DAOfind input parameter
-            'threshold'. Default value = 2.
-
-        dao_ratio : float
-            The ratio of the minor to major axis standard deviations of the Gaussian kernel.
-
-        Returns
-        -------
-        sources : astropy table
-            Table containing x, y coordinates of identified sources
-        """
-        # read in sci, wht extensions of drizzled product
-        image = self.imghdu['SCI'].data.copy()
-        wht_image = self.imghdu['WHT'].data.copy()
-
-        image -= np.nanmedian(image)
-
-        # Estimate background for DaoStarfinder 'threshold' input.
-        bkg_estimator = MedianBackground()
-        bkg = None
-        threshold = self.param_dict['dao']['TWEAK_THRESHOLD']
-        exclude_percentiles = [10, 25, 50, 75]
-        for percentile in exclude_percentiles:
-            try:
-                bkg = Background2D(image, (50, 50), filter_size=(3, 3),
-                                   bkg_estimator=bkg_estimator,
-                                   exclude_percentile=percentile)
-            except Exception:
-                bkg = None
-                continue
-            if bkg is not None:
-                # If it succeeds, stop and use that value
-                bkg_rms = (5. * bkg.background_rms)
-                bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
-                default_threshold = bkg.background + bkg_rms
-                if threshold is None:
-                    threshold = default_threshold
-                elif threshold < 0:
-                    threshold = -1 * threshold * default_threshold
-                    log.info("{} based on {}".format(threshold.max(), default_threshold.max()))
-                    bkg_rms_mean = threshold.max()
-                else:
-                    bkg_rms_mean = 3. * threshold
-
-                if bkg_rms_mean < 0:
-                    bkg_rms_mean = 0.
-                break
-
-        # If Background2D does not work at all, define default scalar values for
-        # the background to be used in source identification
-        if bkg is None:
-            bkg_rms_mean = max(0.01, imgarr.min())
-            bkg_rms = bkg_rms_mean * 5
-
-
-
-        # Estimate FWHM from image sources
-
-        bkg_sigma = mad_std(image, ignore_nan=True)
-        detect_sources_thresh = bkgsig_sf * bkg_sigma
-
-        default_fwhm = self.param_dict['dao']['TWEAK_FWHMPSF'] / self.param_dict['astrodrizzle']['SCALE']
-        kernel = astrometric_utils.build_auto_kernel(image, wht_image, threshold=bkg_rms, fwhm=default_fwhm)
-        segm = detect_sources(image, detect_sources_thresh, npixels=self.param_dict["sourcex"]["source_box"],
-                              filter_kernel=kernel)
-        cat = source_properties(image, segm)
-        source_table = cat.to_table()
-        smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
-        source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
-
-        log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm,bkg_rms_mean,bkg_rms_mean))
-        daofind = DAOStarFinder(fwhm=source_fwhm, threshold=bkg_rms_mean, ratio=dao_ratio)
-        sources = daofind(image)
-
-        for col in sources.colnames:
-            sources[col].info.format = '%.8g'  # for consistent table output
-
-        return(sources)
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-    def perform_point_photometry(self,sources,aper_radius=4.):
-        """Perform aperture photometry on identified sources
-
-        Parameters
-        ----------
-        sources : astropy table
-            Table containing x, y coordinates of identified sources
-
-        aper_radius : float
-            Aperture radius (in pixels) used for photometry. Default value = 4.
-
-        Returns
-        -------
-        phot_table : astropy table
-            Table containing photometric information for specified sources based on image data in the specified image.
-        """
-        # Open and background subtract image
-        image = self.imghdu['SCI'].data.copy()
-        image -= np.nanmedian(image)
-
-
-        # Aperture Photometry
-        positions = (sources['xcentroid'], sources['ycentroid'])
-        apertures = CircularAperture(positions, r=aper_radius)
-        phot_table = aperture_photometry(image, apertures)
-
-        for col in phot_table.colnames: phot_table[col].info.format = '%.8g'  # for consistent table output
-        return(phot_table)
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-    def write_catalog_to_file(self,catalog,write_region_file=False):
-        """Write specified catalog to file on disk
-
-        Parameters
-        ----------
-        catalog : astropy table
-            table data to write to disk
-
-        write_region_file : Boolean
-           Write ds9-compatible region file along with the catalog file? Default value = False
-
-        Returns
-        -------
-        Nothing!
-
-        """
-        # Write out catalog to ecsv file
-        catalog.write(self.point_sourcelist_filename, format="ascii.ecsv")
-        log.info("Wrote catalog file '{}' containing {} sources".format(self.point_sourcelist_filename, len(catalog)))
-
-        # Write out region file if input 'write_region_file' is turned on.
-        if write_region_file:
-            out_table = catalog.copy()
-            if 'xcentroid' in out_table.keys(): # for point-source source catalogs
-                # Remove all other columns besides xcentroid and ycentroid
-                out_table.keep_columns(['xcentroid','ycentroid'])
-                # Add offset of 1.0 in X and Y to line up sources in region file with image displayed in ds9.
-                out_table['xcentroid'].data[:] += np.float64(1.0)
-                out_table['ycentroid'].data[:] += np.float64(1.0)
-            elif 'xcenter' in out_table.keys(): # for point-source photometric catalogs
-                # Remove all other columns besides xcenter and ycenter
-                out_table.keep_columns(['xcenter', 'ycenter'])
-                # Add offset of 1.0 in X and Y to line up sources in region file with image displayed in ds9.
-                out_table['xcenter'].data = out_table['xcenter'].data + np.float64(1.0)
-                out_table['ycenter'].data = out_table['ycenter'].data + np.float64(1.0)
-            else: # Bail out if anything else is encountered.
-                log.info("Error: unrecognized catalog format. Skipping region file generation.")
-                return()
-            reg_filename = self.point_sourcelist_filename.replace(".ecsv",".reg")
-            out_table.write(reg_filename, format="ascii")
-            log.info("Wrote region file '{}' containing {} sources".format(reg_filename, len(out_table)))
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-#       Modified contents of Michele's se_source_generation.py, as of commit b2db3ec9c918188cea2d3b0e4b64e39cc79c4146
-# ----------------------------------------------------------------------------------------------------------------------
-class hap_segment_catalog(hap_catalog):
-    """Generate photometric sourcelist(s) for specified image(s) using segment mapping.
-    """
-    def __init__(self,imgname):
-        super().__init__(imgname)
-
-        # Generate output sourcelist catalog filename
-        self.seg_sourcelist_filename = self.imgname.replace(self.imgname[-9:], "_segment-cat.ecsv")
+        self.data = self.imghdu[('SCI', 1)].data
+        self.wht_image = self.imghdu['WHT'].data.copy()
 
         # Get the HSTWCS object from the first extension
         self.imgwcs = HSTWCS(self.imghdu, 1)
 
-        # Get header information to annotate the output catalogs
-        if self.imgname.find("total") > -1:
-            ghd_product = "tdp"
-        else:
-            ghd_product = "fdp"
-        self.keyword_dict = self._get_header_data(product=ghd_product)
+        self.keyword_dict = self._get_header_data()
 
-    def create_sextractor_like_sourcelists(self,se_debug=False):
-        """Use photutils to find sources in image based on segmentation.
-
-        Parameters
-        ----------
-        se_debug : bool, optional
-            Specify whether or not to plot the image and segmentation image for
-            visualization and debugging purposes
-
-        Returns
-        -------
-        segm : `photutils.segmentation.SegmentationImage`
-            Two-dimensional segmentation image where found source regions are labeled with
-            unique, non-zero positive integers.
-
-        kernel :
-
-        bkg : `~photutils.background.Background2D` or None
-            A background map based upon the `~photutils.background.SExtractorBackground`
-            estimator
-
-        bkg_rms_mean : float
-            Mean bkg.background FIX
-
-        """
-        # get the TDP SCI image data
-
-        imgarr = self.imghdu['sci', 1].data.copy()
-
-        # Get the instrument/detector-specific values from the self.param_dict
-        fwhm = self.param_dict["sourcex"]["fwhm"]
-        size_source_box = self.param_dict["sourcex"]["source_box"]
-        threshold_flag = self.param_dict["sourcex"]["thresh"]
-
-        # Report configuration values to log
-        log.info("{}".format("=" * 80))
-        log.info("")
-        log.info("SExtractor-like source finding settings for Photutils segmentation")
-        log.info("Total Detection Product - Input Parameters")
-        log.info("FWHM: {}".format(fwhm))
-        log.info("size_source_box: {}".format(size_source_box))
-        log.info("threshold_flag: {}".format(threshold_flag))
-        log.info("")
-        log.info("{}".format("=" * 80))
-
-        # Only use a single kernel for now
-        kernel_list = [Gaussian2DKernel, MexicanHat2DKernel]
-        kernel_in_use = kernel_list[0]
-
-        bkg, bkg_dao_rms, threshold = self._compute_background(imgarr, nsigma=5., threshold_flag=threshold_flag)
-
-        # FIX imgarr should be background subtracted, sextractor uses the filtered_data image
-        imgarr_bkgsub = imgarr - bkg.background
-
-        # *** FIX: should size_source_box size be used in all these places? ***
-        # Create a 2D filter kernel - this will be used to smooth the input
-        # image prior to thresholding in detect_sources().
-        sigma = fwhm * gaussian_fwhm_to_sigma
-        kernel = kernel_in_use(sigma, x_size=size_source_box, y_size=size_source_box)
-        kernel.normalize()
-
-        # Source segmentation/extraction
-        # If the threshold includes the background level, then the input image
-        # should NOT be background subtracted.
-        # Note: SExtractor has "connectivity=8" which is the default for this function
-        segm = detect_sources(imgarr, threshold, npixels=size_source_box, filter_kernel=kernel)
-
-        # For debugging purposes...
-        if se_debug:
-            # Write out a catalog which can be used as an overlay for image in ds9
-            cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=self.imgwcs)
-            table = cat.to_table()
-
-            # Copy out only the X and Y coordinates to a "debug table" and
-            # cast as an Astropy Table
-            tbl = Table(table["xcentroid", "ycentroid"])
-
-            # Construct the debug output filename and write the catalog
-            indx = self.seg_sourcelist_filename.find("ecsv")
-            outname = self.seg_sourcelist_filename[0:indx] + "reg"
-
-            tbl["xcentroid"].info.format = ".10f"  # optional format
-            tbl["ycentroid"].info.format = ".10f"
-
-            # Add one to the X and Y table values to put the data onto a one-based system,
-            # particularly for display with DS9
-            tbl["xcentroid"] = tbl["xcentroid"] + 1
-            tbl["ycentroid"] = tbl["ycentroid"] + 1
-            tbl.write(outname, format="ascii.commented_header")
-            log.info("Wrote debug source catalog: {}".format(outname))
-
-            """
-            # Generate a graphic of the image and the segmented image
-            norm = ImageNormalize(stretch=SqrtStretch())
-            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12.5))
-            ax1.imshow(imgarr, origin="lower", cmap="Greys_r", norm=norm)
-            ax1.set_title("Data")
-            ax2.imshow(segm, origin="lower", cmap=segm.cmap(random_state=12345))
-            ax2.set_title("Segmentation Image")
-            plt.show()
-            """
-
-        # TROUBLESOME at this time
-        # Deblending is a combination of multi-thresholding and watershed
-        # segmentation. Sextractor uses a multi-thresholding technique.
-        # npixels = number of connected pixels in source
-        # npixels and filter_kernel should match those used by detect_sources()
-        # Note: SExtractor has "connectivity=8" which is the default for this function
-        """
-        segm = deblend_sources(imgarr, segm, npixels=size_source_box,
-                               filter_kernel=kernel, nlevels=32,
-                               contrast=0.005)
-        print("after deblend. ", segm)
-        """
-
-        """
-        if se_debug:
-            # Generate a graphic of the image and the segmented image
-            norm = ImageNormalize(stretch=SqrtStretch())
-            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12.5))
-            ax1.imshow(imgarr, origin="lower", cmap="Greys_r", norm=norm)
-            ax1.set_title("Data")
-            ax2.imshow(segm, origin="lower", cmap=segm.cmap(random_state=12345))
-            ax2.set_title("Segmentation Image")
-            plt.show()
-        """
-
-        # Regenerate the source catalog with presumably now only good sources
-        seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background, filter_kernel=kernel, wcs=self.imgwcs)
-
-        self._write_catalog(seg_cat)
-
-        return segm, kernel, bkg_dao_rms
+        self.bkg = None
 
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    def close(self):
+        self.imghdu.close()
+
+    def build_kernel(self, fwhmpsf, scale):
+        if self.bkg is None:
+            self.compute_background()
+
+        self.kernel = astrometric_utils.build_auto_kernel(self.data, self.wht_image,
+                                                     threshold=self.bkg.background_rms,
+                                                     fwhm=fwhmpsf / scale)
 
 
-    def measure_source_properties(self,segm, kernel):
-        """Use the positions of the sources identified in the white light image to
-        measure properties of these sources in the filter images
-
-        An instrument/detector combination may have multiple filter-level products.
-        This routine is called for each filter image which is then measured to generate
-        a filter-level source catalog based on object positions measured in the total
-        detection product image.
-
-        Parameters
-        ----------
-        segm : `~astropy.photutils.segmentation` Segmentation image
-            Two-dimensional image of labeled source regions based on the "white light" drizzed product
-
-        kernel : `~astropy.convolution`
-            Two dimensional function of a specified FWHM used to smooth the image and
-            used in the detection of sources as well as for the determination of the
-            source properties (this routine)
-
-        catalog_filename : string
-            Name of the output source catalog for the filter detection product
-
-        Returns
-        -------
-
-        """
-
-        # get filter-level science data
-        imgarr = self.imghdu['sci', 1].data.copy()
-
-        # Get the instrument/detector-specific values from the param_dict
-        fwhm = self.param_dict["sourcex"]["fwhm"]
-        size_source_box = self.param_dict["sourcex"]["source_box"]
-        threshold_flag = self.param_dict["sourcex"]["thresh"]
-
-        # Report configuration values to log
-        log.info("{}".format("=" * 80))
-        log.info("")
-        log.info("SExtractor-like source property measurements based on Photutils segmentation")
-        log.info("Filter Level Product - Input Parameters")
-        log.info("FWHM: {}".format(fwhm))
-        log.info("size_source_box: {}".format(size_source_box))
-        log.info("threshold_flag: {}".format(threshold_flag))
-        log.info("")
-        log.info("{}".format("=" * 80))
-
-        # The data needs to be background subtracted when computing the source properties
-        bkg, _, _ = self._compute_background(imgarr, nsigma=5., threshold_flag=threshold_flag)
-
-        imgarr_bkgsub = imgarr - bkg.background
-
-        # Compute source properties...
-        seg_cat = source_properties(imgarr_bkgsub,
-                                    segm,
-                                    background=bkg.background,
-                                    filter_kernel=kernel,
-                                    wcs=self.imgwcs)
-
-        # Write the source catalog
-        self._write_catalog(seg_cat, product="fdp")
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-    def _compute_background(self,image, box_size=50, win_size=3, nsigma=5., threshold_flag=None):
+    def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
+                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS,
+                            nsigma=5., threshold_flag=None):
         """Use Background2D to determine the background of the input image.
 
         Parameters
@@ -669,14 +294,12 @@ class hap_segment_catalog(hap_catalog):
         """
         # Report configuration values to log
         log.info("")
-        log.info("Computation of white light image background - Input Parameters")
+        log.info("Computation of image background - Input Parameters")
         log.info("Box size: {}".format(box_size))
         log.info("Window size: {}".format(win_size))
         log.info("NSigma: {}".format(nsigma))
 
         # SExtractorBackground ans StdBackgroundRMS are the defaults
-        bkg_estimator = SExtractorBackground()
-        bkgrms_estimator = StdBackgroundRMS()
         bkg = None
         bkg_dao_rms = None
 
@@ -685,8 +308,10 @@ class hap_segment_catalog(hap_catalog):
             log.info("")
             log.info("Percentile in use: {}".format(percentile))
             try:
-                bkg = Background2D(image, box_size, filter_size=win_size, bkg_estimator=bkg_estimator,
-                                   bkgrms_estimator=bkgrms_estimator, exclude_percentile=percentile, edge_method="pad")
+                bkg = Background2D(self.data, box_size, filter_size=win_size,
+                                    bkg_estimator=bkg_estimator(),
+                                    bkgrms_estimator=rms_estimator(),
+                                    exclude_percentile=percentile, edge_method="pad")
             except Exception:
                 bkg = None
                 continue
@@ -696,6 +321,7 @@ class hap_segment_catalog(hap_catalog):
                 bkg_rms = nsigma * bkg.background_rms
                 default_threshold = bkg.background + bkg_rms
                 bkg_rms_mean = bkg.background.mean() + nsigma * bkg_rms.std()
+                bkg_mean = bkg.background.mean()
                 bkg_dao_rms = bkg.background_rms
                 if threshold_flag is None:
                     threshold = default_threshold
@@ -714,7 +340,7 @@ class hap_segment_catalog(hap_catalog):
         # If Background2D does not work at all, define default scalar values for
         # the background to be used in source identification
         if bkg is None:
-            bkg_rms_mean = max(0.01, image.min())
+            bkg_mean = bkg_rms_mean = max(0.01, self.data.min())
             bkg_rms = nsigma * bkg_rms_mean
             bkg_dao_rms = bkg_rms_mean
             threshold = bkg_rms_mean + bkg_rms
@@ -723,127 +349,19 @@ class hap_segment_catalog(hap_catalog):
 
         # Report other useful quantities
         log.info("")
-        log.info("Mean background: {}".format(bkg.background.mean()))
-        log.info("Mean threshold: {}".format(bkg_rms_mean))
+        log.info("Mean background: {}".format(bkg_mean))
+        log.info("Mean threshold: {}".format(np.mean(threshold)))
         log.info("")
         log.info("{}".format("=" * 80))
 
-        return bkg, bkg_dao_rms, threshold
+        self.bkg = bkg
+        self.bkg_dao_rms = bkg_dao_rms
+        self.bkg_rms_mean = bkg_rms_mean
+        self.threshold = threshold
 
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-    def _write_catalog(self,seg_cat, product="tdp"):
-        """Actually write the specified source catalog out to disk
-
-        Parameters
-        ----------
-        seg_cat : list of `~photutils.SourceProperties` objects
-            List of SourceProperties objects, one for each source found in the
-            specified detection product
-
-        product : str, optional
-            Identification string for the catalog product being written.  This
-            controls the data being put into the catalog product
-        """
-
-        # Convert the list of SourceProperties objects to a QTable and
-        # document in column metadata Photutils columns which map to SExtractor columns
-        seg_table = Table(seg_cat.to_table())
-        radec_data = seg_table["sky_centroid_icrs"]
-        ra_icrs = radec_data.ra.degree
-        dec_icrs = radec_data.dec.degree
-
-        num_sources = len(seg_table)
-
-        # If the output is for the total detection product, then only
-        # a subset of the full catalog is needed.
-        if product.lower() == "tdp":
-
-            # [x|y]centroid are in pixels, physical data coordinates
-            seg_subset_table = seg_table["xcentroid", "ycentroid"]
-
-            # Add metadata to the output subset table
-            seg_subset_table = self._annotate_table(seg_subset_table, num_sources, product=product)
-
-            seg_subset_table["xcentroid"].description = "SExtractor Column x_image"
-            seg_subset_table["ycentroid"].description = "SExtractor Column y_image"
-            seg_subset_table["RA_icrs"] = ra_icrs
-            seg_subset_table["Dec_icrs"] = dec_icrs
-            seg_subset_table["RA_icrs"].description = "SExtractor Column RA"
-            seg_subset_table["Dec_icrs"].description = "SExtractor Column Dec"
-            seg_subset_table["RA_icrs"].unit = u.deg
-            seg_subset_table["Dec_icrs"].unit = u.deg
-
-            # Write out the official total detection product source catalog
-            seg_subset_table["xcentroid"].info.format = ".10f"
-            seg_subset_table["ycentroid"].info.format = ".10f"
-            seg_subset_table["RA_icrs"].info.format = ".10f"
-            seg_subset_table["Dec_icrs"].info.format = ".10f"
-            log.info("seg_subset_table (white light image): {}".format(seg_subset_table))
-
-            seg_subset_table.write(self.seg_sourcelist_filename, format="ascii.ecsv")
-            log.info("Wrote source catalog: {}".format(self.seg_sourcelist_filename))
-
-        # else the product is the "filter detection product"
-        else:
-
-            seg_table = self._annotate_table(seg_table, num_sources, product=product)
-
-            # Rework the current table for output
-            del seg_table["id"]
-            del seg_table["sky_centroid"]
-            del seg_table["sky_centroid_icrs"]
-            rr = Column(ra_icrs, name="RA_icrs", description="SExtractor Column RA", unit=u.deg)
-            dd = Column(dec_icrs, name="Dec_icrs", description="SExtractor Column Dec", unit=u.deg)
-            seg_table.add_column(dd, index=2)
-            seg_table.add_column(rr, index=2)
-
-            # Add a description for columns which map to SExtractor catalog columns
-            seg_table["xcentroid"].description = "SExtractor Column x_image"
-            seg_table["ycentroid"].description = "SExtractor Column y_image"
-            seg_table["background_at_centroid"].description = "SExtractor Column background"
-            seg_table["source_sum"].description = "SExtractor Column flux_iso"
-            seg_table["source_sum_err"].description = "SExtractor Column fluxerr_iso"
-            # FIX: is mapping to _image or _world?  _image
-            seg_table["cxx"].description = "SExtractor Column cxx_image, ellipse parameter"
-            seg_table["cyy"].description = "SExtractor Column cyy_image, ellipse parameter"
-            seg_table["cxy"].description = "SExtractor Column cxy_image, ellipse parameter"
-            # FIX: is the mapping to _image or _world?
-            seg_table["covar_sigx2"].description = "SExtractor Column x2_image, (0,0) element of covariance matrix"
-            seg_table["covar_sigy2"].description = "SExtractor Column y2_image, (1,1) element of covariance matrix"
-            seg_table[
-                "covar_sigxy"].description = "SExtractor Column xy_image, (0,1) and (1,0) elements of covariance matrix"
-
-            seg_table["xmin"].description = "SExtractor Column xmin_image"
-            seg_table["xmax"].description = "SExtractor Column xmax_image"
-            seg_table["ymin"].description = "SExtractor Column ymin_image"
-            seg_table["ymin"].description = "SExtractor Column ymax_image"
-
-            # Write out the official filter detection product source catalog
-            seg_table["xcentroid"].info.format = ".10f"
-            seg_table["ycentroid"].info.format = ".10f"
-            seg_table["RA_icrs"].info.format = ".10f"
-            seg_table["Dec_icrs"].info.format = ".10f"
-            log.info("seg_table (filter): {}".format(seg_table))
-
-            seg_table.write(self.seg_sourcelist_filename, format="ascii.ecsv")
-            log.info("Wrote filter source catalog: {}".format(self.seg_sourcelist_filename))
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-    def _get_header_data(self,product="tdp"):
+    def _get_header_data(self):
         """Read FITS keywords from the primary or extension header and store the
         information in a dictionary
-
-        Parameters
-        ----------
-        product : str, optional
-            product type. either 'tdp' for total detection product or 'fdp' for filter detection product. Default value
-            is 'tdp'.
 
         Returns
         -------
@@ -872,7 +390,7 @@ class hap_segment_catalog(hap_catalog):
         # For the filter detection product:
         # WFC3 only has FILTER, but ACS has FILTER1 and FILTER2
         # in the primary header.
-        if product.lower() == "tdp":
+        if self.ghd_product.lower() == "tdp":
             keyword_dict["filter"] = self.imghdu[0].header["FILTER"]
         # The filter detection product...
         else:
@@ -891,13 +409,578 @@ class hap_segment_catalog(hap_catalog):
         keyword_dict["aperture_ra"] = self.imghdu[1].header["RA_APER"]
         keyword_dict["aperture_dec"] = self.imghdu[1].header["DEC_APER"]
 
-        return (keyword_dict)
+        return keyword_dict
+
+
+class HAPCatalogs:
+    """Generate photometric sourcelist for specified TOTAL or FILTER product image.
+    """
+
+    def __init__(self, fitsfile, types=None):
+        self.label = "HAPCatalogs"
+        self.description = "A class used to generate photometric sourcelists using aperture photometry"
+
+        self.imgname = fitsfile
+
+        # Determine what types of catalogs have been requested
+        if not isinstance(types, list) and types in [None, 'both']:
+            types = CATALOG_TYPES
+        if any([t not in CATALOG_TYPES for t in types]):
+            log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
+            raise ValueError
+        self.types = types
+
+        # Parameter dictionary definition
+        self.instrument = self.imgname.split("_")[3].upper()
+        self.detector = self.imgname.split("_")[4].upper()
+        self.inst_det = "{} {}".format(self.instrument, self.detector)
+        self.full_param_dict = ParamDict()
+        self.param_dict = self.full_param_dict.get_params(self.instrument, self.detector)
+
+        # Compute the background for this image
+        self.image = CatalogImage(fitsfile)
+        self.image.compute_background(nsigma=self.param_dict['sourcex']['bthresh'],
+                                      threshold_flag=self.param_dict['sourcex']['thresh'])
+
+        self.image.build_kernel(self.param_dict['dao']['TWEAK_FWHMPSF'],
+                                self.param_dict['astrodrizzle']['SCALE'])
+
+        # Initialize all catalog types here...
+        # This does NOT identify or measure sources to create the catalogs at this point...
+        # The syntax here is EXTREMELY cludgy, but until a more compact way to do this is found,
+        #  it will have to do...
+        self.catalogs = {}
+        if 'point' in self.types:
+            self.catalogs['point'] = HAPPointCatalog(self.image, self.param_dict)
+        if 'segment' in self.types:
+            self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict)
+
+    def identify(self, **pars):
+        """Build catalogs for this image.
+
+        Parameters
+        ----------
+        types : list
+            List of catalog types to be generated.  If None, build all available catalogs.
+            Supported types of catalogs include: 'point', 'segment'.
+        """
+        # Support user-input value of 'None' which will trigger generation of all catalog types
+        for catalog in self.catalogs:
+            log.info("Identifying {} sources".format(catalog))
+            self.catalogs[catalog].identify_sources(**pars)
+
+    def measure(self, **pars):
+        """Perform photometry and other measurements on sources for this image.
+
+        Parameters
+        ----------
+        types : list
+            List of catalog types to be generated.  If None, build all available catalogs.
+            Supported types of catalogs include: 'point', 'segment'.
+        """
+        # Make sure we at least have a default 2D background computed
+        for catalog in self.catalogs.values():
+            if catalog.sources is None:
+                catalog.identify_sources(**pars)
+
+        for catalog in self.catalogs.values():
+            catalog.measure_sources(**pars)
+
+    def write(self, **pars):
+        """Write catalogs for this image to output files.
+
+        Parameters
+        ----------
+        types : list
+            List of catalog types to be generated.  If None, build all available catalogs.
+            Supported types of catalogs include: 'point', 'segment'.
+        """
+        # Make sure we at least have a default 2D background computed
+        for catalog in self.catalogs.values():
+            if catalog.source_cat is None:
+                catalog.measure_sources(**pars)
+
+        # Support user-input value of 'None' which will trigger generation of all catalog types
+        for catalog in self.catalogs.values():
+            catalog.write_catalog(**pars)
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+class HAPCatalogBase:
+    """Virtual class used to define API for all catalogs"""
+    catalog_suffix = ".ecsv"
+    catalog_region_suffix = ".reg"
+    catalog_format = "ascii.ecsv"
+
+    def __init__(self, image, param_dict):
+        self.image = image
+        self.imgname = image.imgname
+        self.bkg = image.bkg
+        self.param_dict = param_dict
+
+        self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
+
+        # Initialize attributes which get computed by class methods
+        self.bkg_used = None  # actual background used for source identification/measurement
+        self.sources = None  # list of identified source positions
+        self.source_cat = None  # catalog of sources and their properties
+
+    def identify_sources(self, **pars):
+        pass
+
+    def measure_sources(self, **pars):
+        pass
+
+    def write_catalog(self, **pars):
+        pass
+
+
+class HAPPointCatalog(HAPCatalogBase):
+    """Generate photometric sourcelist(s) for specified image(s) using aperture photometry of point sources.
+    """
+    catalog_suffix = "_point-cat.ecsv"
+
+    def __init__(self, image, param_dict):
+        super().__init__(image, param_dict)
+
+    def identify_sources(self, bkgsig_sf=4., dao_ratio=0.8, simple_bkg=False):
+        """Create a master coordinate list of sources identified in the specified total detection product image
+
+        Parameters
+        ----------
+        dao_fwhm : float
+            (photutils.DAOstarfinder param 'fwhm') The full-width half-maximum (FWHM) of the major axis of the
+            Gaussian kernel in units of pixels. Default value = 3.5.
+
+        bkgsig_sf : float
+            multiplictive scale factor applied to background sigma value to compute DAOfind input parameter
+            'threshold'. Default value = 2.
+
+        dao_ratio : float
+            The ratio of the minor to major axis standard deviations of the Gaussian kernel.
+
+        Returns
+        -------
+        sources : astropy table
+            Table containing x, y coordinates of identified sources
+        """
+        # threshold = self.param_dict['dao']['TWEAK_THRESHOLD']
+        # read in sci, wht extensions of drizzled product
+        image = self.image.data.copy()
+
+        # Estimate FWHM from image sources
+        # Background statistics need to be computed prior to subtracting background from image
+        bkg_sigma = mad_std(image, ignore_nan=True)
+        detect_sources_thresh = bkgsig_sf * bkg_sigma
+
+        # Input image will be background subtracted using pre-computed background, unless
+        # specified explicitly by the user
+        if simple_bkg:
+            self.bkg_used = np.nanmedian(image)
+            image -= self.bkg_used
+        else:
+        # Estimate background
+        # self.compute_background(threshold)
+            self.bkg_used = self.image.bkg.background
+            image -= self.bkg_used
+
+        segm = detect_sources(image, detect_sources_thresh, npixels=self.param_dict["sourcex"]["source_box"],
+                              filter_kernel=self.image.kernel)
+        cat = source_properties(image, segm)
+        source_table = cat.to_table()
+        smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
+        source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
+
+        log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm, self.image.bkg_rms_mean, self.image.bkg_rms_mean))
+        daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.image.bkg_rms_mean, ratio=dao_ratio)
+        sources = daofind(image)
+
+        for col in sources.colnames:
+            sources[col].info.format = '%.8g'  # for consistent table output
+
+        self.sources = sources
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+    def measure_sources(self, aper_radius=4.):
+        """Perform aperture photometry on identified sources
+
+        Parameters
+        ----------
+        sources : astropy table
+            Table containing x, y coordinates of identified sources
+
+        aper_radius : float or list of floats
+            Aperture radius (in pixels) used for photometry. Default value = 4.
+
+        Returns
+        -------
+        phot_table : astropy table
+            Table containing photometric information for specified sources based on image data in the specified image.
+        """
+        log.info("Performing point-source photometry on identified point-sources")
+        # Open and background subtract image
+        image = self.image.data.copy()
+        image -= self.bkg_used
+
+        # Aperture Photometry
+        positions = (self.sources['xcentroid'], self.sources['ycentroid'])
+        apertures = CircularAperture(positions, r=aper_radius)
+        phot_table = aperture_photometry(image, apertures)
+
+        for col in phot_table.colnames: phot_table[col].info.format = '%.8g'  # for consistent table output
+
+        self.source_cat = phot_table
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def _annotate_table(self,data_table, num_sources, product="tdp"):
+    def write_catalog(self, write_region_file=False):
+        """Write specified catalog to file on disk
+
+        Parameters
+        ----------
+        write_region_file : Boolean
+           Write ds9-compatible region file along with the catalog file? Default value = False
+
+        Returns
+        -------
+        Nothing!
+
+        """
+        # Write out catalog to ecsv file
+        self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
+        log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
+
+        # Write out region file if input 'write_region_file' is turned on.
+        if write_region_file:
+            out_table = self.source_cat.copy()
+            if 'xcentroid' in out_table.keys():  # for point-source source catalogs
+                # Remove all other columns besides xcentroid and ycentroid
+                out_table.keep_columns(['xcentroid', 'ycentroid'])
+                # Add offset of 1.0 in X and Y to line up sources in region file with image displayed in ds9.
+                out_table['xcentroid'].data[:] += np.float64(1.0)
+                out_table['ycentroid'].data[:] += np.float64(1.0)
+            elif 'xcenter' in out_table.keys():  # for point-source photometric catalogs
+                # Remove all other columns besides xcenter and ycenter
+                out_table.keep_columns(['xcenter', 'ycenter'])
+                # Add offset of 1.0 in X and Y to line up sources in region file with image displayed in ds9.
+                out_table['xcenter'].data = out_table['xcenter'].data + np.float64(1.0)
+                out_table['ycenter'].data = out_table['ycenter'].data + np.float64(1.0)
+            else:  # Bail out if anything else is encountered.
+                log.info("Error: unrecognized catalog format. Skipping region file generation.")
+                return()
+            reg_filename = self.sourcelist_filename.replace(self.catalog_suffix, self.catalog_region_suffix)
+            out_table.write(reg_filename, format="ascii")
+            log.info("Wrote region file '{}' containing {} sources".format(reg_filename, len(out_table)))
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+class HAPSegmentCatalog(HAPCatalogBase):
+    """Generate photometric sourcelist(s) for specified image(s) using segment mapping.
+    """
+    catalog_suffix = "_segment-cat.ecsv"
+
+    def __init__(self, image, param_dict):
+        super().__init__(image, param_dict)
+
+        # Get the instrument/detector-specific values from the self.param_dict
+        self.fwhm = self.param_dict["sourcex"]["fwhm"]
+        self.size_source_box = self.param_dict["sourcex"]["source_box"]
+        self.threshold_flag = self.param_dict["sourcex"]["thresh"]
+
+    def identify_sources(self, se_debug=False):
+        """Use photutils to find sources in image based on segmentation.
+
+        Parameters
+        ----------
+        se_debug : bool, optional
+            Specify whether or not to plot the image and segmentation image for
+            visualization and debugging purposes
+
+        Returns
+        -------
+        segm : `photutils.segmentation.SegmentationImage`
+            Two-dimensional segmentation image where found source regions are labeled with
+            unique, non-zero positive integers.
+
+        kernel :
+
+        bkg : `~photutils.background.Background2D` or None
+            A background map based upon the `~photutils.background.SExtractorBackground`
+            estimator
+
+        bkg_rms_mean : float
+            Mean bkg.background FIX
+
+        """
+        # Report configuration values to log
+        log.info("{}".format("=" * 80))
+        log.info("")
+        log.info("SExtractor-like source finding settings for Photutils segmentation")
+        log.info("Total Detection Product - Input Parameters")
+        log.info("FWHM: {}".format(self.fwhm))
+        log.info("size_source_box: {}".format(self.size_source_box))
+        log.info("threshold: {}".format(np.mean(self.image.threshold)))
+        log.info("")
+        log.info("{}".format("=" * 80))
+
+        # get the SCI image data
+        imgarr = self.image.data.copy()
+
+        #
+        # Consider whether the auto-generated kernel (self.image.kernel) would work instead
+        #
+        # Only use a single kernel for now
+        kernel_list = [Gaussian2DKernel, MexicanHat2DKernel]
+        kernel_in_use = kernel_list[0]
+
+        bkg = self.image.bkg
+        threshold = self.image.threshold
+
+        # FIX imgarr should be background subtracted, sextractor uses the filtered_data image
+        imgarr_bkgsub = imgarr - bkg.background
+
+        # *** FIX: should size_source_box size be used in all these places? ***
+        # Create a 2D filter kernel - this will be used to smooth the input
+        # image prior to thresholding in detect_sources().
+        sigma = self.fwhm * gaussian_fwhm_to_sigma
+        kernel = kernel_in_use(sigma, x_size=self.size_source_box, y_size=self.size_source_box)
+        kernel.normalize()
+
+        # Source segmentation/extraction
+        # If the threshold includes the background level, then the input image
+        # should NOT be background subtracted.
+        # Note: SExtractor has "connectivity=8" which is the default for this function
+        self.sources = detect_sources(imgarr, threshold, npixels=self.size_source_box, filter_kernel=kernel)
+        self.kernel = kernel  # for use in measure_sources()
+
+        # For debugging purposes...
+        if se_debug:
+            # Write out a catalog which can be used as an overlay for image in ds9
+            cat = source_properties(imgarr_bkgsub, self.sources, background=bkg.background,
+                                    filter_kernel=kernel, wcs=self.image.imgwcs)
+            table = cat.to_table()
+
+            # Copy out only the X and Y coordinates to a "debug table" and
+            # cast as an Astropy Table
+            tbl = Table(table["xcentroid", "ycentroid"])
+
+            # Construct the debug output filename and write the catalog
+            indx = self.sourcelist_filename.find("ecsv")
+            outname = self.sourcelist_filename[0:indx] + "reg"
+
+            tbl["xcentroid"].info.format = ".10f"  # optional format
+            tbl["ycentroid"].info.format = ".10f"
+
+            # Add one to the X and Y table values to put the data onto a one-based system,
+            # particularly for display with DS9
+            tbl["xcentroid"] = tbl["xcentroid"] + 1
+            tbl["ycentroid"] = tbl["ycentroid"] + 1
+            tbl.write(outname, format="ascii.commented_header")
+            log.info("Wrote debug source catalog: {}".format(outname))
+
+            """
+            # Generate a graphic of the image and the segmented image
+            norm = ImageNormalize(stretch=SqrtStretch())
+            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12.5))
+            ax1.imshow(imgarr, origin="lower", cmap="Greys_r", norm=norm)
+            ax1.set_title("Data")
+            ax2.imshow(segm, origin="lower", cmap=segm.cmap(random_state=12345))
+            ax2.set_title("Segmentation Image")
+            plt.show()
+            """
+
+        # TROUBLESOME at this time
+        # Deblending is a combination of multi-thresholding and watershed
+        # segmentation. Sextractor uses a multi-thresholding technique.
+        # npixels = number of connected pixels in source
+        # npixels and filter_kernel should match those used by detect_sources()
+        # Note: SExtractor has "connectivity=8" which is the default for this function
+        """
+        segm = deblend_sources(imgarr, self.sources, npixels=size_source_box,
+                               filter_kernel=kernel, nlevels=32,
+                               contrast=0.005)
+        print("after deblend. ", segm)
+        """
+
+        """
+        if se_debug:
+            # Generate a graphic of the image and the segmented image
+            norm = ImageNormalize(stretch=SqrtStretch())
+            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12.5))
+            ax1.imshow(imgarr, origin="lower", cmap="Greys_r", norm=norm)
+            ax1.set_title("Data")
+            ax2.imshow(segm, origin="lower", cmap=segm.cmap(random_state=12345))
+            ax2.set_title("Segmentation Image")
+            plt.show()
+        """
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+    def measure_sources(self):
+        """Use the positions of the sources identified in the white light image to
+        measure properties of these sources in the filter images
+
+        An instrument/detector combination may have multiple filter-level products.
+        This routine is called for each filter image which is then measured to generate
+        a filter-level source catalog based on object positions measured in the total
+        detection product image.
+
+        Parameters
+        ----------
+        segm : `~astropy.photutils.segmentation` Segmentation image
+            Two-dimensional image of labeled source regions based on the "white light" drizzed product
+
+        kernel : `~astropy.convolution`
+            Two dimensional function of a specified FWHM used to smooth the image and
+            used in the detection of sources as well as for the determination of the
+            source properties (this routine)
+
+        catalog_filename : string
+            Name of the output source catalog for the filter detection product
+
+        Returns
+        -------
+
+        """
+        # get filter-level science data
+        imgarr = self.image.data.copy()
+
+        # Report configuration values to log
+        log.info("{}".format("=" * 80))
+        log.info("")
+        log.info("SExtractor-like source property measurements based on Photutils segmentation")
+        log.info("Filter Level Product - Input Parameters")
+        log.info("FWHM: {}".format(self.fwhm))
+        log.info("size_source_box: {}".format(self.size_source_box))
+        log.info("")
+        log.info("{}".format("=" * 80))
+
+        # The data needs to be background subtracted when computing the source properties
+        bkg = self.image.bkg
+
+        imgarr_bkgsub = imgarr - bkg.background
+
+        # Compute source properties...
+        self.source_cat = source_properties(imgarr_bkgsub,
+                                    self.sources,
+                                    background=bkg.background,
+                                    filter_kernel=self.kernel,
+                                    wcs=self.image.imgwcs)
+        log.info("Found {} sources from segmentation map".format(len(self.source_cat)))
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+    def write_catalog(self):
+        """Actually write the specified source catalog out to disk
+
+        Parameters
+        ----------
+        seg_cat : list of `~photutils.SourceProperties` objects
+            List of SourceProperties objects, one for each source found in the
+            specified detection product
+
+        product : str, optional
+            Identification string for the catalog product being written.  This
+            controls the data being put into the catalog product
+        """
+        # Convert the list of SourceProperties objects to a QTable and
+        # document in column metadata Photutils columns which map to SExtractor columns
+        seg_table = Table(self.source_cat.to_table())
+        radec_data = seg_table["sky_centroid_icrs"]
+        ra_icrs = radec_data.ra.degree
+        dec_icrs = radec_data.dec.degree
+
+        num_sources = len(seg_table)
+
+        # If the output is for the total detection product, then only
+        # a subset of the full catalog is needed.
+        if self.image.ghd_product.lower() == "tdp":
+
+            # [x|y]centroid are in pixels, physical data coordinates
+            seg_subset_table = seg_table["xcentroid", "ycentroid"]
+
+            # Add metadata to the output subset table
+            seg_subset_table = self._annotate_table(seg_subset_table, num_sources,
+                                                    product=self.image.ghd_product)
+
+            seg_subset_table["xcentroid"].description = "SExtractor Column x_image"
+            seg_subset_table["ycentroid"].description = "SExtractor Column y_image"
+            seg_subset_table["RA_icrs"] = ra_icrs
+            seg_subset_table["Dec_icrs"] = dec_icrs
+            seg_subset_table["RA_icrs"].description = "SExtractor Column RA"
+            seg_subset_table["Dec_icrs"].description = "SExtractor Column Dec"
+            seg_subset_table["RA_icrs"].unit = u.deg
+            seg_subset_table["Dec_icrs"].unit = u.deg
+
+            # Write out the official total detection product source catalog
+            seg_subset_table["xcentroid"].info.format = ".10f"
+            seg_subset_table["ycentroid"].info.format = ".10f"
+            seg_subset_table["RA_icrs"].info.format = ".10f"
+            seg_subset_table["Dec_icrs"].info.format = ".10f"
+            log.info("seg_subset_table (white light image): {}".format(seg_subset_table))
+
+            seg_subset_table.write(self.sourcelist_filename, format=self.catalog_format)
+            log.info("Wrote source catalog: {}".format(self.sourcelist_filename))
+
+        # else the product is the "filter detection product"
+        else:
+
+            seg_table = self._annotate_table(seg_table, num_sources, product=self.image.ghd_product)
+
+            # Rework the current table for output
+            del seg_table["id"]
+            del seg_table["sky_centroid"]
+            del seg_table["sky_centroid_icrs"]
+            rr = Column(ra_icrs, name="RA_icrs", description="SExtractor Column RA", unit=u.deg)
+            dd = Column(dec_icrs, name="Dec_icrs", description="SExtractor Column Dec", unit=u.deg)
+            log.info("Added RA_icrs, Dec_icrs columns to Segment catalog")
+            seg_table.add_columns([dd, rr], indexes=[2, 3])
+
+            # Add a description for columns which map to SExtractor catalog columns
+            seg_table["xcentroid"].description = "SExtractor Column x_image"
+            seg_table["ycentroid"].description = "SExtractor Column y_image"
+            seg_table["background_at_centroid"].description = "SExtractor Column background"
+            seg_table["source_sum"].description = "SExtractor Column flux_iso"
+            seg_table["source_sum_err"].description = "SExtractor Column fluxerr_iso"
+            # FIX: is mapping to _image or _world?  _image
+            seg_table["cxx"].description = "SExtractor Column cxx_image, ellipse parameter"
+            seg_table["cyy"].description = "SExtractor Column cyy_image, ellipse parameter"
+            seg_table["cxy"].description = "SExtractor Column cxy_image, ellipse parameter"
+            # FIX: is the mapping to _image or _world?
+            seg_table["covar_sigx2"].description = "SExtractor Column x2_image, (0,0) element of covariance matrix"
+            seg_table["covar_sigy2"].description = "SExtractor Column y2_image, (1,1) element of covariance matrix"
+            seg_table[
+                "covar_sigxy"].description = "SExtractor Column xy_image, (0,1) and (1,0) elements of covariance matrix"
+
+            xmin_cols_orig = ['xmin', 'xmax', 'ymin', 'ymax']
+            xmin_descr = "SExtractor Column {}_image"
+            if xmin_cols_orig[0] not in seg_table.colnames:
+                xmin_cols = ['bbox_{}'.format(cname) for cname in xmin_cols_orig]
+            else:
+                xmin_cols = xmin_cols_orig
+
+            for cname, oname in zip(xmin_cols, xmin_cols_orig):
+                seg_table[cname].description = xmin_descr.format(oname)
+
+            # Write out the official filter detection product source catalog
+            seg_table["xcentroid"].info.format = ".10f"
+            seg_table["ycentroid"].info.format = ".10f"
+            seg_table["RA_icrs"].info.format = ".10f"
+            seg_table["Dec_icrs"].info.format = ".10f"
+            log.info("seg_table (filter): {}".format(seg_table))
+
+            seg_table.write(self.sourcelist_filename, format=self.catalog_format)
+            log.info("Wrote filter source catalog: {}".format(self.sourcelist_filename))
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def _annotate_table(self, data_table, num_sources, product="tdp"):
         """Add state metadata to the output source catalog
 
         Parameters
@@ -919,31 +1002,31 @@ class hap_segment_catalog(hap_catalog):
 
         """
 
-        data_table.meta["WCSNAME"] = self.keyword_dict["wcs_name"]
-        data_table.meta["WCSTYPE"] = self.keyword_dict["wcs_type"]
-        data_table.meta["Proposal ID"] = self.keyword_dict["proposal_id"]
-        data_table.meta["Image File Name"] = self.keyword_dict['image_file_name']
-        data_table.meta["Target Name"] = self.keyword_dict["target_name"]
-        data_table.meta["Date Observed"] = self.keyword_dict["date_obs"]
+        data_table.meta["WCSNAME"] = self.image.keyword_dict["wcs_name"]
+        data_table.meta["WCSTYPE"] = self.image.keyword_dict["wcs_type"]
+        data_table.meta["Proposal ID"] = self.image.keyword_dict["proposal_id"]
+        data_table.meta["Image File Name"] = self.image.keyword_dict['image_file_name']
+        data_table.meta["Target Name"] = self.image.keyword_dict["target_name"]
+        data_table.meta["Date Observed"] = self.image.keyword_dict["date_obs"]
         # FIX
         if product.lower() == "tdp":
             data_table.meta["Time Observed"] = " "
-            data_table.meta["Filter"] = self.keyword_dict["filter"]
+            data_table.meta["Filter"] = self.image.keyword_dict["filter"]
         else:
             data_table.meta["Time Observed"] = "FIX ME"
-            data_table.meta["Filter 1"] = self.keyword_dict["filter1"]
-            data_table.meta["Filter 2"] = self.keyword_dict["filter2"]
-        data_table.meta["Instrument"] = self.keyword_dict["instrument"]
-        data_table.meta["Detector"] = self.keyword_dict["detector"]
-        data_table.meta["Target RA"] = self.keyword_dict["target_ra"]
-        data_table.meta["Target DEC"] = self.keyword_dict["target_dec"]
-        data_table.meta["Orientation"] = self.keyword_dict["orientation"]
-        data_table.meta["Aperture RA"] = self.keyword_dict["aperture_ra"]
-        data_table.meta["Aperture DEC"] = self.keyword_dict["aperture_dec"]
-        data_table.meta["Aperture PA"] = self.keyword_dict["aperture_pa"]
-        data_table.meta["Exposure Start"] = self.keyword_dict["expo_start"]
-        data_table.meta["Total Exposure Time"] = self.keyword_dict["texpo_time"]
-        data_table.meta["CCD Gain"] = self.keyword_dict["ccd_gain"]
+            data_table.meta["Filter 1"] = self.image.keyword_dict["filter1"]
+            data_table.meta["Filter 2"] = self.image.keyword_dict["filter2"]
+        data_table.meta["Instrument"] = self.image.keyword_dict["instrument"]
+        data_table.meta["Detector"] = self.image.keyword_dict["detector"]
+        data_table.meta["Target RA"] = self.image.keyword_dict["target_ra"]
+        data_table.meta["Target DEC"] = self.image.keyword_dict["target_dec"]
+        data_table.meta["Orientation"] = self.image.keyword_dict["orientation"]
+        data_table.meta["Aperture RA"] = self.image.keyword_dict["aperture_ra"]
+        data_table.meta["Aperture DEC"] = self.image.keyword_dict["aperture_dec"]
+        data_table.meta["Aperture PA"] = self.image.keyword_dict["aperture_pa"]
+        data_table.meta["Exposure Start"] = self.image.keyword_dict["expo_start"]
+        data_table.meta["Total Exposure Time"] = self.image.keyword_dict["texpo_time"]
+        data_table.meta["CCD Gain"] = self.image.keyword_dict["ccd_gain"]
         data_table.meta["Number of sources"] = num_sources
         data_table.meta[""] = " "
         data_table.meta[""] = "Absolute coordinates are in a zero-based coordinate system."
@@ -952,78 +1035,3 @@ class hap_segment_catalog(hap_catalog):
 
 
 # ======================================================================================================================
-
-
-@util.with_logging
-def run_catalog_utils(args,starting_dt):
-    """Super simple testing interface for the above code.
-
-    Parameters
-    ----------
-    args : argparse.Namespace object
-        command-line input arguments
-
-    starting_dt : datetime.datetime object
-        start date/time of current run.
-
-    Returns
-    -------
-    Nothing.
-    """
-    log.info("Run start time: {}".format(str(starting_dt)))
-    log.info("python {} {} -f {} -d {} -m {}".format(os.path.realpath(__file__),
-                                               args.total_product_name,
-                                               " ".join(args.filter_product_list),
-                                               args.debug,args.phot_mode))
-
-
-
-    if args.phot_mode in ['point', 'both']:
-        total_point_product = hap_point_catalog(args.total_product_name)
-        total_point_product.ps_source_cat = total_point_product.identify_point_sources()
-        total_point_product.write_catalog_to_file(total_point_product.ps_source_cat, write_region_file=args.debug)
-
-    if args.phot_mode in ['seg', 'both']:
-        total_seg_product = hap_segment_catalog(args.total_product_name)
-        total_seg_product.segmap, \
-        total_seg_product.kernel, \
-        total_seg_product.bkg_dao_rms = \
-            total_seg_product.create_sextractor_like_sourcelists(se_debug=args.debug)
-
-    for filter_img_name in args.filter_product_list:
-
-        if args.phot_mode in ['point', 'both']:
-            filter_point_product = hap_point_catalog(filter_img_name)
-            filter_point_product.ps_phot_cat = filter_point_product.perform_point_photometry(total_point_product.ps_source_cat)
-            filter_point_product.write_catalog_to_file(filter_point_product.ps_phot_cat,write_region_file=args.debug)
-
-        if args.phot_mode in ['seg', 'both']:
-            filter_seg_product = hap_segment_catalog(filter_img_name)
-            filter_seg_product.measure_source_properties(total_seg_product.segmap,total_seg_product.kernel)
-
-    log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))
-
-
-# ======================================================================================================================
-
-
-
-if __name__ == '__main__':
-    """Super simple testing interface for the above code."""
-
-    starting_dt = datetime.datetime.now()
-
-
-    parser = argparse.ArgumentParser(description='test interface for sourcelist_generation')
-    parser.add_argument('total_product_name',help="total product filename")
-    parser.add_argument('-f', '--filter_product_list',nargs='+',required=True,
-                        help="Space-separated list of one or more total filter products")
-    parser.add_argument('-d', '--debug',required=False,choices=['True','False'],default='False',help='debug mode on? (generate region files?)')
-    parser.add_argument('-m', '--phot_mode',required=False,choices=['point','seg','both'],default='both',help="which photometry mode should be run? 'point' for point-soruce only; 'seg' for segment only, and 'both' for both point-source and segment photometry. ")
-    args = parser.parse_args()
-    if args.debug == "True":
-        args.debug = True
-    else:
-        args.debug = False
-
-    run_catalog_utils(args, starting_dt)
