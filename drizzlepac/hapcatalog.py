@@ -8,6 +8,9 @@ from stsci.tools import logutil
 
 from drizzlepac import util
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
+from drizzlepac.hlautils import poller_utils
+
+import pdb
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
@@ -32,6 +35,9 @@ def run_catalog_utils(args, starting_dt):
                                                args.total_product_name,
                                                " ".join(args.filter_product_list),
                                                args.debug, args.phot_mode))
+
+    obs_info_dict, expo_list, filt_list, total_list = poller_utils.interpret_obset_input('j92c01.out')
+    pdb.set_trace()
 
     total_product_catalogs = HAPCatalogs(args.total_product_name, types=args.phot_mode, debug=args.debug)
     total_product_catalogs.identify()
