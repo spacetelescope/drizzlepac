@@ -14,8 +14,9 @@ import pdb
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
+
 @util.with_logging
-def run_catalog_utils(args, starting_dt):
+def run_catalog_utils(total_list, debug, phot_mode):
     """Super simple testing interface for the catalog generation code.
 
     Parameters
@@ -30,14 +31,10 @@ def run_catalog_utils(args, starting_dt):
     -------
     Nothing.
     """
+    starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
-    log.info("python {} {} -d {} -m {}".format(os.path.realpath(__file__),
-                                                     args.input_file, args.debug, args.phot_mode))
-
-    obs_info_dict, expo_list, filt_list, total_list = poller_utils.interpret_obset_input(args.input_file)
 
     for total_product_obj in total_list:
-
         if os.path.exists(total_product_obj.product_basename+"_drc.fits"):
             total_product_name = total_product_obj.product_basename + "_drc.fits"
         else:
@@ -52,8 +49,8 @@ def run_catalog_utils(args, starting_dt):
                 filter_product_name = filter_product_obj.product_basename + "_drc.fits"
             else:
                 filter_product_name = filter_product_obj.product_basename + "_drz.fits"
-
-            filter_product_catalogs = HAPCatalogs(filter_product_name, types=args.phot_mode, debug=args.debug)
+            pdb.set_trace()
+            filter_product_catalogs = HAPCatalogs(filter_product_name, types=phot_mode, debug=debug)
             filter_product_catalogs.identify()
             filter_product_catalogs.measure()
             filter_product_catalogs.write()
@@ -67,9 +64,6 @@ def run_catalog_utils(args, starting_dt):
 
 def main():
     """Super simple testing interface for the catalog_utils code."""
-
-    starting_dt = datetime.datetime.now()
-
     parser = argparse.ArgumentParser(description='test interface for sourcelist_generation')
     parser.add_argument('input_file', help="input filename (ends with '.out'")
     parser.add_argument('-d', '--debug', required=False, choices=['True', 'False'], default='False', help='debug mode on? (generate region files?)')
@@ -80,7 +74,11 @@ def main():
     else:
         args.debug = False
 
-    run_catalog_utils(args, starting_dt)
+    log.info("python {} {} -d {} -m {}".format(os.path.realpath(__file__), args.input_file, args.debug, args.phot_mode))
+
+    obs_info_dict, expo_list, filt_list, total_list = poller_utils.interpret_obset_input(args.input_file)
+
+    run_catalog_utils(total_list, args.debug, args.phot_mode)
 
 
 # ======================================================================================================================
