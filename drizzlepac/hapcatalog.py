@@ -31,15 +31,15 @@ def run_catalog_utils(total_list, debug, phot_mode):
     -------
     Nothing.
     """
-    starting_dt = datetime.datetime.now()
-    log.info("Run start time: {}".format(str(starting_dt)))
+    starting_dt = datetime.datetime.now() # TODO: remove prior to final integration
+    log.info("Run start time: {}".format(str(starting_dt))) # TODO: remove prior to final integration
 
     for total_product_obj in total_list:
         if os.path.exists(total_product_obj.product_basename+"_drc.fits"):
             total_product_name = total_product_obj.product_basename + "_drc.fits"
         else:
             total_product_name = total_product_obj.product_basename + "_drz.fits"
-        # total_product_catalogs = HAPCatalogs(total_product_name, types=args.phot_mode, debug=args.debug)
+        # total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
         # total_product_catalogs.identify()
         #
         # total_product_catalogs.measure()
@@ -56,7 +56,7 @@ def run_catalog_utils(total_list, debug, phot_mode):
             filter_product_catalogs.write()
 
 
-    log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))
+    log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds())) # TODO: remove prior to final integration
 
 
 # ======================================================================================================================
