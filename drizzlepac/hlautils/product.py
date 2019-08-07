@@ -111,7 +111,7 @@ class FilterProduct(HAPProduct):
         self.exposure_name = filename[0:6]
         self.filters = filters
 
-        self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
+        self.product_basename = self.basename + "_" + "_".join(map(str, [filters, self.exposure_name]))
         # Trailer names .txt or .log
         self.trl_filename = self.product_basename + "_trl.log"
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
