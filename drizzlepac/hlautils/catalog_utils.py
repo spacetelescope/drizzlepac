@@ -460,7 +460,7 @@ class HAPCatalogs:
         if 'point' in self.types:
             self.catalogs['point'] = HAPPointCatalog(self.image, self.param_dict, self.debug)
         if 'segment' in self.types:
-            self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict)
+            self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict, self.debug)
 
     def identify(self, **pars):
         """Build catalogs for this image.
@@ -645,7 +645,7 @@ class HAPPointCatalog(HAPCatalogBase):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-    def write_catalog(self, debug=False):
+    def write_catalog(self):
         """Write specified catalog to file on disk
 
         Parameters
@@ -692,15 +692,15 @@ class HAPSegmentCatalog(HAPCatalogBase):
     """
     catalog_suffix = "_segment-cat.ecsv"
 
-    def __init__(self, image, param_dict):
-        super().__init__(image, param_dict)
+    def __init__(self, image, param_dict, debug):
+        super().__init__(image, param_dict, debug)
 
         # Get the instrument/detector-specific values from the self.param_dict
         self.fwhm = self.param_dict["sourcex"]["fwhm"]
         self.size_source_box = self.param_dict["sourcex"]["source_box"]
         self.threshold_flag = self.param_dict["sourcex"]["thresh"]
 
-    def identify_sources(self, se_debug=False):
+    def identify_sources(self):
         """Use photutils to find sources in image based on segmentation.
 
         Parameters
@@ -767,7 +767,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self.kernel = kernel  # for use in measure_sources()
 
         # For debugging purposes...
-        if se_debug:
+        if self.debug:
             # Write out a catalog which can be used as an overlay for image in ds9
             cat = source_properties(imgarr_bkgsub, self.sources, background=bkg.background,
                                     filter_kernel=kernel, wcs=self.image.imgwcs)
@@ -1045,5 +1045,5 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # ======================================================================================================================
 
-# TODO: fix code so that debug functionality actually works, and region files are produced.
+
 # TODO: fix bug that causes code to not use source lists from total images for photometry of filter images
