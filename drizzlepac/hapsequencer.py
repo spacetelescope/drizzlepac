@@ -6,6 +6,7 @@
 import datetime
 import glob
 import os
+import pdb
 import pickle
 import sys
 import traceback
@@ -16,6 +17,7 @@ import drizzlepac
 from drizzlepac import alignimages
 from drizzlepac import astrodrizzle
 from drizzlepac import wcs_functions
+from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import poller_utils
 from drizzlepac.hlautils import processing_utils as dpu
 from drizzlepac.hlautils import sourcelist_generation
@@ -293,11 +295,16 @@ def run_hla_processing(input_filename, result=None, debug=False):
     log.info("Run start time: {}".format(str(starting_dt)))
     product_list = []
     try:
-        # 1: Parse the poller file and generate the the obs_info_dict, as well as the single exposure, filter, 
+        # 0: Parse the poller file and generate the the obs_info_dict, as well as the single exposure, filter,
         # and total detection product lists which contain the ExposureProduct, FilterProduct, and 
         # TotalProduct objects
         log.info("1: Parse the poller and determine what exposures need to be combined into separate products")
         obs_info_dict, expo_list, filt_list, total_list = poller_utils.interpret_obset_input(input_filename)
+
+        # 1: Instantiate parameter configuration
+        custom_param_filename = "superparamfile.json"
+        for product_object in expo_list + filt_list + total_list:
+            product_object.pars = config_utils.HapConfig(product_object, output_custom_pars_file=custom_param_filename, use_defaults=True)
 
         # 2: Run alignimages.py on images on a filter-by-filter basis.
         # Process each filter object which contains a list of exposure objects/products,
