@@ -684,8 +684,6 @@ class HAPPointCatalog(HAPCatalogBase):
             out_table.write(reg_filename, format="ascii")
             log.info("Wrote region file '{}' containing {} sources".format(reg_filename, len(out_table)))
 
-        print("\a")
-        pdb.set_trace()
 # ----------------------------------------------------------------------------------------------------------------------
 class HAPSegmentCatalog(HAPCatalogBase):
     """Generate photometric sourcelist(s) for specified image(s) using segment mapping.
