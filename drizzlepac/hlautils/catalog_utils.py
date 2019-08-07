@@ -627,6 +627,7 @@ class HAPPointCatalog(HAPCatalogBase):
         phot_table : astropy table
             Table containing photometric information for specified sources based on image data in the specified image.
         """
+        print("MEASURE SOURCES!!!")
         log.info("Performing point-source photometry on identified point-sources")
         # Open and background subtract image
         image = self.image.data.copy()

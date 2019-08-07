@@ -35,23 +35,23 @@ def run_catalog_utils(total_list, debug, phot_mode):
     log.info("Run start time: {}".format(str(starting_dt))) # TODO: remove prior to final integration
 
     for total_product_obj in total_list:
-        if os.path.exists(total_product_obj.product_basename+"_drc.fits"):
-            total_product_name = total_product_obj.product_basename + "_drc.fits"
-        else:
-            total_product_name = total_product_obj.product_basename + "_drz.fits"
+        # if os.path.exists(total_product_obj.product_basename+"_drc.fits"):
+        #     total_product_name = total_product_obj.product_basename + "_drc.fits"
+        # else:
+        #     total_product_name = total_product_obj.product_basename + "_drz.fits"
         # total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
         # total_product_catalogs.identify()
         #
-        # total_product_catalogs.measure()
+        # # total_product_catalogs.measure() # <----DON'T NEED TO DO PHOTOMETRY ON IDENTIFIED SOURCES. REMOVE!
         # total_product_catalogs.write()
+
         for filter_product_obj in total_product_obj.fdp_list:
             if os.path.exists(filter_product_obj.product_basename + "_drc.fits"):
                 filter_product_name = filter_product_obj.product_basename + "_drc.fits"
             else:
                 filter_product_name = filter_product_obj.product_basename + "_drz.fits"
-            pdb.set_trace()
             filter_product_catalogs = HAPCatalogs(filter_product_name, types=phot_mode, debug=debug)
-            filter_product_catalogs.identify()
+            #filter_product_catalogs.identify() # <------FILTER IMAGES DON'T NEED TO RE-IDENTIFY SORUCES AGAIN. REMOVE!
             filter_product_catalogs.measure()
             filter_product_catalogs.write()
 
