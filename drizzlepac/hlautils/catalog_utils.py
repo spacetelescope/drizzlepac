@@ -417,12 +417,13 @@ class HAPCatalogs:
     """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
 
-    def __init__(self, fitsfile, debug=False, types=None):
+    def __init__(self, fitsfile, debug=False, types=None, tp_sources = None):
         self.label = "HAPCatalogs"
         self.description = "A class used to generate photometric sourcelists using aperture photometry"
 
         self.imgname = fitsfile
         self.debug = debug
+        self.tp_soruces = tp_sources # <---total product catalogs.catalogs[*].sources
 
         # Determine what types of catalogs have been requested
         if not isinstance(types, list) and types in [None, 'both']:
@@ -458,7 +459,7 @@ class HAPCatalogs:
         #  it will have to do...
         self.catalogs = {}
         if 'point' in self.types:
-            self.catalogs['point'] = HAPPointCatalog(self.image, self.param_dict, self.debug)
+            self.catalogs['point'] = HAPPointCatalog(self.image, self.param_dict, self.debug, tp_sources = tp_sources)
         if 'segment' in self.types:
             self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict, self.debug)
 
@@ -519,7 +520,7 @@ class HAPCatalogBase:
     catalog_region_suffix = ".reg"
     catalog_format = "ascii.ecsv"
 
-    def __init__(self, image, param_dict, debug):
+    def __init__(self, image, param_dict, debug, tp_sources):
         self.image = image
         self.imgname = image.imgname
         self.bkg = image.bkg
@@ -532,6 +533,7 @@ class HAPCatalogBase:
         self.bkg_used = None  # actual background used for source identification/measurement
         self.sources = None  # list of identified source positions
         self.source_cat = None  # catalog of sources and their properties
+        self.tp_sources = tp_sources
 
     def identify_sources(self, **pars):
         pass
@@ -548,8 +550,8 @@ class HAPPointCatalog(HAPCatalogBase):
     """
     catalog_suffix = "_point-cat.ecsv"
 
-    def __init__(self, image, param_dict,debug):
-        super().__init__(image, param_dict,debug)
+    def __init__(self, image, param_dict,debug,tp_sources):
+        super().__init__(image, param_dict,debug,tp_sources)
 
     def identify_sources(self, bkgsig_sf=4., dao_ratio=0.8, simple_bkg=False):
         """Create a master coordinate list of sources identified in the specified total detection product image
@@ -574,6 +576,9 @@ class HAPPointCatalog(HAPCatalogBase):
         """
         # threshold = self.param_dict['dao']['TWEAK_THRESHOLD']
         # read in sci, wht extensions of drizzled product
+
+
+
         image = self.image.data.copy()
 
         # Estimate FWHM from image sources
@@ -599,14 +604,19 @@ class HAPPointCatalog(HAPCatalogBase):
         smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
         source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
 
-        log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm, self.image.bkg_rms_mean, self.image.bkg_rms_mean))
-        daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.image.bkg_rms_mean, ratio=dao_ratio)
-        sources = daofind(image)
+        if not self.tp_sources:
+            log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm, self.image.bkg_rms_mean, self.image.bkg_rms_mean))
+            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.image.bkg_rms_mean, ratio=dao_ratio)
+            sources = daofind(image)
 
-        for col in sources.colnames:
-            sources[col].info.format = '%.8g'  # for consistent table output
+            for col in sources.colnames:
+                sources[col].info.format = '%.8g'  # for consistent table output
 
-        self.sources = sources
+            self.sources = sources
+
+        # if processing filter product, use sources identified by parent total drizzle product identify_sources() run
+        if self.tp_sources:
+            self.sources = self.tp_sources['point']
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1046,3 +1056,4 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 
 # TODO: fix bug that causes code to not use source lists from total images for photometry of filter images
+# NOTES: need to preserve
