@@ -43,8 +43,7 @@ def run_catalog_utils(total_list, debug, phot_mode):
         total_product_catalogs.identify()
         #total_product_catalogs.measure() # <----DON'T NEED TO DO PHOTOMETRY ON IDENTIFIED SOURCES. REMOVE!
         total_product_catalogs.write()
-        print("\a")
-        pdb.set_trace()
+
         # build dictionary of total_product_catalogs.catalogs[*].sources to use for filter photometric catalog generation
         sources_dict = {}
         for cat_type in total_product_catalogs.catalogs.keys():

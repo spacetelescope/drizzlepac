@@ -665,14 +665,44 @@ class HAPPointCatalog(HAPCatalogBase):
         image = self.image.data.copy()
         image -= self.bkg_used
 
-        # Aperture Photometry
-        positions = (self.sources['xcentroid'], self.sources['ycentroid'])
-        apertures = CircularAperture(positions, r=aper_radius)
-        phot_table = aperture_photometry(image, apertures)
+        # # Aperture Photometry
+        # positions = (self.sources['xcentroid'], self.sources['ycentroid'])
+        # apertures = CircularAperture(positions, r=aper_radius)
+        # phot_table = aperture_photometry(image, apertures)
+        #
+        # for col in phot_table.colnames: phot_table[col].info.format = '%.8g'  # for consistent table output
+        #
+        # self.source_cat = phot_table
 
-        for col in phot_table.colnames: phot_table[col].info.format = '%.8g'  # for consistent table output
 
-        self.source_cat = phot_table
+        #>>>>>>>>>>>>>>>>>> ADAPTION OF HLA CLASSIC CODE 'HLA_SOURCELIST' SUBROUTINE 'DAOPHOT_STYLE_PHOTOMETRY' LINE 1019 <<<<<<<<<<<
+
+        platescale = self.param_dict['astrodrizzle']['SCALE'] #arcsec/pixel
+
+        annulus_arcsec = 0.25 # TODO: PUT THIS STUFF INTO CONFIGS
+        annulus_pix = annulus_arcsec/platescale
+
+        dannulus_arcsec = 0.25 # TODO: PUT THIS STUFF INTO CONFIGS
+        dannulus_pix = dannulus_arcsec/platescale
+
+        ab_zeropoint = 26.5136022236
+        gain = 5060.0
+        readnoise = 4.97749985
+
+
+        # convert photometric aperture radii from arcsec to pixels
+        aper_radius_arcsec = [self.param_dict['dao']['aperture_1'],self.param_dict['dao']['aperture_2']]
+        aper_radius_list_pixels =[]
+        for aper_radius in aper_radius_arcsec:
+            aper_radius_list_pixels.append(aper_radius/platescale)
+            print("\a")
+            pdb.set_trace()
+
+        photometry_tbl = photometry_tools.iraf_style_photometry(photAps, bgAps, data=image, platescale=platescale,
+                                               error_array=errData, bg_method=salgorithm, epadu=gain,
+                                               zero_point=ab_zeroPoint)
+
+
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
