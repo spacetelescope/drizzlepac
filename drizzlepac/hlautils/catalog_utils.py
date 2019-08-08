@@ -18,6 +18,7 @@ from stsci.tools import logutil
 from stwcs.wcsutil import HSTWCS
 
 from . import astrometric_utils
+from . import photometry_tools
 
 try:
     from matplotlib import pyplot as plt
