@@ -16,6 +16,8 @@ of the list).
 
 3.1.0 (unreleased)
 ==================
+- Migration of the HAP portion of the package to an object-oriented
+  implemenation. [#427]
 
 - Added support for providing HSTWCS object as input to 'final_refimage'
   or 'single_refimage' parameter.  [#426]
