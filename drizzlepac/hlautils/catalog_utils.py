@@ -604,8 +604,28 @@ class HAPPointCatalog(HAPCatalogBase):
         source_table = cat.to_table()
         smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
         source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
-
         if not self.tp_sources:
+            # Report configuration values to log
+            log.info("{}".format("=" * 80))
+            log.info("")
+            log.info("Point-source finding settings")
+            log.info("Total Detection Product - Input Parameters")
+            log.info("INPUT PARAMETERS")
+            log.info("{}: {}".format("bkgsig_sf",bkgsig_sf))
+            log.info("{}: {}".format("dao_ratio", dao_ratio))
+            log.info("{}: {}".format("simple_bkg", simple_bkg))
+            log.info("{}: {}".format("self.image.bkg_rms_mean", self.image.bkg_rms_mean))
+            log.info("{}: {}".format("self.image.bkg_rms_mean", self.image.bkg_rms_mean))
+            log.info("{}: {}".format("self.param_dict['sourcex']['source_box']", self.param_dict["sourcex"]["source_box"]))
+            log.info("\nDERIVED PARAMETERS")
+            log.info("{}: {}".format("bkg_sigma", bkg_sigma))
+            log.info("{}: {}".format("detect_sources_thresh", detect_sources_thresh))
+            log.info("{}: {}".format("smajor_sigma", smajor_sigma))
+            log.info("{}: {}".format("source_fwhm", source_fwhm))
+            log.info("")
+            log.info("{}".format("=" * 80))
+
+            # find ALL the sources!!!
             log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm, self.image.bkg_rms_mean, self.image.bkg_rms_mean))
             daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.image.bkg_rms_mean, ratio=dao_ratio)
             sources = daofind(image)
