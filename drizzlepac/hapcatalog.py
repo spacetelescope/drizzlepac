@@ -47,8 +47,10 @@ def run_catalog_utils(total_list, debug, phot_mode):
         # build dictionary of total_product_catalogs.catalogs[*].sources to use for filter photometric catalog generation
         sources_dict = {}
         for cat_type in total_product_catalogs.catalogs.keys():
-            sources_dict[cat_type] = total_product_catalogs.catalogs[cat_type].sources
-
+            sources_dict[cat_type] = {}
+            sources_dict[cat_type]['sources'] = total_product_catalogs.catalogs[cat_type].sources
+            if cat_type == "segment":
+                sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
         for filter_product_obj in total_product_obj.fdp_list:
             if os.path.exists(filter_product_obj.product_basename + "_drc.fits"):
                 filter_product_name = filter_product_obj.product_basename + "_drc.fits"

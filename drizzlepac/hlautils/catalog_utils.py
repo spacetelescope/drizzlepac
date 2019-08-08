@@ -461,7 +461,8 @@ class HAPCatalogs:
         if 'point' in self.types:
             self.catalogs['point'] = HAPPointCatalog(self.image, self.param_dict, self.debug, tp_sources = tp_sources)
         if 'segment' in self.types:
-            self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict, self.debug)
+            self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict,
+                                                         self.debug, tp_sources = tp_sources)
 
     def identify(self, **pars):
         """Build catalogs for this image.
@@ -616,7 +617,7 @@ class HAPPointCatalog(HAPCatalogBase):
 
         # if processing filter product, use sources identified by parent total drizzle product identify_sources() run
         if self.tp_sources:
-            self.sources = self.tp_sources['point']
+            self.sources = self.tp_sources['point']['sources']
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -701,8 +702,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
     """
     catalog_suffix = "_segment-cat.ecsv"
 
-    def __init__(self, image, param_dict, debug):
-        super().__init__(image, param_dict, debug)
+    def __init__(self, image, param_dict, debug, tp_sources):
+        super().__init__(image, param_dict, debug, tp_sources)
 
         # Get the instrument/detector-specific values from the self.param_dict
         self.fwhm = self.param_dict["sourcex"]["fwhm"]
@@ -767,13 +768,18 @@ class HAPSegmentCatalog(HAPCatalogBase):
         sigma = self.fwhm * gaussian_fwhm_to_sigma
         kernel = kernel_in_use(sigma, x_size=self.size_source_box, y_size=self.size_source_box)
         kernel.normalize()
+        if not self.tp_sources:
+            # Source segmentation/extraction
+            # If the threshold includes the background level, then the input image
+            # should NOT be background subtracted.
+            # Note: SExtractor has "connectivity=8" which is the default for this function
+            self.sources = detect_sources(imgarr, threshold, npixels=self.size_source_box, filter_kernel=kernel)
+            self.kernel = kernel  # for use in measure_sources()
 
-        # Source segmentation/extraction
-        # If the threshold includes the background level, then the input image
-        # should NOT be background subtracted.
-        # Note: SExtractor has "connectivity=8" which is the default for this function
-        self.sources = detect_sources(imgarr, threshold, npixels=self.size_source_box, filter_kernel=kernel)
-        self.kernel = kernel  # for use in measure_sources()
+        # if processing filter product, use sources identified by parent total drizzle product identify_sources() run
+        if self.tp_sources:
+            self.sources = self.tp_sources['segment']['sources']
+            self.kernel = self.tp_sources['segment']['kernel']
 
         # For debugging purposes...
         if self.debug:
@@ -1054,6 +1060,5 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # ======================================================================================================================
 
-
-# TODO: fix bug that causes code to not use source lists from total images for photometry of filter images
-# NOTES: need to preserve
+# TODO: 1) re-tune source identifaction parmeters. Warren's updates brought the total number of soruces found down from ~16k-17k to 7138 sources for ACS_10265_01.
+# TODO: 2) add meaningful code to HAPPointCatalog.measure_soruces so that it actually produces a sourcelist that meets or exceeds the HLA classic counterpart
