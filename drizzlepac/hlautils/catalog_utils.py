@@ -217,8 +217,8 @@ class ParamDict:
         inst_det = "{} {}".format(instrument, detector)
         return self.full_param_dict[inst_det].copy()
 
-class CatalogImage:
 
+class CatalogImage:
     def __init__(self, filename):
         if isinstance(filename, str):
             self.imghdu = fits.open(filename)
@@ -244,7 +244,6 @@ class CatalogImage:
 
         self.bkg = None
 
-
     def close(self):
         self.imghdu.close()
 
@@ -253,13 +252,11 @@ class CatalogImage:
             self.compute_background()
 
         self.kernel = astrometric_utils.build_auto_kernel(self.data, self.wht_image,
-                                                     threshold=self.bkg.background_rms,
-                                                     fwhm=fwhmpsf / scale)
-
+                                                          threshold=self.bkg.background_rms, fwhm=fwhmpsf / scale)
 
     def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
-                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS,
-                            nsigma=5., threshold_flag=None):
+                           bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS,
+                           nsigma=5., threshold_flag=None):
         """Use Background2D to determine the background of the input image.
 
         Parameters
@@ -272,6 +269,12 @@ class CatalogImage:
 
         win_size : int
             Size of 2D filter to apply to the background image
+
+        bkg_estimator : subroutine
+            background estimation algorithm
+
+        rms_estimator : subroutine
+            RMS estimation algorithm
 
         nsigma : float
             Number of sigma above background
@@ -311,9 +314,9 @@ class CatalogImage:
             log.info("Percentile in use: {}".format(percentile))
             try:
                 bkg = Background2D(self.data, box_size, filter_size=win_size,
-                                    bkg_estimator=bkg_estimator(),
-                                    bkgrms_estimator=rms_estimator(),
-                                    exclude_percentile=percentile, edge_method="pad")
+                                   bkg_estimator=bkg_estimator(),
+                                   bkgrms_estimator=rms_estimator(),
+                                   exclude_percentile=percentile, edge_method="pad")
             except Exception:
                 bkg = None
                 continue
@@ -418,20 +421,20 @@ class HAPCatalogs:
     """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
 
-    def __init__(self, fitsfile, debug=False, types=None, tp_sources = None):
+    def __init__(self, fitsfile, debug=False, types=None, tp_sources=None):
         self.label = "HAPCatalogs"
         self.description = "A class used to generate photometric sourcelists using aperture photometry"
 
         self.imgname = fitsfile
         self.debug = debug
-        self.tp_soruces = tp_sources # <---total product catalogs.catalogs[*].sources
+        self.tp_soruces = tp_sources  # <---total product catalogs.catalogs[*].sources
 
         # Determine what types of catalogs have been requested
         if not isinstance(types, list) and types in [None, 'both']:
             types = CATALOG_TYPES
 
         elif types == 'point' or types == 'segment':
-            types=[types]
+            types = [types]
         else:
             if any([t not in CATALOG_TYPES for t in types]):
                 log.error("Catalog types {} not supported. Only {} are valid.".format(types, CATALOG_TYPES))
@@ -460,10 +463,10 @@ class HAPCatalogs:
         #  it will have to do...
         self.catalogs = {}
         if 'point' in self.types:
-            self.catalogs['point'] = HAPPointCatalog(self.image, self.param_dict, self.debug, tp_sources = tp_sources)
+            self.catalogs['point'] = HAPPointCatalog(self.image, self.param_dict, self.debug, tp_sources=tp_sources)
         if 'segment' in self.types:
             self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict,
-                                                         self.debug, tp_sources = tp_sources)
+                                                         self.debug, tp_sources=tp_sources)
 
     def identify(self, **pars):
         """Build catalogs for this image.
@@ -512,7 +515,7 @@ class HAPCatalogs:
 
         # Support user-input value of 'None' which will trigger generation of all catalog types
         for catalog in self.catalogs.values():
-            catalog.write_catalog(**pars)
+            catalog.write_catalog
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -552,18 +555,14 @@ class HAPPointCatalog(HAPCatalogBase):
     """
     catalog_suffix = "_point-cat.ecsv"
 
-    def __init__(self, image, param_dict,debug,tp_sources):
-        super().__init__(image, param_dict,debug,tp_sources)
+    def __init__(self, image, param_dict, debug, tp_sources):
+        super().__init__(image, param_dict, debug, tp_sources)
 
     def identify_sources(self, bkgsig_sf=4., dao_ratio=0.8, simple_bkg=False):
         """Create a master coordinate list of sources identified in the specified total detection product image
 
         Parameters
         ----------
-        dao_fwhm : float
-            (photutils.DAOstarfinder param 'fwhm') The full-width half-maximum (FWHM) of the major axis of the
-            Gaussian kernel in units of pixels. Default value = 3.5.
-
         bkgsig_sf : float
             multiplictive scale factor applied to background sigma value to compute DAOfind input parameter
             'threshold'. Default value = 2.
@@ -571,16 +570,18 @@ class HAPPointCatalog(HAPCatalogBase):
         dao_ratio : float
             The ratio of the minor to major axis standard deviations of the Gaussian kernel.
 
+        simple_bkg : bool, optional
+            Should the input image will be background subtracted using pre-computed background?
+            Default value is False.
+
         Returns
         -------
         sources : astropy table
             Table containing x, y coordinates of identified sources
         """
         # threshold = self.param_dict['dao']['TWEAK_THRESHOLD']
+
         # read in sci, wht extensions of drizzled product
-
-
-
         image = self.image.data.copy()
 
         # Estimate FWHM from image sources
@@ -612,12 +613,13 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("Point-source finding settings")
             log.info("Total Detection Product - Input Parameters")
             log.info("INPUT PARAMETERS")
-            log.info("{}: {}".format("bkgsig_sf",bkgsig_sf))
+            log.info("{}: {}".format("bkgsig_sf", bkgsig_sf))
             log.info("{}: {}".format("dao_ratio", dao_ratio))
             log.info("{}: {}".format("simple_bkg", simple_bkg))
             log.info("{}: {}".format("self.image.bkg_rms_mean", self.image.bkg_rms_mean))
             log.info("{}: {}".format("self.image.bkg_rms_mean", self.image.bkg_rms_mean))
-            log.info("{}: {}".format("self.param_dict['sourcex']['source_box']", self.param_dict["sourcex"]["source_box"]))
+            log.info("{}: {}".format("self.param_dict['sourcex']['source_box']",
+                                     self.param_dict["sourcex"]["source_box"]))
             log.info("\nDERIVED PARAMETERS")
             log.info("{}: {}".format("bkg_sigma", bkg_sigma))
             log.info("{}: {}".format("detect_sources_thresh", detect_sources_thresh))
@@ -627,7 +629,9 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("{}".format("=" * 80))
 
             # find ALL the sources!!!
-            log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm, self.image.bkg_rms_mean, self.image.bkg_rms_mean))
+            log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm,
+                                                                             self.image.bkg_rms_mean,
+                                                                             self.image.bkg_rms_mean))
             daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.image.bkg_rms_mean, ratio=dao_ratio)
             sources = daofind(image)
 
@@ -641,7 +645,6 @@ class HAPPointCatalog(HAPCatalogBase):
             self.sources = self.tp_sources['point']['sources']
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
 
     def measure_sources(self, aper_radius=4.):
         """Perform aperture photometry on identified sources
@@ -674,11 +677,10 @@ class HAPPointCatalog(HAPCatalogBase):
         #
         # self.source_cat = phot_table
 
-
-        #>>>>>>>>>>>>>>>>>> ADAPTION OF HLA CLASSIC CODE 'HLA_SOURCELIST' SUBROUTINE 'DAOPHOT_STYLE_PHOTOMETRY' LINE 1019 <<<<<<<<<<<
+        # ADAPTION OF HLA CLASSIC CODE 'HLA_SOURCELIST' SUBROUTINE 'DAOPHOT_STYLE_PHOTOMETRY' LINE 1019
         # +++++++++++++++++++ Hardwired presets just to get things moving  +++++++++++++++++++
-        # TODO: Remove. All these values come from static values in config files or be determined dynamically from the product being processed.
-        platescale = self.param_dict['astrodrizzle']['SCALE'] #arcsec/pixel
+        # TODO: Remove. All these values should come from static values in config files or be determined dynamically
+        platescale = self.param_dict['astrodrizzle']['SCALE']  # arcsec/pixel
         skyannulus_arcsec = 0.25
         skyannulus_pix = skyannulus_arcsec/platescale
         dskyannulus_arcsec = 0.25
@@ -692,14 +694,14 @@ class HAPPointCatalog(HAPCatalogBase):
         positions = (self.sources['xcentroid'], self.sources['ycentroid'])
 
         # adjust coods for calculations that assume origin value of 0, rather than 1.
-        pos_x = np.asarray(positions[0]) -1.0
-        pos_y = np.asarray(positions[0]) -1.0
+        pos_x = np.asarray(positions[0]) - 1.0
+        pos_y = np.asarray(positions[0]) - 1.0
 
-        #define list of background annulii
+        # define list of background annulii
         bg_apers = CircularAnnulus((pos_x, pos_y), r_in=skyannulus_arcsec, r_out=skyannulus_arcsec + dskyannulus_arcsec)  # TODO: Since the image is already background subtracted, do we need another background subtraction?
 
         # convert photometric aperture radii from arcsec to pixels and create list of photometric apertures to measure
-        aper_radius_arcsec = [self.param_dict['dao']['aperture_1'],self.param_dict['dao']['aperture_2']]
+        aper_radius_arcsec = [self.param_dict['dao']['aperture_1'], self.param_dict['dao']['aperture_2']]
         aper_radius_list_pixels = []
         for aper_radius in aper_radius_arcsec:
             aper_radius_list_pixels.append(aper_radius/platescale)
@@ -725,15 +727,16 @@ class HAPPointCatalog(HAPCatalogBase):
 
         # Perform aperture photometry
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image, platescale=platescale,
-                                               error_array=self.bkg.background_rms, bg_method=salgorithm, epadu=gain,
-                                               zero_point=ab_zeropoint)
+                                                                error_array=self.bkg.background_rms,
+                                                                bg_method=salgorithm, epadu=gain,
+                                                                zero_point=ab_zeropoint)
 
         # convert coords back to origin value = 1 rather than 0
         photometry_tbl["XCENTER"] = photometry_tbl["XCENTER"] + 1.
         photometry_tbl["YCENTER"] = photometry_tbl["YCENTER"] + 1.
 
         # calculate and add RA and DEC columns to table
-        ra, dec = self.transform_list_xy_to_ra_dec(photometry_tbl["XCENTER"], photometry_tbl["YCENTER"], self.imgname) # TODO: replace with all_pix2sky or somthing at a later date
+        ra, dec = self.transform_list_xy_to_ra_dec(photometry_tbl["XCENTER"], photometry_tbl["YCENTER"], self.imgname)  # TODO: replace with all_pix2sky or somthing at a later date
         ra_col = Column(name="RA", data=ra, dtype=np.float64)
         dec_col = Column(name="DEC", data=dec, dtype=np.float64)
         photometry_tbl.add_column(ra_col, index=2)
@@ -754,24 +757,26 @@ class HAPPointCatalog(HAPCatalogBase):
 
         # Add null-value "TotMag(<outer radiiArc>)" and "TotMag(<outer radiiArc>)" columns
         empty_tot_mag = MaskedColumn(name="TotMag({})".format(aper_radius_arcsec[1]), fill_value=None, mask=True,
-                                   length=len(photometry_tbl["XCENTER"].data), dtype=np.int64)
+                                     length=len(photometry_tbl["XCENTER"].data), dtype=np.int64)
         empty_tot_mag_err = MaskedColumn(name="TotMagErr({})".format(aper_radius_arcsec[1]), fill_value=None, mask=True,
-                                      length=len(photometry_tbl["XCENTER"].data), dtype=np.int64)
+                                         length=len(photometry_tbl["XCENTER"].data), dtype=np.int64)
         photometry_tbl.add_column(empty_tot_mag)
         photometry_tbl.add_column(empty_tot_mag_err)
 
         # build final output table
         final_col_order = ["XCENTER", "YCENTER", "RA", "DEC", "ID", "MAG_{}".format(aper_radius_arcsec[0]),
-                         "MAG_{}".format(aper_radius_arcsec[1]), "MERR_{}".format(aper_radius_arcsec[0]),
-                         "MERR_{}".format(aper_radius_arcsec[1]), "MSKY", "STDEV", "FLUX_{}".format(aper_radius_arcsec[1]),
-                         "TotMag({})".format(aper_radius_arcsec[1]), "TotMagErr({})".format(aper_radius_arcsec[1]), "CI", "Flags"]
+                           "MAG_{}".format(aper_radius_arcsec[1]), "MERR_{}".format(aper_radius_arcsec[0]),
+                           "MERR_{}".format(aper_radius_arcsec[1]), "MSKY", "STDEV",
+                           "FLUX_{}".format(aper_radius_arcsec[1]), "TotMag({})".format(aper_radius_arcsec[1]),
+                           "TotMagErr({})".format(aper_radius_arcsec[1]), "CI", "Flags"]
         output_photometry_table = photometry_tbl[final_col_order]
 
         # format output table columns
         final_col_format = {"RA": "13.10f", "DEC": "13.10f", "MAG_{}".format(aper_radius_arcsec[0]): '6.3f',
-                          "MAG_{}".format(aper_radius_arcsec[1]): '6.3f', "MERR_{}".format(aper_radius_arcsec[0]): '6.3f',
-                          "MERR_{}".format(aper_radius_arcsec[1]): '6.3f', "MSKY": '10.8f', "STDEV": '10.8f',
-                          "FLUX_{}".format(aper_radius_arcsec[1]): '10.8f', "CI": "7.3f"}
+                            "MAG_{}".format(aper_radius_arcsec[1]): '6.3f',
+                            "MERR_{}".format(aper_radius_arcsec[0]): '6.3f',
+                            "MERR_{}".format(aper_radius_arcsec[1]): '6.3f', "MSKY": '10.8f', "STDEV": '10.8f',
+                            "FLUX_{}".format(aper_radius_arcsec[1]): '10.8f', "CI": "7.3f"}
         for fcf_key in final_col_format.keys():
             output_photometry_table[fcf_key].format = final_col_format[fcf_key]
 
@@ -781,7 +786,8 @@ class HAPPointCatalog(HAPCatalogBase):
                        "MAG_{}".format(aper_radius_arcsec[1]): "MagAp({})".format(aper_radius_arcsec[1]),
                        "MERR_{}".format(aper_radius_arcsec[0]): "MagErr({})".format(aper_radius_arcsec[0]),
                        "MERR_{}".format(aper_radius_arcsec[1]): "MagErr({})".format(aper_radius_arcsec[1]),
-                       "MSKY": "MSky({})".format(aper_radius_arcsec[1]), "STDEV": "Stdev({})".format(aper_radius_arcsec[1]),
+                       "MSKY": "MSky({})".format(aper_radius_arcsec[1]),
+                       "STDEV": "Stdev({})".format(aper_radius_arcsec[1]),
                        "FLUX_{}".format(aper_radius_arcsec[1]): "Flux({})".format(aper_radius_arcsec[1])}
         for old_col_title in rename_dict:
             output_photometry_table.rename_column(old_col_title, rename_dict[old_col_title])
@@ -792,7 +798,7 @@ class HAPPointCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-
+    @property
     def write_catalog(self):
         """Write specified catalog to file on disk
 
@@ -823,18 +829,19 @@ class HAPPointCatalog(HAPCatalogBase):
                 # Remove all other columns besides 'X-Center and Y-Center
                 out_table.keep_columns(['X-Center', 'Y-Center'])
                 # Add offset of 1.0 in X and Y to line up sources in region file with image displayed in ds9.
-                out_table['X-Center'].data = out_table['X-Center'].data + np.float64(1.0)
-                out_table['Y-Center'].data = out_table['Y-Center'].data + np.float64(1.0)
+                out_table['X-Center'].data[:] += np.float64(1.0)
+                out_table['Y-Center'].data[:] += np.float64(1.0)
             else:  # Bail out if anything else is encountered.
                 log.info("Error: unrecognized catalog format. Skipping region file generation.")
                 return()
-            reg_filename = self.sourcelist_filename.replace("."+self.catalog_suffix.split(".")[1], self.catalog_region_suffix)
+            reg_filename = self.sourcelist_filename.replace("."+self.catalog_suffix.split(".")[1],
+                                                            self.catalog_region_suffix)
             out_table.write(reg_filename, format="ascii")
             log.info("Wrote region file '{}' containing {} sources".format(reg_filename, len(out_table)))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def transform_list_xy_to_ra_dec(self,list_of_x, list_of_y, drizzled_image):
+    def transform_list_xy_to_ra_dec(self, list_of_x, list_of_y, drizzled_image):
         """Transform lists of X and Y coordinates to lists of RA and Dec coordinates
         This is a temporary solution until somthing like pix2sky or pix2world can be implemented in measure_sources.
 
@@ -1027,7 +1034,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-
     def measure_sources(self):
         """Use the positions of the sources identified in the white light image to
         measure properties of these sources in the filter images
@@ -1073,15 +1079,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
         imgarr_bkgsub = imgarr - bkg.background
 
         # Compute source properties...
-        self.source_cat = source_properties(imgarr_bkgsub,
-                                    self.sources,
-                                    background=bkg.background,
-                                    filter_kernel=self.kernel,
-                                    wcs=self.image.imgwcs)
+        self.source_cat = source_properties(imgarr_bkgsub, self.sources, background=bkg.background,
+                                            filter_kernel=self.kernel, wcs=self.image.imgwcs)
         log.info("Found {} sources from segmentation map".format(len(self.source_cat)))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
 
     def write_catalog(self):
         """Actually write the specified source catalog out to disk
