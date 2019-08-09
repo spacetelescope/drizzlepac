@@ -328,6 +328,12 @@ def run_hla_processing(input_filename, result=None, debug=False):
         log.info("Parse the poller and determine what exposures need to be combined into separate products")
         obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename)
 
+        # Generate the name for the manifest file which is for the entire visit.  It is fine
+        # to use only one of the Total Products to generate the manifest name as it is not
+        # dependent on the detector.
+        # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
+        manifest_name = total_list[0].manifest_name
+
         # Run alignimages.py on images on a filter-by-filter basis.
         # Process each filter object which contains a list of exposure objects/products,
         # regardless of detector.
@@ -384,8 +390,6 @@ def run_hla_processing(input_filename, result=None, debug=False):
         driz_list = create_drizzle_products(obs_info_dict, total_list, meta_wcs)
         product_list += driz_list
 
-        # MDD ENDED HERE
-
         """
         # 7: Create source catalogs from newly defined products (HLA-204)
         log.info("7: (WIP) Create source catalog from newly defined product")
@@ -408,14 +412,14 @@ def run_hla_processing(input_filename, result=None, debug=False):
         log.info("8: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry"
                  "of product")
         # TODO: QUALITY CONTROL SUBROUTINE CALL GOES HERE.
+        """
 
-        # 9: Write out manifest file listing all products generated during processing
+        # Write out manifest file listing all products generated during processing
         log.info("Creating manifest file {}".format(manifest_name))
         log.info("  Manifest contains the names of products generated during processing.")
         with open(manifest_name, mode='w') as catfile:
             [catfile.write("{}\n".format(name)) for name in product_list]
 
-        """
         # 10: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
     except Exception:

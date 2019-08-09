@@ -66,9 +66,10 @@ class TotalProduct(HAPProduct):
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
         self.ref_drizzle_filename = self.product_basename + "_ref_" + self.filetype + ".fits"
 
-        # How exactly is this used as it is set the number of times a TDP is created for
-        # an obset
-        # Manifest is created for the obset and instrument, regarding of the detector
+        # Generate the name for the manifest file which is for the entire visit.  It is fine
+        # to create it as an attribute of a TotalProduct as it is independent of
+        # the detector in use.
+        # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
         self.manifest_name = '_'.join([instrument, filename[1:4], obset_id, "manifest.txt"])
 
         # These attributes will be populated during processing

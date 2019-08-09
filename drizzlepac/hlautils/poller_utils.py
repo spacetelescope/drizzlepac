@@ -136,8 +136,6 @@ def parse_obset_tree(det_tree):
     sep_indx = 0
 
     tdp_list = []
-    # filt_list = []
-    # sep_list = []
 
     # Determine if the individual files being processed are flt or flc and
     # set the filetype accordingly (flt->drz or flc->drc).
@@ -175,8 +173,6 @@ def parse_obset_tree(det_tree):
                 # Create a single exposure product object
                 prod_list = prod_info.split(" ")
                 sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3], filename[1], prod_list[5], prod_list[6])
-                # sep_list.append(sep_obj)
-
                 # Set up the filter product dictionary and create a filter product object
                 # Initialize `info` key for this filter product dictionary
                 if not obset_products[fprod]['info']:
@@ -207,9 +203,6 @@ def parse_obset_tree(det_tree):
 
             # Append filter object to the list of filter objects for this specific total product object
             tdp_obj.add_product(filt_obj)
-
-            # Add the filter object to the list of FilterProducts
-            # filt_list.append(filt_obj)
 
         # Add the total product object to the list of TotalProducts
         tdp_list.append(tdp_obj)
