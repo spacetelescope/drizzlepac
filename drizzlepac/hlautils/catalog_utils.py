@@ -690,7 +690,12 @@ class HAPPointCatalog(HAPCatalogBase):
         # load in coords of sources identified in total product
         positions = (self.sources['xcentroid'], self.sources['ycentroid'])
 
-        bg_apers = CircularAnnulus(positions, r_in=skyannulus_arcsec, r_out=skyannulus_arcsec + dskyannulus_arcsec)  # compute background
+        # adjust coods for calculations that assume origin value of 0, rather than 1.
+
+        pos_x = np.asarray(positions[0]) -1.0
+        pos_y = np.asarray(positions[0]) -1.0
+
+        bg_apers = CircularAnnulus((pos_x, pos_y), r_in=skyannulus_arcsec, r_out=skyannulus_arcsec + dskyannulus_arcsec)  # compute background
 
         # convert photometric aperture radii from arcsec to pixels
         aper_radius_arcsec = [self.param_dict['dao']['aperture_1'],self.param_dict['dao']['aperture_2']]
@@ -698,7 +703,7 @@ class HAPPointCatalog(HAPCatalogBase):
         for aper_radius in aper_radius_arcsec:
             aper_radius_list_pixels.append(aper_radius/platescale)
 
-        phot_apers = [CircularAperture(positions, r=r) for r in aper_radius_list_pixels]
+        phot_apers = [CircularAperture((pos_x, pos_y), r=r) for r in aper_radius_list_pixels]
 
         log.info("{}".format("=" * 80))
         log.info("")
@@ -723,6 +728,21 @@ class HAPPointCatalog(HAPCatalogBase):
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image, platescale=platescale,
                                                error_array=self.bkg.background_rms, bg_method=salgorithm, epadu=gain,
                                                zero_point=ab_zeropoint)
+
+        # convert coords back to origin value = 1 rather than 0
+        photometry_tbl["XCENTER"] = photometry_tbl["XCENTER"] + 1.
+        photometry_tbl["YCENTER"] = photometry_tbl["YCENTER"] + 1.
+
+        # calculate and add RA and DEC columns to table
+        ra, dec = self.transform_list_xy_to_ra_dec(photometry_tbl["XCENTER"], photometry_tbl["YCENTER"], self.imgname) # TODO: replace with all_pix2sky or somthing at a later date
+        ra_col = Column(name="RA", data=ra, dtype=np.float64)
+        dec_col = Column(name="DEC", data=dec, dtype=np.float64)
+        photometry_tbl.add_column(ra_col, index=2)
+        photometry_tbl.add_column(dec_col, index=3)
+
+        photometry_tbl.write("photometry_tbl.csv", format='ascii.csv', overwrite=True)  # TODO: NO FILE WRITE SHOULD OCCUR HERE!
+        log.info("WROTE photometry_tbl.csv !")
+
         print("\a")
         pdb.set_trace()
 
@@ -768,6 +788,49 @@ class HAPPointCatalog(HAPCatalogBase):
             reg_filename = self.sourcelist_filename.replace("."+self.catalog_suffix.split(".")[1], self.catalog_region_suffix)
             out_table.write(reg_filename, format="ascii")
             log.info("Wrote region file '{}' containing {} sources".format(reg_filename, len(out_table)))
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def transform_list_xy_to_ra_dec(self,list_of_x, list_of_y, drizzled_image):
+        """Transform lists of X and Y coordinates to lists of RA and Dec coordinates
+
+        Tested.
+
+        Parameters
+        ----------
+        list_of_x : list
+            list of x coordinates to convert
+
+        list_of_y :
+            list of y coordinates to convert
+
+        drizzled_image : str
+            Name of the image that corresponds to the table from DAOPhot. This image is used to re-write x and y coordinates in RA and Dec.
+
+        Returns
+        -------
+        ra: list
+            list of right ascension values
+
+        dec : list
+            list of declination values
+        """
+        import stwcs
+
+        wcs1_drz = stwcs.wcsutil.HSTWCS(drizzled_image + "[1]")
+        origin = 1
+        # *origin* is the coordinate in the upper left corner of the
+        # image.  In FITS and Fortran standards, this is 1.  In Numpy and C
+        # standards this is 0.
+        try:
+            skyposish = wcs1_drz.all_pix2sky(list_of_x, list_of_y, origin)
+        except AttributeError:
+            skyposish = wcs1_drz.all_pix2world(list_of_x, list_of_y, origin)
+        ra = skyposish[0]
+        dec = skyposish[1]
+
+        return ra, dec
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 class HAPSegmentCatalog(HAPCatalogBase):
@@ -1135,3 +1198,4 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # TODO: 1) re-tune source identifaction parmeters. Warren's updates brought the total number of soruces found down from ~16k-17k to 7138 sources for ACS_10265_01.
 # TODO: 2) add meaningful code to HAPPointCatalog.measure_soruces so that it actually produces a sourcelist that meets or exceeds the HLA classic counterpart
+# TODO: 3) Figure out why the total image is still getting to measure_sources.

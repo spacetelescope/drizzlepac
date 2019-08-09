@@ -41,7 +41,7 @@ def run_catalog_utils(total_list, debug, phot_mode):
             total_product_name = total_product_obj.product_basename + "_drz.fits"
         total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
         total_product_catalogs.identify()
-        #total_product_catalogs.measure() # <----DON'T NEED TO DO PHOTOMETRY ON IDENTIFIED SOURCES. REMOVE!
+        total_product_catalogs.measure()
         total_product_catalogs.write()
 
         # build dictionary of total_product_catalogs.catalogs[*].sources to use for filter photometric catalog generation
