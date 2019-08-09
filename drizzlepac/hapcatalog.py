@@ -31,9 +31,6 @@ def run_catalog_utils(total_list, debug, phot_mode):
     -------
     Nothing.
     """
-    starting_dt = datetime.datetime.now() # TODO: remove prior to final integration
-    log.info("Run start time: {}".format(str(starting_dt))) # TODO: remove prior to final integration
-
     for total_product_obj in total_list:
         if os.path.exists(total_product_obj.product_basename+"_drc.fits"):
             total_product_name = total_product_obj.product_basename + "_drc.fits"
@@ -44,7 +41,8 @@ def run_catalog_utils(total_list, debug, phot_mode):
         total_product_catalogs.measure()
         total_product_catalogs.write()
 
-        # build dictionary of total_product_catalogs.catalogs[*].sources to use for filter photometric catalog generation
+        # build dictionary of total_product_catalogs.catalogs[*].sources to use for
+        # filter photometric catalog generation
         sources_dict = {}
         for cat_type in total_product_catalogs.catalogs.keys():
             sources_dict[cat_type] = {}
@@ -56,12 +54,10 @@ def run_catalog_utils(total_list, debug, phot_mode):
                 filter_product_name = filter_product_obj.product_basename + "_drc.fits"
             else:
                 filter_product_name = filter_product_obj.product_basename + "_drz.fits"
-            filter_product_catalogs = HAPCatalogs(filter_product_name, types=phot_mode, debug=debug, tp_sources=sources_dict)
+            filter_product_catalogs = HAPCatalogs(filter_product_name, types=phot_mode,
+                                                  debug=debug, tp_sources=sources_dict)
             filter_product_catalogs.measure()
             filter_product_catalogs.write()
-
-    log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds())) # TODO: remove prior to final integration
-
 
 # ======================================================================================================================
 
@@ -82,7 +78,12 @@ def main():
 
     obs_info_dict, expo_list, filt_list, total_list = poller_utils.interpret_obset_input(args.input_file)
 
+    starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
+    log.info("Run start time: {}".format(str(starting_dt)))  # TODO: remove prior to final integration
+
     run_catalog_utils(total_list, args.debug, args.phot_mode)
+
+    log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
 
 
 # ======================================================================================================================
