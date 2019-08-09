@@ -16,16 +16,22 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 
 @util.with_logging
-def run_catalog_utils(total_list, debug, phot_mode):
-    """Super simple testing interface for the catalog generation code.
+def run_catalog_utils(total_list, debug=False, phot_mode='both'):
+    """This subroutine utilizes hlautils/catalog_utils module to produce photometric sourcelists for the specified
+    total drizzle product and it's associated child filter products.
 
     Parameters
     ----------
-    args : argparse.Namespace object
-        command-line input arguments
+    total_list : drizzlepac.hlautils.Product.TotalProduct
+        total drizzle product that will be processed by catalog_utils. catalog_utils will also create photometric
+        sourcelists for the child filter products of this total product.
 
-    starting_dt : datetime.datetime object
-        start date/time of current run.
+    debug : bool, optional
+        generate ds9 region file counterparts to the photometric sourcelists? Default value is False.
+
+    phot_mode : str, optional
+        Which algorithm should be used to generate the sourcelists? 'point' for point-source aperture photometry;
+        'segment' for segment map photometry; 'both' for both 'segment' and 'point'. Default value is 'both'.
 
     Returns
     -------
