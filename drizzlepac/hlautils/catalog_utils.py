@@ -11,7 +11,7 @@ from astropy.table import Column, Table
 import numpy as np
 import pdb
 
-from photutils import aperture_photometry, CircularAperture, DAOStarFinder
+from photutils import aperture_photometry, CircularAperture, CircularAnnulus, DAOStarFinder
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
 from photutils import detect_sources, source_properties  # , deblend_sources
 from stsci.tools import logutil
@@ -676,33 +676,55 @@ class HAPPointCatalog(HAPCatalogBase):
 
 
         #>>>>>>>>>>>>>>>>>> ADAPTION OF HLA CLASSIC CODE 'HLA_SOURCELIST' SUBROUTINE 'DAOPHOT_STYLE_PHOTOMETRY' LINE 1019 <<<<<<<<<<<
-
+        # ))))))))))))))))) Hardwired presets just to get things moving (((((((((((
         platescale = self.param_dict['astrodrizzle']['SCALE'] #arcsec/pixel
-
-        annulus_arcsec = 0.25 # TODO: PUT THIS STUFF INTO CONFIGS
-        annulus_pix = annulus_arcsec/platescale
-
-        dannulus_arcsec = 0.25 # TODO: PUT THIS STUFF INTO CONFIGS
-        dannulus_pix = dannulus_arcsec/platescale
-
+        skyannulus_arcsec = 0.25 # TODO: PUT THIS STUFF INTO CONFIGS
+        skyannulus_pix = skyannulus_arcsec/platescale
+        dskyannulus_arcsec = 0.25 # TODO: PUT THIS STUFF INTO CONFIGS
+        dskyannulus_pix = dskyannulus_arcsec/platescale
         ab_zeropoint = 26.5136022236
         gain = 5060.0
         readnoise = 4.97749985
+        salgorithm = 'mode'
 
+        # load in coords of sources identified in total product
+        positions = (self.sources['xcentroid'], self.sources['ycentroid'])
+
+        bg_apers = CircularAnnulus(positions, r_in=skyannulus_arcsec, r_out=skyannulus_arcsec + dskyannulus_arcsec)  # compute background
 
         # convert photometric aperture radii from arcsec to pixels
         aper_radius_arcsec = [self.param_dict['dao']['aperture_1'],self.param_dict['dao']['aperture_2']]
-        aper_radius_list_pixels =[]
+        aper_radius_list_pixels = []
         for aper_radius in aper_radius_arcsec:
             aper_radius_list_pixels.append(aper_radius/platescale)
-            print("\a")
-            pdb.set_trace()
 
-        photometry_tbl = photometry_tools.iraf_style_photometry(photAps, bgAps, data=image, platescale=platescale,
-                                               error_array=errData, bg_method=salgorithm, epadu=gain,
-                                               zero_point=ab_zeroPoint)
+        phot_apers = [CircularAperture(positions, r=r) for r in aper_radius_list_pixels]
+
+        log.info("{}".format("=" * 80))
+        log.info("")
+        log.info("SUMMARY OF INPUT PARAMETERS")
+        # log.info("imgFile:          {}".format(imgFile))
+        # log.info("errFile:          {}".format(errFile))
+        # log.info("cooFile:          {}".format(cooFile))
+        # log.info("outFile:          {}".format(outFile))
+        log.info("platescale:       {}".format(platescale))
+        log.info("radii (pixels):   {}".format(aper_radius_list_pixels))
+        log.info("radii (arcsec):   {}".format(aper_radius_arcsec))
+        log.info("annulus:          {}".format(skyannulus_arcsec))
+        log.info("dSkyAnnulus:      {}".format(dskyannulus_arcsec))
+        log.info("salgorithm:       {}".format(salgorithm))
+        log.info("gain:             {}".format(gain))
+        log.info("ab_zeropoint:     {}".format(ab_zeropoint))
+        log.info(" ")
+        log.info("{}".format("=" * 80))
+        log.info("")
 
 
+        photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image, platescale=platescale,
+                                               error_array=self.bkg.background_rms, bg_method=salgorithm, epadu=gain,
+                                               zero_point=ab_zeropoint)
+        print("\a")
+        pdb.set_trace()
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
