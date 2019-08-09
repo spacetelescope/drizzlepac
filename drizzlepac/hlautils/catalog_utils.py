@@ -7,7 +7,7 @@ import astropy.units as u
 from astropy.io import fits as fits
 from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel
 from astropy.stats import mad_std, gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm
-from astropy.table import Column, Table
+from astropy.table import Column, MaskedColumn, Table
 import numpy as np
 import pdb
 
@@ -676,28 +676,29 @@ class HAPPointCatalog(HAPCatalogBase):
 
 
         #>>>>>>>>>>>>>>>>>> ADAPTION OF HLA CLASSIC CODE 'HLA_SOURCELIST' SUBROUTINE 'DAOPHOT_STYLE_PHOTOMETRY' LINE 1019 <<<<<<<<<<<
-        # ))))))))))))))))) Hardwired presets just to get things moving (((((((((((
+        # +++++++++++++++++++ Hardwired presets just to get things moving  +++++++++++++++++++
+        # TODO: Remove. All these values come from static values in config files or be determined dynamically from the product being processed.
         platescale = self.param_dict['astrodrizzle']['SCALE'] #arcsec/pixel
-        skyannulus_arcsec = 0.25 # TODO: PUT THIS STUFF INTO CONFIGS
+        skyannulus_arcsec = 0.25
         skyannulus_pix = skyannulus_arcsec/platescale
-        dskyannulus_arcsec = 0.25 # TODO: PUT THIS STUFF INTO CONFIGS
+        dskyannulus_arcsec = 0.25
         dskyannulus_pix = dskyannulus_arcsec/platescale
         ab_zeropoint = 26.5136022236
         gain = 5060.0
         readnoise = 4.97749985
         salgorithm = 'mode'
-
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         # load in coords of sources identified in total product
         positions = (self.sources['xcentroid'], self.sources['ycentroid'])
 
         # adjust coods for calculations that assume origin value of 0, rather than 1.
-
         pos_x = np.asarray(positions[0]) -1.0
         pos_y = np.asarray(positions[0]) -1.0
 
-        bg_apers = CircularAnnulus((pos_x, pos_y), r_in=skyannulus_arcsec, r_out=skyannulus_arcsec + dskyannulus_arcsec)  # compute background
+        #define list of background annulii
+        bg_apers = CircularAnnulus((pos_x, pos_y), r_in=skyannulus_arcsec, r_out=skyannulus_arcsec + dskyannulus_arcsec)  # TODO: Since the image is already background subtracted, do we need another background subtraction?
 
-        # convert photometric aperture radii from arcsec to pixels
+        # convert photometric aperture radii from arcsec to pixels and create list of photometric apertures to measure
         aper_radius_arcsec = [self.param_dict['dao']['aperture_1'],self.param_dict['dao']['aperture_2']]
         aper_radius_list_pixels = []
         for aper_radius in aper_radius_arcsec:
@@ -705,13 +706,11 @@ class HAPPointCatalog(HAPCatalogBase):
 
         phot_apers = [CircularAperture((pos_x, pos_y), r=r) for r in aper_radius_list_pixels]
 
+        # parameter log dump!
         log.info("{}".format("=" * 80))
         log.info("")
         log.info("SUMMARY OF INPUT PARAMETERS")
-        # log.info("imgFile:          {}".format(imgFile))
-        # log.info("errFile:          {}".format(errFile))
-        # log.info("cooFile:          {}".format(cooFile))
-        # log.info("outFile:          {}".format(outFile))
+        log.info("self.imgname:   {}".format(self.imgname))
         log.info("platescale:       {}".format(platescale))
         log.info("radii (pixels):   {}".format(aper_radius_list_pixels))
         log.info("radii (arcsec):   {}".format(aper_radius_arcsec))
@@ -724,7 +723,7 @@ class HAPPointCatalog(HAPCatalogBase):
         log.info("{}".format("=" * 80))
         log.info("")
 
-
+        # Perform aperture photometry
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image, platescale=platescale,
                                                error_array=self.bkg.background_rms, bg_method=salgorithm, epadu=gain,
                                                zero_point=ab_zeropoint)
@@ -740,11 +739,55 @@ class HAPPointCatalog(HAPCatalogBase):
         photometry_tbl.add_column(ra_col, index=2)
         photometry_tbl.add_column(dec_col, index=3)
 
-        photometry_tbl.write("photometry_tbl.csv", format='ascii.csv', overwrite=True)  # TODO: NO FILE WRITE SHOULD OCCUR HERE!
-        log.info("WROTE photometry_tbl.csv !")
+        # Calculate and add concentration index (CI) column to table
+        ci_data = photometry_tbl["MAG_{}".format(aper_radius_arcsec[0])].data - photometry_tbl[
+            "MAG_{}".format(aper_radius_arcsec[1])].data
+        ci_mask = np.logical_and(np.abs(ci_data) > 0.0, np.abs(ci_data) < 1.0e-30)
+        big_bad_index = np.where(abs(ci_data) > 1.0e20)
+        ci_mask[big_bad_index] = True
+        ci_col = MaskedColumn(name="CI", data=ci_data, dtype=np.float64, mask=ci_mask)
+        photometry_tbl.add_column(ci_col)
 
-        print("\a")
-        pdb.set_trace()
+        # Add zero-value "Flags" column in preparation for source flagging
+        flag_col = Column(name="Flags", data=np.zeros_like(photometry_tbl['ID']), dtype=np.int64)
+        photometry_tbl.add_column(flag_col)
+
+        # Add null-value "TotMag(<outer radiiArc>)" and "TotMag(<outer radiiArc>)" columns
+        empty_tot_mag = MaskedColumn(name="TotMag({})".format(aper_radius_arcsec[1]), fill_value=None, mask=True,
+                                   length=len(photometry_tbl["XCENTER"].data), dtype=np.int64)
+        empty_tot_mag_err = MaskedColumn(name="TotMagErr({})".format(aper_radius_arcsec[1]), fill_value=None, mask=True,
+                                      length=len(photometry_tbl["XCENTER"].data), dtype=np.int64)
+        photometry_tbl.add_column(empty_tot_mag)
+        photometry_tbl.add_column(empty_tot_mag_err)
+
+        # build final output table
+        final_col_order = ["XCENTER", "YCENTER", "RA", "DEC", "ID", "MAG_{}".format(aper_radius_arcsec[0]),
+                         "MAG_{}".format(aper_radius_arcsec[1]), "MERR_{}".format(aper_radius_arcsec[0]),
+                         "MERR_{}".format(aper_radius_arcsec[1]), "MSKY", "STDEV", "FLUX_{}".format(aper_radius_arcsec[1]),
+                         "TotMag({})".format(aper_radius_arcsec[1]), "TotMagErr({})".format(aper_radius_arcsec[1]), "CI", "Flags"]
+        output_photometry_table = photometry_tbl[final_col_order]
+
+        # format output table columns
+        final_col_format = {"RA": "13.10f", "DEC": "13.10f", "MAG_{}".format(aper_radius_arcsec[0]): '6.3f',
+                          "MAG_{}".format(aper_radius_arcsec[1]): '6.3f', "MERR_{}".format(aper_radius_arcsec[0]): '6.3f',
+                          "MERR_{}".format(aper_radius_arcsec[1]): '6.3f', "MSKY": '10.8f', "STDEV": '10.8f',
+                          "FLUX_{}".format(aper_radius_arcsec[1]): '10.8f', "CI": "7.3f"}
+        for fcf_key in final_col_format.keys():
+            output_photometry_table[fcf_key].format = final_col_format[fcf_key]
+
+        # change some column titles to match old daophot.txt files
+        rename_dict = {"XCENTER": "X-Center", "YCENTER": "Y-Center",
+                       "MAG_{}".format(aper_radius_arcsec[0]): "MagAp({})".format(aper_radius_arcsec[0]),
+                       "MAG_{}".format(aper_radius_arcsec[1]): "MagAp({})".format(aper_radius_arcsec[1]),
+                       "MERR_{}".format(aper_radius_arcsec[0]): "MagErr({})".format(aper_radius_arcsec[0]),
+                       "MERR_{}".format(aper_radius_arcsec[1]): "MagErr({})".format(aper_radius_arcsec[1]),
+                       "MSKY": "MSky({})".format(aper_radius_arcsec[1]), "STDEV": "Stdev({})".format(aper_radius_arcsec[1]),
+                       "FLUX_{}".format(aper_radius_arcsec[1]): "Flux({})".format(aper_radius_arcsec[1])}
+        for old_col_title in rename_dict:
+            output_photometry_table.rename_column(old_col_title, rename_dict[old_col_title])
+            log.info("Column '{}' renamed '{}'".format(old_col_title, rename_dict[old_col_title]))
+
+        self.source_cat = output_photometry_table
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -776,12 +819,12 @@ class HAPPointCatalog(HAPCatalogBase):
                 # Add offset of 1.0 in X and Y to line up sources in region file with image displayed in ds9.
                 out_table['xcentroid'].data[:] += np.float64(1.0)
                 out_table['ycentroid'].data[:] += np.float64(1.0)
-            elif 'xcenter' in out_table.keys():  # for point-source photometric catalogs
-                # Remove all other columns besides xcenter and ycenter
-                out_table.keep_columns(['xcenter', 'ycenter'])
+            elif 'X-Center' in out_table.keys():  # for point-source photometric catalogs
+                # Remove all other columns besides 'X-Center and Y-Center
+                out_table.keep_columns(['X-Center', 'Y-Center'])
                 # Add offset of 1.0 in X and Y to line up sources in region file with image displayed in ds9.
-                out_table['xcenter'].data = out_table['xcenter'].data + np.float64(1.0)
-                out_table['ycenter'].data = out_table['ycenter'].data + np.float64(1.0)
+                out_table['X-Center'].data = out_table['X-Center'].data + np.float64(1.0)
+                out_table['Y-Center'].data = out_table['Y-Center'].data + np.float64(1.0)
             else:  # Bail out if anything else is encountered.
                 log.info("Error: unrecognized catalog format. Skipping region file generation.")
                 return()
@@ -793,6 +836,9 @@ class HAPPointCatalog(HAPCatalogBase):
 
     def transform_list_xy_to_ra_dec(self,list_of_x, list_of_y, drizzled_image):
         """Transform lists of X and Y coordinates to lists of RA and Dec coordinates
+        This is a temporary solution until somthing like pix2sky or pix2world can be implemented in measure_sources.
+
+        directly lifted from hla classic subroutine hla_sorucelist.Transform_list_xy_to_RA_Dec()
 
         Tested.
 
@@ -805,7 +851,8 @@ class HAPPointCatalog(HAPCatalogBase):
             list of y coordinates to convert
 
         drizzled_image : str
-            Name of the image that corresponds to the table from DAOPhot. This image is used to re-write x and y coordinates in RA and Dec.
+            Name of the image that corresponds to the table from DAOPhot. This image is used to re-write x and y
+            coordinates in RA and Dec.
 
         Returns
         -------

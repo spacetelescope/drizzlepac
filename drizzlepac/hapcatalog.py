@@ -57,10 +57,8 @@ def run_catalog_utils(total_list, debug, phot_mode):
             else:
                 filter_product_name = filter_product_obj.product_basename + "_drz.fits"
             filter_product_catalogs = HAPCatalogs(filter_product_name, types=phot_mode, debug=debug, tp_sources=sources_dict)
-            # filter_product_catalogs.identify() # <------FILTER IMAGES DON'T NEED TO RE-IDENTIFY SORUCES AGAIN. REMOVE!
             filter_product_catalogs.measure()
             filter_product_catalogs.write()
-
 
     log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds())) # TODO: remove prior to final integration
 
