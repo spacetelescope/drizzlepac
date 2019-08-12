@@ -123,7 +123,7 @@ class ParamDict:
                 "TWEAK_THRESHOLD": None,
                 "aperture_1": 0.05,  # update from 0.15
                 "aperture_2": 0.15,  # update from 0.25
-                "bthresh": 5.0},
+                "bthresh": 1.5},
             "sourcex": {
                 "fwhm": 0.13,
                 "thresh": None,
@@ -451,8 +451,8 @@ class HAPCatalogs:
 
         # Compute the background for this image
         self.image = CatalogImage(fitsfile)
-        self.image.compute_background(nsigma=self.param_dict['sourcex']['bthresh'],
-                                      threshold_flag=self.param_dict['sourcex']['thresh'])
+        self.image.compute_background(nsigma=self.param_dict['dao']['bthresh'],
+                                      threshold_flag=self.param_dict['sourcex']['thresh']) # TODO previoulsy, nsigma=self.param_dict['sourcex']['bthresh']
 
         self.image.build_kernel(self.param_dict['dao']['TWEAK_FWHMPSF'],
                                 self.param_dict['astrodrizzle']['SCALE'])
@@ -511,7 +511,9 @@ class HAPCatalogs:
         # Make sure we at least have a default 2D background computed
         for catalog in self.catalogs.values():
             if catalog.source_cat is None:
-                catalog.measure_sources(**pars)
+                # catalog.source_cat = catalog.sources
+                # catalog.write_catalog
+                catalog.measure_sources(**pars) # TODO: uncomment prior to deployment
 
         # Support user-input value of 'None' which will trigger generation of all catalog types
         for catalog in self.catalogs.values():
@@ -630,8 +632,7 @@ class HAPPointCatalog(HAPCatalogBase):
 
             # find ALL the sources!!!
             log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm,
-                                                                             self.image.bkg_rms_mean,
-                                                                             self.image.bkg_rms_mean))
+                                                                             self.image.bkg_rms_mean, dao_ratio))
             daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.image.bkg_rms_mean, ratio=dao_ratio)
             sources = daofind(image)
 
@@ -666,7 +667,7 @@ class HAPPointCatalog(HAPCatalogBase):
         log.info("Performing point-source photometry on identified point-sources")
         # Open and background subtract image
         image = self.image.data.copy()
-        image -= self.bkg_used
+        # image -= self.bkg_used # TODO: commented out for testing 8/12/19 1309
 
         # # Aperture Photometry
         # positions = (self.sources['xcentroid'], self.sources['ycentroid'])
@@ -694,8 +695,8 @@ class HAPPointCatalog(HAPCatalogBase):
         positions = (self.sources['xcentroid'], self.sources['ycentroid'])
 
         # adjust coods for calculations that assume origin value of 0, rather than 1.
-        pos_x = np.asarray(positions[0]) - 1.0
-        pos_y = np.asarray(positions[0]) - 1.0
+        pos_x = np.asarray(positions[0])# - 1.0 # TODO test tweak 8/12/19 1528
+        pos_y = np.asarray(positions[0])# - 1.0 # TODO test tweak 8/12/19 1528
 
         # define list of background annulii
         bg_apers = CircularAnnulus((pos_x, pos_y), r_in=skyannulus_arcsec, r_out=skyannulus_arcsec + dskyannulus_arcsec)  # TODO: Since the image is already background subtracted, do we need another background subtraction?
