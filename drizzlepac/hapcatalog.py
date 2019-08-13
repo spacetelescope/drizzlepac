@@ -68,8 +68,7 @@ def run_catalog_utils(total_list, debug=False, phot_mode='both'):
         #     total_product_catalogs = pickle.load(pickle_in)
         #     pickle_in.close()
 
-        print("\a")
-        pdb.set_trace()
+        sys.exit()
         # build dictionary of total_product_catalogs.catalogs[*].sources to use for
         # filter photometric catalog generation
         sources_dict = {}
