@@ -695,11 +695,11 @@ class HAPPointCatalog(HAPCatalogBase):
         positions = (self.sources['xcentroid'], self.sources['ycentroid'])
 
         # adjust coods for calculations that assume origin value of 0, rather than 1.
-        pos_x = np.asarray(positions[0])# - 1.0 # TODO test tweak 8/12/19 1528
-        pos_y = np.asarray(positions[0])# - 1.0 # TODO test tweak 8/12/19 1528
+        pos_x = np.asarray(positions[0]) - 1.0
+        pos_y = np.asarray(positions[1]) - 1.0
 
         # define list of background annulii
-        bg_apers = CircularAnnulus((pos_x, pos_y), r_in=skyannulus_arcsec, r_out=skyannulus_arcsec + dskyannulus_arcsec)  # TODO: Since the image is already background subtracted, do we need another background subtraction?
+        bg_apers = CircularAnnulus((pos_x, pos_y), r_in=skyannulus_arcsec, r_out=skyannulus_arcsec + dskyannulus_arcsec)
 
         # convert photometric aperture radii from arcsec to pixels and create list of photometric apertures to measure
         aper_radius_arcsec = [self.param_dict['dao']['aperture_1'], self.param_dict['dao']['aperture_2']]

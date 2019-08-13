@@ -2,6 +2,8 @@
 import argparse
 import datetime
 import os
+import pdb
+import pickle
 import sys
 
 from stsci.tools import logutil
@@ -10,7 +12,6 @@ from drizzlepac import util
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
 from drizzlepac.hlautils import poller_utils
 
-import pdb
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
@@ -42,13 +43,32 @@ def run_catalog_utils(total_list, debug=False, phot_mode='both'):
             total_product_name = total_product_obj.product_basename + "_drc.fits"
         else:
             total_product_name = total_product_obj.product_basename + "_drz.fits"
-        total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
-        total_product_catalogs.identify()
-        total_product_catalogs.measure()
-        total_product_catalogs.write()
+
+        # total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
+        # total_product_catalogs.identify()
+        # total_product_catalogs.measure()
+        # total_product_catalogs.write()
+
+        pickle_filename = "foo.pickle"
+        if not os.path.exists(pickle_filename):
+
+            total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
+            total_product_catalogs.identify()
+            total_product_catalogs.measure()
+            total_product_catalogs.write()
+
+            log.info("Writing out pickle file....")
+            pickle_out = open(pickle_filename, "wb")
+            pickle.dump(total_product_catalogs, pickle_out)
+            pickle_out.close()
+        else:
+            log.info("Reading in pickle file...")
+            pickle_in = open(pickle_filename, "rb")
+            total_product_catalogs = pickle.load(pickle_in)
+            pickle_in.close()
+
         print("\a")
         pdb.set_trace()
-
         # build dictionary of total_product_catalogs.catalogs[*].sources to use for
         # filter photometric catalog generation
         sources_dict = {}
