@@ -686,11 +686,15 @@ class HAPPointCatalog(HAPCatalogBase):
         skyannulus_pix = skyannulus_arcsec/platescale
         dskyannulus_arcsec = 0.25
         dskyannulus_pix = dskyannulus_arcsec/platescale
-        ab_zeropoint = 26.5136022236
         gain = 5060.0
         readnoise = 4.97749985
         salgorithm = 'mode'
         # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        # Compute AB mag zeropoint.
+        photplam = self.image.imghdu[1].header['photplam']
+        photflam = self.image.imghdu[1].header['photflam']
+        ab_zeropoint = -2.5 * np.log10(photflam) - 21.10 - 5.0 * np.log10(photplam) + 18.6921
+
         # load in coords of sources identified in total product
         positions = (self.sources['xcentroid'], self.sources['ycentroid'])
 
