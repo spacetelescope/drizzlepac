@@ -44,28 +44,29 @@ def run_catalog_utils(total_list, debug=False, phot_mode='both'):
         else:
             total_product_name = total_product_obj.product_basename + "_drz.fits"
 
-        # total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
-        # total_product_catalogs.identify()
-        # total_product_catalogs.measure()
-        # total_product_catalogs.write()
+        total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
+        total_product_catalogs.identify()
+        total_product_catalogs.measure()
+        total_product_catalogs.write()
 
-        pickle_filename = "foo.pickle"
-        if not os.path.exists(pickle_filename):
-
-            total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
-            total_product_catalogs.identify()
-            total_product_catalogs.measure()
-            total_product_catalogs.write()
-
-            log.info("Writing out pickle file....")
-            pickle_out = open(pickle_filename, "wb")
-            pickle.dump(total_product_catalogs, pickle_out)
-            pickle_out.close()
-        else:
-            log.info("Reading in pickle file...")
-            pickle_in = open(pickle_filename, "rb")
-            total_product_catalogs = pickle.load(pickle_in)
-            pickle_in.close()
+        # TODO: remove below commented out code prior to deployment
+        # pickle_filename = "foo.pickle"
+        # if not os.path.exists(pickle_filename):
+        #
+        #     total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
+        #     total_product_catalogs.identify()
+        #     total_product_catalogs.measure()
+        #     total_product_catalogs.write()
+        #
+        #     log.info("Writing out pickle file....")
+        #     pickle_out = open(pickle_filename, "wb")
+        #     pickle.dump(total_product_catalogs, pickle_out)
+        #     pickle_out.close()
+        # else:
+        #     log.info("Reading in pickle file...")
+        #     pickle_in = open(pickle_filename, "rb")
+        #     total_product_catalogs = pickle.load(pickle_in)
+        #     pickle_in.close()
 
         print("\a")
         pdb.set_trace()
@@ -104,7 +105,7 @@ def main():
 
     log.info("python {} {} -d {} -m {}".format(os.path.realpath(__file__), args.input_file, args.debug, args.phot_mode))
 
-    obs_info_dict, expo_list, filt_list, total_list = poller_utils.interpret_obset_input(args.input_file)
+    obs_info_dict, total_list = poller_utils.interpret_obset_input(args.input_file)
 
     starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
     log.info("Run start time: {}".format(str(starting_dt)))  # TODO: remove prior to final integration
