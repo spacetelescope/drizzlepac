@@ -287,7 +287,7 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
 
             # Add CTE corrected filename as additional input if present
             if os.path.exists(_infile_flc) and _infile_flc != _infile:
-                _inlist.append(_infile_flc)
+                _calfiles_flc = [_infile_flc]
 
         else:
             # Working with an ASN table...
@@ -305,10 +305,14 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
             _cal_prodname = inFilename
             _new_asn.extend(_inlist)  # kept so we can delete it when finished
 
-        # check to see whether FLC files are also present, and need to be updated
-        # generate list of FLC files
+            # check to see whether FLC files are also present, and need to be updated
+            # generate list of FLC files
+            _calfiles_flc = [f.replace('_flt.fits', '_flc.fits')
+                             for f in _calfiles
+                             if os.path.exists(f.replace('_flt.fits', '_flc.fits'))]
+
         align_files = None
-        _calfiles_flc = [f.replace('_flt.fits', '_flc.fits') for f in _calfiles]
+
         # insure these files exist, if not, blank them out
         # Also pick out what files will be used for additional alignment to GAIA
         if not os.path.exists(_calfiles_flc[0]):
