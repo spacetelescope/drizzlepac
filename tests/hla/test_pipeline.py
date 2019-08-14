@@ -90,7 +90,8 @@ class BasePipeline:
         downloaded, if necessary.
         """
         filename = self.get_data(*args, docopy=docopy)
-        ref_files = ref_from_image(filename, ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE', 'DGEOFILE'])
+        ref_files = ref_from_image(filename, ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE',
+                                              'DGEOFILE', 'MDRIZTAB'])
         print("Looking for REF_FILES: {}".format(ref_files))
 
         for ref_file in ref_files:
