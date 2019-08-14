@@ -695,7 +695,7 @@ class HAPPointCatalog(HAPCatalogBase):
         ab_zeropoint = -2.5 * np.log10(photflam) - 21.10 - 5.0 * np.log10(photplam) + 18.6921
 
         #compute average average gain
-        gain = np.mean(self.image.imghdu[0].header['atodgna'],self.image.imghdu[0].header['atodgnb'],self.image.imghdu[0].header['atodgnc'],self.image.imghdu[0].header['atodgnd'])
+        gain = self.image.imghdu[0].header['exptime'] * np.mean([self.image.imghdu[0].header['atodgna'],self.image.imghdu[0].header['atodgnb'],self.image.imghdu[0].header['atodgnc'],self.image.imghdu[0].header['atodgnd']])
 
         # load in coords of sources identified in total product
         positions = (self.sources['xcentroid'], self.sources['ycentroid'])
