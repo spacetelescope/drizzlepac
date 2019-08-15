@@ -331,6 +331,8 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
         print("FLT: {}".format(fits.info(_calfiles[0])))
         print("ENV[step_control]: {}".format(os.environ['ASTROMETRY_STEP_CONTROL']))
         print("ENV[a_priori]: {}".format(os.environ['ASTROMETRY_APPLY_APRIORI']))
+        import stwcs
+        print("STWCS: {}".format(stwcs.__version__))
 
         if align_to_gaia:
             # Perform additional alignment on the FLC files, if present
