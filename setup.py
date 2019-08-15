@@ -93,7 +93,7 @@ setup(
         'stsci.imagestats',
         'stsci.skypac',
         'stsci.stimage',
-        'stwcs',
+        'stwcs>=1.5.1',
         'tweakwcs>=0.5.0',
         'stregion',
         'requests',
