@@ -327,6 +327,7 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
         updatewcs.updatewcs(_calfiles)
         if _calfiles_flc:
             updatewcs.updatewcs(_calfiles_flc)
+        print("WCSNAME[FLT]: {}   WCSNAME[FLC]: {}".format(fits.getval(_calfiles[0], 'wcsname', ext=1), fits.getval(_calfiles_flc[0], 'wcsname', ext=1)))
 
         if align_to_gaia:
             # Perform additional alignment on the FLC files, if present
