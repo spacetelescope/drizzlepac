@@ -328,6 +328,9 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
         if _calfiles_flc:
             updatewcs.updatewcs(_calfiles_flc)
         print("WCSNAME[FLT]: {}   WCSNAME[FLC]: {}".format(fits.getval(_calfiles[0], 'wcsname', ext=1), fits.getval(_calfiles_flc[0], 'wcsname', ext=1)))
+        print("FLT: {}".format(fits.info(_calfiles[0])))
+        print("ENV[step_control]: {}".format(os.environ['ASTROMETRY_STEP_CONTROL']))
+        print("ENV[a_priori]: {}".format(os.environ['ASTROMETRY_APPLY_APRIORI']))
 
         if align_to_gaia:
             # Perform additional alignment on the FLC files, if present
