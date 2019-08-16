@@ -39,36 +39,21 @@ def run_catalog_utils(total_list, debug=False, phot_mode='both'):
     Nothing.
     """
     for total_product_obj in total_list:
+        # determine total product filename
         if os.path.exists(total_product_obj.product_basename+"_drc.fits"):
             total_product_name = total_product_obj.product_basename + "_drc.fits"
         else:
             total_product_name = total_product_obj.product_basename + "_drz.fits"
 
+        # Instantiate filter catalog product object
         total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
+
+        # Identify sources to be measured by filter photometry step
         total_product_catalogs.identify()
-        total_product_catalogs.measure()
+
+        #write out list(s) of identified sources
         total_product_catalogs.write()
 
-        # TODO: remove below commented out code prior to deployment
-        # pickle_filename = "foo.pickle"
-        # if not os.path.exists(pickle_filename):
-        #
-        #     total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
-        #     total_product_catalogs.identify()
-        #     total_product_catalogs.measure()
-        #     total_product_catalogs.write()
-        #
-        #     log.info("Writing out pickle file....")
-        #     pickle_out = open(pickle_filename, "wb")
-        #     pickle.dump(total_product_catalogs, pickle_out)
-        #     pickle_out.close()
-        # else:
-        #     log.info("Reading in pickle file...")
-        #     pickle_in = open(pickle_filename, "rb")
-        #     total_product_catalogs = pickle.load(pickle_in)
-        #     pickle_in.close()
-
-        sys.exit()
         # build dictionary of total_product_catalogs.catalogs[*].sources to use for
         # filter photometric catalog generation
         sources_dict = {}
@@ -77,14 +62,21 @@ def run_catalog_utils(total_list, debug=False, phot_mode='both'):
             sources_dict[cat_type]['sources'] = total_product_catalogs.catalogs[cat_type].sources
             if cat_type == "segment":
                 sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
+
         for filter_product_obj in total_product_obj.fdp_list:
+            # determine filter product filename
             if os.path.exists(filter_product_obj.product_basename + "_drc.fits"):
                 filter_product_name = filter_product_obj.product_basename + "_drc.fits"
             else:
                 filter_product_name = filter_product_obj.product_basename + "_drz.fits"
+
+            # Instantiate filter catalog product object
             filter_product_catalogs = HAPCatalogs(filter_product_name, types=phot_mode,
                                                   debug=debug, tp_sources=sources_dict)
+            # Perform photometry
             filter_product_catalogs.measure()
+
+            # Write out photometric catalog(s)
             filter_product_catalogs.write()
 
 # ======================================================================================================================
