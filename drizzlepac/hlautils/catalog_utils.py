@@ -1,6 +1,7 @@
 """This script contains code to support creation of photometric sourcelists using two techniques: aperture photometry
 segmentation-map based photometry.
 """
+import pdb
 import sys
 
 import astropy.units as u
@@ -9,7 +10,7 @@ from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel
 from astropy.stats import mad_std, gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm
 from astropy.table import Column, MaskedColumn, Table
 import numpy as np
-import pdb
+from scipy import ndimage
 
 from photutils import aperture_photometry, CircularAperture, CircularAnnulus, DAOStarFinder
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
@@ -634,7 +635,13 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm,
                                                                              self.image.bkg_rms_mean, dao_ratio))
             daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.image.bkg_rms_mean, ratio=dao_ratio)
-            sources = daofind(image)
+
+            # create mask to reject any sources located less than 10 pixels from a image/chip edge
+            wht_image = self.image.data.copy()
+            binary_inverted_wht = np.where(wht_image == 0, 1, 0)
+            exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
+
+            sources = daofind(image,mask=exclusion_mask)
 
             for col in sources.colnames:
                 sources[col].info.format = '%.8g'  # for consistent table output
