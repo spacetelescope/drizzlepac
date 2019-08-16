@@ -512,9 +512,7 @@ class HAPCatalogs:
         # Make sure we at least have a default 2D background computed
         for catalog in self.catalogs.values():
             if catalog.source_cat is None:
-                # catalog.source_cat = catalog.sources
-                # catalog.write_catalog
-                catalog.measure_sources(**pars) # TODO: uncomment prior to deployment
+                catalog.source_cat = catalog.sources
 
         # Support user-input value of 'None' which will trigger generation of all catalog types
         for catalog in self.catalogs.values():
