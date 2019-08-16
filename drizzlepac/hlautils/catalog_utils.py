@@ -453,7 +453,7 @@ class HAPCatalogs:
         # Compute the background for this image
         self.image = CatalogImage(fitsfile)
         self.image.compute_background(nsigma=self.param_dict['dao']['bthresh'],
-                                      threshold_flag=self.param_dict['sourcex']['thresh']) # TODO previoulsy, nsigma=self.param_dict['sourcex']['bthresh']
+                                      threshold_flag=self.param_dict['sourcex']['thresh'])  # TODO previoulsy, nsigma=self.param_dict['sourcex']['bthresh']
 
         self.image.build_kernel(self.param_dict['dao']['TWEAK_FWHMPSF'],
                                 self.param_dict['astrodrizzle']['SCALE'])
@@ -639,7 +639,7 @@ class HAPPointCatalog(HAPCatalogBase):
             binary_inverted_wht = np.where(wht_image == 0, 1, 0)
             exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
 
-            sources = daofind(image,mask=exclusion_mask)
+            sources = daofind(image, mask=exclusion_mask)
 
             for col in sources.colnames:
                 sources[col].info.format = '%.8g'  # for consistent table output
@@ -672,7 +672,7 @@ class HAPPointCatalog(HAPCatalogBase):
         log.info("Performing point-source photometry on identified point-sources")
         # Open and background subtract image
         image = self.image.data.copy()
-        image -= self.bkg_used # TODO Turned back on full-frame background subtraction 8/14/19
+        image -= self.bkg_used  # TODO Turned back on full-frame background subtraction 8/14/19
 
         # # Aperture Photometry
         # positions = (self.sources['xcentroid'], self.sources['ycentroid'])
@@ -699,14 +699,17 @@ class HAPPointCatalog(HAPCatalogBase):
         ab_zeropoint = -2.5 * np.log10(photflam) - 21.10 - 5.0 * np.log10(photplam) + 18.6921
 
         # Compute average gain
-        gain = self.image.imghdu[0].header['exptime'] * np.mean([self.image.imghdu[0].header['atodgna'],self.image.imghdu[0].header['atodgnb'],self.image.imghdu[0].header['atodgnc'],self.image.imghdu[0].header['atodgnd']])
+        gain = self.image.imghdu[0].header['exptime'] * np.mean([self.image.imghdu[0].header['atodgna'],
+                                                                 self.image.imghdu[0].header['atodgnb'],
+                                                                 self.image.imghdu[0].header['atodgnc'],
+                                                                 self.image.imghdu[0].header['atodgnd']])
 
         # load in coords of sources identified in total product
         positions = (self.sources['xcentroid'], self.sources['ycentroid'])
 
         # adjust coods for calculations that assume origin value of 0, rather than 1.
-        pos_x = np.asarray(positions[0])# - 1.0 # TODO: removed -1 pixel offset 8//14/19
-        pos_y = np.asarray(positions[1])# - 1.0 # TODO: removed -1 pixel offset 8//14/19
+        pos_x = np.asarray(positions[0])  # TODO: removed -1 pixel offset 8//14/19
+        pos_y = np.asarray(positions[1])  # TODO: removed -1 pixel offset 8//14/19
 
         # define list of background annulii
         bg_apers = CircularAnnulus((pos_x, pos_y), r_in=skyannulus_arcsec, r_out=skyannulus_arcsec + dskyannulus_arcsec)
