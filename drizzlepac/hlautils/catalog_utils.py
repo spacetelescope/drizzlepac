@@ -1259,8 +1259,5 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # ======================================================================================================================
 
-# TODO: re-tune source identifaction parmeters. Warren's updates brought the total number of soruces found down from ~16k-17k to 7138 sources for ACS_10265_01.
 # TODO: add meaningful code to HAPPointCatalog.measure_soruces so that it actually produces a sourcelist that meets or exceeds the HLA classic counterpart
-# TODO: Figure out why the total image is still getting to measure_sources.
 # TODO: Adapt hla_flag_filter.py to run after measure methods
-# TODO: Add algorithm to reject sources near image edges, chip gaps (See drizzlepac/hlautils/astrometric_utils.build_auto_kernal for ideas
