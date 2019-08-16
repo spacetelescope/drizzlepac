@@ -2,8 +2,6 @@
 import argparse
 import datetime
 import os
-import pdb
-import pickle
 import sys
 
 from stsci.tools import logutil
@@ -87,7 +85,7 @@ def main():
     parser = argparse.ArgumentParser(description='test interface for sourcelist_generation')
     parser.add_argument('input_file', help="input filename (ends with '.out'")
     parser.add_argument('-d', '--debug', required=False, choices=['True', 'False'], default='False', help='debug mode on? (generate region files?)')
-    parser.add_argument('-m', '--phot_mode', required=False, choices=['point', 'segment', 'both'], default='both', help="which photometry mode should be run? 'point' for point-soruce only; 'seg' for segment only, and 'both' for both point-source and segment photometry. ")
+    parser.add_argument('-m', '--phot_mode', required=False, choices=['point', 'segment', 'both'], default='both', help="which photometry mode should be run? 'point' for point-source only; 'seg' for segment only, and 'both' for both point-source and segment photometry. ")
     args = parser.parse_args()
     if args.debug == "True":
         args.debug = True
