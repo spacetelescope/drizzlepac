@@ -534,15 +534,19 @@ def interpret_wcsname_type(wcsname):
     no_fit = 'not aligned'
 
     wcsname_list = wcsname.split('-')
+    wcsname_term = wcsname_list[0][:3]
+    if wcsname_term not in base_terms:
+        wcstype = 'user-defined'  # Set to user-defined default
+        return wcstype
 
     # Interpret base terms
-    wcstype += base_terms[wcsname_list[0][:3]]
+    wcstype += base_terms[wcsname_term]
 
     # Interpret fit term (if any)
-    if len(wcsname_list) == 1:
+    fit_term = wcsname_list[1]
+    if len(wcsname_list) == 1 or fit_term not in fit_terms:
         wcstype += no_fit
     else:
-        fit_term = wcsname_list[1]
         if 'FIT' not in fit_term:
             wcstype += default_fit.format(fit_term)
         else:
