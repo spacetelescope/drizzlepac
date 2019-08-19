@@ -75,6 +75,7 @@ import os
 import shutil
 import sys
 import time
+import logging
 
 # THIRD-PARTY
 from astropy.io import fits
@@ -363,6 +364,8 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
                 _trlmsg += "   No correction to absolute astrometric frame applied!\n"
 
             # Write the perform_align log to the trailer file...(this will delete the _alignlog)
+            # Start by disabling the alignimages logger...
+            logging.getLogger('alignimages').disable = True
             _appendTrlFile(_trlfile, _alignlog)
 
             # Append messages from this calling routine post-perform_align
