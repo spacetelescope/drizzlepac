@@ -112,12 +112,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
             # Identify what sub-directory was created by astroquery for the
             # download
             if download_dir is None:
-                new_file_path = os.path.dirname(os.path.abspath(file))
-                file_path = file.split(os.sep)
-                log.info("Defining download directory based on: {} or [new]{}".format(file_path, new_file_path))
-                if '.' in file_path:
-                    file_path.remove('.')
-                download_dir = file_path[0]
+                download_dir = os.path.dirname(os.path.abspath(file))
             # Move or copy downloaded file to current directory
             local_file = os.path.abspath(os.path.basename(file))
             if archive:
