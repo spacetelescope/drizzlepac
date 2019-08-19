@@ -366,7 +366,7 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
 
             # Write the perform_align log to the trailer file...(this will delete the _alignlog)
             shutil.copy(_alignlog, _alignlog_copy)
-            _appendTrlFile(_trlfile, _alignlog)
+            _appendTrlFile(_trlfile, _alignlog_copy)
 
             # Append messages from this calling routine post-perform_align
             ftmp = open(_tmptrl, 'w')
