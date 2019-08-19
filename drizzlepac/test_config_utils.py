@@ -10,20 +10,25 @@ from drizzlepac.hlautils import poller_utils
 
 
 
-input_filename = sys.argv[1]
+# input_filename = sys.argv[1]
 
-# obs_info_dict, expo_list, filt_list, total_list = poller_utils.interpret_obset_input('j92c01.out')
-#
-# param_filename = "superparamfile.json"
-#
-# for item in expo_list+filt_list+total_list:
-#     item.pars = config_utils.HapConfig(item,input_custom_pars_file=param_filename,use_defaults=False)
-# #
-# print(" ")
-# print(expo_list[0].pars.get_pars("alignment"))
-#
+obs_info_dict, total_list = poller_utils.interpret_obset_input('j92c01.out')
+product_list = total_list.copy()
 
-rv = hapsequencer.run_hla_processing(input_filename)
+for total_item in total_list:
+    product_list += total_item.fdp_list
+    product_list += total_item.edp_list
+
+param_filename = "superparamfile.json"
+
+for item in product_list:
+    item.pars = config_utils.HapConfig(item,output_custom_pars_file=param_filename,use_defaults=False)
+#
+print(" ")
+print(product_list[1].pars.get_pars("alignment"))
+
+
+# rv = hapsequencer.run_hla_processing(input_filename)
 # pdb.set_trace()
 
 # config_utils.reformat_json_file("superparamfile.json","new_superparamfile.json")
