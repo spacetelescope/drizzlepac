@@ -275,6 +275,7 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
     _drizfile = _trlroot + '_pydriz'
     _drizlog = _drizfile + ".log"  # the '.log' gets added automatically by astrodrizzle
     _alignlog = _trlroot + '_align.log'
+    _alignlog_copy = _alignlog.replace('.log', '_copy.log')
     if dcorr == 'PERFORM':
         if '_asn.fits' not in inFilename:
             # Working with a singleton
@@ -364,8 +365,7 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
                 _trlmsg += "   No correction to absolute astrometric frame applied!\n"
 
             # Write the perform_align log to the trailer file...(this will delete the _alignlog)
-            # Start by disabling the alignimages logger...
-            logging.getLogger('alignimages').disable = True
+            shutil.copy(_alignlog, _alignlog_copy)
             _appendTrlFile(_trlfile, _alignlog)
 
             # Append messages from this calling routine post-perform_align
@@ -513,6 +513,11 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
         ftrl = open(_trlfile, 'a')
         ftrl.write(hlet_msg)
         ftrl.close()
+
+    # Remove secondary log files for good...
+    logging.shutdown()
+    if os.path.exists(_alignlog):
+        os.remove(_alignlog)
 
     # If processing was done in a temp working dir, restore results to original
     # processing directory, return to original working dir and remove temp dir
