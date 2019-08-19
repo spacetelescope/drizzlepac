@@ -543,10 +543,10 @@ def interpret_wcsname_type(wcsname):
     wcstype += base_terms[wcsname_term]
 
     # Interpret fit term (if any)
+    fit_term = wcsname_list[1] if len(wcsname_list) > 1 else None
     if len(wcsname_list) == 1 or fit_term not in fit_terms:
         wcstype += no_fit
     else:
-        fit_term = wcsname_list[1]
         if 'FIT' not in fit_term:
             wcstype += default_fit.format(fit_term)
         else:
