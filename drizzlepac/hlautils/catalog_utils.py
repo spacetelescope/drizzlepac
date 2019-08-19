@@ -672,7 +672,7 @@ class HAPPointCatalog(HAPCatalogBase):
         log.info("Performing point-source photometry on identified point-sources")
         # Open and background subtract image
         image = self.image.data.copy()
-        image -= self.bkg_used  # TODO Turned back on full-frame background subtraction 8/14/19
+        image -= self.bkg_used
 
         # # Aperture Photometry
         # positions = (self.sources['xcentroid'], self.sources['ycentroid'])
@@ -708,8 +708,8 @@ class HAPPointCatalog(HAPCatalogBase):
         positions = (self.sources['xcentroid'], self.sources['ycentroid'])
 
         # adjust coods for calculations that assume origin value of 0, rather than 1.
-        pos_x = np.asarray(positions[0])  # TODO: removed -1 pixel offset 8//14/19
-        pos_y = np.asarray(positions[1])  # TODO: removed -1 pixel offset 8//14/19
+        pos_x = np.asarray(positions[0])
+        pos_y = np.asarray(positions[1])
 
         # define list of background annulii
         bg_apers = CircularAnnulus((pos_x, pos_y), r_in=skyannulus_arcsec, r_out=skyannulus_arcsec + dskyannulus_arcsec)
@@ -1258,6 +1258,3 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 
 # ======================================================================================================================
-
-# TODO: add meaningful code to HAPPointCatalog.measure_soruces so that it actually produces a sourcelist that meets or exceeds the HLA classic counterpart
-# TODO: Adapt hla_flag_filter.py to run after measure methods
