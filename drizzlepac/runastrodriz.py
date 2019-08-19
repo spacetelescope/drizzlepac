@@ -435,7 +435,8 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
 
             # Now, append comments created by PyDrizzle to CALXXX trailer file
             print('Updating trailer file %s with astrodrizzle comments.' % _trlfile)
-            _drizlog_copy = _drizlog.replac('.log', '_copy.log')
+            _drizlog_copy = _drizlog.replace('.log', '_copy.log')
+            shutil.copy(_drizlog, _drizlog_copy)
             _appendTrlFile(_trlfile, _drizlog_copy)
 
         # Save this for when astropy.io.fits can modify a file 'in-place'
