@@ -435,7 +435,8 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
 
             # Now, append comments created by PyDrizzle to CALXXX trailer file
             print('Updating trailer file %s with astrodrizzle comments.' % _trlfile)
-            _appendTrlFile(_trlfile, _drizlog)
+            _drizlog_copy = _drizlog.replac('.log', '_copy.log')
+            _appendTrlFile(_trlfile, _drizlog_copy)
 
         # Save this for when astropy.io.fits can modify a file 'in-place'
         # Update calibration switch
@@ -516,8 +517,9 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
 
     # Remove secondary log files for good...
     logging.shutdown()
-    if os.path.exists(_alignlog):
-        os.remove(_alignlog)
+    for _olog in [_alignlog, _drizlog]:
+        if os.path.exists(_olog):
+            os.remove(_olog)
 
     # If processing was done in a temp working dir, restore results to original
     # processing directory, return to original working dir and remove temp dir
