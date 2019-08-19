@@ -113,7 +113,8 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
             # download
             if download_dir is None:
                 file_path = file.split(os.sep)
-                file_path.remove('.')
+                if '.' in file_path:
+                    file_path.remove('.')
                 download_dir = file_path[0]
             # Move or copy downloaded file to current directory
             local_file = os.path.abspath(os.path.basename(file))
