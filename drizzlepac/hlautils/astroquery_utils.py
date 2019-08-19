@@ -114,7 +114,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
             if download_dir is None:
                 new_file_path = os.path.dirname(file)
                 file_path = file.split(os.sep)
-                print("Defining download directory based on: {} or [new]{}".format(file_path, new_file_path))
+                log.info("Defining download directory based on: {} or [new]{}".format(file_path, new_file_path))
                 if '.' in file_path:
                     file_path.remove('.')
                 download_dir = file_path[0]
