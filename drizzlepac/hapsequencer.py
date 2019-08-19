@@ -1,38 +1,36 @@
 #!/usr/bin/env python
 
-"""This script duplicates the functionality of the HLA pipeline.
-
+""" This script defines the HST Advanced Products (HAP) generation portion of the
+    calibration pipeline.  This portion of the pipeline produces mosaic and catalog
+    products. This script provides similar functionality as compared to the Hubble
+    Legacy Archive (HLA) pipeline in that it provides the overall sequence of 
+    the processing.
 """
 import datetime
 import glob
 import os
-import pdb
 import pickle
 import sys
 import traceback
-import shutil
 
 from astropy.io import fits
 import drizzlepac
 from drizzlepac import alignimages
 from drizzlepac import astrodrizzle
 from drizzlepac import wcs_functions
-from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import poller_utils
-from drizzlepac.hlautils import processing_utils as dpu
+from drizzlepac.hlautils import processing_utils as proc_utils
 from drizzlepac.hlautils import sourcelist_generation
 from stsci.tools import logutil
 
-from drizzlepac.hlautils import product
-
-__taskname__ = 'runhlaprocessing'
-log = logutil.create_logger('runhlaprocessing', level=logutil.logging.INFO, stream=sys.stdout)
+__taskname__ = 'hapsequencer'
+log = logutil.create_logger('hapsequencer', level=logutil.logging.INFO, stream=sys.stdout)
 
 __version__ = 0.1
 __version_date__ = '19-Mar-2019'
 
 # ----------------------------------------------------------------------------------------------------------------------
-# set up instrument/detector-specific params.
+# set up instrument/detector-specific params
 # Parameters imported from the following HLA classic parameter files:
 # - https://grit.stsci.edu/HLA/hla/tree/master/software/trunk/HLApipeline/HLApipe/param/parameter_acs_hrc.cfg
 # - https://grit.stsci.edu/HLA/hla/tree/master/software/trunk/HLApipeline/HLApipe/param/parameter_acs_sbc.cfg
@@ -211,69 +209,99 @@ param_dict = {
             "proximity_binary": "yes"}}}
 # ----------------------------------------------------------------------------------------------------------------------
 
-def create_drizzle_products(obs_info_dict, total_list, filt_list, expo_list, meta_wcs):
+def create_drizzle_products(obs_info_dict, total_list, meta_wcs):
     """
-    Run astrodrizzle to produce products specified in obs_info_dict.
+    Run astrodrizzle to produce products specified in the total_list.
 
     Parameters
     ----------
     obs_info_dict : dictionary
         Dictionary containing all relevant information required to process the dataset.
 
+    total_list: list
+        List of TotalProduct objects, one object per instrument/detector combination is
+        a visit.  The TotalProduct objects are comprised of FilterProduct and ExposureProduct
+        objects.
+
     RETURNS
     -------
-    Nothing.
+    product_list: list
+        A list of output products
     """
     log.info("Processing with astrodrizzle version {}".format(drizzlepac.astrodrizzle.__version__))
 
     # Get rules files
     for imgname in glob.glob("*fl?.fits"):
-        dpu.get_rules_file(imgname)
+        proc_utils.get_rules_file(imgname)
 
-    # FIX - This will be updated with the new configuration management.
+    # TODO: This will be updated with the new configuration management.
     cfgfile_path = os.path.join(os.path.dirname(__file__), "pars")
     total_config_obj = '{}{}astrodrizzle_total_hap.cfg'.format(cfgfile_path, os.path.sep)
     filt_config_obj = '{}{}astrodrizzle_filter_hap.cfg'.format(cfgfile_path, os.path.sep)
     expo_config_obj = '{}{}astrodrizzle_single_hap.cfg'.format(cfgfile_path, os.path.sep)
     product_list = []
 
-    # Create drizzle-combined total detection image using the meta_wcs as the reference output 
+    # Create drizzle-combined total detection image using the meta_wcs as the reference output
     # for each instrument/detector combination (single instrument, multiple detectors)
     for total_obj in total_list:
         log.info("~" * 118)
 
-        # Make sure to create the drizzle filename before a call to the drizzle functionality
-        # FIX in pipeline_poller_utils
-        _ = total_obj.create_drizzle_filename()
-        log.info("CREATE TOTAL DRIZZLE-COMBINED IMAGE: {}\n".format(total_obj.drizzle_filename))
-        total_obj.drizzle_product(meta_wcs, total_config_obj)
-        product_list.append(total_obj.drizzle_filename)
+        # TODO: Use WCS
+        # log.info("CREATE TOTAL DRIZZLE-COMBINED IMAGE: {}\n".format(total_obj.drizzle_filename))
+        # total_obj.wcs_drizzle_product(meta_wcs, total_config_obj)
+        # product_list.append(total_obj.drizzle_filename)
 
-        # Create drizzle-combined filter image using the meta_wcs as the reference output 
-        print("length of total FDP list: {}".format(len(total_obj.fdp_list)))
+        ref_total_combined_image = total_obj.ref_drizzle_filename
+        log.info("CREATE TEMPORARY REFERENCE TOTAL DRIZZLED IMAGE: {}\n".format(ref_total_combined_image))
+        adriz_in_list = [element.full_filename for element in total_obj.edp_list]
+        log.info("Ref total combined image. {} {}".format(ref_total_combined_image, adriz_in_list))
+        astrodrizzle.AstroDrizzle(input=adriz_in_list, output=ref_total_combined_image,
+                                  configobj=total_config_obj)
+        log.info("Finished creating TEMP REFERENCE TOTAL DRIZZLED IMAGE: {}\n".format(ref_total_combined_image))
+
+        # Extract shape of ref_total_combined_image for explicit use in AstroDrizzle for all other products.
+        rtci = fits.open(ref_total_combined_image)
+        total_shape = rtci[('sci', 1)].data.shape
+        rtci.close()
+
+        # Create drizzle-combined filter image
         for filt_obj in total_obj.fdp_list:
+            log.info("~" * 118)
+
+            # TODO: Use WCS
+            # filt_obj.wcs_drizzle_product(meta_wcs, filt_config_obj)
+            log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
+            filt_obj.image_drizzle_product(ref_total_combined_image, total_shape, filt_config_obj)
+            product_list.append(filt_obj.drizzle_filename)
+
+            # Create individual single drizzled images
+            for exposure_obj in filt_obj.edp_list:
                 log.info("~" * 118)
 
-                # Make sure to create the drizzle filename before a call to the drizzle functionality
-                # FIX in pipeline_poller_utils
-                _ = filt_obj.create_drizzle_filename()
-                log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
-                filt_obj.drizzle_product(meta_wcs, filt_config_obj)
-                product_list.append(filt_obj.drizzle_filename)
+                # TODO: Use WCS
+                # exposure_obj.wcs_drizzle_product(meta_wcs, expo_config_obj)
+                log.info("CREATE SINGLE DRIZZLED IMAGE: {}".format(exposure_obj.drizzle_filename))
+                exposure_obj.image_drizzle_product(ref_total_combined_image, total_shape, expo_config_obj)
+                product_list.append(exposure_obj.drizzle_filename)
 
-                # Create individual singlely-drizzled images using meta_wcs
-                for exposure_obj in filt_obj.edp_list:
-                    log.info("~" * 118)
-                    log.info("CREATE SINGLY DRIZZLED IMAGE: {}".format(exposure_obj.drizzle_filename))
+        # TODO: Use WCS
+        # total_obj.wcs_drizzle_product(meta_wcs, total_config_obj)
 
-                    exposure_obj.drizzle_product(meta_wcs, expo_config_obj)
-                    product_list.append(exposure_obj.drizzle_filename)
+        log.info("CREATE DRIZZLE-COMBINED TOTAL IMAGE: {}\n".format(total_obj.drizzle_filename))
+        total_obj.image_drizzle_product(ref_total_combined_image, total_shape, total_config_obj)
+        product_list.append(total_obj.drizzle_filename)
 
     # Ensure that all drizzled products have headers that are to specification
-    log.info("Updating these drizzle products for CAOM compatibility:")
-    for filename in product_list:
-        log.info("    {}".format(filename))
-        dpu.refine_product_headers(filename, obs_info_dict)
+    try:
+        log.info("Updating these drizzle products for CAOM compatibility:")
+        for filename in product_list:
+            log.info("    {}".format(filename))
+            proc_utils.refine_product_headers(filename, total_list)
+    except Exception:
+        print("Trouble updating drizzle products for CAOM.")
+        # TODO: Maybe these next two lines are just temporary for debugging
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
 
     # Remove rules files copied to the current working directory
     for rules_filename in glob.glob("*_header_hla.rules"):
@@ -287,7 +315,7 @@ def create_drizzle_products(obs_info_dict, total_list, filt_list, expo_list, met
 
 
 def run_hla_processing(input_filename, result=None, debug=False):
-    # This routine needs to return an exit code, return_value, for use by the calling 
+    # This routine needs to return an exit code, return_value, for use by the calling
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
 
@@ -295,69 +323,72 @@ def run_hla_processing(input_filename, result=None, debug=False):
     log.info("Run start time: {}".format(str(starting_dt)))
     product_list = []
     try:
-        # 0: Parse the poller file and generate the the obs_info_dict, as well as the single exposure, filter,
-        # and total detection product lists which contain the ExposureProduct, FilterProduct, and 
-        # TotalProduct objects
-        log.info("1: Parse the poller and determine what exposures need to be combined into separate products")
-        obs_info_dict, expo_list, filt_list, total_list = poller_utils.interpret_obset_input(input_filename)
+        # Parse the poller file and generate the the obs_info_dict, as well as the total detection 
+        # product lists which contain the ExposureProduct, FilterProduct, and TotalProduct objects
+        log.info("Parse the poller and determine what exposures need to be combined into separate products")
+        obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename)
 
-        # 1: Instantiate parameter configuration
-        custom_param_filename = "superparamfile.json"
-        for product_object in expo_list + filt_list + total_list:
-            product_object.pars = config_utils.HapConfig(product_object, output_custom_pars_file=custom_param_filename, use_defaults=True)
+        # Generate the name for the manifest file which is for the entire visit.  It is fine
+        # to use only one of the Total Products to generate the manifest name as it is not
+        # dependent on the detector.
+        # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
+        manifest_name = total_list[0].manifest_name
 
-        # 2: Run alignimages.py on images on a filter-by-filter basis.
+        # Run alignimages.py on images on a filter-by-filter basis.
         # Process each filter object which contains a list of exposure objects/products,
         # regardless of detector.
-        log.info("2: Run alignimages.py on images on a filter-by-filter basis.")
+        log.info("Run alignimages.py on images on a filter-by-filter basis.")
         exposure_filenames = []
-        for filt_obj in filt_list:
-            align_table, filt_exposures = filt_obj.align_to_gaia()
+        for tot_obj in total_list:
+            for filt_obj in tot_obj.fdp_list:
+                align_table, filt_exposures = filt_obj.align_to_gaia()
 
-            # Report results and track the output files
-            # FIX - Add info here in the case of alignment working on data that should not be aligned
-            # as well as outright failure (exception vs msgs)
-            if align_table:
-                log.info("ALIGN_TABLE: {}".format(align_table))
-                # FIX
-                # os.remove("alignimages.log")  # FIX This log needs to be included in total product trailer file
-                for row in align_table:
-                    if row['status'] == 0:
-                        log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
-                    # Alignment did not work for this particular image
-                    # FIX - If alignment did not work for an image, it seems this exposure should
-                    # be removed from the exposure lists.  TotalProduct and FilterProduct need
-                    # methods to do this.
-                    else:
-                        log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
+                # Report results and track the output files
+                # FIX - Add info here in the case of alignment working on data that should not be aligned
+                # as well as outright failure (exception vs msgs)
+                if align_table:
+                    log.info("ALIGN_TABLE: {}".format(align_table))
+                    # FIX
+                    # os.remove("alignimages.log")  # FIX This log needs to be included in total product trailer file
+                    for row in align_table:
+                        if row['status'] == 0:
+                            log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
+                        # Alignment did not work for this particular image
+                        # FIX - If alignment did not work for an image, it seems this exposure should
+                        # be removed from the exposure lists.  TotalProduct and FilterProduct need
+                        # methods to do this.
+                        else:
+                            log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
 
-                hdrlet_list = align_table['headerletFile'].tolist()
-                product_list += hdrlet_list
-                exposure_filenames += filt_exposures
+                    hdrlet_list = align_table['headerletFile'].tolist()
+                    product_list += hdrlet_list
+                    exposure_filenames += filt_exposures
 
-            else:
-                log.info("{}: Alignimages step skipped.".format(obs_category))
+                else:
+                    log.info("Alignimages step skipped.")
 
-        # 3: Run meta wcs code to get common WCS for all images in this obset_id, regardless
-        # of detector.
+        # Run meta wcs code to get common WCS for all images in this obset_id, regardless of detector.
         # FIX (1) Intended for this to be a method of TotalProduct, but it should be
-        # associated with all the exposures really used in the alignment (the "as built") 
-        # as is done here. 
+        # associated with all the exposures really used in the alignment (the "as built")
+        # as is done here.
         # This function used based upon WH analysis but make sure to set
         # the size of the output image. This comment is related to the previously mentioned issue.
-        log.info("3: Run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
+        # This produced incompatible results.  Perhaps accessing wrong dimension information.
+        """
+        log.info("Run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
         log.info("The following images will be used: ")
         for imgname in exposure_filenames:
             log.info("{}".format(imgname))
         if exposure_filenames:
             meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames)
+        """
+        # Not using meta_wcs at this time
+        meta_wcs = []
 
-        # 4: Run AstroDrizzle to produce drizzle-combined products
-        log.info("4: (WIP) Create drizzled imagery products")
-        driz_list = create_drizzle_products(obs_info_dict, total_list, filt_list, expo_list, meta_wcs)
+        # Run AstroDrizzle to produce drizzle-combined products
+        log.info("Create drizzled imagery products")
+        driz_list = create_drizzle_products(obs_info_dict, total_list, meta_wcs)
         product_list += driz_list
-
-        # MDD ENDED HERE
 
         """
         # 7: Create source catalogs from newly defined products (HLA-204)
@@ -381,14 +412,14 @@ def run_hla_processing(input_filename, result=None, debug=False):
         log.info("8: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry"
                  "of product")
         # TODO: QUALITY CONTROL SUBROUTINE CALL GOES HERE.
+        """
 
-        # 9: Write out manifest file listing all products generated during processing
+        # Write out manifest file listing all products generated during processing
         log.info("Creating manifest file {}".format(manifest_name))
         log.info("  Manifest contains the names of products generated during processing.")
         with open(manifest_name, mode='w') as catfile:
             [catfile.write("{}\n".format(name)) for name in product_list]
 
-        """
         # 10: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
     except Exception:
@@ -402,4 +433,3 @@ def run_hla_processing(input_filename, result=None, debug=False):
         log.info("9: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
                  "condition")
         return return_value
-
