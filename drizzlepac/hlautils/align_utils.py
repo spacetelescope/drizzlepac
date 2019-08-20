@@ -246,11 +246,11 @@ class CatalogImage:
 
         # Fits file read
         self.data = self.imghdu[('SCI', 1)].data
-        self.wht_image = self.imghdu['WHT'].data.copy()
         self.num_sci = amutils.countExtn(self.imghdu)
 
         # Get the HSTWCS object from the first extension
         self.imgwcs = HSTWCS(self.imghdu, 1)
+        self.pscale = self.imgwcs.pscale
 
         self.keyword_dict = self._get_header_data()
 
@@ -261,12 +261,12 @@ class CatalogImage:
     def close(self):
         self.imghdu.close()
 
-    def build_kernel(self, fwhmpsf, scale):
+    def build_kernel(self, fwhmpsf):
         if self.bkg is None:
             self.compute_background()
 
-        self.kernel = amutils.build_auto_kernel(self.data, self.wht_image,
-                                                          threshold=self.bkg.background_rms, fwhm=fwhmpsf / scale)
+        self.kernel, self.kernel_fwhm = amutils.build_auto_kernel(self.data, self.wht_image,
+                                                          threshold=self.bkg.background_rms, fwhm=fwhmpsf / self.pscale)
 
     def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS,
@@ -366,15 +366,13 @@ class CatalogImage:
         self.bkg_rms_mean = bkg_rms_mean
         self.threshold = threshold
 
-    def find_sources(self, output=True, dqname='DQ'):
+    def find_sources(self, output=True, dqname='DQ', fwhmpsf=3.0, **alignment_pars):
         """Find sources in all chips for this exposure."""
         for chip in range(self.numSci):
             chip += 1
             # find sources in image
             if output:
                 outroot = '{}_sci{}_src'.format(self.keyword_dict['rootname'], chip)
-
-            imgarr = self.imghdu['sci', chip].data
 
             # apply any DQ array, if available
             dqmask = None
@@ -402,10 +400,29 @@ class CatalogImage:
                 # TODO: <---Remove this old no-sat bit grow line once this
                 # thing works
 
+            if not self.kernel:
+                imgarr = self.imghdu['sci', chip].data
+                num_wht = amutils.countExtn(self.imghdu, extn='WHT')
+                if num_wht > 0:
+                    wht_image = self.imghdu['WHT'].data.copy()
+                else:
+                    # Build pseudo-wht array for detection purposes
+                    errarr = self.imghdu['err', chip].data
+                    wht_image = errarr / errarr.max()
+                    wht_image[dqmask] = 0
+
+                self.kernel, self.kernel_fwhm = amutils.build_auto_kernel(imgarr, wht_image,
+                                                          threshold=self.bkg.background_rms,
+                                                          fwhm=fwhmpsf / self.pscale)
+
             #  TODO: replace use of FWHM with already calculated kernel...
             #  TODO: replace detector_pars with dict from OO Config class
             seg_tab, segmap = amutils.extract_sources(imgarr, dqmask=dqmask, outroot=outroot,
-                                                      fwhm=fwhm, **detector_pars)
+                                                      kernel=self.kernel,
+                                                      segment_threshold=self.threshold,
+                                                      dao_threshold=self.bkg_rms_mean,
+                                                      fwhm=self.kernel_fwhm,
+                                                      **alignment_pars)
 
             self.catalog_table[chip] = seg_tab
 

@@ -344,7 +344,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     # Sort based on peak_value to identify brightest sources for use as a kernel
     peaks.sort('peak_value')
 
-    wht_box = 2  # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
+    wht_box = 2 # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
 
     # Identify position of brightest, non-saturated peak (in numpy index order)
     for peak_ctr in range(-1, -1 * len(peaks) - 1, -1):
