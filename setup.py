@@ -99,7 +99,7 @@ setup(
         'requests',
         # HLA-pipeline specific:
         'astroquery',
-        'photutils>0.7',
+        'photutils>=0.7',
         'pysynphot',
         'lxml',
         'scikit-image>=0.14.2',
