@@ -128,9 +128,7 @@ def iraf_style_photometry(phot_apertures,bg_apertures,data,platescale,
         (datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
     starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
     for aperCtr in range(0, nAper):
-        print("\a")
-        pdb.set_trace()
-        ap_area = phot_apertures[aperCtr].area()
+        ap_area = phot_apertures[aperCtr].area
         bg_method_name = 'aperture_{}'.format(bg_method)
 
         flux = phot['aperture_sum_{}'.format(aperCtr)]# - bg_phot[bg_method_name] * ap_area # TODO background subtraction commented out 8/14/19
