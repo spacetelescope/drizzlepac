@@ -34,7 +34,9 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 
 class AlignmentTable:
-    def __init__(self, input_list, clobber=False):
+    def __init__(self, input_list, clobber=False, **alignment_pars):
+        self.alignment_pars = alignment_pars
+
         self.zero_dt = starting_dt = datetime.datetime.now()
         log.info(str(starting_dt))
         # Apply filter to input observations to insure that they meet minimum criteria for being able to be aligned
