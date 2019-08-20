@@ -40,6 +40,10 @@ jobs:
       displayName: install dependencies
 
     - script: |
+        $(PIP_INSTALL) -e .[test]
+      displayName: build package
+
+    - script: |
         python -m pip freeze
       displayName: freeze output
 
