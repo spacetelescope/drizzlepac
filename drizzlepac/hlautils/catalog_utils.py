@@ -513,11 +513,12 @@ class HAPCatalogs:
 
         for catalog in self.catalogs.values():
             if catalog.source_cat is None:
-                if hasattr(catalog,'total_source_cat'): # for total product segment processing
-                    catalog.source_cat = catalog.total_source_cat # TODO: find a less memory-intensive way to do this.
+                if hasattr(catalog, 'total_source_cat'):  # for total product segment processing
+                    catalog.source_cat = catalog.total_source_cat  # TODO: find a less memory-intensive way to do this.
                 else:
-                    catalog.source_cat = catalog.sources #for total product point-source processing
+                    catalog.source_cat = catalog.sources  # for total product point-source processing
             catalog.write_catalog
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 class HAPCatalogBase:
@@ -979,7 +980,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Note: SExtractor has "connectivity=8" which is the default for this function
             self.sources = detect_sources(imgarr, threshold, npixels=self.size_source_box, filter_kernel=kernel)
             self.kernel = kernel  # for use in measure_sources()
-            self.total_source_cat = source_properties(imgarr_bkgsub, self.sources, background=bkg.background, filter_kernel=kernel, wcs=self.image.imgwcs)
+            self.total_source_cat = source_properties(imgarr_bkgsub, self.sources, background=bkg.background,
+                                                      filter_kernel=kernel, wcs=self.image.imgwcs)
 
         # if processing filter product, use sources identified by parent total drizzle product identify_sources() run
         if self.tp_sources:
@@ -989,7 +991,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # For debugging purposes...
         if self.debug:
             # Write out a catalog which can be used as an overlay for image in ds9
-            if not hasattr(self,'total_source_cat'):
+            if not hasattr(self, 'total_source_cat'):
                 cat = source_properties(imgarr_bkgsub, self.sources, background=bkg.background, filter_kernel=kernel,
                                         wcs=self.image.imgwcs)
                 table = cat.to_table()
