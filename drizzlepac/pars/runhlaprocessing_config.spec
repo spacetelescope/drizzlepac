@@ -1,0 +1,32 @@
+[astrodrizzle]
+SCALE = float(default=0.0)
+PIXFRAC = float(default=0.0)
+KERNEL = string(default="square")
+OUTNX = integer(default=None)
+OUTNY = integer(default=None)
+ROT = float(default=0.0)
+BITS = integer(default=0)
+[ci filter]
+ci_daolower_limit = float(default=0.0)
+ci_daoupper_limit = float(default=0.0)
+ci_selower_limit = float(default=0.0)
+ci_seupper_limit = float(default=0.0)
+[dao]
+TWEAK_FWHMPSF = float(default=0.0)
+TWEAK_THRESHOLD = float(default=0.0)
+aperture_1 = float(default=0.0)
+aperture_2 = float(default=0.0)
+bthresh = float(default=0.0)
+[sourcex]
+fwhm = float(default=0.0)
+thresh = float(default=0.0)
+bthresh = float(default=0.0)
+source_box = integer(default=0)
+[swarm filter]
+upper_epp_limit = float(default=0.0)
+lower_epp_limit = float(default=0.0)
+eppsky_limit = float(default=0.0)
+swarm_thresh = float(default=0.0)
+clip_radius_list = list(default=None)
+scale_factor_list = list(default=None)
+proximity_binary = string(default="no")
