@@ -623,7 +623,6 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
             ax[1][1].imshow(threshold, origin='lower')
     return tbl, segm
 
-
 def classify_sources(catalog, sources=None):
     """ Convert moments_central attribute for source catalog into star/cr flag.
 
