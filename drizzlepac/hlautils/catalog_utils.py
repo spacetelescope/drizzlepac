@@ -1,7 +1,8 @@
 """This script contains code to support creation of photometric sourcelists using two techniques: aperture photometry
 segmentation-map based photometry.
 """
-import pdb
+import datetime # TODO: Remove prior to final integration
+import pdb # TODO: Remove prior to final integration
 import sys
 
 import astropy.units as u
@@ -669,7 +670,7 @@ class HAPPointCatalog(HAPCatalogBase):
         phot_table : astropy table
             Table containing photometric information for specified sources based on image data in the specified image.
         """
-        print("MEASURE SOURCES!!!")
+        starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
         log.info("Performing aperture photometry on identified point-sources")
         # Open and background subtract image
         image = self.image.data.copy()
@@ -722,7 +723,8 @@ class HAPPointCatalog(HAPCatalogBase):
             aper_radius_list_pixels.append(aper_radius/platescale)
 
         phot_apers = [CircularAperture((pos_x, pos_y), r=r) for r in aper_radius_list_pixels]
-
+        log.info('>>>>> Initialization processing time: {} sec\a'.format(
+            (datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
         # parameter log dump!
         log.info("{}".format("=" * 80))
         log.info("")
@@ -740,12 +742,16 @@ class HAPPointCatalog(HAPCatalogBase):
         log.info("{}".format("=" * 80))
         log.info("")
 
+        starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
         # Perform aperture photometry
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image, platescale=platescale,
                                                                 error_array=self.bkg.background_rms,
                                                                 bg_method=salgorithm, epadu=gain,
                                                                 zero_point=ab_zeropoint)
+        log.info('>>>>> Photometry processing time: {} sec\a'.format(
+            (datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
 
+        starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
         # convert coords back to origin value = 1 rather than 0
         photometry_tbl["XCENTER"] = photometry_tbl["XCENTER"] + 1.
         photometry_tbl["YCENTER"] = photometry_tbl["YCENTER"] + 1.
@@ -809,6 +815,8 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("Column '{}' renamed '{}'".format(old_col_title, rename_dict[old_col_title]))
 
         self.source_cat = output_photometry_table
+        log.info('>>>>> Post-phot processing time: {} sec\a'.format(
+            (datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

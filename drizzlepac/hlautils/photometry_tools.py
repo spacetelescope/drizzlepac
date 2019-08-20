@@ -61,7 +61,8 @@ import numpy as np
 from astropy.table import Table
 from drizzlepac.hlautils.background_median import aperture_stats_tbl
 from photutils import aperture_photometry
-import pdb
+import datetime # TODO: Remove prior to final integration
+import pdb # TODO: Remove prior to final integration
 
 
 def iraf_style_photometry(phot_apertures,bg_apertures,data,platescale,
@@ -106,10 +107,12 @@ def iraf_style_photometry(phot_apertures,bg_apertures,data,platescale,
     if bg_method not in ['mean', 'median', 'mode']:
         raise ValueError('Invalid background method, choose either \
                           mean, median, or mode')
-
+    starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
     phot = aperture_photometry(data, phot_apertures, error=error_array)
     bg_phot = aperture_stats_tbl(data, bg_apertures, sigma_clip=True)
-
+    print('>>>>>PT phot/bg_phot processing time: {} sec\a'.format(
+        (datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
+    starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
     names = ['XCENTER', 'YCENTER', 'ID']
     X, Y = phot_apertures[0].positions.T
     finalStacked = np.stack([X, Y, phot["id"].data], axis=1)
@@ -121,8 +124,12 @@ def iraf_style_photometry(phot_apertures,bg_apertures,data,platescale,
             for name in nameList:
                 names.append("{}_{}".format(name, aperSize_arcsec))
             nAper += 1
-
+    print('>>>>>PT table setup processing time: {} sec\a'.format(
+        (datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
+    starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
     for aperCtr in range(0, nAper):
+        print("\a")
+        pdb.set_trace()
         ap_area = phot_apertures[aperCtr].area()
         bg_method_name = 'aperture_{}'.format(bg_method)
 
@@ -146,6 +153,9 @@ def iraf_style_photometry(phot_apertures,bg_apertures,data,platescale,
         # Build the final data table
         stacked = np.stack([flux, flux_error, mag, mag_err], axis=1)
         finalStacked = np.concatenate([finalStacked, stacked], axis=1)
+    print('>>>>>PT flux/mag calculation processing time: {} sec\a'.format(
+        (datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
+    starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
     # Build final output table
     final_tbl = Table(data=finalStacked, names=names,
                       dtype=[np.float64, np.float64, np.int64, np.float64, np.float64, np.float64, np.float64,
@@ -164,7 +174,8 @@ def iraf_style_photometry(phot_apertures,bg_apertures,data,platescale,
     #                               length=len(final_tbl['X-CENTER'].data), dtype=np.int64)
     # final_tbl.add_column(emptyTotMag)
     # final_tbl.add_column(emptyTotMagErr)
-
+    print('>>>>>PT final_tbl build processing time: {} sec\a'.format(
+        (datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
     return final_tbl
 
 def compute_phot_error( flux_variance, bg_phot, bg_method, ap_area, epadu=1.0):
