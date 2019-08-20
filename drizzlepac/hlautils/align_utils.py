@@ -435,6 +435,7 @@ class CatalogImage:
                                                           threshold=self.bkg.background_rms,
                                                           fwhm=fwhmpsf / self.pscale)
 
+            #  TODO: replace use of FWHM with already calculated kernel...
             #  TODO: replace detector_pars with dict from OO Config class
             seg_tab, segmap = amutils.extract_sources(imgarr, dqmask=dqmask, outroot=outroot,
                                                       kernel=self.kernel,
@@ -444,6 +445,7 @@ class CatalogImage:
                                                       **alignment_pars)
 
             self.catalog_table[chip] = seg_tab
+
 
 
     def _get_header_data(self):
