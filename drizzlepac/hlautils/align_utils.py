@@ -6,6 +6,8 @@ import traceback
 import glob
 
 import numpy as np
+from scipy import ndimage
+
 import astropy
 from astropy.io import fits
 from astropy.table import Table
