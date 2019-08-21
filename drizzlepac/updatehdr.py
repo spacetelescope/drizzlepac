@@ -544,16 +544,8 @@ def interpret_wcsname_type(wcsname):
 
     # Interpret fit term (if any)
     fit_term = wcsname_list[1] if len(wcsname_list) > 1 else None
-    # Check to see whether any of the 'registered' fit types are found
-    # in the fit_term, e.g,, FIT_REL_GAIADR2 should be found as valid.
-    valid_fit_type = False
-    if fit_term:
-        for term in fit_terms:
-            if term in fit_term:
-                valid_fit_type = True
-                break
 
-    if len(wcsname_list) == 1 or not valid_fit_type:
+    if len(wcsname_list) == 1:
         wcstype += no_fit
     else:
         if 'FIT' not in fit_term:
