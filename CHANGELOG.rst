@@ -19,11 +19,18 @@ of the list).
 - Migration of the HAP portion of the package to an object-oriented
   implemenation. [#427]
 
+- Implementation of grid definition interface to support returning SkyCell
+  objects that overlap a mosaic footprint. [#425]
+
+
+3.0.3 (21-Aug-2019)
+===================
 - Added support for providing HSTWCS object as input to 'final_refimage'
   or 'single_refimage' parameter.  [#426]
 
-- Implementation of grid definition interface to support returning SkyCell
-  objects that overlap a mosaic footprint. [#425]
+- Added WCSTYPE keyword as human-understandable interpretation of the
+  WCSNAME keyword from the SCI extension. [#390, #396, #433]
+
 
 3.0.2 (15-Jul-2019)
 ====================
