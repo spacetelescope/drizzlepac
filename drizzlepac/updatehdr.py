@@ -533,6 +533,7 @@ def interpret_wcsname_type(wcsname):
                   'OPU': 'pipeline default '}
     no_fit = 'not aligned'
 
+    wcsname = wcsname.upper()  # make this comparison case-insensitive
     wcsname_list = wcsname.split('-')
     wcsname_term = wcsname_list[0][:3]
     if wcsname_term not in base_terms:
