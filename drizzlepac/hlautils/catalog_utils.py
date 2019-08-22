@@ -1,7 +1,6 @@
 """This script contains code to support creation of photometric sourcelists using two techniques: aperture photometry
 segmentation-map based photometry.
 """
-import pdb # TODO: Remove prior to final integration
 import sys
 
 import astropy.units as u
@@ -937,6 +936,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             Mean bkg.background FIX
 
         """
+        # TODO: Finish up and optimize HAPSegmentCatalog.identify_sources()
         # Report configuration values to log
         log.info("{}".format("=" * 80))
         log.info("")
@@ -1077,6 +1077,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         -------
 
         """
+        # TODO: Finish up and optimize HAPSegmentCatalog.measure_sources()
+
         # get filter-level science data
         imgarr = self.image.data.copy()
 
