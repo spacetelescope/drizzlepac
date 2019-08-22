@@ -9,7 +9,7 @@
 import datetime
 import glob
 import os
-import pickle
+import pdb # TODO: Remove before deployment
 import sys
 import traceback
 
@@ -18,6 +18,7 @@ import drizzlepac
 from drizzlepac import alignimages
 from drizzlepac import astrodrizzle
 from drizzlepac import wcs_functions
+from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import poller_utils
 from drizzlepac.hlautils import processing_utils as proc_utils
 from drizzlepac.hlautils import sourcelist_generation
@@ -333,6 +334,23 @@ def run_hla_processing(input_filename, result=None, debug=False):
         # dependent on the detector.
         # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
         manifest_name = total_list[0].manifest_name
+
+        # Set up all pipeline parameter values that will be used later on in the run.
+        # First, build temp.list of all product objects
+        full_product_list = total_list.copy()
+        for total_item in total_list:
+            full_product_list += total_item.fdp_list
+            full_product_list += total_item.edp_list
+
+        # Next, generate output parameter file
+        param_out_filename = input_filename.replace(".out",".config")
+
+        # Finally, instantiate configuration object in each product object
+        for item in full_product_list:
+            item.pars = config_utils.HapConfig(item, output_custom_pars_file=param_out_filename, use_defaults=True)
+
+        # Lastly, delete temp.list of all product objects 
+        del full_product_list
 
         # Run alignimages.py on images on a filter-by-filter basis.
         # Process each filter object which contains a list of exposure objects/products,
