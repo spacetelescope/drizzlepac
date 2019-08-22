@@ -343,7 +343,7 @@ def run_hla_processing(input_filename, result=None, debug=False):
             full_product_list += total_item.edp_list
 
         # Next, generate output parameter file
-        param_out_filename = input_filename.replace(".out", ".config")
+        param_out_filename = input_filename.replace(".out", "_config.json")
 
         # Finally, instantiate configuration object in each product object
         for item in full_product_list:
