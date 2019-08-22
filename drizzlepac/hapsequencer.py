@@ -19,6 +19,7 @@ import drizzlepac
 from drizzlepac import alignimages
 from drizzlepac import astrodrizzle
 from drizzlepac import wcs_functions
+from drizzlepac.hlautils.catalog_utils import HAPCatalogs
 from drizzlepac.hlautils import poller_utils
 from drizzlepac.hlautils import processing_utils as proc_utils
 from drizzlepac.hlautils import sourcelist_generation
