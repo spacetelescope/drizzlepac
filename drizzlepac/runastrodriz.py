@@ -75,6 +75,7 @@ import os
 import shutil
 import sys
 import time
+import logging
 
 # THIRD-PARTY
 from astropy.io import fits
@@ -274,6 +275,7 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
     _drizfile = _trlroot + '_pydriz'
     _drizlog = _drizfile + ".log"  # the '.log' gets added automatically by astrodrizzle
     _alignlog = _trlroot + '_align.log'
+    _alignlog_copy = _alignlog.replace('.log', '_copy.log')
     if dcorr == 'PERFORM':
         if '_asn.fits' not in inFilename:
             # Working with a singleton
@@ -287,7 +289,7 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
 
             # Add CTE corrected filename as additional input if present
             if os.path.exists(_infile_flc) and _infile_flc != _infile:
-                _inlist.append(_infile_flc)
+                _calfiles_flc = [_infile_flc]
 
         else:
             # Working with an ASN table...
@@ -305,10 +307,14 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
             _cal_prodname = inFilename
             _new_asn.extend(_inlist)  # kept so we can delete it when finished
 
-        # check to see whether FLC files are also present, and need to be updated
-        # generate list of FLC files
+            # check to see whether FLC files are also present, and need to be updated
+            # generate list of FLC files
+            _calfiles_flc = [f.replace('_flt.fits', '_flc.fits')
+                             for f in _calfiles
+                             if os.path.exists(f.replace('_flt.fits', '_flc.fits'))]
+
         align_files = None
-        _calfiles_flc = [f.replace('_flt.fits', '_flc.fits') for f in _calfiles]
+
         # insure these files exist, if not, blank them out
         # Also pick out what files will be used for additional alignment to GAIA
         if not os.path.exists(_calfiles_flc[0]):
@@ -359,7 +365,8 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
                 _trlmsg += "   No correction to absolute astrometric frame applied!\n"
 
             # Write the perform_align log to the trailer file...(this will delete the _alignlog)
-            _appendTrlFile(_trlfile, _alignlog)
+            shutil.copy(_alignlog, _alignlog_copy)
+            _appendTrlFile(_trlfile, _alignlog_copy)
 
             # Append messages from this calling routine post-perform_align
             ftmp = open(_tmptrl, 'w')
@@ -428,7 +435,9 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
 
             # Now, append comments created by PyDrizzle to CALXXX trailer file
             print('Updating trailer file %s with astrodrizzle comments.' % _trlfile)
-            _appendTrlFile(_trlfile, _drizlog)
+            _drizlog_copy = _drizlog.replace('.log', '_copy.log')
+            shutil.copy(_drizlog, _drizlog_copy)
+            _appendTrlFile(_trlfile, _drizlog_copy)
 
         # Save this for when astropy.io.fits can modify a file 'in-place'
         # Update calibration switch
@@ -506,6 +515,12 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
         ftrl = open(_trlfile, 'a')
         ftrl.write(hlet_msg)
         ftrl.close()
+
+    # Remove secondary log files for good...
+    logging.shutdown()
+    for _olog in [_alignlog, _drizlog]:
+        if os.path.exists(_olog):
+            os.remove(_olog)
 
     # If processing was done in a temp working dir, restore results to original
     # processing directory, return to original working dir and remove temp dir

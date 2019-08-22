@@ -55,7 +55,8 @@ if sys.platform == 'win32':
 TESTS_REQUIRE = [
     'ci_watson',
     'crds',
-    'pytest'
+    'pytest',
+    'pytest-remotedata'
 ]
 
 setup(
@@ -78,7 +79,7 @@ setup(
     ],
     python_requires='>=3.5',
     install_requires=[
-        'astropy>=3.1',
+        'astropy>=3.1.2',
         'fitsblender',
         'nictools',
         'nose',
@@ -86,8 +87,8 @@ setup(
         'scipy',
         'matplotlib',
         'acstools',
-        'spherical-geometry',
-        'stsci.tools',
+        'spherical-geometry>=1.2.17',
+        'stsci.tools>=3.6',
         'stsci.image>=2.3.0',
         'stsci.imagestats',
         'stsci.skypac',
@@ -98,7 +99,7 @@ setup(
         'requests',
         # HLA-pipeline specific:
         'astroquery',
-        'photutils',
+        'photutils>=0.7',
         'pysynphot',
         'lxml',
         'scikit-image>=0.14.2',
@@ -122,7 +123,8 @@ setup(
             'mdriz=drizzlepac.mdriz:main',
             'resetbits=drizzlepac.resetbits:main',
             'updatenpol=drizzlepac.updatenpol:main',
-            'runastrodriz=drizzlepac.runastrodriz:main'
+            'runastrodriz=drizzlepac.runastrodriz:main',
+            'runhap=drizzlepac.runhlaprocessing:main'
         ],
     },
     ext_modules=[

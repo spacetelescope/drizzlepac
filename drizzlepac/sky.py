@@ -210,7 +210,8 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
     # DQ image, and user-supplied mask. The combined mask is then
     # passed to 'skymatch' to be used for excluding "bad" pixels.
 
-    skyKW="MDRIZSKY" #header keyword that contains the sky that's been subtracted
+    #header keyword that contains the sky that's been subtracted
+    skyKW = "MDRIZSKY"
 
     nimg = len(imageList)
     if nimg == 0:
@@ -353,19 +354,19 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
     # Populate 'subtractedSky' and 'computedSky' of input image objects:
     for i in range(nimg):
         assert(not new_fi[i].fnamesOnly and not new_fi[i].image.closed)
-        image       = imageList[i]
+        image = imageList[i]
         skysubimage = new_fi[i].image.hdu
-        numchips    = image._numchips
-        extname     = image.scienceExt
+        numchips = image._numchips
+        extname = image.scienceExt
         assert(os.path.samefile(image._filename, skysubimage.filename()))
 
-        for extver in range(1,numchips+1,1):
-            chip = image[extname,extver]
+        for extver in range(1, numchips + 1, 1):
+            chip = image[extname, extver]
             if not chip.group_member:
                 continue
-            subtracted_sky     = skysubimage[extname,extver].header[skyKW]
+            subtracted_sky = skysubimage[extname, extver].header.get(skyKW, 0.)
             chip.subtractedSky = subtracted_sky
-            chip.computedSky   = subtracted_sky
+            chip.computedSky = subtracted_sky
 
     # clean-up:
     for fi in new_fi:

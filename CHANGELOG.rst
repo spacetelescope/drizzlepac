@@ -14,9 +14,40 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-
-3.0.2 (unreleased)
+3.1.0 (unreleased)
 ==================
+- Migration of the HAP portion of the package to an object-oriented
+  implemenation. [#427]
+
+- Implementation of grid definition interface to support returning SkyCell
+  objects that overlap a mosaic footprint. [#425]
+
+
+3.0.3 (21-Aug-2019)
+===================
+- Added support for providing HSTWCS object as input to 'final_refimage'
+  or 'single_refimage' parameter.  [#426]
+
+- Added WCSTYPE keyword as human-understandable interpretation of the
+  WCSNAME keyword from the SCI extension. [#390, #396, #433]
+
+
+3.0.2 (15-Jul-2019)
+====================
+
+- Removed deprecated parameter ``coords`` from the parameter list of
+  ``pixtopix.tran()`` function. [#406]
+
+- Modified the behavior of the ``verbose`` parameter in ``pixtopix.tran()``
+  to not print coordinates when not run as a script and when ``output``
+  is `None`. [#406]
+
+- Fixed a compatibility issue in ``tweakutils`` that would result in crash in
+  ``skytopix`` when converting coordinates in ``hms`` format. [#385]
+
+- Fixed a bug in the ``astrodrizzle.sky`` module due to which sky matching
+  fails with "Keyword 'MDRIZSKY' not found" error when some of the
+  input images do not overlap at all with the other images. [#380]
 
 - Fixed a bug in the ``util.WithLogging`` decorator due to which incorrect
   log file was reported when user-supplied log file name does not have ``.log``

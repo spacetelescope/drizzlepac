@@ -1,0 +1,541 @@
+!VERSION = 1.1
+!INSTRUMENT = WFC3
+################################################################################
+#
+# Header keyword rules
+#
+# Columns definitions:
+#    Column 1: header keyword from input header or '<delete>'
+#    Column 2: [optional] name of table column for recording values from
+#              keyword specified in the first column from each input image
+#              =or= name of keyword to be updated in output image header
+#    Column 3: [optional] function to use to create output header value
+#              (output keyword name must be specified in second column)
+#
+# Any line that starts with '<delete>' indicates that that keyword
+# or set of keywords for that header section should be deleted from the
+# output header.
+#
+# Supported functions: first, last, min, max, mean, sum, stddev, multi
+#
+# Any keyword without a function will be copied to a table column with the
+# name given in the second column, or first column if only 1 column has been
+# specified.  These keywords will also be removed from the output header unless
+# another rule for the same keyword (1st column) has been specified with a
+# function named in the 3rd column.
+#
+# All keywords *not specified in this rules file* will be derived from the first
+# input image's header and used unchanged to create the final output header(s).
+# So, any keyword with a rule that adds that keyword to a table will be removed from
+# the output headers unless additional rules are provided to specify what values
+# should be kept in the header for that keyword.
+##
+# Final header output will use the same formatting and order of keywords defined
+# by the first image's headers.
+#
+# Rules for headers from all image extensions can be included in the same
+# file without regard for order, although keeping them organized by extension
+# makes the file easier to maintain and update.
+#
+# The order of the rules will determine the order of the columns in the
+# final output table. As a result, the rules for EXTNAME and EXTVER are
+# associated with ROOTNAME, rather than the SCI header, in order to make
+# rows of the table easier to identify.
+#
+# Comments appended to the end of a rule will be ignored when reading the
+# rules. All comments start with '#'.
+#
+#
+################################################################################
+#
+# Table Keyword Rules
+#
+################################################################################
+ROOTNAME
+EXTNAME
+EXTVER
+A_0_2
+A_0_3
+A_0_4
+A_1_1
+A_1_2
+A_1_3
+A_2_0
+A_2_1
+A_2_2
+A_3_0
+A_3_1
+A_4_0
+A_ORDER
+APERTURE
+ASN_ID
+ASN_MTYP
+ASN_TAB
+ATODCORR
+ATODGNA
+ATODGNB
+ATODGNC
+ATODGND
+ATODTAB
+B_0_2
+B_0_3
+B_0_4
+B_1_1
+B_1_2
+B_1_3
+B_2_0
+B_2_1
+B_2_2
+B_3_0
+B_3_1
+B_4_0
+B_ORDER
+BADINPDQ
+BIASCORR
+BIASFILE
+BIASLEVA
+BIASLEVB
+BIASLEVC
+BIASLEVD
+BINAXIS1
+BINAXIS2
+BLEVCORR
+BPIXTAB
+BUNIT
+CAL_VER
+CCDAMP
+CCDCHIP
+CCDGAIN
+CCDOFSAB
+CCDOFSCD
+CCDOFSTA
+CCDOFSTB
+CCDOFSTC
+CCDOFSTD
+CCDTAB
+CD1_1
+CD1_2
+CD2_1
+CD2_2
+CENTERA1
+CENTERA2
+CHINJECT
+COMPTAB
+CRCORR
+CRMASK
+CRPIX1
+CRPIX2
+CRRADIUS
+CRREJTAB
+CRSIGMAS
+CRSPLIT
+CRTHRESH
+CRVAL1
+CRVAL2
+CTEDIR
+CTEIMAGE
+CTYPE1
+CTYPE2
+DARKCORR
+DARKFILE
+DATAMAX
+DATAMIN
+DATE
+DATE-OBS
+DEC_APER
+DEC_TARG
+DELTATIM
+DETECTOR
+DFLTFILE
+DGEOFILE
+DIRIMAGE
+DQICORR
+DRIZCORR
+EQUINOX
+ERRCNT
+EXPEND
+EXPFLAG
+EXPNAME
+EXPSCORR
+EXPSTART
+EXPTIME
+FGSLOCK
+FILENAME
+FILETYPE
+FILLCNT
+FILTER
+FLASHCUR
+FLASHDUR
+FLASHSTA
+FLATCORR
+FLSHCORR
+FLSHFILE
+GOODMAX
+GOODMEAN
+GOODMIN
+GRAPHTAB
+GYROMODE
+IDCSCALE
+IDCTAB
+IDCTHETA
+IDCV2REF
+IDCV3REF
+IMAGETYP
+INHERIT
+INITGUES
+INSTRUME
+IRAF-TLM
+LFLTFILE
+LINENUM
+LTM1_1
+LTM2_2
+LTV1
+LTV2
+MDRIZSKY
+MDRIZTAB
+MEANBLEV
+MEANDARK
+MEANEXP
+MEANFLSH
+MOONANGL
+MTFLAG
+NAXIS1
+NAXIS2
+NCOMBINE
+NGOODPIX
+NLINCORR
+NLINFILE
+NRPTEXP
+NSAMP
+OBSMODE
+OBSTYPE
+OCD1_1
+OCD1_2
+OCD2_1
+OCD2_2
+OCRPIX1
+OCRPIX2
+OCRVAL1
+OCRVAL2
+OCTYPE1
+OCTYPE2
+OCX10
+OCX11
+OCY10
+OCY11
+ONAXIS1
+ONAXIS2
+OORIENTA
+OPUS_VER
+ORIENTAT
+ORIGIN
+OSCNTAB
+P1_ANGLE
+P1_CENTR
+P1_FRAME
+P1_LSPAC
+P1_NPTS
+P1_ORINT
+P1_PSPAC
+P1_PURPS
+P1_SHAPE
+P2_ANGLE
+P2_CENTR
+P2_FRAME
+P2_LSPAC
+P2_NPTS
+P2_ORINT
+P2_PSPAC
+P2_PURPS
+P2_SHAPE
+PA_APER
+PA_V3
+PATTERN1
+PATTERN2
+PATTSTEP
+PFLTFILE
+PHOTBW
+PHOTCORR
+PHOTFLAM
+PHOTFNU
+PHOTMODE
+PHOTPLAM
+PHOTZPT
+PODPSFF
+POSTARG1
+POSTARG2
+PR_INV_F
+PR_INV_L
+PR_INV_M
+PRIMESI
+PROCTIME
+PROPAPER
+PROPOSID
+QUALCOM1
+QUALCOM2
+QUALCOM3
+QUALITY
+RA_APER
+RA_TARG
+READNSEA
+READNSEB
+READNSEC
+READNSED
+REFFRAME
+REJ_RATE
+ROUTTIME
+RPTCORR
+SAA_DARK
+SAA_EXIT
+SAA_TIME
+SAACRMAP
+SAMP_SEQ
+SAMPNUM
+SAMPTIME
+SAMPZERO
+SCALENSE
+SCLAMP
+SDQFLAGS
+SHADCORR
+SHADFILE
+SHUTRPOS
+SIMPLE
+SIZAXIS1
+SIZAXIS2
+SKYSUB
+SKYSUM
+SNRMAX
+SNRMEAN
+SNRMIN
+SOFTERRS
+STDCFFF
+STDCFFP
+SUBARRAY
+SUBTYPE
+SUN_ALT
+SUNANGLE
+T_SGSTAR
+TARGNAME
+TDFTRANS
+TELESCOP
+TIME-OBS
+UNITCORR
+VAFACTOR
+WCSAXES
+WCSCDATE
+ZOFFCORR
+ZSIGCORR
+WCSNAME
+WCSTYPE
+################################################################################
+#
+# Header Keyword Rules REQUIRED for CAOM
+#
+################################################################################
+PROPOSID  PROPOSID  first
+TARGNAME  TARGNAME  first
+PR_INV_L  PR_INV_L  first
+PR_INV_F  PR_INV_F  first
+PR_INV_M  PR_INV_M  first
+RA_TARG   RA_TARG   first
+DEC_TARG  DEC_TARG  first
+INSTRUME  INSTRUME  first
+DETECTOR  DETECTOR  first
+APERTURE  APERTURE  multi
+FILTER    FILTER    first  # May need to modify this as '-' combined value
+EXPEND    EXPEND    max
+EXPSTART  EXPSTART  min
+EXPTIME   TEXPTIME  sum
+EXPTIME   EXPTIME   sum
+EXPSTART  DATE-BEG  min    # convert value to iso format -- separately?
+EXPEND    DATE-END  max    # convert value to iso format -- separately?
+IMAGETYP  IMAGETYP  first
+OBSMODE   OBSMODE   multi
+OBSTYPE   OBSTYPE   first
+EQUINOX   EQUINOX   first
+################################################################################
+#
+# Header Keyword Rules
+#
+################################################################################
+APERTURE    APERTURE    multi
+ASN_ID    ASN_ID    first
+ASN_MTYP    ASN_MTYP    multi
+ASN_TAB    ASN_TAB    multi
+ATODCORR    ATODCORR    multi
+ATODGNA        ATODGNA        first
+ATODGNB        ATODGNB        first
+ATODGNC        ATODGNC        first
+ATODGND        ATODGND        first
+ATODTAB    ATODTAB    multi
+BADINPDQ    BADINPDQ    sum
+BIASCORR    BIASCORR    multi
+BIASFILE    BIASFILE    multi
+BIASLEVA    BIASLEVA    first
+BIASLEVB    BIASLEVB    first
+BIASLEVC    BIASLEVC    first
+BIASLEVD    BIASLEVD    first
+BINAXIS1    BINAXIS1    first
+BINAXIS2    BINAXIS2    first
+BLEVCORR    BLEVCORR    multi
+BPIXTAB    BPIXTAB    multi
+BUNIT        BUNIT        first
+CAL_VER        CAL_VER        first
+CCDAMP        CCDAMP        first
+CCDCHIP    CCDCHIP    first
+CCDGAIN        CCDGAIN        first
+CCDOFSTA    CCDOFSTA    first
+CCDOFSTB    CCDOFSTB    first
+CCDOFSTC    CCDOFSTC    first
+CCDOFSTD    CCDOFSTD    first
+CCDTAB      CCDTAB      multi
+CD1_1    CD1_1    first
+CD1_2    CD1_2    first
+CD2_1    CD2_1    first
+CD2_2    CD2_2    first
+CENTERA1    CENTERA1    first
+CENTERA2    CENTERA2    first
+CHINJECT    CHINJECT    multi
+COMPTAB    COMPTAB    multi
+CRCORR    CRCORR    multi
+CRMASK    CRMASK    first
+CRPIX1    CRPIX1    first
+CRPIX2    CRPIX2    first
+CRRADIUS    CRRADIUS    first
+CRREJTAB    CRREJTAB    multi
+CRSIGMAS    CRSIGMAS    multi
+CRSPLIT    CRSPLIT    first
+CRTHRESH    CRTHRESH    first
+CTEDIR      CTEDIR      multi
+CTEIMAGE    CTEIMAGE    first
+CTYPE1    CTYPE1    multi
+CTYPE2    CTYPE2    multi
+CRVAL1    CRVAL1    first
+CRVAL2    CRVAL2    first
+DARKCORR    DARKCORR    multi
+DARKFILE    DARKFILE    multi
+DATE-OBS    DATE-OBS    first
+DEC_APER    DEC_APER    first
+DELTATIM    DELTATIM    first
+DFLTFILE    DFLTFILE    multi
+DGEOFILE    DGEOFILE    multi
+DIRIMAGE    DIRIMAGE    multi
+DQICORR    DQICORR    multi
+DRIZCORR    DRIZCORR    multi
+EXPFLAG    EXPFLAG    multi
+EXPNAME    EXPNAME    first
+EXPSCORR    EXPSCORR    multi
+EXTVER    EXTVER    first
+FGSLOCK    FGSLOCK    multi
+FILENAME    FILENAME    multi
+FILETYPE    FILETYPE    multi
+FILTER    FILTER    multi
+FLASHCUR    FLASHCUR    multi
+FLASHDUR    FLASHDUR    first
+FLASHSTA    FLASHSTA    first
+FLATCORR    FLATCORR    multi
+FLSHCORR    FLSHCORR    multi
+FLSHFILE    FLSHFILE    multi
+GRAPHTAB    GRAPHTAB    multi
+GYROMODE    GYROMODE    multi
+IDCTAB    IDCTAB    multi
+INHERIT    INHERIT    first # maintains IRAF compatibility
+INITGUES    INITGUES    multi
+INSTRUME    INSTRUME    first
+LFLTFILE    LFLTFILE    multi
+LINENUM    LINENUM    first
+LTM1_1    LTM1_1    float_one
+LTM2_2    LTM2_2    float_one
+LTV1    LTV1    first
+LTV2    LTV2    first
+MDRIZTAB    MDRIZTAB    multi
+MEANEXP    MEANEXP    first
+MEANFLSH    MEANFLSH    first
+MOONANGL  MOONANGL      first
+MTFLAG      MTFLAG    first
+NCOMBINE    NCOMBINE    sum
+NLINCORR    NLINCORR    multi
+NLINFILE    NLINFILE    multi
+NRPTEXP    NRPTEXP    first
+NSAMP    NSAMP    first
+OPUS_VER    OPUS_VER    first
+ORIENTAT    ORIENTAT    first
+OSCNTAB    OSCNTAB    multi
+P1_ANGLE    P1_ANGLE    first
+P1_CENTR    P1_CENTR    multi
+P1_FRAME    P1_FRAME    multi
+P1_LSPAC    P1_LSPAC    first
+P1_NPTS    P1_NPTS    first
+P1_ORINT    P1_ORINT    first
+P1_PSPAC    P1_PSPAC    first
+P1_PURPS    P1_PURPS    multi
+P1_SHAPE    P1_SHAPE    multi
+P2_ANGLE    P2_ANGLE    first
+P2_CENTR    P2_CENTR    multi
+P2_FRAME    P2_FRAME    multi
+P2_LSPAC    P2_LSPAC    first
+P2_NPTS     P2_NPTS    first
+P2_ORINT    P2_ORINT    first
+P2_PSPAC    P2_PSPAC    first
+P2_PURPS    P2_PURPS    multi
+P2_SHAPE    P2_SHAPE    multi
+PA_APER    PA_APER    first
+PA_V3        PA_V3        first
+PATTERN1    PATTERN1    multi
+PATTERN2    PATTERN2    multi
+PATTSTEP    PATTSTEP    first
+PFLTFILE    PFLTFILE    multi
+PHOTBW        PHOTBW        mean
+PHOTCORR    PHOTCORR    multi
+PHOTFLAM    PHOTFLAM    mean
+PHOTFNU    PHOTFNU      mean
+PHOTMODE    PHOTMODE    first
+PHOTPLAM    PHOTPLAM    mean
+PHOTZPT        PHOTZPT        mean
+PODPSFF    PODPSFF    multi
+PRIMESI        PRIMESI        multi
+PROCTIME    PROCTIME    first
+PROPAPER    PROPAPER    multi
+PROPOSID    PROPOSID    first
+QUALCOM1    QUALCOM1    multi
+QUALCOM2    QUALCOM2    multi
+QUALCOM3    QUALCOM3    multi
+QUALITY    QUALITY    multi
+RA_APER    RA_APER    first
+READNSEA    READNSEA    first
+READNSEB    READNSEB    first
+READNSEC    READNSEC    first
+READNSED    READNSED    first
+REFFRAME    REFFRAME    multi
+ROOTNAME    ROOTNAME    first
+ROUTTIME    ROUTTIME    first
+RPTCORR    RPTCORR    multi
+SAACRMAP    SAACRMAP    multi
+SAMP_SEQ    SAMP_SEQ    first
+SAMPNUM    SAMPNUM    first
+SAMPTIME    SAMPTIME    first
+SAMPZERO    SAMPZERO    first
+SCALENSE    SCALENSE    first
+SCLAMP    SCLAMP    multi
+SDQFLAGS    SDQFLAGS    first
+SHADCORR    SHADCORR    multi
+SHADFILE    SHADFILE    multi
+SIZAXIS1    SIZAXIS1    first
+SIZAXIS2    SIZAXIS2    first
+SOFTERRS    SOFTERRS    sum
+STDCFFF    STDCFFF    multi
+STDCFFP    STDCFFP    multi
+SUBARRAY    SUBARRAY    first
+SUBTYPE    SUBTYPE    multi
+SUNANGLE   SUNANGLE   first
+T_SGSTAR    T_SGSTAR    multi
+TARGNAME    TARGNAME    first
+TDFTRANS    TDFTRANS    sum
+TELESCOP    TELESCOP    first
+TIME-OBS    TIME-OBS    first
+UNITCORR    UNITCORR    multi
+WCSAXES        WCSAXES        first
+WCSCDATE    WCSCDATE    first
+WCSNAME        WCSNAME        first
+ZOFFCORR    ZOFFCORR    multi
+ZSIGCORR    ZSIGCORR    multi
