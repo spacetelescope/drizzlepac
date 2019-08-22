@@ -2,6 +2,7 @@
 import argparse
 import datetime
 import os
+import pdb
 import sys
 
 from stsci.tools import logutil
@@ -36,6 +37,7 @@ def run_catalog_utils(total_list, debug=False, phot_mode='both'):
     -------
     Nothing.
     """
+    product_list = []
     for total_product_obj in total_list:
         # determine total product filename
         if os.path.exists(total_product_obj.product_basename+"_drc.fits"):
@@ -51,6 +53,12 @@ def run_catalog_utils(total_list, debug=False, phot_mode='both'):
 
         #write out list(s) of identified sources
         total_product_catalogs.write()
+
+        #append total product catalogs to list
+        if phot_mode in ['aperture', 'both']:
+            product_list.append(total_product_obj.point_cat_filename)
+        if phot_mode in ['segment', 'both']:
+            product_list.append(total_product_obj.segment_cat_filename)
 
         # build dictionary of total_product_catalogs.catalogs[*].sources to use for
         # filter photometric catalog generation
@@ -77,6 +85,12 @@ def run_catalog_utils(total_list, debug=False, phot_mode='both'):
             # Write out photometric catalog(s)
             filter_product_catalogs.write()
 
+            # append filter product catalogs to list
+            if phot_mode in ['aperture', 'both']:
+                product_list.append(filter_product_obj.point_cat_filename)
+            if phot_mode in ['segment', 'both']:
+                product_list.append(filter_product_obj.segment_cat_filename)
+    return product_list
 # ======================================================================================================================
 
 
@@ -99,9 +113,12 @@ def main():
     starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
     log.info("Run start time: {}".format(str(starting_dt)))  # TODO: remove prior to final integration
 
-    run_catalog_utils(total_list, args.debug, args.phot_mode)
+    product_list = run_catalog_utils(total_list, args.debug, args.phot_mode)
 
     log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
+
+    for item in product_list:
+        print(item)
 
 
 # ======================================================================================================================
