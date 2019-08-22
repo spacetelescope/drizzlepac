@@ -20,7 +20,8 @@ All the stats are sigma clipped.  These are calculated by the
 functions in aperture_stats_tbl.
 
 .. note::
-    Currently, the background computations will fully include a pixel that has ANY overlap with the background aperture (the annulus). This is to simplify the computation of the median, as a weighted median is nontrivial, and slower.
+    Currently, the background computations will fully include a pixel that has ANY overlap with the background aperture
+    (the annulus). This is to simplify the computation of the median, as a weighted median is nontrivial, and slower.
     Copied from https://grit.stsci.edu/HLA/software/blob/master/HLApipeline/HLApipe/scripts/photometry_tools.py
 Authors
 -------
@@ -56,17 +57,14 @@ Can also set the gain (if image units are DN)
 Classes and Functions
 ---------------------
 """
-
 import numpy as np
 from astropy.table import Table
 from drizzlepac.hlautils.background_median import aperture_stats_tbl
 from photutils import aperture_photometry
-import datetime # TODO: Remove prior to final integration
-import pdb # TODO: Remove prior to final integration
 
 
-def iraf_style_photometry(phot_apertures,bg_apertures,data,platescale,
-                          error_array=None,bg_method='mode',epadu=1.0,zero_point=0.0):
+def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale,
+                          error_array=None, bg_method='mode', epadu=1.0, zero_point=0.0):
     """
     Computes photometry with PhotUtils apertures, with IRAF formulae
 
@@ -107,31 +105,26 @@ def iraf_style_photometry(phot_apertures,bg_apertures,data,platescale,
     if bg_method not in ['mean', 'median', 'mode']:
         raise ValueError('Invalid background method, choose either \
                           mean, median, or mode')
-    starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
     phot = aperture_photometry(data, phot_apertures, error=error_array)
     bg_phot = aperture_stats_tbl(data, bg_apertures, sigma_clip=True)
-    print('>>>>>PT phot/bg_phot processing time: {} sec\a'.format(
-        (datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
-    starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
     names = ['XCENTER', 'YCENTER', 'ID']
-    X, Y = phot_apertures[0].positions.T
-    finalStacked = np.stack([X, Y, phot["id"].data], axis=1)
-    nAper = 0
-    nameList = 'FLUX', 'FERR', 'MAG', 'MERR'
+    x, y = phot_apertures[0].positions.T
+    final_stacked = np.stack([x, y, phot["id"].data], axis=1)
+    n_aper = 0
+    name_list = 'FLUX', 'FERR', 'MAG', 'MERR'
     for item in list(phot.keys()):
         if item.startswith("aperture_sum_") and not item.startswith("aperture_sum_err_"):
-            aperSize_arcsec = phot_apertures[nAper].r * platescale
-            for name in nameList:
-                names.append("{}_{}".format(name, aperSize_arcsec))
-            nAper += 1
-    print('>>>>>PT table setup processing time: {} sec\a'.format(
-        (datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
-    starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
-    for aperCtr in range(0, nAper):
+            aper_size_arcsec = phot_apertures[n_aper].r * platescale
+            for name in name_list:
+                names.append("{}_{}".format(name, aper_size_arcsec))
+            n_aper += 1
+
+    for aperCtr in range(0, n_aper):
         ap_area = phot_apertures[aperCtr].area
         bg_method_name = 'aperture_{}'.format(bg_method)
 
-        flux = phot['aperture_sum_{}'.format(aperCtr)]# - bg_phot[bg_method_name] * ap_area # TODO background subtraction commented out 8/14/19
+        # NOTE background subtraction below commented out 8/14/19
+        flux = phot['aperture_sum_{}'.format(aperCtr)]  # - bg_phot[bg_method_name] * ap_area
 
         # Need to use variance of the sources
         # for Poisson noise term in error computation.
@@ -150,12 +143,10 @@ def iraf_style_photometry(phot_apertures,bg_apertures,data,platescale,
 
         # Build the final data table
         stacked = np.stack([flux, flux_error, mag, mag_err], axis=1)
-        finalStacked = np.concatenate([finalStacked, stacked], axis=1)
-    print('>>>>>PT flux/mag calculation processing time: {} sec\a'.format(
-        (datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
-    starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
+        final_stacked = np.concatenate([final_stacked, stacked], axis=1)
+
     # Build final output table
-    final_tbl = Table(data=finalStacked, names=names,
+    final_tbl = Table(data=final_stacked, names=names,
                       dtype=[np.float64, np.float64, np.int64, np.float64, np.float64, np.float64, np.float64,
                              np.float64, np.float64, np.float64, np.float64])
 
@@ -166,17 +157,16 @@ def iraf_style_photometry(phot_apertures,bg_apertures,data,platescale,
     final_tbl.rename_column('aperture_std', 'STDEV')
 
     # # Add some empty columns to match the current final output DAOPHOT
-    # emptyTotMag = MaskedColumn(name="TotMag(0.15)", fill_value=None, mask=True, length=len(final_tbl['X-CENTER'].data),
-    #                            dtype=np.int64)
+    # emptyTotMag = MaskedColumn(name="TotMag(0.15)", fill_value=None, mask=True,
+    #                            length=len(final_tbl['X-CENTER'].data), dtype=np.int64)
     # emptyTotMagErr = MaskedColumn(name="TotMagErr(0.15)", fill_value=None, mask=True,
     #                               length=len(final_tbl['X-CENTER'].data), dtype=np.int64)
     # final_tbl.add_column(emptyTotMag)
     # final_tbl.add_column(emptyTotMagErr)
-    print('>>>>>PT final_tbl build processing time: {} sec\a'.format(
-        (datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
     return final_tbl
 
-def compute_phot_error( flux_variance, bg_phot, bg_method, ap_area, epadu=1.0):
+
+def compute_phot_error(flux_variance, bg_phot, bg_method, ap_area, epadu=1.0):
     """Computes the flux errors using the DAOPHOT style computation
 
     Parameters
@@ -201,8 +191,8 @@ def compute_phot_error( flux_variance, bg_phot, bg_method, ap_area, epadu=1.0):
     flux_error : array
         an array of flux errors
     """
-    bg_variance_terms = (ap_area * bg_phot['aperture_std'] ** 2. ) \
-                        * (1. + ap_area/bg_phot['aperture_area'])
+
+    bg_variance_terms = (ap_area * bg_phot['aperture_std'] ** 2.) * (1. + ap_area/bg_phot['aperture_area'])
     variance = flux_variance / epadu + bg_variance_terms
     flux_error = variance ** .5
     return flux_error
