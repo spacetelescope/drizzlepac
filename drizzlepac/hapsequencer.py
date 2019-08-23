@@ -398,7 +398,7 @@ def create_drizzle_products(obs_info_dict, total_list, meta_wcs):
 
 
 def run_hla_processing(input_filename, result=None, debug=False, use_defaults_configs=True,
-                       input_custom_pars_file=None, output_custom_pars_file=None, phot_mode = 'aperture'):
+                       input_custom_pars_file=None, output_custom_pars_file=None, phot_mode = 'both'):
     # This routine needs to return an exit code, return_value, for use by the calling
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
@@ -419,6 +419,7 @@ def run_hla_processing(input_filename, result=None, debug=False, use_defaults_co
         manifest_name = total_list[0].manifest_name
 
         # Set up all pipeline parameter values that will be used later on in the run.
+
         for total_item in total_list:
             total_item.pars = config_utils.HapConfig(total_item,
                                                      use_defaults=use_defaults_configs,
@@ -436,67 +437,69 @@ def run_hla_processing(input_filename, result=None, debug=False, use_defaults_co
                                                         input_custom_pars_file=input_custom_pars_file,
                                                         output_custom_pars_file=output_custom_pars_file)
 
-        # Run alignimages.py on images on a filter-by-filter basis.
-        # Process each filter object which contains a list of exposure objects/products,
-        # regardless of detector.
-        log.info("Run alignimages.py on images on a filter-by-filter basis.")
-        exposure_filenames = []
-        for tot_obj in total_list:
-            for filt_obj in tot_obj.fdp_list:
-                align_table, filt_exposures = filt_obj.align_to_gaia()
-
-                # Report results and track the output files
-                # FIX - Add info here in the case of alignment working on data that should not be aligned
-                # as well as outright failure (exception vs msgs)
-                if align_table:
-                    log.info("ALIGN_TABLE: {}".format(align_table))
-                    # FIX
-                    # os.remove("alignimages.log")  # FIX This log needs to be included in total product trailer file
-                    for row in align_table:
-                        if row['status'] == 0:
-                            log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
-                        # Alignment did not work for this particular image
-                        # FIX - If alignment did not work for an image, it seems this exposure should
-                        # be removed from the exposure lists.  TotalProduct and FilterProduct need
-                        # methods to do this.
-                        else:
-                            log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
-
-                    hdrlet_list = align_table['headerletFile'].tolist()
-                    product_list += hdrlet_list
-                    exposure_filenames += filt_exposures
-
-                else:
-                    log.info("Alignimages step skipped.")
-
-        # Run meta wcs code to get common WCS for all images in this obset_id, regardless of detector.
-        # FIX (1) Intended for this to be a method of TotalProduct, but it should be
-        # associated with all the exposures really used in the alignment (the "as built")
-        # as is done here.
-        # This function used based upon WH analysis but make sure to set
-        # the size of the output image. This comment is related to the previously mentioned issue.
-        # This produced incompatible results.  Perhaps accessing wrong dimension information.
-        """
-        log.info("Run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
-        log.info("The following images will be used: ")
-        for imgname in exposure_filenames:
-            log.info("{}".format(imgname))
-        if exposure_filenames:
-            meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames)
-        """
-        # Not using meta_wcs at this time
-        meta_wcs = []
-
-        # Run AstroDrizzle to produce drizzle-combined products
-        log.info("Create drizzled imagery products")
-        driz_list = create_drizzle_products(obs_info_dict, total_list, meta_wcs)
-        product_list += driz_list
+        # TODO vvv uncomment the below large block of code once catalog generation parameter files are populated vvv.
+        # # Run alignimages.py on images on a filter-by-filter basis.
+        # # Process each filter object which contains a list of exposure objects/products,
+        # # regardless of detector.
+        # log.info("Run alignimages.py on images on a filter-by-filter basis.")
+        # exposure_filenames = []
+        # for tot_obj in total_list:
+        #     for filt_obj in tot_obj.fdp_list:
+        #         align_table, filt_exposures = filt_obj.align_to_gaia()
+        #
+        #         # Report results and track the output files
+        #         # FIX - Add info here in the case of alignment working on data that should not be aligned
+        #         # as well as outright failure (exception vs msgs)
+        #         if align_table:
+        #             log.info("ALIGN_TABLE: {}".format(align_table))
+        #             # FIX
+        #             # os.remove("alignimages.log")  # FIX This log needs to be included in total product trailer file
+        #             for row in align_table:
+        #                 if row['status'] == 0:
+        #                     log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
+        #                 # Alignment did not work for this particular image
+        #                 # FIX - If alignment did not work for an image, it seems this exposure should
+        #                 # be removed from the exposure lists.  TotalProduct and FilterProduct need
+        #                 # methods to do this.
+        #                 else:
+        #                     log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
+        #
+        #             hdrlet_list = align_table['headerletFile'].tolist()
+        #             product_list += hdrlet_list
+        #             exposure_filenames += filt_exposures
+        #
+        #         else:
+        #             log.info("Alignimages step skipped.")
+        #
+        # # Run meta wcs code to get common WCS for all images in this obset_id, regardless of detector.
+        # # FIX (1) Intended for this to be a method of TotalProduct, but it should be
+        # # associated with all the exposures really used in the alignment (the "as built")
+        # # as is done here.
+        # # This function used based upon WH analysis but make sure to set
+        # # the size of the output image. This comment is related to the previously mentioned issue.
+        # # This produced incompatible results.  Perhaps accessing wrong dimension information.
+        # """
+        # log.info("Run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
+        # log.info("The following images will be used: ")
+        # for imgname in exposure_filenames:
+        #     log.info("{}".format(imgname))
+        # if exposure_filenames:
+        #     meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames)
+        # """
+        # # Not using meta_wcs at this time
+        # meta_wcs = []
+        #
+        # # Run AstroDrizzle to produce drizzle-combined products
+        # log.info("Create drizzled imagery products")
+        # driz_list = create_drizzle_products(obs_info_dict, total_list, meta_wcs)
+        # product_list += driz_list
+        # TODO ^^^ uncomment the above large block of code once catalog generation parameter files are populated ^^^.
 
 
         # Create source catalogs from newly defined products (HLA-204)
         log.info("Create source catalog from newly defined product")
         if 'total detection product 00' in obs_info_dict.keys():
-            catalog_list = create_drizzle_products(total_list, debug=debug, phot_mode=phot_mode)
+            catalog_list = create_catalog_products(total_list, debug=debug, phot_mode=phot_mode)
             product_list += catalog_list
         else:
             print("Sourcelist generation step skipped.")
@@ -526,3 +529,12 @@ def run_hla_processing(input_filename, result=None, debug=False, use_defaults_co
         log.info("9: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
                  "condition")
         return return_value
+
+# ----------------------------------------------------------------------------------------------------------------------
+# TODO: REMOVE BELOW COMMAND-LINE INTERFACE PRIOR TO PULL REQUEST
+
+if __name__ == '__main__':
+    out_pars_file = sys.argv[1].replace(".out", "_config.json")
+    if os.path.exists(out_pars_file):
+        os.remove(out_pars_file)
+    x = run_hla_processing(sys.argv[1], debug=True, output_custom_pars_file=out_pars_file, phot_mode='aperture')
