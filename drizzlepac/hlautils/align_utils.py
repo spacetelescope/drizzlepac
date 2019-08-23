@@ -12,6 +12,7 @@ import astropy
 from astropy.io import fits
 from astropy.table import Table
 from astropy.nddata.bitmask import bitfield_to_boolean_mask
+from astropy.coordinates import SkyCoord, Angle
 
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
 
@@ -21,7 +22,7 @@ from stsci.tools import logutil
 from . import astrometric_utils as amutils
 from . import astroquery_utils as aqutils
 
-from .. import wcs_functions
+from .. import tweakwcs
 
 __taskname__ = 'align_utils'
 
@@ -58,6 +59,12 @@ class AlignmentTable:
 
         # Initialize computed attributes
         self.imglist = []
+        self.reference_catalogs = []
+        self.group_id_dict = {}
+
+        self.fit_methods = {'relative': match_relative_fit,
+                            '2dhist': match_2dhist_fit,
+                            'default': match_default_fit}
 
     def build_images(self, **image_pars):
         """Create CatalogImage objects for each input to use in alignment."""
@@ -74,7 +81,7 @@ class AlignmentTable:
             self.imglist.append(catimg)
 
 
-    def set_catalog(self, catalog_names):
+    def get_reference_catalog(self, catalog_name, output=True, catalog=None):
         """Define the reference catalog(s) to be used for alignment
 
         Parameters
@@ -86,27 +93,63 @@ class AlignmentTable:
             If a filename is provided, file would be used instead
             of deriving catalogs from standard astrometric catalogs
             like GAIADR2.
+
+        output : boolean
+            Specify whether or not to write out reference catalog to a file
+
+        catalog : Table, optional
+            Astrometric catalog to use for alignment, if specified.  It will be
+            labelled with value given in `catalog_name` and added as an entry
+            in `self.reference_catalogs`.
+
+        Returns
+        -------
+        reference_catalog : Table
+            Table with astrometric source positions to use for alignment.  This
+            table will be saved in `self.reference_catalogs` dictionary.
+
         """
-        pass
+        if catalog_name in self.reference_catalogs:
+            log.info("Using {} reference catalog from earlier this run.".format(catalog_name))
+            reference_catalog = self.reference_catalogs[catalog_name]
+        else:
+            if catalog:
+                reference_catalog = catalog
+                log.info("Using custom reference catalog {};"
+                         " Storing it for potential re-use later this run.".format(catalog_name))
+            else:
+                log.info("Generating new reference catalog for {};"
+                         " Storing it for potential re-use later this run.".format(catalog_name))
+                reference_catalog = generate_astrometric_catalog(self.process_list,
+                                                                 catalog=catalog_name,
+                                                                 output=output)
+            self.reference_catalogs[catalog_name] = reference_catalog
+        return reference_catalog
 
-    def set_method(self, method):
-        """Define what alignment method(s) are to be used
-
-        Parameters
-        ----------
-        method : list
-            List of alignment method names to be used.
-            Supported options: relative, 2dhist, threshold.
-        """
-        pass
-
-    def find_sources(self):
+    def find_sources(self, output=True, dqname='DQ', fwhmpsf=3.0, **alignment_pars):
         """Find observable sources in each input exposure."""
-        self.extracted_sources = None
+        self.extracted_sources = {}
+        for img in self.imglist:
+            img.find_sources(output=output, dqname=dqname, fwhmpsf=fwhmpsf, **alignment_pars)
+            self.extracted_sources[img.imgname] = img.catalog_table
 
-    def get_reference_catalog(self, catalog):
-        """Return the desired reference catalog to be used for alignment"""
-        pass
+            # Allow user to decide when and how to write out catalogs to files
+            if output:
+                # write out coord lists to files for diagnostic purposes. Protip: To display the sources in these files in DS9,
+                # set the "Coordinate System" option to "Physical" when loading the region file.
+                imgroot = os.path.basename(img.imgname).split('_')[0]
+                for chip in range(1, img.num_sci + 1):
+                    chip_cat = img.catalog_table[chip]
+                    if chip_cat and len(chip_cat) > 0:
+                        regfilename = "{}_sci{}_src.reg".format(imgroot, chip)
+                        out_table = Table(chip_cat)
+                        # To align with positions of sources in DS9/IRAF
+                        out_table['xcentroid'] += 1
+                        out_table['ycentroid'] += 1
+                        out_table.write(regfilename,
+                                        include_names=["xcentroid", "ycentroid"],
+                                        format="ascii.fast_commented_header")
+                        log.info("Wrote region file {}\n".format(regfilename))
 
     def reset_group_id(self):
         for image in self.imglist:
@@ -119,7 +162,7 @@ class AlignmentTable:
         self.imglist = []
         for group_id, image in enumerate(self.process_list):
             img = amutils.build_wcscat(image, group_id,
-                                       self.extracted_sources[image]['catalog_table'])
+                                       self.extracted_sources[image])
             # add the name of the image to the imglist object
             for im in img:
             #    im.meta['name'] = image
@@ -130,9 +173,15 @@ class AlignmentTable:
         for image in self.imglist:
             self.group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])] = image.meta["group_id"]
 
-    def perform_fit(self, method):
+    def get_fit_methods(self):
+        """Return the list of method names for all registered functions
+            available for performing alignment.
+        """
+        return self.fit_methods.keys()
+
+    def perform_fit(self, method_name, reference_catalog):
         """Perform fit using specified method, then determine fit quality"""
-        pass
+        self.fit_methods[method_name](self.imglist, reference_catalog)
 
 # Including this from catalog_utils
 #
@@ -282,6 +331,8 @@ class CatalogImage:
             # find sources in image
             if output:
                 outroot = '{}_sci{}_src'.format(self.keyword_dict['rootname'], chip)
+            else:
+                outroot = None
 
             # apply any DQ array, if available
             dqmask = None
@@ -387,3 +438,233 @@ class CatalogImage:
         keyword_dict["aperture_dec"] = self.imghdu[1].header["DEC_APER"]
 
         return keyword_dict
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def generate_astrometric_catalog(imglist, **pars):
+    """Generates a catalog of all sources from an existing astrometric catalog are
+       in or near the FOVs of the images in the input list.
+
+    Parameters
+    ----------
+    imglist : list
+        List of one or more calibrated fits images that will be used for catalog generation.
+
+    Returns
+    =======
+    ref_table : object
+        Astropy Table object of the catalog
+
+    """
+    # generate catalog
+    temp_pars = pars.copy()
+    if pars['output'] is True:
+        pars['output'] = 'ref_cat.ecsv'
+    else:
+        pars['output'] = None
+    out_catalog = amutils.create_astrometric_catalog(imglist, **pars)
+    pars = temp_pars.copy()
+    # if the catalog has contents, write the catalog to ascii text file
+    if len(out_catalog) > 0 and pars['output']:
+        catalog_filename = "refcatalog.cat"
+        out_catalog.write(catalog_filename, format="ascii.fast_commented_header")
+        log.info("Wrote reference catalog {}.".format(catalog_filename))
+
+    return(out_catalog)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def match_relative_fit(imglist, reference_catalog):
+    """Perform cross-matching and final fit using relative matching algorithm
+
+    Parameters
+    ----------
+    imglist : list
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+
+    reference_catalog : Table
+        Astropy Table of reference sources for this field
+
+    Returns
+    --------
+    imglist : list
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+
+    """
+    log.info("{} STEP 5b: (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
+    # 0: Specify matching algorithm to use
+    match = tweakwcs.TPMatch(searchrad=75, separation=0.1, tolerance=2, use2dhist=True)
+    # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
+    #                          tolerance=100, use2dhist=False)
+
+    # Align images and correct WCS
+    # NOTE: this invocation does not use an astrometric catalog. This call allows all the input images to be aligned in
+    # a relative way using the first input image as the reference.
+    # 1: Perform relative alignment
+    tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True)
+
+    # Set all the group_id values to be the same so the various images/chips will be aligned to the astrometric
+    # reference catalog as an ensemble.
+    # astrometric reference catalog as an ensemble. BEWARE: If additional iterations of solutions are to be
+    # done, the group_id values need to be restored.
+    for image in imglist:
+        image.meta["group_id"] = 1234567
+    # 2: Perform absolute alignment
+    tweakwcs.align_wcs(imglist, reference_catalog, match=match)
+
+    # 3: Interpret RMS values from tweakwcs
+    interpret_fit_rms(imglist, reference_catalog)
+
+    return imglist
+
+# ----------------------------------------------------------------------------------------------------------
+
+
+def match_default_fit(imglist, reference_catalog):
+    """Perform cross-matching and final fit using default tolerance matching
+
+    Parameters
+    ----------
+    imglist : list
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+
+    reference_catalog : Table
+        Astropy Table of reference sources for this field
+
+    Returns
+    --------
+    imglist : list
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+
+    """
+    log.info("{} STEP 5b: (match_default_fit) Cross matching and fitting "
+             "{}".format("-" * 20, "-" * 27))
+    # Specify matching algorithm to use
+    match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
+                             tolerance=100, use2dhist=False)
+    # Align images and correct WCS
+    tweakwcs.align_wcs(imglist, reference_catalog, match=match, expand_refcat=False)
+
+    # Interpret RMS values from tweakwcs
+    interpret_fit_rms(imglist, reference_catalog)
+
+    return imglist
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def match_2dhist_fit(imglist, reference_catalog):
+    """Perform cross-matching and final fit using 2dHistogram matching
+
+    Parameters
+    ----------
+    imglist : list
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+
+    reference_catalog : Table
+        Astropy Table of reference sources for this field
+
+    Returns
+    --------
+    imglist : list
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+
+    """
+    log.info("{} STEP 5b: (match_2dhist_fit) Cross matching and fitting "
+             "{}".format("-" * 20, "-" * 28))
+    # Specify matching algorithm to use
+    match = tweakwcs.TPMatch(searchrad=75, separation=0.1, tolerance=2.0, use2dhist=True)
+    # Align images and correct WCS
+    tweakwcs.align_wcs(imglist, reference_catalog, match=match, expand_refcat=False)
+
+    # Interpret RMS values from tweakwcs
+    interpret_fit_rms(imglist, reference_catalog)
+
+    return imglist
+
+# ----------------------------------------------------------------------------------------------------------
+def interpret_fit_rms(tweakwcs_output, reference_catalog):
+    """Interpret the FIT information to convert RMS to physical units
+
+    Parameters
+    ----------
+    tweakwcs_output : list
+        output of tweakwcs. Contains sourcelist tables, newly computed WCS info, etc. for every chip of every valid
+        input image.  This list gets updated, in-place, with the new RMS values;
+        specifically,
+
+            * 'FIT_RMS': RMS of the separations between fitted image positions and reference positions
+            * 'TOTAL_RMS': mean of the FIT_RMS values for all observations
+            * 'NUM_FITS': number of images/group_id's with successful fits included in the TOTAL_RMS
+
+        These entries are added to the 'fit_info' dictionary.
+
+    reference_catalog : astropy.Table
+        Table of reference source positions used for the fit
+
+    Returns
+    -------
+    Nothing
+    """
+    # Start by collecting information by group_id
+    group_ids = [info.meta['group_id'] for info in tweakwcs_output]
+    # Compress the list to have only unique group_id values to avoid some unnecessary iterations
+    group_ids = list(set(group_ids))
+    group_dict = {'avg_RMS': None}
+    obs_rms = []
+    for group_id in group_ids:
+        for item in tweakwcs_output:
+            # When status = FAILED (fit failed) or REFERENCE (relative alignment done with first image
+            # as the reference), skip to the beginning of the loop as there is no 'fit_info'.
+            if item.meta['fit_info']['status'] != 'SUCCESS':
+                continue
+            # Make sure to store data for any particular group_id only once.
+            if item.meta['group_id'] == group_id and \
+               group_id not in group_dict:
+                group_dict[group_id] = {'ref_idx': None, 'FIT_RMS': None}
+                log.info("fit_info: {}".format(item.meta['fit_info']))
+                tinfo = item.meta['fit_info']
+                ref_idx = tinfo['matched_ref_idx']
+                fitmask = tinfo['fitmask']
+                group_dict[group_id]['ref_idx'] = ref_idx
+                ref_RA = reference_catalog[ref_idx]['RA'][fitmask]
+                ref_DEC = reference_catalog[ref_idx]['DEC'][fitmask]
+                input_RA = tinfo['fit_RA']
+                input_DEC = tinfo['fit_DEC']
+                img_coords = SkyCoord(input_RA, input_DEC,
+                                      unit='deg', frame='icrs')
+                ref_coords = SkyCoord(ref_RA, ref_DEC, unit='deg', frame='icrs')
+                dra, ddec = img_coords.spherical_offsets_to(ref_coords)
+                ra_rms = np.std(dra.to(u.mas))
+                dec_rms = np.std(ddec.to(u.mas))
+                fit_rms = np.std(Angle(img_coords.separation(ref_coords), unit=u.mas)).value
+                group_dict[group_id]['FIT_RMS'] = fit_rms
+                group_dict[group_id]['RMS_RA'] = ra_rms
+                group_dict[group_id]['RMS_DEC'] = dec_rms
+
+                obs_rms.append(fit_rms)
+    # Compute RMS for entire ASN/observation set
+    total_rms = np.mean(obs_rms)
+    # total_rms = np.sqrt(np.sum(np.array(obs_rms)**2))
+
+    # Now, append computed results to tweakwcs_output
+    for item in tweakwcs_output:
+        group_id = item.meta['group_id']
+        if group_id in group_dict:
+            fit_rms = group_dict[group_id]['FIT_RMS']
+            ra_rms = group_dict[group_id]['RMS_RA']
+            dec_rms = group_dict[group_id]['RMS_DEC']
+        else:
+            fit_rms = None
+            ra_rms = None
+            dec_rms = None
+
+        item.meta['fit_info']['FIT_RMS'] = fit_rms
+        item.meta['fit_info']['TOTAL_RMS'] = total_rms
+        item.meta['fit_info']['NUM_FITS'] = len(group_ids)
+        item.meta['fit_info']['RMS_RA'] = ra_rms
+        item.meta['fit_info']['RMS_DEC'] = dec_rms
+        item.meta['fit_info']['catalog'] = reference_catalog.meta['catalog']
