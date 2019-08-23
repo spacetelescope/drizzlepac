@@ -243,7 +243,7 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
             total_product_name = total_product_obj.product_basename + "_drz.fits"
 
         # Instantiate filter catalog product object
-        total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
+        total_product_catalogs = HAPCatalogs(total_product_name, total_product_obj.pars, types=phot_mode, debug=debug)
 
         # Identify sources to be measured by filter photometry step
         total_product_catalogs.identify()
@@ -274,7 +274,7 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
                 filter_product_name = filter_product_obj.product_basename + "_drz.fits"
 
             # Instantiate filter catalog product object
-            filter_product_catalogs = HAPCatalogs(filter_product_name, types=phot_mode,
+            filter_product_catalogs = HAPCatalogs(filter_product_name, filter_product_obj.pars, types=phot_mode,
                                                   debug=debug, tp_sources=sources_dict)
             # Perform photometry
             filter_product_catalogs.measure()
@@ -419,7 +419,6 @@ def run_hla_processing(input_filename, result=None, debug=False, use_defaults_co
         manifest_name = total_list[0].manifest_name
 
         # Set up all pipeline parameter values that will be used later on in the run.
-
         for total_item in total_list:
             total_item.pars = config_utils.HapConfig(total_item,
                                                      use_defaults=use_defaults_configs,
@@ -534,7 +533,9 @@ def run_hla_processing(input_filename, result=None, debug=False, use_defaults_co
 # TODO: REMOVE BELOW COMMAND-LINE INTERFACE PRIOR TO PULL REQUEST
 
 if __name__ == '__main__':
+    os.system("rm -f *.*")
+    os.system("cp orig/* .")
     out_pars_file = sys.argv[1].replace(".out", "_config.json")
-    if os.path.exists(out_pars_file):
-        os.remove(out_pars_file)
+
     x = run_hla_processing(sys.argv[1], debug=True, output_custom_pars_file=out_pars_file, phot_mode='aperture')
+    print("\a")
