@@ -9,7 +9,7 @@
 import datetime
 import glob
 import os
-import pickle
+import pdb # TODO: Remove before deployment
 import sys
 import traceback
 
@@ -18,6 +18,7 @@ import drizzlepac
 from drizzlepac import alignimages
 from drizzlepac import astrodrizzle
 from drizzlepac import wcs_functions
+from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import poller_utils
 from drizzlepac.hlautils import processing_utils as proc_utils
 from drizzlepac.hlautils import sourcelist_generation
@@ -314,14 +315,15 @@ def create_drizzle_products(obs_info_dict, total_list, meta_wcs):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_hla_processing(input_filename, result=None, debug=False):
+def run_hla_processing(input_filename, result=None, debug=False, use_defaults_configs=True,
+                       input_custom_pars_file=None, output_custom_pars_file=None):
     # This routine needs to return an exit code, return_value, for use by the calling
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
 
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
-    product_list = []
+
     try:
         # Parse the poller file and generate the the obs_info_dict, as well as the total detection 
         # product lists which contain the ExposureProduct, FilterProduct, and TotalProduct objects
@@ -333,6 +335,24 @@ def run_hla_processing(input_filename, result=None, debug=False):
         # dependent on the detector.
         # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
         manifest_name = total_list[0].manifest_name
+
+        # Set up all pipeline parameter values that will be used later on in the run.
+        for total_item in total_list:
+            total_item.pars = config_utils.HapConfig(total_item,
+                                                     use_defaults=use_defaults_configs,
+                                                     input_custom_pars_file=input_custom_pars_file,
+                                                     output_custom_pars_file=output_custom_pars_file)
+
+            for filter_item in total_item.fdp_list:
+                filter_item.pars = config_utils.HapConfig(filter_item,
+                                                          use_defaults=use_defaults_configs,
+                                                          input_custom_pars_file=input_custom_pars_file,
+                                                          output_custom_pars_file=output_custom_pars_file)
+            for expo_item in total_item.edp_list:
+                expo_item.pars = config_utils.HapConfig(expo_item,
+                                                        use_defaults=use_defaults_configs,
+                                                        input_custom_pars_file=input_custom_pars_file,
+                                                        output_custom_pars_file=output_custom_pars_file)
 
         # Run alignimages.py on images on a filter-by-filter basis.
         # Process each filter object which contains a list of exposure objects/products,

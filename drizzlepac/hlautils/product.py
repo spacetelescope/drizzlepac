@@ -32,7 +32,7 @@ class HAPProduct:
         self.mjdutc = None
 
         # class variables to be set later
-        self.param_dict = {}
+        self.pars = None
 
     # def print_info(self):
         # """ Generic print at this time to indicate the information used in the
