@@ -1,18 +1,15 @@
 import os
 import sys
-import shutil
 import datetime
-import traceback
-import glob
 
 import numpy as np
 from scipy import ndimage
 
-import astropy
 from astropy.io import fits
 from astropy.table import Table
 from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from astropy.coordinates import SkyCoord, Angle
+from astropy import units as u
 
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
 
@@ -20,7 +17,6 @@ from stwcs.wcsutil import HSTWCS
 from stsci.tools import logutil
 
 from . import astrometric_utils as amutils
-from . import astroquery_utils as aqutils
 
 from .. import tweakwcs
 
@@ -65,21 +61,23 @@ class AlignmentTable:
         self.fit_methods = {'relative': match_relative_fit,
                             '2dhist': match_2dhist_fit,
                             'default': match_default_fit}
+    def close(self):
+        for img in self.imglist:
+            img.close()
 
     def build_images(self, **image_pars):
         """Create CatalogImage objects for each input to use in alignment."""
         if self.imglist:
             return
-        fwhmpsf = self.alignment_pars.get('fwhmpsf')
+        fwhmpsf = self.alignment_pars.get('fwhmpsf')  # in arcseconds
 
         for img in self.process_list:
-            catimg = CatalogImage(img)
+            catimg = HAPImage(img)
             # Build image properties needed for alignment
             catimg.compute_background(**image_pars)
             catimg.build_kernel(fwhmpsf)
 
             self.imglist.append(catimg)
-
 
     def get_reference_catalog(self, catalog_name, output=True, catalog=None):
         """Define the reference catalog(s) to be used for alignment
@@ -126,11 +124,11 @@ class AlignmentTable:
             self.reference_catalogs[catalog_name] = reference_catalog
         return reference_catalog
 
-    def find_sources(self, output=True, dqname='DQ', fwhmpsf=3.0, **alignment_pars):
+    def find_alignment_sources(self, output=True, dqname='DQ', fwhmpsf=0.12, **alignment_pars):
         """Find observable sources in each input exposure."""
         self.extracted_sources = {}
         for img in self.imglist:
-            img.find_sources(output=output, dqname=dqname, fwhmpsf=fwhmpsf, **alignment_pars)
+            img.find_alignment_sources(output=output, dqname=dqname, fwhmpsf=fwhmpsf, **alignment_pars)
             self.extracted_sources[img.imgname] = img.catalog_table
 
             # Allow user to decide when and how to write out catalogs to files
@@ -181,13 +179,18 @@ class AlignmentTable:
 
     def perform_fit(self, method_name, reference_catalog):
         """Perform fit using specified method, then determine fit quality"""
-        self.fit_methods[method_name](self.imglist, reference_catalog)
+        return self.fit_methods[method_name](self.imglist, reference_catalog)
+        
 
-# Including this from catalog_utils
-#
-# TODO:  Merge differences into version in catalog_utils
-#
-class CatalogImage:
+class HAPImage:
+    """Core class defining interface for each input exposure/product
+
+    .. note:: This class is compatible with the CatalogImage class, while including
+    additional functionality and attributes required for processing beyond
+    catalog generation.
+
+    """
+
     def __init__(self, filename):
         if isinstance(filename, str):
             self.imghdu = fits.open(filename)
@@ -203,8 +206,13 @@ class CatalogImage:
             self.ghd_product = "fdp"  # appropriate for single exposures, too
 
         # Fits file read
-        self.data = self.imghdu[('SCI', 1)].data
         self.num_sci = amutils.countExtn(self.imghdu)
+        self.num_wht = amutils.countExtn(self.imghdu, extname='WHT')
+        self.data = np.concatenate([self.imghdu[('SCI', i + 1)].data for i in range(self.num_sci)])
+        if not self.num_wht:
+            self.dqmask = build_dqmask()
+        else:
+            self.dqmask = None
 
         # Get the HSTWCS object from the first extension
         self.imgwcs = HSTWCS(self.imghdu, 1)
@@ -213,13 +221,44 @@ class CatalogImage:
         self.keyword_dict = self._get_header_data()
 
         self.bkg = None
+        self.kernel = None
+        self.kernel_fwhm = None
+
         self.imglist = None
         self.catalog_table = {}
+
+    @def wht_image():
+        doc = "The wht_image property."
+        def fget(self):
+            return self.wht_image
+        def fset(self):
+            if not self.num_wht:
+                # Working with a calibrated exposure, no WHT extension
+                # create a substitute WHT array from ERR and DQ
+                # Build pseudo-wht array for detection purposes
+                errarr = np.concatenate([self.imghdu[('ERR', i + 1)].data for i in range(self.num_sci)])
+                wht_image = 1.0 / errarr
+                wht_image /= wht_image.max()
+                wht_image *= self.imghdu[0].header['exptime']**2
+                wht_image[dqmask] = 0
+                self.wht_image = wht_image
+            else:
+                self.wht_image = self.imghdu['WHT'].data
+        def fdel(self):
+            del self.wht_image
+        return locals()
+    wht_image = property(**wht_image())
 
     def close(self):
         self.imghdu.close()
 
     def build_kernel(self, fwhmpsf):
+        """
+        Parameters
+        -----------
+        fwhmpsf : float
+            Default FWHM of PSF in units of arcseconds.
+        """
         if self.bkg is None:
             self.compute_background()
 
@@ -324,8 +363,38 @@ class CatalogImage:
         self.bkg_rms_mean = bkg_rms_mean
         self.threshold = threshold
 
-    def find_sources(self, output=True, dqname='DQ', fwhmpsf=3.0, **alignment_pars):
+    def build_dqmask(self, chip=None):
+        # apply any DQ array, if available
+        dqmask = None
+        if chip:
+            dqarr = self.imghdu[('DQ', chip)].data
+        else:
+            dqarr = np.concatenate([self.imghdu[('DQ', i + 1)].data for i in range(self.num_sci)])
+
+        # "grow out" regions in DQ mask flagged as saturated by several
+        # pixels in every direction to prevent the
+        # source match algorithm from trying to match multiple sources
+        # from one image to a single source in the
+        # other or vice-versa.
+        # Create temp DQ mask containing all pixels flagged with any value EXCEPT 256
+        non_sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=256)
+
+        # Create temp DQ mask containing saturated pixels ONLY
+        sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=~256)
+
+        # Grow out saturated pixels by a few pixels in every direction
+        grown_sat_mask = ndimage.binary_dilation(sat_mask, iterations=5)
+
+        # combine the two temporary DQ masks into a single composite DQ mask.
+        dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
+
+        self.dqmask = dqmask
+
+    def find_alignment_sources(self, output=True, dqname='DQ', fwhmpsf=0.12, **alignment_pars):
         """Find sources in all chips for this exposure."""
+        if not self.kernel:
+            self.build_kernel(fwhmpsf)
+
         for chip in range(self.numSci):
             chip += 1
             # find sources in image
@@ -334,49 +403,11 @@ class CatalogImage:
             else:
                 outroot = None
 
-            # apply any DQ array, if available
-            dqmask = None
-            if self.imghdu.index_of(dqname):
-                dqarr = self.imghdu[dqname, chip].data
-
-                # "grow out" regions in DQ mask flagged as saturated by several
-                # pixels in every direction to prevent the
-                # source match algorithm from trying to match multiple sources
-                # from one image to a single source in the
-                # other or vice-versa.
-                # Create temp DQ mask containing all pixels flagged with any value EXCEPT 256
-                non_sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=256)
-
-                # Create temp DQ mask containing saturated pixels ONLY
-                sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=~256)
-
-                # Grow out saturated pixels by a few pixels in every direction
-                grown_sat_mask = ndimage.binary_dilation(sat_mask, iterations=5)
-
-                # combine the two temporary DQ masks into a single composite DQ mask.
-                dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
-
-                # dqmask = bitfield_to_boolean_mask(dqarr, good_mask_value=False)
-                # TODO: <---Remove this old no-sat bit grow line once this
-                # thing works
-
-            if not self.kernel:
-                imgarr = self.imghdu['sci', chip].data
-                num_wht = amutils.countExtn(self.imghdu, extn='WHT')
-                if num_wht > 0:
-                    wht_image = self.imghdu['WHT'].data.copy()
-                else:
-                    # Build pseudo-wht array for detection purposes
-                    errarr = self.imghdu['err', chip].data
-                    wht_image = errarr / errarr.max()
-                    wht_image[dqmask] = 0
-
-                self.kernel, self.kernel_fwhm = amutils.build_auto_kernel(imgarr, wht_image,
-                                                          threshold=self.bkg.background_rms,
-                                                          fwhm=fwhmpsf / self.pscale)
-
+            dqmask = build_dqmask(chip=chip)
+            sciarr = self.imghdu[("SCI", chip)].data
             #  TODO: replace detector_pars with dict from OO Config class
-            seg_tab, segmap = amutils.extract_sources(imgarr, dqmask=dqmask, outroot=outroot,
+            seg_tab, segmap = amutils.extract_sources(sciarr, dqmask=self.dqmask,
+                                                      outroot=outroot,
                                                       kernel=self.kernel,
                                                       segment_threshold=self.threshold,
                                                       dao_threshold=self.bkg_rms_mean,

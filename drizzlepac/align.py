@@ -233,7 +233,7 @@ def perform_align(input_list, **kwargs):
 @util.with_logging
 def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
               runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=250,
-              headerlet_filenames=None):
+              headerlet_filenames=None, **alignment_pars):
     """Actual Main calling function.
 
     Parameters
@@ -325,14 +325,16 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         # Instantiate AlignmentTable class with these input files
         alignment_table = align_utils.AlignmentTable(imglist)
         alignment_table.build_images(**image_pars)
+        alignment_table.configure_fit()
+        process_list = alignment_table.process_list
 
         # Define fitting algorithm list in priority order
         # The match_relative_fit algorithm must have more than one image as the first image is
         # the reference for the remaining images.
-        if len(process_list) > 1:
-            fit_algorithm_list = [match_relative_fit, match_2dhist_fit, match_default_fit]
-        else:
-            fit_algorithm_list = [match_2dhist_fit, match_default_fit]
+        fit_algorithm_list = alignment_table.get_fit_methods()
+
+        if len(process_list) == 1:
+            fit_algorithm_list.remove("relative")
 
         current_dt = datetime.datetime.now()
         delta_dt = (current_dt - starting_dt).total_seconds()
@@ -358,32 +360,33 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 log.info("Using sourcelist extracted from {} generated during the last run to save time.".format(
                     pickle_filename))
             else:
-                extracted_sources = generate_source_catalogs(process_list,
-                                                             centering_mode='starfind',
-                                                             nlargest=num_sources,
-                                                             output=output)
+                extracted_sources = alignment_table.find_alignment_sources(output=True, dqname='DQ',
+                                                                           fwhmpsf=0.12, **alignment_pars)
+
+                # extracted_sources = generate_source_catalogs(process_list,
+                #                                             centering_mode='starfind',
+                #                                             nlargest=num_sources,
+                #                                             output=output)
                 pickle_out = open(pickle_filename, "wb")
                 pickle.dump(extracted_sources, pickle_out)
                 pickle_out.close()
                 log.info("Wrote {}".format(pickle_filename))
         else:
-            extracted_sources = generate_source_catalogs(process_list,
-                                                         centering_mode='starfind',
-                                                         nlargest=num_sources,
-                                                         output=output)
+            extracted_sources = alignment_table.find_alignment_sources(output=True, dqname='DQ',
+                                                                           fwhmpsf=0.12, **alignment_pars)
 
         for imgname in extracted_sources.keys():
-            table = extracted_sources[imgname]["catalog_table"]
+            table = extracted_sources[imgname]
 
             # Get the location of the current image in the filtered table
-            index = np.where(filtered_table['imageName'] == imgname)[0][0]
+            index = np.where(alignment_table.filtered_table['imageName'] == imgname)[0][0]
 
             # First ensure sources were found
 
             if table is None or not table[1]:
                 log.warning("No sources found in image {}".format(imgname))
-                filtered_table[:]['status'] = 1
-                filtered_table[:]['processMsg'] = "No sources found"
+                alignment_table.filtered_table[:]['status'] = 1
+                alignment_table.filtered_table[:]['processMsg'] = "No sources found"
                 current_dt = datetime.datetime.now()
                 delta_dt = (current_dt - starting_dt).total_seconds()
                 log.info('Processing time of [STEP 4]: {} sec'.format(delta_dt))
@@ -395,12 +398,12 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 total_num_sources += len(table[chipnum])
 
             # Update filtered table with number of found sources
-            filtered_table[index]['foundSources'] = total_num_sources
+            alignment_table.filtered_table[index]['foundSources'] = total_num_sources
 
             if total_num_sources < MIN_OBSERVABLE_THRESHOLD:
                 log.warning("Not enough sources ({}) found in image {}".format(total_num_sources, imgname))
-                filtered_table[:]['status'] = 1
-                filtered_table[:]['processMsg'] = "Not enough sources found"
+                alignment_table.filtered_table[:]['status'] = 1
+                alignment_table.filtered_table[:]['processMsg'] = "Not enough sources found"
                 current_dt = datetime.datetime.now()
                 delta_dt = (current_dt - starting_dt).total_seconds()
                 log.info('Processing time of [STEP 4]: {} sec'.format(delta_dt))
@@ -437,24 +440,14 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         # create dummy list that will be used to preserve imglist best_meta information through the imglist reset process
         best_imglist = []
         fit_info_dict = OrderedDict()
-        reference_catalog_dict = {}
         for algorithm_name in fit_algorithm_list:  # loop over fit algorithm type
             for catalog_index, catalog_name in enumerate(catalog_list):  # loop over astrometric catalog
                 log.info("{} STEP 5: Detect astrometric sources {}".format("-" * 20, "-" * 48))
                 log.info("Astrometric Catalog: {}".format(catalog_name))
                 # store reference catalogs in a dictionary so that generate_astrometric_catalog() doesn't
                 #  execute unnecessarily after it's been run once for a given astrometric catalog.
-                if catalog_name in reference_catalog_dict:
-                    log.info("Using {} reference catalog from earlier this run.".format(catalog_name))
-                    reference_catalog = reference_catalog_dict[catalog_name]
-                else:
-                    log.info("Generating new reference catalog for {};"
-                             " Storing it for potential re-use later this run.".format(catalog_name))
-                    reference_catalog = generate_astrometric_catalog(process_list,
-                                                                     catalog=catalog_name,
-                                                                     output=output)
-                    reference_catalog_dict[catalog_name] = reference_catalog
-
+                reference_catalog = alignment_table.generate_reference_catalog(catalog=catalog_name,
+                                                                                 output=output)
                 current_dt = datetime.datetime.now()
                 delta_dt = (current_dt - starting_dt).total_seconds()
                 log.info('Processing time of [STEP 5]: {} sec'.format(delta_dt))
@@ -468,13 +461,14 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                     else:
                         # bail out if not enough sources can be found any of the astrometric catalogs
                         log.warning("ERROR! No astrometric sources found in any catalog. Exiting...")
-                        filtered_table['status'][:] = 1
-                        filtered_table['processMsg'][:] = "No astrometric sources found"
-                        filtered_table['fit_qual'][:] = fit_quality
+                        alignment_table.filtered_table['status'][:] = 1
+                        alignment_table.filtered_table['processMsg'][:] = "No astrometric sources found"
+                        alignment_table.filtered_table['fit_qual'][:] = fit_quality
                         current_dt = datetime.datetime.now()
                         delta_dt = (current_dt - starting_dt).total_seconds()
                         log.info('Processing time of [STEP 5]: {} sec'.format(delta_dt))
-                        return (filtered_table)
+                        alignment_table.close()
+                        return (alignment_table.filtered_table)
                 else:
                     log.info("{} STEP 5b: Cross matching and "
                          "fitting {}".format("-" * 20, "-" * 47))
@@ -486,37 +480,36 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                                                    algorithm_name.__name__, "-" * 18))
                     try:
                         # restore group IDs to their pristine state prior to each run.
-                        for image in imglist:
-                            image.meta["group_id"] = group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])]
+                        alignment_table.reset_group_id()
 
                         # execute the correct fitting/matching algorithm
-                        imglist = algorithm_name(imglist, reference_catalog)
+                        imglist = alignment_table.perform_fit(algorithm_name, reference_catalog)
 
                         # determine the quality of the fit
                         fit_rms, fit_num, fit_quality, filtered_table, fit_status_dict = \
                             determine_fit_quality(
-                                imglist,
-                                filtered_table,
+                                alignment_table.imglist,
+                                alignment_table.filtered_table,
                                 (catalog_index < (len(catalog_list) - 1)),
                                 print_fit_parameters=print_fit_parameters)
 
                         # save fit algorithm name to dictionary key "fit method" in imglist.
-                        for imglist_ctr in range(0, len(imglist)):
-                            imglist[imglist_ctr].meta['fit method'] = algorithm_name.__name__
-                            imglist[imglist_ctr].meta['fit quality'] = fit_quality
+                        for imglist_ctr in range(0, len(alignment_table.imglist)):
+                            alignment_table.imglist[imglist_ctr].meta['fit method'] = algorithm_name
+                            alignment_table.imglist[imglist_ctr].meta['fit quality'] = fit_quality
 
                         # populate fit_info_dict
-                        fit_info_dict["{} {}".format(catalog_name, algorithm_name.__name__)] = \
+                        fit_info_dict["{} {}".format(catalog_name, algorithm_name)] = \
                             fit_status_dict[next(iter(fit_status_dict))]
                         fit_info_dict["{} {}".format(catalog_name,
-                            algorithm_name.__name__)]['fit_qual'] = fit_quality
+                            algorithm_name)]['fit_qual'] = fit_quality
 
                         # Figure out which fit solution to go with based on fit_quality value and maybe also total_rms
                         if fit_quality < 5:
                             if fit_quality == 1:  # valid, non-comprimised solution with total rms < 10 mas...go with this solution.
                                 best_fit_rms = fit_rms
 
-                                best_imglist = copy.deepcopy(imglist)
+                                best_imglist = copy.deepcopy(alignment_table.imglist)
 
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
@@ -525,7 +518,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                 log.info("Better solution found!")
                                 best_fit_rms = fit_rms
 
-                                best_imglist = copy.deepcopy(imglist)
+                                best_imglist = copy.deepcopy(alignment_table.imglist)
 
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
@@ -534,7 +527,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                     if fit_rms < best_fit_rms:
                                         best_fit_rms = fit_rms
 
-                                        best_imglist = copy.deepcopy(imglist)
+                                        best_imglist = copy.deepcopy(alignment_table.imglist)
 
                                         best_fit_status_dict = fit_status_dict.copy()
                                         best_fit_qual = fit_quality
@@ -547,7 +540,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         log.warning(
                             "WARNING: Catastrophic fitting failure with catalog {} and matching "
                             "algorithm {}.".format(catalog_name,
-                                                   algorithm_name.__name__))
+                                                   algorithm_name))
                         filtered_table['status'][:] = 1
                         filtered_table['processMsg'][:] = "Fitting failure"
                         # It may be there are additional catalogs and algorithms to try, so keep going
@@ -559,11 +552,12 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             # break out of outer fit algorithm loop
             # either with a fit_rms < 10 or a 'valid' relative fit
             if fit_quality == 1 or (0 < fit_quality < 5 and
-                "relative" in algorithm_name.__name__):
+                "relative" in algorithm_name):
                 break
 
         # Reset imglist to point to best solution...
         imglist = copy.deepcopy(best_imglist)
+        filtered_table = alignment_table
 
         # Report processing time for this step
         current_dt = datetime.datetime.now()
