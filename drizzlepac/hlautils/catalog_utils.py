@@ -558,45 +558,24 @@ class HAPPointCatalog(HAPCatalogBase):
     def __init__(self, image, param_dict, debug, tp_sources):
         super().__init__(image, param_dict, debug, tp_sources)
 
-    def identify_sources(self, bkgsig_sf=4., dao_ratio=0.8, simple_bkg=False):
+    def identify_sources(self):
         """Create a master coordinate list of sources identified in the specified total detection product image
-
-        Parameters
-        ----------
-        bkgsig_sf : float
-            multiplictive scale factor applied to background sigma value to compute DAOfind input parameter
-            'threshold'. Default value = 2.
-
-        dao_ratio : float
-            The ratio of the minor to major axis standard deviations of the Gaussian kernel.
-
-        simple_bkg : bool, optional
-            Should the input image will be background subtracted using pre-computed background?
-            Default value is False.
-
-        Returns
-        -------
-        sources : astropy table
-            Table containing x, y coordinates of identified sources
         """
-        # threshold = self.param_dict['dao']['TWEAK_THRESHOLD']
-
         # read in sci, wht extensions of drizzled product
         image = self.image.data.copy()
 
         # Estimate FWHM from image sources
         # Background statistics need to be computed prior to subtracting background from image
         bkg_sigma = mad_std(image, ignore_nan=True)
-        detect_sources_thresh = bkgsig_sf * bkg_sigma
+        detect_sources_thresh = self.param_dict["dao"]["bkgsig_sf"] * bkg_sigma
 
         # Input image will be background subtracted using pre-computed background, unless
         # specified explicitly by the user
-        if simple_bkg:
+        if self.param_dict["dao"]["simple_bkg"]:
             self.bkg_used = np.nanmedian(image)
             image -= self.bkg_used
         else:
         # Estimate background
-        # self.compute_background(threshold)
             self.bkg_used = self.image.bkg.background
             image -= self.bkg_used
 
@@ -613,9 +592,9 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("Point-source finding settings")
             log.info("Total Detection Product - Input Parameters")
             log.info("INPUT PARAMETERS")
-            log.info("{}: {}".format("bkgsig_sf", bkgsig_sf))
-            log.info("{}: {}".format("dao_ratio", dao_ratio))
-            log.info("{}: {}".format("simple_bkg", simple_bkg))
+            log.info("{}: {}".format("self.param_dict['dao']['bkgsig_sf']", self.param_dict["dao"]["bkgsig_sf"]))
+            log.info("{}: {}".format("self.param_dict['dao']['kernel_sd_aspect_ratio']", self.param_dict['dao']['kernel_sd_aspect_ratio']))
+            log.info("{}: {}".format("self.param_dict['dao']['simple_bkg']", self.param_dict['dao']['simple_bkg']))
             log.info("{}: {}".format("self.image.bkg_rms_mean", self.image.bkg_rms_mean))
             log.info("{}: {}".format("self.image.bkg_rms_mean", self.image.bkg_rms_mean))
             log.info("{}: {}".format("self.param_dict['sourcex']['source_box']",
@@ -630,8 +609,10 @@ class HAPPointCatalog(HAPCatalogBase):
 
             # find ALL the sources!!!
             log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm,
-                                                                             self.image.bkg_rms_mean, dao_ratio))
-            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.image.bkg_rms_mean, ratio=dao_ratio)
+                                                                             self.image.bkg_rms_mean,
+                                                                             self.param_dict['dao']['kernel_sd_aspect_ratio']))
+            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.image.bkg_rms_mean,
+                                    ratio=self.param_dict['dao']['kernel_sd_aspect_ratio'])
 
             # create mask to reject any sources located less than 10 pixels from a image/chip edge
             wht_image = self.image.data.copy()
