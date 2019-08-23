@@ -3,6 +3,9 @@
    {
      "dao":
      {
+       "bkgsig_sf": 4.0,
+       "kernel_sd_aspect_ratio": 0.8,
+       "simple_bkg": false,
        "TWEAK_FWHMPSF": 0.076,
        "TWEAK_THRESHOLD": null,
        "aperture_1": 0.05,
@@ -24,6 +27,9 @@
    {
      "dao":
      {
+       "bkgsig_sf": 4.0,
+       "kernel_sd_aspect_ratio": 0.8,
+       "simple_bkg": false,
        "TWEAK_FWHMPSF": 0.076,
        "TWEAK_THRESHOLD": null,
        "aperture_1": 0.05,
