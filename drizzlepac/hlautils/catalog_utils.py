@@ -422,11 +422,12 @@ class HAPCatalogs:
     """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
 
-    def __init__(self, fitsfile, param_obj, debug=False, types=None, tp_sources=None):
+    def __init__(self, fitsfile, param_dict, debug=False, types=None, tp_sources=None):
         self.label = "HAPCatalogs"
         self.description = "A class used to generate photometric sourcelists using aperture photometry"
 
         self.imgname = fitsfile
+        self.param_dict = param_dict
         self.debug = debug
         self.tp_soruces = tp_sources  # <---total product catalogs.catalogs[*].sources
 
@@ -442,12 +443,6 @@ class HAPCatalogs:
                 raise ValueError
 
         self.types = types
-
-        # Parameter dictionary definition
-        self.instrument = self.imgname.split("_")[3].upper()
-        self.detector = self.imgname.split("_")[4].upper()
-        self.inst_det = "{} {}".format(self.instrument, self.detector)
-        self.param_dict = param_obj.get_pars('catalog generation')
 
         # Compute the background for this image
         self.image = CatalogImage(fitsfile)

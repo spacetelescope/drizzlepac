@@ -243,7 +243,10 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
             total_product_name = total_product_obj.product_basename + "_drz.fits"
 
         # Instantiate filter catalog product object
-        total_product_catalogs = HAPCatalogs(total_product_name, total_product_obj.pars, types=phot_mode, debug=debug)
+        total_product_catalogs = HAPCatalogs(total_product_name,
+                                             total_product_obj.pars.get_pars('catalog generation'),
+                                             types=phot_mode,
+                                             debug=debug)
 
         # Identify sources to be measured by filter photometry step
         total_product_catalogs.identify()
@@ -274,8 +277,11 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
                 filter_product_name = filter_product_obj.product_basename + "_drz.fits"
 
             # Instantiate filter catalog product object
-            filter_product_catalogs = HAPCatalogs(filter_product_name, filter_product_obj.pars, types=phot_mode,
-                                                  debug=debug, tp_sources=sources_dict)
+            filter_product_catalogs = HAPCatalogs(filter_product_name,
+                                                  filter_product_obj.pars.get_pars('catalog generation'),
+                                                  types=phot_mode,
+                                                  debug=debug,
+                                                  tp_sources=sources_dict)
             # Perform photometry
             filter_product_catalogs.measure()
 
