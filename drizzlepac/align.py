@@ -23,16 +23,15 @@ from stsci.tools import fileutil, logutil
 from stwcs.wcsutil import headerlet, HSTWCS
 import tweakwcs
 
-from drizzlepac import updatehdr
-from drizzlepac import util
-from drizzlepac.hlautils import astrometric_utils as amutils
-from drizzlepac.hlautils import astroquery_utils as aqutils
-from drizzlepac.hlautils import analyze as filter
-from drizzlepac.hlautils import get_git_rev_info
-from drizzlepac.hlautils import align_utils
+from . import updatehdr
+from . import util
+from .hlautils import astrometric_utils as amutils
+from .hlautils import astroquery_utils as aqutils
+from .hlautils import analyze as filter
+from .hlautils import get_git_rev_info
+from .hlautils import align_utils
 
 __taskname__ = 'align'
-
 
 MIN_CATALOG_THRESHOLD = 3
 MIN_OBSERVABLE_THRESHOLD = 10
@@ -233,7 +232,7 @@ def perform_align(input_list, **kwargs):
 @util.with_logging
 def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
               runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=250,
-              headerlet_filenames=None, **alignment_pars):
+              headerlet_filenames=None, catalog_list=['GAIADR2', 'GAIADR1'], **alignment_pars):
     """Actual Main calling function.
 
     Parameters
@@ -288,9 +287,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     """
     log.info("*** HLAPIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__, __version_date__, util._ptime()[0]))
 
-    # Define astrometric catalog list in priority order
-    catalog_list = ['GAIADR2', 'GAIADR1']
-
     # 0: print git info
     if print_git_info:
         log.info("{} STEP 0: Display Git revision info  {}".format("-" * 20, "-" * 49))
@@ -323,8 +319,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         starting_dt = current_dt
 
         # Instantiate AlignmentTable class with these input files
-        alignment_table = align_utils.AlignmentTable(imglist)
-        alignment_table.build_images(**image_pars)
+        alignment_table = align_utils.AlignmentTable(imglist, **alignment_pars)
         alignment_table.configure_fit()
         process_list = alignment_table.process_list
 
@@ -360,20 +355,20 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 log.info("Using sourcelist extracted from {} generated during the last run to save time.".format(
                     pickle_filename))
             else:
-                extracted_sources = alignment_table.find_alignment_sources(output=True, dqname='DQ',
-                                                                           fwhmpsf=0.12, **alignment_pars)
+                alignment_table.find_alignment_sources(output=True, dqname='DQ',
+                                                       fwhmpsf=0.12)
 
                 # extracted_sources = generate_source_catalogs(process_list,
                 #                                             centering_mode='starfind',
                 #                                             nlargest=num_sources,
                 #                                             output=output)
                 pickle_out = open(pickle_filename, "wb")
-                pickle.dump(extracted_sources, pickle_out)
+                pickle.dump(alignment_table.extracted_sources, pickle_out)
                 pickle_out.close()
                 log.info("Wrote {}".format(pickle_filename))
         else:
-            extracted_sources = alignment_table.find_alignment_sources(output=True, dqname='DQ',
-                                                                           fwhmpsf=0.12, **alignment_pars)
+            alignment_table.find_alignment_sources(output=True, dqname='DQ',
+                                                   fwhmpsf=0.12)
 
         for imgname in extracted_sources.keys():
             table = extracted_sources[imgname]
@@ -633,7 +628,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                  "{}".format("-" * 20, "-" * 29))
         if (0 < best_fit_rms < 9999.) and update_hdr_wcs:
             # determine the quality of the fit
-            headerlet_dict = update_image_wcs_info(imglist, headerlet_filenames=headerlet_filenames)
+            headerlet_dict = align_utils.update_image_wcs_info(imglist, headerlet_filenames=headerlet_filenames)
             for table_index in range(0, len(filtered_table)):
                 filtered_table[table_index]['headerletFile'] = headerlet_dict[
                     filtered_table[table_index]['imageName']]
@@ -964,7 +959,7 @@ def generate_source_catalogs(imglist, **pars):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def update_image_wcs_info(tweakwcs_output,headerlet_filenames=None):
+def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None):
     """Write newly computed WCS information to image headers and write headerlet files
 
         Parameters
@@ -1029,7 +1024,7 @@ def update_image_wcs_info(tweakwcs_output,headerlet_filenames=None):
 
             # Write headerlet
             if headerlet_filenames:
-                headerlet_filename = headerlet_filenames[image_name] # Use HAP-compatible filename defined in runhlaprocessing.py
+                headerlet_filename = headerlet_filenames[image_name]  # Use HAP-compatible filename defined in runhlaprocessing.py
             else:
                 if image_name.endswith("flc.fits"):
                     headerlet_filename = image_name.replace("flc", "flt_hlet")

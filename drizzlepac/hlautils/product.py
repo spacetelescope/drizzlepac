@@ -7,12 +7,12 @@ import sys
 import traceback
 import shutil
 
+
+from .. import wcs_functions
+from .. import astrodrizzle
+
 from stsci.tools import logutil
 from astropy.io import fits
-
-from drizzlepac import wcs_functions
-from drizzlepac import alignimages
-from drizzlepac import astrodrizzle
 
 log = logutil.create_logger('product', level=logutil.logging.INFO, stream=sys.stdout)
 
@@ -182,11 +182,20 @@ class FilterProduct(HAPProduct):
                     exposure_filenames.append(edp.full_filename)
                     headerlet_filenames[edp.full_filename] = edp.headerlet_filename
 
-                align_table = alignimages.perform_align(exposure_filenames,
-                                                        debug=False,
-                                                        runfile="alignimages.log",
-                                                        update_hdr_wcs=True,
-                                                        headerlet_filenames=headerlet_filenames)
+                align_table = align_utils.AlignmentTable(exposure_filenames, **self.alignment_pars)
+                align_table.configure_fit()
+                align_table.find_alignment_sources(output=True, fwhmpsf=0.12)
+                ref_catalog = amutils.create_astrometric_catalog(exposure_filenames, catalog="GAIADR2",
+                                            output="{}_ref_cat.ecsv".format(self.product_basename),
+                                            gaia_only=False)
+                align_table.perform_fit('relative', ref_catalog)  # Only perform the relative alignment
+                headerlet_dict = align_utils.update_image_wcs_info(align_table.imglist,
+                                                                   headerlet_filenames=headerlet_filenames)
+                filtered_table = align_table.filtered_table
+                for table_index in range(0, len(filtered_table)):
+                    filtered_table[table_index]['headerletFile'] = headerlet_dict[
+                        filtered_table[table_index]['imageName']]
+
 
         except Exception:
             # Report a problem with the alignment
