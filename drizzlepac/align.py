@@ -313,9 +313,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         imglist = check_and_get_data(input_list, archive=archive, clobber=clobber)
         log.info("SUCCESS")
 
-        current_dt = datetime.datetime.now()
-        delta_dt = (current_dt - starting_dt).total_seconds()
-        log.info('Processing time of [STEP 1]: {} sec'.format(delta_dt))
+        log.info(make_label('Processing time of [STEP 1]', starting_dt))
         starting_dt = current_dt
 
         # Instantiate AlignmentTable class with these input files
@@ -331,18 +329,14 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         if len(process_list) == 1:
             fit_algorithm_list.remove("relative")
 
-        current_dt = datetime.datetime.now()
-        delta_dt = (current_dt - starting_dt).total_seconds()
-        log.info('Processing time of [STEP 2]: {} sec'.format(delta_dt))
+        log.info(make_label('Processing time of [STEP 2]', starting_dt))
         starting_dt = current_dt
         # 3: Build WCS for full set of input observations
         log.info("{} STEP 3: Build WCS {}".format("-" * 20, "-" * 65))
         # refwcs = amutils.build_reference_wcs(process_list)
         log.info("SUCCESS")
 
-        current_dt = datetime.datetime.now()
-        delta_dt = (current_dt - starting_dt).total_seconds()
-        log.info('Processing time of [STEP 3]: {} sec'.format(delta_dt))
+        log.info(make_label('Processing time of [STEP 3]', starting_dt))
         starting_dt = current_dt
         # 4: Extract catalog of observable sources from each input image
         log.info(
@@ -382,9 +376,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 log.warning("No sources found in image {}".format(imgname))
                 alignment_table.filtered_table[:]['status'] = 1
                 alignment_table.filtered_table[:]['processMsg'] = "No sources found"
-                current_dt = datetime.datetime.now()
-                delta_dt = (current_dt - starting_dt).total_seconds()
-                log.info('Processing time of [STEP 4]: {} sec'.format(delta_dt))
+                log.info(make_label('Processing time of [STEP 4]', starting_dt))
                 return
 
             # The catalog of observable sources must have at least MIN_OBSERVABLE_THRESHOLD entries to be useful
@@ -399,14 +391,10 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 log.warning("Not enough sources ({}) found in image {}".format(total_num_sources, imgname))
                 alignment_table.filtered_table[:]['status'] = 1
                 alignment_table.filtered_table[:]['processMsg'] = "Not enough sources found"
-                current_dt = datetime.datetime.now()
-                delta_dt = (current_dt - starting_dt).total_seconds()
-                log.info('Processing time of [STEP 4]: {} sec'.format(delta_dt))
+                log.info(make_label('Processing time of [STEP 4]', starting_dt))
                 return
         log.info("SUCCESS")
-        current_dt = datetime.datetime.now()
-        delta_dt = (current_dt - starting_dt).total_seconds()
-        log.info('Processing time of [STEP 4]: {} sec'.format(delta_dt))
+        log.info(make_label('Processing time of [STEP 4]', starting_dt))
         starting_dt = current_dt
         # 5: Retrieve list of astrometric sources from database
 
@@ -441,11 +429,17 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 log.info("Astrometric Catalog: {}".format(catalog_name))
                 # store reference catalogs in a dictionary so that generate_astrometric_catalog() doesn't
                 #  execute unnecessarily after it's been run once for a given astrometric catalog.
-                reference_catalog = alignment_table.generate_reference_catalog(catalog=catalog_name,
-                                                                                 output=output)
-                current_dt = datetime.datetime.now()
-                delta_dt = (current_dt - starting_dt).total_seconds()
-                log.info('Processing time of [STEP 5]: {} sec'.format(delta_dt))
+                if catalog_name in reference_catalog_dict:
+                    log.info("Using {} reference catalog from earlier this run.".format(catalog_name))
+                    reference_catalog = reference_catalog_dict[catalog_name]
+                else:
+                    log.info("Generating new reference catalog for {};"
+                             " Storing it for potential re-use later this run.".format(catalog_name))
+                    reference_catalog = generate_astrometric_catalog(process_list,
+                                                                     catalog=catalog_name,
+                                                                     output=output)
+                    reference_catalog_dict[catalog_name] = reference_catalog
+                log.info(make_label('Processing time of [STEP 5]', starting_dt))
                 starting_dt = current_dt
 
                 if len(reference_catalog) < MIN_CATALOG_THRESHOLD:
@@ -478,7 +472,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         alignment_table.reset_group_id()
 
                         # execute the correct fitting/matching algorithm
-                        imglist = alignment_table.perform_fit(algorithm_name, reference_catalog)
+                        imglist = alignment_table.perform_fit(algorithm_name, catalog_name, reference_catalog)
 
                         # determine the quality of the fit
                         fit_rms, fit_num, fit_quality, filtered_table, fit_status_dict = \
@@ -487,11 +481,13 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                 alignment_table.filtered_table,
                                 (catalog_index < (len(catalog_list) - 1)),
                                 print_fit_parameters=print_fit_parameters)
+                        alignment_table.filtered_table = filtered_table
 
                         # save fit algorithm name to dictionary key "fit method" in imglist.
-                        for imglist_ctr in range(0, len(alignment_table.imglist)):
-                            alignment_table.imglist[imglist_ctr].meta['fit method'] = algorithm_name
-                            alignment_table.imglist[imglist_ctr].meta['fit quality'] = fit_quality
+                        for imglist_ctr in range(0, len(imglist)):
+                            table_fit = alignment_table.fit_dict[(catalog_name, algorithm_name)]
+                            table_fit[imglist_ctr].meta['fit method'] = algorithm_name
+                            table_fit[imglist_ctr].meta['fit quality'] = fit_quality
 
                         # populate fit_info_dict
                         fit_info_dict["{} {}".format(catalog_name, algorithm_name)] = \
@@ -503,8 +499,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         if fit_quality < 5:
                             if fit_quality == 1:  # valid, non-comprimised solution with total rms < 10 mas...go with this solution.
                                 best_fit_rms = fit_rms
-
-                                best_imglist = copy.deepcopy(alignment_table.imglist)
+                                best_fit_label = (catalog_name, algorithm_name)
 
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
@@ -512,8 +507,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                             elif fit_quality < best_fit_qual:  # better solution found. keep looping but with the better solution as "best" for now.
                                 log.info("Better solution found!")
                                 best_fit_rms = fit_rms
-
-                                best_imglist = copy.deepcopy(alignment_table.imglist)
+                                best_fit_label = (catalog_name, algorithm_name)
 
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
@@ -521,8 +515,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                 if best_fit_rms >= 0.:
                                     if fit_rms < best_fit_rms:
                                         best_fit_rms = fit_rms
-
-                                        best_imglist = copy.deepcopy(alignment_table.imglist)
+                                        best_fit_label = (catalog_name, algorithm_name)
 
                                         best_fit_status_dict = fit_status_dict.copy()
                                         best_fit_qual = fit_quality
@@ -551,13 +544,12 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 break
 
         # Reset imglist to point to best solution...
-        imglist = copy.deepcopy(best_imglist)
-        filtered_table = alignment_table
+        alignment_table.select_fit(best_fit_label[0], best_fit_label[1])
+        imglist = alignment_table.selected_fit
+        filtered_table = alignment_table.filtered_table
 
         # Report processing time for this step
-        current_dt = datetime.datetime.now()
-        delta_dt = (current_dt - starting_dt).total_seconds()
-        log.info('Processing time of [STEP 5b]: {} sec'.format(delta_dt))
+        log.info(make_label('Processing time of [STEP 5b]', starting_dt))
         starting_dt = current_dt
 
         # 6: Populate the filtered_table
@@ -577,68 +569,19 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             filtered_table['status'][:] = 0
             fit_status_dict = best_fit_status_dict.copy()
 
-            # Protect the writing of the table within the best_fit_rms
-            info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
-            # Update filtered table with number of matched sources and other information
-            for item in imglist:
-                imgname = item.meta['name']
-                index = np.where(filtered_table['imageName'] == imgname)[0][0]
-
-                if not item.meta['fit_info']['status'].startswith("FAILED"):
-                    for tweakwcs_info_key in info_keys:
-                        if not tweakwcs_info_key.startswith("matched"):
-                            if tweakwcs_info_key.lower() == 'rms':
-                                filtered_table[index]['rms_x'] = item.meta['fit_info'][tweakwcs_info_key][0]
-                                filtered_table[index]['rms_y'] = item.meta['fit_info'][tweakwcs_info_key][1]
-
-                    filtered_table[index]['fit_method'] = item.meta['fit method']
-                    filtered_table[index]['catalog'] = item.meta['fit_info']['catalog']
-                    filtered_table[index]['catalogSources'] = len(reference_catalog)
-                    filtered_table[index]['matchSources'] = item.meta['fit_info']['nmatches']
-                    filtered_table[index]['rms_ra'] = item.meta['fit_info']['RMS_RA'].value
-                    filtered_table[index]['rms_dec'] = item.meta['fit_info']['RMS_DEC'].value
-                    filtered_table[index]['fit_rms'] = item.meta['fit_info']['FIT_RMS']
-                    filtered_table[index]['total_rms'] = item.meta['fit_info']['TOTAL_RMS']
-                    filtered_table[index]['offset_x'], filtered_table[index]['offset_y'] = item.meta['fit_info']['shift']
-                    filtered_table[index]['scale'] = item.meta['fit_info']['scale'][0]
-                    filtered_table[index]['rotation'] = item.meta['fit_info']['rot']
-
-                    # populate filtered_table fields "status", "compromised" and
-                    # "processMsg" with fit_status_dict fields "valid", "compromised"
-                    # and "reason".
-                    explicit_dict_key = "{},{}".format(item.meta['name'], item.meta['chip'])
-                    if fit_status_dict[explicit_dict_key]['valid'] is True:
-                        filtered_table[index]['status'] = 0
-                    else:
-                        filtered_table[index]['status'] = 1
-                    if fit_status_dict[explicit_dict_key]['compromised'] is False:
-                        filtered_table['compromised'] = 0
-                    else:
-                        filtered_table['compromised'] = 1
-
-                    filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
-                    filtered_table['fit_qual'][index] = item.meta['fit quality']
-
-        current_dt = datetime.datetime.now()
-        delta_dt = (current_dt - starting_dt).total_seconds()
-        log.info('Processing time of [STEP 6]: {} sec'.format(delta_dt))
+        log.info(make_label('Processing time of [STEP 6]', starting_dt))
         starting_dt = current_dt
         # 7: Write new fit solution to input image headers
         log.info("{} STEP 7: Update image headers with new WCS information "
                  "{}".format("-" * 20, "-" * 29))
         if (0 < best_fit_rms < 9999.) and update_hdr_wcs:
             # determine the quality of the fit
-            headerlet_dict = align_utils.update_image_wcs_info(imglist, headerlet_filenames=headerlet_filenames)
-            for table_index in range(0, len(filtered_table)):
-                filtered_table[table_index]['headerletFile'] = headerlet_dict[
-                    filtered_table[table_index]['imageName']]
+            alignment_table.apply_fit(headerlet_filenames)
             log.info("SUCCESS")
         else:
             log.info(" STEP SKIPPED")
 
-        current_dt = datetime.datetime.now()
-        delta_dt = (current_dt - starting_dt).total_seconds()
-        log.info('Processing time of [STEP 7]: {} sec'.format(delta_dt))
+        log.info(make_label('Processing time of [STEP 7]', starting_dt))
         log.info('TOTAL Processing time of {} sec'.format((current_dt - zero_dt).total_seconds()))
         log.info(best_fit_status_dict)
         log.info("-" * 104)
@@ -660,6 +603,16 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         for col in filtered_table.colnames:
             result.add_column(filtered_table[col], name=col)
         filtered_table.pprint(max_width=-1)
+
+
+# ----------------------------------------------------------------------------------------------------------
+
+def make_label(label, starting_dt):
+    """Create a time-stamped label for use in log messages"""
+    current_dt = datetime.datetime.now()
+    delta_dt = (current_dt - starting_dt).total_seconds()
+    return '{}: {} sec'.format(label, delta_dt)
+
 
 
 # ----------------------------------------------------------------------------------------------------------
@@ -881,6 +834,39 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
     return max_rms_val, num_xmatches, fit_quality, filtered_table, fit_status_dict
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def generate_astrometric_catalog(imglist, **pars):
+    """Generates a catalog of all sources from an existing astrometric catalog are
+       in or near the FOVs of the images in the input list.
+
+    Parameters
+    ----------
+    imglist : list
+        List of one or more calibrated fits images that will be used for catalog generation.
+
+    Returns
+    =======
+    ref_table : object
+        Astropy Table object of the catalog
+
+    """
+    # generate catalog
+    temp_pars = pars.copy()
+    if pars['output'] is True:
+        pars['output'] = 'ref_cat.ecsv'
+    else:
+        pars['output'] = None
+    out_catalog = amutils.create_astrometric_catalog(imglist, **pars)
+    pars = temp_pars.copy()
+    # if the catalog has contents, write the catalog to ascii text file
+    if len(out_catalog) > 0 and pars['output']:
+        catalog_filename = "refcatalog.cat"
+        out_catalog.write(catalog_filename, format="ascii.fast_commented_header")
+        log.info("Wrote reference catalog {}.".format(catalog_filename))
+
+    return(out_catalog)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -954,92 +940,6 @@ def generate_source_catalogs(imglist, **pars):
                     log.info("Wrote region file {}\n".format(regfilename))
         imghdu.close()
     return(sourcecatalogdict)
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None):
-    """Write newly computed WCS information to image headers and write headerlet files
-
-        Parameters
-        ----------
-        tweakwcs_output : list
-            output of tweakwcs. Contains sourcelist tables, newly computed WCS info, etc. for every chip of every valid
-            every valid input image.
-
-        headerlet_filenames : dictionary, optional
-            dictionary that maps the flt/flc.fits file name to the corresponding custom headerlet filename.
-
-        Returns
-        -------
-        out_headerlet_list : dictionary
-            a dictionary of the headerlet files created by this subroutine, keyed by flt/flc fits filename.
-        """
-    out_headerlet_dict = {}
-    for item in tweakwcs_output:
-        image_name = item.meta['filename']
-        chipnum = item.meta['chip']
-        if chipnum == 1:
-            chipctr = 1
-            hdulist = fits.open(image_name, mode='update')
-            num_sci_ext = amutils.countExtn(hdulist)
-
-            # generate wcs name for updated image header, headerlet
-            # Just in case header value 'wcs_name' is empty.
-            if item.meta['fit method'] == 'match_relative_fit':
-                fit_method = 'REL'
-            else:
-                fit_method = 'IMG'
-
-            if not hdulist['SCI', 1].header['WCSNAME'] or hdulist['SCI', 1].header['WCSNAME'] == "":
-                wcs_name = "FIT_{}_{}".format(fit_method, item.meta['catalog_name'])
-            else:
-                wname = hdulist['sci', 1].header['wcsname']
-                if "-" in wname:
-                    wcs_name = '{}-FIT_{}_{}'.format(wname[:wname.index('-')],
-                                                    fit_method,
-                                                    item.meta['fit_info']['catalog'])
-                else:
-                    wcs_name = '{}-FIT_{}_{}'.format(wname, fit_method, item.meta['fit_info']['catalog'])
-
-            # establish correct mapping to the science extensions
-            sci_ext_dict = {}
-            for sci_ext_ctr in range(1, num_sci_ext + 1):
-                sci_ext_dict["{}".format(sci_ext_ctr)] = fileutil.findExtname(hdulist, 'sci', extver=sci_ext_ctr)
-
-        # update header with new WCS info
-        updatehdr.update_wcs(hdulist, sci_ext_dict["{}".format(item.meta['chip'])], item.wcs, wcsname=wcs_name,
-                                 reusename=True, verbose=True)
-        if chipctr == num_sci_ext:
-            # Close updated flc.fits or flt.fits file
-            hdulist.flush()
-            hdulist.close()
-
-            # Create headerlet
-            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, wcsname=wcs_name, logging=False)
-
-            # Update headerlet
-            update_headerlet_phdu(item, out_headerlet)
-
-            # Write headerlet
-            if headerlet_filenames:
-                headerlet_filename = headerlet_filenames[image_name]  # Use HAP-compatible filename defined in runhlaprocessing.py
-            else:
-                if image_name.endswith("flc.fits"):
-                    headerlet_filename = image_name.replace("flc", "flt_hlet")
-                if image_name.endswith("flt.fits"):
-                    headerlet_filename = image_name.replace("flt", "flt_hlet")
-            out_headerlet.writeto(headerlet_filename, clobber=True)
-            log.info("Wrote headerlet file {}.\n\n".format(headerlet_filename))
-            out_headerlet_dict[image_name] = headerlet_filename
-
-            # Attach headerlet as HDRLET extension
-            headerlet.attach_headerlet(image_name, headerlet_filename, logging=False)
-
-        chipctr += 1
-    return (out_headerlet_dict)
-
 
 # --------------------------------------------------------------------------------------------------------------
 def update_headerlet_phdu(tweakwcs_item, headerlet):
