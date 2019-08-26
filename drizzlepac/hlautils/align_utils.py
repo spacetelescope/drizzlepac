@@ -31,8 +31,9 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 
 class AlignmentTable:
-    def __init__(self, input_list, clobber=False, **alignment_pars):
+    def __init__(self, input_list, clobber=False, dqname='DQ', **alignment_pars):
         self.alignment_pars = alignment_pars
+        self.dqname = dqname
 
         self.zero_dt = starting_dt = datetime.datetime.now()
         log.info(str(starting_dt))
@@ -53,31 +54,29 @@ class AlignmentTable:
         self.process_list = list(process_list)  # Convert process_list from numpy list to regular python list
         log.info("SUCCESS")
 
-        # Initialize computed attributes
-        self.imglist = []
-        self.reference_catalogs = []
-        self.group_id_dict = {}
-
-        self.fit_methods = {'relative': match_relative_fit,
-                            '2dhist': match_2dhist_fit,
-                            'default': match_default_fit}
-    def close(self):
-        for img in self.imglist:
-            img.close()
-
-    def build_images(self, **image_pars):
-        """Create CatalogImage objects for each input to use in alignment."""
-        if self.imglist:
-            return
         fwhmpsf = self.alignment_pars.get('fwhmpsf')  # in arcseconds
 
+        self.haplist = []
         for img in self.process_list:
             catimg = HAPImage(img)
             # Build image properties needed for alignment
             catimg.compute_background(**image_pars)
             catimg.build_kernel(fwhmpsf)
 
-            self.imglist.append(catimg)
+            self.haplist.append(catimg)
+
+        # Initialize computed attributes
+        self.imglist = []  # list of FITSWCS objects for tweakwcs
+        self.reference_catalogs = []
+        self.group_id_dict = {}
+
+        self.fit_methods = {'relative': match_relative_fit,
+                            '2dhist': match_2dhist_fit,
+                            'default': match_default_fit}
+
+    def close(self):
+        for img in self.haplist:
+            img.close()
 
     def get_reference_catalog(self, catalog_name, output=True, catalog=None):
         """Define the reference catalog(s) to be used for alignment
@@ -124,11 +123,11 @@ class AlignmentTable:
             self.reference_catalogs[catalog_name] = reference_catalog
         return reference_catalog
 
-    def find_alignment_sources(self, output=True, dqname='DQ', fwhmpsf=0.12, **alignment_pars):
+    def find_alignment_sources(self, output=True, fwhmpsf=0.12):
         """Find observable sources in each input exposure."""
         self.extracted_sources = {}
-        for img in self.imglist:
-            img.find_alignment_sources(output=output, dqname=dqname, fwhmpsf=fwhmpsf, **alignment_pars)
+        for img in self.haplist:
+            img.find_alignment_sources(output=output, dqname=self.dqname, fwhmpsf=fwhmpsf, **self.alignment_pars)
             self.extracted_sources[img.imgname] = img.catalog_table
 
             # Allow user to decide when and how to write out catalogs to files
@@ -180,7 +179,7 @@ class AlignmentTable:
     def perform_fit(self, method_name, reference_catalog):
         """Perform fit using specified method, then determine fit quality"""
         return self.fit_methods[method_name](self.imglist, reference_catalog)
-        
+
 
 class HAPImage:
     """Core class defining interface for each input exposure/product
@@ -699,3 +698,88 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
         item.meta['fit_info']['RMS_RA'] = ra_rms
         item.meta['fit_info']['RMS_DEC'] = dec_rms
         item.meta['fit_info']['catalog'] = reference_catalog.meta['catalog']
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=None):
+    """Write newly computed WCS information to image headers and write headerlet files
+
+        Parameters
+        ----------
+        tweakwcs_output : list
+            output of tweakwcs. Contains sourcelist tables, newly computed WCS info, etc. for every chip of every valid
+            every valid input image.
+
+        headerlet_filenames : dictionary, optional
+            dictionary that maps the flt/flc.fits file name to the corresponding custom headerlet filename.
+
+        Returns
+        -------
+        out_headerlet_list : dictionary
+            a dictionary of the headerlet files created by this subroutine, keyed by flt/flc fits filename.
+        """
+    out_headerlet_dict = {}
+    for item in tweakwcs_output:
+        image_name = item.meta['filename']
+        chipnum = item.meta['chip']
+        if chipnum == 1:
+            chipctr = 1
+            hdulist = fits.open(image_name, mode='update')
+            num_sci_ext = amutils.countExtn(hdulist)
+
+            # generate wcs name for updated image header, headerlet
+            # Just in case header value 'wcs_name' is empty.
+            if fit_label is None:
+                if item.meta['fit method'] == 'match_relative_fit':
+                    fit_label = 'REL'
+                else:
+                    fit_label = 'IMG'
+
+            if not hdulist['SCI', 1].header['WCSNAME'] or hdulist['SCI', 1].header['WCSNAME'] == "":
+                wcs_name = "FIT_{}_{}".format(fit_label, item.meta['catalog_name'])
+            else:
+                wname = hdulist['sci', 1].header['wcsname']
+                if "-" in wname:
+                    wcs_name = '{}-FIT_{}_{}'.format(wname[:wname.index('-')],
+                                                    fit_label,
+                                                    item.meta['fit_info']['catalog'])
+                else:
+                    wcs_name = '{}-FIT_{}_{}'.format(wname, fit_label, item.meta['fit_info']['catalog'])
+
+            # establish correct mapping to the science extensions
+            sci_ext_dict = {}
+            for sci_ext_ctr in range(1, num_sci_ext + 1):
+                sci_ext_dict["{}".format(sci_ext_ctr)] = fileutil.findExtname(hdulist, 'sci', extver=sci_ext_ctr)
+
+        # update header with new WCS info
+        updatehdr.update_wcs(hdulist, sci_ext_dict["{}".format(item.meta['chip'])], item.wcs, wcsname=wcs_name,
+                                 reusename=True, verbose=True)
+        if chipctr == num_sci_ext:
+            # Close updated flc.fits or flt.fits file
+            hdulist.flush()
+            hdulist.close()
+
+            # Create headerlet
+            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, wcsname=wcs_name, logging=False)
+
+            # Update headerlet
+            update_headerlet_phdu(item, out_headerlet)
+
+            # Write headerlet
+            if headerlet_filenames:
+                headerlet_filename = headerlet_filenames[image_name]  # Use HAP-compatible filename defined in runhlaprocessing.py
+            else:
+                if image_name.endswith("flc.fits"):
+                    headerlet_filename = image_name.replace("flc", "flt_hlet")
+                if image_name.endswith("flt.fits"):
+                    headerlet_filename = image_name.replace("flt", "flt_hlet")
+            out_headerlet.writeto(headerlet_filename, clobber=True)
+            log.info("Wrote headerlet file {}.\n\n".format(headerlet_filename))
+            out_headerlet_dict[image_name] = headerlet_filename
+
+            # Attach headerlet as HDRLET extension
+            headerlet.attach_headerlet(image_name, headerlet_filename, logging=False)
+
+        chipctr += 1
+    return (out_headerlet_dict)
