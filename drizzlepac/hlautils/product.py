@@ -7,7 +7,6 @@ import sys
 import traceback
 import shutil
 
-
 from .. import wcs_functions
 from .. import astrodrizzle
 
@@ -168,11 +167,14 @@ class FilterProduct(HAPProduct):
         """
         self.edp_list.append(edp)
 
-    def align_to_gaia(self):
+    def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, **alignment_pars):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment
            routine.
         """
+        # Only perform the relative alignment
+        method_name = 'relative'
+
         exposure_filenames = []
         headerlet_filenames = {}
         align_table = None
@@ -182,20 +184,21 @@ class FilterProduct(HAPProduct):
                     exposure_filenames.append(edp.full_filename)
                     headerlet_filenames[edp.full_filename] = edp.headerlet_filename
 
-                align_table = align_utils.AlignmentTable(exposure_filenames, **self.alignment_pars)
+                align_table = align_utils.AlignmentTable(exposure_filenames, **alignment_pars)
                 align_table.configure_fit()
-                align_table.find_alignment_sources(output=True, fwhmpsf=0.12)
-                ref_catalog = amutils.create_astrometric_catalog(exposure_filenames, catalog="GAIADR2",
+                align_table.find_alignment_sources(output=True)
+                ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
+                                            catalog=catalog_name,
                                             output="{}_ref_cat.ecsv".format(self.product_basename),
                                             gaia_only=False)
-                align_table.perform_fit('relative', ref_catalog)  # Only perform the relative alignment
-                headerlet_dict = align_utils.update_image_wcs_info(align_table.imglist,
-                                                                   headerlet_filenames=headerlet_filenames)
-                filtered_table = align_table.filtered_table
-                for table_index in range(0, len(filtered_table)):
-                    filtered_table[table_index]['headerletFile'] = headerlet_dict[
-                        filtered_table[table_index]['imageName']]
 
+                if len(ref_catalog) > MIN_CATALOG_THRESHOLD:
+                    align_table.perform_fit(method_name, catalog_name, ref_catalog)
+                    align_table.select_fit(catalog_name, method_name)
+                    align_table.apply_fit(headerlet_filenames=headerlet_filenames)
+                else:
+                    print("Not enough reference sources for absolute alignment...")
+                    raise ValueError
 
         except Exception:
             # Report a problem with the alignment

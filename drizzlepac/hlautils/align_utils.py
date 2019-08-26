@@ -54,80 +54,37 @@ class AlignmentTable:
         self.process_list = list(process_list)  # Convert process_list from numpy list to regular python list
         log.info("SUCCESS")
 
-        fwhmpsf = self.alignment_pars.get('fwhmpsf')  # in arcseconds
-
         self.haplist = []
         for img in self.process_list:
             catimg = HAPImage(img)
             # Build image properties needed for alignment
-            catimg.compute_background(**image_pars)
-            catimg.build_kernel(fwhmpsf)
+            catimg.compute_background(**alignment_pars)
+            catimg.build_kernel(self.alignment_pars.get('fwhmpsf'))
 
             self.haplist.append(catimg)
 
         # Initialize computed attributes
         self.imglist = []  # list of FITSWCS objects for tweakwcs
-        self.reference_catalogs = []
+        self.reference_catalogs = {}
         self.group_id_dict = {}
 
         self.fit_methods = {'relative': match_relative_fit,
                             '2dhist': match_2dhist_fit,
                             'default': match_default_fit}
 
+        self.fit_dict = {}  # store results of all fitting in this dict for evaluation
+        self.selected_fit = None  # identify fit selected by user (as 'best'?) to be applied to images WCSs
+
+
     def close(self):
         for img in self.haplist:
             img.close()
 
-    def get_reference_catalog(self, catalog_name, output=True, catalog=None):
-        """Define the reference catalog(s) to be used for alignment
-
-        Parameters
-        ----------
-        catalog_names : list
-            List of astrometric catalog names to use for alignment.
-            Options would include (but not be limited to):
-            "GAIADR1" and "GAIADR2".
-            If a filename is provided, file would be used instead
-            of deriving catalogs from standard astrometric catalogs
-            like GAIADR2.
-
-        output : boolean
-            Specify whether or not to write out reference catalog to a file
-
-        catalog : Table, optional
-            Astrometric catalog to use for alignment, if specified.  It will be
-            labelled with value given in `catalog_name` and added as an entry
-            in `self.reference_catalogs`.
-
-        Returns
-        -------
-        reference_catalog : Table
-            Table with astrometric source positions to use for alignment.  This
-            table will be saved in `self.reference_catalogs` dictionary.
-
-        """
-        if catalog_name in self.reference_catalogs:
-            log.info("Using {} reference catalog from earlier this run.".format(catalog_name))
-            reference_catalog = self.reference_catalogs[catalog_name]
-        else:
-            if catalog:
-                reference_catalog = catalog
-                log.info("Using custom reference catalog {};"
-                         " Storing it for potential re-use later this run.".format(catalog_name))
-            else:
-                log.info("Generating new reference catalog for {};"
-                         " Storing it for potential re-use later this run.".format(catalog_name))
-                reference_catalog = generate_astrometric_catalog(self.process_list,
-                                                                 catalog=catalog_name,
-                                                                 output=output)
-            self.reference_catalogs[catalog_name] = reference_catalog
-        return reference_catalog
-
-    def find_alignment_sources(self, output=True, fwhmpsf=0.12):
+    def find_alignment_sources(self, output=True):
         """Find observable sources in each input exposure."""
         self.extracted_sources = {}
         for img in self.haplist:
-            img.find_alignment_sources(output=output, dqname=self.dqname, fwhmpsf=fwhmpsf, **self.alignment_pars)
+            img.find_alignment_sources(output=output, dqname=self.dqname, **self.alignment_pars)
             self.extracted_sources[img.imgname] = img.catalog_table
 
             # Allow user to decide when and how to write out catalogs to files
@@ -176,9 +133,83 @@ class AlignmentTable:
         """
         return self.fit_methods.keys()
 
-    def perform_fit(self, method_name, reference_catalog):
+    def perform_fit(self, method_name, catalog_name, reference_catalog):
         """Perform fit using specified method, then determine fit quality"""
-        return self.fit_methods[method_name](self.imglist, reference_catalog)
+        imglist = self.fit_methods[method_name](self.imglist, reference_catalog)
+
+        # store results for evaluation
+        self.fit_dict[(catalog_name, method_name)] = copy.deepcopy(imglist)
+        self.reference_catalogs[catalog_name] = reference_catalog
+
+        return imglist
+
+    def select_fit(self, catalog_name, method_name):
+        """Select the fit that has been identified as 'best'"""
+        imglist = self.selected_fit = self.fit_list[(method_name, reference_catalog)]
+
+        # Protect the writing of the table within the best_fit_rms
+        info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
+        # Update filtered table with number of matched sources and other information
+        for item in imglist:
+            imgname = item.meta['name']
+            index = np.where(self.filtered_table['imageName'] == imgname)[0][0]
+
+            if not item.meta['fit_info']['status'].startswith("FAILED"):
+                for tweakwcs_info_key in info_keys:
+                    if not tweakwcs_info_key.startswith("matched"):
+                        if tweakwcs_info_key.lower() == 'rms':
+                            self.filtered_table[index]['rms_x'] = item.meta['fit_info'][tweakwcs_info_key][0]
+                            self.filtered_table[index]['rms_y'] = item.meta['fit_info'][tweakwcs_info_key][1]
+
+                self.filtered_table[index]['fit_method'] = item.meta['fit method']
+                self.filtered_table[index]['catalog'] = item.meta['fit_info']['catalog']
+                self.filtered_table[index]['catalogSources'] = len(reference_catalog)
+                self.filtered_table[index]['matchSources'] = item.meta['fit_info']['nmatches']
+                self.filtered_table[index]['rms_ra'] = item.meta['fit_info']['RMS_RA'].value
+                self.filtered_table[index]['rms_dec'] = item.meta['fit_info']['RMS_DEC'].value
+                self.filtered_table[index]['fit_rms'] = item.meta['fit_info']['FIT_RMS']
+                self.filtered_table[index]['total_rms'] = item.meta['fit_info']['TOTAL_RMS']
+                self.filtered_table[index]['offset_x'], self.filtered_table[index]['offset_y'] = item.meta['fit_info']['shift']
+                self.filtered_table[index]['scale'] = item.meta['fit_info']['scale'][0]
+                self.filtered_table[index]['rotation'] = item.meta['fit_info']['rot']
+
+                # populate self.filtered_table fields "status", "compromised" and
+                # "processMsg" with fit_status_dict fields "valid", "compromised"
+                # and "reason".
+                explicit_dict_key = "{},{}".format(item.meta['name'], item.meta['chip'])
+                if fit_status_dict[explicit_dict_key]['valid'] is True:
+                    self.filtered_table[index]['status'] = 0
+                else:
+                    self.filtered_table[index]['status'] = 1
+                if fit_status_dict[explicit_dict_key]['compromised'] is False:
+                    self.filtered_table['compromised'] = 0
+                else:
+                    self.filtered_table['compromised'] = 1
+
+                self.filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
+                self.filtered_table['fit_qual'][index] = item.meta['fit quality']
+
+
+    def apply_fit(self, headerlet_filenames=None):
+        """Apply solution from identified fit to image WCS's
+
+        Parameters
+        ----------
+        headerlet_filenames : dict, optional
+            Dictionary relating exposure filenames to headerlet filenames.  If None,
+            will generate headerlet filenames where _flt or _flc is replaced by
+            _flt_hlet or _flc_hlet, respectively.
+
+        """
+        if not self.selected_fit:
+            print("No FIT selected for application.  Please run 'select_fit()' method.")
+            raise ValueError
+        # Call update_hdr_wcs()
+        headerlet_dict = align_utils.update_image_wcs_info(self.selected_fit, headerlet_filenames=headerlet_filenames)
+
+        for table_index in range(0, len(self.filtered_table)):
+            self.filtered_table[table_index]['headerletFile'] = headerlet_dict[
+                self.filtered_table[table_index]['imageName']]
 
 
 class HAPImage:
@@ -198,12 +229,6 @@ class HAPImage:
             self.imghdu = filename
             self.imgname = filename.filename()
 
-        # Get header information to annotate the output catalogs
-        if "total" in self.imgname:
-            self.ghd_product = "tdp"
-        else:
-            self.ghd_product = "fdp"  # appropriate for single exposures, too
-
         # Fits file read
         self.num_sci = amutils.countExtn(self.imghdu)
         self.num_wht = amutils.countExtn(self.imghdu, extname='WHT')
@@ -217,13 +242,16 @@ class HAPImage:
         self.imgwcs = HSTWCS(self.imghdu, 1)
         self.pscale = self.imgwcs.pscale
 
-        self.keyword_dict = self._get_header_data()
+        if 'rootname' in self.imghdu[0].header:
+            self.rootname = self.imghdu[0].header['rootname']
+        else:
+            self.rootname = self.imgname.rstrip('.fits')
 
         self.bkg = None
         self.kernel = None
         self.kernel_fwhm = None
+        self.fwhmpsf = None
 
-        self.imglist = None
         self.catalog_table = {}
 
     @def wht_image():
@@ -263,6 +291,7 @@ class HAPImage:
 
         self.kernel, self.kernel_fwhm = amutils.build_auto_kernel(self.data, self.wht_image,
                                                           threshold=self.bkg.background_rms, fwhm=fwhmpsf / self.pscale)
+        self.fwhmpsf = self.kernel_fwhm * self.pscale
 
     def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS,
@@ -389,16 +418,13 @@ class HAPImage:
 
         self.dqmask = dqmask
 
-    def find_alignment_sources(self, output=True, dqname='DQ', fwhmpsf=0.12, **alignment_pars):
+    def find_alignment_sources(self, output=True, dqname='DQ', **alignment_pars):
         """Find sources in all chips for this exposure."""
-        if not self.kernel:
-            self.build_kernel(fwhmpsf)
-
         for chip in range(self.numSci):
             chip += 1
             # find sources in image
             if output:
-                outroot = '{}_sci{}_src'.format(self.keyword_dict['rootname'], chip)
+                outroot = '{}_sci{}_src'.format(self.rootname, chip)
             else:
                 outroot = None
 
