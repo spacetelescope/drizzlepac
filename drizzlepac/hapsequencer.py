@@ -533,12 +533,12 @@ def run_hla_processing(input_filename, result=None, debug=False, use_defaults_co
         return return_value
 
 # ----------------------------------------------------------------------------------------------------------------------
-# TODO: REMOVE BELOW COMMAND-LINE INTERFACE PRIOR TO PULL REQUEST
+# TODO: COMMENT OUT/REMOVE BELOW COMMAND-LINE INTERFACE PRIOR TO PULL REQUEST
 
-if __name__ == '__main__':
-    os.system("rm -f *.*")
-    os.system("cp orig/* .")
-    out_pars_file = sys.argv[1].replace(".out", "_config.json")
-
-    x = run_hla_processing(sys.argv[1], debug=True, output_custom_pars_file=out_pars_file, phot_mode='aperture')
-    print("\a")
+# if __name__ == '__main__':
+#     os.system("rm -f *.*")
+#     os.system("cp orig/* .")
+#     out_pars_file = sys.argv[1].replace(".out", "_config.json")
+#
+#     x = run_hla_processing(sys.argv[1], debug=True, output_custom_pars_file=out_pars_file, phot_mode='aperture')
+#     print("\a")
