@@ -9,7 +9,6 @@
 import datetime
 import glob
 import os
-import pdb # TODO: Remove before deployment
 import sys
 import traceback
 
@@ -212,6 +211,7 @@ param_dict = {
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def create_catalog_products(total_list, debug=False, phot_mode='both'):
     """This subroutine utilizes hlautils/catalog_utils module to produce photometric sourcelists for the specified
     total drizzle product and it's associated child filter products.
@@ -251,10 +251,10 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
         # Identify sources to be measured by filter photometry step
         total_product_catalogs.identify()
 
-        #write out list(s) of identified sources
+        # write out list(s) of identified sources
         total_product_catalogs.write()
 
-        #append total product catalogs to list
+        # append total product catalogs to list
         if phot_mode in ['aperture', 'both']:
             product_list.append(total_product_obj.point_cat_filename)
         if phot_mode in ['segment', 'both']:
@@ -295,6 +295,7 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
                 product_list.append(filter_product_obj.segment_cat_filename)
 
     return product_list
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -404,7 +405,7 @@ def create_drizzle_products(obs_info_dict, total_list, meta_wcs):
 
 
 def run_hla_processing(input_filename, result=None, debug=False, use_defaults_configs=True,
-                       input_custom_pars_file=None, output_custom_pars_file=None, phot_mode = 'both'):
+                       input_custom_pars_file=None, output_custom_pars_file=None, phot_mode='both'):
     # This routine needs to return an exit code, return_value, for use by the calling
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0

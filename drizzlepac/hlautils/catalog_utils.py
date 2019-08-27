@@ -34,6 +34,7 @@ __taskname__ = 'catalog_utils'
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
+
 class CatalogImage:
     def __init__(self, filename):
         if isinstance(filename, str):
@@ -148,7 +149,8 @@ class CatalogImage:
                     threshold = default_threshold
                 elif threshold_flag < 0:
                     threshold = -1 * threshold_flag * default_threshold
-                    log.info("Background threshold set to {} based on {}".format(threshold.max(), default_threshold.max()))
+                    log.info("Background threshold set to {} based on {}".format(threshold.max(),
+                                                                                 default_threshold.max()))
                     bkg_rms_mean = threshold.max()
                 else:
                     bkg_rms_mean = 3. * threshold_flag
@@ -385,7 +387,7 @@ class HAPPointCatalog(HAPCatalogBase):
             self.bkg_used = np.nanmedian(image)
             image -= self.bkg_used
         else:
-        # Estimate background
+            # Estimate background
             self.bkg_used = self.image.bkg.background
             image -= self.bkg_used
 
