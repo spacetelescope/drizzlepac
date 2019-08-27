@@ -1,7 +1,6 @@
 """This script contains code to support creation of photometric sourcelists using two techniques: aperture photometry
 segmentation-map based photometry.
 """
-import pdb # TODO Remove before deployment
 import sys
 
 import astropy.units as u
@@ -449,7 +448,7 @@ class HAPCatalogs:
         self.image.compute_background(nsigma=self.param_dict['dao']['bthresh'],
                                       threshold_flag=self.param_dict['sourcex']['thresh'])  # TODO previoulsy, nsigma=self.param_dict['sourcex']['bthresh']
 
-        self.image.build_kernel(self.param_dict['dao']['TWEAK_FWHMPSF'], self.param_dict['dao']['scale']) # TODO: replace hardwired value of '0.05' with value astrodrizzle param 'scale'
+        self.image.build_kernel(self.param_dict['dao']['TWEAK_FWHMPSF'], self.param_dict['dao']['scale'])
 
         # Initialize all catalog types here...
         # This does NOT identify or measure sources to create the catalogs at this point...
