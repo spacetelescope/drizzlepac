@@ -11,7 +11,7 @@
        "aperture_1": 0.07,
        "aperture_2": 0.125,
        "bthresh": 5.0,
-       "scale": 0.05,
+       "scale": 0.03,
        "skyannulus_arcsec": 0.25,
        "dskyannulus_arcsec": 0.25,
        "salgorithm": "mode"
@@ -35,7 +35,7 @@
        "aperture_1": 0.07,
        "aperture_2": 0.125,
        "bthresh": 5.0,
-       "scale": 0.05,
+       "scale": 0.03,
        "skyannulus_arcsec": 0.25,
        "dskyannulus_arcsec": 0.25,
        "salgorithm": "mode"
