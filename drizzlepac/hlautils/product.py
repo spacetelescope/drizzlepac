@@ -7,7 +7,6 @@ import sys
 import traceback
 import shutil
 
-from .. import wcs_functions
 from .. import astrodrizzle
 
 from stsci.tools import logutil

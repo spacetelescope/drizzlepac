@@ -404,7 +404,8 @@ def find_fwhm(psf, default_fwhm):
 
     return fwhm
 
-def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
+def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None,
+                    segment_threshold=None, dao_threshold=None, source_box=7,
                     classify=True, centering_mode="starfind", nlargest=None,
                     outroot=None, plot=False, vmax=None, deblend=False):
     """Use photutils to find sources in image based on segmentation.
@@ -457,47 +458,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
     else:
         imgarr = img
 
-    bkg_estimator = MedianBackground()
-    bkg = None
-
-    exclude_percentiles = [10, 25, 50, 75]
-    for percentile in exclude_percentiles:
-        try:
-            bkg = Background2D(imgarr, (50, 50), filter_size=(3, 3),
-                               bkg_estimator=bkg_estimator,
-                               exclude_percentile=percentile)
-        except Exception:
-            bkg = None
-            continue
-
-        if bkg is not None:
-            # If it succeeds, stop and use that value
-            bkg_rms = (5. * bkg.background_rms)
-            bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
-            default_threshold = bkg.background + bkg_rms
-            if threshold is None:
-                threshold = default_threshold
-            elif threshold < 0:
-                threshold = -1 * threshold * default_threshold
-                log.info("{} based on {}".format(threshold.max(), default_threshold.max()))
-                bkg_rms_mean = threshold.max()
-            else:
-                bkg_rms_mean = 3. * threshold
-
-            if bkg_rms_mean < 0:
-                bkg_rms_mean = 0.
-            break
-
-    # If Background2D does not work at all, define default scalar values for
-    # the background to be used in source identification
-    if bkg is None:
-        bkg_rms_mean = max(0.01, imgarr.min())
-        bkg_rms = bkg_rms_mean * 5
-
-    sigma = fwhm * gaussian_fwhm_to_sigma
-    kernel = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
-    kernel.normalize()
-    segm = detect_sources(imgarr, threshold, npixels=source_box,
+    segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
                           filter_kernel=kernel)
     # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
     if segm is None or segm.nlabels == 0:
@@ -530,8 +491,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
     if centering_mode == 'starfind':
         src_table = None
         # daofind = IRAFStarFinder(fwhm=fwhm, threshold=5.*bkg.background_rms_median)
-        log.info("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, bkg_rms_mean))
-        daofind = DAOStarFinder(fwhm=fwhm, threshold=bkg_rms_mean)
+        log.info("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, dao_threshold))
+        daofind = DAOStarFinder(fwhm=fwhm, threshold=dao_threshold)
 
         # Identify nbrightest/largest sources
         if nlargest is not None:
@@ -702,10 +663,15 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
 
     # remove parameters that are not needed by subsequent functions
     del detector_pars['fwhmpsf']
+    threshold = detector_pars.get('threshold', None)
+    source_box = detector_pars.get('source_box', 7)
+    isolation_size = detector_pars.get('isolation_size', 50)
+    saturation_limit = detector_pars.get('saturation_limit', 70000.0)
 
     # Build source catalog for entire image
     source_cats = {}
     numSci = countExtn(image, extname='SCI')
+    numWht = countExtn(image, extname='WHT')
     outroot = None
 
     for chip in range(numSci):
@@ -743,7 +709,59 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
             # TODO: <---Remove this old no-sat bit grow line once this
             # thing works
 
-        seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, outroot=outroot, fwhm=fwhm, **detector_pars)
+        if numWht > 0:
+            whtarr = image['wht', chip].data
+        else:
+            errarr = image['err', chip].data
+            whtarr = errarr / errarr.max()
+            whtarr[dqmask] = 0
+
+        bkg_estimator = MedianBackground()
+        bkg = None
+
+        exclude_percentiles = [10, 25, 50, 75]
+        for percentile in exclude_percentiles:
+            try:
+                bkg = Background2D(imgarr, (50, 50), filter_size=(3, 3),
+                                   bkg_estimator=bkg_estimator,
+                                   exclude_percentile=percentile)
+            except Exception:
+                bkg = None
+                continue
+
+            if bkg is not None:
+                # If it succeeds, stop and use that value
+                bkg_rms = (5. * bkg.background_rms)
+                bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
+                default_threshold = bkg.background + bkg_rms
+                if threshold is None:
+                    threshold = default_threshold
+                elif threshold < 0:
+                    threshold = -1 * threshold * default_threshold
+                    log.info("{} based on {}".format(threshold.max(), default_threshold.max()))
+                    bkg_rms_mean = threshold.max()
+                else:
+                    bkg_rms_mean = 3. * threshold
+
+                if bkg_rms_mean < 0:
+                    bkg_rms_mean = 0.
+                break
+
+        # If Background2D does not work at all, define default scalar values for
+        # the background to be used in source identification
+        if bkg is None:
+            bkg_rms_mean = max(0.01, imgarr.min())
+            bkg_rms = bkg_rms_mean * 5
+
+        # kernel = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
+        # kernel.normalize()
+        kernel, kernel_fwhm = build_auto_kernel(imgarr, whtarr, threshold=threshold,
+                                                source_box=source_box, isolation_size=isolation_size,
+                                                saturation_limit=saturation_limit)
+
+        # seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, outroot=outroot, fwhm=fwhm, **detector_pars)
+        seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, outroot=outroot, kernel=kernel,
+                                          segment_threshold=threshold, dao_threshold=bkg_rms_mean, fwhm=kernel_fwhm, **detector_pars)
         seg_tab_phot = seg_tab
 
         source_cats[chip] = seg_tab_phot

@@ -62,7 +62,7 @@ detector_specific_params = {"acs": {"hrc": {"fwhmpsf": 0.152,  # 0.073
 
 log = logutil.create_logger('alignimages', level=logutil.logging.INFO, stream=sys.stdout)
 
-__version__ = 0.0.1
+__version__ = 0.0
 __version_date__ = '21-Aug-2019'
 
 # ----------------------------------------------------------------------------------------------------------
@@ -314,10 +314,11 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         log.info("SUCCESS")
 
         log.info(make_label('Processing time of [STEP 1]', starting_dt))
-        starting_dt = current_dt
+        starting_dt = datetime.datetime.now()
 
         # Instantiate AlignmentTable class with these input files
         alignment_table = align_utils.AlignmentTable(imglist, **alignment_pars)
+        alignment_table.find_alignment_sources()
         alignment_table.configure_fit()
         process_list = alignment_table.process_list
 
@@ -330,14 +331,14 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             fit_algorithm_list.remove("relative")
 
         log.info(make_label('Processing time of [STEP 2]', starting_dt))
-        starting_dt = current_dt
+        starting_dt = datetime.datetime.now()
         # 3: Build WCS for full set of input observations
         log.info("{} STEP 3: Build WCS {}".format("-" * 20, "-" * 65))
         # refwcs = amutils.build_reference_wcs(process_list)
         log.info("SUCCESS")
 
         log.info(make_label('Processing time of [STEP 3]', starting_dt))
-        starting_dt = current_dt
+        starting_dt = datetime.datetime.now()
         # 4: Extract catalog of observable sources from each input image
         log.info(
             "{} STEP 4: Source finding {}".format("-" * 20, "-" * 60))
@@ -349,23 +350,17 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 log.info("Using sourcelist extracted from {} generated during the last run to save time.".format(
                     pickle_filename))
             else:
-                alignment_table.find_alignment_sources(output=True, dqname='DQ',
-                                                       fwhmpsf=0.12)
+                alignment_table.find_alignment_sources(output=True)
 
-                # extracted_sources = generate_source_catalogs(process_list,
-                #                                             centering_mode='starfind',
-                #                                             nlargest=num_sources,
-                #                                             output=output)
                 pickle_out = open(pickle_filename, "wb")
                 pickle.dump(alignment_table.extracted_sources, pickle_out)
                 pickle_out.close()
                 log.info("Wrote {}".format(pickle_filename))
         else:
-            alignment_table.find_alignment_sources(output=True, dqname='DQ',
-                                                   fwhmpsf=0.12)
+            alignment_table.find_alignment_sources(output=True)
 
-        for imgname in extracted_sources.keys():
-            table = extracted_sources[imgname]
+        for imgname in alignment_table.extracted_sources.keys():
+            table = alignment_table.extracted_sources[imgname]
 
             # Get the location of the current image in the filtered table
             index = np.where(alignment_table.filtered_table['imageName'] == imgname)[0][0]
@@ -395,7 +390,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 return
         log.info("SUCCESS")
         log.info(make_label('Processing time of [STEP 4]', starting_dt))
-        starting_dt = current_dt
+        starting_dt = datetime.datetime.now()
         # 5: Retrieve list of astrometric sources from database
 
         # Convert input images to tweakwcs-compatible FITSWCS objects and
@@ -403,7 +398,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         imglist = []
         for group_id, image in enumerate(process_list):
             img = amutils.build_wcscat(image, group_id,
-                                       extracted_sources[image]['catalog_table'])
+                                       alignment_table.extracted_sources[image])
             # add the name of the image to the imglist object
             for im in img:
             #    im.meta['name'] = image
@@ -421,7 +416,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         # for each run.
         orig_imglist = copy.deepcopy(imglist)
         # create dummy list that will be used to preserve imglist best_meta information through the imglist reset process
-        best_imglist = []
+        # best_imglist = []
         fit_info_dict = OrderedDict()
         for algorithm_name in fit_algorithm_list:  # loop over fit algorithm type
             for catalog_index, catalog_name in enumerate(catalog_list):  # loop over astrometric catalog
@@ -429,18 +424,18 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 log.info("Astrometric Catalog: {}".format(catalog_name))
                 # store reference catalogs in a dictionary so that generate_astrometric_catalog() doesn't
                 #  execute unnecessarily after it's been run once for a given astrometric catalog.
-                if catalog_name in reference_catalog_dict:
+                if catalog_name in alignment_table.reference_catalogs:
                     log.info("Using {} reference catalog from earlier this run.".format(catalog_name))
-                    reference_catalog = reference_catalog_dict[catalog_name]
+                    reference_catalog = alignment_table.reference_catalogs[catalog_name]
                 else:
                     log.info("Generating new reference catalog for {};"
                              " Storing it for potential re-use later this run.".format(catalog_name))
                     reference_catalog = generate_astrometric_catalog(process_list,
                                                                      catalog=catalog_name,
                                                                      output=output)
-                    reference_catalog_dict[catalog_name] = reference_catalog
+                    alignment_table.reference_catalogs[catalog_name] = reference_catalog
                 log.info(make_label('Processing time of [STEP 5]', starting_dt))
-                starting_dt = current_dt
+                starting_dt = datetime.datetime.now()
 
                 if len(reference_catalog) < MIN_CATALOG_THRESHOLD:
                     log.warning("Not enough sources found in catalog {}".format(catalog_name))
@@ -466,7 +461,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                     log.info(
                         "{} Catalog {} matched using {} {}".format("-" * 18,
                                                                    catalog_name,
-                                                                   algorithm_name.__name__, "-" * 18))
+                                                                   algorithm_name, "-" * 18))
                     try:
                         # restore group IDs to their pristine state prior to each run.
                         alignment_table.reset_group_id()
@@ -529,11 +524,11 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                             "WARNING: Catastrophic fitting failure with catalog {} and matching "
                             "algorithm {}.".format(catalog_name,
                                                    algorithm_name))
-                        filtered_table['status'][:] = 1
-                        filtered_table['processMsg'][:] = "Fitting failure"
+                        alignment_table.filtered_table['status'][:] = 1
+                        alignment_table.filtered_table['processMsg'][:] = "Fitting failure"
                         # It may be there are additional catalogs and algorithms to try, so keep going
                         fit_quality = 5  # Flag this fit with the 'bad' quality value
-                        filtered_table['fit_qual'][:] = fit_quality
+                        alignment_table.filtered_table['fit_qual'][:] = fit_quality
                         continue
                     if fit_quality == 1:  # break out of inner  astrometric catalog loop
                         break
@@ -550,7 +545,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
         # Report processing time for this step
         log.info(make_label('Processing time of [STEP 5b]', starting_dt))
-        starting_dt = current_dt
+        starting_dt = datetime.datetime.now()
 
         # 6: Populate the filtered_table
         log.info(
@@ -569,8 +564,28 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             filtered_table['status'][:] = 0
             fit_status_dict = best_fit_status_dict.copy()
 
+            for item in imglist:
+                imgname = item.meta['name']
+                index = np.where(filtered_table['imageName'] == imgname)[0][0]
+
+                # populate self.filtered_table fields "status", "compromised" and
+                # "processMsg" with fit_status_dict fields "valid", "compromised"
+                # and "reason".
+                explicit_dict_key = "{},{}".format(item.meta['name'], item.meta['chip'])
+                if fit_status_dict[explicit_dict_key]['valid'] is True:
+                    filtered_table[index]['status'] = 0
+                else:
+                    filtered_table[index]['status'] = 1
+                if fit_status_dict[explicit_dict_key]['compromised'] is False:
+                    filtered_table['compromised'] = 0
+                else:
+                    filtered_table['compromised'] = 1
+
+                filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
+                filtered_table['fit_qual'][index] = item.meta['fit quality']
+
         log.info(make_label('Processing time of [STEP 6]', starting_dt))
-        starting_dt = current_dt
+        starting_dt = datetime.datetime.now()
         # 7: Write new fit solution to input image headers
         log.info("{} STEP 7: Update image headers with new WCS information "
                  "{}".format("-" * 20, "-" * 29))
@@ -582,7 +597,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             log.info(" STEP SKIPPED")
 
         log.info(make_label('Processing time of [STEP 7]', starting_dt))
-        log.info('TOTAL Processing time of {} sec'.format((current_dt - zero_dt).total_seconds()))
+        log.info('TOTAL Processing time of {} sec'.format(
+                 (datetime.datetime.now() - zero_dt).total_seconds()))
         log.info(best_fit_status_dict)
         log.info("-" * 104)
 
@@ -599,11 +615,12 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
     finally:
 
         # Now update the result with the filtered_table contents
-        result.meta = filtered_table.meta
-        for col in filtered_table.colnames:
-            result.add_column(filtered_table[col], name=col)
+        if result:
+            result.meta = filtered_table.meta
+            for col in filtered_table.colnames:
+                result.add_column(filtered_table[col], name=col)
         filtered_table.pprint(max_width=-1)
-
+    return filtered_table
 
 # ----------------------------------------------------------------------------------------------------------
 

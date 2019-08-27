@@ -1,6 +1,9 @@
 import os
 import sys
 import datetime
+import copy
+
+from collections import OrderedDict
 
 import numpy as np
 from scipy import ndimage
@@ -14,11 +17,16 @@ from astropy import units as u
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
 
 from stwcs.wcsutil import HSTWCS
+from stwcs.wcsutil import headerlet
+
 from stsci.tools import logutil
+from stsci.tools import fileutil
 
+from .. import updatehdr
 from . import astrometric_utils as amutils
+from . import analyze
 
-from .. import tweakwcs
+import tweakwcs
 
 __taskname__ = 'align_utils'
 
@@ -32,7 +40,36 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 class AlignmentTable:
     def __init__(self, input_list, clobber=False, dqname='DQ', **alignment_pars):
-        self.alignment_pars = alignment_pars
+        """
+        **alignment_pars needs to contain the following entries:
+                          # kernel defining, source finding par
+                          fwhmpsf=0.12,
+                          # background computing pars
+                          box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
+                          bkg_estimator=SExtractorBackground,
+                          rms_estimator=StdBackgroundRMS,
+                          nsigma=5., threshold_flag=None,
+                          # object finding pars
+                          source_box=7,
+                          classify=True, centering_mode="starfind", nlargest=None,
+                          plot=False, vmax=None, deblend=False
+        """
+        # Register fit methods with the class
+        self.fit_methods = {'relative': match_relative_fit,
+                            '2dhist': match_2dhist_fit,
+                            'default': match_default_fit}
+
+        # Also, register fit method default parameters with the class
+        self.fit_pars = {'relative': alignment_pars['match_relative_fit'],
+                         '2dhist': alignment_pars['match_2dhist_fit'],
+                         'default': alignment_pars['match_default_fit']}
+
+        # merge remaining parameters for individual alignment steps into single set
+        self.alignment_pars = alignment_pars['run_align'].copy()
+        self.alignment_pars.update(alignment_pars['general'])
+        self.alignment_pars.update(alignment_pars['generate_source_catalogs'])
+        self.alignment_pars.update(alignment_pars['determine_fit_quality'])
+
         self.dqname = dqname
 
         self.zero_dt = starting_dt = datetime.datetime.now()
@@ -40,7 +77,7 @@ class AlignmentTable:
         # Apply filter to input observations to insure that they meet minimum criteria for being able to be aligned
         log.info(
             "{} AlignmentTable: Filter STEP {}".format("-" * 20, "-" * 63))
-        self.filtered_table = filter.analyze_data(input_list)
+        self.filtered_table = analyze.analyze_data(input_list)
 
         if self.filtered_table['doProcess'].sum() == 0:
             log.warning("No viable images in filtered table - no processing done.\n")
@@ -58,7 +95,10 @@ class AlignmentTable:
         for img in self.process_list:
             catimg = HAPImage(img)
             # Build image properties needed for alignment
-            catimg.compute_background(**alignment_pars)
+            catimg.compute_background(box_size=self.alignment_pars['box_size'],
+                                      win_size=self.alignment_pars['win_size'],
+                                      nsigma=self.alignment_pars['nsigma'],
+                                      threshold_flag=self.alignment_pars['threshold'])
             catimg.build_kernel(self.alignment_pars.get('fwhmpsf'))
 
             self.haplist.append(catimg)
@@ -67,10 +107,6 @@ class AlignmentTable:
         self.imglist = []  # list of FITSWCS objects for tweakwcs
         self.reference_catalogs = {}
         self.group_id_dict = {}
-
-        self.fit_methods = {'relative': match_relative_fit,
-                            '2dhist': match_2dhist_fit,
-                            'default': match_default_fit}
 
         self.fit_dict = {}  # store results of all fitting in this dict for evaluation
         self.selected_fit = None  # identify fit selected by user (as 'best'?) to be applied to images WCSs
@@ -135,7 +171,8 @@ class AlignmentTable:
 
     def perform_fit(self, method_name, catalog_name, reference_catalog):
         """Perform fit using specified method, then determine fit quality"""
-        imglist = self.fit_methods[method_name](self.imglist, reference_catalog)
+        imglist = self.fit_methods[method_name](self.imglist, reference_catalog,
+                                                **self.fit_pars[method_name])
 
         # store results for evaluation
         self.fit_dict[(catalog_name, method_name)] = copy.deepcopy(imglist)
@@ -145,7 +182,7 @@ class AlignmentTable:
 
     def select_fit(self, catalog_name, method_name):
         """Select the fit that has been identified as 'best'"""
-        imglist = self.selected_fit = self.fit_list[(method_name, reference_catalog)]
+        imglist = self.selected_fit = self.fit_dict[(catalog_name, method_name)]
 
         # Protect the writing of the table within the best_fit_rms
         info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
@@ -163,7 +200,7 @@ class AlignmentTable:
 
                 self.filtered_table[index]['fit_method'] = item.meta['fit method']
                 self.filtered_table[index]['catalog'] = item.meta['fit_info']['catalog']
-                self.filtered_table[index]['catalogSources'] = len(reference_catalog)
+                self.filtered_table[index]['catalogSources'] = len(self.reference_catalogs[catalog_name])
                 self.filtered_table[index]['matchSources'] = item.meta['fit_info']['nmatches']
                 self.filtered_table[index]['rms_ra'] = item.meta['fit_info']['RMS_RA'].value
                 self.filtered_table[index]['rms_dec'] = item.meta['fit_info']['RMS_DEC'].value
@@ -172,22 +209,6 @@ class AlignmentTable:
                 self.filtered_table[index]['offset_x'], self.filtered_table[index]['offset_y'] = item.meta['fit_info']['shift']
                 self.filtered_table[index]['scale'] = item.meta['fit_info']['scale'][0]
                 self.filtered_table[index]['rotation'] = item.meta['fit_info']['rot']
-
-                # populate self.filtered_table fields "status", "compromised" and
-                # "processMsg" with fit_status_dict fields "valid", "compromised"
-                # and "reason".
-                explicit_dict_key = "{},{}".format(item.meta['name'], item.meta['chip'])
-                if fit_status_dict[explicit_dict_key]['valid'] is True:
-                    self.filtered_table[index]['status'] = 0
-                else:
-                    self.filtered_table[index]['status'] = 1
-                if fit_status_dict[explicit_dict_key]['compromised'] is False:
-                    self.filtered_table['compromised'] = 0
-                else:
-                    self.filtered_table['compromised'] = 1
-
-                self.filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
-                self.filtered_table['fit_qual'][index] = item.meta['fit quality']
 
 
     def apply_fit(self, headerlet_filenames=None):
@@ -205,7 +226,8 @@ class AlignmentTable:
             print("No FIT selected for application.  Please run 'select_fit()' method.")
             raise ValueError
         # Call update_hdr_wcs()
-        headerlet_dict = align_utils.update_image_wcs_info(self.selected_fit, headerlet_filenames=headerlet_filenames)
+        headerlet_dict = update_image_wcs_info(self.selected_fit,
+                                               headerlet_filenames=headerlet_filenames)
 
         for table_index in range(0, len(self.filtered_table)):
             self.filtered_table[table_index]['headerletFile'] = headerlet_dict[
@@ -234,9 +256,10 @@ class HAPImage:
         self.num_wht = amutils.countExtn(self.imghdu, extname='WHT')
         self.data = np.concatenate([self.imghdu[('SCI', i + 1)].data for i in range(self.num_sci)])
         if not self.num_wht:
-            self.dqmask = build_dqmask()
+            self.dqmask = self.build_dqmask()
         else:
             self.dqmask = None
+        self.wht_image = self.build_wht_image()
 
         # Get the HSTWCS object from the first extension
         self.imgwcs = HSTWCS(self.imghdu, 1)
@@ -247,12 +270,18 @@ class HAPImage:
         else:
             self.rootname = self.imgname.rstrip('.fits')
 
-        self.bkg = None
+        self._wht_image = None
+        self.bkg = {}
+        self.bkg_dao_rms = {}
+        self.bkg_rms_mean = {}
+        self.threshold = {}
+
         self.kernel = None
         self.kernel_fwhm = None
         self.fwhmpsf = None
 
         self.catalog_table = {}
+
 
     @def wht_image():
         doc = "The wht_image property."
@@ -288,9 +317,10 @@ class HAPImage:
         """
         if self.bkg is None:
             self.compute_background()
-
+        threshold_rms = np.array([rms for rms in self.bkg_dao_rms]).mean()
         self.kernel, self.kernel_fwhm = amutils.build_auto_kernel(self.data, self.wht_image,
-                                                          threshold=self.bkg.background_rms, fwhm=fwhmpsf / self.pscale)
+                                                          threshold=threshold_rms,
+                                                          fwhm=fwhmpsf / self.pscale)
         self.fwhmpsf = self.kernel_fwhm * self.pscale
 
     def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
@@ -332,21 +362,23 @@ class HAPImage:
         log.info("NSigma: {}".format(nsigma))
 
         # SExtractorBackground ans StdBackgroundRMS are the defaults
-        bkg = None
-        bkg_dao_rms = None
-
         exclude_percentiles = [10, 25, 50, 75]
-        for percentile in exclude_percentiles:
-            log.info("")
-            log.info("Percentile in use: {}".format(percentile))
-            try:
-                bkg = Background2D(self.data, box_size, filter_size=win_size,
-                                   bkg_estimator=bkg_estimator(),
-                                   bkgrms_estimator=rms_estimator(),
-                                   exclude_percentile=percentile, edge_method="pad")
-            except Exception:
-                bkg = None
-                continue
+
+        for chip in range(self.num_sci):
+            chip += 1
+            bkg = None
+            bkg_dao_rms = None
+            scidata = self.imghdu[('sci', chip)].data
+
+            for percentile in exclude_percentiles:
+                try:
+                    bkg = Background2D(scidata, box_size, filter_size=win_size,
+                                       bkg_estimator=bkg_estimator(),
+                                       bkgrms_estimator=rms_estimator(),
+                                       exclude_percentile=percentile, edge_method="pad")
+                except Exception:
+                    bkg = None
+                    continue
 
             if bkg is not None:
                 # Set the bkg_rms at "nsigma" sigma above background
@@ -379,17 +411,17 @@ class HAPImage:
 
         # *** FIX: Need to do something for bkg if bkg is None ***
 
-        # Report other useful quantities
-        log.info("")
-        log.info("Mean background: {}".format(bkg_mean))
-        log.info("Mean threshold: {}".format(np.mean(threshold)))
-        log.info("")
-        log.info("{}".format("=" * 80))
+            # Report other useful quantities
+            log.info("CHIP: {}".format(chip))
+            log.info("Mean background: {}".format(bkg_mean))
+            log.info("Mean threshold: {}".format(np.mean(threshold)))
+            log.info("")
+            log.info("{}".format("=" * 80))
 
-        self.bkg = bkg
-        self.bkg_dao_rms = bkg_dao_rms
-        self.bkg_rms_mean = bkg_rms_mean
-        self.threshold = threshold
+            self.bkg[chip] = bkg
+            self.bkg_dao_rms[chip] = bkg_dao_rms
+            self.bkg_rms_mean[chip] = bkg_rms_mean
+            self.threshold[chip] = threshold
 
     def build_dqmask(self, chip=None):
         # apply any DQ array, if available
@@ -416,11 +448,11 @@ class HAPImage:
         # combine the two temporary DQ masks into a single composite DQ mask.
         dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
 
-        self.dqmask = dqmask
+        return dqmask
 
     def find_alignment_sources(self, output=True, dqname='DQ', **alignment_pars):
         """Find sources in all chips for this exposure."""
-        for chip in range(self.numSci):
+        for chip in range(self.num_sci):
             chip += 1
             # find sources in image
             if output:
@@ -428,16 +460,20 @@ class HAPImage:
             else:
                 outroot = None
 
-            dqmask = build_dqmask(chip=chip)
+            dqmask = self.build_dqmask(chip=chip)
             sciarr = self.imghdu[("SCI", chip)].data
             #  TODO: replace detector_pars with dict from OO Config class
-            seg_tab, segmap = amutils.extract_sources(sciarr, dqmask=self.dqmask,
+            extract_pars = {'classify': alignment_pars['classify'],
+                            'centering_mode': alignment_pars['centering_mode'],
+                            'nlargest': alignment_pars['num_sources'],
+                            'deblend': alignment_pars['deblend']}
+            seg_tab, segmap = amutils.extract_sources(sciarr, dqmask=dqmask,
                                                       outroot=outroot,
                                                       kernel=self.kernel,
-                                                      segment_threshold=self.threshold,
-                                                      dao_threshold=self.bkg_rms_mean,
+                                                      segment_threshold=self.threshold[chip],
+                                                      dao_threshold=self.bkg_rms_mean[chip],
                                                       fwhm=self.kernel_fwhm,
-                                                      **alignment_pars)
+                                                      **extract_pars)
 
             self.catalog_table[chip] = seg_tab
 
@@ -532,7 +568,7 @@ def generate_astrometric_catalog(imglist, **pars):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def match_relative_fit(imglist, reference_catalog):
+def match_relative_fit(imglist, reference_catalog, **fit_pars):
     """Perform cross-matching and final fit using relative matching algorithm
 
     Parameters
@@ -551,7 +587,7 @@ def match_relative_fit(imglist, reference_catalog):
     """
     log.info("{} STEP 5b: (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
     # 0: Specify matching algorithm to use
-    match = tweakwcs.TPMatch(searchrad=75, separation=0.1, tolerance=2, use2dhist=True)
+    match = tweakwcs.TPMatch(**fit_pars)
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
     #                          tolerance=100, use2dhist=False)
 
@@ -578,7 +614,7 @@ def match_relative_fit(imglist, reference_catalog):
 # ----------------------------------------------------------------------------------------------------------
 
 
-def match_default_fit(imglist, reference_catalog):
+def match_default_fit(imglist, reference_catalog, **fit_pars):
     """Perform cross-matching and final fit using default tolerance matching
 
     Parameters
@@ -598,8 +634,8 @@ def match_default_fit(imglist, reference_catalog):
     log.info("{} STEP 5b: (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
     # Specify matching algorithm to use
-    match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
-                             tolerance=100, use2dhist=False)
+    match = tweakwcs.TPMatch(**fit_pars)
+
     # Align images and correct WCS
     tweakwcs.align_wcs(imglist, reference_catalog, match=match, expand_refcat=False)
 
@@ -612,7 +648,7 @@ def match_default_fit(imglist, reference_catalog):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def match_2dhist_fit(imglist, reference_catalog):
+def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     """Perform cross-matching and final fit using 2dHistogram matching
 
     Parameters
@@ -632,7 +668,7 @@ def match_2dhist_fit(imglist, reference_catalog):
     log.info("{} STEP 5b: (match_2dhist_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 28))
     # Specify matching algorithm to use
-    match = tweakwcs.TPMatch(searchrad=75, separation=0.1, tolerance=2.0, use2dhist=True)
+    match = tweakwcs.TPMatch(**fit_pars)
     # Align images and correct WCS
     tweakwcs.align_wcs(imglist, reference_catalog, match=match, expand_refcat=False)
 
@@ -809,3 +845,51 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
 
         chipctr += 1
     return (out_headerlet_dict)
+
+# --------------------------------------------------------------------------------------------------------------
+def update_headerlet_phdu(tweakwcs_item, headerlet):
+    """Update the primary header data unit keywords of a headerlet object in-place
+
+    Parameters
+    ==========
+    tweakwcs_item :
+        Basically the output from tweakwcs which contains the cross match and fit information for every chip
+        of every valid input image.
+
+    headerlet : headerlet object
+        object containing WCS information
+    """
+
+    # Get the data to be used as values for FITS keywords
+    rms_ra = tweakwcs_item.meta['fit_info']['RMS_RA'].value
+    rms_dec = tweakwcs_item.meta['fit_info']['RMS_DEC'].value
+    fit_rms = tweakwcs_item.meta['fit_info']['FIT_RMS']
+    nmatch = tweakwcs_item.meta['fit_info']['nmatches']
+    catalog = tweakwcs_item.meta['fit_info']['catalog']
+    fit_method = tweakwcs_item.meta['fit method']
+
+    x_shift = (tweakwcs_item.meta['fit_info']['shift'])[0]
+    y_shift = (tweakwcs_item.meta['fit_info']['shift'])[1]
+    rot = tweakwcs_item.meta['fit_info']['rot']
+    scale = tweakwcs_item.meta['fit_info']['scale'][0]
+    skew = tweakwcs_item.meta['fit_info']['skew']
+
+    # Update the existing FITS keywords
+    primary_header = headerlet[0].header
+    primary_header['RMS_RA'] = rms_ra
+    primary_header['RMS_DEC'] = rms_dec
+    primary_header['NMATCH'] = nmatch
+    primary_header['CATALOG'] = catalog
+    primary_header['FITMETH'] = fit_method
+
+    # Create a new FITS keyword
+    primary_header['FIT_RMS'] = (fit_rms, 'RMS (mas) of the 2D fit of the headerlet solution')
+
+    # Create the set of HISTORY keywords
+    primary_header['HISTORY'] = '~~~~~ FIT PARAMETERS ~~~~~'
+    primary_header['HISTORY'] = '{:>15} : {:9.4f} "/pixels'.format('platescale', tweakwcs_item.wcs.pscale)
+    primary_header['HISTORY'] = '{:>15} : {:9.4f} pixels'.format('x_shift', x_shift)
+    primary_header['HISTORY'] = '{:>15} : {:9.4f} pixels'.format('y_shift', y_shift)
+    primary_header['HISTORY'] = '{:>15} : {:9.4f} degrees'.format('rotation', rot)
+    primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('scale', scale)
+    primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('skew', skew)
