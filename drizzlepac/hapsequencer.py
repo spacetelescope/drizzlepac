@@ -442,64 +442,61 @@ def run_hla_processing(input_filename, result=None, debug=False, use_defaults_co
                                                         input_custom_pars_file=input_custom_pars_file,
                                                         output_custom_pars_file=output_custom_pars_file)
 
-        # TODO vvv uncomment the below large block of code once catalog generation parameter files are populated vvv.
-        # # Run alignimages.py on images on a filter-by-filter basis.
-        # # Process each filter object which contains a list of exposure objects/products,
-        # # regardless of detector.
-        # log.info("Run alignimages.py on images on a filter-by-filter basis.")
-        # exposure_filenames = []
-        # for tot_obj in total_list:
-        #     for filt_obj in tot_obj.fdp_list:
-        #         align_table, filt_exposures = filt_obj.align_to_gaia()
-        #
-        #         # Report results and track the output files
-        #         # FIX - Add info here in the case of alignment working on data that should not be aligned
-        #         # as well as outright failure (exception vs msgs)
-        #         if align_table:
-        #             log.info("ALIGN_TABLE: {}".format(align_table))
-        #             # FIX
-        #             # os.remove("alignimages.log")  # FIX This log needs to be included in total product trailer file
-        #             for row in align_table:
-        #                 if row['status'] == 0:
-        #                     log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
-        #                 # Alignment did not work for this particular image
-        #                 # FIX - If alignment did not work for an image, it seems this exposure should
-        #                 # be removed from the exposure lists.  TotalProduct and FilterProduct need
-        #                 # methods to do this.
-        #                 else:
-        #                     log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
-        #
-        #             hdrlet_list = align_table['headerletFile'].tolist()
-        #             product_list += hdrlet_list
-        #             exposure_filenames += filt_exposures
-        #
-        #         else:
-        #             log.info("Alignimages step skipped.")
-        #
-        # # Run meta wcs code to get common WCS for all images in this obset_id, regardless of detector.
-        # # FIX (1) Intended for this to be a method of TotalProduct, but it should be
-        # # associated with all the exposures really used in the alignment (the "as built")
-        # # as is done here.
-        # # This function used based upon WH analysis but make sure to set
-        # # the size of the output image. This comment is related to the previously mentioned issue.
-        # # This produced incompatible results.  Perhaps accessing wrong dimension information.
-        # """
-        # log.info("Run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
-        # log.info("The following images will be used: ")
-        # for imgname in exposure_filenames:
-        #     log.info("{}".format(imgname))
-        # if exposure_filenames:
-        #     meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames)
-        # """
-        # # Not using meta_wcs at this time
-        # meta_wcs = []
-        #
-        # # Run AstroDrizzle to produce drizzle-combined products
-        # log.info("Create drizzled imagery products")
-        # driz_list = create_drizzle_products(obs_info_dict, total_list, meta_wcs)
-        # product_list += driz_list
-        # TODO ^^^ uncomment the above large block of code once catalog generation parameter files are populated ^^^.
+        # Run alignimages.py on images on a filter-by-filter basis.
+        # Process each filter object which contains a list of exposure objects/products,
+        # regardless of detector.
+        log.info("Run alignimages.py on images on a filter-by-filter basis.")
+        exposure_filenames = []
+        for tot_obj in total_list:
+            for filt_obj in tot_obj.fdp_list:
+                align_table, filt_exposures = filt_obj.align_to_gaia()
 
+                # Report results and track the output files
+                # FIX - Add info here in the case of alignment working on data that should not be aligned
+                # as well as outright failure (exception vs msgs)
+                if align_table:
+                    log.info("ALIGN_TABLE: {}".format(align_table))
+                    # FIX
+                    # os.remove("alignimages.log")  # FIX This log needs to be included in total product trailer file
+                    for row in align_table:
+                        if row['status'] == 0:
+                            log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
+                        # Alignment did not work for this particular image
+                        # FIX - If alignment did not work for an image, it seems this exposure should
+                        # be removed from the exposure lists.  TotalProduct and FilterProduct need
+                        # methods to do this.
+                        else:
+                            log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
+
+                    hdrlet_list = align_table['headerletFile'].tolist()
+                    product_list += hdrlet_list
+                    exposure_filenames += filt_exposures
+
+                else:
+                    log.info("Alignimages step skipped.")
+
+        # Run meta wcs code to get common WCS for all images in this obset_id, regardless of detector.
+        # FIX (1) Intended for this to be a method of TotalProduct, but it should be
+        # associated with all the exposures really used in the alignment (the "as built")
+        # as is done here.
+        # This function used based upon WH analysis but make sure to set
+        # the size of the output image. This comment is related to the previously mentioned issue.
+        # This produced incompatible results.  Perhaps accessing wrong dimension information.
+        """
+        log.info("Run make_mosaic_wcs to create a common WCS for all images aligned in the previous step.")
+        log.info("The following images will be used: ")
+        for imgname in exposure_filenames:
+            log.info("{}".format(imgname))
+        if exposure_filenames:
+            meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames)
+        """
+        # Not using meta_wcs at this time
+        meta_wcs = []
+
+        # Run AstroDrizzle to produce drizzle-combined products
+        log.info("Create drizzled imagery products")
+        driz_list = create_drizzle_products(obs_info_dict, total_list, meta_wcs)
+        product_list += driz_list
 
         # Create source catalogs from newly defined products (HLA-204)
         log.info("Create source catalog from newly defined product")
