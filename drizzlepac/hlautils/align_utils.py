@@ -285,28 +285,20 @@ class HAPImage:
 
         self.catalog_table = {}
 
-
-    @def wht_image():
-        doc = "The wht_image property."
-        def fget(self):
-            return self.wht_image
-        def fset(self):
-            if not self.num_wht:
-                # Working with a calibrated exposure, no WHT extension
-                # create a substitute WHT array from ERR and DQ
-                # Build pseudo-wht array for detection purposes
-                errarr = np.concatenate([self.imghdu[('ERR', i + 1)].data for i in range(self.num_sci)])
-                wht_image = 1.0 / errarr
-                wht_image /= wht_image.max()
-                wht_image *= self.imghdu[0].header['exptime']**2
-                wht_image[dqmask] = 0
-                self.wht_image = wht_image
-            else:
-                self.wht_image = self.imghdu['WHT'].data
-        def fdel(self):
-            del self.wht_image
-        return locals()
-    wht_image = property(**wht_image())
+    def build_wht_image(self):
+        if not self.num_wht:
+            # Working with a calibrated exposure, no WHT extension
+            # create a substitute WHT array from ERR and DQ
+            # Build pseudo-wht array for detection purposes
+            errarr = np.concatenate([self.imghdu[('ERR', i + 1)].data for i in range(self.num_sci)])
+            wht_image = 1.0 / errarr
+            wht_image /= wht_image.max()
+            wht_image *= self.imghdu[0].header['exptime']**2
+            if self.dqmask is not None:
+                wht_image[self.dqmask] = 0
+        else:
+            wht_image = self.imghdu['WHT'].data
+        return wht_image
 
     def close(self):
         self.imghdu.close()
@@ -485,93 +477,6 @@ class HAPImage:
 
             self.catalog_table[chip] = seg_tab
 
-
-
-    def _get_header_data(self):
-        """Read FITS keywords from the primary or extension header and store the
-        information in a dictionary
-        Returns
-        -------
-        keyword_dict : dictionary
-            dictionary of keyword values
-        """
-
-        keyword_dict = {}
-
-        keyword_dict["proposal_id"] = self.imghdu[0].header["PROPOSID"]
-        keyword_dict["image_file_name"] = self.imghdu[0].header['FILENAME'].upper()
-        keyword_dict["target_name"] = self.imghdu[0].header["TARGNAME"].upper()
-        keyword_dict["date_obs"] = self.imghdu[0].header["DATE-OBS"]
-        keyword_dict["instrument"] = self.imghdu[0].header["INSTRUME"].upper()
-        keyword_dict["detector"] = self.imghdu[0].header["DETECTOR"].upper()
-        keyword_dict["target_ra"] = self.imghdu[0].header["RA_TARG"]
-        keyword_dict["target_dec"] = self.imghdu[0].header["DEC_TARG"]
-        keyword_dict["expo_start"] = self.imghdu[0].header["EXPSTART"]
-        keyword_dict["texpo_time"] = self.imghdu[0].header["TEXPTIME"]
-        keyword_dict["ccd_gain"] = self.imghdu[0].header["CCDGAIN"]
-        keyword_dict["aperture_pa"] = self.imghdu[0].header["PA_V3"]
-        keyword_dict["rootname"] = self.imghdu[0].header["ROOTNAME"]
-
-        # The total detection product has the FILTER keyword in
-        # the primary header - read it for any instrument.
-        #
-        # For the filter detection product:
-        # WFC3 only has FILTER, but ACS has FILTER1 and FILTER2
-        # in the primary header.
-        if self.ghd_product.lower() == "tdp":
-            keyword_dict["filter"] = self.imghdu[0].header["FILTER"]
-        # The filter detection product...
-        else:
-            if keyword_dict["instrument"] == "ACS":
-                keyword_dict["filter1"] = self.imghdu[0].header["FILTER1"]
-                keyword_dict["filter2"] = self.imghdu[0].header["FILTER2"]
-            else:
-                keyword_dict["filter1"] = self.imghdu[0].header["FILTER"]
-                keyword_dict["filter2"] = ""
-
-        # Get the HSTWCS object from the first extension
-        keyword_dict["wcs_name"] = self.imghdu[1].header["WCSNAME"]
-        keyword_dict["wcs_type"] = self.imghdu[1].header["WCSTYPE"]
-        log.info('WCSTYPE: {}'.format(keyword_dict["wcs_type"]))
-        keyword_dict["orientation"] = self.imghdu[1].header["ORIENTAT"]
-        keyword_dict["aperture_ra"] = self.imghdu[1].header["RA_APER"]
-        keyword_dict["aperture_dec"] = self.imghdu[1].header["DEC_APER"]
-
-        return keyword_dict
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-def generate_astrometric_catalog(imglist, **pars):
-    """Generates a catalog of all sources from an existing astrometric catalog are
-       in or near the FOVs of the images in the input list.
-
-    Parameters
-    ----------
-    imglist : list
-        List of one or more calibrated fits images that will be used for catalog generation.
-
-    Returns
-    =======
-    ref_table : object
-        Astropy Table object of the catalog
-
-    """
-    # generate catalog
-    temp_pars = pars.copy()
-    if pars['output'] is True:
-        pars['output'] = 'ref_cat.ecsv'
-    else:
-        pars['output'] = None
-    out_catalog = amutils.create_astrometric_catalog(imglist, **pars)
-    pars = temp_pars.copy()
-    # if the catalog has contents, write the catalog to ascii text file
-    if len(out_catalog) > 0 and pars['output']:
-        catalog_filename = "refcatalog.cat"
-        out_catalog.write(catalog_filename, format="ascii.fast_commented_header")
-        log.info("Wrote reference catalog {}.".format(catalog_filename))
-
-    return(out_catalog)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
