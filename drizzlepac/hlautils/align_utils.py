@@ -35,6 +35,7 @@ __taskname__ = 'align_utils'
 BKG_BOX_SIZE = 50
 BKG_FILTER_SIZE = 3
 CATALOG_TYPES = ['point', 'segment']
+MIN_CATALOG_THRESHOLD = 3
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
@@ -904,7 +905,7 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
 # --------------------------------------------------------------------------------------------------------------
 def register_photutils_function(name):
     """Convert photutils name as a string into a pointer to the actual photutils function"""
-    
+
     if name in dir(photutils):
         func = eval("photutils.{}".format(name))
     return func
