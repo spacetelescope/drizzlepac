@@ -35,189 +35,6 @@ __taskname__ = 'catalog_utils'
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 
-# ======================================================================================================================
-class ParamDict:
-    full_param_dict = {
-        "ACS HRC": {
-            "astrodrizzle": {
-                "SCALE": 0.025,
-                "PIXFRAC": 1.0,
-                "KERNEL": "square",
-                "OUTNX": None,
-                "OUTNY": None,
-                "ROT": 0.0,
-                "BITS": 256},
-            "ci filter": {
-                "ci_daolower_limit": 0.9,
-                "ci_daoupper_limit": 1.6,
-                "ci_selower_limit": 0.9,
-                "ci_seupper_limit": 1.6},
-            "dao": {
-                "TWEAK_FWHMPSF": 0.073,
-                "TWEAK_THRESHOLD": 3.0,
-                "aperture_1": 0.03,
-                "aperture_2": 0.125,
-                "bthresh": 5.0},
-            "sourcex": {
-                "fwhm": 0.073,
-                "thresh": 1.4,
-                "bthresh": 5.0,
-                "source_box": 7},
-            "swarm filter": {
-                "upper_epp_limit": 70000.,
-                "lower_epp_limit": 2000.,
-                "eppsky_limit": 1000.,
-                "swarm_thresh": 1.,
-                "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
-                "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
-                "proximity_binary": "no"}},
-        "ACS SBC": {
-            "astrodrizzle": {
-                "SCALE": 0.03,
-                "PIXFRAC": 1.0,
-                "KERNEL": "square",
-                "OUTNX": None,
-                "OUTNY": None,
-                "ROT": 0.0,
-                "BITS": 256},
-            "ci filter": {
-                "ci_daolower_limit": 0.15,
-                "ci_daoupper_limit": 0.45,
-                "ci_selower_limit": 0.15,
-                "ci_seupper_limit": 0.45},
-            "dao": {
-                "TWEAK_FWHMPSF": 0.065,
-                "TWEAK_THRESHOLD": 3.0,
-                "aperture_1": 0.07,
-                "aperture_2": 0.125,
-                "bthresh": 5.0},
-            "sourcex": {
-                "fwhm": 0.065,
-                "thresh": 1.4,
-                "bthresh": 5.0,
-                "source_box": 7},
-            "swarm filter": {
-                "upper_epp_limit": 70000.,
-                "lower_epp_limit": 2000.,
-                "eppsky_limit": 1000.,
-                "swarm_thresh": 1.,
-                "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
-                "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
-                "proximity_binary": "no"}},
-        "ACS WFC": {
-            "astrodrizzle": {
-                "SCALE": 0.05,
-                "PIXFRAC": 1.0,
-                "KERNEL": "square",
-                "OUTNX": None,
-                "OUTNY": None,
-                "ROT": 0.0,
-                "BITS": 256},
-            "ci filter": {
-                "ci_daolower_limit": 0.9,
-                "ci_daoupper_limit": 1.23,
-                "ci_selower_limit": 0.9,
-                "ci_seupper_limit": 1.23},
-            "dao": {
-                "TWEAK_FWHMPSF": 0.076,
-                "TWEAK_THRESHOLD": None,
-                "aperture_1": 0.05,  # update from 0.15
-                "aperture_2": 0.15,  # update from 0.25
-                "bthresh": 1.5},
-            "sourcex": {
-                "fwhm": 0.13,
-                "thresh": None,
-                "bthresh": 5.0,
-                "source_box": 5},
-            "swarm filter": {
-                "upper_epp_limit": 70000.,
-                "lower_epp_limit": 2000.,
-                "eppsky_limit": 1000.,
-                "swarm_thresh": 1.,
-                "clip_radius_list": [120., 100., 80., 60., 40., 30., 20., 10., 5., 2., 0.],
-                "scale_factor_list": [0.0, 0.000000e+00, 6.498530e-06, 3.687270e-05, 1.412972e-04, 3.151877e-04, 1.023391e-03, 3.134859e-03, 2.602436e-02, 1.820539e-01, 1.000000e+00],
-                "proximity_binary": "no"}},
-        "WFC3 IR": {
-            "astrodrizzle": {
-                "SCALE": 0.09,
-                "PIXFRAC": 1.0,
-                "KERNEL": "square",
-                "OUTNX": None,
-                "OUTNY": None,
-                "ROT": 0.0,
-                "BITS": 768},
-            "ci filter": {
-                "ci_daolower_limit": 0.25,
-                "ci_daoupper_limit": 0.55,
-                "ci_selower_limit": 0.25,
-                "ci_seupper_limit": 0.55},
-            "dao": {
-                "TWEAK_FWHMPSF": 0.14,
-                "TWEAK_THRESHOLD": 3.0,
-                "aperture_1": 0.15,
-                "aperture_2": 0.45,
-                "bthresh": 5.0},
-            "sourcex": {
-                "fwhm": 0.14,
-                "thresh": 1.4,
-                "bthresh": 5.0,
-                "source_box": 7},
-            "swarm filter": {
-                "upper_epp_limit": 70000.,
-                "lower_epp_limit": 2000.,
-                "eppsky_limit": 100.,
-                "swarm_thresh": 1.,
-                "clip_radius_list": [140., 120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
-                #                   x10    x10    x10   x10   x10   x10    x10   x10  x10  x2,
-                "scale_factor_list": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.015, 0.05, 0.15, 0.9, 1.],
-                # "scale_factor_list_orig": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.005, 0.05, 0.15, 0.9, 1.],
-                "proximity_binary": "yes"}},
-        "WFC3 UVIS": {
-            "astrodrizzle": {
-                "SCALE": 0.04,
-                "PIXFRAC": 1.0,
-                "KERNEL": "square",
-                "OUTNX": None,
-                "OUTNY": None,
-                "ROT": 0.0,
-                "BITS": 256},
-            "ci filter": {
-                "ci_daolower_limit": 0.75,
-                "ci_daoupper_limit": 1.0,
-                "ci_selower_limit": 0.75,
-                "ci_seupper_limit": 1.0},
-            "dao": {
-                "TWEAK_FWHMPSF": 0.076,
-                "TWEAK_THRESHOLD": 3.0,
-                "aperture_1": 0.05,
-                "aperture_2": 0.15,
-                "bthresh": 5.0},
-            "sourcex": {
-                "fwhm": 0.076,
-                "thresh": 1.4,
-                "bthresh": 5.0,
-                "source_box": 7},
-            "swarm filter": {
-                "upper_epp_limit": 70000.,
-                "lower_epp_limit": 2000.,
-                "eppsky_limit": 1000.,
-                "swarm_thresh": 1.,
-                "clip_radius_list": [120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
-                "scale_factor_list": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 0.0005, 0.005, 0.005, 0.015, 0.45, 1.],
-                # "scale_factor_list_orig": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 6.e-5, 0.0005, 0.005, 0.015, 0.45, 1.],
-                "proximity_binary": "yes"}}}  # TODO: remove para_dict definition once we have fleshed out the config object
-
-    def __init__(self, param_file=None):
-        self.param_file = param_file
-
-    def read_param_file(self):
-        pass
-
-    def get_params(self, instrument, detector):
-        inst_det = "{} {}".format(instrument, detector)
-        return self.full_param_dict[inst_det].copy()
-
-
 class CatalogImage:
     def __init__(self, filename):
         if isinstance(filename, str):
@@ -332,7 +149,8 @@ class CatalogImage:
                     threshold = default_threshold
                 elif threshold_flag < 0:
                     threshold = -1 * threshold_flag * default_threshold
-                    log.info("Background threshold set to {} based on {}".format(threshold.max(), default_threshold.max()))
+                    log.info("Background threshold set to {} based on {}".format(threshold.max(),
+                                                                                 default_threshold.max()))
                     bkg_rms_mean = threshold.max()
                 else:
                     bkg_rms_mean = 3. * threshold_flag
@@ -421,11 +239,12 @@ class HAPCatalogs:
     """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
 
-    def __init__(self, fitsfile, debug=False, types=None, tp_sources=None):
+    def __init__(self, fitsfile, param_dict, debug=False, types=None, tp_sources=None):
         self.label = "HAPCatalogs"
         self.description = "A class used to generate photometric sourcelists using aperture photometry"
 
         self.imgname = fitsfile
+        self.param_dict = param_dict
         self.debug = debug
         self.tp_soruces = tp_sources  # <---total product catalogs.catalogs[*].sources
 
@@ -442,20 +261,12 @@ class HAPCatalogs:
 
         self.types = types
 
-        # Parameter dictionary definition
-        self.instrument = self.imgname.split("_")[3].upper()
-        self.detector = self.imgname.split("_")[4].upper()
-        self.inst_det = "{} {}".format(self.instrument, self.detector)
-        self.full_param_dict = ParamDict()
-        self.param_dict = self.full_param_dict.get_params(self.instrument, self.detector)
-
         # Compute the background for this image
         self.image = CatalogImage(fitsfile)
         self.image.compute_background(nsigma=self.param_dict['dao']['bthresh'],
                                       threshold_flag=self.param_dict['sourcex']['thresh'])  # TODO previoulsy, nsigma=self.param_dict['sourcex']['bthresh']
 
-        self.image.build_kernel(self.param_dict['dao']['TWEAK_FWHMPSF'],
-                                self.param_dict['astrodrizzle']['SCALE'])
+        self.image.build_kernel(self.param_dict['dao']['TWEAK_FWHMPSF'], self.param_dict['dao']['scale'])
 
         # Initialize all catalog types here...
         # This does NOT identify or measure sources to create the catalogs at this point...
@@ -559,45 +370,24 @@ class HAPPointCatalog(HAPCatalogBase):
     def __init__(self, image, param_dict, debug, tp_sources):
         super().__init__(image, param_dict, debug, tp_sources)
 
-    def identify_sources(self, bkgsig_sf=4., dao_ratio=0.8, simple_bkg=False):
+    def identify_sources(self):
         """Create a master coordinate list of sources identified in the specified total detection product image
-
-        Parameters
-        ----------
-        bkgsig_sf : float
-            multiplictive scale factor applied to background sigma value to compute DAOfind input parameter
-            'threshold'. Default value = 2.
-
-        dao_ratio : float
-            The ratio of the minor to major axis standard deviations of the Gaussian kernel.
-
-        simple_bkg : bool, optional
-            Should the input image will be background subtracted using pre-computed background?
-            Default value is False.
-
-        Returns
-        -------
-        sources : astropy table
-            Table containing x, y coordinates of identified sources
         """
-        # threshold = self.param_dict['dao']['TWEAK_THRESHOLD']
-
         # read in sci, wht extensions of drizzled product
         image = self.image.data.copy()
 
         # Estimate FWHM from image sources
         # Background statistics need to be computed prior to subtracting background from image
         bkg_sigma = mad_std(image, ignore_nan=True)
-        detect_sources_thresh = bkgsig_sf * bkg_sigma
+        detect_sources_thresh = self.param_dict["dao"]["bkgsig_sf"] * bkg_sigma
 
         # Input image will be background subtracted using pre-computed background, unless
         # specified explicitly by the user
-        if simple_bkg:
+        if self.param_dict["dao"]["simple_bkg"]:
             self.bkg_used = np.nanmedian(image)
             image -= self.bkg_used
         else:
-        # Estimate background
-        # self.compute_background(threshold)
+            # Estimate background
             self.bkg_used = self.image.bkg.background
             image -= self.bkg_used
 
@@ -614,9 +404,9 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("Point-source finding settings")
             log.info("Total Detection Product - Input Parameters")
             log.info("INPUT PARAMETERS")
-            log.info("{}: {}".format("bkgsig_sf", bkgsig_sf))
-            log.info("{}: {}".format("dao_ratio", dao_ratio))
-            log.info("{}: {}".format("simple_bkg", simple_bkg))
+            log.info("{}: {}".format("self.param_dict['dao']['bkgsig_sf']", self.param_dict["dao"]["bkgsig_sf"]))
+            log.info("{}: {}".format("self.param_dict['dao']['kernel_sd_aspect_ratio']", self.param_dict['dao']['kernel_sd_aspect_ratio']))
+            log.info("{}: {}".format("self.param_dict['dao']['simple_bkg']", self.param_dict['dao']['simple_bkg']))
             log.info("{}: {}".format("self.image.bkg_rms_mean", self.image.bkg_rms_mean))
             log.info("{}: {}".format("self.image.bkg_rms_mean", self.image.bkg_rms_mean))
             log.info("{}: {}".format("self.param_dict['sourcex']['source_box']",
@@ -631,8 +421,10 @@ class HAPPointCatalog(HAPCatalogBase):
 
             # find ALL the sources!!!
             log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm,
-                                                                             self.image.bkg_rms_mean, dao_ratio))
-            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.image.bkg_rms_mean, ratio=dao_ratio)
+                                                                             self.image.bkg_rms_mean,
+                                                                             self.param_dict['dao']['kernel_sd_aspect_ratio']))
+            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.image.bkg_rms_mean,
+                                    ratio=self.param_dict['dao']['kernel_sd_aspect_ratio'])
 
             # create mask to reject any sources located less than 10 pixels from a image/chip edge
             wht_image = self.image.data.copy()
@@ -652,46 +444,14 @@ class HAPPointCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def measure_sources(self, aper_radius=4.):
+    def measure_sources(self):
         """Perform aperture photometry on identified sources
-
-        Parameters
-        ----------
-        sources : astropy table
-            Table containing x, y coordinates of identified sources
-
-        aper_radius : float or list of floats
-            Aperture radius (in pixels) used for photometry. Default value = 4.
-
-        Returns
-        -------
-        phot_table : astropy table
-            Table containing photometric information for specified sources based on image data in the specified image.
         """
         log.info("Performing aperture photometry on identified point-sources")
         # Open and background subtract image
         image = self.image.data.copy()
         image -= self.bkg_used
 
-        # # Aperture Photometry
-        # positions = (self.sources['xcentroid'], self.sources['ycentroid'])
-        # apertures = CircularAperture(positions, r=aper_radius)
-        # phot_table = aperture_photometry(image, apertures)
-        #
-        # for col in phot_table.colnames: phot_table[col].info.format = '%.8g'  # for consistent table output
-        #
-        # self.source_cat = phot_table
-
-        # ADAPTION OF HLA CLASSIC CODE 'HLA_SOURCELIST' SUBROUTINE 'DAOPHOT_STYLE_PHOTOMETRY' LINE 1019
-        # +++++++++++++++++++ Hardwired presets just to get things moving  +++++++++++++++++++
-        # TODO: Remove. All these values should come from static values in config files or be determined dynamically
-        platescale = self.param_dict['astrodrizzle']['SCALE']  # arcsec/pixel
-        skyannulus_arcsec = 0.25
-        skyannulus_pix = skyannulus_arcsec/platescale
-        dskyannulus_arcsec = 0.25
-        dskyannulus_pix = dskyannulus_arcsec/platescale
-        salgorithm = 'mode'
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         # Compute AB mag zeropoint.
         photplam = self.image.imghdu[1].header['photplam']
         photflam = self.image.imghdu[1].header['photflam']
@@ -711,13 +471,16 @@ class HAPPointCatalog(HAPCatalogBase):
         pos_y = np.asarray(positions[1])
 
         # define list of background annulii
-        bg_apers = CircularAnnulus((pos_x, pos_y), r_in=skyannulus_arcsec, r_out=skyannulus_arcsec + dskyannulus_arcsec)
+        bg_apers = CircularAnnulus((pos_x, pos_y),
+                                   r_in=self.param_dict['dao']['skyannulus_arcsec'],
+                                   r_out=self.param_dict['dao']['skyannulus_arcsec'] +
+                                         self.param_dict['dao']['dskyannulus_arcsec'])
 
         # convert photometric aperture radii from arcsec to pixels and create list of photometric apertures to measure
         aper_radius_arcsec = [self.param_dict['dao']['aperture_1'], self.param_dict['dao']['aperture_2']]
         aper_radius_list_pixels = []
         for aper_radius in aper_radius_arcsec:
-            aper_radius_list_pixels.append(aper_radius/platescale)
+            aper_radius_list_pixels.append(aper_radius/self.param_dict['dao']['scale'])
         phot_apers = [CircularAperture((pos_x, pos_y), r=r) for r in aper_radius_list_pixels]
 
         # parameter log dump!
@@ -725,12 +488,12 @@ class HAPPointCatalog(HAPCatalogBase):
         log.info("")
         log.info("SUMMARY OF INPUT PARAMETERS")
         log.info("self.imgname:   {}".format(self.imgname))
-        log.info("platescale:       {}".format(platescale))
+        log.info("platescale:       {}".format(self.param_dict['dao']['scale']))
         log.info("radii (pixels):   {}".format(aper_radius_list_pixels))
         log.info("radii (arcsec):   {}".format(aper_radius_arcsec))
-        log.info("annulus:          {}".format(skyannulus_arcsec))
-        log.info("dSkyAnnulus:      {}".format(dskyannulus_arcsec))
-        log.info("salgorithm:       {}".format(salgorithm))
+        log.info("annulus:          {}".format(self.param_dict['dao']['skyannulus_arcsec']))
+        log.info("dSkyAnnulus:      {}".format(self.param_dict['dao']['dskyannulus_arcsec']))
+        log.info("salgorithm:       {}".format(self.param_dict['dao']['salgorithm']))
         log.info("gain:             {}".format(gain))
         log.info("ab_zeropoint:     {}".format(ab_zeropoint))
         log.info(" ")
@@ -738,9 +501,11 @@ class HAPPointCatalog(HAPCatalogBase):
         log.info("")
 
         # Perform aperture photometry
-        photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image, platescale=platescale,
+        photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image,
+                                                                platescale=self.param_dict['dao']['scale'],
                                                                 error_array=self.bkg.background_rms,
-                                                                bg_method=salgorithm, epadu=gain,
+                                                                bg_method=self.param_dict['dao']['salgorithm'],
+                                                                epadu=gain,
                                                                 zero_point=ab_zeropoint)
 
         # convert coords back to origin value = 1 rather than 0
