@@ -9,10 +9,8 @@ import shutil
 
 from .. import astrodrizzle
 
-from stsci.tools import logutil
-from astropy.io import fits
-
-log = logutil.create_logger('product', level=logutil.logging.INFO, stream=sys.stdout)
+from . import align_utils
+from . import astrometric_utils as amutils
 
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
@@ -166,11 +164,13 @@ class FilterProduct(HAPProduct):
         """
         self.edp_list.append(edp)
 
-    def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, **alignment_pars):
+    def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment
            routine.
         """
+        alignment_pars = self.pars.get_pars('alignment')
+
         # Only perform the relative alignment
         method_name = 'relative'
 
@@ -184,14 +184,14 @@ class FilterProduct(HAPProduct):
                     headerlet_filenames[edp.full_filename] = edp.headerlet_filename
 
                 align_table = align_utils.AlignmentTable(exposure_filenames, **alignment_pars)
+                align_table.find_alignment_sources()
                 align_table.configure_fit()
-                align_table.find_alignment_sources(output=True)
                 ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
                                             catalog=catalog_name,
                                             output="{}_ref_cat.ecsv".format(self.product_basename),
                                             gaia_only=False)
 
-                if len(ref_catalog) > MIN_CATALOG_THRESHOLD:
+                if len(ref_catalog) > align_table.MIN_CATALOG_THRESHOLD:
                     align_table.perform_fit(method_name, catalog_name, ref_catalog)
                     align_table.select_fit(catalog_name, method_name)
                     align_table.apply_fit(headerlet_filenames=headerlet_filenames)
