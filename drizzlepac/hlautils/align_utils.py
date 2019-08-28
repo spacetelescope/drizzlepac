@@ -14,6 +14,7 @@ from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
 
+import photutils
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
 
 from stwcs.wcsutil import HSTWCS
@@ -98,6 +99,8 @@ class AlignmentTable:
             catimg.compute_background(box_size=self.alignment_pars['box_size'],
                                       win_size=self.alignment_pars['win_size'],
                                       nsigma=self.alignment_pars['nsigma'],
+                                      bkg_estimator=self.alignment_pars['bkg_estimator'],
+                                      rms_estimator=self.alignment_pars['rms_estimator'],
                                       threshold_flag=self.alignment_pars['threshold'])
             catimg.build_kernel(self.alignment_pars.get('fwhmpsf'))
 
@@ -110,7 +113,6 @@ class AlignmentTable:
 
         self.fit_dict = {}  # store results of all fitting in this dict for evaluation
         self.selected_fit = None  # identify fit selected by user (as 'best'?) to be applied to images WCSs
-
 
     def close(self):
         for img in self.haplist:
@@ -180,7 +182,7 @@ class AlignmentTable:
 
         return imglist
 
-    def select_fit(self, catalog_name, method_name):
+    def select_fit(self, method_name, catalog_name):
         """Select the fit that has been identified as 'best'"""
         imglist = self.selected_fit = self.fit_dict[(catalog_name, method_name)]
 
@@ -324,7 +326,7 @@ class HAPImage:
         self.fwhmpsf = self.kernel_fwhm * self.pscale
 
     def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
-                           bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS,
+                           bkg_estimator="SExtractorBackground", rms_estimator="StdBackgroundRMS",
                            nsigma=5., threshold_flag=None):
         """Use Background2D to determine the background of the input image.
         Parameters
@@ -354,12 +356,17 @@ class HAPImage:
         threshold : ndarray
             Numpy array representing the background plus RMS
         """
+        # Interpret estimator labels as photutils functions
+        bkg_estimator = register_photutils_function(bkg_estimator)
+        rms_estimator = register_photutils_function(rms_estimator)
+
         # Report configuration values to log
         log.info("")
         log.info("Computation of image background - Input Parameters")
         log.info("Box size: {}".format(box_size))
         log.info("Window size: {}".format(win_size))
         log.info("NSigma: {}".format(nsigma))
+        log.info("BKG Estimator: {}".format(bkg_estimator.__name__))
 
         # SExtractorBackground ans StdBackgroundRMS are the defaults
         exclude_percentiles = [10, 25, 50, 75]
@@ -380,36 +387,36 @@ class HAPImage:
                     bkg = None
                     continue
 
-            if bkg is not None:
-                # Set the bkg_rms at "nsigma" sigma above background
-                bkg_rms = nsigma * bkg.background_rms
-                default_threshold = bkg.background + bkg_rms
-                bkg_rms_mean = bkg.background.mean() + nsigma * bkg_rms.std()
-                bkg_mean = bkg.background.mean()
-                bkg_dao_rms = bkg.background_rms
-                if threshold_flag is None:
-                    threshold = default_threshold
-                elif threshold_flag < 0:
-                    threshold = -1 * threshold_flag * default_threshold
-                    log.info("Background threshold set to {} based on {}".format(threshold.max(), default_threshold.max()))
-                    bkg_rms_mean = threshold.max()
-                else:
-                    bkg_rms_mean = 3. * threshold_flag
-                    threshold = bkg_rms_mean
+                if bkg is not None:
+                    # Set the bkg_rms at "nsigma" sigma above background
+                    bkg_rms = nsigma * bkg.background_rms
+                    default_threshold = bkg.background + bkg_rms
+                    bkg_rms_mean = bkg.background.mean() + nsigma * bkg_rms.std()
+                    bkg_mean = bkg.background.mean()
+                    bkg_dao_rms = bkg.background_rms
+                    if threshold_flag is None:
+                        threshold = default_threshold
+                    elif threshold_flag < 0:
+                        threshold = -1 * threshold_flag * default_threshold
+                        log.info("Background threshold set to {} based on {}".format(threshold.max(), default_threshold.max()))
+                        bkg_rms_mean = threshold.max()
+                    else:
+                        bkg_rms_mean = 3. * threshold_flag
+                        threshold = bkg_rms_mean
 
-                if bkg_rms_mean < 0:
-                    bkg_rms_mean = 0.
-                break
+                    if bkg_rms_mean < 0:
+                        bkg_rms_mean = 0.
+                    break
 
-        # If Background2D does not work at all, define default scalar values for
-        # the background to be used in source identification
-        if bkg is None:
-            bkg_mean = bkg_rms_mean = max(0.01, self.data.min())
-            bkg_rms = nsigma * bkg_rms_mean
-            bkg_dao_rms = bkg_rms_mean
-            threshold = bkg_rms_mean + bkg_rms
+            # If Background2D does not work at all, define default scalar values for
+            # the background to be used in source identification
+            if bkg is None:
+                bkg_mean = bkg_rms_mean = max(0.01, self.data.min())
+                bkg_rms = nsigma * bkg_rms_mean
+                bkg_dao_rms = bkg_rms_mean
+                threshold = bkg_rms_mean + bkg_rms
 
-        # *** FIX: Need to do something for bkg if bkg is None ***
+            # *** FIX: Need to do something for bkg if bkg is None ***
 
             # Report other useful quantities
             log.info("CHIP: {}".format(chip))
@@ -717,7 +724,7 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
             if item.meta['group_id'] == group_id and \
                group_id not in group_dict:
                 group_dict[group_id] = {'ref_idx': None, 'FIT_RMS': None}
-                log.info("fit_info: {}".format(item.meta['fit_info']))
+                # log.info("fit_info: {}".format(item.meta['fit_info']))
                 tinfo = item.meta['fit_info']
                 ref_idx = tinfo['matched_ref_idx']
                 fitmask = tinfo['fitmask']
@@ -893,3 +900,11 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
     primary_header['HISTORY'] = '{:>15} : {:9.4f} degrees'.format('rotation', rot)
     primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('scale', scale)
     primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('skew', skew)
+
+# --------------------------------------------------------------------------------------------------------------
+def register_photutils_function(name):
+    """Convert photutils name as a string into a pointer to the actual photutils function"""
+    
+    if name in dir(photutils):
+        func = eval("photutils.{}".format(name))
+    return func
