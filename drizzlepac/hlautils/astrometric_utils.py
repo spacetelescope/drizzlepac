@@ -663,10 +663,11 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
 
     # remove parameters that are not needed by subsequent functions
     del detector_pars['fwhmpsf']
-    threshold = detector_pars.get('threshold', None)
+    threshold_par = detector_pars.get('threshold', None)
     source_box = detector_pars.get('source_box', 7)
     isolation_size = detector_pars.get('isolation_size', 50)
     saturation_limit = detector_pars.get('saturation_limit', 70000.0)
+    del detector_pars['threshold']
 
     # Build source catalog for entire image
     source_cats = {}
@@ -734,14 +735,14 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
                 bkg_rms = (5. * bkg.background_rms)
                 bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
                 default_threshold = bkg.background + bkg_rms
-                if threshold is None:
+                if threshold_par is None:
                     threshold = default_threshold
-                elif threshold < 0:
-                    threshold = -1 * threshold * default_threshold
+                elif threshold_par < 0:
+                    threshold = -1 * threshold_par * default_threshold
                     log.info("{} based on {}".format(threshold.max(), default_threshold.max()))
                     bkg_rms_mean = threshold.max()
                 else:
-                    bkg_rms_mean = 3. * threshold
+                    bkg_rms_mean = 3. * threshold_par
 
                 if bkg_rms_mean < 0:
                     bkg_rms_mean = 0.

@@ -318,8 +318,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
 
         # Instantiate AlignmentTable class with these input files
         alignment_table = align_utils.AlignmentTable(imglist, **alignment_pars)
-        alignment_table.find_alignment_sources()
-        alignment_table.configure_fit()
         process_list = alignment_table.process_list
 
         # Define fitting algorithm list in priority order
@@ -346,7 +344,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             pickle_filename = "{}.source_catalog.pickle".format(process_list[0])
             if os.path.exists(pickle_filename):
                 pickle_in = open(pickle_filename, "rb")
-                extracted_sources = pickle.load(pickle_in)
+                alignment_table.extracted_sources = pickle.load(pickle_in)
                 log.info("Using sourcelist extracted from {} generated during the last run to save time.".format(
                     pickle_filename))
             else:
@@ -358,6 +356,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                 log.info("Wrote {}".format(pickle_filename))
         else:
             alignment_table.find_alignment_sources(output=True)
+
+        alignment_table.configure_fit()
 
         for imgname in alignment_table.extracted_sources.keys():
             table = alignment_table.extracted_sources[imgname]
@@ -494,7 +494,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         if fit_quality < 5:
                             if fit_quality == 1:  # valid, non-comprimised solution with total rms < 10 mas...go with this solution.
                                 best_fit_rms = fit_rms
-                                best_fit_label = (catalog_name, algorithm_name)
+                                best_fit_label = (algorithm_name, catalog_name)
 
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
@@ -502,7 +502,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                             elif fit_quality < best_fit_qual:  # better solution found. keep looping but with the better solution as "best" for now.
                                 log.info("Better solution found!")
                                 best_fit_rms = fit_rms
-                                best_fit_label = (catalog_name, algorithm_name)
+                                best_fit_label = (algorithm_name, catalog_name)
 
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
@@ -510,7 +510,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                 if best_fit_rms >= 0.:
                                     if fit_rms < best_fit_rms:
                                         best_fit_rms = fit_rms
-                                        best_fit_label = (catalog_name, algorithm_name)
+                                        best_fit_label = (algorithm_name, catalog_name)
 
                                         best_fit_status_dict = fit_status_dict.copy()
                                         best_fit_qual = fit_quality
@@ -690,7 +690,6 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
             * fit compromised status (Boolean)
             * reason fit is considered 'compromised' (only populated if "compromised" field is "True")
     """
-    tweakwcs_info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
     max_rms_val = 1e9
     num_xmatches = 0
     fit_status_dict = {}
@@ -798,12 +797,15 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
                                           num_xmatches))
         # print fit params to screen
         if print_fit_parameters:
+            # Avoid printing out large sets of data to the log...
+            info_keys = ['status', 'fitgeom', 'eff_minobj', 'matrix', 'shift', 'center',
+                        'rot', 'rotxy', 'scale', 'skew', 'rmse', 'mae', 'nmatches']
+
             log.info("{} FIT PARAMETERS {}".format("~" * 35, "~" * 34))
             log.info("image: {}".format(image_name))
             log.info("chip: {}".format(item.meta['chip']))
             log.info("group_id: {}".format(item.meta['group_id']))
-            for tweakwcs_info_key in tweakwcs_info_keys:
-                if not tweakwcs_info_key.startswith("matched"):
+            for tweakwcs_info_key in info_keys:
                     log.info("{} : {}".format(tweakwcs_info_key, item.meta['fit_info'][tweakwcs_info_key]))
             log.info("~" * 84)
             log.info("nmatches_check: {} radial_offset_check: {}"
