@@ -13,13 +13,7 @@ import sys
 import traceback
 
 import drizzlepac
-<<<<<<< HEAD
-from drizzlepac import alignimages
-from drizzlepac import astrodrizzle
-from drizzlepac import wcs_functions
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
-=======
->>>>>>> Integration of HapConfig into hapsequencer
 from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import poller_utils
 from drizzlepac.hlautils import processing_utils as proc_utils
@@ -203,7 +197,6 @@ param_dict = {
             "scale_factor_list": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 0.0005, 0.005, 0.005, 0.015, 0.45, 1.],
             # "scale_factor_list_orig": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 6.e-5, 0.0005, 0.005, 0.015, 0.45, 1.],
             "proximity_binary": "yes"}}}
-
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -231,15 +224,10 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
     """
     product_list = []
     for total_product_obj in total_list:
-        # determine total product filename
-        if os.path.exists(total_product_obj.product_basename+"_drc.fits"):
-            total_product_name = total_product_obj.product_basename + "_drc.fits"
-        else:
-            total_product_name = total_product_obj.product_basename + "_drz.fits"
 
         # Instantiate filter catalog product object
-        total_product_catalogs = HAPCatalogs(total_product_name,
-                                             total_product_obj.pars.get_pars('catalog generation'),
+        total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename,
+                                             total_product_obj.configobj_pars.get_pars('catalog generation'),
                                              types=phot_mode,
                                              debug=debug)
 
@@ -265,15 +253,10 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
                 sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
 
         for filter_product_obj in total_product_obj.fdp_list:
-            # determine filter product filename
-            if os.path.exists(filter_product_obj.product_basename + "_drc.fits"):
-                filter_product_name = filter_product_obj.product_basename + "_drc.fits"
-            else:
-                filter_product_name = filter_product_obj.product_basename + "_drz.fits"
 
             # Instantiate filter catalog product object
-            filter_product_catalogs = HAPCatalogs(filter_product_name,
-                                                  filter_product_obj.pars.get_pars('catalog generation'),
+            filter_product_catalogs = HAPCatalogs(filter_product_obj.drizzle_filename,
+                                                  filter_product_obj.configobj_pars.get_pars('catalog generation'),
                                                   types=phot_mode,
                                                   debug=debug,
                                                   tp_sources=sources_dict)
@@ -373,12 +356,8 @@ def create_drizzle_products(total_list):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-<<<<<<< HEAD
-def run_hla_processing(input_filename, result=None, debug=False, use_defaults_configs=True,
-                       input_custom_pars_file=None, output_custom_pars_file=None, phot_mode='both'):
-=======
 def run_hap_processing(input_filename, result=None, debug=False, use_defaults_configs=True,
-                       input_custom_pars_file=None, output_custom_pars_file=None):
+                       input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both"):
     """
     Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
     controller which invokes the high-level functionality to process the single visit data.
@@ -386,7 +365,7 @@ def run_hap_processing(input_filename, result=None, debug=False, use_defaults_co
     Parameters
     ----------
     input_filename: string
-        The "poller file" where each line contains information regarding an exposures taken 
+        The 'poller file' where each line contains information regarding an exposures taken 
         during a single visit.
 
     result: ---
@@ -397,24 +376,31 @@ def run_hap_processing(input_filename, result=None, debug=False, use_defaults_co
         creation and use of pickled information.
 
     use_default_configs: bool, optional
-
+        If True, use the configuration parameters in the 'default' portion of the configuration 
+        JSON files.  If False, use the configuration parameters in the "parameters" portion of
+        the file.  The default is True.
 
     input_custom_pars_file: string, optional
-        Fully specified input filename of a configuration file which has been customized 
-        for specialized processing.  These customized configuration values will override the
-        corresponding default settings.
+        Represents a fully specified input filename of a configuration JSON file which has been 
+        customized for specialized processing.  This file should contain ALL the input parameters
+        necessary for processing.  If there is a filename present for this parameter, the
+        'use_default_configs' parameter is ignored. The default is None.
 
     output_custom_pars_file: string, optional
         Fully specified output filename which contains all the configuration parameters
-        available during the processing session.
+        available during the processing session.  The default is None.
+
+    phot_mode : str, optional
+        Which algorithm should be used to generate the sourcelists? 'aperture' for aperture photometry;
+        'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
 
 
     RETURNS
     -------
-    product_list: list
-        A list of output products
+    return_value: integer
+        A return exit code used by the calling Condor/OWL workflow code: 0 (zero) for success, 1 for error
+
     """
->>>>>>> Integration of HapConfig into hapsequencer
     # This routine needs to return an exit code, return_value, for use by the calling
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
@@ -524,14 +510,3 @@ def run_hap_processing(input_filename, result=None, debug=False, use_defaults_co
         log.info("9: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
                  "condition")
         return return_value
-
-# ----------------------------------------------------------------------------------------------------------------------
-# TODO: COMMENT OUT/REMOVE BELOW COMMAND-LINE INTERFACE PRIOR TO PULL REQUEST
-
-# if __name__ == '__main__':
-#     os.system("rm -f *.*")
-#     os.system("cp orig/* .")
-#     out_pars_file = sys.argv[1].replace(".out", "_config.json")
-#
-#     x = run_hla_processing(sys.argv[1], debug=True, output_custom_pars_file=out_pars_file, phot_mode='aperture')
-#     print("\a")

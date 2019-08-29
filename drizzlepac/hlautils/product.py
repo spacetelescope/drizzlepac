@@ -62,7 +62,6 @@ class TotalProduct(HAPProduct):
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
-        self.ref_drizzle_filename = self.product_basename + "_ref_" + self.filetype + ".fits"
 
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to create it as an attribute of a TotalProduct as it is independent of
