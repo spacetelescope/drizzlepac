@@ -1304,8 +1304,6 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
             if item.meta['group_id'] == group_id and \
                group_id not in group_dict:
                 group_dict[group_id] = {'ref_idx': None, 'FIT_RMS': None}
-                # MDD FIX
-                # log.info("fit_info: {}".format(item.meta['fit_info']))
                 tinfo = item.meta['fit_info']
                 ref_idx = tinfo['matched_ref_idx']
                 fitmask = tinfo['fitmask']
