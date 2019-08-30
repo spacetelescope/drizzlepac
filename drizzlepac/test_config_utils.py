@@ -17,13 +17,13 @@ input_filename = sys.argv[1]
 # param_filename = "superparamfile.json"
 #
 # for item in expo_list+filt_list+total_list:
-#     item.pars = config_utils.HapConfig(item,input_custom_pars_file=param_filename,use_defaults=False)
+#     item.configobj_pars = config_utils.HapConfig(item,input_custom_pars_file=param_filename,use_defaults=False)
 # #
 # print(" ")
-# print(expo_list[0].pars.get_pars("alignment"))
+# print(expo_list[0].configobj_pars.get_pars("alignment"))
 #
 
-rv = hapsequencer.run_hla_processing(input_filename)
+rv = hapsequencer.run_hap_processing(input_filename)
 # pdb.set_trace()
 
 # config_utils.reformat_json_file("superparamfile.json","new_superparamfile.json")
