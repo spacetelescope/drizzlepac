@@ -276,6 +276,7 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
     _drizlog = _drizfile + ".log"  # the '.log' gets added automatically by astrodrizzle
     _alignlog = _trlroot + '_align.log'
     _alignlog_copy = _alignlog.replace('.log', '_copy.log')
+    _calfiles_flc = []
     if dcorr == 'PERFORM':
         if '_asn.fits' not in inFilename:
             # Working with a singleton
@@ -317,7 +318,7 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
 
         # insure these files exist, if not, blank them out
         # Also pick out what files will be used for additional alignment to GAIA
-        if not os.path.exists(_calfiles_flc[0]):
+        if not _calfiles_flc or not os.path.exists(_calfiles_flc[0]):
             _calfiles_flc = None
             align_files = _calfiles
             align_update_files = None

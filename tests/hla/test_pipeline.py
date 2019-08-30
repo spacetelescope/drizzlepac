@@ -119,10 +119,13 @@ class BaseWFC3Pipeline(BasePipeline):
 
 class TestSingleton(BaseWFC3Pipeline):
 
-    def test_astrometric_singleton(self):
+    @pytest.mark.parametrize(
+        'dataset_names', ['iaaua1n4q', 'iacs01t4q']
+    )
+
+    def test_astrometric_singleton(self, dataset_names):
         """ Tests pipeline-style processing of a singleton exposure using runastrodriz.
         """
-        dataset_names = ['iaaua1n4q']
         # Get sample data through astroquery
         flcfile = aqutils.retrieve_observation(dataset_names, suffix=['FLC'])[0]
         fltfile = aqutils.retrieve_observation(dataset_names, suffix=['FLT'])[0]
