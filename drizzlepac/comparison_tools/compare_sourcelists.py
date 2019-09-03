@@ -694,15 +694,20 @@ def slFiles2dataTables(slNames):
     :type slNames: list
     :return: a pair of astropy.table objects the first is the data from the reference sourcelist, and the second is from the comparison sourcelist.
     """
-    try:
-        refData_in=Table.read(slNames[0], format='ascii.daophot')
-    except:
-        refData_in = Table.read(slNames[0], format='ascii')
-
-    try:
-        compData_in = Table.read(slNames[1], format='ascii.daophot')
-    except:
-        compData_in=Table.read(slNames[1], format='ascii')
+    if slNames[0].endswith(".ecsv"):
+        refData_in = Table.read(slNames[0], format='ascii.ecsv')
+    else:
+        try:
+            refData_in=Table.read(slNames[0], format='ascii.daophot')
+        except:
+            refData_in = Table.read(slNames[0], format='ascii')
+    if slNames[1].endswith(".ecsv"):
+        compData_in = Table.read(slNames[1], format='ascii.ecsv')
+    else:
+        try:
+            compData_in = Table.read(slNames[1], format='ascii.daophot')
+        except:
+            compData_in=Table.read(slNames[1], format='ascii')
     titleSwapDict_dao1={"X":"X-Center","Y":"Y-Center","RA":"RA","DEC":"DEC","FLUX1":"n/a","FLUX2":"Flux(0.15)","MAGNITUDE1":"MagAp(0.05)","MAGNITUDE2":"MagAp(0.15)","MERR1":"MagErr(0.05)","MERR2":"MagErr(0.15)","MSKY":"MSky(0.15)","STDEV":"Stdev(0.15)","FLAGS":"Flags","ID":"ID","CI":"CI"}
     titleSwapDict_dao2 = {"X": "X-Center", "Y": "Y-Center", "RA": "RA", "DEC": "DEC", "FLUX1": "n/a",
                           "FLUX2": "Flux(0.45)", "MAGNITUDE1": "MagAp(0.15)", "MAGNITUDE2": "MagAp(0.45)",
