@@ -76,7 +76,7 @@ def compareFileStructure(imgHDU1,imgHDU2,verbose):
     :type verbose: Boolean
     :return: Logical 'True' if everything is ok, and logical 'False' if dissimilarities are found.
     """
-    if verbose: print "> > > > > COMPARE FILE STRUCTURE < < < < <"
+    if verbose: print("> > > > > COMPARE FILE STRUCTURE < < < < <")
 
     returnValue = False
 
@@ -86,14 +86,14 @@ def compareFileStructure(imgHDU1,imgHDU2,verbose):
             img1Info = get_ext_info(imgHDU1[ext_num])
             img2Info = get_ext_info(imgHDU2[ext_num])
 
-            for dictKey in img1Info.keys():
+            for dictKey in list(img1Info.keys()):
                 if img1Info[dictKey] != img2Info[dictKey]:
                     returnValue = False
             if  not returnValue:
-                if verbose: print ext_num, img1Info['name'],img2Info['name'],"     ",img1Info['type'],img2Info['type'],"     ",img1Info['size'],img2Info['size']
+                if verbose: print(ext_num, img1Info['name'],img2Info['name'],"     ",img1Info['type'],img2Info['type'],"     ",img1Info['size'],img2Info['size'])
     if returnValue:
-        if verbose: print "OK"
-    if verbose: print
+        if verbose: print("OK")
+    if verbose: print()
     return(returnValue)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def compareHeaderValues(imgHDU1,imgHDU2,verbose):
@@ -108,13 +108,13 @@ def compareHeaderValues(imgHDU1,imgHDU2,verbose):
     :type verbose: Boolean
     :return: Logical 'True' if everything is ok, and logical 'False' if dissimilarities are found.
     """
-    if verbose: print "> > > > > COMPARE HEADERS < < < < <"
+    if verbose: print("> > > > > COMPARE HEADERS < < < < <")
 
     out_list = []
     exclude_list = ['DATE', 'IRAF-TLM']  # list of header keys to ignore from search.
     for ext_num in range(0, len(imgHDU1)):
-        hdr_list1 = imgHDU1[ext_num].header.keys()
-        hdr_list2 = imgHDU2[ext_num].header.keys()
+        hdr_list1 = list(imgHDU1[ext_num].header.keys())
+        hdr_list2 = list(imgHDU2[ext_num].header.keys())
         for hdr_title in hdr_list1:
             if ((hdr_title != 'HISTORY') and (exclude_list.count(hdr_title) == 0) and (len(hdr_title) != 0)):
                 try:
@@ -131,10 +131,10 @@ def compareHeaderValues(imgHDU1,imgHDU2,verbose):
     if len(out_list) > 0:
         returnValue = False
         if verbose:
-            for item in out_list: print item
+            for item in out_list: print(item)
     if returnValue:
-        if verbose: print "OK"
-    if verbose: print
+        if verbose: print("OK")
+    if verbose: print()
     return (returnValue)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def comparePixelValues(imgHDU1,imgHDU2,verbose):
@@ -150,7 +150,7 @@ def comparePixelValues(imgHDU1,imgHDU2,verbose):
     :return: Logical 'True' if everything is ok, and logical 'False' if dissimilarities are found.
     """
     returnValue = True
-    if verbose: print "> > > > > COMPARE PIXEL VALUES < < < < <"
+    if verbose: print("> > > > > COMPARE PIXEL VALUES < < < < <")
     imgExtenList=[]
     #Determine which extensions are image extension
     for ext_num in range(0, len(imgHDU1)):
@@ -167,11 +167,11 @@ def comparePixelValues(imgHDU1,imgHDU2,verbose):
         for item in statMeasureList:
             if img1Stats[item] != img2Stats[item]:
                 pct_diff=((img2Stats[item]-img1Stats[item])/np.abs(img1Stats[item]))*100.0
-                if verbose: print "[{}] {}:{} {} {} ({}%)".format(ext_num, item," "*(6-len(item)), img1Stats[item], img2Stats[item],pct_diff)
+                if verbose: print("[{}] {}:{} {} {} ({}%)".format(ext_num, item," "*(6-len(item)), img1Stats[item], img2Stats[item],pct_diff))
                 returnValue = False
     if returnValue:
-        if verbose: print "OK"
-    if verbose: print
+        if verbose: print("OK")
+    if verbose: print()
     return (returnValue)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def findFiles(rootPath,drzOnly):
@@ -295,7 +295,7 @@ def run(pathNames,compType,drzOnly,verbose):
     maxNameSepLength = 0
     for ctr in range(0,2):
         if not pathNames[ctr].endswith("/"): pathNames[ctr]=pathNames[ctr]+"/"
-    print pathNames
+    print(pathNames)
     uniqueFileList=make_file_list(pathNames,drzOnly)
     check_status=["Skipped","Skipped","Skipped"]
     imgCtr=1
@@ -308,24 +308,24 @@ def run(pathNames,compType,drzOnly,verbose):
 
         name_seperator = "{}> {}/{}: {} <{}".format("-"*58,imgCtr,numImgs,imgName,"-"*58)
         if len(name_seperator) >maxNameSepLength: maxNameSepLength = len(name_seperator)
-        print name_seperator
+        print(name_seperator)
         check_status[0]=compareFileStructure(imgHDU1,imgHDU2,verbose)
         if compType in ["header data","both"]: check_status[1]=compareHeaderValues(imgHDU1,imgHDU2,verbose)
         if compType in ["pixel data", "both"]:check_status[2] = comparePixelValues(imgHDU1, imgHDU2,verbose)
 
-        print
-        print "File Structure... {}".format(check_status[0])
-        print "Header Values.... {}".format(check_status[1])
-        print "Pixel Data....... {}".format(check_status[2])
-        print
-        print
+        print()
+        print("File Structure... {}".format(check_status[0]))
+        print("Header Values.... {}".format(check_status[1]))
+        print("Pixel Data....... {}".format(check_status[2]))
+        print()
+        print()
 
         for item in check_status:
             if item == False:
                 overallStatus = "FAILED"
         imgCtr +=1
-    print "="*maxNameSepLength
-    print "Overall Status... {}".format(overallStatus)
+    print("="*maxNameSepLength)
+    print("Overall Status... {}".format(overallStatus))
     return(overallStatus)
 #=======================================================================================================================
 if __name__ == "__main__":
