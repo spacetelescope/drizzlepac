@@ -262,39 +262,39 @@ def vdyadicp(a, b):
 
 
 if __name__ == "__main__":
-    print '='*40
+    print('='*40)
     ra1 = np.array([1.0, 1.1, 1.2, 1.3])
     dec1 = 45.0 + np.zeros(ra1.size,dtype=float)
     ra2 = ra1
     dec2 = dec1 + (ra1-ra1[0])*1.e-3
     omega = getinfrot(ra1, dec1, ra2, dec2)
-    print 'ra1  ',ra1
-    print 'dec1 ',dec1
-    print 'omega',omega
-    print 'ra2  ',ra2
-    print 'dec2 ',dec2
-    print 'rotated values'
+    print('ra1  ',ra1)
+    print('dec1 ',dec1)
+    print('omega',omega)
+    print('ra2  ',ra2)
+    print('dec2 ',dec2)
+    print('rotated values')
     ra1r, dec1r = applyomega(ra1,dec1,omega)
-    print 'ra1r ',ra1r
-    print 'dec1r',dec1r
-    print 'check'
-    print 'ra diff ', ra1r-ra2
-    print 'dec diff', dec1r-dec2
+    print('ra1r ',ra1r)
+    print('dec1r',dec1r)
+    print('check')
+    print('ra diff ', ra1r-ra2)
+    print('dec diff', dec1r-dec2)
 
-    print '='*40
+    print('='*40)
     ra1 = np.array([1.0, 1.1, 1.2, 1.3])
     dec1 = 45.0 + np.zeros(ra1.size,dtype=float)
     ra2 = ra1
     dec2 = dec1 + 1.e-3
     omega = getinfrot(ra1, dec1, ra2, dec2)
-    print 'ra1  ',ra1
-    print 'dec1 ',dec1
-    print 'omega',omega
-    print 'ra2  ',ra2
-    print 'dec2 ',dec2
-    print 'rotated values'
+    print('ra1  ',ra1)
+    print('dec1 ',dec1)
+    print('omega',omega)
+    print('ra2  ',ra2)
+    print('dec2 ',dec2)
+    print('rotated values')
     ra1r, dec1r = applyomega(ra1,dec1,omega)
-    print 'ra1r ',ra1r
-    print 'dec1r',dec1r
-    print 'ra diff ', ra1r-ra2
-    print 'dec diff', dec1r-dec2
+    print('ra1r ',ra1r)
+    print('dec1r',dec1r)
+    print('ra diff ', ra1r-ra2)
+    print('dec diff', dec1r-dec2)
