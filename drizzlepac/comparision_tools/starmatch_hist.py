@@ -20,7 +20,7 @@ Classes and Functions
 """
 
 import os,sys,pdb,numpy
-import infrot
+from . import infrot
 import scipy.special, scipy.signal
 from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.morphology import generate_binary_structure
@@ -47,10 +47,10 @@ def run(source_list_dict, minimum_match=10, xref=0.0, yref=0.0, postarg=None):
     """
     out_dict={}
     ### assumes list with greatest number of sources should be the reference file
-    (coo_ref,number)=max(source_list_dict.iteritems(), key=lambda x:x[1])
+    (coo_ref,number)=max(iter(source_list_dict.items()), key=lambda x:x[1])
     if postarg is None:
         postarg = getpostarg(source_list_dict)
-    for coo_img in source_list_dict.keys():
+    for coo_img in list(source_list_dict.keys()):
         matched_flag=True
         if coo_img == coo_ref:
             matched_list=['#This is reference']
@@ -64,9 +64,9 @@ def run(source_list_dict, minimum_match=10, xref=0.0, yref=0.0, postarg=None):
         if len(matched_list) < minimum_match:
             matched_flag = False
             if coo_img == coo_ref:
-                print >> msgunit, "\n %s is reference image, starmatch_hist leaving WCS alone\n" %(coo_img,)
+                print("\n %s is reference image, starmatch_hist leaving WCS alone\n" %(coo_img,), file=msgunit)
             else:
-                print >> msgunit, "\n %s -> %s starmatch_hist failed! Leaving WCS alone\n" %(coo_img,coo_ref)
+                print("\n %s -> %s starmatch_hist failed! Leaving WCS alone\n" %(coo_img,coo_ref), file=msgunit)
     return(out_dict)
 
 
@@ -117,7 +117,7 @@ def getpostarg(source_list_dict):
             dy = sinpa*postarg1+cospa*postarg2
             rv[coo_img] = (dx, dy)
         else:
-            print >> msgunit, 'FITS file %s not found, using POSTARG=0' % fitsfile
+            print('FITS file %s not found, using POSTARG=0' % fitsfile, file=msgunit)
             rv[coo_img] = (0.0,0.0)
     return rv
 
@@ -172,17 +172,17 @@ def match_cat_histogram(catHH, catWW, maxdiff=50, step=1, verbose = False, extra
     :returns: matched column list of coordinates, list of catHH lines that match catWW lines, and list of catWW lines that match catHH lines
     """
     if extra_verbose:
-        print >> msgunit, "Matching %s --> %s using the Stefano method."%(catWW.split("/")[-1], catHH.split("/")[-1])
+        print("Matching %s --> %s using the Stefano method."%(catWW.split("/")[-1], catHH.split("/")[-1]), file=msgunit)
     # Read the catalogs - Column 0 and 1 are the X and Y respectively
     chh = read_cat_file(catHH)
     if chh.size == 0:
-        print >> msgunit, "Empty reference file", catHH
+        print("Empty reference file", catHH, file=msgunit)
         return []
     x1 = chh[:,0]
     y1 = chh[:,1]
     cww = read_cat_file(catWW)
     if cww.size == 0:
-        print >> msgunit, "Empty coordinate file", catWW
+        print("Empty coordinate file", catWW, file=msgunit)
         return []
     x2 = cww[:,0]
     y2 = cww[:,1]
@@ -197,12 +197,12 @@ def match_cat_histogram(catHH, catWW, maxdiff=50, step=1, verbose = False, extra
     # pdb.set_trace() #- for de-bugging
     rv = findOffsetAndRotation(x1,y1, x2,y2, maxdiff, postarg_ref, postarg_img, verbose = verbose)
     if rv is None:
-        if verbose: print >> msgunit, "No significant peak found, skipping fine match"
+        if verbose: print("No significant peak found, skipping fine match", file=msgunit)
         return ["#No significant peak found"],[],[]
     base_offset, rotangle = rv
 
     if verbose:
-        print >> msgunit, "base_offset, rotangle", base_offset, rotangle
+        print("base_offset, rotangle", base_offset, rotangle, file=msgunit)
     # Now match sources within bin; use radius = twice the bin size
     index = catMatch(x1,y1, x2,y2, 2.*step, base_offset, rotangle)
     # index is an array of length = n(cat1) with is -1 if the ith source
@@ -214,7 +214,7 @@ def match_cat_histogram(catHH, catWW, maxdiff=50, step=1, verbose = False, extra
     suby1 = y1[ww]
     subx2 = x2[index[ww]]
     suby2 = y2[index[ww]]
-    if verbose: print >> msgunit, nsub
+    if verbose: print(nsub, file=msgunit)
 
     # iterate to tighten up match if there is a tight cluster
     # this is not useful if there is a rotation, so skip it 
@@ -228,7 +228,7 @@ def match_cat_histogram(catHH, catWW, maxdiff=50, step=1, verbose = False, extra
             dist = numpy.sqrt((dx-meandx)**2+(dy-meandy)**2)
             rmsdist = numpy.sqrt(numpy.mean(dist[wsub]**2))
             wsub = numpy.where(dist <= 2.*rmsdist)[0]
-            if verbose: print >> msgunit, meandx, meandy, rmsdist, wsub.size
+            if verbose: print(meandx, meandy, rmsdist, wsub.size, file=msgunit)
 
     nsub = wsub.size
     output_array = numpy.empty((nsub,4), dtype=float)
@@ -245,7 +245,7 @@ def match_cat_histogram(catHH, catWW, maxdiff=50, step=1, verbose = False, extra
     if nsub >= minimum_match:
         # compute the shift and rotation
         xshift, yshift, rotation = infrot.getxyshiftrot(output_array[:,0],output_array[:,1],output_array[:,2],output_array[:,3], xref=0.0, yref=0.0)
-        print >> msgunit, "infrot xshift yshift rotation", xshift, yshift, rotation
+        print("infrot xshift yshift rotation", xshift, yshift, rotation, file=msgunit)
 
     output_array = output_array.astype(str)
     column_list = [None]*nsub
@@ -349,7 +349,7 @@ def findOffsetAndRotation(x1,y1, x2, y2, maxdiff, postarg1, postarg2, verbose = 
     sthresh = (smax+smax0)/2.0 + numpy.sqrt((smax+smax0)/2.0)
     if smax <= sthresh:
         if verbose and smax > smax0:
-            print >> msgunit, "Choosing zero-rot histogram peak", smax0, "over rotated max", smax, "threshold=", sthresh
+            print("Choosing zero-rot histogram peak", smax0, "over rotated max", smax, "threshold=", sthresh, file=msgunit)
         count_diff = count_diff[irot0]
         rotfactor = 1
         rotangle = 0.0
@@ -360,20 +360,20 @@ def findOffsetAndRotation(x1,y1, x2, y2, maxdiff, postarg1, postarg2, verbose = 
         rotfactor = 2*numpy.abs(irot-irot0) + 1
         rotangle = rotangle[irot]
         if verbose:
-            print >> msgunit, "Best histogram has rotation", rotangle*180/numpy.pi, "degrees"
-            print >> msgunit, "Rotated peak", smax, "unrotated peak", smax0
+            print("Best histogram has rotation", rotangle*180/numpy.pi, "degrees", file=msgunit)
+            print("Rotated peak", smax, "unrotated peak", smax0, file=msgunit)
 
     # find the best peak
     jmax, imax, npred = findbestpeak(count_diff, oversample, postarg1, postarg2, verbose=verbose)
     npred = npred*rotfactor
     maxcount = count_diff[jmax,imax]
     if verbose:
-        print >> msgunit, maxcount, imax, jmax
-        print >> msgunit, 'number of predicted peaks of this size =', npred
+        print(maxcount, imax, jmax, file=msgunit)
+        print('number of predicted peaks of this size =', npred, file=msgunit)
     # Is it significant?
     # Require probability > 1-e3 that one of the pixels iin the histogram has this max or bigger
     if npred >= 0.001:
-        if verbose: print >> msgunit, ' Maximum not very significant: predicted', npred, 'peaks'
+        if verbose: print(' Maximum not very significant: predicted', npred, 'peaks', file=msgunit)
         return None
     x_base_offset = (imax-xmid)/foversample
     y_base_offset = (jmax-xmid)/foversample
@@ -421,7 +421,7 @@ def findbestpeak(h, size, postarg1, postarg2, minthresh=1.e-3, verbose=False):
     maxcount = h[jmax,imax]
     if maxcount == 0:
         if verbose:
-            print >> msgunit, "No matches in histogram"
+            print("No matches in histogram", file=msgunit)
         return (jmax, imax, 1.0)
     hmean = numpy.mean(h)
 
@@ -431,7 +431,7 @@ def findbestpeak(h, size, postarg1, postarg2, minthresh=1.e-3, verbose=False):
     # get slope to empirically improve probability estimate
     power = getprobcorr(prob, h, jmax, imax, size, verbose=verbose)
     if verbose:
-        print >> msgunit, "False-peak probability parameter", power
+        print("False-peak probability parameter", power, file=msgunit)
     prob = prob**power
     w = numpy.where(prob <= minthresh)[0]
     if w.size == 0:
@@ -456,10 +456,10 @@ def findbestpeak(h, size, postarg1, postarg2, minthresh=1.e-3, verbose=False):
         ii = ii[w]
         jj = jj[w]
         if ss != ii.size and verbose:
-            print >> msgunit, "Filtered out",ss-ii.size,"peak near POSTARG position"
+            print("Filtered out",ss-ii.size,"peak near POSTARG position", file=msgunit)
     else:
         if verbose:
-            print >> msgunit, "POSTARG near zero, no peaks excluded"
+            print("POSTARG near zero, no peaks excluded", file=msgunit)
 
     if jj.size == 0:
         # no peaks found
@@ -501,7 +501,7 @@ def findbestpeak(h, size, postarg1, postarg2, minthresh=1.e-3, verbose=False):
     npred = npred[keep]
     if len(ii) == 1:
         if verbose:
-            print >> msgunit, "Only 1 peak left after weeding out nearby peaks"
+            print("Only 1 peak left after weeding out nearby peaks", file=msgunit)
         npbest = npred[0]
     else:
         if len(npred) > 1 and npred[1] < minthresh and hpeak[1] >= hpeak[0]-3*numpy.sqrt(hpeak[0]):
@@ -509,10 +509,10 @@ def findbestpeak(h, size, postarg1, postarg2, minthresh=1.e-3, verbose=False):
             # return highest peak but with low significance
             npbest = 1.0
             if verbose:
-                print >> msgunit, "More than 1 significant peak, not reliable (top 2 npred = %e %e hpeak = %d %d)" % (npred[0], npred[1], hpeak[0], hpeak[1])
+                print("More than 1 significant peak, not reliable (top 2 npred = %e %e hpeak = %d %d)" % (npred[0], npred[1], hpeak[0], hpeak[1]), file=msgunit)
         else:
             if len(npred) > 1 and npred[1] < minthresh and verbose:
-                print >> msgunit, "2nd peak judged not significant (top 2 npred = %e %e hpeak = %d %d)" % (npred[0], npred[1], hpeak[0], hpeak[1])
+                print("2nd peak judged not significant (top 2 npred = %e %e hpeak = %d %d)" % (npred[0], npred[1], hpeak[0], hpeak[1]), file=msgunit)
             npbest = npred[0]
     return (jj[0], ii[0], npbest)
 
@@ -597,7 +597,7 @@ def getprobcorr(prob, h, jmax, imax, size, verbose=False):
     w = numpy.where((xx != 1) & (xx != 0))[0]
     if w.size == 0:
         if verbose:
-            print >> msgunit, "No points to fit after removing zero weights"
+            print("No points to fit after removing zero weights", file=msgunit)
         return 1.0
     xx = numpy.log(xx[w])
     csum = csum[w]
@@ -814,21 +814,21 @@ if __name__ == '__main__':
     import getopt
 
     def usage(msg=None):
-        print >> sys.stderr, "Usage: %s [-r xref,yref] coo1 coo2..." % sys.argv[0]
-        if msg: print >> sys.stderr, msg
+        print("Usage: %s [-r xref,yref] coo1 coo2..." % sys.argv[0], file=sys.stderr)
+        if msg: print(msg, file=sys.stderr)
         sys.exit(1)
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "r:h")
-    except getopt.error, e:
+    except getopt.error as e:
         usage(str(e))
     xref = 0.0
     yref = 0.0
     for opt, value in opts:
         if opt == "-r":
             try:
-                xref, yref = map(float, value.split(','))
-            except ValueError, e:
+                xref, yref = list(map(float, value.split(',')))
+            except ValueError as e:
                 usage("Argument for -r must be comma-separated pair of floats")
         elif opt == "-h":
             usage()
