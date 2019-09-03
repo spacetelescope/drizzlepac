@@ -20,7 +20,8 @@ Classes and Functions
 """
 
 import os,sys,pdb,numpy
-from . import infrot
+# from . import infrot
+import infrot
 import scipy.special, scipy.signal
 from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.morphology import generate_binary_structure
@@ -331,7 +332,7 @@ def findOffsetAndRotation(x1,y1, x2, y2, maxdiff, postarg1, postarg2, verbose = 
     rotangle = (numpy.arange(nrot,dtype=float) - (nrot-1)/2) * rotinc
     crot = numpy.cos(rotangle)
     srot = numpy.sin(rotangle)
-    count_diff = numpy.zeros((nrot,nytrim,nxtrim), dtype=numpy.int64)
+    count_diff = numpy.zeros((nrot,int(nytrim),int(nxtrim)), dtype=numpy.int64)
     for k in range(nrot):
         cx2 = x2*crot[k] - y2*srot[k]
         cy2 = y2*crot[k] + x2*srot[k]
@@ -343,14 +344,14 @@ def findOffsetAndRotation(x1,y1, x2, y2, maxdiff, postarg1, postarg2, verbose = 
     xmid = xmid - halfsample
 
     irot0 = (nrot-1)/2
-    smax0 = count_diff[irot0].max()
+    smax0 = count_diff[int(irot0)].max()
     smax = count_diff.max()
     # use zero-rotation histogram unless a rotated version is at least 1-sigma better
     sthresh = (smax+smax0)/2.0 + numpy.sqrt((smax+smax0)/2.0)
     if smax <= sthresh:
         if verbose and smax > smax0:
             print("Choosing zero-rot histogram peak", smax0, "over rotated max", smax, "threshold=", sthresh, file=msgunit)
-        count_diff = count_diff[irot0]
+        count_diff = count_diff[int(irot0)]
         rotfactor = 1
         rotangle = 0.0
     else:
@@ -576,7 +577,7 @@ def getprobcorr(prob, h, jmax, imax, size, verbose=False):
     """
     # remove points from histogram around peak
     keep = numpy.ones(h.shape, dtype=bool)
-    shalf = (size-1)/2
+    shalf = int((size-1)/2)
     j1 = max(jmax-shalf,0)
     j2 = min(jmax+shalf, h.shape[0]-1)
     i1 = max(imax-shalf,0)
@@ -668,7 +669,7 @@ def bincount2d(jj, ii, ny, nx, clipped=False):
     else:
         ww = numpy.where((ii>=0) & (ii<nx) & (jj>=0) & (jj<ny))[0]
         index = ii[ww] + jj[ww]*nx
-    return numpy.bincount(index, minlength=nx*ny).reshape(ny,nx)
+    return numpy.bincount(index.astype('int'), minlength=int(nx*ny)).reshape(int(ny),int(nx))
 
 
 def catMatch(x1,y1, x2,y2, sep, offset=None, rotangle=None):

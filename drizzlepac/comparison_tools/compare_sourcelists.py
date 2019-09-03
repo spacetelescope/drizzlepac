@@ -91,7 +91,8 @@ from astropy.table import Table
 import matplotlib.pyplot as plt
 import numpy as np
 import pdb
-from . import starmatch_hist
+# from . import starmatch_hist
+import starmatch_hist
 import sys,os
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
@@ -248,14 +249,14 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
 
     else:
         if diffMode == "pmean":
-            normValue = np.abs(sigma_clipped_stats(matchedRA[0, :], sigma=sigVal, iters=intersVal)[0]) #divide all comp-ref values by a single sigma-clipped mean ref value
+            normValue = np.abs(sigma_clipped_stats(matchedRA[0, :], sigma=sigVal, maxiters=intersVal)[0]) #divide all comp-ref values by a single sigma-clipped mean ref value
             if verbose: print("normValue: ", normValue)
         if diffMode == "pdynamic":
             normValue = matchedRA[0, :] #divide each comp-ref value by the corresponding ref value
 
         diffRA = ((matchedRA[1, :] - matchedRA[0, :]) / normValue) * 100.0
 
-    clippedStats = sigma_clipped_stats(diffRA, sigma=sigVal, iters=intersVal)
+    clippedStats = sigma_clipped_stats(diffRA, sigma=sigVal, maxiters=intersVal)
     pct_1sig = (float(np.shape(np.where(abs(diffRA) <= clippedStats[2]))[1]) / float(np.shape(diffRA)[0])) * 100.0
     pct_five = (float(np.shape(np.where(abs(diffRA) <= 5.0))[1]) / float(np.shape(diffRA)[0])) * 100.0
 
@@ -274,14 +275,14 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
         print("Sigma-clipped mean........................ ",clippedStats[0])
         print("Sigma-clipped median...................... ",clippedStats[1])
         print("Sigma-clipped standard deviation.......... ",clippedStats[2])
-        print("Sigma-clipped mean in units of SD......... ",clippedStats[0]/clippedStats[2])
+        print("Sigma-clipped mean in units of SD......... ",np.divide(clippedStats[0],clippedStats[2]))
         print()
         print()
         print("            Non-Clipped Statistics")
         print("Non-clipped mean.......................... ",np.mean(diffRA))
         print("Non-clipped median........................ ",np.median(diffRA))
         print("Non-clipped standard deviation............ ",np.std(diffRA))
-        print("Non-clipped mean in units of SD........... ",np.mean(diffRA)/np.std(diffRA))
+        print("Non-clipped mean in units of SD........... ",np.divide(np.mean(diffRA), np.std(diffRA)))
         print("Non-clipped minimum....................... ",np.min(diffRA))
         print("Non-clipped maximum....................... ",np.max(diffRA))
         print("% all diff values within 1 sigma of 0.0... ", pct_1sig)
@@ -322,7 +323,7 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
         ax1.set_ylabel("Number of matched sources")
 
         ax2 = ax1.twinx()
-        ax2.hist(diffRA, bins='auto', cumulative=-1, normed=True, histtype='step', color='r')
+        ax2.hist(diffRA, bins='auto', cumulative=-1, density=True, histtype='step', color='r')
         ax2.set_ylabel("Fraction of all matched sources",color='r')
         for tl in ax2.get_yticklabels():
             tl.set_color('r')
