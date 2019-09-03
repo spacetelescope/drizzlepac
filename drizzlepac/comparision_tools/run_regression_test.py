@@ -64,8 +64,8 @@ Classes and Functions
 ---------------------
 """
 import argparse
-import compare_images
-import compare_sourcelists
+from . import compare_images
+from . import compare_sourcelists
 import glob
 import pdb
 
@@ -134,14 +134,14 @@ if __name__ == "__main__":
         if ARGS.pathNames[ctr].endswith("/"):
             ARGS.pathNames[ctr]=ARGS.pathNames[ctr][:-1]
     padding=68
-    print "{}>{}<{}".format("=" * padding, " COMPARE SOURCELISTS ", "=" * padding)
+    print("{}>{}<{}".format("=" * padding, " COMPARE SOURCELISTS ", "=" * padding))
     overallStatus="OK"
     slList = find_matched_sourcelists(ARGS.pathNames[0], ARGS.pathNames[1])
     slCtr =1
 
     for slName in slList:
         name_seperator = "{}> {}/{}: {} <{}".format("-" * 56, slCtr, len(slList), slName, "-" * 56)
-        print name_seperator
+        print(name_seperator)
         slPair = [ARGS.pathNames[0] + "/logs/" + slName, ARGS.pathNames[1] + "/logs/" + slName]
         if slName.endswith("daophot.txt"): imgname=slName.replace("daophot.txt","drz.fits")
         if slName.endswith("sexphot.txt"): imgname = slName.replace("sexphot.txt", "drz.fits")
@@ -151,11 +151,11 @@ if __name__ == "__main__":
         if runStatus != "OK": overallStatus = "FAILURE"
         slCtr+=1
 
-    print "{}>{}<{}".format("=" * padding, " COMPARE  IMAGES ", "=" * padding)
+    print("{}>{}<{}".format("=" * padding, " COMPARE  IMAGES ", "=" * padding))
     runStatus =compare_images.run(ARGS.pathNames, ARGS.comparisonType, ARGS.drzOnly, ARGS.verbose)
     if runStatus != "OK": overallStatus = "FAILURE"
 
-    print
-    print
-    print
-    print "OVERALL REGRESSION TEST RESULT: ",overallStatus
+    print()
+    print()
+    print()
+    print("OVERALL REGRESSION TEST RESULT: ",overallStatus)
