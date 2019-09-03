@@ -116,7 +116,7 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale,
         if item.startswith("aperture_sum_") and not item.startswith("aperture_sum_err_"):
             aper_size_arcsec = phot_apertures[n_aper].r * platescale
             for name in name_list:
-                names.append("{}_{}".format(name, aper_size_arcsec))
+                names.append("{}_{:.2f}".format(name, aper_size_arcsec))
             n_aper += 1
 
     for aperCtr in range(0, n_aper):

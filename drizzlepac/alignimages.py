@@ -964,15 +964,17 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
                                           fit_rms_val,
                                           max_rms_val,
                                           num_xmatches))
-        # print fit params to screen
+        # print important fit params to screen
         if print_fit_parameters:
+            log_info_keys = ['status', 'fitgeom', 'eff_minobj', 'matrix', 'shift', 'center', 'rot', 'proper',
+                'rotxy', 'scale', 'skew', 'rmse', 'mae', 'nmatches', 'FIT_RMS', 'TOTAL_RMS', 'NUM_FITS', 
+                'RMS_RA', 'RMS_DEC', 'catalog']
             log.info("{} FIT PARAMETERS {}".format("~" * 35, "~" * 34))
             log.info("image: {}".format(image_name))
             log.info("chip: {}".format(item.meta['chip']))
             log.info("group_id: {}".format(item.meta['group_id']))
-            for tweakwcs_info_key in tweakwcs_info_keys:
-                if not tweakwcs_info_key.startswith("matched"):
-                    log.info("{} : {}".format(tweakwcs_info_key, item.meta['fit_info'][tweakwcs_info_key]))
+            for tweakwcs_info_key in log_info_keys:
+                log.info("{} : {}".format(tweakwcs_info_key, item.meta['fit_info'][tweakwcs_info_key]))
             log.info("~" * 84)
             log.info("nmatches_check: {} radial_offset_check: {}"
                      " large_rms_check: {},"
@@ -1302,7 +1304,6 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
             if item.meta['group_id'] == group_id and \
                group_id not in group_dict:
                 group_dict[group_id] = {'ref_idx': None, 'FIT_RMS': None}
-                log.info("fit_info: {}".format(item.meta['fit_info']))
                 tinfo = item.meta['fit_info']
                 ref_idx = tinfo['matched_ref_idx']
                 fitmask = tinfo['fitmask']

@@ -2,6 +2,7 @@
 segmentation-map based photometry.
 """
 import sys
+import pickle # FIX Remove
 
 import astropy.units as u
 from astropy.io import fits as fits
@@ -519,9 +520,15 @@ class HAPPointCatalog(HAPCatalogBase):
         photometry_tbl.add_column(ra_col, index=2)
         photometry_tbl.add_column(dec_col, index=3)
 
-        # Calculate and add concentration index (CI) column to table
-        ci_data = photometry_tbl["MAG_{}".format(aper_radius_arcsec[0])].data - photometry_tbl[
-            "MAG_{}".format(aper_radius_arcsec[1])].data
+        try:
+            # Calculate and add concentration index (CI) column to table
+            ci_data = photometry_tbl["MAG_{}".format(aper_radius_arcsec[0])].data - photometry_tbl[
+                "MAG_{}".format(aper_radius_arcsec[1])].data
+        except Exception:
+            pickle_out = open("catalog.pickle", "wb")
+            pickle.dump(photometry_tbl, pickle_out)
+            pickle_out.close()
+
         ci_mask = np.logical_and(np.abs(ci_data) > 0.0, np.abs(ci_data) < 1.0e-30)
         big_bad_index = np.where(abs(ci_data) > 1.0e20)
         ci_mask[big_bad_index] = True

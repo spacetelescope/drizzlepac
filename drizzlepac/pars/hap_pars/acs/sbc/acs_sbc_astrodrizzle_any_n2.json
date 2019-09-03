@@ -9,7 +9,7 @@
         "coeffs": true,
         "context": true,
         "group": "",
-        "build": false,
+        "build": true,
         "crbit": 4096,
         "stepsize": 10,
         "resetbits": "4096",
@@ -107,7 +107,7 @@
             "restore": false,
             "preserve": true,
             "overwrite": false,
-            "clean": false
+            "clean": true
         },
         "STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS": {
             "driz_sep_wcs": false,
@@ -132,7 +132,7 @@
         "coeffs": true,
         "context": true,
         "group": "",
-        "build": false,
+        "build": true,
         "crbit": 4096,
         "stepsize": 10,
         "resetbits": "4096",
@@ -230,7 +230,7 @@
             "restore": false,
             "preserve": true,
             "overwrite": false,
-            "clean": false
+            "clean": true
         },
         "STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS": {
             "driz_sep_wcs": false,

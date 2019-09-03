@@ -1044,7 +1044,7 @@ def readAltWCS(fobj, ext, wcskey=' ', verbose=False):
         hwcs = altwcs.pc2cd(hwcs, key=wcskey)
     return hwcs
 
-def make_mosaic_wcs(filenames, rot=0.0, scale=0.05):
+def make_mosaic_wcs(filenames, rot=None, scale=None):
     """Combine WCSs from all input files into a single meta-WCS
 
     Parameters
@@ -1053,10 +1053,10 @@ def make_mosaic_wcs(filenames, rot=0.0, scale=0.05):
         list of filenames to process
 
     rot : float
-        desired rotation of meta-WCS. Default value is 0.0.
+        desired rotation of meta-WCS. Default value is None.
 
     scale : float
-        desired scale of meta-WCS. Default value is 0.05.
+        desired scale of meta-WCS. Default value is None.
 
     Returns
     --------

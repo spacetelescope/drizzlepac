@@ -7,9 +7,14 @@ import sys
 import traceback
 import shutil
 
+from stsci.tools import logutil
+from astropy.io import fits
+
 from drizzlepac import wcs_functions
 from drizzlepac import alignimages
 from drizzlepac import astrodrizzle
+
+log = logutil.create_logger('product', level=logutil.logging.INFO, stream=sys.stdout)
 
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
@@ -28,11 +33,9 @@ class HAPProduct:
         # exposure_name is the ipppssoo or a portion thereof
         self.exposure_name = filename[0:8]
 
-        # TO DO: update this variable
-        self.mjdutc = None
-
-        # class variables to be set later
-        self.pars = None
+        # HAPConfig objects are created after these Product objects have been instantiated so
+        # this attribute is updated in the hapsequncer.py module (run_hla_processing()).
+        self.configobj_pars = None
 
     # def print_info(self):
         # """ Generic print at this time to indicate the information used in the
@@ -40,11 +43,6 @@ class HAPProduct:
         # """
         # print("Object information: {}".format(self.info))
 
-    def update_config(self, param_dict):
-        """ Method reserved for potential update of configuration information
-            for the particular data product in question.
-        """
-        pass
 
 class TotalProduct(HAPProduct):
     """ A Total Detection Product is a 'white' light mosaic comprised of
@@ -64,7 +62,6 @@ class TotalProduct(HAPProduct):
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
-        self.ref_drizzle_filename = self.product_basename + "_ref_" + self.filetype + ".fits"
 
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to create it as an attribute of a TotalProduct as it is independent of
@@ -88,51 +85,47 @@ class TotalProduct(HAPProduct):
         """
         self.fdp_list.append(fdp)
 
-    def build_metawcs(self):
-        """ A reserved method to build a unique WCS for each TotalProduct product which is
-            generated based upon the merging of all the ExposureProductss which comprise the
-            specific TotalProduct.
+    def generate_metawcs(self):
+        """ A method to build a unique WCS for each TotalProduct product which is
+            generated based upon the merging of all the ExposureProducts which comprise the
+            specific TotalProduct.  This is done on a per TotalProduct basis as the Single
+            Visit Mosaics need to be represented in their native scale.
 
-        image_list = [element.full_filename for element in edp_list]
-        meta_wcs = wcs_functions.make_mosaic_wcs(image_list)
-        outnx = meta_wcs.pixel_shape[1]
-        outny = meta_wcs.pixel_shape[0]
         """
-        pass
+        exposure_filenames = [element.full_filename for element in self.edp_list]
+        log.info("\n\nRun make_mosaic_wcs to create a common WCS.")
+        log.info("The following images will be used: ")
+        log.info("{}\n".format(exposure_filenames))
 
-    def wcs_drizzle_product(self, meta_wcs, configobj):
+        # Set the rotation to 0.0 to force North as up
+        if exposure_filenames:
+            meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames, rot=0.0)
+
+        # Store this for potential use.  The wcs_drizzle_product methods use the
+        # WCS passed in as a parameter which provides flexibility which may not
+        # be needed.  MONITOR for possible clean up.
+        self.meta_wcs = meta_wcs
+
+        return meta_wcs
+
+    def wcs_drizzle_product(self, meta_wcs):
         """
-        Create the drizzle-combined total image using the meta_wcs as the reference output
+            Create the drizzle-combined total image using the meta_wcs as the reference output
         """
+        # Retrieve the configuration parameters for astrodrizzle
+        drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
+        drizzle_pars["final_refimage"] = meta_wcs
+        drizzle_pars["runfile"] = self.trl_filename
+
         edp_filenames = [element.full_filename for element in self.edp_list]
         astrodrizzle.AstroDrizzle(input=edp_filenames,
                                   output=self.drizzle_filename,
-                                  final_refimage=meta_wcs,
-                                  final_outnx=meta_wcs.pixel_shape[1],
-                                  final_outny=meta_wcs.pixel_shape[0],
-                                  runfile=self.trl_filename,
-                                  configobj=configobj)
+                                  **drizzle_pars)
 
         # Rename Astrodrizzle log file as a trailer file
+        log.info("Total combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         shutil.move(self.trl_filename, self.trl_filename.replace('.log', '.txt'))
 
-    def image_drizzle_product(self, ref_image, total_shape, configobj):
-        """
-        Create the drizzle-combined total image using the reference image as the reference output
-        """
-        edp_filenames = [element.full_filename for element in self.edp_list]
-        astrodrizzle.AstroDrizzle(input=edp_filenames,
-                                  output=self.drizzle_filename,
-                                  final_refimage=ref_image,
-                                  final_outnx=total_shape[1],
-                                  final_outny=total_shape[0],
-                                  runfile=self.trl_filename,
-                                  configobj=configobj)
-
-        # Rename Astrodrizzle log file as a trailer file
-        shutil.move(self.trl_filename, self.trl_filename.replace('.log', '.txt'))
-
-        # log.info("Total combined image consists of ... {} {}".format(self.drizzle_filename, edp_filenames))
 
 
 class FilterProduct(HAPProduct):
@@ -186,12 +179,11 @@ class FilterProduct(HAPProduct):
                                                         headerlet_filenames=headerlet_filenames)
 
         except Exception:
-            # TODO: Fix up the logging
             # Report a problem with the alignment
-            # log.info("EXCEPTION encountered in alignimages.\n")
+            log.info("EXCEPTION encountered in align_to_gaia for the FilteredProduct.\n")
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-            # log.info("No correction to absolute astrometric frame applied.\n")
+            log.info("No correction to absolute astrometric frame applied.\n")
             align_table = None
 
         # Return a table which contains data regarding the alignment, as well as the
@@ -200,39 +192,25 @@ class FilterProduct(HAPProduct):
         # excluded from alignment.
         return align_table, exposure_filenames
 
-    def wcs_drizzle_product(self, meta_wcs, configobj):
+    def wcs_drizzle_product(self, meta_wcs):
         """
-        Create the drizzle-combined filter image using the meta_wcs as the reference output
+            Create the drizzle-combined filter image using the meta_wcs as the reference output
         """
+
+        # Retrieve the configuration parameters for astrodrizzle
+        drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
+        drizzle_pars["final_refimage"] = meta_wcs
+        drizzle_pars["runfile"] = self.trl_filename
+
         edp_filenames = [element.full_filename for element in self.edp_list]
         astrodrizzle.AstroDrizzle(input=edp_filenames,
                                   output=self.drizzle_filename,
-                                  final_refimage=meta_wcs,
-                                  final_outnx=meta_wcs.pixel_shape[1],
-                                  final_outny=meta_wcs.pixel_shape[0],
-                                  runfile=self.trl_filename,
-                                  configobj=configobj)
+                                  **drizzle_pars)
 
         # Rename Astrodrizzle log file as a trailer file
+        log.info("Filter combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         shutil.move(self.trl_filename, self.trl_filename.replace('.log', '.txt'))
 
-    def image_drizzle_product(self, ref_image, total_shape, configobj):
-        """
-        Create the drizzle-combined filter image using the reference image as the reference output
-        """
-        edp_filenames = [element.full_filename for element in self.edp_list]
-        astrodrizzle.AstroDrizzle(input=edp_filenames,
-                                  output=self.drizzle_filename,
-                                  final_refimage=ref_image,
-                                  final_outnx=total_shape[1],
-                                  final_outny=total_shape[0],
-                                  runfile=self.trl_filename,
-                                  configobj=configobj)
-
-        # Rename Astrodrizzle log file as a trailer file
-        shutil.move(self.trl_filename, self.trl_filename.replace('.log', '.txt'))
-
-        # log.info("Filter combined image... {} {}".format(self.drizzle_filename, edp_filenames))
 
 class ExposureProduct(HAPProduct):
     """ An Exposure Product is an individual exposure/image (flt/flc).
@@ -246,8 +224,11 @@ class ExposureProduct(HAPProduct):
         self.full_filename = filename
         self.filters = filters
 
-        # TO DO: update this variable
-        # self.exptime = exptime
+        # Open the input FITS file to mine some header information.
+        hdu_list = fits.open(filename)
+        self.mjdutc = hdu_list[0].header['EXPSTART']
+        self.exptime = hdu_list[0].header['EXPTIME']
+        hdu_list.close()
 
         self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
@@ -256,35 +237,20 @@ class ExposureProduct(HAPProduct):
 
         self.regions_dict = {}
 
-    def wcs_drizzle_product(self, meta_wcs, configobj):
+    def wcs_drizzle_product(self, meta_wcs):
         """
             Create the drizzle-combined exposure image using the meta_wcs as the reference output
         """
-        # AstroDrizzle will soon take a meta_wcs object which contains outnx, outny
+
+        # Retrieve the configuration parameters for astrodrizzle
+        drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
+        drizzle_pars["final_refimage"] = meta_wcs
+        drizzle_pars["runfile"] = self.trl_filename
+
         astrodrizzle.AstroDrizzle(input=self.full_filename,
                                   output=self.drizzle_filename,
-                                  final_refimage=meta_wcs,
-                                  final_outnx=meta_wcs.pixel_shape[1],
-                                  final_outny=meta_wcs.pixel_shape[0],
-                                  runfile=self.trl_filename,
-                                  configobj=configobj)
+                                  **drizzle_pars)
 
         # Rename Astrodrizzle log file as a trailer file
+        log.info("Exposure image {}".format(self.drizzle_filename))
         shutil.move(self.trl_filename, self.trl_filename.replace('.log', '.txt'))
-
-    def image_drizzle_product(self, ref_image, total_shape, configobj):
-        """
-            Create the drizzle-combined exposure image using the reference image as the reference output
-        """
-        astrodrizzle.AstroDrizzle(input=self.full_filename,
-                                  output=self.drizzle_filename,
-                                  final_refimage=ref_image,
-                                  final_outnx=total_shape[1],
-                                  final_outny=total_shape[0],
-                                  runfile=self.trl_filename,
-                                  configobj=configobj)
-
-        # Rename Astrodrizzle log file as a trailer file
-        shutil.move(self.trl_filename, self.trl_filename.replace('.log', '.txt'))
-
-        # log.info("Filter combined image... {} {}".format(self.drizzle_filename, self.full_filename))
