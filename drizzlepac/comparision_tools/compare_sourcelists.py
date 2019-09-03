@@ -91,7 +91,7 @@ from astropy.table import Table
 import matplotlib.pyplot as plt
 import numpy as np
 import pdb
-import starmatch_hist
+from . import starmatch_hist
 import sys,os
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
@@ -108,7 +108,7 @@ def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
     :type verbose: Boolean
     :return: Regression test status: Either "OK" or "FAILURE".
     """
-    print ">>>>>> Comparision - reference sourcelist %s differences <<<<<<" % (plot_title)
+    print(">>>>>> Comparision - reference sourcelist %s differences <<<<<<" % (plot_title))
     #set up arrays to count stuff up
     bit_list = [0, 1, 2, 4, 8, 16, 32, 64, 128]
     refFlagBreakdown=np.zeros(9,dtype=int)
@@ -140,28 +140,28 @@ def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
     if ((verbose == True) or (regTestStatus == "FAILURE")):
         #Generate result tables
         n = np.sum(refFlagBreakdown, dtype=float)
-        print "        Statistical Breakdown of Reference List Flagging Differences"
-        print "  Flagging differences by number         Flagging differences by percentage"
-        print "--------------------------------------------------------------------------------"
-        print "%5s%9s%12s%10s%5s%5s %9s %12s %10s" % ("FLAG", "# TOTAL", "# UNCHANGED", "# ON->OFF","  |  ","FLAG", "% TOTAL", "% UNCHANGED", "% ON->OFF")
+        print("        Statistical Breakdown of Reference List Flagging Differences")
+        print("  Flagging differences by number         Flagging differences by percentage")
+        print("--------------------------------------------------------------------------------")
+        print("%5s%9s%12s%10s%5s%5s %9s %12s %10s" % ("FLAG", "# TOTAL", "# UNCHANGED", "# ON->OFF","  |  ","FLAG", "% TOTAL", "% UNCHANGED", "% ON->OFF"))
         for ctr in range(0, len(bit_list)):
-            print "%5d%9d%12d%10d%5s%5d  %8.4f %12.4f %10.4f" % (bit_list[ctr], refFlagBreakdown[ctr], unchangedFlagBreakdown[ctr],on_off_FlagFlips[ctr],"  |  ",bit_list[ctr],(float(refFlagBreakdown[ctr]) / n) * 100.0,(float(unchangedFlagBreakdown[ctr]) / n) * 100.0,(float(on_off_FlagFlips[ctr]) / n) * 100.0)
-        print "%5s%9d%12d%10d%5s%5s  %8.4f %12.4f %10.4f"%("TOTAL",np.sum(refFlagBreakdown), np.sum(unchangedFlagBreakdown),np.sum(on_off_FlagFlips),"  |  ","TOTAL",(float(np.sum(refFlagBreakdown)) / n) * 100.0,(float(np.sum(unchangedFlagBreakdown)) / n) * 100.0,(float(np.sum(on_off_FlagFlips)) / n) * 100.0)
-        print
+            print("%5d%9d%12d%10d%5s%5d  %8.4f %12.4f %10.4f" % (bit_list[ctr], refFlagBreakdown[ctr], unchangedFlagBreakdown[ctr],on_off_FlagFlips[ctr],"  |  ",bit_list[ctr],(float(refFlagBreakdown[ctr]) / n) * 100.0,(float(unchangedFlagBreakdown[ctr]) / n) * 100.0,(float(on_off_FlagFlips[ctr]) / n) * 100.0))
+        print("%5s%9d%12d%10d%5s%5s  %8.4f %12.4f %10.4f"%("TOTAL",np.sum(refFlagBreakdown), np.sum(unchangedFlagBreakdown),np.sum(on_off_FlagFlips),"  |  ","TOTAL",(float(np.sum(refFlagBreakdown)) / n) * 100.0,(float(np.sum(unchangedFlagBreakdown)) / n) * 100.0,(float(np.sum(on_off_FlagFlips)) / n) * 100.0))
+        print()
         n = np.sum(compFlagBreakdown,dtype=float)
-        print "        Statistical Breakdown of Comparison List Flagging Differences"
-        print "  Flagging differences by number         Flagging differences by percentage"
-        print "--------------------------------------------------------------------------------"
-        print "%5s%9s%12s%10s%5s%5s %9s %12s %10s" % ("FLAG", "# TOTAL", "# UNCHANGED", "# OFF->ON", "  |  ", "FLAG", "% TOTAL", "% UNCHANGED", "% OFF->ON")
+        print("        Statistical Breakdown of Comparison List Flagging Differences")
+        print("  Flagging differences by number         Flagging differences by percentage")
+        print("--------------------------------------------------------------------------------")
+        print("%5s%9s%12s%10s%5s%5s %9s %12s %10s" % ("FLAG", "# TOTAL", "# UNCHANGED", "# OFF->ON", "  |  ", "FLAG", "% TOTAL", "% UNCHANGED", "% OFF->ON"))
         for ctr in range(0, len(bit_list)):
-            print "%5d%9d%12d%10d%5s%5d  %8.4f %12.4f %10.4f" % (
-            bit_list[ctr], compFlagBreakdown[ctr], unchangedFlagBreakdown[ctr], off_on_FlagFlips[ctr], "  |  ",bit_list[ctr], (float(compFlagBreakdown[ctr]) / n) * 100.0, (float(unchangedFlagBreakdown[ctr]) / n) * 100.0,(float(off_on_FlagFlips[ctr]) / n) * 100.0)
-        print "%5s%9d%12d%10d%5s%5s  %8.4f %12.4f %10.4f" % ("TOTAL", np.sum(compFlagBreakdown), np.sum(unchangedFlagBreakdown), np.sum(off_on_FlagFlips), "  |  ","TOTAL", (float(np.sum(compFlagBreakdown)) / n) * 100.0, (float(np.sum(unchangedFlagBreakdown)) / n) * 100.0,(float(np.sum(off_on_FlagFlips)) / n) * 100.0)
-        print
-        print "Total flag bit differences......... ",np.sum([off_on_FlagFlips,on_off_FlagFlips])
-        print "Percentage change of all ref bits.. ",pct_diff_refbits,"%"
+            print("%5d%9d%12d%10d%5s%5d  %8.4f %12.4f %10.4f" % (
+            bit_list[ctr], compFlagBreakdown[ctr], unchangedFlagBreakdown[ctr], off_on_FlagFlips[ctr], "  |  ",bit_list[ctr], (float(compFlagBreakdown[ctr]) / n) * 100.0, (float(unchangedFlagBreakdown[ctr]) / n) * 100.0,(float(off_on_FlagFlips[ctr]) / n) * 100.0))
+        print("%5s%9d%12d%10d%5s%5s  %8.4f %12.4f %10.4f" % ("TOTAL", np.sum(compFlagBreakdown), np.sum(unchangedFlagBreakdown), np.sum(off_on_FlagFlips), "  |  ","TOTAL", (float(np.sum(compFlagBreakdown)) / n) * 100.0, (float(np.sum(unchangedFlagBreakdown)) / n) * 100.0,(float(np.sum(off_on_FlagFlips)) / n) * 100.0))
+        print()
+        print("Total flag bit differences......... ",np.sum([off_on_FlagFlips,on_off_FlagFlips]))
+        print("Percentage change of all ref bits.. ",pct_diff_refbits,"%")
 
-    print "Regression test status............. ",regTestStatus
+    print("Regression test status............. ",regTestStatus)
 
 
 
@@ -187,7 +187,7 @@ def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
             plotFileName = fullPlotTitle.replace(" ","_")+".pdf"
             plt.savefig(plotFileName)
             plt.close()
-            print "{} plot saved to file {}.".format(fullPlotTitle, plotFileName)
+            print("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
 
         #plot flag changes brokeken down by bit
         p_unchanged=plt.bar(idx,unchangedFlagBreakdown)
@@ -206,7 +206,7 @@ def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
             plotFileName = fullPlotTitle.replace(" ","_")+".pdf"
             plt.savefig(plotFileName)
             plt.close()
-            print "{} plot saved to file {}.".format(fullPlotTitle, plotFileName)
+            print("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
 
     regTestStatus = "%s %11.7f"%(regTestStatus,pct_diff_refbits)
     return (regTestStatus)
@@ -227,16 +227,16 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
     :type verbose: Boolean
     :return: Regression test status: Either "OK" or "FAILURE".
     """
-    print ">>>>>> Comparision - reference sourcelist %s differences <<<<<<" % (plot_title)
+    print(">>>>>> Comparision - reference sourcelist %s differences <<<<<<" % (plot_title))
     #remove any "inf" or "nan" values in matchedRA.
     nanIdx = np.where(np.isnan(matchedRA) == True)[1]
     if len(nanIdx) >0:
-        if verbose: print "{} np.nan values will be removed from input list. New input list contains {} values.".format(len(nanIdx),len(matchedRA[0,:]) - len(nanIdx))
+        if verbose: print("{} np.nan values will be removed from input list. New input list contains {} values.".format(len(nanIdx),len(matchedRA[0,:]) - len(nanIdx)))
         matchedRA = np.delete(matchedRA, nanIdx, axis=1)
 
     infIdx = np.where(np.isinf(matchedRA) == True)[1]
     if len(infIdx) >0:
-        if verbose: print "{} np.inf values will be removed from input list. New input list contains {} values.".format(len(infIdx),len(matchedRA[0,:]) - len(infIdx))
+        if verbose: print("{} np.inf values will be removed from input list. New input list contains {} values.".format(len(infIdx),len(matchedRA[0,:]) - len(infIdx)))
         matchedRA = np.delete(matchedRA, infIdx, axis=1)
 
     # 'sigma' and 'iters' input values used for various np.sigma_clipped_stats() runs
@@ -249,7 +249,7 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
     else:
         if diffMode == "pmean":
             normValue = np.abs(sigma_clipped_stats(matchedRA[0, :], sigma=sigVal, iters=intersVal)[0]) #divide all comp-ref values by a single sigma-clipped mean ref value
-            if verbose: print "normValue: ", normValue
+            if verbose: print("normValue: ", normValue)
         if diffMode == "pdynamic":
             normValue = matchedRA[0, :] #divide each comp-ref value by the corresponding ref value
 
@@ -270,23 +270,23 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
         else:
             regTestStatus = "FAILURE "
     if ((verbose == True) or (regTestStatus == "FAILURE ")):
-        print "       Sigma-clipped Statistics; Sigma = {}, # steps = {}".format(sigVal,intersVal)
-        print "Sigma-clipped mean........................ ",clippedStats[0]
-        print "Sigma-clipped median...................... ",clippedStats[1]
-        print "Sigma-clipped standard deviation.......... ",clippedStats[2]
-        print "Sigma-clipped mean in units of SD......... ",clippedStats[0]/clippedStats[2]
-        print
-        print
-        print "            Non-Clipped Statistics"
-        print "Non-clipped mean.......................... ",np.mean(diffRA)
-        print "Non-clipped median........................ ",np.median(diffRA)
-        print "Non-clipped standard deviation............ ",np.std(diffRA)
-        print "Non-clipped mean in units of SD........... ",np.mean(diffRA)/np.std(diffRA)
-        print "Non-clipped minimum....................... ",np.min(diffRA)
-        print "Non-clipped maximum....................... ",np.max(diffRA)
-        print "% all diff values within 1 sigma of 0.0... ", pct_1sig
-        print "% all diff values within 5% of 0.0........ ",pct_five
-    print "Regression test status.................... ",regTestStatus
+        print("       Sigma-clipped Statistics; Sigma = {}, # steps = {}".format(sigVal,intersVal))
+        print("Sigma-clipped mean........................ ",clippedStats[0])
+        print("Sigma-clipped median...................... ",clippedStats[1])
+        print("Sigma-clipped standard deviation.......... ",clippedStats[2])
+        print("Sigma-clipped mean in units of SD......... ",clippedStats[0]/clippedStats[2])
+        print()
+        print()
+        print("            Non-Clipped Statistics")
+        print("Non-clipped mean.......................... ",np.mean(diffRA))
+        print("Non-clipped median........................ ",np.median(diffRA))
+        print("Non-clipped standard deviation............ ",np.std(diffRA))
+        print("Non-clipped mean in units of SD........... ",np.mean(diffRA)/np.std(diffRA))
+        print("Non-clipped minimum....................... ",np.min(diffRA))
+        print("Non-clipped maximum....................... ",np.max(diffRA))
+        print("% all diff values within 1 sigma of 0.0... ", pct_1sig)
+        print("% all diff values within 5% of 0.0........ ",pct_five)
+    print("Regression test status.................... ",regTestStatus)
 
     if plotGen != "none":
         # plt.hist(diffRA,bins='auto')
@@ -303,10 +303,10 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
         plotCutoff=(10.0*np.abs(clippedStats[2]))+np.abs(clippedStats[0])
         if plotCutoff != 0.0:
             origSize=len(diffRA)
-            print "Plot cutoff: ",plotCutoff
+            print("Plot cutoff: ",plotCutoff)
             goodIdx=np.where(np.abs(diffRA)<=plotCutoff)
             diffRA=diffRA[goodIdx]
-            print "%d values (%7.4f percent) clipped from plot."%(origSize-len(diffRA),(float(origSize-len(diffRA))/float(origSize))*100.0)
+            print("%d values (%7.4f percent) clipped from plot."%(origSize-len(diffRA),(float(origSize-len(diffRA))/float(origSize))*100.0))
         fig = plt.figure()
         ax1 = fig.add_subplot(111)
         fullPlotTitle = "Comparision - reference sourcelist %s differences" % (plot_title)
@@ -332,8 +332,8 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
             plotFileName = plot_title.replace(" ","_")+".pdf"
             plt.savefig(plotFileName)
             plt.close()
-            print "{} plot saved to file {}.".format(fullPlotTitle, plotFileName)
-    print
+            print("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
+    print()
     return(regTestStatus+out_stats)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
 def deconstruct_flag(flagval):
@@ -378,7 +378,7 @@ def extractMatchedLines(col2get,refData,compData,refLines,compLines):
     :return: A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The corresponding matched comparision values
     """
     return_ra=[]
-    if col2get in refData.keys() and col2get in compData.keys():
+    if col2get in list(refData.keys()) and col2get in list(compData.keys()):
         matching_refData = refData[col2get][refLines].data
         matching_compData = compData[col2get][compLines].data
         return_ra=np.stack((matching_refData,matching_compData))
@@ -411,19 +411,19 @@ def getMatchedLists(slNames,imgNames,slLengths):
         yref = fh[0].header['crpix2']
         fh.close()
     except:
-        print "WARNING: Unable to fetch values for xref and yref from fits file headers. Using xref = 0.0 and yref = 0.0."
+        print("WARNING: Unable to fetch values for xref and yref from fits file headers. Using xref = 0.0 and yref = 0.0.")
         xref=0.0
         yref=0.0
-    print "source_list_dict: ",source_list_dict
+    print("source_list_dict: ",source_list_dict)
     out_dict = starmatch_hist.run(source_list_dict, xref=xref, yref=yref)
     matching_lines_ref = out_dict[slNames[0]]
     matching_lines_img = out_dict[slNames[1]]
 
     if equal_flag: slLengths[0] -=1
     #Report number and percentage of the total number of detected ref and comp sources that were matched
-    print "Sourcelist Matching Results"
-    print "Reference sourcelist:  {} of {} total sources matched ({} %)".format(len(matching_lines_ref),slLengths[0],100.0*(float(len(matching_lines_ref))/float(slLengths[0])))
-    print "Comparison sourcelist: {} of {} total sources matched ({} %)".format(len(matching_lines_img),slLengths[1],100.0*(float(len(matching_lines_img))/float(slLengths[1])))
+    print("Sourcelist Matching Results")
+    print("Reference sourcelist:  {} of {} total sources matched ({} %)".format(len(matching_lines_ref),slLengths[0],100.0*(float(len(matching_lines_ref))/float(slLengths[0]))))
+    print("Comparison sourcelist: {} of {} total sources matched ({} %)".format(len(matching_lines_img),slLengths[1],100.0*(float(len(matching_lines_img))/float(slLengths[1]))))
 
     return(matching_lines_ref,matching_lines_img)
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
@@ -447,7 +447,7 @@ def makeVectorPlot(x,y,plotDest,binThresh = 10000,binSize=250):
     dy = y[1, :] - y[0, :]
     if len(dx)>binThresh:# if the input list is larger than binThresh, a binned vector plot will be generated.
         binStatus = "%d x %d Binning"%(binSize,binSize)
-        print "Input list length greater than threshold length value. Generating binned vector plot using %d pixel x %d pixel bins"%(binSize,binSize)
+        print("Input list length greater than threshold length value. Generating binned vector plot using %d pixel x %d pixel bins"%(binSize,binSize))
         if min(x[0,:])<0.0: xmin=min(x[0,:])
         else: xmin = 0.0
         if min(y[0,:])<0.0: ymin=min(y[0,:])
@@ -483,7 +483,7 @@ def makeVectorPlot(x,y,plotDest,binThresh = 10000,binSize=250):
         lowSampleWarning = ""
         if "r" in color_ra: lowSampleWarning = "; Red Vectors were computed with less than 10 values"
     else:
-        print "Generating unbinned vector plot"
+        print("Generating unbinned vector plot")
         binStatus = "Unbinned"
         lowSampleWarning = ""
         color_ra=["k"]
@@ -506,7 +506,7 @@ def makeVectorPlot(x,y,plotDest,binThresh = 10000,binSize=250):
     if plotDest == "file":
         plt.savefig("xy_vector_plot.pdf")
         plt.close()
-        print "Vector plot saved to file xy_vector_plot.pdf"
+        print("Vector plot saved to file xy_vector_plot.pdf")
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def round2ArbatraryBase(value,direction,roundingBase):
     """
@@ -548,12 +548,12 @@ def run(slNames,imgNames,plotGen,diffMode,verbose):
     colTitles=[]
     # 1: Read in sourcelists fiels into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
     refData,compData=slFiles2dataTables(slNames)
-    print "Valid reference data columns:   ",refData.keys()
-    print "Valid comparision data columns: ",compData.keys()
-    print
-    print "Data columns to be compared:"
-    for listItem in sorted(list(set(refData.keys()).intersection(set(compData.keys())))): print listItem
-    print
+    print("Valid reference data columns:   ",list(refData.keys()))
+    print("Valid comparision data columns: ",list(compData.keys()))
+    print()
+    print("Data columns to be compared:")
+    for listItem in sorted(list(set(refData.keys()).intersection(set(compData.keys())))): print(listItem)
+    print()
     # 2: Run starmatch_hist to get list of matched sources common to both input sourcelists
     slLengths=[len(refData['X']),len(compData['X'])]
     matching_lines_ref, matching_lines_img=getMatchedLists(slNames,imgNames,slLengths)
@@ -658,17 +658,17 @@ def run(slNames,imgNames,plotGen,diffMode,verbose):
         regressionTestResults["Source Flagging"]=rt_status
         colTitles.append("Source Flagging")
     overallStatus="OK"
-    print "\n"*2
-    print ">---> REGRESSION TESTING SUMMARY <---<"
-    print "                                                                                 % within     % within"
-    print "COLUMN                             STATUS   MEAN        MEDIAN       STD DEV     5% of 0.     1 SD of 0."
+    print("\n"*2)
+    print(">---> REGRESSION TESTING SUMMARY <---<")
+    print("                                                                                 % within     % within")
+    print("COLUMN                             STATUS   MEAN        MEDIAN       STD DEV     5% of 0.     1 SD of 0.")
     lenList=[]
     for item in colTitles:
         lenList.append(len(item))
     totalPaddedSize=max(lenList)+3
 
     for colTitle in colTitles:
-        print "%s%s%s"%(colTitle,"."*(totalPaddedSize-len(colTitle)),regressionTestResults[colTitle])
+        print("%s%s%s"%(colTitle,"."*(totalPaddedSize-len(colTitle)),regressionTestResults[colTitle]))
         if not regressionTestResults[colTitle].startswith("OK"):overallStatus="FAILURE"
     return(overallStatus)
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
@@ -723,36 +723,36 @@ def slFiles2dataTables(slNames):
     titleSwapDict_daorep = {"X": "X", "Y": "Y", "RA": "n/a", "DEC": "n/a", "FLUX1": "flux_0", "FLUX2": "flux_1","MAGNITUDE1": "mag_0", "MAGNITUDE2": "mag_1", "FLAGS": "n/a", "ID": "n/a"}
     ctr=1
     for dataTable in [refData_in,compData_in]:
-        if "X-Center" in dataTable.keys():
-            if (("MagAp(0.05)" in dataTable.keys()) and ("MagAp(0.15)" in dataTable.keys())): #ACS/WFC, WFC3/UVIS
-                print "titleSwapDict_dao1"
+        if "X-Center" in list(dataTable.keys()):
+            if (("MagAp(0.05)" in list(dataTable.keys())) and ("MagAp(0.15)" in list(dataTable.keys()))): #ACS/WFC, WFC3/UVIS
+                print("titleSwapDict_dao1")
                 titleSwapDict = titleSwapDict_dao1
-            elif (("MagAp(0.15)" in dataTable.keys()) and ("MagAp(0.45)" in dataTable.keys())): #WFC3/IR
-                print "titleSwapDict_dao2"
+            elif (("MagAp(0.15)" in list(dataTable.keys())) and ("MagAp(0.45)" in list(dataTable.keys()))): #WFC3/IR
+                print("titleSwapDict_dao2")
                 titleSwapDict = titleSwapDict_dao2
-            elif (("MagAp(0.03)" in dataTable.keys()) and ("MagAp(0.125)" in dataTable.keys())): #ACS/HRC
-                print "titleSwapDict_dao3"
+            elif (("MagAp(0.03)" in list(dataTable.keys())) and ("MagAp(0.125)" in list(dataTable.keys()))): #ACS/HRC
+                print("titleSwapDict_dao3")
                 titleSwapDict = titleSwapDict_dao3
             else:
                 sys.exit("ERROR: Unrecognized format. Exiting...")
-        elif ("XCENTER" in dataTable.keys() and "FLUX1" in dataTable.keys()):
-            print "titleSwapDict_daoTemp"
+        elif ("XCENTER" in list(dataTable.keys()) and "FLUX1" in list(dataTable.keys())):
+            print("titleSwapDict_daoTemp")
             titleSwapDict = titleSwapDict_daoTemp
-        elif "X_IMAGE" in dataTable.keys():
-            print "titleSwapDict_sourceX"
+        elif "X_IMAGE" in list(dataTable.keys()):
+            print("titleSwapDict_sourceX")
             titleSwapDict = titleSwapDict_sourceX
-        elif "col1" in dataTable.keys():
-            print "titleSwapDict_cooNew"
+        elif "col1" in list(dataTable.keys()):
+            print("titleSwapDict_cooNew")
             titleSwapDict = titleSwapDict_cooNew
-        elif "XCENTER" in dataTable.keys():
-            print "titleSwapDict_cooOld2"
+        elif "XCENTER" in list(dataTable.keys()):
+            print("titleSwapDict_cooOld2")
             titleSwapDict = titleSwapDict_cooOld2
-        elif "X" in dataTable.keys():
-            print "titleSwapDict_daorep"
+        elif "X" in list(dataTable.keys()):
+            print("titleSwapDict_daorep")
             titleSwapDict = titleSwapDict_daorep
         else: sys.exit("ERROR: Unrecognized format. Exiting...")
         outTable=Table()
-        for swapKey in titleSwapDict.keys():
+        for swapKey in list(titleSwapDict.keys()):
             if titleSwapDict[swapKey] != "n/a":
                 col2add=Table.Column(name=swapKey,data=dataTable[titleSwapDict[swapKey]])
                 outTable.add_column(col2add)
@@ -774,7 +774,7 @@ if __name__ == "__main__":
     PARSER.add_argument('-v', '--verbose', required=False, choices=["True", "False"], default="True",
                         help='Display verbose output? Default value is "True".')
     ARGS = PARSER.parse_args()
-    print ARGS
+    print(ARGS)
 
     if ARGS.verbose == "True":
         ARGS.verbose = True
