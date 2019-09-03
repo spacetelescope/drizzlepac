@@ -141,7 +141,6 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
                         for exposure in tot_obj.edp_list:
                             if rootname in exposure.full_filename:
                                 name_col.append(exposure.drizzle_filename)
-                                log.info("UTILS. FOUND IT. exposure.drizzle_filename: {}".format(exposure.drizzle_filename))
                                 foundit = True
                                 break
 
