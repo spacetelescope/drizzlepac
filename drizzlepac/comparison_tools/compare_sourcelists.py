@@ -94,6 +94,11 @@ import pdb
 # from . import starmatch_hist
 import starmatch_hist
 import sys,os
+
+from drizzlepac import util
+from stsci.tools import fileutil, logutil
+
+log =logutil.create_logger('compare_sourcelists', level=logutil.logging.INFO, stream=sys.stdout)
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
     """
@@ -109,7 +114,7 @@ def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
     :type verbose: Boolean
     :return: Regression test status: Either "OK" or "FAILURE".
     """
-    print(">>>>>> Comparision - reference sourcelist %s differences <<<<<<" % (plot_title))
+    log.info(">>>>>> Comparision - reference sourcelist {} differences <<<<<<".format(plot_title))
     #set up arrays to count stuff up
     bit_list = [0, 1, 2, 4, 8, 16, 32, 64, 128]
     refFlagBreakdown=np.zeros(9,dtype=int)
@@ -529,7 +534,8 @@ def round2ArbatraryBase(value,direction,roundingBase):
         rv=int(roundingBase * round(float(value)/roundingBase)) #round up or down to nearest base
     return rv
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
-def run(slNames,imgNames,plotGen,diffMode,verbose):
+@util.with_logging
+def comparesourcelists(slNames,imgNames,plotGen,diffMode,verbose):
     """
     Main calling subroutine to compare sourcelists.
 
@@ -786,4 +792,4 @@ if __name__ == "__main__":
         ARGS.verbose = True
     else: ARGS.verbose = False
 
-    runStatus=run(ARGS.sourcelistNames,ARGS.imageNames,ARGS.plotGen,ARGS.diffMode,ARGS.verbose)
+    runStatus=comparesourcelists(ARGS.sourcelistNames,ARGS.imageNames,ARGS.plotGen,ARGS.diffMode,ARGS.verbose)

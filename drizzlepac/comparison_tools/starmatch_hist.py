@@ -28,8 +28,13 @@ from scipy.ndimage.morphology import generate_binary_structure
 import astropy.io.fits as pyfits
 from astropy.table import Table
 
-msgunit = sys.stdout
+from drizzlepac import util
+from stsci.tools import fileutil, logutil
 
+log =logutil.create_logger('starmatch_hist', level=logutil.logging.INFO, stream=sys.stdout)
+
+msgunit = sys.stdout
+@util.with_logging
 def run(source_list_dict, minimum_match=10, xref=0.0, yref=0.0, postarg=None):
     """
     Match source lists in x,y coordinates allowing for possible shift & rotation
