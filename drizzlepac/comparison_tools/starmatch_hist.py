@@ -79,14 +79,18 @@ def read_cat_file(catfile):
     :type catfile: string
     :returns: Catalog file information (reshaped if need be)
     """
-    try:
-        daoData = Table.read(catfile, format='ascii.daophot') #now will read in and process daophot data
-        data = numpy.stack((daoData["XCENTER"].data, daoData["YCENTER"].data), axis=-1)
-    except:
+    if catfile.endswith(".ecsv"):
+        ecsvData = Table.read(catfile, format='ascii.ecsv') #now will read in and process HAP catalog data
+        data = numpy.stack((ecsvData["X-Center"].data, ecsvData["Y-Center"].data), axis=-1)
+    else:
         try:
-            data = numpy.loadtxt(catfile, comments='#', skiprows=0,usecols=(0,1)) #orig. loadtxt call for .coo files
+            daoData = Table.read(catfile, format='ascii.daophot') #now will read in and process daophot data
+            data = numpy.stack((daoData["XCENTER"].data, daoData["YCENTER"].data), axis=-1)
         except:
-            data = numpy.loadtxt(catfile, comments='#', usecols=(0, 1), delimiter=',', skiprows=1) #new loadtxt call for daophot.txt, sexphot.txt sourcelists
+            try:
+                data = numpy.loadtxt(catfile, comments='#', skiprows=0,usecols=(0,1)) #orig. loadtxt call for .coo files
+            except:
+                data = numpy.loadtxt(catfile, comments='#', usecols=(0, 1), delimiter=',', skiprows=1) #new loadtxt call for daophot.txt, sexphot.txt sourcelists
     # force result to be 2-D if it is not empty
     if data.size == 2:
         data = data.reshape(1, data.size)
