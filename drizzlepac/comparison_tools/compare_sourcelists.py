@@ -309,7 +309,7 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
         plotCutoff=(10.0*np.abs(clippedStats[2]))+np.abs(clippedStats[0])
         if plotCutoff != 0.0:
             origSize=len(diffRA)
-            log.info("Plot cutoff: ",plotCutoff)
+            log.info("Plot cutoff: {}".format(plotCutoff))
             goodIdx=np.where(np.abs(diffRA)<=plotCutoff)
             diffRA=diffRA[goodIdx]
             log.info("%d values (%7.4f percent) clipped from plot."%(origSize-len(diffRA),(float(origSize-len(diffRA))/float(origSize))*100.0))
@@ -420,7 +420,7 @@ def getMatchedLists(slNames,imgNames,slLengths):
         log.info("WARNING: Unable to fetch values for xref and yref from fits file headers. Using xref = 0.0 and yref = 0.0.")
         xref=0.0
         yref=0.0
-    log.info("source_list_dict: ",source_list_dict)
+    log.info("source_list_dict: {}".format(source_list_dict))
     out_dict = starmatch_hist.run(source_list_dict, xref=xref, yref=yref)
     matching_lines_ref = out_dict[slNames[0]]
     matching_lines_img = out_dict[slNames[1]]
@@ -555,8 +555,8 @@ def comparesourcelists(slNames,imgNames,plotGen,diffMode,verbose):
     colTitles=[]
     # 1: Read in sourcelists fiels into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
     refData,compData=slFiles2dataTables(slNames)
-    log.info("Valid reference data columns:   ",list(refData.keys()))
-    log.info("Valid comparision data columns: ",list(compData.keys()))
+    log.info("Valid reference data columns:   {}".format(list(refData.keys())))
+    log.info("Valid comparision data columns: {}".format(list(compData.keys())))
     log.info("\n")
     log.info("Data columns to be compared:")
     for listItem in sorted(list(set(refData.keys()).intersection(set(compData.keys())))): log.info(listItem)
