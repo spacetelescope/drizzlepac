@@ -91,6 +91,7 @@ from astropy.table import Table
 import matplotlib.pyplot as plt
 import numpy as np
 import pdb
+import random
 # from . import starmatch_hist
 import starmatch_hist
 import sys,os
@@ -99,6 +100,38 @@ from drizzlepac import util
 from stsci.tools import fileutil, logutil
 
 log = logutil.create_logger('compare_sourcelists', level=logutil.logging.INFO, stream=sys.stdout)
+#-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+
+def check_match_quality(matched_x_list, matched_y_list):
+    """Creates region file to check quality of source matching.
+
+    PARAMETERS
+    ----------
+    matched_x_list : list
+        list of ref and comp x coords for matched sources
+
+    matched_y_list : list
+        list of ref and comp y coords for matched sources
+
+    RETURNS
+    -------
+    Nothing.
+    """
+    out_filename = "match_check.reg"
+    num_display = 5000 # Number of pairs to plot
+    list_length = len(matched_x_list[0])
+    if num_display > list_length: # if the list of matched sources is smaller than num_display, just use all matched pairs, rather than a randomly selected subset.
+        index_list = arange(list_length)
+    else:
+        index_list = random.sample(range(1, list_length), num_display)
+    with open(out_filename,"w") as fout:
+        for index_no in index_list:
+            fout.write("circle({},{},10)  # color=green\n".format(matched_x_list[0][index_no], matched_y_list[0][index_no])) # write ref source circlw
+            fout.write("circle({},{},10) # color=red\n".format(matched_x_list[1][index_no], matched_y_list[1][index_no])) # write comp source circle
+            fout.write("line({},{},{},{}) # color=blue\n".format(matched_x_list[0][index_no], matched_y_list[0][index_no], matched_x_list[1][index_no], matched_y_list[1][index_no])) # write line connecting the two
+    log.info("Wrote region file {}".format(out_filename))
+
+
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
     """
@@ -535,7 +568,7 @@ def round2ArbatraryBase(value,direction,roundingBase):
     return rv
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 @util.with_logging
-def comparesourcelists(slNames,imgNames,plotGen,diffMode,verbose):
+def comparesourcelists(slNames,imgNames,plotGen,diffMode,verbose,debugMode):
     """
     Main calling subroutine to compare sourcelists.
 
@@ -570,17 +603,18 @@ def comparesourcelists(slNames,imgNames,plotGen,diffMode,verbose):
         rt_status=computeLinearStats(matched_values,plotGen,diffMode,"X position",verbose)
         regressionTestResults["X Position"]=rt_status
         colTitles.append("X Position")
-        if plotGen != "none":matchedXValues=matched_values
+        matchedXValues=matched_values.copy()
     # 4: Compute and display statistics on Y position differences for matched sources
     matched_values=extractMatchedLines("Y",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
         rt_status=computeLinearStats(matched_values,plotGen,diffMode,"Y position",verbose)
         regressionTestResults["Y Position"]=rt_status
         colTitles.append("Y Position")
+        matchedYValues = matched_values.copy()
         if plotGen != "none" and diffMode == "absolute":
-            matchedYValues=matched_values
             makeVectorPlot(matchedXValues,matchedYValues,plotGen)
-
+    if debugMode:
+        check_match_quality(matchedXValues,matchedYValues)
     # 5: Compute and display statistics on RA position differences for matched sources
     matched_values=extractMatchedLines("RA",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
@@ -779,6 +813,7 @@ if __name__ == "__main__":
     # required positional input arguments
     PARSER.add_argument('sourcelistNames', nargs=2,help='A space-separated pair of sourcelists to compare. The first sorucelist is assumed to be the reference sourcelist that the second is being compared to.')
     # optional input arguments
+    PARSER.add_argument('-d', '--debugMode', required=False, choices=["True", "False"], default="False", help="Turn on debug mode? Default value is False.")
     PARSER.add_argument('-i', '--imageNames', required = False, nargs=2,help='A space-seperated list of the fits images that were used to generate the input sourcelists. The first image corresponds to the first listed sourcelist, and so in. These will be used to imporove the sourcelist alignment and matching.')
     PARSER.add_argument('-m', '--diffMode', required=False, choices=["absolute", "pmean","pdynamic"], default="pmean",
                         help='How should the comp-ref difference be calculated? "absolute" is simply the stright comp-ref difference. "peman" is the mean percent difference ((C-R)/avg(R)) x 100. "pdynamic" is the dynamic percent difference ((C-R)/R) x 100. Default value is "pmean".')
@@ -792,4 +827,11 @@ if __name__ == "__main__":
         ARGS.verbose = True
     else: ARGS.verbose = False
 
-    runStatus=comparesourcelists(ARGS.sourcelistNames,ARGS.imageNames,ARGS.plotGen,ARGS.diffMode,ARGS.verbose)
+    if ARGS.debugMode == "True":
+        ARGS.debugMode = True
+    else: ARGS.debugMode = False
+
+    runStatus=comparesourcelists(ARGS.sourcelistNames,ARGS.imageNames,ARGS.plotGen,ARGS.diffMode,ARGS.verbose,ARGS.debugMode)
+
+# TODO: reformat docstrings
+# TODO: fix PEP 8 violations
