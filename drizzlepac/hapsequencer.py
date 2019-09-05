@@ -6,6 +6,7 @@
     Legacy Archive (HLA) pipeline in that it provides the overall sequence of
     the processing.
 """
+import argparse
 import datetime
 import glob
 import os
@@ -510,6 +511,7 @@ def run_hap_processing(input_filename, result=None, debug=False, use_defaults_co
         log.info("9: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
                  "condition")
         return return_value
+<<<<<<< HEAD
 # ----------------------------------------------------------------------------------------------------------------------
 # TODO: COMMENT OUT/REMOVE BELOW COMMAND-LINE INTERFACE PRIOR TO PULL REQUEST
 
@@ -520,3 +522,28 @@ if __name__ == '__main__':
 
     x = run_hap_processing(sys.argv[1], debug=True, output_custom_pars_file=out_pars_file, phot_mode='aperture')
     print("\a")
+=======
+
+def main():
+    """ The __main__ and main() functionality here are TEMPORARILY to allow the Single Visit Mosaic
+    processing to be invoked from the command line by INS.  At this time there is no high-level Hubble
+    Advanced Products (HAP) driver which would contain the "main".
+
+    This command line processing is invoked as 
+    $ runhap poller_file  (e.g., runhap ib4606.out)
+    """
+
+    parser = argparse.ArgumentParser(description="Process images, produce drizzled images and sourcelists")
+    parser.add_argument("input_filename", help="Name of the input csv file containing information about the files to "
+                        "be processed")
+    ARGS = parser.parse_args()
+
+    print("Single-visit processing started for: {}".format(ARGS.input_filename))
+    rv = run_hap_processing(ARGS.input_filename)
+    print("Return Value: ", rv)
+    return rv
+
+if __name__ == "__main__":
+    main()
+
+>>>>>>> master
