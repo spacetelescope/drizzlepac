@@ -1,7 +1,5 @@
 {
     "parameters": {
-        "input": "*flt.fits",
-        "output": "",
         "_mdriztab_btn_": "Update From MDRIZTAB",
         "runfile": "astrodrizzle.log",
         "wcskey": "",
@@ -123,8 +121,6 @@
         }
     },
     "default_values": {
-        "input": "*flt.fits",
-        "output": "",
         "_mdriztab_btn_": "Update From MDRIZTAB",
         "runfile": "astrodrizzle.log",
         "wcskey": "",
