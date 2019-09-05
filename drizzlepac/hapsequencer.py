@@ -511,18 +511,6 @@ def run_hap_processing(input_filename, result=None, debug=False, use_defaults_co
         log.info("9: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
                  "condition")
         return return_value
-<<<<<<< HEAD
-# ----------------------------------------------------------------------------------------------------------------------
-# TODO: COMMENT OUT/REMOVE BELOW COMMAND-LINE INTERFACE PRIOR TO PULL REQUEST
-
-if __name__ == '__main__':
-    os.system("rm -f *.*")
-    os.system("cp orig/* .")
-    out_pars_file = sys.argv[1].replace(".out", "_config.json")
-
-    x = run_hap_processing(sys.argv[1], debug=True, output_custom_pars_file=out_pars_file, phot_mode='aperture')
-    print("\a")
-=======
 
 def main():
     """ The __main__ and main() functionality here are TEMPORARILY to allow the Single Visit Mosaic
@@ -545,5 +533,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
->>>>>>> master
