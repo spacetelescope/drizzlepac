@@ -111,21 +111,27 @@ def getpostarg(source_list_dict):
     """
     rv = {}
     for coo_img in source_list_dict:
-        fitsfile = coo_img.split('.coo')[0]
+        fitsfile = coo_img.replace(coo_img.split("_")[-1],"drz.fits")
+        if not os.path.exists(fitsfile):
+            fitsfile.replace("drz.fits","drc.fits")
         if (os.path.exists(fitsfile) and fitsfile.endswith(".fits")):
-            fh = pyfits.open(fitsfile)
-            hdr = fh[0].header
-            # assume image has north up (which is true for HLA images)
-            pixsize = abs(hdr['cd1_1'])*3600.0 #TODO: figure out how to get "cd1_1" (or eqivlent) value from final drizzle-combined (e.g. hst_10265_01_acs_wfc_f606w_drz.fits or hst_10265_01_acs_wfc_total_drz.fits) images
-            postarg1 = hdr['postarg1']/pixsize
-            postarg2 = hdr['postarg2']/pixsize
-            pa_aper = hdr['pa_aper']*numpy.pi/180 #TODO: figure out how to get "pa_aper" (or eqivlent) value from final drizzle-combined (e.g. hst_10265_01_acs_wfc_f606w_drz.fits or hst_10265_01_acs_wfc_total_drz.fits) images
-            fh.close()
-            cospa = numpy.cos(pa_aper)
-            sinpa = numpy.sin(pa_aper)
-            dx = cospa*postarg1-sinpa*postarg2
-            dy = sinpa*postarg1+cospa*postarg2
-            rv[coo_img] = (dx, dy)
+            try:
+                fh = pyfits.open(fitsfile)
+                hdr = fh[0].header
+                # assume image has north up (which is true for HLA images)
+                pixsize = abs(hdr['cd1_1'])*3600.0 #TODO: figure out how to get "cd1_1" (or eqivlent) value from final drizzle-combined (e.g. hst_10265_01_acs_wfc_f606w_drz.fits or hst_10265_01_acs_wfc_total_drz.fits) images
+                postarg1 = hdr['postarg1']/pixsize
+                postarg2 = hdr['postarg2']/pixsize
+                pa_aper = hdr['pa_aper']*numpy.pi/180 #TODO: figure out how to get "pa_aper" (or eqivlent) value from final drizzle-combined (e.g. hst_10265_01_acs_wfc_f606w_drz.fits or hst_10265_01_acs_wfc_total_drz.fits) images
+                fh.close()
+                cospa = numpy.cos(pa_aper)
+                sinpa = numpy.sin(pa_aper)
+                dx = cospa*postarg1-sinpa*postarg2
+                dy = sinpa*postarg1+cospa*postarg2
+                rv[coo_img] = (dx, dy)
+            except:
+                log.info("Warning: unable to fetch POSTARG info for image {}. Using POSTARG=0".format(fitsfile))
+                rv[coo_img] = (0.0, 0.0)
         else:
             log.info('FITS file %s not found, using POSTARG=0' % fitsfile)
             rv[coo_img] = (0.0,0.0)
