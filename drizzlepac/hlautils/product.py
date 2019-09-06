@@ -7,10 +7,15 @@ import sys
 import traceback
 import shutil
 
-from .. import astrodrizzle
+from stsci.tools import logutil
+from astropy.io import fits
 
+from .. import astrodrizzle
+from .. import wcs_functions
 from . import align_utils
 from . import astrometric_utils as amutils
+
+log = logutil.create_logger('product', level=logutil.logging.INFO, stream=sys.stdout)
 
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
@@ -28,6 +33,9 @@ class HAPProduct:
 
         # exposure_name is the ipppssoo or a portion thereof
         self.exposure_name = filename[0:8]
+
+        # TO DO: update this variable
+        self.mjdutc = None
 
         # HAPConfig objects are created after these Product objects have been instantiated so
         # this attribute is updated in the hapsequncer.py module (run_hla_processing()).
@@ -59,6 +67,7 @@ class TotalProduct(HAPProduct):
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
+        self.ref_drizzle_filename = self.product_basename + "_ref_" + self.filetype + ".fits"
 
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to create it as an attribute of a TotalProduct as it is independent of
@@ -111,7 +120,7 @@ class TotalProduct(HAPProduct):
         """
             Create the drizzle-combined total image using the meta_wcs as the reference output
         """
-        # Retrieve the configuration parameters for astrodrizzle...
+        # Retrieve the configuration parameters for astrodrizzle
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
         # ...and set parameters which are computed on-the-fly
         drizzle_pars["final_refimage"] = meta_wcs
@@ -169,7 +178,8 @@ class FilterProduct(HAPProduct):
            well as the corresponding headerlet filenames to use legacy alignment
            routine.
         """
-        alignment_pars = self.pars.get_pars('alignment')
+        log.info('Starting alignment to absolute astrometric reference frame {}'.format(catalog_name))
+        alignment_pars = self.configobj_pars.get_pars('alignment')
 
         # Only perform the relative alignment
         method_name = 'relative'
@@ -186,12 +196,17 @@ class FilterProduct(HAPProduct):
                 align_table = align_utils.AlignmentTable(exposure_filenames, **alignment_pars)
                 align_table.find_alignment_sources()
                 align_table.configure_fit()
+                refname = "{}_ref_cat.ecsv".format(self.product_basename)
+                log.info('Creating reference catalog {}'.format(refname))
+                print(align_table.process_list, catalog_name)
+
                 ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
                                             catalog=catalog_name,
                                             output="{}_ref_cat.ecsv".format(self.product_basename),
                                             gaia_only=False)
 
-                if len(ref_catalog) > align_table.MIN_CATALOG_THRESHOLD:
+                log.info(ref_catalog)
+                if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
                     align_table.perform_fit(method_name, catalog_name, ref_catalog)
                     align_table.select_fit(catalog_name, method_name)
                     align_table.apply_fit(headerlet_filenames=headerlet_filenames)
@@ -218,7 +233,7 @@ class FilterProduct(HAPProduct):
             Create the drizzle-combined filter image using the meta_wcs as the reference output
         """
 
-        # Retrieve the configuration parameters for astrodrizzle...
+        # Retrieve the configuration parameters for astrodrizzle
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
         # ...and set parameters which are computed on-the-fly
         drizzle_pars["final_refimage"] = meta_wcs
@@ -273,7 +288,7 @@ class ExposureProduct(HAPProduct):
             Create the drizzle-combined exposure image using the meta_wcs as the reference output
         """
 
-        # Retrieve the configuration parameters for astrodrizzle...
+        # Retrieve the configuration parameters for astrodrizzle
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
         # ...and set parameters which are computed on-the-fly
         drizzle_pars["final_refimage"] = meta_wcs

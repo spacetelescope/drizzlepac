@@ -43,24 +43,9 @@ MAX_SOURCES_PER_CHIP = 250  # Maximum number of sources per chip to include in s
 # MAX_RMS_RATIO = 1.0  # Maximum ratio between RMS in RA and DEC which still represents a valid fit
 MAS_TO_ARCSEC = 1000.  # Conversion factor from milli-arcseconds to arcseconds
 
-# Module-level dictionary contains instrument/detector-specific parameters used later on in the script.
-detector_specific_params = {"acs": {"hrc": {"fwhmpsf": 0.152,  # 0.073
-                                            "classify": True,
-                                            "threshold": None},
-                                    "sbc": {"fwhmpsf": 0.13,  # 0.065
-                                            "classify": False,
-                                            "threshold": 2.0},
-                                    "wfc": {"fwhmpsf": 0.13,  # 0.076,
-                                            "classify": True,
-                                            "threshold": -1.1}},
-                            "wfc3": {"ir": {"fwhmpsf": 0.25,  # 0.14
-                                            "classify": False,
-                                            "threshold": None},
-                                     "uvis": {"fwhmpsf": 0.152,  # 0.076
-                                              "classify": True,
-                                              "threshold": None}}}
 
 log = logutil.create_logger('alignimages', level=logutil.logging.INFO, stream=sys.stdout)
+
 
 __version__ = 0.0
 __version_date__ = '21-Aug-2019'
@@ -170,9 +155,6 @@ def check_and_get_data(input_list, **pars):
     return(total_input_list)
 
 # ------------------------------------------------------------------------------------------------------------
-
-
-@util.with_logging
 def perform_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
               runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=250,
               headerlet_filenames=None, catalog_list=['GAIADR2', 'GAIADR1'], **alignment_pars):
@@ -212,8 +194,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
 
     output : Boolean
         Should utils.astrometric_utils.create_astrometric_catalog() generate file 'ref_cat.ecsv' and should
-        generate_source_catalogs() generate the .reg region files for every chip of every input image and
-        should generate_astrometric_catalog() generate file 'refcatalog.cat'?
+        the alignment source catalogs get written out to files?
 
     num_sources : int, optional
         Maximum number of **brightest sources per chip** which will be used for cross-matching and fitting.
@@ -397,7 +378,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                         alignment_table.close()
                         return (alignment_table.filtered_table)
                 else:
-                    log.info("{} STEP 5b: Cross matching and "
+                    log.info("{} Cross matching and "
                          "fitting {}".format("-" * 20, "-" * 47))
                     imglist = copy.deepcopy(orig_imglist)  # reset imglist to pristine state
 
@@ -426,6 +407,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                             table_fit = alignment_table.fit_dict[(catalog_name, algorithm_name)]
                             table_fit[imglist_ctr].meta['fit method'] = algorithm_name
                             table_fit[imglist_ctr].meta['fit quality'] = fit_quality
+                        print(alignment_table.fit_dict[(catalog_name, algorithm_name)][0].meta)
 
                         # populate fit_info_dict
                         fit_info_dict["{} {}".format(catalog_name, algorithm_name)] = \
@@ -832,78 +814,6 @@ def generate_astrometric_catalog(imglist, **pars):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-
-def generate_source_catalogs(imglist, **pars):
-    """Generates a dictionary of source catalogs keyed by image name.
-
-    Parameters
-    ----------
-    imglist : list
-        List of one or more calibrated fits images that will be used for source detection.
-
-    Returns
-    -------
-    sourcecatalogdict : dictionary
-        a dictionary (keyed by image name) of two-element dictionaries which contain the following:
-            * a dictionary of the detector-specific processing parameters
-            * an astropy table of position and photometry information of all detected sources
-    """
-    output = pars.get('output', False)
-    sourcecatalogdict = {}
-    for imgname in imglist:
-        log.info("Image name: {}".format(imgname))
-
-        sourcecatalogdict[imgname] = {}
-
-        # open image
-        imghdu = fits.open(imgname)
-        imgprimaryheader = imghdu[0].header
-        instrument = imgprimaryheader['INSTRUME'].lower()
-        detector = imgprimaryheader['DETECTOR'].lower()
-
-        # get instrument/detector-specific image alignment parameters
-        if instrument in detector_specific_params.keys():
-            if detector in detector_specific_params[instrument].keys():
-                detector_pars = detector_specific_params[instrument][detector]
-                # to allow generate_source_catalog to get detector specific parameters
-                detector_pars.update(pars)
-                sourcecatalogdict[imgname]["params"] = detector_pars
-            else:
-                sys.error("ERROR! Unrecognized detector '{}'. Exiting...".format(detector))
-                log.exit("ERROR! Unrecognized detector '{}'. Exiting...".format(detector))
-        else:
-            sys.error("ERROR! Unrecognized instrument '{}'. Exiting...".format(instrument))
-            log.exit("ERROR! Unrecognized instrument '{}'. Exiting...".format(instrument))
-
-        # Identify sources in image, convert coords from chip x, y form to reference WCS sky RA, Dec form.
-        imgwcs = HSTWCS(imghdu, 1)
-        # Convert fwhmpsf from arsec to pixels
-        fwhmpsf_pix = sourcecatalogdict[imgname]["params"]['fwhmpsf'] / imgwcs.pscale
-        sourcecatalogdict[imgname]["catalog_table"] = \
-            amutils.generate_source_catalog(imghdu, fwhm=fwhmpsf_pix, **detector_pars)
-
-        # write out coord lists to files for diagnostic purposes. Protip: To display the sources in these files in DS9,
-        # set the "Coordinate System" option to "Physical" when loading the region file.
-        imgroot = os.path.basename(imgname).split('_')[0]
-        num_sci = amutils.countExtn(imghdu)
-        # Allow user to decide when and how to write out catalogs to files
-        if output:
-            for chip in range(1, num_sci + 1):
-                chip_cat = sourcecatalogdict[imgname]["catalog_table"][chip]
-                if chip_cat and len(chip_cat) > 0:
-                    regfilename = "{}_sci{}_src.reg".format(imgroot, chip)
-                    out_table = Table(chip_cat)
-                    # To align with positions of sources in DS9/IRAF
-                    out_table['xcentroid'] += 1
-                    out_table['ycentroid'] += 1
-                    out_table.write(regfilename,
-                                    include_names=["xcentroid", "ycentroid"],
-                                    format="ascii.fast_commented_header")
-                    log.info("Wrote region file {}\n".format(regfilename))
-        imghdu.close()
-    return(sourcecatalogdict)
-
-# --------------------------------------------------------------------------------------------------------------
 def update_headerlet_phdu(tweakwcs_item, headerlet):
     """Update the primary header data unit keywords of a headerlet object in-place
 

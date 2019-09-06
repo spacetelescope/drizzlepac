@@ -29,7 +29,7 @@
         "deblend": false,
         "fwhmpsf": 0.25,
         "classify": false,
-        "threshold": None
+        "threshold": null
       },
     "generate_astrometric_catalog":
       {

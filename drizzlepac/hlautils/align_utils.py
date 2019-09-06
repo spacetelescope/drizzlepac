@@ -177,19 +177,24 @@ class AlignmentTable:
         imglist = self.fit_methods[method_name](self.imglist, reference_catalog,
                                                 **self.fit_pars[method_name])
 
+        # save fit algorithm name to dictionary key "fit method" in imglist.
+        for imglist_ctr in range(0, len(imglist)):
+            imglist[imglist_ctr].meta['fit method'] = method_name
+
         # store results for evaluation
         self.fit_dict[(catalog_name, method_name)] = copy.deepcopy(imglist)
         self.reference_catalogs[catalog_name] = reference_catalog
 
         return imglist
 
-    def select_fit(self, method_name, catalog_name):
+    def select_fit(self, catalog_name, method_name):
         """Select the fit that has been identified as 'best'"""
         imglist = self.selected_fit = self.fit_dict[(catalog_name, method_name)]
 
         # Protect the writing of the table within the best_fit_rms
         info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
         # Update filtered table with number of matched sources and other information
+        print(imglist[0].meta)
         for item in imglist:
             imgname = item.meta['name']
             index = np.where(self.filtered_table['imageName'] == imgname)[0][0]
@@ -313,6 +318,7 @@ class HAPImage:
         if self.bkg is None:
             self.compute_background()
         threshold_rms = np.array([rms for rms in self.bkg_dao_rms]).mean()
+        log.info("Looking for sample PSF in {}".format(self.rootname))
         self.kernel, self.kernel_fwhm = amutils.build_auto_kernel(self.data, self.wht_image,
                                                           threshold=threshold_rms,
                                                           fwhm=fwhmpsf / self.pscale)
@@ -498,7 +504,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
-    log.info("{} STEP 5b: (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
+    log.info("{} (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
@@ -544,7 +550,7 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
         List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
-    log.info("{} STEP 5b: (match_default_fit) Cross matching and fitting "
+    log.info("{} (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
@@ -578,7 +584,7 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
         List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
-    log.info("{} STEP 5b: (match_2dhist_fit) Cross matching and fitting "
+    log.info("{} (match_2dhist_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 28))
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
