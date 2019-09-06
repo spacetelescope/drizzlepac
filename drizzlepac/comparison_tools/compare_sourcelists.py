@@ -121,7 +121,7 @@ def check_match_quality(matched_x_list, matched_y_list):
     num_display = 5000 # Number of pairs to plot
     list_length = len(matched_x_list[0])
     if num_display > list_length: # if the list of matched sources is smaller than num_display, just use all matched pairs, rather than a randomly selected subset.
-        index_list = arange(list_length)
+        index_list = np.arange(list_length)
     else:
         index_list = random.sample(range(1, list_length), num_display)
     with open(out_filename,"w") as fout:
