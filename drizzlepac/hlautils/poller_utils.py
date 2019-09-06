@@ -5,6 +5,8 @@ poller, and produces a tree listing of the output products.  The function,
 parse_obset_tree, converts the tree into product catagories.
 
 """
+import sys
+from stsci.tools import logutil
 
 from astropy.table import Table, Column
 from drizzlepac.hlautils.product import ExposureProduct, FilterProduct, TotalProduct
@@ -18,6 +20,7 @@ TDP_STR = 'total detection product {:02d}'
 INSTRUMENT_DICT = {'i': 'WFC3', 'j': 'ACS', 'o': 'STIS', 'u': 'WFPC2', 'x': 'FOC', 'w': 'WFPC'}
 
 __taskname__ = 'poller_utils'
+log = logutil.create_logger('poller_utils', level=logutil.logging.INFO, stream=sys.stdout)
 
 def interpret_obset_input(results):
     """
@@ -58,6 +61,7 @@ def interpret_obset_input(results):
                                                      "files": ['ib4606cmq_flt.fits', 'ib4606crq_flt.fits']}
 
     """
+    log.info("Interpret the poller file for the observation set.")
     colnames = ['filename', 'proposal_id', 'program_id', 'obset_id',
                 'exptime', 'filters', 'detector', 'pathname']
     obset_table = Table.read(results, format='ascii.fast_no_header', names=colnames)
@@ -66,8 +70,10 @@ def interpret_obset_input(results):
     # convert input to an Astropy Table for parsing
     obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
     # parse Table into a tree-like dict
+    log.info("Build the observation set tree.")
     obset_tree = build_obset_tree(obset_table)
-    # Now create final dict
+    # Now create the output product objects
+    log.info("Parse the observation set tree and create the exposure, filter, and total detection objects.")
     obset_dict, tdp_list = parse_obset_tree(obset_tree)
 
     return obset_dict, tdp_list
@@ -202,6 +208,7 @@ def parse_obset_tree(det_tree):
                 sep_indx += 1
 
             # Append filter object to the list of filter objects for this specific total product object
+            log.info("Attach the filter object {} to its associated total detection product object {}/{}.".format(filt_obj.filters, tdp_obj.instrument, tdp_obj.detector))
             tdp_obj.add_product(filt_obj)
 
         # Add the total product object to the list of TotalProducts
