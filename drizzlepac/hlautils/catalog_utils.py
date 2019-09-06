@@ -264,7 +264,7 @@ class HAPCatalogs:
 
         # Compute the background for this image
         self.image = CatalogImage(fitsfile)
-        self.image.compute_background(nsigma=self.param_dict['dao']['bthresh'],
+        self.image.compute_background(nsigma=self.param_dict['sourcex']['bthresh'],
                                       threshold_flag=self.param_dict['sourcex']['thresh'])  # TODO previoulsy, nsigma=self.param_dict['sourcex']['bthresh']
 
         self.image.build_kernel(self.param_dict['dao']['TWEAK_FWHMPSF'], self.param_dict['dao']['scale'])

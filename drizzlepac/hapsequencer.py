@@ -10,6 +10,7 @@ import argparse
 import datetime
 import glob
 import os
+import pickle
 import sys
 import traceback
 
@@ -481,6 +482,19 @@ def run_hap_processing(input_filename, result=None, debug=False, use_defaults_co
         # Create source catalogs from newly defined products (HLA-204)
         log.info("Create source catalog from newly defined product")
         if 'total detection product 00' in obs_info_dict.keys():
+            # save total_list to pickle file for photometry optimization
+            if debug:
+                try:
+                    pickle_name = 'total_list.obj'
+                    if os.path.exists(pickle_name): os.remove('total_list.obj')  # TODO: Remove before merge!
+                    pout = open(pickle_name, 'wb')  # TODO: Remove before merge!
+                    pickle.dump(total_list, pout)  # TODO: Remove before merge!
+                    pout.close()  # TODO: Remove before merge!
+                    print("Successfully wrote pickle file {}".format(pickle_name))
+                except:
+                    print("PICKLE ERROR. Continuing on...")
+
+            # Perform photometric catalog generation
             catalog_list = create_catalog_products(total_list, debug=debug, phot_mode=phot_mode)
             product_list += catalog_list
         else:
@@ -527,7 +541,7 @@ def main():
     ARGS = parser.parse_args()
 
     print("Single-visit processing started for: {}".format(ARGS.input_filename))
-    rv = run_hap_processing(ARGS.input_filename)
+    rv = run_hap_processing(ARGS.input_filename,debug=True,phot_mode='aperture')
     print("Return Value: ", rv)
     return rv
 
