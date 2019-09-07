@@ -1,0 +1,50 @@
+{
+  "default_values":
+   {
+     "dao":
+     {
+       "bkgsig_sf": 4.0,
+       "kernel_sd_aspect_ratio": 0.8,
+       "simple_bkg": false,
+       "TWEAK_FWHMPSF": 0.076,
+       "TWEAK_THRESHOLD": 3.0,
+       "aperture_1": 0.05,
+       "aperture_2": 0.15,
+       "bthresh": 5.0,
+       "scale": 0.04,
+       "skyannulus_arcsec": 0.25,
+       "dskyannulus_arcsec": 0.25,
+       "salgorithm": "mode"
+     },
+     "sourcex": {
+       "fwhm": 0.076,
+       "thresh": 1.4,
+       "bthresh": 5.0,
+       "source_box": 7
+     }
+   },
+  "parameters":
+   {
+     "dao":
+     {
+       "bkgsig_sf": 4.0,
+       "kernel_sd_aspect_ratio": 0.8,
+       "simple_bkg": false,
+       "TWEAK_FWHMPSF": 0.076,
+       "TWEAK_THRESHOLD": 3.0,
+       "aperture_1": 0.05,
+       "aperture_2": 0.15,
+       "bthresh": 5.0,
+       "scale": 0.04,
+       "skyannulus_arcsec": 0.25,
+       "dskyannulus_arcsec": 0.25,
+       "salgorithm": "mode"
+     },
+     "sourcex": {
+       "fwhm": 0.076,
+       "thresh": 1.4,
+       "bthresh": 5.0,
+       "source_box": 7
+     }
+   }
+}

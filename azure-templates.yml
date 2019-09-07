@@ -40,7 +40,7 @@ jobs:
       displayName: install dependencies
 
     - script: |
-        $(PIP_INSTALL) -r requirements-dev.txt -e .[test]
+        $(PIP_INSTALL) -e .[test]
       displayName: build package
 
     - script: |

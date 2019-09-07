@@ -35,7 +35,7 @@ def get_rules_file(product):
     if rules_name not in os.listdir('.'):
         shutil.copy(rules_filename, os.getcwd())
 
-def refine_product_headers(product, obs_dict_info):
+def refine_product_headers(product, total_obj_list):
     """Refines output product headers to include values not available to AstroDrizzle.
 
     A few header keywords need to have values computed to reflect the type of product being
@@ -48,8 +48,9 @@ def refine_product_headers(product, obs_dict_info):
     product : str or object
         Filename or HDUList object for product to be updated
 
-    obs_dict_info : dict
-        Dictionary describing relationship between input and output exposures.
+    total_obj_list: list
+        List of TotalProduct objects which are composed of Filter and Exposure 
+        Product objects
 
     """
     hdu, closefits = _process_input(product)
@@ -100,7 +101,7 @@ def refine_product_headers(product, obs_dict_info):
 
         # Build HAP table
         # if 'total' in product: level = 3
-        update_hdrtab(hdu, level, obs_dict_info, input_exposures)
+        update_hdrtab(hdu, level, total_obj_list, input_exposures)
 
     # close file if opened by this function
     if closefits:
@@ -120,7 +121,7 @@ def get_acs_filters(image, delimiter=';'):
     return acs_filters
 
 
-def update_hdrtab(image, level, obs_dict_info, input_exposures):
+def update_hdrtab(image, level, total_obj_list, input_exposures):
     """Build HAP entry table extension for product"""
     # Convert input_exposure filenames into HAP product filenames
     name_col = []
@@ -136,18 +137,13 @@ def update_hdrtab(image, level, obs_dict_info, input_exposures):
                 else:
                     # Convert input exposure names into HAP names
                     foundit = False
-                    for haptype, hapdict in obs_dict_info.items():
-                        if expname in hapdict['files'] and not haptype.startswith("Total Detection Product"):
-                            for hapitem in hapdict.keys():
-                                if hapitem == "product filenames" or hapitem.startswith("subproduct"):
-                                    if hapdict[hapitem]['image'].find(rootname[:-1]) > 0:
-                                        name = hapdict[hapitem]['image']
-                                        name = name.replace(';', '-')
-                                        name_col.append(name)
-                                        foundit = True
-                                        break
-                            if foundit:
+                    for tot_obj in total_obj_list:
+                        for exposure in tot_obj.edp_list:
+                            if rootname in exposure.full_filename:
+                                name_col.append(exposure.drizzle_filename)
+                                foundit = True
                                 break
+
     # define new column with HAP expname
     max_len = min(max([len(name) for name in name_col]), 51)
     hapcol = Column(array=np.array(name_col, dtype=np.str), name=HAPCOLNAME, format='{}A'.format(max_len + 4))

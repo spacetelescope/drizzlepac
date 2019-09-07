@@ -87,8 +87,8 @@ setup(
         'scipy',
         'matplotlib',
         'acstools',
-        'spherical-geometry',
-        'stsci.tools',
+        'spherical-geometry>=1.2.17',
+        'stsci.tools>=3.6',
         'stsci.image>=2.3.0',
         'stsci.imagestats',
         'stsci.skypac',
@@ -97,9 +97,9 @@ setup(
         'tweakwcs>=0.5.0',
         'stregion',
         'requests',
-        # HLA-pipeline specific:
+        # HAP-pipeline specific:
         'astroquery',
-        'photutils',
+        'photutils>=0.7',
         'pysynphot',
         'lxml',
         'scikit-image>=0.14.2',
@@ -112,6 +112,13 @@ setup(
         '': ['README.md', 'LICENSE.txt'],
         'drizzlepac': [
             'pars/*',
+            'pars/hap_pars/*',
+            'pars/hap_pars/acs/hrc/*',
+            'pars/hap_pars/acs/sbc/*',
+            'pars/hap_pars/acs/wfc/*',
+            'pars/hap_pars/any/*',
+            'pars/hap_pars/wfc3/ir/*',
+            'pars/hap_pars/wfc3/uvis/*',
             '*.help',
             'htmlhelp/*',
             'htmlhelp/_*/*',
@@ -124,7 +131,7 @@ setup(
             'resetbits=drizzlepac.resetbits:main',
             'updatenpol=drizzlepac.updatenpol:main',
             'runastrodriz=drizzlepac.runastrodriz:main',
-            'runhap=drizzlepac.runhlaprocessing:main'
+            'runhap=drizzlepac.hapsequencer:main'
         ],
     },
     ext_modules=[
