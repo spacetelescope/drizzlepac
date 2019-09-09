@@ -263,10 +263,7 @@ class HAPImage:
         self.num_sci = amutils.countExtn(self.imghdu)
         self.num_wht = amutils.countExtn(self.imghdu, extname='WHT')
         self.data = np.concatenate([self.imghdu[('SCI', i + 1)].data for i in range(self.num_sci)])
-        if not self.num_wht:
-            self.dqmask = self.build_dqmask()
-        else:
-            self.dqmask = None
+
         self.wht_image = self.build_wht_image()
 
         # Get the HSTWCS object from the first extension
@@ -299,8 +296,8 @@ class HAPImage:
             wht_image = 1.0 / errarr
             wht_image /= wht_image.max()
             wht_image *= self.imghdu[0].header['exptime']**2
-            if self.dqmask is not None:
-                wht_image[self.dqmask] = 0
+            dqmask = self.build_dqmask()
+            wht_image[dqmask] = 0
         else:
             wht_image = self.imghdu['WHT'].data
         return wht_image
@@ -318,7 +315,7 @@ class HAPImage:
         if self.bkg is None:
             self.compute_background()
         threshold_rms = np.array([rms for rms in self.bkg_dao_rms]).mean()
-        log.info("Looking for sample PSF in {}".format(self.rootname))
+        log.info("Looking for sample PSF in {}".format(self.imgname))
         self.kernel, self.kernel_fwhm = amutils.build_auto_kernel(self.data, self.wht_image,
                                                           threshold=threshold_rms,
                                                           fwhm=fwhmpsf / self.pscale)
@@ -443,17 +440,20 @@ class HAPImage:
         # from one image to a single source in the
         # other or vice-versa.
         # Create temp DQ mask containing all pixels flagged with any value EXCEPT 256
-        non_sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=256)
+        non_sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=256+2048)
 
         # Create temp DQ mask containing saturated pixels ONLY
-        sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=~256)
+        sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=~(256+2048))
+
+        # Ignore sources where only a couple of pixels are flagged as saturated
+        sat_mask = ndimage.binary_erosion(sat_mask, iterations=1)
 
         # Grow out saturated pixels by a few pixels in every direction
         grown_sat_mask = ndimage.binary_dilation(sat_mask, iterations=5)
 
         # combine the two temporary DQ masks into a single composite DQ mask.
         dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
-
+        
         return dqmask
 
     def find_alignment_sources(self, output=True, dqname='DQ', **alignment_pars):
