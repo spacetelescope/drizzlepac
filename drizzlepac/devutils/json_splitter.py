@@ -12,24 +12,43 @@ import pdb
 code_dir = os.path.abspath(__file__)
 base_dir = os.path.dirname(os.path.dirname(code_dir))
 full_pars_path = os.path.join(base_dir, "pars/hap_pars")
-json_list = Path(full_pars_path).glob("*/*/*_test.json")
+json_list = Path(full_pars_path).glob("**/*.json")
 
 
 for json_file in json_list:
     json_file = str(json_file)
-    print(json_file)
-    with open(json_file, 'r') as jfin:
-        json_data = json.load(jfin)
-    out_file = json_file.replace(".json", "_user.json")
-    with open(out_file, 'w') as f:
-        json.dump(json_data['parameters'], f, indent=4)
-    print('Wrote {}'.format(out_file))
+    if not json_file.endswith("_index.json"):
+        print(json_file)
+        # open and read in current unsplit json file
+        with open(json_file, 'r') as jfin:
+            json_data = json.load(jfin)
 
-    out_file = json_file.replace('.json', '_default.json')
-    with open(out_file, 'w') as f:
-        json.dump(json_data['default_values'], f, indent=4)
-    print('Wrote {}'.format(out_file))
+        # write out user-editable parameter set to file
+        # generate output filename
+        out_file = json_file.replace('hap_pars/', 'hap_pars/user_parameters/')
+        # Generate output path if it doesn't already exist
+        out_path = os.path.dirname(os.path.abspath(out_file))
+        if not os.path.exists(out_path):
+            cmd = "mkdir -p {}".format(out_path)
+            print(cmd)
+            os.system(cmd)
+        # write output file
+        with open(out_file, 'w') as f:
+            json.dump(json_data['parameters'], f, indent=4)
+        print('Wrote {}'.format(out_file))
 
-    os.remove(json_file)
-    print('removed {}'.format(json_file))
-    print("\n")
+        # write out user-editable parameter set to file
+        # generate output fiename
+        out_file = json_file.replace('hap_pars/','hap_pars/default_parameters/')
+        # Generate output path if it doesn't already exist
+        out_path = os.path.dirname(os.path.abspath(out_file))
+        if not os.path.exists(out_path):
+            cmd = "mkdir -p {}".format(out_path)
+            print(cmd)
+            os.system(cmd)
+        # write output file
+        with open(out_file, 'w') as f:
+            json.dump(json_data['default_values'], f, indent=4)
+        print('Wrote {}'.format(out_file))
+
+        print("\n")
