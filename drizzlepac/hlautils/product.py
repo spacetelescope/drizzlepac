@@ -75,6 +75,8 @@ class TotalProduct(HAPProduct):
         self.regions_dict = {}
         self.meta_wcs = None
 
+        log.info("Total detection object {}/{} created.".format(self.instrument, self.detector))
+
     def add_member(self, edp):
         """ Add an ExposureProduct object to the list - composition.
         """
@@ -152,6 +154,8 @@ class FilterProduct(HAPProduct):
         # These attributes will be populated during processing
         self.edp_list = []
         self.regions_dict = {}
+
+        log.info("Filter object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
 
     def add_member(self, edp):
         """ Add an ExposureProduct object to the list - composition.
@@ -236,6 +240,8 @@ class ExposureProduct(HAPProduct):
         self.trl_filename = self.product_basename + "_trl.log"
 
         self.regions_dict = {}
+
+        log.info("Exposure object {} created.".format(self.full_filename[0:9]))
 
     def wcs_drizzle_product(self, meta_wcs):
         """
