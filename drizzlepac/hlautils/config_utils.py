@@ -425,11 +425,6 @@ class Par():
             json_string = json_file.read()
             json_data = json.loads(json_string)
             return(json_data)
-            # pdb.set_trace()
-            # if self.use_defaults:
-            #     return json_data['default_values']
-            # else:
-            #     return json_data['parameters']
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -487,9 +482,3 @@ class QualityControlPars(Par):
             self._read_custom_pars()
         else:
             self._combine_conditions()
-
-
-# ======================================================================================================================
-
-
-
