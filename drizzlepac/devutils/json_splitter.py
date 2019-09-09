@@ -51,4 +51,8 @@ for json_file in json_list:
             json.dump(json_data['default_values'], f, indent=4)
         print('Wrote {}'.format(out_file))
 
+        # remove existing unsplit file
+        # print("removing existing unsplit file {}".format("json_file"))
+        # os.remove(json_file)
+
         print("\n")
