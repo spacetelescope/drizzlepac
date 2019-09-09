@@ -398,10 +398,9 @@ def find_fwhm(psf, default_fwhm):
     phot_results = itr_phot_obj(psf)
 
     psf_row = np.where(phot_results['flux_fit'] == phot_results['flux_fit'].max())[0][0]
-    print(phot_results['x_fit', 'y_fit', 'flux_fit', 'sigma_fit'])
     sigma_fit = phot_results['sigma_fit'][psf_row]
     fwhm = gaussian_sigma_to_fwhm * sigma_fit
-    print("Found FWHM: {}".format(fwhm))
+    log.info("Found FWHM: {}".format(fwhm))
 
     return fwhm
 
@@ -585,6 +584,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None,
             ax[1][1].imshow(threshold, origin='lower')
     return tbl, segm
 
+
 def classify_sources(catalog, sources=None):
     """ Convert moments_central attribute for source catalog into star/cr flag.
 
@@ -700,6 +700,9 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
 
             # Create temp DQ mask containing saturated pixels ONLY
             sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=~256)
+            
+            # Start by ignoring any sources where only a couple of pixels are saturated
+            sat_mask = ndimage.binary_erosion(sat_mask, iterations=1)
 
             # Grow out saturated pixels by a few pixels in every direction
             grown_sat_mask = ndimage.binary_dilation(sat_mask, iterations=5)
