@@ -19,7 +19,7 @@ Classes and Functions
 ---------------------
 """
 
-import os,sys,pdb,numpy
+import os,sys, numpy
 # from . import infrot
 import infrot
 import scipy.special, scipy.signal
@@ -29,7 +29,7 @@ import astropy.io.fits as pyfits
 from astropy.table import Table
 
 from drizzlepac import util
-from stsci.tools import fileutil, logutil
+from stsci.tools import logutil
 
 log =logutil.create_logger('starmatch_hist', level=logutil.logging.INFO, stream=sys.stdout)
 
@@ -260,7 +260,7 @@ def match_cat_histogram(catHH, catWW, maxdiff=50, step=1, verbose = False, extra
     # print "Comparison sourcelist: {} of {} total sources matched ({} %)".format(len(matching_lines_WW),len(x2),100.0*(float(len(matching_lines_WW))/float(len(x2))))
     if nsub >= minimum_match:
         # compute the shift and rotation
-        xshift, yshift, rotation = infrot.getxyshiftrot(output_array[:,0],output_array[:,1],output_array[:,2],output_array[:,3], xref=0.0, yref=0.0)
+        xshift, yshift, rotation = infrot.getxyshiftrot(output_array[:, 0], output_array[:, 1], output_array[:, 2], output_array[:, 3], xref=0.0, yref=0.0)
         log.info("infrot xshift yshift rotation {} {} {}".format(xshift, yshift, rotation))
 
     output_array = output_array.astype(str)

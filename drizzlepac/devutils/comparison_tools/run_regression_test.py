@@ -67,7 +67,7 @@ import argparse
 from . import compare_images
 from . import compare_sourcelists
 import glob
-import pdb
+
 
 def convert_string_tf_to_logical_tf(in_tf):
     """
@@ -147,12 +147,12 @@ if __name__ == "__main__":
         if slName.endswith("sexphot.txt"): imgname = slName.replace("sexphot.txt", "drz.fits")
         imgPair = [ARGS.pathNames[0] + "/" + imgname, ARGS.pathNames[1] + "/" + imgname]
 
-        runStatus=compare_sourcelists.run(slPair,imgPair,ARGS.plotGen,ARGS.diffMode,ARGS.verbose)
+        runStatus= compare_sourcelists.run(slPair, imgPair, ARGS.plotGen, ARGS.diffMode, ARGS.verbose)
         if runStatus != "OK": overallStatus = "FAILURE"
         slCtr+=1
 
     print("{}>{}<{}".format("=" * padding, " COMPARE  IMAGES ", "=" * padding))
-    runStatus =compare_images.run(ARGS.pathNames, ARGS.comparisonType, ARGS.drzOnly, ARGS.verbose)
+    runStatus = compare_images.run(ARGS.pathNames, ARGS.comparisonType, ARGS.drzOnly, ARGS.verbose)
     if runStatus != "OK": overallStatus = "FAILURE"
 
     print()

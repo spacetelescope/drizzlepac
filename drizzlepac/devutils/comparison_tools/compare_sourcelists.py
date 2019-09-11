@@ -90,14 +90,13 @@ from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 import matplotlib.pyplot as plt
 import numpy as np
-import pdb
 import random
 # from . import starmatch_hist
 import starmatch_hist
-import sys,os
+import sys
 
 from drizzlepac import util
-from stsci.tools import fileutil, logutil
+from stsci.tools import logutil
 
 log = logutil.create_logger('compare_sourcelists', level=logutil.logging.INFO, stream=sys.stdout)
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
