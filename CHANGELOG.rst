@@ -16,14 +16,19 @@ of the list).
 
 3.1.0 (unreleased)
 ==================
+
+- Fixed a bug in the ``updatehdr.update_from_shiftfile()`` function that would
+  crash while reading shift files. [#448]
+
 - Migration of the HAP portion of the package to an object-oriented
   implemenation. [#427]
 
 - Added support for providing HSTWCS object as input to 'final_refimage'
-  or 'single_refimage' parameter.  [#426]
+  or 'single_refimage' parameter. [#426]
 
 - Implementation of grid definition interface to support returning SkyCell
   objects that overlap a mosaic footprint. [#425]
+
 
 3.0.2 (15-Jul-2019)
 ====================

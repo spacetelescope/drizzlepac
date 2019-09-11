@@ -1,0 +1,22 @@
+{
+    "dao": {
+        "bkgsig_sf": 4.0,
+        "kernel_sd_aspect_ratio": 0.8,
+        "simple_bkg": false,
+        "TWEAK_FWHMPSF": 0.14,
+        "TWEAK_THRESHOLD": 3.0,
+        "aperture_1": 0.15,
+        "aperture_2": 0.45,
+        "bthresh": 5.0,
+        "scale": 0.09,
+        "skyannulus_arcsec": 0.25,
+        "dskyannulus_arcsec": 0.25,
+        "salgorithm": "mode"
+    },
+    "sourcex": {
+        "fwhm": 0.14,
+        "thresh": 1.4,
+        "bthresh": 5.0,
+        "source_box": 7
+    }
+}
