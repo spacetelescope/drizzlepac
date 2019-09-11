@@ -6,12 +6,12 @@
 
 USAGE: runsinglehap [-d] inputFilename
 
+The '-d' option will run this task in DEBUG mode producing additional outputs.
+
 Python USAGE:
     python
     from drizzlepac import runsinglehap
-    runsinglehap.process(inputFilename,debug=True)
-
-The '-d' option will run this task in DEBUG mode producing additional outputs.
+    runsinglehap.perform(inputFilename,debug=True)
 
 """
 # Import standard Python modules
