@@ -319,6 +319,7 @@ def create_drizzle_products(total_list):
             log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
             filt_obj.wcs_drizzle_product(meta_wcs)
             product_list.append(filt_obj.drizzle_filename)
+            product_list.append(filt_obj.trl_filename)
 
             # Create individual single drizzled images
             for exposure_obj in filt_obj.edp_list:
@@ -327,17 +328,20 @@ def create_drizzle_products(total_list):
                 log.info("CREATE SINGLE DRIZZLED IMAGE: {}".format(exposure_obj.drizzle_filename))
                 exposure_obj.wcs_drizzle_product(meta_wcs)
                 product_list.append(exposure_obj.drizzle_filename)
+                product_list.append(exposure_obj.trl_filename)
 
         # Create drizzle-combined total detection image after the drizzle-combined filter image and
         # drizzled exposure images in order to take advantage of the cosmic ray flagging.
         log.info("CREATE DRIZZLE-COMBINED TOTAL IMAGE: {}\n".format(total_obj.drizzle_filename))
         total_obj.wcs_drizzle_product(meta_wcs)
         product_list.append(total_obj.drizzle_filename)
+        product_list.append(total_obj.trl_filename)
 
     # Ensure that all drizzled products have headers that are to specification
     try:
         log.info("Updating these drizzle products for CAOM compatibility:")
-        for filename in product_list:
+        fits_files = [file for file in product_list if "fits" in file]
+        for filename in fits_files:
             log.info("    {}".format(filename))
             proc_utils.refine_product_headers(filename, total_list)
     except Exception:
