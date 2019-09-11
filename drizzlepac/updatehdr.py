@@ -22,23 +22,18 @@ from stsci.skypac.utils import get_ext_list, ext2str
 from . import util
 from . import linearfit
 
-__version__ = '0.2.0'
-__version_date__ = '10-Oct-2014'
+__version__ = '0.3.0'
+__version_date__ = '10-Sep-2019'
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 wcs_keys = ['CRVAL1','CRVAL2','CD1_1','CD1_2','CD2_1','CD2_2',
             'CRPIX1','CRPIX2','ORIENTAT']
 
-if hasattr(np, 'float128'):
-    ndfloat128 = np.float128
-elif hasattr(np, 'float96'):
-    ndfloat128 = np.float96
-else:
-    ndfloat128 = np.float64
+_SHIFT_COLNAMES = ['xsh', 'ysh', 'rot', 'scale', 'xrms', 'yrms']
 
 
-def update_from_shiftfile(shiftfile,wcsname=None,force=False):
+def update_from_shiftfile(shiftfile, wcsname=None, force=False):
     """
     Update headers of all images specified in shiftfile with shifts
     from shiftfile.
@@ -58,50 +53,44 @@ def update_from_shiftfile(shiftfile,wcsname=None,force=False):
         wcsname? [Default=False]
 
     """
-    f = open(fileutil.osfn(shiftfile))
-    shift_lines = [x.strip() for x in f.readlines()]
-    f.close()
+    with open(fileutil.osfn(shiftfile)) as f:
+        lines = f.readlines()
 
-    # interpret header of shift file
-    for line in shift_lines:
-        if 'refimage' in line or 'reference' in line:
-            refimage = line.split(':')[-1]
-            refimage = refimage[:refimage.find('[wcs]')].lstrip()
-            break
+    refimage = None
+    shift_info = {}
 
-    # Determine the max length in the first column (filenames)
-    fnames = []
-    for row in shift_lines:
-        if row[0] == '#': continue
-        fnames.append(len(row.split(' ')[0]))
-    fname_fmt = 'S{0}'.format(max(fnames))
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
 
-    # Now read in numerical values from shiftfile
-    type_list = {'names':('fnames','xsh','ysh','rot','scale','xrms','yrms'),
-                 'formats':(fname_fmt,'f4','f4','f4','f4','f4','f4')}
-    try:
-        sdict = np.loadtxt(shiftfile,dtype=type_list,unpack=False)
-    except IndexError:
-        tlist = {'names':('fnames','xsh','ysh','rot','scale'),
-                     'formats':(fname_fmt,'f4','f4','f4','f4')}
-        s = np.loadtxt(shiftfile,dtype=tlist,unpack=False)
-        sdict = np.zeros([s['fnames'].shape[0],],dtype=type_list)
-        for sname in s.dtype.names:
-            sdict[sname] = s[sname]
+        if refimage is not None and ('refimage' in line or
+                                     'reference' in line):
+            refimage = (line.split(':')[-1]).strip()
+            idx = refimage.find('[wcs]')
+            if idx >= 0:
+                refimage = refimage[:idx].lstrip()
+            continue
 
-    for img in sdict:
-        updatewcs_with_shift(img['fnames'], refimage, wcsname=wcsname,
-                rot=img['rot'], scale=img['scale'],
-                xsh=img['xsh'], ysh=img['ysh'],
-                xrms=img['xrms'], yrms=img['yrms'],
-                force=force)
+        cols = list(map(str.strip, line.split()))
 
-def updatewcs_with_shift(image,reference,wcsname=None, reusename=False,
-                         fitgeom='rscale',
-                         rot=0.0,scale=1.0,xsh=0.0,ysh=0.0,fit=None,
-                         xrms=None, yrms = None,
+        if len(cols) not in [5, 7]:
+            raise ValueError("Unsupported shift file format: invalid number "
+                             "of columns.")
+
+        shift_info[cols[0]] = {
+            k: float(v) for k, v in zip(_SHIFT_COLNAMES, cols[1:])
+        }
+
+    for filename, pars in shift_info:
+        updatewcs_with_shift(filename, refimage, wcsname=wcsname,
+                             force=force, **pars)
+
+
+def updatewcs_with_shift(image, reference, wcsname=None, reusename=False,
+                         fitgeom='rscale', rot=0.0, scale=1.0,
+                         xsh=0.0, ysh=0.0, fit=None, xrms=None, yrms = None,
                          verbose=False,force=False,sciext='SCI'):
-
     """
     Update the SCI headers in 'image' based on the fit provided as determined
     in the WCS specified by 'reference'.  The fit should be a 2-D matrix as
@@ -281,9 +270,7 @@ def updatewcs_with_shift(image,reference,wcsname=None, reusename=False,
 
 
 def linearize(wcsim, wcsima, wcsref, imcrpix, f, shift, hx=1.0, hy=1.0):
-    """ linearization using 5-point formula for first order derivative
-
-    """
+    """ linearization using 5-point formula for first order derivative """
     x0 = imcrpix[0]
     y0 = imcrpix[1]
     p = np.asarray([[x0, y0],
@@ -297,12 +284,12 @@ def linearize(wcsim, wcsima, wcsref, imcrpix, f, shift, hx=1.0, hy=1.0):
                     [x0, y0 + hy]],
                    dtype=np.float64)
     # convert image coordinates to reference image coordinates:
-    p = wcsref.wcs_world2pix(wcsim.wcs_pix2world(p, 1), 1).astype(ndfloat128)
+    p = wcsref.wcs_world2pix(wcsim.wcs_pix2world(p, 1), 1).astype(np.longdouble)
     # apply linear fit transformation:
     p = np.dot(f, (p - shift).T).T
     # convert back to image coordinate system:
     p = wcsima.wcs_world2pix(
-        wcsref.wcs_pix2world(p.astype(np.float64), 1), 1).astype(ndfloat128)
+        wcsref.wcs_pix2world(p.astype(np.float64), 1), 1).astype(np.longdouble)
 
     # derivative with regard to x:
     u1 = ((p[1] - p[4]) + 8 * (p[3] - p[2])) / (6*hx)
@@ -358,8 +345,8 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
     fit = np.linalg.inv(fit).T
 
     cwcs = chip_wcs.deepcopy()
-    cd_eye = np.eye(chip_wcs.wcs.cd.shape[0], dtype=ndfloat128)
-    zero_shift = np.zeros(2, dtype=ndfloat128)
+    cd_eye = np.eye(chip_wcs.wcs.cd.shape[0], dtype=np.longdouble)
+    zero_shift = np.zeros(2, dtype=np.longdouble)
 
     naxis1, naxis2 = chip_wcs.pixel_shape
 
@@ -390,7 +377,7 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
     (U, u) = linearize(cwcs, chip_wcs, wcslin, chip_wcs.wcs.crpix,
                        fit, shift, hx=hx, hy=hy)
     err0 = np.amax(np.abs(U-cd_eye)).astype(np.float64)
-    chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd.astype(ndfloat128), U).astype(np.float64)
+    chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd.astype(np.longdouble), U).astype(np.float64)
     chip_wcs.wcs.set()
 
     # NOTE: initial solution is the exact mathematical solution (modulo numeric
