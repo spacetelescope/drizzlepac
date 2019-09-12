@@ -16,8 +16,8 @@ out_table = source_cat.copy()
 # Remove all other columns besides 'X-Center and Y-Center
 out_table.keep_columns(['X-Center', 'Y-Center'])
 # Add offset of 1.0 in X and Y to line up sources in region file with image displayed in ds9.
-out_table['X-Center'].data[:] += np.float64(1.0)
-out_table['Y-Center'].data[:] += np.float64(1.0)
+# out_table['X-Center'].data[:] += np.float64(1.0)
+# out_table['Y-Center'].data[:] += np.float64(1.0)
 
 
 out_table.write(outfilename, format="ascii")
