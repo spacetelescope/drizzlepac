@@ -49,7 +49,7 @@ def run_catalog_utils(total_list, debug=False, phot_mode='both'):
             total_product_name = total_product_obj.product_basename + "_drz.fits"
 
         # Instantiate filter catalog product object
-        total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
+        total_product_catalogs = HAPCatalogs(total_product_name,total_product_obj.configobj_pars.get_pars('catalog generation'),types=phot_mode, debug=debug)
 
         # Identify sources to be measured by filter photometry step
         total_product_catalogs.identify()
@@ -80,8 +80,11 @@ def run_catalog_utils(total_list, debug=False, phot_mode='both'):
                 filter_product_name = filter_product_obj.product_basename + "_drz.fits"
 
             # Instantiate filter catalog product object
-            filter_product_catalogs = HAPCatalogs(filter_product_name, types=phot_mode,
-                                                  debug=debug, tp_sources=sources_dict)
+            filter_product_catalogs = HAPCatalogs(filter_product_name,
+                                                  total_product_obj.configobj_pars.get_pars('catalog generation'),
+                                                  types=phot_mode,
+                                                  debug=debug,
+                                                  tp_sources=sources_dict)
             # Perform photometry
             filter_product_catalogs.measure()
 
@@ -114,13 +117,11 @@ def main():
     obs_info_dict, total_list = poller_utils.interpret_obset_input(args.input_file)
 
     for total_item in total_list:
-        total_item.pars = config_utils.HapConfig(total_item, use_defaults=True)
-
+        total_item.configobj_pars = config_utils.HapConfig(total_item, use_defaults=True)
         for filter_item in total_item.fdp_list:
-            filter_item.pars = config_utils.HapConfig(filter_item, use_defaults=True)
-
+            filter_item.configobj_pars = config_utils.HapConfig(filter_item, use_defaults=True)
         for expo_item in total_item.edp_list:
-            expo_item.pars = config_utils.HapConfig(expo_item, use_defaults=True)
+            expo_item.configobj_pars = config_utils.HapConfig(expo_item, use_defaults=True)
 
     starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
     log.info("Run start time: {}".format(str(starting_dt)))  # TODO: remove prior to final integration
