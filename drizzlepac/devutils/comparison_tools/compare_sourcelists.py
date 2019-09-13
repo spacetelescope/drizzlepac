@@ -85,16 +85,16 @@ Classes and Functions
 ---------------------
 """
 import argparse
+import random
+import sys
+
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 import matplotlib.pyplot as plt
 import numpy as np
-import random
-# from . import starmatch_hist
-import starmatch_hist
-import sys
 
+from drizzlepac.devutils.comparison_tools import starmatch_hist
 from drizzlepac import util
 from stsci.tools import logutil
 
