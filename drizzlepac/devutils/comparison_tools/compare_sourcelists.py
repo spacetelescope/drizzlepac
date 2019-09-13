@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4 ai :
 
-"""
-This script compares two sourcelists and displays various measures of their differences. 3x3-sigma clipped mean, median and standard deviatnion, and  non-sigma clipped min and max values are computed for the following:
+"""This script compares two sourcelists and displays various measures of their differences. 3x3-sigma clipped mean,
+median and standard deviatnion, and  non-sigma clipped min and max values are computed for the following:
 
 * X position
 * Y position
@@ -18,7 +18,9 @@ Bit-wise comparisons are also performed for the following item:
 * Flag Value
 
 .. note::
-    Statistics (and optionally plots) for 'X position' and 'Y position' differences will always be displayed. However, not every sourcelist or catalog file is guaranteed to have any of the seven remaining data columns in the above list. Results for these seven columns will only be displayed if data columns are found in both input files.
+    Statistics (and optionally plots) for 'X position' and 'Y position' differences will always be displayed. However,
+    not every sourcelist or catalog file is guaranteed to have any of the seven remaining data columns in the above
+    list. Results for these seven columns will only be displayed if data columns are found in both input files.
 
 Regression Testing
 ------------------
@@ -39,11 +41,11 @@ The following criteria must be met for the test to be declared "successful":
 
 Path
 ----
-HLApipeline/regression_testing/compare_sourcelists.py
+drizzlepac/drizzlepac/devutils/comparison_tools/compare_sourcelists.py
 
 Dependencies
 ------------
-HLApipeline/regression_testing/starmatch_hist.py
+drizzlepac/drizzlepac/devutils/comparison_tools/starmatch_hist.py
 
 Inputs
 ------
@@ -70,17 +72,6 @@ Inputs
         * Input choices: "True" or "False"
         * Default value: True
 
-Examples
---------
-
-1: Compare j92c01b7q_single_sci.fits.coo to reference list j92c01b5q_single_sci.fits.coo using the corresponding single_sci.fits images to imporve alignment; display verbose output and generate plots::
-
-    $HLApipeline/regression_testing/compare_sourcelists.py j92c01b5q_single_sci.fits.coo j92c01b7q_single_sci.fits.coo -i j92c01b5q_single_sci.fits j92c01b7q_single_sci.fits -p True
-
-2: Compare V99.8/hst_10265_01_acs_wfc_f606w_daophot.txt to reference sourcelist V10.0/hst_10265_01_acs_wfc_f606w_daophot.txt. Return statistics on the differencs, but no plots or verbose output::
-
-    $HLApipeline/regression_testing/compare_sourcelists.py V10.0/hst_10265_01_acs_wfc_f606w_daophot.txt V99.8/hst_10265_01_acs_wfc_f606w_daophot.txt -v False
-
 Classes and Functions
 ---------------------
 """
@@ -104,7 +95,7 @@ log = logutil.create_logger('compare_sourcelists', level=logutil.logging.INFO, s
 def check_match_quality(matched_x_list, matched_y_list):
     """Creates region file to check quality of source matching.
 
-    PARAMETERS
+    Parameters
     ----------
     matched_x_list : list
         list of ref and comp x coords for matched sources
@@ -112,7 +103,7 @@ def check_match_quality(matched_x_list, matched_y_list):
     matched_y_list : list
         list of ref and comp y coords for matched sources
 
-    RETURNS
+    Returns
     -------
     Nothing.
     """
@@ -133,18 +124,27 @@ def check_match_quality(matched_x_list, matched_y_list):
 
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
-    """
-    Compute and report statistics on the differences in flagging.
+    """Compute and report statistics on the differences in flagging.
 
-    :param matchedRA: A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The corresponding matched comparision values
-    :param plotGen: Generate plots and display them to the screen (True/False)?
-    :param plot_title: text string that will be used in plot title.
-    :param verbose: display verbose output?
-    :type matchedRA: numpy.ndarray
-    :type plotGen: Boolean
-    :type plot_title: string
-    :type verbose: Boolean
-    :return: Regression test status: Either "OK" or "FAILURE".
+    Parameters
+    ----------
+    matchedRA : numpy.ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched reference values.
+        Column 2: The corresponding matched comparision values
+
+    plotGen : Boolean
+        Generate plots and display them to the screen (True/False)?
+
+    plot_title : string
+        text string that will be used in plot title.
+
+    verbose : Boolean
+        display verbose output?
+
+    Returns
+    -------
+    regTestStatus : string
+        overall test result and statistics
     """
     log.info(">>>>>> Comparision - reference sourcelist {} differences <<<<<<".format(plot_title))
     #set up arrays to count stuff up
@@ -168,9 +168,6 @@ def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
             unchangedFlagBreakdown[np.where((refFlagRA ==1) & (compFlagRA ==1))] += 1 #takes care of the case were comp and ref have differing bits, but also have additional bits that are unchanged.
         if np.array_equal(refFlagRA, compFlagRA): #if there are absolutly no differences
             unchangedFlagBreakdown+=refFlagRA
-
-
-
     regTestStatus = "OK     "
     pct_diff_refbits=(np.sum([off_on_FlagFlips,on_off_FlagFlips],dtype=float)/np.sum(refFlagBreakdown, dtype=float))*100.0
     if pct_diff_refbits >=5.0:
@@ -250,20 +247,31 @@ def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
     return (regTestStatus)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
 def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
-    """
-    Compute stats on the quantities with differences that can be computed with simple subtraction (X, Y, RA, Dec, Flux, and Magnitude).
+    """Compute stats on the quantities with differences that can be computed with simple subtraction 
+    (X, Y, RA, Dec, Flux, and Magnitude).
 
-    :param matchedRA: A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The corresponding matched comparision values
-    :param plotGen: Generate plots?
-    :param diffMode: Method used to compute diffRA
-    :param plot_title: text string that will be used in plot title.
-    :param verbose: display verbose output?
-    :type matchedRA: numpy.ndarray
-    :type plotGen: string
-    :type diffMode: string
-    :type plot_title: string
-    :type verbose: Boolean
-    :return: Regression test status: Either "OK" or "FAILURE".
+    Parameters
+    ----------  
+    matchedRA : numpy.ndarray
+    A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The corresponding matched
+    comparision values
+
+    plotGen : string
+        Generate plots?
+
+    diffMode : string
+        Method used to compute diffRA
+
+    plot_title : string
+        text string that will be used in plot title.
+
+    verbose : Boolean
+        display verbose output?
+
+    Returns
+    -------
+    regTestStatus : string
+        overall test result and statistics
     """
     log.info(">>>>>> Comparision - reference sourcelist {} differences <<<<<<".format(plot_title))
     #remove any "inf" or "nan" values in matchedRA.
@@ -375,12 +383,18 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
     return(regTestStatus+out_stats)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
 def deconstruct_flag(flagval):
-    """
-    Breaks down an integer flag value into individual component bit values.
+    """Breaks down an integer flag value into individual component bit values.
 
-    :param flagval: Flag value to deconstruct
-    :type flagval: integer
-    :return: a 9-element numpy array of 0s and 1s. Each element of the array represents the presence of a particular bit value (element 0 = bit 0, element 1 = bit 1, ..., element 3 = bit 4 and so on...)
+    Parameters
+    ----------
+    flagval : int
+        Flag value to deconstruct
+    
+    Returns
+    -------
+    out_idx_list : list
+        a 9-element numpy array of 0s and 1s. Each element of the array represents the presence of a particular 
+        bit value (element 0 = bit 0, element 1 = bit 1, ..., element 3 = bit 4 and so on...)
     """
     bit_list = [1, 2, 4, 8, 16, 32, 64, 128]
     flagval = int(flagval)
@@ -400,20 +414,31 @@ def deconstruct_flag(flagval):
     return (out_idx_list)
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def extractMatchedLines(col2get,refData,compData,refLines,compLines):
-    """
-    Extracts only matching lines of data for a specific column of refData and compData. Returns empty list if the specified column is not found in both tables.
+    """Extracts only matching lines of data for a specific column of refData and compData. Returns empty list if the
+    specified column is not found in both tables.
 
-    :param col2get: Title of the column to return
-    :param refData: reference data table
-    :param compData: comparison data table
-    :param refLines: List of matching refData line numbers
-    :param compLines: List of matching compData line numbers
-    :type col2get: string
-    :type refData: astropy Table object
-    :type compData: astropy Table object
-    :type refLines: numpy.ndarray
-    :type compLines: numpy.ndarray
-    :return: A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The corresponding matched comparision values
+    Parameters
+    ----------
+    col2get : string
+        Title of the column to return
+
+    refData : astropy Table object
+        reference data table
+
+    compData : astropy Table object
+        comparison data table
+
+    refLines : numpy.ndarray
+        List of matching refData line numbers
+
+    compLines : numpy.ndarray
+        List of matching compData line numbers
+
+    Returns
+    -------
+    return_ra : numpy ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The corresponding matched
+        comparision values
     """
     return_ra=[]
     if col2get in list(refData.keys()) and col2get in list(compData.keys()):
@@ -423,16 +448,26 @@ def extractMatchedLines(col2get,refData,compData,refLines,compLines):
     return(return_ra)
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def getMatchedLists(slNames,imgNames,slLengths):
-    """
-    run starmatch_hist to get the indices of matching sources that are common to both input source catalogs
+    """run starmatch_hist to get the indices of matching sources that are common to both input source catalogs
 
-    :param slNames: list of input source lists
-    :param imgNames: list of input images
-    :param slLengths: list of integer sourcelist lengths
-    :type slNames: list
-    :type imgNames: list
-    :type slLengths: list
-    :return: A list of the indices of reference sourcelist sources that match comparison sourcelist sources , and a corresponding list of the indices of comparison sourcelist sources that match reference sourcelist sources
+    Parameters
+    ----------
+    slNames : list
+        list of input source lists
+
+    imgNames : list
+        list of input images
+
+    slLengths : list
+        list of integer sourcelist lengths
+
+    Returns
+    -------
+    matching_lines_ref : list
+        A list of the indices of reference sourcelist sources that match comparison sourcelist sources
+
+    matching_lines_img : list
+        A corresponding list of the indices of comparison sourcelist sources that match reference sourcelist sources
     """
     source_list_dict = {}
     equal_flag=False
@@ -466,20 +501,31 @@ def getMatchedLists(slNames,imgNames,slLengths):
     return(matching_lines_ref,matching_lines_img)
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def makeVectorPlot(x,y,plotDest,binThresh = 10000,binSize=250):
-    """
-    Generate vector plot of dx and dy values vs. reference (x,y) positions
+    """Generate vector plot of dx and dy values vs. reference (x,y) positions
 
-    :param x: A 2 x n sized numpy array. Column 1: matched reference X values. Column 2: The corresponding matched comparision X values
-    :param y: A 2 x n sized numpy array. Column 1: matched reference Y values. Column 2: The corresponding matched comparision Y values
-    :param plotDest: plot destination; screen or file
-    :param binThresh: Minimum size of list *x* and *y* that will trigger generation of a binned vector plot. Default value = 10000.
-    :param binSize: Size of binning box in pixels. When generating a binned vector plot, mean dx and dy values are computed by taking the mean of all points located within the box. Default value = 250.
-    :type x: numpy.ndarray
-    :type y: numpy.ndarray
-    :type plotDest: string
-    :type binThresh: integer
-    :type binSize: integer
-    :return: nothing
+    Parameters
+    ----------
+    x : numpy.ndarray
+        A 2 x n sized numpy array. Column 1: matched reference X values. Column 2: The corresponding matched
+        comparision X values
+
+    y : numpy.ndarray
+        A 2 x n sized numpy array. Column 1: matched reference Y values. Column 2: The corresponding matched
+        comparision Y values
+
+    plotDest : string
+        plot destination; screen or file
+
+    binThresh : int
+        Minimum size of list *x* and *y* that will trigger generation of a binned vector plot. Default value = 10000.
+
+    binSize : int
+        Size of binning box in pixels. When generating a binned vector plot, mean dx and dy values are computed by
+        taking the mean of all points located within the box. Default value = 250.
+
+    Returns
+    -------
+    nothing
     """
     dx = x[1, :] - x[0, :]
     dy = y[1, :] - y[0, :]
@@ -547,16 +593,23 @@ def makeVectorPlot(x,y,plotDest,binThresh = 10000,binSize=250):
         log.info("Vector plot saved to file xy_vector_plot.pdf")
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def round2ArbatraryBase(value,direction,roundingBase):
-    """
-    Round value up or down to arbitrary base
+    """Round value up or down to arbitrary base
 
-    :param value: Value to be rounded.
-    :param direction: Round up, down to the nearest base (choices: "up","down","nearest")
-    :param roundingBase: rounding base. (Example: if base = 5, values will be rounded to the nearest multiple of 5 or 10.)
-    :type value: float
-    :type direction: string
-    :type roundingBase: integer
-    :return: rounded value.
+    Parameters
+    ----------
+    value : float
+        Value to be rounded.
+
+    direction : string
+        Round up, down to the nearest base (choices: "up","down","nearest")
+
+    roundingBase : int
+        rounding base. (Example: if base = 5, values will be rounded to the nearest multiple of 5 or 10.)
+
+    Returns
+    -------
+    rv : int
+        rounded value.
     """
     if direction.lower().startswith("u"):
         rv=value+(roundingBase-value%roundingBase) #round up to nearest base
@@ -568,20 +621,29 @@ def round2ArbatraryBase(value,direction,roundingBase):
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 @util.with_logging
 def comparesourcelists(slNames,imgNames,plotGen,diffMode,verbose,debugMode):
-    """
-    Main calling subroutine to compare sourcelists.
+    """Main calling subroutine to compare sourcelists.
 
-    :param slNames: list of input source lists
-    :param imgNames: optional list of input images that starmatch_hist will use to improve sourcelist matching
-    :param plotGen: Generate plots and display them to the screen (True/False)?
-    :param diffMode: method used to compute comp-ref difference in computeLinearStats().
-    :param verbose: display verbose output?
-    :type slNames: list
-    :type imgNames: list
-    :type plotGen: Boolean
-    :type diffMode: string
-    :type verbose: Boolean
-    :return: "OK" if all tests were passed, or "FAILURE" if inconsistencies were found.
+    Parameters
+    ----------
+    slNames : list
+        list of input source lists
+
+    imgNames : list
+        optional list of input images that starmatch_hist will use to improve sourcelist matching
+
+    plotGen : Boolean
+        Generate plots and display them to the screen (True/False)?
+
+    diffMode : string
+        method used to compute comp-ref difference in computeLinearStats().
+
+    verbose : Boolean
+        display verbose output?
+
+    Returns
+    -------
+    overallStatus : string
+        "OK" if all tests were passed, or "FAILURE" if inconsistencies were found.
     """
     regressionTestResults={}
     colTitles=[]
@@ -713,8 +775,8 @@ def comparesourcelists(slNames,imgNames,plotGen,diffMode,verbose,debugMode):
     return(overallStatus)
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def slFiles2dataTables(slNames):
-    """
-    Reads in data from sourcelists, returns some or all of the following data columns in a pair of properly formatted astropy.table objects:
+    """Reads in data from sourcelists, returns some or all of the following data columns in a pair of properly
+    formatted astropy.table objects:
 
     * X Position
     * Y Position
@@ -727,11 +789,21 @@ def slFiles2dataTables(slNames):
     * Flag Value
 
     .. note::
-        'X position' and 'Y position' data columns will always be returned. However, not every sourcelist or catalog file is guaranteed to have any of the seven remaining data columns in the above list.
+        'X position' and 'Y position' data columns will always be returned. However, not every sourcelist or catalog
+        file is guaranteed to have any of the seven remaining data columns in the above list.
 
-    :param slNames: A list containing the reference sourcelist filename and the comparison sourcelist filename, in that order.
-    :type slNames: list
-    :return: a pair of astropy.table objects the first is the data from the reference sourcelist, and the second is from the comparison sourcelist.
+    Parameters
+    ----------
+    slNames : list
+        A list containing the reference sourcelist filename and the comparison sourcelist filename, in that order.
+
+    Returns
+    -------
+    refData : astropy.table object
+        data from the reference sourcelist
+
+    compData : astropy.table object
+        data from the comparision sourcelist
     """
     if slNames[0].endswith(".ecsv"):
         refData_in = Table.read(slNames[0], format='ascii.ecsv')
