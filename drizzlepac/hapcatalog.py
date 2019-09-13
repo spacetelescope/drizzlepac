@@ -115,13 +115,14 @@ def main():
     log.info("python {} {} -d {} -m {}".format(os.path.realpath(__file__), args.input_file, args.debug, args.phot_mode))
 
     obs_info_dict, total_list = poller_utils.interpret_obset_input(args.input_file)
-
+    out_pars_file = 'pars.json'
     for total_item in total_list:
-        total_item.configobj_pars = config_utils.HapConfig(total_item, use_defaults=True)
+
+        total_item.configobj_pars = config_utils.HapConfig(total_item, output_custom_pars_file=out_pars_file,use_defaults=True)
         for filter_item in total_item.fdp_list:
-            filter_item.configobj_pars = config_utils.HapConfig(filter_item, use_defaults=True)
+            filter_item.configobj_pars = config_utils.HapConfig(filter_item, output_custom_pars_file=out_pars_file,use_defaults=True)
         for expo_item in total_item.edp_list:
-            expo_item.configobj_pars = config_utils.HapConfig(expo_item, use_defaults=True)
+            expo_item.configobj_pars = config_utils.HapConfig(expo_item, output_custom_pars_file=out_pars_file,use_defaults=True)
 
     starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
     log.info("Run start time: {}".format(str(starting_dt)))  # TODO: remove prior to final integration
