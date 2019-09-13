@@ -347,11 +347,6 @@ class HAPPointCatalog(HAPCatalogBase):
         # read in sci, wht extensions of drizzled product
         image = self.image.data.copy()
 
-        # Estimate FWHM from image sources
-        # Background statistics need to be computed prior to subtracting background from image
-        bkg_sigma = mad_std(image, ignore_nan=True)
-        detect_sources_thresh = self.param_dict["dao"]["bkgsig_sf"] * bkg_sigma
-
         # Input image will be background subtracted using pre-computed background, unless
         # specified explicitly by the user
         if self.param_dict["dao"]["simple_bkg"]:
@@ -366,18 +361,17 @@ class HAPPointCatalog(HAPCatalogBase):
             # Report configuration values to log
             log.info("{}".format("=" * 80))
             log.info("")
-            # log.info("Point-source finding settings")
-            # log.info("Total Detection Product - Input Parameters")
-            # log.info("INPUT PARAMETERS")
-            # log.info("{}: {}".format("self.param_dict['dao']['bkgsig_sf']", self.param_dict["dao"]["bkgsig_sf"]))
-            # log.info("{}: {}".format("self.param_dict['dao']['kernel_sd_aspect_ratio']", self.param_dict['dao']['kernel_sd_aspect_ratio']))
-            # log.info("{}: {}".format("self.param_dict['dao']['simple_bkg']", self.param_dict['dao']['simple_bkg']))
-            # log.info("{}: {}".format("self.image.bkg_rms_mean", self.image.bkg_rms_mean))
-            # log.info("{}: {}".format("self.image.bkg_rms_mean", self.image.bkg_rms_mean))
-            # log.info("{}: {}".format("self.param_dict['sourcex']['source_box']",
-            #                          self.param_dict["sourcex"]["source_box"]))
-            # log.info("\nDERIVED PARAMETERS")
-            # log.info("{}: {}".format("source_fwhm", source_fwhm))
+            log.info("Point-source finding settings")
+            log.info("Total Detection Product - Input Parameters")
+            log.info("INPUT PARAMETERS")
+            log.info("{}: {}".format("self.param_dict['dao']['bkgsig_sf']", self.param_dict["dao"]["bkgsig_sf"]))
+            log.info("{}: {}".format("self.param_dict['dao']['kernel_sd_aspect_ratio']", self.param_dict['dao']['kernel_sd_aspect_ratio']))
+            log.info("{}: {}".format("self.param_dict['dao']['simple_bkg']", self.param_dict['dao']['simple_bkg']))
+            log.info("{}: {}".format("self.param_dict['dao']['nsigma']", self.param_dict['dao']['nsigma']))
+            log.info("{}: {}".format("self.image.bkg_rms_mean", self.image.bkg_rms_mean))
+            log.info("\nDERIVED PARAMETERS")
+            log.info("{}: {}".format("source_fwhm", source_fwhm))
+            log.info("{}: {}".format("threshold", self.param_dict['dao']['nsigma']*self.image.bkg_rms_mean))
             log.info("")
             log.info("{}".format("=" * 80))
 
