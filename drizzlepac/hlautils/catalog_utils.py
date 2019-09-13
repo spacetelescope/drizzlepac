@@ -129,7 +129,7 @@ class CatalogImage:
             if bkg is not None:
                 bkg_rms_mean = bkg.background_rms_median
                 break
-
+        # TODO: figure out what to do if Background2D doesn't work
         # If Background2D does not work at all, define default scalar values for
         # the background to be used in source identification
         # if bkg is None:
@@ -235,7 +235,8 @@ class HAPCatalogs:
         self.image = CatalogImage(fitsfile)
         self.image.compute_background(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'])
 
-        self.image.build_kernel(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'],self.param_dict['dao']['TWEAK_FWHMPSF'], self.param_dict['dao']['scale'])
+        self.image.build_kernel(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'],
+                                self.param_dict['dao']['TWEAK_FWHMPSF'], self.param_dict['dao']['scale'])
 
         # Initialize all catalog types here...
         # This does NOT identify or measure sources to create the catalogs at this point...
@@ -342,7 +343,6 @@ class HAPPointCatalog(HAPCatalogBase):
     def identify_sources(self):
         """Create a master coordinate list of sources identified in the specified total detection product image
         """
-        nsigma = 5 # TODO: add to catalog config files
         source_fwhm = self.image.kernel_fwhm
         # read in sci, wht extensions of drizzled product
         image = self.image.data.copy()
@@ -382,9 +382,9 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("{}".format("=" * 80))
 
             # find ALL the sources!!!
-            log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm,nsigma,self.image.bkg_rms_mean))
+            log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm,self.param_dict['dao']['nsigma'],self.image.bkg_rms_mean))
 
-            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=nsigma*self.image.bkg_rms_mean)
+            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['dao']['nsigma']*self.image.bkg_rms_mean)
 
             # create mask to reject any sources located less than 10 pixels from a image/chip edge
             wht_image = self.image.data.copy()

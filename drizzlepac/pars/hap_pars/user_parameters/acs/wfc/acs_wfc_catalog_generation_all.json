@@ -13,7 +13,8 @@
         "scale": 0.05,
         "skyannulus_arcsec": 0.25,
         "dskyannulus_arcsec": 0.25,
-        "salgorithm": "mode"
+        "salgorithm": "mode",
+        "nsigma": 5
     },
     "sourcex": {
         "fwhm": 0.13,
