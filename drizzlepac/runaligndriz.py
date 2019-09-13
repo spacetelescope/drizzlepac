@@ -131,7 +131,7 @@ def run(configobj=None):
 
 # Primary user interface
 def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
-            headerlets=True, align_to_gaia=True):
+            headerlets=True, align_to_gaia=True, force_alignment=False):
     """ Run astrodrizzle on input file/ASN table
         using default values for astrodrizzle parameters.
     """
@@ -429,25 +429,28 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
         align_fail = True if sim_indx > 1 else False
         if align_fail:
             _trlmsg += "Absolute astrometry alignment FAILED with an index of {}!\n".format(sim_indx)
-            _trlmsg += "  Reverting to pipeline-default WCS-based alignment.\n"
-            # replace alignment product with default solution
-            for product, default in zip(_align_products, _drz_defaults):
-                os.remove(product)
-                shutil.move(default, product)
-            # remove all traces of a posteriori solutions
-            wcsnames_post = [fits.getval(f, 'wcsname', ext=1) for f in _calfiles+_calfiles_flc]
-            # Run updatewcs on each list of images
-            updatewcs.updatewcs(_calfiles)
-            if _calfiles_flc:
-                updatewcs.updatewcs(_calfiles_flc)
-            # Now delete headerlets for bad astrometric solution
-            for calfile, bad_wcs in zip(_calfiles+_calfiles_flc, wcsnames_post):
-                hdrlet_wcsnames = headerlet.get_headerlet_kw_names(calfile, kw='WCSNAME')
-                hdrlet_hdrnames = headerlet.get_headerlet_kw_names(calfile, kw='HDRNAME')
-                hdrlet_indx = hdrlet_wcsnames.index(bad_wcs)
-                bad_hdrlet = hdrlet_hdrnames[hdrlet_indx]
-                _trlmsg += "Removing corrupted astrometric solution {}\n".format(bad_hdrlet, calfile)
-                headerlet.delete_headerlet(calfile, hdrname=bad_hdrlet)
+            if force_alignment:
+                _trlmsg += "  WARNING: \nKEEPING potentially compromised astrometry solution!\n"
+            else:
+                _trlmsg += "  Reverting to pipeline-default WCS-based alignment.\n"
+                # replace alignment product with default solution
+                for product, default in zip(_align_products, _drz_defaults):
+                    os.remove(product)
+                    shutil.move(default, product)
+                # remove all traces of a posteriori solutions
+                wcsnames_post = [fits.getval(f, 'wcsname', ext=1) for f in _calfiles+_calfiles_flc]
+                # Run updatewcs on each list of images
+                updatewcs.updatewcs(_calfiles)
+                if _calfiles_flc:
+                    updatewcs.updatewcs(_calfiles_flc)
+                # Now delete headerlets for bad astrometric solution
+                for calfile, bad_wcs in zip(_calfiles+_calfiles_flc, wcsnames_post):
+                    hdrlet_wcsnames = headerlet.get_headerlet_kw_names(calfile, kw='WCSNAME')
+                    hdrlet_hdrnames = headerlet.get_headerlet_kw_names(calfile, kw='HDRNAME')
+                    hdrlet_indx = hdrlet_wcsnames.index(bad_wcs)
+                    bad_hdrlet = hdrlet_hdrnames[hdrlet_indx]
+                    _trlmsg += "Removing corrupted astrometric solution {}\n".format(bad_hdrlet, calfile)
+                    headerlet.delete_headerlet(calfile, hdrname=bad_hdrlet)
             
         else:
             _trlmsg += "Alignment appeared to succeed with similarity index of {}\n".format(sim_indx)
