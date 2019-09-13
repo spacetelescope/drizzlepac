@@ -27,9 +27,6 @@ try:
 except Exception:
     plt = None
 
-# Default background determination parameter values
-BKG_BOX_SIZE = 50
-BKG_FILTER_SIZE = 3
 CATALOG_TYPES = ['aperture', 'segment']
 
 __taskname__ = 'catalog_utils'
@@ -66,14 +63,14 @@ class CatalogImage:
     def close(self):
         self.imghdu.close()
 
-    def build_kernel(self, fwhmpsf, scale):
+    def build_kernel(self, box_size, win_size, fwhmpsf, scale):
         if self.bkg is None:
-            self.compute_background()
+            self.compute_background(box_size, win_size)
 
         self.kernel,self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data, self.wht_image,
                                                           threshold=self.bkg.background_rms, fwhm=fwhmpsf / scale)
 
-    def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
+    def compute_background(self, box_size, win_size,
                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS):
         """Use Background2D to determine the background of the input image.
 
@@ -121,7 +118,7 @@ class CatalogImage:
             log.info("")
             log.info("Percentile in use: {}".format(percentile))
             try:
-                bkg = Background2D(self.data, (27,27), filter_size=(3,3),
+                bkg = Background2D(self.data, (box_size,box_size), filter_size=(win_size,win_size),
                                    bkg_estimator=bkg_estimator(),
                                    bkgrms_estimator=rms_estimator(),
                                    exclude_percentile=percentile,edge_method="pad")
@@ -236,9 +233,9 @@ class HAPCatalogs:
 
         # Compute the background for this image
         self.image = CatalogImage(fitsfile)
-        self.image.compute_background()
+        self.image.compute_background(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'])
 
-        self.image.build_kernel(self.param_dict['dao']['TWEAK_FWHMPSF'], self.param_dict['dao']['scale'])
+        self.image.build_kernel(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'],self.param_dict['dao']['TWEAK_FWHMPSF'], self.param_dict['dao']['scale'])
 
         # Initialize all catalog types here...
         # This does NOT identify or measure sources to create the catalogs at this point...
