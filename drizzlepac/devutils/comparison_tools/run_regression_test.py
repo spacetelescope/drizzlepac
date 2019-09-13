@@ -134,7 +134,7 @@ if __name__ == "__main__":
         if ARGS.pathNames[ctr].endswith("/"):
             ARGS.pathNames[ctr]=ARGS.pathNames[ctr][:-1]
     padding=68
-    print("{}>{}<{}".format("=" * padding, " COMPARE SOURCELISTS ", "=" * padding))
+    print(("{}>{}<{}".format("=" * padding, " COMPARE SOURCELISTS ", "=" * padding)))
     overallStatus="OK"
     slList = find_matched_sourcelists(ARGS.pathNames[0], ARGS.pathNames[1])
     slCtr =1
@@ -151,11 +151,11 @@ if __name__ == "__main__":
         if runStatus != "OK": overallStatus = "FAILURE"
         slCtr+=1
 
-    print("{}>{}<{}".format("=" * padding, " COMPARE  IMAGES ", "=" * padding))
+    print(("{}>{}<{}".format("=" * padding, " COMPARE  IMAGES ", "=" * padding)))
     runStatus = compare_images.run(ARGS.pathNames, ARGS.comparisonType, ARGS.drzOnly, ARGS.verbose)
     if runStatus != "OK": overallStatus = "FAILURE"
 
     print()
     print()
     print()
-    print("OVERALL REGRESSION TEST RESULT: ",overallStatus)
+    print(("OVERALL REGRESSION TEST RESULT: ",overallStatus))
