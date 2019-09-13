@@ -14,8 +14,8 @@ HLApipeline/regression_testing/run_regression_test.py
 
 Dependencies
 ------------
-* HLApipeline/regression_testing/compare_images.py
-* HLApipeline/regression_testing/compare_sourcelists.py
+* drizzlepac/drizzlepac/devutils/comparison_tools/compare_images.py
+* drizzlepac/drizzlepac/devutils/comparison_tools/compare_sourcelists.py
 
 Inputs
 ------
