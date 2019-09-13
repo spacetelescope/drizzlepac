@@ -134,11 +134,35 @@ def main():
     for item in product_list:
         print(item)
 
+#-----------------------------------------------------------------------------------------------------------------
+def confirm_execution():
+    """
+    This subroutine prevents accidental execution by requiring the user to type in a randomly generated 6-character
+    confirmation string. If the string is typed in incorrectly, the script will simply exit to the command line.
+
+    :return: nothing
+    """
+    import random
+    import string
+    confirm_string=''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+    foo = input("Confirm execution by entering the following randomized text string: {} \n".format(confirm_string))
+    if foo != confirm_string: sys.exit("Execution aborted.")
+    if foo == confirm_string: print("Execution confirmed.")
+
+#-----------------------------------------------------------------------------------------------------------------
 
 # ======================================================================================================================
 
 
+
 if __name__ == '__main__':
+    print("Current working directory: "+os.getcwd())
+    confirm_execution()
+
+    cmd_list = ['rm -f *.*','cp orig/* .']
+    for cmd in cmd_list:
+        print(cmd)
+        os.system(cmd)
     main()
 
 
