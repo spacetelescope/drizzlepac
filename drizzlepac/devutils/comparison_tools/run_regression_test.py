@@ -64,8 +64,8 @@ Classes and Functions
 ---------------------
 """
 import argparse
-from . import compare_images
-from . import compare_sourcelists
+from drizzlepac.devutils.comparison_tools import compare_images
+from drizzlepac.devutils.comparison_tools import compare_sourcelists
 import glob
 
 
