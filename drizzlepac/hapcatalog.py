@@ -124,12 +124,12 @@ def main():
         for expo_item in total_item.edp_list:
             expo_item.configobj_pars = config_utils.HapConfig(expo_item, output_custom_pars_file=out_pars_file,use_defaults=True)
 
-    starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
-    log.info("Run start time: {}".format(str(starting_dt)))  # TODO: remove prior to final integration
+    starting_dt = datetime.datetime.now()
+    log.info("Run start time: {}".format(str(starting_dt)))
 
     product_list = run_catalog_utils(total_list, args.debug, args.phot_mode)
 
-    log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
+    log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))
 
     for item in product_list:
         print(item)
