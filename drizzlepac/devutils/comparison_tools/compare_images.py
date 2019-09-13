@@ -90,7 +90,7 @@ def compareFileStructure(imgHDU1,imgHDU2,verbose):
                 if img1Info[dictKey] != img2Info[dictKey]:
                     returnValue = False
             if  not returnValue:
-                if verbose: print(ext_num, img1Info['name'],img2Info['name'],"     ",img1Info['type'],img2Info['type'],"     ",img1Info['size'],img2Info['size'])
+                if verbose: print((ext_num, img1Info['name'],img2Info['name'],"     ",img1Info['type'],img2Info['type'],"     ",img1Info['size'],img2Info['size']))
     if returnValue:
         if verbose: print("OK")
     if verbose: print()
@@ -167,7 +167,7 @@ def comparePixelValues(imgHDU1,imgHDU2,verbose):
         for item in statMeasureList:
             if img1Stats[item] != img2Stats[item]:
                 pct_diff=((img2Stats[item]-img1Stats[item])/np.abs(img1Stats[item]))*100.0
-                if verbose: print("[{}] {}:{} {} {} ({}%)".format(ext_num, item," "*(6-len(item)), img1Stats[item], img2Stats[item],pct_diff))
+                if verbose: print(("[{}] {}:{} {} {} ({}%)".format(ext_num, item," "*(6-len(item)), img1Stats[item], img2Stats[item],pct_diff)))
                 returnValue = False
     if returnValue:
         if verbose: print("OK")
@@ -314,9 +314,9 @@ def run(pathNames,compType,drzOnly,verbose):
         if compType in ["pixel data", "both"]:check_status[2] = comparePixelValues(imgHDU1, imgHDU2,verbose)
 
         print()
-        print("File Structure... {}".format(check_status[0]))
-        print("Header Values.... {}".format(check_status[1]))
-        print("Pixel Data....... {}".format(check_status[2]))
+        print(("File Structure... {}".format(check_status[0])))
+        print(("Header Values.... {}".format(check_status[1])))
+        print(("Pixel Data....... {}".format(check_status[2])))
         print()
         print()
 
@@ -324,8 +324,8 @@ def run(pathNames,compType,drzOnly,verbose):
             if item == False:
                 overallStatus = "FAILED"
         imgCtr +=1
-    print("="*maxNameSepLength)
-    print("Overall Status... {}".format(overallStatus))
+    print(("="*maxNameSepLength))
+    print(("Overall Status... {}".format(overallStatus)))
     return(overallStatus)
 #=======================================================================================================================
 if __name__ == "__main__":
