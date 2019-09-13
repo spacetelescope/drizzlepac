@@ -181,8 +181,6 @@ class HapConfig(object):
                     sys.exit("INVALID HST INSTRUMENT!")
         else:  # For single-exposure products
             self.conditions = ["single_basic"]
-            self.conditions.append("any_n1")  # TODO: verify that single-exposure products should use nexp=1 cfg file.
-
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
