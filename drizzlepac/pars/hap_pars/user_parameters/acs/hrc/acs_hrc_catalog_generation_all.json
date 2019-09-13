@@ -1,4 +1,6 @@
 {
+    "bkg_box_size": 27,
+    "bkg_filter_size": 3,
     "dao": {
         "bkgsig_sf": 4.0,
         "kernel_sd_aspect_ratio": 0.8,
