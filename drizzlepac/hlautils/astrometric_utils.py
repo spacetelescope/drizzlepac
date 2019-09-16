@@ -1167,12 +1167,12 @@ def build_wcscat(image, group_id, source_catalog):
         hdulist.close()
 
     return wcs_catalogs
-    
-def rebin(arr, new_shape): 
-    """Rebin 2D array arr to shape new_shape by averaging.""" 
-    shape = (new_shape[0], arr.shape[0] // new_shape[0], 
-             new_shape[1], arr.shape[1] // new_shape[1]) 
-    return arr.reshape(shape).mean(-1).mean(1) 
+
+def rebin(arr, new_shape):
+    """Rebin 2D array arr to shape new_shape by averaging."""
+    shape = (new_shape[0], arr.shape[0] // new_shape[0],
+             new_shape[1], arr.shape[1] // new_shape[1])
+    return arr.reshape(shape).mean(-1).mean(1)
 
 def maxBit(int_val):
     """Return power of 2 for highest bit set for integer"""
@@ -1182,33 +1182,33 @@ def maxBit(int_val):
         count += (int_val & 1)
         length += 1
         int_val >>= 1
-    
+
     return length-1
 
 
 def compute_similarity(image, reference):
     """Compute a similarity index for an image compared to a reference image.
-    
+
     Similarity index is based on a the general algorithm used in the AmphiIndex
-    algorithm.  
+    algorithm.
         - identify slice of image that is a factor of 256 in size
         - rebin image slice down to a (256,256) image
         - rebin same slice from reference down to a (256,256) image
         - sum the differences of the rebinned slices
         - divide absolute value of difference scaled by reference slice sum
-        
+
     .. note::
-    This index will typically return values < 0.1 for similar images, and 
+    This index will typically return values < 0.1 for similar images, and
     values > 1 for dis-similar images.
 
     Parameters
     ----------
     image : ndarray
         Image (as ndarray) to measure
-    
+
     reference : ndarray
         Image which serves as the 'truth' or comparison image.
-    
+
     Returns
     -------
     similarity_index : float
@@ -1219,7 +1219,7 @@ def compute_similarity(image, reference):
     image = np.nan_to_num(image[:], 0)
     reference = np.nan_to_num(reference[:], 0)
 
-    imgshape = (min(image.shape[0], reference.shape[0]), 
+    imgshape = (min(image.shape[0], reference.shape[0]),
                 min(image.shape[1], reference.shape[1]))
     minsize = min(imgshape[0], imgshape[1])
 
@@ -1227,14 +1227,14 @@ def compute_similarity(image, reference):
     window_bit = maxBit(minsize)
     window = 2**window_bit
 
-    # Define how big the rebinned image should be for computing the sim index 
-    sim_size = 2**(window_bit-2) if window > 256 else window
+    # Define how big the rebinned image should be for computing the sim index
+    sim_size = 2**(window_bit - 2) if window > 16 else window
 
     # rebin image and reference
     img = rebin(image[:window, :window], (sim_size, sim_size))
-    ref = rebin(reference[:window, :window], (sim_size,sim_size))
+    ref = rebin(reference[:window, :window], (sim_size, sim_size))
 
-    # Compute index 
+    # Compute index
     diffs = np.abs((img - ref).sum())
     sim_indx = diffs / img.sum()
     return sim_indx
