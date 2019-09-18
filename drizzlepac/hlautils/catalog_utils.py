@@ -8,7 +8,7 @@ import pickle # FIX Remove
 import astropy.units as u
 from astropy.io import fits as fits
 from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel
-from astropy.stats import mad_std, gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm
+from astropy.stats import mad_std, gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm, sigma_clipped_stats
 from astropy.table import Column, MaskedColumn, Table
 import numpy as np
 from scipy import ndimage
@@ -16,6 +16,7 @@ from scipy import ndimage
 from photutils import aperture_photometry, CircularAperture, CircularAnnulus, DAOStarFinder
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
 from photutils import detect_sources, source_properties  # , deblend_sources
+from photutils import make_source_mask
 from stsci.tools import logutil
 from stwcs.wcsutil import HSTWCS
 
@@ -121,7 +122,8 @@ class CatalogImage:
                 bkg = Background2D(self.data, (box_size,box_size), filter_size=(win_size,win_size),
                                    bkg_estimator=bkg_estimator(),
                                    bkgrms_estimator=rms_estimator(),
-                                   exclude_percentile=percentile,edge_method="pad")
+                                   exclude_percentile=percentile,edge_method="paddddd")
+
             except Exception:
                 bkg = None
                 continue
@@ -132,20 +134,18 @@ class CatalogImage:
         # TODO: figure out what to do if Background2D doesn't work
         # If Background2D does not work at all, define default scalar values for
         # the background to be used in source identification
-        # if bkg is None:
-        #     bkg_mean = bkg_rms_mean = max(0.01, self.data.min())
-        #     bkg_rms = bkg_rms_mean
-        #     bkg_dao_rms = bkg_rms_mean
-        #     threshold = bkg_rms_mean + bkg_rms
+        if bkg is None:
+            log.info("Background2D failure detected. Using alternative background calculation instead....")
 
-        # *** FIX: Need to do something for bkg if bkg is None ***
 
-        # Report other useful quantities
-        # log.info("")
-        # log.info("Mean background: {}".format(bkg_mean))
-        # log.info("Mean threshold: {}".format(np.mean(threshold)))
-        # log.info("")
-        # log.info("{}".format("=" * 80))
+            mask = make_source_mask(self.data, nsigma=2, npixels=5, dilate_size=11)
+            sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(self.data, sigma=3.0, mask=mask, maxiters=9)
+            bkg_rms_mean = sigcl_std
+            background = np.full_like(self.data,sigcl_median) # create background frame shaped like self.data populated with sigma-clipped median value
+            print("\a")
+            pdb.set_trace()
+            # 1: make 2x2 numpy array with same dimensions as self.data filled with value sigcl_median
+            # 2: definine threshold as nsigma*sgcl_std
 
         self.bkg = bkg
         # self.bkg_dao_rms = bkg_dao_rms
