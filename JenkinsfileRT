@@ -1,6 +1,10 @@
 // Obtain files from source control system.
 if (utils.scm_checkout()) return
 
+withCredentials([string(
+    credentialsId: 'drizzlepac-codecov',
+    variable: 'codecov_token')]) {
+
 // Allow modification of the job configuration, affects all relevant
 // build configs.
 // Pass this object in the argument list to the`run()` function below
@@ -20,10 +24,11 @@ bc.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
 bc.name = '3.6'
 bc.conda_channels = ['http://ssb.stsci.edu/astroconda']
 bc.conda_packages = ['python=3.6']
-bc.build_cmds = ["pip install numpy astropy",
+bc.build_cmds = ["pip install numpy astropy codecov pytest-cov",
 		 "pip install --upgrade -e '.[test]'",
                  "pip freeze"]
-bc.test_cmds = ["pytest --basetemp=tests_output --junitxml results.xml --bigdata"]
+bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata",
+                "codecov --token=${codecov_token}"]
 bc.test_configs = [data_config]
 
 bc1 = utils.copy(bc)
@@ -34,3 +39,5 @@ bc1.build_cmds[1] = "pip install -r requirements-dev.txt --upgrade -e '.[test]'"
 // Spawn a host (or workdir) for each combination and run in parallel.
 // Also apply the job configuration defined in `jobconfig` above.
 utils.run([bc, bc1, jobconfig])
+
+} // withCredentials()
