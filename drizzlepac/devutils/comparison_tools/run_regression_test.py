@@ -97,8 +97,12 @@ def find_matched_sourcelists(ref_path,comp_path):
     compList=[]
     for item in glob.glob(ref_path+"/logs/*phot.txt"):
         refList.append(item.split("logs/")[-1])
+    for item in glob.glob(ref_path+"*.ecsv"):
+        refList.append(item)
     for item in glob.glob(comp_path+"/logs/*phot.txt"):
         compList.append(item.split("logs/")[-1])
+    for item in glob.glob(comp_path+"*.ecsv"):
+        compList.append(item)
     outList=list(set(refList).intersection(set(compList)))
     return(outList)
 #=======================================================================================================================
