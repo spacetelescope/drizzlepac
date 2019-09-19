@@ -664,7 +664,6 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
 
     # remove parameters that are not needed by subsequent functions
     del detector_pars['fwhmpsf']
-    threshold_par = detector_pars.get('threshold', None)
     source_box = detector_pars.get('source_box', 7)
     isolation_size = detector_pars.get('isolation_size', 50)
     saturation_limit = detector_pars.get('saturation_limit', 70000.0)
@@ -700,9 +699,6 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
 
             # Create temp DQ mask containing saturated pixels ONLY
             sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=~256)
-            
-            # Start by ignoring any sources where only a couple of pixels are saturated
-            sat_mask = ndimage.binary_erosion(sat_mask, iterations=1)
 
             # Grow out saturated pixels by a few pixels in every direction
             grown_sat_mask = ndimage.binary_dilation(sat_mask, iterations=5)
@@ -736,37 +732,27 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
 
             if bkg is not None:
                 # If it succeeds, stop and use that value
-                bkg_rms = (5. * bkg.background_rms)
-                bkg_rms_mean = bkg.background.mean() + 5. * bkg_rms.std()
-                default_threshold = bkg.background + bkg_rms
-                if threshold_par is None:
-                    threshold = default_threshold
-                elif threshold_par < 0:
-                    threshold = -1 * threshold_par * default_threshold
-                    log.info("{} based on {}".format(threshold.max(), default_threshold.max()))
-                    bkg_rms_mean = threshold.max()
-                else:
-                    bkg_rms_mean = 3. * threshold_par
-
-                if bkg_rms_mean < 0:
-                    bkg_rms_mean = 0.
-                break
+                bkg_rms = bkg.background_rms
+                bkg_background = bkg.background
 
         # If Background2D does not work at all, define default scalar values for
         # the background to be used in source identification
         if bkg is None:
-            bkg_rms_mean = max(0.01, imgarr.min())
-            bkg_rms = bkg_rms_mean * 5
+            bkg_background = np.ones(imgarr.shape, imgarr.dtype) * np.nanmedian(imgarr)
+            bkg_rms = imgarr.std()
 
+        threshold = 5 * bkg_rms
         # kernel = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
         # kernel.normalize()
-        kernel, kernel_fwhm = build_auto_kernel(imgarr, whtarr, threshold=threshold,
+        kernel, kernel_fwhm = build_auto_kernel(imgarr - bkg_background, whtarr, threshold=threshold,
                                                 source_box=source_box, isolation_size=isolation_size,
                                                 saturation_limit=saturation_limit)
 
         # seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, outroot=outroot, fwhm=fwhm, **detector_pars)
-        seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, outroot=outroot, kernel=kernel,
-                                          segment_threshold=threshold, dao_threshold=bkg_rms_mean, fwhm=kernel_fwhm, **detector_pars)
+        seg_tab, segmap = extract_sources(imgarr - bkg_background, dqmask=dqmask,
+                                          outroot=outroot, kernel=kernel,
+                                          segment_threshold=threshold, dao_threshold=threshold,
+                                          fwhm=kernel_fwhm, **detector_pars)
         seg_tab_phot = seg_tab
 
         source_cats[chip] = seg_tab_phot
