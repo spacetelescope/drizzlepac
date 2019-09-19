@@ -13,8 +13,13 @@ from drizzlepac import hapsequencer
 from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import poller_utils
 
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 
+@util.with_logging
+def run_catalog_utils(total_list, debug=False, phot_mode='both'):
+    product_list = hapsequencer.create_catalog_products(total_list, debug=debug, phot_mode=phot_mode)
+    return product_list
 
 def main():
     """Super simple testing interface for the catalog_utils code."""
@@ -43,7 +48,7 @@ def main():
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
 
-    product_list = hapsequencer.create_catalog_products(total_list, debug=args.debug, phot_mode=args.phot_mode)
+    product_list = run_catalog_utils(total_list, args.debug, args.phot_mode)
 
     log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))
 
@@ -80,7 +85,7 @@ if __name__ == '__main__':
         print(cmd)
         os.system(cmd)
     main()
-    print("\a")
+    print("\a\a\a")
 
 
 

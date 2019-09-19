@@ -69,7 +69,7 @@ class CatalogImage:
             self.compute_background(box_size, win_size)
 
         self.kernel,self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data, self.wht_image,
-                                                          threshold=self.bkg.background_rms, fwhm=fwhmpsf / scale)
+                                                          threshold=self.bkg_rms_ra, fwhm=fwhmpsf / scale)
 
     def compute_background(self, box_size, win_size,
                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS):
@@ -94,11 +94,11 @@ class CatalogImage:
 
         Returns
         -------
-        bkg_background_image : 2D ndarray
-            Background image
+        bkg_background_ra : 2D ndarray
+            Background array
 
-        bkg_rms_image : 2D ndarray
-            RMS map
+        bkg_rms_ra : 2D ndarray
+            RMS map array
 
         bkg_rms_median : float
             bkg_rms_image median value
@@ -128,6 +128,7 @@ class CatalogImage:
                 continue
 
             if bkg is not None:
+                bkg_rms_ra = bkg.background_rms
                 bkg_rms_median = bkg.background_rms_median
                 break
         # TODO: figure out what to do if Background2D doesn't work
@@ -145,9 +146,9 @@ class CatalogImage:
             # 2: definine threshold as nsigma*sgcl_std
 
         self.bkg = bkg
-        # self.bkg_dao_rms = bkg_dao_rms
+        self.bkg_rms_ra = bkg_rms_ra
         self.bkg_rms_median = bkg_rms_median
-        # self.threshold = threshold
+
 
     def _get_header_data(self):
         """Read FITS keywords from the primary or extension header and store the
@@ -454,7 +455,7 @@ class HAPPointCatalog(HAPCatalogBase):
         # Perform aperture photometry
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image,
                                                                 platescale=self.param_dict['dao']['scale'],
-                                                                error_array=self.bkg.background_rms,
+                                                                error_array=self.image.bkg_rms_ra,
                                                                 bg_method=self.param_dict['dao']['salgorithm'],
                                                                 epadu=gain,
                                                                 zero_point=ab_zeropoint)
