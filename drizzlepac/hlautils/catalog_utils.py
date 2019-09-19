@@ -2,7 +2,7 @@
 segmentation-map based photometry.
 """
 import sys
-import pickle # FIX Remove
+import pickle  # FIX Remove
 
 import astropy.units as u
 from astropy.io import fits as fits
@@ -67,8 +67,10 @@ class CatalogImage:
         if self.bkg is None:
             self.compute_background(box_size, win_size)
 
-        self.kernel,self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data, self.wht_image,
-                                                          threshold=self.bkg_rms_ra, fwhm=fwhmpsf / scale)
+        self.kernel, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
+                                                                            self.wht_image,
+                                                                            threshold=self.bkg_rms_ra,
+                                                                            fwhm=fwhmpsf / scale)
 
     def compute_background(self, box_size, win_size,
                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS):
@@ -117,10 +119,10 @@ class CatalogImage:
             log.info("")
             log.info("Percentile in use: {}".format(percentile))
             try:
-                bkg = Background2D(self.data, (box_size,box_size), filter_size=(win_size,win_size),
+                bkg = Background2D(self.data, (box_size, box_size), filter_size=(win_size, win_size),
                                    bkg_estimator=bkg_estimator(),
                                    bkgrms_estimator=rms_estimator(),
-                                   exclude_percentile=percentile,edge_method="pad")
+                                   exclude_percentile=percentile, edge_method="pad")
 
             except Exception:
                 bkg = None
@@ -140,16 +142,14 @@ class CatalogImage:
             sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(self.data, sigma=3.0, mask=mask, maxiters=9)
             bkg_rms_median = sigcl_std
             # create background frame shaped like self.data populated with sigma-clipped median value
-            bkg_background_ra = np.full_like(self.data,sigcl_median)
+            bkg_background_ra = np.full_like(self.data, sigcl_median)
             # create background frame shaped like self.data populated with sigma-clipped standard deviation value
-            bkg_rms_ra = np.full_like(self.data,sigcl_std)
-
+            bkg_rms_ra = np.full_like(self.data, sigcl_std)
 
         self.bkg = bkg
         self.bkg_background_ra = bkg_background_ra
         self.bkg_rms_ra = bkg_rms_ra
         self.bkg_rms_median = bkg_rms_median
-
 
     def _get_header_data(self):
         """Read FITS keywords from the primary or extension header and store the
@@ -364,7 +364,8 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("Total Detection Product - Input Parameters")
             log.info("INPUT PARAMETERS")
             log.info("{}: {}".format("self.param_dict['dao']['bkgsig_sf']", self.param_dict["dao"]["bkgsig_sf"]))
-            log.info("{}: {}".format("self.param_dict['dao']['kernel_sd_aspect_ratio']", self.param_dict['dao']['kernel_sd_aspect_ratio']))
+            log.info("{}: {}".format("self.param_dict['dao']['kernel_sd_aspect_ratio']",
+                                     self.param_dict['dao']['kernel_sd_aspect_ratio']))
             log.info("{}: {}".format("self.param_dict['dao']['simple_bkg']", self.param_dict['dao']['simple_bkg']))
             log.info("{}: {}".format("self.param_dict['nsigma']", self.param_dict['nsigma']))
             log.info("{}: {}".format("self.image.bkg_rms_median", self.image.bkg_rms_median))
@@ -375,7 +376,8 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("{}".format("=" * 80))
 
             # find ALL the sources!!!
-            log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm,self.param_dict['nsigma'],self.image.bkg_rms_median))
+            log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
+                                                                      self.image.bkg_rms_median))
 
             daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma']*self.image.bkg_rms_median)
 
