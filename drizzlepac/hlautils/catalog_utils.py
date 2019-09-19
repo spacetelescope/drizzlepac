@@ -657,8 +657,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             A background map based upon the `~photutils.background.SExtractorBackground`
             estimator
 
-        bkg_rms_median : float
-            Median rms value
+        bkg_rms_mean : float
+            Mean bkg.background FIX
 
         """
         # TODO: Finish up and optimize HAPSegmentCatalog.identify_sources()
@@ -684,10 +684,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
         kernel_in_use = kernel_list[0]
 
         bkg = self.image.bkg
-        # threshold = self.image.threshold
-        threshold = self.param_dict['nsigma']*self.image.bkg_rms_median
+        threshold = self.image.threshold
+
         # FIX imgarr should be background subtracted, sextractor uses the filtered_data image
-        imgarr_bkgsub = imgarr - self.image.bkg_background_ra
+        imgarr_bkgsub = imgarr - bkg.background
 
         # *** FIX: should size_source_box size be used in all these places? ***
         # Create a 2D filter kernel - this will be used to smooth the input
@@ -702,7 +702,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Note: SExtractor has "connectivity=8" which is the default for this function
             self.sources = detect_sources(imgarr, threshold, npixels=self.size_source_box, filter_kernel=kernel)
             self.kernel = kernel  # for use in measure_sources()
-            self.total_source_cat = source_properties(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
+            self.total_source_cat = source_properties(imgarr_bkgsub, self.sources, background=bkg.background,
                                                       filter_kernel=kernel, wcs=self.image.imgwcs)
 
         # if processing filter product, use sources identified by parent total drizzle product identify_sources() run
@@ -714,7 +714,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         if self.debug:
             # Write out a catalog which can be used as an overlay for image in ds9
             if not hasattr(self, 'total_source_cat'):
-                cat = source_properties(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra, filter_kernel=kernel,
+                cat = source_properties(imgarr_bkgsub, self.sources, background=bkg.background, filter_kernel=kernel,
                                         wcs=self.image.imgwcs)
                 table = cat.to_table()
             else:
@@ -820,10 +820,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # The data needs to be background subtracted when computing the source properties
         bkg = self.image.bkg
 
-        imgarr_bkgsub = imgarr - self.image.bkg_background_ra
+        imgarr_bkgsub = imgarr - bkg.background
 
         # Compute source properties...
-        self.source_cat = source_properties(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
+        self.source_cat = source_properties(imgarr_bkgsub, self.sources, background=bkg.background,
                                             filter_kernel=self.kernel, wcs=self.image.imgwcs)
         log.info("Found {} sources from segmentation map".format(len(self.source_cat)))
 
