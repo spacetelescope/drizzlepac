@@ -139,7 +139,7 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
     from drizzlepac import processInput  # used for creating new ASNs for _flc inputs
     from stwcs import updatewcs
     from drizzlepac import alignimages
-    from drizzlepac.hlautils import astrometric_utils as amutils
+    from drizzlepac.hlautils import astrometric_utils_sim as amutils
 
     # interpret envvar variable, if specified
     if envvar_compute_name in os.environ:
@@ -202,7 +202,7 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
         _asndict = asnutil.readASNTable(inFilename, None, prodonly=False)
         _cal_prodname = _asndict['output'].lower()
         # _fname = fileutil.buildRootname(_cal_prodname,ext=['_drz.fits'])
-        
+
         # Retrieve the first member's rootname for possible use later
         _fimg = fits.open(inFilename, memmap=False)
         for name in _fimg[1].data.field('MEMNAME'):
@@ -336,16 +336,16 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
         if align_to_gaia:
             #
             # Start by creating the 'default' product using a priori/pipeline WCS
-            # This product will be used as the final output if alignment fails 
+            # This product will be used as the final output if alignment fails
             # and will be used as the reference to compare to the aligned
             # product to determine whether alignment was ultimately successful or not.
             #
-            # Call astrodrizzle to create the drizzle products 
+            # Call astrodrizzle to create the drizzle products
             _drz_products = _runDriz(_inlist, _drizfile, inmemory, num_cores, _drizlog, _trlroot,
                                     _trlfile, _tmptrl, **pipeline_pars)
             _drz_defaults = [product.replace('.fits', '_default.fits') for product in _drz_products]
-            _ = [shutil.move(product, default) for product, default in zip(_drz_products, _drz_defaults)]            
-            
+            _ = [shutil.move(product, default) for product, default in zip(_drz_products, _drz_defaults)]
+
             # Perform additional alignment on the FLC files, if present
             ###############
             #
@@ -360,7 +360,7 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
             ftmp.close()
             _appendTrlFile(_trlfile, _tmptrl)
             _trlmsg = ""
-
+            _absolute_alignment = None
             # Create an empty astropy table so it can be used as input/output for the perform_align function
             try:
                 align_table = alignimages.perform_align(align_files, update_hdr_wcs=True, runfile=_alignlog,
@@ -369,15 +369,18 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
                     if row['status'] == 0:
                         trlstr = "Successfully aligned {} to {} astrometric frame\n"
                         _trlmsg += trlstr.format(row['imageName'], row['catalog'])
+                        _absolute_alignment = True
                     else:
                         trlstr = "Could not align {} to absolute astrometric frame\n"
                         _trlmsg += trlstr.format(row['imageName'])
+                        _absolute_alignment = False
 
             except Exception:
                 # Something went wrong with alignment to GAIA, so report this in
                 # trailer file
                 _trlmsg = "EXCEPTION encountered in alignimages...\n"
                 _trlmsg += "   No correction to absolute astrometric frame applied!\n"
+
 
             # Write the perform_align log to the trailer file...(this will delete the _alignlog)
             shutil.copy(_alignlog, _alignlog_copy)
@@ -416,45 +419,60 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
 
         # Run astrodrizzle and send its processing statements to _trlfile
 
-        # Call astrodrizzle to create the drizzle products 
-        _align_products = _runDriz(_inlist, _drizfile, inmemory, num_cores, _drizlog, _trlroot,
-                                  _trlfile, _tmptrl, **pipeline_pars)
+        if _absolute_alignment:
+            # Call astrodrizzle to create the drizzle products
+            _align_products = _runDriz(_inlist, _drizfile, inmemory, num_cores, _drizlog, _trlroot,
+                                      _trlfile, _tmptrl, **pipeline_pars)
 
-        # Perform comparison to 'un-aligned' default product
-        product = _align_products[0]
-        default = _drz_defaults[0]
-        _align_arr = fits.getdata(product, ext=1)
-        _def_arr = fits.getdata(default, ext=1)
-        sim_indx = amutils.compute_similarity(_align_arr, _def_arr)
-        align_fail = True if sim_indx > 1 else False
-        if align_fail:
-            _trlmsg += "Absolute astrometry alignment FAILED with an index of {}!\n".format(sim_indx)
-            if force_alignment:
-                _trlmsg += "  WARNING: \nKEEPING potentially compromised astrometry solution!\n"
+            # Perform comparison to 'un-aligned' default product
+            product = _align_products[0]
+            default = _drz_defaults[0]
+            _align_arr = fits.getdata(product, ext=1)
+            _def_arr = fits.getdata(default, ext=1)
+            sim_indx = amutils.compute_similarity(_align_arr, _def_arr)
+            align_sim_fail = True if sim_indx > 1 else False
+            if align_sim_fail:
+                _trlmsg += "Absolute astrometry alignment FAILED with a similarity index of {}!\n".format(sim_indx)
+                if force_alignment:
+                    _trlmsg += "  WARNING: \nKEEPING potentially compromised astrometry solution!\n"
+                else:
+                    _trlmsg += "  Reverting to pipeline-default WCS-based alignment.\n"
+                    # replace alignment product with default solution
+                    for product, default in zip(_align_products, _drz_defaults):
+                        os.remove(product)
+                        shutil.move(default, product)
+                    # remove all traces of a posteriori solutions
+                    wcsnames_post = [fits.getval(f, 'wcsname', ext=1) for f in _calfiles+_calfiles_flc]
+                    # Run updatewcs on each list of images
+                    updatewcs.updatewcs(_calfiles)
+                    if _calfiles_flc:
+                        updatewcs.updatewcs(_calfiles_flc)
+                    # Now delete headerlets for bad astrometric solution
+                    for calfile, bad_wcs in zip(_calfiles + _calfiles_flc, wcsnames_post):
+                        hdrlet_wcsnames = headerlet.get_headerlet_kw_names(calfile, kw='WCSNAME')
+                        hdrlet_hdrnames = headerlet.get_headerlet_kw_names(calfile, kw='HDRNAME')
+                        hdrlet_indx = hdrlet_wcsnames.index(bad_wcs)
+                        bad_hdrlet = hdrlet_hdrnames[hdrlet_indx]
+                        _trlmsg += "Removing corrupted astrometric solution {}\n".format(bad_hdrlet, calfile)
+                        headerlet.delete_headerlet(calfile, hdrname=bad_hdrlet)
+
             else:
-                _trlmsg += "  Reverting to pipeline-default WCS-based alignment.\n"
-                # replace alignment product with default solution
-                for product, default in zip(_align_products, _drz_defaults):
-                    os.remove(product)
-                    shutil.move(default, product)
-                # remove all traces of a posteriori solutions
-                wcsnames_post = [fits.getval(f, 'wcsname', ext=1) for f in _calfiles+_calfiles_flc]
-                # Run updatewcs on each list of images
-                updatewcs.updatewcs(_calfiles)
-                if _calfiles_flc:
-                    updatewcs.updatewcs(_calfiles_flc)
-                # Now delete headerlets for bad astrometric solution
-                for calfile, bad_wcs in zip(_calfiles+_calfiles_flc, wcsnames_post):
-                    hdrlet_wcsnames = headerlet.get_headerlet_kw_names(calfile, kw='WCSNAME')
-                    hdrlet_hdrnames = headerlet.get_headerlet_kw_names(calfile, kw='HDRNAME')
-                    hdrlet_indx = hdrlet_wcsnames.index(bad_wcs)
-                    bad_hdrlet = hdrlet_hdrnames[hdrlet_indx]
-                    _trlmsg += "Removing corrupted astrometric solution {}\n".format(bad_hdrlet, calfile)
-                    headerlet.delete_headerlet(calfile, hdrname=bad_hdrlet)
-            
+                _trlmsg += "Alignment appeared to succeed with similarity index of {}\n".format(sim_indx)
+                # Remove default results now that the code has confirmed the new results are similar enough
+                for default in _drz_defaults:
+                    os.remove(default)
         else:
-            _trlmsg += "Alignment appeared to succeed with similarity index of {}\n".format(sim_indx)
+            # Rename default drz product as final product
+            _trlmsg += "Absolute alignment did not succeed.  Providing a priori astrometry in product.\n"
+            _trlmsg += "   No similarity index computed."
+            for default in _drz_defaults:
+                shutil.move(default, default.replace('_default.fits', '.fits'))
         print(_trlmsg)
+        # Write message out to temp file and append it to full trailer file
+        ftmp = open(_tmptrl, 'w')
+        ftmp.writelines(_trlmsg)
+        ftmp.close()
+        _appendTrlFile(_trlfile, _tmptrl)
 
         # Save this for when astropy.io.fits can modify a file 'in-place'
         # Update calibration switch
@@ -549,7 +567,7 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
     # Provide feedback to user
     print(_final_msg)
 
-def _runDriz(inlist, drizfile, inmemory, num_cores, drizlog, trlroot, 
+def _runDriz(inlist, drizfile, inmemory, num_cores, drizlog, trlroot,
              trlfile, tmptrl, **pipeline_pars):
 
     import drizzlepac
@@ -557,8 +575,8 @@ def _runDriz(inlist, drizfile, inmemory, num_cores, drizlog, trlroot,
     _drz_products = []
 
     for _infile in inlist:  # Run astrodrizzle for all inputs
-        _,_,_drz_product = processInput.process_input(_infile, updatewcs=False, 
-                                                        preserve=False, 
+        _,_,_drz_product = processInput.process_input(_infile, updatewcs=False,
+                                                        preserve=False,
                                                         overwrite=False)
         _drz_products.append(_drz_product)
         # Create trailer marker message for start of astrodrizzle processing
@@ -598,8 +616,8 @@ def _runDriz(inlist, drizfile, inmemory, num_cores, drizlog, trlroot,
         _appendTrlFile(trlfile, _drizlog_copy)
 
     return _drz_products
-    
-    
+
+
 
 def _lowerAsn(asnfile):
     """ Create a copy of the original asn file and change
