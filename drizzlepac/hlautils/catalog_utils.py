@@ -421,7 +421,6 @@ class HAPPointCatalog(HAPCatalogBase):
         # load in coords of sources identified in total product
         positions = (self.sources['xcentroid'], self.sources['ycentroid'])
 
-        # adjust coods for calculations that assume origin value of 0, rather than 1.
         pos_x = np.asarray(positions[0])
         pos_y = np.asarray(positions[1])
 
@@ -464,8 +463,8 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                 zero_point=ab_zeropoint)
 
         # convert coords back to origin value = 1 rather than 0
-        photometry_tbl["XCENTER"] = photometry_tbl["XCENTER"] + 1.
-        photometry_tbl["YCENTER"] = photometry_tbl["YCENTER"] + 1.
+        # photometry_tbl["XCENTER"] = photometry_tbl["XCENTER"] + 1.
+        # photometry_tbl["YCENTER"] = photometry_tbl["YCENTER"] + 1.
 
         # calculate and add RA and DEC columns to table
         ra, dec = self.transform_list_xy_to_ra_dec(photometry_tbl["XCENTER"], photometry_tbl["YCENTER"], self.imgname)  # TODO: replace with all_pix2sky or somthing at a later date
@@ -550,6 +549,8 @@ class HAPPointCatalog(HAPCatalogBase):
 
         """
         # Write out catalog to ecsv file
+        self.source_cat.meta['comments'] = \
+            ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
         self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
         log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
