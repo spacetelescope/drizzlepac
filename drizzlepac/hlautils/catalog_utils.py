@@ -2,7 +2,6 @@
 segmentation-map based photometry.
 """
 import sys
-import pdb # TODO: remove before merge
 import pickle # FIX Remove
 
 import astropy.units as u
@@ -294,7 +293,7 @@ class HAPCatalogs:
         for catalog in self.catalogs.values():
             if catalog.source_cat is None:
                 if hasattr(catalog, 'total_source_cat'):  # for total product segment processing
-                    catalog.source_cat = catalog.total_source_cat  # TODO: find a less memory-intensive way to do this.
+                    catalog.source_cat = catalog.total_source_cat
                 else:
                     catalog.source_cat = catalog.sources  # for total product point-source processing
             catalog.write_catalog
