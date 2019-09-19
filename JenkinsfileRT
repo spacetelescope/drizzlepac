@@ -6,6 +6,7 @@ if (utils.scm_checkout()) return
 // Pass this object in the argument list to the`run()` function below
 // to apply these settings to the job's execution.
 jobconfig = new JobConfig()
+jobconfig.credentials = ['drizzlepac_codecov']
 // jobconfig.post_test_summary = true
 
 // Configure artifactory ingest
@@ -20,10 +21,11 @@ bc.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
 bc.name = '3.6'
 bc.conda_channels = ['http://ssb.stsci.edu/astroconda']
 bc.conda_packages = ['python=3.6']
-bc.build_cmds = ["pip install numpy astropy",
+bc.build_cmds = ["pip install numpy astropy codecov pytest-cov",
 		 "pip install --upgrade -e '.[test]'",
                  "pip freeze"]
-bc.test_cmds = ["pytest --basetemp=tests_output --junitxml results.xml --bigdata"]
+bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata",
+                "codecov --token=${drizzlepac_codecov}"]
 bc.test_configs = [data_config]
 
 bc1 = utils.copy(bc)
