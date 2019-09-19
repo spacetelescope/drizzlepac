@@ -365,18 +365,18 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("{}: {}".format("self.param_dict['dao']['bkgsig_sf']", self.param_dict["dao"]["bkgsig_sf"]))
             log.info("{}: {}".format("self.param_dict['dao']['kernel_sd_aspect_ratio']", self.param_dict['dao']['kernel_sd_aspect_ratio']))
             log.info("{}: {}".format("self.param_dict['dao']['simple_bkg']", self.param_dict['dao']['simple_bkg']))
-            log.info("{}: {}".format("self.param_dict['dao']['nsigma']", self.param_dict['dao']['nsigma']))
+            log.info("{}: {}".format("self.param_dict['nsigma']", self.param_dict['nsigma']))
             log.info("{}: {}".format("self.image.bkg_rms_median", self.image.bkg_rms_median))
             log.info("\nDERIVED PARAMETERS")
             log.info("{}: {}".format("source_fwhm", source_fwhm))
-            log.info("{}: {}".format("threshold", self.param_dict['dao']['nsigma']*self.image.bkg_rms_median))
+            log.info("{}: {}".format("threshold", self.param_dict['nsigma']*self.image.bkg_rms_median))
             log.info("")
             log.info("{}".format("=" * 80))
 
             # find ALL the sources!!!
-            log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm,self.param_dict['dao']['nsigma'],self.image.bkg_rms_median))
+            log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm,self.param_dict['nsigma'],self.image.bkg_rms_median))
 
-            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['dao']['nsigma']*self.image.bkg_rms_median)
+            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma']*self.image.bkg_rms_median)
 
             # create mask to reject any sources located less than 10 pixels from a image/chip edge
             wht_image = self.image.data.copy()
