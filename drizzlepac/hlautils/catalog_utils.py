@@ -94,15 +94,14 @@ class CatalogImage:
 
         Returns
         -------
-        bkg : 2D ndarray
+        bkg_background_image : 2D ndarray
             Background image
 
-        bkg_dao_rms : ndarry
-            Background RMS image
+        bkg_rms_image : 2D ndarray
+            RMS map
 
-        threshold : ndarray
-            Numpy array representing the background plus RMS
-
+        bkg_rms_median : float
+            bkg_rms_image median value
         """
         # Report configuration values to log
         log.info("")
@@ -122,14 +121,14 @@ class CatalogImage:
                 bkg = Background2D(self.data, (box_size,box_size), filter_size=(win_size,win_size),
                                    bkg_estimator=bkg_estimator(),
                                    bkgrms_estimator=rms_estimator(),
-                                   exclude_percentile=percentile,edge_method="paddddd")
+                                   exclude_percentile=percentile,edge_method="pad")
 
             except Exception:
                 bkg = None
                 continue
 
             if bkg is not None:
-                bkg_rms_mean = bkg.background_rms_median
+                bkg_rms_median = bkg.background_rms_median
                 break
         # TODO: figure out what to do if Background2D doesn't work
         # If Background2D does not work at all, define default scalar values for
@@ -140,16 +139,14 @@ class CatalogImage:
 
             mask = make_source_mask(self.data, nsigma=2, npixels=5, dilate_size=11)
             sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(self.data, sigma=3.0, mask=mask, maxiters=9)
-            bkg_rms_mean = sigcl_std
+            bkg_rms_median = sigcl_std
             background = np.full_like(self.data,sigcl_median) # create background frame shaped like self.data populated with sigma-clipped median value
-            print("\a")
-            pdb.set_trace()
             # 1: make 2x2 numpy array with same dimensions as self.data filled with value sigcl_median
             # 2: definine threshold as nsigma*sgcl_std
 
         self.bkg = bkg
         # self.bkg_dao_rms = bkg_dao_rms
-        self.bkg_rms_mean = bkg_rms_mean
+        self.bkg_rms_median = bkg_rms_median
         # self.threshold = threshold
 
     def _get_header_data(self):
@@ -368,17 +365,17 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("{}: {}".format("self.param_dict['dao']['kernel_sd_aspect_ratio']", self.param_dict['dao']['kernel_sd_aspect_ratio']))
             log.info("{}: {}".format("self.param_dict['dao']['simple_bkg']", self.param_dict['dao']['simple_bkg']))
             log.info("{}: {}".format("self.param_dict['dao']['nsigma']", self.param_dict['dao']['nsigma']))
-            log.info("{}: {}".format("self.image.bkg_rms_mean", self.image.bkg_rms_mean))
+            log.info("{}: {}".format("self.image.bkg_rms_median", self.image.bkg_rms_median))
             log.info("\nDERIVED PARAMETERS")
             log.info("{}: {}".format("source_fwhm", source_fwhm))
-            log.info("{}: {}".format("threshold", self.param_dict['dao']['nsigma']*self.image.bkg_rms_mean))
+            log.info("{}: {}".format("threshold", self.param_dict['dao']['nsigma']*self.image.bkg_rms_median))
             log.info("")
             log.info("{}".format("=" * 80))
 
             # find ALL the sources!!!
-            log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm,self.param_dict['dao']['nsigma'],self.image.bkg_rms_mean))
+            log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm,self.param_dict['dao']['nsigma'],self.image.bkg_rms_median))
 
-            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['dao']['nsigma']*self.image.bkg_rms_mean)
+            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['dao']['nsigma']*self.image.bkg_rms_median)
 
             # create mask to reject any sources located less than 10 pixels from a image/chip edge
             wht_image = self.image.data.copy()
@@ -657,8 +654,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             A background map based upon the `~photutils.background.SExtractorBackground`
             estimator
 
-        bkg_rms_mean : float
-            Mean bkg.background FIX
+        bkg_rms_median : float
+            Median rms value
 
         """
         # TODO: Finish up and optimize HAPSegmentCatalog.identify_sources()

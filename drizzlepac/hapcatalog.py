@@ -164,6 +164,7 @@ if __name__ == '__main__':
         print(cmd)
         os.system(cmd)
     main()
+    print("\a")
 
 
 
