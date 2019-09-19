@@ -121,7 +121,7 @@ class CatalogImage:
                 bkg = Background2D(self.data, (box_size,box_size), filter_size=(win_size,win_size),
                                    bkg_estimator=bkg_estimator(),
                                    bkgrms_estimator=rms_estimator(),
-                                   exclude_percentile=percentile,edge_method="pad")
+                                   exclude_percentile=percentile,edge_method="padcv")
 
             except Exception:
                 bkg = None
@@ -132,19 +132,19 @@ class CatalogImage:
                 bkg_rms_ra = bkg.background_rms
                 bkg_rms_median = bkg.background_rms_median
                 break
-        # TODO: figure out what to do if Background2D doesn't work
+
         # If Background2D does not work at all, define default scalar values for
         # the background to be used in source identification
         if bkg is None:
             log.info("Background2D failure detected. Using alternative background calculation instead....")
-
-
             mask = make_source_mask(self.data, nsigma=2, npixels=5, dilate_size=11)
             sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(self.data, sigma=3.0, mask=mask, maxiters=9)
             bkg_rms_median = sigcl_std
-            background = np.full_like(self.data,sigcl_median) # create background frame shaped like self.data populated with sigma-clipped median value
-            # 1: make 2x2 numpy array with same dimensions as self.data filled with value sigcl_median
-            # 2: definine threshold as nsigma*sgcl_std
+            # create background frame shaped like self.data populated with sigma-clipped median value
+            bkg_background_ra = np.full_like(self.data,sigcl_median)
+            # create background frame shaped like self.data populated with sigma-clipped standard deviation value
+            bkg_rms_ra = np.full_like(self.data,sigcl_std)
+
 
         self.bkg = bkg
         self.bkg_background_ra = bkg_background_ra
