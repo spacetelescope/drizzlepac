@@ -19,9 +19,7 @@ Classes and Functions
 ---------------------
 """
 
-import os,sys, numpy
-# from . import infrot
-import infrot
+import os,sys,numpy
 import scipy.special, scipy.signal
 from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.morphology import generate_binary_structure
@@ -29,9 +27,10 @@ import astropy.io.fits as pyfits
 from astropy.table import Table
 
 from drizzlepac import util
+from drizzlepac.devutils.comparison_tools import infrot
 from stsci.tools import logutil
 
-log =logutil.create_logger('starmatch_hist', level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger('starmatch_hist', level=logutil.logging.INFO, stream=sys.stdout)
 
 msgunit = sys.stdout
 @util.with_logging
