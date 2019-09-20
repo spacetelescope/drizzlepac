@@ -398,10 +398,9 @@ def find_fwhm(psf, default_fwhm):
     phot_results = itr_phot_obj(psf)
 
     psf_row = np.where(phot_results['flux_fit'] == phot_results['flux_fit'].max())[0][0]
-    print(phot_results['x_fit', 'y_fit', 'flux_fit', 'sigma_fit'])
     sigma_fit = phot_results['sigma_fit'][psf_row]
     fwhm = gaussian_sigma_to_fwhm * sigma_fit
-    print("Found FWHM: {}".format(fwhm))
+    log.info("Found FWHM: {}".format(fwhm))
 
     return fwhm
 

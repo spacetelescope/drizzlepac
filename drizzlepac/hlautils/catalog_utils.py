@@ -112,7 +112,6 @@ class CatalogImage:
 
         # SExtractorBackground ans StdBackgroundRMS are the defaults
         bkg = None
-        bkg_dao_rms = None
 
         exclude_percentiles = [10, 25, 50, 75]
         for percentile in exclude_percentiles:
@@ -132,6 +131,7 @@ class CatalogImage:
                 bkg_background_ra = bkg.background
                 bkg_rms_ra = bkg.background_rms
                 bkg_rms_median = bkg.background_rms_median
+                bkg_median = bkg.background_median
                 break
 
         # If Background2D does not work at all, define default scalar values for
@@ -140,6 +140,7 @@ class CatalogImage:
             log.info("Background2D failure detected. Using alternative background calculation instead....")
             mask = make_source_mask(self.data, nsigma=2, npixels=5, dilate_size=11)
             sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(self.data, sigma=3.0, mask=mask, maxiters=9)
+            bkg_median = sigcl_median
             bkg_rms_median = sigcl_std
             # create background frame shaped like self.data populated with sigma-clipped median value
             bkg_background_ra = np.full_like(self.data, sigcl_median)
@@ -150,6 +151,7 @@ class CatalogImage:
         self.bkg_background_ra = bkg_background_ra
         self.bkg_rms_ra = bkg_rms_ra
         self.bkg_rms_median = bkg_rms_median
+        self.bkg_median = bkg_median
 
     def _get_header_data(self):
         """Read FITS keywords from the primary or extension header and store the
