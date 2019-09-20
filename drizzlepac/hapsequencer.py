@@ -10,7 +10,6 @@ import argparse
 import datetime
 import glob
 import os
-import pickle
 import sys
 import traceback
 
@@ -19,7 +18,6 @@ from drizzlepac.hlautils.catalog_utils import HAPCatalogs
 from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import poller_utils
 from drizzlepac.hlautils import processing_utils as proc_utils
-from drizzlepac.hlautils import sourcelist_generation
 from stsci.tools import logutil
 
 __taskname__ = 'hapsequencer'
@@ -321,6 +319,7 @@ def create_drizzle_products(total_list):
             log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
             filt_obj.wcs_drizzle_product(meta_wcs)
             product_list.append(filt_obj.drizzle_filename)
+            product_list.append(filt_obj.trl_filename)
 
             # Create individual single drizzled images
             for exposure_obj in filt_obj.edp_list:
@@ -329,17 +328,20 @@ def create_drizzle_products(total_list):
                 log.info("CREATE SINGLE DRIZZLED IMAGE: {}".format(exposure_obj.drizzle_filename))
                 exposure_obj.wcs_drizzle_product(meta_wcs)
                 product_list.append(exposure_obj.drizzle_filename)
+                product_list.append(exposure_obj.trl_filename)
 
         # Create drizzle-combined total detection image after the drizzle-combined filter image and
         # drizzled exposure images in order to take advantage of the cosmic ray flagging.
         log.info("CREATE DRIZZLE-COMBINED TOTAL IMAGE: {}\n".format(total_obj.drizzle_filename))
         total_obj.wcs_drizzle_product(meta_wcs)
         product_list.append(total_obj.drizzle_filename)
+        product_list.append(total_obj.trl_filename)
 
     # Ensure that all drizzled products have headers that are to specification
     try:
         log.info("Updating these drizzle products for CAOM compatibility:")
-        for filename in product_list:
+        fits_files = [file for file in product_list if "fits" in file]
+        for filename in fits_files:
             log.info("    {}".format(filename))
             proc_utils.refine_product_headers(filename, total_list)
     except Exception:
@@ -358,7 +360,7 @@ def create_drizzle_products(total_list):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_hap_processing(input_filename, result=None, debug=False, use_defaults_configs=True,
+def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
                        input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both"):
     """
     Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
@@ -367,23 +369,20 @@ def run_hap_processing(input_filename, result=None, debug=False, use_defaults_co
     Parameters
     ----------
     input_filename: string
-        The 'poller file' where each line contains information regarding an exposures taken 
+        The 'poller file' where each line contains information regarding an exposures taken
         during a single visit.
-
-    result: ---
-        Nothing at this time.
 
     debug : bool, optional
         Allows printing of additional diagnostic information to the log.  Also, can turn on
         creation and use of pickled information.
 
     use_default_configs: bool, optional
-        If True, use the configuration parameters in the 'default' portion of the configuration 
+        If True, use the configuration parameters in the 'default' portion of the configuration
         JSON files.  If False, use the configuration parameters in the "parameters" portion of
         the file.  The default is True.
 
     input_custom_pars_file: string, optional
-        Represents a fully specified input filename of a configuration JSON file which has been 
+        Represents a fully specified input filename of a configuration JSON file which has been
         customized for specialized processing.  This file should contain ALL the input parameters
         necessary for processing.  If there is a filename present for this parameter, the
         'use_default_configs' parameter is ignored. The default is None.
@@ -417,7 +416,7 @@ def run_hap_processing(input_filename, result=None, debug=False, use_defaults_co
         # is the detector.  A TotalProduct object is comprised of FilterProducts and ExposureProducts
         # where its FilterProduct is distinguished by the filter in use, and the ExposureProduct
         # is the atomic exposure data.
-        log.info("Parse the poller and determine what exposures need to be combined into separate products")
+        log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
         obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename)
 
         # Generate the name for the manifest file which is for the entire visit.  It is fine
@@ -425,6 +424,7 @@ def run_hap_processing(input_filename, result=None, debug=False, use_defaults_co
         # dependent on the detector.
         # Example: instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
         manifest_name = total_list[0].manifest_name
+        log.info("\nGenerate the manifest name for this visit.  The manifest will contain the names of all the output products.")
 
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
@@ -446,9 +446,11 @@ def run_hap_processing(input_filename, result=None, debug=False, use_defaults_co
                                                                   input_custom_pars_file=input_custom_pars_file,
                                                                   output_custom_pars_file=output_custom_pars_file)
 
+        log.info("The configuration parameters have been read and applied to the drizzle objects.")
+
         # Run alignimages.py on images on a filter-by-filter basis.
         # Process each filter object which contains a list of exposure objects/products.
-        log.info("Run alignimages.py on images on a filter-by-filter basis.")
+        log.info("\nAlign the images on a filter-by-filter basis.")
         for tot_obj in total_list:
             for filt_obj in tot_obj.fdp_list:
                 align_table, filt_exposures = filt_obj.align_to_gaia()
@@ -460,6 +462,7 @@ def run_hap_processing(input_filename, result=None, debug=False, use_defaults_co
                     for row in align_table:
                         if row['status'] == 0:
                             log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
+
                         # Alignment did not work for this particular image
                         # FIX - If alignment did not work for an image, it seems this exposure should
                         # be removed from the exposure lists.  TotalProduct and FilterProduct need
@@ -472,33 +475,20 @@ def run_hap_processing(input_filename, result=None, debug=False, use_defaults_co
                     product_list += filt_exposures
 
                 else:
-                    log.info("Alignimages step skipped.")
+                    log.warning("Step to align the images has failed. No alignment table has been generated.")
 
         # Run AstroDrizzle to produce drizzle-combined products
-        log.info("Create drizzled imagery products")
+        log.info("\nCreate drizzled imagery products.")
         driz_list = create_drizzle_products(total_list)
         product_list += driz_list
 
         # Create source catalogs from newly defined products (HLA-204)
-        log.info("Create source catalog from newly defined product")
-        if 'total detection product 00' in obs_info_dict.keys():
-            # save total_list to pickle file for photometry optimization
-            if debug:
-                try:
-                    pickle_name = 'total_list.obj'
-                    if os.path.exists(pickle_name): os.remove('total_list.obj')  # TODO: Remove before merge!
-                    pout = open(pickle_name, 'wb')  # TODO: Remove before merge!
-                    pickle.dump(total_list, pout)  # TODO: Remove before merge!
-                    pout.close()  # TODO: Remove before merge!
-                    print("Successfully wrote pickle file {}".format(pickle_name))
-                except:
-                    print("PICKLE ERROR. Continuing on...")
-
-            # Perform photometric catalog generation
+        log.info("Create source catalog from newly defined product.\n")
+        if "total detection product 00" in obs_info_dict.keys():
             catalog_list = create_catalog_products(total_list, debug=debug, phot_mode=phot_mode)
             product_list += catalog_list
         else:
-            print("Sourcelist generation step skipped.")
+            log.warning("No total detection product has been produced.  The sourcelist generation step has been skipped.")
         """
         # 8: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
         log.info("8: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry"
@@ -507,8 +497,8 @@ def run_hap_processing(input_filename, result=None, debug=False, use_defaults_co
         """
 
         # Write out manifest file listing all products generated during processing
-        log.info("Creating manifest file {}".format(manifest_name))
-        log.info("  Manifest contains the names of products generated during processing.")
+        log.info("Creating manifest file {}.".format(manifest_name))
+        log.info("  The manifest contains the names of products generated during processing.")
         with open(manifest_name, mode='w') as catfile:
             [catfile.write("{}\n".format(name)) for name in product_list]
 
@@ -516,34 +506,11 @@ def run_hap_processing(input_filename, result=None, debug=False, use_defaults_co
         return_value = 0
     except Exception:
         return_value = 1
-        if debug:
-            log.info("\a\a\a")
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+        log.info("\a\a\a")
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
     finally:
         log.info('Total processing time: {} sec'.format((datetime.datetime.now() - starting_dt).total_seconds()))
-        log.info("9: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
-                 "condition")
+        log.info("Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
+                 "condition {}".format(return_value))
         return return_value
-
-def main():
-    """ The __main__ and main() functionality here are TEMPORARILY to allow the Single Visit Mosaic
-    processing to be invoked from the command line by INS.  At this time there is no high-level Hubble
-    Advanced Products (HAP) driver which would contain the "main".
-
-    This command line processing is invoked as 
-    $ runhap poller_file  (e.g., runhap ib4606.out)
-    """
-
-    parser = argparse.ArgumentParser(description="Process images, produce drizzled images and sourcelists")
-    parser.add_argument("input_filename", help="Name of the input csv file containing information about the files to "
-                        "be processed")
-    ARGS = parser.parse_args()
-
-    print("Single-visit processing started for: {}".format(ARGS.input_filename))
-    rv = run_hap_processing(ARGS.input_filename,debug=True,phot_mode='aperture')
-    print("Return Value: ", rv)
-    return rv
-
-if __name__ == "__main__":
-    main()
