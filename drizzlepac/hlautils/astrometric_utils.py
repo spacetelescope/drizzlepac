@@ -23,6 +23,7 @@ from distutils.version import LooseVersion
 
 import numpy as np
 from scipy import ndimage
+import scipy.stats as st
 from lxml import etree
 try:
     from matplotlib import pyplot as plt
@@ -1238,3 +1239,30 @@ def compute_similarity(image, reference):
     diffs = np.abs((img - ref).sum())
     sim_indx = diffs / img.sum()
     return sim_indx
+    
+def compute_prob(val, mean, sigma):
+    """Return z-score for val relative to a distribution
+       
+       If abs(z_score) > 1, `val` is most likely not from the 
+       specified distribution. 
+    
+    """
+    p = st.norm.cdf(x=val, loc=mean, scale=sigma)
+    z_score = st.norm.ppf(p)
+    
+    return z_score
+
+def determine_focus_index(img, sigma=1.5):
+    """Determine blurriness indicator for an image
+       
+       This returns a single value that serves as an indication of the
+       sharpness of the image based on the max pixel value from the image
+       after applying a Laplacian-of-Gaussian filter with sigma.  
+    
+    """
+    
+    img_log = ndimage.gaussian_laplace(img, sigma)
+    focus_val = np.abs(img_log).max()
+    
+    return focus_val
+    
