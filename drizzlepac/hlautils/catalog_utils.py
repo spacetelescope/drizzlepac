@@ -612,7 +612,7 @@ class HAPPointCatalog(HAPCatalogBase):
         import stwcs
 
         wcs1_drz = stwcs.wcsutil.HSTWCS(drizzled_image + "[1]")
-        origin = 1
+        origin = 0
         # *origin* is the coordinate in the upper left corner of the
         # image.  In FITS and Fortran standards, this is 1.  In Numpy and C
         # standards this is 0.
