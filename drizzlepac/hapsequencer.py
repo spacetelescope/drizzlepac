@@ -319,6 +319,7 @@ def create_drizzle_products(total_list):
             log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
             filt_obj.wcs_drizzle_product(meta_wcs)
             product_list.append(filt_obj.drizzle_filename)
+            product_list.append(filt_obj.trl_filename)
 
             # Create individual single drizzled images
             for exposure_obj in filt_obj.edp_list:
@@ -327,17 +328,20 @@ def create_drizzle_products(total_list):
                 log.info("CREATE SINGLE DRIZZLED IMAGE: {}".format(exposure_obj.drizzle_filename))
                 exposure_obj.wcs_drizzle_product(meta_wcs)
                 product_list.append(exposure_obj.drizzle_filename)
+                product_list.append(exposure_obj.trl_filename)
 
         # Create drizzle-combined total detection image after the drizzle-combined filter image and
         # drizzled exposure images in order to take advantage of the cosmic ray flagging.
         log.info("CREATE DRIZZLE-COMBINED TOTAL IMAGE: {}\n".format(total_obj.drizzle_filename))
         total_obj.wcs_drizzle_product(meta_wcs)
         product_list.append(total_obj.drizzle_filename)
+        product_list.append(total_obj.trl_filename)
 
     # Ensure that all drizzled products have headers that are to specification
     try:
         log.info("Updating these drizzle products for CAOM compatibility:")
-        for filename in product_list:
+        fits_files = [file for file in product_list if "fits" in file]
+        for filename in fits_files:
             log.info("    {}".format(filename))
             proc_utils.refine_product_headers(filename, total_list)
     except Exception:
@@ -510,25 +514,3 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         log.info("Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
                  "condition {}".format(return_value))
         return return_value
-
-def main():
-    """ The __main__ and main() functionality here are TEMPORARILY to allow the Single Visit Mosaic
-    processing to be invoked from the command line by INS.  At this time there is no high-level Hubble
-    Advanced Products (HAP) driver which would contain the "main".
-
-    This command line processing is invoked as
-    $ runhap poller_file  (e.g., runhap ib4606.out)
-    """
-
-    parser = argparse.ArgumentParser(description="Process images, produce drizzled images and sourcelists")
-    parser.add_argument("input_filename", help="Name of the input csv file containing information about the files to "
-                        "be processed")
-    args = parser.parse_args()
-
-    print("Single-visit processing started for: {}".format(args.input_filename))
-    return_value = run_hap_processing(args.input_filename)
-    print("Return Value: ", return_value)
-    return return_value
-
-if __name__ == "__main__":
-    main()

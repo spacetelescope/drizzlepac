@@ -58,7 +58,8 @@ class TotalProduct(HAPProduct):
         self.exposure_name = filename[0:6]
 
         self.product_basename = self.basename + "total_" + self.exposure_name
-        self.trl_filename = self.product_basename + "_trl.log"
+        self.trl_logname = self.product_basename + "_trl.log"
+        self.trl_filename = self.product_basename + "_trl.txt"
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
@@ -117,7 +118,7 @@ class TotalProduct(HAPProduct):
         # Retrieve the configuration parameters for astrodrizzle
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
         drizzle_pars["final_refimage"] = meta_wcs
-        drizzle_pars["runfile"] = self.trl_filename
+        drizzle_pars["runfile"] = self.trl_logname
 
         edp_filenames = [element.full_filename for element in self.edp_list]
         astrodrizzle.AstroDrizzle(input=edp_filenames,
@@ -126,7 +127,7 @@ class TotalProduct(HAPProduct):
 
         # Rename Astrodrizzle log file as a trailer file
         log.info("Total combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
-        shutil.move(self.trl_filename, self.trl_filename.replace('.log', '.txt'))
+        shutil.move(self.trl_logname, self.trl_filename)
 
 
 
@@ -146,7 +147,8 @@ class FilterProduct(HAPProduct):
 
         self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
         # Trailer names .txt or .log
-        self.trl_filename = self.product_basename + "_trl.log"
+        self.trl_logname = self.product_basename + "_trl.log"
+        self.trl_filename = self.product_basename + "_trl.txt"
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
@@ -204,7 +206,7 @@ class FilterProduct(HAPProduct):
         # Retrieve the configuration parameters for astrodrizzle
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
         drizzle_pars["final_refimage"] = meta_wcs
-        drizzle_pars["runfile"] = self.trl_filename
+        drizzle_pars["runfile"] = self.trl_logname
 
         edp_filenames = [element.full_filename for element in self.edp_list]
         astrodrizzle.AstroDrizzle(input=edp_filenames,
@@ -213,7 +215,7 @@ class FilterProduct(HAPProduct):
 
         # Rename Astrodrizzle log file as a trailer file
         log.info("Filter combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
-        shutil.move(self.trl_filename, self.trl_filename.replace('.log', '.txt'))
+        shutil.move(self.trl_logname, self.trl_filename)
 
 
 class ExposureProduct(HAPProduct):
@@ -237,7 +239,8 @@ class ExposureProduct(HAPProduct):
         self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
         self.headerlet_filename = self.product_basename + "_hlet.fits"
-        self.trl_filename = self.product_basename + "_trl.log"
+        self.trl_logname = self.product_basename + "_trl.log"
+        self.trl_filename = self.product_basename + "_trl.txt"
 
         self.regions_dict = {}
 
@@ -251,7 +254,7 @@ class ExposureProduct(HAPProduct):
         # Retrieve the configuration parameters for astrodrizzle
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
         drizzle_pars["final_refimage"] = meta_wcs
-        drizzle_pars["runfile"] = self.trl_filename
+        drizzle_pars["runfile"] = self.trl_logname
 
         astrodrizzle.AstroDrizzle(input=self.full_filename,
                                   output=self.drizzle_filename,
@@ -259,4 +262,4 @@ class ExposureProduct(HAPProduct):
 
         # Rename Astrodrizzle log file as a trailer file
         log.info("Exposure image {}".format(self.drizzle_filename))
-        shutil.move(self.trl_filename, self.trl_filename.replace('.log', '.txt'))
+        shutil.move(self.trl_logname, self.trl_filename)

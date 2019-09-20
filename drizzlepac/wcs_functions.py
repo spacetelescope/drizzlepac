@@ -657,8 +657,8 @@ def mergeWCS(default_wcs, user_pars):
 
                 # compute output image shape:
                 shape = (
-                    max(1, int(_py2round(_ratio * naxis1))),
-                    max(1, int(_py2round(_ratio * naxis2)))
+                    max(1, int(np.ceil(_ratio * naxis1))),
+                    max(1, int(np.ceil(_ratio * naxis2)))
                 )
 
                 # update CRPIX:
@@ -684,13 +684,14 @@ def mergeWCS(default_wcs, user_pars):
             # compute output image shape:
             # NOTE: _py2round may be replaced with np.ceil
             shape = (
-                max(1, int(_py2round(_xmax - _xmin))),
-                max(1, int(_py2round(_ymax - _ymin)))
+                max(1, int(np.ceil(_xmax - _xmin))),
+                max(1, int(np.ceil(_ymax - _ymin)))
             )
 
             if _crpix is None:
                 # update CRPIX:
                 _crpix = (-_xmin + 0.5, -_ymin + 0.5)
+
 
     # Set up the new WCS based on values from old one:
 
