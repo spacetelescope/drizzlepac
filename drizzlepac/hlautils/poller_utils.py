@@ -76,6 +76,17 @@ def interpret_obset_input(results):
     log.info("Parse the observation set tree and create the exposure, filter, and total detection objects.")
     obset_dict, tdp_list = parse_obset_tree(obset_tree)
 
+    # This little bit of code adds an attribute to single exposure objects that is True if a given filter only contains
+    # one input (e.g. n_exp = 1)
+    for tot_obj in tdp_list:
+        for filt_obj in tot_obj.fdp_list:
+            if len(filt_obj.edp_list) == 1:
+                is_singleton = True
+            else:
+                is_singleton = False
+            for edp_obj in filt_obj.edp_list:
+                edp_obj.is_singleton = is_singleton
+
     return obset_dict, tdp_list
 
 # Translate the database query on an obset into actionable lists of filenames
