@@ -35,7 +35,7 @@ from astropy.coordinates import SkyCoord
 from astropy.io import fits as fits
 from astropy.io import ascii
 from astropy.convolution import Gaussian2DKernel
-from astropy.stats import gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm
+from astropy.stats import gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm, sigma_clipped_stats
 from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
@@ -44,10 +44,12 @@ from astropy.modeling.fitting import LevMarLSQFitter
 import photutils  # needed to check version
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import Background2D, MedianBackground
+from photutils import SExtractorBackground, StdBackgroundRMS
 from photutils import DAOStarFinder
 from photutils import MMMBackground
 from photutils.psf import IntegratedGaussianPRF, DAOGroup
 from photutils.psf import IterativelySubtractedPSFPhotometry
+from photutils import make_source_mask
 
 from tweakwcs import FITSWCS
 from stwcs.distortion import utils
@@ -296,6 +298,87 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
 
     return delta_ra, delta_dec
 
+def compute_2d_background(imgarr, box_size, win_size,
+                          bkg_estimator=SExtractorBackground,
+                          rms_estimator=StdBackgroundRMS):
+    """Compute a 2D background for the input array.
+
+    Parameters
+    ==========
+    imgarr : ndarray
+        NDarray of science data for which the background needs to be computed
+
+    box_size : integer
+        The box_size along each axis for Background2D to use.
+
+    win_size : integer
+        The window size of the 2D median filter to apply to the low-resolution map as the
+        `filter_size` parameter in Background2D.
+
+    bkg_estimator : function
+        The name of the function to use as the estimator of the background.
+
+    rms_estimator : function
+        The name of the function to use for estimating the RMS in the background.
+
+    Returns
+    =======
+    bkg_background : ndarray
+        NDarray the same shape as the input image array which contains the determined
+        background across the array.  If Background2D fails for any reason, a simpler
+        sigma-clipped single-valued array will be computed instead.
+
+    bkg_median : float
+        The median value (or single sigma-clipped value) of the computed background.
+
+    bkg_rms : ndarray
+        NDarray the same shape as the input image array which contains the RMS of the
+        background across the array.  If Background2D fails for any reason, a simpler
+        sigma-clipped single-valued array will be computed instead.
+
+    bkg_rms_median : float
+        The median value (or single sigma-clipped value) of the RMS of the computed
+        background.
+    """
+
+    # SExtractorBackground and StdBackgroundRMS are the defaults
+    bkg = None
+
+    exclude_percentiles = [10, 25, 50, 75]
+    for percentile in exclude_percentiles:
+        log.info("")
+        log.info("Percentile in use: {}".format(percentile))
+        try:
+            bkg = Background2D(imgarr, (box_size, box_size), filter_size=(win_size, win_size),
+                               bkg_estimator=bkg_estimator(),
+                               bkgrms_estimator=rms_estimator(),
+                               exclude_percentile=percentile, edge_method="pad")
+
+        except Exception:
+            bkg = None
+            continue
+
+        if bkg is not None:
+            bkg_background = bkg.background
+            bkg_median = bkg.background_median
+            bkg_rms = bkg.background_rms
+            bkg_rms_median = bkg.background_rms_median
+            break
+
+    # If Background2D does not work at all, define default scalar values for
+    # the background to be used in source identification
+    if bkg is None:
+        log.info("Background2D failure detected. Using alternative background calculation instead....")
+        mask = make_source_mask(imgarr, nsigma=2, npixels=5, dilate_size=11)
+        sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(imgarr, sigma=3.0, mask=mask, maxiters=9)
+        bkg_median = sigcl_median
+        bkg_rms_median = sigcl_std
+        # create background frame shaped like imgarr populated with sigma-clipped median value
+        bkg_background = np.full_like(imgarr, sigcl_median)
+        # create background frame shaped like imgarr populated with sigma-clipped standard deviation value
+        bkg_rms = np.full_like(imgarr, sigcl_std)
+
+    return bkg_background, bkg_median, bkg_rms, bkg_rms_median
 
 def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
                       isolation_size=50, saturation_limit=70000.):
@@ -365,6 +448,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
             kernel[:] = 0.0
 
     if kernel.sum() > 0.0:
+        kernel = np.clip(kernel, 0, None)  # insure background subtracted kernel has no negative pixels
         kernel /= kernel.sum()  # Normalize the new kernel to a total flux of 1.0
         log.info("Computing kernel FWHM...{}".format(kernel.sum()))
         kernel_fwhm = find_fwhm(kernel, fwhm)
@@ -668,6 +752,9 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
     isolation_size = detector_pars.get('isolation_size', 50)
     saturation_limit = detector_pars.get('saturation_limit', 70000.0)
     del detector_pars['threshold']
+    box_size = detector_pars.get('bkg_box_size', 27)
+    win_size = detector_pars.get('bkg_filter_size', 3)
+    nsigma = detector_pars.get('nsigma', 5)
 
     # Build source catalog for entire image
     source_cats = {}
@@ -717,41 +804,21 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
             whtarr = errarr / errarr.max()
             whtarr[dqmask] = 0
 
-        bkg_estimator = MedianBackground()
-        bkg = None
+        bkg_ra, bkg_median, bkg_rms_ra, bkg_rms_median = compute_2d_background(imgarr, box_size, win_size)
 
-        exclude_percentiles = [10, 25, 50, 75]
-        for percentile in exclude_percentiles:
-            try:
-                bkg = Background2D(imgarr, (50, 50), filter_size=(3, 3),
-                                   bkg_estimator=bkg_estimator,
-                                   exclude_percentile=percentile)
-            except Exception:
-                bkg = None
-                continue
-
-            if bkg is not None:
-                # If it succeeds, stop and use that value
-                bkg_rms = bkg.background_rms
-                bkg_background = bkg.background
-
-        # If Background2D does not work at all, define default scalar values for
-        # the background to be used in source identification
-        if bkg is None:
-            bkg_background = np.ones(imgarr.shape, imgarr.dtype) * np.nanmedian(imgarr)
-            bkg_rms = imgarr.std()
-
-        threshold = 5 * bkg_rms
+        threshold = nsigma * bkg_rms_ra
+        dao_threshold = nsigma * bkg_rms_median
         # kernel = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
         # kernel.normalize()
-        kernel, kernel_fwhm = build_auto_kernel(imgarr - bkg_background, whtarr, threshold=threshold,
+
+        kernel, kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr, threshold=threshold,
                                                 source_box=source_box, isolation_size=isolation_size,
                                                 saturation_limit=saturation_limit)
 
         # seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, outroot=outroot, fwhm=fwhm, **detector_pars)
-        seg_tab, segmap = extract_sources(imgarr - bkg_background, dqmask=dqmask,
+        seg_tab, segmap = extract_sources(imgarr - bkg_ra, dqmask=dqmask,
                                           outroot=outroot, kernel=kernel,
-                                          segment_threshold=threshold, dao_threshold=threshold,
+                                          segment_threshold=threshold, dao_threshold=dao_threshold,
                                           fwhm=kernel_fwhm, **detector_pars)
         seg_tab_phot = seg_tab
 
