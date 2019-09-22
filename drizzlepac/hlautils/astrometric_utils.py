@@ -35,15 +35,20 @@ from astropy.coordinates import SkyCoord
 from astropy.io import fits as fits
 from astropy.io import ascii
 from astropy.convolution import Gaussian2DKernel
-from astropy.stats import gaussian_fwhm_to_sigma
+from astropy.stats import gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm
 from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
+from astropy.modeling.fitting import LevMarLSQFitter
 
 import photutils  # needed to check version
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import Background2D, MedianBackground
 from photutils import DAOStarFinder
+from photutils import MMMBackground
+from photutils.psf import IntegratedGaussianPRF, DAOGroup
+from photutils.psf import IterativelySubtractedPSFPhotometry
+
 from tweakwcs import FITSWCS
 from stwcs.distortion import utils
 from stwcs import wcsutil
@@ -326,7 +331,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
 
     # Try to use PSF derived from image as detection kernel
     # Kernel must be derived from well-isolated sources not near the edge of the image
-    kern_img = imgarr.copy()
+    kern_img = imgarr[:]
     edge = source_box * 2
     kern_img[:edge, :] = 0.0
     kern_img[-edge:, :] = 0.0
@@ -339,18 +344,17 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     # Sort based on peak_value to identify brightest sources for use as a kernel
     peaks.sort('peak_value')
 
-    wht_box = 2 # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
+    wht_box = 2  # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
 
     # Identify position of brightest, non-saturated peak (in numpy index order)
     for peak_ctr in range(-1, -1 * len(peaks) - 1, -1):
-        log.info(peak_ctr)
         kernel_pos = [peaks['y_peak'][peak_ctr], peaks['x_peak'][peak_ctr]]
 
         kernel = imgarr[kernel_pos[0] - source_box:kernel_pos[0] + source_box + 1,
-                        kernel_pos[1] - source_box:kernel_pos[1] + source_box + 1]
+                        kernel_pos[1] - source_box:kernel_pos[1] + source_box + 1].copy()
 
         kernel_wht = whtarr[kernel_pos[0] - wht_box:kernel_pos[0] + wht_box + 1,
-                        kernel_pos[1] - wht_box:kernel_pos[1] + wht_box + 1]
+                        kernel_pos[1] - wht_box:kernel_pos[1] + wht_box + 1].copy()
 
         # search square cut-out (of size 2 x wht_box + 1 pixels on a side) of weight image centered on peak coords for
         # zero-value pixels. Reject peak if any are found.
@@ -361,15 +365,44 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
             kernel[:] = 0.0
 
     if kernel.sum() > 0.0:
-        kernel /= kernel.sum() # Normalize the new kernel to a total flux of 1.0
+        kernel /= kernel.sum()  # Normalize the new kernel to a total flux of 1.0
+        log.info("Computing kernel FWHM...{}".format(kernel.sum()))
+        kernel_fwhm = find_fwhm(kernel, fwhm)
+        log.info("Determined FWHM from sample PSF of {:.2f}".format(kernel_fwhm))
     else:
         # Generate a default kernel using a simple 2D Gaussian
+        kernel_fwhm = fwhm
         sigma = fwhm * gaussian_fwhm_to_sigma
-        kernel = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
-        kernel.normalize()
+        k = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
+        k.normalize()
+        kernel = k.array
 
-    return kernel
+    return kernel, kernel_fwhm
 
+def find_fwhm(psf, default_fwhm):
+    """Determine FWHM for auto-kernel PSF"""
+    daogroup = DAOGroup(crit_separation=8)
+    mmm_bkg = MMMBackground()
+    iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
+    fitter = LevMarLSQFitter()
+    sigma_psf = gaussian_fwhm_to_sigma * default_fwhm
+    gaussian_prf = IntegratedGaussianPRF(sigma=sigma_psf)
+    gaussian_prf.sigma.fixed = False
+    itr_phot_obj = IterativelySubtractedPSFPhotometry(finder=iraffind,
+                                                       group_maker=daogroup,
+                                                       bkg_estimator=mmm_bkg,
+                                                       psf_model=gaussian_prf,
+                                                       fitter=fitter,
+                                                       fitshape=(11, 11),
+                                                       niters=2)
+    phot_results = itr_phot_obj(psf)
+
+    psf_row = np.where(phot_results['flux_fit'] == phot_results['flux_fit'].max())[0][0]
+    sigma_fit = phot_results['sigma_fit'][psf_row]
+    fwhm = gaussian_sigma_to_fwhm * sigma_fit
+    log.info("Found FWHM: {}".format(fwhm))
+
+    return fwhm
 
 def extract_sources(img, dqmask=None, fwhm=3.0, threshold=None, source_box=7,
                     classify=True, centering_mode="starfind", nlargest=None,

@@ -9,93 +9,17 @@ from stsci.tools import logutil
 
 from drizzlepac import util
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
+from drizzlepac import hapsequencer
 from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import poller_utils
-
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 
 @util.with_logging
 def run_catalog_utils(total_list, debug=False, phot_mode='both'):
-    """This subroutine utilizes hlautils/catalog_utils module to produce photometric sourcelists for the specified
-    total drizzle product and it's associated child filter products.
-
-    Parameters
-    ----------
-    total_list : drizzlepac.hlautils.Product.TotalProduct
-        total drizzle product that will be processed by catalog_utils. catalog_utils will also create photometric
-        sourcelists for the child filter products of this total product.
-
-    debug : bool, optional
-        generate ds9 region file counterparts to the photometric sourcelists? Default value is False.
-
-    phot_mode : str, optional
-        Which algorithm should be used to generate the sourcelists? 'aperture' for aperture photometry;
-        'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
-
-    Returns
-    -------
-    Nothing.
-    """
-
-
-    product_list = []
-    for total_product_obj in total_list:
-        # determine total product filename
-        if os.path.exists(total_product_obj.product_basename+"_drc.fits"):
-            total_product_name = total_product_obj.product_basename + "_drc.fits"
-        else:
-            total_product_name = total_product_obj.product_basename + "_drz.fits"
-
-        # Instantiate filter catalog product object
-        total_product_catalogs = HAPCatalogs(total_product_name, types=phot_mode, debug=debug)
-
-        # Identify sources to be measured by filter photometry step
-        total_product_catalogs.identify()
-
-        #write out list(s) of identified sources
-        total_product_catalogs.write()
-
-        #append total product catalogs to list
-        if phot_mode in ['aperture', 'both']:
-            product_list.append(total_product_obj.point_cat_filename)
-        if phot_mode in ['segment', 'both']:
-            product_list.append(total_product_obj.segment_cat_filename)
-
-        # build dictionary of total_product_catalogs.catalogs[*].sources to use for
-        # filter photometric catalog generation
-        sources_dict = {}
-        for cat_type in total_product_catalogs.catalogs.keys():
-            sources_dict[cat_type] = {}
-            sources_dict[cat_type]['sources'] = total_product_catalogs.catalogs[cat_type].sources
-            if cat_type == "segment":
-                sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
-
-        for filter_product_obj in total_product_obj.fdp_list:
-            # determine filter product filename
-            if os.path.exists(filter_product_obj.product_basename + "_drc.fits"):
-                filter_product_name = filter_product_obj.product_basename + "_drc.fits"
-            else:
-                filter_product_name = filter_product_obj.product_basename + "_drz.fits"
-
-            # Instantiate filter catalog product object
-            filter_product_catalogs = HAPCatalogs(filter_product_name, types=phot_mode,
-                                                  debug=debug, tp_sources=sources_dict)
-            # Perform photometry
-            filter_product_catalogs.measure()
-
-            # Write out photometric catalog(s)
-            filter_product_catalogs.write()
-
-            # append filter product catalogs to list
-            if phot_mode in ['aperture', 'both']:
-                product_list.append(filter_product_obj.point_cat_filename)
-            if phot_mode in ['segment', 'both']:
-                product_list.append(filter_product_obj.segment_cat_filename)
+    product_list = hapsequencer.create_catalog_products(total_list, debug=debug, phot_mode=phot_mode)
     return product_list
-# ======================================================================================================================
-
 
 def main():
     """Super simple testing interface for the catalog_utils code."""
@@ -112,32 +36,56 @@ def main():
     log.info("python {} {} -d {} -m {}".format(os.path.realpath(__file__), args.input_file, args.debug, args.phot_mode))
 
     obs_info_dict, total_list = poller_utils.interpret_obset_input(args.input_file)
-
+    out_pars_file = 'pars.json'
     for total_item in total_list:
-        total_item.pars = config_utils.HapConfig(total_item, use_defaults=True)
 
+        total_item.configobj_pars = config_utils.HapConfig(total_item, output_custom_pars_file=out_pars_file,use_defaults=True)
         for filter_item in total_item.fdp_list:
-            filter_item.pars = config_utils.HapConfig(filter_item, use_defaults=True)
-
+            filter_item.configobj_pars = config_utils.HapConfig(filter_item, output_custom_pars_file=out_pars_file,use_defaults=True)
         for expo_item in total_item.edp_list:
-            expo_item.pars = config_utils.HapConfig(expo_item, use_defaults=True)
+            expo_item.configobj_pars = config_utils.HapConfig(expo_item, output_custom_pars_file=out_pars_file,use_defaults=True)
 
-    starting_dt = datetime.datetime.now()  # TODO: remove prior to final integration
-    log.info("Run start time: {}".format(str(starting_dt)))  # TODO: remove prior to final integration
+    starting_dt = datetime.datetime.now()
+    log.info("Run start time: {}".format(str(starting_dt)))
 
     product_list = run_catalog_utils(total_list, args.debug, args.phot_mode)
 
-    log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))  # TODO: remove prior to final integration
+    log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))
 
     for item in product_list:
         print(item)
 
+#-----------------------------------------------------------------------------------------------------------------
+def confirm_execution():
+    """
+    This subroutine prevents accidental execution by requiring the user to type in a randomly generated 6-character
+    confirmation string. If the string is typed in incorrectly, the script will simply exit to the command line.
+
+    :return: nothing
+    """
+    import random
+    import string
+    confirm_string=''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+    foo = input("Confirm execution by entering the following randomized text string: {} \n".format(confirm_string))
+    if foo != confirm_string: sys.exit("Execution aborted.")
+    if foo == confirm_string: print("Execution confirmed.")
+
+#-----------------------------------------------------------------------------------------------------------------
 
 # ======================================================================================================================
 
 
+
 if __name__ == '__main__':
+    print("Current working directory: "+os.getcwd())
+    confirm_execution()
+
+    cmd_list = ['rm -f *.*','cp orig/* .']
+    for cmd in cmd_list:
+        print(cmd)
+        os.system(cmd)
     main()
+    print("\a\a\a")
 
 
 

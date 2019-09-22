@@ -2,12 +2,12 @@
 segmentation-map based photometry.
 """
 import sys
-import pickle # FIX Remove
+import pickle  # FIX Remove
 
 import astropy.units as u
 from astropy.io import fits as fits
 from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel
-from astropy.stats import mad_std, gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm
+from astropy.stats import mad_std, gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm, sigma_clipped_stats
 from astropy.table import Column, MaskedColumn, Table
 import numpy as np
 from scipy import ndimage
@@ -15,6 +15,7 @@ from scipy import ndimage
 from photutils import aperture_photometry, CircularAperture, CircularAnnulus, DAOStarFinder
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
 from photutils import detect_sources, source_properties  # , deblend_sources
+from photutils import make_source_mask
 from stsci.tools import logutil
 from stwcs.wcsutil import HSTWCS
 
@@ -26,9 +27,6 @@ try:
 except Exception:
     plt = None
 
-# Default background determination parameter values
-BKG_BOX_SIZE = 50
-BKG_FILTER_SIZE = 3
 CATALOG_TYPES = ['aperture', 'segment']
 
 __taskname__ = 'catalog_utils'
@@ -65,16 +63,17 @@ class CatalogImage:
     def close(self):
         self.imghdu.close()
 
-    def build_kernel(self, fwhmpsf, scale):
+    def build_kernel(self, box_size, win_size, fwhmpsf, scale):
         if self.bkg is None:
-            self.compute_background()
+            self.compute_background(box_size, win_size)
 
-        self.kernel = astrometric_utils.build_auto_kernel(self.data, self.wht_image,
-                                                          threshold=self.bkg.background_rms, fwhm=fwhmpsf / scale)
+        self.kernel, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
+                                                                            self.wht_image,
+                                                                            threshold=self.bkg_rms_ra,
+                                                                            fwhm=fwhmpsf / scale)
 
-    def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
-                           bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS,
-                           nsigma=5., threshold_flag=None):
+    def compute_background(self, box_size, win_size,
+                           bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS):
         """Use Background2D to determine the background of the input image.
 
         Parameters
@@ -94,94 +93,65 @@ class CatalogImage:
         rms_estimator : subroutine
             RMS estimation algorithm
 
-        nsigma : float
-            Number of sigma above background
-
-        threshold_flag : float or None
-            Value from the image which serves as the limit for determining sources.
-            If None, compute a default value of (background+5*rms(background)).
-            If threshold < 0.0, use absolute value as scaling factor for default value.
-
-
         Returns
         -------
-        bkg : 2D ndarray
-            Background image
+        bkg_background_ra : 2D ndarray
+            Background array
 
-        bkg_dao_rms : ndarry
-            Background RMS image
+        bkg_rms_ra : 2D ndarray
+            RMS map array
 
-        threshold : ndarray
-            Numpy array representing the background plus RMS
-
+        bkg_rms_median : float
+            bkg_rms_image median value
         """
         # Report configuration values to log
         log.info("")
         log.info("Computation of image background - Input Parameters")
         log.info("Box size: {}".format(box_size))
         log.info("Window size: {}".format(win_size))
-        log.info("NSigma: {}".format(nsigma))
 
         # SExtractorBackground ans StdBackgroundRMS are the defaults
         bkg = None
-        bkg_dao_rms = None
 
         exclude_percentiles = [10, 25, 50, 75]
         for percentile in exclude_percentiles:
             log.info("")
             log.info("Percentile in use: {}".format(percentile))
             try:
-                bkg = Background2D(self.data, box_size, filter_size=win_size,
+                bkg = Background2D(self.data, (box_size, box_size), filter_size=(win_size, win_size),
                                    bkg_estimator=bkg_estimator(),
                                    bkgrms_estimator=rms_estimator(),
                                    exclude_percentile=percentile, edge_method="pad")
+
             except Exception:
                 bkg = None
                 continue
 
             if bkg is not None:
-                # Set the bkg_rms at "nsigma" sigma above background
-                bkg_rms = nsigma * bkg.background_rms
-                default_threshold = bkg.background + bkg_rms
-                bkg_rms_mean = bkg.background.mean() + nsigma * bkg_rms.std()
-                bkg_mean = bkg.background.mean()
-                bkg_dao_rms = bkg.background_rms
-                if threshold_flag is None:
-                    threshold = default_threshold
-                elif threshold_flag < 0:
-                    threshold = -1 * threshold_flag * default_threshold
-                    log.info("Background threshold set to {} based on {}".format(threshold.max(),
-                                                                                 default_threshold.max()))
-                    bkg_rms_mean = threshold.max()
-                else:
-                    bkg_rms_mean = 3. * threshold_flag
-                    threshold = bkg_rms_mean
-
-                if bkg_rms_mean < 0:
-                    bkg_rms_mean = 0.
+                bkg_background_ra = bkg.background
+                bkg_rms_ra = bkg.background_rms
+                bkg_rms_median = bkg.background_rms_median
+                bkg_median = bkg.background_median
                 break
 
         # If Background2D does not work at all, define default scalar values for
         # the background to be used in source identification
         if bkg is None:
-            bkg_mean = bkg_rms_mean = max(0.01, self.data.min())
-            bkg_rms = nsigma * bkg_rms_mean
-            bkg_dao_rms = bkg_rms_mean
-            threshold = bkg_rms_mean + bkg_rms
-
-        # *** FIX: Need to do something for bkg if bkg is None ***
-
-        # Report other useful quantities
-        log.info("")
-        log.info("Mean background: {}".format(bkg_mean))
-        log.info("Mean threshold: {}".format(np.mean(threshold)))
-        log.info("")
-        log.info("{}".format("=" * 80))
+            log.info("Background2D failure detected. Using alternative background calculation instead....")
+            mask = make_source_mask(self.data, nsigma=2, npixels=5, dilate_size=11)
+            sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(self.data, sigma=3.0, mask=mask, maxiters=9)
+            bkg_median = sigcl_median
+            bkg_rms_median = sigcl_std
+            # create background frame shaped like self.data populated with sigma-clipped median value
+            bkg_background_ra = np.full_like(self.data, sigcl_median)
+            # create background frame shaped like self.data populated with sigma-clipped standard deviation value
+            bkg_rms_ra = np.full_like(self.data, sigcl_std)
 
         self.bkg = bkg
-        self.bkg_dao_rms = bkg_dao_rms
-        self.bkg_rms_mean = bkg_rms_mean
-        self.threshold = threshold
+        self.bkg_background_ra = bkg_background_ra
+        self.bkg_rms_ra = bkg_rms_ra
+        self.bkg_rms_median = bkg_rms_median
+        self.bkg_median = bkg_median
 
     def _get_header_data(self):
         """Read FITS keywords from the primary or extension header and store the
@@ -264,10 +234,10 @@ class HAPCatalogs:
 
         # Compute the background for this image
         self.image = CatalogImage(fitsfile)
-        self.image.compute_background(nsigma=self.param_dict['sourcex']['bthresh'],
-                                      threshold_flag=self.param_dict['sourcex']['thresh'])
+        self.image.compute_background(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'])
 
-        self.image.build_kernel(self.param_dict['dao']['TWEAK_FWHMPSF'], self.param_dict['dao']['scale'])
+        self.image.build_kernel(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'],
+                                self.param_dict['dao']['TWEAK_FWHMPSF'], self.param_dict['dao']['scale'])
 
         # Initialize all catalog types here...
         # This does NOT identify or measure sources to create the catalogs at this point...
@@ -325,7 +295,7 @@ class HAPCatalogs:
         for catalog in self.catalogs.values():
             if catalog.source_cat is None:
                 if hasattr(catalog, 'total_source_cat'):  # for total product segment processing
-                    catalog.source_cat = catalog.total_source_cat  # TODO: find a less memory-intensive way to do this.
+                    catalog.source_cat = catalog.total_source_cat
                 else:
                     catalog.source_cat = catalog.sources  # for total product point-source processing
             catalog.write_catalog
@@ -374,13 +344,9 @@ class HAPPointCatalog(HAPCatalogBase):
     def identify_sources(self):
         """Create a master coordinate list of sources identified in the specified total detection product image
         """
+        source_fwhm = self.image.kernel_fwhm
         # read in sci, wht extensions of drizzled product
         image = self.image.data.copy()
-
-        # Estimate FWHM from image sources
-        # Background statistics need to be computed prior to subtracting background from image
-        bkg_sigma = mad_std(image, ignore_nan=True)
-        detect_sources_thresh = self.param_dict["dao"]["bkgsig_sf"] * bkg_sigma
 
         # Input image will be background subtracted using pre-computed background, unless
         # specified explicitly by the user
@@ -389,15 +355,9 @@ class HAPPointCatalog(HAPCatalogBase):
             image -= self.bkg_used
         else:
             # Estimate background
-            self.bkg_used = self.image.bkg.background
+            self.bkg_used = self.image.bkg_background_ra
             image -= self.bkg_used
 
-        segm = detect_sources(image, detect_sources_thresh, npixels=self.param_dict["sourcex"]["source_box"],
-                              filter_kernel=self.image.kernel)
-        cat = source_properties(image, segm)
-        source_table = cat.to_table()
-        smajor_sigma = source_table['semimajor_axis_sigma'].mean().value
-        source_fwhm = smajor_sigma * gaussian_sigma_to_fwhm
         if not self.tp_sources:
             # Report configuration values to log
             log.info("{}".format("=" * 80))
@@ -406,26 +366,22 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("Total Detection Product - Input Parameters")
             log.info("INPUT PARAMETERS")
             log.info("{}: {}".format("self.param_dict['dao']['bkgsig_sf']", self.param_dict["dao"]["bkgsig_sf"]))
-            log.info("{}: {}".format("self.param_dict['dao']['kernel_sd_aspect_ratio']", self.param_dict['dao']['kernel_sd_aspect_ratio']))
+            log.info("{}: {}".format("self.param_dict['dao']['kernel_sd_aspect_ratio']",
+                                     self.param_dict['dao']['kernel_sd_aspect_ratio']))
             log.info("{}: {}".format("self.param_dict['dao']['simple_bkg']", self.param_dict['dao']['simple_bkg']))
-            log.info("{}: {}".format("self.image.bkg_rms_mean", self.image.bkg_rms_mean))
-            log.info("{}: {}".format("self.image.bkg_rms_mean", self.image.bkg_rms_mean))
-            log.info("{}: {}".format("self.param_dict['sourcex']['source_box']",
-                                     self.param_dict["sourcex"]["source_box"]))
+            log.info("{}: {}".format("self.param_dict['nsigma']", self.param_dict['nsigma']))
+            log.info("{}: {}".format("self.image.bkg_rms_median", self.image.bkg_rms_median))
             log.info("\nDERIVED PARAMETERS")
-            log.info("{}: {}".format("bkg_sigma", bkg_sigma))
-            log.info("{}: {}".format("detect_sources_thresh", detect_sources_thresh))
-            log.info("{}: {}".format("smajor_sigma", smajor_sigma))
             log.info("{}: {}".format("source_fwhm", source_fwhm))
+            log.info("{}: {}".format("threshold", self.param_dict['nsigma']*self.image.bkg_rms_median))
             log.info("")
             log.info("{}".format("=" * 80))
 
             # find ALL the sources!!!
-            log.info("DAOStarFinder(fwhm={}, threshold={}, ratio={})".format(source_fwhm,
-                                                                             self.image.bkg_rms_mean,
-                                                                             self.param_dict['dao']['kernel_sd_aspect_ratio']))
-            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.image.bkg_rms_mean,
-                                    ratio=self.param_dict['dao']['kernel_sd_aspect_ratio'])
+            log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
+                                                                      self.image.bkg_rms_median))
+
+            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma']*self.image.bkg_rms_median)
 
             # create mask to reject any sources located less than 10 pixels from a image/chip edge
             wht_image = self.image.data.copy()
@@ -467,7 +423,6 @@ class HAPPointCatalog(HAPCatalogBase):
         # load in coords of sources identified in total product
         positions = (self.sources['xcentroid'], self.sources['ycentroid'])
 
-        # adjust coods for calculations that assume origin value of 0, rather than 1.
         pos_x = np.asarray(positions[0])
         pos_y = np.asarray(positions[1])
 
@@ -504,14 +459,14 @@ class HAPPointCatalog(HAPCatalogBase):
         # Perform aperture photometry
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image,
                                                                 platescale=self.param_dict['dao']['scale'],
-                                                                error_array=self.bkg.background_rms,
+                                                                error_array=self.image.bkg_rms_ra,
                                                                 bg_method=self.param_dict['dao']['salgorithm'],
                                                                 epadu=gain,
                                                                 zero_point=ab_zeropoint)
 
         # convert coords back to origin value = 1 rather than 0
-        photometry_tbl["XCENTER"] = photometry_tbl["XCENTER"] + 1.
-        photometry_tbl["YCENTER"] = photometry_tbl["YCENTER"] + 1.
+        # photometry_tbl["XCENTER"] = photometry_tbl["XCENTER"] + 1.
+        # photometry_tbl["YCENTER"] = photometry_tbl["YCENTER"] + 1.
 
         # calculate and add RA and DEC columns to table
         ra, dec = self.transform_list_xy_to_ra_dec(photometry_tbl["XCENTER"], photometry_tbl["YCENTER"], self.imgname)  # TODO: replace with all_pix2sky or somthing at a later date
@@ -596,6 +551,8 @@ class HAPPointCatalog(HAPCatalogBase):
 
         """
         # Write out catalog to ecsv file
+        self.source_cat.meta['comments'] = \
+            ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
         self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
         log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
@@ -655,7 +612,7 @@ class HAPPointCatalog(HAPCatalogBase):
         import stwcs
 
         wcs1_drz = stwcs.wcsutil.HSTWCS(drizzled_image + "[1]")
-        origin = 1
+        origin = 0
         # *origin* is the coordinate in the upper left corner of the
         # image.  In FITS and Fortran standards, this is 1.  In Numpy and C
         # standards this is 0.
