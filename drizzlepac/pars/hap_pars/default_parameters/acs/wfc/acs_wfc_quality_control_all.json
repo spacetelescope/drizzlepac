@@ -1,13 +1,17 @@
 {
-    "ci_daolower_limit": 0.9,
-    "ci_daoupper_limit": 1.23,
-    "ci_selower_limit": 0.9,
-    "ci_seupper_limit": 1.23,
-    "upper_epp_limit": 70000,
-    "lower_epp_limit": 2000,
-    "eppsky_limit": 1000,
-    "swarm_thresh": 1,
-    "clip_radius_list": [120, 100, 80, 60, 40, 30, 20, 10, 5, 2, 0],
-    "scale_factor_list": [0.0, 0.000000e+00, 6.498530e-06, 3.687270e-05, 1.412972e-04, 3.151877e-04, 1.023391e-03, 3.134859e-03, 2.602436e-02, 1.820539e-01, 1.000000e+00],
-    "proximity_binary": false
+    "CI FILTER": {
+      "ci_daolower_limit": 0.9,
+      "ci_daoupper_limit": 1.23,
+      "ci_selower_limit": 0.9,
+      "ci_seupper_limit": 1.23,
+    },
+    "SWARM FILTER": {
+      "upper_epp_limit": 70000,
+      "lower_epp_limit": 2000,
+      "eppsky_limit": 1000,
+      "swarm_thresh": 1,
+      "clip_radius_list": [120, 100, 80, 60, 40, 30, 20, 10, 5, 2, 0],
+      "scale_factor_list": [0.0, 0.000000e+00, 6.498530e-06, 3.687270e-05, 1.412972e-04, 3.151877e-04, 1.023391e-03, 3.134859e-03, 2.602436e-02, 1.820539e-01, 1.000000e+00],
+      "proximity_binary": false
+    }
 }
