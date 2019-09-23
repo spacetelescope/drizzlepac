@@ -133,25 +133,36 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     # -----------------------
     # FLAG FILTER PROCESSING
     # -----------------------
-    print("************************** * * * HLA_FLAG_FILTER * * * **************************")
-    print("ci_filter: ",all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict,"\n")
-
-    print("HLASaturationFlags: ",all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
-                       scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict,"\n")
-
-    print("HLASwarmFlags: ",all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
-                  filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict,"\n")
-
-    print("HLANexpFlags: ",all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
-                 scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir,"\n")
-
+    log.info("************************** * * * HLA_FLAG_FILTER * * * **************************")
+    # Flag sources based on concentration index.
+    log.info("ci_filter({} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red,
+                                                proc_type, param_dict))
     ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict)
+
+    # Flag saturated sources
+    log.info("HLASaturationFlags({} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, working_hla_red,
+                                                                     filter_sorted_flt_dict, readnoise_dictionary_drzs,
+                                                                     scale_dict_drzs, exp_dictionary_scis,
+                                                                     dict_newTAB_matched2drz, proc_type, param_dict))
 
     HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
                        scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict)
 
+    # Flag swarm sources
+    log.info("HLASwarmFlags({} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz,
+                                                                working_hla_red, exp_dictionary_scis,
+                                                                filter_sorted_flt_dict, detection_image, proc_type,
+                                                                rms_dict, param_dict))
+
     HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict)
+
+    # Flag sources from regions where there are a low (or a null) number of contributing exposures
+    log.info("HLANexpFlags({} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, working_hla_red,
+                                                               filter_sorted_flt_dict, param_dict,
+                                                               readnoise_dictionary_drzs,
+                                                               scale_dict_drzs, exp_dictionary_scis,
+                                                               dict_newTAB_matched2drz, drz_root_dir))
 
     HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
                  scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir)
