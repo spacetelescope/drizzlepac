@@ -214,14 +214,14 @@ def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, p
         phot_table = dict_newTAB_matched2drz[drizzled_image]
         phot_table_root = phot_table.split('.')[0]
         if proc_type == 'sexphot':
-            ci_lower_limit = float(param_dict['ci filter']['ci_selower_limit'])
-            ci_upper_limit = float(param_dict['ci filter']['ci_seupper_limit'])
-            snr = float(param_dict['sourcex']['bthresh'])
+            ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_selower_limit'])
+            ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_seupper_limit'])
+            snr = float(param_dict['catalog generation']['sourcex']['bthresh'])
 
         if proc_type == 'daophot':
-            ci_lower_limit = float(param_dict['ci filter']['ci_daolower_limit'])
-            ci_upper_limit = float(param_dict['ci filter']['ci_daoupper_limit'])
-            snr = float(param_dict['dao']['bthresh'])
+            ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_daolower_limit'])
+            ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_daoupper_limit'])
+            snr = float(param_dict['catalog generation']['dao']['bthresh'])
 
 
         # replace CI limits with values from table if possible
@@ -510,7 +510,7 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         # ----------------------------------
         # Convert aperture radius to pixels
         # ----------------------------------
-        ap2 = param_dict['dao']['aperture_2']
+        ap2 = param_dict['catalog generation']['dao']['aperture_2']
         if proc_type == 'daophot': #TODO: WHY ARE THESE HARDCODED IN HERE??? MOVE TO MAIN PARAM_DICT DEFINITINON, RUNSHLAPROCESSING.PY, LINE 39.
             if channel == 'IR':
                 radius = round((ap2 / 0.09) + 0.5) * 2.
@@ -696,17 +696,17 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         image_split = drizzled_image.split('/')[-1]
         channel = drizzled_image.split("_")[-2].lower() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
 
-        ap2 = param_dict['dao']['aperture_2']
+        ap2 = param_dict['catalog generation']['dao']['aperture_2']
         if proc_type not in ('sexphot', 'daophot'):
             raise ValueError("Unknown catalog type '%s'" % proc_type)
 
         # ----------------------------------
         # Convert aperture radius to pixels
         # ----------------------------------
-        radius = ap2 / float(param_dict['astrodrizzle']['SCALE'])
+        radius = ap2 / float(param_dict['source generation']['dao']['SCALE']) # TODO: this value should be probably be somewhere else
         log.info(' ')
         log.info('Aperture Size = {}'.format(ap2))
-        log.info('Pixel Scale = {} arcsec per pixel'.format(float(param_dict['astrodrizzle']['SCALE'])))
+        log.info('Pixel Scale = {} arcsec per pixel'.format(float(param_dict['source generation']['dao']['SCALE']))) # TODO: this value should be probably be somewhere else
         log.info(' ')
         area = math.pi * radius**2
         exptime = exp_dictionary_scis[drizzled_image]
@@ -793,9 +793,9 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         # ----------------------------------------------------------------------
         # ----------------------------------------------------------------------
         # ======================================================================
-        upper_epp_limit = float(param_dict["swarm filter"]["upper_epp_limit"])
-        lower_epp_limit = float(param_dict["swarm filter"]["lower_epp_limit"])
-        eppsky_limit_cfg =float(param_dict["swarm filter"]["eppsky_limit"])
+        upper_epp_limit = float(param_dict["quality control"]["swarm filter"]["upper_epp_limit"])
+        lower_epp_limit = float(param_dict["quality control"]["swarm filter"]["lower_epp_limit"])
+        eppsky_limit_cfg =float(param_dict["quality control"]["swarm filter"]["eppsky_limit"])
 
         if data_type.upper() == 'UVIS':
             eppsky_limit = eppsky_limit_cfg * median_sky
@@ -989,10 +989,10 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         # --------------------------------------------------------------------------
         # ==========================================================================
 
-        swarm_thresh = float(param_dict["swarm filter"]["swarm_thresh"])
-        clip_radius_list = param_dict["swarm filter"]["clip_radius_list"]
+        swarm_thresh = float(param_dict["quality control"]["swarm filter"]["swarm_thresh"])
+        clip_radius_list = param_dict["quality control"]["swarm filter"]["clip_radius_list"]
         clip_radius_list = list(map(float, clip_radius_list))
-        scale_factor_list = param_dict["swarm filter"]["scale_factor_list"]
+        scale_factor_list = param_dict["quality control"]["swarm filter"]["scale_factor_list"]
         scale_factor_list = list(map(float, scale_factor_list))
         log.info('SWARM FILTER CLIP_RADIUS_LIST: {}'.format(clip_radius_list))
         log.info('SWARM FILTER SCALE_FACTOR_LIST: {}'.format(scale_factor_list))
@@ -1151,7 +1151,7 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
 
         proximity_flag = numpy.zeros(nrows, dtype=bool)
 
-        proximity_choice = param_dict["swarm filter"]["proximity_binary"]
+        proximity_choice = param_dict["quality control"]["swarm filter"]["proximity_binary"]
 
         if proximity_choice == 'yes':
             if len(final_flag_src_central_pixel_list) > 0:
@@ -1410,7 +1410,7 @@ def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
         # Convert aperture radius to pixels
         # ----------------------------------
 
-        ap2 = param_dict['dao']['aperture_2']
+        ap2 = param_dict['catalog generation']['dao']['aperture_2']
 
         if channel == 'IR': #TODO: PLATESCALE SHOULDN"T BE HARD-CODED HERE. SHOULD USE PARAM_DICT VALUE.
             radius = ap2 / 0.09

@@ -10,7 +10,7 @@ from drizzlepac.hlautils import hla_flag_filter
 from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import poller_utils
 
-# Get configs from json file
+# Get parameter values
 
 obs_info_dict, total_list = poller_utils.interpret_obset_input("j92c01.out")
 
@@ -27,11 +27,12 @@ for total_item in total_list:
                                                           use_defaults=True)
 
 
-# * * * * hla_flag_filter.run_source_list_flagging inputs * * * *
+# * * * * hla_flag_filter.run_source_list_flagging inputs for HLA Classic test run* * * *
 all_drizzled_filelist = ["hst_10265_01_acs_wfc_f606w_drz.fits"]
 working_hla_red = os.getcwd()
 filter_sorted_flt_dict = {"f606w": ["j92c01b4q_flc.fits", "j92c01b5q_flc.fits", "j92c01b7q_flc.fits", "j92c01b9q_flc.fits"]}
-param_dict = total_list[0].fdp_list[0].configobj_pars.pars
+param_dict = total_list[0].fdp_list[0].configobj_pars.as_single_giant_dict()
+param_dict['catalog generation']['dao']['bthresh'] = 5.0 #force it to use the value from HLA classic
 readnoise_dictionary_drzs = {"hst_10265_01_acs_wfc_f606w_drz.fits": 4.97749985}
 scale_dict_drzs = {"hst_10265_01_acs_wfc_f606w_drz.fits": 0.05}
 zero_point_AB_dict = {"hst_10265_01_acs_wfc_f606w_drz.fits": 26.5136022236}
