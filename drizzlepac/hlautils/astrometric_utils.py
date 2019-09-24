@@ -22,6 +22,7 @@ import sys
 from distutils.version import LooseVersion
 
 import numpy as np
+import scipy.stats as st
 from scipy import ndimage
 from lxml import etree
 try:
@@ -381,7 +382,7 @@ def compute_2d_background(imgarr, box_size, win_size,
     return bkg_background, bkg_median, bkg_rms, bkg_rms_median
 
 def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
-                      isolation_size=50, saturation_limit=70000.):
+                      isolation_size=11, saturation_limit=70000.):
     """Build kernel for use in source detection based on image PSF
     This algorithm looks for an isolated point-source that is non-saturated to use as a template
     for the source detection kernel.  Failing to find any suitable sources, it will return a
@@ -414,23 +415,24 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
 
     # Try to use PSF derived from image as detection kernel
     # Kernel must be derived from well-isolated sources not near the edge of the image
-    kern_img = imgarr[:]
+    kern_img = imgarr.copy()
     edge = source_box * 2
     kern_img[:edge, :] = 0.0
     kern_img[-edge:, :] = 0.0
     kern_img[:, :edge] = 0.0
     kern_img[:, -edge:] = 0.0
-    peaks = photutils.detection.find_peaks(kern_img, threshold=threshold, box_size=isolation_size)
-    if len(peaks['peak_value'][peaks['peak_value'] > saturation_limit]):
-        # Make sure only peaks less than saturation limit are evaluated
-        peaks['peak_value'][peaks['peak_value'] >= saturation_limit] = 0.
-    # Sort based on peak_value to identify brightest sources for use as a kernel
-    peaks.sort('peak_value')
 
-    wht_box = 2 # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
+    peaks = photutils.detection.find_peaks(kern_img, threshold=threshold * 5, box_size=isolation_size)
+
+    # Sort based on peak_value to identify brightest sources for use as a kernel
+    peaks.sort('peak_value', reverse=True)
+    sat_index = np.where(peaks['peak_value'] > saturation_limit)[0][0]
+    peaks['peak_value'][:sat_index] = 0.
+
+    wht_box = 2  # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
 
     # Identify position of brightest, non-saturated peak (in numpy index order)
-    for peak_ctr in range(-1, -1 * len(peaks) - 1, -1):
+    for peak_ctr in range(len(peaks)):
         kernel_pos = [peaks['y_peak'][peak_ctr], peaks['x_peak'][peak_ctr]]
 
         kernel = imgarr[kernel_pos[0] - source_box:kernel_pos[0] + source_box + 1,
@@ -450,10 +452,10 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     if kernel.sum() > 0.0:
         kernel = np.clip(kernel, 0, None)  # insure background subtracted kernel has no negative pixels
         kernel /= kernel.sum()  # Normalize the new kernel to a total flux of 1.0
-        log.info("Computing kernel FWHM...{}".format(kernel.sum()))
         kernel_fwhm = find_fwhm(kernel, fwhm)
         log.info("Determined FWHM from sample PSF of {:.2f}".format(kernel_fwhm))
     else:
+        log.warning("Did not find a suitable PSF out of {} possible sources...".format(len(peaks)))
         # Generate a default kernel using a simple 2D Gaussian
         kernel_fwhm = fwhm
         sigma = fwhm * gaussian_fwhm_to_sigma
@@ -788,7 +790,7 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
             sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=~256)
 
             # Grow out saturated pixels by a few pixels in every direction
-            grown_sat_mask = ndimage.binary_dilation(sat_mask, iterations=5)
+            grown_sat_mask = ndimage.binary_dilation(sat_mask, iterations=2)
 
             # combine the two temporary DQ masks into a single composite DQ mask.
             dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
@@ -1275,3 +1277,112 @@ def build_wcscat(image, group_id, source_catalog):
         hdulist.close()
 
     return wcs_catalogs
+
+def rebin(arr, new_shape):
+    """Rebin 2D array arr to shape new_shape by averaging."""
+    shape = (new_shape[0], arr.shape[0] // new_shape[0],
+             new_shape[1], arr.shape[1] // new_shape[1])
+    return arr.reshape(shape).mean(-1).mean(1)
+
+def maxBit(int_val):
+    """Return power of 2 for highest bit set for integer"""
+    length = 0
+    count = 0
+    while (int_val):
+        count += (int_val & 1)
+        length += 1
+        int_val >>= 1
+
+    return length-1
+
+
+def compute_similarity(image, reference):
+    """Compute a similarity index for an image compared to a reference image.
+
+    Similarity index is based on a the general algorithm used in the AmphiIndex
+    algorithm.
+        - identify slice of image that is a factor of 256 in size
+        - rebin image slice down to a (256,256) image
+        - rebin same slice from reference down to a (256,256) image
+        - sum the differences of the rebinned slices
+        - divide absolute value of difference scaled by reference slice sum
+
+    .. note::
+    This index will typically return values < 0.1 for similar images, and
+    values > 1 for dis-similar images.
+
+    Parameters
+    ----------
+    image : ndarray
+        Image (as ndarray) to measure
+
+    reference : ndarray
+        Image which serves as the 'truth' or comparison image.
+
+    Returns
+    -------
+    similarity_index : float
+        Value of similarity index for `image`
+
+    """
+    # Insure NaNs are replaced with 0
+    image = np.nan_to_num(image[:], 0)
+    reference = np.nan_to_num(reference[:], 0)
+
+    imgshape = (min(image.shape[0], reference.shape[0]),
+                min(image.shape[1], reference.shape[1]))
+    minsize = min(imgshape[0], imgshape[1])
+
+    # determine largest slice that is a power of 2 in size
+    window_bit = maxBit(minsize)
+    window = 2**window_bit
+
+    # Define how big the rebinned image should be for computing the sim index
+    sim_size = 2**(window_bit - 2) if window > 16 else window
+
+    # rebin image and reference
+    img = rebin(image[:window, :window], (sim_size, sim_size))
+    ref = rebin(reference[:window, :window], (sim_size, sim_size))
+
+    # Compute index
+    diffs = np.abs((img - ref).sum())
+    sim_indx = diffs / img.sum()
+    return sim_indx
+    
+def compute_prob(val, mean, sigma):
+    """Return z-score for val relative to a distribution
+
+       If abs(z_score) > 1, `val` is most likely not from the
+       specified distribution.
+
+    """
+    p = st.norm.cdf(x=val, loc=mean, scale=sigma)
+    z_score = st.norm.ppf(p)
+
+    return z_score
+
+def determine_focus_index(img, sigma=1.5):
+    """Determine blurriness indicator for an image
+
+       This returns a single value that serves as an indication of the
+       sharpness of the image based on the max pixel value from the image
+       after applying a Laplacian-of-Gaussian filter with sigma.
+
+    """
+
+    img_log = ndimage.gaussian_laplace(img, sigma)
+    focus_val = np.abs(img_log).max()
+
+    return focus_val
+
+def compute_zero_mask(imgarr, iterations=8, ext=0):
+    """Find section from image with no masked out pixels and max total flux"""
+    if isinstance(imgarr, str):
+        img_mask = fits.getdata(imgarr, ext=0)
+    else:
+        img_mask = imgarr.copy()
+
+    img_mask[img_mask > 0] = 1
+    img_mask = ndimage.binary_erosion(img_mask, iterations=iterations)
+
+    return img_mask
