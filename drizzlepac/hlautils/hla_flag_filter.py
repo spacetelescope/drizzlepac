@@ -336,7 +336,7 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
     """
     for drizzled_image in all_drizzled_filelist:
         image_split = drizzled_image.split('/')[-1]
-        channel = drizzled_image.split("_")[-2] # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+        channel = drizzled_image.split("_")[-3] # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
 
         if channel == 'IR':
             continue
