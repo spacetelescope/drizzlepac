@@ -512,7 +512,6 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         # Convert aperture radius to pixels
         # ----------------------------------
         ap2 = param_dict['catalog generation']['dao']['aperture_2']
-        pdb.set_trace()
         if proc_type == 'daophot': #TODO: WHY ARE THESE HARDCODED IN HERE??? MOVE TO MAIN PARAM_DICT DEFINITINON, RUNSHLAPROCESSING.PY, LINE 39.
             if channel == 'IR':
                 radius = round((ap2 / 0.09) + 0.5) * 2.
@@ -705,10 +704,10 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         # ----------------------------------
         # Convert aperture radius to pixels
         # ----------------------------------
-        radius = ap2 / float(param_dict['catalog generation']['dao']['SCALE']) # TODO: this value should be probably be somewhere else
+        radius = ap2 / float(param_dict['catalog generation']['dao']['scale']) # TODO: this value should be probably be somewhere else
         log.info(' ')
         log.info('Aperture Size = {}'.format(ap2))
-        log.info('Pixel Scale = {} arcsec per pixel'.format(float(param_dict['catalog generation']['dao']['SCALE']))) # TODO: this value should be probably be somewhere else
+        log.info('Pixel Scale = {} arcsec per pixel'.format(float(param_dict['catalog generation']['dao']['scale']))) # TODO: this value should be probably be somewhere else
         log.info(' ')
         area = math.pi * radius**2
         exptime = exp_dictionary_scis[drizzled_image]
