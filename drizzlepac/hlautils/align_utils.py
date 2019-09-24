@@ -190,7 +190,9 @@ class AlignmentTable:
     def select_fit(self, catalog_name, method_name):
         """Select the fit that has been identified as 'best'"""
         imglist = self.selected_fit = self.fit_dict[(catalog_name, method_name)]
-
+        if imglist[0].meta['fit_info']['status'].startswith("FAILED"):
+            self.selected_fit = None
+            
         # Protect the writing of the table within the best_fit_rms
         info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
         # Update filtered table with number of matched sources and other information
@@ -217,6 +219,8 @@ class AlignmentTable:
                 self.filtered_table[index]['offset_x'], self.filtered_table[index]['offset_y'] = item.meta['fit_info']['shift']
                 self.filtered_table[index]['scale'] = item.meta['fit_info']['scale'][0]
                 self.filtered_table[index]['rotation'] = item.meta['fit_info']['rot']
+            else:
+                self.filtered_table[index]['fit_method'] = None                
 
 
     def apply_fit(self, headerlet_filenames=None):
@@ -263,7 +267,10 @@ class HAPImage:
         self.num_sci = amutils.countExtn(self.imghdu)
         self.num_wht = amutils.countExtn(self.imghdu, extname='WHT')
         self.data = np.concatenate([self.imghdu[('SCI', i + 1)].data for i in range(self.num_sci)])
-
+        if not self.num_wht:
+            self.dqmask = self.build_dqmask()
+        else:
+            self.dqmask = None
         self.wht_image = self.build_wht_image()
 
         # Get the HSTWCS object from the first extension
@@ -296,8 +303,8 @@ class HAPImage:
             wht_image = 1.0 / errarr
             wht_image /= wht_image.max()
             wht_image *= self.imghdu[0].header['exptime']**2
-            dqmask = self.build_dqmask()
-            wht_image[dqmask] = 0
+            if self.dqmask is not None:
+                wht_image[self.dqmask] = 0
         else:
             wht_image = self.imghdu['WHT'].data
         return wht_image
@@ -315,7 +322,7 @@ class HAPImage:
         if self.bkg is None:
             self.compute_background()
         threshold_rms = np.array([rms for rms in self.bkg_dao_rms]).mean()
-        log.info("Looking for sample PSF in {}".format(self.imgname))
+        log.info("Looking for sample PSF in {}".format(self.rootname))
         self.kernel, self.kernel_fwhm = amutils.build_auto_kernel(self.data, self.wht_image,
                                                           threshold=threshold_rms,
                                                           fwhm=fwhmpsf / self.pscale)
