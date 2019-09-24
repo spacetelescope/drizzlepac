@@ -355,8 +355,7 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         main_drizzled_filelist = [drizzled_image]
         main_drizzled_filelist_orig = [drizzled_image]
 
-        drz_filter = drizzled_image.split("_")[5] # TODO: REMOVE. this is just a short-term hack to get things working for HLA
-        #drz_filter = drizzled_image.split("_")[-1].replace(".fits","").lower() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+        drz_filter = drizzled_image.split("_")[5] # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
         list_of_flts_in_main_driz = filter_sorted_flt_dict[drz_filter.lower()]
         num_flts_in_main_driz = len(list_of_flts_in_main_driz)
         list_of_flts_in_main_driz.sort()
@@ -1526,7 +1525,7 @@ def get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict)
     component_drz_img_list = glob.glob(drz_root_dir+drz_img_split[0]+'*_drz.fits')
     component_drz_img_list.sort()
 
-    drz_filter = drizzled_image.split("_")[-1].replace(".fits","").lower() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+    drz_filter = drizzled_image.split("_")[5]  # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
     list_of_flts = filter_sorted_flt_dict[drz_filter.lower()]
     if len(list_of_flts) == len(component_drz_img_list):
         # length match means we use them all
