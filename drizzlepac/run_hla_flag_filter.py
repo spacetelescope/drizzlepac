@@ -11,6 +11,10 @@ from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import poller_utils
 
 # Get parameter values
+for cmd in ['rm -f *.*', 'cp orig/* .']:
+    print(cmd)
+    os.system(cmd)
+
 
 obs_info_dict, total_list = poller_utils.interpret_obset_input("j92c01.out")
 
