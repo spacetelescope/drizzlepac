@@ -356,7 +356,8 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         main_drizzled_filelist_orig = [drizzled_image]
         pdb.set_trace()
 
-        drz_filter = drizzled_image.split("_")[-1].replace(".fits","").lower() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+        drz_filter = drizzled_image.split("_")[5] # TODO: REMOVE. this is just a short-term hack to get things working for HLA
+        #drz_filter = drizzled_image.split("_")[-1].replace(".fits","").lower() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
         list_of_flts_in_main_driz = filter_sorted_flt_dict[drz_filter.lower()]
         num_flts_in_main_driz = len(list_of_flts_in_main_driz)
         list_of_flts_in_main_driz.sort()
