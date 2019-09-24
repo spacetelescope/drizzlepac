@@ -1527,6 +1527,7 @@ def get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict)
 
     drz_filter = drizzled_image.split("_")[5]  # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
     list_of_flts = filter_sorted_flt_dict[drz_filter.lower()]
+    pdb.set_trace()
     if len(list_of_flts) == len(component_drz_img_list):
         # length match means we use them all
         return component_drz_img_list
