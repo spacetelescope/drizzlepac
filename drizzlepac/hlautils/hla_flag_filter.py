@@ -336,7 +336,7 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
     """
     for drizzled_image in all_drizzled_filelist:
         image_split = drizzled_image.split('/')[-1]
-        channel = drizzled_image.split("_")[-3] # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+        channel = drizzled_image.split("_")[-3].upper() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
 
         if channel == 'IR':
             continue
@@ -379,7 +379,7 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         if channel.lower() == 'wfpc2':
             image_ext_list = ["[sci,1]","[sci,2]","[sci,3]","[sci,4]"]
             dq_sat_bit = 8 
-        if channel.lower() == 'pc' :
+        if channel.lower() == 'pc':
             image_ext_list = ["[sci,1]"]
             dq_sat_bit = 8
 
@@ -696,7 +696,7 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         phot_table_root = phot_table.split('/')[-1].split('.')[0]
 
         image_split = drizzled_image.split('/')[-1]
-        channel = drizzled_image.split("_")[-2].lower() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+        channel = drizzled_image.split("_")[-3].lower() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
 
         ap2 = param_dict['catalog generation']['dao']['aperture_2']
         if proc_type not in ('sexphot', 'daophot'):
@@ -1325,7 +1325,7 @@ def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
     # ------------------
     for drizzled_image in all_drizzled_filelist:
         image_split = drizzled_image.split('/')[-1]
-        channel = drizzled_image.split("_")[-2] # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+        channel = drizzled_image.split("_")[-3].upper() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
 
         #if channel == 'IR':
         #    continue
