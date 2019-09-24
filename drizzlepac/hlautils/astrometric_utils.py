@@ -294,7 +294,7 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
 
 
 def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
-                      isolation_size=50, saturation_limit=70000.):
+                      isolation_size=11, saturation_limit=70000.):
     """Build kernel for use in source detection based on image PSF
     This algorithm looks for an isolated point-source that is non-saturated to use as a template
     for the source detection kernel.  Failing to find any suitable sources, it will return a
@@ -333,25 +333,25 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     kern_img[-edge:, :] = 0.0
     kern_img[:, :edge] = 0.0
     kern_img[:, -edge:] = 0.0
-    peaks = photutils.detection.find_peaks(kern_img, threshold=threshold, box_size=isolation_size)
-    if len(peaks['peak_value'][peaks['peak_value'] > saturation_limit]):
-        # Make sure only peaks less than saturation limit are evaluated
-        peaks['peak_value'][peaks['peak_value'] >= saturation_limit] = 0.
+
+    peaks = photutils.detection.find_peaks(kern_img, threshold=threshold * 5, box_size=isolation_size)
+
     # Sort based on peak_value to identify brightest sources for use as a kernel
-    peaks.sort('peak_value')
+    peaks.sort('peak_value', reverse=True)
+    sat_index = np.where(peaks['peak_value'] > saturation_limit)[0][0]
+    peaks['peak_value'][:sat_index] = 0.
 
     wht_box = 2 # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
 
     # Identify position of brightest, non-saturated peak (in numpy index order)
-    for peak_ctr in range(-1, -1 * len(peaks) - 1, -1):
-        log.info(peak_ctr)
+    for peak_ctr in range(len(peaks)):
         kernel_pos = [peaks['y_peak'][peak_ctr], peaks['x_peak'][peak_ctr]]
 
         kernel = imgarr[kernel_pos[0] - source_box:kernel_pos[0] + source_box + 1,
-                        kernel_pos[1] - source_box:kernel_pos[1] + source_box + 1]
+                        kernel_pos[1] - source_box:kernel_pos[1] + source_box + 1].copy()
 
         kernel_wht = whtarr[kernel_pos[0] - wht_box:kernel_pos[0] + wht_box + 1,
-                        kernel_pos[1] - wht_box:kernel_pos[1] + wht_box + 1]
+                        kernel_pos[1] - wht_box:kernel_pos[1] + wht_box + 1].copy()
 
         # search square cut-out (of size 2 x wht_box + 1 pixels on a side) of weight image centered on peak coords for
         # zero-value pixels. Reject peak if any are found.
@@ -361,13 +361,14 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
         else:
             kernel[:] = 0.0
 
-    if kernel.sum() > 0.0:
+        if kernel.sum() > 0.0:kernel = np.clip(kernel, 0, None)  # insure background subtracted kernel has no negative pixels
         kernel /= kernel.sum() # Normalize the new kernel to a total flux of 1.0
     else:
         # Generate a default kernel using a simple 2D Gaussian
         sigma = fwhm * gaussian_fwhm_to_sigma
-        kernel = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
-        kernel.normalize()
+        k = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
+        k.normalize()
+        kernel = k.array
 
     return kernel
 
@@ -1265,4 +1266,15 @@ def determine_focus_index(img, sigma=1.5):
     focus_val = np.abs(img_log).max()
     
     return focus_val
-    
+
+def compute_zero_mask(imgarr, iterations=8, ext=0):
+    """Find section from image with no masked out pixels and max total flux"""
+    if isinstance(imgarr, str):
+        img_mask = fits.getdata(imgarr, ext=0)
+    else:
+        img_mask = imgarr.copy()
+
+    img_mask[img_mask > 0] = 1
+    img_mask = ndimage.binary_erosion(img_mask, iterations=iterations)
+
+    return img_mask
