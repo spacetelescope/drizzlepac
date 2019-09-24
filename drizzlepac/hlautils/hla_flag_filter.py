@@ -512,6 +512,7 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         # Convert aperture radius to pixels
         # ----------------------------------
         ap2 = param_dict['catalog generation']['dao']['aperture_2']
+        pdb.set_trace()
         if proc_type == 'daophot': #TODO: WHY ARE THESE HARDCODED IN HERE??? MOVE TO MAIN PARAM_DICT DEFINITINON, RUNSHLAPROCESSING.PY, LINE 39.
             if channel == 'IR':
                 radius = round((ap2 / 0.09) + 0.5) * 2.
