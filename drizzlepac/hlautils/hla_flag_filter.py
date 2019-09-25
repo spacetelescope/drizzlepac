@@ -280,12 +280,11 @@ def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, p
 
                 if ci_value == '' or (not numpy.isfinite(ci_err)) or ci_value < ci_lower_limit - ci_err:
                     flag_value |= 16
-                print(">>>>>",ci_value,ci_upper_limit,type(ci_value),type(ci_upper_limit))
-                try:
+
+                if ci_value != '':
                     if ci_value > ci_upper_limit:
                         flag_value |= 1
-                except:
-                    pdb.set_trace()
+
 
                 row_split[-1] = '%d\n' % flag_value
                 table_row = ','.join(row_split)
