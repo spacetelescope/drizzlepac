@@ -7,11 +7,18 @@ import sys
 
 
 for line in fileinput.input(sys.argv[1], inplace=True):
-    if not line.endswith(",0\n") and not line[0].isdigit():
-        line=line.replace(line.split(",")[-1],"0\n")
-        print(line.strip())
-    else:
-        print(line.strip())
+    if sys.argv[1].endswith("daophot.txt"):
+        if not line.endswith(",0\n") and not line[0].isdigit():
+            line=line.replace(line.split(",")[-1],"0\n")
+            print(line.strip())
+        else:
+            print(line.strip())
+    if sys.argv[1].endswith("sexphot.txt"):
+        if not line.startswith("X_IMAGE") and not line.endswith(",0\n"):
+            line=line.replace(line.split(",")[-1],"0\n")
+            print(line.strip())
+        else:
+            print(line.strip())
 
 
 # pdb.set_trace()
