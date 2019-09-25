@@ -28,6 +28,7 @@ Flag Value Flag Meaning
 
 Where the concentration index (CI) = mag1 - mag2
 
+
 Dependencies
 ------------
 * ci_table.py
