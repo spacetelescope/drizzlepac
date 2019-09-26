@@ -382,6 +382,13 @@ def process(inFile, force=False, newpath=None, num_cores=None,
             if align_aposteriori:
                 align_dicts = align_aposteriori
 
+        _trlmsg = _timestamp('Creating final combined,corrected product based on best alignment')
+        _trlmsg += __trlmarker__
+        _updateTrlFile(_trlfile, _trlmsg)
+
+        # Generate final pipeline products based on 'best' alignment
+        drz_products, align_dicts = run_driz(_inlist, _trlfile, find_crs=True, verify_alignment=False)
+
         # Save this for when astropy.io.fits can modify a file 'in-place'
         # Update calibration switch
         _fimg = fits.open(_cal_prodname, mode='update', memmap=False)
@@ -391,9 +398,9 @@ def process(inFile, force=False, newpath=None, num_cores=None,
 
         # Enforce pipeline convention of all lower-case product
         # names
-        for focus_dict in align_dicts:
-            _plower = focus_dict['prodname'].lower()
-            if focus_dict['prodname'] != _plower: os.rename(focus_dict['prodname'], _plower)
+        for drz_product in drz_products:
+            _plower = drz_product.lower()
+            if drz_product != _plower: os.rename(drz_product, _plower)
 
     else:
         # Create default trailer file messages when astrodrizzle is not
@@ -468,7 +475,7 @@ def process(inFile, force=False, newpath=None, num_cores=None,
     # Provide feedback to user
     print(_final_msg)
 
-def run_driz(inlist, trlfile, **pipeline_pars):
+def run_driz(inlist, trlfile, verify_alignment=True, **pipeline_pars):
 
     import drizzlepac
     pyver = drizzlepac.astrodrizzle.__version__
@@ -512,18 +519,21 @@ def run_driz(inlist, trlfile, **pipeline_pars):
             print('ERROR: Could not complete astrodrizzle processing of %s.' % infile)
             raise Exception(str(errorobj))
 
-        # Evaluate generated products: single_sci vs drz/drc
-        # FLT files are always first, and we want FLC when present
-        cal_suffix = '_flt' if calfiles[0].endswith('_flt.fits') else '_flc'
-        single_files = [calfile.replace(cal_suffix, '_single_sci') for calfile in calfiles]
-        sfile = single_files[0]
-        instr_det = "{}/{}".format(fits.getval(sfile, 'instrume'), fits.getval(sfile, 'detector'))
-        focus_sigma = focus_pars[instr_det]['sigma']
-        print("Building focus dict for: \n{} \n    {}".format(single_files, drz_product))
-        focus_dicts.append(amutils.build_focus_dict(single_files, drz_product, sigma=focus_sigma))
-        json_name = drz_product.replace('.fits', '_focus.json')
-        with open(json_name, mode='w') as json_file:
-            json.dump(focus_dicts, json_file)
+        if verify_alignment:
+            # Evaluate generated products: single_sci vs drz/drc
+            # FLT files are always first, and we want FLC when present
+            cal_suffix = '_flt' if calfiles[0].endswith('_flt.fits') else '_flc'
+            single_files = [calfile.replace(cal_suffix, '_single_sci') for calfile in calfiles]
+            sfile = single_files[0]
+            instr_det = "{}/{}".format(fits.getval(sfile, 'instrume'), fits.getval(sfile, 'detector'))
+            focus_sigma = focus_pars[instr_det]['sigma']
+            print("Building focus dict for: \n{} \n    {}".format(single_files, drz_product))
+            focus_dicts.append(amutils.build_focus_dict(single_files, drz_product, sigma=focus_sigma))
+            json_name = drz_product.replace('.fits', '_focus.json')
+            with open(json_name, mode='w') as json_file:
+                json.dump(focus_dicts, json_file)
+        else:
+            focus_dicts = None
 
         # Now, append comments created by PyDrizzle to CALXXX trailer file
         print('Updating trailer file %s with astrodrizzle comments.' % trlfile)
@@ -579,14 +589,13 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         alignfiles = calfiles_flc if calfiles_flc else calfiles
         align_update_files = calfiles if calfiles_flc else None
 
-
         # Perform any requested alignment here...
         if alignment_mode == 'apriori':
             # run updatewcs with use_db=True
             updatewcs.updatewcs(calfiles)
             if calfiles_flc:
                 updatewcs.updatewcs(calfiles_flc)
-        elif alignment_mode == 'aposteriori':
+        if alignment_mode == 'aposteriori':
             # Create trailer marker message for start of align_to_GAIA processing
             trlmsg = _timestamp("Align_to_GAIA started ")
             _updateTrlFile(trlfile, trlmsg)
@@ -641,7 +650,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
 
         # Run astrodrizzle in desired mode
-        drz_products, focus_dicts = run_driz(inlist, trlfile, **pipeline_pars)
+        drz_products, focus_dicts = run_driz(inlist, trlfile, verify_alignment=True, **pipeline_pars)
 
         # Start verification of alignment using focus and similarity indices
         _trlmsg = _timestamp('Verification of alignment started ')
