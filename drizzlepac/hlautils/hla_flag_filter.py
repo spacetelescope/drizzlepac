@@ -137,9 +137,9 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     # -----------------------
     log.info("************************** * * * HLA_FLAG_FILTER * * * **************************")
     # Flag sources based on concentration index.
-    log.info("ci_filter({} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red,
+    log.info("ci_filter2({} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red,
                                                 proc_type, param_dict))
-    ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict)
+    ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict)
 
     sys.exit()
     # Flag saturated sources
