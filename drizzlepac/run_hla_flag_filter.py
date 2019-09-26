@@ -43,8 +43,8 @@ def run_hla_flag_filter():
     zero_point_AB_dict = {"hst_10265_01_acs_wfc_f606w_drz.fits": 26.5136022236}
     exp_dictionary_scis = {"hst_10265_01_acs_wfc_f606w_drz.fits": 5060.0}
     detection_image = "hst_10265_01_acs_wfc_total_drz.fits"
-    dict_newTAB_matched2drz = {"hst_10265_01_acs_wfc_f606w_drz.fits": "hst_10265_01_acs_wfc_f606w_sexphot.txt"}
-    proc_type = "sexphot"
+    dict_newTAB_matched2drz = {"hst_10265_01_acs_wfc_f606w_drz.fits": "hst_10265_01_acs_wfc_f606w_daophot.txt"}
+    proc_type = "daophot"
     drz_root_dir = os.getcwd()
     rms_dict = {"hst_10265_01_acs_wfc_f606w_drz.fits": "hst_10265_01_acs_wfc_f606w_rms.fits"}
 

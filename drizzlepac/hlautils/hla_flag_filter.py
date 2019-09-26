@@ -262,7 +262,10 @@ def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, p
                 ci_value = row_split[-2]
                 if ci_value != '':
                     ci_value = float(ci_value)
-
+                # x = indicies of elements to KEEP
+                # y = range(0, len(source_cat))
+                # n[21]: l3 = [z for z in y if z not in x]
+                # source_cat2.remove_rows(l3)
                 merr1 = row_split[imerr1]
                 if merr1 == '':
                     merr1 = numpy.nan
