@@ -1,9 +1,9 @@
 include RELIC-INFO
 recursive-include doc *
-global-include *.py *.md *.notes *.yml
+global-include *.py *.md *.notes *.yml *.toml
 global-include *.x *.c *.h *.par
 exclude */version.py
-prune .pytest_cache
+prune .
 prune .eggs
 prune .git
 prune relic
