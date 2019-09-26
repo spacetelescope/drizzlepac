@@ -426,9 +426,10 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     # Sort based on peak_value to identify brightest sources for use as a kernel
     peaks.sort('peak_value', reverse=True)
 
-    sat_peaks = np.where(peaks['peak_value'] > saturation_limit)[0]
-    sat_index = sat_peaks[-1]+1 if len(sat_peaks) > 0 else 0
-    peaks['peak_value'][:sat_index] = 0.
+    if saturation_limit:
+        sat_peaks = np.where(peaks['peak_value'] > saturation_limit)[0]
+        sat_index = sat_peaks[-1] + 1 if len(sat_peaks) > 0 else 0
+        peaks['peak_value'][:sat_index] = 0.
 
     wht_box = 2  # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
 
@@ -811,7 +812,7 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
 
         threshold = nsigma * bkg_rms_ra
         dao_threshold = nsigma * bkg_rms_median
-        
+
         # kernel = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
         # kernel.normalize()
         kernel, kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr, threshold=threshold,
@@ -1388,7 +1389,7 @@ def compute_zero_mask(imgarr, iterations=8, ext=0):
 
     return img_mask
 
-def build_focus_dict(singlefiles, prodfile):
+def build_focus_dict(singlefiles, prodfile, sigma=2.0):
 
     from drizzlepac.hlautils import astrometric_utils as amutils
 
@@ -1407,13 +1408,13 @@ def build_focus_dict(singlefiles, prodfile):
     for f in singlefiles:
         imgarr = fits.getdata(f)
         imgarr[~full_sat_mask] = 0
-        focus_dict['exp'].append(np.float64(amutils.determine_focus_index(imgarr)))
+        focus_dict['exp'].append(np.float64(amutils.determine_focus_index(imgarr, sigma=sigma)))
 
     # Generate results for drizzle product(s)
     prodarr = fits.getdata(prodfile)
     prodarr[~full_sat_mask] = 0
     # Insure output values are JSON-compliant
-    focus_dict['prod'].append(np.float64(amutils.determine_focus_index(prodarr)))
+    focus_dict['prod'].append(np.float64(amutils.determine_focus_index(prodarr, sigma=sigma)))
 
     # Determine statistics for evalaution
     exparr = np.array(focus_dict['exp'])
@@ -1424,9 +1425,12 @@ def build_focus_dict(singlefiles, prodfile):
 
 def evaluate_focus(focus_dict):
     s = focus_dict['stats']
-    min_prob = compute_prob(s['min'], s['mean'], s['std'])
-    max_prob = compute_prob(s['max'], s['mean'], s['std'])
+    min_3sig = s['mean'] - 3.0 * s['std']
+    max_3sig = s['mean'] + 3.0 * s['std']
+    min_prob = compute_prob(min_3sig, s['mean'], s['std'])
+    max_prob = compute_prob(max_3sig, s['mean'], s['std'])
     drz_prob = np.array([compute_prob(d, s['mean'], s['std']) for d in focus_dict['prod']])
+
 
     if (drz_prob < min_prob).any() or (drz_prob > max_prob).any() or s['std'] > s['min']:
         alignment_verified = False
