@@ -293,7 +293,7 @@ def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, 
 
         # phot_table_out.close()
         # failed_ci_table_out.close()
-        phot_table_rows.write(phot_table_temp,format='ascii')
+        phot_table_rows.write(phot_table_temp,delimiter=",",format='ascii')
         os.system('mv ' + phot_table + ' ' + phot_table + '.PreCIFilt')
         os.system('mv ' + phot_table_temp + ' ' + phot_table)
 
