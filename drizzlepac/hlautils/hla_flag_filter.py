@@ -247,26 +247,26 @@ def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, 
         phot_table_failed = phot_table_root + '_Failed-CI.txt'
         # phot_table_out = open(phot_table_temp, 'w')
         # failed_ci_table_out = open(phot_table_root + '_Failed-CI.txt', 'w')
-        pdb.set_trace()
+
         for i, table_row in enumerate(phot_table_rows):
             try:
-                table_row[-1] = int(row_split[-1])
+                table_row[-1] = int(table_row[-1])
             except ValueError:
                 table_row[-1] = 0
 
-            ci_value = row_split[-2]
+            ci_value = table_row[-2]
             if ci_value != '':
                 ci_value = float(ci_value)
             # x = indicies of elements to KEEP
             # y = range(0, len(source_cat))
             # n[21]: l3 = [z for z in y if z not in x]
             # source_cat2.remove_rows(l3)
-            merr1 = row_split[imerr1]
+            merr1 = table_row[imerr1]
             if merr1 == '':
                 merr1 = numpy.nan
             else:
                 merr1 = float(merr1)
-            merr2 = row_split[imerr2]
+            merr2 = table_row[imerr2]
             if merr2 == '':
                 merr2 = numpy.nan
             else:
@@ -288,7 +288,7 @@ def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, 
 
 
             # if ci_value == '':
-            #     failed_ci_table_out.write(table_row)
+            #     failed_ci_table_out.write(table_row) # TODO: Don't forget to make the "Failed-CI" file!!
 
         # phot_table_out.close()
         # failed_ci_table_out.close()
