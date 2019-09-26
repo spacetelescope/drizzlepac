@@ -5,27 +5,12 @@
 
 :License: :doc:`LICENSE`
 
-USAGE: runastrodriz.py [-fhibng] inputFilename [newpath]
+USAGE: runaligndriz.py [-fhibng] inputFilename [newpath]
 
 Alternative USAGE:
     python
-    from acstools import runastrodriz
-    runastrodriz.process(inputFilename,force=False,newpath=None,inmemory=False)
-
-GUI Usage under Python:
-    python
-    from stsci.tools import teal
-    import acstools
-    cfg = teal.teal('runastrodriz')
-
-PyRAF Usage:
-    epar runastrodriz
-
-If the '-i' option gets specified, no intermediate products will be written out
-to disk. These products, instead, will be kept in memory. This includes all
-single drizzle products (*single_sci and *single_wht), median image,
-blot images, and crmask images.  The use of this option will therefore require
-significantly more memory than usual to process the data.
+    from acstools import runaligndriz
+    runaligndriz.process(inputFilename,force=False,newpath=None)
 
 If a value has been provided for the newpath parameter, all processing will be
 performed in that directory/ramdisk.  The steps involved are:
@@ -103,6 +88,10 @@ pipeline_pars = {'mdriztab': True,
                  'preserve': False,
                  'clean': False,
                  'resetbits': 4096}
+
+focus_pars = {"WFC3/IR": {'sigma': 2.0}, "WFC3/UVIS": {'sigma': 1.5},
+              "ACS/WFC": {'sigma': 1.5}, "ACS/SBC": {'sigma': 2.0}, "ACS/HRC": {'sigma': 1.5},
+              "WFPC2/PC": {'sigma': 1.5}}
 
 # default marker for trailer files
 __trlmarker__ = '*** astrodrizzle Processing Version ' + __version__ + __version_date__ + '***\n'
@@ -341,6 +330,10 @@ def process(inFile, force=False, newpath=None, num_cores=None,
         # Integrate user-specified drizzle parameters into pipeline_pars
         pipeline_pars['num_cores'] = num_cores
 
+        _trlmsg = _timestamp('Starting alignment with bad-pixel identification')
+        _trlmsg += __trlmarker__
+        _updateTrlFile(_trlfile, _trlmsg)
+
         # Generate initial default products and perform verification
         align_dicts = verify_alignment(_inlist,
                                          _calfiles, _calfiles_flc,
@@ -348,6 +341,11 @@ def process(inFile, force=False, newpath=None, num_cores=None,
                                          tmpdir='pipeline-default',
                                          force_alignment=force_alignment,
                                          find_crs=True, **pipeline_pars)
+
+
+        _trlmsg = _timestamp('Starting alignment with a priori solutions')
+        _trlmsg += __trlmarker__
+        _updateTrlFile(_trlfile, _trlmsg)
 
         # Generate initial default products and perform verification
         align_apriori = verify_alignment(_inlist,
@@ -361,6 +359,10 @@ def process(inFile, force=False, newpath=None, num_cores=None,
             align_dicts = align_apriori
 
         if align_to_gaia:
+            _trlmsg = _timestamp('Starting a posteriori alignment')
+            _trlmsg += __trlmarker__
+            _updateTrlFile(_trlfile, _trlmsg)
+            
             #
             # Start by creating the 'default' product using a priori/pipeline WCS
             # This product will be used as the final output if alignment fails
@@ -466,7 +468,7 @@ def process(inFile, force=False, newpath=None, num_cores=None,
     master_log = logging.getLogger()
     for h in master_log.handlers:
         master_log.removeHandler(h)
-        
+
     # Provide feedback to user
     print(_final_msg)
 
@@ -518,8 +520,11 @@ def run_driz(inlist, trlfile, **pipeline_pars):
         # FLT files are always first, and we want FLC when present
         cal_suffix = '_flt' if calfiles[0].endswith('_flt.fits') else '_flc'
         single_files = [calfile.replace(cal_suffix, '_single_sci') for calfile in calfiles]
+        sfile = single_files[0]
+        instr_det = "{}/{}".format(fits.getval(sfile, 'instrume'), fits.getval(sfile, 'detector'))
+        focus_sigma = focus_pars[instr_det]['sigma']
         print("Building focus dict for: \n{} \n    {}".format(single_files, drz_product))
-        focus_dicts.append(amutils.build_focus_dict(single_files, drz_product))
+        focus_dicts.append(amutils.build_focus_dict(single_files, drz_product, sigma=focus_sigma))
         json_name = drz_product.replace('.fits', '_focus.json')
         with open(json_name, mode='w') as json_file:
             json.dump(focus_dicts, json_file)
