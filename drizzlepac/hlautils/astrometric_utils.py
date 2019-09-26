@@ -423,12 +423,12 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     kern_img[:, -edge:] = 0.0
 
     peaks = photutils.detection.find_peaks(kern_img, threshold=threshold * 5, box_size=isolation_size)
-
     # Sort based on peak_value to identify brightest sources for use as a kernel
     peaks.sort('peak_value', reverse=True)
+
     sat_peaks = np.where(peaks['peak_value'] > saturation_limit)[0]
-    sat_index = sat_peaks[0] if len(sat_peaks) > 0 else 0
-    peaks['peak_value'][sat_index:] = 0.
+    sat_index = sat_peaks[-1]+1 if len(sat_peaks) > 0 else 0
+    peaks['peak_value'][:sat_index] = 0.
 
     wht_box = 2  # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
 
@@ -752,7 +752,7 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
     # remove parameters that are not needed by subsequent functions
     del detector_pars['fwhmpsf']
     source_box = detector_pars.get('source_box', 7)
-    isolation_size = detector_pars.get('isolation_size', 50)
+    isolation_size = detector_pars.get('isolation_size', 11)
     saturation_limit = detector_pars.get('saturation_limit', 70000.0)
     del detector_pars['threshold']
     box_size = detector_pars.get('bkg_box_size', 27)
@@ -804,16 +804,16 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
             whtarr = image['wht', chip].data
         else:
             errarr = image['err', chip].data
-            whtarr = errarr / errarr.max()
+            whtarr = errarr.max() / errarr
             whtarr[dqmask] = 0
 
         bkg_ra, bkg_median, bkg_rms_ra, bkg_rms_median = compute_2d_background(imgarr, box_size, win_size)
 
         threshold = nsigma * bkg_rms_ra
         dao_threshold = nsigma * bkg_rms_median
+        
         # kernel = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
         # kernel.normalize()
-
         kernel, kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr, threshold=threshold,
                                                 source_box=source_box, isolation_size=isolation_size,
                                                 saturation_limit=saturation_limit)
@@ -823,9 +823,8 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
                                           outroot=outroot, kernel=kernel,
                                           segment_threshold=threshold, dao_threshold=dao_threshold,
                                           fwhm=kernel_fwhm, **detector_pars)
-        seg_tab_phot = seg_tab
 
-        source_cats[chip] = seg_tab_phot
+        source_cats[chip] = seg_tab
 
     return source_cats
 

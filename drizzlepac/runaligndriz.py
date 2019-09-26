@@ -121,7 +121,7 @@ envvar_old_apriori_name = "ASTROMETRY_STEP_CONTROL"
 
 # Primary user interface
 def process(inFile, force=False, newpath=None, num_cores=None,
-            headerlets=True, align_to_gaia=True, force_alignment=False):
+            headerlets=True, align_to_gaia=True, force_alignment=False, debug=False):
     """ Run astrodrizzle on input file/ASN table
         using default values for astrodrizzle parameters.
     """
@@ -410,7 +410,7 @@ def process(inFile, force=False, newpath=None, num_cores=None,
         for _name in _new_asn: fileutil.removeFile(_name)
 
     # Clean up any generated OrIg_files directory
-    remove_dir("OrIg_files", force=False)
+    shutil.rmtree("OrIg_files")
 
     # If headerlets have already been written out by alignment code,
     # do NOT write out this version of the headerlets
@@ -435,6 +435,13 @@ def process(inFile, force=False, newpath=None, num_cores=None,
         ftrl = open(_trlfile, 'a')
         ftrl.write(hlet_msg)
         ftrl.close()
+
+    if not debug:
+        # Remove all temp sub-directories now that we are done
+        shutil.rmtree('pipeline-default')
+        shutil.rmtree('apriori')
+        if align_to_gaia:
+            shutil.rmtree('aposteriori')
 
     # Remove secondary log files for good...
     logging.shutdown()
@@ -739,17 +746,6 @@ def _appendTrlFile(trlfile, drizfile):
 
     # Now, clean up astrodrizzle trailer file
     os.remove(drizfile)
-
-def remove_dir(dirname, force=False):
-    if os.path.exists(dirname):
-        # check to see whether this directory is empty
-        all_files = glob.glob(os.path.join(dirname, "*"))
-        if len(all_files) and not force:
-            print('{} directory NOT removed as it still contained images...'.format(dirname))
-        else:
-            if len(all_files):
-                [os.remove(f) for f in all_files]
-            os.rmdir(dirname)
 
 def _timestamp(_process_name):
     """Create formatted time string recognizable by OPUS."""
