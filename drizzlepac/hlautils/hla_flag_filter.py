@@ -249,11 +249,10 @@ def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, 
         # failed_ci_table_out = open(phot_table_root + '_Failed-CI.txt', 'w')
         pdb.set_trace()
         for i, table_row in enumerate(phot_table_rows):
-            row_split = table_row.split(',')
             try:
-                flag_value = int(row_split[-1])
+                table_row[-1] = int(row_split[-1])
             except ValueError:
-                flag_value = 0
+                table_row[-1] = 0
 
             ci_value = row_split[-2]
             if ci_value != '':
@@ -276,24 +275,24 @@ def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, 
             ci_err = numpy.sqrt(merr1 ** 2 + merr2 ** 2)
 
             if not good_snr:
-                flag_value |= 8
+                table_row[-1] |= 8
 
             if ci_value == '' or (not numpy.isfinite(ci_err)) or ci_value < ci_lower_limit - ci_err:
-                flag_value |= 16
+                table_row[-1] |= 16
 
             if ci_value != '':
                 if ci_value > ci_upper_limit:
-                    flag_value |= 1
+                    table_row[-1] |= 1
 
-            row_split[-1] = '%d\n' % flag_value
-            table_row = ','.join(row_split)
-            phot_table_out.write(table_row)
-            if ci_value == '':
-                failed_ci_table_out.write(table_row)
 
-        phot_table_out.close()
-        failed_ci_table_out.close()
 
+
+            # if ci_value == '':
+            #     failed_ci_table_out.write(table_row)
+
+        # phot_table_out.close()
+        # failed_ci_table_out.close()
+        phot_table_rows.write(phot_table_temp,format='ascii')
         os.system('mv ' + phot_table + ' ' + phot_table + '.PreCIFilt')
         os.system('mv ' + phot_table_temp + ' ' + phot_table)
 
