@@ -387,7 +387,8 @@ def process(inFile, force=False, newpath=None, num_cores=None,
         _updateTrlFile(_trlfile, _trlmsg)
 
         # Generate final pipeline products based on 'best' alignment
-        drz_products, align_dicts = run_driz(_inlist, _trlfile, find_crs=True, verify_alignment=False)
+        drz_products, align_dicts = run_driz(_inlist, _trlfile, verify_alignment=False,
+                                             **pipeline_pars)
 
         # Save this for when astropy.io.fits can modify a file 'in-place'
         # Update calibration switch
@@ -538,7 +539,8 @@ def run_driz(inlist, trlfile, verify_alignment=True, **pipeline_pars):
         # Now, append comments created by PyDrizzle to CALXXX trailer file
         print('Updating trailer file %s with astrodrizzle comments.' % trlfile)
         drizlog_copy = drizlog.replace('.log', '_copy.log')
-        shutil.copy(drizlog, drizlog_copy)
+        if os.path.exists(drizlog):
+            shutil.copy(drizlog, drizlog_copy)
         _appendTrlFile(trlfile, drizlog_copy)
         # clean up log files
         if os.path.exists(drizlog):
@@ -653,16 +655,16 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         drz_products, focus_dicts = run_driz(inlist, trlfile, verify_alignment=True, **pipeline_pars)
 
         # Start verification of alignment using focus and similarity indices
-        _trlmsg = _timestamp('Verification of alignment started ')
+        _trlmsg = _timestamp('Verification of {} alignment started '.format(tmpdir))
         # Only check focus on CTE corrected, when available
         align_focus = focus_dicts[-1] if 'drc' in focus_dicts[-1]['prodname'] else focus_dicts[0]
 
         alignment_verified = amutils.evaluate_focus(align_focus)
 
         if alignment_verified:
-            _trlmsg += "Focus verification indicated that alignment SUCCEEDED.\n"
+            _trlmsg += "Focus verification indicated that {} alignment SUCCEEDED.\n".format(tmpdir)
         else:
-            _trlmsg += "Focus verification indicated that alignment FAILED.\n"
+            _trlmsg += "Focus verification indicated that {} alignment FAILED.\n".format(tmpdir)
 
         if alignment_mode:
             prodname = align_focus['prodname']
