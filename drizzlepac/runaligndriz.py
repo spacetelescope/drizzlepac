@@ -92,6 +92,7 @@ pipeline_pars = {'mdriztab': True,
 focus_pars = {"WFC3/IR": {'sigma': 2.0}, "WFC3/UVIS": {'sigma': 1.5},
               "ACS/WFC": {'sigma': 1.5}, "ACS/SBC": {'sigma': 2.0}, "ACS/HRC": {'sigma': 1.5},
               "WFPC2/PC": {'sigma': 1.5}}
+sub_dirs = ['OrIg_files', 'pipeline-default', 'apriori', 'aposteriori']
 
 # default marker for trailer files
 __trlmarker__ = '*** astrodrizzle Processing Version ' + __version__ + __version_date__ + '***\n'
@@ -362,7 +363,7 @@ def process(inFile, force=False, newpath=None, num_cores=None,
             _trlmsg = _timestamp('Starting a posteriori alignment')
             _trlmsg += __trlmarker__
             _updateTrlFile(_trlfile, _trlmsg)
-            
+
             #
             # Start by creating the 'default' product using a priori/pipeline WCS
             # This product will be used as the final output if alignment fails
@@ -411,9 +412,6 @@ def process(inFile, force=False, newpath=None, num_cores=None,
     if _new_asn is not None:
         for _name in _new_asn: fileutil.removeFile(_name)
 
-    # Clean up any generated OrIg_files directory
-    shutil.rmtree("OrIg_files")
-
     # If headerlets have already been written out by alignment code,
     # do NOT write out this version of the headerlets
     if headerlets:
@@ -440,10 +438,8 @@ def process(inFile, force=False, newpath=None, num_cores=None,
 
     if not debug:
         # Remove all temp sub-directories now that we are done
-        shutil.rmtree('pipeline-default')
-        shutil.rmtree('apriori')
-        if align_to_gaia:
-            shutil.rmtree('aposteriori')
+        for sd in sub_dirs:
+            if os.path.exists(sd): shutil.rmtree(sd)
 
     # Remove secondary log files for good...
     logging.shutdown()
