@@ -426,8 +426,9 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
 
     # Sort based on peak_value to identify brightest sources for use as a kernel
     peaks.sort('peak_value', reverse=True)
-    sat_index = np.where(peaks['peak_value'] > saturation_limit)[0][0]
-    peaks['peak_value'][:sat_index] = 0.
+    sat_peaks = np.where(peaks['peak_value'] > saturation_limit)[0]
+    sat_index = sat_peaks[0] if len(sat_peaks) > 0 else 0
+    peaks['peak_value'][sat_index:] = 0.
 
     wht_box = 2  # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
 
@@ -1325,6 +1326,7 @@ def compute_similarity(image, reference):
         Value of similarity index for `image`
 
     """
+
     # Insure NaNs are replaced with 0
     image = np.nan_to_num(image[:], 0)
     reference = np.nan_to_num(reference[:], 0)
@@ -1348,7 +1350,7 @@ def compute_similarity(image, reference):
     diffs = np.abs((img - ref).sum())
     sim_indx = diffs / img.sum()
     return sim_indx
-    
+
 def compute_prob(val, mean, sigma):
     """Return z-score for val relative to a distribution
 
@@ -1386,3 +1388,50 @@ def compute_zero_mask(imgarr, iterations=8, ext=0):
     img_mask = ndimage.binary_erosion(img_mask, iterations=iterations)
 
     return img_mask
+
+def build_focus_dict(singlefiles, prodfile):
+
+    from drizzlepac.hlautils import astrometric_utils as amutils
+
+    focus_dict = {'exp': [], 'prod': [], 'stats': {},
+                  'expnames': singlefiles, 'prodname': prodfile}
+
+    # Start by creating the full saturation mask from all single_sci images
+    full_sat_mask = None
+    for f in singlefiles:
+        sat_mask = amutils.compute_zero_mask(f)
+        if full_sat_mask is None:
+            full_sat_mask = sat_mask
+        else:
+            full_sat_mask = np.bitwise_and(full_sat_mask, sat_mask)
+    # Now apply full saturation mask to each single_sci image and compute focus
+    for f in singlefiles:
+        imgarr = fits.getdata(f)
+        imgarr[~full_sat_mask] = 0
+        focus_dict['exp'].append(np.float64(amutils.determine_focus_index(imgarr)))
+
+    # Generate results for drizzle product(s)
+    prodarr = fits.getdata(prodfile)
+    prodarr[~full_sat_mask] = 0
+    # Insure output values are JSON-compliant
+    focus_dict['prod'].append(np.float64(amutils.determine_focus_index(prodarr)))
+
+    # Determine statistics for evalaution
+    exparr = np.array(focus_dict['exp'])
+    focus_dict['stats'] = {'mean': exparr.mean(), 'std': exparr.std(),
+                           'min': exparr.min(), 'max': exparr.max()}
+
+    return focus_dict
+
+def evaluate_focus(focus_dict):
+    s = focus_dict['stats']
+    min_prob = compute_prob(s['min'], s['mean'], s['std'])
+    max_prob = compute_prob(s['max'], s['mean'], s['std'])
+    drz_prob = np.array([compute_prob(d, s['mean'], s['std']) for d in focus_dict['prod']])
+
+    if (drz_prob < min_prob).any() or (drz_prob > max_prob).any() or s['std'] > s['min']:
+        alignment_verified = False
+    else:
+        alignment_verified = True
+
+    return alignment_verified

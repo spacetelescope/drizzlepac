@@ -134,10 +134,6 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None, level=logging.INFO):
 
         print('Setting up logfile : ', logname)
 
-        #stdout_logger = logging.getLogger('stsci.tools.logutil.stdout')
-        # Disable display of prints to stdout from all packages except
-        # drizzlepac
-        #stdout_logger.addFilter(logutil.EchoFilter(include=['drizzlepac']))
     else:
         print('No trailer file created...')
 
