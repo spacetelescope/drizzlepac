@@ -143,13 +143,13 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     log.info("************************** * * * HLA_FLAG_FILTER * * * **************************")
     # Flag sources based on concentration index.
 
-    drizzled_image = all_drizzled_filelist[0]
-    catalog_name = dict_newTAB_matched2drz[drizzled_image]
-    catalog_data = phot_table_matched2cat[drizzled_image]
+    drizzled_image = all_drizzled_filelist[0] # TODO: remove once all code is dictinary-independant
+    catalog_name = dict_newTAB_matched2drz[drizzled_image] # TODO: remove once all code is dictinary-independant
+    catalog_data = phot_table_matched2cat[drizzled_image] # TODO: remove once all code is dictinary-independant
     log.info("ci_filter({} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict))
 
     phot_table_matched2cat = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict)
-    # ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict)
+    # ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
 
     # Flag saturated sources
     log.info("HLASaturationFlags2({} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, working_hla_red,
