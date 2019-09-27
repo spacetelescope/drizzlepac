@@ -239,16 +239,13 @@ def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, 
         phot_table = dict_newTAB_matched2drz[drizzled_image]
         phot_table_root = phot_table.split('.')[0]
 
-        # phot_table_in = open(phot_table, 'r')
-        # phot_table_rows = phot_table_in.readlines()
-        # phot_table_in.close()
         phot_table_rows = Table.read(phot_table, format='ascii')
 
         phot_table_temp = phot_table_root + '_temp.txt'
         phot_table_failed = phot_table_root + '_Failed-CI.txt'
-        # phot_table_out = open(phot_table_temp, 'w')
-        # failed_ci_table_out = open(phot_table_root + '_Failed-CI.txt', 'w')
-        failed_index=[]
+
+        if debug:
+            failed_index_list=[]
         for i, table_row in enumerate(phot_table_rows):
             try:
                 table_row[-1] = int(table_row[-1])
