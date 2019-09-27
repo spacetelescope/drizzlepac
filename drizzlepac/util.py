@@ -152,11 +152,12 @@ def end_logging(filename=None):
             # This generally shouldn't happen if logging was started with
             # init_logging and a filename was given...
             print('No trailer file saved...')
-
+        
         logutil.teardown_global_logging()
     else:
         print('No trailer file saved...')
-
+    root_logger = logging.getLogger()
+    root_logger.removeHandler(_log_file_handler)
 
 class WithLogging:
     def __init__(self):
