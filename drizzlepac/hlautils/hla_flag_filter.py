@@ -286,8 +286,6 @@ def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, 
                 failed_index_list.append(i)
 
         if debug:
-            print("FAILED INDICIES: ",failed_index_list)
-            pdb.set_trace()
             # Write out list of ONLY failed rows to to file
             phot_table_rows_failed = phot_table_rows.copy()
             all_indicies = range(0, len(phot_table_rows))
