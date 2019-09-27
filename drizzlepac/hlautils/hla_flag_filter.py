@@ -289,7 +289,7 @@ def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, 
             # Write out list of ONLY failed rows to to file
             phot_table_rows_failed = phot_table_rows.copy()
             all_indicies = range(0, len(phot_table))
-            rows_to_remove = [z for z in failed_index_list if z not in all_indicies]
+            rows_to_remove = [z for z in all_indicies if z not in failed_index_list]
             phot_table_rows_failed.remove_rows(rows_to_remove)
             phot_table_rows_failed.write(phot_table_failed,delimiter=",",format='ascii')
 
