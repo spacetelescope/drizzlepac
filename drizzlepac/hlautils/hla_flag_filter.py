@@ -77,10 +77,12 @@ x_limit = 4096.
 y_limit = 2051.
 
 
+
 def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
                             param_dict, readnoise_dictionary_drzs,
                             scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
-                            detection_image, dict_newTAB_matched2drz, proc_type, drz_root_dir, rms_dict):
+                            detection_image, dict_newTAB_matched2drz,phot_table_matched2cat, proc_type, drz_root_dir,
+                            rms_dict):
     """Simple calling subroutine that executes the other flagging subroutines.
     
     Parameters
@@ -114,7 +116,10 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     
     dict_newTAB_matched2drz : dictionary
         dictionary of source lists keyed by drizzled image name.
-    
+
+    phot_table_matched2cat : dictionary
+        dictionary of source lists tables (already read into memory) keyed by drizzled image name.
+
     proc_type : string
         sourcelist generation type.
 
@@ -137,19 +142,19 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     # -----------------------
     log.info("************************** * * * HLA_FLAG_FILTER * * * **************************")
     # Flag sources based on concentration index.
-    log.info("ci_filter2({} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red,
+    log.info("ci_filter({} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red,
                                                 proc_type, param_dict))
-    ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict)
+    phot_table_matched2cat = ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, phot_table_matched2cat, working_hla_red, proc_type, param_dict)
+    # ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict)
 
-    sys.exit()
     # Flag saturated sources
-    log.info("HLASaturationFlags({} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, working_hla_red,
+    log.info("HLASaturationFlags2({} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, working_hla_red,
                                                                      filter_sorted_flt_dict, readnoise_dictionary_drzs,
                                                                      scale_dict_drzs, exp_dictionary_scis,
                                                                      dict_newTAB_matched2drz, proc_type, param_dict))
 
     HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
-                       scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict)
+                       scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, phot_table_matched2cat, proc_type, param_dict)
 
     # Flag swarm sources
     log.info("HLASwarmFlags({} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz,
@@ -171,7 +176,7 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
                  scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir)
 
 
-def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict,debug=True):
+def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz,phot_table_matched2cat, working_hla_red, proc_type, param_dict,debug=True):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
     It also flags sources below the detection limit in mag_aper2 (flag=8).
@@ -183,6 +188,9 @@ def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, 
 
     dict_newTAB_matched2drz : dictionary
         dictionary of source lists keyed by drizzled image name.
+
+    phot_table_matched2cat : dictionary
+        dictionary of source lists tables (already read into memory) keyed by drizzled image name.
 
     working_hla_red : string
         ***UNUSED*** full path of working directory.
@@ -239,7 +247,7 @@ def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, 
         phot_table = dict_newTAB_matched2drz[drizzled_image]
         phot_table_root = phot_table.split('.')[0]
 
-        phot_table_rows = Table.read(phot_table, format='ascii')
+        phot_table_rows = phot_table_matched2cat[drizzled_image]
 
         phot_table_temp = phot_table_root + '_temp.txt'
         phot_table_failed = phot_table_root + '_Failed-CI.txt'
@@ -292,182 +300,53 @@ def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, 
             rows_to_remove = [z for z in all_indicies if z not in failed_index_list]
             phot_table_rows_failed.remove_rows(rows_to_remove)
             phot_table_rows_failed.write(phot_table_failed,delimiter=",",format='ascii')
+        phot_table_rows.write(phot_table, delimiter=",", format='ascii')
+        phot_table_matched2cat[drizzled_image] = phot_table_rows
 
-        phot_table_rows.write(phot_table_temp,delimiter=",",format='ascii')
-        os.system('mv ' + phot_table + ' ' + phot_table + '.PreCIFilt')
-        os.system('mv ' + phot_table_temp + ' ' + phot_table)
-
-
-def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict):
-    """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
-    flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
-    It also flags sources below the detection limit in mag_aper2 (flag=8).
-    
-    Parameters
-    ----------
-    all_drizzled_filelist : list
-        list of drizzled images
-
-    dict_newTAB_matched2drz : dictionary
-        dictionary of source lists keyed by drizzled image name.
-
-    working_hla_red : string
-        ***UNUSED*** full path of working directory.
-
-    proc_type : string
-        Sourcelist generation type
-
-    param_dict : dictionary
-        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
-    
-    Returns
-    -------
-    Nothing! 
-    """
-
-    # column indices for SE and DAO catalogs
-    if proc_type == 'sexphot':
-        imag1 = 5
-        imag2 = 6
-        imerr1 = 7
-        imerr2 = 8
-    elif proc_type == 'daophot':
-        imag1 = 5
-        imag2 = 7
-        imerr1 = 6
-        imerr2 = 8
-    else:
-        raise ValueError("Unknown proc_type '%s', must be 'sexphot' or 'daophot'" % (proc_type,))
-
-    for drizzled_image in all_drizzled_filelist:
-        phot_table = dict_newTAB_matched2drz[drizzled_image]
-        phot_table_root = phot_table.split('.')[0]
-        if proc_type == 'sexphot':
-            ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_selower_limit'])
-            ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_seupper_limit'])
-            snr = float(param_dict['catalog generation']['sourcex']['bthresh'])
-
-        if proc_type == 'daophot':
-            ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_daolower_limit'])
-            ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_daoupper_limit'])
-            snr = float(param_dict['catalog generation']['dao']['bthresh'])
-
-
-        # replace CI limits with values from table if possible
-        cidict = ci_table.get_ci_from_file(drizzled_image, ci_lower=ci_lower_limit, ci_upper=ci_upper_limit)
-        ci_lower_limit = cidict['ci_lower_limit']
-        ci_upper_limit = cidict['ci_upper_limit']
-        
-        log.info(' ')
-        log.info('ci limits for {}'.format(drizzled_image))
-        log.info('ci_lower_limit = {}'.format(ci_lower_limit))
-        log.info('ci_upper_limit = {}'.format(ci_upper_limit))
-        log.info(' ')
-
-        phot_table = dict_newTAB_matched2drz[drizzled_image]
-        phot_table_root = phot_table.split('.')[0]
-        
-        phot_table_in = open(phot_table,'r')
-        phot_table_rows = phot_table_in.readlines()
-        phot_table_in.close()
-
-        phot_table_temp = phot_table_root+'_temp.txt'
-        phot_table_out = open(phot_table_temp,'w')
-        failed_ci_table_out = open(phot_table_root+'_Failed-CI.txt','w')
-
-        for i,table_row in enumerate(phot_table_rows):
-
-            if i == 0:
-                phot_table_out.write(table_row)
-                continue
-            else:
-                row_split = table_row.split(',')
-                try:
-                    flag_value = int(row_split[-1])
-                except ValueError:
-                    flag_value = 0
-
-                ci_value = row_split[-2]
-                if ci_value != '':
-                    ci_value = float(ci_value)
-                merr1 = row_split[imerr1]
-                if merr1 == '':
-                    merr1 = numpy.nan
-                else:
-                    merr1 = float(merr1)
-                merr2 = row_split[imerr2]
-                if merr2 == '':
-                    merr2 = numpy.nan
-                else:
-                    merr2 = float(merr2)
-                good_snr = merr2 <= 2.5/(snr*numpy.log(10))
-                ci_err = numpy.sqrt(merr1**2+merr2**2)
-
-                if not good_snr:
-                    flag_value |= 8
-
-                if ci_value == '' or (not numpy.isfinite(ci_err)) or ci_value < ci_lower_limit - ci_err:
-                    flag_value |= 16
-
-                if ci_value != '':
-                    if ci_value > ci_upper_limit:
-                        flag_value |= 1
-
-
-                row_split[-1] = '%d\n' % flag_value
-                table_row = ','.join(row_split)
-                phot_table_out.write(table_row)
-                if ci_value == '':
-                    failed_ci_table_out.write(table_row)
-
-        phot_table_out.close()
-        failed_ci_table_out.close()
-        
-        os.system('mv '+phot_table+' '+phot_table+'.PreCIFilt')
-        os.system('mv '+phot_table_temp+' '+phot_table)
+    return phot_table_matched2cat
 
 
 def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
-                       scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict):
-
+                       scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, phot_table_matched2cat, proc_type, param_dict):
     """Identifies and flags saturated sources.
 
     Parameters
     ----------
     all_drizzled_filelist : list
         List of drizzled images to process.
-    
+
     working_hla_red : string
         ***UNUSED*** full path to working directory
-    
+
     filter_sorted_flt_dict : dictionary
         dictionary containing lists of calibrated images sorted (also keyed) by filter name.
 
     readnoise_dictionary_drzs : dictionary
         ***UNUSED*** dictionary of readnoise values keyed by drizzled image.
-    
+
     scale_dict_drzs : dictionary
         ***UNUSED*** dictionary of scale values keyed by drizzled image.
-    
+
     exp_dictionary_scis : dictionary
         ***UNUSED*** dictionary of exposure time values keyed by drizzled image.
-    
+
     dict_newTAB_matched2drz : dictionary
         dictionary of source lists keyed by drizzled image name.
-    
+
     proc_type : string
         sourcelist generation type.
-    
+
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
-    
+
     Returns
     -------
     Nothing!
     """
     for drizzled_image in all_drizzled_filelist:
         image_split = drizzled_image.split('/')[-1]
-        channel = drizzled_image.split("_")[-3].upper() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+        channel = drizzled_image.split("_")[
+            -3].upper()  # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
 
         if channel == 'IR':
             continue
@@ -475,8 +354,8 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         phot_table = dict_newTAB_matched2drz[drizzled_image]
         phot_table_root = phot_table.split('.')[0]
 
-#        for flt_image in flt_images:
-#            os.system('cp '+flt_image+' .')
+        #        for flt_image in flt_images:
+        #            os.system('cp '+flt_image+' .')
 
         # -------------------------------------------------------------------
         # STEP THROUGH EACH APPLICABLE FLT IMAGE, DETERMINE THE COORDINATES
@@ -486,7 +365,8 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         main_drizzled_filelist = [drizzled_image]
         main_drizzled_filelist_orig = [drizzled_image]
 
-        drz_filter = drizzled_image.split("_")[5] # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
+        drz_filter = drizzled_image.split("_")[
+            5]  # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
         list_of_flts_in_main_driz = filter_sorted_flt_dict[drz_filter.lower()]
         num_flts_in_main_driz = len(list_of_flts_in_main_driz)
         list_of_flts_in_main_driz.sort()
@@ -494,34 +374,36 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         log.info(' ')
         log.info("Current Working Directory: {}".format(os.getcwd()))
         log.info(' ')
-        log.info('LIST OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1],list_of_flts_in_main_driz))
+        log.info('LIST OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1], list_of_flts_in_main_driz))
         log.info(' ')
-        log.info('NUMBER OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1],num_flts_in_main_driz))
+        log.info('NUMBER OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1], num_flts_in_main_driz))
         log.info(' ')
 
         # ----------------------------------------------------
-        # EXTRACT DQ DATA FROM FLT IMAGE AND CREATE A LIST 
+        # EXTRACT DQ DATA FROM FLT IMAGE AND CREATE A LIST
         # OF "ALL" PIXEL COORDINATES WITH A FLAG VALUE OF 256
         # ----------------------------------------------------
         if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')):
-            image_ext_list = ["[sci,1]","[sci,2]"]
-            dq_sat_bit=256
+            image_ext_list = ["[sci,1]", "[sci,2]"]
+            dq_sat_bit = 256
         if channel.lower() == 'wfpc2':
-            image_ext_list = ["[sci,1]","[sci,2]","[sci,3]","[sci,4]"]
-            dq_sat_bit = 8 
+            image_ext_list = ["[sci,1]", "[sci,2]", "[sci,3]", "[sci,4]"]
+            dq_sat_bit = 8
         if channel.lower() == 'pc':
             image_ext_list = ["[sci,1]"]
             dq_sat_bit = 8
 
         # build list of arrays
         drz_sat_xy_coords_list = []
-        
-        for flt_cnt,flt_image in enumerate(list_of_flts_in_main_driz):
-            for ext_cnt,image_ext in enumerate(image_ext_list):
+
+        for flt_cnt, flt_image in enumerate(list_of_flts_in_main_driz):
+            for ext_cnt, image_ext in enumerate(image_ext_list):
                 ext_part = image_ext.split(',')[1].split(']')[0]
                 try:
-                    if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')): flt_data = getdata(flt_image,'DQ',int(ext_part))
-                    if ((channel.lower() == 'wfpc2') or (channel.lower() == 'pc')): flt_data = getdata(flt_image.replace("_c0m","_c1m"),'SCI',int(ext_part))
+                    if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')): flt_data = getdata(flt_image, 'DQ',
+                                                                                                        int(ext_part))
+                    if ((channel.lower() == 'wfpc2') or (channel.lower() == 'pc')): flt_data = getdata(
+                        flt_image.replace("_c0m", "_c1m"), 'SCI', int(ext_part))
                 except KeyError:
                     log.info(' ')
                     log.info('WARNING: There is only one set of file extensions in {}'.format(flt_image))
@@ -533,14 +415,14 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
                 # DETERMINE IF ANY OF THE PIXELS LOCATED IN THE GRID
                 # HAVE A BIT VALUE OF 256, I.E. FULL WELL SATURATION.
                 # ----------------------------------------------------
-                # NOTE: NUMPY ARRAYS REPORT Y COORD VALUES FIRST AND 
+                # NOTE: NUMPY ARRAYS REPORT Y COORD VALUES FIRST AND
                 #       X COORD VALUES SECOND AS FOLLOWS:
                 #
                 #       --> numpy.shape(flt_data)
                 #       (2051, 4096)
                 #
-                #       WHERE 2051 IS THE NUMBER OF PIXELS IN THE Y 
-                #       DIRECTION, AND 4096 IS THE NUMBER OF PIXELS 
+                #       WHERE 2051 IS THE NUMBER OF PIXELS IN THE Y
+                #       DIRECTION, AND 4096 IS THE NUMBER OF PIXELS
                 #       IN THE X DIRECTION.
                 # ----------------------------------------------------
                 bit_flt_data = dq_sat_bit & flt_data
@@ -554,19 +436,19 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
                 # THE FLT FILE THAT HAVE BEEN FLAGGED AS SATURATED
                 # -------------------------------------------------
                 nsat = len(complete_sat_coords[0])
-                x_y_array = numpy.empty((nsat,2),dtype=int)
-                x_y_array[:,0] = complete_sat_coords[1]
-                x_y_array[:,1] = complete_sat_coords[0]
+                x_y_array = numpy.empty((nsat, 2), dtype=int)
+                x_y_array[:, 0] = complete_sat_coords[1]
+                x_y_array[:, 1] = complete_sat_coords[0]
 
                 # ---------------------------------------------------
                 # WRITE FLT COORDS TO A FILE FOR DIAGNOSTIC PURPOSES
                 # ---------------------------------------------------
-                flt_xy_coord_out = flt_image.split('/')[-1].split('.')[0]+'_sci'+str(ext_cnt+1)+'.txt'
-                outfile = open(flt_xy_coord_out,'w')
+                flt_xy_coord_out = flt_image.split('/')[-1].split('.')[0] + '_sci' + str(ext_cnt + 1) + '.txt'
+                outfile = open(flt_xy_coord_out, 'w')
                 for flt_xy_coord in x_y_array:
                     x = flt_xy_coord[0]
                     y = flt_xy_coord[1]
-                    outfile.write(str(x)+'     '+str(y)+'\n')
+                    outfile.write(str(x) + '     ' + str(y) + '\n')
                 outfile.close()
 
                 # ----------------------------------------------------
@@ -605,13 +487,13 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         full_satList = numpy.concatenate(drz_sat_xy_coords_list)
 
         # --------------------------------------------
-        # WRITE RA & DEC FLT CONVERTED X & Y DRIZZLED 
+        # WRITE RA & DEC FLT CONVERTED X & Y DRIZZLED
         # IMAGE COORDINATES TO A TEXT FILE
         # --------------------------------------------
-        drz_coord_file = drizzled_image.split('/')[-1].split('.')[0]+'_ALL_FLT_SAT_FLAG_PIX.txt'
-        drz_coord_out = open(drz_coord_file,'w')
+        drz_coord_file = drizzled_image.split('/')[-1].split('.')[0] + '_ALL_FLT_SAT_FLAG_PIX.txt'
+        drz_coord_out = open(drz_coord_file, 'w')
         for coord in full_satList:
-            drz_coord_out.write(str(coord[0])+'     '+str(coord[1])+'\n')
+            drz_coord_out.write(str(coord[0]) + '     ' + str(coord[1]) + '\n')
         drz_coord_out.close()
 
         # --------------------------------------------------------
@@ -619,21 +501,21 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         # X AND Y COORDINATE VALUES TO LISTS FOR LATER COMPARISON
         # --------------------------------------------------------
         full_drz_cat = dict_newTAB_matched2drz[drizzled_image]
-        inputfile=open(full_drz_cat,'r')
-        all_detections=inputfile.readlines()
+        inputfile = open(full_drz_cat, 'r')
+        all_detections = inputfile.readlines()
         inputfile.close()
-        
-        nrows = len(all_detections)-1
-        full_coordList = numpy.empty((nrows,2), dtype=numpy.float)
-        for row_count,detection in enumerate(all_detections[1:]):
+
+        nrows = len(all_detections) - 1
+        full_coordList = numpy.empty((nrows, 2), dtype=numpy.float)
+        for row_count, detection in enumerate(all_detections[1:]):
             ss = detection.split(',')
-            full_coordList[row_count,0] = float(ss[0])
-            full_coordList[row_count,1] = float(ss[1])
+            full_coordList[row_count, 0] = float(ss[0])
+            full_coordList[row_count, 1] = float(ss[1])
 
         # ----------------------------------------------------
         # CREATE SUB-GROUPS OF SATURATION-FLAGGED COORDINATES
         # ----------------------------------------------------
-        proc_time1=time.ctime()
+        proc_time1 = time.ctime()
         log.info(' ')
         log.info('PROC_TIME_1: {}'.format(proc_time1))
         log.info(' ')
@@ -642,7 +524,7 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         # Convert aperture radius to pixels
         # ----------------------------------
         ap2 = param_dict['catalog generation']['dao']['aperture_2']
-        if proc_type == 'daophot': #TODO: WHY ARE THESE HARDCODED IN HERE??? MOVE TO MAIN PARAM_DICT DEFINITINON, RUNSHLAPROCESSING.PY, LINE 39.
+        if proc_type == 'daophot':  # TODO: WHY ARE THESE HARDCODED IN HERE??? MOVE TO MAIN PARAM_DICT DEFINITINON, RUNSHLAPROCESSING.PY, LINE 39.
             if channel == 'IR':
                 radius = round((ap2 / 0.09) + 0.5) * 2.
             if channel == 'UVIS':
@@ -656,7 +538,6 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
             if channel == 'PC':
                 radius = round((ap2 / 0.046) + 0.5) * 2.
 
-
         if proc_type == 'sexphot':
             if channel == 'IR':
                 radius = round((ap2 / 0.09) + 0.5)
@@ -667,23 +548,22 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
             if channel == 'HRC':
                 radius = round((ap2 / 0.027) + 0.5)
             if channel == 'WFPC2':
-                radius = round((ap2 / 0.1) + 0.5) 
+                radius = round((ap2 / 0.1) + 0.5)
             if channel == 'PC':
                 radius = round((ap2 / 0.046) + 0.5) * 2.
-
 
         log.info(' ')
         log.info('THE RADIAL DISTANCE BEING USED IS {} PIXELS'.format(str(radius)))
         log.info(' ')
 
         # do the cross-match using xymatch
-        log.info('Matching {} saturated pixels with {} catalog sources'.format(len(full_satList),len(full_coordList)))
+        log.info('Matching {} saturated pixels with {} catalog sources'.format(len(full_satList), len(full_coordList)))
         psat, pfull = xymatch(full_satList, full_coordList, radius, multiple=True, verbose=False)
         log.info('Found cross-matches (including duplicates)'.format(len(psat)))
-        saturation_flag = numpy.zeros(len(full_coordList),dtype=bool)
+        saturation_flag = numpy.zeros(len(full_coordList), dtype=bool)
         saturation_flag[pfull] = True
 
-        proc_time2=time.ctime()
+        proc_time2 = time.ctime()
         log.info(' ')
         log.info('PROC_TIME_2: {}'.format(proc_time2))
         log.info(' ')
@@ -700,7 +580,7 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
             log.info('NOTE: NO SATURATED SOURCES WERE FOUND FOR: {}'.format(image_split))
             log.info('**************************************************************************************')
             log.info(' ')
-            
+
             continue
 
         else:
@@ -708,10 +588,10 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
             log.info('FLAGGED {} SOURCES'.format(nsaturated))
             log.info(' ')
 
-            sat_coord_file = drizzled_image.split('/')[-1].split('.')[0]+'_INTERMEDIATE.txt'
-            sat_coord_out = open(sat_coord_file,'w')
-            for sat_coord in full_coordList[saturation_flag,:]:
-                sat_coord_out.write(str(sat_coord[0])+'     '+str(sat_coord[1])+'\n')
+            sat_coord_file = drizzled_image.split('/')[-1].split('.')[0] + '_INTERMEDIATE.txt'
+            sat_coord_out = open(sat_coord_file, 'w')
+            for sat_coord in full_coordList[saturation_flag, :]:
+                sat_coord_out.write(str(sat_coord[0]) + '     ' + str(sat_coord[1]) + '\n')
             sat_coord_out.close()
 
             # --------------------------------------------------------------------------
@@ -719,32 +599,480 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
             # --------------------------------------------------------------------------
             phot_table = dict_newTAB_matched2drz[drizzled_image]
             phot_table_root = phot_table.split('.')[0]
-            
-            phot_table_in = open(phot_table,'r')
+
+            phot_table_in = open(phot_table, 'r')
             phot_table_rows = phot_table_in.readlines()
             phot_table_in.close()
 
-            phot_table_temp = phot_table_root+'_SATFILT.txt'
-            phot_table_out = open(phot_table_temp,'w')
+            phot_table_temp = phot_table_root + '_SATFILT.txt'
+            phot_table_out = open(phot_table_temp, 'w')
 
             phot_table_out.write(phot_table_rows[0])
-            for i,table_row in enumerate(phot_table_rows[1:]):
+            for i, table_row in enumerate(phot_table_rows[1:]):
                 if saturation_flag[i]:
                     row_split = table_row.split(',')
                     sat_flag = int(row_split[-1]) | 4
-                    row_split[-1] = str(sat_flag)+'\n'
+                    row_split[-1] = str(sat_flag) + '\n'
                     table_row = ','.join(row_split)
                 phot_table_out.write(table_row)
 
             phot_table_out.close()
 
-            os.system('mv '+phot_table+' '+phot_table+'.PreSatFilt')
-            os.system('mv '+phot_table_temp+' '+phot_table)
+            os.system('mv ' + phot_table + ' ' + phot_table + '.PreSatFilt')
+            os.system('mv ' + phot_table_temp + ' ' + phot_table)
 
             log.info(' ')
             log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
             log.info(' ')
             HLA_flag4and8_hunter_killer(phot_table)
+
+# def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict):
+#     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
+#     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
+#     It also flags sources below the detection limit in mag_aper2 (flag=8).
+#
+#     Parameters
+#     ----------
+#     all_drizzled_filelist : list
+#         list of drizzled images
+#
+#     dict_newTAB_matched2drz : dictionary
+#         dictionary of source lists keyed by drizzled image name.
+#
+#     working_hla_red : string
+#         ***UNUSED*** full path of working directory.
+#
+#     proc_type : string
+#         Sourcelist generation type
+#
+#     param_dict : dictionary
+#         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+#
+#     Returns
+#     -------
+#     Nothing!
+#     """
+#
+#     # column indices for SE and DAO catalogs
+#     if proc_type == 'sexphot':
+#         imag1 = 5
+#         imag2 = 6
+#         imerr1 = 7
+#         imerr2 = 8
+#     elif proc_type == 'daophot':
+#         imag1 = 5
+#         imag2 = 7
+#         imerr1 = 6
+#         imerr2 = 8
+#     else:
+#         raise ValueError("Unknown proc_type '%s', must be 'sexphot' or 'daophot'" % (proc_type,))
+#
+#     for drizzled_image in all_drizzled_filelist:
+#         phot_table = dict_newTAB_matched2drz[drizzled_image]
+#         phot_table_root = phot_table.split('.')[0]
+#         if proc_type == 'sexphot':
+#             ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_selower_limit'])
+#             ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_seupper_limit'])
+#             snr = float(param_dict['catalog generation']['sourcex']['bthresh'])
+#
+#         if proc_type == 'daophot':
+#             ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_daolower_limit'])
+#             ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_daoupper_limit'])
+#             snr = float(param_dict['catalog generation']['dao']['bthresh'])
+#
+#
+#         # replace CI limits with values from table if possible
+#         cidict = ci_table.get_ci_from_file(drizzled_image, ci_lower=ci_lower_limit, ci_upper=ci_upper_limit)
+#         ci_lower_limit = cidict['ci_lower_limit']
+#         ci_upper_limit = cidict['ci_upper_limit']
+#
+#         log.info(' ')
+#         log.info('ci limits for {}'.format(drizzled_image))
+#         log.info('ci_lower_limit = {}'.format(ci_lower_limit))
+#         log.info('ci_upper_limit = {}'.format(ci_upper_limit))
+#         log.info(' ')
+#
+#         phot_table = dict_newTAB_matched2drz[drizzled_image]
+#         phot_table_root = phot_table.split('.')[0]
+#
+#         phot_table_in = open(phot_table,'r')
+#         phot_table_rows = phot_table_in.readlines()
+#         phot_table_in.close()
+#
+#         phot_table_temp = phot_table_root+'_temp.txt'
+#         phot_table_out = open(phot_table_temp,'w')
+#         failed_ci_table_out = open(phot_table_root+'_Failed-CI.txt','w')
+#
+#         for i,table_row in enumerate(phot_table_rows):
+#
+#             if i == 0:
+#                 phot_table_out.write(table_row)
+#                 continue
+#             else:
+#                 row_split = table_row.split(',')
+#                 try:
+#                     flag_value = int(row_split[-1])
+#                 except ValueError:
+#                     flag_value = 0
+#
+#                 ci_value = row_split[-2]
+#                 if ci_value != '':
+#                     ci_value = float(ci_value)
+#                 merr1 = row_split[imerr1]
+#                 if merr1 == '':
+#                     merr1 = numpy.nan
+#                 else:
+#                     merr1 = float(merr1)
+#                 merr2 = row_split[imerr2]
+#                 if merr2 == '':
+#                     merr2 = numpy.nan
+#                 else:
+#                     merr2 = float(merr2)
+#                 good_snr = merr2 <= 2.5/(snr*numpy.log(10))
+#                 ci_err = numpy.sqrt(merr1**2+merr2**2)
+#
+#                 if not good_snr:
+#                     flag_value |= 8
+#
+#                 if ci_value == '' or (not numpy.isfinite(ci_err)) or ci_value < ci_lower_limit - ci_err:
+#                     flag_value |= 16
+#
+#                 if ci_value != '':
+#                     if ci_value > ci_upper_limit:
+#                         flag_value |= 1
+#
+#
+#                 row_split[-1] = '%d\n' % flag_value
+#                 table_row = ','.join(row_split)
+#                 phot_table_out.write(table_row)
+#                 if ci_value == '':
+#                     failed_ci_table_out.write(table_row)
+#
+#         phot_table_out.close()
+#         failed_ci_table_out.close()
+#
+#         os.system('mv '+phot_table+' '+phot_table+'.PreCIFilt')
+#         os.system('mv '+phot_table_temp+' '+phot_table)
+
+
+# def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
+#                        scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict):
+#
+#     """Identifies and flags saturated sources.
+#
+#     Parameters
+#     ----------
+#     all_drizzled_filelist : list
+#         List of drizzled images to process.
+#
+#     working_hla_red : string
+#         ***UNUSED*** full path to working directory
+#
+#     filter_sorted_flt_dict : dictionary
+#         dictionary containing lists of calibrated images sorted (also keyed) by filter name.
+#
+#     readnoise_dictionary_drzs : dictionary
+#         ***UNUSED*** dictionary of readnoise values keyed by drizzled image.
+#
+#     scale_dict_drzs : dictionary
+#         ***UNUSED*** dictionary of scale values keyed by drizzled image.
+#
+#     exp_dictionary_scis : dictionary
+#         ***UNUSED*** dictionary of exposure time values keyed by drizzled image.
+#
+#     dict_newTAB_matched2drz : dictionary
+#         dictionary of source lists keyed by drizzled image name.
+#
+#     proc_type : string
+#         sourcelist generation type.
+#
+#     param_dict : dictionary
+#         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+#
+#     Returns
+#     -------
+#     Nothing!
+#     """
+#     for drizzled_image in all_drizzled_filelist:
+#         image_split = drizzled_image.split('/')[-1]
+#         channel = drizzled_image.split("_")[-3].upper() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+#
+#         if channel == 'IR':
+#             continue
+#
+#         phot_table = dict_newTAB_matched2drz[drizzled_image]
+#         phot_table_root = phot_table.split('.')[0]
+#
+# #        for flt_image in flt_images:
+# #            os.system('cp '+flt_image+' .')
+#
+#         # -------------------------------------------------------------------
+#         # STEP THROUGH EACH APPLICABLE FLT IMAGE, DETERMINE THE COORDINATES
+#         # FOR ALL SATURATION FLAGGED PIXELS, AND TRANSFORM THESE COORDINATES
+#         # INTO THE DRIZZLED IMAGE REFERENCE FRAME.
+#         # -------------------------------------------------------------------
+#         main_drizzled_filelist = [drizzled_image]
+#         main_drizzled_filelist_orig = [drizzled_image]
+#
+#         drz_filter = drizzled_image.split("_")[5] # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
+#         list_of_flts_in_main_driz = filter_sorted_flt_dict[drz_filter.lower()]
+#         num_flts_in_main_driz = len(list_of_flts_in_main_driz)
+#         list_of_flts_in_main_driz.sort()
+#
+#         log.info(' ')
+#         log.info("Current Working Directory: {}".format(os.getcwd()))
+#         log.info(' ')
+#         log.info('LIST OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1],list_of_flts_in_main_driz))
+#         log.info(' ')
+#         log.info('NUMBER OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1],num_flts_in_main_driz))
+#         log.info(' ')
+#
+#         # ----------------------------------------------------
+#         # EXTRACT DQ DATA FROM FLT IMAGE AND CREATE A LIST
+#         # OF "ALL" PIXEL COORDINATES WITH A FLAG VALUE OF 256
+#         # ----------------------------------------------------
+#         if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')):
+#             image_ext_list = ["[sci,1]","[sci,2]"]
+#             dq_sat_bit=256
+#         if channel.lower() == 'wfpc2':
+#             image_ext_list = ["[sci,1]","[sci,2]","[sci,3]","[sci,4]"]
+#             dq_sat_bit = 8
+#         if channel.lower() == 'pc':
+#             image_ext_list = ["[sci,1]"]
+#             dq_sat_bit = 8
+#
+#         # build list of arrays
+#         drz_sat_xy_coords_list = []
+#
+#         for flt_cnt,flt_image in enumerate(list_of_flts_in_main_driz):
+#             for ext_cnt,image_ext in enumerate(image_ext_list):
+#                 ext_part = image_ext.split(',')[1].split(']')[0]
+#                 try:
+#                     if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')): flt_data = getdata(flt_image,'DQ',int(ext_part))
+#                     if ((channel.lower() == 'wfpc2') or (channel.lower() == 'pc')): flt_data = getdata(flt_image.replace("_c0m","_c1m"),'SCI',int(ext_part))
+#                 except KeyError:
+#                     log.info(' ')
+#                     log.info('WARNING: There is only one set of file extensions in {}'.format(flt_image))
+#                     log.info(' ')
+#
+#                     continue
+#
+#                 # ----------------------------------------------------
+#                 # DETERMINE IF ANY OF THE PIXELS LOCATED IN THE GRID
+#                 # HAVE A BIT VALUE OF 256, I.E. FULL WELL SATURATION.
+#                 # ----------------------------------------------------
+#                 # NOTE: NUMPY ARRAYS REPORT Y COORD VALUES FIRST AND
+#                 #       X COORD VALUES SECOND AS FOLLOWS:
+#                 #
+#                 #       --> numpy.shape(flt_data)
+#                 #       (2051, 4096)
+#                 #
+#                 #       WHERE 2051 IS THE NUMBER OF PIXELS IN THE Y
+#                 #       DIRECTION, AND 4096 IS THE NUMBER OF PIXELS
+#                 #       IN THE X DIRECTION.
+#                 # ----------------------------------------------------
+#                 bit_flt_data = dq_sat_bit & flt_data
+#                 complete_sat_coords = numpy.where(bit_flt_data == dq_sat_bit)
+#
+#                 if len(complete_sat_coords[0]) == 0:
+#                     continue
+#
+#                 # -------------------------------------------------
+#                 # RESTRUCTURE THE LIST OF X AND Y COORDINATES FROM
+#                 # THE FLT FILE THAT HAVE BEEN FLAGGED AS SATURATED
+#                 # -------------------------------------------------
+#                 nsat = len(complete_sat_coords[0])
+#                 x_y_array = numpy.empty((nsat,2),dtype=int)
+#                 x_y_array[:,0] = complete_sat_coords[1]
+#                 x_y_array[:,1] = complete_sat_coords[0]
+#
+#                 # ---------------------------------------------------
+#                 # WRITE FLT COORDS TO A FILE FOR DIAGNOSTIC PURPOSES
+#                 # ---------------------------------------------------
+#                 flt_xy_coord_out = flt_image.split('/')[-1].split('.')[0]+'_sci'+str(ext_cnt+1)+'.txt'
+#                 outfile = open(flt_xy_coord_out,'w')
+#                 for flt_xy_coord in x_y_array:
+#                     x = flt_xy_coord[0]
+#                     y = flt_xy_coord[1]
+#                     outfile.write(str(x)+'     '+str(y)+'\n')
+#                 outfile.close()
+#
+#                 # ----------------------------------------------------
+#                 # CONVERT SATURATION FLAGGED X AND Y COORDINATES FROM
+#                 # THE FLT IMAGE INTO RA AND DEC
+#                 # ----------------------------------------------------
+#                 flt_ra_dec_coords = xytord(x_y_array, flt_image, image_ext)
+#
+#                 # -------------------------------------------------
+#                 # CONVERT RA & DEC VALUES FROM FLT REFERENCE FRAME
+#                 # TO THAT OF THE DRIZZLED IMAGE REFERENCE FRAME
+#                 # -------------------------------------------------
+#                 drz_sat_xy_coords_list.append(rdtoxy(flt_ra_dec_coords, drizzled_image, "[sci,1]"))
+#
+#                 log.info(' ')
+#                 log.info('FLT IMAGE = {}'.format(flt_image.split('/')[-1]))
+#                 log.info('IMAGE EXT = {}'.format(image_ext))
+#                 log.info(' ')
+#
+#         # ----------------------------------------------------------------
+#         # IF NO SATURATION FLAGS EXIST IN ANY OF THE FLT FILES, THEN SKIP
+#         # ----------------------------------------------------------------
+#         if len(drz_sat_xy_coords_list) == 0:
+#             log.info(' ')
+#             log.info('*******************************************************************************************')
+#             log.info('NO SATURATION FLAGGED PIXELS EXIST IN ANY OF THE FLT FILES FOR:')
+#             log.info('     --> {}'.format(drizzled_image.split('/')[-1]))
+#             log.info('*******************************************************************************************')
+#             log.info(' ')
+#
+#             continue
+#
+#         # ------------------------------
+#         # now concatenate all the arrays
+#         # ------------------------------
+#         full_satList = numpy.concatenate(drz_sat_xy_coords_list)
+#
+#         # --------------------------------------------
+#         # WRITE RA & DEC FLT CONVERTED X & Y DRIZZLED
+#         # IMAGE COORDINATES TO A TEXT FILE
+#         # --------------------------------------------
+#         drz_coord_file = drizzled_image.split('/')[-1].split('.')[0]+'_ALL_FLT_SAT_FLAG_PIX.txt'
+#         drz_coord_out = open(drz_coord_file,'w')
+#         for coord in full_satList:
+#             drz_coord_out.write(str(coord[0])+'     '+str(coord[1])+'\n')
+#         drz_coord_out.close()
+#
+#         # --------------------------------------------------------
+#         # READ IN FULL DRIZZLED IMAGE-BASED CATALOG AND SAVE
+#         # X AND Y COORDINATE VALUES TO LISTS FOR LATER COMPARISON
+#         # --------------------------------------------------------
+#         full_drz_cat = dict_newTAB_matched2drz[drizzled_image]
+#         inputfile=open(full_drz_cat,'r')
+#         all_detections=inputfile.readlines()
+#         inputfile.close()
+#
+#         nrows = len(all_detections)-1
+#         full_coordList = numpy.empty((nrows,2), dtype=numpy.float)
+#         for row_count,detection in enumerate(all_detections[1:]):
+#             ss = detection.split(',')
+#             full_coordList[row_count,0] = float(ss[0])
+#             full_coordList[row_count,1] = float(ss[1])
+#
+#         # ----------------------------------------------------
+#         # CREATE SUB-GROUPS OF SATURATION-FLAGGED COORDINATES
+#         # ----------------------------------------------------
+#         proc_time1=time.ctime()
+#         log.info(' ')
+#         log.info('PROC_TIME_1: {}'.format(proc_time1))
+#         log.info(' ')
+#
+#         # ----------------------------------
+#         # Convert aperture radius to pixels
+#         # ----------------------------------
+#         ap2 = param_dict['catalog generation']['dao']['aperture_2']
+#         if proc_type == 'daophot': #TODO: WHY ARE THESE HARDCODED IN HERE??? MOVE TO MAIN PARAM_DICT DEFINITINON, RUNSHLAPROCESSING.PY, LINE 39.
+#             if channel == 'IR':
+#                 radius = round((ap2 / 0.09) + 0.5) * 2.
+#             if channel == 'UVIS':
+#                 radius = round((ap2 / 0.04) + 0.5) * 2.
+#             if channel == 'WFC':
+#                 radius = round((ap2 / 0.05) + 0.5) * 2.
+#             if channel == 'HRC':
+#                 radius = round((ap2 / 0.027) + 0.5) * 2.
+#             if channel == 'WFPC2':
+#                 radius = round((ap2 / 0.1) + 0.5) * 2.
+#             if channel == 'PC':
+#                 radius = round((ap2 / 0.046) + 0.5) * 2.
+#
+#
+#         if proc_type == 'sexphot':
+#             if channel == 'IR':
+#                 radius = round((ap2 / 0.09) + 0.5)
+#             if channel == 'UVIS':
+#                 radius = round((ap2 / 0.04) + 0.5)
+#             if channel == 'WFC':
+#                 radius = round((ap2 / 0.05) + 0.5)
+#             if channel == 'HRC':
+#                 radius = round((ap2 / 0.027) + 0.5)
+#             if channel == 'WFPC2':
+#                 radius = round((ap2 / 0.1) + 0.5)
+#             if channel == 'PC':
+#                 radius = round((ap2 / 0.046) + 0.5) * 2.
+#
+#
+#         log.info(' ')
+#         log.info('THE RADIAL DISTANCE BEING USED IS {} PIXELS'.format(str(radius)))
+#         log.info(' ')
+#
+#         # do the cross-match using xymatch
+#         log.info('Matching {} saturated pixels with {} catalog sources'.format(len(full_satList),len(full_coordList)))
+#         psat, pfull = xymatch(full_satList, full_coordList, radius, multiple=True, verbose=False)
+#         log.info('Found cross-matches (including duplicates)'.format(len(psat)))
+#         saturation_flag = numpy.zeros(len(full_coordList),dtype=bool)
+#         saturation_flag[pfull] = True
+#
+#         proc_time2=time.ctime()
+#         log.info(' ')
+#         log.info('PROC_TIME_2: {}'.format(proc_time2))
+#         log.info(' ')
+#
+#         # ------------------------------------------------------------------
+#         # REMOVE DUPLICATE DETECTIONS FROM THE LIST, "group", CREATTED FROM
+#         # MATCHING SATURATION FLAGGED FLT PIXELS TO FINAL SOURCE DETECTIONS
+#         # ------------------------------------------------------------------
+#
+#         nsaturated = saturation_flag.sum()
+#         if nsaturated == 0:
+#             log.info(' ')
+#             log.info('**************************************************************************************')
+#             log.info('NOTE: NO SATURATED SOURCES WERE FOUND FOR: {}'.format(image_split))
+#             log.info('**************************************************************************************')
+#             log.info(' ')
+#
+#             continue
+#
+#         else:
+#             log.info(' ')
+#             log.info('FLAGGED {} SOURCES'.format(nsaturated))
+#             log.info(' ')
+#
+#             sat_coord_file = drizzled_image.split('/')[-1].split('.')[0]+'_INTERMEDIATE.txt'
+#             sat_coord_out = open(sat_coord_file,'w')
+#             for sat_coord in full_coordList[saturation_flag,:]:
+#                 sat_coord_out.write(str(sat_coord[0])+'     '+str(sat_coord[1])+'\n')
+#             sat_coord_out.close()
+#
+#             # --------------------------------------------------------------------------
+#             # WRITE SAT FLAGS TO OUTPUT PHOT TABLE BASED ON flag_src_central_pixel_list
+#             # --------------------------------------------------------------------------
+#             phot_table = dict_newTAB_matched2drz[drizzled_image]
+#             phot_table_root = phot_table.split('.')[0]
+#
+#             phot_table_in = open(phot_table,'r')
+#             phot_table_rows = phot_table_in.readlines()
+#             phot_table_in.close()
+#
+#             phot_table_temp = phot_table_root+'_SATFILT.txt'
+#             phot_table_out = open(phot_table_temp,'w')
+#
+#             phot_table_out.write(phot_table_rows[0])
+#             for i,table_row in enumerate(phot_table_rows[1:]):
+#                 if saturation_flag[i]:
+#                     row_split = table_row.split(',')
+#                     sat_flag = int(row_split[-1]) | 4
+#                     row_split[-1] = str(sat_flag)+'\n'
+#                     table_row = ','.join(row_split)
+#                 phot_table_out.write(table_row)
+#
+#             phot_table_out.close()
+#
+#             os.system('mv '+phot_table+' '+phot_table+'.PreSatFilt')
+#             os.system('mv '+phot_table_temp+' '+phot_table)
+#
+#             log.info(' ')
+#             log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
+#             log.info(' ')
+#             HLA_flag4and8_hunter_killer(phot_table)
 
 def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict):
