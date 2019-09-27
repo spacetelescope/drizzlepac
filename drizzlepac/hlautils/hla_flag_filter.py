@@ -171,7 +171,7 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
                  scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir)
 
 
-def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict):
+def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict,debug=True):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
     It also flags sources below the detection limit in mag_aper2 (flag=8).
@@ -248,7 +248,7 @@ def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, 
         phot_table_failed = phot_table_root + '_Failed-CI.txt'
         # phot_table_out = open(phot_table_temp, 'w')
         # failed_ci_table_out = open(phot_table_root + '_Failed-CI.txt', 'w')
-
+        failed_index=[]
         for i, table_row in enumerate(phot_table_rows):
             try:
                 table_row[-1] = int(table_row[-1])
@@ -288,11 +288,17 @@ def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, 
 
 
 
-            # if ci_value == '':
-            #     failed_ci_table_out.write(table_row) # TODO: Don't forget to make the "Failed-CI" file!!
+            if ci_value == '' and debug:
+                failed_index_list.append(i)
 
-        # phot_table_out.close()
-        # failed_ci_table_out.close()
+        if debug:
+            # Write out list of ONLY failed rows to to file
+            phot_table_rows_failed = phot_table.copy()
+            all_indicies = range(0, len(phot_table))
+            rows_to_remove = [z for z in all_indicies if z not in failed_index_list]
+            phot_table_rows_failed.remove_rows(rows_to_remove)
+            phot_table_rows_failed.write(phot_table_failed,delimiter=",",format='ascii')
+
         phot_table_rows.write(phot_table_temp,delimiter=",",format='ascii')
         os.system('mv ' + phot_table + ' ' + phot_table + '.PreCIFilt')
         os.system('mv ' + phot_table_temp + ' ' + phot_table)
@@ -390,10 +396,6 @@ def ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, p
                 ci_value = row_split[-2]
                 if ci_value != '':
                     ci_value = float(ci_value)
-                # x = indicies of elements to KEEP
-                # y = range(0, len(source_cat))
-                # n[21]: l3 = [z for z in y if z not in x]
-                # source_cat2.remove_rows(l3)
                 merr1 = row_split[imerr1]
                 if merr1 == '':
                     merr1 = numpy.nan
