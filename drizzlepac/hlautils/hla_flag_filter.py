@@ -285,15 +285,12 @@ def ci_filter2(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, 
                 if ci_value > ci_upper_limit:
                     table_row[-1] |= 1
 
-
-
-
             if ci_value == '' and debug:
                 failed_index_list.append(i)
 
         if debug:
             # Write out list of ONLY failed rows to to file
-            phot_table_rows_failed = phot_table.copy()
+            phot_table_rows_failed = phot_table_rows.copy()
             all_indicies = range(0, len(phot_table))
             rows_to_remove = [z for z in all_indicies if z not in failed_index_list]
             phot_table_rows_failed.remove_rows(rows_to_remove)
