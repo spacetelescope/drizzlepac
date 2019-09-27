@@ -150,14 +150,14 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
 
     phot_table_matched2cat = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict)
     # ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
-
+    sys.exit()
     # Flag saturated sources
     log.info("HLASaturationFlags({} {} {} {} {} {})".format(all_drizzled_filelist,
                                                                      filter_sorted_flt_dict, dict_newTAB_matched2drz, "<Catalog Data>",proc_type, param_dict))
 
-    HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz, phot_table_matched2cat, proc_type, param_dict)
-    # HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
-    #                        scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict)
+      # HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz, phot_table_matched2cat, proc_type, param_dict)
+    HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
+                           scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict)
     sys.exit()
 
     # Flag swarm sources
@@ -601,6 +601,7 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
                     table_row[-1] = int(table_row[-1]) | 4
 
                 # phot_table_out.write(table_row)
+            HLA_flag4and8_hunter_killer(phot_table)
             phot_table_rows.write(phot_table_temp, delimiter=",",
                                format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
 
@@ -612,7 +613,6 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
             log.info(' ')
             log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
             log.info(' ')
-            HLA_flag4and8_hunter_killer(phot_table)
 
 def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
                        scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict):
@@ -931,7 +931,7 @@ def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted
             log.info(' ')
             log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
             log.info(' ')
-            HLA_flag4and8_hunter_killer(phot_table)
+            HLA_flag4and8_hunter_killer_OLD(phot_table)
 
 def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict):
@@ -2218,7 +2218,7 @@ def arrayfy_ctx(ctx, maxindex):
             ctxarray [:,:,i] = numpy.bitwise_and (ctx[:,:], cc)
     return ctxarray
 
-def HLA_flag4and8_hunter_killer(photfilename):
+def HLA_flag4and8_hunter_killer_OLD(photfilename):
     """This function searches through photometry catalogs for sources whose flags contain
     both bits 4 (multi-pixel saturation), and 8 (faint magnitude limit).
     If found, the subroutine removes the "8" bit value from the set of flags for that source.
@@ -2232,6 +2232,9 @@ def HLA_flag4and8_hunter_killer(photfilename):
     -------
     nothing!
     """
+
+    # for flag_value in
+
     inf=open(photfilename)
     phot_lines=inf.readlines()
     inf.close()

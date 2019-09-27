@@ -59,7 +59,7 @@ def run_hla_flag_filter():
     # rms_dict = {"hst_10265_01_acs_wfc_f606w_drz.fits": "hst_10265_01_acs_wfc_f606w_rms.fits"}
 
 
-    mode = "dao"
+    mode = "sex"
     all_drizzled_filelist = ["hst_10265_01_acs_wfc_f606w_drz.fits"]
     working_hla_red = os.getcwd()
     filter_sorted_flt_dict = {"f606w": ["j92c01b4q_flc.fits", "j92c01b5q_flc.fits", "j92c01b7q_flc.fits", "j92c01b9q_flc.fits"]}
