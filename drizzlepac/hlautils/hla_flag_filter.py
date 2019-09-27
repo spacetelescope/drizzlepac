@@ -152,13 +152,10 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     # ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
 
     # Flag saturated sources
-    log.info("HLASaturationFlags({} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, working_hla_red,
-                                                                     filter_sorted_flt_dict, readnoise_dictionary_drzs,
-                                                                     scale_dict_drzs, exp_dictionary_scis,
-                                                                     dict_newTAB_matched2drz, proc_type, param_dict))
+    log.info("HLASaturationFlags({} {} {} {} {} {})".format(all_drizzled_filelist,
+                                                                     filter_sorted_flt_dict, dict_newTAB_matched2drz, "<Catalog Data>",proc_type, param_dict))
 
-    HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
-                       scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, phot_table_matched2cat, proc_type, param_dict)
+    HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz, phot_table_matched2cat, proc_type, param_dict)
     # sys.exit()
 
     # Flag swarm sources
@@ -205,9 +202,10 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
 
     Returns
     -------
-    Nothing!
+    catalog_data : astropy.Table object
+        drizzled filter product catalog data with updated flag values
     """
-    # TODO: remove/refactor docstring once all code is dictinary-independant
+
 
     # column indices for SE and DAO catalogs
     if proc_type == 'sexphot':
@@ -298,8 +296,7 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     return {drizzled_image:catalog_data} # TODO: refactor once all code is dictinary-independant
 
 
-def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
-                       scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, phot_table_matched2cat, proc_type, param_dict):
+def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz, phot_table_matched2cat, proc_type, param_dict):
     """Identifies and flags saturated sources.
 
     Parameters
@@ -307,23 +304,14 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
     all_drizzled_filelist : list
         List of drizzled images to process.
 
-    working_hla_red : string
-        ***UNUSED*** full path to working directory
-
     filter_sorted_flt_dict : dictionary
         dictionary containing lists of calibrated images sorted (also keyed) by filter name.
 
-    readnoise_dictionary_drzs : dictionary
-        ***UNUSED*** dictionary of readnoise values keyed by drizzled image.
-
-    scale_dict_drzs : dictionary
-        ***UNUSED*** dictionary of scale values keyed by drizzled image.
-
-    exp_dictionary_scis : dictionary
-        ***UNUSED*** dictionary of exposure time values keyed by drizzled image.
-
     dict_newTAB_matched2drz : dictionary
         dictionary of source lists keyed by drizzled image name.
+
+    phot_table_matched2cat : dictionary
+        dictionary of source list data keyed by drizzled image name
 
     proc_type : string
         sourcelist generation type.
@@ -492,11 +480,11 @@ def HLASaturationFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt
         # READ IN FULL DRIZZLED IMAGE-BASED CATALOG AND SAVE
         # X AND Y COORDINATE VALUES TO LISTS FOR LATER COMPARISON
         # --------------------------------------------------------
-        # full_drz_cat = dict_newTAB_matched2drz[drizzled_image]
-        # # inputfile = open(full_drz_cat, 'r')
-        # # all_detections = inputfile.readlines()
-        # # inputfile.close()
-        all_detections = phot_table_matched2cat[drizzled_image]
+        full_drz_cat = dict_newTAB_matched2drz[drizzled_image]
+        inputfile = open(full_drz_cat, 'r')
+        all_detections = inputfile.readlines()
+        inputfile.close()
+        # all_detections = phot_table_matched2cat[drizzled_image]
 
         nrows = len(all_detections) - 1
         full_coordList = numpy.empty((nrows, 2), dtype=numpy.float)
