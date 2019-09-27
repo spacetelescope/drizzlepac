@@ -110,7 +110,7 @@ envvar_old_apriori_name = "ASTROMETRY_STEP_CONTROL"
 
 
 # Primary user interface
-def process(inFile, force=False, newpath=None, num_cores=None,
+def process(inFile, force=False, newpath=None, num_cores=None, in_memory=False,
             headerlets=True, align_to_gaia=True, force_alignment=False, debug=False):
     """ Run astrodrizzle on input file/ASN table
         using default values for astrodrizzle parameters.
@@ -339,7 +339,7 @@ def process(inFile, force=False, newpath=None, num_cores=None,
         align_dicts = verify_alignment(_inlist,
                                          _calfiles, _calfiles_flc,
                                          _trlfile,
-                                         tmpdir='pipeline-default',
+                                         tmpdir=None,
                                          force_alignment=force_alignment,
                                          find_crs=True, **pipeline_pars)
 
@@ -387,6 +387,7 @@ def process(inFile, force=False, newpath=None, num_cores=None,
         _updateTrlFile(_trlfile, _trlmsg)
 
         # Generate final pipeline products based on 'best' alignment
+        pipeline_pars['in_memory'] = in_memory
         drz_products, align_dicts = run_driz(_inlist, _trlfile, verify_alignment=False,
                                              **pipeline_pars)
 
@@ -468,11 +469,6 @@ def process(inFile, force=False, newpath=None, num_cores=None,
 
     _updateTrlFile(_trlfile, _final_msg)
 
-    # Clean up any left-over log handlers
-    master_log = logging.getLogger()
-    for h in master_log.handlers:
-        master_log.removeHandler(h)
-
     # Provide feedback to user
     print(_final_msg)
 
@@ -549,12 +545,14 @@ def run_driz(inlist, trlfile, verify_alignment=True, **pipeline_pars):
     return drz_products, focus_dicts
 
 def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
-                     find_crs=True, tmpdir='pipeline-default',
+                     find_crs=True, tmpdir=None,
                      alignment_mode=None, force_alignment=False,
                      **pipeline_pars):
 
     if alignment_mode == 'aposteriori':
         from stwcs.wcsutil import headerlet
+  
+    tmpname = tmpdir if tmpdir else 'default-pipeline'
 
     try:
         if not find_crs:
@@ -571,17 +569,18 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             pipeline_pars['blot'] = False
             pipeline_pars['driz_cr'] = False
 
-        # Create tmp directory for processing
-        if not os.path.exists(tmpdir):
-            os.makedirs(tmpdir)
+        if tmpdir:
+            # Create tmp directory for processing
+            if not os.path.exists(tmpdir):
+                os.makedirs(tmpdir)
 
-        # Now, copy all necessary files to tmpdir
-        _ = [shutil.copy(f, tmpdir) for f in inlist + calfiles]
-        if calfiles_flc:
-            _ = [shutil.copy(f, tmpdir) for f in calfiles_flc]
+            # Now, copy all necessary files to tmpdir
+            _ = [shutil.copy(f, tmpdir) for f in inlist + calfiles]
+            if calfiles_flc:
+                _ = [shutil.copy(f, tmpdir) for f in calfiles_flc]
 
-        parent_dir = os.getcwd()
-        os.chdir(tmpdir)
+            parent_dir = os.getcwd()
+            os.chdir(tmpdir)
 
         # insure these files exist, if not, blank them out
         # Also pick out what files will be used for additional alignment to GAIA
@@ -624,11 +623,12 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 return None
 
             # Write the perform_align log to the trailer file...(this will delete the _alignlog)
-            shutil.copy(alignlog, alignlog_copy)
-            _appendTrlFile(trlfile, alignlog_copy)
+            if os.path.exists(alignlog):
+                shutil.copy(alignlog, alignlog_copy)
+                _appendTrlFile(trlfile, alignlog_copy)
 
-            # Append messages from this calling routine post-perform_align
             _updateTrlFile(trlfile, trlmsg)
+
             _trlmsg = ""
             # Check to see whether there are any additional input files that need to
             # be aligned (namely, FLT images)
@@ -655,16 +655,16 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         drz_products, focus_dicts = run_driz(inlist, trlfile, verify_alignment=True, **pipeline_pars)
 
         # Start verification of alignment using focus and similarity indices
-        _trlmsg = _timestamp('Verification of {} alignment started '.format(tmpdir))
+        _trlmsg = _timestamp('Verification of {} alignment started '.format(tmpname))
         # Only check focus on CTE corrected, when available
         align_focus = focus_dicts[-1] if 'drc' in focus_dicts[-1]['prodname'] else focus_dicts[0]
 
         alignment_verified = amutils.evaluate_focus(align_focus)
 
         if alignment_verified:
-            _trlmsg += "Focus verification indicated that {} alignment SUCCEEDED.\n".format(tmpdir)
+            _trlmsg += "Focus verification indicated that {} alignment SUCCEEDED.\n".format(tmpname)
         else:
-            _trlmsg += "Focus verification indicated that {} alignment FAILED.\n".format(tmpdir)
+            _trlmsg += "Focus verification indicated that {} alignment FAILED.\n".format(tmpname)
 
         if alignment_mode:
             prodname = align_focus['prodname']
@@ -687,7 +687,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 _trlmsg += "Alignment appeared to succeed based on similarity index of {}\n".format(sim_indx)
 
         # If CRs were identified, copy updated input files to main directory
-        if alignment_verified:
+        if tmpdir and alignment_verified:
             _trlmsg += "Saving products with new alignment.\n"
             _ = [shutil.copy(f, parent_dir) for f in calfiles]
             if calfiles_flc:
@@ -699,8 +699,9 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         _updateTrlFile(trlfile, _trlmsg)
 
     finally:
-        # Return to main processing dir
-        os.chdir(parent_dir)
+        if tmpdir:
+            # Return to main processing dir
+            os.chdir(parent_dir)
 
     return focus_dicts
 
