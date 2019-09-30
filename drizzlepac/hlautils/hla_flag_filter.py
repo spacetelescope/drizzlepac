@@ -146,20 +146,22 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     drizzled_image = all_drizzled_filelist[0] # TODO: remove once all code is dictinary-independant
     catalog_name = dict_newTAB_matched2drz[drizzled_image] # TODO: remove once all code is dictinary-independant
     catalog_data = phot_table_matched2drz[drizzled_image] # TODO: remove once all code is dictinary-independant
+    for filt_key in filter_sorted_flt_dict.keys(): flt_list = filter_sorted_flt_dict[filt_key] # TODO: remove once all code is dictinary-independant
+
     log.info("ci_filter({} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict))
 
-    phot_table_matched2drz = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict)
+    catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict)
     # ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
 
     # Flag saturated sources
-    log.info("HLASaturationFlags({} {} {} {} {} {})".format(all_drizzled_filelist,filter_sorted_flt_dict,
-                                                            dict_newTAB_matched2drz, "<Catalog Data>",
+    log.info("HLASaturationFlags({} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name, "<Catalog Data>",
                                                             proc_type, param_dict))
 
-    phot_table_matched2drz = HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz,
-                                                phot_table_matched2drz, proc_type, param_dict)
+    phot_table_matched2drz = HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data,
+                                                proc_type, param_dict)
+    sys.exit()
     # HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
-    #                        scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict)
+    #                        scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
 
 
     # Flag swarm sources
@@ -171,7 +173,7 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, dict_newTAB_matched2drz, exp_dictionary_scis,
                   proc_type, param_dict)
     # HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
-    #                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict)
+    #                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict) # TODO: remove once all code is dictinary-independant
 
     sys.exit()
 
@@ -301,7 +303,7 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     catalog_data.write(catalog_name, delimiter=",", format='ascii') # TODO: move this into the above debug code block once everything is working in-memory.
 
 
-    return {drizzled_image:catalog_data} # TODO: refactor once all code is dictinary-independant
+    return catalog_data
 
 
 def ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict):
@@ -435,22 +437,23 @@ def ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         os.system('mv '+phot_table_temp+' '+phot_table)
 
 
-def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz, phot_table_matched2drz, proc_type, param_dict):
+def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict):
     """Identifies and flags saturated sources.
 
     Parameters
     ----------
-    all_drizzled_filelist : list
-        List of drizzled images to process.
+    drizzled_image : string
+        drizzled filter product image filename
 
-    filter_sorted_flt_dict : dictionary
-        dictionary containing lists of calibrated images sorted (also keyed) by filter name.
+    flt_list : list
+        list of calibrated images that were drizzle-combined to produce image specified by input parameter
+        'drizzled_image'
 
-    dict_newTAB_matched2drz : dictionary
-        dictionary of source lists keyed by drizzled image name.
+    catalog_name : string
+        drizzled filter product catalog filename
 
-    phot_table_matched2drz : dictionary
-        dictionary of source list data keyed by drizzled image name
+    catalog_data : astropy.Table object
+        drizzled filter product catalog data
 
     proc_type : string
         sourcelist generation type.
@@ -462,19 +465,13 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
     -------
     Nothing!
     """
-    drizzled_image = all_drizzled_filelist[0]
-    flt_list = filter_sorted_flt_dict[drizzled_image]
-    catalog_name = dict_newTAB_matched2drz[drizzled_image]
-    catalog_data = phot_table_matched2drz[drizzled_image]
-    # for drizzled_image in all_drizzled_filelist: # TODO: pull everything out of this for loop and refactor as necessary
     image_split = drizzled_image.split('/')[-1]
-    channel = drizzled_image.split("_")[
-        -3].upper()  # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+    channel = drizzled_image.split("_")[-3].upper()  # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
 
-    if channel == 'IR':
-        continue
+    if channel == 'IR': #TODO: Test and IR case just to make sure that IR shouldn't be skipped
+        return {drizzled_image: catalog_data}  # TODO: refactor once all code is dictinary-independant
 
-    phot_table = dict_newTAB_matched2drz[drizzled_image]
+    phot_table = catalog_name
     phot_table_root = phot_table.split('.')[0]
 
     #        for flt_image in flt_images:
@@ -485,19 +482,17 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
     # FOR ALL SATURATION FLAGGED PIXELS, AND TRANSFORM THESE COORDINATES
     # INTO THE DRIZZLED IMAGE REFERENCE FRAME.
     # -------------------------------------------------------------------
-    main_drizzled_filelist = [drizzled_image]
-    main_drizzled_filelist_orig = [drizzled_image]
+    main_drizzled_filelist = drizzled_image
+    main_drizzled_filelist_orig = drizzled_image
 
-    drz_filter = drizzled_image.split("_")[
-        5]  # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
-    list_of_flts_in_main_driz = filter_sorted_flt_dict[drz_filter.lower()]
-    num_flts_in_main_driz = len(list_of_flts_in_main_driz)
-    list_of_flts_in_main_driz.sort()
+    drz_filter = drizzled_image.split("_")[5]  # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
+    num_flts_in_main_driz = len(flt_list)
+    flt_list.sort()
 
     log.info(' ')
     log.info("Current Working Directory: {}".format(os.getcwd()))
     log.info(' ')
-    log.info('LIST OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1], list_of_flts_in_main_driz))
+    log.info('LIST OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1], flt_list))
     log.info(' ')
     log.info('NUMBER OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1], num_flts_in_main_driz))
     log.info(' ')
@@ -519,7 +514,7 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
     # build list of arrays
     drz_sat_xy_coords_list = []
 
-    for flt_cnt, flt_image in enumerate(list_of_flts_in_main_driz):
+    for flt_cnt, flt_image in enumerate(flt_list):
         for ext_cnt, image_ext in enumerate(image_ext_list):
             ext_part = image_ext.split(',')[1].split(']')[0]
             try:
@@ -602,7 +597,7 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
         log.info('*******************************************************************************************')
         log.info(' ')
 
-        continue
+        return {drizzled_image: catalog_data}  # TODO: refactor once all code is dictinary-independant
 
     # ------------------------------
     # now concatenate all the arrays
@@ -627,7 +622,7 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
     # inputfile = open(full_drz_cat, 'r')
     # all_detections = inputfile.readlines()
     # inputfile.close()
-    all_detections = phot_table_matched2drz[drizzled_image]
+    all_detections = catalog_data
 
     nrows = len(all_detections)
     full_coordList = numpy.empty((nrows, 2), dtype=numpy.float)
@@ -708,7 +703,7 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
         log.info('**************************************************************************************')
         log.info(' ')
 
-        continue
+        return {drizzled_image: catalog_data}  # TODO: refactor once all code is dictinary-independant
 
     else:
         log.info(' ')
@@ -724,13 +719,13 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
         # --------------------------------------------------------------------------
         # WRITE SAT FLAGS TO OUTPUT PHOT TABLE BASED ON flag_src_central_pixel_list
         # --------------------------------------------------------------------------
-        phot_table = dict_newTAB_matched2drz[drizzled_image]
+        phot_table = catalog_name
         phot_table_root = phot_table.split('.')[0]
 
         # phot_table_in = open(phot_table, 'r')
         # phot_table_rows = phot_table_in.readlines()
         # phot_table_in.close()
-        phot_table_rows = phot_table_matched2drz[drizzled_image]
+        phot_table_rows = catalog_data
 
         phot_table_temp = phot_table_root + '_SATFILT.txt'
         # phot_table_out = open(phot_table_temp, 'w')
