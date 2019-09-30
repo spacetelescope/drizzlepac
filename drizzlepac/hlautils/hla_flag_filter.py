@@ -462,293 +462,297 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
     -------
     Nothing!
     """
-    for drizzled_image in all_drizzled_filelist: # TODO: pull everything out of this for loop and refactor as necessary
-        image_split = drizzled_image.split('/')[-1]
-        channel = drizzled_image.split("_")[
-            -3].upper()  # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+    drizzled_image = all_drizzled_filelist[0]
+    flt_list = filter_sorted_flt_dict[drizzled_image]
+    catalog_name = dict_newTAB_matched2drz[drizzled_image]
+    catalog_data = phot_table_matched2drz[drizzled_image]
+    # for drizzled_image in all_drizzled_filelist: # TODO: pull everything out of this for loop and refactor as necessary
+    image_split = drizzled_image.split('/')[-1]
+    channel = drizzled_image.split("_")[
+        -3].upper()  # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
 
+    if channel == 'IR':
+        continue
+
+    phot_table = dict_newTAB_matched2drz[drizzled_image]
+    phot_table_root = phot_table.split('.')[0]
+
+    #        for flt_image in flt_images:
+    #            os.system('cp '+flt_image+' .')
+
+    # -------------------------------------------------------------------
+    # STEP THROUGH EACH APPLICABLE FLT IMAGE, DETERMINE THE COORDINATES
+    # FOR ALL SATURATION FLAGGED PIXELS, AND TRANSFORM THESE COORDINATES
+    # INTO THE DRIZZLED IMAGE REFERENCE FRAME.
+    # -------------------------------------------------------------------
+    main_drizzled_filelist = [drizzled_image]
+    main_drizzled_filelist_orig = [drizzled_image]
+
+    drz_filter = drizzled_image.split("_")[
+        5]  # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
+    list_of_flts_in_main_driz = filter_sorted_flt_dict[drz_filter.lower()]
+    num_flts_in_main_driz = len(list_of_flts_in_main_driz)
+    list_of_flts_in_main_driz.sort()
+
+    log.info(' ')
+    log.info("Current Working Directory: {}".format(os.getcwd()))
+    log.info(' ')
+    log.info('LIST OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1], list_of_flts_in_main_driz))
+    log.info(' ')
+    log.info('NUMBER OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1], num_flts_in_main_driz))
+    log.info(' ')
+
+    # ----------------------------------------------------
+    # EXTRACT DQ DATA FROM FLT IMAGE AND CREATE A LIST
+    # OF "ALL" PIXEL COORDINATES WITH A FLAG VALUE OF 256
+    # ----------------------------------------------------
+    if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')):
+        image_ext_list = ["[sci,1]", "[sci,2]"]
+        dq_sat_bit = 256
+    if channel.lower() == 'wfpc2':
+        image_ext_list = ["[sci,1]", "[sci,2]", "[sci,3]", "[sci,4]"]
+        dq_sat_bit = 8
+    if channel.lower() == 'pc':
+        image_ext_list = ["[sci,1]"]
+        dq_sat_bit = 8
+
+    # build list of arrays
+    drz_sat_xy_coords_list = []
+
+    for flt_cnt, flt_image in enumerate(list_of_flts_in_main_driz):
+        for ext_cnt, image_ext in enumerate(image_ext_list):
+            ext_part = image_ext.split(',')[1].split(']')[0]
+            try:
+                if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')): flt_data = getdata(flt_image, 'DQ',
+                                                                                                    int(ext_part))
+                if ((channel.lower() == 'wfpc2') or (channel.lower() == 'pc')): flt_data = getdata(
+                    flt_image.replace("_c0m", "_c1m"), 'SCI', int(ext_part))
+            except KeyError:
+                log.info(' ')
+                log.info('WARNING: There is only one set of file extensions in {}'.format(flt_image))
+                log.info(' ')
+
+                continue
+
+            # ----------------------------------------------------
+            # DETERMINE IF ANY OF THE PIXELS LOCATED IN THE GRID
+            # HAVE A BIT VALUE OF 256, I.E. FULL WELL SATURATION.
+            # ----------------------------------------------------
+            # NOTE: NUMPY ARRAYS REPORT Y COORD VALUES FIRST AND
+            #       X COORD VALUES SECOND AS FOLLOWS:
+            #
+            #       --> numpy.shape(flt_data)
+            #       (2051, 4096)
+            #
+            #       WHERE 2051 IS THE NUMBER OF PIXELS IN THE Y
+            #       DIRECTION, AND 4096 IS THE NUMBER OF PIXELS
+            #       IN THE X DIRECTION.
+            # ----------------------------------------------------
+            bit_flt_data = dq_sat_bit & flt_data
+            complete_sat_coords = numpy.where(bit_flt_data == dq_sat_bit)
+
+            if len(complete_sat_coords[0]) == 0:
+                continue
+
+            # -------------------------------------------------
+            # RESTRUCTURE THE LIST OF X AND Y COORDINATES FROM
+            # THE FLT FILE THAT HAVE BEEN FLAGGED AS SATURATED
+            # -------------------------------------------------
+            nsat = len(complete_sat_coords[0])
+            x_y_array = numpy.empty((nsat, 2), dtype=int)
+            x_y_array[:, 0] = complete_sat_coords[1]
+            x_y_array[:, 1] = complete_sat_coords[0]
+
+            # ---------------------------------------------------
+            # WRITE FLT COORDS TO A FILE FOR DIAGNOSTIC PURPOSES
+            # ---------------------------------------------------
+            flt_xy_coord_out = flt_image.split('/')[-1].split('.')[0] + '_sci' + str(ext_cnt + 1) + '.txt'
+            outfile = open(flt_xy_coord_out, 'w')
+            for flt_xy_coord in x_y_array:
+                x = flt_xy_coord[0]
+                y = flt_xy_coord[1]
+                outfile.write(str(x) + '     ' + str(y) + '\n')
+            outfile.close()
+
+            # ----------------------------------------------------
+            # CONVERT SATURATION FLAGGED X AND Y COORDINATES FROM
+            # THE FLT IMAGE INTO RA AND DEC
+            # ----------------------------------------------------
+            flt_ra_dec_coords = xytord(x_y_array, flt_image, image_ext)
+
+            # -------------------------------------------------
+            # CONVERT RA & DEC VALUES FROM FLT REFERENCE FRAME
+            # TO THAT OF THE DRIZZLED IMAGE REFERENCE FRAME
+            # -------------------------------------------------
+            drz_sat_xy_coords_list.append(rdtoxy(flt_ra_dec_coords, drizzled_image, "[sci,1]"))
+
+            log.info(' ')
+            log.info('FLT IMAGE = {}'.format(flt_image.split('/')[-1]))
+            log.info('IMAGE EXT = {}'.format(image_ext))
+            log.info(' ')
+
+    # ----------------------------------------------------------------
+    # IF NO SATURATION FLAGS EXIST IN ANY OF THE FLT FILES, THEN SKIP
+    # ----------------------------------------------------------------
+    if len(drz_sat_xy_coords_list) == 0:
+        log.info(' ')
+        log.info('*******************************************************************************************')
+        log.info('NO SATURATION FLAGGED PIXELS EXIST IN ANY OF THE FLT FILES FOR:')
+        log.info('     --> {}'.format(drizzled_image.split('/')[-1]))
+        log.info('*******************************************************************************************')
+        log.info(' ')
+
+        continue
+
+    # ------------------------------
+    # now concatenate all the arrays
+    # ------------------------------
+    full_satList = numpy.concatenate(drz_sat_xy_coords_list)
+
+    # --------------------------------------------
+    # WRITE RA & DEC FLT CONVERTED X & Y DRIZZLED
+    # IMAGE COORDINATES TO A TEXT FILE
+    # --------------------------------------------
+    drz_coord_file = drizzled_image.split('/')[-1].split('.')[0] + '_ALL_FLT_SAT_FLAG_PIX.txt'
+    drz_coord_out = open(drz_coord_file, 'w')
+    for coord in full_satList:
+        drz_coord_out.write(str(coord[0]) + '     ' + str(coord[1]) + '\n')
+    drz_coord_out.close()
+
+    # --------------------------------------------------------
+    # READ IN FULL DRIZZLED IMAGE-BASED CATALOG AND SAVE
+    # X AND Y COORDINATE VALUES TO LISTS FOR LATER COMPARISON
+    # --------------------------------------------------------
+    # full_drz_cat = dict_newTAB_matched2drz[drizzled_image]
+    # inputfile = open(full_drz_cat, 'r')
+    # all_detections = inputfile.readlines()
+    # inputfile.close()
+    all_detections = phot_table_matched2drz[drizzled_image]
+
+    nrows = len(all_detections)
+    full_coordList = numpy.empty((nrows, 2), dtype=numpy.float)
+    for row_count, detection in enumerate(all_detections):
+        # ss = detection.split(',') # TODO: Remove once in-memory conversion is done
+        # full_coordList[row_count, 0] = float(ss[0]) # TODO: Remove once in-memory conversion is done
+        # full_coordList[row_count, 1] = float(ss[1]) # TODO: Remove once in-memory conversion is done
+        full_coordList[row_count, 0] = float(detection[0])
+        full_coordList[row_count, 1] = float(detection[1])
+
+
+    # ----------------------------------------------------
+    # CREATE SUB-GROUPS OF SATURATION-FLAGGED COORDINATES
+    # ----------------------------------------------------
+    proc_time1 = time.ctime()
+    log.info(' ')
+    log.info('PROC_TIME_1: {}'.format(proc_time1))
+    log.info(' ')
+
+    # ----------------------------------
+    # Convert aperture radius to pixels
+    # ----------------------------------
+    ap2 = param_dict['catalog generation']['dao']['aperture_2']
+    if proc_type == 'daophot':  # TODO: WHY ARE THESE HARDCODED IN HERE??? MOVE TO MAIN PARAM_DICT DEFINITINON, RUNSHLAPROCESSING.PY, LINE 39.
         if channel == 'IR':
-            continue
+            radius = round((ap2 / 0.09) + 0.5) * 2.
+        if channel == 'UVIS':
+            radius = round((ap2 / 0.04) + 0.5) * 2.
+        if channel == 'WFC':
+            radius = round((ap2 / 0.05) + 0.5) * 2.
+        if channel == 'HRC':
+            radius = round((ap2 / 0.027) + 0.5) * 2.
+        if channel == 'WFPC2':
+            radius = round((ap2 / 0.1) + 0.5) * 2.
+        if channel == 'PC':
+            radius = round((ap2 / 0.046) + 0.5) * 2.
 
+    if proc_type == 'sexphot':
+        if channel == 'IR':
+            radius = round((ap2 / 0.09) + 0.5)
+        if channel == 'UVIS':
+            radius = round((ap2 / 0.04) + 0.5)
+        if channel == 'WFC':
+            radius = round((ap2 / 0.05) + 0.5)
+        if channel == 'HRC':
+            radius = round((ap2 / 0.027) + 0.5)
+        if channel == 'WFPC2':
+            radius = round((ap2 / 0.1) + 0.5)
+        if channel == 'PC':
+            radius = round((ap2 / 0.046) + 0.5) * 2.
+
+    log.info(' ')
+    log.info('THE RADIAL DISTANCE BEING USED IS {} PIXELS'.format(str(radius)))
+    log.info(' ')
+
+    # do the cross-match using xymatch
+    log.info('Matching {} saturated pixels with {} catalog sources'.format(len(full_satList), len(full_coordList)))
+    psat, pfull = xymatch(full_satList, full_coordList, radius, multiple=True, verbose=False)
+    log.info('Found cross-matches (including duplicates)'.format(len(psat)))
+    saturation_flag = numpy.zeros(len(full_coordList), dtype=bool)
+    saturation_flag[pfull] = True
+
+    proc_time2 = time.ctime()
+    log.info(' ')
+    log.info('PROC_TIME_2: {}'.format(proc_time2))
+    log.info(' ')
+
+    # ------------------------------------------------------------------
+    # REMOVE DUPLICATE DETECTIONS FROM THE LIST, "group", CREATTED FROM
+    # MATCHING SATURATION FLAGGED FLT PIXELS TO FINAL SOURCE DETECTIONS
+    # ------------------------------------------------------------------
+
+    nsaturated = saturation_flag.sum()
+    if nsaturated == 0:
+        log.info(' ')
+        log.info('**************************************************************************************')
+        log.info('NOTE: NO SATURATED SOURCES WERE FOUND FOR: {}'.format(image_split))
+        log.info('**************************************************************************************')
+        log.info(' ')
+
+        continue
+
+    else:
+        log.info(' ')
+        log.info('FLAGGED {} SOURCES'.format(nsaturated))
+        log.info(' ')
+
+        sat_coord_file = drizzled_image.split('/')[-1].split('.')[0] + '_INTERMEDIATE.txt'
+        sat_coord_out = open(sat_coord_file, 'w')
+        for sat_coord in full_coordList[saturation_flag, :]:
+            sat_coord_out.write(str(sat_coord[0]) + '     ' + str(sat_coord[1]) + '\n')
+        sat_coord_out.close()
+
+        # --------------------------------------------------------------------------
+        # WRITE SAT FLAGS TO OUTPUT PHOT TABLE BASED ON flag_src_central_pixel_list
+        # --------------------------------------------------------------------------
         phot_table = dict_newTAB_matched2drz[drizzled_image]
         phot_table_root = phot_table.split('.')[0]
 
-        #        for flt_image in flt_images:
-        #            os.system('cp '+flt_image+' .')
+        # phot_table_in = open(phot_table, 'r')
+        # phot_table_rows = phot_table_in.readlines()
+        # phot_table_in.close()
+        phot_table_rows = phot_table_matched2drz[drizzled_image]
 
-        # -------------------------------------------------------------------
-        # STEP THROUGH EACH APPLICABLE FLT IMAGE, DETERMINE THE COORDINATES
-        # FOR ALL SATURATION FLAGGED PIXELS, AND TRANSFORM THESE COORDINATES
-        # INTO THE DRIZZLED IMAGE REFERENCE FRAME.
-        # -------------------------------------------------------------------
-        main_drizzled_filelist = [drizzled_image]
-        main_drizzled_filelist_orig = [drizzled_image]
+        phot_table_temp = phot_table_root + '_SATFILT.txt'
+        # phot_table_out = open(phot_table_temp, 'w')
 
-        drz_filter = drizzled_image.split("_")[
-            5]  # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
-        list_of_flts_in_main_driz = filter_sorted_flt_dict[drz_filter.lower()]
-        num_flts_in_main_driz = len(list_of_flts_in_main_driz)
-        list_of_flts_in_main_driz.sort()
+        # phot_table_out.write(phot_table_rows[0])
+        for i, table_row in enumerate(phot_table_rows):
+            if saturation_flag[i]:
+                table_row[-1] = int(table_row[-1]) | 4
 
-        log.info(' ')
-        log.info("Current Working Directory: {}".format(os.getcwd()))
-        log.info(' ')
-        log.info('LIST OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1], list_of_flts_in_main_driz))
-        log.info(' ')
-        log.info('NUMBER OF FLTS IN {}: {}'.format(drizzled_image.split('/')[-1], num_flts_in_main_driz))
-        log.info(' ')
+            # phot_table_out.write(table_row)
+        phot_table_rows = HLA_flag4and8_hunter_killer(phot_table_rows)
+        phot_table_rows.write(phot_table_temp, delimiter=",",
+                           format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
 
-        # ----------------------------------------------------
-        # EXTRACT DQ DATA FROM FLT IMAGE AND CREATE A LIST
-        # OF "ALL" PIXEL COORDINATES WITH A FLAG VALUE OF 256
-        # ----------------------------------------------------
-        if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')):
-            image_ext_list = ["[sci,1]", "[sci,2]"]
-            dq_sat_bit = 256
-        if channel.lower() == 'wfpc2':
-            image_ext_list = ["[sci,1]", "[sci,2]", "[sci,3]", "[sci,4]"]
-            dq_sat_bit = 8
-        if channel.lower() == 'pc':
-            image_ext_list = ["[sci,1]"]
-            dq_sat_bit = 8
+        # phot_table_out.close()
 
-        # build list of arrays
-        drz_sat_xy_coords_list = []
-
-        for flt_cnt, flt_image in enumerate(list_of_flts_in_main_driz):
-            for ext_cnt, image_ext in enumerate(image_ext_list):
-                ext_part = image_ext.split(',')[1].split(']')[0]
-                try:
-                    if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')): flt_data = getdata(flt_image, 'DQ',
-                                                                                                        int(ext_part))
-                    if ((channel.lower() == 'wfpc2') or (channel.lower() == 'pc')): flt_data = getdata(
-                        flt_image.replace("_c0m", "_c1m"), 'SCI', int(ext_part))
-                except KeyError:
-                    log.info(' ')
-                    log.info('WARNING: There is only one set of file extensions in {}'.format(flt_image))
-                    log.info(' ')
-
-                    continue
-
-                # ----------------------------------------------------
-                # DETERMINE IF ANY OF THE PIXELS LOCATED IN THE GRID
-                # HAVE A BIT VALUE OF 256, I.E. FULL WELL SATURATION.
-                # ----------------------------------------------------
-                # NOTE: NUMPY ARRAYS REPORT Y COORD VALUES FIRST AND
-                #       X COORD VALUES SECOND AS FOLLOWS:
-                #
-                #       --> numpy.shape(flt_data)
-                #       (2051, 4096)
-                #
-                #       WHERE 2051 IS THE NUMBER OF PIXELS IN THE Y
-                #       DIRECTION, AND 4096 IS THE NUMBER OF PIXELS
-                #       IN THE X DIRECTION.
-                # ----------------------------------------------------
-                bit_flt_data = dq_sat_bit & flt_data
-                complete_sat_coords = numpy.where(bit_flt_data == dq_sat_bit)
-
-                if len(complete_sat_coords[0]) == 0:
-                    continue
-
-                # -------------------------------------------------
-                # RESTRUCTURE THE LIST OF X AND Y COORDINATES FROM
-                # THE FLT FILE THAT HAVE BEEN FLAGGED AS SATURATED
-                # -------------------------------------------------
-                nsat = len(complete_sat_coords[0])
-                x_y_array = numpy.empty((nsat, 2), dtype=int)
-                x_y_array[:, 0] = complete_sat_coords[1]
-                x_y_array[:, 1] = complete_sat_coords[0]
-
-                # ---------------------------------------------------
-                # WRITE FLT COORDS TO A FILE FOR DIAGNOSTIC PURPOSES
-                # ---------------------------------------------------
-                flt_xy_coord_out = flt_image.split('/')[-1].split('.')[0] + '_sci' + str(ext_cnt + 1) + '.txt'
-                outfile = open(flt_xy_coord_out, 'w')
-                for flt_xy_coord in x_y_array:
-                    x = flt_xy_coord[0]
-                    y = flt_xy_coord[1]
-                    outfile.write(str(x) + '     ' + str(y) + '\n')
-                outfile.close()
-
-                # ----------------------------------------------------
-                # CONVERT SATURATION FLAGGED X AND Y COORDINATES FROM
-                # THE FLT IMAGE INTO RA AND DEC
-                # ----------------------------------------------------
-                flt_ra_dec_coords = xytord(x_y_array, flt_image, image_ext)
-
-                # -------------------------------------------------
-                # CONVERT RA & DEC VALUES FROM FLT REFERENCE FRAME
-                # TO THAT OF THE DRIZZLED IMAGE REFERENCE FRAME
-                # -------------------------------------------------
-                drz_sat_xy_coords_list.append(rdtoxy(flt_ra_dec_coords, drizzled_image, "[sci,1]"))
-
-                log.info(' ')
-                log.info('FLT IMAGE = {}'.format(flt_image.split('/')[-1]))
-                log.info('IMAGE EXT = {}'.format(image_ext))
-                log.info(' ')
-
-        # ----------------------------------------------------------------
-        # IF NO SATURATION FLAGS EXIST IN ANY OF THE FLT FILES, THEN SKIP
-        # ----------------------------------------------------------------
-        if len(drz_sat_xy_coords_list) == 0:
-            log.info(' ')
-            log.info('*******************************************************************************************')
-            log.info('NO SATURATION FLAGGED PIXELS EXIST IN ANY OF THE FLT FILES FOR:')
-            log.info('     --> {}'.format(drizzled_image.split('/')[-1]))
-            log.info('*******************************************************************************************')
-            log.info(' ')
-
-            continue
-
-        # ------------------------------
-        # now concatenate all the arrays
-        # ------------------------------
-        full_satList = numpy.concatenate(drz_sat_xy_coords_list)
-
-        # --------------------------------------------
-        # WRITE RA & DEC FLT CONVERTED X & Y DRIZZLED
-        # IMAGE COORDINATES TO A TEXT FILE
-        # --------------------------------------------
-        drz_coord_file = drizzled_image.split('/')[-1].split('.')[0] + '_ALL_FLT_SAT_FLAG_PIX.txt'
-        drz_coord_out = open(drz_coord_file, 'w')
-        for coord in full_satList:
-            drz_coord_out.write(str(coord[0]) + '     ' + str(coord[1]) + '\n')
-        drz_coord_out.close()
-
-        # --------------------------------------------------------
-        # READ IN FULL DRIZZLED IMAGE-BASED CATALOG AND SAVE
-        # X AND Y COORDINATE VALUES TO LISTS FOR LATER COMPARISON
-        # --------------------------------------------------------
-        # full_drz_cat = dict_newTAB_matched2drz[drizzled_image]
-        # inputfile = open(full_drz_cat, 'r')
-        # all_detections = inputfile.readlines()
-        # inputfile.close()
-        all_detections = phot_table_matched2drz[drizzled_image]
-
-        nrows = len(all_detections)
-        full_coordList = numpy.empty((nrows, 2), dtype=numpy.float)
-        for row_count, detection in enumerate(all_detections):
-            # ss = detection.split(',') # TODO: Remove once in-memory conversion is done
-            # full_coordList[row_count, 0] = float(ss[0]) # TODO: Remove once in-memory conversion is done
-            # full_coordList[row_count, 1] = float(ss[1]) # TODO: Remove once in-memory conversion is done
-            full_coordList[row_count, 0] = float(detection[0])
-            full_coordList[row_count, 1] = float(detection[1])
-
-
-        # ----------------------------------------------------
-        # CREATE SUB-GROUPS OF SATURATION-FLAGGED COORDINATES
-        # ----------------------------------------------------
-        proc_time1 = time.ctime()
-        log.info(' ')
-        log.info('PROC_TIME_1: {}'.format(proc_time1))
-        log.info(' ')
-
-        # ----------------------------------
-        # Convert aperture radius to pixels
-        # ----------------------------------
-        ap2 = param_dict['catalog generation']['dao']['aperture_2']
-        if proc_type == 'daophot':  # TODO: WHY ARE THESE HARDCODED IN HERE??? MOVE TO MAIN PARAM_DICT DEFINITINON, RUNSHLAPROCESSING.PY, LINE 39.
-            if channel == 'IR':
-                radius = round((ap2 / 0.09) + 0.5) * 2.
-            if channel == 'UVIS':
-                radius = round((ap2 / 0.04) + 0.5) * 2.
-            if channel == 'WFC':
-                radius = round((ap2 / 0.05) + 0.5) * 2.
-            if channel == 'HRC':
-                radius = round((ap2 / 0.027) + 0.5) * 2.
-            if channel == 'WFPC2':
-                radius = round((ap2 / 0.1) + 0.5) * 2.
-            if channel == 'PC':
-                radius = round((ap2 / 0.046) + 0.5) * 2.
-
-        if proc_type == 'sexphot':
-            if channel == 'IR':
-                radius = round((ap2 / 0.09) + 0.5)
-            if channel == 'UVIS':
-                radius = round((ap2 / 0.04) + 0.5)
-            if channel == 'WFC':
-                radius = round((ap2 / 0.05) + 0.5)
-            if channel == 'HRC':
-                radius = round((ap2 / 0.027) + 0.5)
-            if channel == 'WFPC2':
-                radius = round((ap2 / 0.1) + 0.5)
-            if channel == 'PC':
-                radius = round((ap2 / 0.046) + 0.5) * 2.
+        os.system('mv ' + phot_table + ' ' + phot_table + '.PreSatFilt')
+        os.system('mv ' + phot_table_temp + ' ' + phot_table)
 
         log.info(' ')
-        log.info('THE RADIAL DISTANCE BEING USED IS {} PIXELS'.format(str(radius)))
+        log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
         log.info(' ')
-
-        # do the cross-match using xymatch
-        log.info('Matching {} saturated pixels with {} catalog sources'.format(len(full_satList), len(full_coordList)))
-        psat, pfull = xymatch(full_satList, full_coordList, radius, multiple=True, verbose=False)
-        log.info('Found cross-matches (including duplicates)'.format(len(psat)))
-        saturation_flag = numpy.zeros(len(full_coordList), dtype=bool)
-        saturation_flag[pfull] = True
-
-        proc_time2 = time.ctime()
-        log.info(' ')
-        log.info('PROC_TIME_2: {}'.format(proc_time2))
-        log.info(' ')
-
-        # ------------------------------------------------------------------
-        # REMOVE DUPLICATE DETECTIONS FROM THE LIST, "group", CREATTED FROM
-        # MATCHING SATURATION FLAGGED FLT PIXELS TO FINAL SOURCE DETECTIONS
-        # ------------------------------------------------------------------
-
-        nsaturated = saturation_flag.sum()
-        if nsaturated == 0:
-            log.info(' ')
-            log.info('**************************************************************************************')
-            log.info('NOTE: NO SATURATED SOURCES WERE FOUND FOR: {}'.format(image_split))
-            log.info('**************************************************************************************')
-            log.info(' ')
-
-            continue
-
-        else:
-            log.info(' ')
-            log.info('FLAGGED {} SOURCES'.format(nsaturated))
-            log.info(' ')
-
-            sat_coord_file = drizzled_image.split('/')[-1].split('.')[0] + '_INTERMEDIATE.txt'
-            sat_coord_out = open(sat_coord_file, 'w')
-            for sat_coord in full_coordList[saturation_flag, :]:
-                sat_coord_out.write(str(sat_coord[0]) + '     ' + str(sat_coord[1]) + '\n')
-            sat_coord_out.close()
-
-            # --------------------------------------------------------------------------
-            # WRITE SAT FLAGS TO OUTPUT PHOT TABLE BASED ON flag_src_central_pixel_list
-            # --------------------------------------------------------------------------
-            phot_table = dict_newTAB_matched2drz[drizzled_image]
-            phot_table_root = phot_table.split('.')[0]
-
-            # phot_table_in = open(phot_table, 'r')
-            # phot_table_rows = phot_table_in.readlines()
-            # phot_table_in.close()
-            phot_table_rows = phot_table_matched2drz[drizzled_image]
-
-            phot_table_temp = phot_table_root + '_SATFILT.txt'
-            # phot_table_out = open(phot_table_temp, 'w')
-
-            # phot_table_out.write(phot_table_rows[0])
-            for i, table_row in enumerate(phot_table_rows):
-                if saturation_flag[i]:
-                    table_row[-1] = int(table_row[-1]) | 4
-
-                # phot_table_out.write(table_row)
-            phot_table_rows = HLA_flag4and8_hunter_killer(phot_table_rows)
-            phot_table_rows.write(phot_table_temp, delimiter=",",
-                               format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
-
-            # phot_table_out.close()
-
-            os.system('mv ' + phot_table + ' ' + phot_table + '.PreSatFilt')
-            os.system('mv ' + phot_table_temp + ' ' + phot_table)
-
-            log.info(' ')
-            log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
-            log.info(' ')
         return {drizzled_image: phot_table_rows}  # TODO: refactor once all code is dictinary-independant
 
 def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
@@ -1117,7 +1121,7 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, phot_table_mat
         # ----------------------------------------------------------------------------
         # ============================= SKY COMPUTATION ==============================
 
-        median_sky = get_median_sky(drizzled_image)
+        median_sky = get_median_sky(drizzled_image) #TODO: maybe get value from filter product object
        # single_rms = rms_dict[drizzled_image]
        # rms_array = pyfits.getdata(single_rms,0)
        # rms_subarray = rms_array[rms_array > 0.0]
