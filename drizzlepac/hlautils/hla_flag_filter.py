@@ -152,14 +152,15 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     # ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
 
     # Flag saturated sources
-    log.info("HLASaturationFlags({} {} {} {} {} {})".format(all_drizzled_filelist,
-                                                                     filter_sorted_flt_dict, dict_newTAB_matched2drz, "<Catalog Data>",proc_type, param_dict))
+    log.info("HLASaturationFlags({} {} {} {} {} {})".format(all_drizzled_filelist,filter_sorted_flt_dict,
+                                                            dict_newTAB_matched2drz, "<Catalog Data>",
+                                                            proc_type, param_dict))
 
-    HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz, phot_table_matched2cat, proc_type, param_dict)
+    HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz, phot_table_matched2cat,
+                       proc_type, param_dict)
     # HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
     #                        scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict)
 
-    sys.exit()
 
     # Flag swarm sources
     log.info("HLASwarmFlags({} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz,
@@ -169,6 +170,8 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
 
     HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict)
+
+    sys.exit()
 
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
     log.info("HLANexpFlags({} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, working_hla_red,
@@ -297,6 +300,137 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
 
 
     return {drizzled_image:catalog_data} # TODO: refactor once all code is dictinary-independant
+
+
+def ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict):
+    """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
+    flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
+    It also flags sources below the detection limit in mag_aper2 (flag=8).
+
+    Parameters
+    ----------
+    all_drizzled_filelist : list
+        list of drizzled images
+
+    dict_newTAB_matched2drz : dictionary
+        dictionary of source lists keyed by drizzled image name.
+
+    working_hla_red : string
+        ***UNUSED*** full path of working directory.
+
+    proc_type : string
+        Sourcelist generation type
+
+    param_dict : dictionary
+        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+
+    Returns
+    -------
+    Nothing!
+    """
+
+    # column indices for SE and DAO catalogs
+    if proc_type == 'sexphot':
+        imag1 = 5
+        imag2 = 6
+        imerr1 = 7
+        imerr2 = 8
+    elif proc_type == 'daophot':
+        imag1 = 5
+        imag2 = 7
+        imerr1 = 6
+        imerr2 = 8
+    else:
+        raise ValueError("Unknown proc_type '%s', must be 'sexphot' or 'daophot'" % (proc_type,))
+
+    for drizzled_image in all_drizzled_filelist:
+        phot_table = dict_newTAB_matched2drz[drizzled_image]
+        phot_table_root = phot_table.split('.')[0]
+        if proc_type == 'sexphot':
+            ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_selower_limit'])
+            ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_seupper_limit'])
+            snr = float(param_dict['catalog generation']['sourcex']['bthresh'])
+
+        if proc_type == 'daophot':
+            ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_daolower_limit'])
+            ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_daoupper_limit'])
+            snr = float(param_dict['catalog generation']['dao']['bthresh'])
+
+
+        # replace CI limits with values from table if possible
+        cidict = ci_table.get_ci_from_file(drizzled_image, ci_lower=ci_lower_limit, ci_upper=ci_upper_limit)
+        ci_lower_limit = cidict['ci_lower_limit']
+        ci_upper_limit = cidict['ci_upper_limit']
+
+        log.info(' ')
+        log.info('ci limits for {}'.format(drizzled_image))
+        log.info('ci_lower_limit = {}'.format(ci_lower_limit))
+        log.info('ci_upper_limit = {}'.format(ci_upper_limit))
+        log.info(' ')
+
+        phot_table = dict_newTAB_matched2drz[drizzled_image]
+        phot_table_root = phot_table.split('.')[0]
+
+        phot_table_in = open(phot_table,'r')
+        phot_table_rows = phot_table_in.readlines()
+        phot_table_in.close()
+
+        phot_table_temp = phot_table_root+'_temp.txt'
+        phot_table_out = open(phot_table_temp,'w')
+        failed_ci_table_out = open(phot_table_root+'_Failed-CI.txt','w')
+
+        for i,table_row in enumerate(phot_table_rows):
+
+            if i == 0:
+                phot_table_out.write(table_row)
+                continue
+            else:
+                row_split = table_row.split(',')
+                try:
+                    flag_value = int(row_split[-1])
+                except ValueError:
+                    flag_value = 0
+
+                ci_value = row_split[-2]
+                if ci_value != '':
+                    ci_value = float(ci_value)
+                merr1 = row_split[imerr1]
+                if merr1 == '':
+                    merr1 = numpy.nan
+                else:
+                    merr1 = float(merr1)
+                merr2 = row_split[imerr2]
+                if merr2 == '':
+                    merr2 = numpy.nan
+                else:
+                    merr2 = float(merr2)
+                good_snr = merr2 <= 2.5/(snr*numpy.log(10))
+                ci_err = numpy.sqrt(merr1**2+merr2**2)
+
+                if not good_snr:
+                    flag_value |= 8
+
+                if ci_value == '' or (not numpy.isfinite(ci_err)) or ci_value < ci_lower_limit - ci_err:
+                    flag_value |= 16
+                    print(i,ci_value)
+                    input()
+
+                if ci_value != '':
+                    if ci_value > ci_upper_limit:
+                        flag_value |= 1
+
+
+                row_split[-1] = '%d\n' % flag_value
+                table_row = ','.join(row_split)
+                phot_table_out.write(table_row)
+                if ci_value == '':
+                    failed_ci_table_out.write(table_row)
+
+        phot_table_out.close()
+        failed_ci_table_out.close()
+
+        os.system('mv '+phot_table+' '+phot_table+'.PreCIFilt')
+        os.system('mv '+phot_table_temp+' '+phot_table)
 
 
 def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz, phot_table_matched2cat, proc_type, param_dict):
@@ -932,137 +1066,6 @@ def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted
             log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
             log.info(' ')
             HLA_flag4and8_hunter_killer_OLD(phot_table)
-
-def ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict):
-    """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
-    flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
-    It also flags sources below the detection limit in mag_aper2 (flag=8).
-
-    Parameters
-    ----------
-    all_drizzled_filelist : list
-        list of drizzled images
-
-    dict_newTAB_matched2drz : dictionary
-        dictionary of source lists keyed by drizzled image name.
-
-    working_hla_red : string
-        ***UNUSED*** full path of working directory.
-
-    proc_type : string
-        Sourcelist generation type
-
-    param_dict : dictionary
-        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
-
-    Returns
-    -------
-    Nothing!
-    """
-
-    # column indices for SE and DAO catalogs
-    if proc_type == 'sexphot':
-        imag1 = 5
-        imag2 = 6
-        imerr1 = 7
-        imerr2 = 8
-    elif proc_type == 'daophot':
-        imag1 = 5
-        imag2 = 7
-        imerr1 = 6
-        imerr2 = 8
-    else:
-        raise ValueError("Unknown proc_type '%s', must be 'sexphot' or 'daophot'" % (proc_type,))
-
-    for drizzled_image in all_drizzled_filelist:
-        phot_table = dict_newTAB_matched2drz[drizzled_image]
-        phot_table_root = phot_table.split('.')[0]
-        if proc_type == 'sexphot':
-            ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_selower_limit'])
-            ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_seupper_limit'])
-            snr = float(param_dict['catalog generation']['sourcex']['bthresh'])
-
-        if proc_type == 'daophot':
-            ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_daolower_limit'])
-            ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_daoupper_limit'])
-            snr = float(param_dict['catalog generation']['dao']['bthresh'])
-
-
-        # replace CI limits with values from table if possible
-        cidict = ci_table.get_ci_from_file(drizzled_image, ci_lower=ci_lower_limit, ci_upper=ci_upper_limit)
-        ci_lower_limit = cidict['ci_lower_limit']
-        ci_upper_limit = cidict['ci_upper_limit']
-
-        log.info(' ')
-        log.info('ci limits for {}'.format(drizzled_image))
-        log.info('ci_lower_limit = {}'.format(ci_lower_limit))
-        log.info('ci_upper_limit = {}'.format(ci_upper_limit))
-        log.info(' ')
-
-        phot_table = dict_newTAB_matched2drz[drizzled_image]
-        phot_table_root = phot_table.split('.')[0]
-
-        phot_table_in = open(phot_table,'r')
-        phot_table_rows = phot_table_in.readlines()
-        phot_table_in.close()
-
-        phot_table_temp = phot_table_root+'_temp.txt'
-        phot_table_out = open(phot_table_temp,'w')
-        failed_ci_table_out = open(phot_table_root+'_Failed-CI.txt','w')
-
-        for i,table_row in enumerate(phot_table_rows):
-
-            if i == 0:
-                phot_table_out.write(table_row)
-                continue
-            else:
-                row_split = table_row.split(',')
-                try:
-                    flag_value = int(row_split[-1])
-                except ValueError:
-                    flag_value = 0
-
-                ci_value = row_split[-2]
-                if ci_value != '':
-                    ci_value = float(ci_value)
-                merr1 = row_split[imerr1]
-                if merr1 == '':
-                    merr1 = numpy.nan
-                else:
-                    merr1 = float(merr1)
-                merr2 = row_split[imerr2]
-                if merr2 == '':
-                    merr2 = numpy.nan
-                else:
-                    merr2 = float(merr2)
-                good_snr = merr2 <= 2.5/(snr*numpy.log(10))
-                ci_err = numpy.sqrt(merr1**2+merr2**2)
-
-                if not good_snr:
-                    flag_value |= 8
-
-                if ci_value == '' or (not numpy.isfinite(ci_err)) or ci_value < ci_lower_limit - ci_err:
-                    flag_value |= 16
-                    print(i,ci_value)
-                    input()
-
-                if ci_value != '':
-                    if ci_value > ci_upper_limit:
-                        flag_value |= 1
-
-
-                row_split[-1] = '%d\n' % flag_value
-                table_row = ','.join(row_split)
-                phot_table_out.write(table_row)
-                if ci_value == '':
-                    failed_ci_table_out.write(table_row)
-
-        phot_table_out.close()
-        failed_ci_table_out.close()
-
-        os.system('mv '+phot_table+' '+phot_table+'.PreCIFilt')
-        os.system('mv '+phot_table_temp+' '+phot_table)
-
 
 
 def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
@@ -1731,6 +1734,669 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         log.info(' ')
 
 
+def HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
+                  filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict):
+    """Identifies and flags swarm sources.
+
+    Parameters
+    ----------
+    all_drizzled_filelist : list
+        List of drizzled images to process
+
+    dict_newTAB_matched2drz : dictionary
+        dictionary of source lists keyed by drizzled image name.
+
+    working_hla_red : string
+        full path to working directory.
+
+    exp_dictionary_scis : dictionary
+        dictionary of exposure time values keyed by drizzled image.
+
+    filter_sorted_flt_dict : dictionary
+        dictionary containing lists of calibrated images sorted (also keyed) by filter name.
+
+    detection_image : string
+        Name of multi-filter composite 'detection' image
+
+    proc_type : string
+        sourcelist generation type.
+
+    rms_dict : dictionary
+        dictionary of RMS image counterparts to drizzled images. Keyed by drizzled image name.
+
+    param_dict : dictionary
+        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+
+    Returns
+    -------
+    Nothing!
+    """
+    for drizzled_image in all_drizzled_filelist:
+
+        drz_imgPath_split = drizzled_image.split('/')
+        drz_img_split = drz_imgPath_split[-1].split('_')
+        data_type = drz_img_split[4]
+        drz_filter = drz_img_split[5]
+
+        # ============================= SKY COMPUTATION ==============================
+        # ----------------------------------------------------------------------------
+        # In the pipeline, AstroDrizzle sky computation is based on the statistical
+        # distribution of pixel values in an input image. It is performed by
+        # iterative sigma-clipping, starting with the full range of pixel intensity
+        # values, to calculate the standard deviation. By default, pixel values
+        # deviating from the median value (specified by parameter skystat) by over
+        # four sigma are rejected, and this operation is repeated for a total of five
+        # iterations. The median value of the final distribution is used as the sky
+        # value.
+        # ----------------------------------------------------------------------------
+        # ============================= SKY COMPUTATION ==============================
+
+        median_sky = get_median_sky(drizzled_image)
+        # single_rms = rms_dict[drizzled_image]
+        # rms_array = pyfits.getdata(single_rms,0)
+        # rms_subarray = rms_array[rms_array > 0.0]
+        # median_sky = Util.binmode(rms_subarray[rms_subarray < 5000.])[0]
+
+        log.info(' ')
+        log.info('MEDIAN SKY VALUE = {}'.format(median_sky))
+        log.info(' ')
+
+        # ==========================================
+        # ------------------------------------------
+        # ------------------------------------------
+        # CREATE LIST OF POTENTIAL SWARM DETECTIONS
+        # ------------------------------------------
+        # ------------------------------------------
+        # ==========================================
+        phot_table = dict_newTAB_matched2drz[drizzled_image]
+        phot_table_root = phot_table.split('/')[-1].split('.')[0]
+
+        image_split = drizzled_image.split('/')[-1]
+        channel = drizzled_image.split("_")[
+            -3].lower()  # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+
+        ap2 = param_dict['catalog generation']['dao']['aperture_2']
+        if proc_type not in ('sexphot', 'daophot'):
+            raise ValueError("Unknown catalog type '%s'" % proc_type)
+
+        # ----------------------------------
+        # Convert aperture radius to pixels
+        # ----------------------------------
+        radius = ap2 / float(
+            param_dict['catalog generation']['dao']['scale'])  # TODO: this value should be probably be somewhere else
+        log.info(' ')
+        log.info('Aperture Size = {}'.format(ap2))
+        log.info('Pixel Scale = {} arcsec per pixel'.format(float(
+            param_dict['catalog generation']['dao']['scale'])))  # TODO: this value should be probably be somewhere else
+        log.info(' ')
+        area = math.pi * radius ** 2
+        exptime = exp_dictionary_scis[drizzled_image]
+
+        log.info('Reading catalog from{}'.format(phot_table))
+        phot_table_in = open(phot_table, 'r')
+        phot_table_rows = phot_table_in.readlines()
+        phot_table_in.close()
+
+        nrows = len(phot_table_rows) - 1
+
+        complete_src_list = numpy.empty((nrows, 6), dtype=numpy.float)
+
+        for row_num, row in enumerate(phot_table_rows[1:]):
+
+            row_split = row.split(',')
+            x_val = float(row_split[0])
+            y_val = float(row_split[1])
+
+            if proc_type == 'sexphot':
+                # mag = row_split[6]
+                flux = row_split[10]
+                sky = row_split[13]
+            elif proc_type == 'daophot':
+                # mag = row_split[7]
+                flux = row_split[11]
+                sky = row_split[9]
+
+            if flux.strip():
+                flux = float(flux)
+            else:
+                flux = 0.0
+
+            if sky.strip():
+                sky = float(sky)
+            else:
+                sky = 0.0
+
+            electronpp = flux / area * exptime
+            eppsky = electronpp / median_sky
+            complete_src_list[row_num, :] = [x_val, y_val, flux, electronpp, sky, eppsky]
+
+        if len(complete_src_list) == 0:
+            continue
+
+        # view into the complete_src_list array for convenience
+        swarm_epp_listA = complete_src_list[:, 3]
+
+        # swarm flag array
+        # this will get set as candidates to flag are found
+        swarm_flag = numpy.zeros(nrows, dtype=bool)
+
+        # ------------------------------------------------------------
+        # WRITE SUBSET SOURCE LIST TO AN OUTPUT FILE FOR VERIFICATION
+        # ------------------------------------------------------------
+        final_complete_source_file = open(phot_table_root + '_SWFILT_COMPLETE_SOURCE_FILE.txt', 'w')
+        final_complete_source_file.write(
+            "# ------------------------------------------------------------------------------------------------\n")
+        final_complete_source_file.write(
+            "# X-Center   Y-Center     Flux        ElectronPP          Sky         EPPSKY_Ratio \n")
+        final_complete_source_file.write(
+            "# ------------------------------------------------------------------------------------------------\n")
+        for i, complete_src_value in enumerate(complete_src_list):
+            final_complete_source_file.write(
+                str(complete_src_value[0]) + '     ' + str(complete_src_value[1]) + '     ' + str(
+                    complete_src_value[2]) + '     ' + str(complete_src_value[3]) + '     ' + str(
+                    complete_src_value[4]) + '     ' + str(complete_src_value[5]) + '\n')
+
+        final_complete_source_file.close()
+
+        # ======================================================================
+        # ----------------------------------------------------------------------
+        # ----------------------------------------------------------------------
+        # Introduce 2 thresholds:
+        # -----------------------
+        # A minimum electronpp, and a minimum electronpp/sky.
+        # The thresholds should have different values for IR and UVIS.
+        #
+        # For IR, sources that have electronpp > 100k, OR
+        # ((electronpp > 100*sky) AND (electronpp > 10k)), should be considered.
+        #
+        # For UVIS, I would set the thresholds at (electronpp > 100k) OR
+        # ((electronpp > 1000*sky) AND (electronpp > 10k)).
+        # ----------------------------------------------------------------------
+        # ----------------------------------------------------------------------
+        # ======================================================================
+        upper_epp_limit = float(param_dict["quality control"]["swarm filter"]["upper_epp_limit"])
+        lower_epp_limit = float(param_dict["quality control"]["swarm filter"]["lower_epp_limit"])
+        eppsky_limit_cfg = float(param_dict["quality control"]["swarm filter"]["eppsky_limit"])
+
+        if data_type.upper() == 'UVIS':
+            eppsky_limit = eppsky_limit_cfg * median_sky
+            selfradius = 20.0
+
+        if data_type.upper() == 'IR':
+            eppsky_limit = eppsky_limit_cfg * median_sky
+            selfradius = 10.0
+
+        if data_type.upper() == 'WFC':  # acs/wfc
+            eppsky_limit = eppsky_limit_cfg * median_sky
+            selfradius = 20.0
+
+        if data_type.upper() == 'HRC':
+            eppsky_limit = eppsky_limit_cfg * median_sky
+            selfradius = 20.0  # JUST USING ACS/WFC VALUE. PROBABLY NEEDS TO BE OPTIMIZED FOR HRC.
+
+        if data_type.upper() == 'WFPC2':
+            eppsky_limit = eppsky_limit_cfg * median_sky
+            selfradius = 20.0  # JUST USING ACS/WFC VALUE PROBABLY NEEDS TO BE OPTIMIZED FOR WFPC2.
+
+        if data_type.upper() == 'PC':
+            eppsky_limit = eppsky_limit_cfg * median_sky
+            selfradius = 20.0  # JUST USING ACS/WFC VALUE PROBABLY NEEDS TO BE OPTIMIZED FOR PC.
+
+        # ----------------------------------------------------------
+        # UVIS --> EPP > 100000. OR (EPP > 1000*sky AND EPP > 10000)
+        # IR   --> EPP > 100000. OR (EPP > 100*sky AND EPP > 10000)
+        # ----------------------------------------------------------
+
+        initial_central_pixel_positions = numpy.where(numpy.logical_or(swarm_epp_listA > upper_epp_limit,
+                                                                       numpy.logical_and(swarm_epp_listA > eppsky_limit,
+                                                                                         swarm_epp_listA > lower_epp_limit)))[
+            0]
+        initial_central_pixel_list = complete_src_list[initial_central_pixel_positions, :]
+        if len(initial_central_pixel_positions) == 0:
+            # no bright objects
+            # copy empty lists so output file is created anyway
+            final_central_pixel_positions = initial_central_pixel_positions
+            final_flag_src_central_pixel_list = initial_central_pixel_list
+        else:
+            # ---------------------------------------------------------
+            # Remove duplicate central pixel position swarm candidates
+            # Keep only objects that are the brightest within 20 pixels
+            # ---------------------------------------------------------
+
+            # -------------------------------------------
+            # match initial central pixel list to itself
+            # -------------------------------------------
+            if data_type.upper() == 'IR':
+
+                # -------------------------------------------------------
+                # Define EPP cut values for filtering multiple detections
+                # from a given central positions for a swarm candidate
+                # -------------------------------------------------------
+                cuts = [2000000., 1800000., 1000000., 500000., 70000., 20000., 0.]
+                selfradii = [25., 100., 35., 30., 20., 15., 10.]
+
+                p1 = []
+                p2 = []
+                for cut_cnt, cut in enumerate(cuts):
+
+                    # --------------------------------------------------------------------
+                    # Extract indices of detections that are within the set EPP cut range
+                    # --------------------------------------------------------------------
+                    if cut_cnt == 0:
+                        cut_value_positions = numpy.where(initial_central_pixel_list[:, 3:4] > cut)[0]
+                    else:
+                        cut_value_positions = numpy.where(numpy.logical_and(initial_central_pixel_list[:, 3:4] >= cut,
+                                                                            initial_central_pixel_list[:, 3:4] <= cuts[
+                                                                                cut_cnt - 1]))[0]
+
+                    # -----------------------------------------------
+                    # If no detections exist for the specified EPP
+                    # cut range, then continue to the next cut range
+                    # -----------------------------------------------
+                    if len(cut_value_positions) == 0:
+                        continue
+
+                    # -----------------------------------------------------------------------
+                    # Determine all matches for detections in "cut_value_positions"
+                    # within the radius value identified for the cut range being implemented
+                    # -----------------------------------------------------------------------
+                    p1_sub, p2_sub = xymatch(initial_central_pixel_list[cut_value_positions, :][:, 0:2],
+                                             initial_central_pixel_list[:, 0:2], selfradii[cut_cnt], multiple=True,
+                                             stack=False, verbose=False)
+
+                    # ------------------------------------------
+                    # For each cut range, add the corresponding
+                    # matches to each detection to a final list
+                    # ------------------------------------------
+                    for p1_arr in p1_sub:
+                        p1.append(p1_arr)
+
+                    for p2_arr in p2_sub:
+                        p2.append(p2_arr)
+
+                    # Not sure if this is still needed???
+                    # ------------------------------------
+                    if cut_cnt == len(cuts) - 1:
+                        if len(p1) == 0 and len(p2) == 0:
+                            p1, p2 = xymatch(initial_central_pixel_list[:, 0:2], initial_central_pixel_list[:, 0:2],
+                                             selfradius, multiple=True, stack=False, verbose=False)
+
+                # ---------------------------------------------------------------------
+                # each object is guaranteed to have at least one match (itself)
+                # get brightest of each group of matches by building a list of indices
+                # ---------------------------------------------------------------------
+                exclude_index = None
+                for i1, i2 in zip(p1, p2):
+                    flux2 = initial_central_pixel_list[i2, 2]
+
+                    # -------------------------------------------------------------
+                    # Verify that there is more than one detection in a given group
+                    # otherwise no detection is added to exclude index because
+                    # there is only one detection for the source being evaluated
+                    # -------------------------------------------------------------
+                    if len(i2[numpy.where(flux2 < numpy.max(flux2))]) > 0:
+
+                        # ----------------------------------------------------------
+                        # Add all detections in grouping with a flux value less than
+                        # that of the maximum flux value to an array to be excluded
+                        # ----------------------------------------------------------
+                        if exclude_index is None:
+                            exclude_index = i2[numpy.where(flux2 < numpy.max(flux2))]
+                        else:
+                            exclude_index = numpy.concatenate(
+                                (exclude_index, i2[numpy.where(flux2 < numpy.max(flux2))]), axis=0)
+
+                        exclude_index = exclude_index.astype(numpy.int32)
+
+                # -----------------------------------------------------------
+                # exclude_index can have multiple copies of the same index
+                # use exclude_bool array to get a list of the unique indices
+                # -----------------------------------------------------------
+                exclude_bool = numpy.ones(len(initial_central_pixel_list), dtype=bool)
+                if not (exclude_index is None):
+                    exclude_bool[exclude_index] = False
+                out_values = numpy.where(exclude_bool)[0]
+
+                # -------------------------------------------------------------------------------
+                # Create final source list based on where the excluded detection indices are not
+                # -------------------------------------------------------------------------------
+                final_central_pixel_positions = initial_central_pixel_positions[out_values]
+                final_flag_src_central_pixel_list = initial_central_pixel_list[out_values, :]
+
+            else:
+
+                p1, p2 = xymatch(initial_central_pixel_list[:, 0:2], initial_central_pixel_list[:, 0:2], selfradius,
+                                 multiple=True, stack=False, verbose=False)
+
+                # ---------------------------------------------------------------------
+                # each object is guaranteed to have at least one match (itself)
+                # get brightest of each group of matches by building a list of indices
+                # ---------------------------------------------------------------------
+                keep_index = numpy.arange(len(initial_central_pixel_list), dtype=int)
+                for i1, i2 in zip(p1, p2):
+                    flux2 = initial_central_pixel_list[i2, 2]
+                    keep_index[i1] = i2[flux2.argmax()]
+
+                # --------------------------------------------------------
+                # keep_index can have multiple copies of the same index
+                # use keep_bool array to get a list of the unique indices
+                # --------------------------------------------------------
+                keep_bool = numpy.zeros(len(initial_central_pixel_list), dtype=bool)
+                keep_bool[keep_index] = True
+                in_values = numpy.where(keep_bool)[0]
+                final_central_pixel_positions = initial_central_pixel_positions[in_values]
+                final_flag_src_central_pixel_list = initial_central_pixel_list[in_values, :]
+
+        # ---------------------------------------------------
+        # WRITE CENTRAL PIXEL POSITIONS FOR SWARMS TO A FILE
+        # ---------------------------------------------------
+        cetrl_pix_pos_file = phot_table_root + '_SWFILT_CENTRAL-PIX-POS.txt'
+        drz_coord_out = open(cetrl_pix_pos_file, 'w')
+        for i in range(len(final_flag_src_central_pixel_list)):
+            drz_coord_out.write(str(final_flag_src_central_pixel_list[i, 0]) + '     ' + str(
+                final_flag_src_central_pixel_list[i, 1]) + '     ' + str(
+                final_flag_src_central_pixel_list[i, 2]) + '     ' + str(
+                final_flag_src_central_pixel_list[i, 3]) + '     ' + str(
+                final_flag_src_central_pixel_list[i, 4]) + '     ' + str(
+                final_flag_src_central_pixel_list[i, 5]) + '\n')
+        drz_coord_out.close()
+
+        # ==========================================================================
+        # --------------------------------------------------------------------------
+        # --------------------------------------------------------------------------
+        # EXTRACT THE CENTRAL PIXEL POSITIONS IN final_flag_src_central_pixel_list,
+        # FROM swarm_xListB AND swarm_yListB
+        # --------------------------------------------------------------------------
+        # --------------------------------------------------------------------------
+        # ==========================================================================
+
+        swarm_thresh = float(param_dict["quality control"]["swarm filter"]["swarm_thresh"])
+        clip_radius_list = param_dict["quality control"]["swarm filter"]["clip_radius_list"]
+        clip_radius_list = list(map(float, clip_radius_list))
+        scale_factor_list = param_dict["quality control"]["swarm filter"]["scale_factor_list"]
+        scale_factor_list = list(map(float, scale_factor_list))
+        log.info('SWARM FILTER CLIP_RADIUS_LIST: {}'.format(clip_radius_list))
+        log.info('SWARM FILTER SCALE_FACTOR_LIST: {}'.format(scale_factor_list))
+
+        # get list of objects not in the central pixel list
+        keep = numpy.ones(nrows, dtype=bool)
+        keep[final_central_pixel_positions] = False
+        notcentral_index = numpy.where(keep)[0]
+        swarm_listB = complete_src_list[notcentral_index, :]
+
+        # views into the swarm_listB array for convenience
+        swarm_xListB = swarm_listB[:, 0]
+        swarm_yListB = swarm_listB[:, 1]
+
+        # ---------------------------------------------------------------------
+        # ITERATIVELY CLIP SOURCES CONTAINED WITHIN RINGS AT SPECIFIED RADIUS
+        # VALUES, PROGRESSIVELY MOVING CLOSER TO THE CENTRAL SOURCE
+        # ---------------------------------------------------------------------
+
+        # do the cross-match using xymatch
+        log.info('Matching {} swarm centers with {} catalog sources'.format(len(final_flag_src_central_pixel_list),
+                                                                            len(swarm_listB)))
+        pcentral, pfull = xymatch(final_flag_src_central_pixel_list[:, 0:2], swarm_listB[:, 0:2], clip_radius_list[0],
+                                  multiple=True, stack=False, verbose=False)
+
+        # XXX RLW: the ring list is needed only for testing, get rid of it when code works
+        testing = True
+        if testing:
+            ring_index_list = []
+            ring_refepp_list = []
+            ring_thresh_list = []
+            ring_count = []
+
+        for pindex, ii in enumerate(pcentral):
+
+            central_pixel_value = final_flag_src_central_pixel_list[ii, :]
+            log.info(' ')
+            log.info('CENTRAL PIXEL VALUE: {}'.format(central_pixel_value))
+            log.info(' ')
+
+            base_epp = central_pixel_value[3]
+            coords = central_pixel_value[0:2]
+
+            allmatches = pfull[pindex]
+
+            if len(allmatches) == 0:
+                # (this should not happen using xymatch)
+                log.info(' ')
+                log.info('------------------------------------------')
+                log.info('NOTE: NO SWARM CANDIDATES FOR THIS SOURCE ')
+                log.info('------------------------------------------')
+                log.info(' ')
+                continue
+
+            distsq = (swarm_xListB[allmatches] - coords[0]) ** 2 + (swarm_yListB[allmatches] - coords[1]) ** 2
+            sind = distsq.argsort()
+            allmatches = allmatches[sind]
+            distsq = distsq[sind]
+            rcut = distsq.searchsorted(numpy.array(clip_radius_list) ** 2)
+            for radius_cnt in range(1, len(clip_radius_list)):
+
+                # -------------------------------------------
+                # ISOLATE THE DETECTIONS WITHIN A GIVEN RING
+                # -------------------------------------------
+
+                matches = allmatches[rcut[radius_cnt]:rcut[radius_cnt - 1]]
+
+                if len(matches) == 0:
+                    log.info(' ')
+                    log.info('------------------------------------------')
+                    log.info('NOTE: ALL MATCHES/DETECTIONS IN THIS RING ')
+                    log.info('      HAVE PREVIOUSLY BEEN ACCOUNTED FOR  ')
+                    log.info('------------------------------------------')
+                    log.info(' ')
+
+                    continue
+
+                # -----------------------------------------------------------
+                # CALCULATE THE MEDIAN SKY VALUE FOR THE GROUP OF DETECTIONS
+                # CONTAINED WITHIN THE SPECIFIED RING BEING PROCESSED
+                # -----------------------------------------------------------
+                ref_epp = base_epp * scale_factor_list[radius_cnt - 1]
+
+                # -----------------------------------------------------------------------------------
+                # DIFFERENTIATE BETWEEN GOOD DETECTIONS AND SWARM DETECTIONS WITHIN SPECIFIED RINGS
+                # -----------------------------------------------------------------------------------
+                ring = swarm_listB[matches, :]
+                w = numpy.where(ring[:, 3] / ref_epp < swarm_thresh)
+                if len(w) > 0:
+                    swarm_flag[notcentral_index[matches[w]]] = True
+
+                # XXX RLW: following needed only for testing, get rid of it when code works
+                if testing:
+                    ring_index_list.append(matches)
+                    ring_count.append(len(matches))
+                    ring_refepp_list.append(ring[:, 3] / ref_epp)
+                    ring_thresh_list.append(swarm_thresh)
+
+        # XXX RLW: following needed only for testing, get rid of it when code works
+        if testing:
+            # -----------------------------------------------------------------------------------------
+            # WRITE CLIPPED SOURCES CONTAINED WITHIN RINGS TO AN OUTPUT FILE FOR INTERMEDIATE ANALYSIS
+            # -----------------------------------------------------------------------------------------
+            ring_source_file = phot_table_root + '_SWFILT_RING-SOURCE-INFO.txt'
+            ring_src_outfile = open(ring_source_file, 'w')
+            ring_src_outfile.write(
+                "# ------------------------------------------------------------------------------------------------\n")
+            ring_src_outfile.write(
+                "# X-Center   Y-Center     Flux        ElectronPP          Sky        SrcEPP/RefEPP   Swarm Thresh \n")
+            ring_src_outfile.write(
+                "# ------------------------------------------------------------------------------------------------\n")
+
+            if ring_index_list:
+                ring_index_list = numpy.concatenate(ring_index_list)
+
+                # select just the lowest value of refepp/swarm threshold for each source
+                # create array with extra columns
+                ring_source_list = numpy.empty((len(ring_index_list), 9), dtype=numpy.float)
+                ring_source_list[:, 0:6] = swarm_listB[ring_index_list, :]
+                ring_source_list[:, 6] = numpy.concatenate(ring_refepp_list)
+                ring_source_list[:, 7] = numpy.repeat(ring_thresh_list, ring_count)
+                ring_source_list[:, 8] = ring_source_list[:, 6] / ring_source_list[:, 7]
+
+                # sort by x, y, and refepp
+                # tricky here: get a view with named columns, then specify names as sort items
+                ring_source_list.view(','.join(['f8'] * 9)).sort(order=['f0', 'f1', 'f8'], axis=0)
+
+                # keep just first entry when the same source appears more than once
+                keep = numpy.ones(len(ring_index_list), dtype=bool)
+                # keep[1:] = numpy.any(ring_source_list[1:,0:2]!=ring_source_list[:-1,0:2], axis=1)
+                keep[1:] = numpy.logical_or(ring_source_list[1:, 0] != ring_source_list[:-1, 0],
+                                            ring_source_list[1:, 1] != ring_source_list[:-1, 1])
+                ring_source_list = ring_source_list[keep, :]
+
+                #                numpy.savetxt(ring_src_outfile,ring_source_list,delimiter='     ')
+
+                for ring_source in ring_source_list:
+                    ring_src_outfile.write(str(ring_source[0]) + '     ' + str(ring_source[1]) + '     ' + str(
+                        ring_source[2]) + '     ' + str(ring_source[3]) + '     ' + str(ring_source[4]) + '     ' + str(
+                        ring_source[5]) + '     ' + str(ring_source[6]) + '     ' + str(ring_source[7]) + '\n')
+
+            ring_src_outfile.close()  # XXX RLW: end of testing code
+
+        # ===================================================================================
+        # -----------------------------------------------------------------------------------
+        # -----------------------------------------------------------------------------------
+        #                          ----- PROXIMITY FILTER -----
+        # EXTRACT ADDITIONAL SWARM DETECTIONS BASED ON THE SWARM CANDIDATE CENTRAL POSITIONS,
+        # DEFINING THE REMOVAL RADIUS AROUND EACH POSITION BASED ON THAT SOURCE'S EPP
+        # -----------------------------------------------------------------------------------
+        # -----------------------------------------------------------------------------------
+        # ===================================================================================
+
+        proximity_flag = numpy.zeros(nrows, dtype=bool)
+
+        proximity_choice = param_dict["quality control"]["swarm filter"]["proximity_binary"]
+
+        if proximity_choice == 'yes':
+            if len(final_flag_src_central_pixel_list) > 0:
+                # XXX these ought to come from config files
+                if data_type == 'ir':
+                    # ctrList_radiusList = [25,100,80,30,50,20,15,10]
+                    # ctrList_thresholdList = [2000000,1800000,500000,250000,100000,40000,20000,2000]
+                    ctrList_radiusList = [125, 100, 80, 30, 50, 20, 15]
+                    ctrList_thresholdList = [2000000, 1800000, 500000, 250000, 100000, 40000, 20000]
+                if data_type == 'uvis':
+                    ctrList_radiusList = [40, 35, 20, 15, 10]
+                    ctrList_thresholdList = [100000, 70000, 50000, 10000, 2000]
+                if data_type == 'wfc':  # acs/wfc
+                    ctrList_radiusList = [40, 35, 20, 15,
+                                          10]  # just copied UVIS values. These values need to be optimized for ACS/WFC
+                    ctrList_thresholdList = [100000, 70000, 50000, 10000,
+                                             2000]  # just copied UVIS values. These values need to be optimized for ACS/WFC
+                if data_type == 'hrc':
+                    ctrList_radiusList = [40, 35, 20, 15,
+                                          10]  # just copied UVIS values. These values need to be optimized for ACS/HRC
+                    ctrList_thresholdList = [100000, 70000, 50000, 10000,
+                                             2000]  # just copied UVIS values. These values need to be optimized for ACS/HRC
+                if data_type == 'wfpc2':  # just copied UVIS values. These values need to be optimized for WFPC2
+                    ctrList_radiusList = [40, 35, 20, 15, 10]
+                    ctrList_thresholdList = [100000, 70000, 50000, 10000, 2000]
+                if data_type == 'pc':  # just copied UVIS values. These values need to be optimized for PC
+                    ctrList_radiusList = [40, 35, 20, 15, 10]
+                    ctrList_thresholdList = [100000, 70000, 50000, 10000, 2000]
+
+                for ctrList_cnt, (threshold, radius) in enumerate(zip(ctrList_thresholdList, ctrList_radiusList)):
+
+                    if ctrList_cnt == 0:
+                        ctr_list_cut = final_flag_src_central_pixel_list[:, 3] > threshold
+                    else:
+                        ctr_list_cut = numpy.logical_and(final_flag_src_central_pixel_list[:, 3] > threshold,
+                                                         final_flag_src_central_pixel_list[:, 3] <=
+                                                         ctrList_thresholdList[ctrList_cnt - 1])
+
+                    ctr_list_cut1 = final_flag_src_central_pixel_list[ctr_list_cut, :]
+                    pcentral, pfull = xymatch(ctr_list_cut1[:, 0:2], swarm_listB[:, 0:2], radius, multiple=True,
+                                              verbose=False)
+                    proximity_flag[notcentral_index[pfull]] = True
+
+            log.info("Proximity filter flagged {} sources".format(proximity_flag.sum()))
+
+            # --------------------------------------------------------------------------
+            # WRITE NEAR CENTRAL POSITION SWARM LIST TO AN OUTPUT FILE FOR VERIFICATION
+            # --------------------------------------------------------------------------
+            near_swmList = complete_src_list[proximity_flag, :]
+            final_near_swarm_file = open(phot_table_root + '_SWFILT_NEAR_SWARM_FILE.txt', 'w')
+            for swarm_value in near_swmList:
+                final_near_swarm_file.write(
+                    str(swarm_value[0]) + '     ' + str(swarm_value[1]) + '     ' + str(swarm_value[2]) + '     ' + str(
+                        swarm_value[3]) + '     ' + str(swarm_value[4]) + '\n')
+            final_near_swarm_file.close()
+
+        # -------------------------------------------------------------------------
+        # EXTRACT DETECTIONS FROM THE complete_src_list THAT ARE NOT FLAGGED
+        # -------------------------------------------------------------------------
+
+        combined_flag = numpy.logical_or(swarm_flag, proximity_flag)
+        final_swarm_list = complete_src_list[combined_flag, :]
+        final_source_list = complete_src_list[numpy.logical_not(combined_flag), :]
+
+        log.info(' ')
+        log.info('************************************************')
+        log.info('INITIAL LENGTH OF complete_src_list = {}'.format(len(complete_src_list)))
+        log.info(' ')
+        log.info('LENGTH OF final_source_list = {}'.format(len(final_source_list)))
+        log.info('LENGTH OF final_swarm_list = {}'.format(len(final_swarm_list)))
+        log.info('TOTAL LENGTH = {}'.format(len(final_source_list) + len(final_swarm_list)))
+        log.info(' ')
+        log.info('MEDIAN SKY VALUE = {}'.format(median_sky))
+        log.info('************************************************')
+        log.info(' ')
+
+        # ----------------------------------------------------
+        # WRITE SWARM LIST TO AN OUTPUT FILE FOR VERIFICATION
+        # ----------------------------------------------------
+        final_swarm_file = open(phot_table_root + '_SWFILT_SWARM_FILE.txt', 'w')
+        for swarm_value in final_swarm_list:
+            final_swarm_file.write(
+                str(swarm_value[0]) + '     ' + str(swarm_value[1]) + '     ' + str(swarm_value[2]) + '     ' + str(
+                    swarm_value[3]) + '     ' + str(swarm_value[4]) + '\n')
+        final_swarm_file.close()
+
+        # ----------------------------------------------------
+        # WRITE SOURCE LIST TO AN OUTPUT FILE FOR VERIFICATION
+        # ----------------------------------------------------
+        final_source_file = open(phot_table_root + '_SWFILT_SOURCE_FILE.txt', 'w')
+        for source_value in final_source_list:
+            final_source_file.write(
+                str(source_value[0]) + '     ' + str(source_value[1]) + '     ' + str(source_value[2]) + '     ' + str(
+                    source_value[3]) + '     ' + str(source_value[4]) + '\n')
+        final_source_file.close()
+
+        # =================================================================
+        # -----------------------------------------------------------------
+        # -----------------------------------------------------------------
+        # WRITE SWARM FLAGS TO OUTPUT PHOT TABLE BASED ON final_swarm_list
+        # -----------------------------------------------------------------
+        # -----------------------------------------------------------------
+        # =================================================================
+        phot_table_temp = phot_table_root + '_SWFILT.txt'
+        phot_table_out = open(phot_table_temp, 'w')
+
+        phot_table_in = open(phot_table, 'r')
+        phot_table_rows = phot_table_in.readlines()
+        phot_table_in.close()
+
+        phot_table_out.write(phot_table_rows[0])
+        for i, table_row in enumerate(phot_table_rows[1:]):
+            if combined_flag[i]:
+                row_split = table_row.split(',')
+                sat_flag = int(row_split[-1]) | 32
+                row_split[-1] = str(sat_flag) + '\n'
+                table_row = ','.join(row_split)
+            phot_table_out.write(table_row)
+
+        phot_table_out.close()
+
+        os.system('mv ' + phot_table + ' ' + phot_table + '.PreSwarmFilt')
+        os.system('mv ' + phot_table_temp + ' ' + phot_table)
+
+        log.info(' ')
+        log.info('FINAL SWAR-FILT PHOT_TABLE: {}'.format(phot_table))
+        log.info(' ')
 
 
 def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
