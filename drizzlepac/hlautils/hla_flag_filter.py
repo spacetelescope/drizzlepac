@@ -81,7 +81,7 @@ y_limit = 2051.
 def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
                             param_dict, readnoise_dictionary_drzs,
                             scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
-                            detection_image, dict_newTAB_matched2drz,phot_table_matched2cat, proc_type, drz_root_dir,
+                            detection_image, dict_newTAB_matched2drz, phot_table_matched2drz, proc_type, drz_root_dir,
                             rms_dict):
     """Simple calling subroutine that executes the other flagging subroutines.
     
@@ -117,7 +117,7 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     dict_newTAB_matched2drz : dictionary
         dictionary of source lists keyed by drizzled image name.
 
-    phot_table_matched2cat : dictionary
+    phot_table_matched2drz : dictionary
         dictionary of source lists tables (already read into memory) keyed by drizzled image name.
 
     proc_type : string
@@ -145,10 +145,10 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
 
     drizzled_image = all_drizzled_filelist[0] # TODO: remove once all code is dictinary-independant
     catalog_name = dict_newTAB_matched2drz[drizzled_image] # TODO: remove once all code is dictinary-independant
-    catalog_data = phot_table_matched2cat[drizzled_image] # TODO: remove once all code is dictinary-independant
+    catalog_data = phot_table_matched2drz[drizzled_image] # TODO: remove once all code is dictinary-independant
     log.info("ci_filter({} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict))
 
-    phot_table_matched2cat = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict)
+    phot_table_matched2drz = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict)
     # ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
 
     # Flag saturated sources
@@ -156,19 +156,20 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
                                                             dict_newTAB_matched2drz, "<Catalog Data>",
                                                             proc_type, param_dict))
 
-    HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz, phot_table_matched2cat,
-                       proc_type, param_dict)
+    phot_table_matched2drz = HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz,
+                                                phot_table_matched2drz, proc_type, param_dict)
     # HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
     #                        scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict)
 
 
     # Flag swarm sources
-    log.info("HLASwarmFlags({} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz,
-                                                                working_hla_red, exp_dictionary_scis,
+    log.info("HLASwarmFlags({} {} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz,
+                                                                working_hla_red, exp_dictionary_scis, "<Catalog Data>",
                                                                 filter_sorted_flt_dict, detection_image, proc_type,
                                                                 rms_dict, param_dict))
 
-    HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, exp_dictionary_scis, proc_type, param_dict)
+    HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, dict_newTAB_matched2drz, exp_dictionary_scis,
+                  proc_type, param_dict)
     # HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
     #                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict)
 
@@ -434,7 +435,7 @@ def ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         os.system('mv '+phot_table_temp+' '+phot_table)
 
 
-def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz, phot_table_matched2cat, proc_type, param_dict):
+def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz, phot_table_matched2drz, proc_type, param_dict):
     """Identifies and flags saturated sources.
 
     Parameters
@@ -448,7 +449,7 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
     dict_newTAB_matched2drz : dictionary
         dictionary of source lists keyed by drizzled image name.
 
-    phot_table_matched2cat : dictionary
+    phot_table_matched2drz : dictionary
         dictionary of source list data keyed by drizzled image name
 
     proc_type : string
@@ -622,7 +623,7 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
         # inputfile = open(full_drz_cat, 'r')
         # all_detections = inputfile.readlines()
         # inputfile.close()
-        all_detections = phot_table_matched2cat[drizzled_image]
+        all_detections = phot_table_matched2drz[drizzled_image]
 
         nrows = len(all_detections)
         full_coordList = numpy.empty((nrows, 2), dtype=numpy.float)
@@ -725,7 +726,7 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
             # phot_table_in = open(phot_table, 'r')
             # phot_table_rows = phot_table_in.readlines()
             # phot_table_in.close()
-            phot_table_rows = phot_table_matched2cat[drizzled_image]
+            phot_table_rows = phot_table_matched2drz[drizzled_image]
 
             phot_table_temp = phot_table_root + '_SATFILT.txt'
             # phot_table_out = open(phot_table_temp, 'w')
@@ -748,6 +749,7 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
             log.info(' ')
             log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
             log.info(' ')
+        return {drizzled_image: phot_table_rows}  # TODO: refactor once all code is dictinary-independant
 
 def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
                        scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict):
@@ -1069,7 +1071,8 @@ def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted
             HLA_flag4and8_hunter_killer_OLD(phot_table)
 
 
-def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, exp_dictionary_scis, proc_type, param_dict):
+def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, phot_table_matched2drz, exp_dictionary_scis,
+                  proc_type, param_dict):
 
     """Identifies and flags swarm sources.
 
@@ -3029,8 +3032,6 @@ def HLA_flag4and8_hunter_killer(catalog_data):
         sys.exit("ERROR! Unrecognized catalog format!")
     for catalog_line in catalog_data:
         if ((catalog_line[flag_col_title] & 4 >0) and (catalog_line[flag_col_title] & 8 >0)):
-            print(catalog_line['NUMBER'],catalog_line[flag_col_title],int(catalog_line[flag_col_title])-8)
-            input()
             conf_ctr+=1
             catalog_line[flag_col_title]=int(catalog_line[flag_col_title])-8
     if conf_ctr == 0: log.info("No conflicts found.")
