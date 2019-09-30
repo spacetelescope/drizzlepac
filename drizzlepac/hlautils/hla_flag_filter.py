@@ -168,8 +168,9 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
                                                                 filter_sorted_flt_dict, detection_image, proc_type,
                                                                 rms_dict, param_dict))
 
-    HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
-                  filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict)
+    HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, exp_dictionary_scis, proc_type, param_dict)
+    # HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
+    #                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict)
 
     sys.exit()
 
@@ -460,7 +461,7 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
     -------
     Nothing!
     """
-    for drizzled_image in all_drizzled_filelist:
+    for drizzled_image in all_drizzled_filelist: # TODO: pull everything out of this for loop and refactor as necessary
         image_split = drizzled_image.split('/')[-1]
         channel = drizzled_image.split("_")[
             -3].upper()  # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
@@ -1068,8 +1069,7 @@ def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted
             HLA_flag4and8_hunter_killer_OLD(phot_table)
 
 
-def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
-                  filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict):
+def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, exp_dictionary_scis, proc_type, param_dict):
 
     """Identifies and flags swarm sources.
 
@@ -1080,25 +1080,13 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
     
     dict_newTAB_matched2drz : dictionary
         dictionary of source lists keyed by drizzled image name.
-    
-    working_hla_red : string
-        full path to working directory.
-    
+
     exp_dictionary_scis : dictionary
         dictionary of exposure time values keyed by drizzled image.
 
-    filter_sorted_flt_dict : dictionary
-        dictionary containing lists of calibrated images sorted (also keyed) by filter name.
-    
-    detection_image : string
-        Name of multi-filter composite 'detection' image
-    
     proc_type : string
         sourcelist generation type.
-    
-    rms_dict : dictionary
-        dictionary of RMS image counterparts to drizzled images. Keyed by drizzled image name.
-    
+
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
     
