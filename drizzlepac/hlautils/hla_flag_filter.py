@@ -165,8 +165,10 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
     # Flag swarm sources
-    log.info("HLASwarmFlags({} {} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz, "<Catalog Data>", exp_dictionary_scis, proc_type, param_dict))
-    HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, phot_table_matched2drz, exp_dictionary_scis, proc_type, param_dict)
+    log.info("HLASwarmFlags({} {} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz, "<Catalog Data>",
+                                                       exp_dictionary_scis, proc_type, param_dict))
+    phot_table_matched2drz = HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, phot_table_matched2drz,
+                                           exp_dictionary_scis, proc_type, param_dict)
     # HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
     #                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict) # TODO: remove once all code is dictinary-independant
     sys.exit()
@@ -1148,38 +1150,45 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, phot_table_mat
         area = math.pi * radius**2
         exptime = exp_dictionary_scis[drizzled_image]
 
-        log.info('Reading catalog from{}'.format(phot_table))
-        phot_table_in = open(phot_table,'r')
-        phot_table_rows = phot_table_in.readlines()
-        phot_table_in.close()
+        # log.info('Reading catalog from{}'.format(phot_table)) # TODO: REMOVE this block of commented code once adaption of this subroutine is complete.
+        # phot_table_in = open(phot_table,'r')
+        # phot_table_rows = phot_table_in.readlines()
+        # phot_table_in.close()
+        phot_table_rows = phot_table_matched2drz[drizzled_image]
 
-        nrows = len(phot_table_rows)-1
+
+
+        nrows = len(phot_table_rows)
 
         complete_src_list = numpy.empty((nrows,6), dtype=numpy.float)
 
-        for row_num,row in enumerate(phot_table_rows[1:]):
+        for row_num,row in enumerate(phot_table_rows[0:]):
 
-            row_split = row.split(',')
-            x_val = float(row_split[0])
-            y_val = float(row_split[1])
+
+            x_val = float(row[0])
+            y_val = float(row[1])
 
             if proc_type == 'sexphot':
                 # mag = row_split[6]
-                flux = row_split[10]
-                sky = row_split[13]
+                flux = row[10]
+                sky = row[13]
             elif proc_type == 'daophot':
                 # mag = row_split[7]
-                flux = row_split[11]
-                sky = row_split[9]
+                flux = row[11]
+                sky = row[9]
 
-            if flux.strip():
-                flux = float(flux)
-            else:
+            # if flux.strip(): # TODO: REMOVE this block of commented code once adaption of this subroutine is complete.
+            #     flux = float(flux)
+            # else:
+            #     flux = 0.0
+            if not flux:
                 flux = 0.0
 
-            if sky.strip():
-                sky = float(sky)
-            else:
+            # if sky.strip(): # TODO: REMOVE this block of commented code once adaption of this subroutine is complete.
+            #     sky = float(sky)
+            # else:
+            #     sky = 0.0
+            if not sky:
                 sky = 0.0
 
             electronpp = flux / area * exptime
@@ -1693,22 +1702,24 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, phot_table_mat
         # -----------------------------------------------------------------
         # =================================================================
         phot_table_temp = phot_table_root+'_SWFILT.txt'
-        phot_table_out = open(phot_table_temp,'w')
+        # phot_table_out = open(phot_table_temp,'w')
 
-        phot_table_in = open(phot_table,'r')
-        phot_table_rows = phot_table_in.readlines()
-        phot_table_in.close()
+        # phot_table_in = open(phot_table,'r')
+        # phot_table_rows = phot_table_in.readlines()
+        # phot_table_in.close()
 
-        phot_table_out.write(phot_table_rows[0])
-        for i,table_row in enumerate(phot_table_rows[1:]):
+        # phot_table_out.write(phot_table_rows[0])
+        for i,table_row in enumerate(phot_table_rows[0:]):
             if combined_flag[i]:
-                row_split = table_row.split(',')
-                sat_flag = int(row_split[-1]) | 32
-                row_split[-1] = str(sat_flag)+'\n'
-                table_row = ','.join(row_split)
-            phot_table_out.write(table_row)
+                # row_split = table_row.split(',')
+                # sat_flag = int(row_split[-1]) | 32
+                # row_split[-1] = str(sat_flag)+'\n'
+                # table_row = ','.join(row_split)
+                table_row[-1] |= 32
+            # phot_table_out.write(table_row)
 
-        phot_table_out.close()
+        phot_table_rows.write(phot_table_temp, delimiter=",",
+                           format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
 
         os.system('mv '+phot_table+' '+phot_table+'.PreSwarmFilt')
         os.system('mv '+phot_table_temp+' '+phot_table)
@@ -1716,7 +1727,7 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, phot_table_mat
         log.info(' ')
         log.info('FINAL SWAR-FILT PHOT_TABLE: {}'.format(phot_table))
         log.info(' ')
-
+        return {drizzled_image: phot_table_rows}  # TODO: refactor once all code is dictinary-independant
 
 def HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict):
