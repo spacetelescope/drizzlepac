@@ -165,12 +165,8 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
     # Flag swarm sources
-    log.info("HLASwarmFlags({} {} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz,
-                                                                working_hla_red, exp_dictionary_scis, "<Catalog Data>",
-                                                                filter_sorted_flt_dict, detection_image, proc_type,
-                                                                rms_dict, param_dict))
-    HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, dict_newTAB_matched2drz, exp_dictionary_scis,
-                  proc_type, param_dict)
+    log.info("HLASwarmFlags({} {} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz, "<Catalog Data>", exp_dictionary_scis, proc_type, param_dict))
+    HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, phot_table_matched2drz, exp_dictionary_scis, proc_type, param_dict)
     # HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
     #                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict) # TODO: remove once all code is dictinary-independant
     sys.exit()
@@ -1097,7 +1093,7 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, phot_table_mat
     for drizzled_image in all_drizzled_filelist:
 
         drz_imgPath_split = drizzled_image.split('/')
-        drz_img_split = drz_imgPath_split[-1].split('_')
+        drz_img_split = drz_imgPath_split[-1].split('_')# TODO: May need to be refactored to adjust for new names,
         data_type = drz_img_split[4]
         drz_filter = drz_img_split[5]
 
