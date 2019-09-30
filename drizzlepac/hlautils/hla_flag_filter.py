@@ -149,7 +149,7 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     log.info("ci_filter({} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict))
 
     phot_table_matched2cat = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict)
-    # ci_filter(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
+    # ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
     sys.exit()
     # Flag saturated sources
     log.info("HLASaturationFlags({} {} {} {} {} {})".format(all_drizzled_filelist,
@@ -275,14 +275,14 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         if not good_snr:
             table_row[-1] |= 8
 
-        if ci_value == '' or (not numpy.isfinite(ci_err)) or ci_value < ci_lower_limit - ci_err:
+        if not ci_value or (not numpy.isfinite(ci_err)) or ci_value < ci_lower_limit - ci_err:
             table_row[-1] |= 16
 
-        if ci_value != '':
+        if ci_value:
             if ci_value > ci_upper_limit:
                 table_row[-1] |= 1
 
-        if ci_value == '' and debug:
+        if not ci_value and debug:
             failed_index_list.append(i)
 
     if debug:
@@ -932,6 +932,138 @@ def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted
             log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
             log.info(' ')
             HLA_flag4and8_hunter_killer_OLD(phot_table)
+
+def ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict):
+    """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
+    flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
+    It also flags sources below the detection limit in mag_aper2 (flag=8).
+
+    Parameters
+    ----------
+    all_drizzled_filelist : list
+        list of drizzled images
+
+    dict_newTAB_matched2drz : dictionary
+        dictionary of source lists keyed by drizzled image name.
+
+    working_hla_red : string
+        ***UNUSED*** full path of working directory.
+
+    proc_type : string
+        Sourcelist generation type
+
+    param_dict : dictionary
+        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+
+    Returns
+    -------
+    Nothing!
+    """
+
+    # column indices for SE and DAO catalogs
+    if proc_type == 'sexphot':
+        imag1 = 5
+        imag2 = 6
+        imerr1 = 7
+        imerr2 = 8
+    elif proc_type == 'daophot':
+        imag1 = 5
+        imag2 = 7
+        imerr1 = 6
+        imerr2 = 8
+    else:
+        raise ValueError("Unknown proc_type '%s', must be 'sexphot' or 'daophot'" % (proc_type,))
+
+    for drizzled_image in all_drizzled_filelist:
+        phot_table = dict_newTAB_matched2drz[drizzled_image]
+        phot_table_root = phot_table.split('.')[0]
+        if proc_type == 'sexphot':
+            ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_selower_limit'])
+            ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_seupper_limit'])
+            snr = float(param_dict['catalog generation']['sourcex']['bthresh'])
+
+        if proc_type == 'daophot':
+            ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_daolower_limit'])
+            ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_daoupper_limit'])
+            snr = float(param_dict['catalog generation']['dao']['bthresh'])
+
+
+        # replace CI limits with values from table if possible
+        cidict = ci_table.get_ci_from_file(drizzled_image, ci_lower=ci_lower_limit, ci_upper=ci_upper_limit)
+        ci_lower_limit = cidict['ci_lower_limit']
+        ci_upper_limit = cidict['ci_upper_limit']
+
+        log.info(' ')
+        log.info('ci limits for {}'.format(drizzled_image))
+        log.info('ci_lower_limit = {}'.format(ci_lower_limit))
+        log.info('ci_upper_limit = {}'.format(ci_upper_limit))
+        log.info(' ')
+
+        phot_table = dict_newTAB_matched2drz[drizzled_image]
+        phot_table_root = phot_table.split('.')[0]
+
+        phot_table_in = open(phot_table,'r')
+        phot_table_rows = phot_table_in.readlines()
+        phot_table_in.close()
+
+        phot_table_temp = phot_table_root+'_temp.txt'
+        phot_table_out = open(phot_table_temp,'w')
+        failed_ci_table_out = open(phot_table_root+'_Failed-CI.txt','w')
+
+        for i,table_row in enumerate(phot_table_rows):
+
+            if i == 0:
+                phot_table_out.write(table_row)
+                continue
+            else:
+                row_split = table_row.split(',')
+                try:
+                    flag_value = int(row_split[-1])
+                except ValueError:
+                    flag_value = 0
+
+                ci_value = row_split[-2]
+                if ci_value != '':
+                    ci_value = float(ci_value)
+                merr1 = row_split[imerr1]
+                if merr1 == '':
+                    merr1 = numpy.nan
+                else:
+                    merr1 = float(merr1)
+                merr2 = row_split[imerr2]
+                if merr2 == '':
+                    merr2 = numpy.nan
+                else:
+                    merr2 = float(merr2)
+                good_snr = merr2 <= 2.5/(snr*numpy.log(10))
+                ci_err = numpy.sqrt(merr1**2+merr2**2)
+
+                if not good_snr:
+                    flag_value |= 8
+
+                if ci_value == '' or (not numpy.isfinite(ci_err)) or ci_value < ci_lower_limit - ci_err:
+                    flag_value |= 16
+                    print(i,ci_value)
+                    input()
+
+                if ci_value != '':
+                    if ci_value > ci_upper_limit:
+                        flag_value |= 1
+
+
+                row_split[-1] = '%d\n' % flag_value
+                table_row = ','.join(row_split)
+                phot_table_out.write(table_row)
+                if ci_value == '':
+                    failed_ci_table_out.write(table_row)
+
+        phot_table_out.close()
+        failed_ci_table_out.close()
+
+        os.system('mv '+phot_table+' '+phot_table+'.PreCIFilt')
+        os.system('mv '+phot_table_temp+' '+phot_table)
+
+
 
 def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict):
