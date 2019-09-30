@@ -20,6 +20,9 @@
         "fwhm": 0.073,
         "thresh": 1.4,
         "bthresh": 5.0,
-        "source_box": 7
+        "source_box": 7,
+        "nlevels": 32,
+        "contrast": 0.005,
+        "border": 10
     }
 }

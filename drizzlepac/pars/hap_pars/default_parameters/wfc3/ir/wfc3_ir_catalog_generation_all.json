@@ -18,8 +18,14 @@
     },
     "sourcex": {
         "fwhm": 0.14,
-        "thresh": 1.4,
-        "bthresh": 5.0,
-        "source_box": 7
+        "source_box": 7,
+        "nlevels": 32,
+        "contrast": 0.005,
+        "border": 10,
+        "aperture_1": 0.3,
+        "aperture_2": 0.9,
+        "scale": 0.09,
+        "skyannulus_arcsec": 1.0,
+        "dskyannulus_arcsec": 0.25
     }
 }
