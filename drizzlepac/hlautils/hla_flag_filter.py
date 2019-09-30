@@ -150,14 +150,15 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
 
     phot_table_matched2cat = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict)
     # ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
-    sys.exit()
+
     # Flag saturated sources
     log.info("HLASaturationFlags({} {} {} {} {} {})".format(all_drizzled_filelist,
                                                                      filter_sorted_flt_dict, dict_newTAB_matched2drz, "<Catalog Data>",proc_type, param_dict))
 
-      # HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz, phot_table_matched2cat, proc_type, param_dict)
-    HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
-                           scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict)
+    HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTAB_matched2drz, phot_table_matched2cat, proc_type, param_dict)
+    # HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
+    #                        scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict)
+
     sys.exit()
 
     # Flag swarm sources
@@ -596,12 +597,11 @@ def HLASaturationFlags(all_drizzled_filelist, filter_sorted_flt_dict, dict_newTA
 
             # phot_table_out.write(phot_table_rows[0])
             for i, table_row in enumerate(phot_table_rows):
-                print(i)
                 if saturation_flag[i]:
                     table_row[-1] = int(table_row[-1]) | 4
 
                 # phot_table_out.write(table_row)
-            HLA_flag4and8_hunter_killer(phot_table)
+            phot_table_rows = HLA_flag4and8_hunter_killer(phot_table_rows)
             phot_table_rows.write(phot_table_temp, delimiter=",",
                                format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
 
@@ -2349,6 +2349,42 @@ def arrayfy_ctx(ctx, maxindex):
         else:
             ctxarray [:,:,i] = numpy.bitwise_and (ctx[:,:], cc)
     return ctxarray
+
+def HLA_flag4and8_hunter_killer(catalog_data):
+    """This function searches through photometry catalogs for sources whose flags contain
+    both bits 4 (multi-pixel saturation), and 8 (faint magnitude limit).
+    If found, the subroutine removes the "8" bit value from the set of flags for that source.
+
+    Parameters
+    ----------
+    catalog_data : astropy Table object
+        catalog data to process
+
+    Returns
+    -------
+    catalog_data : astropy Table object
+        input catalog data with updated flags
+    """
+    conf_ctr=0
+    log.info("Searching for flag 4 + flag 8 conflicts....")
+    if 'FLAGS' in catalog_data.keys():
+        flag_col_title = 'FLAGS'
+    elif 'Flags' in catalog_data.keys():
+        flag_col_title = 'Flags'
+    else:
+        sys.exit("ERROR! Unrecognized catalog format!")
+    for catalog_line in catalog_data:
+        if ((catalog_line[flag_col_title] & 4 >0) and (catalog_line[flag_col_title] & 8 >0)):
+            print(catalog_line['NUMBER'],catalog_line[flag_col_title],int(catalog_line[flag_col_title])-8)
+            input()
+            conf_ctr+=1
+            catalog_line[flag_col_title]=int(catalog_line[flag_col_title])-8
+    if conf_ctr == 0: log.info("No conflicts found.")
+    if conf_ctr == 1: log.info("{} conflict fixed.".format(conf_ctr))
+    if conf_ctr > 1:  log.info("{} conflicts fixed.".format(conf_ctr))
+
+    return catalog_data
+
 
 def HLA_flag4and8_hunter_killer_OLD(photfilename):
     """This function searches through photometry catalogs for sources whose flags contain
