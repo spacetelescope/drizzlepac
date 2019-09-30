@@ -141,49 +141,47 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     # FLAG FILTER PROCESSING
     # -----------------------
     log.info("************************** * * * HLA_FLAG_FILTER * * * **************************")
-    # Flag sources based on concentration index.
-
     drizzled_image = all_drizzled_filelist[0] # TODO: remove once all code is dictinary-independant
     catalog_name = dict_newTAB_matched2drz[drizzled_image] # TODO: remove once all code is dictinary-independant
     catalog_data = phot_table_matched2drz[drizzled_image] # TODO: remove once all code is dictinary-independant
     for filt_key in filter_sorted_flt_dict.keys(): flt_list = filter_sorted_flt_dict[filt_key] # TODO: remove once all code is dictinary-independant
 
+    # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
+    # Flag sources based on concentration index.
     log.info("ci_filter({} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict))
 
     catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict)
     # ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
 
+    # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag saturated sources
     log.info("HLASaturationFlags({} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name, "<Catalog Data>",
                                                             proc_type, param_dict))
-
     phot_table_matched2drz = HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data,
                                                 proc_type, param_dict)
-    sys.exit()
     # HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
     #                        scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
 
+    # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
 
     # Flag swarm sources
     log.info("HLASwarmFlags({} {} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz,
                                                                 working_hla_red, exp_dictionary_scis, "<Catalog Data>",
                                                                 filter_sorted_flt_dict, detection_image, proc_type,
                                                                 rms_dict, param_dict))
-
     HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, dict_newTAB_matched2drz, exp_dictionary_scis,
                   proc_type, param_dict)
     # HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
     #                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict) # TODO: remove once all code is dictinary-independant
-
     sys.exit()
 
+    # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
     log.info("HLANexpFlags({} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, working_hla_red,
                                                                filter_sorted_flt_dict, param_dict,
                                                                readnoise_dictionary_drzs,
                                                                scale_dict_drzs, exp_dictionary_scis,
                                                                dict_newTAB_matched2drz, drz_root_dir))
-
     HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
                  scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir)
 
