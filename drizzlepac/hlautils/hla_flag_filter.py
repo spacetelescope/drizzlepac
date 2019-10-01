@@ -1600,7 +1600,7 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, phot_table_mat
         proximity_choice = param_dict["quality control"]["swarm filter"]["proximity_binary"]
 
         if proximity_choice == 'yes':
-            if len(final_flag_src_central_pixel_list) > 0:
+            if len(final_flag_src_central_pixel_list) > 0: # TODO: Figure out what to do with all these hard-coded values
                 #XXX these ought to come from config files
                 if data_type == 'ir':
                     # ctrList_radiusList = [25,100,80,30,50,20,15,10]
@@ -1718,8 +1718,7 @@ def HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, phot_table_mat
                 table_row[-1] |= 32
             # phot_table_out.write(table_row)
 
-        phot_table_rows.write(phot_table_temp, delimiter=",",
-                           format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
+        phot_table_rows.write(phot_table_temp, delimiter=",",format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
 
         os.system('mv '+phot_table+' '+phot_table+'.PreSwarmFilt')
         os.system('mv '+phot_table_temp+' '+phot_table)
