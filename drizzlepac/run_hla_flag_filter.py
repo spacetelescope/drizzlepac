@@ -75,6 +75,9 @@ def run_hla_flag_filter():
     proc_type = "{}phot".format(mode)
     drz_root_dir = os.getcwd()
     rms_dict = {"hst_10265_01_acs_wfc_f606w_drz.fits": "hst_10265_01_acs_wfc_f606w_rms.fits"}
+
+   # settings for testing ~/Documents/HLAtransition/runhlaprocessing_testing/acs_10595_06_flag_testing/
+
     #   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +
     # Execute hla_flag_filter.run_source_list_flaging
     hla_flag_filter.run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
