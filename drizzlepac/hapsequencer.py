@@ -252,9 +252,6 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
             if cat_type == "segment":
                 sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
 
-        # FIX MDD
-        log.info("sources dict POINT: {}".format(sources_dict['aperture']['sources']))
-
         for filter_product_obj in total_product_obj.fdp_list:
 
             # Instantiate filter catalog product object

@@ -9,7 +9,8 @@ import astropy.units as u
 from astropy.io import fits as fits
 from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel
 from astropy.stats import mad_std, gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm, sigma_clipped_stats
-from astropy.table import Column, MaskedColumn, Table
+from astropy.table import Column, MaskedColumn, Table, QTable
+from astropy.coordinates import SkyCoord
 import numpy as np
 from scipy import ndimage
 
@@ -58,20 +59,6 @@ class CatalogImage:
         self.imgwcs = HSTWCS(self.imghdu, 1)
 
         self.keyword_dict = self._get_header_data()
-
-        # Compute the AB magnitude zeropoint and gain for the image - needed for
-        # photometry computations
-
-        # Compute AB mag zeropoint.
-        # photplam = self.imghdu[1].header['photplam']
-        # photflam = self.imghdu[1].header['photflam']
-        # self.ab_zeropoint = -2.5 * np.log10(photflam) - 21.10 - 5.0 * np.log10(photplam) + 18.6921
-
-        # Compute average gain
-        # self.gain = self.imghdu[0].header['exptime'] * np.mean([self.image.imghdu[0].header['atodgna'],
-        #                                                         self.image.imghdu[0].header['atodgnb'],
-        #                                                         self.image.imghdu[0].header['atodgnc'],
-        #                                                         self.image.imghdu[0].header['atodgnd']])
 
         # Populated by self.compute_background()
         self.bkg = None
@@ -344,8 +331,47 @@ class HAPCatalogBase:
 
         self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
 
-        # Initialize attributes which get computed by class methods
-        self.bkg_used = None  # actual background used for source identification/measurement
+        # Compute catalog-independent attributes to be used for photometry computations
+        # Compute AB mag zeropoint
+        photplam = self.image.imghdu[1].header['photplam']
+        photflam = self.image.imghdu[1].header['photflam']
+        # ABMAG = -2.5log(f_lambda) - 5log(lambda) - 2.406
+        # photflam - inverse sensitivity ergs/cms2/A/e-
+        # photplam - pivot wavelength A
+        self.ab_zeropoint = -2.5 * np.log10(photflam) - 21.10 - 5.0 * np.log10(photplam) + 18.6921
+
+        # Compute average gain
+        # FIX Are there four amps for all detectors?
+        self.gain = self.image.imghdu[0].header['exptime'] * np.mean([self.image.imghdu[0].header['atodgna'],
+                                                                      self.image.imghdu[0].header['atodgnb'],
+                                                                      self.image.imghdu[0].header['atodgnc'],
+                                                                      self.image.imghdu[0].header['atodgnd']])
+
+        # Convert photometric aperture radii from arcsec to pixels
+        self.aper_radius_arcsec = [self.param_dict['aperture_1'], self.param_dict['aperture_2']]
+        self.aper_radius_list_pixels = []
+        for aper_radius in self.aper_radius_arcsec:
+            self.aper_radius_list_pixels.append(aper_radius/self.param_dict['scale'])
+
+        # Photometric information
+        if not tp_sources:
+            log.info("{}".format("=" * 80))
+            log.info("")
+            log.info("SUMMARY OF INPUT PARAMETERS FOR PHOTOMETRY")
+            log.info("self.imgname:   {}".format(self.imgname))
+            log.info("platescale:       {}".format(self.param_dict['scale']))
+            log.info("radii (pixels):   {}".format(self.aper_radius_list_pixels))
+            log.info("radii (arcsec):   {}".format(self.aper_radius_arcsec))
+            log.info("annulus:          {}".format(self.param_dict['skyannulus_arcsec']))
+            log.info("dSkyAnnulus:      {}".format(self.param_dict['dskyannulus_arcsec']))
+            log.info("salgorithm:       {}".format(self.param_dict['salgorithm']))
+            log.info("gain:             {}".format(self.gain))
+            log.info("ab_zeropoint:     {}".format(self.ab_zeropoint))
+            log.info(" ")
+            log.info("{}".format("=" * 80))
+            log.info("")
+
+        # Initialize attributes which are computed by class methods later
         self.sources = None  # list of identified source positions
         self.source_cat = None  # catalog of sources and their properties
         self.tp_sources = tp_sources
@@ -367,6 +393,8 @@ class HAPPointCatalog(HAPCatalogBase):
 
     def __init__(self, image, param_dict, debug, tp_sources):
         super().__init__(image, param_dict, debug, tp_sources)
+
+        self.bkg_used = None  # actual background used for source identification/measurement
 
     def identify_sources(self):
         """Create a master coordinate list of sources identified in the specified total detection product image
@@ -437,6 +465,7 @@ class HAPPointCatalog(HAPCatalogBase):
         image = self.image.data.copy()
         image -= self.bkg_used
 
+        """
         # Compute AB mag zeropoint.
         photplam = self.image.imghdu[1].header['photplam']
         photflam = self.image.imghdu[1].header['photflam']
@@ -447,26 +476,35 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                  self.image.imghdu[0].header['atodgnb'],
                                                                  self.image.imghdu[0].header['atodgnc'],
                                                                  self.image.imghdu[0].header['atodgnd']])
+        """
 
         # load in coords of sources identified in total product
         positions = (self.sources['xcentroid'], self.sources['ycentroid'])
 
         pos_x = np.asarray(positions[0])
         pos_y = np.asarray(positions[1])
+        log.info("type self.sources: {} type positions: {} type posx: {}".format(type(self.sources), type(positions), type(pos_x)))
 
         # define list of background annulii
         bg_apers = CircularAnnulus((pos_x, pos_y),
-                                   r_in=self.param_dict['dao']['skyannulus_arcsec'],
-                                   r_out=self.param_dict['dao']['skyannulus_arcsec'] +
-                                         self.param_dict['dao']['dskyannulus_arcsec'])
+                                   r_in=self.param_dict['skyannulus_arcsec'],
+                                   r_out=self.param_dict['skyannulus_arcsec'] +
+                                         self.param_dict['dskyannulus_arcsec'])
+                                   # r_in=self.param_dict['dao']['skyannulus_arcsec'],
+                                   # r_out=self.param_dict['dao']['skyannulus_arcsec'] +
+                                   #       self.param_dict['dao']['dskyannulus_arcsec'])
 
-        # convert photometric aperture radii from arcsec to pixels and create list of photometric apertures to measure
+        # Create the list of photometric apertures to measure
+        """
         aper_radius_arcsec = [self.param_dict['dao']['aperture_1'], self.param_dict['dao']['aperture_2']]
         aper_radius_list_pixels = []
         for aper_radius in aper_radius_arcsec:
             aper_radius_list_pixels.append(aper_radius/self.param_dict['dao']['scale'])
         phot_apers = [CircularAperture((pos_x, pos_y), r=r) for r in aper_radius_list_pixels]
+        """
+        phot_apers = [CircularAperture((pos_x, pos_y), r=r) for r in self.aper_radius_list_pixels]
 
+        """
         # parameter log dump!
         log.info("{}".format("=" * 80))
         log.info("")
@@ -483,14 +521,19 @@ class HAPPointCatalog(HAPCatalogBase):
         log.info(" ")
         log.info("{}".format("=" * 80))
         log.info("")
+        """
 
         # Perform aperture photometry
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image,
-                                                                platescale=self.param_dict['dao']['scale'],
+                                                                # platescale=self.param_dict['dao']['scale'],
+                                                                platescale=self.param_dict['scale'],
                                                                 error_array=self.image.bkg_rms_ra,
-                                                                bg_method=self.param_dict['dao']['salgorithm'],
-                                                                epadu=gain,
-                                                                zero_point=ab_zeropoint)
+                                                                # bg_method=self.param_dict['dao']['salgorithm'],
+                                                                bg_method=self.param_dict['salgorithm'],
+                                                                # epadu=gain,
+                                                                # zero_point=ab_zeropoint)
+                                                                epadu=self.gain,
+                                                                zero_point=self.ab_zeropoint)
 
         # convert coords back to origin value = 1 rather than 0
         # photometry_tbl["XCENTER"] = photometry_tbl["XCENTER"] + 1.
@@ -505,8 +548,8 @@ class HAPPointCatalog(HAPCatalogBase):
 
         try:
             # Calculate and add concentration index (CI) column to table
-            ci_data = photometry_tbl["MAG_{}".format(aper_radius_arcsec[0])].data - photometry_tbl[
-                "MAG_{}".format(aper_radius_arcsec[1])].data
+            ci_data = photometry_tbl["MAG_{}".format(self.aper_radius_arcsec[0])].data - photometry_tbl[
+                "MAG_{}".format(self.aper_radius_arcsec[1])].data
         except Exception:
             pickle_out = open("catalog.pickle", "wb")
             pickle.dump(photometry_tbl, pickle_out)
@@ -523,39 +566,39 @@ class HAPPointCatalog(HAPCatalogBase):
         photometry_tbl.add_column(flag_col)
 
         # Add null-value "TotMag(<outer radiiArc>)" and "TotMag(<outer radiiArc>)" columns
-        empty_tot_mag = MaskedColumn(name="TotMag({})".format(aper_radius_arcsec[1]), fill_value=None, mask=True,
+        empty_tot_mag = MaskedColumn(name="TotMag({})".format(self.aper_radius_arcsec[1]), fill_value=None, mask=True,
                                      length=len(photometry_tbl["XCENTER"].data), dtype=np.int64)
-        empty_tot_mag_err = MaskedColumn(name="TotMagErr({})".format(aper_radius_arcsec[1]), fill_value=None, mask=True,
+        empty_tot_mag_err = MaskedColumn(name="TotMagErr({})".format(self.aper_radius_arcsec[1]), fill_value=None, mask=True,
                                          length=len(photometry_tbl["XCENTER"].data), dtype=np.int64)
         photometry_tbl.add_column(empty_tot_mag)
         photometry_tbl.add_column(empty_tot_mag_err)
 
         # build final output table
-        final_col_order = ["XCENTER", "YCENTER", "RA", "DEC", "ID", "MAG_{}".format(aper_radius_arcsec[0]),
-                           "MAG_{}".format(aper_radius_arcsec[1]), "MERR_{}".format(aper_radius_arcsec[0]),
-                           "MERR_{}".format(aper_radius_arcsec[1]), "MSKY", "STDEV",
-                           "FLUX_{}".format(aper_radius_arcsec[1]), "TotMag({})".format(aper_radius_arcsec[1]),
-                           "TotMagErr({})".format(aper_radius_arcsec[1]), "CI", "Flags"]
+        final_col_order = ["XCENTER", "YCENTER", "RA", "DEC", "ID", "MAG_{}".format(self.aper_radius_arcsec[0]),
+                           "MAG_{}".format(self.aper_radius_arcsec[1]), "MERR_{}".format(self.aper_radius_arcsec[0]),
+                           "MERR_{}".format(self.aper_radius_arcsec[1]), "MSKY", "STDEV",
+                           "FLUX_{}".format(self.aper_radius_arcsec[1]), "TotMag({})".format(self.aper_radius_arcsec[1]),
+                           "TotMagErr({})".format(self.aper_radius_arcsec[1]), "CI", "Flags"]
         output_photometry_table = photometry_tbl[final_col_order]
 
         # format output table columns
-        final_col_format = {"RA": "13.10f", "DEC": "13.10f", "MAG_{}".format(aper_radius_arcsec[0]): '6.3f',
-                            "MAG_{}".format(aper_radius_arcsec[1]): '6.3f',
-                            "MERR_{}".format(aper_radius_arcsec[0]): '6.3f',
-                            "MERR_{}".format(aper_radius_arcsec[1]): '6.3f', "MSKY": '10.8f', "STDEV": '10.8f',
-                            "FLUX_{}".format(aper_radius_arcsec[1]): '10.8f', "CI": "7.3f"}
+        final_col_format = {"RA": "13.10f", "DEC": "13.10f", "MAG_{}".format(self.aper_radius_arcsec[0]): '6.3f',
+                            "MAG_{}".format(self.aper_radius_arcsec[1]): '6.3f',
+                            "MERR_{}".format(self.aper_radius_arcsec[0]): '6.3f',
+                            "MERR_{}".format(self.aper_radius_arcsec[1]): '6.3f', "MSKY": '10.8f', "STDEV": '10.8f',
+                            "FLUX_{}".format(self.aper_radius_arcsec[1]): '10.8f', "CI": "7.3f"}
         for fcf_key in final_col_format.keys():
             output_photometry_table[fcf_key].format = final_col_format[fcf_key]
 
         # change some column titles to match old daophot.txt files
         rename_dict = {"XCENTER": "X-Center", "YCENTER": "Y-Center",
-                       "MAG_{}".format(aper_radius_arcsec[0]): "MagAp({})".format(aper_radius_arcsec[0]),
-                       "MAG_{}".format(aper_radius_arcsec[1]): "MagAp({})".format(aper_radius_arcsec[1]),
-                       "MERR_{}".format(aper_radius_arcsec[0]): "MagErr({})".format(aper_radius_arcsec[0]),
-                       "MERR_{}".format(aper_radius_arcsec[1]): "MagErr({})".format(aper_radius_arcsec[1]),
-                       "MSKY": "MSky({})".format(aper_radius_arcsec[1]),
-                       "STDEV": "Stdev({})".format(aper_radius_arcsec[1]),
-                       "FLUX_{}".format(aper_radius_arcsec[1]): "Flux({})".format(aper_radius_arcsec[1])}
+                       "MAG_{}".format(self.aper_radius_arcsec[0]): "MagAp({})".format(self.aper_radius_arcsec[0]),
+                       "MAG_{}".format(self.aper_radius_arcsec[1]): "MagAp({})".format(self.aper_radius_arcsec[1]),
+                       "MERR_{}".format(self.aper_radius_arcsec[0]): "MagErr({})".format(self.aper_radius_arcsec[0]),
+                       "MERR_{}".format(self.aper_radius_arcsec[1]): "MagErr({})".format(self.aper_radius_arcsec[1]),
+                       "MSKY": "MSky({})".format(self.aper_radius_arcsec[1]),
+                       "STDEV": "Stdev({})".format(self.aper_radius_arcsec[1]),
+                       "FLUX_{}".format(self.aper_radius_arcsec[1]): "Flux({})".format(self.aper_radius_arcsec[1])}
         for old_col_title in rename_dict:
             output_photometry_table.rename_column(old_col_title, rename_dict[old_col_title])
             log.info("Column '{}' renamed '{}'".format(old_col_title, rename_dict[old_col_title]))
@@ -673,7 +716,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._border = self.param_dict["sourcex"]["border"]
 
         # Initialize attributes to be computed later
-        self.segm_img_obj = None  # Segmentation image 
+        self.segm_img_obj = None  # Segmentation image
 
         # MDD CHECK
         self.kernel = self.image.kernel
@@ -735,7 +778,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # they both should be background subtracted or have the background built in.
             self.segm_img_obj = detect_sources(imgarr_bkgsub, threshold, npixels=self._size_source_box, filter_kernel=self.image.kernel)
             # self.sources = detect_sources(imgarr_bkgsub, threshold, npixels=self._size_source_box, filter_kernel=self.image.kernel)
-            #self.kernel = self.image.kernel
+            # self.kernel = self.image.kernel
 
             try:
                 # Deblending is a combination of multi-thresholding and watershed
@@ -748,7 +791,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 #                                    filter_kernel=self.image.kernel, nlevels=self._nlevels, contrast=self._contrast)
 
                 # The deblending was successful, so just copy the deblended sources back to the sources attribute.
-                self.segm_img_obj = copy.deepcopy(segm_deblend_obj)
+                self.segm_img_obj = copy.deepcopy(segm_deblended_obj)
                 # self.sources = copy.deepcopy(deblended_sources)
             except Exception as x_cept:
                 log.warning("SEGMENT. Deblending the sources in image {} was not successful: {}.".format(self.imgname, x_cept))
@@ -756,7 +799,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                             "check the output catalog for issues.")
 
             # Regardless of whether or not deblending worked, this variable can be reset to None
-            segm_deblend_obj = None
+            segm_deblended_obj = None
             # deblended_sources = None
 
             # Clean up segments that are near or partially overlap the border of the image and relabel
@@ -774,49 +817,35 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # self.sources needs to be passed to an independent filter catalog object
             # BEWARE: self.sources for "segmentation" is a SegmentationImage, but for "point" it is an Astropy table
             self.sources = copy.deepcopy(self.segm_img_obj)
-            #self.sources = self.total_source_cat.to_table()
+            # self.sources = self.total_source_cat.to_table()
 
-        # If processing filter product, use sources identified by parent total drizzle product identify_sources() run
+        # If filter product, use sources identified in total detection product previously generated
+        # FIX
         else:
             self.sources = self.tp_sources['segment']['sources']
             self.kernel = self.tp_sources['segment']['kernel']
 
-        # FIX *** Move to write  no segm_img_obj for filterd product yet
         # For debugging purposes only, create a segmentation image and a "regions" files to use for ds9 overlay
+        # Create the image regions file here in case there is a failure
         if self.debug and self.segm_img_obj:
             # Generate a debug segmentation image
-            indx = self.sourcelist_filename.find("-cat.ecsv")
-            outname = self.sourcelist_filename[0:indx] + ".fits"
-            #fits.PrimaryHDU(data = self.segm_img_obj.data).writeto(outname)
-            fits.PrimaryHDU(data = self.sources.data).writeto(outname)
+            # indx = self.sourcelist_filename.find("-cat.ecsv")
+            # outname = self.sourcelist_filename[0:indx] + ".fits"
+            # fits.PrimaryHDU(data = self.segm_img_obj.data).writeto(outname)
 
             # Write out a catalog which can be used as an overlay for image in ds9
-            # The source coordinates are the same for the total and filter products, but the kernel is 
-            # total- or filter-specific.  This is a little kludgy here are the filtered image has not
-            # officially been measured yet.
-            if not hasattr(self, 'total_source_cat'):
-                log.info("SEGMENT. Filtered coordinates")
-                # cat = source_properties(imgarr_bkgsub, self.segm_img_obj, background=self.image.bkg_background_ra, 
-                #                        filter_kernel=self.image.kernel,
-                cat = source_properties(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra, filter_kernel=self.image.kernel,
-                                        wcs=self.image.imgwcs)
-                table = cat.to_table()
-            else:
-                table = self.total_source_cat.to_table()
+            # The source coordinates are the same for the total and filter products, but the kernel is
+            # total- or filter-specific.
+            table = self.total_source_cat.to_table()
 
-            # Copy out only the X and Y coordinates to a "debug table" and
-            # cast as an Astropy Table
+            # Copy out only the X and Y coordinates to a "debug table" and cast as an Astropy Table
             tbl = Table(table["xcentroid", "ycentroid"])
 
-            # Remove any "nan" rows in the table
-            # mask = tbl["xcentroid"] != np.nan
-            # tbl = tbl[mask]
-
-            # Construct the debug output filename and write the catalog
+            # Construct the debug output filename and write the regions file
             indx = self.sourcelist_filename.find("ecsv")
             outname = self.sourcelist_filename[0:indx] + "reg"
 
-            tbl["xcentroid"].info.format = ".10f"  # optional format
+            tbl["xcentroid"].info.format = ".10f"
             tbl["ycentroid"].info.format = ".10f"
 
             # Add one to the X and Y table values to put the data onto a one-based system,
@@ -824,7 +853,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             tbl["xcentroid"] = tbl["xcentroid"] + 1
             tbl["ycentroid"] = tbl["ycentroid"] + 1
             tbl.write(outname, format="ascii.commented_header")
-            # FIX THIS could be total or filter
+
             log.info("SEGMENT. Wrote the debug version of the total detection source catalog: {}\n".format(outname))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -872,83 +901,115 @@ class HAPSegmentCatalog(HAPCatalogBase):
         imgarr_bkgsub = imgarr - self.image.bkg_background_ra
 
         # Compute source properties...
-        self.source_cat = source_properties(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
+        self.filter_source_cat = source_properties(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
                                             filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
 
+        # Convert filter_source_cat which is a SourceCatalog to a QTable
+        self.filter_measurements_table = Table(self.filter_source_cat.to_table())
+        xxx  = self.filter_measurements_table["sky_centroid_icrs"]
+        log.info("****************** 1 xxx type: {}".format(type(xxx)))
+        ra_icrs = xxx.ra.degree
+
+        # Compute the concentration index and append it to the measurements table
+        updated_table = self._do_aperture_photometry(imgarr_bkgsub)
+        if updated_table:
+            self.filter_measurements_table = copy.deepcopy(updated_table)
+            #del updated_table
+
+        xxx  = self.filter_measurements_table["sky_centroid_icrs"]
+        log.info("****************** 4 xxx type: {}".format(type(xxx)))
+        xxx  = updated_table["sky_centroid_icrs"]
+        log.info("****************** 4a xxx type: {}".format(type(xxx)))
+
+        if self.debug:
+            # Write out a catalog which can be used as an overlay for image in ds9
+            # The source coordinates are the same for the total and filter products, but the kernel is
+            # total- or filter-specific and any row with nan or inf has been removed from the filter table..
+
+            # Copy out only the X and Y coordinates to a "debug table" and
+            # cast as an Astropy Table
+            tbl = Table(self.filter_measurements_table["xcentroid", "ycentroid"])
+
+            # Construct the debug output filename and write the catalog
+            indx = self.sourcelist_filename.find("ecsv")
+            outname = self.sourcelist_filename[0:indx] + "reg"
+
+            tbl["xcentroid"].info.format = ".10f"  # optional format
+            tbl["ycentroid"].info.format = ".10f"
+
+            # Add one to the X and Y table values to put the data onto a one-based system,
+            # particularly for display with ds9
+            tbl["xcentroid"] = tbl["xcentroid"] + 1
+            tbl["ycentroid"] = tbl["ycentroid"] + 1
+            tbl.write(outname, format="ascii.commented_header")
+            # FIX THIS could be total or filter
+            log.info("SEGMENT. Wrote the debug version of the filter detection source catalog: {}\n".format(outname))
+
         # Fix make the seg image and region file here
-        log.info("SEGMENT. Found {} sources from segmentation map".format(len(self.source_cat)))
+        log.info("SEGMENT. Found {} sources from segmentation map".format(len(self.filter_source_cat)))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    # def do_aperture_photometry(self):
+    def _do_aperture_photometry(self, bkg_subtracted_image):
         """Perform aperture photometry measurements as a means to distinguish point versus extended sources.
         """
+        # Filter the table to eliminate nans or inf
+        good_rows = []
+        updated_table = None
+        # good_indices = np.isfinite(pos_x)
+        for old_row in self.filter_measurements_table:
+            if np.isfinite(old_row["xcentroid"]):
+            # if good_indices(row):
+                good_rows.append(old_row)
+        updated_table = QTable(rows=good_rows, names=self.filter_measurements_table.colnames)
 
-        """
-        # Compute AB mag zeropoint.
-        photplam = self.image.imghdu[1].header['photplam']
-        photflam = self.image.imghdu[1].header['photflam']
-        ab_zeropoint = -2.5 * np.log10(photflam) - 21.10 - 5.0 * np.log10(photplam) + 18.6921
+        log.info("updated table: {}".format(updated_table))
+        log.info("********* Table cols: {}".format(updated_table.colnames))
+        xxx  = SkyCoord(updated_table["sky_centroid_icrs"])
+        log.info("****************** 2 xxx type: {}".format(type(xxx)))
+        ra_icrs = xxx.ra.degree
 
-        # Compute average gain
-        # ACS - WFC (4 amps), HRC (1 amp)
-        # FIX Are there four amps for all detectors?
-        gain = self.image.imghdu[0].header['exptime'] * np.mean([self.image.imghdu[0].header['atodgna'],
-                                                                 self.image.imghdu[0].header['atodgnb'],
-                                                                 self.image.imghdu[0].header['atodgnc'],
-                                                                 self.image.imghdu[0].header['atodgnd']])
-
-        # Load in coords of sources identified in total product
-        # self.sources for the segmented catalog is a segmentation image which must be converted
-        # to a table get the coordinates
-        source_coordinates = self.sources.to_table()
-        positions = (sources_coordinates["xcentroid"], source_coordinates["ycentroid"])
-
+        positions = (updated_table["xcentroid"], updated_table["ycentroid"])
         pos_x = np.asarray(positions[0])
+        # pos_x = pos_x[~np.isnan(pos_x)]
         pos_y = np.asarray(positions[1])
+        # pos_y = pos_y[~np.isnan(pos_y)]
 
         # define list of background annulii
         bg_apers = CircularAnnulus((pos_x, pos_y),
-                                    r_in=self.param_dict['sourcex']['skyannulus_arcsec'],
-                                    r_out=self.param_dict['sourcex']['skyannulus_arcsec'] +
-                                          self.param_dict['sourcex']['dskyannulus_arcsec'])
+                                    r_in=self.param_dict['skyannulus_arcsec'],
+                                    r_out=self.param_dict['skyannulus_arcsec'] +
+                                          self.param_dict['dskyannulus_arcsec'])
 
-        # Convert photometric aperture radii from arcsec to pixels and create list of photometric apertures to measure
-        aper_radius_arcsec = [self.param_dict['sourcex']['aperture_1'], self.param_dict['sourcex']['aperture_2']]
-        aper_radius_list_pixels = []
-        for aper_radius in aper_radius_arcsec:
-            aper_radius_list_pixels.append(aper_radius/self.param_dict['sourcex']['scale'])
-        phot_apers = [CircularAperture((pos_x, pos_y), r=r) for r in aper_radius_list_pixels]
-
-        # parameter log dump!
-        log.info("{}".format("=" * 80))
-        log.info("")
-        log.info("SUMMARY OF INPUT PARAMETERS - Segmentation")
-        log.info("self.imgname:   {}".format(self.imgname))
-        log.info("platescale:       {}".format(self.param_dict['sourcex']['scale']))
-        log.info("radii (pixels):   {}".format(aper_radius_list_pixels))
-        log.info("radii (arcsec):   {}".format(aper_radius_arcsec))
-        log.info("annulus:          {}".format(self.param_dict['sourcex']['skyannulus_arcsec']))
-        log.info("dSkyAnnulus:      {}".format(self.param_dict['sourcex']['dskyannulus_arcsec']))
-        # log.info("salgorithm:       {}".format(self.param_dict['sourcex']['salgorithm']))
-        log.info("gain:             {}".format(gain))
-        log.info("ab_zeropoint:     {}".format(ab_zeropoint))
-        log.info(" ")
-        log.info("{}".format("=" * 80))
-        log.info("")
+        # Create list of photometric apertures to measure
+        phot_apers = [CircularAperture((pos_x, pos_y), r=r) for r in self.aper_radius_list_pixels]
 
         # Perform aperture photometry
-        photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image,
-                                                                platescale=self.param_dict['sourcex']['scale'],
+        photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=bkg_subtracted_image,
+                                                                platescale=self.param_dict['scale'],
                                                                 error_array=self.bkg.background_rms,
-        #                                                         bg_method=self.param_dict['sourcex']['salgorithm'],
-                                                                epadu=gain,
-                                                                zero_point=ab_zeropoint)
+                                                                bg_method=self.param_dict['salgorithm'],
+                                                                epadu=self.gain,
+                                                                zero_point=self.ab_zeropoint)
 
-        # convert coords back to origin value = 1 rather than 0
-        photometry_tbl["XCENTER"] = photometry_tbl["XCENTER"] + 1.
-        photometry_tbl["YCENTER"] = photometry_tbl["YCENTER"] + 1.
-        """
+        # Compute the concentration index for all the sources
+        try:
+            ci_data = photometry_tbl["MAG_{}".format(self.aper_radius_arcsec[0])].data - photometry_tbl[
+                "MAG_{}".format(self.aper_radius_arcsec[1])].data
+
+            # Append the CI data to the filter table
+            ci_col = Column(data=ci_data, name="CI", dtype=np.float64)
+            updated_table.add_column(ci_col)
+        except Exception:
+            pickle_out = open("segmentation_catalog.pickle", "wb")
+            pickle.dump(photometry_tbl, pickle_out)
+            pickle_out.close()
+
+        xxx  = updated_table["sky_centroid_icrs"]
+        log.info("****************** 3 xxx type: {}".format(type(xxx)))
+
+        return updated_table
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -966,26 +1027,22 @@ class HAPSegmentCatalog(HAPCatalogBase):
             Identification string for the catalog product being written.  This
             controls the data being put into the catalog product
         """
-        # Convert the list of SourceProperties objects to a QTable and
-        # document in column metadata Photutils columns which map to SExtractor columns
-        seg_table = Table(self.source_cat.to_table())
-
-        # Remove any "nan" rows in the table
-        # mask = seg_table["xcentroid"] != np.nan
-        # seg_table = seg_table[mask]
-        radec_data = seg_table["sky_centroid_icrs"]
-        ra_icrs = radec_data.ra.degree
-        dec_icrs = radec_data.dec.degree
-
-        num_sources = len(seg_table)
-
         # If the output is for the total detection product, then only
         # a subset of the full catalog is needed.
         if self.image.ghd_product.lower() == "tdp":
 
-            # [x|y]centroid are in pixels, physical data coordinates
-            seg_subset_table = seg_table["xcentroid", "ycentroid"]
+            # Convert the SourceProperties object for the total detection product
+            total_seg_table = Table(self.total_source_cat.to_table())
+            log.info("total table type: {}".format(type(total_seg_table)))
 
+            radec_data = total_seg_table["sky_centroid_icrs"]
+            ra_icrs = radec_data.ra.degree
+            dec_icrs = radec_data.dec.degree
+
+            # [x|y]centroid are in pixels, physical data coordinates
+            seg_subset_table = total_seg_table["xcentroid", "ycentroid"]
+
+            num_sources = len(total_seg_table)
             # Add metadata to the output subset table
             seg_subset_table = self._annotate_table(seg_subset_table, num_sources,
                                                     product=self.image.ghd_product)
@@ -1012,55 +1069,63 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
             # Copy the seg_subset_table into a better named variable for use in
             # measuring the sources in the filtered images
-            self._source_coordinates = seg_subset_table.copy()
+            # self._filter_measurements_table = seg_subset_table.copy()
 
         # else the product is the "filter detection product"
         else:
+            num_sources = len(self.filter_measurements_table)
+            self.filter_measurements_table = self._annotate_table(self.filter_measurements_table, num_sources, product=self.image.ghd_product)
+            log.info("filter table type: {}".format(type(self.filter_measurements_table)))
 
-            seg_table = self._annotate_table(seg_table, num_sources, product=self.image.ghd_product)
+            log.info("filter table columns: {}".format(self.filter_measurements_table.colnames))
+
+            radec_data = SkyCoord(self.filter_measurements_table["sky_centroid_icrs"])
+            log.info("radec_data type: {}".format(type(radec_data)))
+            ra_icrs = radec_data.ra.degree
+            dec_icrs = radec_data.dec.degree
 
             # Rework the current table for output
-            del seg_table["id"]
-            del seg_table["sky_centroid"]
-            del seg_table["sky_centroid_icrs"]
+            del self.filter_measurements_table["id"]
+            del self.filter_measurements_table["sky_centroid"]
+            del self.filter_measurements_table["sky_centroid_icrs"]
             rr = Column(ra_icrs, name="RA_icrs", description="SExtractor Column RA", unit=u.deg)
             dd = Column(dec_icrs, name="Dec_icrs", description="SExtractor Column Dec", unit=u.deg)
             log.info("SEGMENT. Added RA_icrs, Dec_icrs columns to Segment catalog")
-            seg_table.add_columns([dd, rr], indexes=[2, 3])
+            self.filter_measurements_table.add_columns([dd, rr], indexes=[2, 3])
 
             # Add a description for columns which map to SExtractor catalog columns
-            seg_table["xcentroid"].description = "SExtractor Column x_image"
-            seg_table["ycentroid"].description = "SExtractor Column y_image"
-            seg_table["background_at_centroid"].description = "SExtractor Column background"
-            seg_table["source_sum"].description = "SExtractor Column flux_iso"
-            seg_table["source_sum_err"].description = "SExtractor Column fluxerr_iso"
+            self.filter_measurements_table["xcentroid"].description = "SExtractor Column x_image"
+            self.filter_measurements_table["ycentroid"].description = "SExtractor Column y_image"
+            self.filter_measurements_table["background_at_centroid"].description = "SExtractor Column background"
+            self.filter_measurements_table["source_sum"].description = "SExtractor Column flux_iso"
+            self.filter_measurements_table["source_sum_err"].description = "SExtractor Column fluxerr_iso"
             # FIX: is mapping to _image or _world?  _image
-            seg_table["cxx"].description = "SExtractor Column cxx_image, ellipse parameter"
-            seg_table["cyy"].description = "SExtractor Column cyy_image, ellipse parameter"
-            seg_table["cxy"].description = "SExtractor Column cxy_image, ellipse parameter"
+            self.filter_measurements_table["cxx"].description = "SExtractor Column cxx_image, ellipse parameter"
+            self.filter_measurements_table["cyy"].description = "SExtractor Column cyy_image, ellipse parameter"
+            self.filter_measurements_table["cxy"].description = "SExtractor Column cxy_image, ellipse parameter"
             # FIX: is the mapping to _image or _world?
-            seg_table["covar_sigx2"].description = "SExtractor Column x2_image, variance along x"
-            seg_table["covar_sigy2"].description = "SExtractor Column y2_image, variance along y"
-            seg_table["covar_sigxy"].description = "SExtractor Column xy_image, covariance of position between x and y"
+            self.filter_measurements_table["covar_sigx2"].description = "SExtractor Column x2_image, variance along x"
+            self.filter_measurements_table["covar_sigy2"].description = "SExtractor Column y2_image, variance along y"
+            self.filter_measurements_table["covar_sigxy"].description = "SExtractor Column xy_image, covariance of position between x and y"
 
             xmin_cols_orig = ['xmin', 'xmax', 'ymin', 'ymax']
             xmin_descr = "SExtractor Column {}_image"
-            if xmin_cols_orig[0] not in seg_table.colnames:
+            if xmin_cols_orig[0] not in self.filter_measurements_table.colnames:
                 xmin_cols = ['bbox_{}'.format(cname) for cname in xmin_cols_orig]
             else:
                 xmin_cols = xmin_cols_orig
 
             for cname, oname in zip(xmin_cols, xmin_cols_orig):
-                seg_table[cname].description = xmin_descr.format(oname)
+                self.filter_measurements_table[cname].description = xmin_descr.format(oname)
 
             # Write out the official filter detection product source catalog
-            seg_table["xcentroid"].info.format = ".10f"
-            seg_table["ycentroid"].info.format = ".10f"
-            seg_table["RA_icrs"].info.format = ".10f"
-            seg_table["Dec_icrs"].info.format = ".10f"
-            log.info("SEGMENT. seg_table (filter): {}".format(seg_table))
+            self.filter_measurements_table["xcentroid"].info.format = ".10f"
+            self.filter_measurements_table["ycentroid"].info.format = ".10f"
+            self.filter_measurements_table["RA_icrs"].info.format = ".10f"
+            self.filter_measurements_table["Dec_icrs"].info.format = ".10f"
+            log.info("SEGMENT. self.filter_measurements_table (filter): {}".format(self.filter_measurements_table))
 
-            seg_table.write(self.sourcelist_filename, format=self.catalog_format)
+            self.filter_measurements_table.write(self.sourcelist_filename, format=self.catalog_format)
             log.info("SEGMENT. Wrote filter source catalog: {}".format(self.sourcelist_filename))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1115,7 +1180,3 @@ class HAPSegmentCatalog(HAPCatalogBase):
         data_table.meta[""] = "Absolute coordinates are in a zero-based coordinate system."
 
         return (data_table)
-            if keyword_dict["instrument"] == "ACS":
-
-
-# ======================================================================================================================
