@@ -59,7 +59,6 @@ from stsci.tools import fileutil as fu
 from stsci.tools import parseinput
 from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
-import pysynphot as S
 
 from ..tweakutils import build_xy_zeropoint
 
@@ -78,7 +77,7 @@ else:
 
 MODULE_PATH = os.path.dirname(inspect.getfile(inspect.currentframe()))
 VEGASPEC = os.path.join(os.path.dirname(MODULE_PATH),
-                        'data', 'alpha_lyr_stis_008.fits')
+                        'pars', 'alpha_lyr_stis_008.fits')
 
 __all__ = ['build_reference_wcs', 'create_astrometric_catalog', 'compute_radius',
            'find_gsc_offset', 'get_catalog',
@@ -167,14 +166,14 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
             g = "-1"  # indicator for no source ID extracted
         r = float(source['ra'])
         d = float(source['dec'])
-        m = -999.9  # float(source['mag'])
+        m = float(source['mag']) if float(source['mag']) > 0 else -999.9
         o = source['objID']
         num_sources += 1
         ref_table.add_row((r, d, m, o, g))
 
     # Write out table to a file, if specified
     if output:
-        ref_table.write(output, format=table_format)
+        ref_table.write(output, format=table_format, overwrite=True)
         log.info("Created catalog '{}' with {} sources".format(output, num_sources))
 
     return ref_table
@@ -382,6 +381,7 @@ def compute_2d_background(imgarr, box_size, win_size,
     return bkg_background, bkg_median, bkg_rms, bkg_rms_median
 
 def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
+                      good_fwhm=[1.0, 4.0], num_fwhm=3,
                       isolation_size=11, saturation_limit=70000.):
     """Build kernel for use in source detection based on image PSF
     This algorithm looks for an isolated point-source that is non-saturated to use as a template
@@ -416,6 +416,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     # Try to use PSF derived from image as detection kernel
     # Kernel must be derived from well-isolated sources not near the edge of the image
     kern_img = imgarr.copy()
+    source_box = isolation_size
     edge = source_box * 2
     kern_img[:edge, :] = 0.0
     kern_img[-edge:, :] = 0.0
@@ -432,7 +433,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
         peaks['peak_value'][:sat_index] = 0.
 
     wht_box = 2  # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
-
+    fwhm_attempts = 0
     # Identify position of brightest, non-saturated peak (in numpy index order)
     for peak_ctr in range(len(peaks)):
         kernel_pos = [peaks['y_peak'][peak_ctr], peaks['x_peak'][peak_ctr]]
@@ -447,16 +448,27 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
         # zero-value pixels. Reject peak if any are found.
         if len(np.where(kernel_wht == 0.)[0]) == 0:
             log.info("Kernel source PSF located at [{},{}]".format(kernel_pos[1], kernel_pos[0]))
-            break
         else:
-            kernel[:] = 0.0
+            kernel = None
 
-    if kernel.sum() > 0.0:
-        kernel = np.clip(kernel, 0, None)  # insure background subtracted kernel has no negative pixels
-        kernel /= kernel.sum()  # Normalize the new kernel to a total flux of 1.0
-        kernel_fwhm = find_fwhm(kernel, fwhm)
-        log.info("Determined FWHM from sample PSF of {:.2f}".format(kernel_fwhm))
-    else:
+        if kernel is not None:
+            kernel = np.clip(kernel, 0, None)  # insure background subtracted kernel has no negative pixels
+            if kernel.sum() > 0.0:
+                kernel /= kernel.sum()  # Normalize the new kernel to a total flux of 1.0
+                kernel_fwhm = find_fwhm(kernel, fwhm)
+                fwhm_attempts += 1
+                if kernel_fwhm is None:
+                    kernel = None
+                else:
+                    log.info("Determined FWHM from sample PSF of {:.2f}".format(kernel_fwhm))
+                    if good_fwhm[1] > kernel_fwhm > good_fwhm[0]:  # This makes it hard to work with sub-sampled data (WFPC2?)
+                        break
+                    else:
+                        kernel = None
+            if fwhm_attempts == num_fwhm:
+                break
+
+    if kernel is None:
         log.warning("Did not find a suitable PSF out of {} possible sources...".format(len(peaks)))
         # Generate a default kernel using a simple 2D Gaussian
         kernel_fwhm = fwhm
@@ -485,6 +497,8 @@ def find_fwhm(psf, default_fwhm):
                                                        niters=2)
     phot_results = itr_phot_obj(psf)
 
+    if len(phot_results['flux_fit']) == 0:
+        return None
     psf_row = np.where(phot_results['flux_fit'] == phot_results['flux_fit'].max())[0][0]
     sigma_fit = phot_results['sigma_fit'][psf_row]
     fwhm = gaussian_sigma_to_fwhm * sigma_fit
@@ -492,7 +506,7 @@ def find_fwhm(psf, default_fwhm):
 
     return fwhm
 
-def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None,
+def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     segment_threshold=None, dao_threshold=None, source_box=7,
                     classify=True, centering_mode="starfind", nlargest=None,
                     outroot=None, plot=False, vmax=None, deblend=False):
@@ -649,6 +663,9 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None,
     cnames.append(cnames[0])
     del cnames[0]
     tbl = src_table[cnames]
+    # Include magnitudes for each source for use in verification of alignment through
+    # comparison with GAIA magnitudes
+    tbl = compute_photometry(tbl, photmode)
 
     if outroot:
         tbl['xcentroid'].info.format = '.10f'  # optional format
@@ -714,7 +731,8 @@ def classify_sources(catalog, sources=None):
     return srctype
 
 
-def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detector_pars):
+def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
+                            **detector_pars):
     """ Build source catalogs for each chip using photutils.
 
     The catalog returned by this function includes sources found in all chips
@@ -759,12 +777,16 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
     box_size = detector_pars.get('bkg_box_size', 27)
     win_size = detector_pars.get('bkg_filter_size', 3)
     nsigma = detector_pars.get('nsigma', 5)
+    sat_flags = detector_pars.get('detector_pars', 256)
+    if 'sat_flags' in detector_pars: del detector_pars['sat_flags']
 
     # Build source catalog for entire image
     source_cats = {}
     numSci = countExtn(image, extname='SCI')
     numWht = countExtn(image, extname='WHT')
     outroot = None
+    img_inst = image[0].header['instrume']
+    img_det = image[0].header['detector']
 
     for chip in range(numSci):
         chip += 1
@@ -772,6 +794,12 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
         if output:
             rootname = image[0].header['rootname']
             outroot = '{}_sci{}_src'.format(rootname, chip)
+        try:
+            sci_ext = 0 if "{}/{}".format(img_inst, img_det) == "WFC3/IR" else ('sci', chip)
+            photmode = {'photflam': image[sci_ext].header['photflam'],
+                        'photplam': image[sci_ext].header['photplam']}
+        except KeyError:
+            photmode = None
 
         imgarr = image['sci', chip].data
 
@@ -786,10 +814,10 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
             # from one image to a single source in the
             # other or vice-versa.
             # Create temp DQ mask containing all pixels flagged with any value EXCEPT 256
-            non_sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=256)
+            non_sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=sat_flags)
 
             # Create temp DQ mask containing saturated pixels ONLY
-            sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=~256)
+            sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=~sat_flags)
 
             # Grow out saturated pixels by a few pixels in every direction
             grown_sat_mask = ndimage.binary_dilation(sat_mask, iterations=2)
@@ -822,6 +850,7 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0, **detect
         # seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, outroot=outroot, fwhm=fwhm, **detector_pars)
         seg_tab, segmap = extract_sources(imgarr - bkg_ra, dqmask=dqmask,
                                           outroot=outroot, kernel=kernel,
+                                          photmode=photmode,
                                           segment_threshold=threshold, dao_threshold=dao_threshold,
                                           fwhm=kernel_fwhm, **detector_pars)
 
@@ -895,8 +924,10 @@ def generate_sky_catalog(image, refwcs, dqname="DQ", output=False):
     return master_cat
 
 
-def compute_photometry(catalog, photmode):
+def compute_photometry(catalog, photvals):
     """ Compute magnitudes for sources from catalog based on observations photmode.
+
+    Magnitudes will be AB mag values.
 
     Parameters
     ----------
@@ -911,19 +942,16 @@ def compute_photometry(catalog, photmode):
     -------
     phot_cat : `~astropy.table.Table`
         Astropy Table object of input source catalog with added column for
-        VEGAMAG photometry (in magnitudes).
+        ABMAG photometry (in magnitudes).
     """
-    # Determine VEGAMAG zero-point using pysynphot for this photmode
-    photmode = photmode.replace(' ', ', ')
-    vega = S.FileSpectrum(VEGASPEC)
-    bp = S.ObsBandpass(photmode)
-    vegauvis = S.Observation(vega, bp)
-    vegazpt = 2.5 * np.log10(vegauvis.countrate())
+    if photvals is None:
+        source_phot = np.array([-99.99] * len(catalog['flux']))
+    else:
+        ab_zpt = -2.5 * np.log10(photvals['photflam']) - 21.10 - 5 * np.log10(photvals['photplam']) + 18.692
+        source_phot = ab_zpt - 2.5 * np.log10(catalog['flux'])
 
-    # Use zero-point to convert flux values from catalog into magnitudes
-    # source_phot = vegazpt - 2.5*np.log10(catalog['source_sum'])
-    source_phot = vegazpt - 2.5 * np.log10(catalog['flux'])
-    source_phot.name = 'vegamag'
+    # Label the new column
+    source_phot.name = 'abmag'
     # Now add this new column to the catalog table
     catalog.add_column(source_phot)
 
@@ -1283,7 +1311,7 @@ def rebin(arr, new_shape):
     """Rebin 2D array arr to shape new_shape by averaging."""
     shape = (new_shape[0], arr.shape[0] // new_shape[0],
              new_shape[1], arr.shape[1] // new_shape[1])
-    return arr.reshape(shape).mean(-1).mean(1)
+    return arr.reshape(shape).sum(-1).sum(1)
 
 def maxBit(int_val):
     """Return power of 2 for highest bit set for integer"""
@@ -1394,6 +1422,7 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
     from drizzlepac.hlautils import astrometric_utils as amutils
 
     focus_dict = {'exp': [], 'prod': [], 'stats': {},
+                  'alignment_verified': False, 'alignment_quality': -1,
                   'expnames': singlefiles, 'prodname': prodfile}
 
     # Start by creating the full saturation mask from all single_sci images
@@ -1423,9 +1452,9 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
 
     return focus_dict
 
-def evaluate_focus(focus_dict):
+def evaluate_focus(focus_dict, tolerance=0.8):
     s = focus_dict['stats']
-    min_3sig = s['mean'] - 3.0 * s['std']
+    min_3sig = min(s['mean'] - 3.0 * s['std'], tolerance * s['mean'])
     max_3sig = s['mean'] + 3.0 * s['std']
     min_prob = compute_prob(min_3sig, s['mean'], s['std'])
     max_prob = compute_prob(max_3sig, s['mean'], s['std'])
