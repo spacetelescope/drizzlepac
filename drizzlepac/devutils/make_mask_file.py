@@ -5,19 +5,17 @@ import pdb
 
 def make_mask_file_old(in_imgname):
     from scipy import ndimage
-    maskfilename = drz_image.replace("_drz.fits","_msk.fits")
-    pdb.
+    maskfilename = in_imgname.replace("_drz.fits","_msk.fits")
     in_hdulist = fits.open(in_imgname)
-    out_hdu = fits.PrimaryHDU(in_hdulist[2].data)
+    out_hdulist = fits.PrimaryHDU(in_hdulist[2].data)
 
 
-    out_hdulist[0].data = np.where(in_hdulist[2].data == 0, 1, 0)
-    ndimage.binary_fill_holes(out_hdulist[0].data)
-    # out_hdulist[0].data.dtype = np.int16
+
+    out_hdulist.data = np.where(out_hdulist.data == 0, 1, 0)
+    ndimage.binary_fill_holes(out_hdulist.data)
+
 
     out_hdulist.writeto(maskfilename)
-    in_wht_hdulist.close()
-    out_hdulist.close()
     # create frame shaped like in_image filled with 1s
 
 def make_mask_file(drz_image,input_list):
@@ -38,3 +36,4 @@ if __name__ == "__main__":
     in_imgname = "hst_10265_01_acs_wfc_f606w_j92c01_drc.fits"
     input_list = ["j92c01b4q_flc.fits", "j92c01b5q_flc.fits", "j92c01b7q_flc.fits", "j92c01b9q_flc.fits"]
     make_mask_file(in_imgname,input_list)
+    # make_mask_file_old("hst_10265_01_acs_wfc_total_drz.fits")
