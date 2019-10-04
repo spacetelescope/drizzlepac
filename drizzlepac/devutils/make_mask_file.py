@@ -27,13 +27,14 @@ def make_mask_file(drz_image,input_list):
     s.build(input_list)
     hdu = fits.PrimaryHDU(s.total_mask)
     hdul = fits.HDUList([hdu])
-    maskfilename = drz_image.replace("_drz.fits","_msk.fits")
+    maskfilename = drz_image.replace("_drc.fits","_msk.fits")
     hdul.writeto(maskfilename)
-    hdu1.close()
+    hdul.close()
     print("Wrote {}".format(maskfilename))
 
 if __name__ == "__main__":
     in_imgname = "hst_10265_01_acs_wfc_f606w_j92c01_drc.fits"
+    in_imgname = "hst_10265_01_acs_wfc_total_drz.fits"
     input_list = ["j92c01b4q_flc.fits", "j92c01b5q_flc.fits", "j92c01b7q_flc.fits", "j92c01b9q_flc.fits"]
     make_mask_file(in_imgname,input_list)
     # make_mask_file_old("hst_10265_01_acs_wfc_total_drz.fits")
