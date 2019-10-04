@@ -25,8 +25,8 @@ def run_hla_flag_filter():
         os.system(cmd)
 
 
-    obs_info_dict, total_list = poller_utils.interpret_obset_input("j92c01.out")
-
+    # obs_info_dict, total_list = poller_utils.interpret_obset_input("j92c01.out") # acs_10265_01
+    obs_info_dict, total_list = poller_utils.interpret_obset_input("j9es06.out") # acs_10595_06
     out_pars_file = None
     for total_item in total_list:
 
@@ -41,7 +41,7 @@ def run_hla_flag_filter():
 
 
     # * * * * hla_flag_filter.run_source_list_flagging inputs for HLA Classic test run* * * *
-    # mode = "dao"
+    # mode = "sex"
     # all_drizzled_filelist = ["hst_10265_01_acs_wfc_f606w_drz.fits"]
     # working_hla_red = os.getcwd()
     # filter_sorted_flt_dict = {"f606w": ["j92c01b4q_flc.fits", "j92c01b5q_flc.fits", "j92c01b7q_flc.fits", "j92c01b9q_flc.fits"]}
@@ -57,26 +57,32 @@ def run_hla_flag_filter():
     # proc_type = "{}phot".format(mode)
     # drz_root_dir = os.getcwd()
     # rms_dict = {"hst_10265_01_acs_wfc_f606w_drz.fits": "hst_10265_01_acs_wfc_f606w_rms.fits"}
+    # os.remove("hst_10265_01_acs_wfc_f606w_msk.fits")
+    # from devutils import make_mask_file
+    # make_mask_file.make_mask_file("hst_10265_01_acs_wfc_f606w_wht.fits")
 
-
+   # settings for testing ~/Documents/HLAtransition/runhlaprocessing_testing/acs_10595_06_flag_testing/
     mode = "sex"
-    all_drizzled_filelist = ["hst_10265_01_acs_wfc_f606w_drz.fits"]
+    all_drizzled_filelist = ["hst_10595_06_acs_wfc_f435w_drz.fits"]
     working_hla_red = os.getcwd()
-    filter_sorted_flt_dict = {"f606w": ["j92c01b4q_flc.fits", "j92c01b5q_flc.fits", "j92c01b7q_flc.fits", "j92c01b9q_flc.fits"]}
+
+
+    filter_sorted_flt_dict = {"f435w": ["j9es06rbq_flc.fits", "j9es06rcq_flc.fits", "j9es06req_flc.fits", "j9es06rgq_flc.fits"]}
     param_dict = total_list[0].fdp_list[0].configobj_pars.as_single_giant_dict()
     param_dict['catalog generation']['dao']['bthresh'] = 5.0 #force it to use the value from HLA classic
-    readnoise_dictionary_drzs = {"hst_10265_01_acs_wfc_f606w_drz.fits": 4.97749985}
-    scale_dict_drzs = {"hst_10265_01_acs_wfc_f606w_drz.fits": 0.05}
-    zero_point_AB_dict = {"hst_10265_01_acs_wfc_f606w_drz.fits": 26.5136022236}
-    exp_dictionary_scis = {"hst_10265_01_acs_wfc_f606w_drz.fits": 5060.0}
-    detection_image = "hst_10265_01_acs_wfc_total_drz.fits"
-    dict_newTAB_matched2drz = {"hst_10265_01_acs_wfc_f606w_drz.fits": "hst_10265_01_acs_wfc_f606w_{}phot.txt".format(mode)}
+    readnoise_dictionary_drzs = {"hst_10595_06_acs_wfc_f435w_drz.fits": 5.247499925}
+    scale_dict_drzs = {"hst_10595_06_acs_wfc_f435w_drz.fits": 0.05}
+    zero_point_AB_dict = {"hst_10595_06_acs_wfc_f435w_drz.fits": 25.6888167958}
+    exp_dictionary_scis = {"hst_10595_06_acs_wfc_f435w_drz.fits": 710.0}
+    detection_image = "hst_10595_06_acs_wfc_total_drz.fits"
+    dict_newTAB_matched2drz = {"hst_10595_06_acs_wfc_f435w_drz.fits": "hst_10595_06_acs_wfc_f435w_{}phot.txt".format(mode)}
     phot_table_matched2cat = {all_drizzled_filelist[0]: Table.read(dict_newTAB_matched2drz[all_drizzled_filelist[0]], format='ascii')}
     proc_type = "{}phot".format(mode)
     drz_root_dir = os.getcwd()
-    rms_dict = {"hst_10265_01_acs_wfc_f606w_drz.fits": "hst_10265_01_acs_wfc_f606w_rms.fits"}
-
-   # settings for testing ~/Documents/HLAtransition/runhlaprocessing_testing/acs_10595_06_flag_testing/
+    rms_dict = {"hst_10595_06_acs_wfc_f435w_drz.fits": "hst_10595_06_acs_wfc_f435w_rms.fits"}
+    os.remove("hst_10595_06_acs_wfc_f435w_msk.fits")
+    from devutils import make_mask_file
+    make_mask_file.make_mask_file("hst_10595_06_acs_wfc_f435w_wht.fits")
 
     #   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +
     # Execute hla_flag_filter.run_source_list_flaging
