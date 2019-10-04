@@ -171,7 +171,7 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
                                            exp_dictionary_scis, proc_type, param_dict)
     # HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
     #                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict) # TODO: remove once all code is dictinary-independant
-    sys.exit()
+    # sys.exit()
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
