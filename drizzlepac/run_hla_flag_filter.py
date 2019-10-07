@@ -95,8 +95,6 @@ def run_hla_flag_filter():
 
     #   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +
     # Execute hla_flag_filter.run_source_list_flaging
-    print(phot_table_matched2cat[all_drizzled_filelist[0]])
-    pdb.set_trace()
     hla_flag_filter.run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
                                             param_dict, readnoise_dictionary_drzs,
                                             scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
