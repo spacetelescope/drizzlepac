@@ -106,7 +106,7 @@ def test_alignpipe_randomlist(tmpdir, dataset):
             (https://bytesalad.stsci.edu/artifactory/hst-hla-pipeline/dev/master_lists).
 
     """
-    # Start by resetting the logging for all the modules used 
+    # Start by resetting the logging for all the modules used
     logging.shutdown()
     reload(logging)
     reload(alignimages)
@@ -156,8 +156,12 @@ def test_alignpipe_randomlist(tmpdir, dataset):
         # Run pipeline processing using
         # runastrodriz accepts *_raw.fits or *_asn.fits, but it assumes the *_fl[t|c].fits files
         # are also present
-        runaligndriz.process(filename_for_runastrodriz, force=True)
-
+        try:
+            runaligndriz.process(filename_for_runastrodriz, force=True)
+        except OSError:
+            os.path.environ['jref'] = os.path.environ.replace('jref', 'jref.old')
+            runaligndriz.process(filename_for_runastrodriz, force=True)
+            
         return_value = 0
 
     # Catch anything that happens as this dataset will be considered a failure, but
@@ -241,7 +245,7 @@ def check_disk_get_data(input_list, **pars):
 
     """
     reload(aqutils)
-    
+
     empty_list = []
     retrieve_list = []    # Actual files retrieved via astroquery and resident on disk
     candidate_list = []   # File names gathered from *_asn.fits file
