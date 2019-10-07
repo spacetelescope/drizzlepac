@@ -261,15 +261,15 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
             table_row[-1] = 0
 
         ci_value = table_row[-2]
-        if ci_value != '':
+        if ci_value:
             ci_value = float(ci_value)
         merr1 = table_row[imerr1]
-        if merr1 == '':
+        if not merr1:
             merr1 = numpy.nan
         else:
             merr1 = float(merr1)
         merr2 = table_row[imerr2]
-        if merr2 == '':
+        if not merr2:
             merr2 = numpy.nan
         else:
             merr2 = float(merr2)
