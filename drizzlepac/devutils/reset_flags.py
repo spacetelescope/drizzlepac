@@ -8,7 +8,7 @@ import sys
 
 for line in fileinput.input(sys.argv[1], inplace=True):
     if sys.argv[1].endswith("daophot.txt"):
-        if not line.endswith(",0\n") and not line[0].isdigit():
+        if not line.startswith("X-Center") and not line.endswith(",0\n"):
             line=line.replace(line.split(",")[-1],"0\n")
             print(line.strip())
         else:
