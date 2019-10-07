@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 """This script simply calls drizzlepac/hlautils/hla_flag_filter.py for test purposes"""
 import json
+import glob
 import os
 import pdb
+import sys
 
 from astropy.table import Table
 import drizzlepac
@@ -19,9 +21,11 @@ def run_hla_flag_filter():
 
     #   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +
     # All below lines are to get it working, not actual final code.
-    out_file = "j92c01.out" # acs_10265_01
-    # out_file = "j9es06.out" # acs_10595_06
+    out_file = glob.glob("??????.out")[0]
+    # out_file = "j92c01.out" # acs_10265_01
+    # #out_file = "j9es06.out" # acs_10595_06
     # Get parameter values
+    if os.getcwd().endswith("orig"): sys.exit("Don't run in the orig dir! YOU'LL RUIN EVERYTHING!")
     for cmd in ['rm -f *.*', 'cp orig/* .']:
         print(cmd)
         os.system(cmd)
@@ -62,10 +66,10 @@ def run_hla_flag_filter():
         drz_root_dir = os.getcwd()
         rms_dict = {"hst_10265_01_acs_wfc_f606w_drz.fits": "hst_10265_01_acs_wfc_f606w_rms.fits"}
 
-        for filt_key in filter_sorted_flt_dict.keys(): flt_list = filter_sorted_flt_dict[filt_key]
-        os.remove("hst_10265_01_acs_wfc_f606w_msk.fits")
-        from devutils import make_mask_file
-        make_mask_file.make_mask_file(all_drizzled_filelist[0],flt_list)
+        # for filt_key in filter_sorted_flt_dict.keys(): flt_list = filter_sorted_flt_dict[filt_key]
+        # os.remove("hst_10265_01_acs_wfc_f606w_msk.fits")
+        # from devutils import make_mask_file
+        # make_mask_file.make_mask_file_old(all_drizzled_filelist[0].replace("drz.fits","wht.fits"))
 
     if out_file == "j9es06.out": # acs_10595_06
         # settings for testing ~/Documents/HLAtransition/runhlaprocessing_testing/acs_10595_06_flag_testing/
@@ -85,12 +89,14 @@ def run_hla_flag_filter():
         proc_type = "{}phot".format(mode)
         drz_root_dir = os.getcwd()
         rms_dict = {"hst_10595_06_acs_wfc_f435w_drz.fits": "hst_10595_06_acs_wfc_f435w_rms.fits"}
-        os.remove("hst_10595_06_acs_wfc_f435w_msk.fits")
-        from devutils import make_mask_file
-        make_mask_file.make_mask_file("hst_10595_06_acs_wfc_f435w_wht.fits")
+        # os.remove("hst_10595_06_acs_wfc_f435w_msk.fits")
+        # from devutils import make_mask_file
+        # make_mask_file.make_mask_file("hst_10595_06_acs_wfc_f435w_wht.fits")
 
     #   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +
     # Execute hla_flag_filter.run_source_list_flaging
+    print(phot_table_matched2cat[all_drizzled_filelist[0]])
+    pdb.set_trace()
     hla_flag_filter.run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
                                             param_dict, readnoise_dictionary_drzs,
                                             scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
