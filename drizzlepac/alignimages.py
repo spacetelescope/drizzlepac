@@ -521,6 +521,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         for imglist_ctr in range(0, len(imglist)):
                             imglist[imglist_ctr].meta['fit method'] = algorithm_name.__name__
                             imglist[imglist_ctr].meta['fit quality'] = fit_quality
+                            
 
                         # populate fit_info_dict
                         fit_info_dict["{} {}".format(catalog_name, algorithm_name.__name__)] = \
@@ -529,6 +530,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                             algorithm_name.__name__)]['fit_qual'] = fit_quality
 
                         # Figure out which fit solution to go with based on fit_quality value and maybe also total_rms
+                        log.info("FIT_QUALITY of {} for {}".format(fit_quality, algorithm_name.__name__))
                         if fit_quality < 5:
                             if fit_quality == 1:  # valid, non-comprimised solution with total rms < 10 mas...go with this solution.
                                 best_fit_rms = fit_rms
@@ -556,7 +558,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                         best_fit_status_dict = fit_status_dict.copy()
                                         best_fit_qual = fit_quality
                             else:  # new solution has worse fit_quality. discard and continue looping.
-                                continue
+                                continue                            
 
                     except Exception:
                         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -571,11 +573,13 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         fit_quality = 5  # Flag this fit with the 'bad' quality value
                         filtered_table['fit_qual'][:] = fit_quality
                         continue
+
                     if fit_quality == 1:  # break out of inner  astrometric catalog loop
                         break
+
             # break out of outer fit algorithm loop
             # either with a fit_rms < 10 or a 'valid' relative fit
-            if fit_quality == 1 or (0 < fit_quality < 5 and
+            if fit_quality == 1 or (best_fit_qual in [2, 3, 4] and
                 "relative" in algorithm_name.__name__):
                 break
 
@@ -619,8 +623,8 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                                 filtered_table[index]['rms_x'] = item.meta['fit_info'][tweakwcs_info_key][0]
                                 filtered_table[index]['rms_y'] = item.meta['fit_info'][tweakwcs_info_key][1]
 
+                        
                     filtered_table[index]['fit_method'] = item.meta['fit method']
-                    filtered_table[index]['catalog'] = item.meta['fit_info']['catalog']
                     filtered_table[index]['catalogSources'] = len(reference_catalog)
                     filtered_table[index]['matchSources'] = item.meta['fit_info']['nmatches']
                     filtered_table[index]['rms_ra'] = item.meta['fit_info']['RMS_RA'].value
@@ -643,7 +647,10 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
                         filtered_table['compromised'] = 0
                     else:
                         filtered_table['compromised'] = 1
-
+                        # If the fit is compromised, then reset catalog to NONE to 
+                        # indicate that the fit was not entirely successful.
+                        item.meta['fit_info']['catalog'] = 'NONE'
+                    filtered_table[index]['catalog'] = item.meta['fit_info']['catalog']    
                     filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
                     filtered_table['fit_qual'][index] = item.meta['fit quality']
 
@@ -690,6 +697,21 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         filtered_table.pprint(max_width=-1)
 
 # ----------------------------------------------------------------------------------------------------------------------
+def check_mag_corr(imglist, threshold=0.5):
+    """Check the correlation between input magnitudes and matched ref magnitudes."""
+    mag_checks = []    
+    for image in imglist:
+        input_mags = image.meta['fit_info']['input_mag']
+        ref_mags = image.meta['fit_info']['ref_mag']
+        if input_mags is not None and len(input_mags) > 0:
+            mag_corr, mag_corr_std = pearsonr(input_mags, ref_mags)
+            cross_match_check = True if mag_corr > threshold else False
+        else:
+            cross_match_check = False
+        mag_checks.append(cross_match_check)
+    
+    return mag_checks
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 def match_relative_fit(imglist, reference_catalog):
@@ -732,6 +754,99 @@ def match_relative_fit(imglist, reference_catalog):
 
     # 3: Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
+
+    return imglist
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def match_relative_multifit(imglist, reference_catalog):
+    """Perform cross-matching and final fit using relative matching algorithm
+    
+    This version attempts to apply successfully more generous searching parameters
+    possible while working initially on a much more limited reference_catalog
+    when the catalog has a lot (>200) sources.  
+
+    Parameters
+    ----------
+    imglist : list
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+
+    reference_catalog : Table
+        Astropy Table of reference sources for this field
+
+    Returns
+    --------
+    imglist : list
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+
+    """
+    orig_imglist = copy.deepcopy(imglist)
+    search_radii = [75, 150, 300, 600, 1200]  # in pixels
+    ref_sources = [50, 25]
+    mid_ref = len(reference_catalog) // 2
+
+    success = False
+    final_ref = False
+    final_radii = False
+    for radii in search_radii:   
+        if radii == search_radii[-1]:
+            final_radii = True 
+        # 0: Specify matching algorithm to use
+        log.info("match_relative_multifit]     with search out to {} pixels".format(radii))
+        match = tweakwcs.TPMatch(searchrad=radii, separation=0.1, tolerance=2, use2dhist=True)
+
+        # Align images and correct WCS
+        # NOTE: this invocation does not use an astrometric catalog. This call allows all the input images to be aligned in
+        # a relative way using the first input image as the reference.
+        # 1: Perform relative alignment
+        tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True)
+                
+        if imglist[0].meta['fit_info']['status'] != 'SUCCESS':
+            continue
+             
+        # Set all the group_id values to be the same so the various 
+        #   images/chips will be aligned to the astrometric
+        # reference catalog as an ensemble.
+        # astrometric reference catalog as an ensemble. 
+        for image in imglist:
+            image.meta["group_id"] = 1111111
+
+        for num_ref in ref_sources:
+            # Insure that the ranges are contained within the list of sources
+            num_ref = max(min(num_ref, mid_ref // 3), 5)
+            # Select only the N brightest, N average and N faintest reference
+            # sources for an initial alignment solution
+            fit_ref_catalog = reference_catalog[:num_ref]
+            mid_range = max(min(num_ref // 2, mid_ref // 3), 5) 
+            fit_ref_catalog = Table(np.hstack([reference_catalog[-num_ref:],
+                                    reference_catalog[mid_ref-mid_range:mid_ref+mid_range],
+                                    fit_ref_catalog]))
+            fit_ref_catalog.meta = reference_catalog.meta
+
+            log.info("[match_relative_multifit]  Trying to match {} reference sources".format(num_ref))
+            if num_ref == ref_sources[-1]:
+                final_ref = True
+                
+            # 2: Perform absolute alignment
+            tweakwcs.align_wcs(imglist, fit_ref_catalog, match=match)
+
+            # 3: Interpret RMS values from tweakwcs
+            interpret_fit_rms(imglist, fit_ref_catalog)
+
+            mag_checks = check_mag_corr(imglist)
+            if not all(mag_checks):
+                if final_radii and final_ref:
+                    continue
+                # Start again 
+                imglist = copy.deepcopy(orig_imglist)
+            else:
+                if num_ref is not None:
+                    # Try to refine the solution with full reference catalog
+                    imglist = match_relative_fit(imglist, reference_catalog)                                       
+                success = True # Successful solution?
+        if success:
+            break
 
     return imglist
 
@@ -872,7 +987,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         if item.meta['fit_info']['status'].startswith('FAILED') is False:
             xshifts.append(item.meta['fit_info']['shift'][0])
             yshifts.append(item.meta['fit_info']['shift'][1])
-
+    
     for item in imglist:
         image_name = item.meta['name']
         chip_num = item.meta['chip']
@@ -888,6 +1003,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         if item.meta['fit_info']['status'].startswith("FAILED") is True:
             log.warning("No cross matches found in any catalog for {} "
                         "- no processing done.".format(image_name))
+            overall_valid = False
             continue
         fit_rms_val = item.meta['fit_info']['FIT_RMS']
         max_rms_val = item.meta['fit_info']['TOTAL_RMS']
@@ -903,12 +1019,12 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
                 log.warning(
                     "Not enough cross matches found between astrometric"
                     "catalog and sources found in {}".format(image_name))
+                overall_valid = False
                 continue
+
         # Compute correlation between input and GAIA magnitudes
-        input_mags = item.meta['fit_info']['input_mag']
-        ref_mags = item.meta['fit_info']['ref_mag']
-        mag_corr, mag_corr_std = pearsonr(input_mags, ref_mags)
-        cross_match_check = True if mag_corr > 0.5 else False
+        cross_match_check = check_mag_corr([item])[0]
+        log.info("Cross-match check: {}".format(cross_match_check))
 
         # Execute checks
         nmatches_check = False
@@ -926,10 +1042,6 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         if fit_rms_val > 150. or max_rms_val > 150.:
             large_rms_check = False
 
-        # fitRmsCheck = False
-        # if fit_rms_val < max_rms_val:
-        #     fitRmsCheck = True
-
         consistency_check = True
         rms_limit = max(item.meta['fit_info']['TOTAL_RMS'], 10.)
         if not math.sqrt(np.std(np.asarray(xshifts)) ** 2 + np.std(
@@ -942,10 +1054,6 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
             fit_status_dict[dict_key]['valid'] = False
             fit_status_dict[dict_key]['compromised'] = False
             fit_status_dict[dict_key]['reason'] = "Consistency violation!"
-        elif not cross_match_check:
-            fit_status_dict[dict_key]['valid'] = True
-            fit_status_dict[dict_key]['compromised'] = True
-            fit_status_dict[dict_key]['reason'] = "Cross-match magnitudes not correlated!"
         elif not large_rms_check:  # RMS value(s) too large
             fit_status_dict[dict_key]['valid'] = False
             fit_status_dict[dict_key]['compromised'] = False
@@ -958,6 +1066,10 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
             fit_status_dict[dict_key]['valid'] = False
             fit_status_dict[dict_key]['compromised'] = True
             fit_status_dict[dict_key]['reason'] = "Too few matches!"
+        elif not cross_match_check:
+            fit_status_dict[dict_key]['valid'] = True
+            fit_status_dict[dict_key]['compromised'] = True
+            fit_status_dict[dict_key]['reason'] = "Cross-match magnitudes not correlated!"
         else:  # all checks passed. Valid solution.
             fit_status_dict[dict_key]['valid'] = True
             fit_status_dict[dict_key]['compromised'] = False
@@ -1012,7 +1124,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         elif overall_comp is True and max_rms_val < 10.:
             log.info("Valid but compromised solution with RMS < 10 mas found!")
             fit_quality = 2
-        elif overall_comp is False and max_rms_val >= 10.:
+        elif overall_comp is False and 1000. >= max_rms_val >= 10.:
             log.info("Valid solution with RMS >= 10 mas found!")
             fit_quality = 3
         else:
@@ -1341,14 +1453,14 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
                 group_dict[group_id]['ref_mag'] = reference_catalog[ref_idx]['mag'][fitmask]
                 group_dict[group_id]['input_idx'] = tinfo['matched_input_idx']
                 obs_rms.append(fit_rms)
-
-            # Stack all input input_mag values since that is what is done by tweakwcs
-            if input_mag is None:
+                
                 input_mag = item.meta['catalog']['abmag']
+                group_dict[group_id]['input_mag'] = input_mag
             else:
-                input_mag = input_mag.copy(data=np.hstack((input_mag, item.meta['catalog']['abmag'])))
+                if input_mag is not None:
+                    input_mag = input_mag.copy(data=np.hstack((input_mag, item.meta['catalog']['abmag'])))
+                    group_dict[group_id]['input_mag'] = input_mag
 
-        group_dict[group_id]['input_mag'] = input_mag
     # Compute RMS for entire ASN/observation set
     total_rms = np.mean(obs_rms)
     # total_rms = np.sqrt(np.sum(np.array(obs_rms)**2))
@@ -1361,11 +1473,13 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
             ra_rms = group_dict[group_id]['RMS_RA']
             dec_rms = group_dict[group_id]['RMS_DEC']
             input_mag = group_dict[group_id]['input_mag'][group_dict[group_id]['input_idx']][fitmask]
+            ref_mag = group_dict[group_id]['ref_mag']
         else:
             fit_rms = None
             ra_rms = None
             dec_rms = None
             input_mag = None
+            ref_mag = None
 
         item.meta['fit_info']['FIT_RMS'] = fit_rms
         item.meta['fit_info']['TOTAL_RMS'] = total_rms
@@ -1373,7 +1487,7 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
         item.meta['fit_info']['RMS_RA'] = ra_rms
         item.meta['fit_info']['RMS_DEC'] = dec_rms
         item.meta['fit_info']['catalog'] = reference_catalog.meta['catalog']
-        item.meta['fit_info']['ref_mag'] = group_dict[group_id]['ref_mag']
+        item.meta['fit_info']['ref_mag'] = ref_mag
         item.meta['fit_info']['input_mag'] = input_mag
 
 # ----------------------------------------------------------------------------------------------------------------------
