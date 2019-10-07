@@ -93,7 +93,7 @@ Primary function for creating an astrometric reference catalog.
 
 def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
                                gaia_only=False, table_format="ascii.ecsv",
-                               existing_wcs=None):
+                               existing_wcs=None, num_sources=None):
     """Create an astrometric catalog that covers the inputs' field-of-view.
 
     Parameters
@@ -115,6 +115,11 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
 
     existing_wcs : `~stwcs.wcsutil.HSTWCS`
         existing WCS object specified by the user
+        
+    num_sources : int
+        Maximum number of brightest/faintest sources to return in catalog.  
+        If `num_sources` is negative, return that number of the faintest 
+        sources.  By default, all sources are returned.
 
     Notes
     -----
@@ -156,7 +161,7 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
     ref_table.rename_column('dec', 'DEC')
 
     # extract just the columns we want...
-    num_sources = 0
+    sources = 0
     for source in ref_dict:
         if 'GAIAsourceID' in source:
             g = source['GAIAsourceID']
@@ -168,13 +173,24 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
         d = float(source['dec'])
         m = float(source['mag']) if float(source['mag']) > 0 else -999.9
         o = source['objID']
-        num_sources += 1
+        sources += 1
         ref_table.add_row((r, d, m, o, g))
+    # sort table by magnitude, fainter to brightest
+    ref_table.sort('mag', reverse=True)
 
+    if num_sources is not None:
+        indx = -1 * num_sources
+        ref_table = ref_table[:indx] if num_sources < 0 else ref_table[indx:]
+        sources_type = "faintest" if num_sources < 0 else "brightest"
+        sources = abs(num_sources)
+    else:
+        sources_type = ""
+        
     # Write out table to a file, if specified
     if output:
         ref_table.write(output, format=table_format, overwrite=True)
-        log.info("Created catalog '{}' with {} sources".format(output, num_sources))
+        log.info("Created catalog '{}' with {} {} sources".format(
+                  output, sources, sources_type))
 
     return ref_table
 
@@ -769,6 +785,7 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
         raise ValueError("Input {} not fits.HDUList object".format(image))
 
     # remove parameters that are not needed by subsequent functions
+    def_fwhmpsf = detector_pars.get('fwhmpsf', 0.13) / 2.0
     del detector_pars['fwhmpsf']
     source_box = detector_pars.get('source_box', 7)
     isolation_size = detector_pars.get('isolation_size', 11)
@@ -802,6 +819,8 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
             photmode = None
 
         imgarr = image['sci', chip].data
+        wcs = wcsutil.HSTWCS(image, ext=('sci',chip))
+        def_fwhm = def_fwhmpsf / wcs.pscale
 
         # apply any DQ array, if available
         dqmask = None
@@ -843,8 +862,11 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
 
         # kernel = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
         # kernel.normalize()
-        kernel, kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr, threshold=threshold,
-                                                source_box=source_box, isolation_size=isolation_size,
+        kernel, kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr, 
+                                                threshold=threshold,
+                                                fwhm=def_fwhm,
+                                                source_box=source_box, 
+                                                isolation_size=isolation_size,
                                                 saturation_limit=saturation_limit)
 
         # seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, outroot=outroot, fwhm=fwhm, **detector_pars)

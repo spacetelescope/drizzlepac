@@ -643,8 +643,12 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                                                         clobber=False, output=debug, sat_flags=sat_flags)
                 for row in align_table:
                     if row['status'] == 0:
-                        trlstr = "Successfully aligned {} to {} astrometric frame\n"
-                        trlmsg += trlstr.format(row['imageName'], row['catalog'])
+                        if row['compromised'] == 0:
+                            trlstr = "Successfully aligned {} to {} astrometric frame\n"
+                            trlmsg += trlstr.format(row['imageName'], row['catalog'])
+                        else:
+                            trlstr = "Alignment only partially successful for {}\n"
+                            trlmsg += trlstr.format(row['imageName'])
                     else:
                         trlstr = "Could not align {} to absolute astrometric frame\n"
                         trlmsg += trlstr.format(row['imageName'])
