@@ -14,11 +14,6 @@ from drizzlepac.hlautils import poller_utils
 
 def run_hla_flag_filter():
 
-
-
-
-
-
     #   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +
     # All below lines are to get it working, not actual final code.
     out_file = glob.glob("??????.out")[0]

@@ -282,9 +282,9 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         if not ci_value or (not numpy.isfinite(ci_err)) or ci_value < ci_lower_limit - ci_err:
             table_row[-1] |= 16
 
-        if ci_value:
-            if ci_value > ci_upper_limit:
-                table_row[-1] |= 1
+
+        if not ci_value or ci_value > ci_upper_limit:
+            table_row[-1] |= 1
 
         if not ci_value and debug:
             failed_index_list.append(i)
