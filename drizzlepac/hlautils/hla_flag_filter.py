@@ -2876,6 +2876,49 @@ def HLANexpFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_d
         os.system('mv ' + phot_table_temp + ' ' + phot_table)
 
         log.info('Created new version of {}'.format(phot_table))
+
+def HLA_flag4and8_hunter_killer_OLD(photfilename):
+    """This function searches through photometry catalogs for sources whose flags contain
+    both bits 4 (multi-pixel saturation), and 8 (faint magnitude limit).
+    If found, the subroutine removes the "8" bit value from the set of flags for that source.
+
+    Parameters
+    ----------
+    photfilename : string
+        name of sourcelist to process
+
+    Returns
+    -------
+    nothing!
+    """
+
+    # for flag_value in
+
+    inf=open(photfilename)
+    phot_lines=inf.readlines()
+    inf.close()
+    fout=open(photfilename,'w')
+    conf_ctr=0
+    log.info("Searching {} for flag 4 + flag 8 conflicts....".format(photfilename))
+    for phot_line in phot_lines:
+        phot_line=phot_line.strip()
+        parse_pl=phot_line.split(',')
+        x=parse_pl[0]
+        if (x[0] == 'X'):out_line=phot_line
+        else:
+            flagval=int(parse_pl[-1])
+            if ((flagval & 4 >0) and (flagval & 8 >0)):
+                conf_ctr+=1
+                parse_pl[-1]=str(int(parse_pl[-1])-8)
+            out_line = ""
+            for item in parse_pl:out_line=out_line+"{},".format(item)
+            out_line=out_line[:-1]
+        fout.write("%s\n"%(out_line))
+    fout.close()
+    if conf_ctr == 0: log.info("No conflicts found.")
+    if conf_ctr == 1: log.info("{} conflict fixed.".format(conf_ctr))
+    if conf_ctr > 1:  log.info("{} conflicts fixed.".format(conf_ctr))
+
 # +++++++++++++++++++++++++++++++++++++++++ END OLD VERSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 def get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict):
@@ -3312,46 +3355,3 @@ def HLA_flag4and8_hunter_killer(catalog_data):
     if conf_ctr > 1:  log.info("{} conflicts fixed.".format(conf_ctr))
 
     return catalog_data
-
-
-def HLA_flag4and8_hunter_killer_OLD(photfilename):
-    """This function searches through photometry catalogs for sources whose flags contain
-    both bits 4 (multi-pixel saturation), and 8 (faint magnitude limit).
-    If found, the subroutine removes the "8" bit value from the set of flags for that source.
-
-    Parameters
-    ----------
-    photfilename : string
-        name of sourcelist to process
-
-    Returns
-    -------
-    nothing!
-    """
-
-    # for flag_value in
-
-    inf=open(photfilename)
-    phot_lines=inf.readlines()
-    inf.close()
-    fout=open(photfilename,'w')
-    conf_ctr=0
-    log.info("Searching {} for flag 4 + flag 8 conflicts....".format(photfilename))
-    for phot_line in phot_lines:
-        phot_line=phot_line.strip()
-        parse_pl=phot_line.split(',')
-        x=parse_pl[0]
-        if (x[0] == 'X'):out_line=phot_line
-        else:
-            flagval=int(parse_pl[-1])
-            if ((flagval & 4 >0) and (flagval & 8 >0)):
-                conf_ctr+=1
-                parse_pl[-1]=str(int(parse_pl[-1])-8)
-            out_line = ""
-            for item in parse_pl:out_line=out_line+"{},".format(item)
-            out_line=out_line[:-1]
-        fout.write("%s\n"%(out_line))
-    fout.close()
-    if conf_ctr == 0: log.info("No conflicts found.")
-    if conf_ctr == 1: log.info("{} conflict fixed.".format(conf_ctr))
-    if conf_ctr > 1:  log.info("{} conflicts fixed.".format(conf_ctr))
