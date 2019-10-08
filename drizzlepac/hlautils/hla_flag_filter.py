@@ -60,7 +60,7 @@ from stwcs import wcsutil
 from scipy import spatial
 
 from drizzlepac.hlautils import ci_table
-
+from drizzlepac import util
 from stsci.tools import logutil
 
 __taskname__ = 'hla_flag_filter'
@@ -77,7 +77,7 @@ x_limit = 4096.
 y_limit = 2051.
 
 
-
+@util.with_logging
 def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
                             param_dict, readnoise_dictionary_drzs,
                             scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
@@ -133,14 +133,11 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     -------
     Nothing! 
     """
-
-
-#    drz_root_dir = Configs.loadcfgs(config, "MISCELLANEOUS", "drz_root_dir")
-
     # -----------------------
     # FLAG FILTER PROCESSING
     # -----------------------
     log.info("************************** * * * HLA_FLAG_FILTER * * * **************************")
+
     drizzled_image = all_drizzled_filelist[0] # TODO: remove once all code is dictinary-independant
     catalog_name = dict_newTAB_matched2drz[drizzled_image] # TODO: remove once all code is dictinary-independant
     catalog_data = phot_table_matched2drz[drizzled_image] # TODO: remove once all code is dictinary-independant
@@ -149,9 +146,7 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
     log.info("ci_filter({} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict))
-
     catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict)
-    # ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag saturated sources
@@ -159,19 +154,13 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
                                                             proc_type, param_dict))
     phot_table_matched2drz = HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data,
                                                 proc_type, param_dict)
-    # HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
-    #                        scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
-
     # Flag swarm sources
     log.info("HLASwarmFlags({} {} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz, "<Catalog Data>",
                                                        exp_dictionary_scis, proc_type, param_dict))
     phot_table_matched2drz = HLASwarmFlags(all_drizzled_filelist, dict_newTAB_matched2drz, phot_table_matched2drz,
                                            exp_dictionary_scis, proc_type, param_dict)
-    # HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
-    #                   filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict) # TODO: remove once all code is dictinary-independant
-    # sys.exit()
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
@@ -180,6 +169,73 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
                                                                readnoise_dictionary_drzs,
                                                                scale_dict_drzs, exp_dictionary_scis,
                                                                dict_newTAB_matched2drz, drz_root_dir))
+    HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
+                 scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir)
+
+
+
+def run_source_list_flaging_old(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict,
+                                readnoise_dictionary_drzs, scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
+                                detection_image, dict_newTAB_matched2drz, phot_table_matched2drz, proc_type,
+                                drz_root_dir,rms_dict):
+    """Simple calling subroutine that executes the other flagging subroutines. OLDER FILE-BASED VERSIONS!
+
+    Parameters
+    ----------
+    all_drizzled_filelist : list
+        List of drizzled images to process
+
+    working_hla_red : string
+        full path to working directory
+
+    filter_sorted_flt_dict : dictionary
+        dictionary containing lists of calibrated images sorted (also keyed) by filter name.
+
+    param_dict : dictionary
+        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+
+    readnoise_dictionary_drzs : dictionary
+        dictionary of readnoise values keyed by drizzled image.
+
+    scale_dict_drzs : dictionary
+        dictionary of scale values keyed by drizzled image name.
+
+    zero_point_AB_dict : dictionary
+        ***UNUSED*** dictionary of zeropoint values keyed by drizzled image name.
+
+    exp_dictionary_scis : dictionary
+        dictionary of exposure time values keyed by drizzled image name.
+
+    detection_image : string
+        name of drizzled image.
+
+    dict_newTAB_matched2drz : dictionary
+        dictionary of source lists keyed by drizzled image name.
+
+    phot_table_matched2drz : dictionary
+        dictionary of source lists tables (already read into memory) keyed by drizzled image name.
+
+    proc_type : string
+        sourcelist generation type.
+
+    drz_root_dir : string
+        Root directory of drizzled images.
+
+    rms_dict : dictionary
+        dictionary of RMS image counterparts to drizzled images. Keyed by drizzled image name.
+
+    Returns
+    -------
+    Nothing!
+    """
+    ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
+
+    HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
+                           scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
+
+    HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
+                      filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict) # TODO: remove once all code is dictinary-independant
+
     HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
                  scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir)
 
