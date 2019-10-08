@@ -28,7 +28,7 @@ def run_hla_flag_filter():
 
 
     obs_info_dict, total_list = poller_utils.interpret_obset_input(out_file)
-    out_pars_file = None
+    out_pars_file = "pars.json"
     for total_item in total_list:
 
         total_item.configobj_pars = config_utils.HapConfig(total_item, output_custom_pars_file=out_pars_file,
