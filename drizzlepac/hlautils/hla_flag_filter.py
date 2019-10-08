@@ -1484,7 +1484,7 @@ def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
 
 
 # +++++++++++++++++++++++++++++++++++++++ OLD VERSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-def run_source_list_flaging_old(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict,
+def run_source_list_flaging_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict,
                                 readnoise_dictionary_drzs, scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
                                 detection_image, dict_newTAB_matched2drz, phot_table_matched2drz, proc_type,
                                 drz_root_dir,rms_dict):
