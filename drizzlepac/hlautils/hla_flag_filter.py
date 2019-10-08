@@ -172,10 +172,6 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
                  scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir)
 
-
-
-
-
 def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,debug=True):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
@@ -1484,6 +1480,7 @@ def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
 
 
 # +++++++++++++++++++++++++++++++++++++++ OLD VERSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# These subroutines are the older versions of the subroutines that did not use persistant in-memory storage of the catalogs.
 def run_source_list_flaging_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict,
                                 readnoise_dictionary_drzs, scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
                                 detection_image, dict_newTAB_matched2drz, phot_table_matched2drz, proc_type,
@@ -1681,7 +1678,7 @@ def ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
 
 
 def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
-                       scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict):
+                           scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict):
 
     """Identifies and flags saturated sources.
 
@@ -2000,7 +1997,7 @@ def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted
             HLA_flag4and8_hunter_killer_OLD(phot_table)
 
 def HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
-                  filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict):
+                      filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict):
     """Identifies and flags swarm sources.
 
     Parameters
@@ -2664,8 +2661,9 @@ def HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hl
         log.info(' ')
 
 
-def HLANexpFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
-                 scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir):
+def HLANexpFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict,
+                     readnoise_dictionary_drzs,scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz,
+                     drz_root_dir):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
 
     all_drizzled_filelist : list
@@ -2878,7 +2876,7 @@ def HLANexpFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_d
         os.system('mv ' + phot_table_temp + ' ' + phot_table)
 
         log.info('Created new version of {}'.format(phot_table))
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++++++++++++++++++++ END OLD VERSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 def get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict):
 
