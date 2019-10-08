@@ -74,14 +74,15 @@ class CatalogImage:
     def close(self):
         self.imghdu.close()
 
-    def build_kernel(self, box_size, win_size, fwhmpsf, scale):
+    # def build_kernel(self, box_size, win_size, fwhmpsf):
+    def build_kernel(self, box_size, win_size, fwhmpsf):
         if self.bkg is None:
             self.compute_background(box_size, win_size)
 
         self.kernel, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
                                                                             self.wht_image,
                                                                             threshold=self.bkg_rms_ra,
-                                                                            fwhm=fwhmpsf / scale)
+                                                                            fwhm=fwhmpsf / self.imgwcs.pscale)
 
     def compute_background(self, box_size, win_size,
                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS):
@@ -250,7 +251,7 @@ class HAPCatalogs:
         self.image.compute_background(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'])
 
         self.image.build_kernel(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'],
-                                self.param_dict['dao']['TWEAK_FWHMPSF'], self.param_dict['scale'])
+                                self.param_dict['dao']['TWEAK_FWHMPSF'])
 
         # Initialize all catalog types here...
         # This does NOT identify or measure sources to create the catalogs at this point...
@@ -338,18 +339,17 @@ class HAPCatalogBase:
         # FIX: replace the constants
         self.ab_zeropoint = -2.5 * np.log10(photflam) - 21.10 - 5.0 * np.log10(photplam) + 18.6921
 
-        # Compute average gain
-        # FIX not four amps for all detectors
-        self.gain = self.image.imghdu[0].header['exptime'] * np.mean([self.image.imghdu[0].header['atodgna'],
-                                                                      self.image.imghdu[0].header['atodgnb'],
-                                                                      self.image.imghdu[0].header['atodgnc'],
-                                                                      self.image.imghdu[0].header['atodgnd']])
+        # Compute average gain - there will always be at least one gain value in the primary header
+        gain_keys = self.image.imghdu[0].header['atodgn*'] 
+        gain_values = [gain_keys[g] for g in gain_keys if gain_keys[g] > 0.0]
+        self.gain = self.image.imghdu[0].header['exptime'] * np.mean(gain_values)
+        log.info("Average gain of {} for input image {}".format(np.mean(gain_values), self.imgname))
 
         # Convert photometric aperture radii from arcsec to pixels
         self.aper_radius_arcsec = [self.param_dict['aperture_1'], self.param_dict['aperture_2']]
         self.aper_radius_list_pixels = []
         for aper_radius in self.aper_radius_arcsec:
-            self.aper_radius_list_pixels.append(aper_radius/self.param_dict['scale'])
+            self.aper_radius_list_pixels.append(aper_radius/self.image.imgwcs.pscale)
 
         # Photometric information
         if not tp_sources:
@@ -357,7 +357,7 @@ class HAPCatalogBase:
             log.info("")
             log.info("SUMMARY OF INPUT PARAMETERS FOR PHOTOMETRY")
             log.info("self.imgname:   {}".format(self.imgname))
-            log.info("platescale:       {}".format(self.param_dict['scale']))
+            log.info("platescale:       {}".format(self.image.imgwcs.pscale))
             log.info("radii (pixels):   {}".format(self.aper_radius_list_pixels))
             log.info("radii (arcsec):   {}".format(self.aper_radius_arcsec))
             log.info("annulus:          {}".format(self.param_dict['skyannulus_arcsec']))
@@ -482,7 +482,7 @@ class HAPPointCatalog(HAPCatalogBase):
 
         # Perform aperture photometry
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image,
-                                                                platescale=self.param_dict['scale'],
+                                                                platescale=self.image.imgwcs.pscale,
                                                                 error_array=self.image.bkg_rms_ra,
                                                                 bg_method=self.param_dict['salgorithm'],
                                                                 epadu=self.gain,
@@ -693,7 +693,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         Returns
         -------
         self.sources
-        self.total_source_catalog
+        self.source_catalog
 
         self.segm : `photutils.segmentation.SegmentationImage`
             Two-dimensional segmentation image where found source regions are labeled with
@@ -738,7 +738,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # npixels = number of connected pixels in source
                 # npixels and filter_kernel should match those used by detect_sources()
                 segm_deblended_img = deblend_sources(imgarr_bkgsub, self.segm_img, npixels=self._size_source_box,
-                                                     filter_kernel=self.image.kernel, nlevels=self._nlevels, contrast=self._contrast)
+                                                     filter_kernel=self.image.kernel, nlevels=self._nlevels, 
+                                                     contrast=self._contrast)
 
                 # The deblending was successful, so just copy the deblended sources back to the sources attribute.
                 self.segm_img = copy.deepcopy(segm_deblended_img)
@@ -910,7 +911,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, 
                                                                 bg_apers, 
                                                                 data=bkg_subtracted_image,
-                                                                platescale=self.param_dict['scale'],
+                                                                platescale=self.image.imgwcs.pscale,
                                                                 error_array=self.bkg.background_rms,
                                                                 bg_method=self.param_dict['salgorithm'],
                                                                 epadu=self.gain,
@@ -924,7 +925,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Append the CI data to the filter table
             ci_col = Column(data=ci_data, name="CI", dtype=np.float64)
             updated_table.add_column(ci_col)
-        except Exception:
+        except Exception as x_cept:
+            log.warning("SEGMENT. Computation of the Concentration Index (CI) was not successful: {}.".format(self.imgname, x_cept))
+            log.warning("SEGMENT. No CI data has been added to the output catalog.\n")
             pickle_out = open("segmentation_catalog.pickle", "wb")
             pickle.dump(photometry_tbl, pickle_out)
             pickle_out.close()
