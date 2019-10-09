@@ -163,13 +163,9 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
-    log.info("HLANexpFlags({} {} {} {} {} {} {} {} {})".format(all_drizzled_filelist, working_hla_red,
-                                                               filter_sorted_flt_dict, param_dict,
-                                                               readnoise_dictionary_drzs,
-                                                               scale_dict_drzs, exp_dictionary_scis,
-                                                               dict_newTAB_matched2drz, drz_root_dir))
-    HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
-                 scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir)
+    log.info("HLANexpFlags({} {} {} {} {})".format(all_drizzled_filelist, filter_sorted_flt_dict, param_dict,
+                                                   dict_newTAB_matched2drz, drz_root_dir))
+    HLANexpFlags(all_drizzled_filelist, filter_sorted_flt_dict, param_dict, dict_newTAB_matched2drz, drz_root_dir)
 
 def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,debug=True):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
@@ -1247,30 +1243,17 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     log.info(' ')
     return {drizzled_image: catalog_data}  # TODO: refactor once all code is dictinary-independant
 
-def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
-                 scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir):
+def HLANexpFlags(all_drizzled_filelist, filter_sorted_flt_dict, param_dict, dict_newTAB_matched2drz, drz_root_dir):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
     all_drizzled_filelist : list
         List of drizzled images to process
-
-    working_hla_red : string
-        ***UNUSED*** full path to working directory.
 
     filter_sorted_flt_dict : dictionary
         dictionary containing lists of calibrated images sorted (also keyed) by filter name.
 
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
-
-    readnoise_dictionary_drzs : dictionary
-        ***UNUSED*** dictionary of readnoise values keyed by drizzled image.
-
-    scale_dict_drzs : dictionary
-        ***UNUSED*** dictionary of scale values keyed by drizzled image.
-
-    exp_dictionary_scis :  dictionary
-        ***UNUSED*** dictionary of exposure time values keyed by drizzled image.
 
     dict_newTAB_matched2drz : dictionary
         dictionary of source lists keyed by drizzled image name.
