@@ -303,7 +303,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, in_memory=True,
         Start updating the data and verifying that the new alignment is valid.
             1. Run updatewcs without astrometry database update on all input exposures (FLCs? and FLTs)
             2. Generate initial default products and perform verification
-                a. perform cosmic-ray identification and generate 
+                a. perform cosmic-ray identification and generate
                     drizzle products using astrodrizzle for all sets of inputs
                 b. verify relative alignment with focus index after masking out CRs
                 c. copy all drizzle products to parent directory
@@ -331,8 +331,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, in_memory=True,
             5. Remove all processing sub-directories
         """
         inst_mode = "{}/{}".format(infile_inst, infile_det)
-        
-        adriz_pars = mdzhandler.getMdriztabParameters(_calfiles_flc)
+
+        adriz_pars = mdzhandler.getMdriztabParameters(_calfiles)
         adriz_pars.update(pipeline_pars)
         adriz_pars['mdriztab'] = False
         adriz_pars['final_fillval'] = 0
@@ -343,8 +343,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, in_memory=True,
         exptimes = np.array([fits.getval(flt, 'exptime') for flt in _calfiles])
         if exptimes.max() / exptimes.min() > 2:
             adriz_pars['combine_type'] = 'median'
-            adriz_pars['combine_nhigh'] = 0         
-       
+            adriz_pars['combine_nhigh'] = 0
+
         # Run updatewcs on each list of images to define pipeline default WCS based on distortion models
         updatewcs.updatewcs(_calfiles, use_db=False)
         if _calfiles_flc:
