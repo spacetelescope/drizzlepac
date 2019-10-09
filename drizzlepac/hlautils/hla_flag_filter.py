@@ -157,9 +157,9 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag swarm sources
-    log.info("HLASwarmFlags({} {} {} {} {} {})".format(all_drizzled_filelist, dict_newTAB_matched2drz, "<Catalog Data>",
+    log.info("HLASwarmFlags({} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>",
                                                        exp_dictionary_scis, proc_type, param_dict))
-    phot_table_matched2drz = HLASwarmFlags(drizzled_image, catalog_name, phot_table_matched2drz,
+    phot_table_matched2drz = HLASwarmFlags(drizzled_image, catalog_name, catalog_data,
                                            exp_dictionary_scis, proc_type, param_dict)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
@@ -602,7 +602,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
         log.info(' ')
         return {drizzled_image: phot_table_rows}  # TODO: refactor once all code is dictinary-independant
 
-def HLASwarmFlags(drizzled_image, catalog_name, phot_table_matched2drz, exp_dictionary_scis,
+def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exp_dictionary_scis,
                   proc_type, param_dict):
 
     """Identifies and flags swarm sources.
@@ -614,6 +614,9 @@ def HLASwarmFlags(drizzled_image, catalog_name, phot_table_matched2drz, exp_dict
     
     catalog_name : string
         drizzled filter product catalog filename to process
+
+    catalog_data : astropy.Table object
+        drizzled filter product catalog data to process
 
     exp_dictionary_scis : dictionary
         dictionary of exposure time values keyed by drizzled image.
@@ -664,7 +667,6 @@ def HLASwarmFlags(drizzled_image, catalog_name, phot_table_matched2drz, exp_dict
     # ------------------------------------------
     # ------------------------------------------
     # ==========================================
-    catalog_name
     phot_table_root = catalog_name.split('/')[-1].split('.')[0]
 
     image_split = drizzled_image.split('/')[-1]
@@ -689,17 +691,13 @@ def HLASwarmFlags(drizzled_image, catalog_name, phot_table_matched2drz, exp_dict
     # phot_table_in = open(catalog_name,'r')
     # phot_table_rows = phot_table_in.readlines()
     # phot_table_in.close()
-    phot_table_rows = phot_table_matched2drz[drizzled_image]
+    catalog_data
 
-
-
-    nrows = len(phot_table_rows)
+    nrows = len(catalog_data)
 
     complete_src_list = numpy.empty((nrows,6), dtype=numpy.float)
 
-    for row_num,row in enumerate(phot_table_rows[0:]):
-
-
+    for row_num,row in enumerate(catalog_data[0:]):
         x_val = float(row[0])
         y_val = float(row[1])
 
@@ -733,7 +731,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, phot_table_matched2drz, exp_dict
     if len(complete_src_list) == 0:
 
         # continue # TODO: REMOVE
-        return {drizzled_image: phot_table_rows}  # TODO: refactor once all code is dictinary-independant
+        return {drizzled_image: catalog_data}  # TODO: refactor once all code is dictinary-independant
 
     # view into the complete_src_list array for convenience
     swarm_epp_listA = complete_src_list[:,3]
@@ -1241,11 +1239,11 @@ def HLASwarmFlags(drizzled_image, catalog_name, phot_table_matched2drz, exp_dict
     # phot_table_out = open(phot_table_temp,'w')
 
     # phot_table_in = open(catalog_name,'r')
-    # phot_table_rows = phot_table_in.readlines()
+    # catalog_data = phot_table_in.readlines()
     # phot_table_in.close()
 
-    # phot_table_out.write(phot_table_rows[0])
-    for i,table_row in enumerate(phot_table_rows[0:]):
+    # phot_table_out.write(catalog_data[0])
+    for i,table_row in enumerate(catalog_data[0:]):
         if combined_flag[i]:
             # row_split = table_row.split(',')
             # sat_flag = int(row_split[-1]) | 32
@@ -1254,7 +1252,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, phot_table_matched2drz, exp_dict
             table_row[-1] |= 32
         # phot_table_out.write(table_row)
 
-    phot_table_rows.write(phot_table_temp, delimiter=",",format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
+    catalog_data.write(phot_table_temp, delimiter=",",format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
 
     os.system('mv '+catalog_name+' '+catalog_name+'.PreSwarmFilt')
     os.system('mv '+phot_table_temp+' '+catalog_name)
@@ -1262,7 +1260,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, phot_table_matched2drz, exp_dict
     log.info(' ')
     log.info('FINAL SWAR-FILT CATALOG NAME: {}'.format(catalog_name))
     log.info(' ')
-    return {drizzled_image: phot_table_rows}  # TODO: refactor once all code is dictinary-independant
+    return {drizzled_image: catalog_data}  # TODO: refactor once all code is dictinary-independant
 
 def HLANexpFlags(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
                  scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir):
