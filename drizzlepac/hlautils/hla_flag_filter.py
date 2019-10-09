@@ -314,7 +314,8 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
 
     Returns
     -------
-    Nothing!
+    phot_table_rows : astropy.Table object
+        drizzled filter product catalog data with updated flag values
     """
     image_split = drizzled_image.split('/')[-1]
     channel = drizzled_image.split("_")[-3].upper()  # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
@@ -627,7 +628,8 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     
     Returns
     -------
-    Nothing!
+    catalog_data : astropy.Table object
+        drizzled filter product catalog data with updated flag values
     """
 
     drz_imgPath_split = drizzled_image.split('/')
@@ -758,6 +760,8 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     lower_epp_limit = float(param_dict["quality control"]["swarm filter"]["lower_epp_limit"])
     eppsky_limit_cfg =float(param_dict["quality control"]["swarm filter"]["eppsky_limit"])
 
+    # TODO: Figure out what to do with all these hard-coded values for 'selfradious' below
+
     if data_type.upper() == 'UVIS':
         eppsky_limit = eppsky_limit_cfg * median_sky
         selfradius = 20.0
@@ -772,15 +776,15 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
 
     if data_type.upper() == 'HRC':
         eppsky_limit = eppsky_limit_cfg * median_sky
-        selfradius = 20.0 # JUST USING ACS/WFC VALUE. PROBABLY NEEDS TO BE OPTIMIZED FOR HRC.
+        selfradius = 20.0 # TODO: JUST USING ACS/WFC VALUE. PROBABLY NEEDS TO BE OPTIMIZED FOR HRC.
 
     if data_type.upper() == 'WFPC2':
         eppsky_limit = eppsky_limit_cfg * median_sky
-        selfradius = 20.0 #JUST USING ACS/WFC VALUE PROBABLY NEEDS TO BE OPTIMIZED FOR WFPC2.
+        selfradius = 20.0 #TODO: UST USING ACS/WFC VALUE PROBABLY NEEDS TO BE OPTIMIZED FOR WFPC2.
 
     if data_type.upper() == 'PC':
         eppsky_limit = eppsky_limit_cfg * median_sky
-        selfradius = 20.0 #JUST USING ACS/WFC VALUE PROBABLY NEEDS TO BE OPTIMIZED FOR PC.
+        selfradius = 20.0 #TODO: JUST USING ACS/WFC VALUE PROBABLY NEEDS TO BE OPTIMIZED FOR PC.
 
 
 
@@ -813,8 +817,8 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
             # Define EPP cut values for filtering multiple detections
             # from a given central positions for a swarm candidate
             # -------------------------------------------------------
-            cuts = [2000000.,1800000.,1000000.,500000.,70000.,20000.,0.]
-            selfradii = [25.,100.,35.,30.,20.,15.,10.]
+            cuts = [2000000.,1800000.,1000000.,500000.,70000.,20000.,0.] # TODO: Figure out what to do with all these hard-coded values
+            selfradii = [25.,100.,35.,30.,20.,15.,10.] # TODO: Figure out what to do with all these hard-coded values
 
             p1 = []
             p2 = []
