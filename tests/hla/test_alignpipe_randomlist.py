@@ -12,7 +12,7 @@ from astropy.table import Table
 import pytest
 import logging
 from importlib import reload
-
+import glob
 
 from stsci.tools import logutil
 from astropy.io import fits
@@ -146,20 +146,23 @@ def test_alignpipe_randomlist(tmpdir, dataset):
             filename_for_runastrodriz = dataset.lower() + "_asn.fits"
         log.info("Input parameter: {}".format(input_parameter))
         files_on_disk = check_disk_get_data([dataset], suffix=input_parameter, archive=False, clobber=False)
+
+        log.info("Dataset: {}".format(dataset))
         if os.path.exists('mastDownload'):
             shutil.rmtree('mastDownload')
+        log.info("\nFiles: {}".format(files_on_disk))
 
-        print("Dataset: {}".format(dataset))
-        print("\nFiles: {}".format(files_on_disk))
 
         # Insure environment variables are set for full processing
         os.environ['ASTROMETRY_STEP_CONTROL'] = 'on'
         os.environ['ASTROMETRY_COMPUTE_APOSTERIORI'] = 'on'
         os.environ['ASTROMETRY_APPLY_APRIORI'] = 'on'
 
-        old_jref = True if '16r12191j_mdz' in fits.getval(files_on_disk[0], 'mdriztab') else False
-        if old_jref:
-            os.path.environ['jref'] = os.path.environ.replace('jref', 'jref.old')
+        flts = sorted(glob.glob('*fl?.fits'))
+        jref_dir = 'jref.old/' if '16r12191j_mdz' in fits.getval(flts[0], 'mdriztab') else 'jref/'
+        os.environ['jref'] = os.path.join(os.environ['crrefer'], jref_dir)
+        log.info("JREF: {}".format(os.environ['jref']))
+
         # Run pipeline processing using
         # runastrodriz accepts *_raw.fits or *_asn.fits, but it assumes the *_fl[t|c].fits files
         # are also present
@@ -172,7 +175,7 @@ def test_alignpipe_randomlist(tmpdir, dataset):
     # unexpected errors and generate sufficient output exception
     # information so algorithmic problems can be addressed.
     except Exception as except_details:
-        print(except_details)
+        traceback.print_exc()
         pytest.fail("TEST_RANDOM. Exception Dataset: {}\n", dataset)
         return_value = 1
 
