@@ -163,9 +163,8 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
-    log.info("HLANexpFlags({} {} {} {} {})".format(all_drizzled_filelist, filter_sorted_flt_dict, param_dict,
-                                                   dict_newTAB_matched2drz, drz_root_dir))
-    HLANexpFlags(all_drizzled_filelist, filter_sorted_flt_dict, param_dict, dict_newTAB_matched2drz, drz_root_dir)
+    log.info("HLANexpFlags({} {} {} {} {})".format(drizzled_image, filter_sorted_flt_dict, param_dict, dict_newTAB_matched2drz, "<Catalog Data>", drz_root_dir))
+    HLANexpFlags(drizzled_image, filter_sorted_flt_dict, param_dict, dict_newTAB_matched2drz, catalog_data, drz_root_dir)
 
 def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,debug=True):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
@@ -1243,11 +1242,11 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     log.info(' ')
     return {drizzled_image: catalog_data}  # TODO: refactor once all code is dictinary-independant
 
-def HLANexpFlags(all_drizzled_filelist, filter_sorted_flt_dict, param_dict, dict_newTAB_matched2drz, drz_root_dir):
+def HLANexpFlags(drizzled_image, filter_sorted_flt_dict, param_dict, dict_newTAB_matched2drz, catalog_data, drz_root_dir):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
-    all_drizzled_filelist : list
-        List of drizzled images to process.
+    drizzled_image : string
+        Name of drizzled image to process
 
     filter_sorted_flt_dict : dictionary
         dictionary containing lists of calibrated images sorted (also keyed) by filter name.
@@ -1257,6 +1256,9 @@ def HLANexpFlags(all_drizzled_filelist, filter_sorted_flt_dict, param_dict, dict
 
     dict_newTAB_matched2drz : dictionary
         dictionary of source lists keyed by drizzled image name.
+
+    catalog_data : astropy.Table object
+        drizzled filter product catalog data to process
 
     drz_root_dir : dictionary of source lists keyed by drizzled image name.
 
@@ -1268,181 +1270,158 @@ def HLANexpFlags(all_drizzled_filelist, filter_sorted_flt_dict, param_dict, dict
     # ------------------
     # CREATE NEXP IMAGE
     # ------------------
-    for drizzled_image in all_drizzled_filelist:
-        image_split = drizzled_image.split('/')[-1]
-        channel = drizzled_image.split("_")[-3].upper() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+    image_split = drizzled_image.split('/')[-1]
+    channel = drizzled_image.split("_")[-3].upper() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
 
-        #if channel == 'IR':
-        #    continue
+    #if channel == 'IR':
+    #    continue
 
-        # ---------
-        # METHOD 1:
-        # ---------
-        ctx = getdata(drizzled_image, 3)
+    # ---------
+    # METHOD 1:
+    # ---------
+    ctx = getdata(drizzled_image, 3)
 
-        if channel in ['UVIS','IR','WFC','HRC']: ncombine = getheader(drizzled_image,1)['NCOMBINE']
-        if channel in ['WFPC2','PC']:
-            ndrizim=getheader(drizzled_image,0)['NDRIZIM']
-            ncombine=ndrizim/4
-        if channel == 'SBC':
-            ndrizim=getheader(drizzled_image,0)['NDRIZIM']
-            ncombine = ndrizim
-        ctxarray = arrayfy_ctx(ctx, ncombine)
+    if channel in ['UVIS','IR','WFC','HRC']: ncombine = getheader(drizzled_image,1)['NCOMBINE']
+    if channel in ['WFPC2','PC']:
+        ndrizim=getheader(drizzled_image,0)['NDRIZIM']
+        ncombine=ndrizim/4
+    if channel == 'SBC':
+        ndrizim=getheader(drizzled_image,0)['NDRIZIM']
+        ncombine = ndrizim
+    ctxarray = arrayfy_ctx(ctx, ncombine)
 
-        nexp_array_ctx = ctxarray.sum(axis=-1)
-        nexp_image_ctx = drizzled_image.split('.')[0]+'_NCTX.fits'
-        if not os.path.isfile(nexp_image_ctx):
-            hdr = getheader(drizzled_image, 1)
-            pyfits.writeto(nexp_image_ctx, numpy.float32(nexp_array_ctx), hdr)
+    nexp_array_ctx = ctxarray.sum(axis=-1)
+    nexp_image_ctx = drizzled_image.split('.')[0]+'_NCTX.fits'
+    if not os.path.isfile(nexp_image_ctx):
+        hdr = getheader(drizzled_image, 1)
+        pyfits.writeto(nexp_image_ctx, numpy.float32(nexp_array_ctx), hdr)
 
-        # ---------
-        # METHOD 2:
-        # ---------
-        drz_data = getdata(drizzled_image, 1)
+    # ---------
+    # METHOD 2:
+    # ---------
+    drz_data = getdata(drizzled_image, 1)
 
-        ## this bit is added to get the mask integrated into the exp map
-        maskfile = drizzled_image.replace('_drz.fits','_msk.fits')
-        if os.path.isfile(maskfile):
-            mask_data = getdata(maskfile)
-            mask_array = (mask_data==0.0).astype(numpy.int32)
+    ## this bit is added to get the mask integrated into the exp map
+    maskfile = drizzled_image.replace('_drz.fits','_msk.fits')
+    if os.path.isfile(maskfile):
+        mask_data = getdata(maskfile)
+        mask_array = (mask_data==0.0).astype(numpy.int32)
 
-        component_drz_img_list = get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict)
+    component_drz_img_list = get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict)
 
-        nx = drz_data.shape[0]
-        ny = drz_data.shape[1]
-        nexp_array = numpy.zeros((nx, ny), dtype = numpy.int32)
+    nx = drz_data.shape[0]
+    ny = drz_data.shape[1]
+    nexp_array = numpy.zeros((nx, ny), dtype = numpy.int32)
 
-        for comp_drz_img in component_drz_img_list:
-            comp_drz_data = (getdata(comp_drz_img) != 0).astype(numpy.int32)
-            try:
-                nexp_array += comp_drz_data
-            except ValueError:
-                log.info("WARNING: Astrodrizzle added an extra-row/column...")
-                nexp_array += comp_drz_data[0:nx,0:ny]
+    for comp_drz_img in component_drz_img_list:
+        comp_drz_data = (getdata(comp_drz_img) != 0).astype(numpy.int32)
+        try:
+            nexp_array += comp_drz_data
+        except ValueError:
+            log.info("WARNING: Astrodrizzle added an extra-row/column...")
+            nexp_array += comp_drz_data[0:nx,0:ny]
 
-        if os.path.isfile(maskfile):
-            nexp_array = nexp_array * mask_array
-        else:
-            log.info("something's wrong: maskfile {} is not a file".format(maskfile))
-            sys.exit()
-        nexp_image = drizzled_image.split('.')[0]+'_NEXP.fits'
-        if not os.path.isfile(nexp_image):
-            hdr = getheader(drizzled_image, 1)
-            pyfits.writeto(nexp_image, numpy.float32(nexp_array), hdr)
+    if os.path.isfile(maskfile):
+        nexp_array = nexp_array * mask_array
+    else:
+        log.info("something's wrong: maskfile {} is not a file".format(maskfile))
+        sys.exit()
+    nexp_image = drizzled_image.split('.')[0]+'_NEXP.fits'
+    if not os.path.isfile(nexp_image):
+        hdr = getheader(drizzled_image, 1)
+        pyfits.writeto(nexp_image, numpy.float32(nexp_array), hdr)
 
-        # -------------------------------------------------------
-        # EXTRACT FLUX/NEXP INFORMATION FROM NEXP IMAGE BASED ON
-        # THE SOURCE DETECTION POSITIONS PREVIOUSLY ESTABLISHED
-        # -------------------------------------------------------
-        phot_table = dict_newTAB_matched2drz[drizzled_image]
-        phot_table_root = phot_table.split('/')[-1].split('.')[0]
+    # -------------------------------------------------------
+    # EXTRACT FLUX/NEXP INFORMATION FROM NEXP IMAGE BASED ON
+    # THE SOURCE DETECTION POSITIONS PREVIOUSLY ESTABLISHED
+    # -------------------------------------------------------
+    phot_table = dict_newTAB_matched2drz[drizzled_image]
+    phot_table_root = phot_table.split('/')[-1].split('.')[0]
 
-        phot_table_in = open(phot_table, 'r')
-        phot_table_lines = phot_table_in.readlines()
-        phot_table_in.close()
+    nrows = len(catalog_data)
+    cat_coords = numpy.empty((nrows,2),dtype=float)
+    for line_cnt,phot_table_line in enumerate(catalog_data):
+        x_coord = phot_table_line[0]
+        y_coord = phot_table_line[1]
+        cat_coords[line_cnt, :] = [x_coord, y_coord]
+    # ----------------------------------
+    # Convert aperture radius to pixels
+    # ----------------------------------
 
-        nrows = len(phot_table_lines)-1
-        cat_coords = numpy.empty((nrows,2),dtype=float)
-        for line_cnt,phot_table_line in enumerate(phot_table_lines):
+    ap2 = param_dict['catalog generation']['dao']['aperture_2']
 
-            if line_cnt == 0:
-                continue
+    if channel == 'IR': #TODO: PLATESCALE SHOULDN"T BE HARD-CODED HERE. SHOULD USE PARAM_DICT VALUE.
+        radius = ap2 / 0.09
+    if channel == 'UVIS':
+        radius = ap2 / 0.04
+    if channel == 'WFC': #ACS/WFC
+        radius = ap2 / 0.05
+    if channel == 'HRC':
+        radius = ap2 / 0.025
+    if channel == 'SBC':
+        radius = ap2 / 0.03
+    if channel == 'WFPC2':
+        radius = ap2 / 0.1
+    if channel == 'PC':
+        radius = ap2 / 0.05
 
-            phot_table_line_split = phot_table_line.split(',')
-            x_coord = float(phot_table_line_split[0])
-            y_coord = float(phot_table_line_split[1])
-            cat_coords[line_cnt-1,:] = [x_coord, y_coord]
+    num_exp = round(numpy.max(nexp_array))
+    if num_exp<=1 or channel in ('IR','SBC'):
+        # Keep everything that has an exposure for detectors without CRs or
+        # when there is only one exposure
+        artifact_filt = 0.5
+    elif num_exp > 5:
+        # Flag sources with <= 2 exposures when there are > 5 total
+        # We are always using the 'imedian' combination in that case, and it
+        # does not do a very good job of rejecting CRs with only 2 available
+        # exposures
+        artifact_filt = 2.5
+    else:
+        artifact_filt = 1.5
 
-        # ----------------------------------
-        # Convert aperture radius to pixels
-        # ----------------------------------
+    icoords = (cat_coords+0.5).astype(int)
+    # note x & y are swapped so they can index the numpy array nexp_array
+    # catalog x is second subscript, catalog y is first subscript
+    ix = icoords[:,1]
+    iy = icoords[:,0]
 
-        ap2 = param_dict['catalog generation']['dao']['aperture_2']
+    # get list of neighboring pixels that are within radius
+    iradius = int(radius+1)
+    idiam = iradius*2+1
+    gx, gy = numpy.mgrid[0:idiam,0:idiam] - iradius
+    gx = gx.ravel()
+    gy = gy.ravel()
+    w = numpy.where(gx**2+gy**2 <= radius**2)[0]
+    gx = gx[w]
+    gy = gy[w]
 
-        if channel == 'IR': #TODO: PLATESCALE SHOULDN"T BE HARD-CODED HERE. SHOULD USE PARAM_DICT VALUE.
-            radius = ap2 / 0.09
-        if channel == 'UVIS':
-            radius = ap2 / 0.04
-        if channel == 'WFC': #ACS/WFC
-            radius = ap2 / 0.05
-        if channel == 'HRC':
-            radius = ap2 / 0.025
-        if channel == 'SBC':
-            radius = ap2 / 0.03
-        if channel == 'WFPC2':
-            radius = ap2 / 0.1
-        if channel == 'PC':
-            radius = ap2 / 0.05
+    # check the pixel values for low nexp
 
-        num_exp = round(numpy.max(nexp_array))
-        if num_exp<=1 or channel in ('IR','SBC'):
-            # Keep everything that has an exposure for detectors without CRs or
-            # when there is only one exposure
-            artifact_filt = 0.5
-        elif num_exp > 5:
-            # Flag sources with <= 2 exposures when there are > 5 total
-            # We are always using the 'imedian' combination in that case, and it
-            # does not do a very good job of rejecting CRs with only 2 available
-            # exposures
-            artifact_filt = 2.5
-        else:
-            artifact_filt = 1.5
+    # this version uses numpy broadcasting sum gx+ix is [len(gx),nrows]
+    gx = (gx[:,numpy.newaxis] + ix).clip(0,nexp_array.shape[0]-1)
+    gy = (gy[:,numpy.newaxis] + iy).clip(0,nexp_array.shape[1]-1)
+    artifact_flag = nexp_array[gx,gy].min(axis=0) < artifact_filt
 
-        icoords = (cat_coords+0.5).astype(int)
-        # note x & y are swapped so they can index the numpy array nexp_array
-        # catalog x is second subscript, catalog y is first subscript
-        ix = icoords[:,1]
-        iy = icoords[:,0]
+    log.info('FLAGGING {} OF {} SOURCES'.format(artifact_flag.sum(),nrows))
 
-        # get list of neighboring pixels that are within radius
-        iradius = int(radius+1)
-        idiam = iradius*2+1
-        gx, gy = numpy.mgrid[0:idiam,0:idiam] - iradius
-        gx = gx.ravel()
-        gy = gy.ravel()
-        w = numpy.where(gx**2+gy**2 <= radius**2)[0]
-        gx = gx[w]
-        gy = gy[w]
+    # -------------------------------------------------------------------
+    # WRITE NEXP FLAGS TO OUTPUT PHOT TABLE BASED ON nexp_phot_data_list
+    # -------------------------------------------------------------------
+    #nexp_outfile_good = open('temp_outfile_NEXP_GOOD.txt','w')
+    #nexp_outfile_bad = open('temp_outfile_NEXP_BAD.txt','w')
 
-        # check the pixel values for low nexp
+    # Add flag bit to appropriate sources
+    for i, table_row in enumerate(catalog_data):
+        if artifact_flag[i]:
+            table_row[-1] |= 64
 
-        # this version uses numpy broadcasting sum gx+ix is [len(gx),nrows]
-        gx = (gx[:,numpy.newaxis] + ix).clip(0,nexp_array.shape[0]-1)
-        gy = (gy[:,numpy.newaxis] + iy).clip(0,nexp_array.shape[1]-1)
-        artifact_flag = nexp_array[gx,gy].min(axis=0) < artifact_filt
+    phot_table_temp = phot_table_root + '_NEXPFILT.txt'
+    catalog_data.write(phot_table_temp, delimiter=",",
+                       format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
 
-        log.info('FLAGGING {} OF {} SOURCES'.format(artifact_flag.sum(),nrows))
-
-        # -------------------------------------------------------------------
-        # WRITE NEXP FLAGS TO OUTPUT PHOT TABLE BASED ON nexp_phot_data_list
-        # -------------------------------------------------------------------
-        #nexp_outfile_good = open('temp_outfile_NEXP_GOOD.txt','w')
-        #nexp_outfile_bad = open('temp_outfile_NEXP_BAD.txt','w')
-
-        phot_table_temp = phot_table_root+'_NEXPFILT.txt'
-        phot_table_out = open(phot_table_temp,'w')
-
-        phot_table_in = open(phot_table,'r')
-        phot_table_rows = phot_table_in.readlines()
-        phot_table_in.close()
-
-        phot_table_out.write(phot_table_rows[0])
-        for i,table_row in enumerate(phot_table_rows[1:]):
-            if artifact_flag[i]:
-                row_split = table_row.split(',')
-                nexp_flag = int(row_split[-1]) | 64
-                row_split[-1] = str(nexp_flag)+'\n'
-                table_row = ','.join(row_split)
-            phot_table_out.write(table_row)
-
-        phot_table_out.close()
-        #nexp_outfile_good.close()
-        #nexp_outfile_bad.close()
-
-        os.system('mv '+phot_table+' '+phot_table+'.PreNexpFilt')
-        os.system('mv '+phot_table_temp+' '+phot_table)
-
-        log.info('Created new version of {}'.format(phot_table))
+    os.system('mv '+phot_table+' '+phot_table+'.PreNexpFilt')
+    os.system('mv '+phot_table_temp+' '+phot_table)
+    log.info('Created new version of {}'.format(phot_table))
 
 
 # +++++++++++++++++++++++++++++++++++++++ OLD VERSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
