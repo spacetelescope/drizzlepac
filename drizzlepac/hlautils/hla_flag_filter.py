@@ -142,6 +142,7 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     catalog_name = dict_newTAB_matched2drz[drizzled_image] # TODO: remove once all code is dictinary-independant
     catalog_data = phot_table_matched2drz[drizzled_image] # TODO: remove once all code is dictinary-independant
     for filt_key in filter_sorted_flt_dict.keys(): flt_list = filter_sorted_flt_dict[filt_key] # TODO: remove once all code is dictinary-independant
+    exptime = exp_dictionary_scis[drizzled_image] # TODO: remove once all code is dictinary-independant
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
@@ -152,15 +153,13 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     # Flag saturated sources
     log.info("HLASaturationFlags({} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name, "<Catalog Data>",
                                                             proc_type, param_dict))
-    phot_table_matched2drz = HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data,
-                                                proc_type, param_dict)
+    catalog_data = HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag swarm sources
-    log.info("HLASwarmFlags({} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>",
-                                                       exp_dictionary_scis, proc_type, param_dict))
-    phot_table_matched2drz = HLASwarmFlags(drizzled_image, catalog_name, catalog_data,
-                                           exp_dictionary_scis, proc_type, param_dict)
+    log.info("HLASwarmFlags({} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>", exptime,
+                                                       proc_type, param_dict))
+    phot_table_matched2drz = HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type, param_dict)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
@@ -321,7 +320,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     channel = drizzled_image.split("_")[-3].upper()  # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
 
     if channel == 'IR': #TODO: Test and IR case just to make sure that IR shouldn't be skipped
-        return {drizzled_image: catalog_data}  # TODO: refactor once all code is dictinary-independant
+        return catalog_data
 
     phot_table = catalog_name
     phot_table_root = phot_table.split('.')[0]
@@ -449,7 +448,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
         log.info('*******************************************************************************************')
         log.info(' ')
 
-        return {drizzled_image: catalog_data}  # TODO: refactor once all code is dictinary-independant
+        return catalog_data  # TODO: refactor once all code is dictinary-independant
 
     # ------------------------------
     # now concatenate all the arrays
@@ -555,7 +554,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
         log.info('**************************************************************************************')
         log.info(' ')
 
-        return {drizzled_image: catalog_data}  # TODO: refactor once all code is dictinary-independant
+        return catalog_data  # TODO: refactor once all code is dictinary-independant
 
     else:
         log.info(' ')
@@ -600,10 +599,9 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
         log.info(' ')
         log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
         log.info(' ')
-        return {drizzled_image: phot_table_rows}  # TODO: refactor once all code is dictinary-independant
+        return phot_table_rows
 
-def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exp_dictionary_scis,
-                  proc_type, param_dict):
+def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type, param_dict):
 
     """Identifies and flags swarm sources.
 
@@ -618,8 +616,8 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exp_dictionary_sci
     catalog_data : astropy.Table object
         drizzled filter product catalog data to process
 
-    exp_dictionary_scis : dictionary
-        dictionary of exposure time values keyed by drizzled image.
+    exptime : float
+        exposure of the specified drizzled image
 
     proc_type : string
         sourcelist generation type.
@@ -685,13 +683,6 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exp_dictionary_sci
     log.info('Pixel Scale = {} arcsec per pixel'.format(float(param_dict['catalog generation']['dao']['scale']))) # TODO: this value should be probably be somewhere else
     log.info(' ')
     area = math.pi * radius**2
-    exptime = exp_dictionary_scis[drizzled_image]
-
-    # log.info('Reading catalog from{}'.format(catalog_name)) # TODO: REMOVE this block of commented code once adaption of this subroutine is complete.
-    # phot_table_in = open(catalog_name,'r')
-    # phot_table_rows = phot_table_in.readlines()
-    # phot_table_in.close()
-    catalog_data
 
     nrows = len(catalog_data)
 
@@ -710,17 +701,9 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exp_dictionary_sci
             flux = row[11]
             sky = row[9]
 
-        # if flux.strip(): # TODO: REMOVE this block of commented code once adaption of this subroutine is complete.
-        #     flux = float(flux)
-        # else:
-        #     flux = 0.0
         if not flux:
             flux = 0.0
 
-        # if sky.strip(): # TODO: REMOVE this block of commented code once adaption of this subroutine is complete.
-        #     sky = float(sky)
-        # else:
-        #     sky = 0.0
         if not sky:
             sky = 0.0
 
@@ -729,8 +712,6 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exp_dictionary_sci
         complete_src_list[row_num,:] = [x_val,y_val,flux,electronpp,sky,eppsky]
 
     if len(complete_src_list) == 0:
-
-        # continue # TODO: REMOVE
         return {drizzled_image: catalog_data}  # TODO: refactor once all code is dictinary-independant
 
     # view into the complete_src_list array for convenience
