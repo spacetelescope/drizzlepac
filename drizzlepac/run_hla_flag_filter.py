@@ -87,7 +87,7 @@ def run_hla_flag_filter():
         # os.remove("hst_10595_06_acs_wfc_f435w_msk.fits")
         # from devutils import make_mask_file
         # make_mask_file.make_mask_file("hst_10595_06_acs_wfc_f435w_wht.fits")
-
+        comp_cmd = "python /Users/dulude/Documents/Code/HLATransition/drizzlepac/drizzlepac/devutils/comparison_tools/compare_sourcelists.py orig_cats/hst_10595_06_acs_wfc_f435w_{}phot.txt hst_10595_06_acs_wfc_f435w_{}phot.txt -i hst_10595_06_acs_wfc_f435w_drz.fits hst_10595_06_acs_wfc_f435w_drz.fits -m absolute -p none".format(mode,mode)
     #   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +
     # Execute hla_flag_filter.run_source_list_flaging
     hla_flag_filter.run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
@@ -95,6 +95,9 @@ def run_hla_flag_filter():
                                             scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
                                             detection_image, dict_newTAB_matched2drz, phot_table_matched2cat,
                                             proc_type, drz_root_dir, rms_dict)
-
+    try:
+        os.system(comp_cmd)
+    except:
+        print("skipping automatic comparision run")
 if __name__ == "__main__":
     run_hla_flag_filter()
