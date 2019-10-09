@@ -1247,13 +1247,13 @@ def HLANexpFlags(all_drizzled_filelist, filter_sorted_flt_dict, param_dict, dict
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
     all_drizzled_filelist : list
-        List of drizzled images to process
+        List of drizzled images to process.
 
     filter_sorted_flt_dict : dictionary
         dictionary containing lists of calibrated images sorted (also keyed) by filter name.
 
     param_dict : dictionary
-        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+        Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters.
 
     dict_newTAB_matched2drz : dictionary
         dictionary of source lists keyed by drizzled image name.
