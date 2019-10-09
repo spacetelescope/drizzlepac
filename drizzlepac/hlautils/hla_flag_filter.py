@@ -1307,8 +1307,7 @@ def HLANexpFlags(drizzled_image, filter_sorted_flt_dict, param_dict, dict_newTAB
         mask_data = getdata(maskfile)
         mask_array = (mask_data==0.0).astype(numpy.int32)
 
-    component_drz_img_list = get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict)
-
+    component_drz_img_list = get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict)# TODO: This might be a problem for HAP
     nx = drz_data.shape[0]
     ny = drz_data.shape[1]
     nexp_array = numpy.zeros((nx, ny), dtype = numpy.int32)
