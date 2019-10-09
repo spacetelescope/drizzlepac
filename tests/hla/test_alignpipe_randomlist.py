@@ -15,6 +15,7 @@ from importlib import reload
 
 
 from stsci.tools import logutil
+from astropy.io import fits
 
 from drizzlepac.hlautils import astroquery_utils as aqutils
 from drizzlepac import runaligndriz
@@ -145,6 +146,9 @@ def test_alignpipe_randomlist(tmpdir, dataset):
             filename_for_runastrodriz = dataset.lower() + "_asn.fits"
         log.info("Input parameter: {}".format(input_parameter))
         files_on_disk = check_disk_get_data([dataset], suffix=input_parameter, archive=False, clobber=False)
+        if os.path.exists('mastDownload'):
+            shutil.rmtree('mastDownload')
+
         print("Dataset: {}".format(dataset))
         print("\nFiles: {}".format(files_on_disk))
 
@@ -153,15 +157,14 @@ def test_alignpipe_randomlist(tmpdir, dataset):
         os.environ['ASTROMETRY_COMPUTE_APOSTERIORI'] = 'on'
         os.environ['ASTROMETRY_APPLY_APRIORI'] = 'on'
 
+        old_jref = True if '16r12191j_mdz' in fits.getval(files_on_disk[0], 'mdriztab') else False
+        if old_jref:
+            os.path.environ['jref'] = os.path.environ.replace('jref', 'jref.old')
         # Run pipeline processing using
         # runastrodriz accepts *_raw.fits or *_asn.fits, but it assumes the *_fl[t|c].fits files
         # are also present
-        try:
-            runaligndriz.process(filename_for_runastrodriz, force=True)
-        except OSError:
-            os.path.environ['jref'] = os.path.environ.replace('jref', 'jref.old')
-            runaligndriz.process(filename_for_runastrodriz, force=True)
-            
+        runaligndriz.process(filename_for_runastrodriz, force=True)
+
         return_value = 0
 
     # Catch anything that happens as this dataset will be considered a failure, but
