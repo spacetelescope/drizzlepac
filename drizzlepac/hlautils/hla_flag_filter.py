@@ -82,7 +82,7 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
                             param_dict, readnoise_dictionary_drzs,
                             scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
                             detection_image, dict_newTAB_matched2drz, phot_table_matched2drz, proc_type, drz_root_dir,
-                            rms_dict):
+                            rms_dict,debug=True):
     """Simple calling subroutine that executes the other flagging subroutines.
     
     Parameters
@@ -128,10 +128,14 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
     
     rms_dict : dictionary
         dictionary of RMS image counterparts to drizzled images. Keyed by drizzled image name.
+
+    debug : bool
+        write intermediate files?
     
     Returns
     -------
-    Nothing! 
+    catalog_data : astropy.Table object
+        drizzled filter product catalog data with updated flag values
     """
     # -----------------------
     # FLAG FILTER PROCESSING
@@ -146,27 +150,33 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
-    log.info("ci_filter({} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict))
-    catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict)
+    log.info("ci_filter({} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict,
+                                                debug))
+    catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag saturated sources
-    log.info("HLASaturationFlags({} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name, "<Catalog Data>",
-                                                            proc_type, param_dict))
-    catalog_data = HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict)
+    log.info("HLASaturationFlags({} {} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name, "<Catalog Data>",
+                                                            proc_type, param_dict, debug))
+    catalog_data = HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag swarm sources
-    log.info("HLASwarmFlags({} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>", exptime,
-                                                       proc_type, param_dict))
-    phot_table_matched2drz = HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type, param_dict)
+    log.info("HLASwarmFlags({} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>", exptime,
+                                                       proc_type, param_dict, debug))
+    catalog_data = HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type, param_dict, debug)
+
+    return catalog_data
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
     log.info("HLANexpFlags({} {} {} {} {})".format(drizzled_image, flt_list, param_dict, catalog_name, "<Catalog Data>", drz_root_dir))
-    HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_data, drz_root_dir)
+    catalog_data = HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_data, drz_root_dir)
 
-def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,debug=True):
+
+
+
+def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, debug):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
     It also flags sources below the detection limit in mag_aper2 (flag=8).
@@ -187,6 +197,9 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
 
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+
+    debug : bool
+        write intermediate files?
 
     Returns
     -------
@@ -278,12 +291,12 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         rows_to_remove = [z for z in all_indicies if z not in failed_index_list]
         catalog_data_failed.remove_rows(rows_to_remove)
         catalog_data_failed.write(catalog_name_failed,delimiter=",",format='ascii')
-    catalog_data.write(catalog_name, delimiter=",", format='ascii') # TODO: move this into the above debug code block once everything is working in-memory.
+        catalog_data.write(catalog_name+"CIfilt", delimiter=",", format='ascii') # TODO: move this into the above debug code block once everything is working in-memory.
 
 
     return catalog_data
 
-def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict):
+def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict, debug):
     """Identifies and flags saturated sources.
 
     Parameters
@@ -306,6 +319,9 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
 
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+
+    debug : bool
+        write intermediate files?
 
     Returns
     -------
@@ -557,11 +573,12 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
         log.info('FLAGGED {} SOURCES'.format(nsaturated))
         log.info(' ')
 
-        sat_coord_file = drizzled_image.split('/')[-1].split('.')[0] + '_INTERMEDIATE.txt'
-        sat_coord_out = open(sat_coord_file, 'w')
-        for sat_coord in full_coordList[saturation_flag, :]:
-            sat_coord_out.write(str(sat_coord[0]) + '     ' + str(sat_coord[1]) + '\n')
-        sat_coord_out.close()
+        if debug:
+            sat_coord_file = drizzled_image.split('/')[-1].split('.')[0] + '_INTERMEDIATE.txt'
+            sat_coord_out = open(sat_coord_file, 'w')
+            for sat_coord in full_coordList[saturation_flag, :]:
+                sat_coord_out.write(str(sat_coord[0]) + '     ' + str(sat_coord[1]) + '\n')
+            sat_coord_out.close()
 
         # --------------------------------------------------------------------------
         # WRITE SAT FLAGS TO OUTPUT PHOT TABLE BASED ON flag_src_central_pixel_list
@@ -574,7 +591,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
         # phot_table_in.close()
         phot_table_rows = catalog_data
 
-        phot_table_temp = phot_table_root + '_SATFILT.txt'
+
         # phot_table_out = open(phot_table_temp, 'w')
 
         # phot_table_out.write(phot_table_rows[0])
@@ -584,20 +601,22 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
 
             # phot_table_out.write(table_row)
         phot_table_rows = HLA_flag4and8_hunter_killer(phot_table_rows)
-        phot_table_rows.write(phot_table_temp, delimiter=",",
-                           format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
+
+        if debug:
+            phot_table_temp = phot_table_root + '_SATFILT.txt'
+            phot_table_rows.write(phot_table_temp, delimiter=",", format='ascii')
 
         # phot_table_out.close()
 
-        os.system('mv ' + phot_table + ' ' + phot_table + '.PreSatFilt')
-        os.system('mv ' + phot_table_temp + ' ' + phot_table)
-
-        log.info(' ')
-        log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
-        log.info(' ')
+        # os.system('mv ' + phot_table + ' ' + phot_table + '.PreSatFilt')
+        # os.system('mv ' + phot_table_temp + ' ' + phot_table)
+        #
+        # log.info(' ')
+        # log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
+        # log.info(' ')
         return phot_table_rows
 
-def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type, param_dict):
+def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type, param_dict, debug):
 
     """Identifies and flags swarm sources.
 
@@ -620,6 +639,9 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
 
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+
+    debug : bool
+        write intermediate files?
     
     Returns
     -------
@@ -929,16 +951,17 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     # ---------------------------------------------------
     # WRITE CENTRAL PIXEL POSITIONS FOR SWARMS TO A FILE
     # ---------------------------------------------------
-    cetrl_pix_pos_file = phot_table_root+'_SWFILT_CENTRAL-PIX-POS.txt'
-    drz_coord_out = open(cetrl_pix_pos_file,'w')
-    for i in range(len(final_flag_src_central_pixel_list)):
-        drz_coord_out.write(str(final_flag_src_central_pixel_list[i,0])+'     '+
-                            str(final_flag_src_central_pixel_list[i,1])+'     '+
-                            str(final_flag_src_central_pixel_list[i,2])+'     '+
-                            str(final_flag_src_central_pixel_list[i,3])+'     '+
-                            str(final_flag_src_central_pixel_list[i,4])+'     '+
-                            str(final_flag_src_central_pixel_list[i,5])+'\n')
-    drz_coord_out.close()
+    if debug:
+        cetrl_pix_pos_file = phot_table_root+'_SWFILT_CENTRAL-PIX-POS.txt'
+        drz_coord_out = open(cetrl_pix_pos_file,'w')
+        for i in range(len(final_flag_src_central_pixel_list)):
+            drz_coord_out.write(str(final_flag_src_central_pixel_list[i,0])+'     '+
+                                str(final_flag_src_central_pixel_list[i,1])+'     '+
+                                str(final_flag_src_central_pixel_list[i,2])+'     '+
+                                str(final_flag_src_central_pixel_list[i,3])+'     '+
+                                str(final_flag_src_central_pixel_list[i,4])+'     '+
+                                str(final_flag_src_central_pixel_list[i,5])+'\n')
+        drz_coord_out.close()
 
     # ==========================================================================
     # --------------------------------------------------------------------------
@@ -977,8 +1000,8 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     pcentral, pfull = xymatch(final_flag_src_central_pixel_list[:,0:2], swarm_listB[:,0:2], clip_radius_list[0], multiple=True, stack=False, verbose=False)
 
     #XXX RLW: the ring list is needed only for testing, get rid of it when code works
-    testing = True
-    if testing:
+
+    if debug:
         ring_index_list = []
         ring_refepp_list = []
         ring_thresh_list = []
@@ -1044,14 +1067,14 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
 
 
             #XXX RLW: following needed only for testing, get rid of it when code works
-            if testing:
+            if debug:
                 ring_index_list.append(matches)
                 ring_count.append(len(matches))
                 ring_refepp_list.append(ring[:,3]/ref_epp)
                 ring_thresh_list.append(swarm_thresh)
 
     #XXX RLW: following needed only for testing, get rid of it when code works
-    if testing:
+    if debug:
         # -----------------------------------------------------------------------------------------
         # WRITE CLIPPED SOURCES CONTAINED WITHIN RINGS TO AN OUTPUT FILE FOR INTERMEDIATE ANALYSIS
         # -----------------------------------------------------------------------------------------
@@ -1154,15 +1177,16 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
         # --------------------------------------------------------------------------
         # WRITE NEAR CENTRAL POSITION SWARM LIST TO AN OUTPUT FILE FOR VERIFICATION
         # --------------------------------------------------------------------------
-        near_swmList = complete_src_list[proximity_flag, :]
-        final_near_swarm_file = open(phot_table_root+'_SWFILT_NEAR_SWARM_FILE.txt','w')
-        for swarm_value in near_swmList:
-            final_near_swarm_file.write(str(swarm_value[0])+'     '+
-                                   str(swarm_value[1])+'     '+
-                                   str(swarm_value[2])+'     '+
-                                   str(swarm_value[3])+'     '+
-                                   str(swarm_value[4])+'\n')
-        final_near_swarm_file.close()
+        if debug:
+            near_swmList = complete_src_list[proximity_flag, :]
+            final_near_swarm_file = open(phot_table_root+'_SWFILT_NEAR_SWARM_FILE.txt','w')
+            for swarm_value in near_swmList:
+                final_near_swarm_file.write(str(swarm_value[0])+'     '+
+                                       str(swarm_value[1])+'     '+
+                                       str(swarm_value[2])+'     '+
+                                       str(swarm_value[3])+'     '+
+                                       str(swarm_value[4])+'\n')
+            final_near_swarm_file.close()
 
     # -------------------------------------------------------------------------
     # EXTRACT DETECTIONS FROM THE complete_src_list THAT ARE NOT FLAGGED
@@ -1187,26 +1211,28 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     # ----------------------------------------------------
     # WRITE SWARM LIST TO AN OUTPUT FILE FOR VERIFICATION
     # ----------------------------------------------------
-    final_swarm_file = open(phot_table_root+'_SWFILT_SWARM_FILE.txt','w')
-    for swarm_value in final_swarm_list:
-        final_swarm_file.write(str(swarm_value[0])+'     '+
-                               str(swarm_value[1])+'     '+
-                               str(swarm_value[2])+'     '+
-                               str(swarm_value[3])+'     '+
-                               str(swarm_value[4])+'\n')
-    final_swarm_file.close()
+    if debug:
+        final_swarm_file = open(phot_table_root+'_SWFILT_SWARM_FILE.txt','w')
+        for swarm_value in final_swarm_list:
+            final_swarm_file.write(str(swarm_value[0])+'     '+
+                                   str(swarm_value[1])+'     '+
+                                   str(swarm_value[2])+'     '+
+                                   str(swarm_value[3])+'     '+
+                                   str(swarm_value[4])+'\n')
+        final_swarm_file.close()
 
     # ----------------------------------------------------
     # WRITE SOURCE LIST TO AN OUTPUT FILE FOR VERIFICATION
     # ----------------------------------------------------
-    final_source_file = open(phot_table_root+'_SWFILT_SOURCE_FILE.txt','w')
-    for source_value in final_source_list:
-        final_source_file.write(str(source_value[0])+'     '+
-                                str(source_value[1])+'     '+
-                                str(source_value[2])+'     '+
-                                str(source_value[3])+'     '+
-                                str(source_value[4])+'\n')
-    final_source_file.close()
+    if debug:
+        final_source_file = open(phot_table_root+'_SWFILT_SOURCE_FILE.txt','w')
+        for source_value in final_source_list:
+            final_source_file.write(str(source_value[0])+'     '+
+                                    str(source_value[1])+'     '+
+                                    str(source_value[2])+'     '+
+                                    str(source_value[3])+'     '+
+                                    str(source_value[4])+'\n')
+        final_source_file.close()
 
     # =================================================================
     # -----------------------------------------------------------------
@@ -1216,33 +1242,17 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     # -----------------------------------------------------------------
     # =================================================================
     phot_table_temp = phot_table_root+'_SWFILT.txt'
-    # phot_table_out = open(phot_table_temp,'w')
 
-    # phot_table_in = open(catalog_name,'r')
-    # catalog_data = phot_table_in.readlines()
-    # phot_table_in.close()
-
-    # phot_table_out.write(catalog_data[0])
     for i,table_row in enumerate(catalog_data[0:]):
         if combined_flag[i]:
-            # row_split = table_row.split(',')
-            # sat_flag = int(row_split[-1]) | 32
-            # row_split[-1] = str(sat_flag)+'\n'
-            # table_row = ','.join(row_split)
             table_row[-1] |= 32
-        # phot_table_out.write(table_row)
 
-    catalog_data.write(phot_table_temp, delimiter=",",format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
+    if debug:
+        catalog_data.write(phot_table_temp, delimiter=",",format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
 
-    os.system('mv '+catalog_name+' '+catalog_name+'.PreSwarmFilt')
-    os.system('mv '+phot_table_temp+' '+catalog_name)
+    return catalog_data
 
-    log.info(' ')
-    log.info('FINAL SWAR-FILT CATALOG NAME: {}'.format(catalog_name))
-    log.info(' ')
-    return {drizzled_image: catalog_data}  # TODO: refactor once all code is dictinary-independant
-
-def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_data, drz_root_dir):
+def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_data, drz_root_dir, debug):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
     drizzled_image : string
@@ -1263,9 +1273,13 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
 
     drz_root_dir : dictionary of source lists keyed by drizzled image name.
 
+    debug : bool
+        write intermediate files?
+
     Returns
     -------
-    nothing!
+    catalog_data : astropy.Table object
+        drizzled filter product catalog data with updated flag values
     
     """
     # ------------------
@@ -1414,14 +1428,13 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
     for i, table_row in enumerate(catalog_data):
         if artifact_flag[i]:
             table_row[-1] |= 64
+    if debug:
+        phot_table_temp = phot_table_root + '_NEXPFILT.txt'
+        print(phot_table_temp)
+        catalog_data.write(phot_table_temp, delimiter=",", format='ascii')
 
-    phot_table_temp = phot_table_root + '_NEXPFILT.txt'
-    catalog_data.write(phot_table_temp, delimiter=",",
-                       format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
 
-    os.system('mv '+catalog_name+' '+catalog_name+'.PreNexpFilt')
-    os.system('mv '+phot_table_temp+' '+catalog_name)
-    log.info('Created new version of {}'.format(catalog_name))
+    return catalog_data
 
 
 # +++++++++++++++++++++++++++++++++++++++ OLD VERSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
