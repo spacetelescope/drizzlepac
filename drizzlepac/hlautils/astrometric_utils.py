@@ -115,10 +115,10 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
 
     existing_wcs : `~stwcs.wcsutil.HSTWCS`
         existing WCS object specified by the user
-        
+
     num_sources : int
-        Maximum number of brightest/faintest sources to return in catalog.  
-        If `num_sources` is negative, return that number of the faintest 
+        Maximum number of brightest/faintest sources to return in catalog.
+        If `num_sources` is negative, return that number of the faintest
         sources.  By default, all sources are returned.
 
     Notes
@@ -185,7 +185,7 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
         sources = abs(num_sources)
     else:
         sources_type = ""
-        
+
     # Write out table to a file, if specified
     if output:
         ref_table.write(output, format=table_format, overwrite=True)
@@ -862,10 +862,10 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
 
         # kernel = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
         # kernel.normalize()
-        kernel, kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr, 
+        kernel, kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr,
                                                 threshold=threshold,
                                                 fwhm=def_fwhm,
-                                                source_box=source_box, 
+                                                source_box=source_box,
                                                 isolation_size=isolation_size,
                                                 saturation_limit=saturation_limit)
 
@@ -1330,10 +1330,11 @@ def build_wcscat(image, group_id, source_catalog):
     return wcs_catalogs
 
 def rebin(arr, new_shape):
-    """Rebin 2D array arr to shape new_shape by averaging."""
+    """Rebin 2D array arr to shape new_shape by summing."""
     shape = (new_shape[0], arr.shape[0] // new_shape[0],
              new_shape[1], arr.shape[1] // new_shape[1])
     return arr.reshape(shape).sum(-1).sum(1)
+
 
 def maxBit(int_val):
     """Return power of 2 for highest bit set for integer"""
@@ -1420,6 +1421,16 @@ def determine_focus_index(img, sigma=1.5):
        sharpness of the image based on the max pixel value from the image
        after applying a Laplacian-of-Gaussian filter with sigma.
 
+       This index needs to be based on 'max' value in order to avoid
+       field-dependent biases, since the 'max' value will correspond
+       to point-source-like sources regardless of the field
+       (nebula, galaxy, ...).  Care must be taken, though, to ignore
+       cosmic-rays as much as possible as they will mimic real sources
+       without providing information on the actual focus through the optics.
+       Similarly, saturation regions must also be ignored as they also
+       only indicate a detector feature, not the focus through the optics or
+       alignment of actual sources.
+
     """
 
     img_log = ndimage.gaussian_laplace(img, sigma)
@@ -1455,6 +1466,7 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
             full_sat_mask = sat_mask
         else:
             full_sat_mask = np.bitwise_and(full_sat_mask, sat_mask)
+
     # Now apply full saturation mask to each single_sci image and compute focus
     for f in singlefiles:
         imgarr = fits.getdata(f)

@@ -86,7 +86,7 @@ __version_date__ = "(09-Oct-2019)"
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
 PIPELINE_PARS = {'mdriztab': True,
-                 'in_memory': False,
+                 'in_memory': True,
                  'stepsize': 10,
                  'output': '',
                  'preserve': False,
@@ -784,6 +784,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
     finally:
         if tmpdir:
+            _appendTrlFile(os.path.join(parent_dir, trlfile), trlfile)
             # Return to main processing dir
             os.chdir(parent_dir)
 
