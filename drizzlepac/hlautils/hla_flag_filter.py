@@ -163,8 +163,8 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
-    log.info("HLANexpFlags({} {} {} {} {})".format(drizzled_image, filter_sorted_flt_dict, param_dict, dict_newTAB_matched2drz, "<Catalog Data>", drz_root_dir))
-    HLANexpFlags(drizzled_image, filter_sorted_flt_dict, param_dict, dict_newTAB_matched2drz, catalog_data, drz_root_dir)
+    log.info("HLANexpFlags({} {} {} {} {})".format(drizzled_image, flt_list, param_dict, catalog_name, "<Catalog Data>", drz_root_dir))
+    HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_data, drz_root_dir)
 
 def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,debug=True):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
@@ -1242,20 +1242,21 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     log.info(' ')
     return {drizzled_image: catalog_data}  # TODO: refactor once all code is dictinary-independant
 
-def HLANexpFlags(drizzled_image, filter_sorted_flt_dict, param_dict, dict_newTAB_matched2drz, catalog_data, drz_root_dir):
+def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_data, drz_root_dir):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
     drizzled_image : string
         Name of drizzled image to process
 
-    filter_sorted_flt_dict : dictionary
-        dictionary containing lists of calibrated images sorted (also keyed) by filter name.
+    flt_list : list
+        list of calibrated images that were drizzle-combined to produce image specified by input parameter
+        'drizzled_image'
 
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters.
 
-    dict_newTAB_matched2drz : dictionary
-        dictionary of source lists keyed by drizzled image name.
+    catalog_name : string
+        drizzled filter product catalog filename to process
 
     catalog_data : astropy.Table object
         drizzled filter product catalog data to process
@@ -1307,7 +1308,7 @@ def HLANexpFlags(drizzled_image, filter_sorted_flt_dict, param_dict, dict_newTAB
         mask_data = getdata(maskfile)
         mask_array = (mask_data==0.0).astype(numpy.int32)
 
-    component_drz_img_list = get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict)# TODO: This might be a problem for HAP
+    component_drz_img_list = get_component_drz_list(drizzled_image, drz_root_dir, flt_list)# TODO: This might be a problem for HAP
     nx = drz_data.shape[0]
     ny = drz_data.shape[1]
     nexp_array = numpy.zeros((nx, ny), dtype = numpy.int32)
@@ -1334,8 +1335,8 @@ def HLANexpFlags(drizzled_image, filter_sorted_flt_dict, param_dict, dict_newTAB
     # EXTRACT FLUX/NEXP INFORMATION FROM NEXP IMAGE BASED ON
     # THE SOURCE DETECTION POSITIONS PREVIOUSLY ESTABLISHED
     # -------------------------------------------------------
-    phot_table = dict_newTAB_matched2drz[drizzled_image]
-    phot_table_root = phot_table.split('/')[-1].split('.')[0]
+
+    phot_table_root = catalog_name.split('/')[-1].split('.')[0]
 
     nrows = len(catalog_data)
     cat_coords = numpy.empty((nrows,2),dtype=float)
@@ -1418,9 +1419,9 @@ def HLANexpFlags(drizzled_image, filter_sorted_flt_dict, param_dict, dict_newTAB
     catalog_data.write(phot_table_temp, delimiter=",",
                        format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
 
-    os.system('mv '+phot_table+' '+phot_table+'.PreNexpFilt')
-    os.system('mv '+phot_table_temp+' '+phot_table)
-    log.info('Created new version of {}'.format(phot_table))
+    os.system('mv '+catalog_name+' '+catalog_name+'.PreNexpFilt')
+    os.system('mv '+phot_table_temp+' '+catalog_name)
+    log.info('Created new version of {}'.format(catalog_name))
 
 
 # +++++++++++++++++++++++++++++++++++++++ OLD VERSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -2865,7 +2866,7 @@ def HLA_flag4and8_hunter_killer_OLD(photfilename):
 
 # +++++++++++++++++++++++++++++++++++++++++ END OLD VERSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-def get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict):
+def get_component_drz_list(drizzled_image, drz_root_dir, flt_file_names):
 
     """Get a list of the drizzled exposure images associated with this combined drizzled image
 
@@ -2893,7 +2894,12 @@ def get_component_drz_list(drizzled_image, drz_root_dir, filter_sorted_flt_dict)
     component_drz_img_list.sort()
 
     drz_filter = drizzled_image.split("_")[5]  # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
-    list_of_flts = filter_sorted_flt_dict[drz_filter.lower()]
+
+    if type(flt_file_names).__name__ == 'dict':
+        list_of_flts = flt_file_names[drz_filter.lower()]
+    if type(flt_file_names).__name__ == 'list':
+        list_of_flts = flt_file_names
+
     if len(list_of_flts) == len(component_drz_img_list):
         # length match means we use them all
         return component_drz_img_list
