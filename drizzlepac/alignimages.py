@@ -707,7 +707,7 @@ def check_mag_corr(imglist, threshold=0.5):
         if input_mags is not None and len(input_mags) > 0:
             mag_corr, mag_corr_std = pearsonr(input_mags, ref_mags)
             print("{} Magnitude correlation: {}".format(image.meta['name'], mag_corr))
-            cross_match_check = True if mag_corr > threshold else False
+            cross_match_check = True if abs(mag_corr) > threshold else False
         else:
             cross_match_check = False
         mag_checks.append(cross_match_check)
@@ -1027,7 +1027,8 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         # Compute correlation between input and GAIA magnitudes
         if num_xmatches < max(0.1 * item.meta['num_ref_catalog'], 10):
             cross_match_check = check_mag_corr([item])[0]
-            log.info("Cross-match check: {}".format(cross_match_check))
+            log.info("Cross-match check: {} on {} ref sources".format(cross_match_check,
+                                                                      item.meta['num_ref_catalog']))
         else:
             cross_match_check = True
 
