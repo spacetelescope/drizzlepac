@@ -739,13 +739,15 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         _trlmsg = _timestamp('Verification of {} alignment started '.format(tmpname))
         # Only check focus on CTE corrected, when available
         align_focus = focus_dicts[-1] if 'drc' in focus_dicts[-1]['prodname'] else focus_dicts[0]
+
         inst = fits.getval(alignfiles[0], 'instrume').lower()
         det = fits.getval(alignfiles[0], 'detector').lower()
         pscale = HSTWCS(alignfiles[0], ext=1).pscale
         det_pars = alignimages.detector_specific_params[inst][det]
         default_fwhm = det_pars['fwhmpsf'] / pscale
         align_fwhm = amutils.get_align_fwhm(align_focus, default_fwhm)
-        print("align_fwhm: {}[{},{}]={:0.4f}pix".format(align_focus['prodname'],
+        if align_fwhm:
+            print("align_fwhm: {}[{},{}]={:0.4f}pix".format(align_focus['prodname'],
                                                         align_focus['prod_pos'][1],
                                                         align_focus['prod_pos'][0],
                                                         align_fwhm))
