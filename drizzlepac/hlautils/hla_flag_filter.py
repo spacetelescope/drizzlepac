@@ -166,15 +166,17 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
                                                        proc_type, param_dict, debug))
     catalog_data = HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type, param_dict, debug)
 
-    return catalog_data
+
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
-    log.info("HLANexpFlags({} {} {} {} {})".format(drizzled_image, flt_list, param_dict, catalog_name, "<Catalog Data>", drz_root_dir))
-    catalog_data = HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_data, drz_root_dir)
+    log.info("HLANexpFlags({} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, catalog_name,
+                                                         "<Catalog Data>", drz_root_dir, debug))
+    catalog_data = HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_data, drz_root_dir, debug)
 
+    return catalog_data
 
-
+# ======================================================================================================================
 
 def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, debug):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
@@ -295,6 +297,8 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
 
 
     return catalog_data
+
+# ======================================================================================================================
 
 def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict, debug):
     """Identifies and flags saturated sources.
@@ -615,6 +619,8 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
         # log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
         # log.info(' ')
         return phot_table_rows
+
+# ======================================================================================================================
 
 def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type, param_dict, debug):
 
@@ -1252,6 +1258,8 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
 
     return catalog_data
 
+# ======================================================================================================================
+
 def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_data, drz_root_dir, debug):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
@@ -1504,6 +1512,8 @@ def run_source_list_flaging_OLD(all_drizzled_filelist, working_hla_red, filter_s
     HLANexpFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
                  scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir)
 
+# ======================================================================================================================
+
 def ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, proc_type, param_dict):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
@@ -1634,6 +1644,7 @@ def ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_re
         os.system('mv '+phot_table+' '+phot_table+'.PreCIFilt')
         os.system('mv '+phot_table_temp+' '+phot_table)
 
+# ======================================================================================================================
 
 def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
                            scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict):
@@ -1953,6 +1964,8 @@ def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted
             log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
             log.info(' ')
             HLA_flag4and8_hunter_killer_OLD(phot_table)
+
+# ======================================================================================================================
 
 def HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
                       filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict):
@@ -2618,6 +2631,7 @@ def HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hl
         log.info('FINAL SWAR-FILT PHOT_TABLE: {}'.format(phot_table))
         log.info(' ')
 
+# ======================================================================================================================
 
 def HLANexpFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict,
                      readnoise_dictionary_drzs,scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz,
@@ -2834,6 +2848,8 @@ def HLANexpFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_d
         os.system('mv ' + phot_table_temp + ' ' + phot_table)
 
         log.info('Created new version of {}'.format(phot_table))
+
+# ======================================================================================================================
 
 def HLA_flag4and8_hunter_killer_OLD(photfilename):
     """This function searches through photometry catalogs for sources whose flags contain
@@ -3094,6 +3110,7 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
     else:
         return p2
 
+# ======================================================================================================================
 
 def sorted_median(a):
     """Compute the median for a 1-D numpy array that is already sorted
@@ -3116,6 +3133,7 @@ def sorted_median(a):
         med = 0.5*(a[ll//2]+a[ll//2 - 1])
     return med
 
+# ======================================================================================================================
 
 def get_median_sky(drizzled_image):
     """Read drizzled image from FITS file and compute sky
@@ -3159,6 +3177,7 @@ def get_median_sky(drizzled_image):
     del driz_img_data # free memory
     return median_sky
 
+# ======================================================================================================================
 
 def rdtoxy(rd_coord_array, image, image_ext):
     """converts RA and dec to x,y image coords.
@@ -3185,6 +3204,7 @@ def rdtoxy(rd_coord_array, image, image_ext):
         xy_arr = wcs.wcs_world2pix(rd_coord_array,1)
     return (xy_arr)
 
+# ======================================================================================================================
 
 def xytord(xy_coord_array, image, image_ext):
     """converts x,y image coords to RA and dec.
@@ -3233,6 +3253,7 @@ def extract_name(stringWpath):
     stringname = stringWpath.split("/")[-1]
     return stringname
 
+# ======================================================================================================================
 def arrayfy_ctx(ctx, maxindex):
 
     """Function to turn the context array returned by AstroDrizzle
@@ -3285,6 +3306,8 @@ def arrayfy_ctx(ctx, maxindex):
         else:
             ctxarray [:,:,i] = numpy.bitwise_and (ctx[:,:], cc)
     return ctxarray
+
+# ======================================================================================================================
 
 def HLA_flag4and8_hunter_killer(catalog_data):
     """This function searches through photometry catalogs for sources whose flags contain
