@@ -8,6 +8,7 @@
     "swarm filter": {
       "upper_epp_limit": 70000.0,
       "lower_epp_limit": 2000.0,
+      "selfradius": 20.0,
       "eppsky_limit": 1000.0,
       "swarm_thresh": 1.0,
       "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
