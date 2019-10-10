@@ -1386,13 +1386,13 @@ def run_source_list_flaging_OLD(all_drizzled_filelist, working_hla_red, filter_s
     -------
     Nothing!
     """
-    ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
+    ci_filter_OLD(all_drizzled_filelist, dict_newTAB_matched2drz,working_hla_red, proc_type, param_dict)
 
     HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, readnoise_dictionary_drzs,
-                           scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict) # TODO: remove once all code is dictinary-independant
+                           scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, proc_type, param_dict)
 
     HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hla_red, exp_dictionary_scis,
-                      filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict) # TODO: remove once all code is dictinary-independant
+                      filter_sorted_flt_dict, detection_image, proc_type, rms_dict, param_dict)
 
     HLANexpFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict, readnoise_dictionary_drzs,
                  scale_dict_drzs, exp_dictionary_scis, dict_newTAB_matched2drz, drz_root_dir)
@@ -1571,7 +1571,7 @@ def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted
     """
     for drizzled_image in all_drizzled_filelist:
         image_split = drizzled_image.split('/')[-1]
-        channel = drizzled_image.split("_")[-3].upper() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+        channel = drizzled_image.split("_")[-3].upper()
 
         if channel == 'IR':
             continue
@@ -1590,7 +1590,7 @@ def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted
         main_drizzled_filelist = [drizzled_image]
         main_drizzled_filelist_orig = [drizzled_image]
 
-        drz_filter = drizzled_image.split("_")[5] # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
+        drz_filter = drizzled_image.split("_")[5]
         list_of_flts_in_main_driz = filter_sorted_flt_dict[drz_filter.lower()]
         num_flts_in_main_driz = len(list_of_flts_in_main_driz)
         list_of_flts_in_main_driz.sort()
@@ -1746,7 +1746,7 @@ def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted
         # Convert aperture radius to pixels
         # ----------------------------------
         ap2 = param_dict['catalog generation']['dao']['aperture_2']
-        if proc_type == 'daophot': #TODO: WHY ARE THESE HARDCODED IN HERE??? MOVE TO MAIN PARAM_DICT DEFINITINON, RUNSHLAPROCESSING.PY, LINE 39.
+        if proc_type == 'daophot':
             if channel == 'IR':
                 radius = round((ap2 / 0.09) + 0.5) * 2.
             if channel == 'UVIS':
@@ -1931,7 +1931,7 @@ def HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hl
 
         image_split = drizzled_image.split('/')[-1]
         channel = drizzled_image.split("_")[
-            -3].lower()  # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+            -3].lower()
 
         ap2 = param_dict['catalog generation']['dao']['aperture_2']
         if proc_type not in ('sexphot', 'daophot'):
@@ -1941,11 +1941,11 @@ def HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hl
         # Convert aperture radius to pixels
         # ----------------------------------
         radius = ap2 / float(
-            param_dict['catalog generation']['dao']['scale'])  # TODO: this value should be probably be somewhere else
+            param_dict['catalog generation']['dao']['scale'])
         log.info(' ')
         log.info('Aperture Size = {}'.format(ap2))
         log.info('Pixel Scale = {} arcsec per pixel'.format(float(
-            param_dict['catalog generation']['dao']['scale'])))  # TODO: this value should be probably be somewhere else
+            param_dict['catalog generation']['dao']['scale'])))
         log.info(' ')
         area = math.pi * radius ** 2
         exptime = exp_dictionary_scis[drizzled_image]
@@ -2560,7 +2560,7 @@ def HLANexpFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_d
     for drizzled_image in all_drizzled_filelist:
         image_split = drizzled_image.split('/')[-1]
         channel = drizzled_image.split("_")[
-            -3].upper()  # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+            -3].upper()
 
         # if channel == 'IR':
         #    continue
@@ -2649,7 +2649,7 @@ def HLANexpFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_d
 
         ap2 = param_dict['catalog generation']['dao']['aperture_2']
 
-        if channel == 'IR':  # TODO: PLATESCALE SHOULDN"T BE HARD-CODED HERE. SHOULD USE PARAM_DICT VALUE.
+        if channel == 'IR':
             radius = ap2 / 0.09
         if channel == 'UVIS':
             radius = ap2 / 0.04
