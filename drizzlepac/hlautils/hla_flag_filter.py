@@ -225,8 +225,6 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     log.info('ci_upper_limit = {}'.format(ci_upper_limit))
     log.info(' ')
 
-    catalog_name_temp = catalog_name_root + '_temp.txt'
-    catalog_name_failed = catalog_name_root + '_Failed-CI.txt'
 
     if debug:
         failed_index_list=[]
@@ -267,12 +265,16 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
 
     if debug:
         # Write out list of ONLY failed rows to to file
+        catalog_name_failed = catalog_name_root + '_Failed-CI.txt'
         catalog_data_failed = catalog_data.copy()
         all_indicies = range(0, len(catalog_data))
         rows_to_remove = [z for z in all_indicies if z not in failed_index_list]
         catalog_data_failed.remove_rows(rows_to_remove)
         catalog_data_failed.write(catalog_name_failed,delimiter=",",format='ascii')
-        catalog_data.write(catalog_name+"CIfilt", delimiter=",", format='ascii') # TODO: move this into the above debug code block once everything is working in-memory.
+
+        # Write out intermediate catalog with updated flags
+        catalog_name = catalog_name_root + 'CIFILT.txt'
+        catalog_data.write(catalog_name, delimiter=",", format='ascii')
 
 
     return catalog_data
@@ -443,7 +445,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
         log.info('*******************************************************************************************')
         log.info(' ')
 
-        return catalog_data  # TODO: refactor once all code is dictinary-independant
+        return catalog_data
 
     # ------------------------------
     # now concatenate all the arrays
@@ -473,9 +475,6 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     nrows = len(all_detections)
     full_coordList = numpy.empty((nrows, 2), dtype=numpy.float)
     for row_count, detection in enumerate(all_detections):
-        # ss = detection.split(',') # TODO: Remove once in-memory conversion is done
-        # full_coordList[row_count, 0] = float(ss[0]) # TODO: Remove once in-memory conversion is done
-        # full_coordList[row_count, 1] = float(ss[1]) # TODO: Remove once in-memory conversion is done
         full_coordList[row_count, 0] = float(detection[0])
         full_coordList[row_count, 1] = float(detection[1])
 
@@ -569,34 +568,16 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
         phot_table = catalog_name
         phot_table_root = phot_table.split('.')[0]
 
-        # phot_table_in = open(phot_table, 'r')
-        # phot_table_rows = phot_table_in.readlines()
-        # phot_table_in.close()
         phot_table_rows = catalog_data
-
-
-        # phot_table_out = open(phot_table_temp, 'w')
-
-        # phot_table_out.write(phot_table_rows[0])
         for i, table_row in enumerate(phot_table_rows):
             if saturation_flag[i]:
                 table_row[-1] = int(table_row[-1]) | 4
 
-            # phot_table_out.write(table_row)
         phot_table_rows = HLA_flag4and8_hunter_killer(phot_table_rows)
 
         if debug:
             phot_table_temp = phot_table_root + '_SATFILT.txt'
             phot_table_rows.write(phot_table_temp, delimiter=",", format='ascii')
-
-        # phot_table_out.close()
-
-        # os.system('mv ' + phot_table + ' ' + phot_table + '.PreSatFilt')
-        # os.system('mv ' + phot_table_temp + ' ' + phot_table)
-        #
-        # log.info(' ')
-        # log.info('FINAL SAT-FILT PHOT_TABLE: {}'.format(phot_table))
-        # log.info(' ')
         return phot_table_rows
 
 # ======================================================================================================================
@@ -1219,21 +1200,17 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
                                     str(source_value[4])+'\n')
         final_source_file.close()
 
-    # =================================================================
-    # -----------------------------------------------------------------
-    # -----------------------------------------------------------------
-    # WRITE SWARM FLAGS TO OUTPUT PHOT TABLE BASED ON final_swarm_list
-    # -----------------------------------------------------------------
-    # -----------------------------------------------------------------
-    # =================================================================
-    phot_table_temp = phot_table_root+'_SWFILT.txt'
 
+
+    # Update catalog_data flag values
     for i,table_row in enumerate(catalog_data[0:]):
         if combined_flag[i]:
             table_row[-1] |= 32
 
     if debug:
-        catalog_data.write(phot_table_temp, delimiter=",",format='ascii')  # TODO: move this into the above debug code block once everything is working in-memory.
+        # Write out intermediate catalog with updated flags
+        phot_table_temp = phot_table_root + '_SWFILT.txt'
+        catalog_data.write(phot_table_temp, delimiter=",",format='ascii')
 
     return catalog_data
 
@@ -1415,9 +1392,10 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
     for i, table_row in enumerate(catalog_data):
         if artifact_flag[i]:
             table_row[-1] |= 64
+
     if debug:
+        # Write out intermediate catalog with updated flags
         phot_table_temp = phot_table_root + '_NEXPFILT.txt'
-        print(phot_table_temp)
         catalog_data.write(phot_table_temp, delimiter=",", format='ascii')
 
 
