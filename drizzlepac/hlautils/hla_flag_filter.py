@@ -1268,21 +1268,22 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
     # ----------------------------------
 
     ap2 = param_dict['catalog generation']['dao']['aperture_2']
-
-    if channel == 'IR': #TODO: PLATESCALE SHOULDN"T BE HARD-CODED HERE. SHOULD USE PARAM_DICT VALUE.
-        radius = ap2 / 0.09
-    if channel == 'UVIS':
-        radius = ap2 / 0.04
-    if channel == 'WFC': #ACS/WFC
-        radius = ap2 / 0.05
-    if channel == 'HRC':
-        radius = ap2 / 0.025
-    if channel == 'SBC':
-        radius = ap2 / 0.03
-    if channel == 'WFPC2':
-        radius = ap2 / 0.1
-    if channel == 'PC':
-        radius = ap2 / 0.05
+    plate_scale = param_dict['catalog generation']['dao']['scale'] #TODO: Need to move scale value out of 'catalog generation' > 'dao' to somewhere more sensable
+    radius = ap2/plate_scale
+    # if channel == 'IR': #TODO: PLATESCALE SHOULDN"T BE HARD-CODED HERE. SHOULD USE PARAM_DICT VALUE.
+    #     radius = ap2 / 0.09
+    # if channel == 'UVIS':
+    #     radius = ap2 / 0.04
+    # if channel == 'WFC': #ACS/WFC
+    #     radius = ap2 / 0.05
+    # if channel == 'HRC':
+    #     radius = ap2 / 0.025
+    # if channel == 'SBC':
+    #     radius = ap2 / 0.03
+    # if channel == 'WFPC2':
+    #     radius = ap2 / 0.1
+    # if channel == 'PC':
+    #     radius = ap2 / 0.05
 
     num_exp = round(numpy.max(nexp_array))
     if num_exp<=1 or channel in ('IR','SBC'):
