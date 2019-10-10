@@ -371,9 +371,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, in_memory=True,
 
         # run updatewcs with use_db=True to insure all products have
         # have a priori solutions as extensions
-        updatewcs.updatewcs(calfiles)
-        if calfiles_flc:
-            updatewcs.updatewcs(calfiles_flc)
+        updatewcs.updatewcs(_calfiles)
+        if _calfiles_flc:
+            updatewcs.updatewcs(_calfiles_flc)
 
         # Generate initial default products and perform verification
         align_apriori = verify_alignment(_inlist,
