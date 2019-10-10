@@ -723,25 +723,9 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     eppsky_limit_cfg = float(param_dict["quality control"]["swarm filter"]["eppsky_limit"])
     selfradius = float(param_dict["quality control"]["swarm filter"]["selfradius"])
 
-    # TODO: Figure out what to do with all these hard-coded values for 'selfradious' below
-
     eppsky_limit = eppsky_limit_cfg * median_sky
 
-    if data_type.upper() == 'UVIS':
-        eppsky_limit = eppsky_limit_cfg * median_sky
-        selfradius = 20.0
 
-    if data_type.upper() == 'IR':
-        eppsky_limit = eppsky_limit_cfg * median_sky
-        selfradius = 10.0
-
-    if data_type.upper() == 'WFC':#acs/wfc
-        eppsky_limit = eppsky_limit_cfg * median_sky
-        selfradius = 20.0
-
-    if data_type.upper() == 'HRC':
-        eppsky_limit = eppsky_limit_cfg * median_sky
-        selfradius = 20.0 # TODO: JUST USING ACS/WFC VALUE. PROBABLY NEEDS TO BE OPTIMIZED FOR HRC.
 
 
 
