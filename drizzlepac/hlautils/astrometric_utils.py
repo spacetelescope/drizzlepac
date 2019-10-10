@@ -1433,10 +1433,11 @@ def determine_focus_index(img, sigma=1.5):
 
     """
 
-    img_log = ndimage.gaussian_laplace(img, sigma)
-    focus_val = np.abs(img_log).max()
+    img_log = np.abs(ndimage.gaussian_laplace(img, sigma))
+    focus_val = img_log.max()
+    focus_pos = np.where(img_log == focus_val)
 
-    return focus_val
+    return focus_val, focus_pos
 
 def compute_zero_mask(imgarr, iterations=8, ext=0):
     """Find section from image with no masked out pixels and max total flux"""
@@ -1455,6 +1456,7 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
     from drizzlepac.hlautils import astrometric_utils as amutils
 
     focus_dict = {'exp': [], 'prod': [], 'stats': {},
+                  'exp_pos': None, 'prod_pos': None,
                   'alignment_verified': False, 'alignment_quality': -1,
                   'expnames': singlefiles, 'prodname': prodfile}
 
@@ -1471,13 +1473,17 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
     for f in singlefiles:
         imgarr = fits.getdata(f)
         imgarr[~full_sat_mask] = 0
-        focus_dict['exp'].append(np.float64(amutils.determine_focus_index(imgarr, sigma=sigma)))
+        focus_val, focus_pos = amutils.determine_focus_index(imgarr, sigma=sigma)
+        focus_dict['exp'].append(float(focus_val))
+        focus_dict['exp_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
 
     # Generate results for drizzle product(s)
     prodarr = fits.getdata(prodfile)
     prodarr[~full_sat_mask] = 0
     # Insure output values are JSON-compliant
-    focus_dict['prod'].append(np.float64(amutils.determine_focus_index(prodarr, sigma=sigma)))
+    focus_val, focus_pos = amutils.determine_focus_index(prodarr, sigma=sigma)
+    focus_dict['prod'].append(float(focus_val))
+    focus_dict['prod_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
 
     # Determine statistics for evalaution
     exparr = np.array(focus_dict['exp'])
@@ -1501,3 +1507,20 @@ def evaluate_focus(focus_dict, tolerance=0.8):
         alignment_verified = True
 
     return alignment_verified
+
+def get_align_fwhm(focus_dict, default_fwhm, src_size=32):
+    """Determine FWHM based on position of sharpest focus in the product"""
+    pimg = fits.open(focus_dict['prodname'])
+    posy, posx = focus_dict['prod_pos']
+
+    prod = pimg[1].data if len(pimg) > 1 else pimg[0].data
+
+    src = prod[posy - src_size:posy + src_size, posx - src_size:posx + src_size]
+    # Normalize to total flux of 1 for FWHM determination
+    kernel = src / src.sum()
+
+    fwhm = find_fwhm(kernel, default_fwhm)
+    # Be nice and close the FITS image
+    pimg.close()
+
+    return fwhm

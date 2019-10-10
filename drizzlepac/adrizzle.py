@@ -982,7 +982,6 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         # update imageObject with product in memory
         if single:
             img.saveVirtualOutputs(outimgs)
-            print("saving virtual outputs to memory: {}".format(outimgs))
 
     # this is after the doWrite
     time_write = time.time() - epoch; epoch = time.time()
