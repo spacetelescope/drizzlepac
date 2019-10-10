@@ -1061,21 +1061,22 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
 
     if proximity_choice: # TODO: optimize ctrList_radiusList, ctrList_thresholdList for ACS wfc, hrc, sbc in quality control config files
         if len(final_flag_src_central_pixel_list) > 0: # TODO: Figure out what to do with all these hard-coded values
-            #XXX these ought to come from config files
             if data_type == 'ir':
-                # ctrList_radiusList = [25,100,80,30,50,20,15,10]
-                # ctrList_thresholdList = [2000000,1800000,500000,250000,100000,40000,20000,2000]
                 ctrList_radiusList = [125,100,80,30,50,20,15]
                 ctrList_thresholdList = [2000000,1800000,500000,250000,100000,40000,20000]
             if data_type == 'uvis':
                 ctrList_radiusList = [40,35,20,15,10]
                 ctrList_thresholdList = [100000,70000,50000,10000,2000]
-            if data_type == 'wfc': #acs/wfc
-                ctrList_radiusList = [40,35,20,15,10] #just copied UVIS values. These values need to be optimized for ACS/WFC
-                ctrList_thresholdList = [100000,70000,50000,10000,2000] #just copied UVIS values. These values need to be optimized for ACS/WFC
+
             if data_type == 'hrc':
                 ctrList_radiusList = [40,35,20,15,10] #just copied UVIS values. These values need to be optimized for ACS/HRC
                 ctrList_thresholdList = [100000,70000,50000,10000,2000] #just copied UVIS values. These values need to be optimized for ACS/HRC
+
+            ctrList_radiusList = param_dict["quality control"]["swarm filter"]["ctrList_radiusList"] # TODO: optimize ctrList_radiusList for ACS wfc, hrc, sbc in quality control config files
+            ctrList_radiusList = list(map(int, ctrList_radiusList))
+
+            ctrList_thresholdList = param_dict["quality control"]["swarm filter"]["ctrList_thresholdList"] # TODO: optimize ctrList_thresholdList for ACS wfc, hrc, sbc in quality control config files
+            ctrList_thresholdList = list(map(int, ctrList_thresholdList))
 
             for ctrList_cnt,(threshold,radius) in enumerate(zip(ctrList_thresholdList, ctrList_radiusList)):
 
