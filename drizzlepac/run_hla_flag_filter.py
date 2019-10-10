@@ -68,7 +68,7 @@ def run_hla_flag_filter():
 
     if out_file == "j9es06.out": # acs_10595_06
         # settings for testing ~/Documents/HLAtransition/runhlaprocessing_testing/acs_10595_06_flag_testing/
-        mode = "dao"
+        mode = "sex"
         all_drizzled_filelist = ["hst_10595_06_acs_wfc_f435w_drz.fits"]
         working_hla_red = os.getcwd()
         filter_sorted_flt_dict = {"f435w": ["j9es06rbq_flc.fits", "j9es06rcq_flc.fits", "j9es06req_flc.fits", "j9es06rgq_flc.fits"]}

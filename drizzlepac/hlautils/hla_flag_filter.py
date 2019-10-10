@@ -491,33 +491,12 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     # Convert aperture radius to pixels
     # ----------------------------------
     ap2 = param_dict['catalog generation']['dao']['aperture_2']
-    if proc_type == 'daophot':  # TODO: WHY ARE THESE HARDCODED IN HERE??? MOVE TO MAIN PARAM_DICT DEFINITINON, RUNSHLAPROCESSING.PY, LINE 39.
-        if channel == 'IR':
-            radius = round((ap2 / 0.09) + 0.5) * 2.
-        if channel == 'UVIS':
-            radius = round((ap2 / 0.04) + 0.5) * 2.
-        if channel == 'WFC':
-            radius = round((ap2 / 0.05) + 0.5) * 2.
-        if channel == 'HRC':
-            radius = round((ap2 / 0.027) + 0.5) * 2.
-        if channel == 'WFPC2':
-            radius = round((ap2 / 0.1) + 0.5) * 2.
-        if channel == 'PC':
-            radius = round((ap2 / 0.046) + 0.5) * 2.
+    plate_scale = param_dict['catalog generation']['dao']['scale'] #TODO: Need to move scale value out of 'catalog generation' > 'dao' to somewhere more sensable
+    if proc_type == 'daophot':
+        radius = round((ap2/plate_scale) + 0.5) * 2. # TODO: WHY DOES DAOPHOT RADIUS VALUE MULTIPLIED BY 2 BUT SEXPHOT VALUE IS NOT?
 
     if proc_type == 'sexphot':
-        if channel == 'IR':
-            radius = round((ap2 / 0.09) + 0.5)
-        if channel == 'UVIS':
-            radius = round((ap2 / 0.04) + 0.5)
-        if channel == 'WFC':
-            radius = round((ap2 / 0.05) + 0.5)
-        if channel == 'HRC':
-            radius = round((ap2 / 0.027) + 0.5)
-        if channel == 'WFPC2':
-            radius = round((ap2 / 0.1) + 0.5)
-        if channel == 'PC':
-            radius = round((ap2 / 0.046) + 0.5) * 2.
+        radius = round((ap2 / plate_scale) + 0.5) # TODO: WHY DOES DAOPHOT RADIUS VALUE MULTIPLIED BY 2 BUT SEXPHOT VALUE IS NOT?
 
     log.info(' ')
     log.info('THE RADIAL DISTANCE BEING USED IS {} PIXELS'.format(str(radius)))
@@ -548,7 +527,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
         log.info('**************************************************************************************')
         log.info(' ')
 
-        return catalog_data  # TODO: refactor once all code is dictinary-independant
+        return catalog_data
 
     else:
         log.info(' ')
@@ -697,7 +676,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
         complete_src_list[row_num,:] = [x_val,y_val,flux,electronpp,sky,eppsky]
 
     if len(complete_src_list) == 0:
-        return {drizzled_image: catalog_data}  # TODO: refactor once all code is dictinary-independant
+        return catalog_data
 
     # view into the complete_src_list array for convenience
     swarm_epp_listA = complete_src_list[:,3]
