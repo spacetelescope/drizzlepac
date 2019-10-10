@@ -78,42 +78,24 @@ y_limit = 2051.
 
 
 @util.with_logging
-def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict,
-                            param_dict, readnoise_dictionary_drzs,
-                            scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
-                            detection_image, dict_newTAB_matched2drz, phot_table_matched2drz, proc_type, drz_root_dir,
-                            rms_dict,debug=True):
+def run_source_list_flaging(all_drizzled_filelist, filter_sorted_flt_dict,param_dict, exp_dictionary_scis,
+                            dict_newTAB_matched2drz, phot_table_matched2drz, proc_type, drz_root_dir, debug=True):
     """Simple calling subroutine that executes the other flagging subroutines.
     
     Parameters
     ----------
     all_drizzled_filelist : list
         List of drizzled images to process
-        
-    working_hla_red : string
-        full path to working directory
-    
+
     filter_sorted_flt_dict : dictionary
         dictionary containing lists of calibrated images sorted (also keyed) by filter name.
     
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
-    
-    readnoise_dictionary_drzs : dictionary
-        dictionary of readnoise values keyed by drizzled image.
-        
-    scale_dict_drzs : dictionary
-        dictionary of scale values keyed by drizzled image name.
-    
-    zero_point_AB_dict : dictionary
-        ***UNUSED*** dictionary of zeropoint values keyed by drizzled image name.
-    
+
     exp_dictionary_scis : dictionary
         dictionary of exposure time values keyed by drizzled image name.
-    
-    detection_image : string
-        name of drizzled image.
-    
+
     dict_newTAB_matched2drz : dictionary
         dictionary of source lists keyed by drizzled image name.
 
@@ -125,9 +107,6 @@ def run_source_list_flaging(all_drizzled_filelist, working_hla_red, filter_sorte
 
     drz_root_dir : string
         Root directory of drizzled images.
-    
-    rms_dict : dictionary
-        dictionary of RMS image counterparts to drizzled images. Keyed by drizzled image name.
 
     debug : bool
         write intermediate files?
