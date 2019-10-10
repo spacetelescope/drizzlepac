@@ -721,7 +721,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     upper_epp_limit = float(param_dict["quality control"]["swarm filter"]["upper_epp_limit"])
     lower_epp_limit = float(param_dict["quality control"]["swarm filter"]["lower_epp_limit"])
     eppsky_limit_cfg = float(param_dict["quality control"]["swarm filter"]["eppsky_limit"])
-    selfradius = float(param_dict["quality control"]["swarm filter"]["selfradius"])
+    selfradius = float(param_dict["quality control"]["swarm filter"]["selfradius"]) # TODO: optimize selfradius values for ACS/HRC, ACS/SBC in quality control param files
 
     eppsky_limit = eppsky_limit_cfg * median_sky
 
@@ -1059,7 +1059,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
 
     proximity_choice = param_dict["quality control"]["swarm filter"]["proximity_binary"]
 
-    if proximity_choice:
+    if proximity_choice: # TODO: optimize ctrList_radiusList, ctrList_thresholdList for ACS wfc, hrc, sbc in quality control config files
         if len(final_flag_src_central_pixel_list) > 0: # TODO: Figure out what to do with all these hard-coded values
             #XXX these ought to come from config files
             if data_type == 'ir':
@@ -1076,12 +1076,6 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
             if data_type == 'hrc':
                 ctrList_radiusList = [40,35,20,15,10] #just copied UVIS values. These values need to be optimized for ACS/HRC
                 ctrList_thresholdList = [100000,70000,50000,10000,2000] #just copied UVIS values. These values need to be optimized for ACS/HRC
-            if data_type == 'wfpc2': #just copied UVIS values. These values need to be optimized for WFPC2
-                ctrList_radiusList = [40,35,20,15,10]
-                ctrList_thresholdList = [100000,70000,50000,10000,2000]
-            if data_type == 'pc': #just copied UVIS values. These values need to be optimized for PC
-                ctrList_radiusList = [40,35,20,15,10]
-                ctrList_thresholdList = [100000,70000,50000,10000,2000]
 
             for ctrList_cnt,(threshold,radius) in enumerate(zip(ctrList_thresholdList, ctrList_radiusList)):
 
