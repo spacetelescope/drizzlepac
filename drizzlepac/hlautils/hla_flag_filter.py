@@ -725,10 +725,6 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
 
     eppsky_limit = eppsky_limit_cfg * median_sky
 
-
-
-
-
     # ----------------------------------------------------------
     # UVIS --> EPP > 100000. OR (EPP > 1000*sky AND EPP > 10000)
     # IR   --> EPP > 100000. OR (EPP > 100*sky AND EPP > 10000)
