@@ -67,6 +67,7 @@ import traceback
 # THIRD-PARTY
 from astropy.io import fits
 from stsci.tools import fileutil, asnutil
+from stwcs.wcsutil import HSTWCS
 import numpy as np
 
 from drizzlepac import processInput  # used for creating new ASNs for _flc inputs
@@ -577,6 +578,7 @@ def run_driz(inlist, trlfile, mode='default-pipeline', verify_alignment=True, de
             focus_sigma = focus_pars[instr_det]['sigma']
             print("Building focus dict for: \n{} \n    {}".format(single_files, drz_product))
             focus_dicts.append(amutils.build_focus_dict(single_files, drz_product, sigma=focus_sigma))
+            print(focus_dicts)
             if debug:
                 json_name = drz_product.replace('.fits', '_{}_focus.json'.format(mode))
                 with open(json_name, mode='w') as json_file:
@@ -625,6 +627,8 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         from stwcs.wcsutil import headerlet
 
     tmpname = tmpdir if tmpdir else 'default-pipeline'
+    fraction_matched = 1.0
+    num_sources = -1
     try:
         if not find_crs:
             # Need to turn off MDRIZTAB if any other parameters are to be set
@@ -675,6 +679,8 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                     sat_flags = 256 + 2048 + 4096 + 8192
                 align_table = alignimages.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
                                                         clobber=False, output=debug, sat_flags=sat_flags)
+                num_sources = align_table['matchSources'][0]
+                fraction_matched = num_sources / align_table['catalogSources'][0]
                 for row in align_table:
                     if row['status'] == 0:
                         if row['compromised'] == 0:
@@ -733,9 +739,23 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         _trlmsg = _timestamp('Verification of {} alignment started '.format(tmpname))
         # Only check focus on CTE corrected, when available
         align_focus = focus_dicts[-1] if 'drc' in focus_dicts[-1]['prodname'] else focus_dicts[0]
-
-        alignment_verified = amutils.evaluate_focus(align_focus)
-        alignment_quality = 0 if alignment_verified else 1
+        inst = fits.getval(alignfiles[0], 'instrume').lower()
+        det = fits.getval(alignfiles[0], 'detector').lower()
+        pscale = HSTWCS(alignfiles[0], ext=1).pscale
+        det_pars = alignimages.detector_specific_params[inst][det]
+        default_fwhm = det_pars['fwhmpsf'] / pscale
+        align_fwhm = amutils.get_align_fwhm(align_focus, default_fwhm)
+        print("align_fwhm: {}[{},{}]={:0.4f}pix".format(align_focus['prodname'],
+                                                        align_focus['prod_pos'][1],
+                                                        align_focus['prod_pos'][0],
+                                                        align_fwhm))
+        # For any borderline situation with alignment, perform an extra check on alignment
+        if fraction_matched < 0.1 or -1 < num_sources < 10:
+            alignment_verified = amutils.evaluate_focus(align_focus)
+            alignment_quality = 0 if alignment_verified else 1
+        else:
+            alignment_verified = True
+            alignment_quality = 0
 
         if alignment_verified:
             _trlmsg += "Focus verification indicated that {} alignment SUCCEEDED.\n".format(tmpname)
