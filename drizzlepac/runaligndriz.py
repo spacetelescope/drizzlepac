@@ -368,6 +368,13 @@ def process(inFile, force=False, newpath=None, num_cores=None, in_memory=True,
         _trlmsg += __trlmarker__
 
         find_crs = not align_dicts[0]['alignment_verified']
+
+        # run updatewcs with use_db=True to insure all products have
+        # have a priori solutions as extensions
+        updatewcs.updatewcs(calfiles)
+        if calfiles_flc:
+            updatewcs.updatewcs(calfiles_flc)
+
         # Generate initial default products and perform verification
         align_apriori = verify_alignment(_inlist,
                                          _calfiles, _calfiles_flc,
@@ -576,9 +583,8 @@ def run_driz(inlist, trlfile, mode='default-pipeline', verify_alignment=True, de
                                                     **pipeline_pars)
             instr_det = "{}/{}".format(fits.getval(sfile, 'instrume'), fits.getval(sfile, 'detector'))
             focus_sigma = focus_pars[instr_det]['sigma']
-            print("Building focus dict for: \n{} \n    {}".format(single_files, drz_product))
+            print("Measuring focus for: \n{} \n    {}".format(single_files, drz_product))
             focus_dicts.append(amutils.build_focus_dict(single_files, drz_product, sigma=focus_sigma))
-            print(focus_dicts)
             if debug:
                 json_name = drz_product.replace('.fits', '_{}_focus.json'.format(mode))
                 with open(json_name, mode='w') as json_file:
@@ -656,11 +662,6 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         align_update_files = calfiles if calfiles_flc else None
 
         # Perform any requested alignment here...
-        if alignment_mode == 'apriori':
-            # run updatewcs with use_db=True
-            updatewcs.updatewcs(calfiles)
-            if calfiles_flc:
-                updatewcs.updatewcs(calfiles_flc)
         if alignment_mode == 'aposteriori':
             # Create trailer marker message for start of align_to_GAIA processing
             trlmsg = _timestamp("Align_to_GAIA started ")
