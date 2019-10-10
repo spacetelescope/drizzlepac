@@ -1059,12 +1059,8 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
 
     proximity_choice = param_dict["quality control"]["swarm filter"]["proximity_binary"]
 
-    if proximity_choice: # TODO: optimize ctrList_radiusList, ctrList_thresholdList for ACS wfc, hrc, sbc in quality control config files
-        if len(final_flag_src_central_pixel_list) > 0: # TODO: Figure out what to do with all these hard-coded values
-            if data_type == 'ir':
-                ctrList_radiusList = [125,100,80,30,50,20,15]
-                ctrList_thresholdList = [2000000,1800000,500000,250000,100000,40000,20000]
-
+    if proximity_choice:
+        if len(final_flag_src_central_pixel_list) > 0:
             ctrList_radiusList = param_dict["quality control"]["swarm filter"]["ctrList_radiusList"] # TODO: optimize ctrList_radiusList for ACS wfc, hrc, sbc in quality control config files
             ctrList_radiusList = list(map(int, ctrList_radiusList))
 
