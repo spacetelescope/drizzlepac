@@ -754,7 +754,8 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
             # Define EPP cut values for filtering multiple detections
             # from a given central positions for a swarm candidate
             # -------------------------------------------------------
-            cuts = [2000000.,1800000.,1000000.,500000.,70000.,20000.,0.] # TODO: Figure out what to do with all these hard-coded values
+            cuts = param_dict["quality control"]["swarm filter"]["cuts"]
+            cuts = list(map(float, cuts))
             selfradii = [25.,100.,35.,30.,20.,15.,10.] # TODO: Figure out what to do with all these hard-coded values
 
             p1 = []
