@@ -10,6 +10,7 @@ import argparse
 import datetime
 import glob
 import os
+import pdb
 import sys
 import traceback
 
@@ -262,6 +263,9 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
                                                   tp_sources=sources_dict)
             # Perform photometry
             filter_product_catalogs.measure()
+            print("\a")
+            pdb.set_trace()
+
 
             # Write out photometric catalog(s)
             filter_product_catalogs.write()
