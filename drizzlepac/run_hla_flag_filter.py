@@ -50,6 +50,7 @@ def run_hla_flag_filter():
         filter_sorted_flt_dict = {"f606w": ["j92c01b4q_flc.fits", "j92c01b5q_flc.fits", "j92c01b7q_flc.fits", "j92c01b9q_flc.fits"]}
         param_dict = total_list[0].fdp_list[0].configobj_pars.as_single_giant_dict()
         param_dict['catalog generation']['dao']['bthresh'] = 5.0 #force it to use the value from HLA classic
+        param_dict['catalog generation']['sourcex']['bthresh'] = 5.0  # force it to use the value from HLA classic
         readnoise_dictionary_drzs = {"hst_10265_01_acs_wfc_f606w_drz.fits": 4.97749985}
         scale_dict_drzs = {"hst_10265_01_acs_wfc_f606w_drz.fits": 0.05}
         zero_point_AB_dict = {"hst_10265_01_acs_wfc_f606w_drz.fits": 26.5136022236}
@@ -74,6 +75,7 @@ def run_hla_flag_filter():
         filter_sorted_flt_dict = {"f435w": ["j9es06rbq_flc.fits", "j9es06rcq_flc.fits", "j9es06req_flc.fits", "j9es06rgq_flc.fits"]}
         param_dict = total_list[0].fdp_list[0].configobj_pars.as_single_giant_dict()
         param_dict['catalog generation']['dao']['bthresh'] = 5.0 #force it to use the value from HLA classic
+        param_dict['catalog generation']['sourcex']['bthresh'] = 5.0  # force it to use the value from HLA classic
         readnoise_dictionary_drzs = {"hst_10595_06_acs_wfc_f435w_drz.fits": 5.247499925}
         scale_dict_drzs = {"hst_10595_06_acs_wfc_f435w_drz.fits": 0.05}
         zero_point_AB_dict = {"hst_10595_06_acs_wfc_f435w_drz.fits": 25.6888167958}

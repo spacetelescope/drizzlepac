@@ -490,8 +490,8 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     # ----------------------------------
     # Convert aperture radius to pixels
     # ----------------------------------
-    ap2 = param_dict['catalog generation']['dao']['aperture_2']
-    plate_scale = param_dict['catalog generation']['dao']['scale'] #TODO: Need to move scale value out of 'catalog generation' > 'dao' to somewhere more sensable
+    ap2 = param_dict['catalog generation']['aperture_2']
+    plate_scale = param_dict['catalog generation']['scale'] #TODO: Need to move scale value out of 'catalog generation' > 'dao' to somewhere more sensable
     if proc_type == 'daophot':
         radius = round((ap2/plate_scale) + 0.5) * 2. # TODO: WHY DOES DAOPHOT RADIUS VALUE MULTIPLIED BY 2 BUT SEXPHOT VALUE IS NOT?
 
@@ -634,17 +634,17 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     image_split = drizzled_image.split('/')[-1]
     channel = drizzled_image.split("_")[-3].lower() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
 
-    ap2 = param_dict['catalog generation']['dao']['aperture_2']
+    ap2 = param_dict['catalog generation']['aperture_2']
     if proc_type not in ('sexphot', 'daophot'):
         raise ValueError("Unknown catalog type '%s'" % proc_type)
 
     # ----------------------------------
     # Convert aperture radius to pixels
     # ----------------------------------
-    radius = ap2 / float(param_dict['catalog generation']['dao']['scale']) # TODO: this value should be probably be somewhere else
+    radius = ap2 / float(param_dict['catalog generation']['scale']) # TODO: this value should be probably be somewhere else
     log.info(' ')
     log.info('Aperture Size = {}'.format(ap2))
-    log.info('Pixel Scale = {} arcsec per pixel'.format(float(param_dict['catalog generation']['dao']['scale']))) # TODO: this value should be probably be somewhere else
+    log.info('Pixel Scale = {} arcsec per pixel'.format(float(param_dict['catalog generation']['scale']))) # TODO: this value should be probably be somewhere else
     log.info(' ')
     area = math.pi * radius**2
 
@@ -1267,8 +1267,8 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
     # Convert aperture radius to pixels
     # ----------------------------------
 
-    ap2 = param_dict['catalog generation']['dao']['aperture_2']
-    plate_scale = param_dict['catalog generation']['dao']['scale'] #TODO: Need to move scale value out of 'catalog generation' > 'dao' to somewhere more sensable
+    ap2 = param_dict['catalog generation']['aperture_2']
+    plate_scale = param_dict['catalog generation']['scale'] #TODO: Need to move scale value out of 'catalog generation' > 'dao' to somewhere more sensable
     radius = ap2/plate_scale
 
     num_exp = round(numpy.max(nexp_array))
@@ -1745,7 +1745,7 @@ def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted
         # ----------------------------------
         # Convert aperture radius to pixels
         # ----------------------------------
-        ap2 = param_dict['catalog generation']['dao']['aperture_2']
+        ap2 = param_dict['catalog generation']['aperture_2']
         if proc_type == 'daophot':
             if channel == 'IR':
                 radius = round((ap2 / 0.09) + 0.5) * 2.
@@ -1933,7 +1933,7 @@ def HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hl
         channel = drizzled_image.split("_")[
             -3].lower()
 
-        ap2 = param_dict['catalog generation']['dao']['aperture_2']
+        ap2 = param_dict['catalog generation']['aperture_2']
         if proc_type not in ('sexphot', 'daophot'):
             raise ValueError("Unknown catalog type '%s'" % proc_type)
 
@@ -1941,11 +1941,11 @@ def HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hl
         # Convert aperture radius to pixels
         # ----------------------------------
         radius = ap2 / float(
-            param_dict['catalog generation']['dao']['scale'])
+            param_dict['catalog generation']['scale'])
         log.info(' ')
         log.info('Aperture Size = {}'.format(ap2))
         log.info('Pixel Scale = {} arcsec per pixel'.format(float(
-            param_dict['catalog generation']['dao']['scale'])))
+            param_dict['catalog generation']['scale'])))
         log.info(' ')
         area = math.pi * radius ** 2
         exptime = exp_dictionary_scis[drizzled_image]
@@ -2647,7 +2647,7 @@ def HLANexpFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_d
         # Convert aperture radius to pixels
         # ----------------------------------
 
-        ap2 = param_dict['catalog generation']['dao']['aperture_2']
+        ap2 = param_dict['catalog generation']['aperture_2']
 
         if channel == 'IR':
             radius = ap2 / 0.09
