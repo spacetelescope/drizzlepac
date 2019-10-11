@@ -50,7 +50,7 @@ class Datasets:
                 self.wcsnames.append(sci['wcsname'])
                
     def create_summary(self):
-        font_size = 18
+        font_size = 12
         first_page = plt.figure(figsize=(8.2, 11.69))
         first_page.clf()
         txt = 'Summary of Alignment Results from {}'.format(self.parent_dir)
@@ -92,7 +92,7 @@ class Datasets:
                 result = create_product_page(p, wcsname=w)
                 pdf.savefig(result)
                 plt.close()
-            
+        
         
 def create_product_page(prodname, zoom_size=128, wcsname=""):
    
