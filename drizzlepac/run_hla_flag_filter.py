@@ -69,13 +69,13 @@ def run_hla_flag_filter():
 
     if out_file == "j9es06.out": # acs_10595_06
         # settings for testing ~/Documents/HLAtransition/runhlaprocessing_testing/acs_10595_06_flag_testing/
-        mode = "sex"
+        mode = "dao"
         all_drizzled_filelist = ["hst_10595_06_acs_wfc_f435w_drz.fits"]
         working_hla_red = os.getcwd()
         filter_sorted_flt_dict = {"f435w": ["j9es06rbq_flc.fits", "j9es06rcq_flc.fits", "j9es06req_flc.fits", "j9es06rgq_flc.fits"]}
         param_dict = total_list[0].fdp_list[0].configobj_pars.as_single_giant_dict()
-        param_dict['catalog generation']['dao']['bthresh'] = 5.0 #force it to use the value from HLA classic
-        param_dict['catalog generation']['sourcex']['bthresh'] = 5.0  # force it to use the value from HLA classic
+        param_dict['quality control']['ci filter']['sourcex_bthresh'] = 5.0 #force it to use the value from HLA classic
+        param_dict['quality control']['ci filter']['dao_bthresh'] = 5.0  # force it to use the value from HLA classic
         readnoise_dictionary_drzs = {"hst_10595_06_acs_wfc_f435w_drz.fits": 5.247499925}
         scale_dict_drzs = {"hst_10595_06_acs_wfc_f435w_drz.fits": 0.05}
         zero_point_AB_dict = {"hst_10595_06_acs_wfc_f435w_drz.fits": 25.6888167958}

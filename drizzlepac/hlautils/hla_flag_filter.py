@@ -207,12 +207,12 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     if proc_type == 'sexphot':
         ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_selower_limit'])
         ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_seupper_limit'])
-        snr = float(param_dict['catalog generation']['sourcex']['bthresh'])
+        snr = float(param_dict['quality control']['ci filter']['sourcex_bthresh']) # TODO: Figure out where the best place for bthresh to be
 
     if proc_type == 'daophot':
         ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_daolower_limit'])
         ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_daoupper_limit'])
-        snr = float(param_dict['catalog generation']['dao']['bthresh'])
+        snr = float(param_dict['quality control']['ci filter']['dao_bthresh']) # TODO: Figure out where the best place for bthresh to be
 
     # replace CI limits with values from table if possible
     cidict = ci_table.get_ci_from_file(drizzled_image, ci_lower=ci_lower_limit, ci_upper=ci_upper_limit)
