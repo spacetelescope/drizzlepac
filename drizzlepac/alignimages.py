@@ -1323,10 +1323,12 @@ def update_image_wcs_info(tweakwcs_output,headerlet_filenames=None):
             hdulist.close()
 
             # Create headerlet
-            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, wcsname=wcs_name, logging=False)
+            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, 
+                                                        wcsname=wcs_name, 
+                                                        logging=False)
 
             # Update headerlet
-            update_headerlet_phdu(item, out_headerlet)
+            out_headerlet = update_headerlet_phdu(item, out_headerlet)
 
             # Write headerlet
             if headerlet_filenames:
@@ -1394,7 +1396,8 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
     primary_header['HISTORY'] = '{:>15} : {:9.4f} degrees'.format('rotation', rot)
     primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('scale', scale)
     primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('skew', skew)
-
+    
+    return headerlet
 
 # ----------------------------------------------------------------------------------------------------------
 def interpret_fit_rms(tweakwcs_output, reference_catalog):
