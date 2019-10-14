@@ -538,12 +538,16 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
     -------
     TODO: Fill in 'Returns' section
     """
+
+    drizzled_image = filter_product_obj.drizzle_filename
+    flt_list = []
+    for edp_obj in filter_product_obj.edp_list:
+        flt_list.append(edp_obj.full_filename)
+    param_dict = filter_product_obj.configobj_pars.as_single_giant_dict()
+    hla_flag_filter.make_mask_file(drizzled_image, flt_list)
     for cat_type in filter_product_catalogs.catalogs.keys():
-        drizzled_image = filter_product_obj.drizzle_filename
-        flt_list = []
-        for edp_obj in filter_product_obj.edp_list:
-            flt_list.append(edp_obj.full_filename)
-        param_dict = filter_product_obj.configobj_pars.as_single_giant_dict()
+
+
         exptime = filter_product_catalogs.catalogs[cat_type].image.imghdu[0].header['exptime'] #TODO: This works for ACS. Make sure that it also works for WFC3.
         catalog_name = filter_product_catalogs.catalogs[cat_type].sourcelist_filename
         catalog_data = filter_product_catalogs.catalogs[cat_type].source_cat
