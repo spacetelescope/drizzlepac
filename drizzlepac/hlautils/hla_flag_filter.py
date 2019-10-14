@@ -57,11 +57,15 @@ getdata = pyfits.getdata
 
 # import pywcs
 from stwcs import wcsutil
+from stwcs.wcsutil import HSTWCS
 from scipy import spatial
 
+from drizzlepac.hlautils import cell_utils as cutils
 from drizzlepac.hlautils import ci_table
 from drizzlepac import util
 from stsci.tools import logutil
+
+
 
 __taskname__ = 'hla_flag_filter'
 
@@ -308,7 +312,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
         drizzled filter product catalog data with updated flag values
     """
     image_split = drizzled_image.split('/')[-1]
-    channel = drizzled_image.split("_")[-3].upper()  # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+    channel = drizzled_image.split("_")[4].upper()
 
     if channel == 'IR': #TODO: Test and IR case just to make sure that IR shouldn't be skipped
         return catalog_data
@@ -626,7 +630,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     phot_table_root = catalog_name.split('/')[-1].split('.')[0]
 
     image_split = drizzled_image.split('/')[-1]
-    channel = drizzled_image.split("_")[-3].lower() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+    channel = drizzled_image.split("_")[4].lower()
 
     ap2 = param_dict['catalog generation']['aperture_2']
     if proc_type not in ('sexphot', 'daophot'):
@@ -1185,7 +1189,7 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
     # CREATE NEXP IMAGE
     # ------------------
     image_split = drizzled_image.split('/')[-1]
-    channel = drizzled_image.split("_")[-3].upper() # TODO: May need to be refactored to adjust for new names, and fact that ACS has two filters
+    channel = drizzled_image.split("_")[4].upper()
 
     #if channel == 'IR':
     #    continue
@@ -1194,7 +1198,6 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
     # METHOD 1:
     # ---------
     ctx = getdata(drizzled_image, 3)
-
     if channel in ['UVIS','IR','WFC','HRC']: ncombine = getheader(drizzled_image,1)['NCOMBINE']
     if channel in ['WFPC2','PC']:
         ndrizim=getheader(drizzled_image,0)['NDRIZIM']
@@ -1771,3 +1774,35 @@ def HLA_flag4and8_hunter_killer(catalog_data):
     if conf_ctr > 1:  log.info("{} conflicts fixed.".format(conf_ctr))
 
     return catalog_data
+
+# ======================================================================================================================
+
+def make_mask_file(drz_image,input_list):
+    """
+    Creates _msk.fits mask file that contains pixel values of 1 outside the drizzled image footprint and pixel values
+    of 0 inside the footprint. This file is used by subroutine HLANexpFlags().
+
+    Parameters
+    ----------
+    drz_image : string
+        drizzled image filename
+
+    input_list : list
+        list of calibrated flc/flt images that were used as AstroDrizzle inputs to generate the image specified by
+        input parameter 'drz_image'.
+
+    Returns
+    -------
+    Nothing.
+    """
+    s = cutils.SkyFootprint(HSTWCS(drz_image, ext = 1))
+    s.build(input_list)
+    hdu = pyfits.PrimaryHDU(s.total_mask)
+    hdu.data = numpy.where(hdu.data  == 0, 1, 0)
+
+    hdul = pyfits.HDUList([hdu])
+
+    maskfilename = drz_image.replace(drz_image[-9:],"_msk.fits")
+    hdul.writeto(maskfilename)
+    hdul.close()
+    print("Wrote {}".format(maskfilename))
