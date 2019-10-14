@@ -538,16 +538,14 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
     -------
     TODO: Fill in 'Returns' section
     """
-
     drizzled_image = filter_product_obj.drizzle_filename
     flt_list = []
     for edp_obj in filter_product_obj.edp_list:
         flt_list.append(edp_obj.full_filename)
     param_dict = filter_product_obj.configobj_pars.as_single_giant_dict()
+    median_sky = filter_product_catalogs.image.bkg_median
     hla_flag_filter.make_mask_file(drizzled_image, flt_list)
     for cat_type in filter_product_catalogs.catalogs.keys():
-
-
         exptime = filter_product_catalogs.catalogs[cat_type].image.imghdu[0].header['exptime'] #TODO: This works for ACS. Make sure that it also works for WFC3.
         catalog_name = filter_product_catalogs.catalogs[cat_type].sourcelist_filename
         catalog_data = filter_product_catalogs.catalogs[cat_type].source_cat
@@ -557,7 +555,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
             proc_type = 'sexphot'
         drz_root_dir = os.getcwd()
 
-        filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flaging(drizzled_image, flt_list, param_dict, exptime, catalog_name, catalog_data, proc_type, drz_root_dir, debug)
+        filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flaging(drizzled_image, flt_list, param_dict, exptime, median_sky, catalog_name, catalog_data, proc_type, drz_root_dir, debug)
 
     return filter_product_catalogs
 

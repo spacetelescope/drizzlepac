@@ -82,7 +82,7 @@ y_limit = 2051.
 
 
 @util.with_logging
-def run_source_list_flaging(drizzled_image, flt_list,param_dict, exptime,
+def run_source_list_flaging(drizzled_image, flt_list,param_dict, exptime, median_sky,
                             catalog_name, catalog_data, proc_type, drz_root_dir, debug=True):
     """Simple calling subroutine that executes the other flagging subroutines.
     
@@ -100,6 +100,9 @@ def run_source_list_flaging(drizzled_image, flt_list,param_dict, exptime,
 
     exptime : float
         drizzled filter product exposure time in seconds
+
+    median_sky : float
+        median sky value
 
     catalog_name : string
         drizzled filter product catalog filename
@@ -139,9 +142,9 @@ def run_source_list_flaging(drizzled_image, flt_list,param_dict, exptime,
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag swarm sources
-    log.info("HLASwarmFlags({} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>", exptime,
-                                                       proc_type, param_dict, debug))
-    catalog_data = HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type, param_dict, debug)
+    log.info("HLASwarmFlags({} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>", exptime,
+                                                       median_sky, proc_type, param_dict, debug))
+    catalog_data = HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, median_sky, proc_type, param_dict, debug)
 
 
 
@@ -559,7 +562,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
 
 # ======================================================================================================================
 
-def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type, param_dict, debug):
+def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, median_sky, proc_type, param_dict, debug):
 
     """Identifies and flags swarm sources.
 
@@ -576,6 +579,9 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
 
     exptime : float
         exposure of the specified drizzled image
+
+    median_sky : float
+        median sky value
 
     proc_type : string
         sourcelist generation type.
@@ -610,7 +616,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     # ----------------------------------------------------------------------------
     # ============================= SKY COMPUTATION ==============================
 
-    median_sky = get_median_sky(drizzled_image) #TODO: maybe get value from filter product object
+    # median_sky = get_median_sky(drizzled_image) #TODO: maybe get value from filter product object
    # single_rms = rms_dict[drizzled_image]
    # rms_array = pyfits.getdata(single_rms,0)
    # rms_subarray = rms_array[rms_array > 0.0]
@@ -1219,7 +1225,7 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
     drz_data = getdata(drizzled_image, 1)
 
     ## this bit is added to get the mask integrated into the exp map
-    maskfile = drizzled_image.replace(drz_image[-9:], "_msk.fits")
+    maskfile = drizzled_image.replace(drizzled_image[-9:], "_msk.fits")
     if os.path.isfile(maskfile):
         mask_data = getdata(maskfile)
         mask_array = (mask_data==0.0).astype(numpy.int32)
@@ -1568,7 +1574,7 @@ def sorted_median(a):
 
 # ======================================================================================================================
 
-def get_median_sky(drizzled_image):
+def get_median_sky(drizzled_image): #TODO: REMOVE. UNUSED SUBROUTINE
     """Read drizzled image from FITS file and compute sky
     
     Parameters
