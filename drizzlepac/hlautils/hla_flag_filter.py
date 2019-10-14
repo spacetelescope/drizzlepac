@@ -1357,10 +1357,12 @@ def get_component_drz_list(drizzled_image, drz_root_dir, flt_file_names):
         a list of drizzled exposure images associated with the specified combined drizzled image
     """
     drizzle_file_suffex = drizzled_image[-8:-5]
-    drz_img_split = drizzled_image.split('/')[-1].split(drizzle_file_suffex)
+    drz_img_split = drizzled_image.split('/')[-1].split("_"+drizzle_file_suffex)
     component_drz_img_list = glob.glob(os.path.join(drz_root_dir,drz_img_split[0])+'*_{}.fits'.format(drizzle_file_suffex))
     component_drz_img_list.sort()
-
+    for item in component_drz_img_list:
+        if item.endswith(drizzled_image):
+            component_drz_img_list.remove(item)
     drz_filter = drizzled_image.split("_")[5]  # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
 
     if type(flt_file_names).__name__ == 'dict':
