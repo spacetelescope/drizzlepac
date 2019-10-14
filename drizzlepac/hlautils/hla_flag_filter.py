@@ -1219,7 +1219,7 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
     drz_data = getdata(drizzled_image, 1)
 
     ## this bit is added to get the mask integrated into the exp map
-    maskfile = drizzled_image.replace('_drz.fits','_msk.fits')
+    maskfile = drizzled_image.replace(drz_image[-9:], "_msk.fits")
     if os.path.isfile(maskfile):
         mask_data = getdata(maskfile)
         mask_array = (mask_data==0.0).astype(numpy.int32)
@@ -1350,9 +1350,9 @@ def get_component_drz_list(drizzled_image, drz_root_dir, flt_file_names):
     rv : list
         a list of drizzled exposure images associated with the specified combined drizzled image
     """
-
-    drz_img_split = drizzled_image.split('/')[-1].split('drz')
-    component_drz_img_list = glob.glob(os.path.join(drz_root_dir,drz_img_split[0])+'*_drz.fits')
+    drizzle_file_suffex = drizzled_image[-8:-5]
+    drz_img_split = drizzled_image.split('/')[-1].split(drizzle_file_suffex)
+    component_drz_img_list = glob.glob(os.path.join(drz_root_dir,drz_img_split[0])+'*_{}.fits'.format(drizzle_file_suffex))
     component_drz_img_list.sort()
 
     drz_filter = drizzled_image.split("_")[5]  # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
