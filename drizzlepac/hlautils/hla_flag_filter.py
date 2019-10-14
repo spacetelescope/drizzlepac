@@ -78,29 +78,30 @@ y_limit = 2051.
 
 
 @util.with_logging
-def run_source_list_flaging(all_drizzled_filelist, filter_sorted_flt_dict,param_dict, exp_dictionary_scis,
-                            dict_newTAB_matched2drz, phot_table_matched2drz, proc_type, drz_root_dir, debug=True):
+def run_source_list_flaging(drizzled_image, flt_list,param_dict, exptime,
+                            catalog_name, catalog_data, proc_type, drz_root_dir, debug=True):
     """Simple calling subroutine that executes the other flagging subroutines.
     
     Parameters
     ----------
-    all_drizzled_filelist : list
-        List of drizzled images to process
+    drizzled_image : string
+        drizzled filter product image filename
 
-    filter_sorted_flt_dict : dictionary
-        dictionary containing lists of calibrated images sorted (also keyed) by filter name.
+    flt_list : list
+        list of calibrated images that were drizzle-combined to produce image specified by input parameter
+        'drizzled_image'
     
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
 
-    exp_dictionary_scis : dictionary
-        dictionary of exposure time values keyed by drizzled image name.
+    exptime : float
+        drizzled filter product exposure time in seconds
 
-    dict_newTAB_matched2drz : dictionary
-        dictionary of source lists keyed by drizzled image name.
+    catalog_name : string
+        drizzled filter product catalog filename
 
-    phot_table_matched2drz : dictionary
-        dictionary of source lists tables (already read into memory) keyed by drizzled image name.
+    catalog_data : astropy.Table object
+        drizzled filter product catalog data
 
     proc_type : string
         sourcelist generation type.
@@ -120,13 +121,6 @@ def run_source_list_flaging(all_drizzled_filelist, filter_sorted_flt_dict,param_
     # FLAG FILTER PROCESSING
     # -----------------------
     log.info("************************** * * * HLA_FLAG_FILTER * * * **************************")
-
-    drizzled_image = all_drizzled_filelist[0] # TODO: remove once all code is dictinary-independant
-    catalog_name = dict_newTAB_matched2drz[drizzled_image] # TODO: remove once all code is dictinary-independant
-    catalog_data = phot_table_matched2drz[drizzled_image] # TODO: remove once all code is dictinary-independant
-    for filt_key in filter_sorted_flt_dict.keys(): flt_list = filter_sorted_flt_dict[filt_key] # TODO: remove once all code is dictinary-independant
-    exptime = exp_dictionary_scis[drizzled_image] # TODO: remove once all code is dictinary-independant
-
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
     log.info("ci_filter({} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict,
