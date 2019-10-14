@@ -198,4 +198,4 @@ def run_hla_flag_filter_HLAClassic():
         print("skipping automatic comparision run")
 
 if __name__ == "__main__":
-    run_hla_flag_filter()
+    run_hla_flag_filter_HLAClassic()
