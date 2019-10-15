@@ -108,12 +108,9 @@ def test_alignpipe_randomlist(tmpdir, dataset):
 
     """
     # Start by resetting the logging for all the modules used
-    logging.shutdown()
-    reload(logging)
-    reload(alignimages)
-    reload(runaligndriz)
-    reload(headerlet)
-
+    rl = logging.getLogger('stwcs.wcsutil.headerlet')
+    if len(rl.handlers) > 1: del rl.handlers[-1]    
+    
     print("TEST_RANDOM. Dataset: ", dataset)
     output_name = dataset + '.ecsv'
 

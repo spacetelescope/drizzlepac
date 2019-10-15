@@ -156,7 +156,7 @@ def check_and_get_data(input_list, **pars):
 
 # ------------------------------------------------------------------------------------------------------------
 def perform_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
-              runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=250,
+              runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=500,
               headerlet_filenames=None, catalog_list=['GAIADR2', 'GAIADR1'], **alignment_pars):
     """Actual Main calling function.
 
@@ -459,7 +459,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                         break
             # break out of outer fit algorithm loop
             # either with a fit_rms < 10 or a 'valid' relative fit
-            if fit_quality == 1 or (0 < fit_quality < 5 and
+            if fit_quality == 1 or (best_fit_qual in [2, 3, 4] and
                 "relative" in algorithm_name):
                 break
 
@@ -547,6 +547,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         filtered_table.pprint(max_width=-1)
     return filtered_table
 
+
+
 # ----------------------------------------------------------------------------------------------------------
 
 def make_label(label, starting_dt):
@@ -615,6 +617,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
             * fit compromised status (Boolean)
             * reason fit is considered 'compromised' (only populated if "compromised" field is "True")
     """
+    tweakwcs_info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
     max_rms_val = 1e9
     num_xmatches = 0
     fit_status_dict = {}
@@ -642,6 +645,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         if item.meta['fit_info']['status'].startswith("FAILED") is True:
             log.warning("No cross matches found in any catalog for {} "
                         "- no processing done.".format(image_name))
+            overall_valid = False
             continue
         fit_rms_val = item.meta['fit_info']['FIT_RMS']
         max_rms_val = item.meta['fit_info']['TOTAL_RMS']
@@ -657,11 +661,20 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
                 log.warning(
                     "Not enough cross matches found between astrometric"
                     "catalog and sources found in {}".format(image_name))
+                overall_valid = False
                 continue
+
+        # Compute correlation between input and GAIA magnitudes
+        if num_xmatches < max(0.1 * item.meta['num_ref_catalog'], 10):
+            cross_match_check = amutils.check_mag_corr([item])[0]
+            log.info("Cross-match check: {} on {} ref sources".format(cross_match_check,
+                                                                      item.meta['num_ref_catalog']))
+        else:
+            cross_match_check = True
 
         # Execute checks
         nmatches_check = False
-        if num_xmatches > 4:
+        if num_xmatches > 4 or (num_xmatches > 2 and fit_rms_val > 0.5):
             nmatches_check = True
 
         radial_offset_check = False
@@ -703,6 +716,10 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
             fit_status_dict[dict_key]['valid'] = False
             fit_status_dict[dict_key]['compromised'] = True
             fit_status_dict[dict_key]['reason'] = "Too few matches!"
+        elif not cross_match_check:
+            fit_status_dict[dict_key]['valid'] = True
+            fit_status_dict[dict_key]['compromised'] = True
+            fit_status_dict[dict_key]['reason'] = "Cross-match magnitudes not correlated!"
         else:  # all checks passed. Valid solution.
             fit_status_dict[dict_key]['valid'] = True
             fit_status_dict[dict_key]['compromised'] = False
@@ -722,16 +739,15 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
                                           num_xmatches))
         # print fit params to screen
         if print_fit_parameters:
-            # Avoid printing out large sets of data to the log...
-            info_keys = ['status', 'fitgeom', 'eff_minobj', 'matrix', 'shift', 'center',
-                        'rot', 'rotxy', 'scale', 'skew', 'rmse', 'mae', 'nmatches']
-
+            log_info_keys = ['status', 'fitgeom', 'eff_minobj', 'matrix', 'shift', 'center', 'rot', 'proper',
+                'rotxy', 'scale', 'skew', 'rmse', 'mae', 'nmatches', 'FIT_RMS', 'TOTAL_RMS', 'NUM_FITS',
+                'RMS_RA', 'RMS_DEC', 'catalog']
             log.info("{} FIT PARAMETERS {}".format("~" * 35, "~" * 34))
             log.info("image: {}".format(image_name))
             log.info("chip: {}".format(item.meta['chip']))
             log.info("group_id: {}".format(item.meta['group_id']))
-            for tweakwcs_info_key in info_keys:
-                    log.info("{} : {}".format(tweakwcs_info_key, item.meta['fit_info'][tweakwcs_info_key]))
+            for tweakwcs_info_key in log_info_keys:
+                log.info("{} : {}".format(tweakwcs_info_key, item.meta['fit_info'][tweakwcs_info_key]))
             log.info("~" * 84)
             log.info("nmatches_check: {} radial_offset_check: {}"
                      " large_rms_check: {},"
@@ -757,7 +773,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         elif overall_comp is True and max_rms_val < 10.:
             log.info("Valid but compromised solution with RMS < 10 mas found!")
             fit_quality = 2
-        elif overall_comp is False and max_rms_val >= 10.:
+        elif overall_comp is False and 1000. >= max_rms_val >= 10.:
             log.info("Valid solution with RMS >= 10 mas found!")
             fit_quality = 3
         else:
@@ -860,94 +876,3 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
     primary_header['HISTORY'] = '{:>15} : {:9.4f} degrees'.format('rotation', rot)
     primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('scale', scale)
     primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('skew', skew)
-
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='Align images')
-    parser.add_argument('raw_input_list', nargs='+', help='The Images one '
-                        'wishes to align. Valid input formats: '
-                        '1. An association name; Example; j92c12345. '
-                        '2. A space-separated list of flc.fits (or flt.fits) '
-                        'files to align; Example: aaa_flc.fits bbb_flc.fits  '
-                        'ccc_flc.fits 3. a simple text file containing a list '
-                        'of fits files to align, one per line; '
-                        'Example: input_list.txt')
-
-    parser.add_argument('-a', '--archive', required=False, action='store_true',
-                        help='Turning on this option will retain '
-                             'copies of the downloaded files in the '
-                             'astroquery created sub-directories.')
-
-    parser.add_argument('-c', '--clobber', required=False, action='store_true',
-                        help='If this option is turned on, the '
-                             'program will download new copies of the input '
-                             'files, overwriting any existing local copies in '
-                             'the working directory')
-
-    parser.add_argument('-d', '--debug', required=False, action='store_true',
-                        help='If this option is turned on, the program will '
-                             'attempt to use saved sourcelists stored in a '
-                             'pickle file generated during a previous run. '
-                             'Using a saved sorucelist instead of generating '
-                             'new sourcelists greatly reduces overall run '
-                             'time. If the pickle file does not exist, the '
-                             'program will generate new sourcelists and save '
-                             'them in a pickle file named after the first '
-                             'input file.')
-
-    parser.add_argument('-g', '--print_git_info', required=False,
-                        action='store_true',
-                        help='Turning on this option will '
-                             'display git repository information at the start '
-                             'of the run.')
-
-    parser.add_argument('-o', '--output', required=False, action='store_true',
-                        help='If turned on, '
-                             'utils.astrometric_utils.create_astrometric_'
-                             'catalog() generate file "ref_cat.ecsv", '
-                             'generate_source_catalogs() generate the .reg '
-                             'region files for every chip of every input '
-                             'image and generate_astrometric_catalog() '
-                             'generate file "refcatalog.cat".')
-
-    parser.add_argument('-p', '--print_fit_parameters', required=False,
-                        action='store_true', help='Turning on this option '
-                               'will print out fit results for each chip.')
-
-    parser.add_argument('-u', '--update_hdr_wcs', required=False,
-                        action='store_true',
-                        help='Turning on this option will write newly '
-                             'computed WCS information to image image headers '
-                             'and create headerlet files.')
-    args = parser.parse_args()
-
-    # Build list of input images
-    input_list = []
-    for item in args.raw_input_list:
-        if os.path.exists(item):
-            if item.endswith(".fits"):
-                input_list.append(item)
-            else:
-                with open(item, 'r') as infile:
-                    file_lines = infile.readlines()
-                for file_line in file_lines:
-                    input_list.append(file_line.strip())
-        else:
-            log.info("{} not found in working directory!".format(item))
-            input_list.append(item)
-
-    # Get to it!
-    return_value = perform_align(input_list,
-                                 archive=args.archive,
-                                 clobber=args.clobber,
-                                 debug=args.debug,
-                                 update_hdr_wcs=args.update_hdr_wcs,
-                                 print_fit_parameters=args.print_fit_parameters,
-                                 print_git_info=args.print_git_info,
-                                 output=args.output)
-    log.info(return_value)

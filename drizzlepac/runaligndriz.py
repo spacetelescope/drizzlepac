@@ -95,11 +95,11 @@ PIPELINE_PARS = {'mdriztab': True,
                  'resetbits': 4096}
 
 focus_pars = {"WFC3/IR": {'sigma': 2.0, 'good_bits': 512},
-              "WFC3/UVIS": {'sigma': 1.5, 'good_bits': 0},
-              "ACS/WFC": {'sigma': 1.5, 'good_bits': 0},
+              "WFC3/UVIS": {'sigma': 1.5, 'good_bits': ~14588},
+              "ACS/WFC": {'sigma': 1.5, 'good_bits': ~14588},
               "ACS/SBC": {'sigma': 2.0, 'good_bits': 0},
-              "ACS/HRC": {'sigma': 1.5, 'good_bits': 0},
-              "WFPC2/PC": {'sigma': 1.5, 'good_bits': 0}}
+              "ACS/HRC": {'sigma': 1.5, 'good_bits': ~14588},
+              "WFPC2/PC": {'sigma': 1.5, 'good_bits': ~14588}}
 sub_dirs = ['OrIg_files', 'pipeline-default', 'apriori', 'aposteriori']
 
 # default marker for trailer files
@@ -394,6 +394,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, in_memory=True,
             if align_dicts[0]['alignment_quality'] > 1:
                 _trlmsg += 'A priori alignment FAILED! No a priori astrometry correction applied.\n'
         _updateTrlFile(_trlfile, _trlmsg)
+
 
         if align_to_gaia:
             _trlmsg = _timestamp('Starting a posteriori alignment')
