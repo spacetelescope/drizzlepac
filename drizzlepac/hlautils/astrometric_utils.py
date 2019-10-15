@@ -1329,6 +1329,28 @@ def build_wcscat(image, group_id, source_catalog):
 
     return wcs_catalogs
 
+
+# -------------------------------------------------------------------------------------------------------------
+#
+#  Utilities and supporting functions for verifying alignment
+#
+#
+def check_mag_corr(imglist, threshold=0.5):
+    """Check the correlation between input magnitudes and matched ref magnitudes."""
+    mag_checks = []
+    for image in imglist:
+        input_mags = image.meta['fit_info']['input_mag']
+        ref_mags = image.meta['fit_info']['ref_mag']
+        if input_mags is not None and len(input_mags) > 0:
+            mag_corr, mag_corr_std = pearsonr(input_mags, ref_mags)
+            print("{} Magnitude correlation: {}".format(image.meta['name'], mag_corr))
+            cross_match_check = True if abs(mag_corr) > threshold else False
+        else:
+            cross_match_check = False
+        mag_checks.append(cross_match_check)
+
+    return mag_checks
+
 def rebin(arr, new_shape):
     """Rebin 2D array arr to shape new_shape by summing."""
     shape = (new_shape[0], arr.shape[0] // new_shape[0],

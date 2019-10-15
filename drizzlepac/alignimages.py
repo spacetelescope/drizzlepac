@@ -697,23 +697,7 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
             result.add_column(filtered_table[col], name=col)
         filtered_table.pprint(max_width=-1)
 
-# ----------------------------------------------------------------------------------------------------------------------
-def check_mag_corr(imglist, threshold=0.5):
-    """Check the correlation between input magnitudes and matched ref magnitudes."""
-    mag_checks = []
-    for image in imglist:
-        input_mags = image.meta['fit_info']['input_mag']
-        ref_mags = image.meta['fit_info']['ref_mag']
-        if input_mags is not None and len(input_mags) > 0:
-            mag_corr, mag_corr_std = pearsonr(input_mags, ref_mags)
-            print("{} Magnitude correlation: {}".format(image.meta['name'], mag_corr))
-            cross_match_check = True if abs(mag_corr) > threshold else False
-        else:
-            cross_match_check = False
-        mag_checks.append(cross_match_check)
-
-    return mag_checks
-# ----------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------
 
 
 def match_relative_fit(imglist, reference_catalog):
@@ -759,7 +743,7 @@ def match_relative_fit(imglist, reference_catalog):
 
     return imglist
 
-# ----------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------
 
 
 def match_relative_multifit(imglist, reference_catalog):
@@ -836,7 +820,7 @@ def match_relative_multifit(imglist, reference_catalog):
             # 3: Interpret RMS values from tweakwcs
             interpret_fit_rms(imglist, fit_ref_catalog)
 
-            mag_checks = check_mag_corr(imglist)
+            mag_checks = amutils.check_mag_corr(imglist)
             if not all(mag_checks):
                 if final_radii and final_ref:
                     continue
@@ -1026,7 +1010,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
 
         # Compute correlation between input and GAIA magnitudes
         if num_xmatches < max(0.1 * item.meta['num_ref_catalog'], 10):
-            cross_match_check = check_mag_corr([item])[0]
+            cross_match_check = amutils.check_mag_corr([item])[0]
             log.info("Cross-match check: {} on {} ref sources".format(cross_match_check,
                                                                       item.meta['num_ref_catalog']))
         else:
@@ -1323,8 +1307,8 @@ def update_image_wcs_info(tweakwcs_output,headerlet_filenames=None):
             hdulist.close()
 
             # Create headerlet
-            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, 
-                                                        wcsname=wcs_name, 
+            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name,
+                                                        wcsname=wcs_name,
                                                         logging=False)
 
             # Update headerlet
@@ -1396,7 +1380,7 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
     primary_header['HISTORY'] = '{:>15} : {:9.4f} degrees'.format('rotation', rot)
     primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('scale', scale)
     primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('skew', skew)
-    
+
     return headerlet
 
 # ----------------------------------------------------------------------------------------------------------
