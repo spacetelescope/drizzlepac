@@ -106,6 +106,8 @@ class HapConfig(object):
         # determine product type, initialize and build conditions list
         if hasattr(prod_obj, "edp_list") and hasattr(prod_obj, "fdp_list"):  # For total products
             self.conditions = ["total_basic"]
+            if len(prod_obj.edp_list) == 1:
+                self.conditions.append("any_n1")
         elif hasattr(prod_obj, "edp_list") and not hasattr(prod_obj, "fdp_list"):  # For filter products
             self.conditions = ["filter_basic"]
             n_exp = len(prod_obj.edp_list)
@@ -181,8 +183,8 @@ class HapConfig(object):
                     sys.exit("INVALID HST INSTRUMENT!")
         else:  # For single-exposure products
             self.conditions = ["single_basic"]
-            self.conditions.append("any_n1")  # TODO: verify that single-exposure products should use nexp=1 cfg file.
-
+            if prod_obj.is_singleton:
+                self.conditions.append("any_n1")
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

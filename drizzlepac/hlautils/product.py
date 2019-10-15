@@ -115,10 +115,14 @@ class TotalProduct(HAPProduct):
         """
             Create the drizzle-combined total image using the meta_wcs as the reference output
         """
-        # Retrieve the configuration parameters for astrodrizzle
+        # Retrieve the configuration parameters for astrodrizzle...
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
+        # ...and set parameters which are computed on-the-fly
         drizzle_pars["final_refimage"] = meta_wcs
         drizzle_pars["runfile"] = self.trl_logname
+        log.info("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
+                 "have been updated for the drizzle step of the total drizzle product."
+                 .format(meta_wcs, self.trl_logname))
 
         edp_filenames = [element.full_filename for element in self.edp_list]
         astrodrizzle.AstroDrizzle(input=edp_filenames,
@@ -203,10 +207,14 @@ class FilterProduct(HAPProduct):
             Create the drizzle-combined filter image using the meta_wcs as the reference output
         """
 
-        # Retrieve the configuration parameters for astrodrizzle
+        # Retrieve the configuration parameters for astrodrizzle...
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
+        # ...and set parameters which are computed on-the-fly
         drizzle_pars["final_refimage"] = meta_wcs
         drizzle_pars["runfile"] = self.trl_logname
+        log.info("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
+                 "have been updated for the drizzle step of the filter drizzle product."
+                 .format(meta_wcs, self.trl_logname))
 
         edp_filenames = [element.full_filename for element in self.edp_list]
         astrodrizzle.AstroDrizzle(input=edp_filenames,
@@ -244,6 +252,9 @@ class ExposureProduct(HAPProduct):
 
         self.regions_dict = {}
 
+        # This attribute is set in poller_utils.py
+        self.is_singleton = False
+
         log.info("Exposure object {} created.".format(self.full_filename[0:9]))
 
     def wcs_drizzle_product(self, meta_wcs):
@@ -251,10 +262,14 @@ class ExposureProduct(HAPProduct):
             Create the drizzle-combined exposure image using the meta_wcs as the reference output
         """
 
-        # Retrieve the configuration parameters for astrodrizzle
+        # Retrieve the configuration parameters for astrodrizzle...
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
+        # ...and set parameters which are computed on-the-fly
         drizzle_pars["final_refimage"] = meta_wcs
         drizzle_pars["runfile"] = self.trl_logname
+        log.info("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
+                 "have been updated for the drizzle step of the exposure drizzle product."
+                 .format(meta_wcs, self.trl_logname))
 
         astrodrizzle.AstroDrizzle(input=self.full_filename,
                                   output=self.drizzle_filename,
