@@ -337,6 +337,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, in_memory=True,
         adriz_pars.update(pipeline_pars)
         adriz_pars['mdriztab'] = False
         adriz_pars['final_fillval'] = 0
+        adriz_pars['driz_sep_kernel'] = 'turbo'
         adriz_pars['driz_sep_fillval'] = 0.0
         adriz_pars['num_cores'] = num_cores
         adriz_pars['resetbits'] = 0
@@ -580,6 +581,7 @@ def run_driz(inlist, trlfile, mode='default-pipeline', verify_alignment=True, de
                 # Working with data where CR is turned off by default (ACS/SBC, for example)
                 # Reset astrodrizzle parameters to generate single_sci images
                 reset_mdriztab_nocr(pipeline_pars, good_bits)
+
                 drizzlepac.astrodrizzle.AstroDrizzle(input=infile, configobj=None,
                                                     **pipeline_pars)
             instr_det = "{}/{}".format(fits.getval(sfile, 'instrume'), fits.getval(sfile, 'detector'))
