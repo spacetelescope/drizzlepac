@@ -24,11 +24,13 @@ from distutils.version import LooseVersion
 import numpy as np
 import scipy.stats as st
 from scipy import ndimage
+from scipy.stats import pearsonr
 from lxml import etree
 try:
     from matplotlib import pyplot as plt
 except Exception:
     plt = None
+
 
 from astropy import units as u
 from astropy.table import Table, vstack

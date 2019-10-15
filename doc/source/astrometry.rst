@@ -84,6 +84,7 @@ where the **Astrometric Catalog** refers the exact astrometric catalog used to c
     - This catalog contains version 2.4.0 of the *Guide Star Coordinates* (GSC) catalog,
     - All guide stars in the catalog were cross-matched with the GAIA DR1 catalog and corrected to the coordinates reported in GAIA DR1.
     - **APPLIES TO**:  All HST datasets which had a successful guide star acquisition, which is nearly all data in the archive.
+    - **NOTE**:  HST Observations taken after September 2017.
 
   * **HSC30**
 
