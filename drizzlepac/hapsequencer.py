@@ -533,12 +533,23 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
 
     Parameters
     ----------
-    TODO: Fill in 'Parameters' section
+    filter_product_obj : drizzlepac.hlautils.product.FilterProduct object
+        object containing all the relevant info for the drizzled filter product
+
+    filter_product_catalogs : drizzlepac.hlautils.catalog_utils.HAPCatalogs object
+        drizzled filter product catalog object
+
+    debug : Boolean, optional.
+        create intermediate diagnostic files? Default value is True.
 
     Returns
     -------
-    TODO: Fill in 'Returns' section
+    filter_product_catalogs : drizzlepac.hlautils.catalog_utils.HAPCatalogs object
+        updated version of filter_product_catalogs object with fully populated source flags
+
     """
+    print("\a")
+    pdb.set_trace()
     drizzled_image = filter_product_obj.drizzle_filename
     flt_list = []
     for edp_obj in filter_product_obj.edp_list:
