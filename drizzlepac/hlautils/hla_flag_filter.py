@@ -58,6 +58,7 @@ getdata = pyfits.getdata
 # import pywcs
 from stwcs import wcsutil
 from stwcs.wcsutil import HSTWCS
+import scipy.ndimage
 from scipy import spatial
 
 from drizzlepac.hlautils import cell_utils as cutils
@@ -1788,7 +1789,7 @@ def HLA_flag4and8_hunter_killer(catalog_data):
 
 # ======================================================================================================================
 
-def make_mask_file(drz_image,input_list):
+def make_mask_file(drz_image):
     """
     Creates _msk.fits mask file that contains pixel values of 1 outside the drizzled image footprint and pixel values
     of 0 inside the footprint. This file is used by subroutine HLANexpFlags().
@@ -1798,22 +1799,19 @@ def make_mask_file(drz_image,input_list):
     drz_image : string
         drizzled image filename
 
-    input_list : list
-        list of calibrated flc/flt images that were used as AstroDrizzle inputs to generate the image specified by
-        input parameter 'drz_image'.
-
     Returns
     -------
     Nothing.
     """
-    s = cutils.SkyFootprint(HSTWCS(drz_image, ext = 1))
-    s.build(input_list)
-    hdu = pyfits.PrimaryHDU(s.total_mask)
-    hdu.data = numpy.where(hdu.data  == 0, 1, 0)
-
-    hdul = pyfits.HDUList([hdu])
-
-    maskfilename = drz_image.replace(drz_image[-9:],"_msk.fits")
-    hdul.writeto(maskfilename)
-    hdul.close()
-    print("Wrote {}".format(maskfilename))
+    mask = pyfits.open(drz_image)[1].data != 0
+    dilate = scipy.ndimage.morphology.binary_dilation
+    erode = scipy.ndimage.morphology.binary_erosion
+    kernel1 = numpy.ones((25, 25), dtype=int)
+    kernel2 = numpy.ones((31, 31), dtype=int)
+    # add padding around the edge so pixels close to image boundary are correct
+    padding = 13
+    bigmask = numpy.pad(mask, padding, 'constant')
+    # strip the padding back off after creating mask
+    mask = (erode(dilate(bigmask, kernel1), kernel2) == 0)[padding:-padding, padding:-padding]
+    flagfile = drz_image.replace(drz_image[-9:],"_msk.fits")
+    pyfits.writeto(flagfile, mask.astype(numpy.int16))

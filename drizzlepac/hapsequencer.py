@@ -544,7 +544,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
         flt_list.append(edp_obj.full_filename)
     param_dict = filter_product_obj.configobj_pars.as_single_giant_dict()
     median_sky = filter_product_catalogs.image.bkg_median
-    hla_flag_filter.make_mask_file(drizzled_image, flt_list)
+    hla_flag_filter.make_mask_file(drizzled_image)
     for cat_type in filter_product_catalogs.catalogs.keys():
         exptime = filter_product_catalogs.catalogs[cat_type].image.imghdu[0].header['exptime'] #TODO: This works for ACS. Make sure that it also works for WFC3. Look at "TEXPTIME"
         catalog_name = filter_product_catalogs.catalogs[cat_type].sourcelist_filename
