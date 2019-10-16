@@ -47,7 +47,7 @@ def display_regions(imgname,reg_dict_list,flag_counts_list,n_sources_list):
         bit_val = bit_list[ctr]
         padding1 = 6 - len(str(bit_val))
         padding2 = 27 - len(flag_meanings[ctr])
-        print("Frame {}: Bit value {}{}{}{}{}{}{})".format(ctr+1,
+        print("Frame {}: Bit value {}{}{}{}{}{}{}".format(ctr+1,
                                                            bit_val,
                                                            "."*padding1,
                                                            flag_meanings[ctr],
