@@ -375,17 +375,22 @@ def process(inFile, force=False, newpath=None, num_cores=None, in_memory=True,
         updatewcs.updatewcs(_calfiles)
         if _calfiles_flc:
             updatewcs.updatewcs(_calfiles_flc)
+        try:
+            # Generate initial default products and perform verification
+            align_apriori = verify_alignment(_inlist,
+                                             _calfiles, _calfiles_flc,
+                                             _trlfile,
+                                             tmpdir='apriori', debug=debug,
+                                             good_bits=focus_pars[inst_mode]['good_bits'],
+                                             alignment_mode='apriori',
+                                             force_alignment=force_alignment,
+                                             find_crs=find_crs,
+                                             **adriz_pars)
+        except Exception:
+            traceback.print_exc()
+            align_apriori = None
+            _trlmsg += "ERROR in applying a priori solution.\n"
 
-        # Generate initial default products and perform verification
-        align_apriori = verify_alignment(_inlist,
-                                         _calfiles, _calfiles_flc,
-                                         _trlfile,
-                                         tmpdir='apriori', debug=debug,
-                                         good_bits=focus_pars[inst_mode]['good_bits'],
-                                         alignment_mode='apriori',
-                                         force_alignment=force_alignment,
-                                         find_crs=find_crs,
-                                         **adriz_pars)
         if align_apriori:
             align_dicts = align_apriori
             if align_dicts[0]['alignment_quality'] == 0:
