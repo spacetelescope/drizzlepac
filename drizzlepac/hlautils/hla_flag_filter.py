@@ -216,8 +216,8 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         snr = float(param_dict['quality control']['ci filter']['dao_bthresh']) # TODO: Figure out where the best place for bthresh to be
 
     # replace CI limits with values from table if possible
-    cidict = ci_table.get_ci_from_file(drizzled_image, ci_lower=ci_lower_limit, ci_upper=ci_upper_limit)
-    ci_lower_limit = cidict['ci_lower_limit']
+    cidict = ci_table.get_ci_from_file(drizzled_image, ci_lower=ci_lower_limit, ci_upper=ci_upper_limit) #TODO: add values for ACS/SBC
+    ci_lower_limit = cidict['ci_lower_limit'] #TODO: if values from lookup table are used, they will not be recorded in an output parameter file. FIXME!
     ci_upper_limit = cidict['ci_upper_limit']
 
     log.info(' ')
@@ -378,6 +378,8 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
 
                 continue
 
+            # TODO: Should we also look for pixels flagged with DQ value 2048 (A to D saturation) for ACS data?
+
             # ----------------------------------------------------
             # DETERMINE IF ANY OF THE PIXELS LOCATED IN THE GRID
             # HAVE A BIT VALUE OF 256, I.E. FULL WELL SATURATION.
@@ -410,6 +412,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
             # ---------------------------------------------------
             # WRITE FLT COORDS TO A FILE FOR DIAGNOSTIC PURPOSES
             # ---------------------------------------------------
+            # TODO: doublecheck if this file can be made only in debug mode
             flt_xy_coord_out = flt_image.split('/')[-1].split('.')[0] + '_sci' + str(ext_cnt + 1) + '.txt'
             outfile = open(flt_xy_coord_out, 'w')
             for flt_xy_coord in x_y_array:
@@ -492,12 +495,12 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     # Convert aperture radius to pixels
     # ----------------------------------
     ap2 = param_dict['catalog generation']['aperture_2']
-    plate_scale = param_dict['catalog generation']['scale'] #TODO: Need to move scale value out of 'catalog generation' > 'dao' to somewhere more sensable
+    plate_scale = param_dict['catalog generation']['scale'] #TODO: use "pscale" attribute from wcs object
     if proc_type == 'daophot':
         radius = round((ap2/plate_scale) + 0.5) * 2. # TODO: WHY DOES DAOPHOT RADIUS VALUE MULTIPLIED BY 2 BUT SEXPHOT VALUE IS NOT?
 
     if proc_type == 'sexphot':
-        radius = round((ap2 / plate_scale) + 0.5) # TODO: WHY DOES DAOPHOT RADIUS VALUE MULTIPLIED BY 2 BUT SEXPHOT VALUE IS NOT?
+        radius = round((ap2 / plate_scale) + 0.5) * 2. # TODO: WHY DOES DAOPHOT RADIUS VALUE MULTIPLIED BY 2 BUT SEXPHOT VALUE IS NOT?
 
     log.info(' ')
     log.info('THE RADIAL DISTANCE BEING USED IS {} PIXELS'.format(str(radius)))
@@ -645,10 +648,10 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, median_sk
     # ----------------------------------
     # Convert aperture radius to pixels
     # ----------------------------------
-    radius = ap2 / float(param_dict['catalog generation']['scale']) # TODO: this value should be probably be somewhere else
+    radius = ap2 / float(param_dict['catalog generation']['scale']) # TODO: this value should be probably be somewhere else USE PSCALE
     log.info(' ')
     log.info('Aperture Size = {}'.format(ap2))
-    log.info('Pixel Scale = {} arcsec per pixel'.format(float(param_dict['catalog generation']['scale']))) # TODO: this value should be probably be somewhere else
+    log.info('Pixel Scale = {} arcsec per pixel'.format(float(param_dict['catalog generation']['scale']))) # TODO: this value should be probably be somewhere else USE PSCALE
     log.info(' ')
     area = math.pi * radius**2
 
@@ -662,8 +665,8 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, median_sk
 
         if proc_type == 'sexphot':
             # mag = row_split[6]
-            flux = row[10]
-            sky = row[13]
+            flux = row[10] #TODO: get column name
+            sky = row[13] #TODO: get column name
         elif proc_type == 'daophot':
             # mag = row_split[7]
             flux = row[11]
@@ -1233,7 +1236,7 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
     component_drz_img_list = get_component_drz_list(drizzled_image, drz_root_dir, flt_list)# TODO: This might be a problem for HAP
     nx = drz_data.shape[0]
     ny = drz_data.shape[1]
-    nexp_array = numpy.zeros((nx, ny), dtype = numpy.int32)
+    nexp_array = numpy.zeros((nx, ny), dtype = numpy.int32) #TODO: NEXP can be computed by sky footprint code
 
     for comp_drz_img in component_drz_img_list:
         comp_drz_data = (getdata(comp_drz_img) != 0).astype(numpy.int32)
