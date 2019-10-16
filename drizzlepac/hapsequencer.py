@@ -21,6 +21,7 @@ from drizzlepac.hlautils import hla_flag_filter
 from drizzlepac.hlautils import poller_utils
 from drizzlepac.hlautils import processing_utils as proc_utils
 from stsci.tools import logutil
+from stwcs import wcsutil
 
 __taskname__ = 'hapsequencer'
 log = logutil.create_logger('hapsequencer', level=logutil.logging.INFO, stream=sys.stdout)
@@ -543,6 +544,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
     for edp_obj in filter_product_obj.edp_list:
         flt_list.append(edp_obj.full_filename)
     param_dict = filter_product_obj.configobj_pars.as_single_giant_dict()
+    plate_scale = wcsutil.HSTWCS(drizzled_image, ext=('sci', 1)).pscale
     median_sky = filter_product_catalogs.image.bkg_median
     hla_flag_filter.make_mask_file(drizzled_image)
     for cat_type in filter_product_catalogs.catalogs.keys():
@@ -555,7 +557,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
             proc_type = 'sexphot'
         drz_root_dir = os.getcwd()
 
-        filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flaging(drizzled_image, flt_list, param_dict, exptime, median_sky, catalog_name, catalog_data, proc_type, drz_root_dir, debug)
+        filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flaging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky, catalog_name, catalog_data, proc_type, drz_root_dir, debug)
 
     return filter_product_catalogs
 
