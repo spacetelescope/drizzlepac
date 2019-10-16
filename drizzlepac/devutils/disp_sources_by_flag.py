@@ -6,7 +6,7 @@ bit value
 NOTE: This script requires the "pyds9" library.
 """
 import sys
-
+import pdb
 from astropy.io import fits as fits
 from astropy.table import Table
 import numpy as np
@@ -43,30 +43,25 @@ def display_regions(imgname,reg_dict,flag_counts,n_sources):
     """
     imghdu = fits.open(imgname)
     d = pyds9.DS9()
-    d.set_fits(imghdu)
-    d.set("frame new")
-    d.set_fits(imghdu)
 
     for ctr in range(0, len(bit_list)):
         bit_val = bit_list[ctr]
-        padding0 = 2 - len(str(ctr+2))
+        padding0 = 2 - len(str(ctr+1))
         padding1 = 6 - len(str(bit_val))
         padding2 = 27 - len(flag_meanings[ctr])
-        print("Frame {}{}: Bit value {}{}{}{}{} sources flagged ({}% of all sources)".format(" "*padding0,
-                                                                                             ctr+2,bit_val,
-                                                                                             "."*padding1,
-                                                                                             flag_meanings[ctr],
-                                                                                             padding2*".",
-                                                                                             flag_counts[ctr],
-                                                                                             100.0*(float(flag_counts[ctr])/float(n_sources))))
+        print("Frame {}: Bit value {}{}{}{}{} sources flagged ({}% of all sources)".format(ctr+1,bit_val,"."*padding1,
+                                                                                           flag_meanings[ctr],
+                                                                                           padding2*".",
+                                                                                           flag_counts[ctr],
+                                                                                           100.0*(float(flag_counts[ctr])/float(n_sources))))
         if ctr != 0:
             d.set("frame new")
         d.set_fits(imghdu)
         d.set("scale zscale")
         if reg_dict[bit_val]:
             d.set('regions', 'physical; {}'.format(reg_dict[bit_val]))
-    d.set("frame first")
-    d.set("frame delete")
+    # d.set("frame first")
+    # d.set("frame delete")
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
@@ -140,7 +135,7 @@ def make_regions(sl_name):
         flag_counts += flag_bits
         for bit_val,flag_element in zip(bit_list,flag_bits):
             if flag_element == 1:
-                reg_dict[bit_val]+="point({}, {}); ".format(x+1.0,y+1.0)
+                reg_dict[bit_val]+="point({}, {}) #point=circle color=red; ".format(x+1.0,y+1.0)
 
     for bit_val in bit_list:
         if len(reg_dict[bit_val]) >0:
