@@ -548,8 +548,6 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
         updated version of filter_product_catalogs object with fully populated source flags
 
     """
-    print("\a")
-    pdb.set_trace()
     drizzled_image = filter_product_obj.drizzle_filename
     flt_list = []
     for edp_obj in filter_product_obj.edp_list:
