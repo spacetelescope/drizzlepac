@@ -10,7 +10,7 @@ from astropy.io import fits as fits
 from astropy.table import Table
 import numpy as np
 import pyds9
-
+import pdb
 bit_list = [0, 1, 2, 4, 8, 16, 32, 64, 128]
 flag_meanings=['Point Source','Extended Source','Single-Pixel Saturation','Multi-Pixel Saturation',
                'Faint Magnitude Limit','Hot Pixel','Swarm Detection','Edge and Chip Gap','Bleeding and Cosmic Rays']
@@ -82,6 +82,7 @@ def deconstruct_flag(flagval):
         a 9-element numpy array of 0s and 1s. Each element of the array represents the presence of a particular
         bit value (element 0 = bit 0, element 1 = bit 1, ..., element 3 = bit 4 and so on...)
     """
+    bitlist = [1, 2, 4, 8, 16, 32, 64, 128]
     flagval = int(flagval)
     # out_bit_list = []
     out_idx_list = np.zeros(9, dtype=int)
@@ -90,7 +91,7 @@ def deconstruct_flag(flagval):
         out_idx_list[0] = 1
     if flagval > 0:
         idx = 1
-        for bit in bit_list:
+        for bit in bitlist:
             if flagval & bit > 0:
                 # out_bit_list.append(bit)
                 out_idx_list[idx] = 1
