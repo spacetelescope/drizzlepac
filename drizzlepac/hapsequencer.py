@@ -557,7 +557,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
             proc_type = 'sexphot'
         drz_root_dir = os.getcwd()
 
-        filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flaging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky, catalog_name, catalog_data, proc_type, drz_root_dir, debug)
+        filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky, catalog_name, catalog_data, proc_type, drz_root_dir, debug)
 
     return filter_product_catalogs
 

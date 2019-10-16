@@ -83,7 +83,7 @@ y_limit = 2051.
 
 
 @util.with_logging
-def run_source_list_flaging(drizzled_image, flt_list,param_dict, exptime, median_sky,
+def run_source_list_flagging(drizzled_image, flt_list,param_dict, exptime, plate_scale, median_sky,
                             catalog_name, catalog_data, proc_type, drz_root_dir, debug=True):
     """Simple calling subroutine that executes the other flagging subroutines.
     
@@ -101,6 +101,9 @@ def run_source_list_flaging(drizzled_image, flt_list,param_dict, exptime, median
 
     exptime : float
         drizzled filter product exposure time in seconds
+
+    plate_scale : float
+        plate scale, in arcseconds/pixel
 
     median_sky : float
         median sky value
@@ -131,29 +134,28 @@ def run_source_list_flaging(drizzled_image, flt_list,param_dict, exptime, median
     log.info("************************** * * * HLA_FLAG_FILTER * * * **************************")
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
-    log.info("ci_filter({} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict,
-                                                debug))
+    log.info("ci_filter({} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict, debug))
     catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag saturated sources
-    log.info("HLASaturationFlags({} {} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name, "<Catalog Data>",
-                                                            proc_type, param_dict, debug))
-    catalog_data = HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict, debug)
+    log.info("HLASaturationFlags({} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name, "<Catalog Data>",
+                                                            proc_type, param_dict, plate_scale, debug))
+    catalog_data = HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict, plate_scale, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag swarm sources
-    log.info("HLASwarmFlags({} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>", exptime,
+    log.info("HLASwarmFlags({} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>", exptime, plate_scale,
                                                        median_sky, proc_type, param_dict, debug))
-    catalog_data = HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, median_sky, proc_type, param_dict, debug)
+    catalog_data = HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky, proc_type, param_dict, debug)
 
 
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
-    log.info("HLANexpFlags({} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, catalog_name,
+    log.info("HLANexpFlags({} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale, catalog_name,
                                                          "<Catalog Data>", drz_root_dir, debug))
-    catalog_data = HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_data, drz_root_dir, debug)
+    catalog_data = HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data, drz_root_dir, debug)
 
     return catalog_data
 
@@ -283,7 +285,7 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
 
 # ======================================================================================================================
 
-def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict, debug):
+def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict, plate_scale, debug):
     """Identifies and flags saturated sources.
 
     Parameters
@@ -306,6 +308,9 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
 
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+
+    plate_scale : float
+        plate scale, in arcseconds/pixel
 
     debug : bool
         write intermediate files?
@@ -496,7 +501,6 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     # Convert aperture radius to pixels
     # ----------------------------------
     ap2 = param_dict['catalog generation']['aperture_2']
-    plate_scale = param_dict['catalog generation']['scale'] #TODO: use "pscale" attribute from wcs object
     if proc_type == 'daophot':
         radius = round((ap2/plate_scale) + 0.5) * 2. # TODO: WHY DOES DAOPHOT RADIUS VALUE MULTIPLIED BY 2 BUT SEXPHOT VALUE IS NOT?
 
@@ -566,7 +570,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
 
 # ======================================================================================================================
 
-def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, median_sky, proc_type, param_dict, debug):
+def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky, proc_type, param_dict, debug):
 
     """Identifies and flags swarm sources.
 
@@ -583,6 +587,9 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, median_sk
 
     exptime : float
         exposure of the specified drizzled image
+
+    plate_scale : float
+        plate scale, in arcseconds/pixel
 
     median_sky : float
         median sky value
@@ -649,10 +656,10 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, median_sk
     # ----------------------------------
     # Convert aperture radius to pixels
     # ----------------------------------
-    radius = ap2 / float(param_dict['catalog generation']['scale']) # TODO: this value should be probably be somewhere else USE PSCALE
+    radius = ap2 / plate_scale
     log.info(' ')
     log.info('Aperture Size = {}'.format(ap2))
-    log.info('Pixel Scale = {} arcsec per pixel'.format(float(param_dict['catalog generation']['scale']))) # TODO: this value should be probably be somewhere else USE PSCALE
+    log.info('Pixel Scale = {} arcsec per pixel'.format(plate_scale))
     log.info(' ')
     area = math.pi * radius**2
 
@@ -1165,7 +1172,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, median_sk
 
 # ======================================================================================================================
 
-def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_data, drz_root_dir, debug):
+def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data, drz_root_dir, debug):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
     drizzled_image : string
@@ -1177,6 +1184,9 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
 
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters.
+
+    plate_scale : float
+        plate scale, in arcseconds/pixel
 
     catalog_name : string
         drizzled filter product catalog filename to process
@@ -1275,7 +1285,6 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
     # ----------------------------------
 
     ap2 = param_dict['catalog generation']['aperture_2']
-    plate_scale = param_dict['catalog generation']['scale'] #TODO: Need to move scale value out of 'catalog generation' > 'dao' to somewhere more sensable
     radius = ap2/plate_scale
 
     num_exp = round(numpy.max(nexp_array))
