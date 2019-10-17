@@ -424,14 +424,14 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
             # ---------------------------------------------------
             # WRITE FLT COORDS TO A FILE FOR DIAGNOSTIC PURPOSES
             # ---------------------------------------------------
-            # TODO: doublecheck if this file can be made only in debug mode
-            flt_xy_coord_out = flt_image.split('/')[-1].split('.')[0] + '_sci' + str(ext_cnt + 1) + '.txt'
-            outfile = open(flt_xy_coord_out, 'w')
-            for flt_xy_coord in x_y_array:
-                x = flt_xy_coord[0]
-                y = flt_xy_coord[1]
-                outfile.write(str(x) + '     ' + str(y) + '\n')
-            outfile.close()
+            if debug:
+                flt_xy_coord_out = flt_image.split('/')[-1].split('.')[0] + '_sci' + str(ext_cnt + 1) + '.txt'
+                outfile = open(flt_xy_coord_out, 'w')
+                for flt_xy_coord in x_y_array:
+                    x = flt_xy_coord[0]
+                    y = flt_xy_coord[1]
+                    outfile.write(str(x) + '     ' + str(y) + '\n')
+                outfile.close()
 
             # ----------------------------------------------------
             # CONVERT SATURATION FLAGGED X AND Y COORDINATES FROM
@@ -472,11 +472,12 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     # WRITE RA & DEC FLT CONVERTED X & Y DRIZZLED
     # IMAGE COORDINATES TO A TEXT FILE
     # --------------------------------------------
-    drz_coord_file = drizzled_image.split('/')[-1].split('.')[0] + '_ALL_FLT_SAT_FLAG_PIX.txt'
-    drz_coord_out = open(drz_coord_file, 'w')
-    for coord in full_satList:
-        drz_coord_out.write(str(coord[0]) + '     ' + str(coord[1]) + '\n')
-    drz_coord_out.close()
+    if debug:
+        drz_coord_file = drizzled_image.split('/')[-1].split('.')[0] + '_ALL_FLT_SAT_FLAG_PIX.txt'
+        drz_coord_out = open(drz_coord_file, 'w')
+        for coord in full_satList:
+            drz_coord_out.write(str(coord[0]) + '     ' + str(coord[1]) + '\n')
+        drz_coord_out.close()
 
     # --------------------------------------------------------
     # READ IN FULL DRIZZLED IMAGE-BASED CATALOG AND SAVE
@@ -709,19 +710,20 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
     # ------------------------------------------------------------
     # WRITE SUBSET SOURCE LIST TO AN OUTPUT FILE FOR VERIFICATION
     # ------------------------------------------------------------
-    final_complete_source_file = open(phot_table_root+'_SWFILT_COMPLETE_SOURCE_FILE.txt','w')
-    final_complete_source_file.write("# ------------------------------------------------------------------------------------------------\n")
-    final_complete_source_file.write("# X-Center   Y-Center     Flux        ElectronPP          Sky         EPPSKY_Ratio \n")
-    final_complete_source_file.write("# ------------------------------------------------------------------------------------------------\n")
-    for i, complete_src_value in enumerate(complete_src_list):
-        final_complete_source_file.write(str(complete_src_value[0])+'     '+
-                                         str(complete_src_value[1])+'     '+
-                                         str(complete_src_value[2])+'     '+
-                                         str(complete_src_value[3])+'     '+
-                                         str(complete_src_value[4])+'     '+
-                                         str(complete_src_value[5])+'\n')
+    if debug:
+        final_complete_source_file = open(phot_table_root+'_SWFILT_COMPLETE_SOURCE_FILE.txt','w')
+        final_complete_source_file.write("# ------------------------------------------------------------------------------------------------\n")
+        final_complete_source_file.write("# X-Center   Y-Center     Flux        ElectronPP          Sky         EPPSKY_Ratio \n")
+        final_complete_source_file.write("# ------------------------------------------------------------------------------------------------\n")
+        for i, complete_src_value in enumerate(complete_src_list):
+            final_complete_source_file.write(str(complete_src_value[0])+'     '+
+                                             str(complete_src_value[1])+'     '+
+                                             str(complete_src_value[2])+'     '+
+                                             str(complete_src_value[3])+'     '+
+                                             str(complete_src_value[4])+'     '+
+                                             str(complete_src_value[5])+'\n')
 
-    final_complete_source_file.close()
+        final_complete_source_file.close()
 
     # ======================================================================
     # ----------------------------------------------------------------------
@@ -1348,7 +1350,14 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
         phot_table_temp = phot_table_root + '_NEXPFILT.txt'
         catalog_data.write(phot_table_temp, delimiter=",", format='ascii')
 
-
+    if not debug:
+        # Remove _msk.fits, _NCTX.fits, and _NEXP.fits files created in this subroutine
+        if os.path.exists(maskfile):
+            os.remove(maskfile)
+        if os.path.exists(nexp_image_ctx):
+            os.remove(nexp_image_ctx)
+        if os.path.exists(nexp_image):
+            os.remove(nexp_image)
     return catalog_data
 
 # ======================================================================================================================
