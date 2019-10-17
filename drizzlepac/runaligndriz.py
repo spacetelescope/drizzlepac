@@ -387,6 +387,11 @@ def process(inFile, force=False, newpath=None, num_cores=None, in_memory=True,
                                              find_crs=find_crs,
                                              **adriz_pars)
         except Exception:
+            # Reset to state prior to applying a priori solutions
+            updatewcs.updatewcs(_calfiles, use_db=False)
+            if _calfiles_flc:
+                updatewcs.updatewcs(_calfiles_flc, use_db=False)
+
             traceback.print_exc()
             align_apriori = None
             _trlmsg += "ERROR in applying a priori solution.\n"
