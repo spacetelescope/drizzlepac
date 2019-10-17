@@ -1,31 +1,16 @@
 #!/usr/bin/env python
 
-""" runastrodriz.py - Module to control operation of astrodrizzle to
+""" runaligndriz.py - Module to control operation of astrodrizzle to
         remove distortion and combine HST images in the pipeline.
 
 :License: :doc:`LICENSE`
 
-USAGE: runastrodriz.py [-fhibng] inputFilename [newpath]
+USAGE: runaligndriz.py [-fhdaibng] inputFilename [newpath]
 
 Alternative USAGE:
     python
-    from acstools import runastrodriz
-    runastrodriz.process(inputFilename,force=False,newpath=None,inmemory=False)
-
-GUI Usage under Python:
-    python
-    from stsci.tools import teal
-    import acstools
-    cfg = teal.teal('runastrodriz')
-
-PyRAF Usage:
-    epar runastrodriz
-
-If the '-i' option gets specified, no intermediate products will be written out
-to disk. These products, instead, will be kept in memory. This includes all
-single drizzle products (*single_sci and *single_wht), median image,
-blot images, and crmask images.  The use of this option will therefore require
-significantly more memory than usual to process the data.
+    from acstools import runaligndriz
+    runaligndriz.process(inputFilename,force=False,newpath=None)
 
 If a value has been provided for the newpath parameter, all processing will be
 performed in that directory/ramdisk.  The steps involved are:
@@ -76,24 +61,46 @@ import shutil
 import sys
 import time
 import logging
+import json
+import traceback
 
 # THIRD-PARTY
 from astropy.io import fits
 from stsci.tools import fileutil, asnutil
+from stwcs.wcsutil import HSTWCS
+import numpy as np
 
-__taskname__ = "runastrodriz"
+from drizzlepac import processInput  # used for creating new ASNs for _flc inputs
+from stwcs import updatewcs
+from drizzlepac import alignimages
+from drizzlepac import resetbits
+from drizzlepac.hlautils import astrometric_utils as amutils
+from drizzlepac import util
+from drizzlepac import mdzhandler
+
+__taskname__ = "runaligndriz"
 
 # Local variables
-__version__ = "1.6.0"
-__version_date__ = "(01-Mar-2019)"
+__version__ = "2.0.0"
+__version_date__ = "(09-Oct-2019)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
-pipeline_pars = {'mdriztab': True,
+PIPELINE_PARS = {'mdriztab': True,
+                 'in_memory': True,
                  'stepsize': 10,
                  'output': '',
                  'preserve': False,
+                 'clean': False,
                  'resetbits': 4096}
+
+focus_pars = {"WFC3/IR": {'sigma': 2.0, 'good_bits': 512},
+              "WFC3/UVIS": {'sigma': 1.5, 'good_bits': ~14588},
+              "ACS/WFC": {'sigma': 1.5, 'good_bits': ~14588},
+              "ACS/SBC": {'sigma': 2.0, 'good_bits': 0},
+              "ACS/HRC": {'sigma': 1.5, 'good_bits': ~14588},
+              "WFPC2/PC": {'sigma': 1.5, 'good_bits': ~14588}}
+sub_dirs = ['OrIg_files', 'pipeline-default', 'apriori', 'aposteriori']
 
 # default marker for trailer files
 __trlmarker__ = '*** astrodrizzle Processing Version ' + __version__ + __version_date__ + '***\n'
@@ -110,35 +117,14 @@ envvar_old_apriori_name = "ASTROMETRY_STEP_CONTROL"
 # Version 1.0.0 - Derived from v1.2.0 of wfc3.runwf3driz to run astrodrizzle
 
 
-# TEAL Interfaces
-def getHelpAsString():
-    helpString = 'runastrodriz Version ' + __version__ + __version_date__ + '\n'
-    helpString += __doc__ + '\n'
-
-    return helpString
-
-
-def help():
-    print(getHelpAsString())
-
-
-def run(configobj=None):
-    process(configobj['input'], force=configobj['force'],
-                newpath=configobj['newpath'], inmemory=configobj['in_memory'],
-                num_cores=configobj['num_cores'], headerlets=configobj['headerlets'])
-
-
 # Primary user interface
-def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
-            headerlets=True, align_to_gaia=True):
+def process(inFile, force=False, newpath=None, num_cores=None, in_memory=True,
+            headerlets=True, align_to_gaia=True, force_alignment=False, debug=False):
     """ Run astrodrizzle on input file/ASN table
         using default values for astrodrizzle parameters.
     """
-    # We only need to import this package if a user run the task
-    import drizzlepac
-    from drizzlepac import processInput  # used for creating new ASNs for _flc inputs
-    from stwcs import updatewcs
-    from drizzlepac import alignimages
+    trlmsg = "{}: Calibration pipeline processing of {} started.\n".format(_getTime(), inFile)
+    pipeline_pars = PIPELINE_PARS.copy()
 
     # interpret envvar variable, if specified
     if envvar_compute_name in os.environ:
@@ -188,7 +174,9 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
     _calfiles = []
 
     # Identify WFPC2 inputs to account for differences in WFPC2 inputs
-    wfpc2_input = fits.getval(inFilename, 'instrume') == 'WFPC2'
+    infile_inst = fits.getval(inFilename, 'instrume')
+    infile_det = fits.getval(inFilename, 'detector')
+    wfpc2_input = infile_inst == 'WFPC2'
     cal_ext = None
 
     # Check input file to see if [DRIZ/DITH]CORR is set to PERFORM
@@ -248,6 +236,11 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
             _trlroot = inFile
 
     _trlfile = _trlroot + '.tra'
+    _alignlog = _trlroot + '_align.log'
+    _calfiles_flc = []
+
+    # Write message out to temp file and append it to full trailer file
+    _updateTrlFile(_trlfile, trlmsg)
 
     # Open product and read keyword value
     # Check to see if product already exists...
@@ -270,13 +263,6 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
         else:
             dcorr = None
 
-    time_str = _getTime()
-    _tmptrl = _trlroot + '_tmp.tra'
-    _drizfile = _trlroot + '_pydriz'
-    _drizlog = _drizfile + ".log"  # the '.log' gets added automatically by astrodrizzle
-    _alignlog = _trlroot + '_align.log'
-    _alignlog_copy = _alignlog.replace('.log', '_copy.log')
-    _calfiles_flc = []
     if dcorr == 'PERFORM':
         if '_asn.fits' not in inFilename:
             # Working with a singleton
@@ -314,131 +300,161 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
                              for f in _calfiles
                              if os.path.exists(f.replace('_flt.fits', '_flc.fits'))]
 
-        align_files = None
+        """
+        Start updating the data and verifying that the new alignment is valid.
+            1. Run updatewcs without astrometry database update on all input exposures (FLCs? and FLTs)
+            2. Generate initial default products and perform verification
+                a. perform cosmic-ray identification and generate
+                    drizzle products using astrodrizzle for all sets of inputs
+                b. verify relative alignment with focus index after masking out CRs
+                c. copy all drizzle products to parent directory
+                d. if alignment fails, update trailer file with failure information
+                e. if alignment verified, copy updated input exposures to parent directory
+            3. If alignment is verified,
+                0. copy inputs to separate sub-directory for processing
+                a. run updatewcs to get a priori updates
+                b. generate drizzle products for all sets of inputs (FLC and/or FLT) without CR identification
+                c. verify alignment using focus index on FLC or, if no FLC, FLT products
+                d. if alignment fails, update trailer file with info on failure
+                e. if product alignment verified,
+                    - copy all drizzle products to parent directory
+                    - copy updated input exposures to parent directory
+            4. If a posteriori correction enabled,
+                0. copy all inputs to separate sub-directory for processing
+                a. run alignimages
+                b. generate drizzle products for all sets of inputs (FLC and/or FLT) without CR identification
+                c. verify alignment using focus index on FLC or, if no FLC, FLT products
+                d. determine similarity index relative to pipeline default product
+                e. if either focus or similarity indicates a problem, update trailer file with info on failure
+                f. if product alignment verified,
+                    - copy all drizzle products to parent directory
+                    - copy updated input exposures to parent directory
+            5. Remove all processing sub-directories
+        """
+        inst_mode = "{}/{}".format(infile_inst, infile_det)
 
-        # insure these files exist, if not, blank them out
-        # Also pick out what files will be used for additional alignment to GAIA
-        if not _calfiles_flc or not os.path.exists(_calfiles_flc[0]):
-            _calfiles_flc = None
-            align_files = _calfiles
-            align_update_files = None
-        else:
-            align_files = _calfiles_flc
-            align_update_files = _calfiles
+        adriz_pars = mdzhandler.getMdriztabParameters(_calfiles)
+        adriz_pars.update(pipeline_pars)
+        adriz_pars['mdriztab'] = False
+        adriz_pars['final_fillval'] = 0
+        adriz_pars['driz_sep_kernel'] = 'turbo'
+        adriz_pars['driz_sep_fillval'] = 0.0
+        adriz_pars['num_cores'] = num_cores
+        adriz_pars['resetbits'] = 0
 
-        # Run updatewcs on each list of images
+        exptimes = np.array([fits.getval(flt, 'exptime') for flt in _calfiles])
+        if exptimes.max() / exptimes.min() > 2:
+            adriz_pars['combine_type'] = 'median'
+            adriz_pars['combine_nhigh'] = 0
+
+        # Run updatewcs on each list of images to define pipeline default WCS based on distortion models
+        updatewcs.updatewcs(_calfiles, use_db=False)
+        if _calfiles_flc:
+            updatewcs.updatewcs(_calfiles_flc, use_db=False)
+
+        # Integrate user-specified drizzle parameters into pipeline_pars
+        _trlmsg = _timestamp('Starting alignment with bad-pixel identification')
+        _trlmsg += __trlmarker__
+        _updateTrlFile(_trlfile, _trlmsg)
+
+        # Generate initial default products and perform verification
+        align_dicts = verify_alignment(_inlist,
+                                         _calfiles, _calfiles_flc,
+                                         _trlfile,
+                                         tmpdir=None, debug=debug,
+                                         force_alignment=force_alignment,
+                                         find_crs=True, **adriz_pars)
+
+        _trlmsg = _timestamp('Starting alignment with a priori solutions')
+        _trlmsg += __trlmarker__
+
+        find_crs = not align_dicts[0]['alignment_verified']
+
+        # run updatewcs with use_db=True to insure all products have
+        # have a priori solutions as extensions
         updatewcs.updatewcs(_calfiles)
         if _calfiles_flc:
             updatewcs.updatewcs(_calfiles_flc)
+        try:
+            # Generate initial default products and perform verification
+            align_apriori = verify_alignment(_inlist,
+                                             _calfiles, _calfiles_flc,
+                                             _trlfile,
+                                             tmpdir='apriori', debug=debug,
+                                             good_bits=focus_pars[inst_mode]['good_bits'],
+                                             alignment_mode='apriori',
+                                             force_alignment=force_alignment,
+                                             find_crs=find_crs,
+                                             **adriz_pars)
+        except Exception:
+            # Reset to state prior to applying a priori solutions
+            updatewcs.updatewcs(_calfiles, use_db=False)
+            if _calfiles_flc:
+                updatewcs.updatewcs(_calfiles_flc, use_db=False)
+
+            traceback.print_exc()
+            align_apriori = None
+            _trlmsg += "ERROR in applying a priori solution.\n"
+
+        if align_apriori:
+            align_dicts = align_apriori
+            if align_dicts[0]['alignment_quality'] == 0:
+                _trlmsg += 'A priori alignment SUCCESSFUL.\n'
+            if align_dicts[0]['alignment_quality'] == 1:
+                _trlmsg += 'A priori alignment potentially compromised.  Please review final product!\n'
+            if align_dicts[0]['alignment_quality'] > 1:
+                _trlmsg += 'A priori alignment FAILED! No a priori astrometry correction applied.\n'
+        _updateTrlFile(_trlfile, _trlmsg)
+
 
         if align_to_gaia:
-            # Perform additional alignment on the FLC files, if present
-            ###############
-            #
-            # call hlapipeline code here on align_files list of files
-            #
-            ###############
-            # Create trailer marker message for start of align_to_GAIA processing
-            _trlmsg = _timestamp("Align_to_GAIA started ")
-            print(_trlmsg)
-            ftmp = open(_tmptrl, 'w')
-            ftmp.writelines(_trlmsg)
-            ftmp.close()
-            _appendTrlFile(_trlfile, _tmptrl)
-            _trlmsg = ""
-
-            # Create an empty astropy table so it can be used as input/output for the perform_align function
-            try:
-                align_table = alignimages.perform_align(align_files, update_hdr_wcs=True, runfile=_alignlog,
-                                                        clobber=False)
-                for row in align_table:
-                    if row['status'] == 0:
-                        trlstr = "Successfully aligned {} to {} astrometric frame\n"
-                        _trlmsg += trlstr.format(row['imageName'], row['catalog'])
-                    else:
-                        trlstr = "Could not align {} to absolute astrometric frame\n"
-                        _trlmsg += trlstr.format(row['imageName'])
-
-            except Exception:
-                # Something went wrong with alignment to GAIA, so report this in
-                # trailer file
-                _trlmsg = "EXCEPTION encountered in alignimages...\n"
-                _trlmsg += "   No correction to absolute astrometric frame applied!\n"
-
-            # Write the perform_align log to the trailer file...(this will delete the _alignlog)
-            shutil.copy(_alignlog, _alignlog_copy)
-            _appendTrlFile(_trlfile, _alignlog_copy)
-
-            # Append messages from this calling routine post-perform_align
-            ftmp = open(_tmptrl, 'w')
-            ftmp.writelines(_trlmsg)
-            ftmp.close()
-            _appendTrlFile(_trlfile, _tmptrl)
-            _trlmsg = ""
-
-            # Check to see whether there are any additional input files that need to
-            # be aligned (namely, FLT images)
-            if align_update_files and align_table:
-                # Apply headerlets from alignment to FLT version of the files
-                for fltfile, flcfile in zip(align_update_files, align_files):
-                    row = align_table[align_table['imageName'] == flcfile]
-                    headerletFile = row['headerletFile'][0]
-                    if headerletFile != "None":
-                        headerlet.apply_headerlet_as_primary(fltfile, headerletFile,
-                                                            attach=True, archive=True)
-                        # append log file contents to _trlmsg for inclusion in trailer file
-                        _trlstr = "Applying headerlet {} as Primary WCS to {}\n"
-                        _trlmsg += _trlstr.format(headerletFile, fltfile)
-                    else:
-                        _trlmsg += "No absolute astrometric headerlet applied to {}\n".format(fltfile)
-
-            # Finally, append any further messages associated with alignement from this calling routine
-            _trlmsg += _timestamp('Align_to_GAIA completed ')
-            print(_trlmsg)
-            ftmp = open(_tmptrl, 'w')
-            ftmp.writelines(_trlmsg)
-            ftmp.close()
-            _appendTrlFile(_trlfile, _tmptrl)
-
-        # Run astrodrizzle and send its processing statements to _trlfile
-        _pyver = drizzlepac.astrodrizzle.__version__
-
-        for _infile in _inlist:  # Run astrodrizzle for all inputs
-            # Create trailer marker message for start of astrodrizzle processing
-            _trlmsg = _timestamp('astrodrizzle started ')
+            _trlmsg = _timestamp('Starting a posteriori alignment')
             _trlmsg += __trlmarker__
-            _trlmsg += '%s: Processing %s with astrodrizzle Version %s\n' % (time_str, _infile, _pyver)
-            print(_trlmsg)
 
-            # Write out trailer comments to trailer file...
-            ftmp = open(_tmptrl, 'w')
-            ftmp.writelines(_trlmsg)
-            ftmp.close()
-            _appendTrlFile(_trlfile, _tmptrl)
+            #
+            # Start by creating the 'default' product using a priori/pipeline WCS
+            # This product will be used as the final output if alignment fails
+            # and will be used as the reference to compare to the aligned
+            # product to determine whether alignment was ultimately successful or not.
+            #
+            # Call astrodrizzle to create the drizzle products
+            find_crs = not align_dicts[0]['alignment_verified']
+            align_aposteriori = verify_alignment(_inlist,
+                                             _calfiles, _calfiles_flc,
+                                             _trlfile,
+                                             tmpdir='aposteriori', debug=debug,
+                                             good_bits=focus_pars[inst_mode]['good_bits'],
+                                             alignment_mode='aposteriori',
+                                             force_alignment=force_alignment,
+                                             find_crs=find_crs,
+                                             **adriz_pars)
+            if align_aposteriori:
+                align_dicts = align_aposteriori
+                align_qual = align_dicts[0]['alignment_quality']
+                if align_qual == 0:
+                    _trlmsg += 'A posteriori alignment SUCCESSFUL.\n'
+                elif align_qual == 1:
+                    _trlmsg += 'A posteriori alignment potentially COMPROMISED with bad focus.\n'
+                    _trlmsg += '  Please review final product for alignment!\n'
+                elif align_dicts[0]['alignment_quality'] == 2:
+                    _trlmsg += 'A posteriori alignment potentially COMPROMISED.\n'
+                    _trlmsg += 'Please review final product!\n'
+                else:
+                    _trlmsg += 'A posteriori alignment FAILED! No a posteriori astrometry correction applied.\n'
 
-            _pyd_err = _trlroot + '_pydriz.stderr'
+            _updateTrlFile(_trlfile, _trlmsg)
 
-            try:
-                drizzlepac.astrodrizzle.AstroDrizzle(input=_infile, runfile=_drizfile,
-                                            configobj='defaults', in_memory=inmemory,
-                                            num_cores=num_cores, **pipeline_pars)
-            except Exception as errorobj:
-                _appendTrlFile(_trlfile, _drizlog)
-                _appendTrlFile(_trlfile, _pyd_err)
-                _ftrl = open(_trlfile, 'a')
-                _ftrl.write('ERROR: Could not complete astrodrizzle processing of %s.\n' % _infile)
-                _ftrl.write(str(sys.exc_info()[0]) + ': ')
-                _ftrl.writelines(str(errorobj))
-                _ftrl.write('\n')
-                _ftrl.close()
-                print('ERROR: Could not complete astrodrizzle processing of %s.' % _infile)
-                raise Exception(str(errorobj))
+        _trlmsg = _timestamp('Creating final combined,corrected product based on best alignment')
+        _trlmsg += __trlmarker__
+        _updateTrlFile(_trlfile, _trlmsg)
 
-            # Now, append comments created by PyDrizzle to CALXXX trailer file
-            print('Updating trailer file %s with astrodrizzle comments.' % _trlfile)
-            _drizlog_copy = _drizlog.replace('.log', '_copy.log')
-            shutil.copy(_drizlog, _drizlog_copy)
-            _appendTrlFile(_trlfile, _drizlog_copy)
+        # Generate final pipeline products based on 'best' alignment
+        pipeline_pars['in_memory'] = in_memory
+        pipeline_pars['clean'] = True
+
+        drz_products, final_dicts = run_driz(_inlist, _trlfile, verify_alignment=False,
+                                             good_bits=focus_pars[inst_mode]['good_bits'],
+                                             **pipeline_pars)
 
         # Save this for when astropy.io.fits can modify a file 'in-place'
         # Update calibration switch
@@ -449,10 +465,9 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
 
         # Enforce pipeline convention of all lower-case product
         # names
-        _prodlist = glob.glob('*drz.fits')
-        for _prodname in _prodlist:
-            _plower = _prodname.lower()
-            if _prodname != _plower: os.rename(_prodname, _plower)
+        for drz_product in drz_products:
+            _plower = drz_product.lower()
+            if drz_product != _plower: os.rename(drz_product, _plower)
 
     else:
         # Create default trailer file messages when astrodrizzle is not
@@ -460,38 +475,16 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
         # and other reference images.
         # Start by building up the message...
         _trlmsg = _timestamp('astrodrizzle skipped ')
-        _trlmsg = _trlmsg + __trlmarker__
-        _trlmsg = _trlmsg + '%s: astrodrizzle processing not requested for %s.\n' % (time_str, inFilename)
-        _trlmsg = _trlmsg + '       astrodrizzle will not be run at this time.\n'
-        print(_trlmsg)
+        _trlmsg += __trlmarker__
+        _trlmsg += '%s: astrodrizzle processing not requested for %s.\n' % _getTime(), inFilename
+        _trlmsg += '       astrodrizzle will not be run at this time.\n'
 
         # Write message out to temp file and append it to full trailer file
-        ftmp = open(_tmptrl, 'w')
-        ftmp.writelines(_trlmsg)
-        ftmp.close()
-        _appendTrlFile(_trlfile, _tmptrl)
-
-    # Append final timestamp to trailer file...
-    _final_msg = '%s: Finished processing %s \n' % (time_str, inFilename)
-    _final_msg += _timestamp('astrodrizzle completed ')
-    _trlmsg += _final_msg
-    ftmp = open(_tmptrl, 'w')
-    ftmp.writelines(_trlmsg)
-    ftmp.close()
-    _appendTrlFile(_trlfile, _tmptrl)
+        _updateTrlFile(_trlfile, _trlmsg)
 
     # If we created a new ASN table, we need to remove it
     if _new_asn is not None:
         for _name in _new_asn: fileutil.removeFile(_name)
-
-    # Clean up any generated OrIg_files directory
-    if os.path.exists("OrIg_files"):
-        # check to see whether this directory is empty
-        flist = glob.glob('OrIg_files/*.fits')
-        if len(flist) == 0:
-            os.rmdir("OrIg_files")
-        else:
-            print('OrIg_files directory NOT removed as it still contained images...')
 
     # If headerlets have already been written out by alignment code,
     # do NOT write out this version of the headerlets
@@ -517,9 +510,14 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
         ftrl.write(hlet_msg)
         ftrl.close()
 
+    if not debug:
+        # Remove all temp sub-directories now that we are done
+        for sd in sub_dirs:
+            if os.path.exists(sd): shutil.rmtree(sd)
+
     # Remove secondary log files for good...
     logging.shutdown()
-    for _olog in [_alignlog, _drizlog]:
+    for _olog in [_alignlog]:
         if os.path.exists(_olog):
             os.remove(_olog)
 
@@ -530,8 +528,303 @@ def process(inFile, force=False, newpath=None, inmemory=False, num_cores=None,
         os.chdir(orig_processing_dir)
         _removeWorkingDir(new_processing_dir)
 
+    # Append final timestamp to trailer file...
+    _final_msg = '%s: Finished processing %s \n' % (_getTime(), inFilename)
+    _final_msg += _timestamp('astrodrizzle completed ')
+
+    _updateTrlFile(_trlfile, _final_msg)
+
     # Provide feedback to user
     print(_final_msg)
+
+def run_driz(inlist, trlfile, mode='default-pipeline', verify_alignment=True, debug=False, good_bits=512,
+             **pipeline_pars):
+
+    import drizzlepac
+    pyver = drizzlepac.astrodrizzle.__version__
+    drz_products = []
+    focus_dicts = []
+
+    pipeline_pars['runfile'] = trlfile.replace('.tra', '_pydriz')
+    drizlog = pipeline_pars['runfile'] + ".log"  # the '.log' gets added automatically by astrodrizzle
+    for infile in inlist:  # Run astrodrizzle for all inputs
+        asndict, ivmlist, drz_product = processInput.process_input(infile, updatewcs=False,
+                                                        preserve=False,
+                                                        overwrite=False)
+        del ivmlist
+        calfiles = asndict['original_file_names']
+        drz_products.append(drz_product)
+
+        # Create trailer marker message for start of astrodrizzle processing
+        _trlmsg = _timestamp('astrodrizzle started ')
+        _trlmsg += __trlmarker__
+        _trlmsg += '%s: Processing %s with astrodrizzle Version %s\n' % (_getTime(), infile, pyver)
+
+        _updateTrlFile(trlfile, _trlmsg)
+
+        _pyd_err = trlfile.replace('.tra', '_pydriz.stderr')
+
+        try:
+            drizzlepac.astrodrizzle.AstroDrizzle(input=infile, configobj=None,
+                                                 **pipeline_pars)
+            util.end_logging(drizlog)
+
+        except Exception as errorobj:
+            _appendTrlFile(trlfile, drizlog)
+            _appendTrlFile(trlfile, _pyd_err)
+            _ftrl = open(trlfile, 'a')
+            _ftrl.write('ERROR: Could not complete astrodrizzle processing of %s.\n' % infile)
+            _ftrl.write(str(sys.exc_info()[0]) + ': ')
+            _ftrl.writelines(str(errorobj))
+            _ftrl.write('\n')
+            _ftrl.close()
+            print('ERROR: Could not complete astrodrizzle processing of %s.' % infile)
+            raise Exception(str(errorobj))
+
+        if verify_alignment:
+            # Evaluate generated products: single_sci vs drz/drc
+            # FLT files are always first, and we want FLC when present
+            cal_suffix = '_flt' if calfiles[0].endswith('_flt.fits') else '_flc'
+            single_files = [calfile.replace(cal_suffix, '_single_sci') for calfile in calfiles]
+            sfile = single_files[0]
+            if not os.path.exists(sfile):
+                # Working with data where CR is turned off by default (ACS/SBC, for example)
+                # Reset astrodrizzle parameters to generate single_sci images
+                reset_mdriztab_nocr(pipeline_pars, good_bits)
+
+                drizzlepac.astrodrizzle.AstroDrizzle(input=infile, configobj=None,
+                                                    **pipeline_pars)
+            instr_det = "{}/{}".format(fits.getval(sfile, 'instrume'), fits.getval(sfile, 'detector'))
+            focus_sigma = focus_pars[instr_det]['sigma']
+            print("Measuring focus for: \n{} \n    {}".format(single_files, drz_product))
+            focus_dicts.append(amutils.build_focus_dict(single_files, drz_product, sigma=focus_sigma))
+            if debug:
+                json_name = drz_product.replace('.fits', '_{}_focus.json'.format(mode))
+                with open(json_name, mode='w') as json_file:
+                    json.dump(focus_dicts, json_file)
+        else:
+            focus_dicts = None
+
+        # Now, append comments created by PyDrizzle to CALXXX trailer file
+        print('Updating trailer file %s with astrodrizzle comments.' % trlfile)
+        drizlog_copy = drizlog.replace('.log', '_copy.log')
+        if os.path.exists(drizlog):
+            shutil.copy(drizlog, drizlog_copy)
+        _appendTrlFile(trlfile, drizlog_copy)
+        # clean up log files
+        if os.path.exists(drizlog):
+            os.remove(drizlog)
+        # Clean up intermediate files generated by astrodrizzle
+        if not debug:
+            for ftype in ['*mask*.fits']:
+                [os.remove(file) for file in glob.glob(ftype)]
+
+    return drz_products, focus_dicts
+
+def reset_mdriztab_nocr(pipeline_pars, good_bits):
+    # Need to turn off MDRIZTAB if any other parameters are to be set
+    pipeline_pars['mdriztab'] = False
+    pipeline_pars['build'] = True
+    pipeline_pars['resetbits'] = 0
+    pipeline_pars['static'] = False
+    pipeline_pars['skysub'] = False
+    pipeline_pars['driz_separate'] = True
+    pipeline_pars['driz_sep_bits'] = good_bits
+    pipeline_pars['driz_sep_fillval'] = 0.0
+    pipeline_pars['median'] = False
+    pipeline_pars['blot'] = False
+    pipeline_pars['driz_cr'] = False
+    pipeline_pars['final_fillval'] = 0.0
+
+
+def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
+                     find_crs=True, tmpdir=None, debug=False, good_bits=512,
+                     alignment_mode=None, force_alignment=False,
+                     **pipeline_pars):
+
+    if alignment_mode == 'aposteriori':
+        from stwcs.wcsutil import headerlet
+
+    tmpname = tmpdir if tmpdir else 'default-pipeline'
+    fraction_matched = 1.0
+    num_sources = -1
+    try:
+        if not find_crs:
+            # Need to turn off MDRIZTAB if any other parameters are to be set
+            reset_mdriztab_nocr(pipeline_pars, good_bits)
+
+        if tmpdir:
+            # Create tmp directory for processing
+            if not os.path.exists(tmpdir):
+                os.makedirs(tmpdir)
+
+            # Now, copy all necessary files to tmpdir
+            _ = [shutil.copy(f, tmpdir) for f in inlist + calfiles]
+            if calfiles_flc:
+                _ = [shutil.copy(f, tmpdir) for f in calfiles_flc]
+
+            parent_dir = os.getcwd()
+            os.chdir(tmpdir)
+
+        # insure these files exist, if not, blank them out
+        # Also pick out what files will be used for additional alignment to GAIA
+        if not calfiles_flc or not os.path.exists(calfiles_flc[0]):
+            calfiles_flc = None
+
+        alignfiles = calfiles_flc if calfiles_flc else calfiles
+        align_update_files = calfiles if calfiles_flc else None
+
+        # Perform any requested alignment here...
+        if alignment_mode == 'aposteriori':
+            # Create trailer marker message for start of align_to_GAIA processing
+            trlmsg = _timestamp("Align_to_GAIA started ")
+            _updateTrlFile(trlfile, trlmsg)
+
+            alignlog = trlfile.replace('.tra', '_align.log')
+            alignlog_copy = alignlog.replace('_align', '_align_copy')
+            try:
+                if find_crs:
+                    # reset all DQ flags associated with CRs assuming previous attempts were inaccurate
+                    for f in alignfiles:
+                        trlmsg += "Resetting CR DQ bits for {}\n".format(f)
+                        resetbits.reset_dq_bits(f, "4096,8192")
+                        sat_flags = 256 + 2048
+                else:
+                    sat_flags = 256 + 2048 + 4096 + 8192
+                align_table = alignimages.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
+                                                        clobber=False, output=debug, sat_flags=sat_flags)
+                num_sources = align_table['matchSources'][0]
+                fraction_matched = num_sources / align_table['catalogSources'][0]
+                for row in align_table:
+                    if row['status'] == 0:
+                        if row['compromised'] == 0:
+                            trlstr = "Successfully aligned {} to {} astrometric frame\n"
+                            trlmsg += trlstr.format(row['imageName'], row['catalog'])
+                        else:
+                            trlstr = "Alignment only partially successful for {}\n"
+                            trlmsg += trlstr.format(row['imageName'])
+                    else:
+                        trlstr = "Could not align {} to absolute astrometric frame\n"
+                        trlmsg += trlstr.format(row['imageName'])
+                        return None
+            except Exception:
+                # Something went wrong with alignment to GAIA, so report this in
+                # trailer file
+                _trlmsg = "EXCEPTION encountered in alignimages...\n"
+                _trlmsg += "   No correction to absolute astrometric frame applied!\n"
+                _updateTrlFile(trlfile, _trlmsg)
+                traceback.print_exc()
+                return None
+
+            _updateTrlFile(trlfile, trlmsg)
+            # Write the perform_align log to the trailer file...(this will delete the _alignlog)
+            if os.path.exists(alignlog):
+                shutil.copy(alignlog, alignlog_copy)
+                _appendTrlFile(trlfile, alignlog_copy)
+
+
+            _trlmsg = ""
+            # Check to see whether there are any additional input files that need to
+            # be aligned (namely, FLT images)
+            if align_update_files and align_table:
+                # Apply headerlets from alignment to FLT version of the files
+                for fltfile, flcfile in zip(align_update_files, alignfiles):
+                    row = align_table[align_table['imageName'] == flcfile]
+                    headerlet_file = row['headerletFile'][0]
+                    if headerlet_file != "None":
+                        headerlet.apply_headerlet_as_primary(fltfile, headerlet_file,
+                                                            attach=True, archive=True)
+                        # append log file contents to _trlmsg for inclusion in trailer file
+                        _trlstr = "Applying headerlet {} as Primary WCS to {}\n"
+                        _trlmsg += _trlstr.format(headerlet_file, fltfile)
+                    else:
+                        _trlmsg += "No absolute astrometric headerlet applied to {}\n".format(fltfile)
+
+            # Finally, append any further messages associated with alignement from this calling routine
+            _trlmsg += _timestamp('Align_to_GAIA completed ')
+            _updateTrlFile(trlfile, _trlmsg)
+
+
+        # Run astrodrizzle in desired mode
+        drz_products, focus_dicts = run_driz(inlist, trlfile, mode=tmpname, verify_alignment=True,
+                                             debug=debug, good_bits=good_bits, **pipeline_pars)
+
+        # Start verification of alignment using focus and similarity indices
+        _trlmsg = _timestamp('Verification of {} alignment started '.format(tmpname))
+        # Only check focus on CTE corrected, when available
+        align_focus = focus_dicts[-1] if 'drc' in focus_dicts[-1]['prodname'] else focus_dicts[0]
+
+        inst = fits.getval(alignfiles[0], 'instrume').lower()
+        det = fits.getval(alignfiles[0], 'detector').lower()
+        pscale = HSTWCS(alignfiles[0], ext=1).pscale
+        det_pars = alignimages.detector_specific_params[inst][det]
+        default_fwhm = det_pars['fwhmpsf'] / pscale
+        align_fwhm = amutils.get_align_fwhm(align_focus, default_fwhm)
+        if align_fwhm:
+            print("align_fwhm: {}[{},{}]={:0.4f}pix".format(align_focus['prodname'],
+                                                        align_focus['prod_pos'][1],
+                                                        align_focus['prod_pos'][0],
+                                                        align_fwhm))
+        # For any borderline situation with alignment, perform an extra check on alignment
+        if fraction_matched < 0.1 or -1 < num_sources < 10:
+            alignment_verified = amutils.evaluate_focus(align_focus)
+            alignment_quality = 0 if alignment_verified else 1
+        else:
+            alignment_verified = True
+            alignment_quality = 0
+
+        if alignment_verified:
+            _trlmsg += "Focus verification indicated that {} alignment SUCCEEDED.\n".format(tmpname)
+        else:
+            _trlmsg += "Focus verification indicated that {} alignment FAILED.\n".format(tmpname)
+
+        # For default pipeline alignment, we have nothing else to compare
+        # similarity to, so skip this step...
+        if alignment_mode:
+            prodname = align_focus['prodname']
+            alignprod = fits.getdata(prodname, ext=1)
+
+            # compute similarity_index as well and fold into alignment_verified state
+            refname = os.path.abspath(os.path.join('..', prodname))
+            align_ref = fits.getdata(refname, ext=1)
+
+            print("Computing sim_indx for: {} ".format(os.path.join(tmpdir, prodname)))
+            sim_indx = amutils.compute_similarity(alignprod, align_ref)
+            align_sim_fail = True if sim_indx > 1 else False
+
+            if not align_sim_fail and alignment_verified:
+                _trlmsg += "Alignment appeared to succeed based on similarity index of {}\n".format(sim_indx)
+            elif align_sim_fail or not alignment_verified:
+                _trlmsg += "  WARNING: \nKEEPING potentially compromised astrometry solution!\n"
+                alignment_quality = 2
+            else:
+                _trlmsg += "  Reverting to previously determined WCS alignment.\n"
+                alignment_verified = False
+                alignment_quality = 3
+
+        for fd in focus_dicts:
+            fd['alignment_verified'] = alignment_verified
+            fd['alignment_quality'] = alignment_quality
+
+        # If CRs were identified, copy updated input files to main directory
+        if tmpdir and alignment_verified:
+            _trlmsg += "Saving products with new alignment.\n"
+            _ = [shutil.copy(f, parent_dir) for f in calfiles]
+            if calfiles_flc:
+                _ = [shutil.copy(f, parent_dir) for f in calfiles_flc]
+            # Copy drizzle products to parent directory to replace 'less aligned' versions
+            _ = [shutil.copy(f, parent_dir) for f in drz_products]
+
+        _trlmsg += _timestamp('Verification of alignment completed ')
+        _updateTrlFile(trlfile, _trlmsg)
+
+    finally:
+        if tmpdir:
+            _appendTrlFile(os.path.join(parent_dir, trlfile), trlfile)
+            # Return to main processing dir
+            os.chdir(parent_dir)
+
+    return focus_dicts
 
 def _lowerAsn(asnfile):
     """ Create a copy of the original asn file and change
@@ -552,6 +845,18 @@ def _lowerAsn(asnfile):
     fasn.close()
 
     return _new_asn
+
+def _updateTrlFile(trlfile, trl_lines):
+    tmptrl = trlfile.replace('.tra', '_tmp.tra')
+
+    print(trl_lines)
+
+    # Write message out to temp file and append it to full trailer file
+    ftmp = open(tmptrl, 'w')
+    ftmp.writelines(trl_lines)
+    ftmp.close()
+    _appendTrlFile(trlfile, tmptrl)
+
 
 def _appendTrlFile(trlfile, drizfile):
     """ Append drizfile to already existing trlfile from CALXXX.
@@ -576,7 +881,6 @@ def _appendTrlFile(trlfile, drizfile):
     # Now, clean up astrodrizzle trailer file
     os.remove(drizfile)
 
-
 def _timestamp(_process_name):
     """Create formatted time string recognizable by OPUS."""
     _prefix = time.strftime("%Y%j%H%M%S-I-----", time.localtime())
@@ -589,6 +893,7 @@ def _getTime():
     time_str = time.strftime('%H:%M:%S (%d-%b-%Y)', _ltime)
 
     return time_str
+
 
 # Functions used to manage processing in a separate directory/ramdisk
 def _createWorkingDir(rootdir, input):
@@ -640,7 +945,7 @@ def main():
     import getopt
 
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], 'bhfgin:')
+        optlist, args = getopt.getopt(sys.argv[1:], 'bdahfgin:')
     except getopt.error as e:
         print(str(e))
         print(__doc__)
@@ -654,11 +959,17 @@ def main():
     num_cores = None
     headerlets = True
     align_to_gaia = True
+    debug = False
+    force_alignment = False
 
     # read options
     for opt, value in optlist:
         if opt == "-g":
             align_to_gaia = False
+        if opt == "-d":
+            debug = True
+        if opt == "-a":
+            force_alignment = False
         if opt == "-h":
             help = 1
         if opt == "-f":
@@ -683,9 +994,10 @@ def main():
         print("\t", __version__ + '(' + __version_date__ + ')')
     else:
         try:
-            process(args[0], force=force, newpath=newdir, inmemory=inmemory,
-                    num_cores=num_cores, headerlets=headerlets,
-                    align_to_gaia=align_to_gaia)
+            process(args[0], force=force, newpath=newdir, num_cores=num_cores,
+                    in_memory=inmemory, headerlets=headerlets,
+                    align_to_gaia=align_to_gaia, force_alignment=force_alignment, debug=debug)
+
         except Exception as errorobj:
             print(str(errorobj))
             print("ERROR: Cannot run astrodrizzle on %s." % sys.argv[1])
