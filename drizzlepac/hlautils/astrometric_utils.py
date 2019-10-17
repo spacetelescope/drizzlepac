@@ -46,7 +46,7 @@ from astropy.modeling.fitting import LevMarLSQFitter
 
 import photutils  # needed to check version
 from photutils import detect_sources, source_properties, deblend_sources
-from photutils import Background2D, MedianBackground
+from photutils import Background2D
 from photutils import SExtractorBackground, StdBackgroundRMS
 from photutils import DAOStarFinder
 from photutils import MMMBackground
@@ -78,8 +78,6 @@ else:
     SERVICELOCATION = DEF_CAT_URL
 
 MODULE_PATH = os.path.dirname(inspect.getfile(inspect.currentframe()))
-VEGASPEC = os.path.join(os.path.dirname(MODULE_PATH),
-                        'pars', 'alpha_lyr_stis_008.fits')
 
 __all__ = ['build_reference_wcs', 'create_astrometric_catalog', 'compute_radius',
            'find_gsc_offset', 'get_catalog',
