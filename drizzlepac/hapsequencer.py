@@ -556,13 +556,17 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
     plate_scale = wcsutil.HSTWCS(drizzled_image, ext=('sci', 1)).pscale
     median_sky = filter_product_catalogs.image.bkg_median
     hla_flag_filter.make_mask_file(drizzled_image)
+    if filter_product_obj.configobj_pars.use_defaults:
+        ci_lookup_file_path = "default_parameters/any"
+    else:
+        ci_lookup_file_path = "user_parameters/any"
     for cat_type in filter_product_catalogs.catalogs.keys():
         exptime = filter_product_catalogs.catalogs[cat_type].image.imghdu[0].header['exptime'] #TODO: This works for ACS. Make sure that it also works for WFC3. Look at "TEXPTIME"
         catalog_name = filter_product_catalogs.catalogs[cat_type].sourcelist_filename
         catalog_data = filter_product_catalogs.catalogs[cat_type].source_cat
         drz_root_dir = os.getcwd()
 
-        filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky, catalog_name, catalog_data, cat_type, drz_root_dir, debug)
+        filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky, catalog_name, catalog_data, cat_type, drz_root_dir, ci_lookup_file_path, debug)
 
     return filter_product_catalogs
 

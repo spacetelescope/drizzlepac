@@ -84,7 +84,7 @@ y_limit = 2051.
 
 @util.with_logging
 def run_source_list_flagging(drizzled_image, flt_list,param_dict, exptime, plate_scale, median_sky,
-                            catalog_name, catalog_data, proc_type, drz_root_dir, debug=True):
+                            catalog_name, catalog_data, proc_type, drz_root_dir, ci_lookup_file_path, debug=True):
     """Simple calling subroutine that executes the other flagging subroutines.
     
     Parameters
@@ -120,6 +120,9 @@ def run_source_list_flagging(drizzled_image, flt_list,param_dict, exptime, plate
     drz_root_dir : string
         Root directory of drizzled images.
 
+    ci_lookup_file_path : string
+        final path elements of the concentration index lookup file
+
     debug : bool
         write intermediate files?
     
@@ -134,8 +137,8 @@ def run_source_list_flagging(drizzled_image, flt_list,param_dict, exptime, plate
     log.info("************************** * * * HLA_FLAG_FILTER * * * **************************")
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
-    log.info("ci_filter({} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict, debug))
-    catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, debug)
+    log.info("ci_filter({} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict, ci_lookup_file_path, debug))
+    catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag saturated sources
@@ -161,7 +164,7 @@ def run_source_list_flagging(drizzled_image, flt_list,param_dict, exptime, plate
 
 # ======================================================================================================================
 
-def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, debug):
+def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path, debug):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
     It also flags sources below the detection limit in mag_aper2 (flag=8).
@@ -182,6 +185,9 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
 
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+
+    ci_lookup_file_path : string
+        final path elements of the concentration index lookup file
 
     debug : bool
         write intermediate files?
@@ -219,7 +225,7 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         snr = float(param_dict['quality control']['ci filter']['dao_bthresh']) # TODO: Figure out where the best place for bthresh to be
 
     # replace CI limits with values from table if possible
-    cidict = ci_table.get_ci_from_file(drizzled_image, ci_lower=ci_lower_limit, ci_upper=ci_upper_limit) #TODO: add values for ACS/SBC
+    cidict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path, ci_lower=ci_lower_limit, ci_upper=ci_upper_limit) #TODO: add values for ACS/SBC
     ci_lower_limit = cidict['ci_lower_limit'] #TODO: if values from lookup table are used, they will not be recorded in an output parameter file. FIXME!
     ci_upper_limit = cidict['ci_upper_limit']
 
