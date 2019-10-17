@@ -616,7 +616,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
     """
 
     drz_imgPath_split = drizzled_image.split('/')
-    drz_img_split = drz_imgPath_split[-1].split('_')# TODO: May need to be refactored to adjust for new names,
+    drz_img_split = drz_imgPath_split[-1].split('_')
     data_type = drz_img_split[4]
     drz_filter = drz_img_split[5]
 
@@ -1592,50 +1592,6 @@ def sorted_median(a):
     else:
         med = 0.5*(a[ll//2]+a[ll//2 - 1])
     return med
-
-# ======================================================================================================================
-
-def get_median_sky(drizzled_image): #TODO: REMOVE. UNUSED SUBROUTINE
-    """Read drizzled image from FITS file and compute sky
-    
-    Parameters
-    ----------
-    drizzled_image : string
-        name of image that will be used to compute median sky value.
-
-    Returns
-    -------
-    median_sky : float
-        median sky value for image specified by 'drizzled_image'. 
-    """
-
-    driz_img_data = getdata(drizzled_image,1).ravel()
-    # change the datatype to swap pixels if necessary
-    # this makes searchsorted much faster
-    dstring = str(driz_img_data.dtype)
-    if dstring[0] in '<>':
-        driz_img_data = driz_img_data.astype(dstring[1:])
-    # ignore zero pixels (missing data)
-    driz_img_data = driz_img_data[driz_img_data != 0]
-    if len(driz_img_data) == 0:
-        # all zero pixels so sky is zero too
-        median_sky = 0.0
-    else:
-        driz_img_data.sort()
-        for clip_cnt in range(5):
-            driz_data_std = numpy.std(driz_img_data)
-            # Computing median (easy since array is sorted)
-            driz_data_med = sorted_median(driz_img_data)
-            upper_limit = driz_data_med + (4. * driz_data_std)
-            lower_limit = driz_data_med - (4. * driz_data_std)
-            subIndexUpper = driz_img_data.searchsorted(upper_limit,'right')
-            subIndexLower = driz_img_data.searchsorted(lower_limit,'left')
-            driz_img_data = driz_img_data[subIndexLower:subIndexUpper]
-        median_sky = sorted_median(driz_img_data)
-        if median_sky == 0.0:
-            median_sky = numpy.mean(driz_img_data)
-    del driz_img_data # free memory
-    return median_sky
 
 # ======================================================================================================================
 
