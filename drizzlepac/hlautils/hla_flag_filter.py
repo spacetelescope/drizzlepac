@@ -1431,13 +1431,11 @@ def get_component_drz_list(drizzled_image, drz_root_dir, flt_file_names):
         log.info("Plowing ahead with the filtered drizzled list")
     return rv
 
-
 # =============================================================================
 # -----------------------------------------------------------------------------
-# ------------------------ AUXILLIARY FUNCTIONS BELOW -------------------------
+# ------------------------ AUXILIARY FUNCTIONS BELOW --------------------------
 # -----------------------------------------------------------------------------
 # =============================================================================
-
 
 def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
     """Routine to match two lists of objects by position using 2-D Cartesian distances.
@@ -1581,29 +1579,6 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
 
 # ======================================================================================================================
 
-def sorted_median(a):
-    """Compute the median for a 1-D numpy array that is already sorted
-
-    Parameters
-    ----------
-    a : numpy.ndarray
-        list of values what will be processed.
-     
-    Returns
-    -------
-    med : numpy.float32
-        median value
-    """
-
-    ll = len(a)
-    if (ll % 2) == 1:
-        med = a[ll//2]
-    else:
-        med = 0.5*(a[ll//2]+a[ll//2 - 1])
-    return med
-
-# ======================================================================================================================
-
 def rdtoxy(rd_coord_array, image, image_ext):
     """converts RA and dec to x,y image coords.
 
@@ -1657,28 +1632,8 @@ def xytord(xy_coord_array, image, image_ext):
         rd_arr = wcs.all_pix2world(xy_coord_array,1)
     return (rd_arr)
 
-# ========================================================================================================
-# ========================================= NEW FUNCTIONS 131002 =========================================
-# ========================================================================================================
-def extract_name(stringWpath):
-    """This task will extract just the name of  specific filename that includes the path in the name: 'stringWpath'.
-    
-    Tested.
-    
-    stringWpath : string
-        input path to be processed
-
-    Returns
-    -------
-    stringname : string
-        name of string
-    """
-    while "/" == stringWpath[-1]:
-        stringWpath = stringWpath[:-1]
-    stringname = stringWpath.split("/")[-1]
-    return stringname
-
 # ======================================================================================================================
+
 def arrayfy_ctx(ctx, maxindex):
 
     """Function to turn the context array returned by AstroDrizzle
