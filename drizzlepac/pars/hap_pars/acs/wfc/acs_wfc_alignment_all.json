@@ -5,7 +5,7 @@
       {
         "MIN_FIT_MATCHES": 6,
         "MAX_FIT_RMS": 10,
-        "MAX_SOURCES_PER_CHIP": 250
+        "MAX_SOURCES_PER_CHIP": 500
       },
     "run_align":
       {

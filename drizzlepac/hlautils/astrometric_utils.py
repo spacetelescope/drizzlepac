@@ -33,7 +33,7 @@ except Exception:
 
 
 from astropy import units as u
-from astropy.table import Table, vstack
+from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord
 from astropy.io import fits as fits
 from astropy.io import ascii
@@ -975,9 +975,9 @@ def compute_photometry(catalog, photvals):
         source_phot = ab_zpt - 2.5 * np.log10(catalog['flux'])
 
     # Label the new column
-    source_phot.name = 'abmag'
+    phot_col = Column(data=source_phot, name='abmag')
     # Now add this new column to the catalog table
-    catalog.add_column(source_phot)
+    catalog.add_column(phot_col)
 
     return catalog
 

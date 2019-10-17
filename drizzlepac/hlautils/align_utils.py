@@ -71,7 +71,7 @@ class AlignmentTable:
         self.alignment_pars.update(alignment_pars['general'])
         self.alignment_pars.update(alignment_pars['generate_source_catalogs'])
         self.alignment_pars.update(alignment_pars['determine_fit_quality'])
-
+        
         self.dqname = dqname
 
         self.zero_dt = starting_dt = datetime.datetime.now()
@@ -192,7 +192,7 @@ class AlignmentTable:
         imglist = self.selected_fit = self.fit_dict[(catalog_name, method_name)]
         if imglist[0].meta['fit_info']['status'].startswith("FAILED"):
             self.selected_fit = None
-            
+
         # Protect the writing of the table within the best_fit_rms
         info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
         # Update filtered table with number of matched sources and other information
@@ -220,7 +220,7 @@ class AlignmentTable:
                 self.filtered_table[index]['scale'] = item.meta['fit_info']['scale'][0]
                 self.filtered_table[index]['rotation'] = item.meta['fit_info']['rot']
             else:
-                self.filtered_table[index]['fit_method'] = None                
+                self.filtered_table[index]['fit_method'] = None
 
 
     def apply_fit(self, headerlet_filenames=None):
@@ -460,7 +460,7 @@ class HAPImage:
 
         # combine the two temporary DQ masks into a single composite DQ mask.
         dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
-        
+
         return dqmask
 
     def find_alignment_sources(self, output=True, dqname='DQ', **alignment_pars):

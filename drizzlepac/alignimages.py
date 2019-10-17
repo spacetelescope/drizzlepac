@@ -1292,6 +1292,7 @@ def update_image_wcs_info(tweakwcs_output,headerlet_filenames=None):
                                                     item.meta['fit_info']['catalog'])
                 else:
                     wcs_name = '{}-FIT_{}_{}'.format(wname, fit_method, item.meta['fit_info']['catalog'])
+            hdrname = "{}_{}".format(image_name.replace(".fits", ""), wcs_name)
 
             # establish correct mapping to the science extensions
             sci_ext_dict = {}
@@ -1299,15 +1300,19 @@ def update_image_wcs_info(tweakwcs_output,headerlet_filenames=None):
                 sci_ext_dict["{}".format(sci_ext_ctr)] = fileutil.findExtname(hdulist, 'sci', extver=sci_ext_ctr)
 
         # update header with new WCS info
-        updatehdr.update_wcs(hdulist, sci_ext_dict["{}".format(item.meta['chip'])], item.wcs, wcsname=wcs_name,
-                                 reusename=True, verbose=True)
+        ext = sci_ext_dict["{}".format(item.meta['chip'])]
+        updatehdr.update_wcs(hdulist, ext, item.wcs,
+                             wcsname=wcs_name,
+                             reusename=True, verbose=True)
+        hdulist[ext].header['hdrname'] = hdrname
+
         if chipctr == num_sci_ext:
             # Close updated flc.fits or flt.fits file
             hdulist.flush()
             hdulist.close()
 
             # Create headerlet
-            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name,
+            out_headerlet = headerlet.create_headerlet(image_name, hdrname=hdrname,
                                                         wcsname=wcs_name,
                                                         logging=False)
 
@@ -1316,7 +1321,8 @@ def update_image_wcs_info(tweakwcs_output,headerlet_filenames=None):
 
             # Write headerlet
             if headerlet_filenames:
-                headerlet_filename = headerlet_filenames[image_name] # Use HAP-compatible filename defined in runhlaprocessing.py
+                # Use HAP-compatible filename defined in runhlaprocessing.py
+                headerlet_filename = headerlet_filenames[image_name]
             else:
                 if image_name.endswith("flc.fits"):
                     headerlet_filename = image_name.replace("flc", "flt_hlet")
