@@ -6,7 +6,6 @@
     Legacy Archive (HLA) pipeline in that it provides the overall sequence of
     the processing.
 """
-import argparse
 import datetime
 import glob
 import os
@@ -27,178 +26,6 @@ __version__ = 0.1
 __version_date__ = '19-Mar-2019'
 
 # ----------------------------------------------------------------------------------------------------------------------
-
-param_dict = {
-    "ACS HRC": {
-        "astrodrizzle": {
-            "SCALE": 0.025,
-            "PIXFRAC": 1.0,
-            "KERNEL": "square",
-            "OUTNX": None,
-            "OUTNY": None,
-            "ROT": 0.0,
-            "BITS": 256},
-        "ci filter": {
-            "ci_daolower_limit": 0.9,
-            "ci_daoupper_limit": 1.6,
-            "ci_selower_limit": 0.9,
-            "ci_seupper_limit": 1.6},
-        "dao": {
-            "TWEAK_FWHMPSF": 0.073,
-            "TWEAK_THRESHOLD": 3.0,
-            "aperture_1": 0.03,
-            "aperture_2": 0.125,
-            "bthresh": 5.0},
-        "sourcex": {
-            "fwhm": 0.073,
-            "thresh": 1.4,
-            "bthresh": 5.0,
-            "source_box": 7},
-        "swarm filter": {
-            "upper_epp_limit": 70000.,
-            "lower_epp_limit": 2000.,
-            "eppsky_limit": 1000.,
-            "swarm_thresh": 1.,
-            "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
-            "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
-            "proximity_binary": "no"}},
-    "ACS SBC": {
-        "astrodrizzle": {
-            "SCALE": 0.03,
-            "PIXFRAC": 1.0,
-            "KERNEL": "square",
-            "OUTNX": None,
-            "OUTNY": None,
-            "ROT": 0.0,
-            "BITS": 256},
-        "ci filter": {
-            "ci_daolower_limit": 0.15,
-            "ci_daoupper_limit": 0.45,
-            "ci_selower_limit": 0.15,
-            "ci_seupper_limit": 0.45},
-        "dao": {
-            "TWEAK_FWHMPSF": 0.065,
-            "TWEAK_THRESHOLD": 3.0,
-            "aperture_1": 0.07,
-            "aperture_2": 0.125,
-            "bthresh": 5.0},
-        "sourcex": {
-            "fwhm": 0.065,
-            "thresh": 1.4,
-            "bthresh": 5.0,
-            "source_box": 7},
-        "swarm filter": {
-            "upper_epp_limit": 70000.,
-            "lower_epp_limit": 2000.,
-            "eppsky_limit": 1000.,
-            "swarm_thresh": 1.,
-            "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
-            "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
-            "proximity_binary": "no"}},
-    "ACS WFC": {
-        "astrodrizzle": {
-            "SCALE": 0.05,
-            "PIXFRAC": 1.0,
-            "KERNEL": "square",
-            "OUTNX": None,
-            "OUTNY": None,
-            "ROT": 0.0,
-            "BITS": 256},
-        "ci filter": {
-            "ci_daolower_limit": 0.9,
-            "ci_daoupper_limit": 1.23,
-            "ci_selower_limit": 0.9,
-            "ci_seupper_limit": 1.23},
-        "dao": {
-            "TWEAK_FWHMPSF": 0.076,
-            "TWEAK_THRESHOLD": 3.0,
-            "aperture_1": 0.05,  # update from 0.15
-            "aperture_2": 0.15,  # update from 0.25
-            "bthresh": 5.0},
-        "sourcex": {
-            "fwhm": 0.13,
-            "thresh": -1.2,
-            "bthresh": 5.0,
-            "source_box": 5},
-        "swarm filter": {
-            "upper_epp_limit": 70000.,
-            "lower_epp_limit": 2000.,
-            "eppsky_limit": 1000.,
-            "swarm_thresh": 1.,
-            "clip_radius_list": [120., 100., 80., 60., 40., 30., 20., 10., 5., 2., 0.],
-            "scale_factor_list": [0.0, 0.000000e+00, 6.498530e-06, 3.687270e-05, 1.412972e-04, 3.151877e-04, 1.023391e-03, 3.134859e-03, 2.602436e-02, 1.820539e-01, 1.000000e+00],
-            "proximity_binary": "no"}},
-    "WFC3 IR": {
-        "astrodrizzle": {
-            "SCALE": 0.09,
-            "PIXFRAC": 1.0,
-            "KERNEL": "square",
-            "OUTNX": None,
-            "OUTNY": None,
-            "ROT": 0.0,
-            "BITS": 768},
-        "ci filter": {
-            "ci_daolower_limit": 0.25,
-            "ci_daoupper_limit": 0.55,
-            "ci_selower_limit": 0.25,
-            "ci_seupper_limit": 0.55},
-        "dao": {
-            "TWEAK_FWHMPSF": 0.14,
-            "TWEAK_THRESHOLD": 3.0,
-            "aperture_1": 0.15,
-            "aperture_2": 0.45,
-            "bthresh": 5.0},
-        "sourcex": {
-            "fwhm": 0.14,
-            "thresh": 1.4,
-            "bthresh": 5.0,
-            "source_box": 7},
-        "swarm filter": {
-            "upper_epp_limit": 70000.,
-            "lower_epp_limit": 2000.,
-            "eppsky_limit": 100.,
-            "swarm_thresh": 1.,
-            "clip_radius_list": [140., 120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
-            #                   x10    x10    x10   x10   x10   x10    x10   x10  x10  x2,
-            "scale_factor_list": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.015, 0.05, 0.15, 0.9, 1.],
-            # "scale_factor_list_orig": [1.5e-5, 2.3e-5, 4.e-5, 8.e-5, 2.e-4, 0.0006, 0.005, 0.05, 0.15, 0.9, 1.],
-            "proximity_binary": "yes"}},
-    "WFC3 UVIS": {
-        "astrodrizzle": {
-            "SCALE": 0.04,
-            "PIXFRAC": 1.0,
-            "KERNEL": "square",
-            "OUTNX": None,
-            "OUTNY": None,
-            "ROT": 0.0,
-            "BITS": 256},
-        "ci filter": {
-            "ci_daolower_limit": 0.75,
-            "ci_daoupper_limit": 1.0,
-            "ci_selower_limit": 0.75,
-            "ci_seupper_limit": 1.0},
-        "dao": {
-            "TWEAK_FWHMPSF": 0.076,
-            "TWEAK_THRESHOLD": 3.0,
-            "aperture_1": 0.05,
-            "aperture_2": 0.15,
-            "bthresh": 5.0},
-        "sourcex": {
-            "fwhm": 0.076,
-            "thresh": 1.4,
-            "bthresh": 5.0,
-            "source_box": 7},
-        "swarm filter": {
-            "upper_epp_limit": 70000.,
-            "lower_epp_limit": 2000.,
-            "eppsky_limit": 1000.,
-            "swarm_thresh": 1.,
-            "clip_radius_list": [120., 100., 80., 60., 40., 20., 10., 5., 2., 0.],
-            "scale_factor_list": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 0.0005, 0.005, 0.005, 0.015, 0.45, 1.],
-            # "scale_factor_list_orig": [2.3e-6, 4.e-6, 8.e-6, 2.e-5, 6.e-5, 0.0005, 0.005, 0.015, 0.45, 1.],
-            "proximity_binary": "yes"}}}
-# ----------------------------------------------------------------------------------------------------------------------
-
 
 def create_catalog_products(total_list, debug=False, phot_mode='both'):
     """This subroutine utilizes hlautils/catalog_utils module to produce photometric sourcelists for the specified
@@ -222,6 +49,7 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
     product_list : list
         list of all catalogs generated.
     """
+
     product_list = []
     for total_product_obj in total_list:
 
@@ -231,24 +59,22 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
                                              types=phot_mode,
                                              debug=debug)
 
-        # Identify sources to be measured by filter photometry step
-        total_product_catalogs.identify()
+        # Generate an "n" exposure mask which has the image footprint set to the number
+        # of exposures which constitute each pixel.
+        total_product_obj.generate_footprint_mask()
 
-        # write out list(s) of identified sources
-        total_product_catalogs.write()
+        # Identify sources in the input image and delay writing the total detection
+        # catalog until the photometric measurements have been done on the filter
+        # images and some of the measurements can be appended to the total catalog
+        total_product_catalogs.identify(mask=total_product_obj.mask)
 
-        # append total product catalogs to list
-        if phot_mode in ['aperture', 'both']:
-            product_list.append(total_product_obj.point_cat_filename)
-        if phot_mode in ['segment', 'both']:
-            product_list.append(total_product_obj.segment_cat_filename)
-
-        # build dictionary of total_product_catalogs.catalogs[*].sources to use for
+        # Build dictionary of total_product_catalogs.catalogs[*].sources to use for
         # filter photometric catalog generation
         sources_dict = {}
         for cat_type in total_product_catalogs.catalogs.keys():
             sources_dict[cat_type] = {}
             sources_dict[cat_type]['sources'] = total_product_catalogs.catalogs[cat_type].sources
+            # FIX MDD Remove?
             if cat_type == "segment":
                 sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
 
@@ -260,17 +86,42 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
                                                   types=phot_mode,
                                                   debug=debug,
                                                   tp_sources=sources_dict)
+
             # Perform photometry
             filter_product_catalogs.measure()
 
-            # Write out photometric catalog(s)
+            # Write out photometric (filter) catalog(s)
             filter_product_catalogs.write()
+
+            # Create a subset (e.g., CI, Flags...) of the output filter table as an
+            # attribute of the specific catalog (self.subset_filter_source_cat)...
+            filter_name = filter_product_obj.filters
+            filter_product_catalogs.extract(filter_name)
+
+            # Load a dictionary with a subset table for each catalog
+            subset_columns_dict = {}
+            for cat_type in filter_product_catalogs.catalogs.keys():
+                subset_columns_dict[cat_type] = {}
+                subset_columns_dict[cat_type]['subset'] = filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat
+
+            # ...append the new columns to the total detection project catalog.
+            total_product_catalogs.combine(subset_columns_dict)
 
             # append filter product catalogs to list
             if phot_mode in ['aperture', 'both']:
                 product_list.append(filter_product_obj.point_cat_filename)
             if phot_mode in ['segment', 'both']:
                 product_list.append(filter_product_obj.segment_cat_filename)
+
+        # write out list(s) of identified sources
+        total_product_catalogs.write()
+
+        # append total product catalogs to manifest list
+        if phot_mode in ['aperture', 'both']:
+            product_list.append(total_product_obj.point_cat_filename)
+        if phot_mode in ['segment', 'both']:
+            product_list.append(total_product_obj.segment_cat_filename)
+
 
     return product_list
 

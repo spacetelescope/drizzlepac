@@ -13,6 +13,7 @@ from astropy.io import fits
 from drizzlepac import wcs_functions
 from drizzlepac import alignimages
 from drizzlepac import astrodrizzle
+from drizzlepac.hlautils import cell_utils
 
 log = logutil.create_logger('product', level=logutil.logging.INFO, stream=sys.stdout)
 
@@ -75,6 +76,7 @@ class TotalProduct(HAPProduct):
         self.fdp_list = []
         self.regions_dict = {}
         self.meta_wcs = None
+        self.mask = None
 
         log.info("Total detection object {}/{} created.".format(self.instrument, self.detector))
 
@@ -104,9 +106,7 @@ class TotalProduct(HAPProduct):
         if exposure_filenames:
             meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames, rot=0.0)
 
-        # Store this for potential use.  The wcs_drizzle_product methods use the
-        # WCS passed in as a parameter which provides flexibility which may not
-        # be needed.  MONITOR for possible clean up.
+        # Used in generation of SkyFootprints
         self.meta_wcs = meta_wcs
 
         return meta_wcs
@@ -133,6 +133,16 @@ class TotalProduct(HAPProduct):
         log.info("Total combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         shutil.move(self.trl_logname, self.trl_filename)
 
+    def generate_footprint_mask(self):
+        """ Create a footprint mask for a set of exposure images
+
+            Create a mask which is True/1/on for the illuminated portion of the image, and
+            False/0/off for the remainder of the image.
+        """
+        footprint = cell_utils.SkyFootprint(self.meta_wcs)
+        exposure_names = [element.full_filename for element in self.edp_list]
+        footprint.build(exposure_names)
+        self.mask = footprint.total_mask
 
 
 class FilterProduct(HAPProduct):
