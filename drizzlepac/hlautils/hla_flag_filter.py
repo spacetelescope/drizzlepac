@@ -1250,10 +1250,10 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
         mask_data = getdata(maskfile)
         mask_array = (mask_data==0.0).astype(numpy.int32)
 
-    component_drz_img_list = get_component_drz_list(drizzled_image, drz_root_dir, flt_list)# TODO: This might be a problem for HAP
+    component_drz_img_list = get_component_drz_list(drizzled_image, drz_root_dir, flt_list)
     nx = drz_data.shape[0]
     ny = drz_data.shape[1]
-    nexp_array = numpy.zeros((nx, ny), dtype = numpy.int32) #TODO: NEXP can be computed by sky footprint code
+    nexp_array = numpy.zeros((nx, ny), dtype = numpy.int32)
 
     for comp_drz_img in component_drz_img_list:
         comp_drz_data = (getdata(comp_drz_img) != 0).astype(numpy.int32)
