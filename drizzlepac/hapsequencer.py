@@ -560,13 +560,9 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
         exptime = filter_product_catalogs.catalogs[cat_type].image.imghdu[0].header['exptime'] #TODO: This works for ACS. Make sure that it also works for WFC3. Look at "TEXPTIME"
         catalog_name = filter_product_catalogs.catalogs[cat_type].sourcelist_filename
         catalog_data = filter_product_catalogs.catalogs[cat_type].source_cat
-        if cat_type == 'aperture': #TODO: update hla_flag_filter to use "aperture" instead of "daophot" and "segment" instead of "sexphot".
-            proc_type = 'daophot'
-        else:
-            proc_type = 'sexphot'
         drz_root_dir = os.getcwd()
 
-        filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky, catalog_name, catalog_data, proc_type, drz_root_dir, debug)
+        filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky, catalog_name, catalog_data, cat_type, drz_root_dir, debug)
 
     return filter_product_catalogs
 

@@ -194,26 +194,26 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
 
 
     # column indices for SE and DAO catalogs
-    if proc_type == 'sexphot':
+    if proc_type == 'segment':
         imag1 = 5
         imag2 = 6
         imerr1 = 7
         imerr2 = 8
-    elif proc_type == 'daophot':
+    elif proc_type == 'aperture':
         imag1 = 5
         imag2 = 7
         imerr1 = 6
         imerr2 = 8
     else:
-        raise ValueError("Unknown proc_type '%s', must be 'sexphot' or 'daophot'" % (proc_type,))
+        raise ValueError("Unknown proc_type '%s', must be 'segment' or 'aperture'" % (proc_type,))
 
     catalog_name_root = catalog_name.split('.')[0]
-    if proc_type == 'sexphot':
+    if proc_type == 'segment':
         ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_selower_limit'])
         ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_seupper_limit'])
         snr = float(param_dict['quality control']['ci filter']['sourcex_bthresh']) # TODO: Figure out where the best place for bthresh to be
 
-    if proc_type == 'daophot':
+    if proc_type == 'aperture':
         ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_daolower_limit'])
         ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_daoupper_limit'])
         snr = float(param_dict['quality control']['ci filter']['dao_bthresh']) # TODO: Figure out where the best place for bthresh to be
@@ -501,11 +501,11 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     # Convert aperture radius to pixels
     # ----------------------------------
     ap2 = param_dict['catalog generation']['aperture_2']
-    if proc_type == 'daophot':
-        radius = round((ap2/plate_scale) + 0.5) * 2. # TODO: WHY DOES DAOPHOT RADIUS VALUE MULTIPLIED BY 2 BUT SEXPHOT VALUE IS NOT?
+    if proc_type == 'aperture':
+        radius = round((ap2/plate_scale) + 0.5) * 2. # TODO: WHY DOES aperture RADIUS VALUE MULTIPLIED BY 2 BUT segment VALUE IS NOT?
 
-    if proc_type == 'sexphot':
-        radius = round((ap2 / plate_scale) + 0.5) * 2. # TODO: WHY DOES DAOPHOT RADIUS VALUE MULTIPLIED BY 2 BUT SEXPHOT VALUE IS NOT?
+    if proc_type == 'segment':
+        radius = round((ap2 / plate_scale) + 0.5) * 2. # TODO: WHY DOES aperture RADIUS VALUE MULTIPLIED BY 2 BUT segment VALUE IS NOT?
 
     log.info(' ')
     log.info('THE RADIAL DISTANCE BEING USED IS {} PIXELS'.format(str(radius)))
@@ -650,7 +650,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
     channel = drizzled_image.split("_")[4].lower()
 
     ap2 = param_dict['catalog generation']['aperture_2']
-    if proc_type not in ('sexphot', 'daophot'):
+    if proc_type not in ('segment', 'aperture'):
         raise ValueError("Unknown catalog type '%s'" % proc_type)
 
     # ----------------------------------
@@ -671,11 +671,11 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
         x_val = float(row[0])
         y_val = float(row[1])
 
-        if proc_type == 'sexphot':
+        if proc_type == 'segment':
             # mag = row_split[6]
             flux = row[10] #TODO: get column name
             sky = row[13] #TODO: get column name
-        elif proc_type == 'daophot':
+        elif proc_type == 'aperture':
             # mag = row_split[7]
             flux = row[11]
             sky = row[9]
