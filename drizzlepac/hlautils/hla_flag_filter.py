@@ -36,22 +36,13 @@ Dependencies
 import glob
 import json
 import math
-import numpy
 import os
-import scipy
 import sys
 import time
 
-import astropy.io.fits as pyfits
-
-new_table = pyfits.BinTableHDU.from_columns
-if not hasattr(pyfits, '__version__'):
-    pyfits.__version__ = '1.3'
-
-getheader = pyfits.getheader
-getdata = pyfits.getdata
-
-
+from astropy.io import fits as fits
+import numpy
+import scipy
 import scipy.ndimage
 
 from drizzlepac.hlautils import ci_table
@@ -380,9 +371,9 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
         for ext_cnt, image_ext in enumerate(image_ext_list):
             ext_part = image_ext.split(',')[1].split(']')[0]
             try:
-                if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')): flt_data = getdata(flt_image, 'DQ',
+                if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')): flt_data = fits.getdata(flt_image, 'DQ',
                                                                                                     int(ext_part))
-                if ((channel.lower() == 'wfpc2') or (channel.lower() == 'pc')): flt_data = getdata(
+                if ((channel.lower() == 'wfpc2') or (channel.lower() == 'pc')): flt_data = fits.getdata(
                     flt_image.replace("_c0m", "_c1m"), 'SCI', int(ext_part))
             except KeyError:
                 log.info(' ')
@@ -1201,31 +1192,31 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
     # ---------
     # METHOD 1:
     # ---------
-    ctx = getdata(drizzled_image, 3)
-    if channel in ['UVIS','IR','WFC','HRC']: ncombine = getheader(drizzled_image,1)['NCOMBINE']
+    ctx = fits.getdata(drizzled_image, 3)
+    if channel in ['UVIS','IR','WFC','HRC']: ncombine = fits.getheader(drizzled_image,1)['NCOMBINE']
     if channel in ['WFPC2','PC']:
-        ndrizim=getheader(drizzled_image,0)['NDRIZIM']
+        ndrizim=fits.getheader(drizzled_image,0)['NDRIZIM']
         ncombine=ndrizim/4
     if channel == 'SBC':
-        ndrizim=getheader(drizzled_image,0)['NDRIZIM']
+        ndrizim=fits.getheader(drizzled_image,0)['NDRIZIM']
         ncombine = ndrizim
     ctxarray = arrayfy_ctx(ctx, ncombine)
 
     nexp_array_ctx = ctxarray.sum(axis=-1)
     nexp_image_ctx = drizzled_image.split('.')[0]+'_NCTX.fits'
     if not os.path.isfile(nexp_image_ctx):
-        hdr = getheader(drizzled_image, 1)
-        pyfits.writeto(nexp_image_ctx, numpy.float32(nexp_array_ctx), hdr)
+        hdr = fits.getheader(drizzled_image, 1)
+        fits.writeto(nexp_image_ctx, numpy.float32(nexp_array_ctx), hdr)
 
     # ---------
     # METHOD 2:
     # ---------
-    drz_data = getdata(drizzled_image, 1)
+    drz_data = fits.getdata(drizzled_image, 1)
 
     ## this bit is added to get the mask integrated into the exp map
     maskfile = drizzled_image.replace(drizzled_image[-9:], "_msk.fits")
     if os.path.isfile(maskfile):
-        mask_data = getdata(maskfile)
+        mask_data = fits.getdata(maskfile)
         mask_array = (mask_data==0.0).astype(numpy.int32)
 
     component_drz_img_list = get_component_drz_list(drizzled_image, drz_root_dir, flt_list)
@@ -1234,7 +1225,7 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
     nexp_array = numpy.zeros((nx, ny), dtype = numpy.int32)
 
     for comp_drz_img in component_drz_img_list:
-        comp_drz_data = (getdata(comp_drz_img) != 0).astype(numpy.int32)
+        comp_drz_data = (fits.getdata(comp_drz_img) != 0).astype(numpy.int32)
         try:
             nexp_array += comp_drz_data
         except ValueError:
@@ -1248,8 +1239,8 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
         sys.exit()
     nexp_image = drizzled_image.split('.')[0]+'_NEXP.fits'
     if not os.path.isfile(nexp_image):
-        hdr = getheader(drizzled_image, 1)
-        pyfits.writeto(nexp_image, numpy.float32(nexp_array), hdr)
+        hdr = fits.getheader(drizzled_image, 1)
+        fits.writeto(nexp_image, numpy.float32(nexp_array), hdr)
 
     # -------------------------------------------------------
     # EXTRACT FLUX/NEXP INFORMATION FROM NEXP IMAGE BASED ON
@@ -1386,7 +1377,7 @@ def get_component_drz_list(drizzled_image, drz_root_dir, flt_file_names):
         ipdict[fname] = 1
     rv = []
     for drzfile in component_drz_img_list:
-        fh = pyfits.open(drzfile)
+        fh = fits.open(drzfile)
         rootname = fh[0].header.get('rootname','')
         fh.close()
         fname = os.path.split(rootname)[-1]
@@ -1708,7 +1699,7 @@ def make_mask_file(drz_image):
     -------
     Nothing.
     """
-    mask = pyfits.open(drz_image)[1].data != 0
+    mask = fits.open(drz_image)[1].data != 0
     dilate = scipy.ndimage.morphology.binary_dilation
     erode = scipy.ndimage.morphology.binary_erosion
     kernel1 = numpy.ones((25, 25), dtype=int)
@@ -1719,4 +1710,4 @@ def make_mask_file(drz_image):
     # strip the padding back off after creating mask
     mask = (erode(dilate(bigmask, kernel1), kernel2) == 0)[padding:-padding, padding:-padding]
     flagfile = drz_image.replace(drz_image[-9:],"_msk.fits")
-    pyfits.writeto(flagfile, mask.astype(numpy.int16))
+    fits.writeto(flagfile, mask.astype(numpy.int16))
