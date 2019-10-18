@@ -180,13 +180,9 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
 
     # column indices for SE and DAO catalogs
     if proc_type == 'segment':
-        imag1 = 5
-        imag2 = 6
         imerr1 = 7
         imerr2 = 8
     elif proc_type == 'aperture':
-        imag1 = 5
-        imag2 = 7
         imerr1 = 6
         imerr2 = 8
     else:
@@ -327,18 +323,11 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     if channel == 'IR': #TODO: Test and IR case just to make sure that IR shouldn't be skipped
         return catalog_data
 
-    phot_table = catalog_name
-    phot_table_root = phot_table.split('.')[0]
-
     # -------------------------------------------------------------------
     # STEP THROUGH EACH APPLICABLE FLT IMAGE, DETERMINE THE COORDINATES
     # FOR ALL SATURATION FLAGGED PIXELS, AND TRANSFORM THESE COORDINATES
     # INTO THE DRIZZLED IMAGE REFERENCE FRAME.
     # -------------------------------------------------------------------
-    main_drizzled_filelist = drizzled_image
-    main_drizzled_filelist_orig = drizzled_image
-
-    drz_filter = drizzled_image.split("_")[5]  # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
     num_flts_in_main_driz = len(flt_list)
     flt_list.sort()
 
@@ -606,7 +595,6 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
     drz_imgPath_split = drizzled_image.split('/')
     drz_img_split = drz_imgPath_split[-1].split('_')
     data_type = drz_img_split[4]
-    drz_filter = drz_img_split[5]
 
     log.info(' ')
     log.info('MEDIAN SKY VALUE = {}'.format(median_sky))
@@ -620,9 +608,6 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
     # ------------------------------------------
     # ==========================================
     phot_table_root = catalog_name.split('/')[-1].split('.')[0]
-
-    image_split = drizzled_image.split('/')[-1]
-    channel = drizzled_image.split("_")[4].lower()
 
     ap2 = param_dict['catalog generation']['aperture_2']
     if proc_type not in ('segment', 'aperture'):
@@ -1183,7 +1168,6 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
     # ------------------
     # CREATE NEXP IMAGE
     # ------------------
-    image_split = drizzled_image.split('/')[-1]
     channel = drizzled_image.split("_")[4].upper()
 
     # if channel == 'IR':  # TODO: This was commented out in the HLA classic era, prior to adaption to the HAP pipeline. Ask Rick about it.
@@ -1388,7 +1372,7 @@ def get_component_drz_list(drizzled_image, drz_root_dir, flt_file_names):
         # this must be a bug?
         log.info("ERROR: mismatch after filtering in exposure lists for {}".format(drz_filter))
         log.info("Filtered drizzled exposure list: {}".format("\n".join(rv)))
-        log.info("flt exposure list: {}".format("\n".join(list_of_flts_in_main_driz)))
+        log.info("flt exposure list: {}".format("\n".join(list_of_flts)))
         log.info("Plowing ahead with the filtered drizzled list")
     return rv
 
