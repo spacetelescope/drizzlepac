@@ -111,7 +111,7 @@ def test_alignpipe_randomlist(tmpdir, dataset):
     rl = logging.getLogger('stwcs.wcsutil.headerlet')
     if len(rl.handlers) > 1: del rl.handlers[-1]    
     
-    print("TEST_RANDOM. Dataset: ", dataset)
+    print("TEST_RANDOM_ALIGN. Dataset: ", dataset)
     output_name = dataset + '.ecsv'
 
     current_dt = datetime.datetime.now()
