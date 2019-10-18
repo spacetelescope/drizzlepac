@@ -55,9 +55,11 @@ __taskname__ = 'hla_flag_filter'
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
+
 @util.with_logging
-def run_source_list_flagging(drizzled_image, flt_list,param_dict, exptime, plate_scale, median_sky,
-                            catalog_name, catalog_data, proc_type, drz_root_dir, ci_lookup_file_path, output_custom_pars_file, debug=True):
+def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky,
+                             catalog_name, catalog_data, proc_type, drz_root_dir, ci_lookup_file_path,
+                             output_custom_pars_file, debug=True):
     """Simple calling subroutine that executes the other flagging subroutines.
     
     Parameters
@@ -113,34 +115,42 @@ def run_source_list_flagging(drizzled_image, flt_list,param_dict, exptime, plate
     log.info("************************** * * * HLA_FLAG_FILTER * * * **************************")
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
-    log.info("ci_filter({} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict, ci_lookup_file_path, output_custom_pars_file, debug))
-    catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path, output_custom_pars_file, debug)
+    log.info("ci_filter({} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type,
+                                                         param_dict, ci_lookup_file_path,
+                                                         output_custom_pars_file, debug))
+    catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
+                             output_custom_pars_file, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag saturated sources
-    log.info("HLASaturationFlags({} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name, "<Catalog Data>",
-                                                            proc_type, param_dict, plate_scale, debug))
-    catalog_data = HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict, plate_scale, debug)
+    log.info("hla_saturation_flags({} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name,
+                                                                    "<Catalog Data>", proc_type, param_dict,
+                                                                    plate_scale, debug))
+    catalog_data = hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict,
+                                        plate_scale, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag swarm sources
-    log.info("HLASwarmFlags({} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>", exptime, plate_scale,
-                                                       median_sky, proc_type, param_dict, debug))
-    catalog_data = HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky, proc_type, param_dict, debug)
-
-
+    log.info("hla_swarm_flags({} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>",
+                                                                  exptime, plate_scale, median_sky, proc_type,
+                                                                  param_dict, debug))
+    catalog_data = hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky,
+                                   proc_type, param_dict, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
-    log.info("HLANexpFlags({} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale, catalog_name,
-                                                         "<Catalog Data>", drz_root_dir, debug))
-    catalog_data = HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data, drz_root_dir, debug)
+    log.info("hla_nexp_flags({} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
+                                                              catalog_name, "<Catalog Data>", drz_root_dir, debug))
+    catalog_data = hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data,
+                                  drz_root_dir, debug)
 
     return catalog_data
 
 # ======================================================================================================================
 
-def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path, output_custom_pars_file, debug):
+
+def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
+              output_custom_pars_file, debug):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
     It also flags sources below the detection limit in mag_aper2 (flag=8).
@@ -176,8 +186,6 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     catalog_data : astropy.Table object
         drizzled filter product catalog data with updated flag values
     """
-
-
     # column indices for SE and DAO catalogs
     if proc_type == 'segment':
         imerr1 = 7
@@ -194,13 +202,16 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     snr = float(param_dict['quality control']['ci filter'][proc_type]['bthresh'])
 
     # replace CI limits with values from table if possible
-    cidict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path, ci_lower=ci_lower_limit, ci_upper=ci_upper_limit) #TODO: add values for ACS/SBC
+    cidict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path,
+                                       ci_lower=ci_lower_limit, ci_upper=ci_upper_limit)  # TODO: add values for ACS/SBC
     ci_lower_limit = cidict['ci_lower_limit']
     ci_upper_limit = cidict['ci_upper_limit']
 
-    #if an output custom param file was created and the CI values were updated by ci_table.get_ci_from_file, update output custom param file with new CI values
+    # if an output custom param file was created and the CI values were updated by ci_table.get_ci_from_file,
+    # update output custom param file with new CI values
     if output_custom_pars_file:
-        if ci_upper_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_lower_limit']) or ci_upper_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_upper_limit']):
+        if ci_upper_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_lower_limit']) or \
+                ci_upper_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_upper_limit']):
             log.info("CI limits updated.")
             with open(output_custom_pars_file) as f:
                 json_data = json.load(f)
@@ -210,11 +221,12 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
                 param_set = "parameters"
 
             if ci_lower_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_lower_limit']):
-                json_data[drizzled_image[:-9]][param_set]["quality control"]["ci filter"]["aperture"]["ci_lower_limit"]  = ci_lower_limit
+                json_data[drizzled_image[:-9]][param_set]["quality control"]["ci filter"][proc_type]["ci_lower_limit"]\
+                    = ci_lower_limit
 
             if ci_upper_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_upper_limit']):
-                json_data[drizzled_image[:-9]][param_set]["quality control"]["ci filter"][proc_type]["ci_upper_limit"]  = ci_upper_limit
-
+                json_data[drizzled_image[:-9]][param_set]["quality control"]["ci filter"][proc_type]["ci_upper_limit"]\
+                    = ci_upper_limit
 
             with open(output_custom_pars_file, 'w') as f:
                 json.dump(json_data, f, indent=4)
@@ -227,8 +239,7 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     log.info(' ')
 
 
-    if debug:
-        failed_index_list=[]
+    failed_index_list = []
     for i, table_row in enumerate(catalog_data):
         try:
             table_row[-1] = int(table_row[-1])
@@ -257,7 +268,6 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         if not ci_value or (not numpy.isfinite(ci_err)) or ci_value < ci_lower_limit - ci_err:
             table_row[-1] |= 16
 
-
         if not ci_value or ci_value > ci_upper_limit:
             table_row[-1] |= 1
 
@@ -271,18 +281,18 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         all_indicies = range(0, len(catalog_data))
         rows_to_remove = [z for z in all_indicies if z not in failed_index_list]
         catalog_data_failed.remove_rows(rows_to_remove)
-        catalog_data_failed.write(catalog_name_failed,delimiter=",",format='ascii')
+        catalog_data_failed.write(catalog_name_failed, delimiter=",", format='ascii')
 
         # Write out intermediate catalog with updated flags
         catalog_name = catalog_name_root + 'CIFILT.txt'
         catalog_data.write(catalog_name, delimiter=",", format='ascii')
-
-
     return catalog_data
 
 # ======================================================================================================================
 
-def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict, plate_scale, debug):
+
+def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict, plate_scale,
+                         debug):
     """Identifies and flags saturated sources.
 
     Parameters
@@ -320,7 +330,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     image_split = drizzled_image.split('/')[-1]
     channel = drizzled_image.split("_")[4].upper()
 
-    if channel == 'IR': #TODO: Test and IR case just to make sure that IR shouldn't be skipped
+    if channel == 'IR':  # TODO: Test and IR case just to make sure that IR shouldn't be skipped
         return catalog_data
 
     # -------------------------------------------------------------------
@@ -360,10 +370,10 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
         for ext_cnt, image_ext in enumerate(image_ext_list):
             ext_part = image_ext.split(',')[1].split(']')[0]
             try:
-                if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')): flt_data = fits.getdata(flt_image, 'DQ',
-                                                                                                    int(ext_part))
-                if ((channel.lower() == 'wfpc2') or (channel.lower() == 'pc')): flt_data = fits.getdata(
-                    flt_image.replace("_c0m", "_c1m"), 'SCI', int(ext_part))
+                if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')):
+                    flt_data = fits.getdata(flt_image, 'DQ', int(ext_part))
+                if ((channel.lower() == 'wfpc2') or (channel.lower() == 'pc')):
+                    flt_data = fits.getdata(flt_image.replace("_c0m", "_c1m"), 'SCI', int(ext_part))
             except KeyError:
                 log.info(' ')
                 log.info('WARNING: There is only one set of file extensions in {}'.format(flt_image))
@@ -447,7 +457,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     # ------------------------------
     # now concatenate all the arrays
     # ------------------------------
-    full_satList = numpy.concatenate(drz_sat_xy_coords_list)
+    full_sat_list = numpy.concatenate(drz_sat_xy_coords_list)
 
     # --------------------------------------------
     # WRITE RA & DEC FLT CONVERTED X & Y DRIZZLED
@@ -456,7 +466,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     if debug:
         drz_coord_file = drizzled_image.split('/')[-1].split('.')[0] + '_ALL_FLT_SAT_FLAG_PIX.txt'
         drz_coord_out = open(drz_coord_file, 'w')
-        for coord in full_satList:
+        for coord in full_sat_list:
             drz_coord_out.write(str(coord[0]) + '     ' + str(coord[1]) + '\n')
         drz_coord_out.close()
 
@@ -466,11 +476,10 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     all_detections = catalog_data
 
     nrows = len(all_detections)
-    full_coordList = numpy.empty((nrows, 2), dtype=numpy.float)
+    full_coord_list = numpy.empty((nrows, 2), dtype=numpy.float)
     for row_count, detection in enumerate(all_detections):
-        full_coordList[row_count, 0] = float(detection[0])
-        full_coordList[row_count, 1] = float(detection[1])
-
+        full_coord_list[row_count, 0] = float(detection[0])
+        full_coord_list[row_count, 1] = float(detection[1])
 
     # ----------------------------------------------------
     # CREATE SUB-GROUPS OF SATURATION-FLAGGED COORDINATES
@@ -485,20 +494,20 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     # ----------------------------------
     ap2 = param_dict['catalog generation']['aperture_2']
     if proc_type == 'aperture':
-        radius = round((ap2/plate_scale) + 0.5) * 2. # TODO: WHY DOES aperture RADIUS VALUE MULTIPLIED BY 2 BUT segment VALUE IS NOT?
+        radius = round((ap2/plate_scale) + 0.5) * 2.  # TODO: WHY DOES aperture RADIUS VALUE MULTIPLIED BY 2 BUT segment VALUE IS NOT?
 
     if proc_type == 'segment':
-        radius = round((ap2 / plate_scale) + 0.5) * 2. # TODO: WHY DOES aperture RADIUS VALUE MULTIPLIED BY 2 BUT segment VALUE IS NOT?
+        radius = round((ap2 / plate_scale) + 0.5)  # TODO: WHY DOES aperture RADIUS VALUE MULTIPLIED BY 2 BUT segment VALUE IS NOT?
 
     log.info(' ')
     log.info('THE RADIAL DISTANCE BEING USED IS {} PIXELS'.format(str(radius)))
     log.info(' ')
 
     # do the cross-match using xymatch
-    log.info('Matching {} saturated pixels with {} catalog sources'.format(len(full_satList), len(full_coordList)))
-    psat, pfull = xymatch(full_satList, full_coordList, radius, multiple=True, verbose=False)
+    log.info('Matching {} saturated pixels with {} catalog sources'.format(len(full_sat_list), len(full_coord_list)))
+    psat, pfull = xymatch(full_sat_list, full_coord_list, radius, multiple=True, verbose=False)
     log.info('Found cross-matches (including duplicates)'.format(len(psat)))
-    saturation_flag = numpy.zeros(len(full_coordList), dtype=bool)
+    saturation_flag = numpy.zeros(len(full_coord_list), dtype=bool)
     saturation_flag[pfull] = True
 
     proc_time2 = time.ctime()
@@ -529,7 +538,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
         if debug:
             sat_coord_file = drizzled_image.split('/')[-1].split('.')[0] + '_INTERMEDIATE.txt'
             sat_coord_out = open(sat_coord_file, 'w')
-            for sat_coord in full_coordList[saturation_flag, :]:
+            for sat_coord in full_coord_list[saturation_flag, :]:
                 sat_coord_out.write(str(sat_coord[0]) + '     ' + str(sat_coord[1]) + '\n')
             sat_coord_out.close()
 
@@ -544,7 +553,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
             if saturation_flag[i]:
                 table_row[-1] = int(table_row[-1]) | 4
 
-        phot_table_rows = HLA_flag4and8_hunter_killer(phot_table_rows)
+        phot_table_rows = flag4and8_hunter_killer(phot_table_rows)
 
         if debug:
             phot_table_temp = phot_table_root + '_SATFILT.txt'
@@ -553,7 +562,9 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
 
 # ======================================================================================================================
 
-def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky, proc_type, param_dict, debug):
+
+def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky, proc_type, param_dict,
+                    debug):
 
     """Identifies and flags swarm sources.
 
@@ -592,8 +603,8 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
         drizzled filter product catalog data with updated flag values
     """
 
-    drz_imgPath_split = drizzled_image.split('/')
-    drz_img_split = drz_imgPath_split[-1].split('_')
+    drz_img_path_split = drizzled_image.split('/')
+    drz_img_split = drz_img_path_split[-1].split('_')
     data_type = drz_img_split[4]
 
     log.info(' ')
@@ -625,15 +636,15 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
 
     nrows = len(catalog_data)
 
-    complete_src_list = numpy.empty((nrows,6), dtype=numpy.float)
+    complete_src_list = numpy.empty((nrows, 6), dtype=numpy.float)
 
-    for row_num,row in enumerate(catalog_data[0:]):
+    for row_num, row in enumerate(catalog_data[0:]):
         x_val = float(row[0])
         y_val = float(row[1])
 
         if proc_type == 'segment':
-            flux = row[10] #TODO: get column name
-            sky = row[13] #TODO: get column name
+            flux = row[10]  # TODO: get column name
+            sky = row[13]  # TODO: get column name
 
         elif proc_type == 'aperture':
             flux = row[11]
@@ -647,13 +658,13 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
 
         electronpp = flux / area * exptime
         eppsky = electronpp / median_sky
-        complete_src_list[row_num,:] = [x_val,y_val,flux,electronpp,sky,eppsky]
+        complete_src_list[row_num, :] = [x_val, y_val, flux, electronpp, sky, eppsky]
 
     if len(complete_src_list) == 0:
         return catalog_data
 
     # view into the complete_src_list array for convenience
-    swarm_epp_listA = complete_src_list[:,3]
+    swarm_epp_list_a = complete_src_list[:, 3]
 
     # swarm flag array
     # this will get set as candidates to flag are found
@@ -663,17 +674,18 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
     # WRITE SUBSET SOURCE LIST TO AN OUTPUT FILE FOR VERIFICATION
     # ------------------------------------------------------------
     if debug:
-        final_complete_source_file = open(phot_table_root+'_SWFILT_COMPLETE_SOURCE_FILE.txt','w')
-        final_complete_source_file.write("# ------------------------------------------------------------------------------------------------\n")
-        final_complete_source_file.write("# X-Center   Y-Center     Flux        ElectronPP          Sky         EPPSKY_Ratio \n")
-        final_complete_source_file.write("# ------------------------------------------------------------------------------------------------\n")
+        final_complete_source_file = open(phot_table_root+'_SWFILT_COMPLETE_SOURCE_FILE.txt', 'w')
+        final_complete_source_file.write("# {}\n".format("-"*96))
+        swfilt_table_header = "# X-Center   Y-Center     Flux        ElectronPP          Sky         EPPSKY_Ratio \n"
+        final_complete_source_file.write(swfilt_table_header)
+        final_complete_source_file.write("# {}\n".format("-"*96))
         for i, complete_src_value in enumerate(complete_src_list):
-            final_complete_source_file.write(str(complete_src_value[0])+'     '+
-                                             str(complete_src_value[1])+'     '+
-                                             str(complete_src_value[2])+'     '+
-                                             str(complete_src_value[3])+'     '+
-                                             str(complete_src_value[4])+'     '+
-                                             str(complete_src_value[5])+'\n')
+            final_complete_source_file.write(str(complete_src_value[0]) + '     ' +
+                                             str(complete_src_value[1]) + '     ' +
+                                             str(complete_src_value[2]) + '     ' +
+                                             str(complete_src_value[3]) + '     ' +
+                                             str(complete_src_value[4]) + '     ' +
+                                             str(complete_src_value[5]) + '\n')
 
         final_complete_source_file.close()
 
@@ -696,7 +708,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
     upper_epp_limit = float(param_dict["quality control"]["swarm filter"]["upper_epp_limit"])
     lower_epp_limit = float(param_dict["quality control"]["swarm filter"]["lower_epp_limit"])
     eppsky_limit_cfg = float(param_dict["quality control"]["swarm filter"]["eppsky_limit"])
-    selfradius = float(param_dict["quality control"]["swarm filter"]["selfradius"]) # TODO: optimize selfradius values for ACS/HRC, ACS/SBC in quality control param files
+    selfradius = float(param_dict["quality control"]["swarm filter"]["selfradius"])  # TODO: optimize selfradius values for ACS/HRC, ACS/SBC in quality control param files
 
     eppsky_limit = eppsky_limit_cfg * median_sky
 
@@ -705,10 +717,10 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
     # IR   --> EPP > 100000. OR (EPP > 100*sky AND EPP > 10000)
     # ----------------------------------------------------------
 
-    initial_central_pixel_positions = numpy.where(numpy.logical_or(swarm_epp_listA > upper_epp_limit,
-                                                  numpy.logical_and(swarm_epp_listA > eppsky_limit,
-                                                                    swarm_epp_listA > lower_epp_limit)))[0]
-    initial_central_pixel_list = complete_src_list[initial_central_pixel_positions,:]
+    initial_central_pixel_positions = numpy.where(numpy.logical_or(swarm_epp_list_a > upper_epp_limit,
+                                                  numpy.logical_and(swarm_epp_list_a > eppsky_limit,
+                                                                    swarm_epp_list_a > lower_epp_limit)))[0]
+    initial_central_pixel_list = complete_src_list[initial_central_pixel_positions, :]
     if len(initial_central_pixel_positions) == 0:
         # no bright objects
         # copy empty lists so output file is created anyway
@@ -737,16 +749,17 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
 
             p1 = []
             p2 = []
-            for cut_cnt,cut in enumerate(cuts):
+            for cut_cnt, cut in enumerate(cuts):
 
                 # --------------------------------------------------------------------
                 # Extract indices of detections that are within the set EPP cut range
                 # --------------------------------------------------------------------
                 if cut_cnt == 0:
-                    cut_value_positions = numpy.where(initial_central_pixel_list[:,3:4] > cut)[0]
+                    cut_value_positions = numpy.where(initial_central_pixel_list[:, 3:4] > cut)[0]
                 else:
-                    cut_value_positions = numpy.where(numpy.logical_and(initial_central_pixel_list[:,3:4] >= cut,
-                                                                        initial_central_pixel_list[:,3:4] <= cuts[cut_cnt-1]))[0]
+                    cut_value_positions = numpy.where(numpy.logical_and(initial_central_pixel_list[:, 3:4] >= cut,
+                                                                        initial_central_pixel_list[:, 3:4] <=
+                                                                        cuts[cut_cnt-1]))[0]
 
                 # -----------------------------------------------
                 # If no detections exist for the specified EPP
@@ -759,8 +772,8 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
                 # Determine all matches for detections in "cut_value_positions"
                 # within the radius value identified for the cut range being implemented
                 # -----------------------------------------------------------------------
-                p1_sub, p2_sub = xymatch(initial_central_pixel_list[cut_value_positions,:][:,0:2],
-                                         initial_central_pixel_list[:,0:2], selfradii[cut_cnt],
+                p1_sub, p2_sub = xymatch(initial_central_pixel_list[cut_value_positions, :][:, 0:2],
+                                         initial_central_pixel_list[:, 0:2], selfradii[cut_cnt],
                                          multiple=True, stack=False, verbose=False)
 
                 # ------------------------------------------
@@ -777,7 +790,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
                 # ------------------------------------
                 if cut_cnt == len(cuts) - 1:
                     if len(p1) == 0 and len(p2) == 0:
-                        p1, p2 = xymatch(initial_central_pixel_list[:,0:2], initial_central_pixel_list[:,0:2],
+                        p1, p2 = xymatch(initial_central_pixel_list[:, 0:2], initial_central_pixel_list[:, 0:2],
                                          selfradius, multiple=True, stack=False, verbose=False)
 
             # ---------------------------------------------------------------------
@@ -785,8 +798,8 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
             # get brightest of each group of matches by building a list of indices
             # ---------------------------------------------------------------------
             exclude_index = None
-            for i1, i2 in zip(p1,p2):
-                flux2 = initial_central_pixel_list[i2,2]
+            for i1, i2 in zip(p1, p2):
+                flux2 = initial_central_pixel_list[i2, 2]
 
                 # -------------------------------------------------------------
                 # Verify that there is more than one detection in a given group
@@ -802,7 +815,8 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
                     if exclude_index is None:
                         exclude_index = i2[numpy.where(flux2 < numpy.max(flux2))]
                     else:
-                        exclude_index = numpy.concatenate((exclude_index,i2[numpy.where(flux2 < numpy.max(flux2))]),axis=0)
+                        exclude_index = numpy.concatenate((exclude_index,
+                                                           i2[numpy.where(flux2 < numpy.max(flux2))]), axis=0)
 
                     exclude_index = exclude_index.astype(numpy.int32)
 
@@ -810,7 +824,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
             # exclude_index can have multiple copies of the same index
             # use exclude_bool array to get a list of the unique indices
             # -----------------------------------------------------------
-            exclude_bool = numpy.ones(len(initial_central_pixel_list),dtype=bool)
+            exclude_bool = numpy.ones(len(initial_central_pixel_list), dtype=bool)
             if not (exclude_index is None):
                 exclude_bool[exclude_index] = False
             out_values = numpy.where(exclude_bool)[0]
@@ -819,53 +833,52 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
             # Create final source list based on where the excluded detection indices are not
             # -------------------------------------------------------------------------------
             final_central_pixel_positions = initial_central_pixel_positions[out_values]
-            final_flag_src_central_pixel_list = initial_central_pixel_list[out_values,:]
+            final_flag_src_central_pixel_list = initial_central_pixel_list[out_values, :]
 
         else:
 
-            p1, p2 = xymatch(initial_central_pixel_list[:,0:2], initial_central_pixel_list[:,0:2], selfradius,
+            p1, p2 = xymatch(initial_central_pixel_list[:, 0:2], initial_central_pixel_list[:, 0:2], selfradius,
                              multiple=True, stack=False, verbose=False)
 
             # ---------------------------------------------------------------------
             # each object is guaranteed to have at least one match (itself)
             # get brightest of each group of matches by building a list of indices
             # ---------------------------------------------------------------------
-            keep_index = numpy.arange(len(initial_central_pixel_list),dtype=int)
-            for i1, i2 in zip(p1,p2):
-                flux2 = initial_central_pixel_list[i2,2]
+            keep_index = numpy.arange(len(initial_central_pixel_list), dtype=int)
+            for i1, i2 in zip(p1, p2):
+                flux2 = initial_central_pixel_list[i2, 2]
                 keep_index[i1] = i2[flux2.argmax()]
 
             # --------------------------------------------------------
             # keep_index can have multiple copies of the same index
             # use keep_bool array to get a list of the unique indices
             # --------------------------------------------------------
-            keep_bool = numpy.zeros(len(initial_central_pixel_list),dtype=bool)
+            keep_bool = numpy.zeros(len(initial_central_pixel_list), dtype=bool)
             keep_bool[keep_index] = True
             in_values = numpy.where(keep_bool)[0]
             final_central_pixel_positions = initial_central_pixel_positions[in_values]
-            final_flag_src_central_pixel_list = initial_central_pixel_list[in_values,:]
-
+            final_flag_src_central_pixel_list = initial_central_pixel_list[in_values, :]
 
     # ---------------------------------------------------
     # WRITE CENTRAL PIXEL POSITIONS FOR SWARMS TO A FILE
     # ---------------------------------------------------
     if debug:
-        cetrl_pix_pos_file = phot_table_root+'_SWFILT_CENTRAL-PIX-POS.txt'
-        drz_coord_out = open(cetrl_pix_pos_file,'w')
+        cetrl_pix_pos_file = phot_table_root + '_SWFILT_CENTRAL-PIX-POS.txt'
+        drz_coord_out = open(cetrl_pix_pos_file, 'w')
         for i in range(len(final_flag_src_central_pixel_list)):
-            drz_coord_out.write(str(final_flag_src_central_pixel_list[i,0])+'     '+
-                                str(final_flag_src_central_pixel_list[i,1])+'     '+
-                                str(final_flag_src_central_pixel_list[i,2])+'     '+
-                                str(final_flag_src_central_pixel_list[i,3])+'     '+
-                                str(final_flag_src_central_pixel_list[i,4])+'     '+
-                                str(final_flag_src_central_pixel_list[i,5])+'\n')
+            drz_coord_out.write(str(final_flag_src_central_pixel_list[i, 0]) + '     ' +
+                                str(final_flag_src_central_pixel_list[i, 1]) + '     ' +
+                                str(final_flag_src_central_pixel_list[i, 2]) + '     ' +
+                                str(final_flag_src_central_pixel_list[i, 3]) + '     ' +
+                                str(final_flag_src_central_pixel_list[i, 4]) + '     ' +
+                                str(final_flag_src_central_pixel_list[i, 5]) + '\n')
         drz_coord_out.close()
 
     # ==========================================================================
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------
     # EXTRACT THE CENTRAL PIXEL POSITIONS IN final_flag_src_central_pixel_list,
-    # FROM swarm_xListB AND swarm_yListB
+    # FROM swarm_x_list_b AND swarm_y_list_b
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------
     # ==========================================================================
@@ -882,11 +895,11 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
     keep = numpy.ones(nrows, dtype=bool)
     keep[final_central_pixel_positions] = False
     notcentral_index = numpy.where(keep)[0]
-    swarm_listB = complete_src_list[notcentral_index,:]
+    swarm_list_b = complete_src_list[notcentral_index, :]
 
-    # views into the swarm_listB array for convenience
-    swarm_xListB = swarm_listB[:,0]
-    swarm_yListB = swarm_listB[:,1]
+    # views into the swarm_list_b array for convenience
+    swarm_x_list_b = swarm_list_b[:, 0]
+    swarm_y_list_b = swarm_list_b[:, 1]
 
     # ---------------------------------------------------------------------
     # ITERATIVELY CLIP SOURCES CONTAINED WITHIN RINGS AT SPECIFIED RADIUS
@@ -894,10 +907,12 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
     # ---------------------------------------------------------------------
 
     # do the cross-match using xymatch
-    log.info('Matching {} swarm centers with {} catalog sources'.format(len(final_flag_src_central_pixel_list),len(swarm_listB)))
-    pcentral, pfull = xymatch(final_flag_src_central_pixel_list[:,0:2], swarm_listB[:,0:2], clip_radius_list[0], multiple=True, stack=False, verbose=False)
+    log.info('Matching {} swarm centers with {} catalog sources'.format(len(final_flag_src_central_pixel_list),
+                                                                        len(swarm_list_b)))
+    pcentral, pfull = xymatch(final_flag_src_central_pixel_list[:, 0:2], swarm_list_b[:, 0:2],
+                              clip_radius_list[0], multiple=True, stack=False, verbose=False)
 
-    #XXX RLW: the ring list is needed only for testing, get rid of it when code works
+    # TODO: RLW: the ring list is needed only for testing, get rid of it when code works
 
     if debug:
         ring_index_list = []
@@ -907,7 +922,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
 
     for pindex, ii in enumerate(pcentral):
 
-        central_pixel_value = final_flag_src_central_pixel_list[ii,:]
+        central_pixel_value = final_flag_src_central_pixel_list[ii, :]
         log.info(' ')
         log.info('CENTRAL PIXEL VALUE: {}'.format(central_pixel_value))
         log.info(' ')
@@ -926,12 +941,12 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
             log.info(' ')
             continue
 
-        distsq = (swarm_xListB[allmatches]-coords[0])**2 + (swarm_yListB[allmatches]-coords[1])**2
+        distsq = (swarm_x_list_b[allmatches]-coords[0])**2 + (swarm_y_list_b[allmatches]-coords[1])**2
         sind = distsq.argsort()
         allmatches = allmatches[sind]
         distsq = distsq[sind]
         rcut = distsq.searchsorted(numpy.array(clip_radius_list)**2)
-        for radius_cnt in range(1,len(clip_radius_list)):
+        for radius_cnt in range(1, len(clip_radius_list)):
 
             # -------------------------------------------
             # ISOLATE THE DETECTIONS WITHIN A GIVEN RING
@@ -958,67 +973,63 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
             # -----------------------------------------------------------------------------------
             # DIFFERENTIATE BETWEEN GOOD DETECTIONS AND SWARM DETECTIONS WITHIN SPECIFIED RINGS
             # -----------------------------------------------------------------------------------
-            ring = swarm_listB[matches,:]
-            w = numpy.where(ring[:,3]/ref_epp < swarm_thresh)
+            ring = swarm_list_b[matches, :]
+            w = numpy.where(ring[:, 3]/ref_epp < swarm_thresh)
             if len(w) > 0:
                 swarm_flag[notcentral_index[matches[w]]] = True
 
-
-            #XXX RLW: following needed only for testing, get rid of it when code works
+            # TODO: RLW: following needed only for testing, get rid of it when code works
             if debug:
                 ring_index_list.append(matches)
                 ring_count.append(len(matches))
-                ring_refepp_list.append(ring[:,3]/ref_epp)
+                ring_refepp_list.append(ring[:, 3]/ref_epp)
                 ring_thresh_list.append(swarm_thresh)
 
-    #XXX RLW: following needed only for testing, get rid of it when code works
+    # TODO: RLW: following needed only for testing, get rid of it when code works
     if debug:
         # -----------------------------------------------------------------------------------------
         # WRITE CLIPPED SOURCES CONTAINED WITHIN RINGS TO AN OUTPUT FILE FOR INTERMEDIATE ANALYSIS
         # -----------------------------------------------------------------------------------------
         ring_source_file = phot_table_root+'_SWFILT_RING-SOURCE-INFO.txt'
-        ring_src_outfile = open(ring_source_file,'w')
-        ring_src_outfile.write("# ------------------------------------------------------------------------------------------------\n")
-        ring_src_outfile.write("# X-Center   Y-Center     Flux        ElectronPP          Sky        SrcEPP/RefEPP   Swarm Thresh \n")
-        ring_src_outfile.write("# ------------------------------------------------------------------------------------------------\n")
+        ring_src_outfile = open(ring_source_file, 'w')
+        ring_src_outfile.write("# {}\n".format("-"*96))
+        swfilt_ring_file_header = "# X-Center   Y-Center     Flux        ElectronPP"
+        swfilt_ring_file_header += "          Sky        SrcEPP/RefEPP   Swarm Thresh \n"
+        ring_src_outfile.write(swfilt_ring_file_header)
+        ring_src_outfile.write("# {}\n".format("-"*96))
 
         if ring_index_list:
             ring_index_list = numpy.concatenate(ring_index_list)
 
             # select just the lowest value of refepp/swarm threshold for each source
             # create array with extra columns
-            ring_source_list = numpy.empty((len(ring_index_list),9), dtype=numpy.float)
-            ring_source_list[:,0:6] = swarm_listB[ring_index_list,:]
-            ring_source_list[:,6] = numpy.concatenate(ring_refepp_list)
-            ring_source_list[:,7] = numpy.repeat(ring_thresh_list,ring_count)
-            ring_source_list[:,8] = ring_source_list[:,6] / ring_source_list[:,7]
+            ring_source_list = numpy.empty((len(ring_index_list), 9), dtype=numpy.float)
+            ring_source_list[:, 0:6] = swarm_list_b[ring_index_list, :]
+            ring_source_list[:, 6] = numpy.concatenate(ring_refepp_list)
+            ring_source_list[:, 7] = numpy.repeat(ring_thresh_list, ring_count)
+            ring_source_list[:, 8] = ring_source_list[:, 6] / ring_source_list[:, 7]
 
             # sort by x, y, and refepp
             # tricky here: get a view with named columns, then specify names as sort items
-            ring_source_list.view(','.join(['f8']*9)).sort(order=['f0','f1','f8'],axis=0)
+            ring_source_list.view(','.join(['f8']*9)).sort(order=['f0', 'f1', 'f8'], axis=0)
 
             # keep just first entry when the same source appears more than once
-            keep = numpy.ones(len(ring_index_list),dtype=bool)
-            # keep[1:] = numpy.any(ring_source_list[1:,0:2]!=ring_source_list[:-1,0:2], axis=1)
-            keep[1:] = numpy.logical_or(ring_source_list[1:,0]!=ring_source_list[:-1,0],
-                                        ring_source_list[1:,1]!=ring_source_list[:-1,1])
-            ring_source_list = ring_source_list[keep,:]
-
-#                numpy.savetxt(ring_src_outfile,ring_source_list,delimiter='     ')
+            keep = numpy.ones(len(ring_index_list), dtype=bool)
+            keep[1:] = numpy.logical_or(ring_source_list[1:, 0] != ring_source_list[:-1, 0],
+                                        ring_source_list[1:, 1] != ring_source_list[:-1, 1])
+            ring_source_list = ring_source_list[keep, :]
 
             for ring_source in ring_source_list:
-                ring_src_outfile.write(str(ring_source[0])+'     '+
-                                       str(ring_source[1])+'     '+
-                                       str(ring_source[2])+'     '+
-                                       str(ring_source[3])+'     '+
-                                       str(ring_source[4])+'     '+
-                                       str(ring_source[5])+'     '+
-                                       str(ring_source[6])+'     '+
-                                       str(ring_source[7])+'\n')
-
+                ring_src_outfile.write(str(ring_source[0]) + '     ' +
+                                       str(ring_source[1]) + '     ' +
+                                       str(ring_source[2]) + '     ' +
+                                       str(ring_source[3]) + '     ' +
+                                       str(ring_source[4]) + '     ' +
+                                       str(ring_source[5]) + '     ' +
+                                       str(ring_source[6]) + '     ' +
+                                       str(ring_source[7]) + '\n')
         ring_src_outfile.close()
-        #XXX RLW: end of testing code
-
+        # XXX RLW: end of testing code
 
     # ===================================================================================
     # -----------------------------------------------------------------------------------
@@ -1036,22 +1047,23 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
 
     if proximity_choice:
         if len(final_flag_src_central_pixel_list) > 0:
-            ctrList_radiusList = param_dict["quality control"]["swarm filter"]["ctrList_radiusList"] # TODO: optimize ctrList_radiusList for ACS wfc, hrc, sbc in quality control config files
-            ctrList_radiusList = list(map(int, ctrList_radiusList))
+            ctr_list_radius_list = param_dict["quality control"]["swarm filter"]["ctr_list_radius_list"]  # TODO: optimize ctr_list_radius_list for ACS wfc, hrc, sbc in quality control config files
+            ctr_list_radius_list = list(map(int, ctr_list_radius_list))
 
-            ctrList_thresholdList = param_dict["quality control"]["swarm filter"]["ctrList_thresholdList"] # TODO: optimize ctrList_thresholdList for ACS wfc, hrc, sbc in quality control config files
-            ctrList_thresholdList = list(map(int, ctrList_thresholdList))
+            ctr_list_threshold_list = param_dict["quality control"]["swarm filter"]["ctr_list_threshold_list"]  # TODO: optimize ctr_list_threshold_list for ACS wfc, hrc, sbc in quality control config files
+            ctr_list_threshold_list = list(map(int, ctr_list_threshold_list))
 
-            for ctrList_cnt,(threshold,radius) in enumerate(zip(ctrList_thresholdList, ctrList_radiusList)):
+            for ctr_list_cnt, (threshold, radius) in enumerate(zip(ctr_list_threshold_list, ctr_list_radius_list)):
 
-                if ctrList_cnt == 0:
-                    ctr_list_cut = final_flag_src_central_pixel_list[:,3] > threshold
+                if ctr_list_cnt == 0:
+                    ctr_list_cut = final_flag_src_central_pixel_list[:, 3] > threshold
                 else:
-                    ctr_list_cut = numpy.logical_and(final_flag_src_central_pixel_list[:,3] > threshold,
-                                                     final_flag_src_central_pixel_list[:,3] <= ctrList_thresholdList[ctrList_cnt-1])
+                    ctr_list_cut = numpy.logical_and(final_flag_src_central_pixel_list[:, 3] > threshold,
+                                                     final_flag_src_central_pixel_list[:, 3] <= ctr_list_threshold_list[ctr_list_cnt-1])
 
                 ctr_list_cut1 = final_flag_src_central_pixel_list[ctr_list_cut, :]
-                pcentral, pfull = xymatch(ctr_list_cut1[:,0:2], swarm_listB[:,0:2], radius, multiple=True, verbose=False)
+                pcentral, pfull = xymatch(ctr_list_cut1[:, 0:2], swarm_list_b[:, 0:2],
+                                          radius, multiple=True, verbose=False)
                 proximity_flag[notcentral_index[pfull]] = True
 
         log.info("Proximity filter flagged {} sources".format(proximity_flag.sum()))
@@ -1060,21 +1072,21 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
         # WRITE NEAR CENTRAL POSITION SWARM LIST TO AN OUTPUT FILE FOR VERIFICATION
         # --------------------------------------------------------------------------
         if debug:
-            near_swmList = complete_src_list[proximity_flag, :]
-            final_near_swarm_file = open(phot_table_root+'_SWFILT_NEAR_SWARM_FILE.txt','w')
-            for swarm_value in near_swmList:
-                final_near_swarm_file.write(str(swarm_value[0])+'     '+
-                                       str(swarm_value[1])+'     '+
-                                       str(swarm_value[2])+'     '+
-                                       str(swarm_value[3])+'     '+
-                                       str(swarm_value[4])+'\n')
+            near_swm_list = complete_src_list[proximity_flag, :]
+            final_near_swarm_file = open(phot_table_root+'_SWFILT_NEAR_SWARM_FILE.txt', 'w')
+            for swarm_value in near_swm_list:
+                final_near_swarm_file.write(str(swarm_value[0]) + '     ' +
+                                            str(swarm_value[1]) + '     ' +
+                                            str(swarm_value[2]) + '     ' +
+                                            str(swarm_value[3]) + '     ' +
+                                            str(swarm_value[4]) + '\n')
             final_near_swarm_file.close()
 
     # -------------------------------------------------------------------------
     # EXTRACT DETECTIONS FROM THE complete_src_list THAT ARE NOT FLAGGED
     # -------------------------------------------------------------------------
 
-    combined_flag = numpy.logical_or(swarm_flag,proximity_flag)
+    combined_flag = numpy.logical_or(swarm_flag, proximity_flag)
     final_swarm_list = complete_src_list[combined_flag, :]
     final_source_list = complete_src_list[numpy.logical_not(combined_flag), :]
 
@@ -1094,45 +1106,44 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
     # WRITE SWARM LIST TO AN OUTPUT FILE FOR VERIFICATION
     # ----------------------------------------------------
     if debug:
-        final_swarm_file = open(phot_table_root+'_SWFILT_SWARM_FILE.txt','w')
+        final_swarm_file = open(phot_table_root+'_SWFILT_SWARM_FILE.txt', 'w')
         for swarm_value in final_swarm_list:
-            final_swarm_file.write(str(swarm_value[0])+'     '+
-                                   str(swarm_value[1])+'     '+
-                                   str(swarm_value[2])+'     '+
-                                   str(swarm_value[3])+'     '+
-                                   str(swarm_value[4])+'\n')
+            final_swarm_file.write(str(swarm_value[0]) + '     ' +
+                                   str(swarm_value[1]) + '     ' +
+                                   str(swarm_value[2]) + '     ' +
+                                   str(swarm_value[3]) + '     ' +
+                                   str(swarm_value[4]) + '\n')
         final_swarm_file.close()
 
     # ----------------------------------------------------
     # WRITE SOURCE LIST TO AN OUTPUT FILE FOR VERIFICATION
     # ----------------------------------------------------
     if debug:
-        final_source_file = open(phot_table_root+'_SWFILT_SOURCE_FILE.txt','w')
+        final_source_file = open(phot_table_root+'_SWFILT_SOURCE_FILE.txt', 'w')
         for source_value in final_source_list:
-            final_source_file.write(str(source_value[0])+'     '+
-                                    str(source_value[1])+'     '+
-                                    str(source_value[2])+'     '+
-                                    str(source_value[3])+'     '+
-                                    str(source_value[4])+'\n')
+            final_source_file.write(str(source_value[0]) + '     ' +
+                                    str(source_value[1]) + '     ' +
+                                    str(source_value[2]) + '     ' +
+                                    str(source_value[3]) + '     ' +
+                                    str(source_value[4]) + '\n')
         final_source_file.close()
 
-
-
     # Update catalog_data flag values
-    for i,table_row in enumerate(catalog_data[0:]):
+    for i, table_row in enumerate(catalog_data[0:]):
         if combined_flag[i]:
             table_row[-1] |= 32
 
     if debug:
         # Write out intermediate catalog with updated flags
         phot_table_temp = phot_table_root + '_SWFILT.txt'
-        catalog_data.write(phot_table_temp, delimiter=",",format='ascii')
+        catalog_data.write(phot_table_temp, delimiter=",", format='ascii')
 
     return catalog_data
 
 # ======================================================================================================================
 
-def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data, drz_root_dir, debug):
+
+def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data, drz_root_dir, debug):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
     drizzled_image : string
@@ -1177,12 +1188,13 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
     # METHOD 1:
     # ---------
     ctx = fits.getdata(drizzled_image, 3)
-    if channel in ['UVIS','IR','WFC','HRC']: ncombine = fits.getheader(drizzled_image,1)['NCOMBINE']
-    if channel in ['WFPC2','PC']:
-        ndrizim=fits.getheader(drizzled_image,0)['NDRIZIM']
-        ncombine=ndrizim/4
+    if channel in ['UVIS', 'IR', 'WFC', 'HRC']:
+        ncombine = fits.getheader(drizzled_image, 1)['NCOMBINE']
+    if channel in ['WFPC2', 'PC']:
+        ndrizim = fits.getheader(drizzled_image, 0)['NDRIZIM']
+        ncombine = ndrizim/4
     if channel == 'SBC':
-        ndrizim=fits.getheader(drizzled_image,0)['NDRIZIM']
+        ndrizim = fits.getheader(drizzled_image, 0)['NDRIZIM']
         ncombine = ndrizim
     ctxarray = arrayfy_ctx(ctx, ncombine)
 
@@ -1197,16 +1209,16 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
     # ---------
     drz_data = fits.getdata(drizzled_image, 1)
 
-    ## this bit is added to get the mask integrated into the exp map
+    # this bit is added to get the mask integrated into the exp map
     maskfile = drizzled_image.replace(drizzled_image[-9:], "_msk.fits")
     if os.path.isfile(maskfile):
         mask_data = fits.getdata(maskfile)
-        mask_array = (mask_data==0.0).astype(numpy.int32)
+        mask_array = (mask_data == 0.0).astype(numpy.int32)
 
     component_drz_img_list = get_component_drz_list(drizzled_image, drz_root_dir, flt_list)
     nx = drz_data.shape[0]
     ny = drz_data.shape[1]
-    nexp_array = numpy.zeros((nx, ny), dtype = numpy.int32)
+    nexp_array = numpy.zeros((nx, ny), dtype=numpy.int32)
 
     for comp_drz_img in component_drz_img_list:
         comp_drz_data = (fits.getdata(comp_drz_img) != 0).astype(numpy.int32)
@@ -1214,7 +1226,7 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
             nexp_array += comp_drz_data
         except ValueError:
             log.info("WARNING: Astrodrizzle added an extra-row/column...")
-            nexp_array += comp_drz_data[0:nx,0:ny]
+            nexp_array += comp_drz_data[0:nx, 0:ny]
 
     if os.path.isfile(maskfile):
         nexp_array = nexp_array * mask_array
@@ -1234,8 +1246,8 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
     phot_table_root = catalog_name.split('/')[-1].split('.')[0]
 
     nrows = len(catalog_data)
-    cat_coords = numpy.empty((nrows,2),dtype=float)
-    for line_cnt,phot_table_line in enumerate(catalog_data):
+    cat_coords = numpy.empty((nrows, 2), dtype=float)
+    for line_cnt, phot_table_line in enumerate(catalog_data):
         x_coord = phot_table_line[0]
         y_coord = phot_table_line[1]
         cat_coords[line_cnt, :] = [x_coord, y_coord]
@@ -1247,7 +1259,7 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
     radius = ap2/plate_scale
 
     num_exp = round(numpy.max(nexp_array))
-    if num_exp<=1 or channel in ('IR','SBC'):
+    if num_exp <= 1 or channel in ('IR', 'SBC'):
         # Keep everything that has an exposure for detectors without CRs or
         # when there is only one exposure
         artifact_filt = 0.5
@@ -1263,13 +1275,13 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
     icoords = (cat_coords+0.5).astype(int)
     # note x & y are swapped so they can index the numpy array nexp_array
     # catalog x is second subscript, catalog y is first subscript
-    ix = icoords[:,1]
-    iy = icoords[:,0]
+    ix = icoords[:, 1]
+    iy = icoords[:, 0]
 
     # get list of neighboring pixels that are within radius
     iradius = int(radius+1)
     idiam = iradius*2+1
-    gx, gy = numpy.mgrid[0:idiam,0:idiam] - iradius
+    gx, gy = numpy.mgrid[0:idiam, 0:idiam] - iradius
     gx = gx.ravel()
     gy = gy.ravel()
     w = numpy.where(gx**2+gy**2 <= radius**2)[0]
@@ -1278,12 +1290,12 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
 
     # check the pixel values for low nexp
 
-    # this version uses numpy broadcasting sum gx+ix is [len(gx),nrows]
-    gx = (gx[:,numpy.newaxis] + ix).clip(0,nexp_array.shape[0]-1)
-    gy = (gy[:,numpy.newaxis] + iy).clip(0,nexp_array.shape[1]-1)
-    artifact_flag = nexp_array[gx,gy].min(axis=0) < artifact_filt
+    # this version uses numpy broadcasting sum gx+ix is [len(gx), nrows]
+    gx = (gx[:, numpy.newaxis] + ix).clip(0, nexp_array.shape[0]-1)
+    gy = (gy[:, numpy.newaxis] + iy).clip(0, nexp_array.shape[1]-1)
+    artifact_flag = nexp_array[gx, gy].min(axis=0) < artifact_filt
 
-    log.info('FLAGGING {} OF {} SOURCES'.format(artifact_flag.sum(),nrows))
+    log.info('FLAGGING {} OF {} SOURCES'.format(artifact_flag.sum(), nrows))
 
     # Add flag bit to appropriate sources
     for i, table_row in enumerate(catalog_data):
@@ -1306,6 +1318,7 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
     return catalog_data
 
 # ======================================================================================================================
+
 
 def get_component_drz_list(drizzled_image, drz_root_dir, flt_file_names):
 
@@ -1331,7 +1344,8 @@ def get_component_drz_list(drizzled_image, drz_root_dir, flt_file_names):
     """
     drizzle_file_suffex = drizzled_image[-8:-5]
     drz_img_split = drizzled_image.split('/')[-1].split("_"+drizzle_file_suffex)
-    component_drz_img_list = glob.glob(os.path.join(drz_root_dir,drz_img_split[0])+'*_{}.fits'.format(drizzle_file_suffex))
+    component_drz_img_list = glob.glob(os.path.join(drz_root_dir,
+                                                    drz_img_split[0])+'*_{}.fits'.format(drizzle_file_suffex))
     component_drz_img_list.sort()
     for item in component_drz_img_list:
         if item.endswith(drizzled_image):
@@ -1362,7 +1376,7 @@ def get_component_drz_list(drizzled_image, drz_root_dir, flt_file_names):
     rv = []
     for drzfile in component_drz_img_list:
         fh = fits.open(drzfile)
-        rootname = fh[0].header.get('rootname','')
+        rootname = fh[0].header.get('rootname', '')
         fh.close()
         fname = os.path.split(rootname)[-1]
         fname = fname.split('_')[0].lower()
@@ -1382,6 +1396,7 @@ def get_component_drz_list(drizzled_image, drz_root_dir, flt_file_names):
 # -----------------------------------------------------------------------------
 # =============================================================================
 
+
 def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
     """Routine to match two lists of objects by position using 2-D Cartesian distances.
 
@@ -1389,8 +1404,8 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
     If more than one match is found, the nearest is returned.
     Setting multiple=True returns all matching pairs rather than just the closest.
 
-    Input catalogs need not be sorted. They should be 2-element arrays [:,2] with
-    cat1[:,0] = x1 and cat1[:,1] = y1.
+    Input catalogs need not be sorted. They should be 2-element arrays [:, 2] with
+    cat1[:, 0] = x1 and cat1[:, 1] = y1.
 
     Returns an array of indices for cat2 that correspond to the closest match
     (within sep) in cat2 for each object in cat1, so x1[i] matches x2[return_value[i]].
@@ -1431,27 +1446,30 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
         maximum separation (in pixels) allowed for source matching.
     
     multiple : Boolean
-        If multiple is true, returns a tuple (p1,p2) such that cat1[p1] and cat2[p2] are within sep.  p1 and p2 may include multiple pointers to the same objects in cat1 or cat2.  In this case objects that don't match are simply omitted from the lists. Default value is 'False'.
+        If multiple is true, returns a tuple (p1,p2) such that cat1[p1] and cat2[p2] are within sep.
+        p1 and p2 may include multiple pointers to the same objects in cat1 or cat2.  In this case objects that don't
+        match are simply omitted from the lists. Default value is 'False'.
     
     stack : Boolean
-        If stack is true, the returned matching pointers are stacked into a single big array, so both p1 and p2 are 1-D arrays of length nmatches. Default value is 'True'.
+        If stack is true, the returned matching pointers are stacked into a single big array, so both p1 and p2 are 1-D
+        arrays of length nmatches. Default value is 'True'.
     
     verbose : Boolean
         print verbose output? Default value is 'True'.
 
     Returns
     -------
-    Varies; Depending on inputs, either just 'p2', or 'p1' and 'p2'. p1 and p2 are lists of matched indicies
+    Varies; Depending on inputs, either just 'p2', or 'p1' and 'p2'. p1 and p2 are lists of matched indices
     """
-    if not (isinstance(cat1, numpy.ndarray) and len(cat1.shape)==2 and cat1.shape[1]==2):
-        raise ValueError("cat1 must be a [N,2] array")
-    if not (isinstance(cat2, numpy.ndarray) and len(cat2.shape)==2 and cat2.shape[1]==2):
-        raise ValueError("cat2 must be a [N,2] array")
+    if not (isinstance(cat1, numpy.ndarray) and len(cat1.shape) == 2 and cat1.shape[1] == 2):
+        raise ValueError("cat1 must be a [N, 2] array")
+    if not (isinstance(cat2, numpy.ndarray) and len(cat2.shape) == 2 and cat2.shape[1] == 2):
+        raise ValueError("cat2 must be a [N, 2] array")
 
-    x1 = cat1[:,0]
-    y1 = cat1[:,1]
-    x2 = cat2[:,0]
-    y2 = cat2[:,1]
+    x1 = cat1[:, 0]
+    y1 = cat1[:, 1]
+    x2 = cat2[:, 0]
+    y2 = cat2[:, 1]
 
     # Sort the arrays by increasing y-coordinate
     is1 = y1.argsort()
@@ -1461,8 +1479,8 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
     x2 = x2[is2]
     y2 = y2[is2]
     # find search limits in y2 for each object in y1
-    kvlo = y2.searchsorted(y1-sep,'left').clip(0, len(y2))
-    kvhi = y2.searchsorted(y1+sep,'right').clip(kvlo, len(y2))
+    kvlo = y2.searchsorted(y1-sep, 'left').clip(0, len(y2))
+    kvhi = y2.searchsorted(y1+sep, 'right').clip(kvlo, len(y2))
 
     nnomatch = 0
     n1 = len(x1)
@@ -1493,7 +1511,7 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
                     nnomatch += 1
                 else:
                     if stack:
-                        p1.append(numpy.zeros(len(ww),dtype='int')+is1[i])
+                        p1.append(numpy.zeros(len(ww), dtype='int')+is1[i])
                     else:
                         p1.append(is1[i])
                     p2.append(is2[klo + w[ww]])
@@ -1514,9 +1532,9 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
             if len(p1) == 0:
                 # no matches found
                 # return empty integer arrays that are still usable as indices
-                return numpy.array([],dtype=int), numpy.array([],dtype=int)
+                return numpy.array([], dtype=int), numpy.array([], dtype=int)
             else:
-                return numpy.concatenate(p1),numpy.concatenate(p2)
+                return numpy.concatenate(p1), numpy.concatenate(p2)
         else:
             return (p1, p2)
     else:
@@ -1524,8 +1542,9 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
 
 # ======================================================================================================================
 
+
 def rdtoxy(rd_coord_array, image, image_ext):
-    """converts RA and dec to x,y image coords.
+    """converts RA and dec to x, y image coords.
 
     rd_coord_array : numpy.ndarray
         array containing RA and dec values to convert.
@@ -1538,24 +1557,25 @@ def rdtoxy(rd_coord_array, image, image_ext):
     
     Returns
     xy_arr: array
-        array of converted x,y coordinate value pairs
+        array of converted x, y coordinate value pairs
     """
 
     scifile = image + image_ext
     wcs = wcsutil.HSTWCS(scifile)
     try:
-        xy_arr = wcs.wcs_sky2pix(rd_coord_array,1)
+        xy_arr = wcs.wcs_sky2pix(rd_coord_array, 1)
     except AttributeError:
-        xy_arr = wcs.wcs_world2pix(rd_coord_array,1)
+        xy_arr = wcs.wcs_world2pix(rd_coord_array, 1)
     return (xy_arr)
 
 # ======================================================================================================================
 
+
 def xytord(xy_coord_array, image, image_ext):
-    """converts x,y image coords to RA and dec.
+    """converts x, y image coords to RA and dec.
 
     xy_coord_array : numpy.ndarray
-        array containing image x,y coord values to convert.
+        array containing image x, y coord values to convert.
 
     image : string
         drizzled image whose WCS info will be used in the coordinate conversion.
@@ -1572,12 +1592,13 @@ def xytord(xy_coord_array, image, image_ext):
     scifile = image + image_ext
     wcs = wcsutil.HSTWCS(scifile)
     try:
-        rd_arr = wcs.all_pix2sky(xy_coord_array,1)
+        rd_arr = wcs.all_pix2sky(xy_coord_array, 1)
     except AttributeError:
-        rd_arr = wcs.all_pix2world(xy_coord_array,1)
+        rd_arr = wcs.all_pix2world(xy_coord_array, 1)
     return (rd_arr)
 
 # ======================================================================================================================
+
 
 def arrayfy_ctx(ctx, maxindex):
 
@@ -1595,7 +1616,7 @@ def arrayfy_ctx(ctx, maxindex):
     Per AstroDrizzle specifications, ctx can be a 2-dimensional or 3-dimensional
     array of 32-bit integers.  It will be 2-dimensional if fewer than 32 images
     are combined; 3-dimensional if more images are combined, in which case the
-    ctx[:,:,0] contains the bit values for images 1-32, ctx[:,:,1] for images
+    ctx[:, :, 0] contains the bit values for images 1-32, ctx[:, :, 1] for images
     33-64, and so forth.
 
     Parameters
@@ -1619,22 +1640,23 @@ def arrayfy_ctx(ctx, maxindex):
     n3 = maxindex
     # Need to find out how to handle the case in which maxindex is not specified
 
-    ctxarray = numpy.zeros ( (nx, ny, n3), dtype="bool" )
-    comparison = numpy.zeros ( (nx, ny), dtype="int32")
+    ctxarray = numpy.zeros((nx, ny, n3), dtype="bool")
+    comparison = numpy.zeros((nx, ny), dtype="int32")
     
     for i in range(n3):
         ilayer = int(i/32)
         ibit = i - 32*ilayer
         cc = comparison + 2**ibit
         if nz > 1:
-            ctxarray [:,:,i] = numpy.bitwise_and (ctx[:,:,ilayer], cc)
+            ctxarray[:, :, i] = numpy.bitwise_and(ctx[:, :, ilayer], cc)
         else:
-            ctxarray [:,:,i] = numpy.bitwise_and (ctx[:,:], cc)
+            ctxarray[:, :, i] = numpy.bitwise_and(ctx[:, :], cc)
     return ctxarray
 
 # ======================================================================================================================
 
-def HLA_flag4and8_hunter_killer(catalog_data):
+
+def flag4and8_hunter_killer(catalog_data):
     """This function searches through photometry catalogs for sources whose flags contain
     both bits 4 (multi-pixel saturation), and 8 (faint magnitude limit).
     If found, the subroutine removes the "8" bit value from the set of flags for that source.
@@ -1649,7 +1671,7 @@ def HLA_flag4and8_hunter_killer(catalog_data):
     catalog_data : astropy Table object
         input catalog data with updated flags
     """
-    conf_ctr=0
+    conf_ctr = 0
     log.info("Searching for flag 4 + flag 8 conflicts....")
     if 'FLAGS' in catalog_data.keys():
         flag_col_title = 'FLAGS'
@@ -1658,21 +1680,25 @@ def HLA_flag4and8_hunter_killer(catalog_data):
     else:
         sys.exit("ERROR! Unrecognized catalog format!")
     for catalog_line in catalog_data:
-        if ((catalog_line[flag_col_title] & 4 >0) and (catalog_line[flag_col_title] & 8 >0)):
-            conf_ctr+=1
-            catalog_line[flag_col_title]=int(catalog_line[flag_col_title])-8
-    if conf_ctr == 0: log.info("No conflicts found.")
-    if conf_ctr == 1: log.info("{} conflict fixed.".format(conf_ctr))
-    if conf_ctr > 1:  log.info("{} conflicts fixed.".format(conf_ctr))
+        if ((catalog_line[flag_col_title] & 4 > 0) and (catalog_line[flag_col_title] & 8 > 0)):
+            conf_ctr += 1
+            catalog_line[flag_col_title] = int(catalog_line[flag_col_title]) - 8
+    if conf_ctr == 0:
+        log.info("No conflicts found.")
+    if conf_ctr == 1:
+        log.info("{} conflict fixed.".format(conf_ctr))
+    if conf_ctr > 1:
+        log.info("{} conflicts fixed.".format(conf_ctr))
 
     return catalog_data
 
 # ======================================================================================================================
 
+
 def make_mask_file(drz_image):
     """
     Creates _msk.fits mask file that contains pixel values of 1 outside the drizzled image footprint and pixel values
-    of 0 inside the footprint. This file is used by subroutine HLANexpFlags().
+    of 0 inside the footprint. This file is used by subroutine hla_nexp_flags().
 
     Parameters
     ----------
@@ -1693,5 +1719,5 @@ def make_mask_file(drz_image):
     bigmask = numpy.pad(mask, padding, 'constant')
     # strip the padding back off after creating mask
     mask = (erode(dilate(bigmask, kernel1), kernel2) == 0)[padding:-padding, padding:-padding]
-    flagfile = drz_image.replace(drz_image[-9:],"_msk.fits")
+    flagfile = drz_image.replace(drz_image[-9:], "_msk.fits")
     fits.writeto(flagfile, mask.astype(numpy.int16))
