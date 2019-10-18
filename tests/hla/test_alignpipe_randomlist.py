@@ -18,7 +18,7 @@ from stsci.tools import logutil
 from astropy.io import fits
 
 from drizzlepac.hlautils import astroquery_utils as aqutils
-from drizzlepac import runaligndriz
+from drizzlepac import runastrodriz
 from drizzlepac import alignimages
 from stwcs.wcsutil import headerlet
 
@@ -163,7 +163,7 @@ def test_alignpipe_randomlist(tmpdir, dataset):
         # Run pipeline processing using
         # runastrodriz accepts *_raw.fits or *_asn.fits, but it assumes the *_fl[t|c].fits files
         # are also present
-        runaligndriz.process(filename_for_runastrodriz, force=True)
+        runastrodriz.process(filename_for_runastrodriz, force=True)
 
         return_value = 0
 
