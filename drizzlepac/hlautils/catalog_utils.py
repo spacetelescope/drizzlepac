@@ -337,7 +337,7 @@ class HAPCatalogBase:
         self.ab_zeropoint = -2.5 * np.log10(photflam) - 21.10 - 5.0 * np.log10(photplam) + 18.6921
 
         # Compute average gain - there will always be at least one gain value in the primary header
-        gain_keys = self.image.imghdu[0].header['atodgn*'] 
+        gain_keys = self.image.imghdu[0].header['atodgn*']
         gain_values = [gain_keys[g] for g in gain_keys if gain_keys[g] > 0.0]
         self.gain = self.image.imghdu[0].header['exptime'] * np.mean(gain_values)
         log.info("Average gain of {} for input image {}".format(np.mean(gain_values), self.imgname))
@@ -464,18 +464,16 @@ class HAPPointCatalog(HAPCatalogBase):
         # load in coords of sources identified in total product
         positions = (self.sources['xcentroid'], self.sources['ycentroid'])
 
-        pos_x = np.asarray(positions[0])
-        pos_y = np.asarray(positions[1])
-        log.info("type self.sources: {} type positions: {} type posx: {}".format(type(self.sources), type(positions), type(pos_x)))
+        pos_xy = np.vstack(positions).T
 
         # define list of background annulii
-        bg_apers = CircularAnnulus((pos_x, pos_y),
+        bg_apers = CircularAnnulus(pos_xy,
                                    r_in=self.param_dict['skyannulus_arcsec'],
                                    r_out=self.param_dict['skyannulus_arcsec'] +
                                          self.param_dict['dskyannulus_arcsec'])
 
         # Create the list of photometric apertures to measure
-        phot_apers = [CircularAperture((pos_x, pos_y), r=r) for r in self.aper_radius_list_pixels]
+        phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
 
         # Perform aperture photometry
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image,
@@ -654,7 +652,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
        Parameters
        ----------
        image : CatalogImage object
-           The white light or total detection drizzled image 
+           The white light or total detection drizzled image
 
        param_dict : dictionary
            Configuration values for catalog generation based upon in put JSON files
@@ -681,7 +679,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Initialize attributes to be computed later
         self.segm_img = None  # Segmentation image
 
-        # FIX 
+        # FIX
         self.kernel = self.image.kernel
 
     def identify_sources(self):
@@ -735,7 +733,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # npixels = number of connected pixels in source
                 # npixels and filter_kernel should match those used by detect_sources()
                 segm_deblended_img = deblend_sources(imgarr_bkgsub, self.segm_img, npixels=self._size_source_box,
-                                                     filter_kernel=self.image.kernel, nlevels=self._nlevels, 
+                                                     filter_kernel=self.image.kernel, nlevels=self._nlevels,
                                                      contrast=self._contrast)
 
                 # The deblending was successful, so just copy the deblended sources back to the sources attribute.
@@ -776,7 +774,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # outname = self.sourcelist_filename[0:indx] + ".fits"
             # fits.PrimaryHDU(data = self.segm_img.data).writeto(outname)
 
-            # Convert the SourceCatalog to a QTable and write out a regions file which can be 
+            # Convert the SourceCatalog to a QTable and write out a regions file which can be
             # used as an overlay for image in ds9
             table = self.source_cat.to_table()
 
@@ -905,8 +903,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         phot_apers = [CircularAperture((pos_x, pos_y), r=r) for r in self.aper_radius_list_pixels]
 
         # Perform aperture photometry
-        photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, 
-                                                                bg_apers, 
+        photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers,
+                                                                bg_apers,
                                                                 data=bkg_subtracted_image,
                                                                 platescale=self.image.imgwcs.pscale,
                                                                 error_array=self.bkg.background_rms,
@@ -991,7 +989,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             num_sources = len(self.filter_measurements_table)
             self.filter_measurements_table = self._annotate_table(self.filter_measurements_table, num_sources, product=self.image.ghd_product)
 
-            # Need to cast the column containing the sky coordinates as self.filter_measurements_table was 
+            # Need to cast the column containing the sky coordinates as self.filter_measurements_table was
             # constructed row by row
             radec_data = SkyCoord(self.filter_measurements_table["sky_centroid_icrs"])
             ra_icrs = radec_data.ra.degree

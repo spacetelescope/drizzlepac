@@ -516,7 +516,7 @@ def interpret_wcsname_type(wcsname):
                  'IMG': 'aligned image-by-image to {}'}
     post_fit = 'a posteriori solution '
     default_fit = 'a priori solution based on {}'
-    base_terms = {'IDC': 'distortion-corrected ',
+    base_terms = {'IDC': 'undistorted ',
                   'OPU': 'pipeline default '}
     no_fit = 'not aligned'
 
