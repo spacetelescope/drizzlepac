@@ -28,6 +28,9 @@ of the list).
 
 - Implementation of grid definition interface to support returning SkyCell
   objects that overlap a mosaic footprint. [#425]
+  
+- Complete rewrite of ``runastrodriz`` for pipeline processing to include
+  multi-level verification of alignment.  [#440]  
 
 
 3.0.2 (15-Jul-2019)
