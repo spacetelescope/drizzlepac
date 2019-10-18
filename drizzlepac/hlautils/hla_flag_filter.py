@@ -33,55 +33,36 @@ Dependencies
 ------------
 * ci_table.py
 """
-import os
-import string
-import sys
-import pdb
 import glob
 import json
-import time
-import shutil
 import math
 import numpy
-import datetime
-import itertools
+import os
 import scipy
+import sys
+import time
 
 import astropy.io.fits as pyfits
-from astropy.table import Table
+
 new_table = pyfits.BinTableHDU.from_columns
-if not hasattr(pyfits,'__version__'):
+if not hasattr(pyfits, '__version__'):
     pyfits.__version__ = '1.3'
 
 getheader = pyfits.getheader
 getdata = pyfits.getdata
 
-# import pywcs
-from stwcs import wcsutil
-from stwcs.wcsutil import HSTWCS
-import scipy.ndimage
-from scipy import spatial
 
-from drizzlepac.hlautils import cell_utils as cutils
+import scipy.ndimage
+
 from drizzlepac.hlautils import ci_table
 from drizzlepac import util
 from stsci.tools import logutil
-
+from stwcs import wcsutil
 
 
 __taskname__ = 'hla_flag_filter'
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
-
-# config = configparser.ConfigParser()
-# Configs=util.toolbox.Configs()
-# Rename=util.toolbox.Rename()
-# Headers=util.toolbox.Headers()
-# Util = util.toolbox.Util()
-
-x_limit = 4096.
-y_limit = 2051.
-
 
 @util.with_logging
 def run_source_list_flagging(drizzled_image, flt_list,param_dict, exptime, plate_scale, median_sky,
@@ -358,9 +339,6 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     phot_table = catalog_name
     phot_table_root = phot_table.split('.')[0]
 
-    #        for flt_image in flt_images:
-    #            os.system('cp '+flt_image+' .')
-
     # -------------------------------------------------------------------
     # STEP THROUGH EACH APPLICABLE FLT IMAGE, DETERMINE THE COORDINATES
     # FOR ALL SATURATION FLAGGED PIXELS, AND TRANSFORM THESE COORDINATES
@@ -502,14 +480,9 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
             drz_coord_out.write(str(coord[0]) + '     ' + str(coord[1]) + '\n')
         drz_coord_out.close()
 
-    # --------------------------------------------------------
-    # READ IN FULL DRIZZLED IMAGE-BASED CATALOG AND SAVE
-    # X AND Y COORDINATE VALUES TO LISTS FOR LATER COMPARISON
-    # --------------------------------------------------------
-    # full_drz_cat = dict_newTAB_matched2drz[drizzled_image]
-    # inputfile = open(full_drz_cat, 'r')
-    # all_detections = inputfile.readlines()
-    # inputfile.close()
+    # ----------------------------------------------------
+    # GET SOURCELIST X AND Y VALUES
+    # ----------------------------------------------------
     all_detections = catalog_data
 
     nrows = len(all_detections)
@@ -683,11 +656,10 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
         y_val = float(row[1])
 
         if proc_type == 'segment':
-            # mag = row_split[6]
             flux = row[10] #TODO: get column name
             sky = row[13] #TODO: get column name
+
         elif proc_type == 'aperture':
-            # mag = row_split[7]
             flux = row[11]
             sky = row[9]
 
@@ -1223,8 +1195,8 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
     image_split = drizzled_image.split('/')[-1]
     channel = drizzled_image.split("_")[4].upper()
 
-    #if channel == 'IR':
-    #    continue
+    # if channel == 'IR':  # TODO: This was commented out in the HLA classic era, prior to adaption to the HAP pipeline. Ask Rick about it.
+    #    return catalog_data
 
     # ---------
     # METHOD 1:
@@ -1337,12 +1309,6 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name
     artifact_flag = nexp_array[gx,gy].min(axis=0) < artifact_filt
 
     log.info('FLAGGING {} OF {} SOURCES'.format(artifact_flag.sum(),nrows))
-
-    # -------------------------------------------------------------------
-    # WRITE NEXP FLAGS TO OUTPUT PHOT TABLE BASED ON nexp_phot_data_list
-    # -------------------------------------------------------------------
-    #nexp_outfile_good = open('temp_outfile_NEXP_GOOD.txt','w')
-    #nexp_outfile_bad = open('temp_outfile_NEXP_BAD.txt','w')
 
     # Add flag bit to appropriate sources
     for i, table_row in enumerate(catalog_data):

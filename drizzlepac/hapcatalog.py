@@ -66,7 +66,7 @@ def confirm_execution():
     """
     import random
     import string
-    confirm_string=''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+    confirm_string=''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
     foo = input("Confirm execution by entering the following randomized text string: {} \n".format(confirm_string))
     if foo != confirm_string: sys.exit("Execution aborted.")
     if foo == confirm_string: print("Execution confirmed.")
