@@ -121,7 +121,7 @@ envvar_old_apriori_name = "ASTROMETRY_STEP_CONTROL"
 
 
 # Primary user interface
-def process(inFile, force=False, newpath=None, num_cores=None, in_memory=True,
+def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             headerlets=True, align_to_gaia=True, force_alignment=False, debug=False):
     """ Run astrodrizzle on input file/ASN table
         using default values for astrodrizzle parameters.
@@ -453,7 +453,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, in_memory=True,
         _updateTrlFile(_trlfile, _trlmsg)
 
         # Generate final pipeline products based on 'best' alignment
-        pipeline_pars['in_memory'] = in_memory
+        pipeline_pars['in_memory'] = inmemory
         pipeline_pars['clean'] = True
 
         drz_products, final_dicts = run_driz(_inlist, _trlfile, verify_alignment=False,
@@ -1006,7 +1006,7 @@ def main():
     else:
         try:
             process(args[0], force=force, newpath=newdir, num_cores=num_cores,
-                    in_memory=inmemory, headerlets=headerlets,
+                    inmemory=inmemory, headerlets=headerlets,
                     align_to_gaia=align_to_gaia, force_alignment=force_alignment, debug=debug)
 
         except Exception as errorobj:
