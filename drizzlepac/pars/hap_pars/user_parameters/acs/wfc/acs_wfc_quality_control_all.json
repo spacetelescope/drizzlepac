@@ -1,11 +1,15 @@
 {
-    "CI FILTER": {
-      "ci_daolower_limit": 0.9,
-      "ci_daoupper_limit": 1.23,
-      "ci_selower_limit": 0.9,
-      "ci_seupper_limit": 1.23,
-      "dao_bthresh": 1.5,
-      "sourcex_bthresh": 5.0
+    "ci filter": {
+      "aperture": {
+        "bthresh": 1.5,
+        "ci_lower_limit": 0.9,
+        "ci_upper_limit": 1.23
+      },
+      "segment": {
+        "bthresh": 5.0,
+        "ci_lower_limit": 0.9,
+        "ci_upper_limit": 1.23
+      }
     },
     "SWARM FILTER": {
       "upper_epp_limit": 70000.0,

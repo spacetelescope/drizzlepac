@@ -1,9 +1,15 @@
 {
     "ci filter": {
-      "ci_daolower_limit": 0.15,
-      "ci_daoupper_limit": 0.45,
-      "ci_selower_limit": 0.15,
-      "ci_seupper_limit": 0.45
+      "aperture": {
+        "bthresh": 5.0,
+        "ci_lower_limit": 0.15,
+        "ci_upper_limit": 0.45
+      },
+      "segment": {
+        "bthresh": 5.0,
+        "ci_lower_limit": 0.15,
+        "ci_upper_limit": 0.45
+      }
     },
     "swarm filter": {
       "upper_epp_limit": 70000.0,
