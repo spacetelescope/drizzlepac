@@ -38,6 +38,7 @@ import string
 import sys
 import pdb
 import glob
+import json
 import time
 import shutil
 import math
@@ -84,7 +85,7 @@ y_limit = 2051.
 
 @util.with_logging
 def run_source_list_flagging(drizzled_image, flt_list,param_dict, exptime, plate_scale, median_sky,
-                            catalog_name, catalog_data, proc_type, drz_root_dir, ci_lookup_file_path, debug=True):
+                            catalog_name, catalog_data, proc_type, drz_root_dir, ci_lookup_file_path, output_custom_pars_file, debug=True):
     """Simple calling subroutine that executes the other flagging subroutines.
     
     Parameters
@@ -123,6 +124,9 @@ def run_source_list_flagging(drizzled_image, flt_list,param_dict, exptime, plate
     ci_lookup_file_path : string
         final path elements of the concentration index lookup file
 
+    output_custom_pars_file : string
+        name of the output config file
+
     debug : bool
         write intermediate files?
     
@@ -137,8 +141,8 @@ def run_source_list_flagging(drizzled_image, flt_list,param_dict, exptime, plate
     log.info("************************** * * * HLA_FLAG_FILTER * * * **************************")
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
-    log.info("ci_filter({} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict, ci_lookup_file_path, debug))
-    catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path, debug)
+    log.info("ci_filter({} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type, param_dict, ci_lookup_file_path, output_custom_pars_file, debug))
+    catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path, output_custom_pars_file, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag saturated sources
@@ -164,7 +168,7 @@ def run_source_list_flagging(drizzled_image, flt_list,param_dict, exptime, plate
 
 # ======================================================================================================================
 
-def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path, debug):
+def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path, output_custom_pars_file, debug):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
     It also flags sources below the detection limit in mag_aper2 (flag=8).
@@ -188,6 +192,9 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
 
     ci_lookup_file_path : string
         final path elements of the concentration index lookup file
+
+    output_custom_pars_file : string
+        name of the output config file
 
     debug : bool
         write intermediate files?
@@ -214,20 +221,36 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         raise ValueError("Unknown proc_type '%s', must be 'segment' or 'aperture'" % (proc_type,))
 
     catalog_name_root = catalog_name.split('.')[0]
-    if proc_type == 'segment':
-        ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_selower_limit'])
-        ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_seupper_limit'])
-        snr = float(param_dict['quality control']['ci filter']['sourcex_bthresh']) # TODO: Figure out where the best place for bthresh to be
-
-    if proc_type == 'aperture':
-        ci_lower_limit = float(param_dict['quality control']['ci filter']['ci_daolower_limit'])
-        ci_upper_limit = float(param_dict['quality control']['ci filter']['ci_daoupper_limit'])
-        snr = float(param_dict['quality control']['ci filter']['dao_bthresh']) # TODO: Figure out where the best place for bthresh to be
+    ci_lower_limit = float(param_dict['quality control']['ci filter'][proc_type]['ci_lower_limit'])
+    ci_upper_limit = float(param_dict['quality control']['ci filter'][proc_type]['ci_upper_limit'])
+    snr = float(param_dict['quality control']['ci filter'][proc_type]['bthresh'])
 
     # replace CI limits with values from table if possible
     cidict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path, ci_lower=ci_lower_limit, ci_upper=ci_upper_limit) #TODO: add values for ACS/SBC
-    ci_lower_limit = cidict['ci_lower_limit'] #TODO: if values from lookup table are used, they will not be recorded in an output parameter file. FIXME!
+    ci_lower_limit = cidict['ci_lower_limit']
     ci_upper_limit = cidict['ci_upper_limit']
+
+    #if an output custom param file was created and the CI values were updated by ci_table.get_ci_from_file, update output custom param file with new CI values
+    if output_custom_pars_file:
+        if ci_upper_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_lower_limit']) or ci_upper_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_upper_limit']):
+            log.info("CI limits updated.")
+            with open(output_custom_pars_file) as f:
+                json_data = json.load(f)
+            if ci_lookup_file_path.startswith("default"):
+                param_set = "default_values"
+            else:
+                param_set = "parameters"
+
+            if ci_lower_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_lower_limit']):
+                json_data[drizzled_image[:-9]][param_set]["quality control"]["ci filter"]["aperture"]["ci_lower_limit"]  = ci_lower_limit
+
+            if ci_upper_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_upper_limit']):
+                json_data[drizzled_image[:-9]][param_set]["quality control"]["ci filter"][proc_type]["ci_upper_limit"]  = ci_upper_limit
+
+
+            with open(output_custom_pars_file, 'w') as f:
+                json.dump(json_data, f, indent=4)
+            log.info("Updated custom pars file {}".format(output_custom_pars_file))
 
     log.info(' ')
     log.info('ci limits for {}'.format(drizzled_image))
