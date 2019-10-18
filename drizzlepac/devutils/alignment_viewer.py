@@ -105,6 +105,7 @@ def create_product_page(prodname, zoom_size=128, wcsname=""):
         det = phdr['detector']
         texptime = phdr['texptime']
         inexp = phdr['d001data'].split('[')[0]
+        wcstype = prod[1].header['wcstype']
         wcs = wcsutil.HSTWCS(prod, ext=1)     
     center = (data.shape[0]//2, data.shape[1]//2)
     prod_path = os.path.split(prodname)[0]
@@ -168,6 +169,7 @@ def create_product_page(prodname, zoom_size=128, wcsname=""):
     fig_summary.text(0.01, 0.85, "TARGET: {}".format(targname), fontsize=fsize)
     fig_summary.text(0.01, 0.8, "Instrument: {}/{}".format(inst, det), fontsize=fsize)
     fig_summary.text(0.01, 0.7, "Total Exptime: {}".format(texptime), fontsize=fsize)
+    fig_summary.text(0.01, 0.65, "WCSTYPE: {}".format(wcstype), fontsize=fsize)
     fig_summary.text(0.01, 0.5, "# of GAIA sources: {}".format(len(rx)), fontsize=fsize)
     
     if 'FIT' in wcsname:
