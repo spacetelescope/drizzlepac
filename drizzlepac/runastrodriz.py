@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
-""" runaligndriz.py - Module to control operation of astrodrizzle to
+""" runastrodriz.py - Module to control operation of astrodrizzle to
         remove distortion and combine HST images in the pipeline.
 
 :License: :doc:`LICENSE`
 
-USAGE: runaligndriz.py [-fhdaibng] inputFilename [newpath]
+USAGE: runastrodriz.py [-fhdaibng] inputFilename [newpath]
 
 Alternative USAGE:
     python
-    from acstools import runaligndriz
-    runaligndriz.process(inputFilename,force=False,newpath=None)
+    from acstools import runastrodriz
+    runastrodriz.process(inputFilename,force=False,newpath=None)
 
 If a value has been provided for the newpath parameter, all processing will be
 performed in that directory/ramdisk.  The steps involved are:
@@ -53,6 +53,8 @@ W.J. Hack  24 Aug 2012: Provided interface for in-memory option
 
 W.J. Hack  26 Nov 2012: Option to write out headerlets added and debugged
 
+W.J. Hack  18 Oct 2019: Impelemented multi-stage alignment with verification
+
 """
 # Import standard Python modules
 import glob
@@ -77,12 +79,13 @@ from drizzlepac import resetbits
 from drizzlepac.hlautils import astrometric_utils as amutils
 from drizzlepac import util
 from drizzlepac import mdzhandler
+from drizzlepac import updatehdr
 
 __taskname__ = "runaligndriz"
 
 # Local variables
 __version__ = "2.0.0"
-__version_date__ = "(09-Oct-2019)"
+__version_date__ = "(18-Oct-2019)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
@@ -124,6 +127,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, in_memory=True,
         using default values for astrodrizzle parameters.
     """
     trlmsg = "{}: Calibration pipeline processing of {} started.\n".format(_getTime(), inFile)
+    trlmsg += __trlmarker__
     pipeline_pars = PIPELINE_PARS.copy()
 
     # interpret envvar variable, if specified
@@ -499,9 +503,16 @@ def process(inFile, force=False, newpath=None, num_cores=None, in_memory=True,
             if not os.path.exists(hname):
                 hlet_msg += "Created Headerlet file %s \n" % hname
                 try:
-                    headerlet.write_headerlet(fname, 'OPUS', output='flt', wcskey='PRIMARY',
-                        author="OPUS", descrip="Default WCS from Pipeline Calibration",
-                        attach=False, clobber=True, logging=False)
+                    wcsname = fits.getval(fname, 'wcsname', ext=1)
+                    wcstype = updatehdr.interpret_wcsname_type(wcsname)
+                    hdrname = "{}_{}".format(fname.replace('.fits',''), wcsname)
+                    headerlet.write_headerlet(fname, hdrname, output='flt',
+                                              wcskey='PRIMARY',
+                                              author="OPUS", 
+                                              descrip=wcstype,
+                                              attach=False, 
+                                              clobber=True, 
+                                              logging=False)
                 except ValueError:
                     hlet_msg += _timestamp("SKIPPED: Headerlet not created for %s \n" % fname)
                     # update trailer file to log creation of headerlet files

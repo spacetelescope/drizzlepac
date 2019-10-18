@@ -1293,6 +1293,7 @@ def update_image_wcs_info(tweakwcs_output,headerlet_filenames=None):
                 else:
                     wcs_name = '{}-FIT_{}_{}'.format(wname, fit_method, item.meta['fit_info']['catalog'])
             hdrname = "{}_{}".format(image_name.replace(".fits", ""), wcs_name)
+            wcstype = updatehdr.interpret_wcsname_type(wcs_name)
 
             # establish correct mapping to the science extensions
             sci_ext_dict = {}
@@ -1305,6 +1306,7 @@ def update_image_wcs_info(tweakwcs_output,headerlet_filenames=None):
                              wcsname=wcs_name,
                              reusename=True, verbose=True)
         hdulist[ext].header['hdrname'] = hdrname
+        log.info("Updated {} with WCSTYPE of {}\n".format(ext, wcstype))
 
         if chipctr == num_sci_ext:
             # Close updated flc.fits or flt.fits file
@@ -1312,9 +1314,11 @@ def update_image_wcs_info(tweakwcs_output,headerlet_filenames=None):
             hdulist.close()
 
             # Create headerlet
-            out_headerlet = headerlet.create_headerlet(image_name, hdrname=hdrname,
-                                                        wcsname=wcs_name,
-                                                        logging=False)
+            out_headerlet = headerlet.create_headerlet(image_name,
+                                                       hdrname=hdrname,
+                                                       wcsname=wcs_name,
+                                                       descrip=wcstype,
+                                                       logging=False)
 
             # Update headerlet
             out_headerlet = update_headerlet_phdu(item, out_headerlet)
