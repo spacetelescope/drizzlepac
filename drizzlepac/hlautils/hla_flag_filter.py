@@ -644,25 +644,6 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, plate_sca
     data_type = drz_img_split[4]
     drz_filter = drz_img_split[5]
 
-    # ============================= SKY COMPUTATION ==============================
-    # ----------------------------------------------------------------------------
-    # In the pipeline, AstroDrizzle sky computation is based on the statistical
-    # distribution of pixel values in an input image. It is performed by
-    # iterative sigma-clipping, starting with the full range of pixel intensity
-    # values, to calculate the standard deviation. By default, pixel values
-    # deviating from the median value (specified by parameter skystat) by over
-    # four sigma are rejected, and this operation is repeated for a total of five
-    # iterations. The median value of the final distribution is used as the sky
-    # value.
-    # ----------------------------------------------------------------------------
-    # ============================= SKY COMPUTATION ==============================
-
-    # median_sky = get_median_sky(drizzled_image) #TODO: maybe get value from filter product object
-   # single_rms = rms_dict[drizzled_image]
-   # rms_array = pyfits.getdata(single_rms,0)
-   # rms_subarray = rms_array[rms_array > 0.0]
-   # median_sky = Util.binmode(rms_subarray[rms_subarray < 5000.])[0]
-
     log.info(' ')
     log.info('MEDIAN SKY VALUE = {}'.format(median_sky))
     log.info(' ')
