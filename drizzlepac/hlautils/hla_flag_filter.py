@@ -618,6 +618,22 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     catalog_data : astropy.Table object
         drizzled filter product catalog data with updated flag values
     """
+    # column titles for segment and aperture catalogs
+    if proc_type == 'segment':
+        x_coltitle = "X_IMAGE"
+        y_coltitle = "Y_IMAGE"
+        flux_coltitle = 'FLUX_APER2'
+        background_coltitle = "BACKGROUND"
+        flag_coltitle = "FLAGS"
+    elif proc_type == 'aperture':
+        x_coltitle = "X-Center"
+        y_coltitle = "Y-Center"
+        flux_coltitle = "Flux({})".format(param_dict["catalog generation"]["aperture_2"])
+        background_coltitle = "MSky({})".format(param_dict["catalog generation"]["aperture_2"])
+        flag_coltitle = "Flags"
+    else:
+        raise ValueError("Unknown proc_type '{}', must be 'segment' or 'aperture'".format(proc_type))
+
 
     drz_img_path_split = drizzled_image.split('/')
     drz_img_split = drz_img_path_split[-1].split('_')
@@ -655,16 +671,10 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     complete_src_list = numpy.empty((nrows, 6), dtype=numpy.float)
 
     for row_num, row in enumerate(catalog_data[0:]):
-        x_val = float(row[0])
-        y_val = float(row[1])
-
-        if proc_type == 'segment':
-            flux = row[10]  # TODO: get column name
-            sky = row[13]  # TODO: get column name
-
-        elif proc_type == 'aperture':
-            flux = row[11]
-            sky = row[9]
+        x_val = float(row[x_coltitle])
+        y_val = float(row[y_coltitle])
+        flux = row[flux_coltitle]
+        sky = row[background_coltitle]
 
         if not flux:
             flux = 0.0
@@ -1147,7 +1157,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     # Update catalog_data flag values
     for i, table_row in enumerate(catalog_data[0:]):
         if combined_flag[i]:
-            table_row[-1] |= 32
+            table_row[flag_coltitle] |= 32
 
     if debug:
         # Write out intermediate catalog with updated flags
