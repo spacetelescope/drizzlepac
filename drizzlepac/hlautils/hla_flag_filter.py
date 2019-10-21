@@ -156,19 +156,19 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag swarm sources
-    log.info("hla_swarm_flags({} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>",
+    log.info("hla_swarm_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>",
                                                                   exptime, plate_scale, median_sky, proc_type,
-                                                                  param_dict, debug))
+                                                                  param_dict, column_titles, debug))
     catalog_data = hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky,
-                                   proc_type, param_dict, debug)
+                                   proc_type, param_dict, column_titles, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
-    log.info("hla_nexp_flags({} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
+    log.info("hla_nexp_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
                                                               catalog_name, "<Catalog Data>", drz_root_dir, proc_type,
-                                                              debug))
+                                                              column_titles, debug))
     catalog_data = hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data,
-                                  drz_root_dir, proc_type, debug)
+                                  drz_root_dir, proc_type, column_titles, debug)
 
     return catalog_data
 
@@ -203,6 +203,9 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
 
     output_custom_pars_file : string
         name of the output config file
+
+    column_titles : dictionary
+        Relevant column titles
 
     debug : bool
         write intermediate files?
@@ -347,6 +350,9 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
     plate_scale : float
         plate scale, in arcseconds/pixel
 
+    column_titles : dictionary
+        Relevant column titles
+
     debug : bool
         write intermediate files?
 
@@ -355,19 +361,6 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
     phot_table_rows : astropy.Table object
         drizzled filter product catalog data with updated flag values
     """
-    # column titles for segment and aperture catalogs
-    # if proc_type == 'segment':
-    #     x_coltitle = "X_IMAGE"
-    #     y_coltitle = "Y_IMAGE"
-    #     flag_coltitle = "FLAGS"
-    # elif proc_type == 'aperture':
-    #     x_coltitle = "X-Center"
-    #     y_coltitle = "Y-Center"
-    #     flag_coltitle = "Flags"
-    # else:
-    #     raise ValueError("Unknown proc_type '{}', must be 'segment' or 'aperture'".format(proc_type))
-
-
     image_split = drizzled_image.split('/')[-1]
     channel = drizzled_image.split("_")[4].upper()
 
@@ -519,8 +512,8 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
     nrows = len(all_detections)
     full_coord_list = numpy.empty((nrows, 2), dtype=numpy.float)
     for row_count, detection in enumerate(all_detections):
-        full_coord_list[row_count, 0] = float(detection[x_coltitle])
-        full_coord_list[row_count, 1] = float(detection[y_coltitle])
+        full_coord_list[row_count, 0] = float(detection[column_titles["x_coltitle"]])
+        full_coord_list[row_count, 1] = float(detection[column_titles["y_coltitle"]])
 
     # ----------------------------------------------------
     # CREATE SUB-GROUPS OF SATURATION-FLAGGED COORDINATES
@@ -592,9 +585,9 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
         phot_table_rows = catalog_data
         for i, table_row in enumerate(phot_table_rows):
             if saturation_flag[i]:
-                table_row[flag_coltitle] = int(table_row[flag_coltitle]) | 4
+                table_row[column_titles["flag_coltitle"]] = int(table_row[column_titles["flag_coltitle"]]) | 4
 
-        phot_table_rows = flag4and8_hunter_killer(phot_table_rows, proc_type)
+        phot_table_rows = flag4and8_hunter_killer(phot_table_rows, column_titles)
 
         if debug:
             phot_table_temp = phot_table_root + '_SATFILT.txt'
@@ -605,7 +598,7 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
 
 
 def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky, proc_type, param_dict,
-                    debug):
+                    column_titles, debug):
 
     """Identifies and flags swarm sources.
 
@@ -634,6 +627,9 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
+
+    column_titles : dictionary
+        Relevant column titles
 
     debug : bool
         write intermediate files?
@@ -1195,7 +1191,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
 
 def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data, drz_root_dir,
-                   proc_type, debug):
+                   proc_type, column_titles, debug):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
     drizzled_image : string
@@ -1221,6 +1217,9 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
 
     proc_type : string
         Catalog type. Either 'aperture' or 'segment'.
+
+    column_titles : dictionary
+        Relevant column titles
 
     debug : bool
         write intermediate files?
@@ -1723,7 +1722,7 @@ def arrayfy_ctx(ctx, maxindex):
 # ======================================================================================================================
 
 
-def flag4and8_hunter_killer(catalog_data, proc_type):
+def flag4and8_hunter_killer(catalog_data, column_titles):
     """This function searches through photometry catalogs for sources whose flags contain
     both bits 4 (multi-pixel saturation), and 8 (faint magnitude limit).
     If found, the subroutine removes the "8" bit value from the set of flags for that source.
@@ -1733,8 +1732,8 @@ def flag4and8_hunter_killer(catalog_data, proc_type):
     catalog_data : astropy Table object
         catalog data to process
 
-    proc_type : string
-        Catalog type. Either 'aperture' or 'segment'.
+    column_titles : dictionary
+        Relevant column titles
 
     Returns
     -------
@@ -1743,16 +1742,10 @@ def flag4and8_hunter_killer(catalog_data, proc_type):
     """
     conf_ctr = 0
     log.info("Searching for flag 4 + flag 8 conflicts....")
-    if proc_type == 'segment':
-        flag_coltitle = "FLAGS"
-    elif proc_type == 'aperture':
-        flag_coltitle = "Flags"
-    else:
-        raise ValueError("Unknown proc_type '{}', must be 'segment' or 'aperture'".format(proc_type))
     for catalog_line in catalog_data:
-        if ((catalog_line[flag_coltitle] & 4 > 0) and (catalog_line[flag_coltitle] & 8 > 0)):
+        if ((catalog_line[column_titles["flag_coltitle"]] & 4 > 0) and (catalog_line[column_titles["flag_coltitle"]] & 8 > 0)):
             conf_ctr += 1
-            catalog_line[flag_coltitle] = int(catalog_line[flag_coltitle]) - 8
+            catalog_line[column_titles["flag_coltitle"]] = int(catalog_line[column_titles["flag_coltitle"]]) - 8
     if conf_ctr == 0:
         log.info("No conflicts found.")
     if conf_ctr == 1:
