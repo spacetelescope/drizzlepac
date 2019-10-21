@@ -566,7 +566,6 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
         catalog_name = filter_product_catalogs.catalogs[cat_type].sourcelist_filename
         catalog_data = filter_product_catalogs.catalogs[cat_type].source_cat
         drz_root_dir = os.getcwd()
-
         filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky, catalog_name, catalog_data, cat_type, drz_root_dir, ci_lookup_file_path, output_custom_pars_file, debug)
 
     return filter_product_catalogs

@@ -188,13 +188,11 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     """
     # column indices for SE and DAO catalogs
     if proc_type == 'segment':
-        imerr1_coltitle = "MAGERR_APER1"
-        imerr2_coltitle = "MAGERR_APER2"
-        flagscoltitle = "FLAGS"
+        imerr1 = 7
+        imerr2 = 8
     elif proc_type == 'aperture':
-        imerr1_coltitle = "MagErr({})".format(param_dict['catalog_generation']["aperture_1"])
-        imerr2_coltitle = "MagErr({})".format(param_dict['catalog_generation']["aperture_2"])
-        flagscoltitle = "Flags"
+        imerr1 = 6
+        imerr2 = 8
     else:
         raise ValueError("Unknown proc_type '%s', must be 'segment' or 'aperture'" % (proc_type,))
 
@@ -244,19 +242,19 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     failed_index_list = []
     for i, table_row in enumerate(catalog_data):
         try:
-            table_row[flagscoltitle] = int(table_row[flagscoltitle])
+            table_row[-1] = int(table_row[-1])
         except ValueError:
-            table_row[flagscoltitle] = 0
+            table_row[-1] = 0
 
-        ci_value = table_row["CI"]
+        ci_value = table_row[-2]
         if ci_value:
             ci_value = float(ci_value)
-        merr1 = table_row[imerr1_coltitle]
+        merr1 = table_row[imerr1]
         if not merr1:
             merr1 = numpy.nan
         else:
             merr1 = float(merr1)
-        merr2 = table_row[imerr2_coltitle]
+        merr2 = table_row[imerr2]
         if not merr2:
             merr2 = numpy.nan
         else:
@@ -265,13 +263,13 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         ci_err = numpy.sqrt(merr1 ** 2 + merr2 ** 2)
 
         if not good_snr:
-            table_row[flagscoltitle] |= 8
+            table_row[-1] |= 8
 
         if not ci_value or (not numpy.isfinite(ci_err)) or ci_value < ci_lower_limit - ci_err:
-            table_row[flagscoltitle] |= 16
+            table_row[-1] |= 16
 
         if not ci_value or ci_value > ci_upper_limit:
-            table_row[flagscoltitle] |= 1
+            table_row[-1] |= 1
 
         if not ci_value and debug:
             failed_index_list.append(i)

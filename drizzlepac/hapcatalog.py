@@ -39,7 +39,6 @@ def main():
     obs_info_dict, total_list = poller_utils.interpret_obset_input(args.input_file)
     out_pars_file = 'pars.json'
     for total_item in total_list:
-
         total_item.configobj_pars = config_utils.HapConfig(total_item, output_custom_pars_file=out_pars_file,use_defaults=True)
         for filter_item in total_item.fdp_list:
             filter_item.configobj_pars = config_utils.HapConfig(filter_item, output_custom_pars_file=out_pars_file,use_defaults=True)
@@ -87,6 +86,3 @@ if __name__ == '__main__':
         os.system(cmd)
     main()
     print("\a\a\a")
-
-
-
