@@ -9,6 +9,7 @@ import sys
 from stsci.tools import logutil
 
 from drizzlepac import util
+from drizzlepac.devutils.confirm_execution import confirm_execution
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
 from drizzlepac import hapsequencer
 from drizzlepac.hlautils import config_utils
@@ -54,24 +55,6 @@ def main():
 
     for item in product_list:
         print(item)
-
-#-----------------------------------------------------------------------------------------------------------------
-def confirm_execution():
-    """
-    This subroutine prevents accidental execution by requiring the user to type in a randomly generated 6-character
-    confirmation string. If the string is typed in incorrectly, the script will simply exit to the command line.
-
-    :return: nothing
-    """
-    import random
-    import string
-    confirm_string=''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
-    foo = input("Confirm execution by entering the following randomized text string: {} \n".format(confirm_string))
-    if foo != confirm_string: sys.exit("Execution aborted.")
-    if foo == confirm_string: print("Execution confirmed.")
-
-#-----------------------------------------------------------------------------------------------------------------
-
 # ======================================================================================================================
 
 
