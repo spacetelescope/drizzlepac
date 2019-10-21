@@ -1066,10 +1066,10 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
     if proximity_choice:
         if len(final_flag_src_central_pixel_list) > 0:
-            ctr_list_radius_list = param_dict["quality control"]["swarm filter"]["ctr_list_radius_list"]  # TODO: optimize ctr_list_radius_list for ACS wfc, hrc, sbc in quality control config files
+            ctr_list_radius_list = param_dict["quality control"]["swarm filter"]["ctrList_radiusList"]  # TODO: optimize ctr_list_radius_list for ACS wfc, hrc, sbc in quality control config files
             ctr_list_radius_list = list(map(int, ctr_list_radius_list))
 
-            ctr_list_threshold_list = param_dict["quality control"]["swarm filter"]["ctr_list_threshold_list"]  # TODO: optimize ctr_list_threshold_list for ACS wfc, hrc, sbc in quality control config files
+            ctr_list_threshold_list = param_dict["quality control"]["swarm filter"]["ctrList_thresholdList"]  # TODO: optimize ctr_list_threshold_list for ACS wfc, hrc, sbc in quality control config files
             ctr_list_threshold_list = list(map(int, ctr_list_threshold_list))
 
             for ctr_list_cnt, (threshold, radius) in enumerate(zip(ctr_list_threshold_list, ctr_list_radius_list)):
