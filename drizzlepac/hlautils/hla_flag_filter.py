@@ -133,6 +133,8 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
             "flag_coltitle" : "FLAGS"
         }
     }
+    if proc_type not in all_column_titles.keys():
+        raise ValueError("Unknown proc_type '{}', must be 'aperture' or 'segment'".format(proc_type))
     column_titles = all_column_titles[proc_type]
     # -----------------------
     # FLAG FILTER PROCESSING
@@ -215,18 +217,6 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     catalog_data : astropy.Table object
         drizzled filter product catalog data with updated flag values
     """
-    # column titles for segment and aperture catalogs
-    # if proc_type == 'segment':
-    #     magerr1_coltitle = "MAGERR_APER1"
-    #     magerr2_coltitle = "MAGERR_APER2"
-    #     flag_coltitle = "FLAGS"
-    # elif proc_type == 'aperture':
-    #     magerr1_coltitle = "MagErr({})".format(param_dict["catalog generation"]["aperture_1"])
-    #     magerr2_coltitle = "MagErr({})".format(param_dict["catalog generation"]["aperture_2"])
-    #     flag_coltitle = "Flags"
-    # else:
-    #     raise ValueError("Unknown proc_type '{}', must be 'segment' or 'aperture'".format(proc_type))
-
     catalog_name_root = catalog_name.split('.')[0]
     ci_lower_limit = float(param_dict['quality control']['ci filter'][proc_type]['ci_lower_limit'])
     ci_upper_limit = float(param_dict['quality control']['ci filter'][proc_type]['ci_upper_limit'])
@@ -639,23 +629,6 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     catalog_data : astropy.Table object
         drizzled filter product catalog data with updated flag values
     """
-    # column titles for segment and aperture catalogs
-    if proc_type == 'segment':
-        x_coltitle = "X_IMAGE"
-        y_coltitle = "Y_IMAGE"
-        flux_coltitle = 'FLUX_APER2'
-        background_coltitle = "BACKGROUND"
-        flag_coltitle = "FLAGS"
-    elif proc_type == 'aperture':
-        x_coltitle = "X-Center"
-        y_coltitle = "Y-Center"
-        flux_coltitle = "Flux({})".format(param_dict["catalog generation"]["aperture_2"])
-        background_coltitle = "MSky({})".format(param_dict["catalog generation"]["aperture_2"])
-        flag_coltitle = "Flags"
-    else:
-        raise ValueError("Unknown proc_type '{}', must be 'segment' or 'aperture'".format(proc_type))
-
-
     drz_img_path_split = drizzled_image.split('/')
     drz_img_split = drz_img_path_split[-1].split('_')
     data_type = drz_img_split[4]
@@ -692,10 +665,10 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     complete_src_list = numpy.empty((nrows, 6), dtype=numpy.float)
 
     for row_num, row in enumerate(catalog_data[0:]):
-        x_val = float(row[x_coltitle])
-        y_val = float(row[y_coltitle])
-        flux = row[flux_coltitle]
-        sky = row[background_coltitle]
+        x_val = float(row[column_titles["x_coltitle"]])
+        y_val = float(row[column_titles["y_coltitle"]])
+        flux = row[column_titles["flux_coltitle"]]
+        sky = row[column_titles["background_coltitle"]]
 
         if not flux:
             flux = 0.0
@@ -1178,7 +1151,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     # Update catalog_data flag values
     for i, table_row in enumerate(catalog_data[0:]):
         if combined_flag[i]:
-            table_row[flag_coltitle] |= 32
+            table_row[column_titles["flag_coltitle"]] |= 32
 
     if debug:
         # Write out intermediate catalog with updated flags
