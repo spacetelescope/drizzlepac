@@ -110,25 +110,49 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     catalog_data : astropy.Table object
         drizzled filter product catalog data with updated flag values
     """
+    # Relevant equivalent column titles for aperture and segment catalogs
+    all_column_titles = {
+        "aperture": {
+            "x_coltitle" : "X-Center",
+            "y_coltitle" : "Y-Center",
+            "magerr1_coltitle" : "MagErr({})".format(param_dict["catalog generation"]["aperture_1"]),
+            "magerr2_coltitle" : "MagErr({})".format(param_dict["catalog generation"]["aperture_2"]),
+            "flux_coltitle" : "Flux({})".format(param_dict["catalog generation"]["aperture_2"]),
+            "background_coltitle" : "MSky({})".format(param_dict["catalog generation"]["aperture_2"]),
+            "ci_coltitle" : "CI",
+            "flag_coltitle" : "Flags"
+        },
+        "segment": {
+            "x_coltitle" : "X_IMAGE",
+            "y_coltitle" : "Y_IMAGE",
+            "magerr1_coltitle" : "MAGERR_APER1",
+            "magerr2_coltitle" : "MAGERR_APER2",
+            "flux_coltitle": "FLUX_APER2",
+            "background_coltitle" : "BACKGROUND",
+            "ci_coltitle": "CI",
+            "flag_coltitle" : "FLAGS"
+        }
+    }
+    column_titles = all_column_titles[proc_type]
     # -----------------------
     # FLAG FILTER PROCESSING
     # -----------------------
     log.info("************************** * * * HLA_FLAG_FILTER * * * **************************")
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
-    log.info("ci_filter({} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type,
+    log.info("ci_filter({} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type,
                                                          param_dict, ci_lookup_file_path,
-                                                         output_custom_pars_file, debug))
+                                                         output_custom_pars_file, column_titles, debug))
     catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
-                             output_custom_pars_file, debug)
+                             output_custom_pars_file, column_titles, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag saturated sources
-    log.info("hla_saturation_flags({} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name,
+    log.info("hla_saturation_flags({} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name,
                                                                     "<Catalog Data>", proc_type, param_dict,
-                                                                    plate_scale, debug))
+                                                                    plate_scale, column_titles, debug))
     catalog_data = hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict,
-                                        plate_scale, debug)
+                                        plate_scale, column_titles, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag swarm sources
@@ -140,10 +164,11 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
-    log.info("hla_nexp_flags({} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
-                                                              catalog_name, "<Catalog Data>", drz_root_dir, debug))
+    log.info("hla_nexp_flags({} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
+                                                              catalog_name, "<Catalog Data>", drz_root_dir, proc_type,
+                                                              debug))
     catalog_data = hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data,
-                                  drz_root_dir, debug)
+                                  drz_root_dir, proc_type, debug)
 
     return catalog_data
 
@@ -151,7 +176,7 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
 
 def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
-              output_custom_pars_file, debug):
+              output_custom_pars_file, column_titles, debug):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
     It also flags sources below the detection limit in mag_aper2 (flag=8).
@@ -188,16 +213,16 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         drizzled filter product catalog data with updated flag values
     """
     # column titles for segment and aperture catalogs
-    if proc_type == 'segment':
-        magerr1_coltitle = "MAGERR_APER1"
-        magerr2_coltitle = "MAGERR_APER2"
-        flag_coltitle = "FLAGS"
-    elif proc_type == 'aperture':
-        magerr1_coltitle = "MagErr({})".format(param_dict["catalog generation"]["aperture_1"])
-        magerr2_coltitle = "MagErr({})".format(param_dict["catalog generation"]["aperture_2"])
-        flag_coltitle = "Flags"
-    else:
-        raise ValueError("Unknown proc_type '{}', must be 'segment' or 'aperture'".format(proc_type))
+    # if proc_type == 'segment':
+    #     magerr1_coltitle = "MAGERR_APER1"
+    #     magerr2_coltitle = "MAGERR_APER2"
+    #     flag_coltitle = "FLAGS"
+    # elif proc_type == 'aperture':
+    #     magerr1_coltitle = "MagErr({})".format(param_dict["catalog generation"]["aperture_1"])
+    #     magerr2_coltitle = "MagErr({})".format(param_dict["catalog generation"]["aperture_2"])
+    #     flag_coltitle = "Flags"
+    # else:
+    #     raise ValueError("Unknown proc_type '{}', must be 'segment' or 'aperture'".format(proc_type))
 
     catalog_name_root = catalog_name.split('.')[0]
     ci_lower_limit = float(param_dict['quality control']['ci filter'][proc_type]['ci_lower_limit'])
@@ -245,19 +270,19 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     failed_index_list = []
     for i, table_row in enumerate(catalog_data):
         try:
-            table_row[flag_coltitle] = int(table_row[flag_coltitle])
+            table_row[column_titles["flag_coltitle"]] = int(table_row[column_titles["flag_coltitle"]])
         except ValueError:
-            table_row[flag_coltitle] = 0
+            table_row[column_titles["flag_coltitle"]] = 0
 
-        ci_value = table_row["CI"]
+        ci_value = table_row[column_titles["ci_coltitle"]]
         if ci_value:
             ci_value = float(ci_value)
-        merr1 = table_row[magerr1_coltitle]
+        merr1 = table_row[column_titles["magerr1_coltitle"]]
         if not merr1:
             merr1 = numpy.nan
         else:
             merr1 = float(merr1)
-        merr2 = table_row[magerr2_coltitle]
+        merr2 = table_row[column_titles["magerr2_coltitle"]]
         if not merr2:
             merr2 = numpy.nan
         else:
@@ -266,13 +291,13 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         ci_err = numpy.sqrt(merr1 ** 2 + merr2 ** 2)
 
         if not good_snr:
-            table_row[flag_coltitle] |= 8
+            table_row[column_titles["flag_coltitle"]] |= 8
 
         if not ci_value or (not numpy.isfinite(ci_err)) or ci_value < ci_lower_limit - ci_err:
-            table_row[flag_coltitle] |= 16
+            table_row[column_titles["flag_coltitle"]] |= 16
 
         if not ci_value or ci_value > ci_upper_limit:
-            table_row[flag_coltitle] |= 1
+            table_row[column_titles["flag_coltitle"]] |= 1
 
         if not ci_value and debug:
             failed_index_list.append(i)
@@ -295,7 +320,7 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
 
 
 def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict, plate_scale,
-                         debug):
+                         column_titles, debug):
     """Identifies and flags saturated sources.
 
     Parameters
@@ -331,16 +356,16 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
         drizzled filter product catalog data with updated flag values
     """
     # column titles for segment and aperture catalogs
-    if proc_type == 'segment':
-        x_coltitle = "X_IMAGE"
-        y_coltitle = "Y_IMAGE"
-        flag_coltitle = "FLAGS"
-    elif proc_type == 'aperture':
-        x_coltitle = "X-Center"
-        y_coltitle = "Y-Center"
-        flag_coltitle = "Flags"
-    else:
-        raise ValueError("Unknown proc_type '{}', must be 'segment' or 'aperture'".format(proc_type))
+    # if proc_type == 'segment':
+    #     x_coltitle = "X_IMAGE"
+    #     y_coltitle = "Y_IMAGE"
+    #     flag_coltitle = "FLAGS"
+    # elif proc_type == 'aperture':
+    #     x_coltitle = "X-Center"
+    #     y_coltitle = "Y-Center"
+    #     flag_coltitle = "Flags"
+    # else:
+    #     raise ValueError("Unknown proc_type '{}', must be 'segment' or 'aperture'".format(proc_type))
 
 
     image_split = drizzled_image.split('/')[-1]
@@ -1169,7 +1194,8 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 # ======================================================================================================================
 
 
-def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data, drz_root_dir, debug):
+def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data, drz_root_dir,
+                   proc_type, debug):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
     drizzled_image : string
@@ -1193,6 +1219,9 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
 
     drz_root_dir : dictionary of source lists keyed by drizzled image name.
 
+    proc_type : string
+        Catalog type. Either 'aperture' or 'segment'.
+
     debug : bool
         write intermediate files?
 
@@ -1202,6 +1231,18 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
         drizzled filter product catalog data with updated flag values
     
     """
+    # column titles for segment and aperture catalogs
+    if proc_type == 'segment':
+        x_coltitle = "X_IMAGE"
+        y_coltitle = "Y_IMAGE"
+        flag_coltitle = "FLAGS"
+    elif proc_type == 'aperture':
+        x_coltitle = "X-Center"
+        y_coltitle = "Y-Center"
+        flag_coltitle = "Flags"
+    else:
+        raise ValueError("Unknown proc_type '{}', must be 'segment' or 'aperture'".format(proc_type))
+
     # ------------------
     # CREATE NEXP IMAGE
     # ------------------
@@ -1274,8 +1315,8 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     nrows = len(catalog_data)
     cat_coords = numpy.empty((nrows, 2), dtype=float)
     for line_cnt, phot_table_line in enumerate(catalog_data):
-        x_coord = phot_table_line[0]
-        y_coord = phot_table_line[1]
+        x_coord = phot_table_line[x_coltitle]
+        y_coord = phot_table_line[y_coltitle]
         cat_coords[line_cnt, :] = [x_coord, y_coord]
     # ----------------------------------
     # Convert aperture radius to pixels
@@ -1326,7 +1367,7 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     # Add flag bit to appropriate sources
     for i, table_row in enumerate(catalog_data):
         if artifact_flag[i]:
-            table_row[-1] |= 64
+            table_row[flag_coltitle] |= 64
 
     if debug:
         # Write out intermediate catalog with updated flags
