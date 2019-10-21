@@ -37,7 +37,6 @@ import glob
 import json
 import math
 import os
-import pdb
 import sys
 import time
 
@@ -143,34 +142,34 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
     log.info("ci_filter({} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type,
-                                                         param_dict, ci_lookup_file_path,
-                                                         output_custom_pars_file, column_titles, debug))
+                                                            param_dict, ci_lookup_file_path,output_custom_pars_file,
+                                                            column_titles, debug))
     catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
                              output_custom_pars_file, column_titles, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag saturated sources
     log.info("hla_saturation_flags({} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name,
-                                                                    "<Catalog Data>", proc_type, param_dict,
-                                                                    plate_scale, column_titles, debug))
+                                                                       "<Catalog Data>", proc_type, param_dict,
+                                                                       plate_scale, column_titles, debug))
     catalog_data = hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict,
                                         plate_scale, column_titles, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag swarm sources
     log.info("hla_swarm_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>",
-                                                                  exptime, plate_scale, median_sky, proc_type,
-                                                                  param_dict, column_titles, debug))
+                                                                     exptime, plate_scale, median_sky, proc_type,
+                                                                     param_dict, column_titles, debug))
     catalog_data = hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky,
                                    proc_type, param_dict, column_titles, debug)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
-    log.info("hla_nexp_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
-                                                              catalog_name, "<Catalog Data>", drz_root_dir, proc_type,
-                                                              column_titles, debug))
+    log.info("hla_nexp_flags({} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
+                                                                 catalog_name, "<Catalog Data>", drz_root_dir,
+                                                                 column_titles, debug))
     catalog_data = hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data,
-                                  drz_root_dir, proc_type, column_titles, debug)
+                                  drz_root_dir, column_titles, debug)
 
     return catalog_data
 
@@ -1164,7 +1163,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
 
 def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data, drz_root_dir,
-                   proc_type, column_titles, debug):
+                   column_titles, debug):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
     drizzled_image : string
@@ -1186,10 +1185,8 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     catalog_data : astropy.Table object
         drizzled filter product catalog data to process
 
-    drz_root_dir : dictionary of source lists keyed by drizzled image name.
-
-    proc_type : string
-        Catalog type. Either 'aperture' or 'segment'.
+    drz_root_dir :
+        dictionary of source lists keyed by drizzled image name.
 
     column_titles : dictionary
         Relevant column titles
@@ -1201,20 +1198,7 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     -------
     catalog_data : astropy.Table object
         drizzled filter product catalog data with updated flag values
-    
     """
-    # column titles for segment and aperture catalogs
-    if proc_type == 'segment':
-        x_coltitle = "X_IMAGE"
-        y_coltitle = "Y_IMAGE"
-        flag_coltitle = "FLAGS"
-    elif proc_type == 'aperture':
-        x_coltitle = "X-Center"
-        y_coltitle = "Y-Center"
-        flag_coltitle = "Flags"
-    else:
-        raise ValueError("Unknown proc_type '{}', must be 'segment' or 'aperture'".format(proc_type))
-
     # ------------------
     # CREATE NEXP IMAGE
     # ------------------
@@ -1287,8 +1271,8 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     nrows = len(catalog_data)
     cat_coords = numpy.empty((nrows, 2), dtype=float)
     for line_cnt, phot_table_line in enumerate(catalog_data):
-        x_coord = phot_table_line[x_coltitle]
-        y_coord = phot_table_line[y_coltitle]
+        x_coord = phot_table_line[column_titles["x_coltitle"]]
+        y_coord = phot_table_line[column_titles["y_coltitle"]]
         cat_coords[line_cnt, :] = [x_coord, y_coord]
     # ----------------------------------
     # Convert aperture radius to pixels
@@ -1339,7 +1323,7 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     # Add flag bit to appropriate sources
     for i, table_row in enumerate(catalog_data):
         if artifact_flag[i]:
-            table_row[flag_coltitle] |= 64
+            table_row[column_titles["flag_coltitle"]] |= 64
 
     if debug:
         # Write out intermediate catalog with updated flags
