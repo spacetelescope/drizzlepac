@@ -187,7 +187,7 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     catalog_data : astropy.Table object
         drizzled filter product catalog data with updated flag values
     """
-    # column indices for SE and DAO catalogs
+    # column titles for segment and aperture catalogs
     if proc_type == 'segment':
         magerr1_coltitle = "MAGERR_APER1"
         magerr2_coltitle = "MAGERR_APER2"
@@ -330,6 +330,19 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
     phot_table_rows : astropy.Table object
         drizzled filter product catalog data with updated flag values
     """
+    # column titles for segment and aperture catalogs
+    if proc_type == 'segment':
+        x_coltitle = "X_IMAGE"
+        y_coltitle = "Y_IMAGE"
+        flag_coltitle = "FLAGS"
+    elif proc_type == 'aperture':
+        x_coltitle = "X-Center"
+        y_coltitle = "Y-Center"
+        flag_coltitle = "Flags"
+    else:
+        raise ValueError("Unknown proc_type '{}', must be 'segment' or 'aperture'".format(proc_type))
+
+
     image_split = drizzled_image.split('/')[-1]
     channel = drizzled_image.split("_")[4].upper()
 
@@ -481,8 +494,8 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
     nrows = len(all_detections)
     full_coord_list = numpy.empty((nrows, 2), dtype=numpy.float)
     for row_count, detection in enumerate(all_detections):
-        full_coord_list[row_count, 0] = float(detection[0])
-        full_coord_list[row_count, 1] = float(detection[1])
+        full_coord_list[row_count, 0] = float(detection[x_coltitle])
+        full_coord_list[row_count, 1] = float(detection[y_coltitle])
 
     # ----------------------------------------------------
     # CREATE SUB-GROUPS OF SATURATION-FLAGGED COORDINATES
@@ -554,9 +567,9 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
         phot_table_rows = catalog_data
         for i, table_row in enumerate(phot_table_rows):
             if saturation_flag[i]:
-                table_row[-1] = int(table_row[-1]) | 4
+                table_row[flag_coltitle] = int(table_row[flag_coltitle]) | 4
 
-        phot_table_rows = flag4and8_hunter_killer(phot_table_rows)
+        phot_table_rows = flag4and8_hunter_killer(phot_table_rows, proc_type)
 
         if debug:
             phot_table_temp = phot_table_root + '_SATFILT.txt'
@@ -1659,7 +1672,7 @@ def arrayfy_ctx(ctx, maxindex):
 # ======================================================================================================================
 
 
-def flag4and8_hunter_killer(catalog_data):
+def flag4and8_hunter_killer(catalog_data, proc_type):
     """This function searches through photometry catalogs for sources whose flags contain
     both bits 4 (multi-pixel saturation), and 8 (faint magnitude limit).
     If found, the subroutine removes the "8" bit value from the set of flags for that source.
@@ -1669,6 +1682,9 @@ def flag4and8_hunter_killer(catalog_data):
     catalog_data : astropy Table object
         catalog data to process
 
+    proc_type : string
+        Catalog type. Either 'aperture' or 'segment'.
+
     Returns
     -------
     catalog_data : astropy Table object
@@ -1676,16 +1692,16 @@ def flag4and8_hunter_killer(catalog_data):
     """
     conf_ctr = 0
     log.info("Searching for flag 4 + flag 8 conflicts....")
-    if 'FLAGS' in catalog_data.keys():
-        flag_col_title = 'FLAGS'
-    elif 'Flags' in catalog_data.keys():
-        flag_col_title = 'Flags'
+    if proc_type == 'segment':
+        flag_coltitle = "FLAGS"
+    elif proc_type == 'aperture':
+        flag_coltitle = "Flags"
     else:
-        sys.exit("ERROR! Unrecognized catalog format!")
+        raise ValueError("Unknown proc_type '{}', must be 'segment' or 'aperture'".format(proc_type))
     for catalog_line in catalog_data:
-        if ((catalog_line[flag_col_title] & 4 > 0) and (catalog_line[flag_col_title] & 8 > 0)):
+        if ((catalog_line[flag_coltitle] & 4 > 0) and (catalog_line[flag_coltitle] & 8 > 0)):
             conf_ctr += 1
-            catalog_line[flag_col_title] = int(catalog_line[flag_col_title]) - 8
+            catalog_line[flag_coltitle] = int(catalog_line[flag_coltitle]) - 8
     if conf_ctr == 0:
         log.info("No conflicts found.")
     if conf_ctr == 1:
