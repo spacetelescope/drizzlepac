@@ -125,5 +125,5 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
             local_files.append(file)
     if not archive:
         # Remove astroquery created sub-directories
-        shutil.rmtree(download_dir)
+        shutil.rmtree('mastDownload')
     return local_files

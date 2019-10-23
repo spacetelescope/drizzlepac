@@ -84,6 +84,7 @@ where the **Astrometric Catalog** refers the exact astrometric catalog used to c
     - This catalog contains version 2.4.0 of the *Guide Star Coordinates* (GSC) catalog,
     - All guide stars in the catalog were cross-matched with the GAIA DR1 catalog and corrected to the coordinates reported in GAIA DR1.
     - **APPLIES TO**:  All HST datasets which had a successful guide star acquisition, which is nearly all data in the archive.
+    - **NOTE**:  HST Observations taken after September 2017.
 
   * **HSC30**
 
@@ -142,7 +143,11 @@ The terms are defined as:
 
   * **<Astrometric Catalog>**
 
-    - This term describes the astrometric catalog, as listed for use with the *a priori* solutions, which was used for the cross-matching and fitting sources identified in the image(s).
+    - This term describes the astrometric catalog, as listed for use with the *a priori* solutions, which was used for the cross-matching and fitting sources identified in the image(s).  If a value of `NONE` is
+    specified here, it indicates that although the image appears (according to the code) to have been
+    successfully relatively aligned one exposure to another, there were indications that the alignment to an
+    astrometric catalog like `GAIADR2` failed.  The user will need to carefully review the state of alignment
+    of this data when `NONE` is listed in the output WCS.
 
 
 These separate terms provide as succinct a description of the solution determined for and applied to the exposure as possible. Additional keywords have been written out to the headerlet extension for the *a posteriori* fit which further describe the solution, including:

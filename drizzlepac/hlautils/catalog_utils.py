@@ -565,17 +565,16 @@ class HAPPointCatalog(HAPCatalogBase):
         # load in coords of sources identified in total product
         positions = (self.sources['xcentroid'], self.sources['ycentroid'])
 
-        pos_x = np.asarray(positions[0])
-        pos_y = np.asarray(positions[1])
+        pos_xy = np.vstack(positions).T
 
         # define list of background annulii
-        bg_apers = CircularAnnulus((pos_x, pos_y),
+        bg_apers = CircularAnnulus(pos_xy,
                                    r_in=self.param_dict['skyannulus_arcsec'],
                                    r_out=self.param_dict['skyannulus_arcsec'] +
                                          self.param_dict['dskyannulus_arcsec'])
 
         # Create the list of photometric apertures to measure
-        phot_apers = [CircularAperture((pos_x, pos_y), r=r) for r in self.aper_radius_list_pixels]
+        phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
 
         # Perform aperture photometry
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image,
@@ -939,9 +938,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Create the image regions file here in case there is a failure
         if self.debug and self.segm_img:
             # Generate a debug segmentation image
-            indx = self.sourcelist_filename.find("-cat.ecsv")
-            outname = self.sourcelist_filename[0:indx] + ".fits"
-            fits.PrimaryHDU(data=self.segm_img.data).writeto(outname)
+            # indx = self.sourcelist_filename.find("-cat.ecsv")
+            # outname = self.sourcelist_filename[0:indx] + ".fits"
+            # fits.PrimaryHDU(data = self.segm_img.data).writeto(outname)
 
             # Copy out only the X and Y coordinates to a "debug table" and cast as an Astropy Table
             # so a scalar can be added to the centroid coordinates

@@ -134,10 +134,6 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None, level=logging.INFO):
 
         print('Setting up logfile : ', logname)
 
-        #stdout_logger = logging.getLogger('stsci.tools.logutil.stdout')
-        # Disable display of prints to stdout from all packages except
-        # drizzlepac
-        #stdout_logger.addFilter(logutil.EchoFilter(include=['drizzlepac']))
     else:
         print('No trailer file created...')
 
@@ -156,11 +152,12 @@ def end_logging(filename=None):
             # This generally shouldn't happen if logging was started with
             # init_logging and a filename was given...
             print('No trailer file saved...')
-
+        
         logutil.teardown_global_logging()
     else:
         print('No trailer file saved...')
-
+    root_logger = logging.getLogger()
+    root_logger.removeHandler(_log_file_handler)
 
 class WithLogging:
     def __init__(self):

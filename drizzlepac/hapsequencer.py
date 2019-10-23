@@ -304,9 +304,10 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
 
                 # Report results and track the output files
                 if align_table:
-                    log.info("ALIGN_TABLE: {}".format(align_table))
+                    log.info("ALIGN_TABLE: {}".format(align_table.filtered_table))
                     # os.remove("alignimages.log")  # FIX This log needs to be included in total product trailer file
-                    for row in align_table:
+                    for row in align_table.filtered_table:
+                        log.info(row['status'])
                         if row['status'] == 0:
                             log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
 
@@ -317,7 +318,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
                         else:
                             log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
 
-                    hdrlet_list = align_table['headerletFile'].tolist()
+                    hdrlet_list = align_table.filtered_table['headerletFile'].tolist()
                     product_list += hdrlet_list
                     product_list += filt_exposures
 
