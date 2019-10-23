@@ -7,14 +7,13 @@ import copy
 
 import astropy.units as u
 from astropy.io import fits as fits
-from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel
-from astropy.stats import mad_std, gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm, sigma_clipped_stats
-from astropy.table import Column, MaskedColumn, Table, QTable, join
+from astropy.stats import sigma_clipped_stats
+from astropy.table import Column, MaskedColumn, Table, join
 from astropy.coordinates import SkyCoord
 import numpy as np
 from scipy import ndimage
 
-from photutils import aperture_photometry, CircularAperture, CircularAnnulus, DAOStarFinder
+from photutils import CircularAperture, CircularAnnulus, DAOStarFinder
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import make_source_mask
@@ -280,7 +279,7 @@ class HAPCatalogs:
             log.info("Identifying {} sources".format(catalog))
             self.catalogs[catalog].identify_sources(**pars)
 
-    def measure(self, **pars):
+    def measure(self, filter_name, **pars):
         """Perform photometry and other measurements on sources for this image.
 
         Parameters
@@ -295,7 +294,7 @@ class HAPCatalogs:
                 catalog.identify_sources(**pars)
 
         for catalog in self.catalogs.values():
-            catalog.measure_sources(**pars)
+            catalog.measure_sources(filter_name, **pars)
 
     def write(self, **pars):
         """Write catalogs for this image to output files.
@@ -313,20 +312,8 @@ class HAPCatalogs:
                     catalog.source_cat = catalog.sources
             catalog.write_catalog
 
-    def extract(self, filter_name, **pars):
-        """Extract specified columns from the filter catalog.
-
-        Parameters
-        ----------
-        filter_name : str
-           Full filter name
-
-        """
-        for catalog in self.catalogs.values():
-            catalog.extract_filter_data(filter_name, **pars)
-
     def combine(self, subset_dict):
-        """Combine extracted columns from the filter catalog with the total detection catalog.
+        """Combine subset columns from the filter catalog with the total detection catalog.
 
         Parameters
         ----------
@@ -400,7 +387,7 @@ class HAPCatalogBase:
     def identify_sources(self, **pars):
         pass
 
-    def measure_sources(self, **pars):
+    def measure_sources(self, filter_name, **pars):
         pass
 
     def write_catalog(self, **pars):
@@ -424,15 +411,15 @@ class HAPCatalogBase:
             Table of source properties updatd to contain state metadata
 
         """
-        data_table.meta["h0"] = [" #=================================================================================================="]
-        data_table.meta["h1"] = [" # All refereed publications based on data obtained from the HAP must carry the following footnote: "]
-        data_table.meta["h2"] = [" #                                                                                                  "]
-        data_table.meta["h3"] = [" #     Based on observations made with the NASA/ESA Hubble Space Telescope                          "]
-        data_table.meta["h4"] = [" #     and obtained from the Hubble Advanced Products collection generated                          "]
-        data_table.meta["h5"] = [" #     by the Space Telescope Science Institute (STScI/NASA).                                       "]
-        data_table.meta["h6"] = [" #                                                                                                  "]
-        data_table.meta["h7"] = [" # One copy of each paper resulting from data obtained from the HAP should be sent to the STScI.    "]
-        data_table.meta["h8"] = [" #=================================================================================================="]
+        data_table.meta["h00"] = [" #=================================================================================================="]
+        data_table.meta["h01"] = [" # All refereed publications based on data obtained from the HAP must carry the following footnote: "]
+        data_table.meta["h02"] = [" #                                                                                                  "]
+        data_table.meta["h03"] = [" #     Based on observations made with the NASA/ESA Hubble Space Telescope                          "]
+        data_table.meta["h04"] = [" #     and obtained from the Hubble Advanced Products collection generated                          "]
+        data_table.meta["h05"] = [" #     by the Space Telescope Science Institute (STScI/NASA).                                       "]
+        data_table.meta["h06"] = [" #                                                                                                  "]
+        data_table.meta["h07"] = [" # One copy of each paper resulting from data obtained from the HAP should be sent to the STScI.    "]
+        data_table.meta["h08"] = [" #=================================================================================================="]
 
         data_table.meta["WCSNAME"] = self.image.keyword_dict["wcs_name"]
         data_table.meta["WCSTYPE"] = self.image.keyword_dict["wcs_type"]
@@ -462,34 +449,30 @@ class HAPCatalogBase:
         data_table.meta["Number of sources"] = num_sources
 
 
-        if self.image.ghd_product.lower() != "tdp":
-            try:
-                log.info("{ } { }".format(self.aper_radius_arcsec[0], self.aper_radius_arcsec[1]))
-                # aperture_string = " 2. Aperture Magnitudes (MAGAP1,MAGAP2) are measured with aperture radii of { }as ({:.3f} pix) and { }as ({:.3f} pix)".format(self.aper_radius_arcsec[0],self.aper_radius_list_pixels[0], self.aper_radius_arcsec[1], self.aper_radius_list_pixels[1])
-            except Exception as xcept:
-                log.info("Exception in printing APERTURE info {}".format(xcept))
-                pass
-            data_table.meta["h9"] = ["# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "]
-            data_table.meta["c0."] = ["IMPORTANT NOTES"]
-            data_table.meta["c1."] = ["The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
-            data_table.meta["c2."] = ["Magnitude values are in the ABMAG system"]
-            data_table.meta["c3."] = ["aperture_string"]
-            data_table.meta["c4."] = ["CI = Concentration Index = MAGAP1-MAGAP2"]
-            data_table.meta["c5."] = ["Total Magnitudes (TOTMAG) are given for flag values of 0"]
-            data_table.meta["c5.1"] = ["    This flag value identifies stellar sources possessing CI values as follows: 0.85 < CI 1.3"]
-            data_table.meta["c6."] = ["Flag Value Identification:"]
-            data_table.meta["c6.1"] = ["    0 - WFC3/IR: 0.5 < CI < 1.0; WFC3/UVIS: 0.7 < CI < 1.3)"]
-            data_table.meta["c6.2"] = ["    1 - Extended Source WFC3/IR: CI > 1.0; WFC3/UVIS CI > 1.3"]
-            data_table.meta["c6.3"] = ["    2 - Questionable Photometry (single-pixel saturation)"]
-            data_table.meta["c6.4"] = ["   16 - Concentration Index < 0.5 (IR), < 0.7 (UVIS), Hot Pixels"]
-            data_table.meta["c6.5"] = ["   32 - False Detection Swarm Around Saturated Source"]
-            data_table.meta["c6.6"] = ["   64 - False Detections Near Image Edge"]
-            data_table.meta["h10"] = ["# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "]
+        try:
+            log.info("{ } { }".format(self.aper_radius_arcsec[0], self.aper_radius_arcsec[1]))
+            # aperture_string = " 2. Aperture Magnitudes (MAGAP1,MAGAP2) are measured with aperture radii of { }as ({:.3f} pix) and { }as ({:.3f} pix)".format(self.aper_radius_arcsec[0],self.aper_radius_list_pixels[0], self.aper_radius_arcsec[1], self.aper_radius_list_pixels[1])
+        except Exception as xcept:
+            log.info("Exception in printing APERTURE info {}".format(xcept))
+            pass
+        data_table.meta["h09"] = ["#================================================================================================="]
+        data_table.meta["h10"] = ["IMPORTANT NOTES"]
+        data_table.meta["h11"] = ["The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
+        data_table.meta["h12"] = ["Magnitude values are in the ABMAG system"]
+        data_table.meta["h13"] = ["aperture_string"]
+        data_table.meta["h14"] = ["CI = Concentration Index = MAGAP1-MAGAP2"]
+        data_table.meta["h15"] = ["Total Magnitudes (TOTMAG) are given for flag values of 0"]
+        data_table.meta["h15.1"] = ["    This flag value identifies stellar sources possessing CI values as follows: 0.85 < CI 1.3"]
+        data_table.meta["h16"] = ["Flag Value Identification:"]
+        data_table.meta["h16.1"] = ["    0 - WFC3/IR: 0.5 < CI < 1.0; WFC3/UVIS: 0.7 < CI < 1.3)"]
+        data_table.meta["h16.2"] = ["    1 - Extended Source WFC3/IR: CI > 1.0; WFC3/UVIS CI > 1.3"]
+        data_table.meta["h16.3"] = ["    2 - Questionable Photometry (single-pixel saturation)"]
+        data_table.meta["h16.4"] = ["   16 - Concentration Index < 0.5 (IR), < 0.7 (UVIS), Hot Pixels"]
+        data_table.meta["h16.5"] = ["   32 - False Detection Swarm Around Saturated Source"]
+        data_table.meta["h16.6"] = ["   64 - False Detections Near Image Edge"]
+        data_table.meta["h17"] = ["#================================================================================================="]
 
         return (data_table)
-
-    def extract_filter_data(self, filter_name, **pars):
-        pass
 
     def combine_tables(self, subset_dict):
         pass
@@ -506,7 +489,7 @@ class HAPPointCatalog(HAPCatalogBase):
 
         self.bkg_used = None  # actual background used for source identification/measurement
 
-        # Defined in extract_filter_data
+        # Defined in measure_sources
         self.subset_filter_source_cat = None
 
     def identify_sources(self, **pars):
@@ -570,7 +553,7 @@ class HAPPointCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def measure_sources(self):
+    def measure_sources(self, filter_name):
         """Perform aperture photometry on identified sources
         """
         log.info("Performing aperture photometry on identified point-sources")
@@ -670,6 +653,13 @@ class HAPPointCatalog(HAPCatalogBase):
             output_photometry_table.rename_column(old_col_title, rename_dict[old_col_title])
             log.info("Column '{}' renamed '{}'".format(old_col_title, rename_dict[old_col_title]))
 
+        # Capture specified columns in order to append to the total detection table
+        magap_name = "MagAp({})".format(self.aper_radius_arcsec[1])
+        self.subset_filter_source_cat = output_photometry_table["ID", "CI", magap_name, "Flags"]
+        self.subset_filter_source_cat.rename_column(magap_name, magap_name + "_" + filter_name)
+        self.subset_filter_source_cat.rename_column("CI", "CI_" + filter_name)
+        self.subset_filter_source_cat.rename_column("Flags", "Flags_" + filter_name)
+
         # Add the header information to the table
         self.source_cat = self.annotate_table(output_photometry_table, product=self.image.ghd_product)
 
@@ -690,8 +680,9 @@ class HAPPointCatalog(HAPCatalogBase):
 
         """
         # Write out catalog to ecsv file
-        self.source_cat.meta['comments'] = \
-            ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
+        self.source_cat = self.annotate_table(self.source_cat, product=self.image.ghd_product)
+        # self.source_cat.meta['comments'] = \
+        #     ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
         self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
         log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
@@ -766,29 +757,6 @@ class HAPPointCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def extract_filter_data(self, filter_name, **pars):
-        """Create a table which contains a subset of the columns found in the full output table.
-
-        Parameters
-        ----------
-        filter_name : str
-           Full filter name to be used to give columns unique names within the catalog
-
-        Returns
-        -------
-        self.subset_filter_source_cat : Table
-            Table containing the id, magnitude, and concentration index for the identified sources
-
-        """
-        # FIX change names of apetures to MagAp#, use MagAp2 here
-        magap_name = "MagAp({})".format(self.aper_radius_arcsec[1])
-        self.subset_filter_source_cat = self.source_cat["ID", "CI", magap_name, "Flags"]
-        self.subset_filter_source_cat.rename_column("CI", "CI_" + filter_name)
-        self.subset_filter_source_cat.rename_column(magap_name, magap_name + "_" + filter_name)
-        self.subset_filter_source_cat.rename_column("Flags", "Flags_" + filter_name)
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
     def combine_tables(self, subset_table):
         """Append specified measurements from the filter table to the total detection table.
 
@@ -838,7 +806,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Initialize attributes to be computed later
         self.segm_img = None  # Segmentation image
 
-        # Defined in extract_filter_data
+        # Defined in measure_sources
         self.subset_filter_source_cat = None
 
         # FIX
@@ -996,7 +964,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def measure_sources(self):
+    def measure_sources(self, filter_name):
         """Use the positions of the sources identified in the white light (total detection) image to
         measure properties of these sources in the filter images
 
@@ -1049,6 +1017,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self.source_cat = self._define_filter_table(updated_table)
 
         log.info("SEGMENT. Found and measured {} sources from segmentation map.".format(len(self.source_cat)))
+
+        # Capture specified columns in order to append to the total detection table
+        self.subset_filter_source_cat = self.source_cat["ID", "MagAuto", "CI", "Flags"]
+        self.subset_filter_source_cat.rename_column("MagAuto", "MagAuto_" + filter_name)
+        self.subset_filter_source_cat.rename_column("CI", "CI_" + filter_name)
+        self.subset_filter_source_cat.rename_column("Flags", "Flags_" + filter_name)
 
         if self.debug:
             # Write out a catalog which can be used as an overlay for image in ds9
@@ -1259,54 +1233,15 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # If the output is for the total detection product, then only
         # a subset of the full catalog is needed.
         if self.image.ghd_product.lower() == "tdp":
-
-            """
-            radec_data = SkyCoord(self.source_cat["sky_centroid_icrs"])
-            ra_icrs = radec_data.ra.degree
-            dec_icrs = radec_data.dec.degree
-            rr = Column(ra_icrs, name="RA", unit=u.deg, format="11.7f")
-            dd = Column(dec_icrs, name="DEC", unit=u.deg, format="11.7f")
-            self.source_cat.add_columns([dd, rr])
-            del self.source_cat["sky_centroid_icrs"]
-
-            # self.source_cat.add_column(ra_icrs, name="RA")
-            # self.source_cat.add_column(Dec_icrs, name="DEC")
-            self.source_cat["xcentroid"].format = "8.3f"
-            self.source_cat["ycentroid"].format = "8.3f"
-
-            # Fix the column order
-            # self.source_cat = self.source_cat["ID", "xcentroid", "ycentroid", "RA", "DEC", "MagAp2", "CI", "Flags"]
-            """
+            self.source_cat = self.annotate_table(self.source_cat, product=self.image.ghd_product)
             self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
 
         # else the product is the "filter detection product" catalog which has already been formatted
         else:
-            num_sources = len(self.source_cat)
             self.source_cat = self.annotate_table(self.source_cat, product=self.image.ghd_product)
 
             self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
             log.info("SEGMENT. Wrote filter source catalog: {}".format(self.sourcelist_filename))
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    def extract_filter_data(self, filter_name, **pars):
-        """Create a table which contains a subset of the columns found in the full output table.
-
-        Parameters
-        ----------
-        filter_name : str
-           Full filter name to be used to give columns unique names within the catalog
-
-        Returns
-        -------
-        data_table : Table
-            Table containing the id, magnitude, and concentration index for the identified sources
-
-        """
-        self.subset_filter_source_cat = self.source_cat["ID", "MagAuto", "CI", "Flags"]
-        self.subset_filter_source_cat.rename_column("MagAuto", "MagAuto_" + filter_name)
-        self.subset_filter_source_cat.rename_column("CI", "CI_" + filter_name)
-        self.subset_filter_source_cat.rename_column("Flags", "Flags_" + filter_name)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

@@ -88,15 +88,11 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
                                                   tp_sources=sources_dict)
 
             # Perform photometry
-            filter_product_catalogs.measure()
+            filter_name = filter_product_obj.filters
+            filter_product_catalogs.measure(filter_name)
 
             # Write out photometric (filter) catalog(s)
             filter_product_catalogs.write()
-
-            # Create a subset (e.g., CI, Flags...) of the output filter table as an
-            # attribute of the specific catalog (self.subset_filter_source_cat)...
-            filter_name = filter_product_obj.filters
-            filter_product_catalogs.extract(filter_name)
 
             # Load a dictionary with a subset table for each catalog
             subset_columns_dict = {}
