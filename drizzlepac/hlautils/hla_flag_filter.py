@@ -112,24 +112,24 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     # Relevant equivalent column titles for aperture and segment catalogs
     all_column_titles = {
         "aperture": {
-            "x_coltitle" : "X-Center",
-            "y_coltitle" : "Y-Center",
-            "magerr1_coltitle" : "MagErr({})".format(param_dict["catalog generation"]["aperture_1"]),
-            "magerr2_coltitle" : "MagErr({})".format(param_dict["catalog generation"]["aperture_2"]),
-            "flux_coltitle" : "Flux({})".format(param_dict["catalog generation"]["aperture_2"]),
-            "background_coltitle" : "MSky({})".format(param_dict["catalog generation"]["aperture_2"]),
-            "ci_coltitle" : "CI",
-            "flag_coltitle" : "Flags"
+            "x_coltitle": "X-Center",
+            "y_coltitle": "Y-Center",
+            "magerr1_coltitle": "MagErr({})".format(param_dict["catalog generation"]["aperture_1"]),
+            "magerr2_coltitle": "MagErr({})".format(param_dict["catalog generation"]["aperture_2"]),
+            "flux_coltitle": "Flux({})".format(param_dict["catalog generation"]["aperture_2"]),
+            "background_coltitle": "MSky({})".format(param_dict["catalog generation"]["aperture_2"]),
+            "ci_coltitle": "CI",
+            "flag_coltitle": "Flags"
         },
         "segment": {
-            "x_coltitle" : "X_IMAGE",
-            "y_coltitle" : "Y_IMAGE",
-            "magerr1_coltitle" : "MAGERR_APER1",
-            "magerr2_coltitle" : "MAGERR_APER2",
+            "x_coltitle": "X_IMAGE",
+            "y_coltitle": "Y_IMAGE",
+            "magerr1_coltitle": "MAGERR_APER1",
+            "magerr2_coltitle": "MAGERR_APER2",
             "flux_coltitle": "FLUX_APER2",
-            "background_coltitle" : "BACKGROUND",
+            "background_coltitle": "BACKGROUND",
             "ci_coltitle": "CI",
-            "flag_coltitle" : "FLAGS"
+            "flag_coltitle": "FLAGS"
         }
     }
     if proc_type not in all_column_titles.keys():
@@ -142,7 +142,7 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
     log.info("ci_filter({} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type,
-                                                            param_dict, ci_lookup_file_path,output_custom_pars_file,
+                                                            param_dict, ci_lookup_file_path, output_custom_pars_file,
                                                             column_titles, debug))
     catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
                              output_custom_pars_file, column_titles, debug)
@@ -257,7 +257,6 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     log.info('ci_lower_limit = {}'.format(ci_lower_limit))
     log.info('ci_upper_limit = {}'.format(ci_upper_limit))
     log.info(' ')
-
 
     failed_index_list = []
     for i, table_row in enumerate(catalog_data):
