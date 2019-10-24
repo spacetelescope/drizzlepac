@@ -56,9 +56,6 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
     """
     product_list = []
     for total_product_obj in total_list:
-        if total_product_obj.detector == "uvis": # TODO: REMOVE ONCE negitive FWHM ISSUE IS RESOVLED
-            continue # TODO: REMOVE ONCE negitive FWHM ISSUE IS RESOVLED
-
         # Instantiate filter catalog product object
         total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename,
                                              total_product_obj.configobj_pars.get_pars('catalog generation'),
