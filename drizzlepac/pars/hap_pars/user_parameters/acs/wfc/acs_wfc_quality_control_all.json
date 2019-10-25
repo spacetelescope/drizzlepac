@@ -11,7 +11,7 @@
         "ci_upper_limit": 1.23
       }
     },
-    "SWARM FILTER": {
+    "swarm filter": {
       "upper_epp_limit": 70000.0,
       "lower_epp_limit": 2000.0,
       "eppsky_limit": 1000.0,
