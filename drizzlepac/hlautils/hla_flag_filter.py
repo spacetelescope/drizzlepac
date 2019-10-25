@@ -122,14 +122,14 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
             "flag_coltitle": "Flags"
         },
         "segment": {
-            "x_coltitle": "X_IMAGE",
-            "y_coltitle": "Y_IMAGE",
-            "magerr1_coltitle": "MAGERR_APER1",
-            "magerr2_coltitle": "MAGERR_APER2",
-            "flux_coltitle": "FLUX_APER2",
-            "background_coltitle": "BACKGROUND",
+            "x_coltitle": "xcentroid",
+            "y_coltitle": "ycentroid",
+            "magerr1_coltitle": "MAGERR_APER1", # TODO: possibly rename
+            "magerr2_coltitle": "MAGERR_APER2", # TODO: possibly rename
+            "flux_coltitle": "source_sum",
+            "background_coltitle": "background_at_centroid",
             "ci_coltitle": "CI",
-            "flag_coltitle": "FLAGS"
+            "flag_coltitle": "Flags"
         }
     }
     if proc_type not in all_column_titles.keys():
