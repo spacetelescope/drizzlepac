@@ -1372,7 +1372,7 @@ def get_component_drz_list(drizzled_image, drz_root_dir, flt_file_names):
     for item in component_drz_img_list:
         if item.endswith(drizzled_image):
             component_drz_img_list.remove(item)
-    drz_filter = drizzled_image.split("_")[5]  # TODO: REFACTOR FOR HAP. this is just a short-term hack to get things working for HLA
+    drz_filter = drizzled_image.split("_")[5]
 
     if type(flt_file_names).__name__ == 'dict':
         list_of_flts = flt_file_names[drz_filter.lower()]
