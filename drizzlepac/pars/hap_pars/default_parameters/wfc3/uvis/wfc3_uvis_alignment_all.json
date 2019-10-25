@@ -24,11 +24,17 @@
         "MAX_FIT_LIMIT": 150
     },
     "generate_source_catalogs": {
+        "box_size":50,
+        "win_size":3,
+        "nsigma":5.0,
         "centering_mode": "starfind",
-        "num_sources": 250,
+        "bkg_estimator": "MedianBackground",
+        "rms_estimator": "StdBackgroundRMS",
+        "num_sources": 500,
+        "deblend": false,
         "fwhmpsf": 0.152,
         "classify": true,
-        "threshold": null
+        "threshold": -1.1
     },
     "generate_astrometric_catalog": {
         "gaia_only": false,

@@ -2,7 +2,7 @@ jobs:
 - job: ${{ format(parameters.name) }}
   pool:
     ${{ if eq(parameters.os, 'windows') }}:
-      vmImage: vs2017-win2016
+      vmImage: windows-latest
     ${{ if eq(parameters.os, 'macos') }}:
       vmImage: macOS-10.13
     ${{ if eq(parameters.os, 'linux') }}:

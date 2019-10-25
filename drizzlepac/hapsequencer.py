@@ -6,11 +6,9 @@
     Legacy Archive (HLA) pipeline in that it provides the overall sequence of
     the processing.
 """
-import argparse
 import datetime
 import glob
 import os
-import pdb
 import sys
 import traceback
 
@@ -30,7 +28,6 @@ __version__ = 0.1
 __version_date__ = '19-Mar-2019'
 
 # ----------------------------------------------------------------------------------------------------------------------
-
 
 def create_catalog_products(total_list, debug=False, phot_mode='both'):
     """This subroutine utilizes hlautils/catalog_utils module to produce photometric sourcelists for the specified
@@ -62,24 +59,22 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
                                              types=phot_mode,
                                              debug=debug)
 
-        # Identify sources to be measured by filter photometry step
-        total_product_catalogs.identify()
+        # Generate an "n" exposure mask which has the image footprint set to the number
+        # of exposures which constitute each pixel.
+        total_product_obj.generate_footprint_mask()
 
-        # write out list(s) of identified sources
-        total_product_catalogs.write()
+        # Identify sources in the input image and delay writing the total detection
+        # catalog until the photometric measurements have been done on the filter
+        # images and some of the measurements can be appended to the total catalog
+        total_product_catalogs.identify(mask=total_product_obj.mask)
 
-        # append total product catalogs to list
-        if phot_mode in ['aperture', 'both']:
-            product_list.append(total_product_obj.point_cat_filename)
-        if phot_mode in ['segment', 'both']:
-            product_list.append(total_product_obj.segment_cat_filename)
-
-        # build dictionary of total_product_catalogs.catalogs[*].sources to use for
+        # Build dictionary of total_product_catalogs.catalogs[*].sources to use for
         # filter photometric catalog generation
         sources_dict = {}
         for cat_type in total_product_catalogs.catalogs.keys():
             sources_dict[cat_type] = {}
             sources_dict[cat_type]['sources'] = total_product_catalogs.catalogs[cat_type].sources
+            # FIX MDD Remove?
             if cat_type == "segment":
                 sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
 
@@ -92,19 +87,39 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
                                                   debug=debug,
                                                   tp_sources=sources_dict)
             # Perform photometry
-            filter_product_catalogs.measure()
+            filter_name = filter_product_obj.filters
+            filter_product_catalogs.measure(filter_name)
 
             filter_product_catalogs = run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug)
 
 
-            # Write out photometric catalog(s)
+            # Write out photometric (filter) catalog(s)
             filter_product_catalogs.write()
+
+            # Load a dictionary with a subset table for each catalog
+            subset_columns_dict = {}
+            for cat_type in filter_product_catalogs.catalogs.keys():
+                subset_columns_dict[cat_type] = {}
+                subset_columns_dict[cat_type]['subset'] = filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat
+
+            # ...append the new columns to the total detection project catalog.
+            total_product_catalogs.combine(subset_columns_dict)
 
             # append filter product catalogs to list
             if phot_mode in ['aperture', 'both']:
                 product_list.append(filter_product_obj.point_cat_filename)
             if phot_mode in ['segment', 'both']:
                 product_list.append(filter_product_obj.segment_cat_filename)
+
+        # write out list(s) of identified sources
+        total_product_catalogs.write()
+
+        # append total product catalogs to manifest list
+        if phot_mode in ['aperture', 'both']:
+            product_list.append(total_product_obj.point_cat_filename)
+        if phot_mode in ['segment', 'both']:
+            product_list.append(total_product_obj.segment_cat_filename)
+
 
     return product_list
 
@@ -291,9 +306,10 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
 
                 # Report results and track the output files
                 if align_table:
-                    log.info("ALIGN_TABLE: {}".format(align_table))
+                    log.info("ALIGN_TABLE: {}".format(align_table.filtered_table))
                     # os.remove("alignimages.log")  # FIX This log needs to be included in total product trailer file
-                    for row in align_table:
+                    for row in align_table.filtered_table:
+                        log.info(row['status'])
                         if row['status'] == 0:
                             log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
 
@@ -304,7 +320,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
                         else:
                             log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
 
-                    hdrlet_list = align_table['headerletFile'].tolist()
+                    hdrlet_list = align_table.filtered_table['headerletFile'].tolist()
                     product_list += hdrlet_list
                     product_list += filt_exposures
 
