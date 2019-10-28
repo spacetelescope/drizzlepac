@@ -515,11 +515,8 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
     # Convert aperture radius to pixels
     # ----------------------------------
     ap2 = param_dict['catalog generation']['aperture_2']
-    if proc_type == 'aperture':
-        radius = round((ap2/plate_scale) + 0.5) * 2.  # TODO: WHY DOES aperture RADIUS VALUE MULTIPLIED BY 2 BUT segment VALUE IS NOT?
 
-    if proc_type == 'segment':
-        radius = round((ap2 / plate_scale) + 0.5)  # TODO: WHY DOES aperture RADIUS VALUE MULTIPLIED BY 2 BUT segment VALUE IS NOT?
+    radius = round((ap2/plate_scale) + 0.5) * 2.
 
     log.info(' ')
     log.info('THE RADIAL DISTANCE BEING USED IS {} PIXELS'.format(str(radius)))
