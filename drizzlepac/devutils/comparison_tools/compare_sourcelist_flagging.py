@@ -12,13 +12,14 @@ import numpy as np
 import pyds9
 import pdb
 bit_list = [0, 1, 2, 4, 8, 16, 32, 64, 128]
-flag_meanings=['Point Source','Extended Source','Single-Pixel Saturation','Multi-Pixel Saturation',
-               'Faint Magnitude Limit','Hot Pixel','Swarm Detection','Edge and Chip Gap','Bleeding and Cosmic Rays']
+flag_meanings = ['Point Source', 'Extended Source', 'Single-Pixel Saturation', 'Multi-Pixel Saturation',
+                 'Faint Magnitude Limit', 'Hot Pixel', 'Swarm Detection', 'Edge and Chip Gap',
+                 'Bleeding and Cosmic Rays']
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
 
-def display_regions(imgname,reg_dict_list,flag_counts_list,n_sources_list):
+def display_regions(imgname, reg_dict_list, flag_counts_list, n_sources_list):
     """
     Display the input input image overplot the positions of flagged sources
 
@@ -48,13 +49,13 @@ def display_regions(imgname,reg_dict_list,flag_counts_list,n_sources_list):
         padding1 = 6 - len(str(bit_val))
         padding2 = 27 - len(flag_meanings[ctr])
         print("Frame {}: Bit value {}{}{}{}{}{}{}".format(ctr+1,
-                                                           bit_val,
-                                                           "."*padding1,
-                                                           flag_meanings[ctr],
-                                                           padding2*".",
-                                                           flag_counts_list[0][ctr],
-                                                           (10-len(str(flag_counts_list[0][ctr])))*".",
-                                                           flag_counts_list[1][ctr]))
+                                                          bit_val,
+                                                          "."*padding1,
+                                                          flag_meanings[ctr],
+                                                          padding2*".",
+                                                          flag_counts_list[0][ctr],
+                                                          (10-len(str(flag_counts_list[0][ctr])))*".",
+                                                          flag_counts_list[1][ctr]))
         if ctr != 0:
             d.set("frame new")
         d.set_fits(imghdu)
@@ -62,8 +63,6 @@ def display_regions(imgname,reg_dict_list,flag_counts_list,n_sources_list):
         for reg_dict in reg_dict_list:
             if reg_dict[bit_val]:
                 d.set('regions', 'physical; {}'.format(reg_dict[bit_val]))
-
-
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
 
@@ -95,7 +94,8 @@ def deconstruct_flag(flagval):
             if flagval & bit > 0:
                 # out_bit_list.append(bit)
                 out_idx_list[idx] = 1
-            if bit > flagval: break
+            if bit > flagval:
+                break
             idx += 1
     return out_idx_list
 
@@ -103,7 +103,7 @@ def deconstruct_flag(flagval):
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
 
 
-def make_regions(sl_name,shape,color):
+def make_regions(sl_name, shape, color):
     """
     generate a dictionary of dictionary region info to plot in ds9. Assumes that X and Y coords are stored the first
     two (leftmost) columns, and flag values are stored in the last (rightmost) column.
@@ -131,7 +131,7 @@ def make_regions(sl_name,shape,color):
         total number of sources in sourcelist
     """
     table_data = Table.read(sl_name, format='ascii.ecsv')
-    flag_counts = np.zeros(9,dtype=int)
+    flag_counts = np.zeros(9, dtype=int)
     reg_dict = {}
     for bit_val in bit_list:
         reg_dict[bit_val] = ""
@@ -139,33 +139,35 @@ def make_regions(sl_name,shape,color):
     for table_line in table_data:
         x = table_line[0]
         y = table_line[1]
-        flagval  = table_line[-1]
+        flagval = table_line[-1]
         flag_bits = deconstruct_flag((flagval))
         flag_counts += flag_bits
-        for bit_val,flag_element in zip(bit_list,flag_bits):
+        for bit_val, flag_element in zip(bit_list, flag_bits):
             if flag_element == 1:
-                reg_dict[bit_val]+="point({}, {}) #point={} color={}; ".format(x+1.0,y+1.0, shape, color)
+                reg_dict[bit_val] += "point({}, {}) #point={} color={}; ".format(x+1.0, y+1.0, shape, color)
 
     for bit_val in bit_list:
-        if len(reg_dict[bit_val]) >0:
+        if len(reg_dict[bit_val]) > 0:
             reg_dict[bit_val] = reg_dict[bit_val][:-2]
     n_sources = len(table_data)
     return reg_dict, flag_counts, n_sources
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+
+
 if __name__ == "__main__":
     imgname = sys.argv[1]
     sl_name_a = sys.argv[2]
     sl_name_b = sys.argv[3]
     if sl_name_a.split("_")[5] == "total" or sl_name_b.split("_")[5] == "total":
         sys.exit("Invalid sourcelist input. This script only compares filter sourcelists, not total sourcelists.")
-    shapes=['box','circle']
+    shapes = ['box', 'circle']
     colors = ['red', 'green']
 
-    reg_dict_list = ["",""]
-    flag_counts_list = ["",""]
-    n_sources_list = ["",""]
-    print("Creating regions for sourcelist "+sl_name_a)
+    reg_dict_list = ["", ""]
+    flag_counts_list = ["", ""]
+    n_sources_list = ["", ""]
+    print("Creating regions for sourcelist " + sl_name_a)
     reg_dict_list[0], flag_counts_list[0], n_sources_list[0] = make_regions(sl_name_a, shapes[0], colors[0])
     print("Creating regions for sourcelist " + sl_name_b+"\n")
     reg_dict_list[1], flag_counts_list[1], n_sources_list[1] = make_regions(sl_name_b, shapes[1], colors[1])
@@ -173,4 +175,4 @@ if __name__ == "__main__":
     print("{} {}: {}".format(colors[0], shapes[0], sl_name_a))
     print("{} {}: {}".format(colors[1], shapes[1], sl_name_b))
 
-    display_regions(imgname,reg_dict_list,flag_counts_list,n_sources_list)
+    display_regions(imgname, reg_dict_list, flag_counts_list, n_sources_list)
