@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-This script allows the user to compare the flagging in two sourcelists on a bit-by-bit basis. It breaks down the flag
-values in the specified sourcelists by flag bit value and plots source locations by bit value
+This script allows the user to compare the flagging in two filter sourcelists on a bit-by-bit basis. It breaks down
+the flag values in the specified sourcelists by flag bit value and plots source locations by bit value
 
 NOTE: This script requires the "pyds9" library.
 """
@@ -105,7 +105,8 @@ def deconstruct_flag(flagval):
 
 def make_regions(sl_name,shape,color):
     """
-    generate a dictionary of dictionary region info to plot in ds9.
+    generate a dictionary of dictionary region info to plot in ds9. Assumes that X and Y coords are stored the first
+    two (leftmost) columns, and flag values are stored in the last (rightmost) column.
 
     parameters
     ----------
@@ -156,7 +157,8 @@ if __name__ == "__main__":
     imgname = sys.argv[1]
     sl_name_a = sys.argv[2]
     sl_name_b = sys.argv[3]
-
+    if sl_name_a.split("_")[5] == "total" or sl_name_b.split("_")[5] == "total":
+        sys.exit("Invalid sourcelist input. This script only compares filter sourcelists, not total sourcelists.")
     shapes=['box','circle']
     colors = ['red', 'green']
 
