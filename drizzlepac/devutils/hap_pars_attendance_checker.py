@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""This script checks to make sure all nessessary HAP json parameter files are present"""
+"""This script checks to make sure all necessary HAP json parameter files are present"""
 import glob
 import os
 from pathlib import Path
