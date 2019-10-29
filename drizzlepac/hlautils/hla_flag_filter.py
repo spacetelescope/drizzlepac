@@ -376,7 +376,10 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
     # OF "ALL" PIXEL COORDINATES WITH A FLAG VALUE OF 256
     # ----------------------------------------------------
     if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')):
-        image_ext_list = ["[sci,1]", "[sci,2]"]
+        if channel.lower in ['wfc', 'uvis']:
+            image_ext_list = ["[sci,1]", "[sci,2]"]
+        if channel.lower in ['sbc', 'hrc']:
+            image_ext_list = ["[sci,1]"]
         dq_sat_bit = 256
     if channel.lower() == 'wfpc2':
         image_ext_list = ["[sci,1]", "[sci,2]", "[sci,3]", "[sci,4]"]
