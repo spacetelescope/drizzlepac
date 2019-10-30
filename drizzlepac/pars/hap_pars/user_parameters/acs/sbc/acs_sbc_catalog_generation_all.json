@@ -6,7 +6,6 @@
     "dskyannulus_arcsec": 0.25,
     "aperture_1": 0.07,
     "aperture_2": 0.125,
-    "scale": 0.03,
     "salgorithm": "mode",
     "dao": {
         "bkgsig_sf": 4.0,
