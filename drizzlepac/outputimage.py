@@ -456,12 +456,14 @@ class OutputImage:
             if newtab is not None:
                 fo.append(newtab)
 
-            if not virtual:
+            if not virtual or "single_sci" in self.outdata:
                 print('Writing out image to disk:',self.outdata)
                 # write out file to disk
                 fo.writeto(self.outdata)
-                del fo,hdu
-                fo = None
+                del hdu
+                if "single_sci" not in self.outdata:
+                    del fo
+                    fo = None
             # End 'if not virtual'
             outputFITS[self.outdata]= fo
 
