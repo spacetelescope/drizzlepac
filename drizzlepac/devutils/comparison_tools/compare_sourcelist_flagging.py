@@ -43,7 +43,7 @@ def display_regions(imgname, reg_dict_list, flag_counts_list, n_sources_list):
     """
     imghdu = fits.open(imgname)
     d = pyds9.DS9()
-
+    print("{}Cat. #1{}Cat. #2".format(" " * 52, " " * 3))
     for ctr in range(0, len(bit_list)):
         bit_val = bit_list[ctr]
         padding1 = 6 - len(str(bit_val))
@@ -160,19 +160,20 @@ if __name__ == "__main__":
     sl_name_a = sys.argv[2]
     sl_name_b = sys.argv[3]
     if sl_name_a.split("_")[5] == "total" or sl_name_b.split("_")[5] == "total":
-        sys.exit("Invalid sourcelist input. This script only compares filter sourcelists, not total sourcelists.")
+        sys.exit("Invalid catalog input. This script only compares filter catalogs, not total catalogs.")
     shapes = ['box', 'circle']
     colors = ['red', 'green']
 
     reg_dict_list = ["", ""]
     flag_counts_list = ["", ""]
     n_sources_list = ["", ""]
-    print("Creating regions for sourcelist " + sl_name_a)
+    print("Creating regions for catalog " + sl_name_a)
     reg_dict_list[0], flag_counts_list[0], n_sources_list[0] = make_regions(sl_name_a, shapes[0], colors[0])
-    print("Creating regions for sourcelist " + sl_name_b+"\n")
+    print("Creating regions for catalog " + sl_name_b+"\n")
     reg_dict_list[1], flag_counts_list[1], n_sources_list[1] = make_regions(sl_name_b, shapes[1], colors[1])
-
-    print("{} {}: {}".format(colors[0], shapes[0], sl_name_a))
-    print("{} {}: {}".format(colors[1], shapes[1], sl_name_b))
+    len_list = [len("{} {}".format(colors[0], shapes[0])), len("{} {}".format(colors[1], shapes[1]))]
+    max_width = max(len_list)
+    print("Catalog #1 ({} {}):{} {}".format(colors[0], shapes[0], (max_width - len_list[0])*" ", sl_name_a))
+    print("Catalog #2 ({} {}):{} {}".format(colors[1], shapes[1], (max_width - len_list[1])*" ", sl_name_b))
 
     display_regions(imgname, reg_dict_list, flag_counts_list, n_sources_list)
