@@ -1,0 +1,63 @@
+{
+  "general":
+    {
+      "MIN_FIT_MATCHES": 6,
+      "MAX_FIT_RMS": 10,
+      "MAX_SOURCES_PER_CHIP": 250
+    },
+  "run_align":
+    {
+      "update_hdr_wcs": true,
+      "catalog_list": ["GAIADR2", "GAIADR1"],
+      "fit_algorithm_list_ngt1": ["match_relative_fit", "match_2dhist_fit", "match_default_fit"],
+      "fit_algorithm_list_n1": ["match_2dhist_fit", "match_default_fit"],
+      "MIN_CATALOG_THRESHOLD": 3,
+      "MIN_OBSERVABLE_THRESHOLD": 10,
+      "MAX_FIT_LIMIT": 150
+    },
+  "generate_source_catalogs":
+    {
+      "box_size":50,
+      "win_size":3,
+      "nsigma":5.0,
+      "centering_mode": "starfind",
+      "bkg_estimator": "MedianBackground",
+      "rms_estimator": "StdBackgroundRMS",
+      "num_sources": 250,
+      "deblend": false,
+      "fwhmpsf": 0.13,
+      "classify": false,
+      "threshold": 2.0
+    },
+  "generate_astrometric_catalog":
+    {
+      "gaia_only": false,
+      "existing_wcs": null
+    },
+  "match_relative_fit":
+    {
+      "searchrad": 75,
+      "separation": 0.1,
+      "tolerance": 2,
+      "use2dhist": true
+    },
+  "match_default_fit":
+    {
+      "searchrad": 250,
+      "separation": 0.1,
+      "tolerance": 100,
+      "use2dhist": false
+    },
+  "match_2dhist_fit":
+    {
+      "searchrad": 75,
+      "separation": 0.1,
+      "tolerance": 2,
+      "use2dhist": true
+    },
+  "determine_fit_quality":
+    {
+      "MIN_CROSS_MATCHES": 3,
+      "MAS_TO_ARCSEC": 1000
+    }
+}
