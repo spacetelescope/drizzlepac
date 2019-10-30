@@ -183,7 +183,7 @@ class FilterProduct(HAPProduct):
         """
         self.edp_list.append(edp)
 
-    def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None):
+    def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment
            routine.
@@ -204,7 +204,7 @@ class FilterProduct(HAPProduct):
                     headerlet_filenames[edp.full_filename] = edp.headerlet_filename
 
                 align_table = align_utils.AlignmentTable(exposure_filenames, **alignment_pars)
-                align_table.find_alignment_sources()
+                align_table.find_alignment_sources(output=output)
                 align_table.configure_fit()
                 refname = "{}_ref_cat.ecsv".format(self.product_basename)
                 log.info('Creating reference catalog {}'.format(refname))
