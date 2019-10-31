@@ -4,6 +4,7 @@ segmentation-map based photometry.
 import sys
 import pickle  # FIX Remove
 import copy
+import pdb
 
 import astropy.units as u
 from astropy.io import fits as fits
@@ -455,20 +456,41 @@ class HAPCatalogBase:
         except Exception as xcept:
             log.info("Exception in printing APERTURE info {}".format(xcept))
             pass
+        # TODO: Get rid of this if-elif-else logic tree. Get values directly from 'filter_product_obj.configobj_pars' object.
+        if self.image.keyword_dict["detector"] == "HRC":
+            ci_lower = 0.9
+            ci_upper = 1.6
+        elif self.image.keyword_dict["detector"] == "SBC":
+            ci_lower = 0.15
+            ci_upper = 0.45
+        elif self.image.keyword_dict["detector"] == "WFC":
+            ci_lower = 0.9
+            ci_upper = 1.23
+        elif self.image.keyword_dict["detector"] == "IR":
+            ci_lower = 0.25
+            ci_upper = 0.55
+        elif self.image.keyword_dict["detector"] == "UVIS":
+            ci_lower = 0.75
+            ci_upper = 1.00
+        else: #Hopefully should never reach the 'else'
+            sys.exit("UNRECOGNIZED DETECTOR!")
+
         data_table.meta["h09"] = ["#================================================================================================="]
         data_table.meta["h10"] = ["IMPORTANT NOTES"]
         data_table.meta["h11"] = ["The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
-        data_table.meta["h12"] = ["RA and Dec values in this table are sky coordinates (i.e. coordinates at the epoch of observation"]
-        data_table.meta["h12.1"] = [" and fit to GAIADR1 (2015.0) or GAIADR2 (2015.5))."]
+        data_table.meta["h12"] = ["RA and Dec values in this table are in sky coordinates (i.e. coordinates at the epoch of observation"]
+        data_table.meta["h12.1"] = ["and fit to GAIADR1 (2015.0) or GAIADR2 (2015.5))."]
         data_table.meta["h13"] = ["Magnitude values in this table are in the ABMAG system."]
-        data_table.meta["h14"] = ["Column titles in this table ending with 'Ap1' refer to the inner photometric aperture (radius = {} pixels, {} arcsec.".format(self.aper_radius_list_pixels[0], self.aper_radius_arcsec[0])]
-        data_table.meta["h15"] = ["Column titles in this table ending with 'Ap2' refer to the outer photometric aperture (radius = {} pixels, {} arcsec.".format(self.aper_radius_list_pixels[1], self.aper_radius_arcsec[1])]
-        data_table.meta["h16"] = ["CI = Concentration Index = MagAp1 - MagAp2."]
+        data_table.meta["h14"] = ["Column titles in this table ending with Ap1 refer to the inner photometric aperture "]
+        data_table.meta["h14.1"] = ["(radius = {} pixels, {} arcsec.".format(self.aper_radius_list_pixels[0], self.aper_radius_arcsec[0])]
+        data_table.meta["h15"] = ["Column titles in this table ending with Ap2 refer to the outer photometric aperture "]
+        data_table.meta["h15.1"] = ["(radius = {} pixels, {} arcsec.".format(self.aper_radius_list_pixels[1], self.aper_radius_arcsec[1])]
+        data_table.meta["h16"] = ["CI = Concentration Index (CI) = MagAp1 - MagAp2."]
         data_table.meta["h17"] = ["Flag Value Identification:"]
-        data_table.meta["h17.1"] = ["    0 - WFC3/IR: 0.5 < CI < 1.0; WFC3/UVIS: 0.7 < CI < 1.3)"]
-        data_table.meta["h17.2"] = ["    1 - Extended Source WFC3/IR: CI > 1.0; WFC3/UVIS CI > 1.3"]
+        data_table.meta["h17.1"] = ["    0 - Stellar Source ({} < CI < {})".format(ci_lower,ci_upper)]
+        data_table.meta["h17.2"] = ["    1 - Extended Source (CI > {})".format(ci_upper)]
         data_table.meta["h17.3"] = ["    2 - Questionable Photometry (single-pixel saturation)"]
-        data_table.meta["h17.4"] = ["   16 - Concentration Index < 0.5 (IR), < 0.7 (UVIS), Hot Pixels"]
+        data_table.meta["h17.4"] = ["   16 - Hot Pixels (CI < {})".format(ci_lower)]
         data_table.meta["h17.5"] = ["   32 - False Detection Swarm Around Saturated Source"]
         data_table.meta["h17.6"] = ["   64 - False Detections Near Image Edge"]
         data_table.meta["h18"] = ["#================================================================================================="]
