@@ -200,6 +200,23 @@ class HapConfig(object):
             json_string = jsonFile.read()
             self.full_cfg_index = json.loads(json_string)
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    def as_single_giant_dict(self):
+        """This method returns all parameters for all steps in a single dictionary keyed by stepname
+
+        Parameters
+        ----------
+        None.
+
+        Returns
+        -------
+        Dictionary of all parameter values keyed by step name.
+        """
+        step_list = ['alignment', 'astrodrizzle', 'catalog generation', 'quality control']
+        big_giant_dictionary = {}
+        for step in step_list:
+            big_giant_dictionary[step] = self.get_pars(step)
+        return big_giant_dictionary
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def get_pars(self, step_name):
