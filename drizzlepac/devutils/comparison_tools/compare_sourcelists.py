@@ -76,6 +76,7 @@ Classes and Functions
 ---------------------
 """
 import argparse
+import pdb
 import random
 import sys
 
@@ -871,7 +872,10 @@ def slFiles2dataTables(slNames):
         outTable=Table()
         for swapKey in list(titleSwapDict.keys()):
             if titleSwapDict[swapKey] != "n/a":
-                col2add=Table.Column(name=swapKey,data=dataTable[titleSwapDict[swapKey]])
+                try:
+                    col2add=Table.Column(name=swapKey,data=dataTable[titleSwapDict[swapKey]])
+                except TypeError:
+                    col2add = Table.MaskedColumn(name=swapKey, data=dataTable[titleSwapDict[swapKey]])
                 outTable.add_column(col2add)
         if ctr == 1: refData = outTable
         if ctr == 2: compData = outTable
