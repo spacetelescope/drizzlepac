@@ -461,16 +461,14 @@ class HAPCatalogBase:
         data_table.meta["h12"] = ["Magnitude values are in the ABMAG system"]
         data_table.meta["h13"] = ["aperture_string"]
         data_table.meta["h14"] = ["CI = Concentration Index = MAGAP1-MAGAP2"]
-        data_table.meta["h15"] = ["Total Magnitudes (TOTMAG) are given for flag values of 0"]
-        data_table.meta["h15.1"] = ["    This flag value identifies stellar sources possessing CI values as follows: 0.85 < CI 1.3"]
-        data_table.meta["h16"] = ["Flag Value Identification:"]
-        data_table.meta["h16.1"] = ["    0 - WFC3/IR: 0.5 < CI < 1.0; WFC3/UVIS: 0.7 < CI < 1.3)"]
-        data_table.meta["h16.2"] = ["    1 - Extended Source WFC3/IR: CI > 1.0; WFC3/UVIS CI > 1.3"]
-        data_table.meta["h16.3"] = ["    2 - Questionable Photometry (single-pixel saturation)"]
-        data_table.meta["h16.4"] = ["   16 - Concentration Index < 0.5 (IR), < 0.7 (UVIS), Hot Pixels"]
-        data_table.meta["h16.5"] = ["   32 - False Detection Swarm Around Saturated Source"]
-        data_table.meta["h16.6"] = ["   64 - False Detections Near Image Edge"]
-        data_table.meta["h17"] = ["#================================================================================================="]
+        data_table.meta["h15"] = ["Flag Value Identification:"]
+        data_table.meta["h15.1"] = ["    0 - WFC3/IR: 0.5 < CI < 1.0; WFC3/UVIS: 0.7 < CI < 1.3)"]
+        data_table.meta["h15.2"] = ["    1 - Extended Source WFC3/IR: CI > 1.0; WFC3/UVIS CI > 1.3"]
+        data_table.meta["h15.3"] = ["    2 - Questionable Photometry (single-pixel saturation)"]
+        data_table.meta["h15.4"] = ["   16 - Concentration Index < 0.5 (IR), < 0.7 (UVIS), Hot Pixels"]
+        data_table.meta["h15.5"] = ["   32 - False Detection Swarm Around Saturated Source"]
+        data_table.meta["h15.6"] = ["   64 - False Detections Near Image Edge"]
+        data_table.meta["h16"] = ["#================================================================================================="]
 
         return (data_table)
 
@@ -614,20 +612,11 @@ class HAPPointCatalog(HAPCatalogBase):
         flag_col = Column(name="Flags", data=np.zeros_like(photometry_tbl['ID']), dtype=np.int64)
         photometry_tbl.add_column(flag_col)
 
-        # Add null-value "TotMag(<outer radiiArc>)" and "TotMag(<outer radiiArc>)" columns
-        empty_tot_mag = MaskedColumn(name="TotMag({})".format(self.aper_radius_arcsec[1]), fill_value=None, mask=True,
-                                     length=len(photometry_tbl["XCENTER"].data), dtype=np.int64)
-        empty_tot_mag_err = MaskedColumn(name="TotMagErr({})".format(self.aper_radius_arcsec[1]), fill_value=None, mask=True,
-                                         length=len(photometry_tbl["XCENTER"].data), dtype=np.int64)
-        photometry_tbl.add_column(empty_tot_mag)
-        photometry_tbl.add_column(empty_tot_mag_err)
-
         # build final output table
         final_col_order = ["XCENTER", "YCENTER", "RA", "DEC", "ID", "MAG_{}".format(self.aper_radius_arcsec[0]),
                            "MAG_{}".format(self.aper_radius_arcsec[1]), "MERR_{}".format(self.aper_radius_arcsec[0]),
                            "MERR_{}".format(self.aper_radius_arcsec[1]), "MSKY", "STDEV",
-                           "FLUX_{}".format(self.aper_radius_arcsec[1]), "TotMag({})".format(self.aper_radius_arcsec[1]),
-                           "TotMagErr({})".format(self.aper_radius_arcsec[1]), "CI", "Flags"]
+                           "FLUX_{}".format(self.aper_radius_arcsec[1]), "CI", "Flags"]
         output_photometry_table = photometry_tbl[final_col_order]
 
         # format output table columns
