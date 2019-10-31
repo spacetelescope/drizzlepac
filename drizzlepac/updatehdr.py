@@ -513,7 +513,8 @@ def interpret_wcsname_type(wcsname):
     """Interpret WCSNAME as a standardized human-understandable description """
     wcstype = ''
     fit_terms = {'REL': 'relatively aligned to {}',
-                 'IMG': 'aligned image-by-image to {}'}
+                 'IMG': 'aligned image-by-image to {}',
+                 'SVM': 'aligned by visit to {}'}
     post_fit = 'a posteriori solution '
     default_fit = 'a priori solution based on {}'
     base_terms = {'IDC': 'undistorted ',

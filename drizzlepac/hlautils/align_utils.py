@@ -71,7 +71,7 @@ class AlignmentTable:
         self.alignment_pars.update(alignment_pars['general'])
         self.alignment_pars.update(alignment_pars['generate_source_catalogs'])
         self.alignment_pars.update(alignment_pars['determine_fit_quality'])
-        
+
         self.dqname = dqname
 
         self.zero_dt = starting_dt = datetime.datetime.now()
@@ -239,7 +239,8 @@ class AlignmentTable:
             raise ValueError
         # Call update_hdr_wcs()
         headerlet_dict = update_image_wcs_info(self.selected_fit,
-                                               headerlet_filenames=headerlet_filenames)
+                                               headerlet_filenames=headerlet_filenames,
+                                               fit_label='SVM')
 
         for table_index in range(0, len(self.filtered_table)):
             self.filtered_table[table_index]['headerletFile'] = headerlet_dict[
