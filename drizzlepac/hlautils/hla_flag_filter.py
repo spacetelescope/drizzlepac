@@ -114,10 +114,10 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
         "aperture": {
             "x_coltitle": "X-Center",
             "y_coltitle": "Y-Center",
-            "magerr1_coltitle": "MagErr({})".format(param_dict["catalog generation"]["aperture_1"]),
-            "magerr2_coltitle": "MagErr({})".format(param_dict["catalog generation"]["aperture_2"]),
-            "flux_coltitle": "Flux({})".format(param_dict["catalog generation"]["aperture_2"]),
-            "background_coltitle": "MSky({})".format(param_dict["catalog generation"]["aperture_2"]),
+            "magerr1_coltitle": "MagErrAp1",
+            "magerr2_coltitle": "MagErrAp2",
+            "flux_coltitle": "FluxAp2",
+            "background_coltitle": "MSkyAp2",
             "ci_coltitle": "CI",
             "flag_coltitle": "Flags"
         },

@@ -620,8 +620,7 @@ class HAPPointCatalog(HAPCatalogBase):
 
         try:
             # Calculate and add concentration index (CI) column to table
-            ci_data = photometry_tbl["MAG_{}".format(self.aper_radius_arcsec[0])].data - photometry_tbl[
-                "MAG_{}".format(self.aper_radius_arcsec[1])].data
+            ci_data = photometry_tbl["MagAp1"].data - photometry_tbl["MagAp2"].data
         except Exception:
             pickle_out = open("catalog.pickle", "wb")
             pickle.dump(photometry_tbl, pickle_out)
@@ -638,36 +637,24 @@ class HAPPointCatalog(HAPCatalogBase):
         photometry_tbl.add_column(flag_col)
 
         # build final output table
-        final_col_order = ["XCENTER", "YCENTER", "RA", "DEC", "ID", "MAG_{}".format(self.aper_radius_arcsec[0]),
-                           "MAG_{}".format(self.aper_radius_arcsec[1]), "MERR_{}".format(self.aper_radius_arcsec[0]),
-                           "MERR_{}".format(self.aper_radius_arcsec[1]), "MSKY", "STDEV",
-                           "FLUX_{}".format(self.aper_radius_arcsec[1]), "CI", "Flags"]
+        final_col_order = ["XCENTER", "YCENTER", "RA", "DEC", "ID", "MagAp1", "MagAp2", "MagErrAp1", "MagErrAp2",
+                           "MSkyAp2", "StdevAp2", "FluxAp2", "CI", "Flags"]
         output_photometry_table = photometry_tbl[final_col_order]
 
         # format output table columns
-        final_col_format = {"RA": "13.10f", "DEC": "13.10f", "MAG_{}".format(self.aper_radius_arcsec[0]): '6.3f',
-                            "MAG_{}".format(self.aper_radius_arcsec[1]): '6.3f',
-                            "MERR_{}".format(self.aper_radius_arcsec[0]): '6.3f',
-                            "MERR_{}".format(self.aper_radius_arcsec[1]): '6.3f', "MSKY": '10.8f', "STDEV": '10.8f',
-                            "FLUX_{}".format(self.aper_radius_arcsec[1]): '10.8f', "CI": "7.3f"}
+        final_col_format = {"RA": "13.10f", "DEC": "13.10f", "MagAp1": '6.3f', "MagAp2": '6.3f', "MagErrAp1": '6.3f',
+                            "MagErrAp2": '6.3f', "MSkyAp2": '10.8f', "StdevAp2": '10.8f', "FluxAp2": '10.8f', "CI": "7.3f"}
         for fcf_key in final_col_format.keys():
             output_photometry_table[fcf_key].format = final_col_format[fcf_key]
 
         # change some column titles to match old daophot.txt files
-        rename_dict = {"XCENTER": "X-Center", "YCENTER": "Y-Center",
-                       "MAG_{}".format(self.aper_radius_arcsec[0]): "MagAp({})".format(self.aper_radius_arcsec[0]),
-                       "MAG_{}".format(self.aper_radius_arcsec[1]): "MagAp({})".format(self.aper_radius_arcsec[1]),
-                       "MERR_{}".format(self.aper_radius_arcsec[0]): "MagErr({})".format(self.aper_radius_arcsec[0]),
-                       "MERR_{}".format(self.aper_radius_arcsec[1]): "MagErr({})".format(self.aper_radius_arcsec[1]),
-                       "MSKY": "MSky({})".format(self.aper_radius_arcsec[1]),
-                       "STDEV": "Stdev({})".format(self.aper_radius_arcsec[1]),
-                       "FLUX_{}".format(self.aper_radius_arcsec[1]): "Flux({})".format(self.aper_radius_arcsec[1])}
+        rename_dict = {"XCENTER": "X-Center", "YCENTER": "Y-Center"}
         for old_col_title in rename_dict:
             output_photometry_table.rename_column(old_col_title, rename_dict[old_col_title])
             log.info("Column '{}' renamed '{}'".format(old_col_title, rename_dict[old_col_title]))
 
         # Capture specified columns in order to append to the total detection table
-        magap_name = "MagAp({})".format(self.aper_radius_arcsec[1])
+        magap_name = "MagAp1"
         self.subset_filter_source_cat = output_photometry_table["ID", "CI", magap_name, "Flags"]
         self.subset_filter_source_cat.rename_column(magap_name, magap_name + "_" + filter_name)
         self.subset_filter_source_cat.rename_column("CI", "CI_" + filter_name)
