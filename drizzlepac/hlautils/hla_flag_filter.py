@@ -122,12 +122,12 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
             "flag_coltitle": "Flags"
         },
         "segment": {
-            "x_coltitle": "xcentroid",
-            "y_coltitle": "ycentroid",
-            "magerr1_coltitle": "MAGERR_APER1", # TODO: update with correct column title once column is added to segment catalogs
-            "magerr2_coltitle": "MAGERR_APER2", # TODO: update with correct column title once column is added to segment catalogs
-            "flux_coltitle": "source_sum",
-            "background_coltitle": "background_at_centroid",
+            "x_coltitle": "X-Centroid",
+            "y_coltitle": "Y-Centroid",
+            "magerr1_coltitle": "MagErrAp1",
+            "magerr2_coltitle": "MagErrAp2",
+            "flux_coltitle": "FluxAp2",
+            "background_coltitle": "MSkyAp2",
             "ci_coltitle": "CI",
             "flag_coltitle": "Flags"
         }
