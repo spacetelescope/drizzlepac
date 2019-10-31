@@ -302,7 +302,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         log.info("\nAlign the images on a filter-by-filter basis.")
         for tot_obj in total_list:
             for filt_obj in tot_obj.fdp_list:
-                align_table, filt_exposures = filt_obj.align_to_gaia()
+                align_table, filt_exposures = filt_obj.align_to_gaia(output=debug)
 
                 # Report results and track the output files
                 if align_table:
