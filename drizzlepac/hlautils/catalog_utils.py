@@ -586,7 +586,10 @@ class HAPPointCatalog(HAPCatalogBase):
 
 
         # load in coords of sources identified in total product
-        positions = (self.sources['xcentroid'], self.sources['ycentroid'])
+        try:
+            positions = (self.sources['xcentroid'], self.sources['ycentroid'])
+        except:
+            positions = (self.sources['X-Center'], self.sources['Y-Center'])
 
         pos_xy = np.vstack(positions).T
 
@@ -767,10 +770,17 @@ class HAPPointCatalog(HAPCatalogBase):
 
         # Keep all the rows in the original total detection table and add rows from the filter
         # table where a matching "id" key is present.  The key must match in case.
-        self.sources.rename_column('xcentroid', 'X-Center')
-        self.sources.rename_column('ycentroid', 'Y-Center')
-        self.sources.rename_column("id", "ID")
-        self.sources.remove_columns(['sharpness', 'roundness1', 'roundness2', 'npix', 'sky', 'peak', 'flux', 'mag'])
+        if 'xcentroid' in self.sources.colnames:
+            self.sources.rename_column('xcentroid', 'X-Center')
+        if 'ycentroid' in self.sources.colnames:
+            self.sources.rename_column('ycentroid', 'Y-Center')
+        if 'id' in self.sources.colnames:
+            self.sources.rename_column("id", "ID")
+        for col2del in ['sharpness', 'roundness1', 'roundness2', 'npix', 'sky', 'peak', 'flux', 'mag']:
+            if col2del in self.sources.colnames:
+                self.sources.remove_column(col2del)
+
+        if 'RA' in self.sources.colnames and 'DEC' in self.sources.colnames: subset_table.remove_columns(['RA', 'DEC'])
         self.sources = join(self.sources, subset_table, keys="ID", join_type="left")
 
 
