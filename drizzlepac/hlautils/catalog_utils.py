@@ -657,9 +657,8 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("Column '{}' renamed '{}'".format(old_col_title, rename_dict[old_col_title]))
 
         # Capture specified columns in order to append to the total detection table
-        magap_name = "MagAp2"
-        self.subset_filter_source_cat = output_photometry_table["ID", "RA", "DEC", magap_name, "CI", "Flags"]
-        self.subset_filter_source_cat.rename_column(magap_name, magap_name + "_" + filter_name)
+        self.subset_filter_source_cat = output_photometry_table["ID", "RA", "DEC", "MagAp2", "CI", "Flags"]
+        self.subset_filter_source_cat.rename_column("MagAp2", "MagAP2_" + filter_name)
         self.subset_filter_source_cat.rename_column("CI", "CI_" + filter_name)
         self.subset_filter_source_cat.rename_column("Flags", "Flags_" + filter_name)
 
