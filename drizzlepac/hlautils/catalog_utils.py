@@ -1015,6 +1015,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Convert source_cat which is a SourceCatalog to an Astropy Table
         filter_measurements_table = Table(self.source_cat.to_table())
 
+        # Compute the MagAuto
+        filter_measurements_table["MagAuto"] = self.ab_zeropoint - 2.5 * np.log10(filter_measurements_table["source_sum"])
+
         # Compute additional measurements and append the columns to the measurements table
         updated_table = self.do_aperture_photometry(imgarr_bkgsub, filter_measurements_table)
 
@@ -1074,17 +1077,18 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # log.info("SEGMENT. Bad filter rows: {}".format(bad_rows))
 
         positions = (updated_table["xcentroid"], updated_table["ycentroid"])
-        pos_x = np.asarray(positions[0])
-        pos_y = np.asarray(positions[1])
+        pos_xy = np.vstack(positions).T
 
         # Define list of background annulii
-        bg_apers = CircularAnnulus((pos_x, pos_y),
+        # bg_apers = CircularAnnulus((pos_x, pos_y),
+        bg_apers = CircularAnnulus(pos_xy,
                                     r_in=self.param_dict['skyannulus_arcsec'],
                                     r_out=self.param_dict['skyannulus_arcsec'] +
                                           self.param_dict['dskyannulus_arcsec'])
 
         # Create list of photometric apertures to measure
-        phot_apers = [CircularAperture((pos_x, pos_y), r=r) for r in self.aper_radius_list_pixels]
+        # phot_apers = [CircularAperture((pos_x, pos_y), r=r) for r in self.aper_radius_list_pixels]
+        phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
 
         # Perform aperture photometry
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers,
@@ -1096,24 +1100,44 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                 epadu=self.gain,
                                                                 zero_point=self.ab_zeropoint)
 
-        # Compute the concentration index for all the good sources and extract the magnitude data
+        # Capture data computed by the photometry tools and append to the output table
         try:
+            flux_inner_data = photometry_tbl["FLUX_{}".format(self.aper_radius_arcsec[0])].data
+            flux_inner_data_err = photometry_tbl["FERR_{}".format(self.aper_radius_arcsec[0])].data
             mag_inner_data = photometry_tbl["MAG_{}".format(self.aper_radius_arcsec[0])].data
-            mag_outer_data = photometry_tbl["MAG_{}".format(self.aper_radius_arcsec[1])].data
-            ci_data = mag_inner_data - mag_outer_data
+            mag_inner_data_error = photometry_tbl["MERR_{}".format(self.aper_radius_arcsec[0])].data
 
+            flux_outer_data = photometry_tbl["FLUX_{}".format(self.aper_radius_arcsec[1])].data
+            flux_outer_data_err = photometry_tbl["FERR_{}".format(self.aper_radius_arcsec[1])].data
+            mag_outer_data = photometry_tbl["MAG_{}".format(self.aper_radius_arcsec[1])].data
+            mag_outer_data_error = photometry_tbl["MERR_{}".format(self.aper_radius_arcsec[1])].data
+
+            ci_data = mag_inner_data - mag_outer_data
             ci_mask = np.logical_and(np.abs(ci_data) > 0.0, np.abs(ci_data) < 1.0e-30)
             big_bad_index = np.where(abs(ci_data) > 1.0e20)
             ci_mask[big_bad_index] = True
             ci_col = MaskedColumn(name="CI", data=ci_data, dtype=np.float64, mask=ci_mask)
+            updated_table.add_column(ci_col)
 
             # Append these additional measurements to the filter table
+            flux_col = Column(data=flux_inner_data, name="FluxAp1", dytpe=np.float64)
+            flux_col_err = Column(data=flux_inner_data_err, name="FluxErrAp1", dytpe=np.float64)
             mag_col = Column(data=mag_inner_data, name="MagAp1", dtype=np.float64)
+            mag_col_err = Column(data=mag_inner_data_err, name="MagErrAp1", dtype=np.float64)
+            updated_table.add_column(flux_col)
+            updated_table.add_column(flux_col_err)
             updated_table.add_column(mag_col)
+            updated_table.add_column(mag_col_err)
+
+            flux_col = Column(data=flux_outer_data, name="FluxAp2", dytpe=np.float64)
+            flux_col_err = Column(data=flux_outer_data_err, name="FluxErrAp2", dytpe=np.float64)
             mag_col = Column(data=mag_outer_data, name="MagAp2", dtype=np.float64)
+            mag_col_err = Column(data=mag_outer_data_err, name="MagErrAp2", dtype=np.float64)
+            updated_table.add_column(flux_col)
+            updated_table.add_column(flux_col_err)
             updated_table.add_column(mag_col)
-            ci_col = Column(data=ci_data, name="CI", dtype=np.float64)
-            updated_table.add_column(ci_col)
+            updated_table.add_column(mag_col_err)
+
         except Exception as x_cept:
             log.warning("SEGMENT. Computation of additional photometric measurements was not successful: {}.".format(self.imgname, x_cept))
             log.warning("SEGMENT. Additional measurements have not been added to the output catalog.\n")
@@ -1121,16 +1145,17 @@ class HAPSegmentCatalog(HAPCatalogBase):
             pickle.dump(photometry_tbl, pickle_out)
             pickle_out.close()
 
-        # Generate the MagAuto from the source_sum
-        # FIX
-        temp_table = updated_table["id", "source_sum"]
-        temp_table.rename_column("source_sum", "MagAuto")
-        temp_table["MagAuto"] = self.ab_zeropoint - 2.5 * np.log10(temp_table["MagAuto"])
-        updated_table = join(updated_table, temp_table, keys="id", join_type="left")
-
         # Add zero-value "Flags" column in preparation for source flagging
         flag_col = Column(name="Flags", data=np.zeros_like(updated_table["id"]))
         updated_table.add_column(flag_col)
+
+        # Add null-value "TotMagAp2" and "TotMagErrAp2" columns
+        empty_tot_mag = MaskedColumn(name="TotMagApr2", fill_value=None, mask=True,
+                                     length=len(updated_table["id"].data), dtype=np.int64)
+        empty_tot_mag_err = MaskedColumn(name="TotMagErrAp2", fill_value=None, mask=True,
+                                         length=len(updated_table["id"].data), dtype=np.int64)
+        updated_table.add_column(empty_tot_mag)
+        updated_table.add_column(empty_tot_mag_err)
 
         return updated_table
 
@@ -1144,38 +1169,45 @@ class HAPSegmentCatalog(HAPCatalogBase):
         rr = Column(ra_icrs, name="RA", unit=u.deg)
         dd = Column(dec_icrs, name="DEC", unit=u.deg)
         filter_table.add_columns([dd, rr])
-        final_col_order = ["xcentroid", "ycentroid", "RA", "DEC",
-                           "id", "CI", "MagAp1", "MagAp2", "MagAuto",
-                           "background_at_centroid", "source_sum", "source_sum_err",
+
+        # Define the order of the columns
+        final_col_order = ["xcentroid", "ycentroid", "RA", "DEC", "id", "TotMag", "TotMagErr", 
+                           "CI", "Flags", "MagAp1", "MagErrAp1", "FluxAp1", "FluxErrAp1", 
+                           "MagAp2", "MagErrAp2", "FluxAp2", "FluxErrAp2",
+                           "background_at_centroid", "MagAuto", "source_sum", "source_sum_err",
                            "bbox_xmin", "bbox_ymin", "bbox_xmax", "bbox_ymax",
                            "covar_sigx2", "covar_sigy2", "covar_sigxy",
                            "cxx", "cyy", "cxy",
-                           "elongation", "ellipticity", "Flags"]
+                           "elongation", "ellipticity"]
         final_filter_table = filter_table[final_col_order]
 
-        final_col_format = {"xcentroid": "10.3f", "ycentroid": "10.3f", "RA": "13.7f", "DEC": "13.7f",
-                            "id": "6d", "CI": "10.3f", "MagAp1": "8.3f", "MagAp2": "8.3f", "MagAuto": "8.3f",
-                            # "background_at_centroid" : "8.3f", "source_sum" : "8.3f", "source_sum_err" : "8.3f",
-                            "background_at_centroid": "8.3f", "source_sum": "8.3f",
-                            "bbox_xmin": "8.1f", "bbox_ymin": "8.1f", "bbox_xmax": "8.1f", "bbox_ymax": "8.1f",
+        # Define the format
+        final_col_format = {"xcentroid": "10.3f", "ycentroid": "10.3f", "RA": "13.7f", "DEC": "13.7f", "id": "6d", 
+                            "CI": "10.3f", "Flags": "5d", 
+                            "MagAp1": "8.4f", "MagErrAp1": "8.5f", "FluxAp1": "8.4f", "FluxErrAp1": "8.5f",
+                            "MagAp2": "8.4f", "MagErrAp2": "8.5f", "FluxAp2": "8.4f", "FluxErrAp2": "8.5f",
+                            "background_at_centroid": "8.3f", "MagAuto": "8.3f", "source_sum" : "8.3f", "source_sum_err" : "8.3f",
+                            "bbox_xmin": "5d", "bbox_ymin": "5d", "bbox_xmax": "5d", "bbox_ymax": "5d",
                             "covar_sigx2": "8.3f", "covar_sigy2": "8.3f", "covar_sigxy": "8.3f",
                             "cxx": "8.3f", "cyy": "8.3f", "cxy": "8.3f",
-                            "elongation": "8.3f", "ellipticity": "8.3f", "Flags": "5d"}
+                            "elongation": "8.3f", "ellipticity": "8.3f"}
         for fcf_key in final_col_format.keys():
             final_filter_table[fcf_key].format = final_col_format[fcf_key]
 
-        # Rename some column titles
-        final_filter_table.rename_column("id", "ID")
+        # Rename columns to names used when HLA Classic catalog distributed by MAST
+        final_col_names = {"id": "ID", "xcentroid": "X-Center", "ycentroid": "Y-Center",
+                       "background_at_centroid": "Bck", "source_sum": "FluxAuto", "source_sum_err": "FluxAutoErr",
+                       "bbox_xmin": "Xmin", "bbox_ymin": "Ymin", "bbox_xmax": "Xmax", "bbox_ymax": "Ymax",
+                       "covar_sigx2": "X2", "covar_sigy2": "Y2", "covar_sigxy": "XY"}
+        for old_col_title in final_col_names:
+            final_filter_table.rename_column(old_col_title, final_col_names[old_col_title])
 
-        # Add description to some of the column names where the description is the SExtractor name
-        final_col_descrip = {"xcentroid": "x_image", "ycentroid": "y_image",
-                             "background_at_centroid": "background", "source_sum": "flux_auto",
-                             "source_sum_err": "fluxerr_auto",
-                             # "bbox_xmin" : "6.1f", "bbox_ymin" : "6.1f", "bbox_xmax" : "6.1f", "bbox_ymax" : "6.1f",
-                             "covar_sigx2": "x2_image, variance along x", "covar_sigy2": "y2_image, variance along y",
-                             "covar_sigxy": "covariance of position between x and y",
-                             "cxx": "cxx_image, ellipse parameter", "cyy": "cxx_image, ellipse parameter",
-                             "cxy": "cxy_image, ellipse parameter"}
+        # Add description and possibly units for some of the columns
+        final_col_descrip = {"Bck": "background at centroid position", 
+                             "X2": "variance along X", "Y2": "variance along Y",
+                             "XY": "covariance of position between X and Y",
+                             "CXX": "ellipse parameter", "CYY": "ellipse parameter",
+                             "CXY": "ellipse parameter"}
         for fcd_key in final_col_descrip.keys():
             final_filter_table[fcd_key].description = final_col_descrip[fcd_key]
 
@@ -1200,18 +1232,18 @@ class HAPSegmentCatalog(HAPCatalogBase):
         dd = Column(dec_icrs, name="DEC", unit=u.deg, format="11.7f")
         table.add_columns([rr, dd])
 
-        # Rename columns to match SExtractor output
-        # The columns that are appended will be renamed during the combine process
-        rename_dict = {"id": "ID", "xcentroid": "X", "ycentroid": "Y"}
-        for old_col_title in rename_dict:
-            table.rename_column(old_col_title, rename_dict[old_col_title])
-
         # Format the columns
-        final_col_format = {"ID": "6d", "X": "10.3f", "Y": "10.3f", "RA": "13.7f", "DEC": "13.7f"}
+        final_col_format = {"id": "6d", "xcentroid": "10.3f", "ycentroid": "10.3f", "RA": "13.7f", "DEC": "13.7f"}
         for fcf_key in final_col_format.keys():
             table[fcf_key].format = final_col_format[fcf_key]
 
-        # Add description to some of the columns
+        # Rename columns to names used when HLA Classic catalog distributed by MAST
+        # The columns that are appended will be renamed during the combine process
+        final_col_names = {"id": "ID", "xcentroid": "X", "ycentroid": "Y"}
+        for old_col_title in final_col_names:
+            table.rename_column(old_col_title, final_col_names[old_col_title])
+
+        # Add description and possibly units for some of the columns
         final_col_descrip = {"X": "Pixel Position", "Y": "Pixel Position",
                              "RA": "ICRS Coordinate", "DEC": "ICRS Coordinate"}
         for fcd_key in final_col_descrip.keys():
