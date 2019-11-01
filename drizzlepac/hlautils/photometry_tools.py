@@ -155,9 +155,9 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale,
 
     # add sky and std dev columns from background calculation subroutine
     final_tbl.add_column(bg_phot[bg_method_name])
-    final_tbl.rename_column(bg_method_name, 'MskyAp2')
+    final_tbl.rename_column(bg_method_name, 'MSkyAp2')
     final_tbl.add_column(bg_phot['aperture_std'])
-    final_tbl.rename_column('aperture_std', 'StDevAp2')
+    final_tbl.rename_column('aperture_std', 'StdevAp2')
 
     # # Add some empty columns to match the current final output DAOPHOT
     # emptyTotMag = MaskedColumn(name="TotMag(0.15)", fill_value=None, mask=True,

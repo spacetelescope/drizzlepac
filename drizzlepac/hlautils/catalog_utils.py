@@ -637,13 +637,14 @@ class HAPPointCatalog(HAPCatalogBase):
         photometry_tbl.add_column(flag_col)
 
         # build final output table
-        final_col_order = ["XCENTER", "YCENTER", "RA", "DEC", "ID", "MagAp1", "MagAp2", "MagErrAp1", "MagErrAp2",
+        final_col_order = ["XCENTER", "YCENTER", "RA", "DEC", "ID", "MagAp1", "MagErrAp1", "MagAp2", "MagErrAp2",
                            "MSkyAp2", "StdevAp2", "FluxAp2", "CI", "Flags"]
         output_photometry_table = photometry_tbl[final_col_order]
 
         # format output table columns
-        final_col_format = {"RA": "13.10f", "DEC": "13.10f", "MagAp1": '6.3f', "MagAp2": '6.3f', "MagErrAp1": '6.3f',
-                            "MagErrAp2": '6.3f', "MSkyAp2": '10.8f', "StdevAp2": '10.8f', "FluxAp2": '10.8f', "CI": "7.3f"}
+        final_col_format = {"RA": "13.10f", "DEC": "13.10f", "MagAp1": '6.3f', "MagErrAp1": '6.3f', "MagAp2": '6.3f',
+                            "MagErrAp2": '6.3f', "MSkyAp2": '10.8f', "StdevAp2": '10.8f',
+                            "FluxAp2": '10.8f', "CI": "7.3f"}
         for fcf_key in final_col_format.keys():
             output_photometry_table[fcf_key].format = final_col_format[fcf_key]
 
@@ -654,8 +655,8 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("Column '{}' renamed '{}'".format(old_col_title, rename_dict[old_col_title]))
 
         # Capture specified columns in order to append to the total detection table
-        magap_name = "MagAp1"
-        self.subset_filter_source_cat = output_photometry_table["ID", "CI", magap_name, "Flags"]
+        magap_name = "MagAp2"
+        self.subset_filter_source_cat = output_photometry_table["ID", "RA", "DEC", magap_name, "CI", "Flags"]
         self.subset_filter_source_cat.rename_column(magap_name, magap_name + "_" + filter_name)
         self.subset_filter_source_cat.rename_column("CI", "CI_" + filter_name)
         self.subset_filter_source_cat.rename_column("Flags", "Flags_" + filter_name)
@@ -766,9 +767,11 @@ class HAPPointCatalog(HAPCatalogBase):
 
         # Keep all the rows in the original total detection table and add rows from the filter
         # table where a matching "id" key is present.  The key must match in case.
+        self.sources.rename_column('xcentroid', 'X-Center')
+        self.sources.rename_column('ycentroid', 'Y-Center')
         self.sources.rename_column("id", "ID")
+        self.sources.remove_columns(['sharpness', 'roundness1', 'roundness2', 'npix', 'sky', 'peak', 'flux', 'mag'])
         self.sources = join(self.sources, subset_table, keys="ID", join_type="left")
-        self.sources.rename_column("ID", "id")
 
 
 # ----------------------------------------------------------------------------------------------------------------------
