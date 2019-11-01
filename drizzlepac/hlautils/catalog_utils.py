@@ -4,7 +4,6 @@ segmentation-map based photometry.
 import sys
 import pickle  # FIX Remove
 import copy
-import pdb
 
 import astropy.units as u
 from astropy.io import fits as fits
@@ -779,8 +778,8 @@ class HAPPointCatalog(HAPCatalogBase):
         for col2del in ['sharpness', 'roundness1', 'roundness2', 'npix', 'sky', 'peak', 'flux', 'mag']:
             if col2del in self.sources.colnames:
                 self.sources.remove_column(col2del)
-
-        if 'RA' in self.sources.colnames and 'DEC' in self.sources.colnames: subset_table.remove_columns(['RA', 'DEC'])
+        if 'RA' in self.sources.colnames and 'DEC' in self.sources.colnames:
+            subset_table.remove_columns(['RA', 'DEC'])
         self.sources = join(self.sources, subset_table, keys="ID", join_type="left")
 
 
