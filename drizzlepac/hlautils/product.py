@@ -6,6 +6,7 @@
 import sys
 import traceback
 import shutil
+import pickle  # FIX Remove
 
 from stsci.tools import logutil
 from astropy.io import fits
@@ -114,6 +115,10 @@ class TotalProduct(HAPProduct):
         # Used in generation of SkyFootprints
         self.meta_wcs = meta_wcs
 
+        pickle_out = open("meta_wcs_"+self.detector+".pickle", "wb")
+        pickle.dump(self.meta_wcs, pickle_out)
+        pickle_out.close()
+
         return meta_wcs
 
     def wcs_drizzle_product(self, meta_wcs):
@@ -144,6 +149,9 @@ class TotalProduct(HAPProduct):
             Create a mask which is True/1/on for the illuminated portion of the image, and
             False/0/off for the remainder of the image.
         """
+        if self.meta_wcs is None:
+            pickle_in = open("meta_wcs.pickle", "rb")
+            self.meta_wcs = pickle.load(pickle_in)
         footprint = cell_utils.SkyFootprint(self.meta_wcs)
         exposure_names = [element.full_filename for element in self.edp_list]
         footprint.build(exposure_names)
