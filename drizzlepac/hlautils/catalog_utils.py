@@ -1,7 +1,6 @@
 """This script contains code to support creation of photometric sourcelists using two techniques: aperture photometry
 segmentation-map based photometry.
 """
-import pdb
 import sys
 import pickle  # FIX Remove
 import copy
@@ -639,6 +638,14 @@ class HAPPointCatalog(HAPCatalogBase):
         for fcf_key in final_col_format.keys():
             output_photometry_table[fcf_key].format = final_col_format[fcf_key]
 
+        # add units to columns
+        final_col_units = {"X-Center": "Pixels", "Y-Center": "Pixels", "RA": "Sky Coords", "DEC": "Sky Coords",
+                           "ID": "Unitless", "MagAp1": "ABMAG", "MagErrAp1": "ABMAG", "MagAp2": "ABMAG",
+                           "MagErrAp2": "ABMAG", "MSkyAp2": "ABMAG", "StdevAp2": "ABMAG",
+                           "FluxAp2": "erg cm^-2 sec^-1 Hz^-1", "CI": "ABMAG", "Flags": "Unitless"}
+        for col_title in final_col_units:
+            output_photometry_table[col_title].unit = final_col_units[col_title]
+
         # Capture specified columns in order to append to the total detection table
         self.subset_filter_source_cat = output_photometry_table["ID", "RA", "DEC", "MagAp2", "CI", "Flags"]
         self.subset_filter_source_cat.rename_column("MagAp2", "MagAP2_" + filter_name)
@@ -667,8 +674,6 @@ class HAPPointCatalog(HAPCatalogBase):
 
         """
         # Write out catalog to ecsv file
-        print("\a")
-        pdb.set_trace()
         self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, product=self.image.ghd_product)
         # self.source_cat.meta['comments'] = \
         #     ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
