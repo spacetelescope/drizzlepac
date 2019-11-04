@@ -114,22 +114,10 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
         "aperture": {
             "x_coltitle": "X-Center",
             "y_coltitle": "Y-Center",
-            "magerr1_coltitle": "MagErrAp1",
-            "magerr2_coltitle": "MagErrAp2",
-            "flux_coltitle": "FluxAp2",
-            "background_coltitle": "MSkyAp2",
-            "ci_coltitle": "CI",
-            "flag_coltitle": "Flags"
         },
         "segment": {
             "x_coltitle": "X-Centroid",
             "y_coltitle": "Y-Centroid",
-            "magerr1_coltitle": "MagErrAp1",
-            "magerr2_coltitle": "MagErrAp2",
-            "flux_coltitle": "FluxAp2",
-            "background_coltitle": "MSkyAp2",
-            "ci_coltitle": "CI",
-            "flag_coltitle": "Flags"
         }
     }
     if proc_type not in all_column_titles.keys():
@@ -261,19 +249,19 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     failed_index_list = []
     for i, table_row in enumerate(catalog_data):
         try:
-            table_row[column_titles["flag_coltitle"]] = int(table_row[column_titles["flag_coltitle"]])
+            table_row["Flags"] = int(table_row["Flags"])
         except ValueError:
-            table_row[column_titles["flag_coltitle"]] = 0
+            table_row["Flags"] = 0
 
-        ci_value = table_row[column_titles["ci_coltitle"]]
+        ci_value = table_row["CI"]
         if ci_value:
             ci_value = float(ci_value)
-        merr1 = table_row[column_titles["magerr1_coltitle"]]
+        merr1 = table_row["MagErrAp1"]
         if not merr1:
             merr1 = numpy.nan
         else:
             merr1 = float(merr1)
-        merr2 = table_row[column_titles["magerr2_coltitle"]]
+        merr2 = table_row["MagErrAp2"]
         if not merr2:
             merr2 = numpy.nan
         else:
@@ -282,13 +270,13 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         ci_err = numpy.sqrt(merr1 ** 2 + merr2 ** 2)
 
         if not good_snr:
-            table_row[column_titles["flag_coltitle"]] |= 8
+            table_row["Flags"] |= 8
 
         if not ci_value or (not numpy.isfinite(ci_err)) or ci_value < ci_lower_limit - ci_err:
-            table_row[column_titles["flag_coltitle"]] |= 16
+            table_row["Flags"] |= 16
 
         if not ci_value or ci_value > ci_upper_limit:
-            table_row[column_titles["flag_coltitle"]] |= 1
+            table_row["Flags"] |= 1
 
         if not ci_value and debug:
             failed_index_list.append(i)
@@ -573,7 +561,7 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
         phot_table_rows = catalog_data
         for i, table_row in enumerate(phot_table_rows):
             if saturation_flag[i]:
-                table_row[column_titles["flag_coltitle"]] = int(table_row[column_titles["flag_coltitle"]]) | 4
+                table_row["Flags"] = int(table_row["Flags"]) | 4
 
         phot_table_rows = flag4and8_hunter_killer(phot_table_rows, column_titles)
 
@@ -665,8 +653,8 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     for row_num, row in enumerate(catalog_data[0:]):
         x_val = float(row[column_titles["x_coltitle"]])
         y_val = float(row[column_titles["y_coltitle"]])
-        flux = row[column_titles["flux_coltitle"]]
-        sky = row[column_titles["background_coltitle"]]
+        flux = row["FluxAp2"]
+        sky = row["MSkyAp2"]
 
         if not flux:
             flux = 0.0
@@ -1149,7 +1137,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     # Update catalog_data flag values
     for i, table_row in enumerate(catalog_data[0:]):
         if combined_flag[i]:
-            table_row[column_titles["flag_coltitle"]] |= 32
+            table_row["Flags"] |= 32
 
     if debug:
         # Write out intermediate catalog with updated flags
@@ -1322,7 +1310,7 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     # Add flag bit to appropriate sources
     for i, table_row in enumerate(catalog_data):
         if artifact_flag[i]:
-            table_row[column_titles["flag_coltitle"]] |= 64
+            table_row["Flags"] |= 64
 
     if debug:
         # Write out intermediate catalog with updated flags
@@ -1699,9 +1687,9 @@ def flag4and8_hunter_killer(catalog_data, column_titles):
     conf_ctr = 0
     log.info("Searching for flag 4 + flag 8 conflicts....")
     for catalog_line in catalog_data:
-        if ((catalog_line[column_titles["flag_coltitle"]] & 4 > 0) and (catalog_line[column_titles["flag_coltitle"]] & 8 > 0)):
+        if ((catalog_line["Flags"] & 4 > 0) and (catalog_line["Flags"] & 8 > 0)):
             conf_ctr += 1
-            catalog_line[column_titles["flag_coltitle"]] = int(catalog_line[column_titles["flag_coltitle"]]) - 8
+            catalog_line["Flags"] = int(catalog_line["Flags"]) - 8
     if conf_ctr == 0:
         log.info("No conflicts found.")
     if conf_ctr == 1:
