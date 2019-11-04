@@ -99,8 +99,8 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale,
 
     Returns
     -------
-        An astropy Table with 'XCENTER', 'YCENTER', 'ID', 'FLUX_0.05', 'FERR_0.05', 'MAG_0.05', 'MERR_0.05',
-        'FLUX_0.15', 'FERR_0.15', 'MAG_0.15', 'MERR_0.15', 'MSKY', and 'STDEV' values for each of the sources. #TODO: update this!
+        An astropy Table with columns as follows:
+        X-Center Y-Center RA DEC ID MagAp1 MagErrAp1 MagAp2 MagErrAp2 MSkyAp2 StdevAp2 FluxAp2 CI Flags
     """
     if bg_method not in ['mean', 'median', 'mode']:
         raise ValueError('Invalid background method, choose either \
