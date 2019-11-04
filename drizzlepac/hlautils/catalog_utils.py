@@ -480,7 +480,9 @@ class HAPCatalogBase:
         data_table.meta["h17"] = ["Flag Value Identification:"]
         data_table.meta["h17.1"] = ["    0 - Stellar Source ({} < CI < {})".format(ci_lower,ci_upper)]
         data_table.meta["h17.2"] = ["    1 - Extended Source (CI > {})".format(ci_upper)]
-        data_table.meta["h17.3"] = ["    2 - Questionable Photometry (single-pixel saturation)"]
+        data_table.meta["h17.3"] = ["    2 - Questionable Photometry (Single-Pixel Saturation)"]
+        data_table.meta["h17.4"] = ["    4 - Questionable Photometry (Multi-Pixel Saturation)"]
+        data_table.meta["h17.3"] = ["    8 - Faint Detection Limit"]
         data_table.meta["h17.4"] = ["   16 - Hot Pixels (CI < {})".format(ci_lower)]
         data_table.meta["h17.5"] = ["   32 - False Detection Swarm Around Saturated Source"]
         data_table.meta["h17.6"] = ["   64 - False Detections Near Image Edge"]
@@ -632,9 +634,9 @@ class HAPPointCatalog(HAPCatalogBase):
         output_photometry_table = photometry_tbl[final_col_order]
 
         # format output table columns
-        final_col_format = {"RA": "13.10f", "DEC": "13.10f", "MagAp1": '6.3f', "MagErrAp1": '6.3f', "MagAp2": '6.3f',
-                            "MagErrAp2": '6.3f', "MSkyAp2": '10.8f', "StdevAp2": '10.8f',
-                            "FluxAp2": '10.8f', "CI": "7.3f"} # TODO: 1) Add formats for X-Center, Y-Center, ID and FLAGS 2) Standardize precision
+        final_col_format = {"X-Center": "18.13f", "Y-Center": "18.13f", "RA": "13.10f", "DEC": "13.10f", "ID": ".8g", "MagAp1": '6.3f', "MagErrAp1": '6.3f', "MagAp2": '6.3f',
+                            "MagErrAp2": '6.3f', "MSkyAp2": '10.8f', "StdevAp2": '10.4f',
+                            "FluxAp2": '10.8f', "CI": "7.3f", "Flags": "3d"} # TODO: Standardize precision
         for fcf_key in final_col_format.keys():
             output_photometry_table[fcf_key].format = final_col_format[fcf_key]
 
