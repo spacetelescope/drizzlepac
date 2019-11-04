@@ -261,10 +261,9 @@ class HAPCatalogs:
         #  it will have to do...
         self.catalogs = {}
         if 'aperture' in self.types:
-            self.catalogs['aperture'] = HAPPointCatalog(self.image, self.param_dict, self.debug, tp_sources=tp_sources)
+            self.catalogs['aperture'] = HAPPointCatalog(self.image, self.param_dict, self.param_dict_qc, self.debug, tp_sources=tp_sources)
         if 'segment' in self.types:
-            self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict,
-                                                         self.debug, tp_sources=tp_sources)
+            self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict, self.param_dict_qc, self.debug, tp_sources=tp_sources)
 
     def identify(self, **pars):
         """Build catalogs for this image.
@@ -334,11 +333,12 @@ class HAPCatalogBase:
     catalog_region_suffix = ".reg"
     catalog_format = "ascii.ecsv"
 
-    def __init__(self, image, param_dict, debug, tp_sources):
+    def __init__(self, image, param_dict, param_dict_qc, debug, tp_sources):
         self.image = image
         self.imgname = image.imgname
         self.bkg = image.bkg
         self.param_dict = param_dict
+        self.param_dict_qc = param_dict_qc
         self.debug = debug
 
         self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
@@ -395,13 +395,16 @@ class HAPCatalogBase:
     def write_catalog(self, **pars):
         pass
 
-    def annotate_table(self, data_table, product="tdp"):
+    def annotate_table(self, data_table, param_dict_qc, product="tdp"):
         """Add state metadata to the top of the output source catalog.
 
         Parameters
         ----------
         data_table : QTable
             Table of source properties
+
+        param_dict_qc : dictionary
+            Configuration values for quality control step based upon input JSON files (used to build catalog header)
 
         product : str, optional
             Identification string for the catalog product being written.  This
@@ -456,24 +459,13 @@ class HAPCatalogBase:
         except Exception as xcept:
             log.info("Exception in printing APERTURE info {}".format(xcept))
             pass
-        # TODO: Get rid of this if-elif-else logic tree. Get values directly from 'filter_product_obj.configobj_pars' object.
-        if self.image.keyword_dict["detector"] == "HRC":
-            ci_lower = 0.9
-            ci_upper = 1.6
-        elif self.image.keyword_dict["detector"] == "SBC":
-            ci_lower = 0.15
-            ci_upper = 0.45
-        elif self.image.keyword_dict["detector"] == "WFC":
-            ci_lower = 0.9
-            ci_upper = 1.23
-        elif self.image.keyword_dict["detector"] == "IR":
-            ci_lower = 0.25
-            ci_upper = 0.55
-        elif self.image.keyword_dict["detector"] == "UVIS":
-            ci_lower = 0.75
-            ci_upper = 1.00
-        else: #Hopefully should never reach the 'else'
-            sys.exit("UNRECOGNIZED DETECTOR!")
+
+        if "X-Center" in data_table.colnames:
+            proc_type = "aperture"
+        else:
+            proc_type = "segment"
+        ci_lower = float(param_dict_qc['ci filter'][proc_type]['ci_lower_limit'])
+        ci_upper = float(param_dict_qc['ci filter'][proc_type]['ci_upper_limit'])
 
         data_table.meta["h09"] = ["#================================================================================================="]
         data_table.meta["h10"] = ["IMPORTANT NOTES"]
@@ -507,8 +499,8 @@ class HAPPointCatalog(HAPCatalogBase):
     """
     catalog_suffix = "_point-cat.ecsv"
 
-    def __init__(self, image, param_dict, debug, tp_sources):
-        super().__init__(image, param_dict, debug, tp_sources)
+    def __init__(self, image, param_dict, param_dict_qc, debug, tp_sources):
+        super().__init__(image, param_dict, param_dict_qc, debug, tp_sources)
 
         self.bkg_used = None  # actual background used for source identification/measurement
 
@@ -655,7 +647,8 @@ class HAPPointCatalog(HAPCatalogBase):
 
         # Add the header information to the table
 
-        self.source_cat = self.annotate_table(output_photometry_table, product=self.image.ghd_product)
+
+        self.source_cat = self.annotate_table(output_photometry_table, self.param_dict_qc, product=self.image.ghd_product)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -674,7 +667,9 @@ class HAPPointCatalog(HAPCatalogBase):
 
         """
         # Write out catalog to ecsv file
-        self.source_cat = self.annotate_table(self.source_cat, product=self.image.ghd_product)
+        print("\a")
+        pdb.set_trace()
+        self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, product=self.image.ghd_product)
         # self.source_cat.meta['comments'] = \
         #     ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
         self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
@@ -785,7 +780,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
            The white light or total detection drizzled image
 
        param_dict : dictionary
-           Configuration values for catalog generation based upon in put JSON files
+           Configuration values for catalog generation based upon input JSON files
 
        debug : bool
            Specifies whether or not to generate the regions file used for ds9 overlay
@@ -795,8 +790,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
     """
     catalog_suffix = "_segment-cat.ecsv"
 
-    def __init__(self, image, param_dict, debug, tp_sources):
-        super().__init__(image, param_dict, debug, tp_sources)
+    def __init__(self, image, param_dict, param_dict_qc, debug, tp_sources):
+        super().__init__(image, param_dict, param_dict_qc, debug, tp_sources)
 
         # Get the instrument/detector-specific values from the self.param_dict
         self._fwhm = self.param_dict["sourcex"]["fwhm"]
@@ -1236,12 +1231,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # If the output is for the total detection product, then only
         # a subset of the full catalog is needed.
         if self.image.ghd_product.lower() == "tdp":
-            self.source_cat = self.annotate_table(self.source_cat, product=self.image.ghd_product)
+            self.source_cat = self.annotate_table(self.source_cat, param_dict_qc, product=self.image.ghd_product)
             self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
 
         # else the product is the "filter detection product" catalog which has already been formatted
         else:
-            self.source_cat = self.annotate_table(self.source_cat, product=self.image.ghd_product)
+            self.source_cat = self.annotate_table(self.source_cat, param_dict_qc, product=self.image.ghd_product)
 
             self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
             log.info("SEGMENT. Wrote filter source catalog: {}".format(self.sourcelist_filename))
