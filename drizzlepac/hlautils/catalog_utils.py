@@ -1,6 +1,7 @@
 """This script contains code to support creation of photometric sourcelists using two techniques: aperture photometry
 segmentation-map based photometry.
 """
+import pdb
 import sys
 import pickle  # FIX Remove
 import copy
@@ -224,12 +225,13 @@ class HAPCatalogs:
     """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
 
-    def __init__(self, fitsfile, param_dict, debug=False, types=None, tp_sources=None):
+    def __init__(self, fitsfile, param_dict, param_dict_qc, debug=False, types=None, tp_sources=None):
         self.label = "HAPCatalogs"
         self.description = "A class used to generate photometric sourcelists using aperture photometry"
 
         self.imgname = fitsfile
         self.param_dict = param_dict
+        self.param_dict_qc = param_dict_qc
         self.debug = debug
         self.tp_sources = tp_sources  # <---total product catalogs.catalogs[*].sources
 
@@ -448,7 +450,6 @@ class HAPCatalogBase:
         num_sources = len(data_table)
         data_table.meta["Number of sources"] = num_sources
 
-
         try:
             log.info("{ } { }".format(self.aper_radius_arcsec[0], self.aper_radius_arcsec[1]))
             # aperture_string = " 2. Aperture Magnitudes (MAGAP1,MAGAP2) are measured with aperture radii of { }as ({:.3f} pix) and { }as ({:.3f} pix)".format(self.aper_radius_arcsec[0],self.aper_radius_list_pixels[0], self.aper_radius_arcsec[1], self.aper_radius_list_pixels[1])
@@ -609,12 +610,8 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                 epadu=self.gain,
                                                                 zero_point=self.ab_zeropoint)
 
-        # convert coords back to origin value = 1 rather than 0
-        # photometry_tbl["XCENTER"] = photometry_tbl["XCENTER"] + 1.
-        # photometry_tbl["YCENTER"] = photometry_tbl["YCENTER"] + 1.
-
         # calculate and add RA and DEC columns to table
-        ra, dec = self.transform_list_xy_to_ra_dec(photometry_tbl["XCENTER"], photometry_tbl["YCENTER"], self.imgname)  # TODO: replace with all_pix2sky or somthing at a later date
+        ra, dec = self.transform_list_xy_to_ra_dec(photometry_tbl["X-Center"], photometry_tbl["Y-Center"], self.imgname)  # TODO: replace with all_pix2sky or somthing at a later date
         ra_col = Column(name="RA", data=ra, dtype=np.float64)
         dec_col = Column(name="DEC", data=dec, dtype=np.float64)
         photometry_tbl.add_column(ra_col, index=2)
@@ -639,22 +636,16 @@ class HAPPointCatalog(HAPCatalogBase):
         photometry_tbl.add_column(flag_col)
 
         # build final output table
-        final_col_order = ["XCENTER", "YCENTER", "RA", "DEC", "ID", "MagAp1", "MagErrAp1", "MagAp2", "MagErrAp2",
+        final_col_order = ["X-Center", "Y-Center", "RA", "DEC", "ID", "MagAp1", "MagErrAp1", "MagAp2", "MagErrAp2",
                            "MSkyAp2", "StdevAp2", "FluxAp2", "CI", "Flags"]
         output_photometry_table = photometry_tbl[final_col_order]
 
         # format output table columns
         final_col_format = {"RA": "13.10f", "DEC": "13.10f", "MagAp1": '6.3f', "MagErrAp1": '6.3f', "MagAp2": '6.3f',
                             "MagErrAp2": '6.3f', "MSkyAp2": '10.8f', "StdevAp2": '10.8f',
-                            "FluxAp2": '10.8f', "CI": "7.3f"}
+                            "FluxAp2": '10.8f', "CI": "7.3f"} # TODO: 1) Add formats for X-Center, Y-Center, ID and FLAGS 2) Standardize precision
         for fcf_key in final_col_format.keys():
             output_photometry_table[fcf_key].format = final_col_format[fcf_key]
-
-        # change some column titles to match old daophot.txt files
-        rename_dict = {"XCENTER": "X-Center", "YCENTER": "Y-Center"}
-        for old_col_title in rename_dict:
-            output_photometry_table.rename_column(old_col_title, rename_dict[old_col_title])
-            log.info("Column '{}' renamed '{}'".format(old_col_title, rename_dict[old_col_title]))
 
         # Capture specified columns in order to append to the total detection table
         self.subset_filter_source_cat = output_photometry_table["ID", "RA", "DEC", "MagAp2", "CI", "Flags"]
@@ -663,6 +654,7 @@ class HAPPointCatalog(HAPCatalogBase):
         self.subset_filter_source_cat.rename_column("Flags", "Flags_" + filter_name)
 
         # Add the header information to the table
+
         self.source_cat = self.annotate_table(output_photometry_table, product=self.image.ghd_product)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

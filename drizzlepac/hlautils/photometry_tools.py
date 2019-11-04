@@ -100,14 +100,14 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale,
     Returns
     -------
         An astropy Table with 'XCENTER', 'YCENTER', 'ID', 'FLUX_0.05', 'FERR_0.05', 'MAG_0.05', 'MERR_0.05',
-        'FLUX_0.15', 'FERR_0.15', 'MAG_0.15', 'MERR_0.15', 'MSKY', and 'STDEV' values for each of the sources.
+        'FLUX_0.15', 'FERR_0.15', 'MAG_0.15', 'MERR_0.15', 'MSKY', and 'STDEV' values for each of the sources. #TODO: update this!
     """
     if bg_method not in ['mean', 'median', 'mode']:
         raise ValueError('Invalid background method, choose either \
                           mean, median, or mode')
     phot = aperture_photometry(data, phot_apertures, error=error_array)
     bg_phot = aperture_stats_tbl(data, bg_apertures, sigma_clip=True)
-    names = ['XCENTER', 'YCENTER', 'ID']
+    names = ['X-Center', 'Y-Center', 'ID']
     x, y = phot_apertures[0].positions.T
     final_stacked = np.stack([x, y, phot["id"].data], axis=1)
     # n_aper = 0
@@ -159,13 +159,6 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale,
     final_tbl.add_column(bg_phot['aperture_std'])
     final_tbl.rename_column('aperture_std', 'StdevAp2')
 
-    # # Add some empty columns to match the current final output DAOPHOT
-    # emptyTotMag = MaskedColumn(name="TotMag(0.15)", fill_value=None, mask=True,
-    #                            length=len(final_tbl['X-CENTER'].data), dtype=np.int64)
-    # emptyTotMagErr = MaskedColumn(name="TotMagErr(0.15)", fill_value=None, mask=True,
-    #                               length=len(final_tbl['X-CENTER'].data), dtype=np.int64)
-    # final_tbl.add_column(emptyTotMag)
-    # final_tbl.add_column(emptyTotMagErr)
     return final_tbl
 
 
