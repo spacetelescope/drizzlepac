@@ -373,8 +373,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
         _trlmsg = _timestamp('Starting alignment with a priori solutions')
         _trlmsg += __trlmarker__
-
-        find_crs = not align_dicts[0]['alignment_verified']
+        if align_dicts is not None:
+            find_crs = not align_dicts[0]['alignment_verified']
+        else:
+            find_crs = False
 
         # run updatewcs with use_db=True to insure all products have
         # have a priori solutions as extensions
@@ -426,7 +428,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             # product to determine whether alignment was ultimately successful or not.
             #
             # Call astrodrizzle to create the drizzle products
-            find_crs = not align_dicts[0]['alignment_verified']
+            if align_dicts is not None:
+                find_crs = not align_dicts[0]['alignment_verified']
+            else:
+                find_crs = False
             tmpname = "_".join([_trlroot, 'aposteriori'])
             sub_dirs.append(tmpname)
             align_aposteriori = verify_alignment(_inlist,
@@ -462,7 +467,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         pipeline_pars['in_memory'] = inmemory
         pipeline_pars['clean'] = True
 
-        drz_products, final_dicts = run_driz(_inlist, _trlfile, verify_alignment=False,
+        drz_products, final_dicts = run_driz(_inlist, _trlfile, _calfiles, verify_alignment=False,
                                              good_bits=focus_pars[inst_mode]['good_bits'],
                                              **pipeline_pars)
 
@@ -554,8 +559,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # Provide feedback to user
     print(_final_msg)
 
-def run_driz(inlist, trlfile, mode='default-pipeline', verify_alignment=True, debug=False, good_bits=512,
-             **pipeline_pars):
+def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignment=True,
+            debug=False, good_bits=512, **pipeline_pars):
 
     import drizzlepac
     pyver = drizzlepac.astrodrizzle.__version__
@@ -569,7 +574,7 @@ def run_driz(inlist, trlfile, mode='default-pipeline', verify_alignment=True, de
                                                         preserve=False,
                                                         overwrite=False)
         del ivmlist
-        calfiles = asndict['original_file_names']
+        calfiles = asndict['original_file_names'] if asndict is not None else calfiles
         drz_products.append(drz_product)
 
         # Create trailer marker message for start of astrodrizzle processing
@@ -598,7 +603,7 @@ def run_driz(inlist, trlfile, mode='default-pipeline', verify_alignment=True, de
             print('ERROR: Could not complete astrodrizzle processing of %s.' % infile)
             raise Exception(str(errorobj))
 
-        if verify_alignment:
+        if verify_alignment and asndict is not None:
             # Evaluate generated products: single_sci vs drz/drc
             # FLT files are always first, and we want FLC when present
             cal_suffix = '_flt' if calfiles[0].endswith('_flt.fits') else '_flc'
@@ -611,6 +616,7 @@ def run_driz(inlist, trlfile, mode='default-pipeline', verify_alignment=True, de
 
                 drizzlepac.astrodrizzle.AstroDrizzle(input=infile, configobj=None,
                                                     **pipeline_pars)
+
             instr_det = "{}/{}".format(fits.getval(sfile, 'instrume'), fits.getval(sfile, 'detector'))
             focus_sigma = focus_pars[instr_det]['sigma']
             print("Measuring focus for: \n{} \n    {}".format(single_files, drz_product))
@@ -658,6 +664,15 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                      find_crs=True, tmpdir=None, debug=False, good_bits=512,
                      alignment_mode=None, force_alignment=False,
                      **pipeline_pars):
+
+    for infile in inlist:
+        asndict, ivmlist, drz_product = processInput.process_input(infile, updatewcs=False,
+                                                    preserve=False,
+                                                    overwrite=False)
+        del ivmlist
+        # If there are no products to be generated, there is nothing to align...
+        if asndict is None:
+            return None
 
     if alignment_mode == 'aposteriori':
         from stwcs.wcsutil import headerlet
@@ -773,7 +788,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
 
         # Run astrodrizzle in desired mode
-        drz_products, focus_dicts = run_driz(inlist, trlfile, mode=tmpmode, verify_alignment=True,
+        drz_products, focus_dicts = run_driz(inlist, trlfile, calfiles, mode=tmpmode, verify_alignment=True,
                                              debug=debug, good_bits=good_bits, **pipeline_pars)
 
         # Start verification of alignment using focus and similarity indices
