@@ -65,6 +65,8 @@ import time
 import logging
 import json
 import traceback
+import stat
+import errno
 
 # THIRD-PARTY
 from astropy.io import fits
@@ -542,7 +544,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     if not debug:
         # Remove all temp sub-directories now that we are done
         for sd in sub_dirs:
-            if os.path.exists(sd): shutil.rmtree(sd)
+            if os.path.exists(sd): rmtree2(sd)
 
     # Remove secondary log files for good...
     logging.shutdown()
@@ -1002,6 +1004,32 @@ def _removeWorkingDir(newdir):
     """
     os.rmdir(newdir)
 
+def rmtree2(path, n=3):
+    """Wrapper around shutil.rmtree to make it more robust when used on NFS mounted file systems."""
+    ok = False
+    for i in range(0, n):
+        try:
+            shutil.rmtree(path, ignore_errors=False, onerror=handle_remove_readonly)
+            ok = True
+            break
+        except OSError as err:
+            print("Failed to remove path %s with shutil.rmtree at attempt %d: %s" % (path, n, err))
+            raise OSError
+        time.sleep(3)
+
+    if not ok:
+        print("Failed to remove path %s with shutil.rmtree, even after %d attempts.".format(path, n))
+        raise OSError
+    else:
+        print("Path %s successfully removed." % path)
+
+def handle_remove_readonly(func, path, exc):
+    excvalue = exc[1]
+    if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
+        os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # 0777
+        func(path)
+    else:
+        raise
 
 # Functions to support execution from the shell.
 def main():
