@@ -751,9 +751,13 @@ class HAPPointCatalog(HAPCatalogBase):
 
         The "ID" column is used to map the filter table measurements to the total detection table
 
-        """
+        Parameters
+        ----------
+        subset_table : Astropy table
+            A table containing a subset of columns from a filter catalog.
 
-        # Keep all the rows in the original total detection table and add rows from the filter
+        """
+        # Keep all the rows in the original total detection table and add columns from the filter
         # table where a matching "id" key is present.  The key must match in case.
         if 'xcentroid' in self.sources.colnames:
             self.sources.rename_column('xcentroid', 'X-Center')
@@ -767,7 +771,6 @@ class HAPPointCatalog(HAPCatalogBase):
         if 'RA' in self.sources.colnames and 'DEC' in self.sources.colnames:
             subset_table.remove_columns(['RA', 'DEC'])
         self.sources = join(self.sources, subset_table, keys="ID", join_type="left")
-
 
 # ----------------------------------------------------------------------------------------------------------------------
 class HAPSegmentCatalog(HAPCatalogBase):
@@ -913,7 +916,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 else:
                     bad_segm_rows_by_id.append(total_measurements_table['id'][i])
             updated_table = Table(rows=good_rows, names=total_measurements_table.colnames)
-            # log.info("SEGMENT. Bad total rows: {}".format(bad_segm_rows_by_id))
+            if self.debug:
+                log.info("SEGMENT. Bad total rows: {}".format(bad_segm_rows_by_id))
             log.info("SEGMENT. Bad segments removed from segmentation image.")
 
             # Remove the bad segments from the image
@@ -964,22 +968,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
     def measure_sources(self, filter_name):
         """Use the positions of the sources identified in the white light (total detection) image to
-        measure properties of these sources in the filter images
+        measure properties of these sources in the filter images.
 
         An instrument/detector combination may have multiple filter-level products.
         This routine is called for each filter image which is then measured to generate
         a filter-level source catalog based on object positions measured in the total
         detection product image.
-
-            Two-dimensional image of labeled source regions based on the "white light" drizzed product
-
-        kernel : `~astropy.convolution`
-            Two dimensional function of a specified FWHM used to smooth the image and
-            used in the detection of sources as well as for the determination of the
-            source properties (this routine)
-
-        catalog_filename : string
-            Name of the output source catalog for the filter detection product
 
         Returns
         -------
@@ -1011,7 +1005,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Compute the MagIso
         filter_measurements_table["MagIso"] = self.ab_zeropoint - 2.5 * np.log10(filter_measurements_table["source_sum"])
 
-        # Compute additional measurements and append the columns to the measurements table
+        # Compute aperture photometry measurements and append the columns to the measurements table
         updated_table = self.do_aperture_photometry(imgarr_bkgsub, filter_measurements_table)
 
         # Now clean up and prepare the filter table for output
@@ -1019,7 +1013,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         log.info("SEGMENT. Found and measured {} sources from segmentation map.".format(len(self.source_cat)))
 
-        # Capture specified columns in order to append to the total detection table
+        # Capture specified filter columns in order to append to the total detection table
         self.subset_filter_source_cat = self.source_cat["ID", "MagAp2", "CI", "Flags"]
         self.subset_filter_source_cat.rename_column("MagAp2", "MagAp2_" + filter_name)
         self.subset_filter_source_cat.rename_column("CI", "CI_" + filter_name)
@@ -1065,22 +1059,19 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 bad_rows.append(filter_measurements_table['id'][i])
         updated_table = Table(rows=good_rows, names=filter_measurements_table.colnames)
         # FIX What filter?
-        log.info("SEGMENT. Bad rows removed from coordinate list for filter data based on invalid positions")
-        log.info("SEGMENT. after source property measurements.")
+        log.info("SEGMENT. Bad rows removed from coordinate list for filter data based on invalid positions after source property measurements.")
         # log.info("SEGMENT. Bad filter rows: {}".format(bad_rows))
 
         positions = (updated_table["xcentroid"], updated_table["ycentroid"])
         pos_xy = np.vstack(positions).T
 
         # Define list of background annulii
-        # bg_apers = CircularAnnulus((pos_x, pos_y),
         bg_apers = CircularAnnulus(pos_xy,
-                                    r_in=self.param_dict['skyannulus_arcsec'],
-                                    r_out=self.param_dict['skyannulus_arcsec'] +
-                                          self.param_dict['dskyannulus_arcsec'])
+                                   r_in=self.param_dict['skyannulus_arcsec'],
+                                   r_out=self.param_dict['skyannulus_arcsec'] +
+                                   self.param_dict['dskyannulus_arcsec'])
 
         # Create list of photometric apertures to measure
-        # phot_apers = [CircularAperture((pos_x, pos_y), r=r) for r in self.aper_radius_list_pixels]
         phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
 
         # Perform aperture photometry
@@ -1096,7 +1087,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Capture data computed by the photometry tools and append to the output table
         try:
             flux_inner_data = photometry_tbl["FLUX_{}".format(self.aper_radius_arcsec[0])].data
-            log.info("*** flux inner {}".format(flux_inner_data))
             flux_inner_data_err = photometry_tbl["FERR_{}".format(self.aper_radius_arcsec[0])].data
             mag_inner_data = photometry_tbl["MAG_{}".format(self.aper_radius_arcsec[0])].data
             mag_inner_data_err = photometry_tbl["MERR_{}".format(self.aper_radius_arcsec[0])].data
@@ -1105,34 +1095,28 @@ class HAPSegmentCatalog(HAPCatalogBase):
             flux_outer_data_err = photometry_tbl["FERR_{}".format(self.aper_radius_arcsec[1])].data
             mag_outer_data = photometry_tbl["MAG_{}".format(self.aper_radius_arcsec[1])].data
             mag_outer_data_err = photometry_tbl["MERR_{}".format(self.aper_radius_arcsec[1])].data
-            log.info("*** mag outer error {}".format(mag_outer_data_err))
 
             ci_data = mag_inner_data - mag_outer_data
             ci_mask = np.logical_and(np.abs(ci_data) > 0.0, np.abs(ci_data) < 1.0e-30)
             big_bad_index = np.where(abs(ci_data) > 1.0e20)
             ci_mask[big_bad_index] = True
             ci_col = MaskedColumn(name="CI", data=ci_data, dtype=np.float64, mask=ci_mask)
-            log.info("*** after ci".format(ci_col))
             updated_table.add_column(ci_col)
 
-            # Append these additional measurements to the filter table
-            log.info("*** Making col set 1")
+            # Append these additional photometric measurements to the filter table
             flux_col = Column(data=flux_inner_data, name="FluxAp1", dtype=np.float64)
             flux_col_err = Column(data=flux_inner_data_err, name="FluxErrAp1", dtype=np.float64)
             mag_col = Column(data=mag_inner_data, name="MagAp1", dtype=np.float64)
             mag_col_err = Column(data=mag_inner_data_err, name="MagErrAp1", dtype=np.float64)
-            log.info("*** Appending col set 1")
             updated_table.add_column(flux_col)
             updated_table.add_column(flux_col_err)
             updated_table.add_column(mag_col)
             updated_table.add_column(mag_col_err)
 
-            log.info("*** Making col set 2")
             flux_col = Column(data=flux_outer_data, name="FluxAp2", dtype=np.float64)
             flux_col_err = Column(data=flux_outer_data_err, name="FluxErrAp2", dtype=np.float64)
             mag_col = Column(data=mag_outer_data, name="MagAp2", dtype=np.float64)
             mag_col_err = Column(data=mag_outer_data_err, name="MagErrAp2", dtype=np.float64)
-            log.info("*** Appending col set 2")
             updated_table.add_column(flux_col)
             updated_table.add_column(flux_col_err)
             updated_table.add_column(mag_col)
@@ -1141,16 +1125,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
         except Exception as x_cept:
             log.warning("SEGMENT. Computation of additional photometric measurements was not successful: {} - {}.".format(self.imgname, x_cept))
             log.warning("SEGMENT. Additional measurements have not been added to the output catalog.\n")
-            pickle_out = open("segmentation_catalog.pickle", "wb")
-            pickle.dump(photometry_tbl, pickle_out)
-            pickle_out.close()
 
         # Add zero-value "Flags" column in preparation for source flagging
         flag_col = Column(name="Flags", data=np.zeros_like(updated_table["id"]))
         updated_table.add_column(flag_col)
 
         # Protect against None for source_sum_error
-        log.info("*************** source sum err: {}".format(updated_table["source_sum_err"]))
+        # FIX MDD
+        # log.info("*************** source sum err: {}".format(updated_table["source_sum_err"]))
         # None_index = np.where(source_sum_err is None)
         # sse_mask[None_index] = True
         # ci_col = MaskedColumn(name="CI", data=source_sum_err, dtype=np.float64, mask=sse_mask)
@@ -1160,6 +1142,23 @@ class HAPSegmentCatalog(HAPCatalogBase):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _define_filter_table(self, filter_table):
+        """Set the overall format for the filter output catalog.
+ 
+           Define the column order, data format, output column names, descriptions, and units 
+           for the table.
+
+           Parameters
+           ----------
+           filter_table : Astropy table
+               Table which has been generated based upon SourceCatalog information and contains
+               many properties calculated for each segmented source.
+
+           Returns
+           ------
+           final_filter_table : Astropy table
+                A modified version of the input table which has been reformatted in preparation
+                for catalog generation.
+        """
 
         radec_data = SkyCoord(filter_table["sky_centroid_icrs"])
         ra_icrs = radec_data.ra.degree
@@ -1167,32 +1166,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         rr = Column(ra_icrs, name="RA", unit=u.deg)
         dd = Column(dec_icrs, name="DEC", unit=u.deg)
         filter_table.add_columns([dd, rr])
-
-        # Define the order of the columns
-        final_col_order = ["xcentroid", "ycentroid", "RA", "DEC", "id", 
-                           "CI", "Flags", "MagAp1", "MagErrAp1", "FluxAp1", "FluxErrAp1", 
-                           "MagAp2", "MagErrAp2", "FluxAp2", "FluxErrAp2",
-                           "background_at_centroid", "MagIso", "source_sum", 
-                           # "background_at_centroid", "MagIso", "source_sum", "source_sum_err",
-                           "bbox_xmin", "bbox_ymin", "bbox_xmax", "bbox_ymax",
-                           "covar_sigx2", "covar_sigy2", "covar_sigxy",
-                           "cxx", "cyy", "cxy",
-                           "elongation", "ellipticity", "orientation"]
-        final_filter_table = filter_table[final_col_order]
-
-        # Define the format
-        final_col_format = {"xcentroid": "10.3f", "ycentroid": "10.3f", "RA": "13.7f", "DEC": "13.7f", "id": "6d", 
-                            "CI": "6.3f", "Flags": "5d", 
-                            "MagAp1": "7.2f", "MagErrAp1": "6.4f", "FluxAp1": "8.2f", "FluxErrAp1": "8.5f",
-                            "MagAp2": "7.2f", "MagErrAp2": "6.4f", "FluxAp2": "8.2f", "FluxErrAp2": "8.5f",
-                            "background_at_centroid": "8.4f", "MagIso": "7.2f", "source_sum" : "8.3f",
-                            # "background_at_centroid": "8.3f", "MagIso": "8.3f", "source_sum" : "8.3f", "source_sum_err" : "8.3f",
-                            "bbox_xmin": "5.2f", "bbox_ymin": "5.2f", "bbox_xmax": "5.2f", "bbox_ymax": "5.2f",
-                            "covar_sigx2": "8.3f", "covar_sigy2": "8.3f", "covar_sigxy": "8.3f",
-                            "cxx": "8.3f", "cyy": "8.3f", "cxy": "8.3f",
-                            "elongation": "8.3f", "ellipticity": "8.3f", "orientation": "8.3f"}
-        for fcf_key in final_col_format.keys():
-            final_filter_table[fcf_key].format = final_col_format[fcf_key]
 
         # Rename columns to names used when HLA Classic catalog distributed by MAST
         final_col_names = {"id": "ID", "xcentroid": "X-Centroid", "ycentroid": "Y-Centroid",
@@ -1204,7 +1177,33 @@ class HAPSegmentCatalog(HAPCatalogBase):
                            "orientation": "Theta",
                            "elongation": "Elongation", "ellipticity": "Ellipticity"}
         for old_col_title in final_col_names:
-            final_filter_table.rename_column(old_col_title, final_col_names[old_col_title])
+            filter_table.rename_column(old_col_title, final_col_names[old_col_title])
+
+        # Define the order of the columns
+        final_col_order = ["X-Centroid", "Y-Centroid", "RA", "DEC", "ID", 
+                           "CI", "Flags", "MagAp1", "MagErrAp1", "FluxAp1", "FluxErrAp1", 
+                           "MagAp2", "MagErrAp2", "FluxAp2", "FluxErrAp2",
+                           "Bck", "MagIso", "FluxIso", 
+                           # "Bck", "MagIso", "FluxIso", "FluxIsoErr",
+                           "Xmin", "Ymin", "Xmax", "Ymax",
+                           "X2", "Y2", "XY",
+                           "CXX", "CYY", "CXY",
+                           "Elongation", "Ellipticity", "Theta"]
+        final_filter_table = filter_table[final_col_order]
+
+        # Define the format
+        final_col_format = {"X-Centroid": "10.3f", "Y-Centroid": "10.3f", "RA": "13.7f", "DEC": "13.7f", "ID": "6d", 
+                            "CI": "7.3f", "Flags": "5d", 
+                            "MagAp1": "8.2f", "MagErrAp1": "9.4f", "FluxAp1": "9.2f", "FluxErrAp1": "10.5f",
+                            "MagAp2": "8.2f", "MagErrAp2": "9.4f", "FluxAp2": "9.2f", "FluxErrAp2": "10.5f",
+                            "Bck": "9.4f", "MagIso": "8.2f", "FluxIso" : "9.2f",
+                            # "Bck": "9.4f", "MagIso": "8.2f", "FluxIso" : "9.2f", "FluxIsoErr" : "10.5f",
+                            "Xmin": "8.0f", "Ymin": "8.0f", "Xmax": "8.0f", "Ymax": "8.0f",
+                            "X2": "8.4f", "Y2": "8.4f", "XY": "10.5f",
+                            "CXX": "9.5f", "CYY": "9.5f", "CXY": "9.5f",
+                            "Elongation": "7.2f", "Ellipticity": "7.2f", "Theta": "8.3f"}
+        for fcf_key in final_col_format.keys():
+            final_filter_table[fcf_key].format = final_col_format[fcf_key]
 
         # Add description and possibly units for some of the columns
         final_col_descrip = {"ID": "Catalog Object Identification Number", 
@@ -1212,10 +1211,20 @@ class HAPSegmentCatalog(HAPCatalogBase):
                              "RA": "Sky coordinate at epoch of observation and fit to GAIA", 
                              "DEC": "Sky coordinate at epoch of observation and fit to GAIA",
                              "Bck": "Background at the position of the source centroid", 
-                             "FluxIso": "Flux FIX", 
-                             # "FluxIso": "Flux FIX", "FluxIsoErr": "Flux error FIX",
-                             "MagIso": "Magnitude FIX", 
-                             "X2": "Variance along X", "Y2": "Variance along Y",
+                             "MagAp1": "Magnitude of source based on the inner (smaller) aperture",
+                             "MagErrAp1": "Error of MagAp1",
+                             "FluxAp1": "Flux of source based on the inner (smaller) aperture",
+                             "FluxErrAp1": "Error of FluxAp1",
+                             "MagAp2": "Magnitude of source based on the outer (larger) aperture",
+                             "MagErrAp2": "Error of MagAp2",
+                             "FluxAp2": "Flux of source based on the outer (large) aperture",
+                             "FluxErrAp2": "Error of FluxAp2",
+                             "FluxIso": "Sum of unmasked data values in the source segment", 
+                             # "FluxIsoErr": "Uncertainty of FluxIso propagated from the input error array",
+                             "MagIso": "Magnitude corresponding to FluxIso", 
+                             # "MagIsoErr: "Uncertainty of MagIso corresponding to FluxIsoErr"
+                             "X2": "Variance along X", 
+                             "Y2": "Variance along Y",
                              "XY": "Covariance of position between X and Y",
                              "CXX": "SExtractor's ellipse parameter", "CYY": "SExtractor's ellipse parameter",
                              "CXY": "SExtractor's ellipse parameter",
@@ -1231,31 +1240,73 @@ class HAPSegmentCatalog(HAPCatalogBase):
         for fcd_key in final_col_descrip.keys():
             final_filter_table[fcd_key].description = final_col_descrip[fcd_key]
 
+        # Add units
+        final_col_unit = {"X-Centroid": u.pix, "Y-Centroid": u.pix,
+                          "RA": u.deg, "DEC": u.deg,
+                          "Bck": "count",
+                          "MagAp1": "ABMAG",
+                          "MagErrAp1": "ABMAG",
+                          "FluxAp1": "count",
+                          "FluxErrAp1": "count",
+                          "MagAp2": "ABMAG",
+                          "MagErrAp2": "ABMAG",
+                          "FluxAp2": "count",
+                          "FluxErrAp2": "count",
+                          "MagIso": "ABMAG",
+                          "FluxIso": "count",
+                          "X2": "pixel**2", 
+                          "Y2": "pixel**2", 
+                          "XY": "pixel**2", 
+                          "CXX": "pixel**2",
+                          "CYY": "pixel**2",
+                          "CXY": "pixel**2",
+                          "Xmin": u.pix,
+                          "Ymin": u.pix,
+                          "Xmax": u.pix,
+                          "Ymax": u.pix,
+                          "Theta": u.rad}
+        for fcu_key in final_col_unit.keys():
+            final_filter_table[fcu_key].unit = final_col_unit[fcu_key]
+
         return(final_filter_table)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+            
     def _define_total_table(self, updated_table):
+        """Set the overall format for the total detection output catalog.
+ 
+           Define the column order, data format, output column names, descriptions, and units 
+           for the table.
+
+           Parameters
+           ----------
+           updated_table : Astropy table
+               Table which has been generated based upon SourceCatalog information and contains
+               many properties calculated for each segmented source.
+
+           Returns
+           ------
+           table : Astropy table
+                A modified version of the input table which has been reformatted in preparation
+                for catalog generation.
+        """
 
         # Extract just a few columns generated by the source_properties() as
         # more columns are appended to this table from the filter results.
         # Actually, the filter columns are in a table which is "database joined"
         # to the total table.  During the combine process, the new columns are renamed,
-        # formatted, and described (as necessary).
-
+        # formatted, and described (as necessary). For now this table only has id, xcentroid,
+        # ycentroid, RA, and DEC.
         table = updated_table["id", "xcentroid", "ycentroid"]
 
+        # Convert the RA/Dec SkyCoord into separate columns
         radec_data = SkyCoord(updated_table["sky_centroid_icrs"])
         ra_icrs = radec_data.ra.degree
         dec_icrs = radec_data.dec.degree
         rr = Column(ra_icrs, name="RA", unit=u.deg)
         dd = Column(dec_icrs, name="DEC", unit=u.deg)
         table.add_columns([rr, dd])
-
-        # Format the columns
-        final_col_format = {"id": "6d", "xcentroid": "10.3f", "ycentroid": "10.3f", "RA": "13.7f", "DEC": "13.7f"}
-        for fcf_key in final_col_format.keys():
-            table[fcf_key].format = final_col_format[fcf_key]
 
         # Rename columns to names to those used when HLA Classic catalog distributed by MAST 
         # and/or to distinguish Point and Segment catalogs
@@ -1264,16 +1315,24 @@ class HAPSegmentCatalog(HAPCatalogBase):
         for old_col_title in final_col_names:
             table.rename_column(old_col_title, final_col_names[old_col_title])
 
-        # Add description and possibly units for some of the columns
-        # FIX MDD
+        # Format the current columns
+        final_col_format = {"ID": "6d", "X-Centroid": "10.3f", "Y-Centroid": "10.3f", "RA": "13.7f", "DEC": "13.7f"}
+        for fcf_key in final_col_format.keys():
+            table[fcf_key].format = final_col_format[fcf_key]
+
+        # Add description 
         descr_str = "Sky coordinate at epoch of observation and " + self.image.keyword_dict["wcs_type"]
         final_col_descrip = {"ID": "Catalog Object Identification Number", 
                              "X-Centroid": "Pixel Coordinate", "Y-Centroid": "Pixel Coordinate",
-                             # "RA": "Sky coordinate at epoch of observation and fit to GAIA", 
-                             # "DEC": "Sky coordinate at epoch of observation and fit to GAIA"}
                              "RA": descr_str, "DEC": descr_str}
         for fcd_key in final_col_descrip.keys():
             table[fcd_key].description = final_col_descrip[fcd_key]
+
+        # Add units
+        final_col_unit = {"X-Centroid": u.pix, "Y-Centroid": u.pix, 
+                             "RA": u.deg, "DEC": u.deg} 
+        for fcu_key in final_col_unit.keys():
+            table[fcu_key].unit = final_col_unit[fcu_key]
 
         return(table)
 
@@ -1281,30 +1340,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
     @property
     def write_catalog(self):
-        """Actually write the specified source catalog out to disk
-
-        Parameters
-        ----------
-        seg_cat : list of `~photutils.SourceProperties` objects
-            List of SourceProperties objects, one for each source found in the
-            specified detection product
-
-        product : str, optional
-            Identification string for the catalog product being written.  This
-            controls the data being put into the catalog product
+        """Write the specified source catalog out to disk.
         """
-        # If the output is for the total detection product, then only
-        # a subset of the full catalog is needed.
-        if self.image.ghd_product.lower() == "tdp":
-            self.source_cat = self.annotate_table(self.source_cat, param_dict_qc, product=self.image.ghd_product)
-            self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
-
-        # else the product is the "filter detection product" catalog which has already been formatted
-        else:
-            self.source_cat = self.annotate_table(self.source_cat, param_dict_qc, product=self.image.ghd_product)
-
-            self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
-            log.info("SEGMENT. Wrote filter source catalog: {}".format(self.sourcelist_filename))
+        self.source_cat = self.annotate_table(self.source_cat, product=self.image.ghd_product)
+        self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
+        log.info("SEGMENT. Wrote filter source catalog: {}".format(self.sourcelist_filename))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1313,8 +1353,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         The "ID" column is used to map the filter table measurements to the total detection table
 
+        Parameters
+        ----------
+        subset_table : Astropy table
+            A table containing a subset of columns from a filter catalog.
         """
 
-        # Keep all the rows in the original total detection table and add rows from the filter
-        # table where a matching "id" key is present.
+        # Keep all the rows in the original total detection table and add columns from the filter
+        # table where a matching "id" key is present
         self.source_cat = join(self.source_cat, subset_table, keys="ID", join_type="left")
