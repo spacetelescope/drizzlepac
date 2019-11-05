@@ -130,6 +130,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     trlmsg = "{}: Calibration pipeline processing of {} started.\n".format(_getTime(), inFile)
     trlmsg += __trlmarker__
     pipeline_pars = PIPELINE_PARS.copy()
+    _verify = True  # Switch to control whether to verify alignment or not
 
     # interpret envvar variable, if specified
     if envvar_compute_name in os.environ:
@@ -208,7 +209,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # If it is, strip off the _raw.fits extension...
         _indx = inFilename.find('_raw')
         if _indx < 0: _indx = len(inFilename)
-        _raw_input = inFilename
         # ... and build the CALXXX product rootname.
         if wfpc2_input:
             # force code to define _c0m file as calibrated product to be used
@@ -220,7 +220,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # drizzle: calibrated product name.
         inFilename = _mname
 
-        if _mname is None or inFilename == _raw_input:
+        if _mname is None:
             errorMsg = 'Could not find calibrated product!'
             raise Exception(errorMsg)
 
@@ -279,6 +279,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
             _cal_prodname = _infile
             _inlist = _calfiles = [_infile]
+            print("_calfiles initialized as: {}".format(_calfiles))
+            if len(_calfiles) == 1 and "_raw" in _calfiles[0]:
+                _verify = False
 
             # Add CTE corrected filename as additional input if present
             if os.path.exists(_infile_flc) and _infile_flc != _infile:
@@ -338,7 +341,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             5. Remove all processing sub-directories
         """
         inst_mode = "{}/{}".format(infile_inst, infile_det)
-
         adriz_pars = mdzhandler.getMdriztabParameters(_calfiles)
         adriz_pars.update(pipeline_pars)
         adriz_pars['mdriztab'] = False
@@ -467,9 +469,14 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         pipeline_pars['in_memory'] = inmemory
         pipeline_pars['clean'] = True
 
-        drz_products, final_dicts = run_driz(_inlist, _trlfile, _calfiles, verify_alignment=False,
+        drz_products, asn_dicts = run_driz(_inlist, _trlfile, _calfiles, verify_alignment=False,
                                              good_bits=focus_pars[inst_mode]['good_bits'],
                                              **pipeline_pars)
+        if len(_inlist) == 1 and _calfiles_flc is not None:
+            drc_products, flc_dicts = run_driz(_calfiles_flc, _trlfile, _calfiles_flc, verify_alignment=False,
+                                                 good_bits=focus_pars[inst_mode]['good_bits'],
+                                                 **pipeline_pars)
+
 
         # Save this for when astropy.io.fits can modify a file 'in-place'
         # Update calibration switch
@@ -603,6 +610,10 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
             print('ERROR: Could not complete astrodrizzle processing of %s.' % infile)
             raise Exception(str(errorobj))
 
+        # For singletons, there is no need to perform focus check since there is only 1 input exposure
+        if len(calfiles) == 1:
+            verify_alignment = False
+
         if verify_alignment and asndict is not None:
             # Evaluate generated products: single_sci vs drz/drc
             # FLT files are always first, and we want FLC when present
@@ -627,7 +638,6 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
                     json.dump(focus_dicts, json_file)
         else:
             focus_dicts = None
-
         # Now, append comments created by PyDrizzle to CALXXX trailer file
         print('Updating trailer file %s with astrodrizzle comments.' % trlfile)
         drizlog_copy = drizlog.replace('.log', '_copy.log')
@@ -685,7 +695,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             tmpmode = mode
             break
     if tmpmode is None:
-        log.error("Invalid alignment mode {} requested.".format(tmpdir))
+        print("Invalid alignment mode {} requested.".format(tmpdir))
         raise ValueError
 
     fraction_matched = 1.0
@@ -793,37 +803,49 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
         # Start verification of alignment using focus and similarity indices
         _trlmsg = _timestamp('Verification of {} alignment started '.format(tmpmode))
-        # Only check focus on CTE corrected, when available
-        align_focus = focus_dicts[-1] if 'drc' in focus_dicts[-1]['prodname'] else focus_dicts[0]
 
-        inst = fits.getval(alignfiles[0], 'instrume').lower()
-        det = fits.getval(alignfiles[0], 'detector').lower()
-        pscale = HSTWCS(alignfiles[0], ext=1).pscale
-        det_pars = alignimages.detector_specific_params[inst][det]
-        default_fwhm = det_pars['fwhmpsf'] / pscale
-        align_fwhm = amutils.get_align_fwhm(align_focus, default_fwhm)
-        if align_fwhm:
-            print("align_fwhm: {}[{},{}]={:0.4f}pix".format(align_focus['prodname'],
-                                                        align_focus['prod_pos'][1],
-                                                        align_focus['prod_pos'][0],
-                                                        align_fwhm))
-        # For any borderline situation with alignment, perform an extra check on alignment
-        if fraction_matched < 0.1 or -1 < num_sources < 10:
-            alignment_verified = amutils.evaluate_focus(align_focus)
-            alignment_quality = 0 if alignment_verified else 1
+        if focus_dicts is not None:
+            # Only check focus on CTE corrected, when available
+            align_focus = focus_dicts[-1] if 'drc' in focus_dicts[-1]['prodname'] else focus_dicts[0]
+
+            inst = fits.getval(alignfiles[0], 'instrume').lower()
+            det = fits.getval(alignfiles[0], 'detector').lower()
+            pscale = HSTWCS(alignfiles[0], ext=1).pscale
+            det_pars = alignimages.detector_specific_params[inst][det]
+            default_fwhm = det_pars['fwhmpsf'] / pscale
+            align_fwhm = amutils.get_align_fwhm(align_focus, default_fwhm)
+            if align_fwhm:
+                print("align_fwhm: {}[{},{}]={:0.4f}pix".format(align_focus['prodname'],
+                                                            align_focus['prod_pos'][1],
+                                                            align_focus['prod_pos'][0],
+                                                            align_fwhm))
+            # For any borderline situation with alignment, perform an extra check on alignment
+            if fraction_matched < 0.1 or -1 < num_sources < 10:
+                alignment_verified = amutils.evaluate_focus(align_focus)
+                alignment_quality = 0 if alignment_verified else 1
+            else:
+                alignment_verified = True
+                alignment_quality = 0
+
+            if alignment_verified:
+                _trlmsg += "Focus verification indicated that {} alignment SUCCEEDED.\n".format(tmpmode)
+            else:
+                _trlmsg += "Focus verification indicated that {} alignment FAILED.\n".format(tmpmode)
+
+            prodname = align_focus['prodname']
         else:
+            fd = amutils.FOCUS_DICT.copy()
+            fd['expnames'] = calfiles
+            fd['prodname'] = drz_products[0]
             alignment_verified = True
             alignment_quality = 0
+            focus_dicts = [fd]
 
-        if alignment_verified:
-            _trlmsg += "Focus verification indicated that {} alignment SUCCEEDED.\n".format(tmpmode)
-        else:
-            _trlmsg += "Focus verification indicated that {} alignment FAILED.\n".format(tmpmode)
+            prodname = drz_products[0]
 
         # For default pipeline alignment, we have nothing else to compare
         # similarity to, so skip this step...
         if alignment_mode:
-            prodname = align_focus['prodname']
             alignprod = fits.getdata(prodname, ext=1)
 
             # compute similarity_index as well and fold into alignment_verified state
