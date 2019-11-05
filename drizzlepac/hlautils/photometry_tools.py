@@ -63,7 +63,7 @@ from drizzlepac.hlautils.background_median import aperture_stats_tbl
 from photutils import aperture_photometry
 
 
-def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale,
+def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale, photflam,
                           error_array=None, bg_method='mode', epadu=1.0, zero_point=0.0):
     """
     Computes photometry with PhotUtils apertures, with IRAF formulae
@@ -81,6 +81,9 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale,
 
     platescale : float
         instrument platescale in arcseconds per pixel.
+
+    photflam : float
+        inverse sensitivity, ergs/cm2/Hz/electron
 
     error_array : array
         (Optional) The array of pixelwise error of the data.  If none, the Poisson noise term in the error computation
@@ -141,8 +144,9 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale,
         else:
             flux_error = compute_phot_error(flux, bg_phot, bg_method, ap_area, epadu)
 
-        mag = zero_point - 2.5 * np.log10(flux)
-        mag_err = 1.0857 * flux_error / flux
+        #mag = zero_point - 2.5 * np.log10(flux)
+        mag = -2.5 * np.log10(flux * photflam) - zero_point
+        mag_err = 1.0857 * flux_error / flux # TODO: Doublecheck this
 
         # Build the final data table
         stacked = np.stack([flux, flux_error, mag, mag_err], axis=1)
