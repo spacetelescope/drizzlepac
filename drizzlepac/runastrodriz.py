@@ -1015,7 +1015,7 @@ def rmtree2(path, n=3):
         except OSError as err:
             print("Failed to remove path %s with shutil.rmtree at attempt %d: %s" % (path, n, err))
             raise OSError
-        time.sleep(2)
+        time.sleep(3)
 
     if not ok:
         print("Failed to remove path %s with shutil.rmtree, even after %d attempts.".format(path, n))
