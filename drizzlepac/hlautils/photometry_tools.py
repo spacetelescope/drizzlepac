@@ -99,27 +99,30 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale,
 
     Returns
     -------
-        An astropy Table with 'XCENTER', 'YCENTER', 'ID', 'FLUX_0.05', 'FERR_0.05', 'MAG_0.05', 'MERR_0.05',
-        'FLUX_0.15', 'FERR_0.15', 'MAG_0.15', 'MERR_0.15', 'MSKY', and 'STDEV' values for each of the sources.
+        An astropy Table with columns as follows:
+        X-Center Y-Center RA DEC ID MagAp1 MagErrAp1 MagAp2 MagErrAp2 MSkyAp2 StdevAp2 FluxAp2 CI Flags
     """
     if bg_method not in ['mean', 'median', 'mode']:
         raise ValueError('Invalid background method, choose either \
                           mean, median, or mode')
     phot = aperture_photometry(data, phot_apertures, error=error_array)
     bg_phot = aperture_stats_tbl(data, bg_apertures, sigma_clip=True)
-    names = ['XCENTER', 'YCENTER', 'ID']
+    names = ['X-Center', 'Y-Center', 'ID']
     x, y = phot_apertures[0].positions.T
     final_stacked = np.stack([x, y, phot["id"].data], axis=1)
-    n_aper = 0
-    name_list = 'FLUX', 'FERR', 'MAG', 'MERR'
-    for item in list(phot.keys()):
-        if item.startswith("aperture_sum_") and not item.startswith("aperture_sum_err_"):
-            aper_size_arcsec = phot_apertures[n_aper].r * platescale
-            for name in name_list:
-                names.append("{}_{:.2f}".format(name, aper_size_arcsec))
-            n_aper += 1
+    # n_aper = 0
+    name_list = 'Flux', 'FluxErr', 'Mag', 'MagErr'
+    for aper_string  in ['Ap1', 'Ap2']:
+        for col_name in name_list:
+            names.append("{}{}".format(col_name,aper_string))
 
-    for aperCtr in range(0, n_aper):
+    # for item in list(phot.keys()):
+    #     if item.startswith("aperture_sum_") and not item.startswith("aperture_sum_err_"):
+    #         aper_size_arcsec = phot_apertures[n_aper].r * platescale
+    #         for name in name_list:
+    #             names.append("{}_{:.2f}".format(name, aper_size_arcsec))
+    #         n_aper += 1
+    for aperCtr in range(0, 2):
         ap_area = phot_apertures[aperCtr].area
         bg_method_name = 'aperture_{}'.format(bg_method)
 
@@ -152,17 +155,10 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale,
 
     # add sky and std dev columns from background calculation subroutine
     final_tbl.add_column(bg_phot[bg_method_name])
-    final_tbl.rename_column(bg_method_name, 'MSKY')
+    final_tbl.rename_column(bg_method_name, 'MSkyAp2')
     final_tbl.add_column(bg_phot['aperture_std'])
-    final_tbl.rename_column('aperture_std', 'STDEV')
+    final_tbl.rename_column('aperture_std', 'StdevAp2')
 
-    # # Add some empty columns to match the current final output DAOPHOT
-    # emptyTotMag = MaskedColumn(name="TotMag(0.15)", fill_value=None, mask=True,
-    #                            length=len(final_tbl['X-CENTER'].data), dtype=np.int64)
-    # emptyTotMagErr = MaskedColumn(name="TotMagErr(0.15)", fill_value=None, mask=True,
-    #                               length=len(final_tbl['X-CENTER'].data), dtype=np.int64)
-    # final_tbl.add_column(emptyTotMag)
-    # final_tbl.add_column(emptyTotMagErr)
     return final_tbl
 
 

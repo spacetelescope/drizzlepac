@@ -54,10 +54,7 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
     product_list = []
     for total_product_obj in total_list:
         # Instantiate filter catalog product object
-        total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename,
-                                             total_product_obj.configobj_pars.get_pars('catalog generation'),
-                                             types=phot_mode,
-                                             debug=debug)
+        total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename, total_product_obj.configobj_pars.get_pars('catalog generation'), total_product_obj.configobj_pars.get_pars('quality control'), types=phot_mode, debug=debug)
 
         # Generate an "n" exposure mask which has the image footprint set to the number
         # of exposures which constitute each pixel.
@@ -81,17 +78,18 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
         for filter_product_obj in total_product_obj.fdp_list:
 
             # Instantiate filter catalog product object
-            filter_product_catalogs = HAPCatalogs(filter_product_obj.drizzle_filename,
-                                                  filter_product_obj.configobj_pars.get_pars('catalog generation'),
-                                                  types=phot_mode,
-                                                  debug=debug,
-                                                  tp_sources=sources_dict)
+            filter_product_catalogs = HAPCatalogs(filter_product_obj.drizzle_filename, total_product_obj.configobj_pars.get_pars('catalog generation'), total_product_obj.configobj_pars.get_pars('quality control'), types=phot_mode, debug=debug, tp_sources=sources_dict)
             # Perform photometry
             filter_name = filter_product_obj.filters
             filter_product_catalogs.measure(filter_name)
 
             filter_product_catalogs = run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug)
 
+            # Replace zero-value total-product catalog 'Flags' column values with meaningful filter-product catalog
+            # 'Flags' column values
+            filter_product_catalogs.catalogs['aperture'].subset_filter_source_cat[
+                'Flags_{}'.format(filter_product_obj.filters)] = \
+            filter_product_catalogs.catalogs['aperture'].source_cat['Flags']
 
             # Write out photometric (filter) catalog(s)
             filter_product_catalogs.write()

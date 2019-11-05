@@ -224,12 +224,13 @@ class HAPCatalogs:
     """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
 
-    def __init__(self, fitsfile, param_dict, debug=False, types=None, tp_sources=None):
+    def __init__(self, fitsfile, param_dict, param_dict_qc, debug=False, types=None, tp_sources=None):
         self.label = "HAPCatalogs"
         self.description = "A class used to generate photometric sourcelists using aperture photometry"
 
         self.imgname = fitsfile
         self.param_dict = param_dict
+        self.param_dict_qc = param_dict_qc
         self.debug = debug
         self.tp_sources = tp_sources  # <---total product catalogs.catalogs[*].sources
 
@@ -259,10 +260,9 @@ class HAPCatalogs:
         #  it will have to do...
         self.catalogs = {}
         if 'aperture' in self.types:
-            self.catalogs['aperture'] = HAPPointCatalog(self.image, self.param_dict, self.debug, tp_sources=tp_sources)
+            self.catalogs['aperture'] = HAPPointCatalog(self.image, self.param_dict, self.param_dict_qc, self.debug, tp_sources=tp_sources)
         if 'segment' in self.types:
-            self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict,
-                                                         self.debug, tp_sources=tp_sources)
+            self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict, self.param_dict_qc, self.debug, tp_sources=tp_sources)
 
     def identify(self, **pars):
         """Build catalogs for this image.
@@ -332,11 +332,12 @@ class HAPCatalogBase:
     catalog_region_suffix = ".reg"
     catalog_format = "ascii.ecsv"
 
-    def __init__(self, image, param_dict, debug, tp_sources):
+    def __init__(self, image, param_dict, param_dict_qc, debug, tp_sources):
         self.image = image
         self.imgname = image.imgname
         self.bkg = image.bkg
         self.param_dict = param_dict
+        self.param_dict_qc = param_dict_qc
         self.debug = debug
 
         self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
@@ -393,13 +394,16 @@ class HAPCatalogBase:
     def write_catalog(self, **pars):
         pass
 
-    def annotate_table(self, data_table, product="tdp"):
+    def annotate_table(self, data_table, param_dict_qc, product="tdp"):
         """Add state metadata to the top of the output source catalog.
 
         Parameters
         ----------
         data_table : QTable
             Table of source properties
+
+        param_dict_qc : dictionary
+            Configuration values for quality control step based upon input JSON files (used to build catalog header)
 
         product : str, optional
             Identification string for the catalog product being written.  This
@@ -448,27 +452,41 @@ class HAPCatalogBase:
         num_sources = len(data_table)
         data_table.meta["Number of sources"] = num_sources
 
-
         try:
             log.info("{ } { }".format(self.aper_radius_arcsec[0], self.aper_radius_arcsec[1]))
             # aperture_string = " 2. Aperture Magnitudes (MAGAP1,MAGAP2) are measured with aperture radii of { }as ({:.3f} pix) and { }as ({:.3f} pix)".format(self.aper_radius_arcsec[0],self.aper_radius_list_pixels[0], self.aper_radius_arcsec[1], self.aper_radius_list_pixels[1])
         except Exception as xcept:
             log.info("Exception in printing APERTURE info {}".format(xcept))
             pass
+
+        if "X-Center" in data_table.colnames:
+            proc_type = "aperture"
+        else:
+            proc_type = "segment"
+        ci_lower = float(param_dict_qc['ci filter'][proc_type]['ci_lower_limit'])
+        ci_upper = float(param_dict_qc['ci filter'][proc_type]['ci_upper_limit'])
+
         data_table.meta["h09"] = ["#================================================================================================="]
         data_table.meta["h10"] = ["IMPORTANT NOTES"]
         data_table.meta["h11"] = ["The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
-        data_table.meta["h12"] = ["Magnitude values are in the ABMAG system"]
-        data_table.meta["h13"] = ["aperture_string"]
-        data_table.meta["h14"] = ["CI = Concentration Index = MAGAP1-MAGAP2"]
-        data_table.meta["h15"] = ["Flag Value Identification:"]
-        data_table.meta["h15.1"] = ["    0 - WFC3/IR: 0.5 < CI < 1.0; WFC3/UVIS: 0.7 < CI < 1.3)"]
-        data_table.meta["h15.2"] = ["    1 - Extended Source WFC3/IR: CI > 1.0; WFC3/UVIS CI > 1.3"]
-        data_table.meta["h15.3"] = ["    2 - Questionable Photometry (single-pixel saturation)"]
-        data_table.meta["h15.4"] = ["   16 - Concentration Index < 0.5 (IR), < 0.7 (UVIS), Hot Pixels"]
-        data_table.meta["h15.5"] = ["   32 - False Detection Swarm Around Saturated Source"]
-        data_table.meta["h15.6"] = ["   64 - False Detections Near Image Edge"]
-        data_table.meta["h16"] = ["#================================================================================================="]
+        data_table.meta["h12"] = ["RA and Dec values in this table are in sky coordinates (i.e. coordinates at the epoch of observation"]
+        data_table.meta["h12.1"] = ["and fit to GAIADR1 (2015.0) or GAIADR2 (2015.5))."]
+        data_table.meta["h13"] = ["Magnitude values in this table are in the ABMAG system."]
+        data_table.meta["h14"] = ["Column titles in this table ending with Ap1 refer to the inner photometric aperture "]
+        data_table.meta["h14.1"] = ["(radius = {} pixels, {} arcsec.".format(self.aper_radius_list_pixels[0], self.aper_radius_arcsec[0])]
+        data_table.meta["h15"] = ["Column titles in this table ending with Ap2 refer to the outer photometric aperture "]
+        data_table.meta["h15.1"] = ["(radius = {} pixels, {} arcsec.".format(self.aper_radius_list_pixels[1], self.aper_radius_arcsec[1])]
+        data_table.meta["h16"] = ["CI = Concentration Index (CI) = MagAp1 - MagAp2."]
+        data_table.meta["h17"] = ["Flag Value Identification:"]
+        data_table.meta["h17.1"] = ["    0 - Stellar Source ({} < CI < {})".format(ci_lower,ci_upper)]
+        data_table.meta["h17.2"] = ["    1 - Extended Source (CI > {})".format(ci_upper)]
+        data_table.meta["h17.3"] = ["    2 - Questionable Photometry (Single-Pixel Saturation)"]
+        data_table.meta["h17.4"] = ["    4 - Questionable Photometry (Multi-Pixel Saturation)"]
+        data_table.meta["h17.3"] = ["    8 - Faint Detection Limit"]
+        data_table.meta["h17.4"] = ["   16 - Hot Pixels (CI < {})".format(ci_lower)]
+        data_table.meta["h17.5"] = ["   32 - False Detection Swarm Around Saturated Source"]
+        data_table.meta["h17.6"] = ["   64 - False Detections Near Image Edge"]
+        data_table.meta["h18"] = ["#================================================================================================="]
 
         return (data_table)
 
@@ -482,8 +500,8 @@ class HAPPointCatalog(HAPCatalogBase):
     """
     catalog_suffix = "_point-cat.ecsv"
 
-    def __init__(self, image, param_dict, debug, tp_sources):
-        super().__init__(image, param_dict, debug, tp_sources)
+    def __init__(self, image, param_dict, param_dict_qc, debug, tp_sources):
+        super().__init__(image, param_dict, param_dict_qc, debug, tp_sources)
 
         self.bkg_used = None  # actual background used for source identification/measurement
 
@@ -561,7 +579,10 @@ class HAPPointCatalog(HAPCatalogBase):
 
 
         # load in coords of sources identified in total product
-        positions = (self.sources['xcentroid'], self.sources['ycentroid'])
+        try:
+            positions = (self.sources['xcentroid'], self.sources['ycentroid'])
+        except:
+            positions = (self.sources['X-Center'], self.sources['Y-Center'])
 
         pos_xy = np.vstack(positions).T
 
@@ -582,12 +603,8 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                 epadu=self.gain,
                                                                 zero_point=self.ab_zeropoint)
 
-        # convert coords back to origin value = 1 rather than 0
-        # photometry_tbl["XCENTER"] = photometry_tbl["XCENTER"] + 1.
-        # photometry_tbl["YCENTER"] = photometry_tbl["YCENTER"] + 1.
-
         # calculate and add RA and DEC columns to table
-        ra, dec = self.transform_list_xy_to_ra_dec(photometry_tbl["XCENTER"], photometry_tbl["YCENTER"], self.imgname)  # TODO: replace with all_pix2sky or somthing at a later date
+        ra, dec = self.transform_list_xy_to_ra_dec(photometry_tbl["X-Center"], photometry_tbl["Y-Center"], self.imgname)  # TODO: replace with all_pix2sky or somthing at a later date
         ra_col = Column(name="RA", data=ra, dtype=np.float64)
         dec_col = Column(name="DEC", data=dec, dtype=np.float64)
         photometry_tbl.add_column(ra_col, index=2)
@@ -595,8 +612,7 @@ class HAPPointCatalog(HAPCatalogBase):
 
         try:
             # Calculate and add concentration index (CI) column to table
-            ci_data = photometry_tbl["MAG_{}".format(self.aper_radius_arcsec[0])].data - photometry_tbl[
-                "MAG_{}".format(self.aper_radius_arcsec[1])].data
+            ci_data = photometry_tbl["MagAp1"].data - photometry_tbl["MagAp2"].data
         except Exception:
             pickle_out = open("catalog.pickle", "wb")
             pickle.dump(photometry_tbl, pickle_out)
@@ -613,43 +629,35 @@ class HAPPointCatalog(HAPCatalogBase):
         photometry_tbl.add_column(flag_col)
 
         # build final output table
-        final_col_order = ["XCENTER", "YCENTER", "RA", "DEC", "ID", "MAG_{}".format(self.aper_radius_arcsec[0]),
-                           "MAG_{}".format(self.aper_radius_arcsec[1]), "MERR_{}".format(self.aper_radius_arcsec[0]),
-                           "MERR_{}".format(self.aper_radius_arcsec[1]), "MSKY", "STDEV",
-                           "FLUX_{}".format(self.aper_radius_arcsec[1]), "CI", "Flags"]
+        final_col_order = ["X-Center", "Y-Center", "RA", "DEC", "ID", "MagAp1", "MagErrAp1", "MagAp2", "MagErrAp2",
+                           "MSkyAp2", "StdevAp2", "FluxAp2", "CI", "Flags"]
         output_photometry_table = photometry_tbl[final_col_order]
 
         # format output table columns
-        final_col_format = {"RA": "13.10f", "DEC": "13.10f", "MAG_{}".format(self.aper_radius_arcsec[0]): '6.3f',
-                            "MAG_{}".format(self.aper_radius_arcsec[1]): '6.3f',
-                            "MERR_{}".format(self.aper_radius_arcsec[0]): '6.3f',
-                            "MERR_{}".format(self.aper_radius_arcsec[1]): '6.3f', "MSKY": '10.8f', "STDEV": '10.8f',
-                            "FLUX_{}".format(self.aper_radius_arcsec[1]): '10.8f', "CI": "7.3f"}
+        final_col_format = {"X-Center": "18.13f", "Y-Center": "18.13f", "RA": "13.10f", "DEC": "13.10f", "ID": ".8g", "MagAp1": '6.3f', "MagErrAp1": '6.3f', "MagAp2": '6.3f',
+                            "MagErrAp2": '6.3f', "MSkyAp2": '10.8f', "StdevAp2": '10.4f',
+                            "FluxAp2": '10.8f', "CI": "7.3f", "Flags": "3d"} # TODO: Standardize precision
         for fcf_key in final_col_format.keys():
             output_photometry_table[fcf_key].format = final_col_format[fcf_key]
 
-        # change some column titles to match old daophot.txt files
-        rename_dict = {"XCENTER": "X-Center", "YCENTER": "Y-Center",
-                       "MAG_{}".format(self.aper_radius_arcsec[0]): "MagAp({})".format(self.aper_radius_arcsec[0]),
-                       "MAG_{}".format(self.aper_radius_arcsec[1]): "MagAp({})".format(self.aper_radius_arcsec[1]),
-                       "MERR_{}".format(self.aper_radius_arcsec[0]): "MagErr({})".format(self.aper_radius_arcsec[0]),
-                       "MERR_{}".format(self.aper_radius_arcsec[1]): "MagErr({})".format(self.aper_radius_arcsec[1]),
-                       "MSKY": "MSky({})".format(self.aper_radius_arcsec[1]),
-                       "STDEV": "Stdev({})".format(self.aper_radius_arcsec[1]),
-                       "FLUX_{}".format(self.aper_radius_arcsec[1]): "Flux({})".format(self.aper_radius_arcsec[1])}
-        for old_col_title in rename_dict:
-            output_photometry_table.rename_column(old_col_title, rename_dict[old_col_title])
-            log.info("Column '{}' renamed '{}'".format(old_col_title, rename_dict[old_col_title]))
+        # add units to columns
+        final_col_units = {"X-Center": "Pixels", "Y-Center": "Pixels", "RA": "Sky Coords", "DEC": "Sky Coords",
+                           "ID": "Unitless", "MagAp1": "ABMAG", "MagErrAp1": "ABMAG", "MagAp2": "ABMAG",
+                           "MagErrAp2": "ABMAG", "MSkyAp2": "ABMAG", "StdevAp2": "ABMAG",
+                           "FluxAp2": "erg cm^-2 sec^-1 Hz^-1", "CI": "ABMAG", "Flags": "Unitless"}
+        for col_title in final_col_units:
+            output_photometry_table[col_title].unit = final_col_units[col_title]
 
         # Capture specified columns in order to append to the total detection table
-        magap_name = "MagAp({})".format(self.aper_radius_arcsec[1])
-        self.subset_filter_source_cat = output_photometry_table["ID", "CI", magap_name, "Flags"]
-        self.subset_filter_source_cat.rename_column(magap_name, magap_name + "_" + filter_name)
+        self.subset_filter_source_cat = output_photometry_table["ID", "RA", "DEC", "MagAp2", "CI", "Flags"]
+        self.subset_filter_source_cat.rename_column("MagAp2", "MagAP2_" + filter_name)
         self.subset_filter_source_cat.rename_column("CI", "CI_" + filter_name)
         self.subset_filter_source_cat.rename_column("Flags", "Flags_" + filter_name)
 
         # Add the header information to the table
-        self.source_cat = self.annotate_table(output_photometry_table, product=self.image.ghd_product)
+
+
+        self.source_cat = self.annotate_table(output_photometry_table, self.param_dict_qc, product=self.image.ghd_product)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -668,7 +676,7 @@ class HAPPointCatalog(HAPCatalogBase):
 
         """
         # Write out catalog to ecsv file
-        self.source_cat = self.annotate_table(self.source_cat, product=self.image.ghd_product)
+        self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, product=self.image.ghd_product)
         # self.source_cat.meta['comments'] = \
         #     ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
         self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
@@ -754,9 +762,18 @@ class HAPPointCatalog(HAPCatalogBase):
 
         # Keep all the rows in the original total detection table and add rows from the filter
         # table where a matching "id" key is present.  The key must match in case.
-        self.sources.rename_column("id", "ID")
+        if 'xcentroid' in self.sources.colnames:
+            self.sources.rename_column('xcentroid', 'X-Center')
+        if 'ycentroid' in self.sources.colnames:
+            self.sources.rename_column('ycentroid', 'Y-Center')
+        if 'id' in self.sources.colnames:
+            self.sources.rename_column("id", "ID")
+        for col2del in ['sharpness', 'roundness1', 'roundness2', 'npix', 'sky', 'peak', 'flux', 'mag']:
+            if col2del in self.sources.colnames:
+                self.sources.remove_column(col2del)
+        if 'RA' in self.sources.colnames and 'DEC' in self.sources.colnames:
+            subset_table.remove_columns(['RA', 'DEC'])
         self.sources = join(self.sources, subset_table, keys="ID", join_type="left")
-        self.sources.rename_column("ID", "id")
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -770,7 +787,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
            The white light or total detection drizzled image
 
        param_dict : dictionary
-           Configuration values for catalog generation based upon in put JSON files
+           Configuration values for catalog generation based upon input JSON files
 
        debug : bool
            Specifies whether or not to generate the regions file used for ds9 overlay
@@ -780,8 +797,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
     """
     catalog_suffix = "_segment-cat.ecsv"
 
-    def __init__(self, image, param_dict, debug, tp_sources):
-        super().__init__(image, param_dict, debug, tp_sources)
+    def __init__(self, image, param_dict, param_dict_qc, debug, tp_sources):
+        super().__init__(image, param_dict, param_dict_qc, debug, tp_sources)
 
         # Get the instrument/detector-specific values from the self.param_dict
         self._fwhm = self.param_dict["sourcex"]["fwhm"]
@@ -1221,12 +1238,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # If the output is for the total detection product, then only
         # a subset of the full catalog is needed.
         if self.image.ghd_product.lower() == "tdp":
-            self.source_cat = self.annotate_table(self.source_cat, product=self.image.ghd_product)
+            self.source_cat = self.annotate_table(self.source_cat, param_dict_qc, product=self.image.ghd_product)
             self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
 
         # else the product is the "filter detection product" catalog which has already been formatted
         else:
-            self.source_cat = self.annotate_table(self.source_cat, product=self.image.ghd_product)
+            self.source_cat = self.annotate_table(self.source_cat, param_dict_qc, product=self.image.ghd_product)
 
             self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
             log.info("SEGMENT. Wrote filter source catalog: {}".format(self.sourcelist_filename))
