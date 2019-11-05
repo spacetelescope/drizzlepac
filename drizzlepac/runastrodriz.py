@@ -541,13 +541,14 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         ftrl.write(hlet_msg)
         ftrl.close()
 
+    # Remove secondary log files for good...
+    logging.shutdown()
+
     if not debug:
         # Remove all temp sub-directories now that we are done
         for sd in sub_dirs:
             if os.path.exists(sd): rmtree2(sd)
 
-    # Remove secondary log files for good...
-    logging.shutdown()
     for _olog in [_alignlog]:
         if os.path.exists(_olog):
             os.remove(_olog)
@@ -1014,7 +1015,6 @@ def rmtree2(path, n=3):
             break
         except OSError as err:
             print("Failed to remove path %s with shutil.rmtree at attempt %d: %s" % (path, n, err))
-            raise OSError
         time.sleep(3)
 
     if not ok:
