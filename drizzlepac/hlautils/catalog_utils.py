@@ -344,8 +344,9 @@ class HAPCatalogBase:
 
         # Compute catalog-independent attributes to be used for photometry computations
         # Compute AB mag zeropoint
-        photplam = self.image.imghdu[1].header['photplam']
-        photflam = self.image.imghdu[1].header['photflam']
+        self.ang2hz = 2.99792458**18 # angstrom to hertz conversion. freq = c/wavelength = 2.99792458**18 ang/sec / ang
+        photplam = self.ang2hz/self.image.imghdu[1].header['photplam']
+        photflam = self.image.imghdu[1].header['photflam']/self.ang2hz
         # FIX: replace the constants
         self.ab_zeropoint = -2.5 * np.log10(photflam) - 21.10 - 5.0 * np.log10(photplam) + 18.6921
 
@@ -594,10 +595,10 @@ class HAPPointCatalog(HAPCatalogBase):
 
         # Create the list of photometric apertures to measure
         phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
-
         # Perform aperture photometry
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image,
                                                                 platescale=self.image.imgwcs.pscale,
+                                                                photflam=self.image.imghdu[1].header['photflam']/self.ang2hz,
                                                                 error_array=self.image.bkg_rms_ra,
                                                                 bg_method=self.param_dict['salgorithm'],
                                                                 epadu=self.gain,
@@ -644,7 +645,7 @@ class HAPPointCatalog(HAPCatalogBase):
         final_col_units = {"X-Center": "Pixels", "Y-Center": "Pixels", "RA": "Sky Coords", "DEC": "Sky Coords",
                            "ID": "Unitless", "MagAp1": "ABMAG", "MagErrAp1": "ABMAG", "MagAp2": "ABMAG",
                            "MagErrAp2": "ABMAG", "MSkyAp2": "ABMAG", "StdevAp2": "ABMAG",
-                           "FluxAp2": "erg cm^-2 sec^-1 Hz^-1", "CI": "ABMAG", "Flags": "Unitless"}
+                           "FluxAp2": "electrons/sec", "CI": "ABMAG", "Flags": "Unitless"}
         for col_title in final_col_units:
             output_photometry_table[col_title].unit = final_col_units[col_title]
 

@@ -154,7 +154,6 @@ def create_drizzle_products(total_list):
     # and finally the drizzle-combined total detection image.
     for total_obj in total_list:
         log.info("~" * 118)
-
         # Get the common WCS for all images which are part of a total detection product,
         # where the total detection product is detector-dependent.
         meta_wcs = total_obj.generate_metawcs()
