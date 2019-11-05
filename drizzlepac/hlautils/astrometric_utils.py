@@ -84,6 +84,11 @@ __all__ = ['build_reference_wcs', 'create_astrometric_catalog', 'compute_radius'
            'extract_sources', 'find_hist2d_offset', 'generate_source_catalog',
            'classify_sources']
 
+FOCUS_DICT = {'exp': [], 'prod': [], 'stats': {},
+              'exp_pos': None, 'prod_pos': None,
+              'alignment_verified': False, 'alignment_quality': -1,
+              'expnames': "", 'prodname': ""}
+
 """
 
 Primary function for creating an astrometric reference catalog.
@@ -1477,10 +1482,9 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
 
     from drizzlepac.hlautils import astrometric_utils as amutils
 
-    focus_dict = {'exp': [], 'prod': [], 'stats': {},
-                  'exp_pos': None, 'prod_pos': None,
-                  'alignment_verified': False, 'alignment_quality': -1,
-                  'expnames': singlefiles, 'prodname': prodfile}
+    focus_dict = FOCUS_DICT.copy()
+    focus_dict['expnames'] = singlefiles
+    focus_dict['prodname'] = prodfile
 
     # Start by creating the full saturation mask from all single_sci images
     full_sat_mask = None
@@ -1515,6 +1519,9 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
     return focus_dict
 
 def evaluate_focus(focus_dict, tolerance=0.8):
+    if focus_dict is None:
+        return True
+
     s = focus_dict['stats']
     min_3sig = min(s['mean'] - 3.0 * s['std'], tolerance * s['mean'])
     max_3sig = s['mean'] + 3.0 * s['std']
