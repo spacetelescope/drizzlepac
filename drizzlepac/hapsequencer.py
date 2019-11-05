@@ -22,7 +22,8 @@ from stsci.tools import logutil
 from stwcs import wcsutil
 
 __taskname__ = 'hapsequencer'
-log = logutil.create_logger('hapsequencer', level=logutil.logging.INFO, stream=sys.stdout)
+log_level = logutil.logging.INFO
+log = logutil.create_logger('hapsequencer', level=log_level, stream=sys.stdout)
 
 __version__ = 0.1
 __version_date__ = '19-Mar-2019'
@@ -220,7 +221,8 @@ def create_drizzle_products(total_list):
 
 
 def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
-                       input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both"):
+                       input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
+                       log_level=logutil.logging.INFO):
     """
     Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
     controller which invokes the high-level functionality to process the single visit data.
@@ -265,6 +267,17 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
 
+    # Define trailer file (log file) that will contain the log entries for all processing
+    if isinstance(input_filename, str):  # input file is a poller file -- easy case
+        trlroot = input_filename.replace('.out', '.log')
+    else:
+        trlroot = 'svm_process.log'
+    # attach trailer file to logger
+    fh = logutil.logging.FileHandler(trlroot)
+    fh.setLevel(log_level)
+    log.addHandler(fh)
+
+    # start processing
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
     product_list = []
