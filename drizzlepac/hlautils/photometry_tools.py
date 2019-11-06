@@ -63,8 +63,8 @@ from drizzlepac.hlautils.background_median import aperture_stats_tbl
 from photutils import aperture_photometry
 
 
-def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale, photflam,
-                          error_array=None, bg_method='mode', epadu=1.0, zero_point=0.0):
+def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam, error_array=None,
+                          bg_method='mode', epadu=1.0):
     """
     Computes photometry with PhotUtils apertures, with IRAF formulae
 
@@ -79,11 +79,11 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale, photfl
     data : array
         The data for the image to be measured.
 
-    platescale : float
-        instrument platescale in arcseconds per pixel.
-
     photflam : float
-        inverse sensitivity, ergs/cm2/Hz/electron
+        inverse sensitivity, in ergs/cm2/angstrom/electron
+
+    photplam : float
+        Pivot wavelength, in angstroms
 
     error_array : array
         (Optional) The array of pixelwise error of the data.  If none, the Poisson noise term in the error computation
@@ -96,9 +96,6 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale, photfl
 
     epadu : float
         (optional) Gain in electrons per adu (only use if image units aren't e-). Default value is 1.0
-
-    zero_point: float
-        (optional) Photometric zeropoint used to compute magnitude values from flux values. Default value is 0.0
 
     Returns
     -------
@@ -145,7 +142,9 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, platescale, photfl
             flux_error = compute_phot_error(flux, bg_phot, bg_method, ap_area, epadu)
 
         #mag = zero_point - 2.5 * np.log10(flux)
-        mag = -2.5 * np.log10(flux * photflam) - zero_point
+
+        #mag = -2.5 * np.log10(flux * photflam) - zero_point
+        mag = convert_flux_to_abmag(flux, photflam, photplam)
         mag_err = 1.0857 * flux_error / flux # TODO: Doublecheck this
 
         # Build the final data table
@@ -196,3 +195,35 @@ def compute_phot_error(flux_variance, bg_phot, bg_method, ap_area, epadu=1.0):
     variance = flux_variance / epadu + bg_variance_terms
     flux_error = variance ** .5
     return flux_error
+
+
+def convert_flux_to_abmag(in_flux, photflam, photplam):
+    """converts flux (in units of electrons/sec) to ABMAG
+
+    Parameters
+    ----------
+    in_flux : list
+        flux values to convert to ABMAG, in electrons/second
+
+    photflam : float
+        inverse sensitivity, in ergs/cm2/angstrom/electron
+
+    photplam : float
+        pivot wavelength, in angstroms
+
+    Returns
+    -------
+    abmag : list
+        input flux values converted to ABMAG
+    """
+
+    # convert flux from units of electrons/second to ergs/cm2/angstrom/second
+    f_lambda = in_flux * photflam
+
+    # Convert f_lambda to STMAG
+    stmag = -2.5 * np.log10(f_lambda) - 21.10
+
+    # Convert STMAG to ABMAG
+    abmag =  stmag - 5.0 * np.log10(photplam) + 18.692
+
+    return abmag

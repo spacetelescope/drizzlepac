@@ -342,14 +342,6 @@ class HAPCatalogBase:
 
         self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
 
-        # Compute catalog-independent attributes to be used for photometry computations
-        # Compute AB mag zeropoint
-        self.ang2hz = 2.99792458**18 # angstrom to hertz conversion. freq = c/wavelength = 2.99792458**18 ang/sec / ang
-        photplam = self.ang2hz/self.image.imghdu[1].header['photplam']
-        photflam = self.image.imghdu[1].header['photflam']/self.ang2hz
-        # FIX: replace the constants
-        self.ab_zeropoint = -2.5 * np.log10(photflam) - 21.10 - 5.0 * np.log10(photplam) + 18.6921
-
         # Compute average gain - there will always be at least one gain value in the primary header
         gain_keys = self.image.imghdu[0].header['atodgn*']
         gain_values = [gain_keys[g] for g in gain_keys if gain_keys[g] > 0.0]
@@ -376,7 +368,7 @@ class HAPCatalogBase:
             log.info("dSkyAnnulus:      {}".format(self.param_dict['dskyannulus_arcsec']))
             log.info("salgorithm:       {}".format(self.param_dict['salgorithm']))
             log.info("gain:             {}".format(self.gain))
-            log.info("ab_zeropoint:     {}".format(self.ab_zeropoint))
+            # log.info("ab_zeropoint:     {}".format(self.ab_zeropoint))
             log.info(" ")
             log.info("{}".format("=" * 80))
             log.info("")
@@ -597,12 +589,11 @@ class HAPPointCatalog(HAPCatalogBase):
         phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
         # Perform aperture photometry
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image,
-                                                                platescale=self.image.imgwcs.pscale,
-                                                                photflam=self.image.imghdu[1].header['photflam']/self.ang2hz,
+                                                                photflam=self.image.imghdu[1].header['photflam'],
+                                                                photplam=self.image.imghdu[1].header['photplam'],
                                                                 error_array=self.image.bkg_rms_ra,
                                                                 bg_method=self.param_dict['salgorithm'],
-                                                                epadu=self.gain,
-                                                                zero_point=self.ab_zeropoint)
+                                                                epadu=self.gain)
 
         # calculate and add RA and DEC columns to table
         ra, dec = self.transform_list_xy_to_ra_dec(photometry_tbl["X-Center"], photometry_tbl["Y-Center"], self.imgname)  # TODO: replace with all_pix2sky or somthing at a later date
