@@ -141,9 +141,6 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam
         else:
             flux_error = compute_phot_error(flux, bg_phot, bg_method, ap_area, epadu)
 
-        #mag = zero_point - 2.5 * np.log10(flux)
-
-        #mag = -2.5 * np.log10(flux * photflam) - zero_point
         mag = convert_flux_to_abmag(flux, photflam, photplam)
         mag_err = 1.0857 * flux_error / flux # TODO: Doublecheck this
 
@@ -224,6 +221,6 @@ def convert_flux_to_abmag(in_flux, photflam, photplam):
     stmag = -2.5 * np.log10(f_lambda) - 21.10
 
     # Convert STMAG to ABMAG
-    abmag =  stmag - 5.0 * np.log10(photplam) + 18.692
+    abmag =  stmag - 5.0 * np.log10(photplam) + 18.6921
 
     return abmag
