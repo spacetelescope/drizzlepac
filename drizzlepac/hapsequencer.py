@@ -54,7 +54,11 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
     product_list = []
     for total_product_obj in total_list:
         # Instantiate filter catalog product object
-        total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename, total_product_obj.configobj_pars.get_pars('catalog generation'), total_product_obj.configobj_pars.get_pars('quality control'), types=phot_mode, debug=debug)
+        total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename,
+                                             total_product_obj.configobj_pars.get_pars('catalog generation'),
+                                             total_product_obj.configobj_pars.get_pars('quality control'),
+                                             types=phot_mode,
+                                             debug=debug)
 
         # Generate an "n" exposure mask which has the image footprint set to the number
         # of exposures which constitute each pixel.
@@ -78,8 +82,16 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
         for filter_product_obj in total_product_obj.fdp_list:
 
             # Instantiate filter catalog product object
-            filter_product_catalogs = HAPCatalogs(filter_product_obj.drizzle_filename, total_product_obj.configobj_pars.get_pars('catalog generation'), total_product_obj.configobj_pars.get_pars('quality control'), types=phot_mode, debug=debug, tp_sources=sources_dict)
+            filter_product_catalogs = HAPCatalogs(filter_product_obj.drizzle_filename,
+                                                  total_product_obj.configobj_pars.get_pars('catalog generation'),
+                                                  total_product_obj.configobj_pars.get_pars('quality control'),
+                                                  types=phot_mode,
+                                                  debug=debug,
+                                                  tp_sources=sources_dict)
+
             # Perform photometry
+            # The measure method also copies a specified portion of the filter table into
+            # a filter "subset" table which will be combined with the total detection table.
             filter_name = filter_product_obj.filters
             filter_product_catalogs.measure(filter_name)
 
@@ -87,20 +99,21 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
 
             # Replace zero-value total-product catalog 'Flags' column values with meaningful filter-product catalog
             # 'Flags' column values
-            filter_product_catalogs.catalogs['aperture'].subset_filter_source_cat[
-                'Flags_{}'.format(filter_product_obj.filters)] = \
-            filter_product_catalogs.catalogs['aperture'].source_cat['Flags']
+            for cat_type in total_product_catalogs.catalogs.keys():
+                filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat[
+                    'Flags_{}'.format(filter_product_obj.filters)] = \
+                filter_product_catalogs.catalogs[cat_type].source_cat['Flags']
 
             # Write out photometric (filter) catalog(s)
             filter_product_catalogs.write()
 
-            # Load a dictionary with a subset table for each catalog
+            # Load a dictionary with the filter subset table for each catalog...
             subset_columns_dict = {}
             for cat_type in filter_product_catalogs.catalogs.keys():
                 subset_columns_dict[cat_type] = {}
                 subset_columns_dict[cat_type]['subset'] = filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat
 
-            # ...append the new columns to the total detection project catalog.
+            # ...and append the filter columns to the total detection product catalog.
             total_product_catalogs.combine(subset_columns_dict)
 
             # append filter product catalogs to list
@@ -408,6 +421,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
         catalog_name = filter_product_catalogs.catalogs[cat_type].sourcelist_filename
         catalog_data = filter_product_catalogs.catalogs[cat_type].source_cat
         drz_root_dir = os.getcwd()
+        log.info("Run source list flagging on catalog file {}.".format(catalog_name))
         filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image,
                                                                                                          flt_list,
                                                                                                          param_dict,
