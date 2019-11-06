@@ -11,6 +11,7 @@ import glob
 import os
 import sys
 import traceback
+import logging
 
 import drizzlepac
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
@@ -22,13 +23,14 @@ from stsci.tools import logutil
 from stwcs import wcsutil
 
 __taskname__ = 'hapsequencer'
-log_level = logutil.logging.INFO
+log_level = logging.INFO
 log = logutil.create_logger('hapsequencer', level=log_level, stream=sys.stdout)
+# log = logging.getLogger(__name__)
 
 __version__ = 0.1
 __version_date__ = '19-Mar-2019'
 
-# ----------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------
 
 def create_catalog_products(total_list, debug=False, phot_mode='both'):
     """This subroutine utilizes hlautils/catalog_utils module to produce photometric sourcelists for the specified
@@ -269,13 +271,11 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
 
     # Define trailer file (log file) that will contain the log entries for all processing
     if isinstance(input_filename, str):  # input file is a poller file -- easy case
-        trlroot = input_filename.replace('.out', '.log')
+        logname = input_filename.replace('.out', '.log')
     else:
-        trlroot = 'svm_process.log'
-    # attach trailer file to logger
-    fh = logutil.logging.FileHandler(trlroot)
-    fh.setLevel(log_level)
-    log.addHandler(fh)
+        logname = 'svm_process.log'
+    print("Trailer filename: {}".format(logname))
+    logging.basicConfig(filename=logname)
 
     # start processing
     starting_dt = datetime.datetime.now()
@@ -291,6 +291,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
         obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename)
 
+        k = input("Continue??")
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to use only one of the Total Products to generate the manifest name as the name is not
         # dependent on the detector.

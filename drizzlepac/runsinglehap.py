@@ -17,19 +17,26 @@ Python USAGE:
 # Import standard Python modules
 import argparse
 
-# import sys
+import sys
 # import logging
 
 # THIRD-PARTY
-# from stsci.tools import logutil
+from stsci.tools import logutil
 
 from drizzlepac import hapsequencer
 
-__taskname__ = "runsinglehap"
+__taskname__ = "drizzlepac.runsinglehap"
 
 # Local variables
 __version__ = "0.1.1"
 __version_date__ = "(16-Oct-2019)"
+#
+# These lines (or something similar) will be needed in the HAP processing code
+#
+log = logutil.create_logger('drizzlepac.runsinglehap', level=logutil.logging.INFO, stream=sys.stdout)
+# logging.getLogger('astrodrizzle').addHandler(log)
+# logging.getLogger('alignimages').addHandler(log)
+
 """
 #
 # These lines (or something similar) will be needed in the HAP processing code
