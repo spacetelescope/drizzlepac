@@ -199,7 +199,7 @@ def convert_flux_to_abmag(in_flux, photflam, photplam):
 
     Parameters
     ----------
-    in_flux : list
+    in_flux : astropy.table.column.Column object
         flux values to convert to ABMAG, in electrons/second
 
     photflam : float
@@ -210,7 +210,7 @@ def convert_flux_to_abmag(in_flux, photflam, photplam):
 
     Returns
     -------
-    abmag : list
+    abmag : astropy.table.column.Column object
         input flux values converted to ABMAG
     """
 
