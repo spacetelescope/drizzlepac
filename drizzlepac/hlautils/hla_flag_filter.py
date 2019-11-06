@@ -929,9 +929,9 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     for pindex, ii in enumerate(pcentral):
 
         central_pixel_value = final_flag_src_central_pixel_list[ii, :]
-        log.info(' ')
-        log.info('CENTRAL PIXEL VALUE: {}'.format(central_pixel_value))
-        log.info(' ')
+        log.debug(' ')
+        log.debug('CENTRAL PIXEL VALUE: {}'.format(central_pixel_value))
+        log.debug(' ')
 
         base_epp = central_pixel_value[3]
         coords = central_pixel_value[0:2]
@@ -961,12 +961,12 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
             matches = allmatches[rcut[radius_cnt]:rcut[radius_cnt-1]]
 
             if len(matches) == 0:
-                log.info(' ')
-                log.info('------------------------------------------')
-                log.info('NOTE: ALL MATCHES/DETECTIONS IN THIS RING ')
-                log.info('      HAVE PREVIOUSLY BEEN ACCOUNTED FOR  ')
-                log.info('------------------------------------------')
-                log.info(' ')
+                log.debug(' ')
+                log.debug('------------------------------------------')
+                log.debug('NOTE: ALL MATCHES/DETECTIONS IN THIS RING ')
+                log.debug('      HAVE PREVIOUSLY BEEN ACCOUNTED FOR  ')
+                log.debug('------------------------------------------')
+                log.debug(' ')
 
                 continue
 
@@ -1219,12 +1219,6 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     # ---------
     drz_data = fits.getdata(drizzled_image, 1)
 
-    # this bit is added to get the mask integrated into the exp map
-    maskfile = drizzled_image.replace(drizzled_image[-9:], "_msk.fits")
-    if os.path.isfile(maskfile):
-        mask_data = fits.getdata(maskfile)
-        mask_array = (mask_data == 0.0).astype(numpy.int32)
-
     component_drz_img_list = get_component_drz_list(drizzled_image, drz_root_dir, flt_list)
     nx = drz_data.shape[0]
     ny = drz_data.shape[1]
@@ -1238,11 +1232,17 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
             log.info("WARNING: Astrodrizzle added an extra-row/column...")
             nexp_array += comp_drz_data[0:nx, 0:ny]
 
+    # this bit is added to get the mask integrated into the exp map
+    maskfile = drizzled_image.replace(drizzled_image[-9:], "_msk.fits")
+    if os.path.isfile(maskfile):
+        mask_data = fits.getdata(maskfile)
+        mask_array = (mask_data == 0.0).astype(numpy.int32)
+
     if os.path.isfile(maskfile):
         nexp_array = nexp_array * mask_array
     else:
         log.info("something's wrong: maskfile {} is not a file".format(maskfile))
-        sys.exit()
+        sys.exit(1)
     nexp_image = drizzled_image.split('.')[0]+'_NEXP.fits'
     if not os.path.isfile(nexp_image):
         hdr = fits.getheader(drizzled_image, 1)
@@ -1318,7 +1318,8 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
         catalog_data.write(phot_table_temp, delimiter=",", format='ascii')
 
     if not debug:
-        # Remove _msk.fits, _NCTX.fits, and _NEXP.fits files created in this subroutine
+        # Mike is going to re-work all of this to be in-memory
+        Remove _msk.fits, _NCTX.fits, and _NEXP.fits files created in this subroutine
         if os.path.exists(maskfile):
             os.remove(maskfile)
         if os.path.exists(nexp_image_ctx):
