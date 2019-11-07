@@ -299,7 +299,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
 
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
-        sys.exit(-1)
+
         # Update all of the product objects with their associated configuration information.
         for total_item in total_list:
             total_item.configobj_pars = config_utils.HapConfig(total_item,
