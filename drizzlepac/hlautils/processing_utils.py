@@ -110,7 +110,6 @@ def refine_product_headers(product, total_obj_list):
 def get_acs_filters(image, delimiter=';', all=False):
     hdu, closefits = _process_input(image)
     filters = [kw[1] for kw in hdu[0].header['filter?'].items()]
-    print(filters)
     acs_filters = []
     for f in filters:
         if ('clear' not in f.lower() and not all) or all:
