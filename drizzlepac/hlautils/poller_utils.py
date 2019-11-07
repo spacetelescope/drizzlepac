@@ -81,9 +81,6 @@ def interpret_obset_input(results):
     """
     log.info("Interpret the poller file for the observation set.")
     obset_table = build_poller_table(results)
-    # Now assign column names to obset_table
-    for i, colname in enumerate(POLLER_COLNAMES):
-        obset_table.columns[i].name = colname
 
     # Add INSTRUMENT column
     instr = INSTRUMENT_DICT[obset_table['filename'][0][0]]
@@ -367,4 +364,9 @@ def build_poller_table(input):
     # Build output table
     poller_data = [col for col in cols.values()]
     poller_table = Table(data=poller_data)
+
+    # Now assign column names to obset_table
+    for i, colname in enumerate(POLLER_COLNAMES):
+        poller_table.columns[i].name = colname
+
     return poller_table
