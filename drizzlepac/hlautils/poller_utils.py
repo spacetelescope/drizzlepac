@@ -27,8 +27,8 @@ INSTRUMENT_DICT = {'i': 'WFC3', 'j': 'ACS', 'o': 'STIS', 'u': 'WFPC2', 'x': 'FOC
 POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
                     'exptime', 'filters', 'detector', 'pathname']
 
-__taskname__ = 'drizzlepac.poller_utils'
-log = logutil.create_logger('poller_utils', level=logutil.logging.INFO, stream=sys.stdout)
+__taskname__ = 'poller_utils'
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 def interpret_obset_input(results):
     """
