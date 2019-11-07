@@ -142,7 +142,10 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam
             flux_error = compute_phot_error(flux, bg_phot, bg_method, ap_area, epadu)
 
         mag = convert_flux_to_abmag(flux, photflam, photplam)
-        mag_err = 1.0857 * flux_error / flux # TODO: Doublecheck this
+
+        # NOTE: Magnitude error calculation comes from computing d(ABMAG)/d(flux).
+        # See https://iraf.net/forum/viewtopic.php?showtopic=83932 for details.
+        mag_err = 1.0857 * flux_error / flux
 
         # Build the final data table
         stacked = np.stack([flux, flux_error, mag, mag_err], axis=1)
