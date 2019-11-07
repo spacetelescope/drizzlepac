@@ -313,9 +313,15 @@ def build_poller_table(input):
     """
     if isinstance(input, str):
         input = Table.read(input, format='ascii.fast_no_header')
+        if len(input.columns) == len(POLLER_COLNAMES):
+            # We were provided a poller file, so use as-is
+            # Now assign column names to obset_table
+            for i, colname in enumerate(POLLER_COLNAMES):
+                input.columns[i].name = colname
+            return input
+
         # Return first column
         filenames = input[input.colnames[0]].tolist()
-
     elif isinstance(input, list):
         filenames = input
 
