@@ -1203,22 +1203,22 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     # ---------
     # METHOD 1:
     # ---------
-    ctx = fits.getdata(drizzled_image, 3)
-    if channel in ['UVIS', 'IR', 'WFC', 'HRC']:
-        ncombine = fits.getheader(drizzled_image, 1)['NCOMBINE']
-    if channel in ['WFPC2', 'PC']:
-        ndrizim = fits.getheader(drizzled_image, 0)['NDRIZIM']
-        ncombine = ndrizim/4
-    if channel == 'SBC':
-        ndrizim = fits.getheader(drizzled_image, 0)['NDRIZIM']
-        ncombine = ndrizim
-    ctxarray = arrayfy_ctx(ctx, ncombine)
+    # ctx = fits.getdata(drizzled_image, 3)
+    # if channel in ['UVIS', 'IR', 'WFC', 'HRC']:
+    #     ncombine = fits.getheader(drizzled_image, 1)['NCOMBINE']
+    # if channel in ['WFPC2', 'PC']:
+    #     ndrizim = fits.getheader(drizzled_image, 0)['NDRIZIM']
+    #     # ncombine = ndrizim/4
+    # if channel == 'SBC':
+    #     ndrizim = fits.getheader(drizzled_image, 0)['NDRIZIM']
+        # ncombine = ndrizim
+    # ctxarray = arrayfy_ctx(ctx, ncombine)
 
-    nexp_array_ctx = ctxarray.sum(axis=-1)
-    nexp_image_ctx = drizzled_image.split('.')[0]+'_NCTX.fits'
-    if not os.path.isfile(nexp_image_ctx):
-        hdr = fits.getheader(drizzled_image, 1)
-        fits.writeto(nexp_image_ctx, numpy.float32(nexp_array_ctx), hdr)
+    # nexp_array_ctx = ctxarray.sum(axis=-1)
+    # nexp_image_ctx = drizzled_image.split('.')[0]+'_NCTX.fits'
+    # if not os.path.isfile(nexp_image_ctx):
+    #     hdr = fits.getheader(drizzled_image, 1)
+    #     fits.writeto(nexp_image_ctx, numpy.float32(nexp_array_ctx), hdr)
 
     # ---------
     # METHOD 2:
@@ -1239,24 +1239,8 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
             nexp_array += comp_drz_data[0:nx, 0:ny]
 
     # this bit is added to get the mask integrated into the exp map
-    # maskfile = drizzled_image.replace(drizzled_image[-9:], "_msk.fits")
-    # if os.path.isfile(maskfile):
-    #     mask_data = fits.getdata(maskfile)
-    #     mask_array = (mask_data == 0.0).astype(numpy.int32)
-    #
-    # if os.path.isfile(maskfile):
-    #     nexp_array = nexp_array * mask_array
-    # else:
-    #     log.info("something's wrong: maskfile {} is not a file".format(maskfile))
-    #     sys.exit(1)
-
     mask_array = (mask_data == 0.0).astype(numpy.int32)
     nexp_array = nexp_array * mask_array
-    nexp_image = drizzled_image.split('.')[0]+'_NEXP.fits'
-    if not os.path.isfile(nexp_image):
-        hdr = fits.getheader(drizzled_image, 1)
-        fits.writeto(nexp_image, numpy.float32(nexp_array), hdr)
-
     # -------------------------------------------------------
     # EXTRACT FLUX/NEXP INFORMATION FROM NEXP IMAGE BASED ON
     # THE SOURCE DETECTION POSITIONS PREVIOUSLY ESTABLISHED
@@ -1326,15 +1310,11 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
         phot_table_temp = phot_table_root + '_NEXPFILT.txt'
         catalog_data.write(phot_table_temp, delimiter=",", format='ascii')
 
-    if not debug:
-        # Mike is going to re-work all of this to be in-memory
-        # Remove _msk.fits, _NCTX.fits, and _NEXP.fits files created in this subroutine
-        # if os.path.exists(maskfile):
-        #     os.remove(maskfile)
-        if os.path.exists(nexp_image_ctx):
-            os.remove(nexp_image_ctx)
-        if os.path.exists(nexp_image):
-            os.remove(nexp_image)
+    # if not debug:
+    #     # Mike is going to re-work all of this to be in-memory
+    #     # Remove _msk.fits, _NCTX.fits, and _NEXP.fits files created in this subroutine
+    #     if os.path.exists(nexp_image_ctx):
+    #         os.remove(nexp_image_ctx)
     return catalog_data
 
 # ======================================================================================================================
@@ -1620,58 +1600,58 @@ def xytord(xy_coord_array, image, image_ext):
 # ======================================================================================================================
 
 
-def arrayfy_ctx(ctx, maxindex):
-
-    """Function to turn the context array returned by AstroDrizzle
-    into a bit datacube with the third dimension equal to maxindex.
-    Requires care since vanilla python seems to be a bit loose with
-    data types, while arrays in numpy are strictly typed.
-    Comments indicate the why of certain operations.
-    Current version requires maxindex to be specified.  In upgrade, could
-    estimate maxindex from the highest non-zero bit set in ctx.
-    (In principle maxindex can be greater, if the last images contribute
-    to no pixels, or smaller, if the calling routine chooses to ignore
-    the contribution of further images.)
-
-    Per AstroDrizzle specifications, ctx can be a 2-dimensional or 3-dimensional
-    array of 32-bit integers.  It will be 2-dimensional if fewer than 32 images
-    are combined; 3-dimensional if more images are combined, in which case the
-    ctx[:, :, 0] contains the bit values for images 1-32, ctx[:, :, 1] for images
-    33-64, and so forth.
-
-    Parameters
-    ----------
-    ctx : numpy.ndarray
-        input context array to be converted
-
-    maxindex : int
-        maximum index value to process
-
-    Returns
-    -------
-    ctxarray : numpy.ndarray
-        ctxarray, The input context array converted to datacube form.
-    """
-    nx = ctx.shape[0]
-    ny = ctx.shape[1]
-    nz = 1
-    if ctx.ndim > 2:
-        nz = ctx.shape[2]
-    n3 = maxindex
-    # Need to find out how to handle the case in which maxindex is not specified
-
-    ctxarray = numpy.zeros((nx, ny, n3), dtype="bool")
-    comparison = numpy.zeros((nx, ny), dtype="int32")
-    
-    for i in range(n3):
-        ilayer = int(i/32)
-        ibit = i - 32*ilayer
-        cc = comparison + 2**ibit
-        if nz > 1:
-            ctxarray[:, :, i] = numpy.bitwise_and(ctx[:, :, ilayer], cc)
-        else:
-            ctxarray[:, :, i] = numpy.bitwise_and(ctx[:, :], cc)
-    return ctxarray
+# def arrayfy_ctx(ctx, maxindex):
+#
+#     """Function to turn the context array returned by AstroDrizzle
+#     into a bit datacube with the third dimension equal to maxindex.
+#     Requires care since vanilla python seems to be a bit loose with
+#     data types, while arrays in numpy are strictly typed.
+#     Comments indicate the why of certain operations.
+#     Current version requires maxindex to be specified.  In upgrade, could
+#     estimate maxindex from the highest non-zero bit set in ctx.
+#     (In principle maxindex can be greater, if the last images contribute
+#     to no pixels, or smaller, if the calling routine chooses to ignore
+#     the contribution of further images.)
+#
+#     Per AstroDrizzle specifications, ctx can be a 2-dimensional or 3-dimensional
+#     array of 32-bit integers.  It will be 2-dimensional if fewer than 32 images
+#     are combined; 3-dimensional if more images are combined, in which case the
+#     ctx[:, :, 0] contains the bit values for images 1-32, ctx[:, :, 1] for images
+#     33-64, and so forth.
+#
+#     Parameters
+#     ----------
+#     ctx : numpy.ndarray
+#         input context array to be converted
+#
+#     maxindex : int
+#         maximum index value to process
+#
+#     Returns
+#     -------
+#     ctxarray : numpy.ndarray
+#         ctxarray, The input context array converted to datacube form.
+#     """
+#     nx = ctx.shape[0]
+#     ny = ctx.shape[1]
+#     nz = 1
+#     if ctx.ndim > 2:
+#         nz = ctx.shape[2]
+#     n3 = maxindex
+#     # Need to find out how to handle the case in which maxindex is not specified
+#
+#     ctxarray = numpy.zeros((nx, ny, n3), dtype="bool")
+#     comparison = numpy.zeros((nx, ny), dtype="int32")
+#
+#     for i in range(n3):
+#         ilayer = int(i/32)
+#         ibit = i - 32*ilayer
+#         cc = comparison + 2**ibit
+#         if nz > 1:
+#             ctxarray[:, :, i] = numpy.bitwise_and(ctx[:, :, ilayer], cc)
+#         else:
+#             ctxarray[:, :, i] = numpy.bitwise_and(ctx[:, :], cc)
+#     return ctxarray
 
 # ======================================================================================================================
 

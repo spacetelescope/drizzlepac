@@ -413,7 +413,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
 
     # Create mask array that will be used by hla_flag_filter.hla_nexp_flags() for both point and segment catalogs.
     if not hasattr(filter_product_obj, 'hla_flag_msk'):
-        filter_product_obj.hla_flag_msk = hla_flag_array.make_mask_file(drizzled_image)
+        filter_product_obj.hla_flag_msk = hla_flag_filter.make_mask_array(drizzled_image)
 
     if filter_product_obj.configobj_pars.use_defaults:
         ci_lookup_file_path = "default_parameters/any"
