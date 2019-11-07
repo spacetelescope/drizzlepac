@@ -1319,7 +1319,7 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
 
     if not debug:
         # Mike is going to re-work all of this to be in-memory
-        Remove _msk.fits, _NCTX.fits, and _NEXP.fits files created in this subroutine
+        # Remove _msk.fits, _NCTX.fits, and _NEXP.fits files created in this subroutine
         if os.path.exists(maskfile):
             os.remove(maskfile)
         if os.path.exists(nexp_image_ctx):
