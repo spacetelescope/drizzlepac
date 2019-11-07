@@ -58,7 +58,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 @util.with_logging
 def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky,
-                             catalog_name, catalog_data, proc_type, drz_root_dir, ci_lookup_file_path,
+                             catalog_name, catalog_data, proc_type, drz_root_dir, hla_flag_msk, ci_lookup_file_path,
                              output_custom_pars_file, debug=True):
     """Simple calling subroutine that executes the other flagging subroutines.
     
@@ -94,6 +94,9 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
     drz_root_dir : string
         Root directory of drizzled images.
+
+    hla_flag_msk : numpy.ndarray object
+        mask array used by hla_nexp_flags().
 
     ci_lookup_file_path : string
         final path elements of the concentration index lookup file
@@ -153,11 +156,11 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
-    log.info("hla_nexp_flags({} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
+    log.info("hla_nexp_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
                                                                  catalog_name, "<Catalog Data>", drz_root_dir,
-                                                                 column_titles, debug))
+                                                                 "<MASK_ARRAY>", column_titles, debug))
     catalog_data = hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data,
-                                  drz_root_dir, column_titles, debug)
+                                  drz_root_dir, hla_flag_msk, column_titles, debug)
 
     return catalog_data
 
@@ -1150,7 +1153,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
 
 def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data, drz_root_dir,
-                   column_titles, debug):
+                   mask_data, column_titles, debug):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
     drizzled_image : string
@@ -1174,6 +1177,9 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
 
     drz_root_dir :
         dictionary of source lists keyed by drizzled image name.
+
+    mask_data : numpy.ndarray object
+        mask array used by hla_nexp_flags().
 
     column_titles : dictionary
         Relevant column titles
@@ -1233,16 +1239,19 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
             nexp_array += comp_drz_data[0:nx, 0:ny]
 
     # this bit is added to get the mask integrated into the exp map
-    maskfile = drizzled_image.replace(drizzled_image[-9:], "_msk.fits")
-    if os.path.isfile(maskfile):
-        mask_data = fits.getdata(maskfile)
-        mask_array = (mask_data == 0.0).astype(numpy.int32)
+    # maskfile = drizzled_image.replace(drizzled_image[-9:], "_msk.fits")
+    # if os.path.isfile(maskfile):
+    #     mask_data = fits.getdata(maskfile)
+    #     mask_array = (mask_data == 0.0).astype(numpy.int32)
+    #
+    # if os.path.isfile(maskfile):
+    #     nexp_array = nexp_array * mask_array
+    # else:
+    #     log.info("something's wrong: maskfile {} is not a file".format(maskfile))
+    #     sys.exit(1)
 
-    if os.path.isfile(maskfile):
-        nexp_array = nexp_array * mask_array
-    else:
-        log.info("something's wrong: maskfile {} is not a file".format(maskfile))
-        sys.exit(1)
+    mask_array = (mask_data == 0.0).astype(numpy.int32)
+    nexp_array = nexp_array * mask_array
     nexp_image = drizzled_image.split('.')[0]+'_NEXP.fits'
     if not os.path.isfile(nexp_image):
         hdr = fits.getheader(drizzled_image, 1)
@@ -1320,8 +1329,8 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     if not debug:
         # Mike is going to re-work all of this to be in-memory
         # Remove _msk.fits, _NCTX.fits, and _NEXP.fits files created in this subroutine
-        if os.path.exists(maskfile):
-            os.remove(maskfile)
+        # if os.path.exists(maskfile):
+        #     os.remove(maskfile)
         if os.path.exists(nexp_image_ctx):
             os.remove(nexp_image_ctx)
         if os.path.exists(nexp_image):
@@ -1703,7 +1712,7 @@ def flag4and8_hunter_killer(catalog_data, column_titles):
 # ======================================================================================================================
 
 
-def make_mask_file(drz_image):
+def make_mask_array(drz_image):
     """
     Creates _msk.fits mask file that contains pixel values of 1 outside the drizzled image footprint and pixel values
     of 0 inside the footprint. This file is used by subroutine hla_nexp_flags().
@@ -1715,7 +1724,8 @@ def make_mask_file(drz_image):
 
     Returns
     -------
-    Nothing.
+    mask : numpy.ndarray object
+        mask array
     """
     mask = fits.open(drz_image)[1].data != 0
     dilate = scipy.ndimage.morphology.binary_dilation
@@ -1727,5 +1737,7 @@ def make_mask_file(drz_image):
     bigmask = numpy.pad(mask, padding, 'constant')
     # strip the padding back off after creating mask
     mask = (erode(dilate(bigmask, kernel1), kernel2) == 0)[padding:-padding, padding:-padding]
-    flagfile = drz_image.replace(drz_image[-9:], "_msk.fits")
-    fits.writeto(flagfile, mask.astype(numpy.int16))
+    # flagfile = drz_image.replace(drz_image[-9:], "_msk.fits")
+    # fits.writeto(flagfile, mask.astype(numpy.int16))
+    mask = mask.astype(numpy.int16)
+    return mask

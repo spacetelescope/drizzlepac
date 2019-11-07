@@ -410,7 +410,11 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
     param_dict = filter_product_obj.configobj_pars.as_single_giant_dict()
     plate_scale = wcsutil.HSTWCS(drizzled_image, ext=('sci', 1)).pscale
     median_sky = filter_product_catalogs.image.bkg_median
-    hla_flag_filter.make_mask_file(drizzled_image)
+
+    # Create mask array that will be used by hla_flag_filter.hla_nexp_flags() for both point and segment catalogs.
+    if not hasattr(filter_product_obj, 'hla_flag_msk'):
+        filter_product_obj.hla_flag_msk = hla_flag_array.make_mask_file(drizzled_image)
+
     if filter_product_obj.configobj_pars.use_defaults:
         ci_lookup_file_path = "default_parameters/any"
     else:
@@ -432,6 +436,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
                                                                                                          catalog_data,
                                                                                                          cat_type,
                                                                                                          drz_root_dir,
+                                                                                                         filter_product_obj.hla_flag_msk,
                                                                                                          ci_lookup_file_path,
                                                                                                          output_custom_pars_file,
                                                                                                          debug)
