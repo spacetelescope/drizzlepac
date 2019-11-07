@@ -49,7 +49,7 @@ def refine_product_headers(product, total_obj_list):
         Filename or HDUList object for product to be updated
 
     total_obj_list: list
-        List of TotalProduct objects which are composed of Filter and Exposure 
+        List of TotalProduct objects which are composed of Filter and Exposure
         Product objects
 
     """
@@ -107,13 +107,15 @@ def refine_product_headers(product, total_obj_list):
     if closefits:
         hdu.close()
 
-def get_acs_filters(image, delimiter=';'):
+def get_acs_filters(image, delimiter=';', all=False):
     hdu, closefits = _process_input(image)
     filters = [kw[1] for kw in hdu[0].header['filter?'].items()]
+    print(filters)
     acs_filters = []
     for f in filters:
-        if 'clear' not in f.lower():
+        if ('clear' not in f.lower() and not all) or all:
             acs_filters.append(f)
+
     if not acs_filters:
         acs_filters = ['clear']
     acs_filters = delimiter.join(acs_filters)
