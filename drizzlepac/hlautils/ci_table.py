@@ -9,8 +9,8 @@ ci_ap_cor_table_ap_20_2016.txt
 
 
 """
-import os, sys
-import pdb
+import os
+import sys
 
 from stsci.tools import logutil
 
@@ -23,7 +23,7 @@ ci_table = None
 def read_ci_apcorr_file(ci_lookup_file_path, debug=False, infile_name='ci_ap_cor_table_ap_20_2016.txt'):
 
     """Read the table of CI values
-    
+
     Parameters
     ----------
     ci_lookup_file_path : string

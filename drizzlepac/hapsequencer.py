@@ -25,10 +25,9 @@ from stwcs import wcsutil
 __taskname__ = 'hapsequencer'
 log_level = logging.INFO
 log = logutil.create_logger('hapsequencer', level=log_level, stream=sys.stdout)
-# log = logging.getLogger(__name__)
 
 __version__ = 0.1
-__version_date__ = '19-Mar-2019'
+__version_date__ = '07-Nov-2019'
 
 # --------------------------------------------------------------------------------------------------------------
 
@@ -291,7 +290,6 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
         obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename)
 
-        k = input("Continue??")
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to use only one of the Total Products to generate the manifest name as the name is not
         # dependent on the detector.
@@ -384,9 +382,11 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
     finally:
-        log.info('Total processing time: {} sec'.format((datetime.datetime.now() - starting_dt).total_seconds()))
-        log.info("Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error "
-                 "condition {}".format(return_value))
+        end_dt = datetime.datetime.now()
+        log.info('Processing completed at {}'.format(str(end_dt)))
+        log.info('Total processing time: {} sec'.format((end_dt - starting_dt).total_seconds()))
+        log.info("Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error ")
+        log.info("Return condition {}".format(return_value))
         return return_value
 
 

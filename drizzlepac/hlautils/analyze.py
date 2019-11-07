@@ -8,6 +8,7 @@ to create a mosaic.
 """
 import math
 import sys
+
 from enum import Enum
 from astropy.io.fits import getheader
 from astropy.table import Table

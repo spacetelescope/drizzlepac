@@ -152,7 +152,7 @@ def end_logging(filename=None):
             # This generally shouldn't happen if logging was started with
             # init_logging and a filename was given...
             print('No trailer file saved...')
-        
+
         logutil.teardown_global_logging()
     else:
         print('No trailer file saved...')
@@ -321,6 +321,7 @@ class ProcSteps:
         """
         ptime = _ptime()
         print('==== Processing Step ',key,' started at ',ptime[0])
+        print("", flush=True)
         self.steps[key] = {'start':ptime}
         self.order.append(key)
 
@@ -337,8 +338,7 @@ class ProcSteps:
             self.steps[key]['elapsed'] = ptime[1] - self.steps[key]['start'][1]
         self.end = ptime
 
-        print('==== Processing Step ',key,' finished at ',ptime[0])
-        print('')
+        print('==== Processing Step {} finished at {}'.format(key,ptime[0]), flush=True)
 
     def reportTimes(self):
         """
@@ -359,6 +359,7 @@ class ProcSteps:
 
         print('   %20s          %s' % ('=' * 20, '=' * 20))
         print('   %20s          %0.4f sec.' % ('Total', total_time))
+        print("", flush=True)
 
         # Compute overall runtime of entire program, including overhead
         #total = self.end[1] - self.start[1]
@@ -616,7 +617,7 @@ def verifyFilePermissions(filelist, chmod=True):
             print('    %s'%(img))
         print('\nPlease reset permissions for these files and restart...')
         print('#'*40)
-        print('\n')
+        print('\n', flush=True)
         filelist = None
 
     return filelist
@@ -805,7 +806,7 @@ def printParams(paramDictionary, all=False, log=None):
             log.info(msg)
     else:
         def output(msg):
-            print(msg)
+            print(msg, flush=True)
 
     if not paramDictionary:
         output('No parameters were supplied')

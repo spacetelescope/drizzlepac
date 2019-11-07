@@ -6,7 +6,6 @@
 import pdb
 import sys
 
-
 from astropy.io import fits
 from astropy.stats import mad_std
 import numpy as np

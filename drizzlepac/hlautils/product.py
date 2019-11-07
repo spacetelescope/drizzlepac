@@ -16,7 +16,7 @@ from . import align_utils
 from . import astrometric_utils as amutils
 from . import cell_utils
 
-log = logutil.create_logger('product', level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the

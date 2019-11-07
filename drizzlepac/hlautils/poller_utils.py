@@ -28,8 +28,7 @@ POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
                     'exptime', 'filters', 'detector', 'pathname']
 
 __taskname__ = 'drizzlepac.poller_utils'
-# log = logutil.create_logger('poller_utils', level=logutil.logging.INFO, stream=sys.stdout)
-log.getLogger(__name__)
+log = logutil.create_logger('poller_utils', level=logutil.logging.INFO, stream=sys.stdout)
 
 def interpret_obset_input(results):
     """
