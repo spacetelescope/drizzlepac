@@ -582,7 +582,9 @@ class HAPPointCatalog(HAPCatalogBase):
         # Create the list of photometric apertures to measure
         phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
         # Perform aperture photometry
-        photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image,
+        photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers,
+                                                                bg_apers,
+                                                                data=image,
                                                                 photflam=self.image.imghdu[1].header['photflam'],
                                                                 photplam=self.image.imghdu[1].header['photplam'],
                                                                 error_array=self.image.bkg_rms_ra,
@@ -996,7 +998,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
         filter_measurements_table = Table(self.source_cat.to_table())
 
         # Compute the MagIso
-        filter_measurements_table["MagIso"] = self.ab_zeropoint - 2.5 * np.log10(filter_measurements_table["source_sum"])
+        filter_measurements_table["MagIso"] = photometry_tools.convert_flux_to_abmag(filter_measurements_table["source_sum"],
+                                                                                     self.image.imghdu[1].header['photflam'],
+                                                                                     self.image.imghdu[1].header['photplam'])
 
         # Compute aperture photometry measurements and append the columns to the measurements table
         updated_table = self.do_aperture_photometry(imgarr_bkgsub, filter_measurements_table)
@@ -1071,11 +1075,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers,
                                                                 bg_apers,
                                                                 data=bkg_subtracted_image,
-                                                                platescale=self.image.imgwcs.pscale,
+                                                                photflam=self.image.imghdu[1].header['photflam'],
+                                                                photplam=self.image.imghdu[1].header['photplam'],
                                                                 error_array=self.bkg.background_rms,
                                                                 bg_method=self.param_dict['salgorithm'],
-                                                                epadu=self.gain,
-                                                                zero_point=self.ab_zeropoint)
+                                                                epadu=self.gain)
 
         # Capture data computed by the photometry tools and append to the output table
         try:
