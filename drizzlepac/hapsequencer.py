@@ -441,7 +441,3 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
                                                                                                          debug)
 
     return filter_product_catalogs
-
-
-
-
