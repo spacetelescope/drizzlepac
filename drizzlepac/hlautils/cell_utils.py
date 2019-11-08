@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 
 from matplotlib import pyplot as plt
 from scipy import ndimage
@@ -11,6 +12,8 @@ from astropy.io import fits
 from astropy.table import Table
 from astropy.coordinates import SkyCoord
 from spherical_geometry.polygon import SphericalPolygon
+
+from PIL import Image, ImageDraw
 
 from stwcs.wcsutil import HSTWCS
 
@@ -146,13 +149,16 @@ class SkyFootprint(object):
                 # Account for rounding problems with creating meta_wcs
                 meta_edges[:,1] = np.clip(meta_edges[:,1], 0, self.meta_wcs.array_shape[0]-1)
                 meta_edges[:,0] = np.clip(meta_edges[:,0], 0, self.meta_wcs.array_shape[1]-1)
-                # apply meta_edges to blank mask
-                blank[meta_edges[:, 1], meta_edges[:, 0]] = 1
 
-                # Fill in outline of each chip
-                blank = morphology.binary_dilation(blank, structure=NDIMAGE_STRUCT2)
-                blank = morphology.binary_fill_holes(blank)
-                blank = morphology.binary_erosion(blank, structure=NDIMAGE_STRUCT2)
+                # apply meta_edges to blank mask
+                # Use PIL to create mask
+                parray = np.array(meta_edges.T)
+                polygon = list(zip(parray[0], parray[1]))
+                nx = self.meta_wcs.array_shape[1]
+                ny = self.meta_wcs.array_shape[0]
+                img = Image.new('L', (nx, ny) , 0)
+                ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
+                blank = np.array(img)
 
             self.total_mask += blank.astype(np.int16)
 
@@ -366,13 +372,11 @@ class ProjectionCell(object):
         edges_x = [0]*naxis2 + [naxis1-1]*naxis2 + list(range(naxis1)) * 2
         edges_y = list(range(naxis2)) * 2 + [0]*naxis1 + [naxis2-1]*naxis1 
         
-        mask = np.zeros(self.wcs.array_shape, dtype=np.int16)
-        mask[edges_y, edges_x] = 1
+        polygon = list(zip(edges_x, edges_y))
+        img = Image.new("L", (naxis1, naxis2), 0)
+        ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
+        mask = np.array(img)
 
-        # Fill in outline of each chip
-        mask = morphology.binary_dilation(mask, structure=NDIMAGE_STRUCT2)
-        mask = morphology.binary_fill_holes(mask)
-        mask = morphology.binary_erosion(mask, structure=NDIMAGE_STRUCT2)
         self.mask = mask
 
     def build_polygon(self):
@@ -514,13 +518,11 @@ class SkyCell(object):
         edges_x = [0]*naxis2 + [naxis1-1]*naxis2 + list(range(naxis1)) * 2
         edges_y = list(range(naxis2)) * 2 + [0]*naxis1 + [naxis2-1]*naxis1 
 
-        mask = np.zeros(self.wcs.array_shape, dtype=np.int16)
-        mask[edges_y, edges_x] = 1
-
-        # Fill in outline of each chip
-        mask = morphology.binary_dilation(mask, structure=NDIMAGE_STRUCT2)
-        mask = morphology.binary_fill_holes(mask)
-        mask = morphology.binary_erosion(mask, structure=NDIMAGE_STRUCT2)
+        polygon = list(zip(edges_x, edges_y))
+        img = Image.new("L", (naxis1, naxis2), 0)
+        ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
+        mask = np.array(img)
+        
         self.mask = mask
 
 #
