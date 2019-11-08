@@ -1632,7 +1632,5 @@ def make_mask_array(drz_image):
     bigmask = numpy.pad(mask, padding, 'constant')
     # strip the padding back off after creating mask
     mask = (erode(dilate(bigmask, kernel1), kernel2) == 0)[padding:-padding, padding:-padding]
-    # flagfile = drz_image.replace(drz_image[-9:], "_msk.fits")
-    # fits.writeto(flagfile, mask.astype(numpy.int16))
     mask = mask.astype(numpy.int16)
     return mask
