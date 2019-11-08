@@ -66,7 +66,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     """
     # Interpret input
     if isinstance(visit_input, list):
-        expnames = visit_input
+        expnames = visit_input.copy()
     else:
         expnames = Table.read(visit_input, format='ascii.fast_no_header')[0]
 
@@ -87,7 +87,19 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
         if bad_files:
             msg = "Could not find {} specified input files".format(bad_files)
             raise (ValueError, msg)
-
+            
+    # Check that all exposures have up-to-date WCS solutions
+    #  This will weed out exposures which were not processed by the pipeline
+    #  such as those with EXPTIME==0
+    for filename in expnames:
+        with fits.open(filename) as fimg:
+            print("Checking {}".format(filename))
+            if 'wcsname' not in fimg[1].header:
+                expnames.remove(filename)
+    if len(expnames) == 0:
+        print("No valid exposures to define sky cells")
+        return None
+        
     # Initialize all sky tessellation object definitions
     # This includes setting the pixel scale.
     sky_grid = GridDefs(scale=scale, cell_size=cell_size)
@@ -131,6 +143,10 @@ class SkyFootprint(object):
 
                 sky_edges = wcs.pixel_to_world_values(np.vstack([edges_x, edges_y]).T)
                 meta_edges = self.meta_wcs.world_to_pixel_values(sky_edges).astype(np.int32)
+                # Account for rounding problems with creating meta_wcs
+                meta_edges[:,1] = np.clip(meta_edges[:,1], 0, self.meta_wcs.array_shape[0]-1)
+                meta_edges[:,0] = np.clip(meta_edges[:,0], 0, self.meta_wcs.array_shape[1]-1)
+                # apply meta_edges to blank mask
                 blank[meta_edges[:, 1], meta_edges[:, 0]] = 1
 
                 # Fill in outline of each chip
