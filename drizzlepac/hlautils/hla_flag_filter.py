@@ -58,7 +58,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 @util.with_logging
 def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky,
-                             catalog_name, catalog_data, proc_type, drz_root_dir, ci_lookup_file_path,
+                             catalog_name, catalog_data, proc_type, drz_root_dir, hla_flag_msk, ci_lookup_file_path,
                              output_custom_pars_file, debug=True):
     """Simple calling subroutine that executes the other flagging subroutines.
     
@@ -94,6 +94,9 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
     drz_root_dir : string
         Root directory of drizzled images.
+
+    hla_flag_msk : numpy.ndarray object
+        mask array used by hla_nexp_flags().
 
     ci_lookup_file_path : string
         final path elements of the concentration index lookup file
@@ -153,11 +156,11 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
-    log.info("hla_nexp_flags({} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
+    log.info("hla_nexp_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
                                                                  catalog_name, "<Catalog Data>", drz_root_dir,
-                                                                 column_titles, debug))
+                                                                 "<MASK_ARRAY>", column_titles, debug))
     catalog_data = hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data,
-                                  drz_root_dir, column_titles, debug)
+                                  drz_root_dir, hla_flag_msk, column_titles, debug)
 
     return catalog_data
 
@@ -1150,7 +1153,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
 
 def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data, drz_root_dir,
-                   column_titles, debug):
+                   mask_data, column_titles, debug):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
    
     drizzled_image : string
@@ -1175,6 +1178,9 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     drz_root_dir :
         dictionary of source lists keyed by drizzled image name.
 
+    mask_data : numpy.ndarray object
+        mask array used by hla_nexp_flags().
+
     column_titles : dictionary
         Relevant column titles
 
@@ -1194,29 +1200,6 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     # if channel == 'IR':  # TODO: This was commented out in the HLA classic era, prior to adaption to the HAP pipeline. Ask Rick about it.
     #    return catalog_data
 
-    # ---------
-    # METHOD 1:
-    # ---------
-    ctx = fits.getdata(drizzled_image, 3)
-    if channel in ['UVIS', 'IR', 'WFC', 'HRC']:
-        ncombine = fits.getheader(drizzled_image, 1)['NCOMBINE']
-    if channel in ['WFPC2', 'PC']:
-        ndrizim = fits.getheader(drizzled_image, 0)['NDRIZIM']
-        ncombine = ndrizim/4
-    if channel == 'SBC':
-        ndrizim = fits.getheader(drizzled_image, 0)['NDRIZIM']
-        ncombine = ndrizim
-    ctxarray = arrayfy_ctx(ctx, ncombine)
-
-    nexp_array_ctx = ctxarray.sum(axis=-1)
-    nexp_image_ctx = drizzled_image.split('.')[0]+'_NCTX.fits'
-    if not os.path.isfile(nexp_image_ctx):
-        hdr = fits.getheader(drizzled_image, 1)
-        fits.writeto(nexp_image_ctx, numpy.float32(nexp_array_ctx), hdr)
-
-    # ---------
-    # METHOD 2:
-    # ---------
     drz_data = fits.getdata(drizzled_image, 1)
 
     component_drz_img_list = get_component_drz_list(drizzled_image, drz_root_dir, flt_list)
@@ -1233,21 +1216,8 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
             nexp_array += comp_drz_data[0:nx, 0:ny]
 
     # this bit is added to get the mask integrated into the exp map
-    maskfile = drizzled_image.replace(drizzled_image[-9:], "_msk.fits")
-    if os.path.isfile(maskfile):
-        mask_data = fits.getdata(maskfile)
-        mask_array = (mask_data == 0.0).astype(numpy.int32)
-
-    if os.path.isfile(maskfile):
-        nexp_array = nexp_array * mask_array
-    else:
-        log.info("something's wrong: maskfile {} is not a file".format(maskfile))
-        sys.exit(1)
-    nexp_image = drizzled_image.split('.')[0]+'_NEXP.fits'
-    if not os.path.isfile(nexp_image):
-        hdr = fits.getheader(drizzled_image, 1)
-        fits.writeto(nexp_image, numpy.float32(nexp_array), hdr)
-
+    mask_array = (mask_data == 0.0).astype(numpy.int32)
+    nexp_array = nexp_array * mask_array
     # -------------------------------------------------------
     # EXTRACT FLUX/NEXP INFORMATION FROM NEXP IMAGE BASED ON
     # THE SOURCE DETECTION POSITIONS PREVIOUSLY ESTABLISHED
@@ -1299,7 +1269,6 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     gy = gy[w]
 
     # check the pixel values for low nexp
-
     # this version uses numpy broadcasting sum gx+ix is [len(gx), nrows]
     gx = (gx[:, numpy.newaxis] + ix).clip(0, nexp_array.shape[0]-1)
     gy = (gy[:, numpy.newaxis] + iy).clip(0, nexp_array.shape[1]-1)
@@ -1317,15 +1286,6 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
         phot_table_temp = phot_table_root + '_NEXPFILT.txt'
         catalog_data.write(phot_table_temp, delimiter=",", format='ascii')
 
-    if not debug:
-        # Mike is going to re-work all of this to be in-memory
-        # Remove _msk.fits, _NCTX.fits, and _NEXP.fits files created in this subroutine
-        if os.path.exists(maskfile):
-            os.remove(maskfile)
-        if os.path.exists(nexp_image_ctx):
-            os.remove(nexp_image_ctx)
-        if os.path.exists(nexp_image):
-            os.remove(nexp_image)
     return catalog_data
 
 # ======================================================================================================================
@@ -1611,62 +1571,6 @@ def xytord(xy_coord_array, image, image_ext):
 # ======================================================================================================================
 
 
-def arrayfy_ctx(ctx, maxindex):
-
-    """Function to turn the context array returned by AstroDrizzle
-    into a bit datacube with the third dimension equal to maxindex.
-    Requires care since vanilla python seems to be a bit loose with
-    data types, while arrays in numpy are strictly typed.
-    Comments indicate the why of certain operations.
-    Current version requires maxindex to be specified.  In upgrade, could
-    estimate maxindex from the highest non-zero bit set in ctx.
-    (In principle maxindex can be greater, if the last images contribute
-    to no pixels, or smaller, if the calling routine chooses to ignore
-    the contribution of further images.)
-
-    Per AstroDrizzle specifications, ctx can be a 2-dimensional or 3-dimensional
-    array of 32-bit integers.  It will be 2-dimensional if fewer than 32 images
-    are combined; 3-dimensional if more images are combined, in which case the
-    ctx[:, :, 0] contains the bit values for images 1-32, ctx[:, :, 1] for images
-    33-64, and so forth.
-
-    Parameters
-    ----------
-    ctx : numpy.ndarray
-        input context array to be converted
-
-    maxindex : int
-        maximum index value to process
-
-    Returns
-    -------
-    ctxarray : numpy.ndarray
-        ctxarray, The input context array converted to datacube form.
-    """
-    nx = ctx.shape[0]
-    ny = ctx.shape[1]
-    nz = 1
-    if ctx.ndim > 2:
-        nz = ctx.shape[2]
-    n3 = maxindex
-    # Need to find out how to handle the case in which maxindex is not specified
-
-    ctxarray = numpy.zeros((nx, ny, n3), dtype="bool")
-    comparison = numpy.zeros((nx, ny), dtype="int32")
-    
-    for i in range(n3):
-        ilayer = int(i/32)
-        ibit = i - 32*ilayer
-        cc = comparison + 2**ibit
-        if nz > 1:
-            ctxarray[:, :, i] = numpy.bitwise_and(ctx[:, :, ilayer], cc)
-        else:
-            ctxarray[:, :, i] = numpy.bitwise_and(ctx[:, :], cc)
-    return ctxarray
-
-# ======================================================================================================================
-
-
 def flag4and8_hunter_killer(catalog_data, column_titles):
     """This function searches through photometry catalogs for sources whose flags contain
     both bits 4 (multi-pixel saturation), and 8 (faint magnitude limit).
@@ -1703,7 +1607,7 @@ def flag4and8_hunter_killer(catalog_data, column_titles):
 # ======================================================================================================================
 
 
-def make_mask_file(drz_image):
+def make_mask_array(drz_image):
     """
     Creates _msk.fits mask file that contains pixel values of 1 outside the drizzled image footprint and pixel values
     of 0 inside the footprint. This file is used by subroutine hla_nexp_flags().
@@ -1715,7 +1619,8 @@ def make_mask_file(drz_image):
 
     Returns
     -------
-    Nothing.
+    mask : numpy.ndarray object
+        mask array
     """
     mask = fits.open(drz_image)[1].data != 0
     dilate = scipy.ndimage.morphology.binary_dilation
@@ -1727,5 +1632,5 @@ def make_mask_file(drz_image):
     bigmask = numpy.pad(mask, padding, 'constant')
     # strip the padding back off after creating mask
     mask = (erode(dilate(bigmask, kernel1), kernel2) == 0)[padding:-padding, padding:-padding]
-    flagfile = drz_image.replace(drz_image[-9:], "_msk.fits")
-    fits.writeto(flagfile, mask.astype(numpy.int16))
+    mask = mask.astype(numpy.int16)
+    return mask
