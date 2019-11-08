@@ -129,9 +129,15 @@ def make_regions(sl_name):
         reg_dict[bit_val] = ""
 
     for table_line in table_data:
-        x = table_line[0]
-        y = table_line[1]
-        flagval  = table_line[-1]
+        if sl_name.endswith("point-cat.ecsv"):
+            x = table_line["X-Center"]
+            y = table_line["Y-Center"]
+        elif sl_name.endswith("segment-cat.ecsv"):
+            x = table_line["X-Centroid"]
+            y = table_line["Y-Centroid"]
+        else:
+            sys.exit("ERROR! Unrecognized catalog filetype!")
+        flagval  = table_line["Flags"]
         flag_bits = deconstruct_flag((flagval))
         flag_counts += flag_bits
         for bit_val,flag_element in zip(bit_list,flag_bits):
