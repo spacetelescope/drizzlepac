@@ -268,6 +268,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
 
+    """
     # Define trailer file (log file) that will contain the log entries for all processing
     if isinstance(input_filename, str):  # input file is a poller file -- easy case
         logname = input_filename.replace('.out', '.log')
@@ -275,7 +276,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         logname = 'svm_process.log'
     print("Trailer filename: {}".format(logname))
     logging.basicConfig(filename=logname)
-
+    """
     # start processing
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
@@ -289,6 +290,9 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         # is the atomic exposure data.
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
         obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename)
+        total_log_file = total_list[0].trl_logname
+        total_trl_file = total_list[0].trl_filename
+        logging.basicConfig(filename=total_log_file)
 
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to use only one of the Total Products to generate the manifest name as the name is not
@@ -353,7 +357,9 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         log.info("\nCreate drizzled imagery products.")
         driz_list = create_drizzle_products(total_list)
         product_list += driz_list
-
+        # append total drizzle trailer file to total log file
+        proc_utils.appendTrlFile(total_log_file, total_list[0].trl_filename)
+        
         # Create source catalogs from newly defined products (HLA-204)
         log.info("Create source catalog from newly defined product.\n")
         if "total detection product 00" in obs_info_dict.keys():
@@ -387,6 +393,9 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         log.info('Total processing time: {} sec'.format((end_dt - starting_dt).total_seconds()))
         log.info("Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error ")
         log.info("Return condition {}".format(return_value))
+        logging.shutdown()
+        # Append total trailer file (from astrodrizzle) to total log file
+        os.rename(total_log_file, total_trl_file)
         return return_value
 
 
@@ -455,3 +464,5 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
                                                                                                          debug)
 
     return filter_product_catalogs
+    
+    
