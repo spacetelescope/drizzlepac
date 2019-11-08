@@ -343,13 +343,6 @@ class HAPCatalogBase:
 
         self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
 
-        # Compute catalog-independent attributes to be used for photometry computations
-        # Compute AB mag zeropoint
-        photplam = self.image.imghdu[1].header['photplam']
-        photflam = self.image.imghdu[1].header['photflam']
-        # FIX: replace the constants
-        self.ab_zeropoint = -2.5 * np.log10(photflam) - 21.10 - 5.0 * np.log10(photplam) + 18.6921
-
         # Compute average gain - there will always be at least one gain value in the primary header
         gain_keys = self.image.imghdu[0].header['atodgn*']
         gain_values = [gain_keys[g] for g in gain_keys if gain_keys[g] > 0.0]
@@ -376,7 +369,7 @@ class HAPCatalogBase:
             log.info("dSkyAnnulus:      {}".format(self.param_dict['dskyannulus_arcsec']))
             log.info("salgorithm:       {}".format(self.param_dict['salgorithm']))
             log.info("gain:             {}".format(self.gain))
-            log.info("ab_zeropoint:     {}".format(self.ab_zeropoint))
+            # log.info("ab_zeropoint:     {}".format(self.ab_zeropoint))
             log.info(" ")
             log.info("{}".format("=" * 80))
             log.info("")
@@ -588,14 +581,15 @@ class HAPPointCatalog(HAPCatalogBase):
 
         # Create the list of photometric apertures to measure
         phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
-
         # Perform aperture photometry
-        photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers, bg_apers, data=image,
-                                                                platescale=self.image.imgwcs.pscale,
+        photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers,
+                                                                bg_apers,
+                                                                data=image,
+                                                                photflam=self.image.imghdu[1].header['photflam'],
+                                                                photplam=self.image.imghdu[1].header['photplam'],
                                                                 error_array=self.image.bkg_rms_ra,
                                                                 bg_method=self.param_dict['salgorithm'],
-                                                                epadu=self.gain,
-                                                                zero_point=self.ab_zeropoint)
+                                                                epadu=self.gain)
 
         # calculate and add RA and DEC columns to table
         ra, dec = self.transform_list_xy_to_ra_dec(photometry_tbl["X-Center"], photometry_tbl["Y-Center"], self.imgname)  # TODO: replace with all_pix2sky or somthing at a later date
@@ -638,7 +632,7 @@ class HAPPointCatalog(HAPCatalogBase):
         final_col_units = {"X-Center": "Pixels", "Y-Center": "Pixels", "RA": "Sky Coords", "DEC": "Sky Coords",
                            "ID": "Unitless", "MagAp1": "ABMAG", "MagErrAp1": "ABMAG", "MagAp2": "ABMAG",
                            "MagErrAp2": "ABMAG", "MSkyAp2": "ABMAG", "StdevAp2": "ABMAG",
-                           "FluxAp2": "erg cm^-2 sec^-1 Hz^-1", "CI": "ABMAG", "Flags": "Unitless"}
+                           "FluxAp2": "electrons/sec", "CI": "ABMAG", "Flags": "Unitless"}
         for col_title in final_col_units:
             output_photometry_table[col_title].unit = final_col_units[col_title]
 
@@ -1004,7 +998,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
         filter_measurements_table = Table(self.source_cat.to_table())
 
         # Compute the MagIso
-        filter_measurements_table["MagIso"] = self.ab_zeropoint - 2.5 * np.log10(filter_measurements_table["source_sum"])
+        filter_measurements_table["MagIso"] = photometry_tools.convert_flux_to_abmag(filter_measurements_table["source_sum"],
+                                                                                     self.image.imghdu[1].header['photflam'],
+                                                                                     self.image.imghdu[1].header['photplam'])
 
         # Compute aperture photometry measurements and append the columns to the measurements table
         updated_table = self.do_aperture_photometry(imgarr_bkgsub, filter_measurements_table)
@@ -1079,11 +1075,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers,
                                                                 bg_apers,
                                                                 data=bkg_subtracted_image,
-                                                                platescale=self.image.imgwcs.pscale,
+                                                                photflam=self.image.imghdu[1].header['photflam'],
+                                                                photplam=self.image.imghdu[1].header['photplam'],
                                                                 error_array=self.bkg.background_rms,
                                                                 bg_method=self.param_dict['salgorithm'],
-                                                                epadu=self.gain,
-                                                                zero_point=self.ab_zeropoint)
+                                                                epadu=self.gain)
 
         # Capture data computed by the photometry tools and append to the output table
         try:
