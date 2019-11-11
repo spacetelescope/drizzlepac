@@ -24,10 +24,11 @@ log = logutil.create_logger('test_run_svmpoller', level=logutil.logging.INFO, st
 
 def pytest_generate_tests(metafunc):
     """Get the command line options."""
-    master_list = metafunc.config.option.master_list
-    poller_dir = metafunc.config.option.poller_dir
 
-    # The list containing the poller file names must exist in the current working directory
+    # The input master_list option should be given a fully qualified filename
+    master_list = metafunc.config.option.master_list
+
+    # The list containing the poller filenames must exist in the current working directory
     if not os.path.exists(master_list):
         # If not, copy the default file from the installation directory
         # Find where this module has been installed.
@@ -63,16 +64,16 @@ def test_run_svmpoller(tmpdir, dataset):
 
         This test file can be executed in the following manner:
             $ pytest -n # -s --basetemp=/internal/hladata/yourUniqueDirectoryHere --bigdata --slow
-              --master_list master_poller_list.txt test_run_svmpoller.py >&
+              --master_list /internal/hladata/input/master_poller_list.txt test_run_svmpoller.py >&
               test_svmpoller_output.txt &
-            $ tail -f test_pipe_random_output.txt
+            $ tail -f test_svmpoller_output.txt
           * The `-n #` option can be used to run tests in parallel if `pytest-xdist` has
-            been installed where `#` is the number of cpus to use.
+            been installed where `#` is the number of cpus to use. THIS IS NOT ADVISED FOR USE.
           * Note: When running this test, the `--basetemp` directory should be set to a unique
             existing directory to avoid deleting previous test output.
-          * The default master list exists in the tests/hla directory and contains 50 datasets.  The
-            full master list of thousands of datasets resides in Artifactory as ACSWFC3List.csv
-            (https://bytesalad.stsci.edu/artifactory/hst-hla-pipeline/dev/master_lists).
+          * A default master list exists in the tests/hla directory and contains 121 datasets.  This
+            is probably NOT the list you want to use, but it allows you to see what this file should
+            contain.
 
     """
     # Start by resetting the logging for all the modules used
@@ -104,7 +105,7 @@ def test_run_svmpoller(tmpdir, dataset):
         # Copy the poller file to the current working directory
         shutil.copy2(dataset, ".")
 
-        # Get the poller file path, as well as it simple name
+        # Get the poller file path, as well as its simple name
         poller_path = "/".join(dataset.split("/")[:-1])
         poller_file = dataset.split("/")[-1]
         table = Table.read(poller_file, format="ascii")
@@ -126,9 +127,8 @@ def test_run_svmpoller(tmpdir, dataset):
         log.info("Obtained all input files for dataset {}.".format(dataset))
         log.info("Files: {}".format(file_list))
 
-        # Run pipeline processing using
-        # runsinglehap poller_file_name
-        #runsinglehap.perform(dataset)
+        # Run SVM pipeline processing
+        runsinglehap.perform(poller_file)
 
         return_value = 0
 
@@ -142,5 +142,6 @@ def test_run_svmpoller(tmpdir, dataset):
         return_value = 1
 
     assert return_value == 0
+
     # Return to original directory
     os.chdir(prevdir)
