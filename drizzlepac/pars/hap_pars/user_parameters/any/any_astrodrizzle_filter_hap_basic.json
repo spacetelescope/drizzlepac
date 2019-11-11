@@ -9,7 +9,7 @@
     "crbit": 4096,
     "stepsize": 10,
     "resetbits": "4096",
-    "num_cores": null,
+    "num_cores": 1,
     "in_memory": true,
     "_mdriztab_btn_": "Update From MDRIZTAB",
     "STATE OF INPUT FILES": {
