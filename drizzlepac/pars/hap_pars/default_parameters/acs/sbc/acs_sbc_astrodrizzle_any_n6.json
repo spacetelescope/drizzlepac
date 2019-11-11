@@ -10,7 +10,7 @@
     "crbit": 4096,
     "stepsize": 10,
     "resetbits": "4096",
-    "num_cores": null,
+    "num_cores": 1,
     "in_memory": false,
     "STEP 1: STATIC MASK": {
         "static": false,
