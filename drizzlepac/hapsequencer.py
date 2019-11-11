@@ -24,7 +24,7 @@ from stwcs import wcsutil
 
 __taskname__ = 'hapsequencer'
 log_level = logging.INFO
-log = logutil.create_logger('hapsequencer', level=log_level, stream=sys.stdout)
+log = logutil.create_logger(__name__, level=log_level, stream=sys.stdout)
 
 __version__ = 0.1
 __version_date__ = '07-Nov-2019'
@@ -54,6 +54,7 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
         list of all catalogs generated.
     """
     product_list = []
+    log.info("Generating total product source catalogs")
     for total_product_obj in total_list:
         # Instantiate filter catalog product object
         total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename,
@@ -81,6 +82,7 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
             if cat_type == "segment":
                 sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
 
+        log.info("Generating filter product source catalogs")
         for filter_product_obj in total_product_obj.fdp_list:
 
             # Instantiate filter catalog product object
@@ -97,6 +99,7 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
             filter_name = filter_product_obj.filters
             filter_product_catalogs.measure(filter_name)
 
+            log.info("Flagging sources in filter product catalog")
             filter_product_catalogs = run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug)
 
             # Replace zero-value total-product catalog 'Flags' column values with meaningful filter-product catalog
@@ -106,6 +109,7 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
                     'Flags_{}'.format(filter_product_obj.filters)] = \
                 filter_product_catalogs.catalogs[cat_type].source_cat['Flags']
 
+            log.info("Writing out filter product catalog")
             # Write out photometric (filter) catalog(s)
             filter_product_catalogs.write()
 
@@ -124,6 +128,7 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
             if phot_mode in ['segment', 'both']:
                 product_list.append(filter_product_obj.segment_cat_filename)
 
+        log.info("Writing out total product catalog")
         # write out list(s) of identified sources
         total_product_catalogs.write()
 
@@ -268,7 +273,6 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
 
-    """
     # Define trailer file (log file) that will contain the log entries for all processing
     if isinstance(input_filename, str):  # input file is a poller file -- easy case
         logname = input_filename.replace('.out', '.log')
@@ -276,7 +280,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         logname = 'svm_process.log'
     print("Trailer filename: {}".format(logname))
     logging.basicConfig(filename=logname)
-    """
+
     # start processing
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
@@ -292,7 +296,6 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename)
         total_log_file = total_list[0].trl_logname
         total_trl_file = total_list[0].trl_filename
-        logging.basicConfig(filename=total_log_file)
 
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to use only one of the Total Products to generate the manifest name as the name is not
@@ -359,7 +362,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         product_list += driz_list
         # append total drizzle trailer file to total log file
         proc_utils.appendTrlFile(total_log_file, total_list[0].trl_filename)
-        
+
         # Create source catalogs from newly defined products (HLA-204)
         log.info("Create source catalog from newly defined product.\n")
         if "total detection product 00" in obs_info_dict.keys():
@@ -395,7 +398,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         log.info("Return condition {}".format(return_value))
         logging.shutdown()
         # Append total trailer file (from astrodrizzle) to total log file
-        os.rename(total_log_file, total_trl_file)
+        os.rename(logname, total_trl_file)
         return return_value
 
 
@@ -464,5 +467,3 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
                                                                                                          debug)
 
     return filter_product_catalogs
-    
-    
