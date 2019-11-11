@@ -14,23 +14,23 @@ is the output of the routine.
 
 """
 import sys
-from distutils.version import LooseVersion
+# from distutils.version import LooseVersion
 
-import numpy as np
+# import numpy as np
 try:
     from matplotlib import pyplot as plt
 except Exception:
     plt = None
 
 import astropy.units as u
-from astropy.io import ascii
+# from astropy.io import ascii
 from astropy.io import fits as fits
 from astropy.table import Column, Table
 from astropy.convolution import Gaussian2DKernel, MexicanHat2DKernel
 from astropy.stats import gaussian_fwhm_to_sigma
-import photutils
-from photutils import detect_sources, source_properties, deblend_sources
-from photutils import Background2D, MedianBackground, SExtractorBackground, StdBackgroundRMS
+# import photutils
+# from photutils import detect_sources, source_properties, deblend_sources
+# from photutils import Background2D, MedianBackground, SExtractorBackground, StdBackgroundRMS
 from stwcs.wcsutil import HSTWCS
 from stsci.tools import logutil
 

@@ -68,7 +68,6 @@ __taskname__ = 'astrometric_utils'
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
-
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
 DEF_CAT_URL = 'http://gsss.stsci.edu/webservices'
 

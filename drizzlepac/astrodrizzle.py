@@ -228,6 +228,8 @@ def run(configobj, wcsmap=None):
         print()
         print("AstroDrizzle Version {:s} is finished processing at {:s}.\n"
               .format(__version__, util._ptime()[0]))
+        print("", flush=True)
+
 
     except:
         clean = False

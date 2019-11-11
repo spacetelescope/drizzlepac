@@ -6,8 +6,7 @@
 
 """
 import re
-import math
-import warnings
+import sys
 
 from astropy.io import fits
 import numpy as np
@@ -15,7 +14,7 @@ import numpy as np
 from astropy import wcs as pywcs
 
 from stsci.tools import fileutil, logutil
-from stwcs import wcsutil, updatewcs
+from stwcs import wcsutil
 from stwcs.wcsutil import wcscorr
 from stsci.skypac.utils import get_ext_list, ext2str
 
@@ -27,8 +26,8 @@ __version_date__ = '10-Sep-2019'
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
-wcs_keys = ['CRVAL1','CRVAL2','CD1_1','CD1_2','CD2_1','CD2_2',
-            'CRPIX1','CRPIX2','ORIENTAT']
+wcs_keys = ['CRVAL1', 'CRVAL2', 'CD1_1', 'CD1_2', 'CD2_1', 'CD2_2',
+            'CRPIX1', 'CRPIX2', 'ORIENTAT']
 
 _SHIFT_COLNAMES = ['xsh', 'ysh', 'rot', 'scale', 'xrms', 'yrms']
 
@@ -89,8 +88,8 @@ def update_from_shiftfile(shiftfile, wcsname=None, force=False):
 
 def updatewcs_with_shift(image, reference, wcsname=None, reusename=False,
                          fitgeom='rscale', rot=0.0, scale=1.0,
-                         xsh=0.0, ysh=0.0, fit=None, xrms=None, yrms = None,
-                         verbose=False,force=False,sciext='SCI'):
+                         xsh=0.0, ysh=0.0, fit=None, xrms=None, yrms=None,
+                         verbose=False, force=False, sciext='SCI'):
     """
     Update the SCI headers in 'image' based on the fit provided as determined
     in the WCS specified by 'reference'.  The fit should be a 2-D matrix as
@@ -229,7 +228,7 @@ def updatewcs_with_shift(image, reference, wcsname=None, reusename=False,
     if extlist:
         if image_update:
             # Create initial WCSCORR extension
-            wcscorr.init_wcscorr(image,force=force)
+            wcscorr.init_wcscorr(image, force=force)
     else:
         extlist = [0]
 
@@ -242,7 +241,7 @@ def updatewcs_with_shift(image, reference, wcsname=None, reusename=False,
         fimg = image
 
     if image_update:
-        wcsutil.altwcs.archiveWCS(fimg,extlist,reusekey=True)
+        wcsutil.altwcs.archiveWCS(fimg, extlist, reusekey=True)
 
     # Process MEF images...
     for ext in extlist:
@@ -252,13 +251,11 @@ def updatewcs_with_shift(image, reference, wcsname=None, reusename=False,
             print("\n{:s}\n".format(logstr))
         else:
             log.info(logstr)
-        chip_wcs = wcsutil.HSTWCS(fimg,ext=ext)
+        chip_wcs = wcsutil.HSTWCS(fimg, ext=ext)
 
         update_refchip_with_shift(chip_wcs, wref, fitgeom=fitgeom,
                     rot=rot, scale=scale, xsh=xsh, ysh=ysh,
                     fit=fit, xrms=xrms, yrms=yrms)
-        #if util.is_blank(wcsname):
-            #wcsname = 'TWEAK'
 
         # Update FITS file with newly updated WCS for this chip
         extnum = fimg.index(fimg[ext])
@@ -292,9 +289,9 @@ def linearize(wcsim, wcsima, wcsref, imcrpix, f, shift, hx=1.0, hy=1.0):
         wcsref.wcs_pix2world(p.astype(np.float64), 1), 1).astype(np.longdouble)
 
     # derivative with regard to x:
-    u1 = ((p[1] - p[4]) + 8 * (p[3] - p[2])) / (6*hx)
+    u1 = ((p[1] - p[4]) + 8 * (p[3] - p[2])) / (6 * hx)
     # derivative with regard to y:
-    u2 = ((p[5] - p[8]) + 8 * (p[7] - p[6])) / (6*hy)
+    u2 = ((p[5] - p[8]) + 8 * (p[7] - p[6])) / (6 * hy)
 
     return (np.asarray([u1, u2]).T, p[0])
 
@@ -368,7 +365,7 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
 
     # compute new CRVAL for the image WCS:
     crpixinref = wcslin.wcs_world2pix(
-        chip_wcs.wcs_pix2world([chip_wcs.wcs.crpix],1),1)
+        chip_wcs.wcs_pix2world([chip_wcs.wcs.crpix], 1), 1)
     crpixinref = np.dot(fit, (crpixinref - shift).T).T
     chip_wcs.wcs.crval = wcslin.wcs_pix2world(crpixinref, 1)[0]
     chip_wcs.wcs.set()
@@ -376,7 +373,7 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
     # initial approximation for CD matrix of the image WCS:
     (U, u) = linearize(cwcs, chip_wcs, wcslin, chip_wcs.wcs.crpix,
                        fit, shift, hx=hx, hy=hy)
-    err0 = np.amax(np.abs(U-cd_eye)).astype(np.float64)
+    err0 = np.amax(np.abs(U - cd_eye)).astype(np.float64)
     chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd.astype(np.longdouble), U).astype(np.float64)
     chip_wcs.wcs.set()
 
@@ -392,7 +389,7 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
     for i in range(maxiter):
         (U, u) = linearize(chip_wcs, chip_wcs, wcslin, chip_wcs.wcs.crpix,
                            cd_eye, zero_shift, hx=hx, hy=hy)
-        err = np.amax(np.abs(U-cd_eye)).astype(np.float64)
+        err = np.amax(np.abs(U - cd_eye)).astype(np.float64)
         if err > err0:
             break
         chip_wcs.wcs.cd = np.dot(chip_wcs.wcs.cd, U).astype(np.float64)
@@ -402,13 +399,13 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
         err0 = err
 
     if xrms is not None:
-        chip_wcs.wcs.crder = np.array([xrms,yrms])
+        chip_wcs.wcs.crder = np.array([xrms, yrms])
 
 
 ###
 ### Header keyword prefix related archive functions
 ###
-def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
+def update_wcs(image, extnum, new_wcs, wcsname="", reusename=False, verbose=False):
     """
     Updates the WCS of the specified extension number with the new WCS
     after archiving the original WCS.
@@ -441,7 +438,7 @@ def update_wcs(image,extnum,new_wcs,wcsname="",reusename=False,verbose=False):
     # Start by insuring that the correct value of 'orientat' has been computed
     new_wcs.setOrient()
 
-    fimg_open=False
+    fimg_open = False
     if not isinstance(image, fits.HDUList):
         fimg = fits.open(image, mode='update', memmap=False)
         fimg_open = True
@@ -573,14 +570,14 @@ def create_unique_wcsname(fimg, extnum, wcsname):
         uniqname = wcsname
     else:
         # setup pattern to match
-        rpatt = re.compile(wcsname+'_\d')
+        rpatt = re.compile(wcsname + '_\d')
         index = 0
         for wname in wnames:
             rmatch = rpatt.match(wname)
             if rmatch:
                 # get index
-                n = int(wname[wname.rfind('_')+1:])
+                n = int(wname[wname.rfind('_') + 1:])
                 if n > index: index = 1
-        index += 1 # for use with new name
-        uniqname = "%s_%d"%(wcsname,index)
+        index += 1  # for use with new name
+        uniqname = "%s_%d" % (wcsname, index)
     return uniqname

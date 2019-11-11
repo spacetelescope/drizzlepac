@@ -227,3 +227,27 @@ def _process_input(input):
             raise ValueError
 
     return hdu, closefits
+    
+def appendTrlFile(trlfile, drizfile):
+    """ Append log file to already existing log or trailer file.
+    """
+    if not os.path.exists(drizfile):
+        return
+    # Open already existing trailer file for appending
+    ftrl = open(trlfile, 'a')
+    # Open astrodrizzle trailer file
+    fdriz = open(drizfile)
+
+    # Read in drizzle comments
+    _dlines = fdriz.readlines()
+
+    # Append them to CALWF3 trailer file
+    ftrl.writelines(_dlines)
+
+    # Close all files
+    ftrl.close()
+    fdriz.close()
+
+    # Now, clean up astrodrizzle trailer file
+    os.remove(drizfile)
+

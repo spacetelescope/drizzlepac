@@ -3,7 +3,6 @@
 """This script is a modernized implementation of tweakreg.
 
 """
-import argparse
 import copy
 import datetime
 import sys
@@ -15,19 +14,13 @@ from collections import OrderedDict
 import traceback
 
 import numpy as np
-from astropy.io import fits
 from astropy.table import Table
-from astropy.coordinates import SkyCoord, Angle
-from astropy import units as u
-from stsci.tools import fileutil, logutil
-from stwcs.wcsutil import headerlet, HSTWCS
-import tweakwcs
 
-from . import updatehdr
+from stsci.tools import logutil
+
 from . import util
 from .hlautils import astrometric_utils as amutils
 from .hlautils import astroquery_utils as aqutils
-from .hlautils import analyze as filter
 from .hlautils import get_git_rev_info
 from .hlautils import align_utils
 
@@ -45,7 +38,6 @@ MAS_TO_ARCSEC = 1000.  # Conversion factor from milli-arcseconds to arcseconds
 
 
 log = logutil.create_logger('alignimages', level=logutil.logging.INFO, stream=sys.stdout)
-
 
 __version__ = 0.0
 __version_date__ = '21-Aug-2019'

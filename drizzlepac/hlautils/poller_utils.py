@@ -8,6 +8,7 @@ parse_obset_tree, converts the tree into product catagories.
 import os
 import sys
 from collections import OrderedDict
+import numpy as np
 
 from stsci.tools import logutil
 
@@ -28,7 +29,7 @@ POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
                     'exptime', 'filters', 'detector', 'pathname']
 
 __taskname__ = 'poller_utils'
-log = logutil.create_logger('poller_utils', level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 def interpret_obset_input(results):
     """
@@ -141,7 +142,7 @@ def build_obset_tree(obset_table):
 
 def create_row_info(row):
     """Build info string for a row from the obset table"""
-    info_list = [str(row['proposal_id']), "{:02d}".format(row['obset_id']), row['instrument'],
+    info_list = [str(row['proposal_id']), "{:s}".format(row['obset_id']), row['instrument'],
                  row['detector'], row['filename'][:row['filename'].find('_')], row['filters']]
     return ' '.join(map(str.upper, info_list)), row['filename']
 
@@ -318,6 +319,9 @@ def build_poller_table(input):
             # Now assign column names to obset_table
             for i, colname in enumerate(POLLER_COLNAMES):
                 input.columns[i].name = colname
+
+            # Convert to a string column, instead of int64
+            input['obset_id'] = input['obset_id'].astype(np.str)
             return input
 
         # Return first column
@@ -356,7 +360,7 @@ def build_poller_table(input):
         with fits.open(d) as dhdu:
             hdr = dhdu[0].header
             cols['program_id'].append(d[1:4].upper())
-            cols['obset_id'].append(int(d[4:6]))
+            cols['obset_id'].append(str(d[4:6]))
             cols['proposal_id'].append(hdr['proposid'])
             cols['exptime'].append(hdr['exptime'])
             cols['detector'].append(hdr['detector'])

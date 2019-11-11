@@ -3,7 +3,6 @@ import argparse
 import datetime
 
 import os
-import pdb
 import sys
 
 from stsci.tools import logutil

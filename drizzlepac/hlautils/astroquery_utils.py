@@ -1,6 +1,7 @@
 """Wrappers for astroquery-related functionality"""
 import shutil
 import os
+
 try:
     from astroquery.mast import Observations
 except FileExistsError:
@@ -14,7 +15,6 @@ __taskname__ = 'astroquery_utils'
 log = logutil.create_logger(__name__,
                             level=logutil.logging.INFO,
                             stream=sys.stdout)
-
 
 def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
     """Simple interface for retrieving an observation from the MAST archive
