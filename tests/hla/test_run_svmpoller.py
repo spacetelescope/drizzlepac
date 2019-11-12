@@ -22,6 +22,7 @@ from drizzlepac import runsinglehap
 
 log = logutil.create_logger('test_run_svmpoller', level=logutil.logging.INFO, stream=sys.stdout)
 
+
 def pytest_generate_tests(metafunc):
     """Get the command line options."""
 
@@ -39,7 +40,7 @@ def pytest_generate_tests(metafunc):
             shutil.copy2(default_file, os.getcwd())
 
     # Read the master_list to get the poller fully qualified filenames
-    table = Table.read(master_list, format = "ascii.fast_no_header")
+    table = Table.read(master_list, format="ascii.fast_no_header")
     poller_fqfile_list = table["col1"].tolist()
 
     print("Input file: {}".format(master_list))
@@ -47,8 +48,8 @@ def pytest_generate_tests(metafunc):
     metafunc.parametrize('dataset', poller_fqfile_list)
 
 
-#@pytest.mark.bigdata
-#@pytest.mark.slow
+@pytest.mark.bigdata
+@pytest.mark.slow
 @pytest.mark.unit
 def test_run_svmpoller(tmpdir, dataset):
     """ Tests to read a series of poller files and process the contents of each as Single Visit Mosaic
@@ -76,11 +77,6 @@ def test_run_svmpoller(tmpdir, dataset):
             contain.
 
     """
-    # Start by resetting the logging for all the modules used
-    #rl = logging.getLogger('stwcs.wcsutil.headerlet')
-
-    #if len(rl.handlers) > 1: del rl.handlers[-1]    
-    
     print("TEST_RUN_SVMPOLLER. Dataset: ", dataset)
     output_name = dataset + '.ecsv'
 
@@ -114,8 +110,8 @@ def test_run_svmpoller(tmpdir, dataset):
         # The fully qualified path designated in the poller file is the shared cache
         file_list = table["col8"].tolist()
 
-        # Check if the files to be processed are in the same directory as poller 
-        # directory, otherwise they need to be copied from the on-line cache 
+        # Check if the files to be processed are in the same directory as poller
+        # directory, otherwise they need to be copied from the on-line cache
         for full_filename in file_list:
             filename = full_filename.split("/")[-1]
             log.info("Looking for file {}".format(filename))
