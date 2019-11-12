@@ -78,7 +78,6 @@ def test_run_svmpoller(tmpdir, dataset):
 
     """
     print("TEST_RUN_SVMPOLLER. Dataset: ", dataset)
-    output_name = dataset + '.ecsv'
 
     current_dt = datetime.datetime.now()
     print(str(current_dt))
@@ -88,7 +87,7 @@ def test_run_svmpoller(tmpdir, dataset):
 
     # create working directory specified for the test
     if not tmpdir.ensure(subdir, dir=True):
-        cpyurdir = tmpdir.mkdir(subdir).strpath
+        curdir = tmpdir.mkdir(subdir).strpath
     else:
         curdir = tmpdir.join(subdir).strpath
     os.chdir(curdir)
@@ -102,26 +101,26 @@ def test_run_svmpoller(tmpdir, dataset):
         shutil.copy2(dataset, ".")
 
         # Get the poller file path, as well as its simple name
-        poller_path = "/".join(dataset.split("/")[:-1])
-        poller_file = dataset.split("/")[-1]
+        poller_path = os.path.dirname(dataset)
+        poller_file = os.path.basename(dataset)
         table = Table.read(poller_file, format="ascii")
 
-        # Column "col8" contains fully qualified constituent filenames for the single visit
-        # The fully qualified path designated in the poller file is the shared cache
+        # Column "col8" contains fully qualified constituent filenames for the single visit, and
+        # the fully qualified path designated in the poller file is the shared cache.
         file_list = table["col8"].tolist()
 
         # Check if the files to be processed are in the same directory as poller
         # directory, otherwise they need to be copied from the on-line cache
         for full_filename in file_list:
-            filename = full_filename.split("/")[-1]
+            filename = os.path.basename(full_filename)
             log.info("Looking for file {}".format(filename))
-            if os.path.exists(poller_path + "/" + filename):
-                shutil.copy2(poller_path + "/" + filename, ".")
+            local_path = os.path.join(poller_path, filename)
+            if os.path.exists(local_path):
+                shutil.copy2(local_path, ".")
             else:
                 shutil.copy2(full_filename, ".")
 
         log.info("Obtained all input files for dataset {}.".format(dataset))
-        log.info("Files: {}".format(file_list))
 
         # Run SVM pipeline processing
         return_value = runsinglehap.perform(poller_file)
