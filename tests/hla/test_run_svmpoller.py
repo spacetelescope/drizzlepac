@@ -124,9 +124,7 @@ def test_run_svmpoller(tmpdir, dataset):
         log.info("Files: {}".format(file_list))
 
         # Run SVM pipeline processing
-        runsinglehap.perform(poller_file)
-
-        return_value = 0
+        return_value = runsinglehap.perform(poller_file)
 
     # Catch anything that happens as this dataset will be considered a failure, but
     # the processing of datasets should continue.  This is meant to catch
