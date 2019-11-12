@@ -530,9 +530,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
 
     finally:
-        for refcat in alignment_table.reference_catalogs:
-            if os.path.exists(refcat):
-                os.remove(refcat)
+
         # Now update the result with the filtered_table contents
         if result:
             result.meta = filtered_table.meta
