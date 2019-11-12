@@ -390,11 +390,18 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # Check for the case where no update was performed due to all inputs
         # having EXPTIME==0 (for example) and apply updatewcs anyway to allow
         # for successful creation of updated headerlets for this data.
-        with fits.open(_calfiles[0]) as img0:
-            if 'wcsname' not in img0[1].header:
-                updatewcs.updatewcs(_calfiles, checkfiles=False)
-                if _calfiles_flc:
-                    updatewcs.updatewcs(_calfiles_flc, checkfiles=False)
+        force_updatewcs = False
+        for cfile in _calfiles:
+            # If any file in the input list was NOT updated, force update with use_db now...
+            with fits.open(cfile) as img0:
+                if 'wcsname' not in img0[1].header:
+                    force_updatewcs = True
+                    _trlmsg += "Forcing reference file update for WCS for: {}".format(_calfiles)
+                    break
+        if force_updatewcs:
+            updatewcs.updatewcs(_calfiles, checkfiles=False)
+            if _calfiles_flc:
+                updatewcs.updatewcs(_calfiles_flc, checkfiles=False)
 
         try:
             tmpname = "_".join([_trlroot, 'apriori'])
