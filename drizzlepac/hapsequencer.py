@@ -161,7 +161,6 @@ def create_drizzle_products(total_list):
         A list of output products
     """
     log.info("Processing with astrodrizzle version {}".format(drizzlepac.astrodrizzle.__version__))
-
     # Get rules files
     for imgname in glob.glob("*fl?.fits"):
         proc_utils.get_rules_file(imgname)
@@ -296,8 +295,6 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         # is the atomic exposure data.
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
         obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename)
-        total_log_file = total_list[0].trl_logname
-        total_trl_file = total_list[0].trl_filename
 
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to use only one of the Total Products to generate the manifest name as the name is not
@@ -330,7 +327,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
 
         # Run alignimages.py on images on a filter-by-filter basis.
         # Process each filter object which contains a list of exposure objects/products.
-        log.info("\nAlign the images on a filter-by-filter basis.")
+        log.info("\n{}: Align the images on a filter-by-filter basis.".format(str(datetime.datetime.now())))
         for tot_obj in total_list:
             for filt_obj in tot_obj.fdp_list:
                 align_table, filt_exposures = filt_obj.align_to_gaia(output=debug)
@@ -359,14 +356,12 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
                     log.warning("Step to align the images has failed. No alignment table has been generated.")
 
         # Run AstroDrizzle to produce drizzle-combined products
-        log.info("\nCreate drizzled imagery products.")
+        log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
         driz_list = create_drizzle_products(total_list)
         product_list += driz_list
-        # append total drizzle trailer file to total log file
-        proc_utils.appendTrlFile(total_log_file, total_list[0].trl_filename)
 
         # Create source catalogs from newly defined products (HLA-204)
-        log.info("Create source catalog from newly defined product.\n")
+        log.info("{}: Create source catalog from newly defined product.\n".format(str(datetime.datetime.now())))
         if "total detection product 00" in obs_info_dict.keys():
             catalog_list = create_catalog_products(total_list, debug=debug, phot_mode=phot_mode)
             product_list += catalog_list
@@ -399,8 +394,12 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         log.info("Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error ")
         log.info("Return condition {}".format(return_value))
         logging.shutdown()
-        # Append total trailer file (from astrodrizzle) to total log file
-        os.rename(logname, total_trl_file)
+        # Append total trailer file (from astrodrizzle) to all total log files
+        for tot_obj in total_list:
+            proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
+        # Now remove single temp log file
+        os.remove(logname)
+        #os.rename(logname, total_trl_file)
         return return_value
 
 
@@ -454,18 +453,18 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
         drz_root_dir = os.getcwd()
         log.info("Run source list flagging on catalog file {}.".format(catalog_name))
         filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image,
-                                                                                                         flt_list,
-                                                                                                         param_dict,
-                                                                                                         exptime,
-                                                                                                         plate_scale,
-                                                                                                         median_sky,
-                                                                                                         catalog_name,
-                                                                                                         catalog_data,
-                                                                                                         cat_type,
-                                                                                                         drz_root_dir,
-                                                                                                         filter_product_obj.hla_flag_msk,
-                                                                                                         ci_lookup_file_path,
-                                                                                                         output_custom_pars_file,
-                                                                                                         debug)
+                                                 flt_list,
+                                                 param_dict,
+                                                 exptime,
+                                                 plate_scale,
+                                                 median_sky,
+                                                 catalog_name,
+                                                 catalog_data,
+                                                 cat_type,
+                                                 drz_root_dir,
+                                                 filter_product_obj.hla_flag_msk,
+                                                 ci_lookup_file_path,
+                                                 output_custom_pars_file,
+                                                 debug)
 
     return filter_product_catalogs
