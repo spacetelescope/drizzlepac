@@ -51,6 +51,7 @@ def pytest_generate_tests(metafunc):
 @pytest.mark.bigdata
 @pytest.mark.slow
 @pytest.mark.unit
+@pytest.mark.skip
 def test_run_svmpoller(tmpdir, dataset):
     """ Tests to read a series of poller files and process the contents of each as Single Visit Mosaic
 
