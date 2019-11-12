@@ -12,7 +12,9 @@ import numpy as np
 
 from stsci.tools import logutil
 
+
 from astropy.io import fits
+from astropy.io import ascii
 from astropy.table import Table, Column
 from drizzlepac.hlautils.product import ExposureProduct, FilterProduct, TotalProduct
 from . import astroquery_utils as aqutils
@@ -82,7 +84,7 @@ def interpret_obset_input(results):
     """
     log.info("Interpret the poller file for the observation set.")
     obset_table = build_poller_table(results)
-
+    print(obset_table['obset_id'])
     # Add INSTRUMENT column
     instr = INSTRUMENT_DICT[obset_table['filename'][0][0]]
     # convert input to an Astropy Table for parsing
@@ -142,7 +144,7 @@ def build_obset_tree(obset_table):
 
 def create_row_info(row):
     """Build info string for a row from the obset table"""
-    info_list = [str(row['proposal_id']), "{:s}".format(row['obset_id']), row['instrument'],
+    info_list = [str(row['proposal_id']), "{}".format(row['obset_id']), row['instrument'],
                  row['detector'], row['filename'][:row['filename'].find('_')], row['filters']]
     return ' '.join(map(str.upper, info_list)), row['filename']
 
@@ -175,7 +177,6 @@ def parse_obset_tree(det_tree):
     # Determine if the individual files being processed are flt or flc and
     # set the filetype accordingly (flt->drz or flc->drc).
     filetype = ''
-
     # Setup products for each detector used
     for filt_tree in det_tree.values():
         totprod = TDP_STR.format(det_indx)
@@ -312,8 +313,9 @@ def build_poller_table(input):
         Astropy table object with the same columns as a poller file.
 
     """
+    obs_converters = {'col4': [ascii.convert_numpy(np.str)]}
     if isinstance(input, str):
-        input = Table.read(input, format='ascii.fast_no_header')
+        input = ascii.read(input, format='no_header', converters=obs_converters)
         if len(input.columns) == len(POLLER_COLNAMES):
             # We were provided a poller file, so use as-is
             # Now assign column names to obset_table

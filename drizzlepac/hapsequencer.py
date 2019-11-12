@@ -279,7 +279,6 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         logname = 'svm_process.log'
     print("Trailer filename: {}".format(logname))
     # Initialize total trailer filename as temp logname
-    total_trl_file = logname
     logging.basicConfig(filename=logname)
 
     # start processing
