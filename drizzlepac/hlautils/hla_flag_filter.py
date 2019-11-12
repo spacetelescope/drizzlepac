@@ -157,7 +157,7 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
-    log.inf("Flagging sources from regions observed with only a small number of exposures.")
+    log.info("Flagging sources from regions observed with only a small number of exposures.")
     log.debug("hla_nexp_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
                                                                  catalog_name, "<Catalog Data>", drz_root_dir,
                                                                  "<MASK_ARRAY>", column_titles, debug))
