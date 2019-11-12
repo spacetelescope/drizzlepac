@@ -398,8 +398,10 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         for tot_obj in total_list:
             proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
         # Now remove single temp log file
-        os.remove(logname)
-        #os.rename(logname, total_trl_file)
+        if os.path.exists(logname):
+            os.remove(logname)
+        else:
+            print("Master log file not found.  Please check logs to locate processing messages.")
         return return_value
 
 
