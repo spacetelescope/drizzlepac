@@ -16,10 +16,9 @@ import traceback
 
 import numpy as np
 from astropy.io import fits
-from astropy.table import Table, vstack
+from astropy.table import Table
 from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
-from scipy.stats import pearsonr
 from stsci.tools import fileutil, logutil
 from stwcs.wcsutil import headerlet, HSTWCS
 import tweakwcs
@@ -1249,7 +1248,7 @@ def generate_source_catalogs(imglist, **pars):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def update_image_wcs_info(tweakwcs_output,headerlet_filenames=None):
+def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None):
     """Write newly computed WCS information to image headers and write headerlet files
 
         Parameters
@@ -1304,7 +1303,7 @@ def update_image_wcs_info(tweakwcs_output,headerlet_filenames=None):
         ext = sci_ext_dict["{}".format(item.meta['chip'])]
         updatehdr.update_wcs(hdulist, ext, item.wcs,
                              wcsname=wcs_name,
-                             reusename=True, verbose=True)
+                             reusename=True)
         hdulist[ext].header['hdrname'] = hdrname
         log.info("Updated {} with WCSTYPE of {}\n".format(ext, wcstype))
 

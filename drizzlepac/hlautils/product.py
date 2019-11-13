@@ -16,7 +16,7 @@ from . import align_utils
 from . import astrometric_utils as amutils
 from . import cell_utils
 
-log = logutil.create_logger('product', level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
@@ -208,14 +208,13 @@ class FilterProduct(HAPProduct):
                 align_table.configure_fit()
                 refname = "{}_ref_cat.ecsv".format(self.product_basename)
                 log.info('Creating reference catalog {}'.format(refname))
-                print(align_table.process_list, catalog_name)
-
                 ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
                                             catalog=catalog_name,
-                                            output="{}_ref_cat.ecsv".format(self.product_basename),
+                                            output=refname,
                                             gaia_only=False)
 
-                log.info(ref_catalog)
+                log.debug(ref_catalog)
+                align_table.reference_catalogs[refname] = ref_catalog
                 if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
                     align_table.perform_fit(method_name, catalog_name, ref_catalog)
                     align_table.select_fit(catalog_name, method_name)

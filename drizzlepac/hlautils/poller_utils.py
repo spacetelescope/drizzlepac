@@ -5,11 +5,20 @@ poller, and produces a tree listing of the output products.  The function,
 parse_obset_tree, converts the tree into product catagories.
 
 """
+import os
 import sys
+from collections import OrderedDict
+import numpy as np
+
 from stsci.tools import logutil
 
+
+from astropy.io import fits
+from astropy.io import ascii
 from astropy.table import Table, Column
 from drizzlepac.hlautils.product import ExposureProduct, FilterProduct, TotalProduct
+from . import astroquery_utils as aqutils
+from . import processing_utils
 
 # Define information/formatted strings to be included in output dict
 SEP_STR = 'single exposure product {:02d}'
@@ -18,12 +27,24 @@ TDP_STR = 'total detection product {:02d}'
 
 # Define the mapping between the first character of the filename and the associated instrument
 INSTRUMENT_DICT = {'i': 'WFC3', 'j': 'ACS', 'o': 'STIS', 'u': 'WFPC2', 'x': 'FOC', 'w': 'WFPC'}
+POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
+                    'exptime', 'filters', 'detector', 'pathname']
 
 __taskname__ = 'poller_utils'
-log = logutil.create_logger('poller_utils', level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 def interpret_obset_input(results):
     """
+
+    Parameters
+    -----------
+    results : str or list
+        Input poller file name or Python list of dataset names to be processed as a single visit.
+        Dataset names have to be either the filename of a singleton (non-associated exposure) or the
+        name of an ASN file (e.g., jabc01010_asn.fits).
+
+    Notes
+    -------
     Interpret the database query for a given obset to prepare the returned
     values for use in generating the names of all the expected output products.
 
@@ -62,9 +83,8 @@ def interpret_obset_input(results):
 
     """
     log.info("Interpret the poller file for the observation set.")
-    colnames = ['filename', 'proposal_id', 'program_id', 'obset_id',
-                'exptime', 'filters', 'detector', 'pathname']
-    obset_table = Table.read(results, format='ascii.fast_no_header', names=colnames)
+    obset_table = build_poller_table(results)
+    print(obset_table['obset_id'])
     # Add INSTRUMENT column
     instr = INSTRUMENT_DICT[obset_table['filename'][0][0]]
     # convert input to an Astropy Table for parsing
@@ -124,7 +144,7 @@ def build_obset_tree(obset_table):
 
 def create_row_info(row):
     """Build info string for a row from the obset table"""
-    info_list = [str(row['proposal_id']), "{:02d}".format(row['obset_id']), row['instrument'],
+    info_list = [str(row['proposal_id']), "{}".format(row['obset_id']), row['instrument'],
                  row['detector'], row['filename'][:row['filename'].find('_')], row['filters']]
     return ' '.join(map(str.upper, info_list)), row['filename']
 
@@ -157,7 +177,6 @@ def parse_obset_tree(det_tree):
     # Determine if the individual files being processed are flt or flc and
     # set the filetype accordingly (flt->drz or flc->drc).
     filetype = ''
-
     # Setup products for each detector used
     for filt_tree in det_tree.values():
         totprod = TDP_STR.format(det_indx)
@@ -277,3 +296,89 @@ def determine_filter_name(raw_filter):
         filter_name = delimiter.join(output_filter_list)
 
     return filter_name
+
+# ----------------------------------------------------------------------------------------------------------
+
+def build_poller_table(input):
+    """Create a poller file from dataset names.
+
+    Parameters
+    -----------
+    input : str, list
+        Filename with list of dataset names, or just a Python list of dataset names, provided by the user.
+
+    Returns
+    --------
+    poller_table : Table
+        Astropy table object with the same columns as a poller file.
+
+    """
+    obs_converters = {'col4': [ascii.convert_numpy(np.str)]}
+    if isinstance(input, str):
+        input = ascii.read(input, format='no_header', converters=obs_converters)
+        if len(input.columns) == len(POLLER_COLNAMES):
+            # We were provided a poller file, so use as-is
+            # Now assign column names to obset_table
+            for i, colname in enumerate(POLLER_COLNAMES):
+                input.columns[i].name = colname
+
+            # Convert to a string column, instead of int64
+            input['obset_id'] = input['obset_id'].astype(np.str)
+            return input
+
+        # Return first column
+        filenames = input[input.colnames[0]].tolist()
+    elif isinstance(input, list):
+        filenames = input
+
+    else:
+        id = '[poller_utils.build_poller_table] '
+        log.error("{}: Input {} not supported as input for processing.".format(id, input))
+        raise ValueError
+
+    # At this point, we should have a list of dataset names
+    datasets = []  # final set of filenames locally on disk for processing
+    for filename in filenames:
+        # Look for dataset in local directory.
+        if "asn" in filename or not os.path.exists(filename):
+            # This retrieval will NOT overwrite any ASN members already on local disk
+            # Return value will still be list of all members
+            files = aqutils.retrieve_observation([filename[:9]], suffix=['FLC'], clobber=False)
+            if len(files) == 0:
+                log.error("Filename {} not found in archive!!".format(filename))
+                log.error("Please provide ASN filename instead!")
+                raise ValueError
+        else:
+            files = [filename]
+        datasets += files
+
+    cols = OrderedDict()
+    for cname in POLLER_COLNAMES:
+        cols[cname] = []
+    cols['filename'] = datasets
+
+    # Now, evaluate each input dataset for the information needed for the poller file
+    for d in datasets:
+        with fits.open(d) as dhdu:
+            hdr = dhdu[0].header
+            cols['program_id'].append(d[1:4].upper())
+            cols['obset_id'].append(str(d[4:6]))
+            cols['proposal_id'].append(hdr['proposid'])
+            cols['exptime'].append(hdr['exptime'])
+            cols['detector'].append(hdr['detector'])
+            cols['pathname'].append(os.path.abspath(d))
+            # process filter names
+            if d[0] == 'j':  # ACS data
+                filters = processing_utils.get_acs_filters(dhdu, all=True)
+            elif d[0] == 'i':
+                filters = dhdu['filter']
+            cols['filters'].append(filters)
+    # Build output table
+    poller_data = [col for col in cols.values()]
+    poller_table = Table(data=poller_data)
+
+    # Now assign column names to obset_table
+    for i, colname in enumerate(POLLER_COLNAMES):
+        poller_table.columns[i].name = colname
+
+    return poller_table

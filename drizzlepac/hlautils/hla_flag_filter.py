@@ -46,7 +46,6 @@ import scipy
 import scipy.ndimage
 
 from drizzlepac.hlautils import ci_table
-from drizzlepac import util
 from stsci.tools import logutil
 from stwcs import wcsutil
 
@@ -56,12 +55,11 @@ __taskname__ = 'hla_flag_filter'
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
 
 
-@util.with_logging
 def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky,
                              catalog_name, catalog_data, proc_type, drz_root_dir, hla_flag_msk, ci_lookup_file_path,
                              output_custom_pars_file, debug=True):
     """Simple calling subroutine that executes the other flagging subroutines.
-    
+
     Parameters
     ----------
     drizzled_image : string
@@ -70,7 +68,7 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     flt_list : list
         list of calibrated images that were drizzle-combined to produce image specified by input parameter
         'drizzled_image'
-    
+
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
 
@@ -106,7 +104,7 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
     debug : bool
         write intermediate files?
-    
+
     Returns
     -------
     catalog_data : astropy.Table object
@@ -132,7 +130,8 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     log.info("************************** * * * HLA_FLAG_FILTER * * * **************************")
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
-    log.info("ci_filter({} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type,
+    log.info("Determining concentration indices for sources.")
+    log.debug("ci_filter({} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type,
                                                             param_dict, ci_lookup_file_path, output_custom_pars_file,
                                                             column_titles, debug))
     catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
@@ -140,7 +139,8 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag saturated sources
-    log.info("hla_saturation_flags({} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name,
+    log.info("Flagging saturated sources in the catalogs.")
+    log.debug("hla_saturation_flags({} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name,
                                                                        "<Catalog Data>", proc_type, param_dict,
                                                                        plate_scale, column_titles, debug))
     catalog_data = hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict,
@@ -148,7 +148,8 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag swarm sources
-    log.info("hla_swarm_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>",
+    log.info("Flagging possible swarm features in catalogs")
+    log.debug("hla_swarm_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>",
                                                                      exptime, plate_scale, median_sky, proc_type,
                                                                      param_dict, column_titles, debug))
     catalog_data = hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky,
@@ -156,7 +157,8 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
-    log.info("hla_nexp_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
+    log.info("Flagging sources from regions observed with only a small number of exposures.")
+    log.debug("hla_nexp_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
                                                                  catalog_name, "<Catalog Data>", drz_root_dir,
                                                                  "<MASK_ARRAY>", column_titles, debug))
     catalog_data = hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data,
@@ -585,7 +587,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     ----------
     drizzled_image : string
         Name of drizzled image to process
-    
+
     catalog_name : string
         drizzled filter product catalog filename to process
 
@@ -612,7 +614,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
     debug : bool
         write intermediate files?
-    
+
     Returns
     -------
     catalog_data : astropy.Table object
@@ -1155,7 +1157,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data, drz_root_dir,
                    mask_data, column_titles, debug):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
-   
+
     drizzled_image : string
         Name of drizzled image to process
 
@@ -1269,6 +1271,7 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     gy = gy[w]
 
     # check the pixel values for low nexp
+
     # this version uses numpy broadcasting sum gx+ix is [len(gx), nrows]
     gx = (gx[:, numpy.newaxis] + ix).clip(0, nexp_array.shape[0]-1)
     gy = (gy[:, numpy.newaxis] + iy).clip(0, nexp_array.shape[1]-1)
@@ -1404,27 +1407,27 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
 
     Marcel Haas, 2012-06-29, after IDL routine xymatch.pro by Rick White
     With some tweaks by Rick White
-    
+
     Parameters
     ----------
     cat1 : numpy.ndarray
         list of x,y source coords to match.
-    
+
     cat2 : numpy.ndarray
         list of x,y source coords to match.
-    
+
     sep : float
         maximum separation (in pixels) allowed for source matching.
-    
+
     multiple : Boolean
         If multiple is true, returns a tuple (p1,p2) such that cat1[p1] and cat2[p2] are within sep.
         p1 and p2 may include multiple pointers to the same objects in cat1 or cat2.  In this case objects that don't
         match are simply omitted from the lists. Default value is 'False'.
-    
+
     stack : Boolean
         If stack is true, the returned matching pointers are stacked into a single big array, so both p1 and p2 are 1-D
         arrays of length nmatches. Default value is 'True'.
-    
+
     verbose : Boolean
         print verbose output? Default value is 'True'.
 
@@ -1519,13 +1522,13 @@ def rdtoxy(rd_coord_array, image, image_ext):
 
     rd_coord_array : numpy.ndarray
         array containing RA and dec values to convert.
-    
+
     image : string
-        drizzled image whose WCS info will be used in the coordinate conversion. 
-    
+        drizzled image whose WCS info will be used in the coordinate conversion.
+
     image_ext : string
         fits image extension to be used in the conversion.
-    
+
     Returns
     xy_arr: array
         array of converted x, y coordinate value pairs

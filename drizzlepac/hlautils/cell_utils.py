@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 
 from matplotlib import pyplot as plt
 from scipy import ndimage
@@ -11,6 +12,8 @@ from astropy.io import fits
 from astropy.table import Table
 from astropy.coordinates import SkyCoord
 from spherical_geometry.polygon import SphericalPolygon
+
+from PIL import Image, ImageDraw
 
 from stwcs.wcsutil import HSTWCS
 
@@ -66,7 +69,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     """
     # Interpret input
     if isinstance(visit_input, list):
-        expnames = visit_input
+        expnames = visit_input.copy()
     else:
         expnames = Table.read(visit_input, format='ascii.fast_no_header')[0]
 
@@ -87,6 +90,18 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
         if bad_files:
             msg = "Could not find {} specified input files".format(bad_files)
             raise (ValueError, msg)
+
+    # Check that all exposures have up-to-date WCS solutions
+    #  This will weed out exposures which were not processed by the pipeline
+    #  such as those with EXPTIME==0
+    for filename in expnames:
+        with fits.open(filename) as fimg:
+            print("Checking {}".format(filename))
+            if 'wcsname' not in fimg[1].header:
+                expnames.remove(filename)
+    if len(expnames) == 0:
+        print("No valid exposures to define sky cells")
+        return None
 
     # Initialize all sky tessellation object definitions
     # This includes setting the pixel scale.
@@ -127,16 +142,23 @@ class SkyFootprint(object):
             for sci in sci_extns:
                 wcs = HSTWCS(exp, ext=sci)
                 edges_x = [0]*wcs.naxis2 + [wcs.naxis1-1]*wcs.naxis2 + list(range(wcs.naxis1)) * 2
-                edges_y = list(range(wcs.naxis2)) * 2 + [0]*wcs.naxis1 + [wcs.naxis2-1]*wcs.naxis1 
+                edges_y = list(range(wcs.naxis2)) * 2 + [0]*wcs.naxis1 + [wcs.naxis2-1]*wcs.naxis1
 
                 sky_edges = wcs.pixel_to_world_values(np.vstack([edges_x, edges_y]).T)
                 meta_edges = self.meta_wcs.world_to_pixel_values(sky_edges).astype(np.int32)
-                blank[meta_edges[:, 1], meta_edges[:, 0]] = 1
+                # Account for rounding problems with creating meta_wcs
+                meta_edges[:,1] = np.clip(meta_edges[:,1], 0, self.meta_wcs.array_shape[0]-1)
+                meta_edges[:,0] = np.clip(meta_edges[:,0], 0, self.meta_wcs.array_shape[1]-1)
 
-                # Fill in outline of each chip
-                blank = morphology.binary_dilation(blank, structure=NDIMAGE_STRUCT2)
-                blank = morphology.binary_fill_holes(blank)
-                blank = morphology.binary_erosion(blank, structure=NDIMAGE_STRUCT2)
+                # apply meta_edges to blank mask
+                # Use PIL to create mask
+                parray = np.array(meta_edges.T)
+                polygon = list(zip(parray[0], parray[1]))
+                nx = self.meta_wcs.array_shape[1]
+                ny = self.meta_wcs.array_shape[0]
+                img = Image.new('L', (nx, ny) , 0)
+                ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
+                blank = np.array(img)
 
             self.total_mask += blank.astype(np.int16)
 
@@ -156,7 +178,7 @@ class SkyFootprint(object):
     def find_corners(self):
         if self.footprint is None:
             self.find_footprint()
-                
+
     def get_edges_sky(self):
         if self.edges is None:
             self.find_edges()
@@ -214,8 +236,8 @@ class GridDefs(object):
         self.sc_nxy = self.hdu[0].header['SC_NXY']
 
     def find_ring_by_id(self, id):
-        return self.rings[np.searchsorted(self.rings['projcell'], id)]
-    
+        return self.rings[np.searchsorted(self.rings['projcell'], id) - 1]
+
     def get_projection_cells(self, skyfootprint=None, ra=None, dec=None, id=None):
         # Interpret footprint to get range of declination in mask
         if id is None:
@@ -223,7 +245,7 @@ class GridDefs(object):
                 ra, dec = skyfootprint.get_edges_sky()
             # Find band[s] that overlap footprint
             self._find_bands(dec)
-                
+
             self.projection_cells = []
             # Define numerical position in band for projection cell
             # self.band_index = self.projection_cell_id - self.band['PROJCELL']
@@ -232,14 +254,14 @@ class GridDefs(object):
                 nra = ra % 360.0
                 nband = band['NBAND']
                 band_index = np.unique(np.rint(nra * nband / 360.0).astype(int) % nband)
-                self.projection_cells += [ProjectionCell(index, band, self.scale) for index in band_index]        
+                self.projection_cells += [ProjectionCell(index, band, self.scale) for index in band_index]
         else:
             self.projection_cells = [ProjectionCell(index=i, scale=self.scale) for i in id]
 
     def get_sky_cells(self, skyfootprint):
 
         self.get_projection_cells(skyfootprint)
-        
+
         # Find sky cells from identified projection cell(s) that overlap footprint
         sky_cells = {}
         for pcell in self.projection_cells:
@@ -279,13 +301,13 @@ class GridDefs(object):
         plt.subplot(111, projection=projection)
         plt.grid(True)
         for pc in self.projection_cells:
-            plt.fill(pc.footprint[:,0], pc.footprint[:,1], 
+            plt.fill(pc.footprint[:,0], pc.footprint[:,1],
                      facecolor='green', edgecolor='forestgreen',
                      alpha=0.25)
             plt.text(pc.footprint[0,0], pc.footprint[0,1], "{}".format(pc.cell_id),
                      horizontalalignment='right', verticalalignment='bottom')
-            
-               
+
+
 
 class ProjectionCell(object):
 
@@ -348,15 +370,13 @@ class ProjectionCell(object):
     def build_mask(self):
         naxis1, naxis2 = self.wcs.pixel_shape
         edges_x = [0]*naxis2 + [naxis1-1]*naxis2 + list(range(naxis1)) * 2
-        edges_y = list(range(naxis2)) * 2 + [0]*naxis1 + [naxis2-1]*naxis1 
-        
-        mask = np.zeros(self.wcs.array_shape, dtype=np.int16)
-        mask[edges_y, edges_x] = 1
+        edges_y = list(range(naxis2)) * 2 + [0]*naxis1 + [naxis2-1]*naxis1
 
-        # Fill in outline of each chip
-        mask = morphology.binary_dilation(mask, structure=NDIMAGE_STRUCT2)
-        mask = morphology.binary_fill_holes(mask)
-        mask = morphology.binary_erosion(mask, structure=NDIMAGE_STRUCT2)
+        polygon = list(zip(edges_x, edges_y))
+        img = Image.new("L", (naxis1, naxis2), 0)
+        ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
+        mask = np.array(img)
+
         self.mask = mask
 
     def build_polygon(self):
@@ -380,7 +400,7 @@ class ProjectionCell(object):
 
         # Get the edges of the mosaic on the sky
         mosaic_ra, mosaic_dec = mosaic.get_edges_sky()
-        # Convert edges to positions in projection cell 
+        # Convert edges to positions in projection cell
         mosaic_edges = self.wcs.world_to_pixel_values(mosaic_ra, mosaic_dec)
         # Determine roughly what sky cells overlap this mosaic
         mosaic_edges[0] = (mosaic_edges[0] / skycell00.wcs.pixel_shape[0] + 0.5).astype(np.int32)
@@ -389,7 +409,7 @@ class ProjectionCell(object):
         mosaic_yr = [mosaic_edges[1].min() - 1, mosaic_edges[1].max() + 1]
 
         print("SkyCell Ranges: {}, {}".format(mosaic_xr, mosaic_yr))
-        # for each suspected sky cell or neighbor, look for any pixel by pixel 
+        # for each suspected sky cell or neighbor, look for any pixel by pixel
         #    overlap with input mosaic footprint
         for xi in range(mosaic_xr[0], mosaic_xr[1]):
             for yi in range(mosaic_yr[0], mosaic_yr[1]):
@@ -398,14 +418,14 @@ class ProjectionCell(object):
 
                 # Translate mosaic edges into SkyCell WCS coordinate frame
                 mosaic_xy = skycell.wcs.world_to_pixel_values(mosaic_ra, mosaic_dec)
-                
+
                 # Identify edge pixels which fall outside the sky cell
                 #  by comparing to each direction (-X, +X, -Y, +Y) separately
                 mosaic_offcell = mosaic_xy[0] < 0
-                mosaic_offcell = np.bitwise_or(mosaic_offcell, 
+                mosaic_offcell = np.bitwise_or(mosaic_offcell,
                                                 mosaic_xy[0] > skycell.wcs.pixel_shape[0])
-                mosaic_offcell = np.bitwise_or(mosaic_offcell, mosaic_xy[1] < 0) 
-                mosaic_offcell = np.bitwise_or(mosaic_offcell, 
+                mosaic_offcell = np.bitwise_or(mosaic_offcell, mosaic_xy[1] < 0)
+                mosaic_offcell = np.bitwise_or(mosaic_offcell,
                                                 mosaic_xy[1] > skycell.wcs.pixel_shape[1])
 
                 # With all out of bounds pixels masked out, see if any are left
@@ -422,7 +442,7 @@ class ProjectionCell(object):
     def plot(self, output=None, color='b'):
         fig = plt.figure(figsize=(8, 6))
         ax = fig.add_subplot(111, projection="mollweide")
-        ax.fill(self.corners[:, 0], self.corners[:, 1], 
+        ax.fill(self.corners[:, 0], self.corners[:, 1],
                 facecolor='green',edgecolor='forestgreen', alpha=0.25)
         if output:
             fig.write(output)
@@ -496,15 +516,13 @@ class SkyCell(object):
     def build_mask(self):
         naxis1, naxis2 = self.wcs.pixel_shape
         edges_x = [0]*naxis2 + [naxis1-1]*naxis2 + list(range(naxis1)) * 2
-        edges_y = list(range(naxis2)) * 2 + [0]*naxis1 + [naxis2-1]*naxis1 
+        edges_y = list(range(naxis2)) * 2 + [0]*naxis1 + [naxis2-1]*naxis1
 
-        mask = np.zeros(self.wcs.array_shape, dtype=np.int16)
-        mask[edges_y, edges_x] = 1
+        polygon = list(zip(edges_x, edges_y))
+        img = Image.new("L", (naxis1, naxis2), 0)
+        ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
+        mask = np.array(img)
 
-        # Fill in outline of each chip
-        mask = morphology.binary_dilation(mask, structure=NDIMAGE_STRUCT2)
-        mask = morphology.binary_fill_holes(mask)
-        mask = morphology.binary_erosion(mask, structure=NDIMAGE_STRUCT2)
         self.mask = mask
 
 #

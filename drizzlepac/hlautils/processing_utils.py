@@ -49,7 +49,7 @@ def refine_product_headers(product, total_obj_list):
         Filename or HDUList object for product to be updated
 
     total_obj_list: list
-        List of TotalProduct objects which are composed of Filter and Exposure 
+        List of TotalProduct objects which are composed of Filter and Exposure
         Product objects
 
     """
@@ -79,7 +79,7 @@ def refine_product_headers(product, total_obj_list):
     phdu['date-beg'] = (Time(phdu['expstart'], format='mjd').iso, "Starting Date and Time")
     phdu['date-end'] = (Time(phdu['expend'], format='mjd').iso, "Ending Date and Time")
 
-    phdu['equinox'] = hdu[('sci',1)].header['equinox'] if 'equinox' in hdu[('sci',1)].header else 2000.0
+    phdu['equinox'] = hdu[('sci', 1)].header['equinox'] if 'equinox' in hdu[('sci', 1)].header else 2000.0
 
     # Re-format ACS filter specification
     if phdu['instrume'] == 'ACS':
@@ -107,13 +107,14 @@ def refine_product_headers(product, total_obj_list):
     if closefits:
         hdu.close()
 
-def get_acs_filters(image, delimiter=';'):
+def get_acs_filters(image, delimiter=';', all=False):
     hdu, closefits = _process_input(image)
     filters = [kw[1] for kw in hdu[0].header['filter?'].items()]
     acs_filters = []
     for f in filters:
-        if 'clear' not in f.lower():
+        if ('clear' not in f.lower() and not all) or all:
             acs_filters.append(f)
+
     if not acs_filters:
         acs_filters = ['clear']
     acs_filters = delimiter.join(acs_filters)
@@ -226,3 +227,32 @@ def _process_input(input):
             raise ValueError
 
     return hdu, closefits
+
+def append_trl_file(trlfile, drizfile, clean=True):
+    """ Append log file to already existing log or trailer file.
+
+    Parameters
+    -----------
+    clean : bool
+        Remove the `drizfile` or not when finished appending it to `trlfile`
+    """
+    if not os.path.exists(drizfile):
+        return
+    # Open already existing trailer file for appending
+    ftrl = open(trlfile, 'a')
+    # Open astrodrizzle trailer file
+    fdriz = open(drizfile)
+
+    # Read in drizzle comments
+    _dlines = fdriz.readlines()
+
+    # Append them to CALWF3 trailer file
+    ftrl.writelines(_dlines)
+
+    # Close all files
+    ftrl.close()
+    fdriz.close()
+
+    if clean:
+        # Now, clean up astrodrizzle trailer file
+        os.remove(drizfile)
