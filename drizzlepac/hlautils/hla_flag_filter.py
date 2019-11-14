@@ -57,7 +57,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky,
                              catalog_name, catalog_data, proc_type, drz_root_dir, hla_flag_msk, ci_lookup_file_path,
-                             output_custom_pars_file, debug=True):
+                             output_custom_pars_file, diagnostic_mode=True):
     """Simple calling subroutine that executes the other flagging subroutines.
 
     Parameters
@@ -102,7 +102,7 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     output_custom_pars_file : string
         name of the output config file
 
-    debug : bool
+    diagnostic_mode : bool
         write intermediate files?
 
     Returns
@@ -133,36 +133,36 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     log.info("Determining concentration indices for sources.")
     log.debug("ci_filter({} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type,
                                                             param_dict, ci_lookup_file_path, output_custom_pars_file,
-                                                            column_titles, debug))
+                                                            column_titles, diagnostic_mode))
     catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
-                             output_custom_pars_file, column_titles, debug)
+                             output_custom_pars_file, column_titles, diagnostic_mode)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag saturated sources
     log.info("Flagging saturated sources in the catalogs.")
     log.debug("hla_saturation_flags({} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name,
                                                                        "<Catalog Data>", proc_type, param_dict,
-                                                                       plate_scale, column_titles, debug))
+                                                                       plate_scale, column_titles, diagnostic_mode))
     catalog_data = hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict,
-                                        plate_scale, column_titles, debug)
+                                        plate_scale, column_titles, diagnostic_mode)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag swarm sources
     log.info("Flagging possible swarm features in catalogs")
     log.debug("hla_swarm_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>",
                                                                      exptime, plate_scale, median_sky, proc_type,
-                                                                     param_dict, column_titles, debug))
+                                                                     param_dict, column_titles, diagnostic_mode))
     catalog_data = hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky,
-                                   proc_type, param_dict, column_titles, debug)
+                                   proc_type, param_dict, column_titles, diagnostic_mode)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
     log.info("Flagging sources from regions observed with only a small number of exposures.")
     log.debug("hla_nexp_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
                                                                  catalog_name, "<Catalog Data>", drz_root_dir,
-                                                                 "<MASK_ARRAY>", column_titles, debug))
+                                                                 "<MASK_ARRAY>", column_titles, diagnostic_mode))
     catalog_data = hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data,
-                                  drz_root_dir, hla_flag_msk, column_titles, debug)
+                                  drz_root_dir, hla_flag_msk, column_titles, diagnostic_mode)
 
     return catalog_data
 
@@ -170,7 +170,7 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
 
 def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
-              output_custom_pars_file, column_titles, debug):
+              output_custom_pars_file, column_titles, diagnostic_mode):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
     It also flags sources below the detection limit in mag_aper2 (flag=8).
@@ -201,7 +201,7 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     column_titles : dictionary
         Relevant column titles
 
-    debug : bool
+    diagnostic_mode : bool
         write intermediate files?
 
     Returns
@@ -283,10 +283,10 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         if not ci_value or ci_value > ci_upper_limit:
             table_row["Flags"] |= 1
 
-        if not ci_value and debug:
+        if not ci_value and diagnostic_mode:
             failed_index_list.append(i)
 
-    if debug:
+    if diagnostic_mode:
         # Write out list of ONLY failed rows to to file
         catalog_name_failed = catalog_name_root + '_Failed-CI.txt'
         catalog_data_failed = catalog_data.copy()
@@ -304,7 +304,7 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
 
 
 def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict, plate_scale,
-                         column_titles, debug):
+                         column_titles, diagnostic_mode):
     """Identifies and flags saturated sources.
 
     Parameters
@@ -334,7 +334,7 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
     column_titles : dictionary
         Relevant column titles
 
-    debug : bool
+    diagnostic_mode : bool
         write intermediate files?
 
     Returns
@@ -433,7 +433,7 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
             # ---------------------------------------------------
             # WRITE FLT COORDS TO A FILE FOR DIAGNOSTIC PURPOSES
             # ---------------------------------------------------
-            if debug:
+            if diagnostic_mode:
                 flt_xy_coord_out = flt_image.split('/')[-1].split('.')[0] + '_sci' + str(ext_cnt + 1) + '.txt'
                 outfile = open(flt_xy_coord_out, 'w')
                 for flt_xy_coord in x_y_array:
@@ -481,7 +481,7 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
     # WRITE RA & DEC FLT CONVERTED X & Y DRIZZLED
     # IMAGE COORDINATES TO A TEXT FILE
     # --------------------------------------------
-    if debug:
+    if diagnostic_mode:
         drz_coord_file = drizzled_image.split('/')[-1].split('.')[0] + '_ALL_FLT_SAT_FLAG_PIX.txt'
         drz_coord_out = open(drz_coord_file, 'w')
         for coord in full_sat_list:
@@ -550,7 +550,7 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
         log.info('FLAGGED {} SOURCES'.format(nsaturated))
         log.info(' ')
 
-        if debug:
+        if diagnostic_mode:
             sat_coord_file = drizzled_image.split('/')[-1].split('.')[0] + '_INTERMEDIATE.txt'
             sat_coord_out = open(sat_coord_file, 'w')
             for sat_coord in full_coord_list[saturation_flag, :]:
@@ -570,7 +570,7 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
 
         phot_table_rows = flag4and8_hunter_killer(phot_table_rows, column_titles)
 
-        if debug:
+        if diagnostic_mode:
             phot_table_temp = phot_table_root + '_SATFILT.txt'
             phot_table_rows.write(phot_table_temp, delimiter=",", format='ascii')
         return phot_table_rows
@@ -579,7 +579,7 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
 
 
 def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky, proc_type, param_dict,
-                    column_titles, debug):
+                    column_titles, diagnostic_mode):
 
     """Identifies and flags swarm sources.
 
@@ -612,7 +612,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     column_titles : dictionary
         Relevant column titles
 
-    debug : bool
+    diagnostic_mode : bool
         write intermediate files?
 
     Returns
@@ -684,7 +684,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     # ------------------------------------------------------------
     # WRITE SUBSET SOURCE LIST TO AN OUTPUT FILE FOR VERIFICATION
     # ------------------------------------------------------------
-    if debug:
+    if diagnostic_mode:
         final_complete_source_file = open(phot_table_root+'_SWFILT_COMPLETE_SOURCE_FILE.txt', 'w')
         final_complete_source_file.write("# {}\n".format("-"*96))
         swfilt_table_header = "# X-Center   Y-Center     Flux        ElectronPP          Sky         EPPSKY_Ratio \n"
@@ -873,7 +873,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     # ---------------------------------------------------
     # WRITE CENTRAL PIXEL POSITIONS FOR SWARMS TO A FILE
     # ---------------------------------------------------
-    if debug:
+    if diagnostic_mode:
         cetrl_pix_pos_file = phot_table_root + '_SWFILT_CENTRAL-PIX-POS.txt'
         drz_coord_out = open(cetrl_pix_pos_file, 'w')
         for i in range(len(final_flag_src_central_pixel_list)):
@@ -925,7 +925,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
     # TODO: RLW: the ring list is needed only for testing, get rid of it when code works
 
-    if debug:
+    if diagnostic_mode:
         ring_index_list = []
         ring_refepp_list = []
         ring_thresh_list = []
@@ -990,14 +990,14 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
                 swarm_flag[notcentral_index[matches[w]]] = True
 
             # TODO: RLW: following needed only for testing, get rid of it when code works
-            if debug:
+            if diagnostic_mode:
                 ring_index_list.append(matches)
                 ring_count.append(len(matches))
                 ring_refepp_list.append(ring[:, 3]/ref_epp)
                 ring_thresh_list.append(swarm_thresh)
 
     # TODO: RLW: following needed only for testing, get rid of it when code works
-    if debug:
+    if diagnostic_mode:
         # -----------------------------------------------------------------------------------------
         # WRITE CLIPPED SOURCES CONTAINED WITHIN RINGS TO AN OUTPUT FILE FOR INTERMEDIATE ANALYSIS
         # -----------------------------------------------------------------------------------------
@@ -1082,7 +1082,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
         # --------------------------------------------------------------------------
         # WRITE NEAR CENTRAL POSITION SWARM LIST TO AN OUTPUT FILE FOR VERIFICATION
         # --------------------------------------------------------------------------
-        if debug:
+        if diagnostic_mode:
             near_swm_list = complete_src_list[proximity_flag, :]
             final_near_swarm_file = open(phot_table_root+'_SWFILT_NEAR_SWARM_FILE.txt', 'w')
             for swarm_value in near_swm_list:
@@ -1116,7 +1116,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     # ----------------------------------------------------
     # WRITE SWARM LIST TO AN OUTPUT FILE FOR VERIFICATION
     # ----------------------------------------------------
-    if debug:
+    if diagnostic_mode:
         final_swarm_file = open(phot_table_root+'_SWFILT_SWARM_FILE.txt', 'w')
         for swarm_value in final_swarm_list:
             final_swarm_file.write(str(swarm_value[0]) + '     ' +
@@ -1129,7 +1129,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     # ----------------------------------------------------
     # WRITE SOURCE LIST TO AN OUTPUT FILE FOR VERIFICATION
     # ----------------------------------------------------
-    if debug:
+    if diagnostic_mode:
         final_source_file = open(phot_table_root+'_SWFILT_SOURCE_FILE.txt', 'w')
         for source_value in final_source_list:
             final_source_file.write(str(source_value[0]) + '     ' +
@@ -1144,7 +1144,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
         if combined_flag[i]:
             table_row["Flags"] |= 32
 
-    if debug:
+    if diagnostic_mode:
         # Write out intermediate catalog with updated flags
         phot_table_temp = phot_table_root + '_SWFILT.txt'
         catalog_data.write(phot_table_temp, delimiter=",", format='ascii')
@@ -1155,7 +1155,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
 
 def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data, drz_root_dir,
-                   mask_data, column_titles, debug):
+                   mask_data, column_titles, diagnostic_mode):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
 
     drizzled_image : string
@@ -1186,7 +1186,7 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     column_titles : dictionary
         Relevant column titles
 
-    debug : bool
+    diagnostic_mode : bool
         write intermediate files?
 
     Returns
@@ -1284,7 +1284,7 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
         if artifact_flag[i]:
             table_row["Flags"] |= 64
 
-    if debug:
+    if diagnostic_mode:
         # Write out intermediate catalog with updated flags
         phot_table_temp = phot_table_root + '_NEXPFILT.txt'
         catalog_data.write(phot_table_temp, delimiter=",", format='ascii')
