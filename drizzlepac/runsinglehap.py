@@ -76,7 +76,7 @@ def main():
     user_args = parser.parse_args()
 
     print("Single-visit processing started for: {}".format(user_args.input_filename))
-    rv = perform(user_args.input_filename, debug=user_args.debug)
+    rv = perform(user_args.input_filename, diagnostic_mode=user_args.diagnostic_mode)
     print("Return Value: ", rv)
     return rv
 
