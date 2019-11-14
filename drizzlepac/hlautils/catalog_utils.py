@@ -224,14 +224,14 @@ class HAPCatalogs:
     """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
 
-    def __init__(self, fitsfile, param_dict, param_dict_qc, debug=False, types=None, tp_sources=None):
+    def __init__(self, fitsfile, param_dict, param_dict_qc, diagnostic_mode=False, types=None, tp_sources=None):
         self.label = "HAPCatalogs"
         self.description = "A class used to generate photometric sourcelists using aperture photometry"
 
         self.imgname = fitsfile
         self.param_dict = param_dict
         self.param_dict_qc = param_dict_qc
-        self.debug = debug
+        self.diagnostic_mode = diagnostic_mode
         self.tp_sources = tp_sources  # <---total product catalogs.catalogs[*].sources
 
         # Determine what types of catalogs have been requested
@@ -260,9 +260,9 @@ class HAPCatalogs:
         #  it will have to do...
         self.catalogs = {}
         if 'aperture' in self.types:
-            self.catalogs['aperture'] = HAPPointCatalog(self.image, self.param_dict, self.param_dict_qc, self.debug, tp_sources=tp_sources)
+            self.catalogs['aperture'] = HAPPointCatalog(self.image, self.param_dict, self.param_dict_qc, self.diagnostic_mode, tp_sources=tp_sources)
         if 'segment' in self.types:
-            self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict, self.param_dict_qc, self.debug, tp_sources=tp_sources)
+            self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict, self.param_dict_qc, self.diagnostic_mode, tp_sources=tp_sources)
 
     def identify(self, **pars):
         """Build catalogs for this image.
@@ -333,13 +333,13 @@ class HAPCatalogBase:
     catalog_region_suffix = ".reg"
     catalog_format = "ascii.ecsv"
 
-    def __init__(self, image, param_dict, param_dict_qc, debug, tp_sources):
+    def __init__(self, image, param_dict, param_dict_qc, diagnostic_mode, tp_sources):
         self.image = image
         self.imgname = image.imgname
         self.bkg = image.bkg
         self.param_dict = param_dict
         self.param_dict_qc = param_dict_qc
-        self.debug = debug
+        self.diagnostic_mode = diagnostic_mode
 
         self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
 
@@ -488,8 +488,8 @@ class HAPPointCatalog(HAPCatalogBase):
     """
     catalog_suffix = "_point-cat.ecsv"
 
-    def __init__(self, image, param_dict, param_dict_qc, debug, tp_sources):
-        super().__init__(image, param_dict, param_dict_qc, debug, tp_sources)
+    def __init__(self, image, param_dict, param_dict_qc, diagnostic_mode, tp_sources):
+        super().__init__(image, param_dict, param_dict_qc, diagnostic_mode, tp_sources)
 
         self.bkg_used = None  # actual background used for source identification/measurement
 
@@ -669,7 +669,7 @@ class HAPPointCatalog(HAPCatalogBase):
         log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
         # Write out region file if input 'write_region_file' is turned on.
-        if self.debug:
+        if self.diagnostic_mode:
             out_table = self.source_cat.copy()
             if 'xcentroid' in out_table.keys():  # for point-source source catalogs
                 # Remove all other columns besides xcentroid and ycentroid
@@ -780,7 +780,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
        param_dict : dictionary
            Configuration values for catalog generation based upon input JSON files
 
-       debug : bool
+       diagnostic_mode : bool
            Specifies whether or not to generate the regions file used for ds9 overlay
 
        tp_sources: dictionary
@@ -788,8 +788,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
     """
     catalog_suffix = "_segment-cat.ecsv"
 
-    def __init__(self, image, param_dict, param_dict_qc, debug, tp_sources):
-        super().__init__(image, param_dict, param_dict_qc, debug, tp_sources)
+    def __init__(self, image, param_dict, param_dict_qc, diagnostic_mode, tp_sources):
+        super().__init__(image, param_dict, param_dict_qc, diagnostic_mode, tp_sources)
 
         # Get the instrument/detector-specific values from the self.param_dict
         self._fwhm = self.param_dict["sourcex"]["fwhm"]
@@ -911,7 +911,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 else:
                     bad_segm_rows_by_id.append(total_measurements_table['id'][i])
             updated_table = Table(rows=good_rows, names=total_measurements_table.colnames)
-            if self.debug:
+            if self.diagnostic_mode:
                 log.info("SEGMENT. Bad total rows: {}".format(bad_segm_rows_by_id))
             log.info("SEGMENT. Bad segments removed from segmentation image.")
 
@@ -934,17 +934,17 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # For debugging purposes only, create a segmentation image and a "regions" files to use for ds9 overlay
         # Create the image regions file here in case there is a failure
-        if self.debug and self.segm_img:
-            # Generate a debug segmentation image
+        if self.diagnostic_mode and self.segm_img:
+            # Generate a diagnostic_mode segmentation image
             # indx = self.sourcelist_filename.find("-cat.ecsv")
             # outname = self.sourcelist_filename[0:indx] + ".fits"
             # fits.PrimaryHDU(data = self.segm_img.data).writeto(outname)
 
-            # Copy out only the X and Y coordinates to a "debug table" and cast as an Astropy Table
+            # Copy out only the X and Y coordinates to a "diagnostic_mode table" and cast as an Astropy Table
             # so a scalar can be added to the centroid coordinates
             tbl = self.source_cat["X-Centroid", "Y-Centroid"]
 
-            # Construct the debug output filename and write the regions file
+            # Construct the diagnostic_mode output filename and write the regions file
             indx = self.sourcelist_filename.find("ecsv")
             outname = self.sourcelist_filename[0:indx] + "reg"
 
@@ -1016,16 +1016,16 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self.subset_filter_source_cat.rename_column("CI", "CI_" + filter_name)
         self.subset_filter_source_cat.rename_column("Flags", "Flags_" + filter_name)
 
-        if self.debug:
+        if self.diagnostic_mode:
             # Write out a catalog which can be used as an overlay for image in ds9
             # The source coordinates are the same for the total and filter products, but the kernel is
             # total- or filter-specific and any row with nan or inf has been removed from the filter table..
 
-            # Copy out only the X and Y coordinates to a "debug table" and
+            # Copy out only the X and Y coordinates to a "diagnostic_mode table" and
             # cast as an Astropy Table so a scalar can be added later
             tbl = Table(self.source_cat["X-Centroid", "Y-Centroid"])
 
-            # Construct the debug output filename and write the catalog
+            # Construct the diagnostic_mode output filename and write the catalog
             indx = self.sourcelist_filename.find("ecsv")
             outname = self.sourcelist_filename[0:indx] + "reg"
 
@@ -1037,7 +1037,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             tbl["X-Centroid"] = tbl["X-Centroid"] + 1
             tbl["Y-Centroid"] = tbl["Y-Centroid"] + 1
             tbl.write(outname, format="ascii.commented_header")
-            log.info("SEGMENT. Wrote the debug version of the filter detection source catalog: {}\n".format(outname))
+            log.info("SEGMENT. Wrote the diagnostic_mode version of the filter detection source catalog: {}\n".format(outname))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
