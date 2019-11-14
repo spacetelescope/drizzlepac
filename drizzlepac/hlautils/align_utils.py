@@ -1,7 +1,7 @@
 import os
-import sys
 import datetime
 import copy
+import sys
 
 from collections import OrderedDict
 
@@ -15,7 +15,7 @@ from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
 
 import photutils
-from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
+from photutils import Background2D
 
 from stwcs.wcsutil import HSTWCS
 from stwcs.wcsutil import headerlet
@@ -38,7 +38,6 @@ CATALOG_TYPES = ['point', 'segment']
 MIN_CATALOG_THRESHOLD = 3
 
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
-
 
 class AlignmentTable:
     def __init__(self, input_list, clobber=False, dqname='DQ', **alignment_pars):
@@ -71,7 +70,7 @@ class AlignmentTable:
         self.alignment_pars.update(alignment_pars['general'])
         self.alignment_pars.update(alignment_pars['generate_source_catalogs'])
         self.alignment_pars.update(alignment_pars['determine_fit_quality'])
-        
+
         self.dqname = dqname
 
         self.zero_dt = starting_dt = datetime.datetime.now()
@@ -196,7 +195,6 @@ class AlignmentTable:
         # Protect the writing of the table within the best_fit_rms
         info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
         # Update filtered table with number of matched sources and other information
-        print(imglist[0].meta)
         for item in imglist:
             imgname = item.meta['name']
             index = np.where(self.filtered_table['imageName'] == imgname)[0][0]
@@ -239,7 +237,8 @@ class AlignmentTable:
             raise ValueError
         # Call update_hdr_wcs()
         headerlet_dict = update_image_wcs_info(self.selected_fit,
-                                               headerlet_filenames=headerlet_filenames)
+                                               headerlet_filenames=headerlet_filenames,
+                                               fit_label='SVM')
 
         for table_index in range(0, len(self.filtered_table)):
             self.filtered_table[table_index]['headerletFile'] = headerlet_dict[
@@ -741,15 +740,17 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
                 sci_ext_dict["{}".format(sci_ext_ctr)] = fileutil.findExtname(hdulist, 'sci', extver=sci_ext_ctr)
 
         # update header with new WCS info
-        updatehdr.update_wcs(hdulist, sci_ext_dict["{}".format(item.meta['chip'])], item.wcs, wcsname=wcs_name,
-                                 reusename=True, verbose=True)
+        updatehdr.update_wcs(hdulist, sci_ext_dict["{}".format(item.meta['chip'])], item.wcs,
+                             wcsname=wcs_name,
+                             reusename=True)
         if chipctr == num_sci_ext:
             # Close updated flc.fits or flt.fits file
             hdulist.flush()
             hdulist.close()
 
             # Create headerlet
-            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, wcsname=wcs_name, logging=False)
+            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, wcsname=wcs_name,
+                                                       logging=False)
 
             # Update headerlet
             update_headerlet_phdu(item, out_headerlet)

@@ -1,0 +1,201 @@
+# Concentration Index peak (and upper and lower boundaries) 
+# and aperture correction from aper2 to infinity.  - April 27, 2016
+#
+# Estimates from combinations of Brad Whitmore's manual measurements using plotcat 
+# in HLA, Steve Lubow's database measurements (see emails), and 
+# Lou Strolger's aperture correction table (but less weight since based on theoretical 
+# enclosed energy curves instead of HLA measurements). See notes, and viewgraphs in
+# - hsc_hvc_apr_26_2016_working.pptx and hsc_ci_study_mar_22_2016 . 
+#
+# WFPC2/PC scaled at 0.77 from WF - Step 1 of script_hsc_misc_mar_2016 in hsc directory 
+# - Whitmore- apr. 20, 2016
+#
+# Another reference file is ci_summary_ap_1_2016_test.txt
+#
+# Quality of CI and aper corrections vary from about 0.02 for mid
+# wavelengths for ACS and WFC3 to about 0.05 in general and 0.10 in a few
+# rare cases (e.g., ACS/HRC_850LP) for some high and low wavelengths.
+# WFPC2/PC may have some "special" issues (e.g., scaled from WF), but 
+# is probably good to 0.05 in general. 
+#
+#  Some examples where special studies would be in order are listed below after #'s.
+#
+# For Reference:
+# 
+# ACS/WFC        0.05        0.15 arcsec  
+# ACS/HRC       0.05   0.125 arcsec    (email Dulude march 28, 2016)
+# WFC3/UVIS      0.05        0.15 
+# WFC3/IR        0.15        0.45 
+# WFPC2          0.10        0.30 
+#
+#
+#  Instr_filter     eft_wave     lower   pk    upper   ap_cor
+#
+ACS_WFC_F435W      433.       0.85 1.08    1.25       -0.28  # lower reduced from 0.9 to 0.85 by RLW, 6/26/17
+ACS_WFC_F475W      478.       0.85 1.08    1.25       -0.24  # lower reduced from 0.9 to 0.85 by RLW, 6/26/17
+ACS_WFC_F502N      502.       0.85 1.08    1.25       -0.24  # lower reduced from 0.9 to 0.85 by RLW, 6/26/17
+ACS_WFC_F550M      558.       0.85 1.08    1.25       -0.25  # lower reduced from 0.9 to 0.85 by RLW, 6/26/17
+ACS_WFC_F555W      538.       0.85 1.08    1.25       -0.25  # lower reduced from 0.9 to 0.85 by RLW, 6/26/17
+ACS_WFC_F606W      599.       0.87 1.08    1.25       -0.25  # lower reduced from 0.9 to 0.87 by RLW, 6/26/17
+ACS_WFC_F625W      633.        0.9 1.08    1.25       -0.25
+ACS_WFC_F658N      658.        0.9 1.08    1.25       -0.26
+ACS_WFC_F660N      660.        0.9 1.08    1.25       -0.26
+ACS_WFC_F775W      771.        0.9 1.08    1.25       -0.27
+ACS_WFC_F814W      811.        0.9 1.08    1.25       -0.29
+ACS_WFC_F850LP     906.       0.95 1.16    1.35        -0.4  # special study of aper cor would be good. 
+#
+ACS_HRC_F220W      999.       0.88  1.06    1.23       -0.34
+ACS_HRC_F250W      999.       0.89  1.07    1.24        -0.3
+ACS_HRC_F330W      999.       0.90  1.08    1.25       -0.28
+ACS_HRC_F435W      433.       0.91 1.09    1.26       -0.25
+ACS_HRC_F475W      478.       0.92 1.10     1.28       -0.25
+ACS_HRC_F502N      502.       0.92  1.11    1.29       -0.24
+ACS_HRC_F550M      558.       0.94  1.13    1.31       -0.24
+ACS_HRC_F555W      538.       0.95  1.14    1.32       -0.24
+ACS_HRC_F606W      599.       1.02  1.22    1.42       -0.24
+ACS_HRC_F625W      633.       0.99  1.19    1.38       -0.25
+ACS_HRC_F658N      658.        1.00  1.20    1.39       -0.27
+ACS_HRC_F660N      660.        1.00  1.20    1.39       -0.27
+ACS_HRC_F775W      771.       1.08  1.30     1.51       -0.35
+ACS_HRC_F814W      811.       1.13  1.35    1.57       -0.41
+ACS_HRC_F850LP     906.       1.18  1.42    1.65        -0.7  # special study of aper cor would be good.
+ACS_HRC_F892N      891.       1.18 1.42    1.65       -0.63   # special study of aper cor would be good.
+#
+WFC3_UVIS_F200LP   571.       0.75 0.90    1.04        -0.24    # questionable,  but set to ~avg below rather than .20 extrap from wave (since CI match) - separate study needed. - All LP set same
+WFC3_UVIS_F218W    223.        0.7 0.85    0.99       -0.34
+WFC3_UVIS_F225W    237.        0.7 0.85    0.99       -0.31
+WFC3_UVIS_F275W    271.        0.7 0.85    0.99       -0.28
+WFC3_UVIS_F280N    286.        0.7 0.85    0.99       -0.26
+WFC3_UVIS_F300X    284.        0.7 0.85    0.99       -0.27
+WFC3_UVIS_F336W    336.        0.7 0.85    0.99       -0.24
+WFC3_UVIS_F343N    343.        0.7 0.85    0.99       -0.23
+WFC3_UVIS_F350LP   628.        0.75  0.90   1.04        -0.24
+WFC3_UVIS_F373N    374.        0.7 0.85    0.99       -0.22
+WFC3_UVIS_F390M    389.        0.7 0.85    0.99       -0.22
+WFC3_UVIS_F390W    394.        0.7 0.85    0.99       -0.21
+WFC3_UVIS_F395N    396.        0.7 0.85    0.99       -0.21
+WFC3_UVIS_F410M    411.       0.72 0.86    1.00       -0.21
+WFC3_UVIS_F438W    433.       0.72 0.86    1.00       -0.21
+WFC3_UVIS_F467M    467.       0.72 0.86    1.00        -0.2
+WFC3_UVIS_F469N    469.       0.73 0.88    1.01        -0.2
+WFC3_UVIS_F475W    481.       0.72 0.87    1.01        -0.2
+WFC3_UVIS_F475X    503.       0.72 0.87    1.01        -0.2
+WFC3_UVIS_F487N    486.       0.72 0.87    1.01        -0.2
+WFC3_UVIS_F502N    500.       0.72 0.87    1.01        -0.2
+WFC3_UVIS_F547M    545.       0.72 0.87    1.01        -0.2
+WFC3_UVIS_F555W    536.       0.72 0.87    1.01        -0.2
+WFC3_UVIS_F600LP   758.       0.75 0.90    1.04       -0.24
+WFC3_UVIS_F606W    596.       0.73 0.88    1.02        -0.2
+WFC3_UVIS_F621M    622.       0.73 0.88    1.02        -0.2
+WFC3_UVIS_F625W    627.       0.73 0.88    1.02        -0.2
+WFC3_UVIS_F631N    630.       0.73 0.88    1.02        -0.2
+WFC3_UVIS_F645N    645.       0.73 0.88    1.02        -0.2
+WFC3_UVIS_F656N    655.       0.73 0.88    1.02        -0.2
+WFC3_UVIS_F657N    656.       0.73 0.88    1.02        -0.2
+WFC3_UVIS_F658N    659.       0.73 0.88    1.02       -0.21
+WFC3_UVIS_F665N    665.       0.73 0.88    1.02       -0.21
+WFC3_UVIS_F673N    676.       0.73 0.88    1.02       -0.21
+WFC3_UVIS_F680N    687.       0.73 0.88    1.02       -0.21
+WFC3_UVIS_F689M    688.       0.73 0.88    1.02       -0.23
+WFC3_UVIS_F763M    761.       0.73 0.88    1.02       -0.22
+WFC3_UVIS_F775W    766.       0.74 0.89    1.03       -0.22
+WFC3_UVIS_F814W    808.       0.75 0.9     1.04       -0.24
+WFC3_UVIS_F845M    844.       0.77 0.92    1.06       -0.25
+WFC3_UVIS_F850LP   919.        0.8 0.96    1.11       -0.28
+WFC3_UVIS_F953N    952.       0.82 0.98    1.14        -0.3
+#
+WFC3_IR_F098M      988.       0.41 0.56    0.70       -0.15
+WFC3_IR_F105W     1061.       0.41 0.56    0.70       -0.15
+WFC3_IR_F110W     1171.       0.41 0.56    0.70       -0.17
+WFC3_IR_F125W     1254.       0.41 0.56    0.70       -0.17
+WFC3_IR_F126N     1260.       0.42 0.57    0.71       -0.17
+WFC3_IR_F127M     1274.       0.42 0.57    0.71       -0.17
+WFC3_IR_F128N     1284.       0.43 0.58    0.73       -0.18
+WFC3_IR_F130N     1300.       0.43 0.58    0.73       -0.18
+WFC3_IR_F132N     1319.       0.43 0.58    0.73       -0.18
+WFC3_IR_F139M     1384.       0.44 0.60    0.75       -0.18
+WFC3_IR_F140W     1401.       0.46 0.62    0.78       -0.18
+WFC3_IR_F153M     1533.       0.47 0.64    0.80       -0.18
+WFC3_IR_F160W     1541.        0.5 0.67    0.84       -0.18
+WFC3_IR_F164N     1642.       0.53 0.71    0.89       -0.19
+WFC3_IR_F167N     1665.       0.55 0.74    0.92       -0.19
+#
+WFPC2_WF_F122M     125.        0.7 1.3     1.80        -0.4
+WFPC2_WF_F160BW    135.        0.7 1.3     1.80       -0.38
+WFPC2_WF_F170W     170.        0.7 1.1     1.50       -0.33
+WFPC2_WF_F185W     174.        0.7 1.08    1.45       -0.33
+WFPC2_WF_F218W     196.        0.7 1.05    1.35        -0.3
+WFPC2_WF_F255W     258.       0.7  0.99    1.23       -0.28
+WFPC2_WF_F300W     301.       0.7  0.92    1.14       -0.25
+WFPC2_WF_F336W     336.       0.69 0.90     1.12       -0.23
+WFPC2_WF_F343N     388.       0.69 0.90     1.12       -0.23
+WFPC2_WF_F375N     390.       0.69 0.90     1.12       -0.23
+WFPC2_WF_F380W     397.       0.69 0.90     1.12       -0.23
+WFPC2_WF_F390N     389.       0.69 0.90     1.12       -0.23
+WFPC2_WF_F410M     409.       0.69 0.90     1.12       -0.21
+WFPC2_WF_F437N     435.       0.68 0.89     1.10       -0.21
+WFPC2_WF_F439W     431.       0.68 0.89    1.10       -0.21
+WFPC2_WF_F450W     451.       0.68 0.89    1.10       -0.21
+WFPC2_WF_F467M     486.       0.67 0.88    1.09       -0.21
+WFPC2_WF_F469N     469.       0.67 0.88    1.09       -0.21
+WFPC2_WF_F487N     485.       0.67 0.88    1.09       -0.21
+WFPC2_WF_F502N     500.       0.67 0.87    1.08       -0.21
+WFPC2_WF_F547M     547.       0.66 0.86    1.07       -0.21
+WFPC2_WF_F555W     535.       0.66 0.86    1.07       -0.21
+WFPC2_WF_F569W     561.       0.66 0.86    1.07       -0.21
+WFPC2_WF_F588N     589.       0.66 0.86    1.07       -0.21
+WFPC2_WF_F606W     610.       0.66 0.86    1.07       -0.23
+WFPC2_WF_F622W     620.       0.66 0.86    1.07       -0.23
+WFPC2_WF_F631N     630.       0.66 0.86    1.07       -0.23
+WFPC2_WF_F656N     655.       0.66 0.86    1.07       -0.24
+WFPC2_WF_F658N     660.       0.66 0.86    1.07       -0.24
+WFPC2_WF_F673N     673.       0.66 0.86    1.07       -0.24
+WFPC2_WF_F675W     677.       0.67 0.87    1.08       -0.24
+WFPC2_WF_F702W     711.       0.71 0.92    1.14       -0.24
+WFPC2_WF_F785LP   1009.        0.8 1.04    1.29       -0.24
+WFPC2_WF_F791W     808.       0.72 0.93    1.15       -0.24
+WFPC2_WF_F814W     820.       0.72 0.93    1.15       -0.24
+WFPC2_WF_F850LP    930.       0.77 1.00    1.24       -0.25
+WFPC2_WF_F953N     954.       0.78 1.02    1.26       -0.25
+WFPC2_WF_F1042M   1046.       0.82 1.07    1.33       -0.26   # Aper. Cor. likely to be slightly higher - needs study
+#
+# PC determined using WF * .77  since PC has few measurements. Ap cor is WF - .02 - Probably good to ~ 0.03 but needs more study. 
+WFPC2_PC_F122M     125.      0.539 1.001    1.386      -0.38
+WFPC2_PC_F160BW    135.      0.539 1.001   1.386       -0.36
+WFPC2_PC_F170W     170.      0.539 0.847   1.155      -0.31
+WFPC2_PC_F185W     174.      0.539 0.8316  1.1165     -0.31
+WFPC2_PC_F218W     196.      0.539 0.8085  1.0395     -0.28
+WFPC2_PC_F255W     258.     0.539 0.7623  0.9471     -0.26
+WFPC2_PC_F300W     301.     0.539 0.7084  0.8778     -0.23
+WFPC2_PC_F336W     336.     0.5313 0.693    0.8624     -0.21
+WFPC2_PC_F343N     388.     0.5313 0.693    0.8624     -0.21
+WFPC2_PC_F375N     390.     0.5313 0.693    0.8624     -0.21
+WFPC2_PC_F380W     397.     0.5313 0.693    0.8624     -0.21
+WFPC2_PC_F390N     389.     0.5313 0.693    0.8624     -0.21
+WFPC2_PC_F410M     409.     0.5313 0.693    0.8624     -0.19
+WFPC2_PC_F437N     435.     0.5236 0.6853   0.847      -0.19
+WFPC2_PC_F439W     431.     0.5236 0.6853  0.847      -0.19
+WFPC2_PC_F450W     451.     0.5236 0.6853  0.847      -0.19
+WFPC2_PC_F467M     486.     0.5159 0.6776  0.8393     -0.19
+WFPC2_PC_F469N     469.     0.5159 0.6776  0.8393     -0.19
+WFPC2_PC_F487N     485.     0.5159 0.6776  0.8393     -0.19
+WFPC2_PC_F502N     500.     0.5159 0.6699  0.8316     -0.19
+WFPC2_PC_F547M     547.     0.5082 0.6622  0.8239     -0.19
+WFPC2_PC_F555W     535.     0.5082 0.6622  0.8239     -0.19
+WFPC2_PC_F569W     561.     0.5082 0.6622  0.8239     -0.19
+WFPC2_PC_F588N     589.     0.5082 0.6622  0.8239     -0.19
+WFPC2_PC_F606W     610.     0.5082 0.6622  0.8239     -0.21
+WFPC2_PC_F622W     620.     0.5082 0.6622  0.8239     -0.21
+WFPC2_PC_F631N     630.     0.5082 0.6622  0.8239     -0.21
+WFPC2_PC_F656N     655.     0.5082 0.6622  0.8239     -0.22
+WFPC2_PC_F658N     660.     0.5082 0.6622  0.8239     -0.22
+WFPC2_PC_F673N     673.     0.5082 0.6622  0.8239     -0.22
+WFPC2_PC_F675W     677.     0.5159 0.6699  0.8316     -0.22
+WFPC2_PC_F702W     711.     0.5467 0.7084  0.8778     -0.22
+WFPC2_PC_F785LP   1009.      0.616 0.8008  0.9933     -0.22
+WFPC2_PC_F791W     808.     0.5544 0.7161  0.8855     -0.22
+WFPC2_PC_F814W     820.     0.5544 0.7161  0.8855     -0.22
+WFPC2_PC_F850L     930.     0.5929 0.77    0.9548     -0.23
+WFPC2_PC_F953N     954.     0.6006 0.7854  0.9702     -0.23
+WFPC2_PC_F1042M   1046.     0.6314 0.8239  1.0241     -0.24
+#

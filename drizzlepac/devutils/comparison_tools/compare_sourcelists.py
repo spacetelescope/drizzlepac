@@ -76,6 +76,7 @@ Classes and Functions
 ---------------------
 """
 import argparse
+import pdb
 import random
 import sys
 
@@ -357,7 +358,8 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
         ax1 = fig.add_subplot(111)
         fullPlotTitle = "Comparision - reference sourcelist %s differences" % (plot_title)
         plt.title(fullPlotTitle)
-        ax1.hist(diffRA,bins='auto')
+        bins = "auto"
+        ax1.hist(diffRA,bins=bins)
         ax1.axvline(x=clippedStats[0], color='k', linestyle='--')
         ax1.axvline(x=clippedStats[0] + clippedStats[2], color='k', linestyle=':')
         ax1.axvline(x=clippedStats[0] - clippedStats[2], color='k', linestyle=':')
@@ -368,7 +370,7 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
         ax1.set_ylabel("Number of matched sources")
 
         ax2 = ax1.twinx()
-        ax2.hist(diffRA, bins='auto', cumulative=-1, density=True, histtype='step', color='r')
+        ax2.hist(diffRA, bins=bins, cumulative=-1, density=True, histtype='step', color='r')
         ax2.set_ylabel("Fraction of all matched sources",color='r')
         for tl in ax2.get_yticklabels():
             tl.set_color('r')
@@ -828,6 +830,14 @@ def slFiles2dataTables(slNames):
                           "FLUX2": "Flux(0.125)", "MAGNITUDE1": "MagAp(0.03)", "MAGNITUDE2": "MagAp(0.125)",
                           "MERR1": "MagErr(0.03)", "MERR2": "MagErr(0.125)", "MSKY": "MSky(0.125)",
                           "STDEV": "Stdev(0.125)", "FLAGS": "Flags", "ID": "ID", "CI": "CI"}
+    titleSwapDict_point = {"X": "X-Center", "Y": "Y-Center", "RA": "RA", "DEC": "DEC", "FLUX1": "n/a",
+                           "FLUX2": "FluxAp2", "MAGNITUDE1": "MagAp1", "MAGNITUDE2": "MagAp2",
+                           "MERR1": "MagErrAp1", "MERR2": "MagErrAp2", "MSKY": "MSkyAp2",
+                           "STDEV": "StdevAp2", "FLAGS": "Flags", "ID": "ID", "CI": "CI"}
+    titleSwapDict_segment = {"X": "X-Centroid", "Y": "Y-Centroid", "RA": "RA", "DEC": "DEC", "FLUX1": "n/a",
+                             "FLUX2": "FluxAp2", "MAGNITUDE1": "MagAp1", "MAGNITUDE2": "MagAp2",
+                             "MERR1": "MagErrAp1", "MERR2": "MagErrAp2", "MSKY": "n/a",
+                             "STDEV": "n/a", "FLAGS": "Flags", "ID": "ID", "CI": "CI"}
     titleSwapDict_daoTemp={"X":"XCENTER","Y":"YCENTER","RA":"n/a","DEC":"n/a","FLUX1":"FLUX1","FLUX2":"FLUX2","MAGNITUDE1":"MAG1","MAGNITUDE2":"MAG2","FLAGS":"n/a","ID":"ID","MERR1":"MERR1","MERR2":"MERR2","MSKY":"MSKY","STDEV":"STDEV"}
     titleSwapDict_sourceX={"X":"X_IMAGE","Y":"Y_IMAGE","RA":"RA","DEC":"DEC","FLUX1":"FLUX_APER1","FLUX2":"FLUX_APER2","MAGNITUDE1":"MAG_APER1","MAGNITUDE2":"MAG_APER2","FLAGS":"FLAGS","ID":"NUMBER"}
     titleSwapDict_cooNew={"X":"col1","Y":"col2","RA":"n/a","DEC":"n/a","FLUX1":"n/a","FLUX2":"n/a","MAGNITUDE1":"n/a","MAGNITUDE2":"n/a","FLAGS":"n/a","ID":"col7"}
@@ -850,6 +860,9 @@ def slFiles2dataTables(slNames):
             elif (("MagAp(0.03)" in list(dataTable.keys())) and ("MagAp(0.125)" in list(dataTable.keys()))): #ACS/HRC
                 log.info("titleSwapDict_dao3")
                 titleSwapDict = titleSwapDict_dao3
+            elif "MagAp1" in list(dataTable.keys()):
+                log.info("titleSwapDict_point")
+                titleSwapDict = titleSwapDict_point
             else:
                 sys.exit("ERROR: Unrecognized format. Exiting...")
         elif ("XCENTER" in list(dataTable.keys()) and "FLUX1" in list(dataTable.keys())):
@@ -867,11 +880,17 @@ def slFiles2dataTables(slNames):
         elif "X" in list(dataTable.keys()):
             log.info("titleSwapDict_daorep")
             titleSwapDict = titleSwapDict_daorep
+        elif "X-Centroid" in list(dataTable.keys()) and "MagAp1" in list(dataTable.keys()):
+            log.info("titleSwapDict_segment")
+            titleSwapDict = titleSwapDict_segment
         else: sys.exit("ERROR: Unrecognized format. Exiting...")
         outTable=Table()
         for swapKey in list(titleSwapDict.keys()):
             if titleSwapDict[swapKey] != "n/a":
-                col2add=Table.Column(name=swapKey,data=dataTable[titleSwapDict[swapKey]])
+                try:
+                    col2add=Table.Column(name=swapKey,data=dataTable[titleSwapDict[swapKey]])
+                except TypeError:
+                    col2add = Table.MaskedColumn(name=swapKey, data=dataTable[titleSwapDict[swapKey]])
                 outTable.add_column(col2add)
         if ctr == 1: refData = outTable
         if ctr == 2: compData = outTable

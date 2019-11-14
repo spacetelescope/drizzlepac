@@ -9,8 +9,8 @@ ci_ap_cor_table_ap_20_2016.txt
 
 
 """
-import os, sys
-import pdb
+import os
+import sys
 
 from stsci.tools import logutil
 
@@ -20,16 +20,19 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 ci_table = None
 
-def read_ci_apcorr_file(debug=False, infile_name='ci_ap_cor_table_ap_20_2016.txt'):
+def read_ci_apcorr_file(ci_lookup_file_path, debug=False, infile_name='ci_ap_cor_table_ap_20_2016.txt'):
 
     """Read the table of CI values
-    
+
     Parameters
     ----------
-    debug : Boolean
+    ci_lookup_file_path : string
+        final path elements of the concentration index lookup file
+
+    debug : Boolean, optional
         print CI info to screen (True/False)? Default value = False
-        
-    infile_name : string
+
+    infile_name : string, optional
         Name of the CI file to use. If not specified, default value = ci_ap_cor_table_ap_20_2016.txt
 
     Returns
@@ -37,16 +40,12 @@ def read_ci_apcorr_file(debug=False, infile_name='ci_ap_cor_table_ap_20_2016.txt
     ci_table : dicitonary
         CI information
     """
-
-    # assume data file is in same directory with this module
-    if not os.path.exists(infile_name):
-        localdir = os.path.split(__file__)[0]
-        tfile = os.path.join(localdir, infile_name)
-        if not os.path.exists(tfile):
-            raise ValueError("Cannot find CI table %s" % infile_name)
-        infile_name = tfile
+    code_dir = os.path.abspath(__file__)
+    base_dir = os.path.dirname(os.path.dirname(code_dir))
+    pars_dir = os.path.join(base_dir, "pars/hap_pars", ci_lookup_file_path)
+    infile_name = os.path.join(pars_dir, infile_name)
+    log.info("CI lookup table: {}".format(infile_name))
     ci_lines = open(infile_name).readlines()
-
     ci_table={}
     for ci_line in ci_lines:
         if ci_line.startswith("#") == False:
@@ -70,7 +69,7 @@ def read_ci_apcorr_file(debug=False, infile_name='ci_ap_cor_table_ap_20_2016.txt
     return ci_table
 
 
-def get_ci_info(inst, detect, filt, debug=False,
+def get_ci_info(inst, detect, filt, ci_lookup_file_path, debug=False,
         eff_wave=-999, ci_lower=-999.0, ci_peak=-999.0, ci_upper=-999.0, ap_corr=-999.0):
 
     """Return dictionary with CI info for given detector/filter
@@ -85,6 +84,9 @@ def get_ci_info(inst, detect, filt, debug=False,
 
     filt : string
         Filter name
+
+    ci_lookup_file_path : string
+        final path elements of the concentration index lookup file
 
     debug : Boolean
         Print information to screen (True/False)? If not specified, default value = False
@@ -112,7 +114,7 @@ def get_ci_info(inst, detect, filt, debug=False,
 
     global ci_table
     if ci_table is None:
-        ci_table = read_ci_apcorr_file(debug=debug)
+        ci_table = read_ci_apcorr_file(ci_lookup_file_path, debug=debug)
 
     obs_config=("%s_%s_%s"%(inst,detect,filt)).upper()
     if debug:
@@ -169,7 +171,7 @@ def parse_file(drzfile):
     return (inst, detect, filt)
 
 
-def get_ci_from_file(drzfile, **kw):
+def get_ci_from_file(drzfile, ci_lookup_file_path, **kw):
 
     """Return dictionary with CI info for given filename
 
@@ -178,13 +180,16 @@ def get_ci_from_file(drzfile, **kw):
     drzfile : string
         name of drizzled fits file
 
+    ci_lookup_file_path : string
+        final path elements of the concentration index lookup file
+
     Returns
     -------
     a dictionary with CI info for given filename
     """
 
     inst, detect, filt = parse_file(drzfile)
-    return get_ci_info(inst, detect, filt, **kw)
+    return get_ci_info(inst, detect, filt, ci_lookup_file_path, **kw)
 
 if __name__=='__main__':
     inst, detect, filt = ('wfc3','uvis','f606w')

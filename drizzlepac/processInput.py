@@ -160,6 +160,13 @@ def setCommonInput(configObj, createOutwcs=True):
     configObj[step3name]['driz_sep_bits'] = interpret_bit_flags(
                                         configObj[step3name]['driz_sep_bits']
     )
+    step4name = util.getSectionName(configObj,4)
+    if len(files) > 5 and 'minmed' in configObj[step4name]['combine_type']:
+        msg = '“minmed” is highly recommended for three images, \n'+\
+        ' and is good for four to six images, \n'+\
+        ' but should be avoided for ten or more images.\n'
+        print(textutil.textbox(msg))
+
     step7name = util.getSectionName(configObj,7)
     configObj[step7name]['final_bits'] = interpret_bit_flags(
                                         configObj[step7name]['final_bits']
