@@ -33,7 +33,7 @@ __version_date__ = "(16-Oct-2019)"
 #
 # These lines (or something similar) will be needed in the HAP processing code
 #
-log = logutil.create_logger('runsinglehap', level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger('runsinglehap', stream=sys.stdout)
 # Any module which uses 'util.with_logging' should be added separately here...
 # logging.getLogger('astrodrizzle').addHandler(log)
 # logging.getLogger('alignimages').addHandler(log)
@@ -62,19 +62,18 @@ def perform(input_filename, **kwargs):
         a simple status value. '0' for a successful run and '1' for a failed
         run
     """
+    # set up log_level as an input to hapsequencer.run_hap_processing().
+    if kwargs['log_level'] == "critical":
+        kwargs['log_level'] = logutil.logging.CRITICAL
+    elif kwargs['log_level'] == "error":
+        kwargs['log_level'] = logutil.logging.ERROR
+    elif kwargs['log_level'] == "warning":
+        kwargs['log_level'] = logutil.logging.WARNING
+    elif kwargs['log_level'] == "INFO":
+        kwargs['log_level'] = logutil.logging.INFO
+    else:
+        kwargs['log_level'] = logutil.logging.DEBUG
 
-    # if kwargs['log_level'] == "critical":
-    #     kwargs['log_level'] = logutil.logging.CRITICAL
-    # elif kwargs['log_level'] == "error":
-    #     kwargs['log_level'] = logutil.logging.ERROR
-    # elif kwargs['log_level'] == "warning":
-    #     kwargs['log_level'] = logutil.logging.WARNING
-    # elif kwargs['log_level'] == "INFO":
-    #     kwargs['log_level'] = logutil.logging.INFO
-    # else:
-    #     kwargs['log_level'] = logutil.logging.DEBUG
-    # log = logutil.create_logger('runsinglehap', level=kwargs['log_level'], stream=sys.stdout)
-    log.info("Starting single-visit processing of {}".format(input_filename))
     return_value = hapsequencer.run_hap_processing(input_filename, **kwargs)
     return return_value
 
