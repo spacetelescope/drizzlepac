@@ -20,7 +20,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 ci_table = None
 
-def read_ci_apcorr_file(ci_lookup_file_path, debug=False, infile_name='ci_ap_cor_table_ap_20_2016.txt'):
+def read_ci_apcorr_file(ci_lookup_file_path, diagnostic_mode=False, infile_name='ci_ap_cor_table_ap_20_2016.txt'):
 
     """Read the table of CI values
 
@@ -29,7 +29,7 @@ def read_ci_apcorr_file(ci_lookup_file_path, debug=False, infile_name='ci_ap_cor
     ci_lookup_file_path : string
         final path elements of the concentration index lookup file
 
-    debug : Boolean, optional
+    diagnostic_mode : Boolean, optional
         print CI info to screen (True/False)? Default value = False
 
     infile_name : string, optional
@@ -63,13 +63,13 @@ def read_ci_apcorr_file(ci_lookup_file_path, debug=False, infile_name='ci_ap_cor
             except ValueError as e:
                 raise ValueError("Illegal line in %s (bad value):\n%s" % (infile_name, ci_line))
             ci_table[obs_config] = (eff_wave, ci_lower, ci_peak, ci_upper, ap_corr)
-    if debug:
+    if diagnostic_mode:
         for key in sorted(ci_table.keys()):
             log.info(key,ci_table[key])
     return ci_table
 
 
-def get_ci_info(inst, detect, filt, ci_lookup_file_path, debug=False,
+def get_ci_info(inst, detect, filt, ci_lookup_file_path, diagnostic_mode=False,
         eff_wave=-999, ci_lower=-999.0, ci_peak=-999.0, ci_upper=-999.0, ap_corr=-999.0):
 
     """Return dictionary with CI info for given detector/filter
@@ -88,7 +88,7 @@ def get_ci_info(inst, detect, filt, ci_lookup_file_path, debug=False,
     ci_lookup_file_path : string
         final path elements of the concentration index lookup file
 
-    debug : Boolean
+    diagnostic_mode : Boolean
         Print information to screen (True/False)? If not specified, default value = False
 
     eff_wave : float
@@ -114,13 +114,13 @@ def get_ci_info(inst, detect, filt, ci_lookup_file_path, debug=False,
 
     global ci_table
     if ci_table is None:
-        ci_table = read_ci_apcorr_file(ci_lookup_file_path, debug=debug)
+        ci_table = read_ci_apcorr_file(ci_lookup_file_path, diagnostic_mode=diagnostic_mode)
 
     obs_config=("%s_%s_%s"%(inst,detect,filt)).upper()
-    if debug:
+    if diagnostic_mode:
         log.info("obs_config: {}".format(obs_config))
     if obs_config in ci_table:
-        if debug:
+        if diagnostic_mode:
             log.info("CI values found.")
         eff_wave, ci_lower, ci_peak, ci_upper, ap_corr = ci_table[obs_config]
     else:
