@@ -57,7 +57,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky,
                              catalog_name, catalog_data, proc_type, drz_root_dir, hla_flag_msk, ci_lookup_file_path,
-                             output_custom_pars_file, diagnostic_mode=True):
+                             output_custom_pars_file, diagnostic_mode):
     """Simple calling subroutine that executes the other flagging subroutines.
 
     Parameters
