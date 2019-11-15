@@ -411,7 +411,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, diagnostic_mode = True):
+def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, diagnostic_mode = False):
     """
     Super-basic and profoundly inelegant interface to hla_flag_filter.py.
 
@@ -427,7 +427,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, diagnos
         drizzled filter product catalog object
 
     diagnostic_mode : Boolean, optional.
-        create intermediate diagnostic files? Default value is True.
+        create intermediate diagnostic files? Default value is False.
 
     Returns
     -------
