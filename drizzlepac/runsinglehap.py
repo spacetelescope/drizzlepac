@@ -16,7 +16,7 @@ Python USAGE:
 """
 # Import standard Python modules
 import argparse
-
+import pdb
 import sys
 import logging
 
@@ -63,6 +63,17 @@ def perform(input_filename, **kwargs):
         run
     """
 
+    # if kwargs['log_level'] == "critical":
+    #     kwargs['log_level'] = logutil.logging.CRITICAL
+    # elif kwargs['log_level'] == "error":
+    #     kwargs['log_level'] = logutil.logging.ERROR
+    # elif kwargs['log_level'] == "warning":
+    #     kwargs['log_level'] = logutil.logging.WARNING
+    # elif kwargs['log_level'] == "INFO":
+    #     kwargs['log_level'] = logutil.logging.INFO
+    # else:
+    #     kwargs['log_level'] = logutil.logging.DEBUG
+    # log = logutil.create_logger('runsinglehap', level=kwargs['log_level'], stream=sys.stdout)
     log.info("Starting single-visit processing of {}".format(input_filename))
     return_value = hapsequencer.run_hap_processing(input_filename, **kwargs)
     return return_value

@@ -9,6 +9,7 @@
 import datetime
 import glob
 import os
+import pdb
 import sys
 import traceback
 import logging
@@ -23,7 +24,7 @@ from stsci.tools import logutil
 from stwcs import wcsutil
 
 __taskname__ = 'hapsequencer'
-log_level = logging.INFO
+log_level = logging.ERROR
 log = logutil.create_logger(__name__, level=log_level, stream=sys.stdout)
 
 __version__ = 0.1
@@ -227,7 +228,7 @@ def create_drizzle_products(total_list):
 
 def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
                        input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
-                       log_level=logutil.logging.INFO):
+                       log_level=logutil.logging.WARNING):
     """
     Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
     controller which invokes the high-level functionality to process the single visit data.
@@ -274,7 +275,15 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
     # This routine needs to return an exit code, return_value, for use by the calling
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
-
+    log.critical("CRITICAL")
+    log.error("ERROR")
+    log.warning("WARNING")
+    log.info("INFO")
+    log.debug("DEBUG")
+    a;sldfkjasd;lfkm
+    print("\a")
+    pdb.set_trace()
+    sys.exit()
     # Define trailer file (log file) that will contain the log entries for all processing
     if isinstance(input_filename, str):  # input file is a poller file -- easy case
         logname = input_filename.replace('.out', '.log')
