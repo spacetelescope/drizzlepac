@@ -261,6 +261,9 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         Which algorithm should be used to generate the sourcelists? 'aperture' for aperture photometry;
         'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
 
+    log_level : string, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
 
     RETURNS
     -------
