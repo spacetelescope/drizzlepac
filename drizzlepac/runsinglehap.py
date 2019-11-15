@@ -53,12 +53,16 @@ def perform(input_filename, **kwargs):
     debug : Boolean
         display all tracebacks, and debug information?
 
+    log_level : string
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
     Updates
     -------
     return_value : list
         a simple status value. '0' for a successful run and '1' for a failed
         run
     """
+
     log.info("Starting single-visit processing of {}".format(input_filename))
     return_value = hapsequencer.run_hap_processing(input_filename, **kwargs)
     return return_value
@@ -76,10 +80,17 @@ def main():
                         'sourcelists greatly reduces overall run time. If the pickle file does not exist, the program '
                         'will generate new sourcelists and save them in a pickle file named after the first input '
                         'file.')
+    parser.add_argument('-l', '--log_level', required=False, default='info',
+                        choices=['critical', 'error', 'warning', 'info', 'debug'], help='The desired level of '
+                        'verboseness in the log statements displayed on the screen and written to the .log file. The '
+                        'level of verboseness from left to right, and includes all log statements with a log_level '
+                        'left of the specified level. Specifying "critical" will only record/display "critical" log '
+                        'statements, and specifying "error" will record/display both "error" and "critical" log '
+                        'statements, and so on.')
     user_args = parser.parse_args()
 
     print("Single-visit processing started for: {}".format(user_args.input_filename))
-    rv = perform(user_args.input_filename, debug=user_args.debug)
+    rv = perform(user_args.input_filename, debug=user_args.debug, log_level = user_args.log_level)
     print("Return Value: ", rv)
     return rv
 
