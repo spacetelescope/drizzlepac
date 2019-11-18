@@ -55,6 +55,7 @@ def read_ci_apcorr_file(ci_lookup_file_path, diagnostic_mode=False, infile_name=
             ci_line=ci_line.strip()
             parse_cil=ci_line.split()
             if len(parse_cil) < 6:
+                log.warning("Illegal line in {} (too few fields):\n{}".format(infile_name, ci_line))
                 raise ValueError("Illegal line in %s (too few fields):\n%s" % (infile_name, ci_line))
             obs_config = parse_cil[0].upper()
             try:
@@ -64,6 +65,7 @@ def read_ci_apcorr_file(ci_lookup_file_path, diagnostic_mode=False, infile_name=
                 ci_upper = float(parse_cil[4])
                 ap_corr = float(parse_cil[5])
             except ValueError as e:
+                log.warning("Illegal line in {} (bad value):\n{}".format(infile_name, ci_line))
                 raise ValueError("Illegal line in %s (bad value):\n%s" % (infile_name, ci_line))
             ci_table[obs_config] = (eff_wave, ci_lower, ci_peak, ci_upper, ap_corr)
     if diagnostic_mode:
@@ -155,6 +157,7 @@ def parse_file(drzfile):
     dir, fname = os.path.split(drzfile)
     f = fname.split('_')
     if len(f) < 6:
+        log.error("Cannot parse inst/detect/filt from {}".format(drzfile))
         raise ValueError("Cannot parse inst/detect/filt from %s" % drzfile)
     inst = f[3].upper()
     if inst == 'WFPC2':
