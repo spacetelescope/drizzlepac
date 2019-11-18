@@ -23,9 +23,6 @@ from stsci.tools import logutil
 from stwcs import wcsutil
 
 __taskname__ = 'hapsequencer'
-
-log_level = logging.INFO
-
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout, 
@@ -288,8 +285,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         logname = 'svm_process.log'
     print("Trailer filename: {}".format(logname))
     # Initialize total trailer filename as temp logname
-    logging.basicConfig(filename=logname, filemode='w', level=log_level)
-
+    logging.basicConfig(filename=logname)
     # start processing
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
