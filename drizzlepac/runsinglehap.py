@@ -70,16 +70,13 @@ def main():
     parser = argparse.ArgumentParser(description='Process images, produce drizzled images and sourcelists')
     parser.add_argument('input_filename', help='Name of the input csv file containing information about the files to '
                         'be processed')
-    parser.add_argument('-d', '--debug', required=False, action='store_true', help='If this option is turned on, the '
-                        'align_images.perform_align() will attempt to use saved sourcelists stored in a pickle file '
-                        'generated during a previous run. Using a saved sorucelist instead of generating new '
-                        'sourcelists greatly reduces overall run time. If the pickle file does not exist, the program '
-                        'will generate new sourcelists and save them in a pickle file named after the first input '
-                        'file.')
+    parser.add_argument('-d', '--diagnostic_mode', required=False, action='store_true', help='If this option is turned '
+                        'on, additional log messages will be displayed and additional files will be created during the '
+                        'course of the run.')
     user_args = parser.parse_args()
 
     print("Single-visit processing started for: {}".format(user_args.input_filename))
-    rv = perform(user_args.input_filename, debug=user_args.debug)
+    rv = perform(user_args.input_filename, diagnostic_mode=user_args.diagnostic_mode)
     print("Return Value: ", rv)
     return rv
 
