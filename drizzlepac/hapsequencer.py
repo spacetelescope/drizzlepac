@@ -277,7 +277,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
     # This routine needs to return an exit code, return_value, for use by the calling
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
-    log.level = log_level
+    log.setLevel(log_level)
     # Define trailer file (log file) that will contain the log entries for all processing
     if isinstance(input_filename, str):  # input file is a poller file -- easy case
         logname = input_filename.replace('.out', '.log')
