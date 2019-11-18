@@ -57,7 +57,8 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky,
                              catalog_name, catalog_data, proc_type, drz_root_dir, hla_flag_msk, ci_lookup_file_path,
-                             output_custom_pars_file, diagnostic_mode):
+                             output_custom_pars_file, log_level, diagnostic_mode):
+
     """Simple calling subroutine that executes the other flagging subroutines.
 
     Parameters
@@ -102,6 +103,9 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     output_custom_pars_file : string
         name of the output config file
 
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
     diagnostic_mode : bool
         write intermediate files?
 
@@ -110,6 +114,7 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     catalog_data : astropy.Table object
         drizzled filter product catalog data with updated flag values
     """
+    log.level = log_level
     # Relevant equivalent column titles for aperture and segment catalogs
     all_column_titles = {
         "aperture": {

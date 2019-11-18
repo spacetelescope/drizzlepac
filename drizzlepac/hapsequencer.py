@@ -33,7 +33,7 @@ __version_date__ = '07-Nov-2019'
 
 # --------------------------------------------------------------------------------------------------------------
 
-def create_catalog_products(total_list, diagnostic_mode=False, phot_mode='both'):
+def create_catalog_products(total_list, log_level, diagnostic_mode=False, phot_mode='both'):
     """This subroutine utilizes hlautils/catalog_utils module to produce photometric sourcelists for the specified
     total drizzle product and it's associated child filter products.
 
@@ -42,6 +42,9 @@ def create_catalog_products(total_list, diagnostic_mode=False, phot_mode='both')
     total_list : drizzlepac.hlautils.Product.TotalProduct
         total drizzle product that will be processed by catalog_utils. catalog_utils will also create photometric
         sourcelists for the child filter products of this total product.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
 
     diagnostic_mode : bool, optional
         generate ds9 region file counterparts to the photometric sourcelists? Default value is False.
@@ -102,7 +105,10 @@ def create_catalog_products(total_list, diagnostic_mode=False, phot_mode='both')
             filter_product_catalogs.measure(filter_name)
 
             log.info("Flagging sources in filter product catalog")
-            filter_product_catalogs = run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, diagnostic_mode)
+            filter_product_catalogs = run_sourcelist_flagging(filter_product_obj,
+                                                              filter_product_catalogs,
+                                                              log_level,
+                                                              diagnostic_mode)
 
             # Replace zero-value total-product catalog 'Flags' column values with meaningful filter-product catalog
             # 'Flags' column values
@@ -372,7 +378,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # Create source catalogs from newly defined products (HLA-204)
         log.info("{}: Create source catalog from newly defined product.\n".format(str(datetime.datetime.now())))
         if "total detection product 00" in obs_info_dict.keys():
-            catalog_list = create_catalog_products(total_list, diagnostic_mode=diagnostic_mode, phot_mode=phot_mode)
+            catalog_list = create_catalog_products(total_list, log_level, diagnostic_mode=diagnostic_mode, phot_mode=phot_mode)
             product_list += catalog_list
         else:
             log.warning("No total detection product has been produced.  The sourcelist generation step has been skipped.")
@@ -416,7 +422,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, diagnostic_mode = False):
+def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_level, diagnostic_mode = False):
     """
     Super-basic and profoundly inelegant interface to hla_flag_filter.py.
 
@@ -430,6 +436,9 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, diagnos
 
     filter_product_catalogs : drizzlepac.hlautils.catalog_utils.HAPCatalogs object
         drizzled filter product catalog object
+
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
 
     diagnostic_mode : Boolean, optional.
         create intermediate diagnostic files? Default value is False.
@@ -476,6 +485,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, diagnos
                                                  filter_product_obj.hla_flag_msk,
                                                  ci_lookup_file_path,
                                                  output_custom_pars_file,
+                                                 log_level,
                                                  diagnostic_mode)
 
     return filter_product_catalogs
