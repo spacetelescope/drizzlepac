@@ -351,13 +351,13 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
                     product_list += hdrlet_list
                     product_list += filt_exposures
 
+                    # Remove reference catalogs created for alignment of each filter product
+                    for catalog_name in align_table.reference_catalogs:
+                        log.info("Looking to clean up reference catalog: {}".format(catalog_name))
+                        if os.path.exists(catalog_name):
+                            os.remove(catalog_name)
                 else:
                     log.warning("Step to align the images has failed. No alignment table has been generated.")
-                # Remove reference catalogs created for alignment of each filter product
-                for catalog_name in align_table.reference_catalogs:
-                    log.info("Looking to clean up reference catalog: {}".format(catalog_name))
-                    if os.path.exists(catalog_name):
-                        os.remove(catalog_name)
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))

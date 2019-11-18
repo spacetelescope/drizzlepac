@@ -4,6 +4,7 @@
     drizzle products.
 """
 import sys
+import os
 import traceback
 import shutil
 
@@ -230,6 +231,11 @@ class FilterProduct(HAPProduct):
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
             log.info("No correction to absolute astrometric frame applied.\n")
             align_table = None
+
+            # If the align_table is None, it is necessary to clean-up reference catalogs 
+            # created for alignment of each filter product here.
+            if os.path.exists(refname):
+                os.remove(refname)
 
         # Return a table which contains data regarding the alignment, as well as the
         # list of the flt/flc exposures which were part of the alignment process
