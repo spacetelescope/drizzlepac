@@ -69,10 +69,12 @@ def perform(input_filename, **kwargs):
         kwargs['log_level'] = logutil.logging.ERROR
     elif kwargs['log_level'] == "warning":
         kwargs['log_level'] = logutil.logging.WARNING
-    elif kwargs['log_level'] == "INFO":
+    elif kwargs['log_level'] == "info":
         kwargs['log_level'] = logutil.logging.INFO
-    else:
+    elif kwargs['log_level'] == "debug":
         kwargs['log_level'] = logutil.logging.DEBUG
+    else:
+        kwargs['log_level'] = logutil.logging.INFO
 
     return_value = hapsequencer.run_hap_processing(input_filename, **kwargs)
     return return_value
