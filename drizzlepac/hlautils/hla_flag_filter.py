@@ -114,7 +114,9 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     catalog_data : astropy.Table object
         drizzled filter product catalog data with updated flag values
     """
-    log.level = log_level
+    # set logging level to user-specified level
+    log.setLevel(log_level)
+
     # Relevant equivalent column titles for aperture and segment catalogs
     all_column_titles = {
         "aperture": {
@@ -136,11 +138,12 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
     log.info("Determining concentration indices for sources.")
-    log.debug("ci_filter({} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type,
-                                                            param_dict, ci_lookup_file_path, output_custom_pars_file,
-                                                            column_titles, diagnostic_mode))
+    log.debug("ci_filter({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>",
+                                                                proc_type, param_dict, ci_lookup_file_path,
+                                                                output_custom_pars_file, column_titles, log_level,
+                                                                diagnostic_mode))
     catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
-                             output_custom_pars_file, column_titles, diagnostic_mode)
+                             output_custom_pars_file, column_titles, log_level, diagnostic_mode)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag saturated sources
@@ -175,7 +178,7 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
 
 def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
-              output_custom_pars_file, column_titles, diagnostic_mode):
+              output_custom_pars_file, column_titles, log_level, diagnostic_mode):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
     It also flags sources below the detection limit in mag_aper2 (flag=8).
@@ -206,6 +209,9 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     column_titles : dictionary
         Relevant column titles
 
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
     diagnostic_mode : bool
         write intermediate files?
 
@@ -220,8 +226,9 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     snr = float(param_dict['quality control']['ci filter'][proc_type]['bthresh'])
 
     # replace CI limits with values from table if possible
-    cidict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path,
-                                       ci_lower=ci_lower_limit, ci_upper=ci_upper_limit)  # TODO: add values for ACS/SBC
+    cidict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path, log_level,
+                                       diagnostic_mode = diagnostic_mode, ci_lower=ci_lower_limit,
+                                       ci_upper=ci_upper_limit)  # TODO: add values for ACS/SBC
     ci_lower_limit = cidict['ci_lower_limit']
     ci_upper_limit = cidict['ci_upper_limit']
 

@@ -65,7 +65,7 @@ def read_ci_apcorr_file(ci_lookup_file_path, diagnostic_mode=False, infile_name=
             ci_table[obs_config] = (eff_wave, ci_lower, ci_peak, ci_upper, ap_corr)
     if diagnostic_mode:
         for key in sorted(ci_table.keys()):
-            log.info(key,ci_table[key])
+            log.info("{} {}".format(key,ci_table[key]))
     return ci_table
 
 
@@ -171,7 +171,7 @@ def parse_file(drzfile):
     return (inst, detect, filt)
 
 
-def get_ci_from_file(drzfile, ci_lookup_file_path, **kw):
+def get_ci_from_file(drzfile, ci_lookup_file_path, log_level, **kw):
 
     """Return dictionary with CI info for given filename
 
@@ -183,10 +183,15 @@ def get_ci_from_file(drzfile, ci_lookup_file_path, **kw):
     ci_lookup_file_path : string
         final path elements of the concentration index lookup file
 
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
     Returns
     -------
     a dictionary with CI info for given filename
     """
+    # set logging level to user-specified level
+    log.setLevel(log_level)
 
     inst, detect, filt = parse_file(drzfile)
     return get_ci_info(inst, detect, filt, ci_lookup_file_path, **kw)
