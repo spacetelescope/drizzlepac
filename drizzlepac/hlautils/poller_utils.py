@@ -31,7 +31,11 @@ POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
                     'exptime', 'filters', 'detector', 'pathname']
 
 __taskname__ = 'poller_utils'
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout, 
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 def interpret_obset_input(results):
     """
