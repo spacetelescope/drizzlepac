@@ -10,13 +10,20 @@ import pdb
 import sys
 
 from astropy.time import Time
+from stsci.tools import logutil
 
-# TODO: Does this module require logging?
+__taskname__ = 'config_utils'
+
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+
 # ======================================================================================================================
 
 
 class HapConfig(object):
-    def __init__(self, prod_obj, use_defaults=True, input_custom_pars_file=None, output_custom_pars_file=None):
+    def __init__(self, prod_obj, log_level=logutil.logging.INFO, use_defaults=True, input_custom_pars_file=None, output_custom_pars_file=None):
         """
         A set of routines to generate appropriate set of configuration parameters.
 
@@ -40,6 +47,7 @@ class HapConfig(object):
         -------
         Nothing.
         """
+        log.setLevel(log_level)
         if input_custom_pars_file and input_custom_pars_file and input_custom_pars_file == output_custom_pars_file:
             sys.exit("ERROR: Input and output parameter files must have unique names!")
         self.label = "hap_config"
@@ -235,8 +243,8 @@ class HapConfig(object):
         if step_name in step_list:
             return self.pars[step_name].outpars
         else:
-            print("ERROR! '{}' is not a recognized step name.".format(step_name))
-            print("Recognized step names: \n{}".format(str(step_list)[2:-2].replace("', '", "\n")))
+            log.critical("'{}' is not a recognized step name.".format(step_name))
+            log.critical("Recognized step names: \n{}".format(str(step_list)[2:-2].replace("', '", "\n")))
             sys.exit(1)
 
 
@@ -268,11 +276,11 @@ class HapConfig(object):
 
             with open(self.output_custom_pars_file, 'w') as f:
                 json.dump(json_data, f, indent=4)
-            print("Updated custom pars file {}".format(self.output_custom_pars_file))
+            log.info("Updated custom pars file {}".format(self.output_custom_pars_file))
         else:
             with open(self.output_custom_pars_file, 'w') as f:
                 json.dump(new_json_data, f, indent=4)
-            print("Wrote custom pars file {}".format(self.output_custom_pars_file))
+            log.info("Wrote custom pars file {}".format(self.output_custom_pars_file))
 
 
 # ----------------------------------------------------------------------------------------------------------------------
