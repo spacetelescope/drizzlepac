@@ -37,7 +37,10 @@ MAX_SOURCES_PER_CHIP = 250  # Maximum number of sources per chip to include in s
 MAS_TO_ARCSEC = 1000.  # Conversion factor from milli-arcseconds to arcseconds
 
 
-log = logutil.create_logger('alignimages', level=logutil.logging.INFO, stream=sys.stdout)
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout, 
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 __version__ = 0.0
 __version_date__ = '21-Aug-2019'

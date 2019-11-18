@@ -33,7 +33,10 @@ __version_date__ = "(16-Oct-2019)"
 #
 # These lines (or something similar) will be needed in the HAP processing code
 #
-log = logutil.create_logger('runsinglehap', level=logutil.logging.INFO, stream=sys.stdout)
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout, 
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 # Any module which uses 'util.with_logging' should be added separately here...
 # logging.getLogger('astrodrizzle').addHandler(log)
 # logging.getLogger('alignimages').addHandler(log)
