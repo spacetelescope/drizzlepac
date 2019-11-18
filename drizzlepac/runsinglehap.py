@@ -66,20 +66,21 @@ def perform(input_filename, **kwargs):
         run
     """
     # set up log_level as an input to hapsequencer.run_hap_processing().
-    if kwargs['log_level'] == "critical":
-        kwargs['log_level'] = logutil.logging.CRITICAL
-    elif kwargs['log_level'] == "error":
-        kwargs['log_level'] = logutil.logging.ERROR
-    elif kwargs['log_level'] == "warning":
-        kwargs['log_level'] = logutil.logging.WARNING
-    elif kwargs['log_level'] == "info":
-        kwargs['log_level'] = logutil.logging.INFO
-    elif kwargs['log_level'] == "debug":
-        kwargs['log_level'] = logutil.logging.DEBUG
+    log_level_dict = {"critical": logutil.logging.CRITICAL,
+                      "error": logutil.logging.ERROR,
+                      "warning": logutil.logging.WARNING,
+                      "info": logutil.logging.INFO,
+                      "debug": logutil.logging.DEBUG}
+    kwargs['log_level'] = kwargs['log_level'].lower()
+    if kwargs['log_level'] in log_level_dict.keys():
+        kwargs['log_level'] = log_level_dict[kwargs['log_level']]
     else:
+        print("Log level set to default level 'log.info'.")
         kwargs['log_level'] = logutil.logging.INFO
 
+    # execute hapsequencer.run_hap_processing()
     return_value = hapsequencer.run_hap_processing(input_filename, **kwargs)
+
     return return_value
 
 # ----------------------------------------------------------------------------------------------------------------------
