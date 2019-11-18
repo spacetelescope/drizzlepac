@@ -24,7 +24,6 @@ from stsci.tools import logutil
 from stwcs import wcsutil
 
 __taskname__ = 'hapsequencer'
-log_level = logging.ERROR
 log = logutil.create_logger(__name__, stream=sys.stdout)
 
 __version__ = 0.1
@@ -284,7 +283,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         logname = 'svm_process.log'
     print("Trailer filename: {}".format(logname))
     # Initialize total trailer filename as temp logname
-    logging.basicConfig(filename=logname)
+    logging.basicConfig(filename=logname, filemode='w', level=log_level)
 
     # start processing
     starting_dt = datetime.datetime.now()
