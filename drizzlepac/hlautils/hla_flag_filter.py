@@ -132,6 +132,7 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
         }
     }
     if proc_type not in all_column_titles.keys():
+        log.error("Unknown proc_type '{}', must be 'aperture' or 'segment'".format(proc_type))
         raise ValueError("Unknown proc_type '{}', must be 'aperture' or 'segment'".format(proc_type))
     column_titles = all_column_titles[proc_type]
     # -----------------------
@@ -654,6 +655,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
     ap2 = param_dict['catalog generation']['aperture_2']
     if proc_type not in ('segment', 'aperture'):
+        log.error("Unknown proc_type '{}', must be 'aperture' or 'segment'".format(proc_type))
         raise ValueError("Unknown catalog type '%s'" % proc_type)
 
     # ----------------------------------
@@ -1451,8 +1453,10 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
     Varies; Depending on inputs, either just 'p2', or 'p1' and 'p2'. p1 and p2 are lists of matched indices
     """
     if not (isinstance(cat1, numpy.ndarray) and len(cat1.shape) == 2 and cat1.shape[1] == 2):
+        log.error("cat1 must be a [N, 2] array")
         raise ValueError("cat1 must be a [N, 2] array")
     if not (isinstance(cat2, numpy.ndarray) and len(cat2.shape) == 2 and cat2.shape[1] == 2):
+        log.error("cat2 must be a [N, 2] array")
         raise ValueError("cat2 must be a [N, 2] array")
 
     x1 = cat1[:, 0]
