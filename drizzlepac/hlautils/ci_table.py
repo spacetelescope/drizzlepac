@@ -16,7 +16,10 @@ from stsci.tools import logutil
 
 __taskname__ = 'ci_table'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 ci_table = None
 
@@ -65,7 +68,7 @@ def read_ci_apcorr_file(ci_lookup_file_path, diagnostic_mode=False, infile_name=
             ci_table[obs_config] = (eff_wave, ci_lower, ci_peak, ci_upper, ap_corr)
     if diagnostic_mode:
         for key in sorted(ci_table.keys()):
-            log.info("{} {}".format(key,ci_table[key]))
+            log.debug("{} {}".format(key,ci_table[key]))
     return ci_table
 
 
