@@ -478,8 +478,8 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
         if kernel is not None:
             kernel = np.clip(kernel, 0, None)  # insure background subtracted kernel has no negative pixels
             if kernel.sum() > 0.0:
-                kernel /= kernel.sum()  # Normalize the new kernel to a total flux of 1.0
                 kernel_fwhm = find_fwhm(kernel, fwhm)
+                kernel /= kernel.sum()  # Normalize the new kernel to a total flux of 1.0
                 fwhm_attempts += 1
                 if kernel_fwhm is None:
                     kernel = None
@@ -523,6 +523,11 @@ def find_fwhm(psf, default_fwhm):
 
     if len(phot_results['flux_fit']) == 0:
         return None
+    # Insure no fit flux is np.nan -- clip to 0
+    for row in phot_results:
+        if np.isnan(row['flux_fit']):
+            row['flux_fit'] = 0.0
+
     psf_row = np.where(phot_results['flux_fit'] == phot_results['flux_fit'].max())[0][0]
     sigma_fit = phot_results['sigma_fit'][psf_row]
     fwhm = gaussian_sigma_to_fwhm * sigma_fit
@@ -590,6 +595,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     if segm is None or segm.nlabels == 0:
         log.info("No detected sources!")
         return None, None
+    log.info("Identified {} possible source segments.".format(segm.nlabels))
+    log.info("   based on threshold of {}".format(segment_threshold.mean()))
 
     if deblend:
         segm = deblend_sources(imgarr, segm, npixels=5,
