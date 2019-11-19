@@ -1691,8 +1691,14 @@ def display_catalog_bit_populations(flag_data):
     Nothing.
     """
     bit_list = [0, 1, 2, 4, 8, 16, 32, 64, 128]
-    flag_meanings = ['Point Source', 'Extended Source', 'Single-Pixel Saturation', 'Multi-Pixel Saturation',
-                     'Faint Magnitude Limit', 'Hot Pixel', 'Swarm Detection', 'Edge and Chip Gap',
+    flag_meanings = ['Point Source',
+                     'Extended Source',
+                     'Single-Pixel Saturation',
+                     'Multi-Pixel Saturation',
+                     'Faint Magnitude Limit',
+                     'Hot Pixel',
+                     'Swarm Detection',
+                     'Edge and Chip Gap',
                      'Bleeding and Cosmic Rays']
     flag_counts = numpy.zeros(9, dtype=int)
     n_sources = len(flag_data)
@@ -1701,9 +1707,9 @@ def display_catalog_bit_populations(flag_data):
     max_length = 5
     for bitval in flag_counts:
         max_length = max([max_length, len(str(bitval))])
-    print("{}".format("-"*60))
-    print("{}FLAG BREAKDOWN BY BIT".format(" "*20))
-    print("Bit   Meaning{}Count Percentage".format(" "*20))
+    log.info("{}".format("-"*60))
+    log.info("{}FLAG BIT VALUE POPULATION SUMMARY".format(" "*13))
+    log.info("Bit   Meaning{}Count Percentage".format(" "*20))
     fill_char = " "
     for ctr in range(0, len(bit_list)):
         bit_val = bit_list[ctr]
@@ -1717,9 +1723,10 @@ def display_catalog_bit_populations(flag_data):
             padding4 = 4
         else:
             padding4 = 5
-        print("{}{}{}{}{}{}{}{:.3f}%".format(bit_val, fill_char*padding1, flag_meanings[ctr], padding2*fill_char,
+        log.info("{}{}{}{}{}{}{}{:.3f}%".format(bit_val, fill_char*padding1, flag_meanings[ctr], padding2*fill_char,
                                              fill_char*padding3, flag_counts[ctr], fill_char*padding4, pct_val))
-    print("\nNOTE: As the flag value for a given source can be composed ")
-    print("of multiple bits, the above percentage values need not add")
-    print("up to 100%.")
-    print("{}".format("-" * 60))
+    log.info("{}".format(" -- " * 15))
+    log.info("NOTE: As the flag value for a given source can be composed ")
+    log.info("of multiple bits, the above percentage values need not add")
+    log.info("up to 100%.")
+    log.info("{}\n".format("-" * 60))
