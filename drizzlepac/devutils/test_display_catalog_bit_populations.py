@@ -66,7 +66,7 @@ def display_catalog_bit_populations(flag_data):
     for bitval in flag_counts:
         max_length = max([max_length, len(str(bitval))])
     print("{}".format("-"*60))
-    print("{}FLAG BREAKDOWN BY BIT".format(" "*20))
+    print("{}FLAG BIT VALUE POPULATION SUMMARY".format(" "*13))
     print("Bit   Meaning{}Count Percentage".format(" "*20))
     fill_char = " "
     for ctr in range(0, len(bit_list)):
@@ -83,11 +83,11 @@ def display_catalog_bit_populations(flag_data):
             padding4 = 5
         print("{}{}{}{}{}{}{}{:.3f}%".format(bit_val, fill_char*padding1, flag_meanings[ctr], padding2*fill_char,
                                              fill_char*padding3, flag_counts[ctr], fill_char*padding4, pct_val))
-    print("\nNOTE: As the flag value for a given source can be composed ")
+    print("{}".format(" -- " * 15))
+    print("NOTE: As the flag value for a given source can be composed ")
     print("of multiple bits, the above percentage values need not add")
     print("up to 100%.")
-    print("{}".format("-" * 60))
-
+    print("{}\n".format("-" * 60))
 
 # ======================================================================================================================
 if __name__ == "__main__":
