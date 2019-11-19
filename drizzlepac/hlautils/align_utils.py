@@ -32,7 +32,7 @@ import tweakwcs
 __taskname__ = 'align_utils'
 
 # Default background determination parameter values
-BKG_BOX_SIZE = 50
+BKG_BOX_SIZE = 27
 BKG_FILTER_SIZE = 3
 CATALOG_TYPES = ['point', 'segment']
 MIN_CATALOG_THRESHOLD = 3
@@ -143,9 +143,10 @@ class AlignmentTable:
                                         format="ascii.fast_commented_header")
                         log.info("Wrote region file {}\n".format(regfilename))
 
-    def reset_group_id(self):
+    def reset_group_id(self, num_ref):
         for image in self.imglist:
             image.meta["group_id"] = self.group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])]
+            image.meta['num_ref_catalog'] = num_ref
 
     def configure_fit(self):
         # Convert input images to tweakwcs-compatible FITSWCS objects and

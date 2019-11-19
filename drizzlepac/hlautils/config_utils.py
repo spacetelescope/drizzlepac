@@ -76,8 +76,6 @@ class HapConfig(object):
             self.input_cfg_json_data = None
 
         # generate parameter sets for each pipeline step
-        step_name_list = [AlignmentPars, AstrodrizzlePars, CatalogGenerationPars, QualityControlPars]
-        step_title_list = ['alignment', 'astrodrizzle', 'catalog generation', 'quality control']
         # step_name_list = [AstrodrizzlePars, CatalogGenerationPars, QualityControlPars]
         # step_title_list = ['astrodrizzle', 'catalog generation', 'quality control']
         for step_title, step_name in zip(step_title_list, step_name_list):
@@ -97,7 +95,6 @@ class HapConfig(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _determine_conditions(self, prod_obj):
-
         """Determine observing condition or conditions present for a given step
 
         Parameters
@@ -199,15 +196,8 @@ class HapConfig(object):
 
     def _get_cfg_index(self):
         """return the contents of the appropriate index cfg file."""
-        code_dir = os.path.abspath(__file__)
-        base_dir = os.path.dirname(os.path.dirname(code_dir))
-        self.pars_dir = os.path.join(base_dir, "pars/hap_pars")
-        cfg_index_fileanme = self.inst_det + "_index.json"
-        cfg_index_filename = os.path.join(self.pars_dir, cfg_index_fileanme)
-
-        with open(cfg_index_filename) as jsonFile:
-            json_string = jsonFile.read()
-            self.full_cfg_index = json.loads(json_string)
+        self.full_cfg_index, self.pars_dir = read_index(self.instrument, 
+                                                        self.detector)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def as_single_giant_dict(self):
@@ -252,7 +242,6 @@ class HapConfig(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def write_pars(self, prod_obj):
-
         """This method writes the current parameter set to the specified file.
 
         Parameters
@@ -331,7 +320,6 @@ class Par():
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _combine_conditions(self):
-
         """Combine parameters from multiple conditions into a single parameter set.
         """
         self.outpars = {}
@@ -342,7 +330,6 @@ class Par():
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _dict_merge(self, dct, merge_dct, add_keys=True):
-
         """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
         updating only top-level keys, dict_merge recurses down into dicts nested
         to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
@@ -513,3 +500,31 @@ class QualityControlPars(Par):
             self._read_custom_pars()
         else:
             self._combine_conditions()
+
+# ------------------------------------------------------------------------------
+
+def read_index(instrument, detector):
+    # Create instrument/detector observing mode
+    inst_det = "{}_{}".format(instrument, detector).lower()
+
+    # Determine directory containing hap_pars index files
+    code_dir = os.path.abspath(__file__)
+    base_dir = os.path.dirname(os.path.dirname(code_dir))
+    pars_dir = os.path.join(base_dir, "pars", "hap_pars")
+
+    # Define name of index appropriate for observing mode
+    cfg_index_filename = "{}_index.json".format(inst_det)
+    cfg_index_filename = os.path.join(pars_dir, cfg_index_filename)
+
+    # Read JSON index file
+    with open(cfg_index_filename) as jsonFile:
+        json_string = jsonFile.read()
+        full_cfg_index = json.loads(json_string)
+
+    return full_cfg_index, pars_dir
+
+# ------------------------------------------------------------------------------
+
+step_name_list = [AlignmentPars, AstrodrizzlePars, CatalogGenerationPars, QualityControlPars]
+step_title_list = ['alignment', 'astrodrizzle', 'catalog generation', 'quality control']
+

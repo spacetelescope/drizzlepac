@@ -437,10 +437,6 @@ def run_align(input_list, archive=False, clobber=False, debug=False, update_hdr_
         for group_id, image in enumerate(process_list):
             img = amutils.build_wcscat(image, group_id,
                                        extracted_sources[image]['catalog_table'])
-            # add the name of the image to the imglist object
-            for im in img:
-            #    im.meta['name'] = image
-                log.info('im.meta[name] = {}'.format(im.meta['name']))
             imglist.extend(img)
         # store mapping of group_id to filename/chip
         group_id_dict = {}

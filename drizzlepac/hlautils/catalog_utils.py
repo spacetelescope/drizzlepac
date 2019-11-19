@@ -138,7 +138,8 @@ class CatalogImage:
                 bkg = Background2D(self.data, (box_size, box_size), filter_size=(win_size, win_size),
                                    bkg_estimator=bkg_estimator(),
                                    bkgrms_estimator=rms_estimator(),
-                                   exclude_percentile=percentile, edge_method="pad")
+                                   exclude_percentile=percentile, edge_method="pad",
+                                   mask=(self.data == 0))
 
             except Exception:
                 bkg = None
@@ -165,6 +166,9 @@ class CatalogImage:
             bkg_rms_ra = np.full_like(self.data, sigcl_std)
 
         log.info("Computation of image background complete")
+        log.info("Found: ")
+        log.info("    Median background: {}".format(bkg_median))
+        log.info("    Median RMS background: {}".format(bkg_rms_median))
         log.info("")
 
         self.bkg = bkg
@@ -363,7 +367,7 @@ class HAPCatalogBase:
         self.aper_radius_arcsec = [self.param_dict['aperture_1'], self.param_dict['aperture_2']]
         self.aper_radius_list_pixels = []
         for aper_radius in self.aper_radius_arcsec:
-            self.aper_radius_list_pixels.append(aper_radius/self.image.imgwcs.pscale)
+            self.aper_radius_list_pixels.append(aper_radius / self.image.imgwcs.pscale)
 
         # Photometric information
         if not tp_sources:
@@ -397,6 +401,9 @@ class HAPCatalogBase:
         pass
 
     def write_catalog(self, **pars):
+        pass
+
+    def combine_tables(self, subset_dict):
         pass
 
     def annotate_table(self, data_table, param_dict_qc, product="tdp"):
@@ -490,11 +497,8 @@ class HAPCatalogBase:
 
         return (data_table)
 
-    def combine_tables(self, subset_dict):
-        pass
 
-# ----------------------------------------------------------------------------------------------------------------------
-
+# --------------------------------------------------------------------------------------------------------
 
 class HAPPointCatalog(HAPCatalogBase):
     """Generate photometric sourcelist(s) for specified image(s) using aperture photometry of point sources.
@@ -541,7 +545,7 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("{}: {}".format("self.image.bkg_rms_median", self.image.bkg_rms_median))
             log.info("DERIVED PARAMETERS")
             log.info("{}: {}".format("source_fwhm", source_fwhm))
-            log.info("{}: {}".format("threshold", self.param_dict['nsigma']*self.image.bkg_rms_median))
+            log.info("{}: {}".format("threshold", self.param_dict['nsigma'] * self.image.bkg_rms_median))
             log.info("")
             log.info("{}".format("=" * 80))
 
@@ -550,7 +554,8 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                       self.image.bkg_rms_median))
             log.info("{}".format("=" * 80))
 
-            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma']*self.image.bkg_rms_median)
+            daofind = DAOStarFinder(fwhm=source_fwhm,
+                                    threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
 
             # create mask to reject any sources located less than 10 pixels from a image/chip edge
             wht_image = self.image.data.copy()
@@ -581,7 +586,7 @@ class HAPPointCatalog(HAPCatalogBase):
         # load in coords of sources identified in total product
         try:
             positions = (self.sources['xcentroid'], self.sources['ycentroid'])
-        except:
+        except Exception:
             positions = (self.sources['X-Center'], self.sources['Y-Center'])
 
         pos_xy = np.vstack(positions).T
@@ -703,7 +708,7 @@ class HAPPointCatalog(HAPCatalogBase):
             else:  # Bail out if anything else is encountered.
                 log.info("Error: unrecognized catalog format. Skipping region file generation.")
                 return()
-            reg_filename = self.sourcelist_filename.replace("."+self.catalog_suffix.split(".")[1],
+            reg_filename = self.sourcelist_filename.replace("." + self.catalog_suffix.split(".")[1],
                                                             self.catalog_region_suffix)
             out_table.write(reg_filename, format="ascii")
             log.info("Wrote region file '{}' containing {} sources".format(reg_filename, len(out_table)))

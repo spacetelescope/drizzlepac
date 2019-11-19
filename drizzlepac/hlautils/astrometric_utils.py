@@ -459,6 +459,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     fwhm_attempts = 0
     # Identify position of brightest, non-saturated peak (in numpy index order)
     for peak_ctr in range(len(peaks)):
+        peak_ctr += sat_index
         kernel_pos = [peaks['y_peak'][peak_ctr], peaks['x_peak'][peak_ctr]]
 
         kernel = imgarr[kernel_pos[0] - source_box:kernel_pos[0] + source_box + 1,
@@ -525,7 +526,7 @@ def find_fwhm(psf, default_fwhm):
     psf_row = np.where(phot_results['flux_fit'] == phot_results['flux_fit'].max())[0][0]
     sigma_fit = phot_results['sigma_fit'][psf_row]
     fwhm = gaussian_sigma_to_fwhm * sigma_fit
-    log.info("Found FWHM: {}".format(fwhm))
+    log.info("Found FWHM: {:0.4f}".format(fwhm))
 
     return fwhm
 
@@ -616,7 +617,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     if centering_mode == 'starfind':
         src_table = None
         # daofind = IRAFStarFinder(fwhm=fwhm, threshold=5.*bkg.background_rms_median)
-        log.info("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, dao_threshold))
+        log.info("Setting up DAOStarFinder with: \n    fwhm={:0.4f}  threshold={:0.4f}".format(fwhm, dao_threshold))
         daofind = DAOStarFinder(fwhm=fwhm, threshold=dao_threshold)
 
         # Identify nbrightest/largest sources
@@ -811,12 +812,12 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
     outroot = None
     img_inst = image[0].header['instrume']
     img_det = image[0].header['detector']
+    rootname = image[0].header['rootname']
 
     for chip in range(numSci):
         chip += 1
         # find sources in image
         if output:
-            rootname = image[0].header['rootname']
             outroot = '{}_sci{}_src'.format(rootname, chip)
         try:
             sci_ext = 0 if "{}/{}".format(img_inst, img_det) == "WFC3/IR" else ('sci', chip)
@@ -861,20 +862,22 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
             errarr = image['err', chip].data
             whtarr = errarr.max() / errarr
             whtarr[dqmask] = 0
-
+            
         bkg_ra, bkg_median, bkg_rms_ra, bkg_rms_median = compute_2d_background(imgarr, box_size, win_size)
-
+        log.info("BKG median: {:0.4f}  BKG RMS median: {:0.4f}".format(bkg_median, bkg_rms_median))
+        log.info("box_size: {}".format(box_size))
+        log.info("win_size: {}".format(win_size))
         threshold = nsigma * bkg_rms_ra
+        
         dao_threshold = nsigma * bkg_rms_median
-
-        # kernel = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
-        # kernel.normalize()
         kernel, kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr,
                                                 threshold=threshold,
                                                 fwhm=def_fwhm,
                                                 source_box=source_box,
                                                 isolation_size=isolation_size,
                                                 saturation_limit=saturation_limit)
+        
+
 
         # seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, outroot=outroot, fwhm=fwhm, **detector_pars)
         seg_tab, segmap = extract_sources(imgarr - bkg_ra, dqmask=dqmask,
@@ -1261,7 +1264,7 @@ def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
                                                   histplot=False, figure_id=1,
                                                   plotname=None, interactive=False)
     hist2d_offset = (xp, yp)
-    log.info('best offset {} based on {} cross-matches'.format(hist2d_offset, nmatches))
+    log.info('best offset {:0.4f},{:0.4f} based on {} cross-matches'.format(xp, yp, nmatches))
 
     return hist2d_offset, seg_xy, ref_xy
 
