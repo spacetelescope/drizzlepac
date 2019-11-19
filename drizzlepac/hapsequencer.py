@@ -23,9 +23,6 @@ from stsci.tools import logutil
 from stwcs import wcsutil
 
 __taskname__ = 'hapsequencer'
-
-log_level = logging.INFO
-
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout, 
@@ -266,6 +263,10 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         Which algorithm should be used to generate the sourcelists? 'aperture' for aperture photometry;
         'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
 
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
+
 
     RETURNS
     -------
@@ -276,7 +277,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
     # This routine needs to return an exit code, return_value, for use by the calling
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
-
+    log.setLevel(log_level)
     # Define trailer file (log file) that will contain the log entries for all processing
     if isinstance(input_filename, str):  # input file is a poller file -- easy case
         logname = input_filename.replace('.out', '.log')
@@ -285,7 +286,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
     print("Trailer filename: {}".format(logname))
     # Initialize total trailer filename as temp logname
     logging.basicConfig(filename=logname)
-
     # start processing
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
