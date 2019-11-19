@@ -23,15 +23,20 @@ from stsci.tools import logutil
 from stwcs import wcsutil
 
 __taskname__ = 'hapsequencer'
+
 log_level = logging.INFO
-log = logutil.create_logger(__name__, level=log_level, stream=sys.stdout)
+
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout, 
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 __version__ = 0.1
 __version_date__ = '07-Nov-2019'
 
 # --------------------------------------------------------------------------------------------------------------
 
-def create_catalog_products(total_list, debug=False, phot_mode='both'):
+def create_catalog_products(total_list, diagnostic_mode=False, phot_mode='both'):
     """This subroutine utilizes hlautils/catalog_utils module to produce photometric sourcelists for the specified
     total drizzle product and it's associated child filter products.
 
@@ -41,7 +46,7 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
         total drizzle product that will be processed by catalog_utils. catalog_utils will also create photometric
         sourcelists for the child filter products of this total product.
 
-    debug : bool, optional
+    diagnostic_mode : bool, optional
         generate ds9 region file counterparts to the photometric sourcelists? Default value is False.
 
     phot_mode : str, optional
@@ -61,7 +66,7 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
                                              total_product_obj.configobj_pars.get_pars('catalog generation'),
                                              total_product_obj.configobj_pars.get_pars('quality control'),
                                              types=phot_mode,
-                                             debug=debug)
+                                             diagnostic_mode=diagnostic_mode)
 
         # Generate an "n" exposure mask which has the image footprint set to the number
         # of exposures which constitute each pixel.
@@ -90,7 +95,7 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
                                                   total_product_obj.configobj_pars.get_pars('catalog generation'),
                                                   total_product_obj.configobj_pars.get_pars('quality control'),
                                                   types=phot_mode,
-                                                  debug=debug,
+                                                  diagnostic_mode=diagnostic_mode,
                                                   tp_sources=sources_dict)
 
             # Perform photometry
@@ -100,7 +105,7 @@ def create_catalog_products(total_list, debug=False, phot_mode='both'):
             filter_product_catalogs.measure(filter_name)
 
             log.info("Flagging sources in filter product catalog")
-            filter_product_catalogs = run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug)
+            filter_product_catalogs = run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, diagnostic_mode)
 
             # Replace zero-value total-product catalog 'Flags' column values with meaningful filter-product catalog
             # 'Flags' column values
@@ -225,7 +230,7 @@ def create_drizzle_products(total_list):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
+def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_configs=True,
                        input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
                        log_level=logutil.logging.INFO):
     """
@@ -238,7 +243,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         The 'poller file' where each line contains information regarding an exposures taken
         during a single visit.
 
-    debug : bool, optional
+    diagnostic_mode : bool, optional
         Allows printing of additional diagnostic information to the log.  Also, can turn on
         creation and use of pickled information.
 
@@ -329,7 +334,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         log.info("\n{}: Align the images on a filter-by-filter basis.".format(str(datetime.datetime.now())))
         for tot_obj in total_list:
             for filt_obj in tot_obj.fdp_list:
-                align_table, filt_exposures = filt_obj.align_to_gaia(output=debug)
+                align_table, filt_exposures = filt_obj.align_to_gaia(output=diagnostic_mode)
 
                 # Report results and track the output files
                 if align_table:
@@ -351,13 +356,13 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
                     product_list += hdrlet_list
                     product_list += filt_exposures
 
+                    # Remove reference catalogs created for alignment of each filter product
+                    for catalog_name in align_table.reference_catalogs:
+                        log.info("Looking to clean up reference catalog: {}".format(catalog_name))
+                        if os.path.exists(catalog_name):
+                            os.remove(catalog_name)
                 else:
                     log.warning("Step to align the images has failed. No alignment table has been generated.")
-                # Remove reference catalogs created for alignment of each filter product
-                for catalog_name in align_table.reference_catalogs:
-                    log.info("Looking to clean up reference catalog: {}".format(catalog_name))
-                    if os.path.exists(catalog_name):
-                        os.remove(catalog_name)
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
@@ -367,7 +372,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
         # Create source catalogs from newly defined products (HLA-204)
         log.info("{}: Create source catalog from newly defined product.\n".format(str(datetime.datetime.now())))
         if "total detection product 00" in obs_info_dict.keys():
-            catalog_list = create_catalog_products(total_list, debug=debug, phot_mode=phot_mode)
+            catalog_list = create_catalog_products(total_list, diagnostic_mode=diagnostic_mode, phot_mode=phot_mode)
             product_list += catalog_list
         else:
             log.warning("No total detection product has been produced.  The sourcelist generation step has been skipped.")
@@ -411,7 +416,7 @@ def run_hap_processing(input_filename, debug=False, use_defaults_configs=True,
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug = True):
+def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, diagnostic_mode = False):
     """
     Super-basic and profoundly inelegant interface to hla_flag_filter.py.
 
@@ -426,8 +431,8 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
     filter_product_catalogs : drizzlepac.hlautils.catalog_utils.HAPCatalogs object
         drizzled filter product catalog object
 
-    debug : Boolean, optional.
-        create intermediate diagnostic files? Default value is True.
+    diagnostic_mode : Boolean, optional.
+        create intermediate diagnostic files? Default value is False.
 
     Returns
     -------
@@ -471,6 +476,6 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, debug =
                                                  filter_product_obj.hla_flag_msk,
                                                  ci_lookup_file_path,
                                                  output_custom_pars_file,
-                                                 debug)
+                                                 diagnostic_mode)
 
     return filter_product_catalogs
