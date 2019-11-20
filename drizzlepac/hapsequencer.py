@@ -227,6 +227,7 @@ def create_drizzle_products(total_list):
         log.critical("Trouble updating drizzle products for CAOM.")
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+        logging.exception("message")
     # Remove rules files copied to the current working directory
     for rules_filename in glob.glob("*_header_hla.rules"):
         log.info("Removed rules file {}".format(rules_filename))
@@ -412,6 +413,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         print("\a\a\a")
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+        logging.exception("message")
+
     finally:
         end_dt = datetime.datetime.now()
         log.info('Processing completed at {}'.format(str(end_dt)))

@@ -6,7 +6,6 @@ specified observation conditions and instrument/detector used in the observation
 import collections
 import json
 import os
-import pdb
 import sys
 
 from astropy.time import Time
