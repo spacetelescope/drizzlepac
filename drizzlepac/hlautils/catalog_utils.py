@@ -228,6 +228,9 @@ class HAPCatalogs:
     """
 
     def __init__(self, fitsfile, param_dict, param_dict_qc, log_level, diagnostic_mode=False, types=None, tp_sources=None):
+        # set logging level to user-specified level
+        log.setLevel(log_level)
+
         self.label = "HAPCatalogs"
         self.description = "A class used to generate photometric sourcelists using aperture photometry"
 
@@ -236,7 +239,6 @@ class HAPCatalogs:
         self.param_dict_qc = param_dict_qc
         self.diagnostic_mode = diagnostic_mode
         self.tp_sources = tp_sources  # <---total product catalogs.catalogs[*].sources
-        log.setLevel(log_level)
         # Determine what types of catalogs have been requested
         if not isinstance(types, list) and types in [None, 'both']:
             types = CATALOG_TYPES
