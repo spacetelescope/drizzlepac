@@ -86,18 +86,17 @@ def interpret_obset_input(results):
                                                      "files": ['ib4606cmq_flt.fits', 'ib4606crq_flt.fits']}
 
     """
-    log.info("Interpret the poller file for the observation set.")
+    log.debug("Interpret the poller file for the observation set.")
     obset_table = build_poller_table(results)
-    print(obset_table['obset_id'])
     # Add INSTRUMENT column
     instr = INSTRUMENT_DICT[obset_table['filename'][0][0]]
     # convert input to an Astropy Table for parsing
     obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
     # parse Table into a tree-like dict
-    log.info("Build the observation set tree.")
+    log.debug("Build the observation set tree.")
     obset_tree = build_obset_tree(obset_table)
     # Now create the output product objects
-    log.info("Parse the observation set tree and create the exposure, filter, and total detection objects.")
+    log.debug("Parse the observation set tree and create the exposure, filter, and total detection objects.")
     obset_dict, tdp_list = parse_obset_tree(obset_tree)
 
     # This little bit of code adds an attribute to single exposure objects that is True if a given filter only contains
@@ -242,7 +241,7 @@ def parse_obset_tree(det_tree):
                 sep_indx += 1
 
             # Append filter object to the list of filter objects for this specific total product object
-            log.info("Attach the filter object {} to its associated total detection product object {}/{}.".format(filt_obj.filters, tdp_obj.instrument, tdp_obj.detector))
+            log.debug("Attach the filter object {} to its associated total detection product object {}/{}.".format(filt_obj.filters, tdp_obj.instrument, tdp_obj.detector))
             tdp_obj.add_product(filt_obj)
 
         # Add the total product object to the list of TotalProducts
