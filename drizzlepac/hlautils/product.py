@@ -17,7 +17,10 @@ from . import align_utils
 from . import astrometric_utils as amutils
 from . import cell_utils
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
@@ -84,7 +87,7 @@ class TotalProduct(HAPProduct):
         self.meta_wcs = None
         self.mask = None
 
-        log.info("Total detection object {}/{} created.".format(self.instrument, self.detector))
+        log.debug("Total detection object {}/{} created.".format(self.instrument, self.detector))
 
     def add_member(self, edp):
         """ Add an ExposureProduct object to the list - composition.
@@ -104,9 +107,9 @@ class TotalProduct(HAPProduct):
 
         """
         exposure_filenames = [element.full_filename for element in self.edp_list]
-        log.info("\n\nRun make_mosaic_wcs to create a common WCS.")
-        log.info("The following images will be used: ")
-        log.info("{}\n".format(exposure_filenames))
+        log.debug("\n\nRun make_mosaic_wcs to create a common WCS.")
+        log.debug("The following images will be used: ")
+        log.debug("{}\n".format(exposure_filenames))
 
         # Set the rotation to 0.0 to force North as up
         if exposure_filenames:
@@ -126,7 +129,7 @@ class TotalProduct(HAPProduct):
         # ...and set parameters which are computed on-the-fly
         drizzle_pars["final_refimage"] = meta_wcs
         drizzle_pars["runfile"] = self.trl_logname
-        log.info("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
+        log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
                  "have been updated for the drizzle step of the total drizzle product."
                  .format(meta_wcs, self.trl_logname))
 
@@ -136,7 +139,7 @@ class TotalProduct(HAPProduct):
                                   **drizzle_pars)
 
         # Rename Astrodrizzle log file as a trailer file
-        log.info("Total combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
+        log.debug("Total combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         shutil.move(self.trl_logname, self.trl_filename)
 
     def generate_footprint_mask(self):
@@ -177,7 +180,7 @@ class FilterProduct(HAPProduct):
         self.edp_list = []
         self.regions_dict = {}
 
-        log.info("Filter object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
+        log.debug("Filter object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
 
     def add_member(self, edp):
         """ Add an ExposureProduct object to the list - composition.
@@ -208,7 +211,7 @@ class FilterProduct(HAPProduct):
                 align_table.find_alignment_sources(output=output)
                 align_table.configure_fit()
                 refname = "{}_ref_cat.ecsv".format(self.product_basename)
-                log.info('Creating reference catalog {}'.format(refname))
+                log.debug('Creating reference catalog {}'.format(refname))
                 ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
                                             catalog=catalog_name,
                                             output=refname,
@@ -221,15 +224,15 @@ class FilterProduct(HAPProduct):
                     align_table.select_fit(catalog_name, method_name)
                     align_table.apply_fit(headerlet_filenames=headerlet_filenames)
                 else:
-                    print("Not enough reference sources for absolute alignment...")
+                    log.warning("Not enough reference sources for absolute alignment...")
                     raise ValueError
 
         except Exception:
             # Report a problem with the alignment
-            log.info("EXCEPTION encountered in align_to_gaia for the FilteredProduct.\n")
+            log.warning("EXCEPTION encountered in align_to_gaia for the FilteredProduct.\n")
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-            log.info("No correction to absolute astrometric frame applied.\n")
+            log.warning("No correction to absolute astrometric frame applied.\n")
             align_table = None
 
             # If the align_table is None, it is necessary to clean-up reference catalogs 
@@ -253,9 +256,9 @@ class FilterProduct(HAPProduct):
         # ...and set parameters which are computed on-the-fly
         drizzle_pars["final_refimage"] = meta_wcs
         drizzle_pars["runfile"] = self.trl_logname
-        log.info("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
-                 "have been updated for the drizzle step of the filter drizzle product."
-                 .format(meta_wcs, self.trl_logname))
+        log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
+                  "have been updated for the drizzle step of the filter drizzle product."
+                  .format(meta_wcs, self.trl_logname))
 
         edp_filenames = [element.full_filename for element in self.edp_list]
         astrodrizzle.AstroDrizzle(input=edp_filenames,
@@ -263,7 +266,7 @@ class FilterProduct(HAPProduct):
                                   **drizzle_pars)
 
         # Rename Astrodrizzle log file as a trailer file
-        log.info("Filter combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
+        log.debug("Filter combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         shutil.move(self.trl_logname, self.trl_filename)
 
 
@@ -308,14 +311,14 @@ class ExposureProduct(HAPProduct):
         # ...and set parameters which are computed on-the-fly
         drizzle_pars["final_refimage"] = meta_wcs
         drizzle_pars["runfile"] = self.trl_logname
-        log.info("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
-                 "have been updated for the drizzle step of the exposure drizzle product."
-                 .format(meta_wcs, self.trl_logname))
+        log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
+                  "have been updated for the drizzle step of the exposure drizzle product."
+                  .format(meta_wcs, self.trl_logname))
 
         astrodrizzle.AstroDrizzle(input=self.full_filename,
                                   output=self.drizzle_filename,
                                   **drizzle_pars)
 
         # Rename Astrodrizzle log file as a trailer file
-        log.info("Exposure image {}".format(self.drizzle_filename))
+        log.debug("Exposure image {}".format(self.drizzle_filename))
         shutil.move(self.trl_logname, self.trl_filename)
