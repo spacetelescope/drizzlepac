@@ -605,6 +605,7 @@ class HAPPointCatalog(HAPCatalogBase):
             # Calculate and add concentration index (CI) column to table
             ci_data = photometry_tbl["MagAp1"].data - photometry_tbl["MagAp2"].data
         except Exception:
+            log.info("Wrote catalog info to file 'catalog.pickle'.")
             pickle_out = open("catalog.pickle", "wb")
             pickle.dump(photometry_tbl, pickle_out)
             pickle_out.close()
