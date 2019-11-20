@@ -3,6 +3,7 @@
     Classes which define the total ("white light" image), filter, and exposure
     drizzle products.
 """
+import logging
 import sys
 import os
 import traceback
@@ -232,9 +233,10 @@ class FilterProduct(HAPProduct):
         except Exception:
             # Report a problem with the alignment
             log.warning("EXCEPTION encountered in align_to_gaia for the FilteredProduct.\n")
+            log.warning("No correction to absolute astrometric frame applied.\n")
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-            log.warning("No correction to absolute astrometric frame applied.\n")
+            logging.exception("message")
             align_table = None
 
             # If the align_table is None, it is necessary to clean-up reference catalogs 
