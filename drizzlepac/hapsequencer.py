@@ -419,8 +419,9 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         log.info("Return condition {}".format(return_value))
         logging.shutdown()
         # Append total trailer file (from astrodrizzle) to all total log files
-        for tot_obj in total_list:
-            proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
+        if product_list:
+            for tot_obj in total_list:
+                proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
         # Now remove single temp log file
         if os.path.exists(logname):
             os.remove(logname)

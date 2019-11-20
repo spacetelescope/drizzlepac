@@ -12,6 +12,7 @@ import sys
 from enum import Enum
 from astropy.io.fits import getheader
 from astropy.table import Table
+import numpy as np
 
 from stsci.tools import logutil
 
@@ -37,6 +38,7 @@ EXPKEY = 'EXPTIME'
 FGSKEY = 'FGSLOCK'
 CHINKEY = 'CHINJECT'
 
+
 # Annotates level to which image can be aligned according observational parameters
 # as described through FITS keywords
 
@@ -47,6 +49,44 @@ class Messages(Enum):
     """
 
     OK, WARN, NOPROC = 1, -1, -2
+
+
+def analyze_wrapper(input_file_list, log_level=logutil.logging.INFO):
+    """
+    Thin wrapper for the analyze_data function to return a list of viable images.
+
+    Parameters
+    ==========
+    input_file_list: list
+        List containing FLT and/or FLC filenames for all input images which comprise an associated
+        dataset where 'associated dataset' may be a single image, multiple images, an HST
+        association, or a number of HST associations
+
+    Returns
+    =======
+    viable_images_list: list
+       List of images which can be used in the drizzle process.
+
+    This routine returns a list containing only viable images instead of a table which
+    provides information, as well as a doProcess bool, regarding each image.
+    """
+    # set logging level to user-specified level
+    log.setLevel(log_level)
+
+    process_list = []
+
+    # Analyze the input file list and get the full table assessment
+    filtered_table = analyze_data(input_file_list)
+
+    # Extract only the filenames of viable images for processing (i.e., doProcess == 1)
+    if filtered_table['doProcess'].sum() == 0:
+        log.error("No viable images in single/multiple visit table - no processing done.\n")
+    else:
+        # Get the list of all "good" files to use for the alignment
+        process_list = filtered_table['imageName'][np.where(filtered_table['doProcess'])]
+        process_list = list(process_list)  # Convert process_list from numpy list to regular python list
+
+    return process_list
 
 
 def analyze_data(input_file_list, log_level=logutil.logging.INFO):

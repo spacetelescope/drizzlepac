@@ -17,6 +17,7 @@ from astropy.io import fits
 from astropy.io import ascii
 from astropy.table import Table, Column
 from drizzlepac.hlautils.product import ExposureProduct, FilterProduct, TotalProduct
+from . import analyze
 from . import astroquery_utils as aqutils
 from . import processing_utils
 
@@ -27,13 +28,14 @@ TDP_STR = 'total detection product {:02d}'
 
 # Define the mapping between the first character of the filename and the associated instrument
 INSTRUMENT_DICT = {'i': 'WFC3', 'j': 'ACS', 'o': 'STIS', 'u': 'WFPC2', 'x': 'FOC', 'w': 'WFPC'}
-POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id', 'exptime', 'filters', 'detector', 'pathname']
+POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
+                   'exptime', 'filters', 'detector', 'pathname']
 
 __taskname__ = 'poller_utils'
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout, 
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 
@@ -94,7 +96,7 @@ def interpret_obset_input(results, log_level):
     log.setLevel(log_level)
 
     log.debug("Interpret the poller file for the observation set.")
-    obset_table = build_poller_table(results)
+    obset_table = build_poller_table(results, log_level)
     # Add INSTRUMENT column
     instr = INSTRUMENT_DICT[obset_table['filename'][0][0]]
     # convert input to an Astropy Table for parsing
@@ -176,6 +178,8 @@ def parse_obset_tree(det_tree, log_level):
       * filter products per detector
       * single exposure product
     """
+    log.setLevel(log_level)
+
     # Initialize products dict
     obset_products = {}
 
@@ -319,7 +323,7 @@ def determine_filter_name(raw_filter):
 # ----------------------------------------------------------------------------------------------------------
 
 
-def build_poller_table(input):
+def build_poller_table(input, log_level):
     """Create a poller file from dataset names.
 
     Parameters
@@ -333,21 +337,26 @@ def build_poller_table(input):
         Astropy table object with the same columns as a poller file.
 
     """
+    log.setLevel(log_level)
+
+    datasets = []
+    is_poller_file = False
     obs_converters = {'col4': [ascii.convert_numpy(np.str)]}
     if isinstance(input, str):
-        input = ascii.read(input, format='no_header', converters=obs_converters)
-        if len(input.columns) == len(POLLER_COLNAMES):
-            # We were provided a poller file, so use as-is
-            # Now assign column names to obset_table
+        input_table = ascii.read(input, format='no_header', converters=obs_converters)
+        if len(input_table.columns) == len(POLLER_COLNAMES):
+            # We were provided a poller file
+            # Now assign column names to table
             for i, colname in enumerate(POLLER_COLNAMES):
-                input.columns[i].name = colname
+                input_table.columns[i].name = colname
 
             # Convert to a string column, instead of int64
-            input['obset_id'] = input['obset_id'].astype(np.str)
-            return input
+            input_table['obset_id'] = input_table['obset_id'].astype(np.str)
 
-        # Return first column
-        filenames = input[input.colnames[0]].tolist()
+        # Since a poller file was the input, it is assumed all the input
+        # data is in the locale directory so just collect the filenames.
+        datasets = input_table[input_table.colnames[0]].tolist()
+        is_poller_file = True
     elif isinstance(input, list):
         filenames = input
 
@@ -356,49 +365,70 @@ def build_poller_table(input):
         log.error("{}: Input {} not supported as input for processing.".format(id, input))
         raise ValueError
 
-    # At this point, we should have a list of dataset names
-    datasets = []  # final set of filenames locally on disk for processing
-    for filename in filenames:
-        # Look for dataset in local directory.
-        if "asn" in filename or not os.path.exists(filename):
-            # This retrieval will NOT overwrite any ASN members already on local disk
-            # Return value will still be list of all members
-            files = aqutils.retrieve_observation([filename[:9]], suffix=['FLC'], clobber=False)
-            if len(files) == 0:
-                log.error("Filename {} not found in archive!!".format(filename))
-                log.error("Please provide ASN filename instead!")
-                raise ValueError
-        else:
-            files = [filename]
-        datasets += files
+    # At this point, we have a poller file or a list of filenames.  If the latter, then any individual
+    # filename can be a singleton or an association name.  We need to get the full list of actual
+    # filenames from the association name.
+    if not is_poller_file:
+        for filename in filenames:
+            # Look for dataset in local directory.
+            if "asn" in filename or not os.path.exists(filename):
+                # This retrieval will NOT overwrite any ASN members already on local disk
+                # Return value will still be list of all members
+                files = aqutils.retrieve_observation([filename[:9]], suffix=['FLC'], clobber=False)
+                if len(files) == 0:
+                    log.error("Filename {} not found in archive!!".format(filename))
+                    log.error("Please provide ASN filename instead!")
+                    raise ValueError
+            else:
+                files = [filename]
+            datasets += files
+
+    # Each image, whether from a poller file or from an input list needs to be
+    # analyzed to ensure it is viable for drizzle processing.  If the image is not
+    # viable, it should not be included in the output "poller" table.
+    usable_datasets = analyze.analyze_wrapper(datasets)
+    if not usable_datasets:
+        log.warning("No usable images in poller file or input list for drizzling. The processing of this data is ending.")
+        sys.exit(0)
 
     cols = OrderedDict()
     for cname in POLLER_COLNAMES:
         cols[cname] = []
-    cols['filename'] = datasets
+    cols['filename'] = usable_datasets
 
-    # Now, evaluate each input dataset for the information needed for the poller file
-    for d in datasets:
-        with fits.open(d) as dhdu:
-            hdr = dhdu[0].header
-            cols['program_id'].append(d[1:4].upper())
-            cols['obset_id'].append(str(d[4:6]))
-            cols['proposal_id'].append(hdr['proposid'])
-            cols['exptime'].append(hdr['exptime'])
-            cols['detector'].append(hdr['detector'])
-            cols['pathname'].append(os.path.abspath(d))
-            # process filter names
-            if d[0] == 'j':  # ACS data
-                filters = processing_utils.get_acs_filters(dhdu, all=True)
-            elif d[0] == 'i':
-                filters = dhdu['filter']
-            cols['filters'].append(filters)
-    # Build output table
-    poller_data = [col for col in cols.values()]
-    poller_table = Table(data=poller_data)
+    # If processing a list of files, evaluate each input dataset for the information needed
+    # for the poller file
+    if not is_poller_file:
+        for d in usable_datasets:
+            with fits.open(d) as dhdu:
+                hdr = dhdu[0].header
+                cols['program_id'].append(d[1:4].upper())
+                cols['obset_id'].append(str(d[4:6]))
+                cols['proposal_id'].append(hdr['proposid'])
+                cols['exptime'].append(hdr['exptime'])
+                cols['detector'].append(hdr['detector'])
+                cols['pathname'].append(os.path.abspath(d))
+                # process filter names
+                if d[0] == 'j':  # ACS data
+                    filters = processing_utils.get_acs_filters(dhdu, all=True)
+                elif d[0] == 'i':
+                    filters = dhdu['filter']
+                cols['filters'].append(filters)
 
-    # Now assign column names to obset_table
-    for i, colname in enumerate(POLLER_COLNAMES):
-        poller_table.columns[i].name = colname
+        # Build output table
+        poller_data = [col for col in cols.values()]
+        poller_table = Table(data=poller_data)
+
+        # Now assign column names to obset_table
+        for i, colname in enumerate(POLLER_COLNAMES):
+            poller_table.columns[i].name = colname
+    # The input was a poller file, so just keep the viable data rows for output
+    else:
+        good_rows = []
+        for d in usable_datasets:
+            for i, old_row in enumerate(input_table):
+                if d == input_table['filename'][i]:
+                    good_rows.append(old_row)
+            poller_table = Table(rows=good_rows, names=input_table.colnames)
 
     return poller_table
