@@ -17,7 +17,10 @@ from stsci.tools import logutil
 
 __taskname__ = 'analyze'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 __all__ = ['analyze_data']
 
@@ -257,7 +260,6 @@ def analyze_data(input_file_list):
                               total_rms, dataset_key, status, fit_qual, headerlet_file,
                               compromised])
         process_msg = None
-    # output_table.pprint(max_width=-1)
 
     return output_table
 
@@ -268,8 +270,8 @@ def generate_msg(filename, msg, key, value):
         with alignment.
     """
 
-    log.info('Dataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
+    log.warning('Dataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
     if msg == Messages.NOPROC.value:
-        log.info('Dataset cannot be aligned.')
+        log.warning('Dataset cannot be aligned.')
     else:
-        log.info('Dataset can be aligned, but the result may be compromised.')
+        log.warning('Dataset can be aligned, but the result may be compromised.')
