@@ -224,10 +224,9 @@ def create_drizzle_products(total_list):
             log.info("    {}".format(filename))
             proc_utils.refine_product_headers(filename, total_list)
     except Exception:
-        print("Trouble updating drizzle products for CAOM.")
+        log.critical("Trouble updating drizzle products for CAOM.")
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-
     # Remove rules files copied to the current working directory
     for rules_filename in glob.glob("*_header_hla.rules"):
         log.info("Removed rules file {}".format(rules_filename))
@@ -410,7 +409,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         return_value = 0
     except Exception:
         return_value = 1
-        log.info("\a\a\a")
+        print("\a\a\a")
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
     finally:
