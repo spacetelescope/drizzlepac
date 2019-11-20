@@ -26,7 +26,10 @@ class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
         astrometry update and mosaicing of image data.
     """
-    def __init__(self, prop_id, obset_id, instrument, detector, filename, filetype):
+    def __init__(self, prop_id, obset_id, instrument, detector, filename, filetype, log_level):
+        # set logging level to user-specified level
+        log.setLevel(log_level)
+
         # Make sure the proposal ID is a 5-character string
         self.prop_id = prop_id.zfill(5)
         self.obset_id = obset_id
@@ -60,9 +63,8 @@ class TotalProduct(HAPProduct):
 
         The "tdp" is short hand for TotalProduct.
     """
-    def __init__(self, prop_id, obset_id, instrument, detector, filename, filetype):
-        super().__init__(prop_id, obset_id, instrument, detector, filename, filetype)
-
+    def __init__(self, prop_id, obset_id, instrument, detector, filename, filetype, log_level):
+        super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
         self.info = '_'.join([prop_id, obset_id, instrument, detector, filename, filetype])
         self.exposure_name = filename[0:6]
 
@@ -161,8 +163,8 @@ class FilterProduct(HAPProduct):
 
         The "fdp" is short hand for FilterProduct.
     """
-    def __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype):
-        super().__init__(prop_id, obset_id, instrument, detector, filename, filetype)
+    def __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype, log_level):
+        super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
 
         self.info = '_'.join([prop_id, obset_id, instrument, detector, filename, filters, filetype])
         self.exposure_name = filename[0:6]
@@ -217,7 +219,7 @@ class FilterProduct(HAPProduct):
                                             output=refname,
                                             gaia_only=False)
 
-                log.debug(ref_catalog)
+                log.debug("Abbreviated reference catalog displayed below\n{}".format(ref_catalog))
                 align_table.reference_catalogs[refname] = ref_catalog
                 if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
                     align_table.perform_fit(method_name, catalog_name, ref_catalog)
@@ -275,8 +277,8 @@ class ExposureProduct(HAPProduct):
 
         The "edp" is short hand for ExposureProduct.
     """
-    def __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype):
-        super().__init__(prop_id, obset_id, instrument, detector, filename, filetype)
+    def __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype, log_level):
+        super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
 
         self.info = '_'.join([prop_id, obset_id, instrument, detector, filename, filters, filetype])
         self.full_filename = filename

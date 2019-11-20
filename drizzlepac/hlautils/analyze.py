@@ -46,7 +46,7 @@ class Messages(Enum):
 
     OK, WARN, NOPROC = 1, -1, -2
 
-def analyze_data(input_file_list):
+def analyze_data(input_file_list, log_level=logutil.logging.INFO):
     """
     Determine if images within the dataset can be aligned
 
@@ -56,6 +56,10 @@ def analyze_data(input_file_list):
         List containing FLT and/or FLC filenames for all input images which comprise an associated
         dataset where 'associated dataset' may be a single image, multiple images, an HST
         association, or a number of HST associations
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
 
     Returns
     =======
@@ -86,6 +90,8 @@ def analyze_data(input_file_list):
 
     Please be aware of the FITS keyword value NONE vs the Python None.
     """
+    # set logging level to user-specified level
+    log.setLevel(log_level)
 
     acs_filt_name_list = [FILKEY1, FILKEY2]
 

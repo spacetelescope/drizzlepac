@@ -310,7 +310,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # where its FilterProduct is distinguished by the filter in use, and the ExposureProduct
         # is the atomic exposure data.
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
-        obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename)
+        obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename,log_level)
 
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to use only one of the Total Products to generate the manifest name as the name is not
