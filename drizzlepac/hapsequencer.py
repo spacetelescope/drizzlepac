@@ -61,8 +61,6 @@ def create_catalog_products(total_list, log_level, diagnostic_mode=False, phot_m
     product_list = []
     log.info("Generating total product source catalogs")
     for total_product_obj in total_list:
-        if total_product_obj.detector == 'uvis':  # TODO: REMOVE!
-            continue  # TODO: REMOVE!
         # Instantiate filter catalog product object
         total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename,
                                              total_product_obj.configobj_pars.get_pars('catalog generation'),
@@ -184,8 +182,6 @@ def create_drizzle_products(total_list):
     # create the drizzle-combined filtered image, the drizzled exposure (aka single) images,
     # and finally the drizzle-combined total detection image.
     for total_obj in total_list:
-        if total_obj.detector == 'uvis':  # TODO: REMOVE!
-            continue  # TODO: REMOVE!
         log.info("~" * 118)
         # Get the common WCS for all images which are part of a total detection product,
         # where the total detection product is detector-dependent.
@@ -348,8 +344,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # Process each filter object which contains a list of exposure objects/products.
         log.info("\n{}: Align the images on a filter-by-filter basis.".format(str(datetime.datetime.now())))
         for tot_obj in total_list:
-            if tot_obj.detector == 'uvis': # TODO: REMOVE!
-                continue # TODO: REMOVE!
             for filt_obj in tot_obj.fdp_list:
                 align_table, filt_exposures = filt_obj.align_to_gaia(output=diagnostic_mode)
 
