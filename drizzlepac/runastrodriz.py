@@ -67,6 +67,7 @@ import json
 import traceback
 import stat
 import errno
+from collections import OrderedDict
 
 # THIRD-PARTY
 from astropy.io import fits
@@ -79,6 +80,7 @@ from stwcs import updatewcs
 from drizzlepac import alignimages
 from drizzlepac import resetbits
 from drizzlepac.hlautils import astrometric_utils as amutils
+from drizzlepac.hlautils import cell_utils
 from drizzlepac import util
 from drizzlepac import mdzhandler
 from drizzlepac import updatehdr
@@ -487,11 +489,13 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         pipeline_pars['in_memory'] = inmemory
         pipeline_pars['clean'] = True
 
-        drz_products, asn_dicts = run_driz(_inlist, _trlfile, _calfiles, verify_alignment=False,
+        drz_products, asn_dicts, diff_dicts = run_driz(_inlist, _trlfile, _calfiles,
+                                             verify_alignment=False,
                                              good_bits=focus_pars[inst_mode]['good_bits'],
                                              **pipeline_pars)
         if len(_inlist) == 1 and _calfiles_flc is not None:
-            drc_products, flc_dicts = run_driz(_calfiles_flc, _trlfile, _calfiles_flc, verify_alignment=False,
+            drc_products, flc_dicts, diff_dicts = run_driz(_calfiles_flc, _trlfile,
+                                                _calfiles_flc, verify_alignment=False,
                                                  good_bits=focus_pars[inst_mode]['good_bits'],
                                                  **pipeline_pars)
 
@@ -592,6 +596,7 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
     pyver = drizzlepac.astrodrizzle.__version__
     drz_products = []
     focus_dicts = []
+    diff_dicts = OrderedDict()
 
     pipeline_pars['runfile'] = trlfile.replace('.tra', '_pydriz')
     drizlog = pipeline_pars['runfile'] + ".log"  # the '.log' gets added automatically by astrodrizzle
@@ -649,14 +654,24 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
 
             instr_det = "{}/{}".format(fits.getval(sfile, 'instrume'), fits.getval(sfile, 'detector'))
             focus_sigma = focus_pars[instr_det]['sigma']
-            print("Measuring focus for: \n{} \n    {}".format(single_files, drz_product))
+            print("Measuring similarity and focus for: \n{} \n    {}".format(single_files, drz_product))
             focus_dicts.append(amutils.build_focus_dict(single_files, drz_product, sigma=focus_sigma))
             if debug:
                 json_name = drz_product.replace('.fits', '_{}_focus.json'.format(mode))
                 with open(json_name, mode='w') as json_file:
                     json.dump(focus_dicts, json_file)
+
+            # Compute additional verification based on Hamming distances of gradients in overlap region
+            drz_wcs = HSTWCS(drz_product, ext=("SCI", 1))
+            drz_footprint = cell_utils.SkyFootprint(drz_wcs)
+            drz_footprint.build(single_files)
+            diff_dicts[drz_product] = amutils.max_overlap_diff(drz_footprint.total_mask,
+                                                               single_files, drz_product,
+                                                               scale=1)
+
         else:
             focus_dicts = None
+
         # Now, append comments created by PyDrizzle to CALXXX trailer file
         print('Updating trailer file %s with astrodrizzle comments.' % trlfile)
         drizlog_copy = drizlog.replace('.log', '_copy.log')
@@ -671,7 +686,7 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
             for ftype in ['*mask*.fits']:
                 [os.remove(file) for file in glob.glob(ftype)]
 
-    return drz_products, focus_dicts
+    return drz_products, focus_dicts, diff_dicts
 
 def reset_mdriztab_nocr(pipeline_pars, good_bits):
     # Need to turn off MDRIZTAB if any other parameters are to be set
@@ -817,8 +832,10 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
 
         # Run astrodrizzle in desired mode
-        drz_products, focus_dicts = run_driz(inlist, trlfile, calfiles, mode=tmpmode, verify_alignment=True,
-                                             debug=debug, good_bits=good_bits, **pipeline_pars)
+        drz_products, focus_dicts, diff_dicts = run_driz(inlist, trlfile, calfiles,
+                                                         mode=tmpmode, verify_alignment=True,
+                                                         debug=debug, good_bits=good_bits,
+                                                         **pipeline_pars)
 
         # Start verification of alignment using focus and similarity indices
         _trlmsg = _timestamp('Verification of {} alignment started '.format(tmpmode))
@@ -838,18 +855,25 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                                                             align_focus['prod_pos'][1],
                                                             align_focus['prod_pos'][0],
                                                             align_fwhm))
+
+            # Interpret the overlap differences computed for this alignment
+            dkeys = [k for k in diff_dicts.keys()]
+            diff_verification, max_diff = amutils.evaluate_overlap_diffs(diff_dicts[dkeys[-1]])
+
             # For any borderline situation with alignment, perform an extra check on alignment
             if fraction_matched < 0.1 or -1 < num_sources < 10:
-                alignment_verified = amutils.evaluate_focus(align_focus)
-                alignment_quality = 0 if alignment_verified else 1
+                focus_verification = amutils.evaluate_focus(align_focus)
+                alignment_verified = True if (diff_verification and focus_verification) else False
+                alignment_quality = 0 if alignment_verified else 3
             else:
-                alignment_verified = True
-                alignment_quality = 0
+                alignment_verified = True if diff_verification else False
+                alignment_quality = 0 if diff_verification else 3
 
             if alignment_verified:
                 _trlmsg += "Focus verification indicated that {} alignment SUCCEEDED.\n".format(tmpmode)
             else:
                 _trlmsg += "Focus verification indicated that {} alignment FAILED.\n".format(tmpmode)
+                _trlmsg += "  Reverting to previously determined WCS alignment.\n"
 
             prodname = align_focus['prodname']
         else:
@@ -876,14 +900,11 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             align_sim_fail = True if sim_indx > 1 else False
 
             if not align_sim_fail and alignment_verified:
-                _trlmsg += "Alignment appeared to succeed based on similarity index of {}\n".format(sim_indx)
-            elif align_sim_fail or not alignment_verified:
-                _trlmsg += "  WARNING: \nKEEPING potentially compromised astrometry solution!\n"
-                alignment_quality = 2
+                _trlmsg += "Alignment appeared to succeed based on similarity index of {:0.4f} \n".format(sim_indx)
             else:
                 _trlmsg += "  Reverting to previously determined WCS alignment.\n"
                 alignment_verified = False
-                alignment_quality = 3
+                alignment_quality += 3
 
         for fd in focus_dicts:
             fd['alignment_verified'] = alignment_verified
