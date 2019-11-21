@@ -21,7 +21,7 @@
         "win_size": 3,
         "nsigma": 5.0,
         "centering_mode": "starfind",
-        "bkg_estimator": "MedianBackground",
+        "bkg_estimator": "SExtractorBackground",
         "rms_estimator": "StdBackgroundRMS",
         "num_sources": 500,
         "deblend": false,
