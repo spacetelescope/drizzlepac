@@ -1604,15 +1604,27 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
         # start by seeing whether this product overlaps the region of max_overlap
         sdata = fits.getdata(sfile)
         sdata = np.nan_to_num(sdata, 0)  # Insure all np.nan's are converted to zeros
+
+        # Create exposure mask corresponding to pixels with drizzled data
         smask = sdata > 0
+        
+        # Trim mask down to only include region where the most exposures overlap
         soverlap = smask * max_overlap
+
+        # If, for some reason, the exposure does not overlap the region of
+        # max overlap (for example, in a large mosaic with little overlap)
+        # resort to using area where single exposure overlaps at least 1 other
+        # exposure instead...
         if soverlap.sum() == 0:
             # Use this for computing the difference index
             soverlap = smask * min_overlap
+
         # get same region from each drizzle product
         drz_region = drz * soverlap
         sfile_region = sdata * soverlap
-        # Limit our analysis only to those pixels within the masked region (modulo slicing limits)
+
+        # Limit our analysis only to those pixels within the masked region 
+        #  (modulo slicing limits)
         yr, xr = np.where(soverlap > 0)
         yslice = slice(yr.min(), yr.max(), 1)
         xslice = slice(xr.min(), yr.max(), 1)
@@ -1622,12 +1634,13 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
         diff_drz = diff_score(drz_region[yslice, xslice], scale=scale)
         diff_sfile = diff_score(sfile_region[yslice, xslice], scale=scale)
 
-        # Compute distance between them
+        # Compute distance between difference scores for 'truth' and 'product'
         dist = distance.hamming(diff_drz, diff_sfile)
         # Also compute focus index for the same region of the single drizzle file
         focus_val, focus_pos = determine_focus_index(sfile_region, sigma=sigma)
         pfocus_val, pfocus_pos = determine_focus_index(drz_region, sigma=sigma)
 
+        # Record results for each exposure compared to the combined drizzle product
         diff_dict[sfile] = {"distance": dist}
         diff_dict[sfile]['focus'] = float(focus_val)
         diff_dict[sfile]['focus_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
@@ -1639,6 +1652,8 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
 
 
 def diff_score(arr, scale=4, box_size=3):
+    # Provide option to rebin to a smaller image size to minimize
+    # impact from high-frequency (pixel-to-pixel) differences in low S/N data
     if scale > 1:
         yend = arr.shape[0] % scale
         xend = arr.shape[1] % scale
@@ -1649,13 +1664,19 @@ def diff_score(arr, scale=4, box_size=3):
         rebin_arr = rebin(arr[:yend, :xend].copy(), new_shape)
     else:
         rebin_arr = arr.copy()
-    
+
+    # Apply median filter in order to avoid excess pixel-to-pixel variations 
+    # due to background noise.    
     rebin_arr = ndimage.median_filter(rebin_arr, size=(box_size,box_size))
 
+    # Convert arrays into 1D arrays along rows and columns, respectively
     rows = rebin_arr.flatten()
     cols = rebin_arr.flatten("F")
+    # Compute pixel-to-pixel differences along row and columns, respectively
+    # and convert to boolean result (delta > 0 is True/0, delta < 0 is False/1)
     diff_row = np.diff(rows) > 0
     diff_col = np.diff(cols) > 0
+    # Stack row and column 1D array as a single concatenated result
     return np.hstack((diff_row, diff_col)).flatten()
 
 
