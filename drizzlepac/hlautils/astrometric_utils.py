@@ -1616,13 +1616,11 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
         yr, xr = np.where(soverlap > 0)
         yslice = slice(yr.min(), yr.max(), 1)
         xslice = slice(xr.min(), yr.max(), 1)
-        drz_region = drz_region[yslice, xslice]
-        sfile_region = sfile_region[yslice, xslice]
-
+        
         # Compute difference score for each product's region
         # Using scale=1 to maximize the differences between the images (if any)
-        diff_drz = diff_score(drz_region, scale=scale)
-        diff_sfile = diff_score(sfile_region, scale=scale)
+        diff_drz = diff_score(drz_region[yslice, xslice], scale=scale)
+        diff_sfile = diff_score(sfile_region[yslice, xslice], scale=scale)
 
         # Compute distance between them
         dist = distance.hamming(diff_drz, diff_sfile)
@@ -1639,7 +1637,8 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
 
     return diff_dict
 
-def diff_score(arr, scale=4):
+
+def diff_score(arr, scale=4, box_size=3):
     if scale > 1:
         yend = arr.shape[0] % scale
         xend = arr.shape[1] % scale
@@ -1650,6 +1649,8 @@ def diff_score(arr, scale=4):
         rebin_arr = rebin(arr[:yend, :xend].copy(), new_shape)
     else:
         rebin_arr = arr.copy()
+    
+    rebin_arr = ndimage.median_filter(rebin_arr, size=(box_size,box_size))
 
     rows = rebin_arr.flatten()
     cols = rebin_arr.flatten("F")
@@ -1657,14 +1658,12 @@ def diff_score(arr, scale=4):
     diff_col = np.diff(cols) > 0
     return np.hstack((diff_row, diff_col)).flatten()
 
+
 def evaluate_overlap_diffs(diff_dict, limit=0.1):
     """Evaluate whether overlap diffs indicate good alignment or not. """
 
     max_diff = max([d['distance'] for d in diff_dict.values()])
-    print(max_diff)
-    log.info("Maximum overlap difference found to be: {:0.4f}".format(max_diff))
-    verified = True
-    if (max_diff > limit):
-        verified = False
+    log.info("Maximum overlap difference: {:0.4f}".format(max_diff))
+    verified = False if max_diff > limit else True
 
     return verified, max_diff
