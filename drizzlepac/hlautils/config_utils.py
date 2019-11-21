@@ -63,7 +63,8 @@ class HapConfig(object):
         self.filters = None
 
         self._determine_conditions(prod_obj)
-        self._get_cfg_index()
+        self.full_cfg_index, self.pars_dir = read_index(self.instrument,
+                                                        self.detector)
 
         # Instantiate the parameter set
         self.pars = {}
@@ -120,7 +121,7 @@ class HapConfig(object):
             if n_exp == 1:
                 self.conditions.append("any_n1")
             else:
-                # Get the filter of the first exposure in the filter exposure product list.  The filter 
+                # Get the filter of the first exposure in the filter exposure product list.  The filter
                 # will be the same for all the exposures in the list.
                 self.filters = prod_obj.edp_list[0].filters
                 if self.instrument == "acs":
@@ -192,12 +193,6 @@ class HapConfig(object):
             if prod_obj.is_singleton:
                 self.conditions.append("any_n1")
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    def _get_cfg_index(self):
-        """return the contents of the appropriate index cfg file."""
-        self.full_cfg_index, self.pars_dir = read_index(self.instrument, 
-                                                        self.detector)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def as_single_giant_dict(self):
@@ -517,8 +512,8 @@ def read_index(instrument, detector):
     cfg_index_filename = os.path.join(pars_dir, cfg_index_filename)
 
     # Read JSON index file
-    with open(cfg_index_filename) as jsonFile:
-        json_string = jsonFile.read()
+    with open(cfg_index_filename) as json_file:
+        json_string = json_file.read()
         full_cfg_index = json.loads(json_string)
 
     return full_cfg_index, pars_dir
@@ -527,4 +522,3 @@ def read_index(instrument, detector):
 
 step_name_list = [AlignmentPars, AstrodrizzlePars, CatalogGenerationPars, QualityControlPars]
 step_title_list = ['alignment', 'astrodrizzle', 'catalog generation', 'quality control']
-
