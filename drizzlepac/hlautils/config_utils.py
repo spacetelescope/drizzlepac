@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-"""This script contains code to create the complete set of configuration parameters required to run XXXXX given the
-specified observation conditions and instrument/detector used in the observations"""
+"""This script contains code to create the complete set of configuration parameters required to run hapsequencer.py
+given the specified observation conditions and instrument/detector used in the observations"""
 
 import collections
 import json
@@ -22,7 +22,8 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 
 
 class HapConfig(object):
-    def __init__(self, prod_obj, log_level=logutil.logging.INFO, use_defaults=True, input_custom_pars_file=None, output_custom_pars_file=None):
+    def __init__(self, prod_obj, log_level=logutil.logging.INFO, use_defaults=True, input_custom_pars_file=None,
+                 output_custom_pars_file=None):
         """
         A set of routines to generate appropriate set of configuration parameters.
 
@@ -96,6 +97,7 @@ class HapConfig(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _determine_conditions(self, prod_obj):
+
         """Determine observing condition or conditions present for a given step
 
         Parameters
@@ -250,6 +252,7 @@ class HapConfig(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def write_pars(self, prod_obj):
+
         """This method writes the current parameter set to the specified file.
 
         Parameters
@@ -328,6 +331,7 @@ class Par():
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _combine_conditions(self):
+
         """Combine parameters from multiple conditions into a single parameter set.
         """
         self.outpars = {}
@@ -338,6 +342,7 @@ class Par():
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _dict_merge(self, dct, merge_dct, add_keys=True):
+
         """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
         updating only top-level keys, dict_merge recurses down into dicts nested
         to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
