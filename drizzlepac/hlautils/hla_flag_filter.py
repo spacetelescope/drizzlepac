@@ -1455,7 +1455,7 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
     Varies; Depending on inputs, either just 'p2', or 'p1' and 'p2'. p1 and p2 are lists of matched indices
     """
     if not (isinstance(cat1, numpy.ndarray) and len(cat1.shape) == 2 and cat1.shape[1] == 2):
-        log.error("cat1 must be a [N, 2] array")
+        log.error("catalog 1 must be a [N, 2] array")
         raise ValueError("cat1 must be a [N, 2] array")
     if not (isinstance(cat2, numpy.ndarray) and len(cat2.shape) == 2 and cat2.shape[1] == 2):
         log.error("cat2 must be a [N, 2] array")
