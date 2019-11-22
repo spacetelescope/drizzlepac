@@ -25,12 +25,12 @@ import numpy as np
 import scipy.stats as st
 from scipy import ndimage
 from scipy.stats import pearsonr
+from scipy.spatial import distance
 from lxml import etree
 try:
     from matplotlib import pyplot as plt
 except Exception:
     plt = None
-
 
 from astropy import units as u
 from astropy.table import Table, vstack, Column
@@ -1374,7 +1374,7 @@ def maxBit(int_val):
         length += 1
         int_val >>= 1
 
-    return length-1
+    return length - 1
 
 
 def compute_similarity(image, reference):
@@ -1501,7 +1501,7 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
     for f in singlefiles:
         imgarr = fits.getdata(f)
         imgarr[~full_sat_mask] = 0
-        focus_val, focus_pos = amutils.determine_focus_index(imgarr, sigma=sigma)
+        focus_val, focus_pos = determine_focus_index(imgarr, sigma=sigma)
         focus_dict['exp'].append(float(focus_val))
         focus_dict['exp_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
 
@@ -1531,7 +1531,6 @@ def evaluate_focus(focus_dict, tolerance=0.8):
     max_prob = compute_prob(max_3sig, s['mean'], s['std'])
     drz_prob = np.array([compute_prob(d, s['mean'], s['std']) for d in focus_dict['prod']])
 
-
     if (drz_prob < min_prob).any() or (drz_prob > max_prob).any() or s['std'] > s['min']:
         alignment_verified = False
     else:
@@ -1555,3 +1554,137 @@ def get_align_fwhm(focus_dict, default_fwhm, src_size=32):
     pimg.close()
 
     return fwhm
+
+
+def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
+    """Determines the difference in the region of max overlap for all drizzled products
+
+    Parameters
+    -----------
+    total_mask : ndarray
+        Mask (array) showing where each input exposure contributes to the final
+        drizzle product `prodfile`.  This could be created using
+        `cell_utils.SkyFootprint`.
+
+    singlefiles : list
+        List of filenames for each single input exposure drizzled onto the same WCS
+        as the final drizzle product `prodfile`
+
+    prodfile : str
+        Filename for the final drizzle product
+
+    scale : int, optional
+        Factor to use in downsizing (resizing smaller) the images to be evaluated.  The larger
+        the value, the less sensitive this measurement becomes.
+
+    sigma : float, optional
+        Size of default kernel (in pixels) to use for determining the focus.
+
+    Returns
+    ---------
+    diff_dict : dictionary
+        Dictionary of difference scores for each input exposure drizzle product
+        (from `singlefiles`) calculated for the region of maximum overlap with the final
+        drizzle product `prodfile`.  Entries for each singlefile includes:
+            - distance : Hamming distance of singlefile from prodfile
+            - focus : focus index of singlefile
+            - focus_pos : position for best focus in singlefile
+            - product_focus : focus index for prodfile
+            - product_focus_pos : position for best focus in prodfile
+
+    """
+    # Determine regions of overlap in total mask
+    min_overlap = total_mask > 1
+    max_overlap = total_mask == total_mask.max()
+
+    drz = fits.getdata(prodfile, ext=("SCI", 1))
+
+    diff_dict = {}
+    for sfile in singlefiles:
+        # start by seeing whether this product overlaps the region of max_overlap
+        sdata = fits.getdata(sfile)
+        sdata = np.nan_to_num(sdata, 0)  # Insure all np.nan's are converted to zeros
+
+        # Create exposure mask corresponding to pixels with drizzled data
+        smask = sdata > 0
+        
+        # Trim mask down to only include region where the most exposures overlap
+        soverlap = smask * max_overlap
+
+        # If, for some reason, the exposure does not overlap the region of
+        # max overlap (for example, in a large mosaic with little overlap)
+        # resort to using area where single exposure overlaps at least 1 other
+        # exposure instead...
+        if soverlap.sum() == 0:
+            # Use this for computing the difference index
+            soverlap = smask * min_overlap
+
+        # get same region from each drizzle product
+        drz_region = drz * soverlap
+        sfile_region = sdata * soverlap
+
+        # Limit our analysis only to those pixels within the masked region 
+        #  (modulo slicing limits)
+        yr, xr = np.where(soverlap > 0)
+        yslice = slice(yr.min(), yr.max(), 1)
+        xslice = slice(xr.min(), yr.max(), 1)
+        
+        # Compute difference score for each product's region
+        # Using scale=1 to maximize the differences between the images (if any)
+        diff_drz = diff_score(drz_region[yslice, xslice], scale=scale)
+        diff_sfile = diff_score(sfile_region[yslice, xslice], scale=scale)
+
+        # Compute distance between difference scores for 'truth' and 'product'
+        dist = distance.hamming(diff_drz, diff_sfile)
+        # Also compute focus index for the same region of the single drizzle file
+        focus_val, focus_pos = determine_focus_index(sfile_region, sigma=sigma)
+        pfocus_val, pfocus_pos = determine_focus_index(drz_region, sigma=sigma)
+
+        # Record results for each exposure compared to the combined drizzle product
+        diff_dict[sfile] = {"distance": dist}
+        diff_dict[sfile]['focus'] = float(focus_val)
+        diff_dict[sfile]['focus_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
+        diff_dict[sfile]['product_focus'] = float(pfocus_val)
+        diff_dict[sfile]['product_focus_pos'] = (int(pfocus_pos[0][0]), int(pfocus_pos[1][0]))
+        log.debug("Overlap differences for {} found to be: \n{}".format(sfile, diff_dict[sfile]))
+
+    return diff_dict
+
+
+def diff_score(arr, scale=4, box_size=3):
+    # Provide option to rebin to a smaller image size to minimize
+    # impact from high-frequency (pixel-to-pixel) differences in low S/N data
+    if scale > 1:
+        yend = arr.shape[0] % scale
+        xend = arr.shape[1] % scale
+        yend = -1 * yend if yend > 0 else None
+        xend = -1 * xend if xend > 0 else None
+        new_shape = (arr.shape[0] // scale, arr.shape[1] // scale)
+
+        rebin_arr = rebin(arr[:yend, :xend].copy(), new_shape)
+    else:
+        rebin_arr = arr.copy()
+
+    # Apply median filter in order to avoid excess pixel-to-pixel variations 
+    # due to background noise.    
+    rebin_arr = ndimage.median_filter(rebin_arr, size=(box_size,box_size))
+
+    # Convert arrays into 1D arrays along rows and columns, respectively
+    rows = rebin_arr.flatten()
+    cols = rebin_arr.flatten("F")
+    # Compute pixel-to-pixel differences along row and columns, respectively
+    # and convert to boolean result (delta > 0 is True/0, delta < 0 is False/1)
+    diff_row = np.diff(rows) > 0
+    diff_col = np.diff(cols) > 0
+    # Stack row and column 1D array as a single concatenated result
+    return np.hstack((diff_row, diff_col)).flatten()
+
+
+def evaluate_overlap_diffs(diff_dict, limit=0.1):
+    """Evaluate whether overlap diffs indicate good alignment or not. """
+
+    max_diff = max([d['distance'] for d in diff_dict.values()])
+    log.info("Maximum overlap difference: {:0.4f}".format(max_diff))
+    verified = False if max_diff > limit else True
+
+    return verified, max_diff
