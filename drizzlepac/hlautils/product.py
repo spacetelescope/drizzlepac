@@ -23,6 +23,7 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
+
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
         astrometry update and mosaicing of image data.
@@ -133,8 +134,8 @@ class TotalProduct(HAPProduct):
         drizzle_pars["final_refimage"] = meta_wcs
         drizzle_pars["runfile"] = self.trl_logname
         log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
-                 "have been updated for the drizzle step of the total drizzle product."
-                 .format(meta_wcs, self.trl_logname))
+                  "have been updated for the drizzle step of the total drizzle product."
+                  .format(meta_wcs, self.trl_logname))
 
         edp_filenames = [element.full_filename for element in self.edp_list]
         astrodrizzle.AstroDrizzle(input=edp_filenames,
@@ -216,9 +217,9 @@ class FilterProduct(HAPProduct):
                 refname = "{}_ref_cat.ecsv".format(self.product_basename)
                 log.debug('Creating reference catalog {}'.format(refname))
                 ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
-                                            catalog=catalog_name,
-                                            output=refname,
-                                            gaia_only=False)
+                                                                 catalog=catalog_name,
+                                                                 output=refname,
+                                                                 gaia_only=False)
 
                 log.debug("Abbreviated reference catalog displayed below\n{}".format(ref_catalog))
                 align_table.reference_catalogs[refname] = ref_catalog
