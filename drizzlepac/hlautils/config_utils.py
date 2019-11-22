@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-"""This script contains code to create the complete set of configuration parameters required to run XXXXX given the
-specified observation conditions and instrument/detector used in the observations"""
+"""This script contains code to create the complete set of configuration parameters required to run hapsequencer.py
+given the specified observation conditions and instrument/detector used in the observations"""
 
 import collections
 import json
@@ -10,13 +10,21 @@ import pdb
 import sys
 
 from astropy.time import Time
+from stsci.tools import logutil
 
-# TODO: Does this module require logging?
+__taskname__ = 'config_utils'
+
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+
 # ======================================================================================================================
 
 
 class HapConfig(object):
-    def __init__(self, prod_obj, use_defaults=True, input_custom_pars_file=None, output_custom_pars_file=None):
+    def __init__(self, prod_obj, log_level=logutil.logging.INFO, use_defaults=True, input_custom_pars_file=None,
+                 output_custom_pars_file=None):
         """
         A set of routines to generate appropriate set of configuration parameters.
 
@@ -40,6 +48,7 @@ class HapConfig(object):
         -------
         Nothing.
         """
+        log.setLevel(log_level)
         if input_custom_pars_file and input_custom_pars_file and input_custom_pars_file == output_custom_pars_file:
             sys.exit("ERROR: Input and output parameter files must have unique names!")
         self.label = "hap_config"
@@ -89,6 +98,7 @@ class HapConfig(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _determine_conditions(self, prod_obj):
+
         """Determine observing condition or conditions present for a given step
 
         Parameters
@@ -235,14 +245,15 @@ class HapConfig(object):
         if step_name in step_list:
             return self.pars[step_name].outpars
         else:
-            print("ERROR! '{}' is not a recognized step name.".format(step_name))
-            print("Recognized step names: \n{}".format(str(step_list)[2:-2].replace("', '", "\n")))
+            log.critical("'{}' is not a recognized step name.".format(step_name))
+            log.critical("Recognized step names: \n{}".format(str(step_list)[2:-2].replace("', '", "\n")))
             sys.exit(1)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def write_pars(self, prod_obj):
+
         """This method writes the current parameter set to the specified file.
 
         Parameters
@@ -268,11 +279,11 @@ class HapConfig(object):
 
             with open(self.output_custom_pars_file, 'w') as f:
                 json.dump(json_data, f, indent=4)
-            print("Updated custom pars file {}".format(self.output_custom_pars_file))
+            log.info("Updated custom pars file {}".format(self.output_custom_pars_file))
         else:
             with open(self.output_custom_pars_file, 'w') as f:
                 json.dump(new_json_data, f, indent=4)
-            print("Wrote custom pars file {}".format(self.output_custom_pars_file))
+            log.info("Wrote custom pars file {}".format(self.output_custom_pars_file))
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -321,6 +332,7 @@ class Par():
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _combine_conditions(self):
+
         """Combine parameters from multiple conditions into a single parameter set.
         """
         self.outpars = {}
@@ -331,6 +343,7 @@ class Par():
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _dict_merge(self, dct, merge_dct, add_keys=True):
+
         """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
         updating only top-level keys, dict_merge recurses down into dicts nested
         to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
