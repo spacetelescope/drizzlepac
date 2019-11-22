@@ -1458,7 +1458,7 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
         log.error("catalog 1 must be a [N, 2] array")
         raise ValueError("cat1 must be a [N, 2] array")
     if not (isinstance(cat2, numpy.ndarray) and len(cat2.shape) == 2 and cat2.shape[1] == 2):
-        log.error("cat2 must be a [N, 2] array")
+        log.error("catalog 2 must be a [N, 2] array")
         raise ValueError("cat2 must be a [N, 2] array")
 
     x1 = cat1[:, 0]
