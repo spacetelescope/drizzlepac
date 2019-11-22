@@ -57,14 +57,14 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.INFO):
 
     Parameters
     ==========
-    input_file_list: list
+    input_file_list : list
         List containing FLT and/or FLC filenames for all input images which comprise an associated
         dataset where 'associated dataset' may be a single image, multiple images, an HST
         association, or a number of HST associations
 
     Returns
     =======
-    viable_images_list: list
+    viable_images_list : list
        List of images which can be used in the drizzle process.
 
     This routine returns a list containing only viable images instead of a table which
@@ -95,7 +95,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.INFO):
 
     Parameters
     ==========
-    input_file_list: list
+    input_file_list : list
         List containing FLT and/or FLC filenames for all input images which comprise an associated
         dataset where 'associated dataset' may be a single image, multiple images, an HST
         association, or a number of HST associations
@@ -106,7 +106,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.INFO):
 
     Returns
     =======
-    output_table: object
+    output_table : object
         Astropy Table object containing data pertaining to the associated dataset, including
         the do_process bool.  It is intended this table is updated by subsequent functions for
         bookkeeping purposes.

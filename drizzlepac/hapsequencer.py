@@ -318,6 +318,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         product_list = []
 
         # Update all of the product objects with their associated configuration information.
+        total_list = []
         for total_item in total_list:
             total_item.configobj_pars = config_utils.HapConfig(total_item,
                                                                log_level=log_level,
@@ -419,7 +420,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         log.info("Return condition {}".format(return_value))
         logging.shutdown()
         # Append total trailer file (from astrodrizzle) to all total log files
-        if product_list:
+        if total_list:
             for tot_obj in total_list:
                 proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
         # Now remove single temp log file
