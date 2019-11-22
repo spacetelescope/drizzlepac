@@ -27,8 +27,7 @@ TDP_STR = 'total detection product {:02d}'
 
 # Define the mapping between the first character of the filename and the associated instrument
 INSTRUMENT_DICT = {'i': 'WFC3', 'j': 'ACS', 'o': 'STIS', 'u': 'WFPC2', 'x': 'FOC', 'w': 'WFPC'}
-POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
-                    'exptime', 'filters', 'detector', 'pathname']
+POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id', 'exptime', 'filters', 'detector', 'pathname']
 
 __taskname__ = 'poller_utils'
 
@@ -37,7 +36,8 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout, 
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
-def interpret_obset_input(results,log_level):
+
+def interpret_obset_input(results, log_level):
     """
 
     Parameters
@@ -119,6 +119,7 @@ def interpret_obset_input(results,log_level):
 
     return obset_dict, tdp_list
 
+
 # Translate the database query on an obset into actionable lists of filenames
 def build_obset_tree(obset_table):
     """Convert obset table into a tree listing all products to be created."""
@@ -152,11 +153,13 @@ def build_obset_tree(obset_table):
 
     return obset_tree
 
+
 def create_row_info(row):
     """Build info string for a row from the obset table"""
     info_list = [str(row['proposal_id']), "{}".format(row['obset_id']), row['instrument'],
                  row['detector'], row['filename'][:row['filename'].find('_')], row['filters']]
     return ' '.join(map(str.upper, info_list)), row['filename']
+
 
 def parse_obset_tree(det_tree, log_level):
     """Convert tree into products
@@ -218,14 +221,16 @@ def parse_obset_tree(det_tree, log_level):
 
                 # Create a single exposure product object
                 prod_list = prod_info.split(" ")
-                sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3], filename[1], prod_list[5], prod_list[6], log_level)
+                sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
+                                          filename[1], prod_list[5], prod_list[6], log_level)
                 # Set up the filter product dictionary and create a filter product object
                 # Initialize `info` key for this filter product dictionary
                 if not obset_products[fprod]['info']:
                     obset_products[fprod]['info'] = prod_info
 
                     # Create a filter product object for this instrument/detector
-                    filt_obj = FilterProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3], prod_list[4], prod_list[5], prod_list[6], log_level)
+                    filt_obj = FilterProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
+                                             prod_list[4], prod_list[5], prod_list[6], log_level)
                 # Append exposure object to the list of exposure objects for this specific filter product object
                 filt_obj.add_member(sep_obj)
                 # Populate filter product dictionary with input filename
@@ -237,7 +242,8 @@ def parse_obset_tree(det_tree, log_level):
                     obset_products[totprod]['info'] = prod_info
 
                     # Create a total detection product object for this instrument/detector
-                    tdp_obj = TotalProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3], prod_list[4], prod_list[6], log_level)
+                    tdp_obj = TotalProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
+                                           prod_list[4], prod_list[6], log_level)
 
                 # Append exposure object to the list of exposure objects for this specific total detection product
                 tdp_obj.add_member(sep_obj)
@@ -248,7 +254,9 @@ def parse_obset_tree(det_tree, log_level):
                 sep_indx += 1
 
             # Append filter object to the list of filter objects for this specific total product object
-            log.debug("Attach the filter object {} to its associated total detection product object {}/{}.".format(filt_obj.filters, tdp_obj.instrument, tdp_obj.detector))
+            log.debug("Attach the filter object {} to its associated total detection product object {}/{}.".format(filt_obj.filters,
+                                                                                                                   tdp_obj.instrument,
+                                                                                                                   tdp_obj.detector))
             tdp_obj.add_product(filt_obj)
 
         # Add the total product object to the list of TotalProducts
@@ -258,6 +266,7 @@ def parse_obset_tree(det_tree, log_level):
     return obset_products, tdp_list
 
 # ----------------------------------------------------------------------------------------------------------
+
 
 def determine_filter_name(raw_filter):
     """
@@ -308,6 +317,7 @@ def determine_filter_name(raw_filter):
     return filter_name
 
 # ----------------------------------------------------------------------------------------------------------
+
 
 def build_poller_table(input):
     """Create a poller file from dataset names.
