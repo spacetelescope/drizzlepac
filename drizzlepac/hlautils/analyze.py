@@ -39,12 +39,15 @@ CHINKEY = 'CHINJECT'
 
 # Annotates level to which image can be aligned according observational parameters
 # as described through FITS keywords
+
+
 class Messages(Enum):
     """
     Define a local classification for OK, Warning, and NoProcess messages
     """
 
     OK, WARN, NOPROC = 1, -1, -2
+
 
 def analyze_data(input_file_list, log_level=logutil.logging.INFO):
     """
