@@ -657,7 +657,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
     ap2 = param_dict['catalog generation']['aperture_2']
     if proc_type not in ('segment', 'aperture'):
-        log.error("Unknown proc_type '{}', must be 'aperture' or 'segment'".format(proc_type))
+        log.error("Unknown catalog type '{}', must be 'aperture' or 'segment'".format(proc_type))
         raise ValueError("Unknown catalog type '%s'" % proc_type)
 
     # ----------------------------------
