@@ -68,7 +68,7 @@ __taskname__ = 'astrometric_utils'
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout, 
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
@@ -869,26 +869,23 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
             errarr = image['err', chip].data
             whtarr = errarr.max() / errarr
             whtarr[dqmask] = 0
-            
+
         bkg_ra, bkg_median, bkg_rms_ra, bkg_rms_median = compute_2d_background(imgarr, box_size, win_size)
         log.info("BKG median: {:0.4f}  BKG RMS median: {:0.4f}".format(bkg_median, bkg_rms_median))
         log.info("box_size: {}".format(box_size))
         log.info("win_size: {}".format(win_size))
         threshold = nsigma * bkg_rms_ra
-        
         dao_threshold = nsigma * bkg_rms_median
+        
         kernel, kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr,
                                                 threshold=threshold,
                                                 fwhm=def_fwhm,
                                                 source_box=source_box,
                                                 isolation_size=isolation_size,
                                                 saturation_limit=saturation_limit)
-        
 
-
-        # seg_tab, segmap = extract_sources(imgarr, dqmask=dqmask, outroot=outroot, fwhm=fwhm, **detector_pars)
-        seg_tab, segmap = extract_sources(imgarr - bkg_ra, dqmask=dqmask,
-                                          outroot=outroot, kernel=kernel,
+        seg_tab, segmap = extract_sources(imgarr - bkg_ra, dqmask=dqmask, 
+                                          fwhm=kernel_fwhm, kernel=kernel, 
                                           photmode=photmode,
                                           segment_threshold=threshold, dao_threshold=dao_threshold,
                                           fwhm=kernel_fwhm, **detector_pars)

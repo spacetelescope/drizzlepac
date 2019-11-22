@@ -321,9 +321,13 @@ class HAPImage:
         """
         if self.bkg is None:
             self.compute_background()
-        threshold_rms = np.array([rms for rms in self.bkg_dao_rms]).mean()
+
+        threshold_rms = np.concatenate([rms for rms in self.threshold.values()])
+        bkg = np.concatenate([background for background in self.bkg.values()])
         log.info("Looking for sample PSF in {}".format(self.rootname))
-        self.kernel, self.kernel_fwhm = amutils.build_auto_kernel(self.data, self.wht_image,
+        log.info("  based on RMS of {}".format(threshold_rms.mean()))
+        self.kernel, self.kernel_fwhm = amutils.build_auto_kernel(self.data - bkg, 
+                                                                  self.wht_image,
                                                           threshold=threshold_rms,
                                                           fwhm=fwhmpsf / self.pscale)
         self.fwhmpsf = self.kernel_fwhm * self.pscale
@@ -365,7 +369,7 @@ class HAPImage:
 
         # Report configuration values to log
         log.info("")
-        log.info("Computation of image background - Input Parameters")
+        log.info("Computation of {} background - Input Parameters".format(self.rootname))
         log.info("Box size: {}".format(box_size))
         log.info("Window size: {}".format(win_size))
         log.info("NSigma: {}".format(nsigma))
@@ -392,17 +396,17 @@ class HAPImage:
 
                 if bkg is not None:
                     # Set the bkg_rms at "nsigma" sigma above background
-                    bkg_rms = nsigma * bkg.background_rms
-                    default_threshold = bkg.background + bkg_rms
-                    bkg_rms_mean = bkg.background.mean() + nsigma * bkg_rms.std()
-                    bkg_mean = bkg.background.mean()
+                    default_threshold = nsigma * bkg.background_rms
+                    # default_threshold = bkg.background + bkg_rms
+                    bkg_rms_mean = bkg.background_rms_median  # bkg.background.mean() + nsigma * bkg_rms.std()
+                    bkg_mean = bkg.background_median
                     bkg_dao_rms = bkg.background_rms
+
                     if threshold_flag is None:
                         threshold = default_threshold
                     elif threshold_flag < 0:
                         threshold = -1 * threshold_flag * default_threshold
-                        log.info("Background threshold set to {} based on {}".format(threshold.max(), default_threshold.max()))
-                        bkg_rms_mean = threshold.max()
+                        bkg_rms_mean = -1 * threshold_flag * bkg_rms_mean
                     else:
                         bkg_rms_mean = 3. * threshold_flag
                         threshold = bkg_rms_mean
@@ -425,10 +429,11 @@ class HAPImage:
             log.info("CHIP: {}".format(chip))
             log.info("Mean background: {}".format(bkg_mean))
             log.info("Mean threshold: {}".format(np.mean(threshold)))
+            log.info("Mean RMS      : {}".format(bkg_rms_mean))
             log.info("")
             log.info("{}".format("=" * 80))
 
-            self.bkg[chip] = bkg
+            self.bkg[chip] = bkg.background
             self.bkg_dao_rms[chip] = bkg_dao_rms
             self.bkg_rms_mean[chip] = bkg_rms_mean
             self.threshold[chip] = threshold
