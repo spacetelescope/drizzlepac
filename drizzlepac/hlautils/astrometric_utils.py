@@ -1605,6 +1605,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
     max_overlap = total_mask == total_mask.max()
 
     drz = fits.getdata(prodfile, ext=("SCI", 1))
+    drz = np.nan_to_num(drz, 0)
 
     diff_dict = {}
     for sfile in singlefiles:
@@ -1626,6 +1627,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
             # Use this for computing the difference index
             soverlap = smask * min_overlap
 
+        fits.PrimaryHDU(data=soverlap.astype(np.int16)).writeto("{}_overlap_mask.fits".format(sfile), overwrite=True)
         # get same region from each drizzle product
         drz_region = drz * soverlap
         sfile_region = sdata * soverlap
@@ -1635,7 +1637,8 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
         yr, xr = np.where(soverlap > 0)
         yslice = slice(yr.min(), yr.max(), 1)
         xslice = slice(xr.min(), yr.max(), 1)
-        
+        log.debug("Computing difference score over xslice:{}  yslice:{}".format(xslice, yslice))
+
         # Compute difference score for each product's region
         # Using scale=1 to maximize the differences between the images (if any)
         diff_drz = diff_score(drz_region[yslice, xslice], scale=scale)
@@ -1653,7 +1656,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
         diff_dict[sfile]['focus_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
         diff_dict[sfile]['product_focus'] = float(pfocus_val)
         diff_dict[sfile]['product_focus_pos'] = (int(pfocus_pos[0][0]), int(pfocus_pos[1][0]))
-        log.debug("Overlap differences for {} found to be: \n{}".format(sfile, diff_dict[sfile]))
+        log.debug("Overlap differences for {} found to be: \n\t{}".format(sfile, diff_dict[sfile]))
 
     return diff_dict
 

@@ -154,7 +154,8 @@ def check_and_get_data(input_list, **pars):
 # ------------------------------------------------------------------------------------------------------------
 def perform_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
               runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=500,
-              headerlet_filenames=None, catalog_list=['GAIADR2', 'GAIADR1'], **alignment_pars):
+              headerlet_filenames=None, catalog_list=['GAIADR2', 'GAIADR1'], fit_label=None,
+              **alignment_pars):
     """Actual Main calling function.
 
     Parameters
@@ -238,11 +239,11 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         starting_dt = datetime.datetime.now()
         
         # Get default alignment parameters if not provided by the user...
-        if not alignment_pars:
-            inst = fits.getval(imglist[0], 'instrume')
-            det = fits.getval(imglist[0], 'detector')
-            alignment_pars = get_default_pars(inst, det)
-        
+        inst = fits.getval(imglist[0], 'instrume')
+        det = fits.getval(imglist[0], 'detector')
+        apars = get_default_pars(inst, det)
+        alignment_pars.update(apars)
+
         # Instantiate AlignmentTable class with these input files
         alignment_table = align_utils.AlignmentTable(imglist, **alignment_pars)
         process_list = alignment_table.process_list

@@ -77,7 +77,8 @@ import numpy as np
 
 from drizzlepac import processInput  # used for creating new ASNs for _flc inputs
 from stwcs import updatewcs
-from drizzlepac import alignimages
+# from drizzlepac import alignimages
+from drizzlepac import align
 from drizzlepac import resetbits
 from drizzlepac.hlautils import astrometric_utils as amutils
 from drizzlepac.hlautils import cell_utils
@@ -88,8 +89,8 @@ from drizzlepac import updatehdr
 __taskname__ = "runaligndriz"
 
 # Local variables
-__version__ = "2.0.0"
-__version_date__ = "(18-Oct-2019)"
+__version__ = "2.1.0"
+__version_date__ = "(22-Nov-2019)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
@@ -348,7 +349,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         adriz_pars = mdzhandler.getMdriztabParameters(_calfiles)
         adriz_pars.update(pipeline_pars)
         adriz_pars['mdriztab'] = False
-        adriz_pars['final_fillval'] = 0
+        adriz_pars['final_fillval'] = "INDEF"
         adriz_pars['driz_sep_kernel'] = 'turbo'
         adriz_pars['driz_sep_fillval'] = 0.0
         adriz_pars['num_cores'] = num_cores
@@ -701,7 +702,7 @@ def reset_mdriztab_nocr(pipeline_pars, good_bits):
     pipeline_pars['median'] = False
     pipeline_pars['blot'] = False
     pipeline_pars['driz_cr'] = False
-    pipeline_pars['final_fillval'] = 0.0
+    pipeline_pars['final_fillval'] = "INDEF"
 
 
 def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
@@ -777,8 +778,10 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                         sat_flags = 256 + 2048
                 else:
                     sat_flags = 256 + 2048 + 4096 + 8192
-                align_table = alignimages.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
-                                                        clobber=False, output=debug, sat_flags=sat_flags)
+                # align_table = alignimages.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
+                #                                        clobber=False, output=debug, sat_flags=sat_flags)
+                align_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
+                                                  clobber=False, output=debug, sat_flags=sat_flags)
                 num_sources = align_table['matchSources'][0]
                 fraction_matched = num_sources / align_table['catalogSources'][0]
                 for row in align_table:
@@ -847,7 +850,8 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             inst = fits.getval(alignfiles[0], 'instrume').lower()
             det = fits.getval(alignfiles[0], 'detector').lower()
             pscale = HSTWCS(alignfiles[0], ext=1).pscale
-            det_pars = alignimages.detector_specific_params[inst][det]
+            # det_pars = alignimages.detector_specific_params[inst][det]
+            det_pars = align.get_default_pars(inst, det)['generate_source_catalogs']
             default_fwhm = det_pars['fwhmpsf'] / pscale
             align_fwhm = amutils.get_align_fwhm(align_focus, default_fwhm)
             if align_fwhm:

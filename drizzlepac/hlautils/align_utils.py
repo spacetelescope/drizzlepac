@@ -222,7 +222,7 @@ class AlignmentTable:
                 self.filtered_table[index]['fit_method'] = None
 
 
-    def apply_fit(self, headerlet_filenames=None):
+    def apply_fit(self, headerlet_filenames=None, fit_label=None):
         """Apply solution from identified fit to image WCS's
 
         Parameters
@@ -231,6 +231,10 @@ class AlignmentTable:
             Dictionary relating exposure filenames to headerlet filenames.  If None,
             will generate headerlet filenames where _flt or _flc is replaced by
             _flt_hlet or _flc_hlet, respectively.
+            
+        fit_label : str
+            Name of fit to apply to indicate how the fit was performed in 
+            the WCSNAME keyword.  Common options: IMG, REL, SVM.
 
         """
         if not self.selected_fit:
@@ -239,7 +243,7 @@ class AlignmentTable:
         # Call update_hdr_wcs()
         headerlet_dict = update_image_wcs_info(self.selected_fit,
                                                headerlet_filenames=headerlet_filenames,
-                                               fit_label='SVM')
+                                               fit_label=fit_label)
 
         for table_index in range(0, len(self.filtered_table)):
             self.filtered_table[table_index]['headerletFile'] = headerlet_dict[
@@ -300,9 +304,7 @@ class HAPImage:
             # create a substitute WHT array from ERR and DQ
             # Build pseudo-wht array for detection purposes
             errarr = np.concatenate([self.imghdu[('ERR', i + 1)].data for i in range(self.num_sci)])
-            wht_image = 1.0 / errarr
-            wht_image /= wht_image.max()
-            wht_image *= self.imghdu[0].header['exptime']**2
+            wht_image = errarr.max() / errarr
             if self.dqmask is not None:
                 wht_image[self.dqmask] = 0
         else:
@@ -324,8 +326,8 @@ class HAPImage:
 
         threshold_rms = np.concatenate([rms for rms in self.threshold.values()])
         bkg = np.concatenate([background for background in self.bkg.values()])
-        log.info("Looking for sample PSF in {}".format(self.rootname))
-        log.info("  based on RMS of {}".format(threshold_rms.mean()))
+        log.debug("Looking for sample PSF in {}".format(self.rootname))
+        log.debug("  based on RMS of {}".format(threshold_rms.mean()))
         self.kernel, self.kernel_fwhm = amutils.build_auto_kernel(self.data - bkg, 
                                                                   self.wht_image,
                                                           threshold=threshold_rms,
@@ -368,12 +370,12 @@ class HAPImage:
         rms_estimator = register_photutils_function(rms_estimator)
 
         # Report configuration values to log
-        log.info("")
-        log.info("Computation of {} background - Input Parameters".format(self.rootname))
-        log.info("Box size: {}".format(box_size))
-        log.info("Window size: {}".format(win_size))
-        log.info("NSigma: {}".format(nsigma))
-        log.info("BKG Estimator: {}".format(bkg_estimator.__name__))
+        log.debug("")
+        log.debug("Computation of {} background - Input Parameters".format(self.rootname))
+        log.debug("Box size: {}".format(box_size))
+        log.debug("Window size: {}".format(win_size))
+        log.debug("NSigma: {}".format(nsigma))
+        log.debug("BKG Estimator: {}".format(bkg_estimator.__name__))
 
         # SExtractorBackground ans StdBackgroundRMS are the defaults
         exclude_percentiles = [10, 25, 50, 75]
@@ -426,12 +428,12 @@ class HAPImage:
             # *** FIX: Need to do something for bkg if bkg is None ***
 
             # Report other useful quantities
-            log.info("CHIP: {}".format(chip))
-            log.info("Mean background: {}".format(bkg_mean))
-            log.info("Mean threshold: {}".format(np.mean(threshold)))
-            log.info("Mean RMS      : {}".format(bkg_rms_mean))
-            log.info("")
-            log.info("{}".format("=" * 80))
+            log.debug("{} CHIP: {}".format(self.rootname, chip))
+            log.debug("Mean background: {}".format(bkg_mean))
+            log.debug("Mean threshold: {}".format(np.mean(threshold)))
+            log.debug("Mean RMS      : {}".format(bkg_rms_mean))
+            log.debug("")
+            log.debug("{}".format("=" * 60))
 
             self.bkg[chip] = bkg.background
             self.bkg_dao_rms[chip] = bkg_dao_rms
@@ -724,7 +726,7 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
             # generate wcs name for updated image header, headerlet
             # Just in case header value 'wcs_name' is empty.
             if fit_label is None:
-                if item.meta['fit method'] == 'match_relative_fit':
+                if 'relative' in item.meta['fit method']:
                     fit_label = 'REL'
                 else:
                     fit_label = 'IMG'
