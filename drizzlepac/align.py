@@ -154,7 +154,8 @@ def check_and_get_data(input_list, **pars):
 # ------------------------------------------------------------------------------------------------------------
 def perform_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
               runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=500,
-              headerlet_filenames=None, catalog_list=['GAIADR2', 'GAIADR1'], fit_label=None,
+              headerlet_filenames=None, catalog_list=['GAIADR2', 'GAIADR1'], 
+              fit_label=None, 
               **alignment_pars):
     """Actual Main calling function.
 
@@ -344,6 +345,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         # best_imglist = []
         fit_info_dict = OrderedDict()
         for algorithm_name in fit_algorithm_list:  # loop over fit algorithm type
+            log.info("Applying {} fit method".format(algorithm_name))
             for catalog_index, catalog_name in enumerate(catalog_list):  # loop over astrometric catalog
                 log.info("{} STEP 5: Detect astrometric sources {}".format("-" * 20, "-" * 48))
                 log.info("Astrometric Catalog: {}".format(catalog_name))
@@ -408,7 +410,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                             table_fit = alignment_table.fit_dict[(catalog_name, algorithm_name)]
                             table_fit[imglist_ctr].meta['fit method'] = algorithm_name
                             table_fit[imglist_ctr].meta['fit quality'] = fit_quality
-                        print(alignment_table.fit_dict[(catalog_name, algorithm_name)][0].meta)
+                        #print(alignment_table.fit_dict[(catalog_name, algorithm_name)][0].meta)
 
                         # populate fit_info_dict
                         fit_info_dict["{} {}".format(catalog_name, algorithm_name)] = \
