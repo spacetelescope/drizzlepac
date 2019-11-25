@@ -295,6 +295,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
     # start processing
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
+    total_list = []
     product_list = []
     try:
         # Parse the poller file and generate the the obs_info_dict, as well as the total detection
@@ -318,7 +319,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         product_list = []
 
         # Update all of the product objects with their associated configuration information.
-        total_list = []
         for total_item in total_list:
             total_item.configobj_pars = config_utils.HapConfig(total_item,
                                                                log_level=log_level,
