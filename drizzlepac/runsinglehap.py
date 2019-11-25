@@ -16,9 +16,7 @@ Python USAGE:
 """
 # Import standard Python modules
 import argparse
-import pdb
 import sys
-import logging
 
 # THIRD-PARTY
 from stsci.tools import logutil

@@ -65,6 +65,7 @@ def create_catalog_products(total_list, log_level, diagnostic_mode=False, phot_m
         total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename,
                                              total_product_obj.configobj_pars.get_pars('catalog generation'),
                                              total_product_obj.configobj_pars.get_pars('quality control'),
+                                             log_level,
                                              types=phot_mode,
                                              diagnostic_mode=diagnostic_mode)
 
@@ -94,6 +95,7 @@ def create_catalog_products(total_list, log_level, diagnostic_mode=False, phot_m
             filter_product_catalogs = HAPCatalogs(filter_product_obj.drizzle_filename,
                                                   total_product_obj.configobj_pars.get_pars('catalog generation'),
                                                   total_product_obj.configobj_pars.get_pars('quality control'),
+                                                  log_level,
                                                   types=phot_mode,
                                                   diagnostic_mode=diagnostic_mode,
                                                   tp_sources=sources_dict)
@@ -217,10 +219,10 @@ def create_drizzle_products(total_list):
             log.info("    {}".format(filename))
             proc_utils.refine_product_headers(filename, total_list)
     except Exception:
-        print("Trouble updating drizzle products for CAOM.")
+        log.critical("Trouble updating drizzle products for CAOM.")
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-
+        logging.exception("message")
     # Remove rules files copied to the current working directory
     for rules_filename in glob.glob("*_header_hla.rules"):
         log.info("Removed rules file {}".format(rules_filename))
@@ -302,7 +304,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # where its FilterProduct is distinguished by the filter in use, and the ExposureProduct
         # is the atomic exposure data.
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
-        obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename)
+        obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename,log_level)
 
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to use only one of the Total Products to generate the manifest name as the name is not
@@ -404,9 +406,11 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         return_value = 0
     except Exception:
         return_value = 1
-        log.info("\a\a\a")
+        print("\a\a\a")
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+        logging.exception("message")
+
     finally:
         end_dt = datetime.datetime.now()
         log.info('Processing completed at {}'.format(str(end_dt)))

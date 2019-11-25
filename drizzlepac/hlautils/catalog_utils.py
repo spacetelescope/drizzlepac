@@ -32,7 +32,10 @@ CATALOG_TYPES = ['aperture', 'segment']
 
 __taskname__ = 'catalog_utils'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 
 class CatalogImage:
@@ -224,7 +227,11 @@ class HAPCatalogs:
     """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
 
-    def __init__(self, fitsfile, param_dict, param_dict_qc, diagnostic_mode=False, types=None, tp_sources=None):
+    def __init__(self, fitsfile, param_dict, param_dict_qc, log_level, diagnostic_mode=False, types=None,
+                 tp_sources=None):
+        # set logging level to user-specified level
+        log.setLevel(log_level)
+
         self.label = "HAPCatalogs"
         self.description = "A class used to generate photometric sourcelists using aperture photometry"
 
@@ -233,7 +240,6 @@ class HAPCatalogs:
         self.param_dict_qc = param_dict_qc
         self.diagnostic_mode = diagnostic_mode
         self.tp_sources = tp_sources  # <---total product catalogs.catalogs[*].sources
-
         # Determine what types of catalogs have been requested
         if not isinstance(types, list) and types in [None, 'both']:
             types = CATALOG_TYPES
@@ -260,9 +266,11 @@ class HAPCatalogs:
         #  it will have to do...
         self.catalogs = {}
         if 'aperture' in self.types:
-            self.catalogs['aperture'] = HAPPointCatalog(self.image, self.param_dict, self.param_dict_qc, self.diagnostic_mode, tp_sources=tp_sources)
+            self.catalogs['aperture'] = HAPPointCatalog(self.image, self.param_dict, self.param_dict_qc,
+                                                        self.diagnostic_mode, tp_sources=tp_sources)
         if 'segment' in self.types:
-            self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict, self.param_dict_qc, self.diagnostic_mode, tp_sources=tp_sources)
+            self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict, self.param_dict_qc,
+                                                         self.diagnostic_mode, tp_sources=tp_sources)
 
     def identify(self, **pars):
         """Build catalogs for this image.
@@ -309,7 +317,7 @@ class HAPCatalogs:
 
         for catalog in self.catalogs.values():
             if catalog.source_cat is None:
-                    catalog.source_cat = catalog.sources
+                catalog.source_cat = catalog.sources
             catalog.write_catalog
 
     def combine(self, subset_dict):
@@ -460,9 +468,11 @@ class HAPCatalogBase:
         data_table.meta["h12.1"] = ["and fit to GAIADR1 (2015.0) or GAIADR2 (2015.5))."]
         data_table.meta["h13"] = ["Magnitude values in this table are in the ABMAG system."]
         data_table.meta["h14"] = ["Column titles in this table ending with Ap1 refer to the inner photometric aperture "]
-        data_table.meta["h14.1"] = ["(radius = {} pixels, {} arcsec.".format(self.aper_radius_list_pixels[0], self.aper_radius_arcsec[0])]
+        data_table.meta["h14.1"] = ["(radius = {} pixels, {} arcsec.".format(self.aper_radius_list_pixels[0],
+                                                                             self.aper_radius_arcsec[0])]
         data_table.meta["h15"] = ["Column titles in this table ending with Ap2 refer to the outer photometric aperture "]
-        data_table.meta["h15.1"] = ["(radius = {} pixels, {} arcsec.".format(self.aper_radius_list_pixels[1], self.aper_radius_arcsec[1])]
+        data_table.meta["h15.1"] = ["(radius = {} pixels, {} arcsec.".format(self.aper_radius_list_pixels[1],
+                                                                             self.aper_radius_arcsec[1])]
         data_table.meta["h16"] = ["CI = Concentration Index (CI) = MagAp1 - MagAp2."]
         data_table.meta["h17"] = ["Flag Value Identification:"]
         data_table.meta["h17.1"] = ["    0 - Stellar Source ({} < CI < {})".format(ci_lower, ci_upper)]
@@ -526,7 +536,7 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("{}: {}".format("self.param_dict['dao']['simple_bkg']", self.param_dict['dao']['simple_bkg']))
             log.info("{}: {}".format("self.param_dict['nsigma']", self.param_dict['nsigma']))
             log.info("{}: {}".format("self.image.bkg_rms_median", self.image.bkg_rms_median))
-            log.info("\nDERIVED PARAMETERS")
+            log.info("DERIVED PARAMETERS")
             log.info("{}: {}".format("source_fwhm", source_fwhm))
             log.info("{}: {}".format("threshold", self.param_dict['nsigma']*self.image.bkg_rms_median))
             log.info("")
@@ -602,6 +612,7 @@ class HAPPointCatalog(HAPCatalogBase):
             # Calculate and add concentration index (CI) column to table
             ci_data = photometry_tbl["MagAp1"].data - photometry_tbl["MagAp2"].data
         except Exception:
+            log.info("Wrote catalog info to file 'catalog.pickle'.")
             pickle_out = open("catalog.pickle", "wb")
             pickle.dump(photometry_tbl, pickle_out)
             pickle_out.close()
@@ -622,7 +633,8 @@ class HAPPointCatalog(HAPCatalogBase):
         output_photometry_table = photometry_tbl[final_col_order]
 
         # format output table columns
-        final_col_format = {"X-Center": "18.13f", "Y-Center": "18.13f", "RA": "13.10f", "DEC": "13.10f", "ID": ".8g", "MagAp1": '6.3f', "MagErrAp1": '6.3f', "MagAp2": '6.3f',
+        final_col_format = {"X-Center": "18.13f", "Y-Center": "18.13f", "RA": "13.10f", "DEC": "13.10f", "ID": ".8g",
+                            "MagAp1": '6.3f', "MagErrAp1": '6.3f', "MagAp2": '6.3f',
                             "MagErrAp2": '6.3f', "MSkyAp2": '10.8f', "StdevAp2": '10.4f',
                             "FluxAp2": '10.8f', "CI": "7.3f", "Flags": "3d"}  # TODO: Standardize precision
         for fcf_key in final_col_format.keys():
@@ -643,7 +655,9 @@ class HAPPointCatalog(HAPCatalogBase):
         self.subset_filter_source_cat.rename_column("Flags", "Flags_" + filter_name)
 
         # Add the header information to the table
-        self.source_cat = self.annotate_table(output_photometry_table, self.param_dict_qc, product=self.image.ghd_product)
+        self.source_cat = self.annotate_table(output_photometry_table,
+                                              self.param_dict_qc,
+                                              product=self.image.ghd_product)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -879,7 +893,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # The deblending was successful, so just copy the deblended sources back to the sources attribute.
                 self.segm_img = copy.deepcopy(segm_deblended_img)
             except Exception as x_cept:
-                log.warning("SEGMENT. Deblending the sources in image {} was not successful: {}.".format(self.imgname, x_cept))
+                log.warning("SEGMENT. Deblending the sources in image {} was not successful: {}.".format(self.imgname,
+                                                                                                         x_cept))
                 log.warning("SEGMENT. Processing can continue with the non-deblended sources, but the user should\n"
                             "check the output catalog for issues.")
 

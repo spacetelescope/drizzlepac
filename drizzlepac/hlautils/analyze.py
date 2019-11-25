@@ -17,7 +17,10 @@ from stsci.tools import logutil
 
 __taskname__ = 'analyze'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 __all__ = ['analyze_data']
 
@@ -36,6 +39,8 @@ CHINKEY = 'CHINJECT'
 
 # Annotates level to which image can be aligned according observational parameters
 # as described through FITS keywords
+
+
 class Messages(Enum):
     """
     Define a local classification for OK, Warning, and NoProcess messages
@@ -43,7 +48,8 @@ class Messages(Enum):
 
     OK, WARN, NOPROC = 1, -1, -2
 
-def analyze_data(input_file_list):
+
+def analyze_data(input_file_list, log_level=logutil.logging.INFO):
     """
     Determine if images within the dataset can be aligned
 
@@ -53,6 +59,10 @@ def analyze_data(input_file_list):
         List containing FLT and/or FLC filenames for all input images which comprise an associated
         dataset where 'associated dataset' may be a single image, multiple images, an HST
         association, or a number of HST associations
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
 
     Returns
     =======
@@ -83,6 +93,8 @@ def analyze_data(input_file_list):
 
     Please be aware of the FITS keyword value NONE vs the Python None.
     """
+    # set logging level to user-specified level
+    log.setLevel(log_level)
 
     acs_filt_name_list = [FILKEY1, FILKEY2]
 
@@ -257,7 +269,6 @@ def analyze_data(input_file_list):
                               total_rms, dataset_key, status, fit_qual, headerlet_file,
                               compromised])
         process_msg = None
-    # output_table.pprint(max_width=-1)
 
     return output_table
 
@@ -268,8 +279,8 @@ def generate_msg(filename, msg, key, value):
         with alignment.
     """
 
-    log.info('Dataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
+    log.warning('Dataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
     if msg == Messages.NOPROC.value:
-        log.info('Dataset cannot be aligned.')
+        log.warning('Dataset cannot be aligned.')
     else:
-        log.info('Dataset can be aligned, but the result may be compromised.')
+        log.warning('Dataset can be aligned, but the result may be compromised.')
