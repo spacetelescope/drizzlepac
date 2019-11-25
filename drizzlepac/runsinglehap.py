@@ -69,9 +69,15 @@ def perform(input_filename, **kwargs):
                       "warning": logutil.logging.WARNING,
                       "info": logutil.logging.INFO,
                       "debug": logutil.logging.DEBUG}
-    kwargs['log_level'] = kwargs['log_level'].lower()
-    if kwargs['log_level'] in log_level_dict.keys():
-        kwargs['log_level'] = log_level_dict[kwargs['log_level']]
+
+
+    if 'log_level' in kwargs:
+        kwargs['log_level'] = kwargs['log_level'].lower()
+        if kwargs['log_level'] in log_level_dict.keys():
+            kwargs['log_level'] = log_level_dict[kwargs['log_level']]
+        else:
+            print("Log level set to default level 'log.info'.")
+            kwargs['log_level'] = logutil.logging.INFO
     else:
         print("Log level set to default level 'log.info'.")
         kwargs['log_level'] = logutil.logging.INFO
