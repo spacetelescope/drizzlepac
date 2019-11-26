@@ -34,7 +34,7 @@ __taskname__ = 'catalog_utils'
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 
@@ -1075,7 +1075,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         updated_table = Table(rows=good_rows, names=filter_measurements_table.colnames)
         # FIX What filter?
         log.info("Bad rows removed from coordinate list for filter data based on invalid positions after source property measurements.")
-        # log.info("Bad filter rows: {}".format(bad_rows))
 
         positions = (updated_table["xcentroid"], updated_table["ycentroid"])
         pos_xy = np.vstack(positions).T

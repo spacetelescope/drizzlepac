@@ -37,7 +37,7 @@ BKG_FILTER_SIZE = 3
 CATALOG_TYPES = ['point', 'segment']
 MIN_CATALOG_THRESHOLD = 3
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
 
 class AlignmentTable:
     def __init__(self, input_list, clobber=False, dqname='DQ', **alignment_pars):

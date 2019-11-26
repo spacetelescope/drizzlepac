@@ -5,6 +5,15 @@
     products. This script provides similar functionality as compared to the Hubble
     Legacy Archive (HLA) pipeline in that it provides the overall sequence of
     the processing.
+
+    Note regarding logging...
+    During instantiation of the log, the logging level is set to NOTSET which essentially 
+    means all message levels (debug, info, etc.) will be passed from the logger to
+    the underlying handlers, and the handlers will dispatch all messages to the associated
+    streams.  When the command line option of setting the logging level is invoked, the
+    logger basically filters which messages are passed on to the handlers according the 
+    level chosen. The logger is acting as a gate on the messages which are allowed to be
+    passed to the handlers.
 """
 import datetime
 import glob
@@ -22,10 +31,11 @@ from drizzlepac.hlautils import processing_utils as proc_utils
 from stsci.tools import logutil
 from stwcs import wcsutil
 
+
 __taskname__ = 'hapsequencer'
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout, 
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout, 
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 __version__ = 0.1
 __version_date__ = '07-Nov-2019'

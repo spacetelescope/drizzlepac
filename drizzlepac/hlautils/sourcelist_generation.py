@@ -17,7 +17,7 @@ from drizzlepac.hlautils import se_source_generation
 
 __taskname__ = 'sourcelist_generation'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
 
 # ----------------------------------------------------------------------------------------------------------------------
 

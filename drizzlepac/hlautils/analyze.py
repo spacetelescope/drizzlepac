@@ -20,7 +20,7 @@ __taskname__ = 'analyze'
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 __all__ = ['analyze_data']
@@ -51,7 +51,7 @@ class Messages(Enum):
     OK, WARN, NOPROC = 1, -1, -2
 
 
-def analyze_wrapper(input_file_list, log_level=logutil.logging.INFO):
+def analyze_wrapper(input_file_list, log_level=logutil.logging.NOTSET):
     """
     Thin wrapper for the analyze_data function to return a list of viable images.
 
@@ -89,7 +89,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.INFO):
     return process_list
 
 
-def analyze_data(input_file_list, log_level=logutil.logging.INFO):
+def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
     """
     Determine if images within the dataset can be aligned
 

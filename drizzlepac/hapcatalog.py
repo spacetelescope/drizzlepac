@@ -14,7 +14,7 @@ from drizzlepac import hapsequencer
 from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import poller_utils
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
 
 
 @util.with_logging
