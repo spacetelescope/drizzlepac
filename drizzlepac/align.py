@@ -284,8 +284,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                 pickle_out.close()
                 log.info("Wrote {}".format(pickle_filename))
         else:
-            alignment_table.find_alignment_sources(output=True)
-        
+            alignment_table.find_alignment_sources(output=output)
+
 
         alignment_table.configure_fit()
 
@@ -880,23 +880,22 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
     primary_header['HISTORY'] = '{:>15} : {:9.4f} degrees'.format('rotation', rot)
     primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('scale', scale)
     primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('skew', skew)
-    
-    
-    
-def get_default_pars(instrument, detector, step='alignment', 
+
+
+
+def get_default_pars(instrument, detector, step='alignment',
                      condition=['filter_basic']):
 
-    step_list = config_utils.step_title_list  
+    step_list = config_utils.step_title_list
     if step not in step_list:
-        log.error("{} not valid!  Needs to be one of: {}".format(step, 
+        log.error("{} not valid!  Needs to be one of: {}".format(step,
                   step_list))
         raise ValueError
-        
+
     full_cfg_index, pars_dir = config_utils.read_index(instrument, detector)
-     
+
     par_class = config_utils.step_name_list[step_list.index(step)]
-    apars = par_class(full_cfg_index[step], condition, 
-                      pars_dir, step, True, None) 
-    
+    apars = par_class(full_cfg_index[step], condition,
+                      pars_dir, step, True, None)
+
     return apars.outpars
-    

@@ -25,7 +25,6 @@ import numpy as np
 import scipy.stats as st
 from scipy import ndimage
 from scipy.stats import pearsonr
-from scipy.spatial import distance
 from lxml import etree
 try:
     from matplotlib import pyplot as plt
@@ -439,7 +438,6 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     # Try to use PSF derived from image as detection kernel
     # Kernel must be derived from well-isolated sources not near the edge of the image
     kern_img = imgarr.copy()
-    source_box = isolation_size
     edge = source_box * 2
     kern_img[:edge, :] = 0.0
     kern_img[-edge:, :] = 0.0
@@ -459,7 +457,6 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     fwhm_attempts = 0
     # Identify position of brightest, non-saturated peak (in numpy index order)
     for peak_ctr in range(len(peaks)):
-        peak_ctr += sat_index
         kernel_pos = [peaks['y_peak'][peak_ctr], peaks['x_peak'][peak_ctr]]
 
         kernel = imgarr[kernel_pos[0] - source_box:kernel_pos[0] + source_box + 1,
@@ -471,21 +468,22 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
         # search square cut-out (of size 2 x wht_box + 1 pixels on a side) of weight image centered on peak coords for
         # zero-value pixels. Reject peak if any are found.
         if len(np.where(kernel_wht == 0.)[0]) == 0:
-            log.info("Kernel source PSF located at [{},{}]".format(kernel_pos[1], kernel_pos[0]))
+            log.debug("Kernel source PSF located at [{},{}]".format(kernel_pos[1], kernel_pos[0]))
         else:
             kernel = None
 
         if kernel is not None:
             kernel = np.clip(kernel, 0, None)  # insure background subtracted kernel has no negative pixels
             if kernel.sum() > 0.0:
-                kernel_fwhm = find_fwhm(kernel, fwhm)
                 kernel /= kernel.sum()  # Normalize the new kernel to a total flux of 1.0
+                kernel_fwhm = find_fwhm(kernel, fwhm)
                 fwhm_attempts += 1
                 if kernel_fwhm is None:
                     kernel = None
                 else:
-                    log.info("Determined FWHM from sample PSF of {:.2f}".format(kernel_fwhm))
+                    log.debug("Determined FWHM from sample PSF of {:.2f}".format(kernel_fwhm))
                     if good_fwhm[1] > kernel_fwhm > good_fwhm[0]:  # This makes it hard to work with sub-sampled data (WFPC2?)
+                        fwhm = kernel_fwhm
                         break
                     else:
                         kernel = None
@@ -499,7 +497,6 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
         sigma = fwhm * gaussian_fwhm_to_sigma
         k = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
         k.normalize()
-        kernel = k.array
 
     return kernel, kernel_fwhm
 
@@ -523,15 +520,10 @@ def find_fwhm(psf, default_fwhm):
 
     if len(phot_results['flux_fit']) == 0:
         return None
-    # Insure no fit flux is np.nan -- clip to 0
-    for row in phot_results:
-        if np.isnan(row['flux_fit']):
-            row['flux_fit'] = 0.0
-
     psf_row = np.where(phot_results['flux_fit'] == phot_results['flux_fit'].max())[0][0]
     sigma_fit = phot_results['sigma_fit'][psf_row]
     fwhm = gaussian_sigma_to_fwhm * sigma_fit
-    log.info("Found FWHM: {:0.4f}".format(fwhm))
+    log.debug("Found FWHM: {}".format(fwhm))
 
     return fwhm
 
@@ -590,17 +582,35 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         imgarr = img
 
     segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
-                          filter_kernel=kernel)
+                          filter_kernel=kernel, connectivity=4)
+    kernel_area = (kernel.shape[0] // 2) ** 2 * np.pi
+    log.debug("Creating segmentation map for {} based on kernel shape of {}".format(outroot, kernel.shape))
+    num_brightest = 10 if len(segm.areas) > 10 else len(segm.areas)
+    mean_area = np.mean(segm.areas)
+    max_area = np.sort(segm.areas)[-1 * num_brightest:].mean()
+    # This section looks for crowded fields where segments run into each other
+    # By reducing the size of the kernel used for segment detection, this can be minimized
+    # in crowded fields.  Also, mean area is used to try to avoid this logic for fields with
+    # several large extended sources in an otherwise empty field.
+    if max_area > 3422 and mean_area > (kernel_area / 2):  # largest > 33-pix radius source
+        # reset kernel to only use the central 1/4 area and redefine the segment map
+        kcenter = (kernel.shape[0] - 1) // 2
+        koffset = (kcenter - 1) // 2
+        kernel = kernel[kcenter - koffset: kcenter + koffset + 1,
+                        kcenter - koffset: kcenter + koffset + 1].copy()
+        kernel /= kernel.sum()  # normalize to total sum == 1
+        log.info("Looking for crowded sources using smaller kernel with shape: {}".format(kernel.shape))
+        segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
+                            filter_kernel=kernel)
+
     # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
     if segm is None or segm.nlabels == 0:
         log.info("No detected sources!")
         return None, None
-    log.info("Identified {} possible source segments.".format(segm.nlabels))
-    log.info("   based on threshold of {}".format(segment_threshold.mean()))
 
     if deblend:
         segm = deblend_sources(imgarr, segm, npixels=5,
-                               filter_kernel=kernel, nlevels=16,
+                               filter_kernel=kernel, nlevels=32,
                                contrast=0.01)
     # If classify is turned on, it should modify the segmentation map
     if classify:
@@ -624,12 +634,15 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     if centering_mode == 'starfind':
         src_table = None
         # daofind = IRAFStarFinder(fwhm=fwhm, threshold=5.*bkg.background_rms_median)
-        log.info("Setting up DAOStarFinder with: \n    fwhm={:0.4f}  threshold={:0.4f}".format(fwhm, dao_threshold))
+        log.debug("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, dao_threshold))
         daofind = DAOStarFinder(fwhm=fwhm, threshold=dao_threshold)
 
         # Identify nbrightest/largest sources
         if nlargest is not None:
             nlargest = min(nlargest, len(segm.labels))
+            """
+            # Initial check uses area as proxy for brightest sources
+            # Can be seriously confused by croweded fields, though...
             if LooseVersion(photutils.__version__) >= '0.7':
                 large_labels = segm.labels[
                     np.flip(np.argsort(segm.areas))[: nlargest]]
@@ -638,6 +651,14 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                 areas = np.array([area for area in np.bincount(segm.data.ravel())[1:] if area != 0])
                 large_labels = segm.labels[
                     np.flip(np.argsort(areas))[: nlargest]]
+            log.debug("Largest sources in segments: \n{}".format(np.sort(large_labels)))
+            """
+            # Look for brightest sources by flux...
+            src_fluxes = np.array([imgarr[src].max() for src in segm.slices])
+            src_labels = np.array([label for label in segm.labels])
+            src_brightest = np.flip(np.argsort(src_fluxes))[: nlargest]
+            large_labels = src_labels[src_brightest]
+            log.debug("Brightest sources in segments: \n{}".format(large_labels))
 
         log.info("Looking for sources in {} segments".format(len(segm.labels)))
 
@@ -667,8 +688,19 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                 src_table = Table(names=seg_table.colnames,
                                   dtype=[dt[1] for dt in seg_table.dtype.descr])
 
-            if seg_table and seg_table['peak'].max() == detection_img.max():
-                max_row = np.where(seg_table['peak'] == seg_table['peak'].max())[0][0]
+            # This logic will eliminate saturated sources, where the max pixel value is not
+            # the center of the PSF (saturated and streaked along the Y axis)
+            max_row = np.where(seg_table['peak'] == seg_table['peak'].max())[0][0]
+            peak_posx = int(seg_table[max_row]['xcentroid'] + 0.5)
+            peak_posy = int(seg_table[max_row]['ycentroid'] + 0.5)
+            delta = (source_box - 1) // 2
+            min_x = peak_posx - delta if peak_posx - delta > 0 else 0
+            max_x = peak_posx + delta + 1 if peak_posx + delta + 1 < seg_slice[1].stop else seg_slice[1].stop
+            min_y = peak_posy - delta if peak_posy - delta > 0 else 0
+            max_y = peak_posy + delta + 1 if peak_posy + delta + 1 < seg_slice[0].stop else seg_slice[0].stop
+            peak_region = detection_img[min_y:max_y, min_x:max_x]
+
+            if seg_table and seg_table['peak'].max() in peak_region:
                 # Add row for detected source to master catalog
                 # apply offset to slice to convert positions into full-frame coordinates
                 seg_table['xcentroid'] += seg_xoffset
@@ -715,9 +747,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         ax[0][0].imshow(imgarr, origin='lower', cmap='Greys_r', norm=norm, vmax=vmax)
         ax[0][1].imshow(segm, origin='lower', cmap=segm.cmap(random_state=12345))
         ax[0][1].set_title('Segmentation Map')
-        ax[1][0].imshow(bkg.background, origin='lower')
-        if not isinstance(threshold, float):
-            ax[1][1].imshow(threshold, origin='lower')
+        if not isinstance(segment_threshold, float):
+            ax[1][1].imshow(segment_threshold, origin='lower')
     return tbl, segm
 
 
@@ -819,12 +850,12 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
     outroot = None
     img_inst = image[0].header['instrume']
     img_det = image[0].header['detector']
-    rootname = image[0].header['rootname']
 
     for chip in range(numSci):
         chip += 1
         # find sources in image
         if output:
+            rootname = image[0].header['rootname']
             outroot = '{}_sci{}_src'.format(rootname, chip)
         try:
             sci_ext = 0 if "{}/{}".format(img_inst, img_det) == "WFC3/IR" else ('sci', chip)
@@ -871,9 +902,7 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
             whtarr[dqmask] = 0
 
         bkg_ra, bkg_median, bkg_rms_ra, bkg_rms_median = compute_2d_background(imgarr, box_size, win_size)
-        log.info("BKG median: {:0.4f}  BKG RMS median: {:0.4f}".format(bkg_median, bkg_rms_median))
-        log.info("box_size: {}".format(box_size))
-        log.info("win_size: {}".format(win_size))
+
         threshold = nsigma * bkg_rms_ra
         dao_threshold = nsigma * bkg_rms_median
         
@@ -883,9 +912,10 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
                                                 source_box=source_box,
                                                 isolation_size=isolation_size,
                                                 saturation_limit=saturation_limit)
+        log.debug("Built kernel with FWHM = {}".format(kernel_fwhm))
 
-        seg_tab, segmap = extract_sources(imgarr - bkg_ra, dqmask=dqmask, 
-                                          fwhm=kernel_fwhm, kernel=kernel, 
+        seg_tab, segmap = extract_sources(imgarr - bkg_ra, dqmask=dqmask,
+                                          outroot=outroot, kernel=kernel,
                                           photmode=photmode,
                                           segment_threshold=threshold, dao_threshold=dao_threshold,
                                           fwhm=kernel_fwhm, **detector_pars)
@@ -1268,7 +1298,7 @@ def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
                                                   histplot=False, figure_id=1,
                                                   plotname=None, interactive=False)
     hist2d_offset = (xp, yp)
-    log.info('best offset {:0.4f},{:0.4f} based on {} cross-matches'.format(xp, yp, nmatches))
+    log.debug('best offset {} based on {} cross-matches'.format(hist2d_offset, nmatches))
 
     return hist2d_offset, seg_xy, ref_xy
 
@@ -1605,7 +1635,6 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
     max_overlap = total_mask == total_mask.max()
 
     drz = fits.getdata(prodfile, ext=("SCI", 1))
-    drz = np.nan_to_num(drz, 0)
 
     diff_dict = {}
     for sfile in singlefiles:
@@ -1627,41 +1656,57 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
             # Use this for computing the difference index
             soverlap = smask * min_overlap
 
-        fits.PrimaryHDU(data=soverlap.astype(np.int16)).writeto("{}_overlap_mask.fits".format(sfile), overwrite=True)
         # get same region from each drizzle product
         drz_region = drz * soverlap
         sfile_region = sdata * soverlap
+        drz_region = np.nan_to_num(drz_region, 0)
+        sfile_region = np.nan_to_num(sfile_region, 0)
 
         # Limit our analysis only to those pixels within the masked region 
         #  (modulo slicing limits)
         yr, xr = np.where(soverlap > 0)
         yslice = slice(yr.min(), yr.max(), 1)
         xslice = slice(xr.min(), yr.max(), 1)
-        log.debug("Computing difference score over xslice:{}  yslice:{}".format(xslice, yslice))
+        log.debug("overlap region: xslice {}, yslice {}".format(xslice, yslice))
 
-        # Compute difference score for each product's region
-        # Using scale=1 to maximize the differences between the images (if any)
-        diff_drz = diff_score(drz_region[yslice, xslice], scale=scale)
-        diff_sfile = diff_score(sfile_region[yslice, xslice], scale=scale)
+        drz_arr = drz_region[yslice, xslice]
+        sfile_arr = sfile_region[yslice, xslice]
+        drzlabels, drznum = detect_point_sources(drz_arr)
+        slabels, snum = detect_point_sources(sfile_arr)
+
+        drzsrcs = np.clip(drzlabels, 0, 1)
+        sfilesrcs = np.clip(slabels, 0, 1)
+
+        # Define weight as number of nonzero pixels being measured
+        drz_num = np.nonzero(drzlabels)[0].size
+        sfile_num = np.nonzero(slabels)[0].size
+        weight = (drz_num * drz_arr.size) / (sfile_num * sfile_num)
 
         # Compute distance between difference scores for 'truth' and 'product'
-        dist = distance.hamming(diff_drz, diff_sfile)
+        # and weight by fraction of nonzero pixels in region
+        # This produces the HAMMING distance for the two arrays
+        dist = (np.abs(drzsrcs - sfilesrcs).sum() / drz_arr.size) * weight
+
         # Also compute focus index for the same region of the single drizzle file
         focus_val, focus_pos = determine_focus_index(sfile_region, sigma=sigma)
         pfocus_val, pfocus_pos = determine_focus_index(drz_region, sigma=sigma)
 
         # Record results for each exposure compared to the combined drizzle product
-        diff_dict[sfile] = {"distance": dist}
+        # Number of sources in drz and sfile can include artifacts such as CRs
+        # As a result, care must be taken in any comparisons using these values.
+        diff_dict[sfile] = {"distance": dist, "xslice": xslice, "yslice": yslice}
+        diff_dict[sfile]['product_num_sources'] = drznum
+        diff_dict[sfile]['num_sources'] = drznum
         diff_dict[sfile]['focus'] = float(focus_val)
         diff_dict[sfile]['focus_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
         diff_dict[sfile]['product_focus'] = float(pfocus_val)
         diff_dict[sfile]['product_focus_pos'] = (int(pfocus_pos[0][0]), int(pfocus_pos[1][0]))
-        log.debug("Overlap differences for {} found to be: \n\t{}".format(sfile, diff_dict[sfile]))
+        log.debug("Overlap differences for {} found to be: \n{}".format(sfile, diff_dict[sfile]))
 
     return diff_dict
 
-
-def diff_score(arr, scale=4, box_size=3):
+def reduce_diff_region(arr, scale=1, background=None, nsigma=4):
+    """Convert the image into a background-removed array"""
     # Provide option to rebin to a smaller image size to minimize
     # impact from high-frequency (pixel-to-pixel) differences in low S/N data
     if scale > 1:
@@ -1674,14 +1719,39 @@ def diff_score(arr, scale=4, box_size=3):
         rebin_arr = rebin(arr[:yend, :xend].copy(), new_shape)
     else:
         rebin_arr = arr.copy()
+    if background is None:
+        # Use simple constant background to avoid problems with nebulosity
+        bkg = sigma_clipped_stats(rebin_arr, sigma=2.5, maxiters=5)
+        bkg_total = bkg[0] + nsigma * bkg[2]  # mean + 4 * sigma
+        log.debug("sigma clipped background value: {}".format(bkg_total))
+    elif isinstance(background, Background2D):
+        bkg_total = background.background + nsigma * background.background_rms
 
-    # Apply median filter in order to avoid excess pixel-to-pixel variations 
-    # due to background noise.    
-    rebin_arr = ndimage.median_filter(rebin_arr, size=(box_size,box_size))
+    rebin_arr -= bkg_total
+    rebin_arr = np.clip(rebin_arr, 0, rebin_arr.max())
+
+    return rebin_arr
+
+def detect_point_sources(arr, background=None, nsigma=4, log_sigma=2.0):
+    # Remove background entirely from input array (clip at 0)
+    src_arr = reduce_diff_region(arr, background=background, nsigma=nsigma)
+
+    # Compute distance between images using labeled sources
+    srclog = -1 * ndimage.gaussian_laplace(src_arr, sigma=log_sigma)
+
+    # zero out wings of sources, only leaving the detected cores/edges...
+    srclog[srclog < 0] = 0
+
+    # label sources
+    slabels, snum = ndimage.label(srclog)
+
+    return slabels, snum
+
+def diff_score(arr):
 
     # Convert arrays into 1D arrays along rows and columns, respectively
-    rows = rebin_arr.flatten()
-    cols = rebin_arr.flatten("F")
+    rows = arr.flatten()
+    cols = arr.flatten("F")
     # Compute pixel-to-pixel differences along row and columns, respectively
     # and convert to boolean result (delta > 0 is True/0, delta < 0 is False/1)
     diff_row = np.diff(rows) > 0
@@ -1690,7 +1760,7 @@ def diff_score(arr, scale=4, box_size=3):
     return np.hstack((diff_row, diff_col)).flatten()
 
 
-def evaluate_overlap_diffs(diff_dict, limit=0.1):
+def evaluate_overlap_diffs(diff_dict, limit=1.0):
     """Evaluate whether overlap diffs indicate good alignment or not. """
 
     max_diff = max([d['distance'] for d in diff_dict.values()])

@@ -92,6 +92,9 @@ class AlignmentTable:
         self.process_list = list(process_list)  # Convert process_list from numpy list to regular python list
         log.info("SUCCESS")
 
+        fwhmpsf = self.alignment_pars.get('fwhmpsf')
+        default_fwhm_set = False
+
         self.haplist = []
         for img in self.process_list:
             catimg = HAPImage(img)
@@ -102,7 +105,11 @@ class AlignmentTable:
                                       bkg_estimator=self.alignment_pars['bkg_estimator'],
                                       rms_estimator=self.alignment_pars['rms_estimator'],
                                       threshold_flag=self.alignment_pars['threshold'])
-            catimg.build_kernel(self.alignment_pars.get('fwhmpsf'))
+            catimg.build_kernel(fwhmpsf)
+            # Use FWHM from first good exposure as default for remainder of exposures
+            if not default_fwhm_set and catimg.kernel is not None:
+                fwhmpsf = catimg.fwhmpsf
+                default_fwhm_set = True
 
             self.haplist.append(catimg)
 
@@ -231,9 +238,9 @@ class AlignmentTable:
             Dictionary relating exposure filenames to headerlet filenames.  If None,
             will generate headerlet filenames where _flt or _flc is replaced by
             _flt_hlet or _flc_hlet, respectively.
-            
+
         fit_label : str
-            Name of fit to apply to indicate how the fit was performed in 
+            Name of fit to apply to indicate how the fit was performed in
             the WCSNAME keyword.  Common options: IMG, REL, SVM.
 
         """
@@ -267,6 +274,11 @@ class HAPImage:
             self.imghdu = filename
             self.imgname = filename.filename()
 
+        if 'rootname' in self.imghdu[0].header:
+            self.rootname = self.imghdu[0].header['rootname']
+        else:
+            self.rootname = self.imgname.rstrip('.fits')
+
         # Fits file read
         self.num_sci = amutils.countExtn(self.imghdu)
         self.num_wht = amutils.countExtn(self.imghdu, extname='WHT')
@@ -280,11 +292,6 @@ class HAPImage:
         # Get the HSTWCS object from the first extension
         self.imgwcs = HSTWCS(self.imghdu, 1)
         self.pscale = self.imgwcs.pscale
-
-        if 'rootname' in self.imghdu[0].header:
-            self.rootname = self.imghdu[0].header['rootname']
-        else:
-            self.rootname = self.imgname.rstrip('.fits')
 
         self._wht_image = None
         self.bkg = {}
@@ -326,12 +333,14 @@ class HAPImage:
 
         threshold_rms = np.concatenate([rms for rms in self.threshold.values()])
         bkg = np.concatenate([background for background in self.bkg.values()])
-        log.debug("Looking for sample PSF in {}".format(self.rootname))
+        log.info("Looking for sample PSF in {}".format(self.rootname))
         log.debug("  based on RMS of {}".format(threshold_rms.mean()))
         self.kernel, self.kernel_fwhm = amutils.build_auto_kernel(self.data - bkg, 
                                                                   self.wht_image,
                                                           threshold=threshold_rms,
                                                           fwhm=fwhmpsf / self.pscale)
+        log.info("  Found PSF with FWHM = {}".format(self.kernel_fwhm))
+
         self.fwhmpsf = self.kernel_fwhm * self.pscale
 
     def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
@@ -398,9 +407,8 @@ class HAPImage:
 
                 if bkg is not None:
                     # Set the bkg_rms at "nsigma" sigma above background
-                    default_threshold = nsigma * bkg.background_rms
-                    # default_threshold = bkg.background + bkg_rms
-                    bkg_rms_mean = bkg.background_rms_median  # bkg.background.mean() + nsigma * bkg_rms.std()
+                    default_threshold = bkg.background + nsigma * bkg.background_rms
+                    bkg_rms_mean = bkg.background_rms_median if bkg.background_rms_median > 0 else 0.
                     bkg_mean = bkg.background_median
                     bkg_dao_rms = bkg.background_rms
 
@@ -411,10 +419,8 @@ class HAPImage:
                         bkg_rms_mean = -1 * threshold_flag * bkg_rms_mean
                     else:
                         bkg_rms_mean = 3. * threshold_flag
-                        threshold = bkg_rms_mean
+                        threshold = default_threshold
 
-                    if bkg_rms_mean < 0:
-                        bkg_rms_mean = 0.
                     break
 
             # If Background2D does not work at all, define default scalar values for

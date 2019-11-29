@@ -27,7 +27,7 @@
         "deblend": false,
         "fwhmpsf": 0.13,
         "classify": true,
-        "threshold": -1.1
+        "threshold": None
       },
     "generate_astrometric_catalog":
       {
@@ -36,7 +36,7 @@
       },
     "match_relative_fit":
       {
-        "searchrad": 75,
+        "searchrad": 100,
         "separation": 0.1,
         "tolerance": 2,
         "use2dhist": true
