@@ -648,6 +648,7 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
     group_dict = {'avg_RMS': None}
     obs_rms = []
     for group_id in group_ids:
+        input_mag = None
         for item in tweakwcs_output:
             # When status = FAILED (fit failed) or REFERENCE (relative alignment done with first image
             # as the reference), skip to the beginning of the loop as there is no 'fit_info'.
@@ -656,7 +657,8 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
             # Make sure to store data for any particular group_id only once.
             if item.meta['group_id'] == group_id and \
                group_id not in group_dict:
-                group_dict[group_id] = {'ref_idx': None, 'FIT_RMS': None}
+                group_dict[group_id] = {'ref_idx': None, 'FIT_RMS': None,
+                                        'input_mag': None, 'ref_mag': None, 'input_idx': None}
                 # log.info("fit_info: {}".format(item.meta['fit_info']))
                 tinfo = item.meta['fit_info']
                 ref_idx = tinfo['matched_ref_idx']
@@ -677,7 +679,21 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
                 group_dict[group_id]['RMS_RA'] = ra_rms
                 group_dict[group_id]['RMS_DEC'] = dec_rms
 
+                group_dict[group_id]['ref_mag'] = reference_catalog[ref_idx]['mag'][fitmask]
+
+                input_mag = item.meta['catalog']['mag']
+                group_dict[group_id]['input_mag'] = input_mag
+                group_dict[group_id]['input_idx'] = tinfo['matched_input_idx']
+                print(tinfo['matched_input_idx'], fitmask)
+
                 obs_rms.append(fit_rms)
+
+            else:
+                if input_mag is not None:
+                    input_mag = input_mag.copy(data=np.hstack((input_mag, item.meta['catalog']['mag'])))
+                    group_dict[group_id]['input_mag'] = input_mag
+
+
     # Compute RMS for entire ASN/observation set
     total_rms = np.mean(obs_rms)
     # total_rms = np.sqrt(np.sum(np.array(obs_rms)**2))
@@ -685,14 +701,21 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
     # Now, append computed results to tweakwcs_output
     for item in tweakwcs_output:
         group_id = item.meta['group_id']
+        fitmask = item.meta['fit_info']['fitmask']
         if group_id in group_dict:
             fit_rms = group_dict[group_id]['FIT_RMS']
             ra_rms = group_dict[group_id]['RMS_RA']
             dec_rms = group_dict[group_id]['RMS_DEC']
+            input_idx = group_dict[group_id]['input_idx']
+            input_mag = group_dict[group_id]['input_mag'][input_idx][fitmask]
+            ref_mag = group_dict[group_id]['ref_mag']
+
         else:
             fit_rms = None
             ra_rms = None
             dec_rms = None
+            input_mag = None
+            ref_mag = None
 
         item.meta['fit_info']['FIT_RMS'] = fit_rms
         item.meta['fit_info']['TOTAL_RMS'] = total_rms
@@ -700,6 +723,8 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
         item.meta['fit_info']['RMS_RA'] = ra_rms
         item.meta['fit_info']['RMS_DEC'] = dec_rms
         item.meta['fit_info']['catalog'] = reference_catalog.meta['catalog']
+        item.meta['fit_info']['input_mag'] = input_mag
+        item.meta['fit_info']['ref_mag'] = ref_mag
 
 # ----------------------------------------------------------------------------------------------------------------------
 
