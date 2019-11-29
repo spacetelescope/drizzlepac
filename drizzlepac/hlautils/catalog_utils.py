@@ -75,6 +75,7 @@ class CatalogImage:
         # Populated by self.build_kernel()
         self.kernel = None
         self.kernel_fwhm = None
+        self.kernel_psf = False
 
     def close(self):
         self.imghdu.close()
@@ -84,10 +85,11 @@ class CatalogImage:
         if self.bkg is None:
             self.compute_background(box_size, win_size)
 
-        self.kernel, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
-                                                                            self.wht_image,
-                                                                            threshold=self.bkg_rms_ra,
-                                                                            fwhm=fwhmpsf / self.imgwcs.pscale)
+        k, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
+                                                                  self.wht_image,
+                                                                  threshold=self.bkg_rms_ra,
+                                                                  fwhm=fwhmpsf / self.imgwcs.pscale)
+        (self.kernel, self.kernel_psf) = k
 
     def compute_background(self, box_size, win_size,
                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS):

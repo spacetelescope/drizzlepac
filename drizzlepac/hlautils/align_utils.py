@@ -301,6 +301,7 @@ class HAPImage:
 
         self.kernel = None
         self.kernel_fwhm = None
+        self.kernel_psf = False
         self.fwhmpsf = None
 
         self.catalog_table = {}
@@ -335,10 +336,11 @@ class HAPImage:
         bkg = np.concatenate([background for background in self.bkg.values()])
         log.info("Looking for sample PSF in {}".format(self.rootname))
         log.debug("  based on RMS of {}".format(threshold_rms.mean()))
-        self.kernel, self.kernel_fwhm = amutils.build_auto_kernel(self.data - bkg, 
-                                                                  self.wht_image,
-                                                          threshold=threshold_rms,
-                                                          fwhm=fwhmpsf / self.pscale)
+        fwhm = fwhmpsf / self.pscale
+        (self.kernel, self.kernel_psf), self.kernel_fwhm = amutils.build_auto_kernel(self.data - bkg,
+                                                                                    self.wht_image,
+                                                                                    threshold=threshold_rms,
+                                                                                    fwhm=fwhm)
         log.info("  Found PSF with FWHM = {}".format(self.kernel_fwhm))
 
         self.fwhmpsf = self.kernel_fwhm * self.pscale
@@ -473,11 +475,11 @@ class HAPImage:
 
         # combine the two temporary DQ masks into a single composite DQ mask.
         dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
-
         return dqmask
 
     def find_alignment_sources(self, output=True, dqname='DQ', **alignment_pars):
         """Find sources in all chips for this exposure."""
+
         for chip in range(self.num_sci):
             chip += 1
             # find sources in image
@@ -493,6 +495,7 @@ class HAPImage:
                             'centering_mode': alignment_pars['centering_mode'],
                             'nlargest': alignment_pars['num_sources'],
                             'deblend': alignment_pars['deblend']}
+
             seg_tab, segmap = amutils.extract_sources(sciarr, dqmask=dqmask,
                                                       outroot=outroot,
                                                       kernel=self.kernel,
@@ -502,8 +505,6 @@ class HAPImage:
                                                       **extract_pars)
 
             self.catalog_table[chip] = seg_tab
-
-
 # ----------------------------------------------------------------------------------------------------------------------
 
 

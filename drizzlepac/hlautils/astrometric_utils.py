@@ -434,7 +434,6 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     the value less than the minimum flux of all those pixels, or maximum pixel value in the
     image if non-were flagged as saturated (in the DQ array).
     """
-
     # Try to use PSF derived from image as detection kernel
     # Kernel must be derived from well-isolated sources not near the edge of the image
     kern_img = imgarr.copy()
@@ -443,6 +442,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     kern_img[-edge:, :] = 0.0
     kern_img[:, :edge] = 0.0
     kern_img[:, -edge:] = 0.0
+    kernel_psf = False
 
     peaks = photutils.detection.find_peaks(kern_img, threshold=threshold * 5, box_size=isolation_size)
     # Sort based on peak_value to identify brightest sources for use as a kernel
@@ -484,6 +484,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
                     log.debug("Determined FWHM from sample PSF of {:.2f}".format(kernel_fwhm))
                     if good_fwhm[1] > kernel_fwhm > good_fwhm[0]:  # This makes it hard to work with sub-sampled data (WFPC2?)
                         fwhm = kernel_fwhm
+                        kernel_psf = True
                         break
                     else:
                         kernel = None
@@ -497,8 +498,9 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
         sigma = fwhm * gaussian_fwhm_to_sigma
         k = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
         k.normalize()
+        kernel = k.array
 
-    return kernel, kernel_fwhm
+    return (kernel, kernel_psf), kernel_fwhm
 
 def find_fwhm(psf, default_fwhm):
     """Determine FWHM for auto-kernel PSF"""
@@ -583,8 +585,15 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
 
     segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
                           filter_kernel=kernel, connectivity=4)
-    kernel_area = (kernel.shape[0] // 2) ** 2 * np.pi
-    log.debug("Creating segmentation map for {} based on kernel shape of {}".format(outroot, kernel.shape))
+
+    log.debug("Creating segmentation map for {} ".format(outroot, kernel.shape))
+    if kernel is not None:
+        kernel_area = ((kernel.shape[0] // 2) ** 2) * np.pi
+        log.debug("   based on kernel shape of {}".format(kernel.shape))
+    else:
+        kernel_area = ((source_box // 2) ** 2) * np.pi
+        log.debug("   based on a default kernel.")
+
     num_brightest = 10 if len(segm.areas) > 10 else len(segm.areas)
     mean_area = np.mean(segm.areas)
     max_area = np.sort(segm.areas)[-1 * num_brightest:].mean()
@@ -612,6 +621,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         segm = deblend_sources(imgarr, segm, npixels=5,
                                filter_kernel=kernel, nlevels=32,
                                contrast=0.01)
+
     # If classify is turned on, it should modify the segmentation map
     if classify:
         cat = source_properties(imgarr, segm)
@@ -633,6 +643,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     # convert segm to mask for daofind
     if centering_mode == 'starfind':
         src_table = None
+
         # daofind = IRAFStarFinder(fwhm=fwhm, threshold=5.*bkg.background_rms_median)
         log.debug("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, dao_threshold))
         daofind = DAOStarFinder(fwhm=fwhm, threshold=dao_threshold)
@@ -688,24 +699,25 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                 src_table = Table(names=seg_table.colnames,
                                   dtype=[dt[1] for dt in seg_table.dtype.descr])
 
-            # This logic will eliminate saturated sources, where the max pixel value is not
-            # the center of the PSF (saturated and streaked along the Y axis)
-            max_row = np.where(seg_table['peak'] == seg_table['peak'].max())[0][0]
-            peak_posx = int(seg_table[max_row]['xcentroid'] + 0.5)
-            peak_posy = int(seg_table[max_row]['ycentroid'] + 0.5)
-            delta = (source_box - 1) // 2
-            min_x = peak_posx - delta if peak_posx - delta > 0 else 0
-            max_x = peak_posx + delta + 1 if peak_posx + delta + 1 < seg_slice[1].stop else seg_slice[1].stop
-            min_y = peak_posy - delta if peak_posy - delta > 0 else 0
-            max_y = peak_posy + delta + 1 if peak_posy + delta + 1 < seg_slice[0].stop else seg_slice[0].stop
-            peak_region = detection_img[min_y:max_y, min_x:max_x]
+            if seg_table:
+                # This logic will eliminate saturated sources, where the max pixel value is not
+                # the center of the PSF (saturated and streaked along the Y axis)
+                max_row = np.where(seg_table['peak'] == seg_table['peak'].max())[0][0]
+                peak_posx = int(seg_table[max_row]['xcentroid'] + 0.5)
+                peak_posy = int(seg_table[max_row]['ycentroid'] + 0.5)
+                delta = (source_box - 1) // 2
+                min_x = peak_posx - delta if peak_posx - delta > 0 else 0
+                max_x = peak_posx + delta + 1 if peak_posx + delta + 1 < seg_slice[1].stop else seg_slice[1].stop
+                min_y = peak_posy - delta if peak_posy - delta > 0 else 0
+                max_y = peak_posy + delta + 1 if peak_posy + delta + 1 < seg_slice[0].stop else seg_slice[0].stop
+                peak_region = detection_img[min_y:max_y, min_x:max_x]
 
-            if seg_table and seg_table['peak'].max() in peak_region:
-                # Add row for detected source to master catalog
-                # apply offset to slice to convert positions into full-frame coordinates
-                seg_table['xcentroid'] += seg_xoffset
-                seg_table['ycentroid'] += seg_yoffset
-                src_table.add_row(seg_table[max_row])
+                if np.isclose(peak_region, seg_table['peak'].max()).any():
+                    # Add row for detected source to master catalog
+                    # apply offset to slice to convert positions into full-frame coordinates
+                    seg_table['xcentroid'] += seg_xoffset
+                    seg_table['ycentroid'] += seg_yoffset
+                    src_table.add_row(seg_table[max_row])
 
     else:
         cat = source_properties(img, segm)
@@ -905,8 +917,8 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
 
         threshold = nsigma * bkg_rms_ra
         dao_threshold = nsigma * bkg_rms_median
-        
-        kernel, kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr,
+
+        (kernel, kernel_psf), kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr,
                                                 threshold=threshold,
                                                 fwhm=def_fwhm,
                                                 source_box=source_box,
@@ -1644,7 +1656,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
 
         # Create exposure mask corresponding to pixels with drizzled data
         smask = sdata > 0
-        
+
         # Trim mask down to only include region where the most exposures overlap
         soverlap = smask * max_overlap
 
@@ -1662,7 +1674,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
         drz_region = np.nan_to_num(drz_region, 0)
         sfile_region = np.nan_to_num(sfile_region, 0)
 
-        # Limit our analysis only to those pixels within the masked region 
+        # Limit our analysis only to those pixels within the masked region
         #  (modulo slicing limits)
         yr, xr = np.where(soverlap > 0)
         yslice = slice(yr.min(), yr.max(), 1)
