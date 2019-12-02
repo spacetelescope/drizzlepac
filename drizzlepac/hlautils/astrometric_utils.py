@@ -89,7 +89,6 @@ FOCUS_DICT = {'exp': [], 'prod': [], 'stats': {},
               'exp_pos': None, 'prod_pos': None,
               'alignment_verified': False, 'alignment_quality': -1,
               'expnames': "", 'prodname': ""}
-EXP_LIMIT = 0.025  # exposure time fraction for determining overlap difference
 
 """
 
@@ -1690,49 +1689,35 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
         xslice = slice(xr.min(), yr.max(), 1)
         log.debug("overlap region: xslice {}, yslice {}".format(xslice, yslice))
 
-        if exp_weight > EXP_LIMIT:
+        drz_arr = drz_region[yslice, xslice]
+        sfile_arr = sfile_region[yslice, xslice]
 
-            drz_arr = drz_region[yslice, xslice]
-            sfile_arr = sfile_region[yslice, xslice]
+        # The number of sources detected is subject to crowding/blending of sources
+        drzlabels, drznum = detect_point_sources(drz_arr, scale=scale)
+        slabels, snum = detect_point_sources(sfile_arr, scale=scale, exp_weight=exp_weight)
 
-            # The number of sources detected is subject to crowding/blending of sources
-            drzlabels, drznum = detect_point_sources(drz_arr, scale=scale)
-            slabels, snum = detect_point_sources(sfile_arr, scale=scale, exp_weight=exp_weight)
+        drzsrcs = np.clip(drzlabels, 0, 1).astype(np.int16)
+        sfilesrcs = np.clip(slabels, 0, 1).astype(np.int16)
 
-            drzsrcs = np.clip(drzlabels, 0, 1).astype(np.int16)
-            sfilesrcs = np.clip(slabels, 0, 1).astype(np.int16)
+        # Determine number of nonzero pixels being measured in 'truth'/single image
+        sfile_num = np.nonzero(sfilesrcs)[0].size
 
-            # Determine number of nonzero pixels being measured in 'truth'/single image
-            sfile_num = np.nonzero(sfilesrcs)[0].size
+        # Compute distance between difference scores for 'truth' and 'product'
+        # and weight by fraction of nonzero pixels in region
+        # This produces the HAMMING distance for the two arrays
+        # dist = (np.abs(drzsrcs - sfilesrcs).sum() / drz_arr.size) * weight
+        dist = (np.abs(drzsrcs - sfilesrcs).sum() / sfile_num) * exp_weight
 
-            # Compute distance between difference scores for 'truth' and 'product'
-            # and weight by fraction of nonzero pixels in region
-            # This produces the HAMMING distance for the two arrays
-            # dist = (np.abs(drzsrcs - sfilesrcs).sum() / drz_arr.size) * weight
-            dist = (np.abs(drzsrcs - sfilesrcs).sum() / sfile_num)
-
-
-            # Record results for each exposure compared to the combined drizzle product
-            # Number of sources in drz and sfile can include artifacts such as CRs
-            # As a result, care must be taken in any comparisons using these values.
-            diff_dict[sfile] = {"distance": dist, "xslice": xslice, "yslice": yslice}
-            diff_dict[sfile]['product_num_sources'] = drznum
-            diff_dict[sfile]['num_sources'] = snum
-            diff_dict[sfile]['focus'] = float(focus_val)
-            diff_dict[sfile]['focus_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
-            diff_dict[sfile]['product_focus'] = float(pfocus_val)
-            diff_dict[sfile]['product_focus_pos'] = (int(pfocus_pos[0][0]), int(pfocus_pos[1][0]))
-        else:
-            # Record results for each exposure compared to the combined drizzle product
-            # Number of sources in drz and sfile can include artifacts such as CRs
-            # As a result, care must be taken in any comparisons using these values.
-            diff_dict[sfile] = {"distance": 0.0, "xslice": xslice, "yslice": yslice}
-            diff_dict[sfile]['product_num_sources'] = None
-            diff_dict[sfile]['num_sources'] = None
-            diff_dict[sfile]['focus'] = float(focus_val)
-            diff_dict[sfile]['focus_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
-            diff_dict[sfile]['product_focus'] = float(pfocus_val)
-            diff_dict[sfile]['product_focus_pos'] = (int(pfocus_pos[0][0]), int(pfocus_pos[1][0]))
+        # Record results for each exposure compared to the combined drizzle product
+        # Number of sources in drz and sfile can include artifacts such as CRs
+        # As a result, care must be taken in any comparisons using these values.
+        diff_dict[sfile] = {"distance": dist, "xslice": xslice, "yslice": yslice}
+        diff_dict[sfile]['product_num_sources'] = drznum
+        diff_dict[sfile]['num_sources'] = snum
+        diff_dict[sfile]['focus'] = float(focus_val)
+        diff_dict[sfile]['focus_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
+        diff_dict[sfile]['product_focus'] = float(pfocus_val)
+        diff_dict[sfile]['product_focus_pos'] = (int(pfocus_pos[0][0]), int(pfocus_pos[1][0]))
 
         log.debug("Overlap differences for {} found to be: \n{}".format(sfile, diff_dict[sfile]))
 
@@ -1757,13 +1742,14 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
         if exp_weight is not None and 0.2 <= exp_weight <= EXP_LIMIT:
             sigma = 2.0
             maxiters = 10.
+
         # Use simple constant background to avoid problems with nebulosity
         bkg = sigma_clipped_stats(rebin_arr, sigma=sigma, maxiters=maxiters)
         bkg_total = bkg[0] + nsigma * bkg[2]  # mean + 4 * sigma
         log.debug("sigma clipped background value: {}".format(bkg_total))
     elif isinstance(background, Background2D):
-        log.debug("[reduce_diff_region] background: max={}, mean={}".format(bkg_total.max(), bkg_total.mean()))
         bkg_total = background.background + nsigma * background.background_rms
+        log.debug("[reduce_diff_region] background: max={}, mean={}".format(bkg_total.max(), bkg_total.mean()))
 
     rebin_arr -= bkg_total
     rebin_arr = np.clip(rebin_arr, 0, rebin_arr.max())
