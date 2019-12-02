@@ -833,6 +833,10 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             _trlmsg += _timestamp('Align_to_GAIA completed ')
             _updateTrlFile(trlfile, _trlmsg)
 
+        if find_crs:
+            drz, fdicts, ddicts = run_driz(inlist, trlfile, calfiles, mode=tmpmode,
+                                        verify_alignment=False, debug=debug,
+                                        good_bits=good_bits, **pipeline_pars)
 
         # Run astrodrizzle in desired mode
         drz_products, focus_dicts, diff_dicts = run_driz(inlist, trlfile, calfiles,
