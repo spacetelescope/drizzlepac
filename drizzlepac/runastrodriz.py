@@ -68,6 +68,7 @@ import traceback
 import stat
 import errno
 from collections import OrderedDict
+import datetime
 
 # THIRD-PARTY
 from astropy.io import fits
@@ -109,6 +110,7 @@ focus_pars = {"WFC3/IR": {'sigma': 2.0, 'good_bits': 512},
               "WFPC2/PC": {'sigma': 1.5, 'good_bits': ~14588}}
 sub_dirs = ['OrIg_files', 'pipeline-default']
 valid_alignment_modes = ['apriori', 'aposteriori', 'default-pipeline']
+gsc240_date = '2017-10-01'
 
 # default marker for trailer files
 __trlmarker__ = '*** astrodrizzle Processing Version ' + __version__ + __version_date__ + '***\n'
@@ -387,8 +389,11 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # run updatewcs with use_db=True to insure all products have
         # have a priori solutions as extensions
         updatewcs.updatewcs(_calfiles)
+        verify_gaia_wcsnames(_calfiles)
         if _calfiles_flc:
             updatewcs.updatewcs(_calfiles_flc)
+            verify_gaia_wcsnames(_calfiles)
+
         # Check for the case where no update was performed due to all inputs
         # having EXPTIME==0 (for example) and apply updatewcs anyway to allow
         # for successful creation of updated headerlets for this data.
@@ -930,6 +935,20 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
     return focus_dicts
 
+def verify_gaia_wcsnames(filenames):
+    """Insure that data taken with GAIA has WCSNAME reflecting that"""
+    gsc240 = gsc240_date.split('-')
+    gdate = datetime.date(int(gsc240[0]), int(gsc240[1]), int(gsc240[2]))
+    for f in filenames:
+        with fits.open(f, mode='update') as fhdu:
+            wcsname = fhdu['sci', 1].header['wcsname']
+            dateobs = fhdu[0].header['date-obs'].split('-')
+            # convert to datetime object
+            fdate = datetime.date(int(dateobs[0]), int(dateobs[1]), int(dateobs[2]))
+            if fdate > gdate and '-' not in wcsname:
+                wcsname = "{}-GSC240".format(wcsname)
+                fhdu['sci', 1].header['wcsname'] = wcsname
+            
 def _lowerAsn(asnfile):
     """ Create a copy of the original asn file and change
         the case of all members to lower-case.
