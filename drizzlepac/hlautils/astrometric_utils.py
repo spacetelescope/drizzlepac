@@ -1607,7 +1607,7 @@ def get_align_fwhm(focus_dict, default_fwhm, src_size=32):
     return fwhm
 
 
-def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
+def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
     """Determines the difference in the region of max overlap for all drizzled products
 
     Parameters
@@ -1651,7 +1651,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
         log.error("Total mask shape {} needs to be the same as input image's shape \
                     {}".format(total_mask.shape, drz.shape))
         raise ValueError
-    
+
     # Determine regions of overlap in total mask
     min_overlap = total_mask > 1
     max_overlap = total_mask == total_mask.max()
@@ -1693,8 +1693,8 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
         sfile_arr = sfile_region[yslice, xslice]
 
         # The number of sources detected is subject to crowding/blending of sources
-        drzlabels, drznum = detect_point_sources(drz_arr)
-        slabels, snum = detect_point_sources(sfile_arr)
+        drzlabels, drznum = detect_point_sources(drz_arr, scale=scale)
+        slabels, snum = detect_point_sources(sfile_arr, scale=scale)
 
         drzsrcs = np.clip(drzlabels, 0, 1).astype(np.int16)
         sfilesrcs = np.clip(slabels, 0, 1).astype(np.int16)
@@ -1736,7 +1736,7 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4):
         yend = -1 * yend if yend > 0 else None
         xend = -1 * xend if xend > 0 else None
         new_shape = (arr.shape[0] // scale, arr.shape[1] // scale)
-
+        print('Data resized to {}'.format(new_shape))
         rebin_arr = rebin(arr[:yend, :xend].copy(), new_shape)
     else:
         rebin_arr = arr.copy()
@@ -1753,9 +1753,9 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4):
 
     return rebin_arr
 
-def detect_point_sources(arr, background=None, nsigma=4, log_sigma=2.0):
+def detect_point_sources(arr, background=None, nsigma=4, log_sigma=2.0, scale=1):
     # Remove background entirely from input array (clip at 0)
-    src_arr = reduce_diff_region(arr, background=background, nsigma=nsigma)
+    src_arr = reduce_diff_region(arr, background=background, nsigma=nsigma, scale=scale)
 
     # Compute distance between images using labeled sources
     srclog = -1 * ndimage.gaussian_laplace(src_arr, sigma=log_sigma)
