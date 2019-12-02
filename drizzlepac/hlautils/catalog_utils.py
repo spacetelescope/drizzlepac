@@ -34,12 +34,15 @@ __taskname__ = 'catalog_utils'
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 
 class CatalogImage:
-    def __init__(self, filename):
+    def __init__(self, filename, log_level):
+        # set logging level to user-specified level
+        log.setLevel(log_level)
+
         if isinstance(filename, str):
             self.imghdu = fits.open(filename)
             self.imgname = filename
@@ -254,7 +257,7 @@ class HAPCatalogs:
         self.types = types
 
         # Compute the background for this image
-        self.image = CatalogImage(fitsfile)
+        self.image = CatalogImage(fitsfile, log_level)
         self.image.compute_background(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'])
 
         self.image.build_kernel(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'],
@@ -875,7 +878,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # The imgarr should be background subtracted to match the threshold which has no background
             imgarr_bkgsub = imgarr - self.image.bkg_background_ra
 
-            log.info("SEGMENT. Detecting sources in total image product.")
+            log.info("Detecting sources in total image product.")
             # Note: SExtractor has "connectivity=8" which is the default for detect_sources().
             self.segm_img = detect_sources(imgarr_bkgsub, threshold, npixels=self._size_source_box,
                                            filter_kernel=self.image.kernel,
@@ -893,9 +896,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # The deblending was successful, so just copy the deblended sources back to the sources attribute.
                 self.segm_img = copy.deepcopy(segm_deblended_img)
             except Exception as x_cept:
-                log.warning("SEGMENT. Deblending the sources in image {} was not successful: {}.".format(self.imgname,
+                log.warning("Deblending the sources in image {} was not successful: {}.".format(self.imgname,
                                                                                                          x_cept))
-                log.warning("SEGMENT. Processing can continue with the non-deblended sources, but the user should\n"
+                log.warning("Processing can continue with the non-deblended sources, but the user should\n"
                             "check the output catalog for issues.")
 
             # Regardless of whether or not deblending worked, this variable can be reset to None
@@ -927,8 +930,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     bad_segm_rows_by_id.append(total_measurements_table['id'][i])
             updated_table = Table(rows=good_rows, names=total_measurements_table.colnames)
             if self.diagnostic_mode:
-                log.info("SEGMENT. Bad total rows: {}".format(bad_segm_rows_by_id))
-            log.info("SEGMENT. Bad segments removed from segmentation image.")
+                log.info("Bad total rows: {}".format(bad_segm_rows_by_id))
+            log.info("Bad segments removed from segmentation image.")
 
             # Remove the bad segments from the image
             self.segm_img.remove_labels(bad_segm_rows_by_id, relabel=True)
@@ -972,7 +975,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             tbl["Y-Centroid"] = tbl["Y-Centroid"] + 1
             tbl.write(outname, format="ascii.commented_header")
 
-            log.info("SEGMENT. Wrote region file '{}' containing {} sources".format(outname, len(tbl)))
+            log.info("Wrote region file '{}' containing {} sources".format(outname, len(tbl)))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1023,7 +1026,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Now clean up and prepare the filter table for output
         self.source_cat = self._define_filter_table(updated_table)
 
-        log.info("SEGMENT. Found and measured {} sources from segmentation map.".format(len(self.source_cat)))
+        log.info("Found and measured {} sources from segmentation map.".format(len(self.source_cat)))
 
         # Capture specified filter columns in order to append to the total detection table
         self.subset_filter_source_cat = self.source_cat["ID", "MagAp2", "CI", "Flags"]
@@ -1052,7 +1055,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             tbl["X-Centroid"] = tbl["X-Centroid"] + 1
             tbl["Y-Centroid"] = tbl["Y-Centroid"] + 1
             tbl.write(outname, format="ascii.commented_header")
-            log.info("SEGMENT. Wrote the diagnostic_mode version of the filter detection source catalog: {}\n".format(outname))
+            log.info("Wrote the diagnostic_mode version of the filter detection source catalog: {}\n".format(outname))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1071,8 +1074,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 bad_rows.append(filter_measurements_table['id'][i])
         updated_table = Table(rows=good_rows, names=filter_measurements_table.colnames)
         # FIX What filter?
-        log.info("SEGMENT. Bad rows removed from coordinate list for filter data based on invalid positions after source property measurements.")
-        # log.info("SEGMENT. Bad filter rows: {}".format(bad_rows))
+        log.info("Bad rows removed from coordinate list for filter data based on invalid positions after source property measurements.")
 
         positions = (updated_table["xcentroid"], updated_table["ycentroid"])
         pos_xy = np.vstack(positions).T
@@ -1143,8 +1145,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             updated_table.add_column(stdev_col)
 
         except Exception as x_cept:
-            log.warning("SEGMENT. Computation of additional photometric measurements was not successful: {} - {}.".format(self.imgname, x_cept))
-            log.warning("SEGMENT. Additional measurements have not been added to the output catalog.\n")
+            log.warning("Computation of additional photometric measurements was not successful: {} - {}.".format(self.imgname, x_cept))
+            log.warning("Additional measurements have not been added to the output catalog.\n")
 
         # Add zero-value "Flags" column in preparation for source flagging
         flag_col = Column(name="Flags", data=np.zeros_like(updated_table["id"]))
@@ -1364,7 +1366,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         """
         self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, product=self.image.ghd_product)
         self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
-        log.info("SEGMENT. Wrote filter source catalog: {}".format(self.sourcelist_filename))
+        log.info("Wrote filter source catalog: {}".format(self.sourcelist_filename))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

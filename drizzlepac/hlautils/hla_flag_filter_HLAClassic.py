@@ -65,7 +65,7 @@ from stsci.tools import logutil
 
 __taskname__ = 'hla_flag_filter'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
 
 # config = configparser.ConfigParser()
 # Configs=util.toolbox.Configs()

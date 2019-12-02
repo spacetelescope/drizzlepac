@@ -12,7 +12,7 @@ from .. import alignimages
 
 __taskname__ = 'testutils'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
 
 def compare_wcs_alignment(dataset, force=False):
     """Return results from aligning dataset using all available WCS solutions.

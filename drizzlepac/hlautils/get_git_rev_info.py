@@ -29,7 +29,7 @@ import traceback
 
 __taskname__ = 'get_git_rev_info'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
 
 # -------------------------------------------------------------------------------------------------
 def print_rev_id(local_repo_path):

@@ -15,14 +15,14 @@ __taskname__ = 'config_utils'
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 # ======================================================================================================================
 
 
 class HapConfig(object):
-    def __init__(self, prod_obj, log_level=logutil.logging.INFO, use_defaults=True, input_custom_pars_file=None,
+    def __init__(self, prod_obj, log_level=logutil.logging.NOTSET, use_defaults=True, input_custom_pars_file=None,
                  output_custom_pars_file=None):
         """
         A set of routines to generate appropriate set of configuration parameters.

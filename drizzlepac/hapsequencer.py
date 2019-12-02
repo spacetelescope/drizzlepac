@@ -5,6 +5,15 @@
     products. This script provides similar functionality as compared to the Hubble
     Legacy Archive (HLA) pipeline in that it provides the overall sequence of
     the processing.
+
+    Note regarding logging...
+    During instantiation of the log, the logging level is set to NOTSET which essentially 
+    means all message levels (debug, info, etc.) will be passed from the logger to
+    the underlying handlers, and the handlers will dispatch all messages to the associated
+    streams.  When the command line option of setting the logging level is invoked, the
+    logger basically filters which messages are passed on to the handlers according the 
+    level chosen. The logger is acting as a gate on the messages which are allowed to be
+    passed to the handlers.
 """
 import datetime
 import glob
@@ -22,10 +31,11 @@ from drizzlepac.hlautils import processing_utils as proc_utils
 from stsci.tools import logutil
 from stwcs import wcsutil
 
+
 __taskname__ = 'hapsequencer'
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout, 
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout, 
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 __version__ = 0.1
 __version_date__ = '07-Nov-2019'
@@ -295,6 +305,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
     # start processing
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
+    total_list = []
     product_list = []
     try:
         # Parse the poller file and generate the the obs_info_dict, as well as the total detection
@@ -419,8 +430,9 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         log.info("Return condition {}".format(return_value))
         logging.shutdown()
         # Append total trailer file (from astrodrizzle) to all total log files
-        for tot_obj in total_list:
-            proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
+        if total_list:
+            for tot_obj in total_list:
+                proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
         # Now remove single temp log file
         if os.path.exists(logname):
             os.remove(logname)
