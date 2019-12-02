@@ -1644,11 +1644,17 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
             - product_focus_pos : position for best focus in prodfile
 
     """
+
+    drz = fits.getdata(prodfile, ext=("SCI", 1))
+    # Verify that the total_mask has the same dimensions as the drz/single_file images
+    if drz.shape != total_mask.shape:
+        log.error("Total mask shape {} needs to be the same as input image's shape \
+                    {}".format(total_mask.shape, drz.shape))
+        raise ValueError
+    
     # Determine regions of overlap in total mask
     min_overlap = total_mask > 1
     max_overlap = total_mask == total_mask.max()
-
-    drz = fits.getdata(prodfile, ext=("SCI", 1))
 
     diff_dict = {}
     for sfile in singlefiles:
@@ -1685,21 +1691,22 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
 
         drz_arr = drz_region[yslice, xslice]
         sfile_arr = sfile_region[yslice, xslice]
+
+        # The number of sources detected is subject to crowding/blending of sources
         drzlabels, drznum = detect_point_sources(drz_arr)
         slabels, snum = detect_point_sources(sfile_arr)
 
-        drzsrcs = np.clip(drzlabels, 0, 1)
-        sfilesrcs = np.clip(slabels, 0, 1)
+        drzsrcs = np.clip(drzlabels, 0, 1).astype(np.int16)
+        sfilesrcs = np.clip(slabels, 0, 1).astype(np.int16)
 
-        # Define weight as number of nonzero pixels being measured
-        drz_num = np.nonzero(drzlabels)[0].size
-        sfile_num = np.nonzero(slabels)[0].size
-        weight = (drz_num * drz_arr.size) / (sfile_num * sfile_num)
+        # Determine number of nonzero pixels being measured in 'truth'/single image
+        sfile_num = np.nonzero(sfilesrcs)[0].size
 
         # Compute distance between difference scores for 'truth' and 'product'
         # and weight by fraction of nonzero pixels in region
         # This produces the HAMMING distance for the two arrays
-        dist = (np.abs(drzsrcs - sfilesrcs).sum() / drz_arr.size) * weight
+        # dist = (np.abs(drzsrcs - sfilesrcs).sum() / drz_arr.size) * weight
+        dist = (np.abs(drzsrcs - sfilesrcs).sum() / sfile_num)
 
         # Also compute focus index for the same region of the single drizzle file
         focus_val, focus_pos = determine_focus_index(sfile_region, sigma=sigma)
@@ -1710,7 +1717,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=2):
         # As a result, care must be taken in any comparisons using these values.
         diff_dict[sfile] = {"distance": dist, "xslice": xslice, "yslice": yslice}
         diff_dict[sfile]['product_num_sources'] = drznum
-        diff_dict[sfile]['num_sources'] = drznum
+        diff_dict[sfile]['num_sources'] = snum
         diff_dict[sfile]['focus'] = float(focus_val)
         diff_dict[sfile]['focus_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
         diff_dict[sfile]['product_focus'] = float(pfocus_val)
@@ -1774,7 +1781,7 @@ def diff_score(arr):
     return np.hstack((diff_row, diff_col)).flatten()
 
 
-def evaluate_overlap_diffs(diff_dict, limit=1.0):
+def evaluate_overlap_diffs(diff_dict, limit=0.5):
     """Evaluate whether overlap diffs indicate good alignment or not. """
 
     max_diff = max([d['distance'] for d in diff_dict.values()])
