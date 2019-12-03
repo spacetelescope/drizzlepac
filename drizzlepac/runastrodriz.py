@@ -102,6 +102,12 @@ PIPELINE_PARS = {'mdriztab': True,
                  'clean': False,
                  'resetbits': 4096}
 
+# Values of good_bits are set to treat these DQ bit values as 'good':
+#  - 1024: sink pixel (ACS), charge trap (WFC3/UVIS)
+#  -  256: saturated pixel (ACS), full-well saturation (WFC3)
+#  -   64: warm pixel (ACS, WFC3)
+#  -   16: hot pixel (ACS, WFC3)
+#  -  512: bad reference file pixel (ACS), bad flat pixel (WFC3)
 focus_pars = {"WFC3/IR": {'sigma': 2.0, 'good_bits': 512},
               "WFC3/UVIS": {'sigma': 1.5, 'good_bits': 1360},
               "ACS/WFC": {'sigma': 1.5, 'good_bits': 1360},
