@@ -94,6 +94,9 @@ __version_date__ = "(22-Nov-2019)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
+# The parameter for resetbits resets DQ values of :
+#  - 4096: pixels previously flagged as cosmic-rays.
+#
 PIPELINE_PARS = {'mdriztab': True,
                  'in_memory': True,
                  'stepsize': 10,
@@ -108,6 +111,7 @@ PIPELINE_PARS = {'mdriztab': True,
 #  -   64: warm pixel (ACS, WFC3)
 #  -   16: hot pixel (ACS, WFC3)
 #  -  512: bad reference file pixel (ACS), bad flat pixel (WFC3)
+
 focus_pars = {"WFC3/IR": {'sigma': 2.0, 'good_bits': 512},
               "WFC3/UVIS": {'sigma': 1.5, 'good_bits': 1360},
               "ACS/WFC": {'sigma': 1.5, 'good_bits': 1360},
