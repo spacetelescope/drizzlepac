@@ -6,6 +6,7 @@ given the specified observation conditions and instrument/detector used in the o
 import collections
 import json
 import os
+import pdb
 import sys
 
 from astropy.time import Time
