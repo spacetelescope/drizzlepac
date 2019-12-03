@@ -19,8 +19,6 @@ from astropy.io import fits
 
 from drizzlepac.hlautils import astroquery_utils as aqutils
 from drizzlepac import runastrodriz
-from drizzlepac import alignimages
-from stwcs.wcsutil import headerlet
 
 
 log = logutil.create_logger('test_alignpipe_randomlist', level=logutil.logging.INFO, stream=sys.stdout)
@@ -109,8 +107,8 @@ def test_alignpipe_randomlist(tmpdir, dataset):
     """
     # Start by resetting the logging for all the modules used
     rl = logging.getLogger('stwcs.wcsutil.headerlet')
-    if len(rl.handlers) > 1: del rl.handlers[-1]    
-    
+    if len(rl.handlers) > 1: del rl.handlers[-1]
+
     print("TEST_RANDOM_ALIGN. Dataset: ", dataset)
     output_name = dataset + '.ecsv'
 
