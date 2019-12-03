@@ -335,11 +335,11 @@ class Par():
         """Combine parameters from multiple conditions into a single parameter set.
         """
         self.outpars = {}
-        print(*self.pars_multidict.keys())
         log.debug("{} step configuration parameter set(s) to be merged: {}".format(self.step_title,*self.pars_multidict.keys()))
+        pdb.set_trace()
         for cfg_key in self.pars_multidict.keys():
             self.outpars = self._dict_merge(self.outpars, self.pars_multidict[cfg_key])
-        log.debug("")
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
