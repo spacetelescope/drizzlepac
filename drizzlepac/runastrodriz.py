@@ -779,8 +779,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 else:
                     sat_flags = 256 + 2048 + 4096 + 8192
                 align_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
-                                                  clobber=False, output=debug, sat_flags=sat_flags,
-                                                  log_level=log_level)
+                                                  clobber=False, output=debug, sat_flags=sat_flags)
                 num_sources = align_table['matchSources'][0]
                 fraction_matched = num_sources / align_table['catalogSources'][0]
                 for row in align_table:

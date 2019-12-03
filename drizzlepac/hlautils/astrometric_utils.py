@@ -663,7 +663,9 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
 
         log.info("Looking for sources in {} segments".format(len(segm.labels)))
 
-        for segment in segm.segments:
+        for indx in src_brightest:
+            segment = segm.segments[indx]
+        # for segment in segm.segments:
             # check needed for photutils <= 0.6; it can be removed when
             # the drizzlepac depends on photutils >= 0.7
             if segment is None:
@@ -1525,8 +1527,6 @@ def compute_zero_mask(imgarr, iterations=8, ext=0):
 
 def build_focus_dict(singlefiles, prodfile, sigma=2.0):
 
-    from drizzlepac.hlautils import astrometric_utils as amutils
-
     focus_dict = FOCUS_DICT.copy()
     focus_dict['expnames'] = singlefiles
     focus_dict['prodname'] = prodfile
@@ -1534,7 +1534,7 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
     # Start by creating the full saturation mask from all single_sci images
     full_sat_mask = None
     for f in singlefiles:
-        sat_mask = amutils.compute_zero_mask(f)
+        sat_mask = compute_zero_mask(f)
         if full_sat_mask is None:
             full_sat_mask = sat_mask
         else:
@@ -1552,7 +1552,7 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
     prodarr = fits.getdata(prodfile)
     prodarr[~full_sat_mask] = 0
     # Insure output values are JSON-compliant
-    focus_val, focus_pos = amutils.determine_focus_index(prodarr, sigma=sigma)
+    focus_val, focus_pos = determine_focus_index(prodarr, sigma=sigma)
     focus_dict['prod'].append(float(focus_val))
     focus_dict['prod_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
 
@@ -1560,6 +1560,8 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
     exparr = np.array(focus_dict['exp'])
     focus_dict['stats'] = {'mean': exparr.mean(), 'std': exparr.std(),
                            'min': exparr.min(), 'max': exparr.max()}
+    log.debug("Focus results for {}: \n{}".format(prodfile, focus_dict))
+    log.info("Mean Focus computed for {}: {}".format(prodfile, focus_dict['stats']['mean']))
 
     return focus_dict
 
@@ -1791,7 +1793,11 @@ def evaluate_overlap_diffs(diff_dict, limit=0.5):
     """Evaluate whether overlap diffs indicate good alignment or not. """
 
     max_diff = max([d['distance'] for d in diff_dict.values()])
-    log.info("Maximum overlap difference: {:0.4f}".format(max_diff))
     verified = False if max_diff > limit else True
+    log.info("Maximum overlap difference: {:0.4f}".format(max_diff))
+    if verified:
+        log.info("Alignment verified based on overlap...")
+    else:
+        log.info("Alignment NOT verified based on overlap...")
 
     return verified, max_diff
