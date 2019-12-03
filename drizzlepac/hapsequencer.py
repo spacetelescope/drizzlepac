@@ -245,7 +245,7 @@ def create_drizzle_products(total_list):
 
 
 def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_configs=True,
-                       input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
+                       input_custom_pars_file=None, output_custom_pars_file="pars.json", phot_mode="both",
                        log_level=logutil.logging.INFO):
     """
     Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
