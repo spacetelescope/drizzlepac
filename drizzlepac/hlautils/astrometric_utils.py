@@ -89,7 +89,7 @@ FOCUS_DICT = {'exp': [], 'prod': [], 'stats': {},
               'exp_pos': None, 'prod_pos': None,
               'alignment_verified': False, 'alignment_quality': -1,
               'expnames': "", 'prodname': ""}
-
+EXP_LIMIT = 0.025  # hard-limit of exptime weighting for comparing images
 """
 
 Primary function for creating an astrometric reference catalog.
@@ -662,6 +662,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
             log.debug("Brightest sources in segments: \n{}".format(large_labels))
 
         log.info("Looking for sources in {} segments".format(len(segm.labels)))
+
         for segment in segm.segments:
             # check needed for photutils <= 0.6; it can be removed when
             # the drizzlepac depends on photutils >= 0.7
@@ -908,7 +909,6 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
             whtarr[dqmask] = 0
 
         bkg_ra, bkg_median, bkg_rms_ra, bkg_rms_median = compute_2d_background(imgarr, box_size, win_size)
-
         threshold = nsigma * bkg_rms_ra
         dao_threshold = nsigma * bkg_rms_median
 
@@ -1653,7 +1653,6 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
 
     diff_dict = {}
     for sfile, exp_weight in zip(singlefiles, exp_weights):
-
         # start by seeing whether this product overlaps the region of max_overlap
         sdata = fits.getdata(sfile)
         sdata = np.nan_to_num(sdata, 0)  # Insure all np.nan's are converted to zeros
@@ -1718,10 +1717,10 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
         diff_dict[sfile]['focus_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
         diff_dict[sfile]['product_focus'] = float(pfocus_val)
         diff_dict[sfile]['product_focus_pos'] = (int(pfocus_pos[0][0]), int(pfocus_pos[1][0]))
-
         log.debug("Overlap differences for {} found to be: \n{}".format(sfile, diff_dict[sfile]))
 
     return diff_dict
+
 
 def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
                         sigma=2.5, maxiters=10, exp_weight=None):
@@ -1734,6 +1733,7 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
         yend = -1 * yend if yend > 0 else None
         xend = -1 * xend if xend > 0 else None
         new_shape = (arr.shape[0] // scale, arr.shape[1] // scale)
+
         rebin_arr = rebin(arr[:yend, :xend].copy(), new_shape)
     else:
         rebin_arr = arr.copy()
@@ -1749,14 +1749,15 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
         log.debug("sigma clipped background value: {}".format(bkg_total))
     elif isinstance(background, Background2D):
         bkg_total = background.background + nsigma * background.background_rms
-        log.debug("[reduce_diff_region] background: max={}, mean={}".format(bkg_total.max(), bkg_total.mean()))
+        log.debug("[reduce_diff_region] background: max={}, mean={}".format(bkg_total.max(),
+                    bkg_total.mean()))
 
     rebin_arr -= bkg_total
     rebin_arr = np.clip(rebin_arr, 0, rebin_arr.max())
 
     return rebin_arr
 
-def detect_point_sources(arr, background=None, nsigma=4, log_sigma=2.0, scale=1, src_mask=None,
+def detect_point_sources(arr, background=None, nsigma=4, log_sigma=2.0, scale=1,
                          sigma=2.5, maxiters=10, exp_weight=None):
     # Remove background entirely from input array (clip at 0)
     src_arr = reduce_diff_region(arr, background=background, nsigma=nsigma, scale=scale,

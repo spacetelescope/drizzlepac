@@ -37,7 +37,10 @@ BKG_FILTER_SIZE = 3
 CATALOG_TYPES = ['point', 'segment']
 MIN_CATALOG_THRESHOLD = 3
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 class AlignmentTable:
     def __init__(self, input_list, clobber=False, dqname='DQ', **alignment_pars):
@@ -166,7 +169,7 @@ class AlignmentTable:
             # add the name of the image to the imglist object
             for im in img:
             #    im.meta['name'] = image
-                log.info('im.meta[name] = {}'.format(im.meta['name']))
+                log.debug('im.meta[name] = {}'.format(im.meta['name']))
             self.imglist.extend(img)
 
         self.group_id_dict = {}
@@ -245,7 +248,7 @@ class AlignmentTable:
 
         """
         if not self.selected_fit:
-            print("No FIT selected for application.  Please run 'select_fit()' method.")
+            log.error("No FIT selected for application.  Please run 'select_fit()' method.")
             raise ValueError
         # Call update_hdr_wcs()
         headerlet_dict = update_image_wcs_info(self.selected_fit,
@@ -659,7 +662,9 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
                group_id not in group_dict:
                 group_dict[group_id] = {'ref_idx': None, 'FIT_RMS': None,
                                         'input_mag': None, 'ref_mag': None, 'input_idx': None}
-                # log.info("fit_info: {}".format(item.meta['fit_info']))
+
+                log.debug("fit_info: {}".format(item.meta['fit_info']))
+
                 tinfo = item.meta['fit_info']
                 ref_idx = tinfo['matched_ref_idx']
                 fitmask = tinfo['fitmask']
@@ -684,7 +689,6 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
                 input_mag = item.meta['catalog']['mag']
                 group_dict[group_id]['input_mag'] = input_mag
                 group_dict[group_id]['input_idx'] = tinfo['matched_input_idx']
-                print(tinfo['matched_input_idx'], fitmask)
 
                 obs_rms.append(fit_rms)
 
@@ -696,7 +700,6 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
 
     # Compute RMS for entire ASN/observation set
     total_rms = np.mean(obs_rms)
-    # total_rms = np.sqrt(np.sum(np.array(obs_rms)**2))
 
     # Now, append computed results to tweakwcs_output
     for item in tweakwcs_output:
