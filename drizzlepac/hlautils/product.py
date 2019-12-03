@@ -205,6 +205,7 @@ class FilterProduct(HAPProduct):
         exposure_filenames = []
         headerlet_filenames = {}
         align_table = None
+        refname = None
         try:
             if self.edp_list:
                 for edp in self.edp_list:
@@ -242,7 +243,7 @@ class FilterProduct(HAPProduct):
 
             # If the align_table is None, it is necessary to clean-up reference catalogs 
             # created for alignment of each filter product here.
-            if os.path.exists(refname):
+            if refname and os.path.exists(refname):
                 os.remove(refname)
 
         # Return a table which contains data regarding the alignment, as well as the
