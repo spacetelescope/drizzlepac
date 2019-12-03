@@ -41,7 +41,7 @@ MAS_TO_ARCSEC = 1000.  # Conversion factor from milli-arcseconds to arcseconds
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout, 
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 __version__ = 0.0
@@ -154,8 +154,7 @@ def check_and_get_data(input_list, **pars):
 # ------------------------------------------------------------------------------------------------------------
 def perform_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
               runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=500,
-              headerlet_filenames=None, catalog_list=['GAIADR2', 'GAIADR1'], 
-              fit_label=None, 
+              headerlet_filenames=None, catalog_list=['GAIADR2', 'GAIADR1'], fit_label=None,
               **alignment_pars):
     """Actual Main calling function.
 
@@ -238,7 +237,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
 
         log.info(make_label('Processing time of [STEP 1]', starting_dt))
         starting_dt = datetime.datetime.now()
-        
+
         # Get default alignment parameters if not provided by the user...
         inst = fits.getval(imglist[0], 'instrume')
         det = fits.getval(imglist[0], 'detector')

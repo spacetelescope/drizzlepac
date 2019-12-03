@@ -43,7 +43,8 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 class AlignmentTable:
-    def __init__(self, input_list, clobber=False, dqname='DQ', **alignment_pars):
+    def __init__(self, input_list, clobber=False, dqname='DQ',
+                 log_level=logutil.logging.NOTSET, **alignment_pars):
         """
         **alignment_pars needs to contain the following entries:
                           # kernel defining, source finding par
@@ -58,6 +59,7 @@ class AlignmentTable:
                           classify=True, centering_mode="starfind", nlargest=None,
                           plot=False, vmax=None, deblend=False
         """
+        log.setLevel(log_level)
         # Register fit methods with the class
         self.fit_methods = {'relative': match_relative_fit,
                             '2dhist': match_2dhist_fit,

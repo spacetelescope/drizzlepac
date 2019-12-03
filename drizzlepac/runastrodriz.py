@@ -77,7 +77,7 @@ import numpy as np
 
 from drizzlepac import processInput  # used for creating new ASNs for _flc inputs
 from stwcs import updatewcs
-# from drizzlepac import alignimages
+
 from drizzlepac import align
 from drizzlepac import resetbits
 from drizzlepac.hlautils import astrometric_utils as amutils
@@ -335,7 +335,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     - copy updated input exposures to parent directory
             4. If a posteriori correction enabled,
                 0. copy all inputs to separate sub-directory for processing
-                a. run alignimages
+                a. run align to align the images
                 b. generate drizzle products for all sets of inputs (FLC and/or FLT) without CR identification
                 c. verify alignment using focus index on FLC or, if no FLC, FLT products
                 d. determine similarity index relative to pipeline default product
@@ -540,7 +540,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             frootname = fileutil.buildNewRootname(fname)
             hname = "%s_flt_hlet.fits" % frootname
             # Write out headerlet file used by astrodrizzle, however,
-            # do not overwrite any that was already written out by alignimages
+            # do not overwrite any that was already written out by align
             if not os.path.exists(hname):
                 hlet_msg += "Created Headerlet file %s \n" % hname
                 try:
@@ -778,10 +778,9 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                         sat_flags = 256 + 2048
                 else:
                     sat_flags = 256 + 2048 + 4096 + 8192
-                # align_table = alignimages.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
-                #                                        clobber=False, output=debug, sat_flags=sat_flags)
                 align_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
-                                                  clobber=False, output=debug, sat_flags=sat_flags)
+                                                  clobber=False, output=debug, sat_flags=sat_flags,
+                                                  log_level=log_level)
                 num_sources = align_table['matchSources'][0]
                 fraction_matched = num_sources / align_table['catalogSources'][0]
                 for row in align_table:
@@ -799,7 +798,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             except Exception:
                 # Something went wrong with alignment to GAIA, so report this in
                 # trailer file
-                _trlmsg = "EXCEPTION encountered in alignimages...\n"
+                _trlmsg = "EXCEPTION encountered in align...\n"
                 _trlmsg += "   No correction to absolute astrometric frame applied!\n"
                 _updateTrlFile(trlfile, _trlmsg)
                 traceback.print_exc()
@@ -854,7 +853,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             inst = fits.getval(alignfiles[0], 'instrume').lower()
             det = fits.getval(alignfiles[0], 'detector').lower()
             pscale = HSTWCS(alignfiles[0], ext=1).pscale
-            # det_pars = alignimages.detector_specific_params[inst][det]
+
             det_pars = align.get_default_pars(inst, det)['generate_source_catalogs']
             default_fwhm = det_pars['fwhmpsf'] / pscale
             align_fwhm = amutils.get_align_fwhm(align_focus, default_fwhm)

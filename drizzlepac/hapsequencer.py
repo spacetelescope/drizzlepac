@@ -7,11 +7,11 @@
     the processing.
 
     Note regarding logging...
-    During instantiation of the log, the logging level is set to NOTSET which essentially 
+    During instantiation of the log, the logging level is set to NOTSET which essentially
     means all message levels (debug, info, etc.) will be passed from the logger to
     the underlying handlers, and the handlers will dispatch all messages to the associated
     streams.  When the command line option of setting the logging level is invoked, the
-    logger basically filters which messages are passed on to the handlers according the 
+    logger basically filters which messages are passed on to the handlers according the
     level chosen. The logger is acting as a gate on the messages which are allowed to be
     passed to the handlers.
 """
@@ -35,7 +35,7 @@ from stwcs import wcsutil
 __taskname__ = 'hapsequencer'
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout, 
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 __version__ = 0.1
 __version_date__ = '07-Nov-2019'
@@ -350,7 +350,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
 
-        # Run alignimages.py on images on a filter-by-filter basis.
+        # Run align.py on images on a filter-by-filter basis.
         # Process each filter object which contains a list of exposure objects/products.
         log.info("\n{}: Align the images on a filter-by-filter basis.".format(str(datetime.datetime.now())))
         for tot_obj in total_list:
@@ -360,17 +360,13 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                 # Report results and track the output files
                 if align_table:
                     log.info("ALIGN_TABLE: {}".format(align_table.filtered_table))
-                    # os.remove("alignimages.log")  # FIX This log needs to be included in total product trailer file
                     for row in align_table.filtered_table:
                         log.info(row['status'])
                         if row['status'] == 0:
-                            log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'],
-                                                                                                row['catalog']))
+                            log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
 
                         # Alignment did not work for this particular image
-                        # FIX - If alignment did not work for an image, it seems this exposure should
-                        # be removed from the exposure lists.  TotalProduct and FilterProduct need
-                        # methods to do this.
+                        # If alignment did not work for an image, image still has WCS so continue processing.
                         else:
                             log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
 
