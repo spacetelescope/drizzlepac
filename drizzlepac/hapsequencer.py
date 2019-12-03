@@ -18,6 +18,7 @@
 import datetime
 import glob
 import os
+import pdb
 import sys
 import traceback
 import logging
@@ -347,7 +348,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                                                                   use_defaults=use_defaults_configs,
                                                                   input_custom_pars_file=input_custom_pars_file,
                                                                   output_custom_pars_file=output_custom_pars_file)
-
+        pdb.set_trace()
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
 
         # Run alignimages.py on images on a filter-by-filter basis.
