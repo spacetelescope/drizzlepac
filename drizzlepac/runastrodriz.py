@@ -389,10 +389,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # run updatewcs with use_db=True to insure all products have
         # have a priori solutions as extensions
         updatewcs.updatewcs(_calfiles)
-        verify_gaia_wcsnames(_calfiles)
+        _trlmsg += verify_gaia_wcsnames(_calfiles)
         if _calfiles_flc:
             updatewcs.updatewcs(_calfiles_flc)
-            verify_gaia_wcsnames(_calfiles)
+            _trlmsg += verify_gaia_wcsnames(_calfiles_flc)
 
         # Check for the case where no update was performed due to all inputs
         # having EXPTIME==0 (for example) and apply updatewcs anyway to allow
@@ -935,20 +935,26 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
     return focus_dicts
 
-def verify_gaia_wcsnames(filenames):
+def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_date):
     """Insure that data taken with GAIA has WCSNAME reflecting that"""
-    gsc240 = gsc240_date.split('-')
+    gsc240 = catalog_date.split('-')
     gdate = datetime.date(int(gsc240[0]), int(gsc240[1]), int(gsc240[2]))
+    msg = ''
     for f in filenames:
         with fits.open(f, mode='update') as fhdu:
-            wcsname = fhdu['sci', 1].header['wcsname']
+            num_sci = fileutil.countExtn(fhdu)
             dateobs = fhdu[0].header['date-obs'].split('-')
             # convert to datetime object
             fdate = datetime.date(int(dateobs[0]), int(dateobs[1]), int(dateobs[2]))
-            if fdate > gdate and '-' not in wcsname:
-                wcsname = "{}-GSC240".format(wcsname)
-                fhdu['sci', 1].header['wcsname'] = wcsname
-            
+            for sciext in range(num_sci):
+                wcsname = fhdu['sci', sciext + 1].header['wcsname']
+                if fdate > gdate and '-' not in wcsname:
+                    wcsname = "{}-{}".format(wcsname, catalog_name)
+                    fhdu['sci', sciext + 1].header['wcsname'] = wcsname
+                    msg += "Updating WCSNAME of {}[sci,{}] for use of {} catalog \n".format(f,
+                            sciext + 1, catalog_name)
+    return msg
+
 def _lowerAsn(asnfile):
     """ Create a copy of the original asn file and change
         the case of all members to lower-case.
