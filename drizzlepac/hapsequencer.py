@@ -331,6 +331,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
         # Update all of the product objects with their associated configuration information.
         for total_item in total_list:
+            import pdb
+            pdb.set_trace()
             total_item.configobj_pars = config_utils.HapConfig(total_item,
                                                                log_level=log_level,
                                                                use_defaults=use_defaults_configs,
