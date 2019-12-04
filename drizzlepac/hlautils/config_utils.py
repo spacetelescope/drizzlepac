@@ -115,7 +115,18 @@ class HapConfig(object):
 
         # determine product type, initialize and build conditions list
         if hasattr(prod_obj, "edp_list") and hasattr(prod_obj, "fdp_list"):  # For total products
-            self.conditions = ["total_basic"]
+            if self.instrument == "wfc3" and self.detector == "uvis":
+                thresh_time = Time("2012-11-08T02:59:15", format='isot', scale='utc').mjd
+                # Get the MJDUTC of the first exposure in the filter exposure product list. While
+                # each exposure will have its own MJDUTC (the EXPSTART keyword), this is probably
+                # granular enough.
+                mjdutc = prod_obj.edp_list[0].mjdutc
+                if mjdutc >= thresh_time:
+                    self.conditions = ["total_basic_post"]
+                else:
+                    self.conditions = ['total_basic_pre']
+            else:
+                self.conditions = ["total_basic"]
             if len(prod_obj.edp_list) == 1:
                 self.conditions.append("any_n1")
         elif hasattr(prod_obj, "edp_list") and not hasattr(prod_obj, "fdp_list"):  # For filter products
