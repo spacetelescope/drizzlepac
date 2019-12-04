@@ -90,6 +90,12 @@ FOCUS_DICT = {'exp': [], 'prod': [], 'stats': {},
               'alignment_verified': False, 'alignment_quality': -1,
               'expnames': "", 'prodname': ""}
 EXP_LIMIT = 0.025  # hard-limit of exptime weighting for comparing images
+
+# A radius of 25 pixels (1" in WFC3, 1.25" in ACS) corresponds to >=95% total flux for a point-source
+# Any source larger than this, would either be saturated or blended with other sources
+# in either case, going to a smaller kernel will help with source identification.
+MAX_AREA_LIMIT = 1964
+
 """
 
 Primary function for creating an astrometric reference catalog.
@@ -588,7 +594,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
                           filter_kernel=kernel, connectivity=4)
 
-    log.debug("Creating segmentation map for {} ".format(outroot, kernel.shape))
+    log.debug("Creating segmentation map for {} ".format(outroot))
     if kernel is not None:
         kernel_area = ((kernel.shape[0] // 2) ** 2) * np.pi
         log.debug("   based on kernel shape of {}".format(kernel.shape))
@@ -603,7 +609,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     # By reducing the size of the kernel used for segment detection, this can be minimized
     # in crowded fields.  Also, mean area is used to try to avoid this logic for fields with
     # several large extended sources in an otherwise empty field.
-    if max_area > 3422 and mean_area > (kernel_area / 2):  # largest > 33-pix radius source
+    if max_area > MAX_AREA_LIMIT and mean_area > (kernel_area / 2):  # largest > 25-pix radius source
         # reset kernel to only use the central 1/4 area and redefine the segment map
         kcenter = (kernel.shape[0] - 1) // 2
         koffset = (kcenter - 1) // 2
@@ -646,10 +652,6 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     if centering_mode == 'starfind':
         src_table = None
 
-        # daofind = IRAFStarFinder(fwhm=fwhm, threshold=5.*bkg.background_rms_median)
-        log.debug("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, dao_threshold))
-        # daofind = DAOStarFinder(fwhm=fwhm, threshold=dao_threshold)
-
         # Identify nbrightest/largest sources
         if nlargest is not None:
             nlargest = min(nlargest, len(segm.labels))
@@ -678,6 +680,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
 
             dao_threshold = segment_threshold[seg_slice].mean()
             daofind = DAOStarFinder(fwhm=fwhm, threshold=dao_threshold)
+            log.debug("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, dao_threshold))
 
             # Define raw data from this slice
             detection_img = img[seg_slice]
