@@ -33,11 +33,8 @@ __version_date__ = "(16-Oct-2019)"
 #
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout, 
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
-# Any module which uses 'util.with_logging' should be added separately here...
-# logging.getLogger('astrodrizzle').addHandler(log)
-# logging.getLogger('alignimages').addHandler(log)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -69,9 +66,15 @@ def perform(input_filename, **kwargs):
                       "warning": logutil.logging.WARNING,
                       "info": logutil.logging.INFO,
                       "debug": logutil.logging.DEBUG}
-    kwargs['log_level'] = kwargs['log_level'].lower()
-    if kwargs['log_level'] in log_level_dict.keys():
-        kwargs['log_level'] = log_level_dict[kwargs['log_level']]
+
+
+    if 'log_level' in kwargs:
+        kwargs['log_level'] = kwargs['log_level'].lower()
+        if kwargs['log_level'] in log_level_dict.keys():
+            kwargs['log_level'] = log_level_dict[kwargs['log_level']]
+        else:
+            print("Log level set to default level 'log.info'.")
+            kwargs['log_level'] = logutil.logging.INFO
     else:
         print("Log level set to default level 'log.info'.")
         kwargs['log_level'] = logutil.logging.INFO

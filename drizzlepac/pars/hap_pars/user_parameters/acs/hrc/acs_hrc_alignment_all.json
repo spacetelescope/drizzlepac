@@ -17,7 +17,7 @@
     },
   "generate_source_catalogs":
     {
-      "box_size":50,
+      "box_size":27,
       "win_size":3,
       "nsigma":5.0,
       "centering_mode": "starfind",
@@ -36,7 +36,7 @@
     },
   "match_relative_fit":
     {
-      "searchrad": 75,
+      "searchrad": 100,
       "separation": 0.1,
       "tolerance": 2,
       "use2dhist": true

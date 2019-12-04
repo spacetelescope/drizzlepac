@@ -227,7 +227,8 @@ class FilterProduct(HAPProduct):
                 if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
                     align_table.perform_fit(method_name, catalog_name, ref_catalog)
                     align_table.select_fit(catalog_name, method_name)
-                    align_table.apply_fit(headerlet_filenames=headerlet_filenames)
+                    align_table.apply_fit(headerlet_filenames=headerlet_filenames, 
+                                         fit_label='SVM')
                 else:
                     log.warning("Not enough reference sources for absolute alignment...")
                     raise ValueError
