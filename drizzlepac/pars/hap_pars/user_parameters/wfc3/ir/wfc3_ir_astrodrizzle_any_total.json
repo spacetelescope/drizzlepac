@@ -23,10 +23,10 @@
         "static_sig": 4.0
     },
     "STEP 2: SKY SUBTRACTION": {
-        "skysub": false,
+        "skysub": true,
         "skymethod": "match",
-        "skystat": "median",
-        "skywidth": 0.1,
+        "skystat": "mode",
+        "skywidth": 0.10000000149011612,
         "skylower": -100.0,
         "skyupper": null,
         "skyclip": 5,
@@ -34,7 +34,7 @@
         "skyusigma": 4.0,
         "skymask_cat": "",
         "use_static": true,
-        "sky_bits": "0",
+        "sky_bits": "16",
         "skyfile": "",
         "skyuser": ""
     },
@@ -93,9 +93,9 @@
         "final_kernel": "square",
         "final_wt_scl": "exptime",
         "final_pixfrac": 1.0,
-        "final_fillval": null,
+        "final_fillval": 0.0,
         "final_maskval": null,
-        "final_bits": "65535",
+        "final_bits": "528",
         "final_units": "cps"
     },
     "STEP 7a: CUSTOM WCS FOR FINAL OUTPUT": {
