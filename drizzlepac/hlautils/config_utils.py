@@ -193,8 +193,6 @@ class HapConfig(object):
                     sys.exit("INVALID HST INSTRUMENT!")
         else:  # For single-exposure products
             self.conditions = ["single_basic"]
-            if prod_obj.is_singleton:
-                self.conditions.append("any_n1")
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
