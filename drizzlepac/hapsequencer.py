@@ -464,7 +464,7 @@ def run_sourcelist_comparision(total_list):
         # hla_classic_path = os.path.join(base_path.replace("INST",tot_obj.instrument),
         #                                 tot_obj.prop_id,
         #                                 tot_obj.prop_id+"_"+tot_obj.obset_id) # Generate path to HLA classic products
-        hla_classic_path = os.path.join(os.getcwd()+"hla_classic")
+        hla_classic_path = os.path.join(os.getcwd(),"hla_classic")
         log.info("HLA classic path: {}".format(hla_classic_path))
         if not os.path.exists(hla_classic_path):
             log.warning("HLA classic path not found. Skipping HAP-HLA classic comparisons.")
