@@ -90,8 +90,13 @@ from drizzlepac.devutils.comparison_tools import starmatch_hist
 from drizzlepac import util
 from stsci.tools import logutil
 
-log = logutil.create_logger('compare_sourcelists', level=logutil.logging.INFO, stream=sys.stdout)
-#-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+__taskname__ = 'compare_sourcelists'
+
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
 def check_match_quality(matched_x_list, matched_y_list):
     """Creates region file to check quality of source matching.
@@ -123,7 +128,7 @@ def check_match_quality(matched_x_list, matched_y_list):
     log.info("Wrote region file {}".format(out_filename))
 
 
-#-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
     """Compute and report statistics on the differences in flagging.
 
