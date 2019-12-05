@@ -660,6 +660,9 @@ def comparesourcelists(slNames,imgNames,plotGen,diffMode,verbose,debugMode):
     # 2: Run starmatch_hist to get list of matched sources common to both input sourcelists
     slLengths=[len(refData['X']),len(compData['X'])]
     matching_lines_ref, matching_lines_img=getMatchedLists(slNames,imgNames,slLengths)
+    if len(matching_lines_ref) == 0  or len(matching_lines_img) == 0:
+        log.critical("*** Comparisons cannot be computed. No matching sources were found. ***")
+        return("ERROR")
     # 3: Compute and display statistics on X position differences for matched sources
     matched_values=extractMatchedLines("X",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
