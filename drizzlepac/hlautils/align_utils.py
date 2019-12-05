@@ -182,7 +182,7 @@ class AlignmentTable:
         """Return the list of method names for all registered functions
             available for performing alignment.
         """
-        return self.fit_methods.keys()
+        return list(self.fit_methods.keys())
 
     def perform_fit(self, method_name, catalog_name, reference_catalog):
         """Perform fit using specified method, then determine fit quality"""
