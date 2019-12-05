@@ -490,7 +490,7 @@ def run_sourcelist_comparision(total_list):
                 log.info("HAP catalog:         {}".format(hap_sourcelist_name))
                 log.info("HLA Classic catalog: {}".format(hla_sourcelist_name))
                 # once all file exist checks are passed, execute sourcelist comparision
-                return_status = compare_sourcelists.comparesourcelists([hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname], False, "absolute", False, False)
+                return_status = compare_sourcelists.comparesourcelists([hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname], "file", "absolute", False, False)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
