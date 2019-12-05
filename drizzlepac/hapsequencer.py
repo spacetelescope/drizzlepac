@@ -406,12 +406,13 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # TODO: QUALITY CONTROL SUBROUTINE CALL GOES HERE.
         """
 
+        # 9: Compare results to HLA classic counterparts (if possible)
+        run_sourcelist_comparision(total_list)
         # Write out manifest file listing all products generated during processing
         log.info("Creating manifest file {}.".format(manifest_name))
         log.info("  The manifest contains the names of products generated during processing.")
         with open(manifest_name, mode='w') as catfile:
             [catfile.write("{}\n".format(name)) for name in product_list]
-
         # 10: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
     except Exception:
@@ -439,6 +440,57 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             print("Master log file not found.  Please check logs to locate processing messages.")
         return return_value
 
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def run_sourcelist_comparision(total_list):
+    """ This subroutine automates execution of drizzlepac/devutils/comparison_tools/compare_sourcelist_flagging.py to
+    compare HAP-generated filter catalogs with their HLA classic counterparts.
+
+    Parameters
+    ----------
+    total_list: list
+        List of TotalProduct objects, one object per instrument/detector combination is
+        a visit.  The TotalProduct objects are comprised of FilterProduct and ExposureProduct
+        objects.
+
+    RETURNS
+    -------
+    Nothing.
+    """
+    from drizzlepac.devutils.comparison_tools import compare_sourcelists
+    base_path = "/ifs/public/hst/hla/INST/V10.0"
+    for tot_obj in total_list:
+        hla_classic_path = os.path.join(base_path.replace("INST",tot_obj.instrument),
+                                        tot_obj.prop_id,
+                                        tot_obj.prop_id+"_"+tot_obj.obset_id) # Generate path to HLA classic products
+
+        log.info("HLA classic path: {}".format(hla_classic_path))
+        if not os.path.exists(hla_classic_path):
+            log.warning("HLA classic path not found. Skipping HAP-HLA classic comparisons.")
+            return # bail out if HLA classic path can't be found.
+        for filt_obj in tot_obj.fdp_list:
+            hap_imgname = filt_obj.drizzle_filename
+            hla_imgname = glob.glob("{}/{}{}_dr*.fits".format(hla_classic_path,filt_obj.basename, filt_obj.filters))[0]
+            if not os.path.exists(hap_imgname) or not os.path.exists(hla_imgname): # Skip filter if one or both of the images can't be found
+                log.warning(
+                    "One or both of the images can't be found. Skipping HAP-HLA classic comparisons for this filter")
+                continue
+            for hap_sourcelist_name in [filt_obj.point_cat_filename, filt_obj.segment_cat_filename]:
+                if hap_sourcelist_name.endswith("point-cat.ecsv"):
+                    hla_classic_cat_type = "dao"
+                else:
+                    hla_classic_cat_type = "sex"
+                hla_sourcelist_name = "{}/logs/{}{}_{}phot.txt".format(hla_classic_path,filt_obj.basename, filt_obj.filters, hla_classic_cat_type)
+                if not os.path.exists(hap_sourcelist_name) or not os.path.exists(hla_sourcelist_name): # Skip catalog type if one or both of the catalogs can't be found
+                    log.warning("One or both of the catalogs can't be found. Skipping HAP-HLA classic comparisons for this catalog type.")
+                    continue
+                log.info("HAP image:           {}".format(hap_imgname))
+                log.info("HLA Classic image:   {}".format(hla_imgname))
+                log.info("HAP catalog:         {}".format(hap_sourcelist_name))
+                log.info("HLA Classic catalog: {}".format(hla_sourcelist_name))
+                # once all file exist checks are passed, execute sourcelist comparision
+                return_status = compare_sourcelists.comparesourcelists([hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname], False, "absolute", False, False)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
