@@ -25,7 +25,7 @@
     "STEP 2: SKY SUBTRACTION": {
         "skysub": true,
         "skymethod": "match",
-        "skystat": "mode",
+        "skystat": "median",
         "skywidth": 0.10000000149011612,
         "skylower": -100.0,
         "skyupper": null,
