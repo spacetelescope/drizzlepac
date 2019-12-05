@@ -580,11 +580,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # Remove secondary log files for good...
     logging.shutdown()
 
-    if not debug:
-        # Remove all temp sub-directories now that we are done
-        for sd in sub_dirs:
-            if os.path.exists(sd): rmtree2(sd)
-
     for _olog in [_alignlog]:
         if os.path.exists(_olog):
             os.remove(_olog)
@@ -595,6 +590,11 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         _restoreResults(new_processing_dir, orig_processing_dir)
         os.chdir(orig_processing_dir)
         _removeWorkingDir(new_processing_dir)
+
+    if not debug:
+        # Remove all temp sub-directories now that we are done
+        for sd in sub_dirs:
+            if os.path.exists(sd): rmtree2(sd)
 
     # Append final timestamp to trailer file...
     _final_msg = '%s: Finished processing %s \n' % (_getTime(), inFilename)
