@@ -957,6 +957,10 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
     gdate = datetime.date(int(gsc240[0]), int(gsc240[1]), int(gsc240[2]))
     msg = ''
     for f in filenames:
+        # Check to see whether a RAW/uncalibrated file has been provided
+        # If so, skip it since updatewcs has not been run on it yet.
+        if '_raw' in f:
+            continue
         with fits.open(f, mode='update') as fhdu:
             num_sci = fileutil.countExtn(fhdu)
             dateobs = fhdu[0].header['date-obs'].split('-')
