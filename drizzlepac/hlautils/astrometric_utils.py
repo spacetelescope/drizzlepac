@@ -1594,6 +1594,11 @@ def get_align_fwhm(focus_dict, default_fwhm, src_size=32):
     prod = pimg[1].data if len(pimg) > 1 else pimg[0].data
 
     src = prod[posy - src_size:posy + src_size, posx - src_size:posx + src_size]
+
+    # For sources near the edge of the image data, insure that any NaN's are converted to 0
+    # This is necessary in order to allow FWHM to be determined
+    src = np.nan_to_num(src, 0)
+
     # Normalize to total flux of 1 for FWHM determination
     kernel = src / src.sum()
 
