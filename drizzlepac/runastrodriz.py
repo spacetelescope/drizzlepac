@@ -87,11 +87,11 @@ from drizzlepac import util
 from drizzlepac import mdzhandler
 from drizzlepac import updatehdr
 
-__taskname__ = "runaligndriz"
+__taskname__ = "runastrodriz"
 
 # Local variables
 __version__ = "2.1.0"
-__version_date__ = "(22-Nov-2019)"
+__version_date__ = "(06-Dec-2019)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
