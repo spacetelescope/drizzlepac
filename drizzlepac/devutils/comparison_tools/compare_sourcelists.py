@@ -627,7 +627,7 @@ def round2ArbatraryBase(value,direction,roundingBase):
     return rv
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 @util.with_logging
-def comparesourcelists(slNames,imgNames,plotGen,diffMode,verbose,debugMode):
+def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",verbose=False,debugMode=False):
     """Main calling subroutine to compare sourcelists.
 
     Parameters
@@ -929,7 +929,7 @@ if __name__ == "__main__":
         ARGS.debugMode = True
     else: ARGS.debugMode = False
 
-    runStatus=comparesourcelists(ARGS.sourcelistNames,ARGS.imageNames,ARGS.plotGen,ARGS.diffMode,ARGS.verbose,ARGS.debugMode)
+    runStatus=comparesourcelists(ARGS.sourcelistNames,ARGS.imageNames,plotGen=ARGS.plotGen,diffMode=ARGS.diffMode,verbose=ARGS.verbose,debugMode=ARGS.debugMode)
 
 # TODO: reformat docstrings
 # TODO: fix PEP 8 violations
