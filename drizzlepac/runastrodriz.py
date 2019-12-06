@@ -69,8 +69,11 @@ import stat
 import errno
 from collections import OrderedDict
 import datetime
-from psutil import Process
-
+try:
+    from psutil import Process
+else:
+    Process = None
+    
 # THIRD-PARTY
 from astropy.io import fits
 from stsci.tools import fileutil, asnutil
@@ -586,7 +589,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         os.chdir(orig_processing_dir)
         _removeWorkingDir(new_processing_dir)
 
-    if debug:
+    if debug and Process is not None:
         print("Files still open for this process include: ")
         print(Process().open_files())
 
