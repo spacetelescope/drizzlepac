@@ -326,8 +326,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                              for f in _calfiles
                              if os.path.exists(f.replace('_flt.fits', '_flc.fits'))]
 
-        print(_inlist)
-        print(_calfiles_flc)
         """
         Start updating the data and verifying that the new alignment is valid.
             1. Run updatewcs without astrometry database update on all input exposures (FLCs? and FLTs)
