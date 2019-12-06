@@ -89,7 +89,9 @@ FOCUS_DICT = {'exp': [], 'prod': [], 'stats': {},
               'exp_pos': None, 'prod_pos': None,
               'alignment_verified': False, 'alignment_quality': -1,
               'expnames': "", 'prodname': ""}
-EXP_LIMIT = 0.025  # hard-limit of exptime weighting for comparing images
+              
+EXP_LIMIT = 0.05  # hard-limit of exptime weighting for comparing images
+EXP_RATIO = 0.2
 
 # A radius of 25 pixels (1" in WFC3, 1.25" in ACS) corresponds to >=95% total flux for a point-source
 # Any source larger than this, would either be saturated or blended with other sources
@@ -1398,7 +1400,7 @@ def check_mag_corr(imglist, threshold=0.5):
         ref_mags = image.meta['fit_info']['ref_mag']
         if input_mags is not None and len(input_mags) > 0:
             mag_corr, mag_corr_std = pearsonr(input_mags, ref_mags)
-            print("{} Magnitude correlation: {}".format(image.meta['name'], mag_corr))
+            log.info("{} Magnitude correlation: {}".format(image.meta['name'], mag_corr))
             cross_match_check = True if abs(mag_corr) > threshold else False
         else:
             cross_match_check = False
@@ -1702,6 +1704,8 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
         sfile_arr = sfile_region[yslice, xslice]
 
         # The number of sources detected is subject to crowding/blending of sources
+        # as well as noise from the background (if too low 
+        #  a background value is used)
         drzlabels, drznum = detect_point_sources(drz_arr, scale=scale)
         slabels, snum = detect_point_sources(sfile_arr, scale=scale, exp_weight=exp_weight)
 
@@ -1720,6 +1724,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
         # Record results for each exposure compared to the combined drizzle product
         # Number of sources in drz and sfile can include artifacts such as CRs
         # As a result, care must be taken in any comparisons using these values.
+        log.info("Overlap difference for {}: {:0.4f}".format(sfile, dist))
         diff_dict[sfile] = {"distance": dist, "xslice": xslice, "yslice": yslice}
         diff_dict[sfile]['product_num_sources'] = drznum
         diff_dict[sfile]['num_sources'] = snum
@@ -1733,7 +1738,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
 
 
 def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
-                        sigma=2.5, maxiters=10, exp_weight=None):
+                        sigma=3.0, exp_weight=None):
     """Convert the image into a background-removed array"""
     # Provide option to rebin to a smaller image size to minimize
     # impact from high-frequency (pixel-to-pixel) differences in low S/N data
@@ -1749,9 +1754,19 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
         rebin_arr = arr.copy()
 
     if background is None:
-        if exp_weight is not None and 0.2 <= exp_weight <= EXP_LIMIT:
+        """
+        if exp_weight is not None and 0.2 >= exp_weight >= EXP_LIMIT:
             sigma = 2.0
             maxiters = 10.
+        """
+        if exp_weight is not None and exp_weight < EXP_RATIO:
+            if EXP_RATIO >= exp_weight >= EXP_LIMIT:
+                sigma = 3.0
+            elif exp_weight < EXP_LIMIT:
+                sigma = 3.
+            else:
+                pass
+        maxiters = int(np.log10(rebin_arr.max()/2)+0.5)
 
         # Use simple constant background to avoid problems with nebulosity
         bkg = sigma_clipped_stats(rebin_arr, sigma=sigma, maxiters=maxiters)
@@ -1759,7 +1774,7 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
         log.debug("sigma clipped background value: {}".format(bkg_total))
     elif isinstance(background, Background2D):
         bkg_total = background.background + nsigma * background.background_rms
-        log.debug("[reduce_diff_region] background: max={}, mean={}".format(bkg_total.max(),
+        log.debug("background: max={}, mean={}".format(bkg_total.max(),
                     bkg_total.mean()))
 
     rebin_arr -= bkg_total
@@ -1768,10 +1783,10 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
     return rebin_arr
 
 def detect_point_sources(arr, background=None, nsigma=4, log_sigma=2.0, scale=1,
-                         sigma=2.5, maxiters=10, exp_weight=None):
+                         sigma=3.0, exp_weight=None):
     # Remove background entirely from input array (clip at 0)
     src_arr = reduce_diff_region(arr, background=background, nsigma=nsigma, scale=scale,
-                                 sigma=sigma, maxiters=maxiters, exp_weight=exp_weight)
+                                 sigma=sigma, exp_weight=exp_weight)
 
     # Compute distance between images using labeled sources
     srclog = -1 * ndimage.gaussian_laplace(src_arr, sigma=log_sigma)

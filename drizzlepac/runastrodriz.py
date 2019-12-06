@@ -326,6 +326,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                              for f in _calfiles
                              if os.path.exists(f.replace('_flt.fits', '_flc.fits'))]
 
+        print(_inlist)
+        print(_calfiles_flc)
         """
         Start updating the data and verifying that the new alignment is valid.
             1. Run updatewcs without astrometry database update on all input exposures (FLCs? and FLTs)
@@ -509,12 +511,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                                              verify_alignment=False,
                                              good_bits=focus_pars[inst_mode]['good_bits'],
                                              **pipeline_pars)
-        if len(_inlist) == 1 and _calfiles_flc is not None:
-            drc_products, flc_dicts, diff_dicts = run_driz(_calfiles_flc, _trlfile,
-                                                _calfiles_flc, verify_alignment=False,
-                                                 good_bits=focus_pars[inst_mode]['good_bits'],
-                                                 **pipeline_pars)
-
 
         # Save this for when astropy.io.fits can modify a file 'in-place'
         # Update calibration switch
@@ -872,10 +868,10 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             default_fwhm = det_pars['fwhmpsf'] / pscale
             align_fwhm = amutils.get_align_fwhm(align_focus, default_fwhm)
             if align_fwhm:
-                print("align_fwhm: {}[{},{}]={:0.4f}pix".format(align_focus['prodname'],
+                _trlmsg += "align_fwhm: {}[{},{}]={:0.4f}pix\n".format(align_focus['prodname'],
                                                             align_focus['prod_pos'][1],
                                                             align_focus['prod_pos'][0],
-                                                            align_fwhm))
+                                                            align_fwhm)
 
             # Interpret the overlap differences computed for this alignment
             dkeys = [k for k in diff_dicts.keys()]
