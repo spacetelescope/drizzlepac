@@ -2,6 +2,7 @@ import os
 import datetime
 import copy
 import sys
+import traceback
 
 from collections import OrderedDict
 
@@ -100,23 +101,29 @@ class AlignmentTable:
         fwhmpsf = self.alignment_pars.get('fwhmpsf')
         default_fwhm_set = False
 
-        self.haplist = []
-        for img in self.process_list:
-            catimg = HAPImage(img)
-            # Build image properties needed for alignment
-            catimg.compute_background(box_size=self.alignment_pars['box_size'],
-                                      win_size=self.alignment_pars['win_size'],
-                                      nsigma=self.alignment_pars['nsigma'],
-                                      bkg_estimator=self.alignment_pars['bkg_estimator'],
-                                      rms_estimator=self.alignment_pars['rms_estimator'],
-                                      threshold_flag=self.alignment_pars['threshold'])
-            catimg.build_kernel(fwhmpsf)
-            # Use FWHM from first good exposure as default for remainder of exposures
-            if not default_fwhm_set and catimg.kernel is not None:
-                fwhmpsf = catimg.fwhmpsf
-                default_fwhm_set = True
+        try:
+            self.haplist = []
+            for img in self.process_list:
+                catimg = HAPImage(img)
+                # Build image properties needed for alignment
+                catimg.compute_background(box_size=self.alignment_pars['box_size'],
+                                          win_size=self.alignment_pars['win_size'],
+                                          nsigma=self.alignment_pars['nsigma'],
+                                          bkg_estimator=self.alignment_pars['bkg_estimator'],
+                                          rms_estimator=self.alignment_pars['rms_estimator'],
+                                          threshold_flag=self.alignment_pars['threshold'])
+                catimg.build_kernel(fwhmpsf)
+                # Use FWHM from first good exposure as default for remainder of exposures
+                if not default_fwhm_set and catimg.kernel is not None:
+                    fwhmpsf = catimg.fwhmpsf
+                    default_fwhm_set = True
 
-            self.haplist.append(catimg)
+                self.haplist.append(catimg)
+        except Exception:
+            log.error("Problem encountered in setting up alignment to a catalog")
+            traceback.print_exc()
+
+            self.close()
 
         # Initialize computed attributes
         self.imglist = []  # list of FITSWCS objects for tweakwcs
@@ -182,7 +189,7 @@ class AlignmentTable:
         """Return the list of method names for all registered functions
             available for performing alignment.
         """
-        return self.fit_methods.keys()
+        return list(self.fit_methods.keys())
 
     def perform_fit(self, method_name, catalog_name, reference_catalog):
         """Perform fit using specified method, then determine fit quality"""
@@ -342,10 +349,26 @@ class HAPImage:
         log.info("Looking for sample PSF in {}".format(self.rootname))
         log.debug("  based on RMS of {}".format(threshold_rms.mean()))
         fwhm = fwhmpsf / self.pscale
-        (self.kernel, self.kernel_psf), self.kernel_fwhm = amutils.build_auto_kernel(self.data - bkg,
-                                                                                    self.wht_image,
-                                                                                    threshold=threshold_rms,
-                                                                                    fwhm=fwhm)
+        
+        k, self.kernel_fwhm = amutils.build_auto_kernel(self.data - bkg,
+                                                        self.wht_image,
+                                                        threshold=threshold_rms,
+                                                        fwhm=fwhm)
+        if not k[1]:
+            # Try one more time with slightly different background...
+            self.compute_background(box_size=BKG_BOX_SIZE // 2)
+            threshold_rms = np.concatenate([rms for rms in self.threshold.values()])
+            bkg = np.concatenate([background for background in self.bkg.values()])
+            log.info("Looking for sample PSF in {}".format(self.rootname))
+            log.debug("  based on RMS of {}".format(threshold_rms.mean()))
+            fwhm = fwhmpsf / self.pscale
+            
+            k, self.kernel_fwhm = amutils.build_auto_kernel(self.data - bkg,
+                                                            self.wht_image,
+                                                            threshold=threshold_rms,
+                                                            fwhm=fwhm)
+
+        self.kernel, self.kernel_psf = k
         log.info("  Found PSF with FWHM = {}".format(self.kernel_fwhm))
 
         self.fwhmpsf = self.kernel_fwhm * self.pscale
@@ -413,11 +436,11 @@ class HAPImage:
                     continue
 
                 if bkg is not None:
+                    bkg_mean = bkg.background_median
+                    bkg_dao_rms = bkg.background_rms
                     # Set the bkg_rms at "nsigma" sigma above background
                     default_threshold = bkg.background + nsigma * bkg.background_rms
                     bkg_rms_mean = bkg.background_rms_median if bkg.background_rms_median > 0 else 0.
-                    bkg_mean = bkg.background_median
-                    bkg_dao_rms = bkg.background_rms
 
                     if threshold_flag is None:
                         threshold = default_threshold

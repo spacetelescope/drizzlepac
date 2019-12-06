@@ -69,7 +69,11 @@ import stat
 import errno
 from collections import OrderedDict
 import datetime
-
+try:
+    from psutil import Process
+except:
+    Process = None
+    
 # THIRD-PARTY
 from astropy.io import fits
 from stsci.tools import fileutil, asnutil
@@ -87,11 +91,11 @@ from drizzlepac import util
 from drizzlepac import mdzhandler
 from drizzlepac import updatehdr
 
-__taskname__ = "runaligndriz"
+__taskname__ = "runastrodriz"
 
 # Local variables
 __version__ = "2.1.0"
-__version_date__ = "(22-Nov-2019)"
+__version_date__ = "(06-Dec-2019)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
@@ -509,12 +513,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                                              verify_alignment=False,
                                              good_bits=focus_pars[inst_mode]['good_bits'],
                                              **pipeline_pars)
-        if len(_inlist) == 1 and _calfiles_flc is not None:
-            drc_products, flc_dicts, diff_dicts = run_driz(_calfiles_flc, _trlfile,
-                                                _calfiles_flc, verify_alignment=False,
-                                                 good_bits=focus_pars[inst_mode]['good_bits'],
-                                                 **pipeline_pars)
-
 
         # Save this for when astropy.io.fits can modify a file 'in-place'
         # Update calibration switch
@@ -580,11 +578,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # Remove secondary log files for good...
     logging.shutdown()
 
-    if not debug:
-        # Remove all temp sub-directories now that we are done
-        for sd in sub_dirs:
-            if os.path.exists(sd): rmtree2(sd)
-
     for _olog in [_alignlog]:
         if os.path.exists(_olog):
             os.remove(_olog)
@@ -595,6 +588,15 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         _restoreResults(new_processing_dir, orig_processing_dir)
         os.chdir(orig_processing_dir)
         _removeWorkingDir(new_processing_dir)
+
+    if debug and Process is not None:
+        print("Files still open for this process include: ")
+        print(Process().open_files())
+
+    if not debug:
+        # Remove all temp sub-directories now that we are done
+        for sd in sub_dirs:
+            if os.path.exists(sd): rmtree2(sd)
 
     # Append final timestamp to trailer file...
     _final_msg = '%s: Finished processing %s \n' % (_getTime(), inFilename)
@@ -795,6 +797,9 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                     sat_flags = 256 + 2048 + 4096 + 8192
                 align_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
                                                   clobber=False, output=debug, sat_flags=sat_flags)
+                if align_table is None:
+                    raise Exception
+
                 num_sources = align_table['matchSources'][0]
                 fraction_matched = num_sources / align_table['catalogSources'][0]
                 for row in align_table:
@@ -872,10 +877,10 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             default_fwhm = det_pars['fwhmpsf'] / pscale
             align_fwhm = amutils.get_align_fwhm(align_focus, default_fwhm)
             if align_fwhm:
-                print("align_fwhm: {}[{},{}]={:0.4f}pix".format(align_focus['prodname'],
+                _trlmsg += "align_fwhm: {}[{},{}]={:0.4f}pix\n".format(align_focus['prodname'],
                                                             align_focus['prod_pos'][1],
                                                             align_focus['prod_pos'][0],
-                                                            align_fwhm))
+                                                            align_fwhm)
 
             # Interpret the overlap differences computed for this alignment
             dkeys = [k for k in diff_dicts.keys()]
@@ -957,6 +962,10 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
     gdate = datetime.date(int(gsc240[0]), int(gsc240[1]), int(gsc240[2]))
     msg = ''
     for f in filenames:
+        # Check to see whether a RAW/uncalibrated file has been provided
+        # If so, skip it since updatewcs has not been run on it yet.
+        if '_raw' in f:
+            continue
         with fits.open(f, mode='update') as fhdu:
             num_sci = fileutil.countExtn(fhdu)
             dateobs = fhdu[0].header['date-obs'].split('-')
