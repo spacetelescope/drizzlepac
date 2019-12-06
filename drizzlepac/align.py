@@ -227,6 +227,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
             log.warning("WARNING: Unable to display Git repository revision information.")
 
     try:
+        # Initialize key variables 
+        filtered_table = None
 
         # 1: Interpret input data and optional parameters
         log.info("{} STEP 1: Get data {}".format("-" * 20, "-" * 66))
@@ -547,7 +549,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
             result.meta = filtered_table.meta
             for col in filtered_table.colnames:
                 result.add_column(filtered_table[col], name=col)
-        filtered_table.pprint(max_width=-1)
+        if filtered_table is not None:
+            filtered_table.pprint(max_width=-1)
     return filtered_table
 
 

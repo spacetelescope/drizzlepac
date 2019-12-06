@@ -69,6 +69,7 @@ import stat
 import errno
 from collections import OrderedDict
 import datetime
+from psutil import Process
 
 # THIRD-PARTY
 from astropy.io import fits
@@ -585,6 +586,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         os.chdir(orig_processing_dir)
         _removeWorkingDir(new_processing_dir)
 
+    if debug:
+        print("Files still open for this process include: ")
+        print(Process().open_files())
+
     if not debug:
         # Remove all temp sub-directories now that we are done
         for sd in sub_dirs:
@@ -789,6 +794,9 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                     sat_flags = 256 + 2048 + 4096 + 8192
                 align_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
                                                   clobber=False, output=debug, sat_flags=sat_flags)
+                if align_table is None:
+                    raise Exception
+
                 num_sources = align_table['matchSources'][0]
                 fraction_matched = num_sources / align_table['catalogSources'][0]
                 for row in align_table:

@@ -452,7 +452,12 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     kern_img[:, -edge:] = 0.0
     kernel_psf = False
 
-    peaks = photutils.detection.find_peaks(kern_img, threshold=threshold * 5, box_size=isolation_size)
+    peaks = photutils.detection.find_peaks(kern_img, threshold=threshold * 5,
+                                          box_size=isolation_size)
+    if peaks is None or (peaks is not None and len(peaks) == 0):
+        peaks = photutils.detection.find_peaks(kern_img, threshold=threshold,
+                                              box_size=isolation_size)
+        
     # Sort based on peak_value to identify brightest sources for use as a kernel
     peaks.sort('peak_value', reverse=True)
 
@@ -1667,7 +1672,6 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
     for sfile, exp_weight in zip(singlefiles, exp_weights):
         # start by seeing whether this product overlaps the region of max_overlap
         sdata = fits.getdata(sfile)
-        sdata = np.nan_to_num(sdata, 0)  # Insure all np.nan's are converted to zeros
 
         # Create exposure mask corresponding to pixels with drizzled data
         smask = sdata > 0
@@ -1686,6 +1690,8 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
         # get same region from each drizzle product
         drz_region = drz * soverlap
         sfile_region = sdata * soverlap
+
+        # Insure all np.nan's are converted to zeros
         drz_region = np.nan_to_num(drz_region, 0)
         sfile_region = np.nan_to_num(sfile_region, 0)
 
