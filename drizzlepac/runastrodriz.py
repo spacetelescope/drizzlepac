@@ -71,7 +71,7 @@ from collections import OrderedDict
 import datetime
 try:
     from psutil import Process
-else:
+except:
     Process = None
     
 # THIRD-PARTY
