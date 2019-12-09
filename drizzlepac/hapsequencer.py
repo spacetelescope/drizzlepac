@@ -460,10 +460,12 @@ def run_sourcelist_comparision(total_list):
     -------
     Nothing.
     """
+    #get HLA classic path details from envroment variables
     hla_classic_basepath = os.getenv('HLA_CLASSIC_BASEPATH')
+    hla_build_ver = os.getenv("HLA_BUILD_VER")
     for tot_obj in total_list:
-        if hla_classic_basepath and os.path.exists(hla_classic_basepath):
-            hla_cassic_basepath = os.path.join(hla_classic_basepath,tot_obj.instrument,"V10.0")
+        if hla_classic_basepath and hla_build_ver and os.path.exists(hla_classic_basepath):
+            hla_cassic_basepath = os.path.join(hla_classic_basepath,tot_obj.instrument,hla_build_ver)
             hla_classic_path = os.path.join(hla_cassic_basepath,tot_obj.prop_id,tot_obj.prop_id+"_"+tot_obj.obset_id) # Generate path to HLA classic products
         elif os.path.exists(os.path.join(os.getcwd(),"hla_classic")): # For local testing
             hla_classic_basepath = os.path.join(os.getcwd(), "hla_classic")
@@ -478,8 +480,10 @@ def run_sourcelist_comparision(total_list):
             for hap_sourcelist_name in [filt_obj.point_cat_filename, filt_obj.segment_cat_filename]:
                 if hap_sourcelist_name.endswith("point-cat.ecsv"):
                     hla_classic_cat_type = "dao"
+                    plotfile_prefix=filt_obj.product_basename+"_point"
                 else:
                     hla_classic_cat_type = "sex"
+                    plotfile_prefix = filt_obj.product_basename + "_segment"
                 hla_sourcelist_name = "{}/logs/{}{}_{}phot.txt".format(hla_classic_path,filt_obj.basename, filt_obj.filters, hla_classic_cat_type)
                 if not os.path.exists(hap_sourcelist_name) or not os.path.exists(hla_sourcelist_name): # Skip catalog type if one or both of the catalogs can't be found
                     continue
@@ -488,7 +492,7 @@ def run_sourcelist_comparision(total_list):
                 log.info("HAP catalog:         {}".format(hap_sourcelist_name.replace(hla_classic_basepath,"")))
                 log.info("HLA Classic catalog: {}".format(hla_sourcelist_name.replace(hla_classic_basepath,"")))
                 # once all file exist checks are passed, execute sourcelist comparision
-                return_status = compare_sourcelists.comparesourcelists([hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="absolute",plotfile_prefix="***plotfile_prefix***", verbose=False, debugMode=False)
+                return_status = compare_sourcelists.comparesourcelists([hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="absolute",plotfile_prefix=plotfile_prefix, verbose=False, debugMode=False)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
