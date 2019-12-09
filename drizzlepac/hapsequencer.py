@@ -487,10 +487,10 @@ def run_sourcelist_comparision(total_list):
                 hla_sourcelist_name = "{}/logs/{}{}_{}phot.txt".format(hla_classic_path,filt_obj.basename, filt_obj.filters, hla_classic_cat_type)
                 if not os.path.exists(hap_sourcelist_name) or not os.path.exists(hla_sourcelist_name): # Skip catalog type if one or both of the catalogs can't be found
                     continue
-                log.info("HAP image:           {}".format(hap_imgname.replace(hla_classic_basepath,"")))
-                log.info("HLA Classic image:   {}".format(hla_imgname.replace(hla_classic_basepath,"")))
-                log.info("HAP catalog:         {}".format(hap_sourcelist_name.replace(hla_classic_basepath,"")))
-                log.info("HLA Classic catalog: {}".format(hla_sourcelist_name.replace(hla_classic_basepath,"")))
+                log.info("HAP image:           {}".format(os.path.basename(hap_imgname)))
+                log.info("HLA Classic image:   {}".format(os.path.basename(hla_imgname)))
+                log.info("HAP catalog:         {}".format(os.path.basename(hap_sourcelist_name)))
+                log.info("HLA Classic catalog: {}".format(os.path.basename(hla_sourcelist_name)))
                 # once all file exist checks are passed, execute sourcelist comparision
                 return_status = compare_sourcelists.comparesourcelists([hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="absolute",plotfile_prefix=plotfile_prefix, verbose=False, debugMode=False)
 

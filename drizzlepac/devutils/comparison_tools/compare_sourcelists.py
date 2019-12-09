@@ -76,8 +76,9 @@ Classes and Functions
 ---------------------
 """
 import argparse
-import pdb
 from datetime import datetime
+import os
+import pdb
 import random
 import sys
 
@@ -496,7 +497,9 @@ def getMatchedLists(slNames,imgNames,slLengths):
         log.info("WARNING: Unable to fetch values for xref and yref from fits file headers. Using xref = 0.0 and yref = 0.0.")
         xref=0.0
         yref=0.0
-    log.info("source_list_dict: {}".format(source_list_dict))
+    log.info("Summary of input catalog lengths")
+    for source_list in source_list_dict.keys():
+        log.info("{}: {}".format(os.path.basename(source_list),source_list_dict[source_list]))
     out_dict = starmatch_hist.run(source_list_dict, xref=xref, yref=yref)
     matching_lines_ref = out_dict[slNames[0]]
     matching_lines_img = out_dict[slNames[1]]

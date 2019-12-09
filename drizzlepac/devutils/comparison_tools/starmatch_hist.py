@@ -69,9 +69,9 @@ def run(source_list_dict, minimum_match=10, xref=0.0, yref=0.0, postarg=None):
         if len(matched_list) < minimum_match:
             matched_flag = False
             if coo_img == coo_ref:
-                log.info("\n %s is reference image, starmatch_hist leaving WCS alone\n" %(coo_img,))
+                log.info("\n %s is reference image, starmatch_hist leaving WCS alone\n" %(os.path.basename(coo_img),))
             else:
-                log.info("\n %s -> %s starmatch_hist failed! Leaving WCS alone\n" %(coo_img,coo_ref))
+                log.info("\n %s -> %s starmatch_hist failed! Leaving WCS alone\n" %(os.path(coo_img),coo_ref))
     return(out_dict)
 
 
@@ -133,10 +133,10 @@ def getpostarg(source_list_dict):
                 dy = sinpa*postarg1+cospa*postarg2
                 rv[coo_img] = (dx, dy)
             except:
-                log.info("Warning: unable to fetch POSTARG info for image {}. Using POSTARG=0".format(fitsfile))
+                log.info("Warning: unable to fetch POSTARG info for image {}. Using POSTARG=0".format(os.path.basename(fitsfile)))
                 rv[coo_img] = (0.0, 0.0)
         else:
-            log.info('FITS file %s not found, using POSTARG=0' % fitsfile)
+            log.info('FITS file %s not found, using POSTARG=0' % os.path.basename(fitsfile))
             rv[coo_img] = (0.0,0.0)
     return rv
 
