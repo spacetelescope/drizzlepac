@@ -273,7 +273,7 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
         text string that will be used in plot title.
 
     plotfile_prefix : string
-        text string that will prepend the plot files geenrated if plots are written to files
+        text string that will prepend the plot files generated if plots are written to files
 
     verbose : Boolean
         display verbose output?
@@ -509,7 +509,7 @@ def getMatchedLists(slNames,imgNames,slLengths):
 
     return(matching_lines_ref,matching_lines_img)
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
-def makeVectorPlot(x,y,plotDest,binThresh = 10000,binSize=250):
+def makeVectorPlot(x,y,plotDest,plotfile_prefix,binThresh = 10000,binSize=250):
     """Generate vector plot of dx and dy values vs. reference (x,y) positions
 
     Parameters
@@ -524,6 +524,9 @@ def makeVectorPlot(x,y,plotDest,binThresh = 10000,binSize=250):
 
     plotDest : string
         plot destination; screen or file
+
+    plotfile_prefix : string
+        text string that will prepend the plot files generated if plots are written to files
 
     binThresh : int
         Minimum size of list *x* and *y* that will trigger generation of a binned vector plot. Default value = 10000.
@@ -587,6 +590,8 @@ def makeVectorPlot(x,y,plotDest,binThresh = 10000,binSize=250):
     plt_mean = np.mean(np.hypot(p_dx, p_dy))
     e = np.log10(5.0*plt_mean).round()
     plt_scaleValue=10**e
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
     if len(dx) > binThresh: Q = plt.quiver(p_x, p_y, p_dx, p_dy,color=color_ra,units="xy")
     else: Q = plt.quiver(p_x, p_y, p_dx, p_dy)
     plt.quiverkey(Q, 0.75, 0.05, plt_scaleValue, r'%5.3f'%(plt_scaleValue), labelpos='S', coordinates='figure', color="k")
@@ -597,9 +602,17 @@ def makeVectorPlot(x,y,plotDest,binThresh = 10000,binSize=250):
     if plotDest == "screen":
         plt.show()
     if plotDest == "file":
-        plt.savefig("xy_vector_plot.pdf")
+
+        # Put timestamp and plotfile_prefix text string in lower left corner below plot
+        timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
+        plt.text(0.0, -0.081, timestamp, horizontalalignment='left', verticalalignment='center', fontsize=5,
+                 transform=ax1.transAxes)
+        plt.text(0.0, -0.105, plotfile_prefix, horizontalalignment='left', verticalalignment='center', fontsize=5,
+                 transform=ax1.transAxes)
+        plotFileName = "{}_xy_vector_plot.pdf".format(plotfile_prefix, plot_title.replace(" ", "_"))
+        plt.savefig(plotFileName)
         plt.close()
-        log.info("Vector plot saved to file xy_vector_plot.pdf")
+        log.info("Vector plot saved to file {}".format(plotFileName))
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def round2ArbatraryBase(value,direction,roundingBase):
     """Round value up or down to arbitrary base
@@ -690,7 +703,7 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",plotfile_p
         colTitles.append("Y Position")
         matchedYValues = matched_values.copy()
         if plotGen != "none" and diffMode == "absolute":
-            makeVectorPlot(matchedXValues,matchedYValues,plotGen)
+            makeVectorPlot(matchedXValues,matchedYValues,plotGen,plotfile_prefix)
     if debugMode:
         check_match_quality(matchedXValues,matchedYValues)
     # 5: Compute and display statistics on RA position differences for matched sources
