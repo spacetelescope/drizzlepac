@@ -959,6 +959,7 @@ if __name__ == "__main__":
     PARSER.add_argument('-m', '--diffMode', required=False, choices=["absolute", "pmean","pdynamic"], default="pmean",
                         help='How should the comp-ref difference be calculated? "absolute" is simply the stright comp-ref difference. "peman" is the mean percent difference ((C-R)/avg(R)) x 100. "pdynamic" is the dynamic percent difference ((C-R)/R) x 100. Default value is "pmean".')
     PARSER.add_argument('-p', '--plotGen', required=False, choices=["screen","file","none"], default="none",help='Generate Plots? "screen" displays plots on-screen. "file" saves them to a .pdf file, and "none" skips all plot generation.')
+    PARSER.add_argument('-s', '--plotfile_prefix_string', required = False, default="", help="text string that will prepend the plot files generated if plots are written to files ***REQUIRES the -p option set to 'file'***")
     PARSER.add_argument('-v', '--verbose', required=False, choices=["True", "False"], default="True",
                         help='Display verbose output? Default value is "True".')
     ARGS = PARSER.parse_args()
@@ -972,7 +973,7 @@ if __name__ == "__main__":
         ARGS.debugMode = True
     else: ARGS.debugMode = False
 
-    runStatus=comparesourcelists(ARGS.sourcelistNames,ARGS.imageNames,plotGen=ARGS.plotGen,diffMode=ARGS.diffMode,verbose=ARGS.verbose,debugMode=ARGS.debugMode,plotfile_prefix="hst_14606_10_acs_wfc_f850lp_jd9510_point")
+    runStatus=comparesourcelists(ARGS.sourcelistNames,ARGS.imageNames,plotGen=ARGS.plotGen,diffMode=ARGS.diffMode,verbose=ARGS.verbose,debugMode=ARGS.debugMode,plotfile_prefix=ARGS.plotfile_prefix_string)
 
 # TODO: reformat docstrings
 # TODO: fix PEP 8 violations
