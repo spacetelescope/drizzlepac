@@ -218,10 +218,10 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
 
         #plot flag breakdown by bit for all matched sources in the reference and comparison sourcelists
         width = 0.35
-        p1=plt.bar(idx - width/2,refFlagBreakdown,width,label='Reference')
-        p2 = plt.bar(idx + width/2, compFlagBreakdown,width, label='Comparison')
         fig = plt.figure()
         ax1 = fig.add_subplot(111)
+        p1=plt.bar(idx - width/2,refFlagBreakdown,width,label='Reference')
+        p2 = plt.bar(idx + width/2, compFlagBreakdown,width, label='Comparison')
         plt.legend()
         plt.xticks(idx, x_title_list)
         plt.xlabel("Flag Bit Value")
@@ -232,28 +232,41 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
         if plotGen == "screen":
             plt.show()
         if plotGen == "file":
-            plotFileName = fullPlotTitle.replace(" ","_")+".pdf"
+            # Put timestamp and plotfile_prefix text string in lower left corner below plot
+            timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
+            plt.text(0.0, -0.081, timestamp, horizontalalignment='left', verticalalignment='center', fontsize=5,
+                     transform=ax1.transAxes)
+            plt.text(0.0, -0.105, plotfile_prefix, horizontalalignment='left', verticalalignment='center', fontsize=5,
+                     transform=ax1.transAxes)
+            plotFileName = "{}_{}.pdf".format(plotfile_prefix,fullPlotTitle.replace(" ","_"))
             plt.savefig(plotFileName)
             plt.close()
             log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
 
-        #plot flag changes brokeken down by bit
+        #plot flag changes broken down by bit
+        fig = plt.figure()
+        ax2 = fig.add_subplot(111)
         p_unchanged=plt.bar(idx,unchangedFlagBreakdown)
         p_offOn=plt.bar(idx,off_on_FlagFlips,bottom=unchangedFlagBreakdown)
         p_onOff=plt.bar(idx,on_off_FlagFlips,bottom=off_on_FlagFlips+unchangedFlagBreakdown)
-        fig = plt.figure()
-        ax1 = fig.add_subplot(111)
         plt.xticks(idx,x_title_list)
         plt.xlabel("Flag Bit Value")
         plt.ylabel("Number of matched sources")
         fullPlotTitle = "Flagging Differences by Bit"
         plt.title(fullPlotTitle)
         plt.legend((p_onOff[0],p_offOn,p_unchanged[0]),("On -> Off","Off -> On","Unchanged"))
-
         if plotGen == "screen":
             plt.show()
         if plotGen == "file":
-            plotFileName = fullPlotTitle.replace(" ","_")+".pdf"
+            # Put timestamp and plotfile_prefix text string in lower left corner below plot
+            timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
+            plt.text(0.0, -0.081, timestamp, horizontalalignment='left', verticalalignment='center',
+                     fontsize=5,
+                     transform=ax2.transAxes)
+            plt.text(0.0, -0.105, plotfile_prefix, horizontalalignment='left', verticalalignment='center',
+                     fontsize=5,
+                     transform=ax2.transAxes)
+            plotFileName = "{}_{}.pdf".format(plotfile_prefix, fullPlotTitle.replace(" ", "_"))
             plt.savefig(plotFileName)
             plt.close()
             log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
@@ -796,7 +809,7 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",plotfile_p
     # 11: Compute and display statistics on differences in flag populations for matched sources
     matched_values=extractMatchedLines("FLAGS",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
-        rt_status=computeFlagStats(matched_values,plotGen,"Source Flagging",verbose)
+        rt_status=computeFlagStats(matched_values,plotGen,"Source Flagging",plotfile_prefix,verbose)
         regressionTestResults["Source Flagging"]=rt_status
         colTitles.append("Source Flagging")
     overallStatus="OK"
