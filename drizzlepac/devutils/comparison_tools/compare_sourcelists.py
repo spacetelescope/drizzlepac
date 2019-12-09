@@ -378,12 +378,12 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
         if plotGen == "screen":
             plt.show()
         if plotGen == "file":
-            # Put plotfile_prefix text string in lower right corner below plot
-            plt.text(1.0, -0.1, plotfile_prefix,horizontalalignment='right',verticalalignment='center',fontsize = 5,transform=ax1.transAxes)
-            # put time stamp in lower left corner below plot
+            # Put timestamp and plotfile_prefix text string in lower left corner below plot
             timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
-            plt.text(0.0, -0.1, timestamp, horizontalalignment='left', verticalalignment='center',
-                     fontsize=5, transform=ax1.transAxes)
+            plt.text(0.0, -0.081, timestamp, horizontalalignment='left', verticalalignment='center', fontsize=5,
+                     transform=ax1.transAxes)
+            plt.text(0.0, -0.105, plotfile_prefix, horizontalalignment='left', verticalalignment='center', fontsize=5,
+                     transform=ax1.transAxes)
             plotFileName = "{}_{}.pdf".format(plotfile_prefix,plot_title.replace(" ","_"))
             plt.savefig(plotFileName)
             plt.close()
