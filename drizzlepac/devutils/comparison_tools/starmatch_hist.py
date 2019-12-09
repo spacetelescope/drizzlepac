@@ -71,7 +71,7 @@ def run(source_list_dict, minimum_match=10, xref=0.0, yref=0.0, postarg=None):
             if coo_img == coo_ref:
                 log.info("\n %s is reference image, starmatch_hist leaving WCS alone\n" %(os.path.basename(coo_img),))
             else:
-                log.info("\n %s -> %s starmatch_hist failed! Leaving WCS alone\n" %(os.path(coo_img),coo_ref))
+                log.info("\n %s -> %s starmatch_hist failed! Leaving WCS alone\n" %(os.path.basename(coo_img),coo_ref))
     return(out_dict)
 
 
