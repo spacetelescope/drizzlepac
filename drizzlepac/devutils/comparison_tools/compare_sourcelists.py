@@ -239,6 +239,8 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
             plt.text(0.0, -0.105, plotfile_prefix, horizontalalignment='left', verticalalignment='center', fontsize=5,
                      transform=ax1.transAxes)
             plotFileName = "{}_{}.pdf".format(plotfile_prefix,fullPlotTitle.replace(" ","_"))
+            if plotFileName.startswith("_"):
+                plotFileName=plotFileName[1:]
             plt.savefig(plotFileName)
             plt.close()
             log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
@@ -267,6 +269,8 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
                      fontsize=5,
                      transform=ax2.transAxes)
             plotFileName = "{}_{}.pdf".format(plotfile_prefix, fullPlotTitle.replace(" ", "_"))
+            if plotFileName.startswith("_"):
+                plotFileName=plotFileName[1:]
             plt.savefig(plotFileName)
             plt.close()
             log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
@@ -406,6 +410,8 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
             plt.text(0.0, -0.105, plotfile_prefix, horizontalalignment='left', verticalalignment='center', fontsize=5,
                      transform=ax1.transAxes)
             plotFileName = "{}_{}.pdf".format(plotfile_prefix,plot_title.replace(" ","_"))
+            if plotFileName.startswith("_"):
+                plotFileName=plotFileName[1:]
             plt.savefig(plotFileName)
             plt.close()
             log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
@@ -633,6 +639,8 @@ def makeVectorPlot(x,y,plotDest,plotfile_prefix,binThresh = 10000,binSize=250):
         plt.text(0.0, -0.105, plotfile_prefix, horizontalalignment='left', verticalalignment='center', fontsize=5,
                  transform=ax1.transAxes)
         plotFileName = "{}_xy_vector_plot.pdf".format(plotfile_prefix, plot_title.replace(" ", "_"))
+        if plotFileName.startswith("_"):
+            plotFileName = plotFileName[1:]
         plt.savefig(plotFileName)
         plt.close()
         log.info("Vector plot saved to file {}".format(plotFileName))
