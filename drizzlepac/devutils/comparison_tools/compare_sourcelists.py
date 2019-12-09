@@ -77,6 +77,7 @@ Classes and Functions
 """
 import argparse
 import pdb
+from datetime import datetime
 import random
 import sys
 
@@ -252,7 +253,7 @@ def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
     regTestStatus = "%s %11.7f"%(regTestStatus,pct_diff_refbits)
     return (regTestStatus)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
-def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
+def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,verbose):
     """Compute stats on the quantities with differences that can be computed with simple subtraction 
     (X, Y, RA, Dec, Flux, and Magnitude).
 
@@ -270,6 +271,9 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
 
     plot_title : string
         text string that will be used in plot title.
+
+    plotfile_prefix : string
+        text string that will prepend the plot files geenrated if plots are written to files
 
     verbose : Boolean
         display verbose output?
@@ -341,15 +345,6 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
     log.info("Regression test status.................... {}".format(regTestStatus))
 
     if plotGen != "none":
-        # plt.hist(diffRA,bins='auto')
-        # plt.axvline(x=clippedStats[0], color='k', linestyle='--')
-        # plt.axvline(x=clippedStats[0] + clippedStats[2], color='r', linestyle=':')
-        # plt.axvline(x=clippedStats[0] - clippedStats[2], color='r', linestyle=':')
-        # plt.xlabel("$\Delta %s$"%(plot_title.split(" ")[0]))
-        # plt.ylabel("Number of matched sources")
-        # plt.title("Comparision - reference sourcelist %s differences"%(plot_title))
-        # plt.show()
-
         if diffMode.startswith("p"): xAxisString="{} (percent)".format(plot_title.split(" ")[0])
         else: xAxisString="{}".format(plot_title.split(" ")[0])
         plotCutoff=(10.0*np.abs(clippedStats[2]))+np.abs(clippedStats[0])
@@ -379,10 +374,17 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,verbose):
         ax2.set_ylabel("Fraction of all matched sources",color='r')
         for tl in ax2.get_yticklabels():
             tl.set_color('r')
+
         if plotGen == "screen":
             plt.show()
         if plotGen == "file":
-            plotFileName = plot_title.replace(" ","_")+".pdf"
+            # Put plotfile_prefix text string in lower right corner below plot
+            plt.text(1.0, -0.1, plotfile_prefix,horizontalalignment='right',verticalalignment='center',fontsize = 5,transform=ax1.transAxes)
+            # put time stamp in lower left corner below plot
+            timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
+            plt.text(0.0, -0.1, timestamp, horizontalalignment='left', verticalalignment='center',
+                     fontsize=5, transform=ax1.transAxes)
+            plotFileName = "{}_{}.pdf".format(plotfile_prefix,plot_title.replace(" ","_"))
             plt.savefig(plotFileName)
             plt.close()
             log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
@@ -627,7 +629,7 @@ def round2ArbatraryBase(value,direction,roundingBase):
     return rv
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 @util.with_logging
-def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",verbose=False,debugMode=False):
+def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",plotfile_prefix=None,verbose=False,debugMode=False):
     """Main calling subroutine to compare sourcelists.
 
     Parameters
@@ -637,6 +639,9 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",verbose=Fa
 
     imgNames : list
         optional list of input images that starmatch_hist will use to improve sourcelist matching
+
+    plotfile_prefix : string
+        text string that will prepend the plot files geenrated if plots are written to files
 
     plotGen : Boolean
         Generate plots and display them to the screen (True/False)?
@@ -652,6 +657,8 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",verbose=Fa
     overallStatus : string
         "OK" if all tests were passed, or "FAILURE" if inconsistencies were found.
     """
+    if not plotfile_prefix:
+        plotfile_prefix = ""
     regressionTestResults={}
     colTitles=[]
     # 1: Read in sourcelists fiels into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
@@ -671,14 +678,14 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",verbose=Fa
     # 3: Compute and display statistics on X position differences for matched sources
     matched_values=extractMatchedLines("X",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
-        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"X position",verbose)
+        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"X position",plotfile_prefix,verbose)
         regressionTestResults["X Position"]=rt_status
         colTitles.append("X Position")
         matchedXValues=matched_values.copy()
     # 4: Compute and display statistics on Y position differences for matched sources
     matched_values=extractMatchedLines("Y",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
-        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"Y position",verbose)
+        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"Y position",plotfile_prefix,verbose)
         regressionTestResults["Y Position"]=rt_status
         colTitles.append("Y Position")
         matchedYValues = matched_values.copy()
@@ -689,54 +696,54 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",verbose=Fa
     # 5: Compute and display statistics on RA position differences for matched sources
     matched_values=extractMatchedLines("RA",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
-        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"RA position",verbose)
+        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"RA position",plotfile_prefix,verbose)
         regressionTestResults["RA Position"]=rt_status
         colTitles.append("RA Position")
 
     # 6: Compute and display statistics on DEC position differences for matched sources
     matched_values=extractMatchedLines("DEC",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
-        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"DEC position",verbose)
+        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"DEC position",plotfile_prefix,verbose)
         regressionTestResults["DEC Position"]=rt_status
         colTitles.append("DEC Position")
 
     # 7: Compute and display statistics on flux differences for matched sources
     matched_values=extractMatchedLines("FLUX1",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
-        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"Flux (Inner Aperture)",verbose)
+        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"Flux (Inner Aperture)",plotfile_prefix,verbose)
         regressionTestResults["Flux (Inner Aperture)"]=rt_status
         colTitles.append("Flux (Inner Aperture)")
 
     matched_values=extractMatchedLines("FLUX2",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
-        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"Flux (Outer Aperture)",verbose)
+        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"Flux (Outer Aperture)",plotfile_prefix,verbose)
         regressionTestResults["Flux (Outer Aperture)"]=rt_status
         colTitles.append("Flux (Outer Aperture)")
 
     # 8: Compute and display statistics on magnitude differences for matched sources
     matched_values=extractMatchedLines("MAGNITUDE1",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
-        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"Magnitude (Inner Aperture)",verbose)
+        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"Magnitude (Inner Aperture)",plotfile_prefix,verbose)
         regressionTestResults["Magnitude (Inner Aperture)"]=rt_status
         colTitles.append("Magnitude (Inner Aperture)")
 
     matched_values=extractMatchedLines("MERR1",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
         formalTitle = "Magnitude (Inner Aperture) Error"
-        rt_status=computeLinearStats(matched_values,plotGen,diffMode,formalTitle,verbose)
+        rt_status=computeLinearStats(matched_values,plotGen,diffMode,formalTitle,plotfile_prefix,verbose)
         regressionTestResults[formalTitle]=rt_status
         colTitles.append(formalTitle)
 
     matched_values=extractMatchedLines("MAGNITUDE2",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
-        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"Magnitude (Outer Aperture)",verbose)
+        rt_status=computeLinearStats(matched_values,plotGen,diffMode,"Magnitude (Outer Aperture)",plotfile_prefix,verbose)
         regressionTestResults["Magnitude (Outer Aperture)"]=rt_status
         colTitles.append("Magnitude (Outer Aperture)")
 
     matched_values=extractMatchedLines("MERR2",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
         formalTitle = "Magnitude (Outer Aperture) Error"
-        rt_status=computeLinearStats(matched_values,plotGen,diffMode,formalTitle,verbose)
+        rt_status=computeLinearStats(matched_values,plotGen,diffMode,formalTitle,plotfile_prefix,verbose)
         regressionTestResults[formalTitle]=rt_status
         colTitles.append(formalTitle)
 
@@ -744,14 +751,14 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",verbose=Fa
     matched_values=extractMatchedLines("MSKY",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
         formalTitle = "MSKY value"
-        rt_status=computeLinearStats(matched_values,plotGen,diffMode,formalTitle,verbose)
+        rt_status=computeLinearStats(matched_values,plotGen,diffMode,formalTitle,plotfile_prefix,verbose)
         regressionTestResults[formalTitle]=rt_status
         colTitles.append(formalTitle)
 
     matched_values=extractMatchedLines("STDEV",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
         formalTitle = "STDEV value"
-        rt_status=computeLinearStats(matched_values,plotGen,diffMode,formalTitle,verbose)
+        rt_status=computeLinearStats(matched_values,plotGen,diffMode,formalTitle,plotfile_prefix,verbose)
         regressionTestResults[formalTitle]=rt_status
         colTitles.append(formalTitle)
 
@@ -759,7 +766,7 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",verbose=Fa
     matched_values=extractMatchedLines("CI",refData,compData,matching_lines_ref, matching_lines_img)
     if len(matched_values) >0:
         formalTitle = "CI"
-        rt_status=computeLinearStats(matched_values,plotGen,diffMode,formalTitle,verbose)
+        rt_status=computeLinearStats(matched_values,plotGen,diffMode,formalTitle,plotfile_prefix,verbose)
         regressionTestResults[formalTitle]=rt_status
         colTitles.append(formalTitle)
 
@@ -929,7 +936,7 @@ if __name__ == "__main__":
         ARGS.debugMode = True
     else: ARGS.debugMode = False
 
-    runStatus=comparesourcelists(ARGS.sourcelistNames,ARGS.imageNames,plotGen=ARGS.plotGen,diffMode=ARGS.diffMode,verbose=ARGS.verbose,debugMode=ARGS.debugMode)
+    runStatus=comparesourcelists(ARGS.sourcelistNames,ARGS.imageNames,plotGen=ARGS.plotGen,diffMode=ARGS.diffMode,verbose=ARGS.verbose,debugMode=ARGS.debugMode,plotfile_prefix="hst_14606_10_acs_wfc_f850lp_jd9510_point")
 
 # TODO: reformat docstrings
 # TODO: fix PEP 8 violations
