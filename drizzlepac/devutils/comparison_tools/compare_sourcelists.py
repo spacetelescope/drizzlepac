@@ -131,7 +131,7 @@ def check_match_quality(matched_x_list, matched_y_list):
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
-def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
+def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
     """Compute and report statistics on the differences in flagging.
 
     Parameters
@@ -145,6 +145,9 @@ def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
 
     plot_title : string
         text string that will be used in plot title.
+
+    plotfile_prefix : string
+        text string that will prepend the plot files generated if plots are written to files
 
     verbose : Boolean
         display verbose output?
@@ -217,6 +220,8 @@ def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
         width = 0.35
         p1=plt.bar(idx - width/2,refFlagBreakdown,width,label='Reference')
         p2 = plt.bar(idx + width/2, compFlagBreakdown,width, label='Comparison')
+        fig = plt.figure()
+        ax1 = fig.add_subplot(111)
         plt.legend()
         plt.xticks(idx, x_title_list)
         plt.xlabel("Flag Bit Value")
@@ -236,6 +241,8 @@ def computeFlagStats(matchedRA,plotGen,plot_title,verbose):
         p_unchanged=plt.bar(idx,unchangedFlagBreakdown)
         p_offOn=plt.bar(idx,off_on_FlagFlips,bottom=unchangedFlagBreakdown)
         p_onOff=plt.bar(idx,on_off_FlagFlips,bottom=off_on_FlagFlips+unchangedFlagBreakdown)
+        fig = plt.figure()
+        ax1 = fig.add_subplot(111)
         plt.xticks(idx,x_title_list)
         plt.xlabel("Flag Bit Value")
         plt.ylabel("Number of matched sources")
