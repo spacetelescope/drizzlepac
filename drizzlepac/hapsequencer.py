@@ -503,7 +503,11 @@ def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
                 else:
                     hla_classic_cat_type = "sex"
                     plotfile_prefix = filt_obj.product_basename + "_segment"
-                hla_sourcelist_name = "{}/logs/{}{}_{}phot.txt".format(hla_classic_path,filt_obj.basename, filt_obj.filters, hla_classic_cat_type)
+                if hla_classic_basepath and hla_build_ver and os.path.exists(hla_classic_basepath):
+                    hla_sourcelist_name = "{}/logs/{}{}_{}phot.txt".format(hla_classic_path,filt_obj.basename, filt_obj.filters, hla_classic_cat_type)
+                else:
+                    hla_sourcelist_name = "{}/{}{}_{}phot.txt".format(hla_classic_path, filt_obj.basename,
+                                                                           filt_obj.filters, hla_classic_cat_type)
                 if not os.path.exists(hap_sourcelist_name) or not os.path.exists(hla_sourcelist_name): # Skip catalog type if one or both of the catalogs can't be found
                     continue
                 log.info("HAP image:           {}".format(os.path.basename(hap_imgname)))
