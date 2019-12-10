@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4 ai :
-
+# TODO: UPDATE main docstring.
 """This script compares two sourcelists and displays various measures of their differences. 3x3-sigma clipped mean,
 median and standard deviation, and non-sigma clipped min and max values are computed for the following:
 
