@@ -14,6 +14,14 @@
     logger basically filters which messages are passed on to the handlers according the
     level chosen. The logger is acting as a gate on the messages which are allowed to be
     passed to the handlers.
+
+    NOTE: In order for step 9 (run_sourcelist_comparison()) to run, the following environment variables need to be set:
+    - HLA_CLASSIC_BASEPATH
+    - HLA_BUILD_VER
+
+    Alternatively, if the HLA classic path is unavailable, The comparison can be run using locally stored HLA classic
+    files. The relevant HLA classic imagery and sourcelist files must be placed in a subdirectory of the current working
+    directory called 'hla_classic'.
 """
 import datetime
 import glob
@@ -447,6 +455,14 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
     """ This subroutine automates execution of drizzlepac/devutils/comparison_tools/compare_sourcelist_flagging.py to
     compare HAP-generated filter catalogs with their HLA classic counterparts.
+
+    NOTE: In order for this subroutine to run, the following environment variables need to be set:
+    - HLA_CLASSIC_BASEPATH
+    - HLA_BUILD_VER
+
+    Alternatively, if the HLA classic path is unavailable, The comparison can be run using locally stored HLA classic
+    files. The relevant HLA classic imagery and sourcelist files must be placed in a subdirectory of the current working
+    directory called 'hla_classic'.
 
     Parameters
     ----------
