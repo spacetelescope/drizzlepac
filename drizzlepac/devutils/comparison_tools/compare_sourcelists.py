@@ -496,6 +496,9 @@ def getMatchedLists(slNames,imgNames,slLengths,log_level):
     slLengths : list
         list of integer sourcelist lengths
 
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
     Returns
     -------
     matching_lines_ref : list

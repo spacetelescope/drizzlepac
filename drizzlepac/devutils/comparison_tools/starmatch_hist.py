@@ -44,11 +44,13 @@ def run(source_list_dict, log_level,minimum_match=10, xref=0.0, yref=0.0, postar
     Match source lists in x,y coordinates allowing for possible shift & rotation
 
     :param source_list_dict: dictionary indexed by coo filename with number of sources in each file as value
+    :param log_level: the desired level of verboseness in the log statements displayed on the screen and written to the .log file.
     :param minimum_match: minimum number of matches in peak. Default value = '10'.
     :param xref: X reference pixel in image (default 0, which is a very bad value if image rotates) 
     :param yref: Y reference pixel in image (default 0, which is a very bad value if image rotates) 
     :param postarg: dictionary indexed by coo filename with (dx, dy) in pixels for postarg (default is to read FITS headers)
     :type source_list_dict: dictionary
+    :type log_level: integer
     :type minimum_match: integer
     :type xref: float
     :type yref: float
