@@ -495,7 +495,7 @@ def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
                 log.info("HAP catalog:         {}".format(os.path.basename(hap_sourcelist_name)))
                 log.info("HLA Classic catalog: {}".format(os.path.basename(hla_sourcelist_name)))
                 # once all file exist checks are passed, execute sourcelist comparision
-                return_status = compare_sourcelists.comparesourcelists([hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="absolute",plotfile_prefix=plotfile_prefix, verbose=False,log_level=log_level, debugMode=False)
+                return_status = compare_sourcelists.comparesourcelists([hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="absolute",plotfile_prefix=plotfile_prefix, verbose=True,log_level=log_level, debugMode=False)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
