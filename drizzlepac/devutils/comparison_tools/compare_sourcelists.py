@@ -646,6 +646,7 @@ def makeVectorPlot(x,y,plotDest,plotfile_prefix,binThresh = 10000,binSize=250):
         plt.savefig(plotFileName)
         plt.close()
         log.info("Vector plot saved to file {}".format(plotFileName))
+        log.info("\n")
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def round2ArbatraryBase(value,direction,roundingBase):
     """Round value up or down to arbitrary base
