@@ -409,7 +409,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
         # 9: Compare results to HLA classic counterparts (if possible)
         if diagnostic_mode:
-            run_sourcelist_comparision(total_list)
+            run_sourcelist_comparision(total_list,log_level=log_level)
         # Write out manifest file listing all products generated during processing
         log.info("Creating manifest file {}.".format(manifest_name))
         log.info("  The manifest contains the names of products generated during processing.")
@@ -445,7 +445,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def run_sourcelist_comparision(total_list):
+def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
     """ This subroutine automates execution of drizzlepac/devutils/comparison_tools/compare_sourcelist_flagging.py to
     compare HAP-generated filter catalogs with their HLA classic counterparts.
 
@@ -455,6 +455,10 @@ def run_sourcelist_comparision(total_list):
         List of TotalProduct objects, one object per instrument/detector combination is
         a visit.  The TotalProduct objects are comprised of FilterProduct and ExposureProduct
         objects.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
 
     RETURNS
     -------
@@ -492,7 +496,7 @@ def run_sourcelist_comparision(total_list):
                 log.info("HAP catalog:         {}".format(os.path.basename(hap_sourcelist_name)))
                 log.info("HLA Classic catalog: {}".format(os.path.basename(hla_sourcelist_name)))
                 # once all file exist checks are passed, execute sourcelist comparision
-                return_status = compare_sourcelists.comparesourcelists([hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="absolute",plotfile_prefix=plotfile_prefix, verbose=False, debugMode=False)
+                return_status = compare_sourcelists.comparesourcelists([hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="absolute",plotfile_prefix=plotfile_prefix, verbose=False,log_level=log_level, debugMode=False)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
