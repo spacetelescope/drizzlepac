@@ -73,7 +73,7 @@ try:
     from psutil import Process
 except:
     Process = None
-    
+
 # THIRD-PARTY
 from astropy.io import fits
 from stsci.tools import fileutil, asnutil
@@ -961,12 +961,13 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
     gsc240 = catalog_date.split('-')
     gdate = datetime.date(int(gsc240[0]), int(gsc240[1]), int(gsc240[2]))
     msg = ''
+    print(filenames)
     for f in filenames:
-        # Check to see whether a RAW/uncalibrated file has been provided
-        # If so, skip it since updatewcs has not been run on it yet.
-        if '_raw' in f:
-            continue
         with fits.open(f, mode='update') as fhdu:
+            # Check to see whether a RAW/uncalibrated file has been provided
+            # If so, skip it since updatewcs has not been run on it yet.
+            if '_raw' in f or 'wcsname' not in fhdu[('sci', 1)].header:
+                continue
             num_sci = fileutil.countExtn(fhdu)
             dateobs = fhdu[0].header['date-obs'].split('-')
             # convert to datetime object
