@@ -89,7 +89,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from drizzlepac.devutils.comparison_tools import starmatch_hist
-from drizzlepac import util
 from stsci.tools import logutil
 
 __taskname__ = 'compare_sourcelists'
@@ -483,7 +482,7 @@ def extractMatchedLines(col2get,refData,compData,refLines,compLines):
         return_ra=np.stack((matching_refData,matching_compData))
     return(return_ra)
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
-def getMatchedLists(slNames,imgNames,slLengths):
+def getMatchedLists(slNames,imgNames,slLengths,log_level):
     """run starmatch_hist to get the indices of matching sources that are common to both input source catalogs
 
     Parameters
@@ -526,7 +525,7 @@ def getMatchedLists(slNames,imgNames,slLengths):
     log.info("Summary of input catalog lengths")
     for source_list in source_list_dict.keys():
         log.info("{}: {}".format(os.path.basename(source_list),source_list_dict[source_list]))
-    out_dict = starmatch_hist.run(source_list_dict, xref=xref, yref=yref)
+    out_dict = starmatch_hist.run(source_list_dict,log_level,xref=xref, yref=yref)
     matching_lines_ref = out_dict[slNames[0]]
     matching_lines_img = out_dict[slNames[1]]
 
@@ -672,8 +671,8 @@ def round2ArbatraryBase(value,direction,roundingBase):
         rv=int(roundingBase * round(float(value)/roundingBase)) #round up or down to nearest base
     return rv
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
-@util.with_logging
-def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",plotfile_prefix=None,verbose=False,debugMode=False):
+
+def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",plotfile_prefix=None,verbose=False,log_level=logutil.logging.NOTSET,debugMode=False):
     """Main calling subroutine to compare sourcelists.
 
     Parameters
@@ -696,11 +695,16 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",plotfile_p
     verbose : Boolean
         display verbose output?
 
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 'NOTSET'.
+
     Returns
     -------
     overallStatus : string
         "OK" if all tests were passed, or "FAILURE" if inconsistencies were found.
     """
+    log.setLevel(log_level)
     if not plotfile_prefix:
         plotfile_prefix = ""
     regressionTestResults={}
@@ -715,7 +719,7 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",plotfile_p
     log.info("\n")
     # 2: Run starmatch_hist to get list of matched sources common to both input sourcelists
     slLengths=[len(refData['X']),len(compData['X'])]
-    matching_lines_ref, matching_lines_img=getMatchedLists(slNames,imgNames,slLengths)
+    matching_lines_ref, matching_lines_img=getMatchedLists(slNames,imgNames,slLengths,log_level)
     if len(matching_lines_ref) == 0  or len(matching_lines_img) == 0:
         log.critical("*** Comparisons cannot be computed. No matching sources were found. ***")
         return("ERROR")
@@ -981,7 +985,7 @@ if __name__ == "__main__":
         ARGS.debugMode = True
     else: ARGS.debugMode = False
 
-    runStatus=comparesourcelists(ARGS.sourcelistNames,ARGS.imageNames,plotGen=ARGS.plotGen,diffMode=ARGS.diffMode,verbose=ARGS.verbose,debugMode=ARGS.debugMode,plotfile_prefix=ARGS.plotfile_prefix_string)
+    runStatus=comparesourcelists(ARGS.sourcelistNames,ARGS.imageNames,plotGen=ARGS.plotGen,diffMode=ARGS.diffMode,verbose=ARGS.verbose,log_level=logutil.logging.INFO,debugMode=ARGS.debugMode,plotfile_prefix=ARGS.plotfile_prefix_string)
 
 # TODO: reformat docstrings
 # TODO: fix PEP 8 violations
