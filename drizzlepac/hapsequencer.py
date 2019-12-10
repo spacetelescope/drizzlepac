@@ -301,7 +301,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         logname = input_filename.replace('.out', '.log')
     else:
         logname = 'svm_process.log'
-    print("Trailer filename: {}".format(logname))
     # Initialize total trailer filename as temp logname
     logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
     # start processing
