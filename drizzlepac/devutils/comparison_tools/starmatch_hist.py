@@ -30,11 +30,16 @@ from drizzlepac import util
 from drizzlepac.devutils.comparison_tools import infrot
 from stsci.tools import logutil
 
-log = logutil.create_logger('starmatch_hist', level=logutil.logging.INFO, stream=sys.stdout)
+__taskname__ = 'starmatch_hist'
+
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 msgunit = sys.stdout
-@util.with_logging
-def run(source_list_dict, minimum_match=10, xref=0.0, yref=0.0, postarg=None):
+
+def run(source_list_dict, log_level,minimum_match=10, xref=0.0, yref=0.0, postarg=None):
     """
     Match source lists in x,y coordinates allowing for possible shift & rotation
 
@@ -50,6 +55,7 @@ def run(source_list_dict, minimum_match=10, xref=0.0, yref=0.0, postarg=None):
     :type postarg: dictionary
     :returns: dictionary of lists of matching sourcelist indicies indexed by coo filename.
     """
+    log.setLevel(log_level)
     out_dict={}
     ### assumes list with greatest number of sources should be the reference file
     (coo_ref,number)=max(iter(source_list_dict.items()), key=lambda x:x[1])
