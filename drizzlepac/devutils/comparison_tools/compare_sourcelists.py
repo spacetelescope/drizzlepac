@@ -36,6 +36,8 @@ The following criteria must be met for the test to be declared "successful":
 * Flux (Outer Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
 * Magnitude (Inner Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
 * Magnitude (Outer Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
+* Magnitude error (Inner Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
+* Magnitude error (Outer Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
 * Flag Value: The total number of differing flag bits is less than 5% of the total number of reference flag bits.
 
 .. note::
