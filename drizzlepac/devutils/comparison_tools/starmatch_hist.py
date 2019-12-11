@@ -30,26 +30,34 @@ from drizzlepac import util
 from drizzlepac.devutils.comparison_tools import infrot
 from stsci.tools import logutil
 
-log = logutil.create_logger('starmatch_hist', level=logutil.logging.INFO, stream=sys.stdout)
+__taskname__ = 'starmatch_hist'
+
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 msgunit = sys.stdout
-@util.with_logging
-def run(source_list_dict, minimum_match=10, xref=0.0, yref=0.0, postarg=None):
+
+def run(source_list_dict, log_level,minimum_match=10, xref=0.0, yref=0.0, postarg=None):
     """
     Match source lists in x,y coordinates allowing for possible shift & rotation
 
     :param source_list_dict: dictionary indexed by coo filename with number of sources in each file as value
+    :param log_level: the desired level of verboseness in the log statements displayed on the screen and written to the .log file.
     :param minimum_match: minimum number of matches in peak. Default value = '10'.
     :param xref: X reference pixel in image (default 0, which is a very bad value if image rotates) 
     :param yref: Y reference pixel in image (default 0, which is a very bad value if image rotates) 
     :param postarg: dictionary indexed by coo filename with (dx, dy) in pixels for postarg (default is to read FITS headers)
     :type source_list_dict: dictionary
+    :type log_level: integer
     :type minimum_match: integer
     :type xref: float
     :type yref: float
     :type postarg: dictionary
     :returns: dictionary of lists of matching sourcelist indicies indexed by coo filename.
     """
+    log.setLevel(log_level)
     out_dict={}
     ### assumes list with greatest number of sources should be the reference file
     (coo_ref,number)=max(iter(source_list_dict.items()), key=lambda x:x[1])
@@ -69,9 +77,9 @@ def run(source_list_dict, minimum_match=10, xref=0.0, yref=0.0, postarg=None):
         if len(matched_list) < minimum_match:
             matched_flag = False
             if coo_img == coo_ref:
-                log.info("\n %s is reference image, starmatch_hist leaving WCS alone\n" %(coo_img,))
+                log.info("\n %s is reference image, starmatch_hist leaving WCS alone\n" %(os.path.basename(coo_img),))
             else:
-                log.info("\n %s -> %s starmatch_hist failed! Leaving WCS alone\n" %(coo_img,coo_ref))
+                log.info("\n %s -> %s starmatch_hist failed! Leaving WCS alone\n" %(os.path.basename(coo_img),coo_ref))
     return(out_dict)
 
 
@@ -133,10 +141,10 @@ def getpostarg(source_list_dict):
                 dy = sinpa*postarg1+cospa*postarg2
                 rv[coo_img] = (dx, dy)
             except:
-                log.info("Warning: unable to fetch POSTARG info for image {}. Using POSTARG=0".format(fitsfile))
+                log.info("Warning: unable to fetch POSTARG info for image {}. Using POSTARG=0".format(os.path.basename(fitsfile)))
                 rv[coo_img] = (0.0, 0.0)
         else:
-            log.info('FITS file %s not found, using POSTARG=0' % fitsfile)
+            log.info('FITS file %s not found, using POSTARG=0' % os.path.basename(fitsfile))
             rv[coo_img] = (0.0,0.0)
     return rv
 

@@ -14,6 +14,14 @@
     logger basically filters which messages are passed on to the handlers according the
     level chosen. The logger is acting as a gate on the messages which are allowed to be
     passed to the handlers.
+
+    NOTE: In order for step 9 (run_sourcelist_comparison()) to run, the following environment variables need to be set:
+    - HLA_CLASSIC_BASEPATH
+    - HLA_BUILD_VER
+
+    Alternatively, if the HLA classic path is unavailable, The comparison can be run using locally stored HLA classic
+    files. The relevant HLA classic imagery and sourcelist files must be placed in a subdirectory of the current working
+    directory called 'hla_classic'.
 """
 import datetime
 import glob
@@ -25,6 +33,7 @@ import logging
 
 import drizzlepac
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
+from drizzlepac.devutils.comparison_tools import compare_sourcelists
 from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import hla_flag_filter
 from drizzlepac.hlautils import poller_utils
@@ -300,7 +309,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         logname = input_filename.replace('.out', '.log')
     else:
         logname = 'svm_process.log'
-    print("Trailer filename: {}".format(logname))
     # Initialize total trailer filename as temp logname
     logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
     # start processing
@@ -406,12 +414,14 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # TODO: QUALITY CONTROL SUBROUTINE CALL GOES HERE.
         """
 
+        # 9: Compare results to HLA classic counterparts (if possible)
+        if diagnostic_mode:
+            run_sourcelist_comparision(total_list,log_level=log_level)
         # Write out manifest file listing all products generated during processing
         log.info("Creating manifest file {}.".format(manifest_name))
         log.info("  The manifest contains the names of products generated during processing.")
         with open(manifest_name, mode='w') as catfile:
             [catfile.write("{}\n".format(name)) for name in product_list]
-
         # 10: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
     except Exception:
@@ -439,6 +449,73 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             print("Master log file not found.  Please check logs to locate processing messages.")
         return return_value
 
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
+    """ This subroutine automates execution of drizzlepac/devutils/comparison_tools/compare_sourcelist_flagging.py to
+    compare HAP-generated filter catalogs with their HLA classic counterparts.
+
+    NOTE: In order for this subroutine to run, the following environment variables need to be set:
+    - HLA_CLASSIC_BASEPATH
+    - HLA_BUILD_VER
+
+    Alternatively, if the HLA classic path is unavailable, The comparison can be run using locally stored HLA classic
+    files. The relevant HLA classic imagery and sourcelist files must be placed in a subdirectory of the current working
+    directory called 'hla_classic'.
+
+    Parameters
+    ----------
+    total_list: list
+        List of TotalProduct objects, one object per instrument/detector combination is
+        a visit.  The TotalProduct objects are comprised of FilterProduct and ExposureProduct
+        objects.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
+
+    RETURNS
+    -------
+    Nothing.
+    """
+    #get HLA classic path details from envroment variables
+    hla_classic_basepath = os.getenv('HLA_CLASSIC_BASEPATH')
+    hla_build_ver = os.getenv("HLA_BUILD_VER")
+    for tot_obj in total_list:
+        if hla_classic_basepath and hla_build_ver and os.path.exists(hla_classic_basepath):
+            hla_cassic_basepath = os.path.join(hla_classic_basepath,tot_obj.instrument,hla_build_ver)
+            hla_classic_path = os.path.join(hla_cassic_basepath,tot_obj.prop_id,tot_obj.prop_id+"_"+tot_obj.obset_id) # Generate path to HLA classic products
+        elif os.path.exists(os.path.join(os.getcwd(),"hla_classic")): # For local testing
+            hla_classic_basepath = os.path.join(os.getcwd(), "hla_classic")
+            hla_classic_path = hla_classic_basepath
+        else:
+            return # bail out if HLA classic path can't be found.
+        for filt_obj in tot_obj.fdp_list:
+            hap_imgname = filt_obj.drizzle_filename
+            hla_imgname = glob.glob("{}/{}{}_dr*.fits".format(hla_classic_path,filt_obj.basename, filt_obj.filters))[0]
+            if not os.path.exists(hap_imgname) or not os.path.exists(hla_imgname): # Skip filter if one or both of the images can't be found
+                continue
+            for hap_sourcelist_name in [filt_obj.point_cat_filename, filt_obj.segment_cat_filename]:
+                if hap_sourcelist_name.endswith("point-cat.ecsv"):
+                    hla_classic_cat_type = "dao"
+                    plotfile_prefix=filt_obj.product_basename+"_point"
+                else:
+                    hla_classic_cat_type = "sex"
+                    plotfile_prefix = filt_obj.product_basename + "_segment"
+                if hla_classic_basepath and hla_build_ver and os.path.exists(hla_classic_basepath):
+                    hla_sourcelist_name = "{}/logs/{}{}_{}phot.txt".format(hla_classic_path,filt_obj.basename, filt_obj.filters, hla_classic_cat_type)
+                else:
+                    hla_sourcelist_name = "{}/{}{}_{}phot.txt".format(hla_classic_path, filt_obj.basename,
+                                                                           filt_obj.filters, hla_classic_cat_type)
+                if not os.path.exists(hap_sourcelist_name) or not os.path.exists(hla_sourcelist_name): # Skip catalog type if one or both of the catalogs can't be found
+                    continue
+                log.info("HAP image:           {}".format(os.path.basename(hap_imgname)))
+                log.info("HLA Classic image:   {}".format(os.path.basename(hla_imgname)))
+                log.info("HAP catalog:         {}".format(os.path.basename(hap_sourcelist_name)))
+                log.info("HLA Classic catalog: {}".format(os.path.basename(hla_sourcelist_name)))
+                # once all file exist checks are passed, execute sourcelist comparision
+                return_status = compare_sourcelists.comparesourcelists([hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="absolute",plotfile_prefix=plotfile_prefix, verbose=True,log_level=log_level, debugMode=False)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
