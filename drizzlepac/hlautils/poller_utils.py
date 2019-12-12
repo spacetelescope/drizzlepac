@@ -352,6 +352,8 @@ def build_poller_table(input, log_level):
 
             # Convert to a string column, instead of int64
             input_table['obset_id'] = input_table['obset_id'].astype(np.str)
+        elif len(input_table.columns) == 1:
+            input_table.columns[0].name = 'filename'
 
         # Since a poller file was the input, it is assumed all the input
         # data is in the locale directory so just collect the filenames.
@@ -390,12 +392,12 @@ def build_poller_table(input, log_level):
     if not usable_datasets:
         log.warning("No usable images in poller file or input list for drizzling. The processing of this data is ending.")
         sys.exit(0)
-
+    print(usable_datasets)
     cols = OrderedDict()
     for cname in POLLER_COLNAMES:
         cols[cname] = []
     cols['filename'] = usable_datasets
-
+    print(input_table)
     # If processing a list of files, evaluate each input dataset for the information needed
     # for the poller file
     if not is_poller_file:
