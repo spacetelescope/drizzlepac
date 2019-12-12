@@ -63,7 +63,7 @@ from . import tweakback
 from . import pixreplace
 
 from . import hlautils
-from . import alignimages
+from . import align
 from . import runastrodriz
 
 # These lines allow TEAL to print out the names of TEAL-enabled tasks

@@ -41,6 +41,7 @@ import sys
 import time
 
 from astropy.io import fits as fits
+from astropy.table import Table
 import numpy
 import scipy
 import scipy.ndimage
@@ -52,12 +53,16 @@ from stwcs import wcsutil
 
 __taskname__ = 'hla_flag_filter'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 
 def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky,
                              catalog_name, catalog_data, proc_type, drz_root_dir, hla_flag_msk, ci_lookup_file_path,
-                             output_custom_pars_file, diagnostic_mode):
+                             output_custom_pars_file, log_level, diagnostic_mode):
+
     """Simple calling subroutine that executes the other flagging subroutines.
 
     Parameters
@@ -102,6 +107,9 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     output_custom_pars_file : string
         name of the output config file
 
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
     diagnostic_mode : bool
         write intermediate files?
 
@@ -110,6 +118,9 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     catalog_data : astropy.Table object
         drizzled filter product catalog data with updated flag values
     """
+    # set logging level to user-specified level
+    log.setLevel(log_level)
+
     # Relevant equivalent column titles for aperture and segment catalogs
     all_column_titles = {
         "aperture": {
@@ -122,6 +133,7 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
         }
     }
     if proc_type not in all_column_titles.keys():
+        log.error("Unknown proc_type '{}', must be 'aperture' or 'segment'".format(proc_type))
         raise ValueError("Unknown proc_type '{}', must be 'aperture' or 'segment'".format(proc_type))
     column_titles = all_column_titles[proc_type]
     # -----------------------
@@ -131,18 +143,19 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
     log.info("Determining concentration indices for sources.")
-    log.debug("ci_filter({} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>", proc_type,
-                                                            param_dict, ci_lookup_file_path, output_custom_pars_file,
-                                                            column_titles, diagnostic_mode))
+    log.debug("ci_filter({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>",
+                                                                proc_type, param_dict, ci_lookup_file_path,
+                                                                output_custom_pars_file, column_titles, log_level,
+                                                                diagnostic_mode))
     catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
-                             output_custom_pars_file, column_titles, diagnostic_mode)
+                             output_custom_pars_file, column_titles, log_level, diagnostic_mode)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag saturated sources
     log.info("Flagging saturated sources in the catalogs.")
     log.debug("hla_saturation_flags({} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, catalog_name,
-                                                                       "<Catalog Data>", proc_type, param_dict,
-                                                                       plate_scale, column_titles, diagnostic_mode))
+                                                                        "<Catalog Data>", proc_type, param_dict,
+                                                                        plate_scale, column_titles, diagnostic_mode))
     catalog_data = hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, proc_type, param_dict,
                                         plate_scale, column_titles, diagnostic_mode)
 
@@ -150,8 +163,8 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     # Flag swarm sources
     log.info("Flagging possible swarm features in catalogs")
     log.debug("hla_swarm_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>",
-                                                                     exptime, plate_scale, median_sky, proc_type,
-                                                                     param_dict, column_titles, diagnostic_mode))
+                                                                      exptime, plate_scale, median_sky, proc_type,
+                                                                      param_dict, column_titles, diagnostic_mode))
     catalog_data = hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky,
                                    proc_type, param_dict, column_titles, diagnostic_mode)
 
@@ -159,18 +172,19 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
     log.info("Flagging sources from regions observed with only a small number of exposures.")
     log.debug("hla_nexp_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, flt_list, param_dict, plate_scale,
-                                                                 catalog_name, "<Catalog Data>", drz_root_dir,
-                                                                 "<MASK_ARRAY>", column_titles, diagnostic_mode))
+                                                                     catalog_name, "<Catalog Data>", drz_root_dir,
+                                                                     "<MASK_ARRAY>", column_titles, diagnostic_mode))
     catalog_data = hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_name, catalog_data,
                                   drz_root_dir, hla_flag_msk, column_titles, diagnostic_mode)
 
+    display_catalog_bit_populations(catalog_data['Flags'])
     return catalog_data
 
 # ======================================================================================================================
 
 
 def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
-              output_custom_pars_file, column_titles, diagnostic_mode):
+              output_custom_pars_file, column_titles, log_level, diagnostic_mode):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
     flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
     It also flags sources below the detection limit in mag_aper2 (flag=8).
@@ -201,6 +215,9 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     column_titles : dictionary
         Relevant column titles
 
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
     diagnostic_mode : bool
         write intermediate files?
 
@@ -215,8 +232,9 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     snr = float(param_dict['quality control']['ci filter'][proc_type]['bthresh'])
 
     # replace CI limits with values from table if possible
-    cidict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path,
-                                       ci_lower=ci_lower_limit, ci_upper=ci_upper_limit)  # TODO: add values for ACS/SBC
+    cidict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path, log_level,
+                                       diagnostic_mode=diagnostic_mode, ci_lower=ci_lower_limit,
+                                       ci_upper=ci_upper_limit)  # TODO: add values for ACS/SBC
     ci_lower_limit = cidict['ci_lower_limit']
     ci_upper_limit = cidict['ci_upper_limit']
 
@@ -639,6 +657,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
     ap2 = param_dict['catalog generation']['aperture_2']
     if proc_type not in ('segment', 'aperture'):
+        log.error("Unknown catalog type '{}', must be 'aperture' or 'segment'".format(proc_type))
         raise ValueError("Unknown catalog type '%s'" % proc_type)
 
     # ----------------------------------
@@ -1070,7 +1089,8 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
                     ctr_list_cut = final_flag_src_central_pixel_list[:, 3] > threshold
                 else:
                     ctr_list_cut = numpy.logical_and(final_flag_src_central_pixel_list[:, 3] > threshold,
-                                                     final_flag_src_central_pixel_list[:, 3] <= ctr_list_threshold_list[ctr_list_cnt-1])
+                                                     final_flag_src_central_pixel_list[:, 3] <=
+                                                     ctr_list_threshold_list[ctr_list_cnt-1])
 
                 ctr_list_cut1 = final_flag_src_central_pixel_list[ctr_list_cut, :]
                 pcentral, pfull = xymatch(ctr_list_cut1[:, 0:2], swarm_list_b[:, 0:2],
@@ -1436,8 +1456,10 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
     Varies; Depending on inputs, either just 'p2', or 'p1' and 'p2'. p1 and p2 are lists of matched indices
     """
     if not (isinstance(cat1, numpy.ndarray) and len(cat1.shape) == 2 and cat1.shape[1] == 2):
+        log.error("catalog 1 must be a [N, 2] array")
         raise ValueError("cat1 must be a [N, 2] array")
     if not (isinstance(cat2, numpy.ndarray) and len(cat2.shape) == 2 and cat2.shape[1] == 2):
+        log.error("catalog 2 must be a [N, 2] array")
         raise ValueError("cat2 must be a [N, 2] array")
 
     x1 = cat1[:, 0]
@@ -1637,3 +1659,94 @@ def make_mask_array(drz_image):
     mask = (erode(dilate(bigmask, kernel1), kernel2) == 0)[padding:-padding, padding:-padding]
     mask = mask.astype(numpy.int16)
     return mask
+
+
+# ======================================================================================================================
+
+def deconstruct_flag(flagval):
+    """Breaks down an integer flag value into individual component bit values.
+
+    Parameters
+    ----------
+    flagval : int
+        Flag value to deconstruct
+
+    Returns
+    -------
+    out_idx_list : list
+        a 9-element numpy array of 0s and 1s. Each element of the array represents the presence of a particular
+        bit value (element 0 = bit 0, element 1 = bit 1, ..., element 3 = bit 4 and so on...)
+    """
+    bitlist = [1, 2, 4, 8, 16, 32, 64, 128]
+    flagval = int(flagval)
+    # out_bit_list = []
+    out_idx_list = numpy.zeros(9, dtype=int)
+    if flagval == 0:
+        # out_bit_list = [0]
+        out_idx_list[0] = 1
+    if flagval > 0:
+        idx = 1
+        for bit in bitlist:
+            if flagval & bit > 0:
+                # out_bit_list.append(bit)
+                out_idx_list[idx] = 1
+            if bit > flagval:
+                break
+            idx += 1
+    return out_idx_list
+
+
+# ======================================================================================================================
+
+def display_catalog_bit_populations(flag_data):
+    """Breaks all input flag values down into their constituent bit values and displays a bit-by-bit population summary
+
+    Parameters
+    ----------
+    flag_data : astropy.table.column.Column object
+        'Flags' column of a given sourcelist to analyze
+
+    Returns
+    -------
+    Nothing.
+    """
+    bit_list = [0, 1, 2, 4, 8, 16, 32, 64, 128]
+    flag_meanings = ['Point Source',
+                     'Extended Source',
+                     'Single-Pixel Saturation',
+                     'Multi-Pixel Saturation',
+                     'Faint Magnitude Limit',
+                     'Hot Pixel',
+                     'Swarm Detection',
+                     'Edge and Chip Gap',
+                     'Bleeding and Cosmic Rays']
+    flag_counts = numpy.zeros(9, dtype=int)
+    n_sources = len(flag_data)
+    for flagval in flag_data:
+        flag_counts += deconstruct_flag(flagval)
+    max_length = 5
+    for bitval in flag_counts:
+        max_length = max([max_length, len(str(bitval))])
+    log.info("{}".format("-"*60))
+    log.info("{}FLAG BIT VALUE POPULATION SUMMARY".format(" "*13))
+    log.info("Bit   Meaning{}Count Percentage".format(" "*20))
+    fill_char = " "
+    for ctr in range(0, len(bit_list)):
+        bit_val = bit_list[ctr]
+        pct_val = 100.0*(float(flag_counts[ctr])/float(n_sources))
+        padding1 = 6 - len(str(bit_val))
+        padding2 = 27 - len(flag_meanings[ctr])
+        padding3 = max_length-len(str(flag_counts[ctr]))
+        if pct_val == 100.:
+            padding4 = 3
+        elif pct_val >= 10.:
+            padding4 = 4
+        else:
+            padding4 = 5
+        log.info("{}{}{}{}{}{}{}{:.3f}%".format(bit_val, fill_char*padding1, flag_meanings[ctr], padding2*fill_char,
+                                                fill_char*padding3, flag_counts[ctr], fill_char*padding4, pct_val))
+    log.info("{}".format(" -- " * 15))
+    log.info("NOTE: As the flag value for a given source can be composed ")
+    log.info("of multiple bits, the above percentage values need not add")
+    log.info("up to 100%.")
+    log.info("{}\n".format("-" * 60))

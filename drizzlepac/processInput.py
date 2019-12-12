@@ -961,10 +961,10 @@ def buildEmptyDRZ(input, output):
             oname = 'final'
         output = fileutil.buildNewRootname(oname, extn='_drz.fits')
     else:
-        if 'drz' not in output:
+        if '_drz' not in output:
             output = fileutil.buildNewRootname(output, extn='_drz.fits')
 
-    log.info('Setting up output name: %s' % output)
+    print('Building emtpy DRZ file with output name: %s' % output)
 
     # Open the first image (of the excludedFileList?) to use as a template to build
     # the DRZ file.

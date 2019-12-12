@@ -16,9 +16,13 @@ from stsci.tools import logutil
 
 __taskname__ = 'ci_table'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 ci_table = None
+
 
 def read_ci_apcorr_file(ci_lookup_file_path, diagnostic_mode=False, infile_name='ci_ap_cor_table_ap_20_2016.txt'):
 
@@ -46,12 +50,13 @@ def read_ci_apcorr_file(ci_lookup_file_path, diagnostic_mode=False, infile_name=
     infile_name = os.path.join(pars_dir, infile_name)
     log.info("CI lookup table: {}".format(infile_name))
     ci_lines = open(infile_name).readlines()
-    ci_table={}
+    ci_table = {}
     for ci_line in ci_lines:
-        if ci_line.startswith("#") == False:
-            ci_line=ci_line.strip()
-            parse_cil=ci_line.split()
+        if not ci_line.startswith("#"):
+            ci_line = ci_line.strip()
+            parse_cil = ci_line.split()
             if len(parse_cil) < 6:
+                log.warning("Illegal line in {} (too few fields):\n{}".format(infile_name, ci_line))
                 raise ValueError("Illegal line in %s (too few fields):\n%s" % (infile_name, ci_line))
             obs_config = parse_cil[0].upper()
             try:
@@ -61,16 +66,17 @@ def read_ci_apcorr_file(ci_lookup_file_path, diagnostic_mode=False, infile_name=
                 ci_upper = float(parse_cil[4])
                 ap_corr = float(parse_cil[5])
             except ValueError as e:
+                log.warning("Illegal line in {} (bad value):\n{}".format(infile_name, ci_line))
                 raise ValueError("Illegal line in %s (bad value):\n%s" % (infile_name, ci_line))
             ci_table[obs_config] = (eff_wave, ci_lower, ci_peak, ci_upper, ap_corr)
     if diagnostic_mode:
         for key in sorted(ci_table.keys()):
-            log.info(key,ci_table[key])
+            log.debug("{} {}".format(key, ci_table[key]))
     return ci_table
 
 
-def get_ci_info(inst, detect, filt, ci_lookup_file_path, diagnostic_mode=False,
-        eff_wave=-999, ci_lower=-999.0, ci_peak=-999.0, ci_upper=-999.0, ap_corr=-999.0):
+def get_ci_info(inst, detect, filt, ci_lookup_file_path, diagnostic_mode=False, eff_wave=-999, ci_lower=-999.0,
+                ci_peak=-999.0, ci_upper=-999.0, ap_corr=-999.0):
 
     """Return dictionary with CI info for given detector/filter
 
@@ -116,7 +122,7 @@ def get_ci_info(inst, detect, filt, ci_lookup_file_path, diagnostic_mode=False,
     if ci_table is None:
         ci_table = read_ci_apcorr_file(ci_lookup_file_path, diagnostic_mode=diagnostic_mode)
 
-    obs_config=("%s_%s_%s"%(inst,detect,filt)).upper()
+    obs_config = (("{}_{}_{}").format(inst, detect, filt)).upper()
     if diagnostic_mode:
         log.info("obs_config: {}".format(obs_config))
     if obs_config in ci_table:
@@ -125,7 +131,11 @@ def get_ci_info(inst, detect, filt, ci_lookup_file_path, diagnostic_mode=False,
         eff_wave, ci_lower, ci_peak, ci_upper, ap_corr = ci_table[obs_config]
     else:
         log.info("get_ci_info: CI values not found for %s, using default values" % obs_config)
-    return_dict={'eff_wave':eff_wave,'ci_lower_limit':ci_lower,'ci_peak':ci_peak,'ci_upper_limit':ci_upper,'ap_corr':ap_corr}
+    return_dict = {'eff_wave': eff_wave,
+                   'ci_lower_limit': ci_lower,
+                   'ci_peak': ci_peak,
+                   'ci_upper_limit': ci_upper,
+                   'ap_corr': ap_corr}
     return return_dict
 
 
@@ -152,6 +162,7 @@ def parse_file(drzfile):
     dir, fname = os.path.split(drzfile)
     f = fname.split('_')
     if len(f) < 6:
+        log.error("Cannot parse inst/detect/filt from {}".format(drzfile))
         raise ValueError("Cannot parse inst/detect/filt from %s" % drzfile)
     inst = f[3].upper()
     if inst == 'WFPC2':
@@ -171,7 +182,7 @@ def parse_file(drzfile):
     return (inst, detect, filt)
 
 
-def get_ci_from_file(drzfile, ci_lookup_file_path, **kw):
+def get_ci_from_file(drzfile, ci_lookup_file_path, log_level, **kw):
 
     """Return dictionary with CI info for given filename
 
@@ -183,40 +194,46 @@ def get_ci_from_file(drzfile, ci_lookup_file_path, **kw):
     ci_lookup_file_path : string
         final path elements of the concentration index lookup file
 
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
     Returns
     -------
     a dictionary with CI info for given filename
     """
+    # set logging level to user-specified level
+    log.setLevel(log_level)
 
     inst, detect, filt = parse_file(drzfile)
     return get_ci_info(inst, detect, filt, ci_lookup_file_path, **kw)
 
-if __name__=='__main__':
-    inst, detect, filt = ('wfc3','uvis','f606w')
-    ciap_dict = get_ci_info(inst,detect,filt)
-    log.info("configuration:  {}".format(inst,detect,filt))
+
+if __name__ == '__main__':
+    inst, detect, filt = ('wfc3', 'uvis', 'f606w')
+    ciap_dict = get_ci_info(inst, detect, filt)
+    log.info("configuration:  {}".format(inst, detect, filt))
     log.info("eff_wave:       {}".format(ciap_dict['eff_wave']))
     log.info("ci_lower:       {}".format(ciap_dict['ci_lower_limit']))
     log.info("ci_peak:        {}".format(ciap_dict['ci_peak']))
     log.info("ci_upper:       {}".format(ciap_dict['ci_upper_limit']))
     log.info("ap_corr:        {}".format(ciap_dict['ap_corr']))
 
-    drizzled_image='hst_12311_03_wfc3_uvis_f275w_drz.fits'
+    drizzled_image = 'hst_12311_03_wfc3_uvis_f275w_drz.fits'
     inst, detect, filt = parse_file(drizzled_image)
     ciap_dict = get_ci_from_file(drizzled_image)
     log.info("drizzled image: {}".format(drizzled_image))
-    log.info("configuration:  {}".format(inst,detect,filt))
+    log.info("configuration:  {}".format(inst, detect, filt))
     log.info("eff_wave:       {}".format(ciap_dict['eff_wave']))
     log.info("ci_lower:       {}".format(ciap_dict['ci_lower_limit']))
     log.info("ci_peak:        {}".format(ciap_dict['ci_peak']))
     log.info("ci_upper:       {}".format(ciap_dict['ci_upper_limit']))
     log.info("ap_corr:        {}".format(ciap_dict['ap_corr']))
 
-    drizzled_image='hst_11969_04_wfpc2_f606w_pc_drz.fits'
+    drizzled_image = 'hst_11969_04_wfpc2_f606w_pc_drz.fits'
     inst, detect, filt = parse_file(drizzled_image)
     ciap_dict = get_ci_from_file(drizzled_image)
     log.info("drizzled image: {}".format(drizzled_image))
-    log.info("configuration:  {}".format(inst,detect,filt))
+    log.info("configuration:  {}".format(inst, detect, filt))
     log.info("eff_wave:       {}".format(ciap_dict['eff_wave']))
     log.info("ci_lower:       {}".format(ciap_dict['ci_lower_limit']))
     log.info("ci_peak:        {}".format(ciap_dict['ci_peak']))

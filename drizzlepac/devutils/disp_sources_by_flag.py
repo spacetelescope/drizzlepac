@@ -6,20 +6,21 @@ bit value
 NOTE: This script requires the "pyds9" library.
 """
 import sys
-import pdb
+# import pdb
 from astropy.io import fits as fits
 from astropy.table import Table
 import numpy as np
 import pyds9
 
 bit_list = [0, 1, 2, 4, 8, 16, 32, 64, 128]
-flag_meanings=['Point Source','Extended Source','Single-Pixel Saturation','Multi-Pixel Saturation',
-               'Faint Magnitude Limit','Hot Pixel','Swarm Detection','Edge and Chip Gap','Bleeding and Cosmic Rays']
+flag_meanings = ['Point Source', 'Extended Source', 'Single-Pixel Saturation', 'Multi-Pixel Saturation',
+               'Faint Magnitude Limit', 'Hot Pixel', 'Swarm Detection', 'Edge and Chip Gap',
+               'Bleeding and Cosmic Rays']
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
 
-def display_regions(imgname,reg_dict,flag_counts,n_sources):
+def display_regions(imgname, reg_dict, flag_counts, n_sources):
     """
     Display the input input image overplot the positions of flagged sources
 
@@ -46,14 +47,15 @@ def display_regions(imgname,reg_dict,flag_counts,n_sources):
 
     for ctr in range(0, len(bit_list)):
         bit_val = bit_list[ctr]
-        padding0 = 2 - len(str(ctr+1))
+        # padding0 = 2 - len(str(ctr + 1))
         padding1 = 6 - len(str(bit_val))
         padding2 = 27 - len(flag_meanings[ctr])
-        print("Frame {}: Bit value {}{}{}{}{} sources flagged ({}% of all sources)".format(ctr+1,bit_val,"."*padding1,
-                                                                                           flag_meanings[ctr],
-                                                                                           padding2*".",
-                                                                                           flag_counts[ctr],
-                                                                                           100.0*(float(flag_counts[ctr])/float(n_sources))))
+        print("Frame {}: Bit value {}{}{}{}{} sources flagged ({}% of all sources)".format(ctr + 1,
+                            bit_val, "." * padding1,
+                            flag_meanings[ctr],
+                            padding2 * ".",
+                            flag_counts[ctr],
+                            100.0 * (float(flag_counts[ctr]) / float(n_sources))))
         if ctr != 0:
             d.set("frame new")
         d.set_fits(imghdu)
@@ -123,7 +125,7 @@ def make_regions(sl_name):
         total number of sources in sourcelist
     """
     table_data = Table.read(sl_name, format='ascii.ecsv')
-    flag_counts = np.zeros(9,dtype=int)
+    flag_counts = np.zeros(9, dtype=int)
     reg_dict = {}
     for bit_val in bit_list:
         reg_dict[bit_val] = ""
@@ -137,19 +139,41 @@ def make_regions(sl_name):
             y = table_line["Y-Centroid"]
         else:
             sys.exit("ERROR! Unrecognized catalog filetype!")
-        flagval  = table_line["Flags"]
+        flagval = table_line["Flags"]
         flag_bits = deconstruct_flag((flagval))
         flag_counts += flag_bits
-        for bit_val,flag_element in zip(bit_list,flag_bits):
+        for bit_val, flag_element in zip(bit_list, flag_bits):
             if flag_element == 1:
-                reg_dict[bit_val]+="point({}, {}) #point=circle color=red; ".format(x+1.0,y+1.0)
+                reg_dict[bit_val] += "point({}, {}) #point=circle color=red; \n".format(x + 1.0, y + 1.0)
 
     for bit_val in bit_list:
-        if len(reg_dict[bit_val]) >0:
+        if len(reg_dict[bit_val]) > 0:
             reg_dict[bit_val] = reg_dict[bit_val][:-2]
     n_sources = len(table_data)
     return reg_dict, flag_counts, n_sources
 
+
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+def write_regions(reg_dict, sl_name):
+    """Write out separate regions files for each bit flagged
+
+    The region files written out can be read in directly by DS9 by the user, as an interactive
+    alternative to using the Python interface pyds9.
+
+    parameters
+    -----------
+    reg_dict : dict
+        dictionary containing region info keyed by flag bit
+
+    sl_name : string
+        sourcelist name
+
+    """
+    for bit in reg_dict:
+        fname = sl_name.replace("-cat.ecsv", "-bit{:03d}.reg".format(int(bit)))
+        regions = reg_dict[bit]
+        with open(fname, 'w') as bitfile:
+            bitfile.writelines(regions)
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
 if __name__ == "__main__":
@@ -157,6 +181,6 @@ if __name__ == "__main__":
     slname = sys.argv[2]
 
 
-    reg_dict, flag_counts,n_sources = make_regions(slname)
+    reg_dict, flag_counts, n_sources = make_regions(slname)
 
-    display_regions(imgname,reg_dict,flag_counts,n_sources)
+    display_regions(imgname, reg_dict, flag_counts, n_sources)

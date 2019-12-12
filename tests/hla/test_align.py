@@ -1,7 +1,7 @@
 """ This module runs tests on specific datasets to determine if the datasets can
     be aligned to an astrometric catalog. """
 import pytest
-from drizzlepac import alignimages
+from drizzlepac import align as alignimages
 from ci_watson.artifactory_helpers import get_bigdata
 from .base_test import BaseHLATest
 

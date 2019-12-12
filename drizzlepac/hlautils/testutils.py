@@ -8,11 +8,11 @@ from stwcs import updatewcs
 from stwcs.wcsutil import headerlet
 from ci_watson.hst_helpers import ref_from_image, download_crds
 
-from .. import alignimages
+from .. import align
 
 __taskname__ = 'testutils'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
 
 def compare_wcs_alignment(dataset, force=False):
     """Return results from aligning dataset using all available WCS solutions.
@@ -65,7 +65,7 @@ def compare_wcs_alignment(dataset, force=False):
     try:
         # Step 1:
         #   Determine alignment for pipeline-defined WCS
-        results = alignimages.perform_align([dataset], clobber=force, debug=True)
+        results = align.perform_align([dataset], clobber=force, debug=True)
         if not results:
             msg = "No valid exposures found for {}.".format(dataset)
             msg += "\n            Please check that input was either a valid ASN"
@@ -113,7 +113,7 @@ def compare_wcs_alignment(dataset, force=False):
                     headerlet.restore_from_headerlet(img, hdrname=hdrname,
                                                      archive=False, force=True)
 
-            results = alignimages.perform_align([dataset], clobber=False, debug=True)
+            results = align.perform_align([dataset], clobber=False, debug=True)
             alignment[wcs] = extract_results(results)
 
     finally:

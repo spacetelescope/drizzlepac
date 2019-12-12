@@ -67,6 +67,12 @@ import json
 import traceback
 import stat
 import errno
+from collections import OrderedDict
+import datetime
+try:
+    from psutil import Process
+except:
+    Process = None
 
 # THIRD-PARTY
 from astropy.io import fits
@@ -76,21 +82,26 @@ import numpy as np
 
 from drizzlepac import processInput  # used for creating new ASNs for _flc inputs
 from stwcs import updatewcs
-from drizzlepac import alignimages
+
+from drizzlepac import align
 from drizzlepac import resetbits
 from drizzlepac.hlautils import astrometric_utils as amutils
+from drizzlepac.hlautils import cell_utils
 from drizzlepac import util
 from drizzlepac import mdzhandler
 from drizzlepac import updatehdr
 
-__taskname__ = "runaligndriz"
+__taskname__ = "runastrodriz"
 
 # Local variables
-__version__ = "2.0.0"
-__version_date__ = "(18-Oct-2019)"
+__version__ = "2.1.0"
+__version_date__ = "(06-Dec-2019)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
+# The parameter for resetbits resets DQ values of :
+#  - 4096: pixels previously flagged as cosmic-rays.
+#
 PIPELINE_PARS = {'mdriztab': True,
                  'in_memory': True,
                  'stepsize': 10,
@@ -99,14 +110,22 @@ PIPELINE_PARS = {'mdriztab': True,
                  'clean': False,
                  'resetbits': 4096}
 
+# Values of good_bits are set to treat these DQ bit values as 'good':
+#  - 1024: sink pixel (ACS), charge trap (WFC3/UVIS)
+#  -  256: saturated pixel (ACS), full-well saturation (WFC3)
+#  -   64: warm pixel (ACS, WFC3)
+#  -   16: hot pixel (ACS, WFC3)
+#  -  512: bad reference file pixel (ACS), bad flat pixel (WFC3)
+
 focus_pars = {"WFC3/IR": {'sigma': 2.0, 'good_bits': 512},
-              "WFC3/UVIS": {'sigma': 1.5, 'good_bits': ~14588},
-              "ACS/WFC": {'sigma': 1.5, 'good_bits': ~14588},
+              "WFC3/UVIS": {'sigma': 1.5, 'good_bits': 1360},
+              "ACS/WFC": {'sigma': 1.5, 'good_bits': 1360},
               "ACS/SBC": {'sigma': 2.0, 'good_bits': 0},
-              "ACS/HRC": {'sigma': 1.5, 'good_bits': ~14588},
-              "WFPC2/PC": {'sigma': 1.5, 'good_bits': ~14588}}
+              "ACS/HRC": {'sigma': 1.5, 'good_bits': 1360},
+              "WFPC2/PC": {'sigma': 1.5, 'good_bits': 1360}}
 sub_dirs = ['OrIg_files', 'pipeline-default']
 valid_alignment_modes = ['apriori', 'aposteriori', 'default-pipeline']
+gsc240_date = '2017-10-01'
 
 # default marker for trailer files
 __trlmarker__ = '*** astrodrizzle Processing Version ' + __version__ + __version_date__ + '***\n'
@@ -332,7 +351,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     - copy updated input exposures to parent directory
             4. If a posteriori correction enabled,
                 0. copy all inputs to separate sub-directory for processing
-                a. run alignimages
+                a. run align to align the images
                 b. generate drizzle products for all sets of inputs (FLC and/or FLT) without CR identification
                 c. verify alignment using focus index on FLC or, if no FLC, FLT products
                 d. determine similarity index relative to pipeline default product
@@ -346,7 +365,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         adriz_pars = mdzhandler.getMdriztabParameters(_calfiles)
         adriz_pars.update(pipeline_pars)
         adriz_pars['mdriztab'] = False
-        adriz_pars['final_fillval'] = 0
+        adriz_pars['final_fillval'] = "INDEF"
         adriz_pars['driz_sep_kernel'] = 'turbo'
         adriz_pars['driz_sep_fillval'] = 0.0
         adriz_pars['num_cores'] = num_cores
@@ -385,8 +404,11 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # run updatewcs with use_db=True to insure all products have
         # have a priori solutions as extensions
         updatewcs.updatewcs(_calfiles)
+        _trlmsg += verify_gaia_wcsnames(_calfiles)
         if _calfiles_flc:
             updatewcs.updatewcs(_calfiles_flc)
+            _trlmsg += verify_gaia_wcsnames(_calfiles_flc)
+
         # Check for the case where no update was performed due to all inputs
         # having EXPTIME==0 (for example) and apply updatewcs anyway to allow
         # for successful creation of updated headerlets for this data.
@@ -487,14 +509,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         pipeline_pars['in_memory'] = inmemory
         pipeline_pars['clean'] = True
 
-        drz_products, asn_dicts = run_driz(_inlist, _trlfile, _calfiles, verify_alignment=False,
+        drz_products, asn_dicts, diff_dicts = run_driz(_inlist, _trlfile, _calfiles,
+                                             verify_alignment=False,
                                              good_bits=focus_pars[inst_mode]['good_bits'],
                                              **pipeline_pars)
-        if len(_inlist) == 1 and _calfiles_flc is not None:
-            drc_products, flc_dicts = run_driz(_calfiles_flc, _trlfile, _calfiles_flc, verify_alignment=False,
-                                                 good_bits=focus_pars[inst_mode]['good_bits'],
-                                                 **pipeline_pars)
-
 
         # Save this for when astropy.io.fits can modify a file 'in-place'
         # Update calibration switch
@@ -535,7 +553,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             frootname = fileutil.buildNewRootname(fname)
             hname = "%s_flt_hlet.fits" % frootname
             # Write out headerlet file used by astrodrizzle, however,
-            # do not overwrite any that was already written out by alignimages
+            # do not overwrite any that was already written out by align
             if not os.path.exists(hname):
                 hlet_msg += "Created Headerlet file %s \n" % hname
                 try:
@@ -560,11 +578,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # Remove secondary log files for good...
     logging.shutdown()
 
-    if not debug:
-        # Remove all temp sub-directories now that we are done
-        for sd in sub_dirs:
-            if os.path.exists(sd): rmtree2(sd)
-
     for _olog in [_alignlog]:
         if os.path.exists(_olog):
             os.remove(_olog)
@@ -575,6 +588,15 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         _restoreResults(new_processing_dir, orig_processing_dir)
         os.chdir(orig_processing_dir)
         _removeWorkingDir(new_processing_dir)
+
+    if debug and Process is not None:
+        print("Files still open for this process include: ")
+        print(Process().open_files())
+
+    if not debug:
+        # Remove all temp sub-directories now that we are done
+        for sd in sub_dirs:
+            if os.path.exists(sd): rmtree2(sd)
 
     # Append final timestamp to trailer file...
     _final_msg = '%s: Finished processing %s \n' % (_getTime(), inFilename)
@@ -592,6 +614,7 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
     pyver = drizzlepac.astrodrizzle.__version__
     drz_products = []
     focus_dicts = []
+    diff_dicts = OrderedDict()
 
     pipeline_pars['runfile'] = trlfile.replace('.tra', '_pydriz')
     drizlog = pipeline_pars['runfile'] + ".log"  # the '.log' gets added automatically by astrodrizzle
@@ -649,14 +672,24 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
 
             instr_det = "{}/{}".format(fits.getval(sfile, 'instrume'), fits.getval(sfile, 'detector'))
             focus_sigma = focus_pars[instr_det]['sigma']
-            print("Measuring focus for: \n{} \n    {}".format(single_files, drz_product))
+            print("Measuring similarity and focus for: \n{} \n    {}".format(single_files, drz_product))
             focus_dicts.append(amutils.build_focus_dict(single_files, drz_product, sigma=focus_sigma))
             if debug:
                 json_name = drz_product.replace('.fits', '_{}_focus.json'.format(mode))
                 with open(json_name, mode='w') as json_file:
                     json.dump(focus_dicts, json_file)
+
+            # Compute additional verification based on Hamming distances of gradients in overlap region
+            drz_wcs = HSTWCS(drz_product, ext=("SCI", 1))
+            drz_footprint = cell_utils.SkyFootprint(drz_wcs)
+            drz_footprint.build(single_files)
+            diff_dicts[drz_product] = amutils.max_overlap_diff(drz_footprint.total_mask,
+                                                               single_files, drz_product,
+                                                               scale=1)
+
         else:
             focus_dicts = None
+
         # Now, append comments created by PyDrizzle to CALXXX trailer file
         print('Updating trailer file %s with astrodrizzle comments.' % trlfile)
         drizlog_copy = drizlog.replace('.log', '_copy.log')
@@ -671,7 +704,7 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
             for ftype in ['*mask*.fits']:
                 [os.remove(file) for file in glob.glob(ftype)]
 
-    return drz_products, focus_dicts
+    return drz_products, focus_dicts, diff_dicts
 
 def reset_mdriztab_nocr(pipeline_pars, good_bits):
     # Need to turn off MDRIZTAB if any other parameters are to be set
@@ -686,7 +719,7 @@ def reset_mdriztab_nocr(pipeline_pars, good_bits):
     pipeline_pars['median'] = False
     pipeline_pars['blot'] = False
     pipeline_pars['driz_cr'] = False
-    pipeline_pars['final_fillval'] = 0.0
+    pipeline_pars['final_fillval'] = "INDEF"
 
 
 def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
@@ -762,8 +795,11 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                         sat_flags = 256 + 2048
                 else:
                     sat_flags = 256 + 2048 + 4096 + 8192
-                align_table = alignimages.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
-                                                        clobber=False, output=debug, sat_flags=sat_flags)
+                align_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
+                                                  clobber=False, output=debug, sat_flags=sat_flags)
+                if align_table is None:
+                    raise Exception
+
                 num_sources = align_table['matchSources'][0]
                 fraction_matched = num_sources / align_table['catalogSources'][0]
                 for row in align_table:
@@ -781,7 +817,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             except Exception:
                 # Something went wrong with alignment to GAIA, so report this in
                 # trailer file
-                _trlmsg = "EXCEPTION encountered in alignimages...\n"
+                _trlmsg = "EXCEPTION encountered in align...\n"
                 _trlmsg += "   No correction to absolute astrometric frame applied!\n"
                 _updateTrlFile(trlfile, _trlmsg)
                 traceback.print_exc()
@@ -815,10 +851,16 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             _trlmsg += _timestamp('Align_to_GAIA completed ')
             _updateTrlFile(trlfile, _trlmsg)
 
+        if find_crs:
+            drz, fdicts, ddicts = run_driz(inlist, trlfile, calfiles, mode=tmpmode,
+                                        verify_alignment=False, debug=debug,
+                                        good_bits=good_bits, **pipeline_pars)
 
         # Run astrodrizzle in desired mode
-        drz_products, focus_dicts = run_driz(inlist, trlfile, calfiles, mode=tmpmode, verify_alignment=True,
-                                             debug=debug, good_bits=good_bits, **pipeline_pars)
+        drz_products, focus_dicts, diff_dicts = run_driz(inlist, trlfile, calfiles,
+                                                         mode=tmpmode, verify_alignment=True,
+                                                         debug=debug, good_bits=good_bits,
+                                                         **pipeline_pars)
 
         # Start verification of alignment using focus and similarity indices
         _trlmsg = _timestamp('Verification of {} alignment started '.format(tmpmode))
@@ -830,26 +872,34 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             inst = fits.getval(alignfiles[0], 'instrume').lower()
             det = fits.getval(alignfiles[0], 'detector').lower()
             pscale = HSTWCS(alignfiles[0], ext=1).pscale
-            det_pars = alignimages.detector_specific_params[inst][det]
+
+            det_pars = align.get_default_pars(inst, det)['generate_source_catalogs']
             default_fwhm = det_pars['fwhmpsf'] / pscale
             align_fwhm = amutils.get_align_fwhm(align_focus, default_fwhm)
             if align_fwhm:
-                print("align_fwhm: {}[{},{}]={:0.4f}pix".format(align_focus['prodname'],
+                _trlmsg += "align_fwhm: {}[{},{}]={:0.4f}pix\n".format(align_focus['prodname'],
                                                             align_focus['prod_pos'][1],
                                                             align_focus['prod_pos'][0],
-                                                            align_fwhm))
+                                                            align_fwhm)
+
+            # Interpret the overlap differences computed for this alignment
+            dkeys = [k for k in diff_dicts.keys()]
+            diff_verification, max_diff = amutils.evaluate_overlap_diffs(diff_dicts[dkeys[-1]])
+
             # For any borderline situation with alignment, perform an extra check on alignment
             if fraction_matched < 0.1 or -1 < num_sources < 10:
-                alignment_verified = amutils.evaluate_focus(align_focus)
-                alignment_quality = 0 if alignment_verified else 1
+                focus_verification = amutils.evaluate_focus(align_focus)
+                alignment_verified = True if (diff_verification and focus_verification) else False
+                alignment_quality = 0 if alignment_verified else 3
             else:
-                alignment_verified = True
-                alignment_quality = 0
+                alignment_verified = True if diff_verification else False
+                alignment_quality = 0 if diff_verification else 3
 
             if alignment_verified:
                 _trlmsg += "Focus verification indicated that {} alignment SUCCEEDED.\n".format(tmpmode)
             else:
                 _trlmsg += "Focus verification indicated that {} alignment FAILED.\n".format(tmpmode)
+                _trlmsg += "  Reverting to previously determined WCS alignment.\n"
 
             prodname = align_focus['prodname']
         else:
@@ -876,14 +926,11 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             align_sim_fail = True if sim_indx > 1 else False
 
             if not align_sim_fail and alignment_verified:
-                _trlmsg += "Alignment appeared to succeed based on similarity index of {}\n".format(sim_indx)
-            elif align_sim_fail or not alignment_verified:
-                _trlmsg += "  WARNING: \nKEEPING potentially compromised astrometry solution!\n"
-                alignment_quality = 2
+                _trlmsg += "Alignment appeared to succeed based on similarity index of {:0.4f} \n".format(sim_indx)
             else:
                 _trlmsg += "  Reverting to previously determined WCS alignment.\n"
                 alignment_verified = False
-                alignment_quality = 3
+                alignment_quality += 3
 
         for fd in focus_dicts:
             fd['alignment_verified'] = alignment_verified
@@ -908,6 +955,31 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             os.chdir(parent_dir)
 
     return focus_dicts
+
+def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_date):
+    """Insure that data taken with GAIA has WCSNAME reflecting that"""
+    gsc240 = catalog_date.split('-')
+    gdate = datetime.date(int(gsc240[0]), int(gsc240[1]), int(gsc240[2]))
+    msg = ''
+    print(filenames)
+    for f in filenames:
+        with fits.open(f, mode='update') as fhdu:
+            # Check to see whether a RAW/uncalibrated file has been provided
+            # If so, skip it since updatewcs has not been run on it yet.
+            if '_raw' in f or 'wcsname' not in fhdu[('sci', 1)].header:
+                continue
+            num_sci = fileutil.countExtn(fhdu)
+            dateobs = fhdu[0].header['date-obs'].split('-')
+            # convert to datetime object
+            fdate = datetime.date(int(dateobs[0]), int(dateobs[1]), int(dateobs[2]))
+            for sciext in range(num_sci):
+                wcsname = fhdu['sci', sciext + 1].header['wcsname']
+                if fdate > gdate and '-' not in wcsname:
+                    wcsname = "{}-{}".format(wcsname, catalog_name)
+                    fhdu['sci', sciext + 1].header['wcsname'] = wcsname
+                    msg += "Updating WCSNAME of {}[sci,{}] for use of {} catalog \n".format(f,
+                            sciext + 1, catalog_name)
+    return msg
 
 def _lowerAsn(asnfile):
     """ Create a copy of the original asn file and change

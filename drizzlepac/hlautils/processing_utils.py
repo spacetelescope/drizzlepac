@@ -21,7 +21,7 @@ PHOT_KEYWORDS = ['PHOTMODE', 'PHOTFLAM', 'PHOTFNU', 'PHOTZPT', 'PHOTPLAM', 'PHOT
 
 __taskname__ = 'processing_utils'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
 
 def get_rules_file(product):
     """Copies default HLA rules file to local directory."""
@@ -256,3 +256,11 @@ def append_trl_file(trlfile, drizfile, clean=True):
     if clean:
         # Now, clean up astrodrizzle trailer file
         os.remove(drizfile)
+
+def make_section_str(str="", width=60, symbol='-'):
+    """Generate string for starting/ending sections of log messages"""
+    strlen = len(str)
+    dash_len = width - strlen if strlen < width else 0
+    side_dash = symbol * (dash_len // 2)
+    section_str = "{}{}{}".format(side_dash, str, side_dash)
+    return section_str

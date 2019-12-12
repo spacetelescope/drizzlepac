@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-"""This script contains code to create the complete set of configuration parameters required to run XXXXX given the
-specified observation conditions and instrument/detector used in the observations"""
+"""This script contains code to create the complete set of configuration parameters required to run hapsequencer.py
+given the specified observation conditions and instrument/detector used in the observations"""
 
 import collections
 import json
@@ -10,13 +10,21 @@ import pdb
 import sys
 
 from astropy.time import Time
+from stsci.tools import logutil
 
-# TODO: Does this module require logging?
+__taskname__ = 'config_utils'
+
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+
 # ======================================================================================================================
 
 
 class HapConfig(object):
-    def __init__(self, prod_obj, use_defaults=True, input_custom_pars_file=None, output_custom_pars_file=None):
+    def __init__(self, prod_obj, log_level=logutil.logging.NOTSET, use_defaults=True, input_custom_pars_file=None,
+                 output_custom_pars_file=None):
         """
         A set of routines to generate appropriate set of configuration parameters.
 
@@ -40,6 +48,7 @@ class HapConfig(object):
         -------
         Nothing.
         """
+        log.setLevel(log_level)
         if input_custom_pars_file and input_custom_pars_file and input_custom_pars_file == output_custom_pars_file:
             sys.exit("ERROR: Input and output parameter files must have unique names!")
         self.label = "hap_config"
@@ -55,7 +64,8 @@ class HapConfig(object):
         self.filters = None
 
         self._determine_conditions(prod_obj)
-        self._get_cfg_index()
+        self.full_cfg_index, self.pars_dir = read_index(self.instrument,
+                                                        self.detector)
 
         # Instantiate the parameter set
         self.pars = {}
@@ -68,8 +78,6 @@ class HapConfig(object):
             self.input_cfg_json_data = None
 
         # generate parameter sets for each pipeline step
-        step_name_list = [AlignmentPars, AstrodrizzlePars, CatalogGenerationPars, QualityControlPars]
-        step_title_list = ['alignment', 'astrodrizzle', 'catalog generation', 'quality control']
         # step_name_list = [AstrodrizzlePars, CatalogGenerationPars, QualityControlPars]
         # step_title_list = ['astrodrizzle', 'catalog generation', 'quality control']
         for step_title, step_name in zip(step_title_list, step_name_list):
@@ -105,7 +113,18 @@ class HapConfig(object):
 
         # determine product type, initialize and build conditions list
         if hasattr(prod_obj, "edp_list") and hasattr(prod_obj, "fdp_list"):  # For total products
-            self.conditions = ["total_basic"]
+            if self.instrument == "wfc3" and self.detector == "uvis":
+                thresh_time = Time("2012-11-08T02:59:15", format='isot', scale='utc').mjd
+                # Get the MJDUTC of the first exposure in the filter exposure product list. While
+                # each exposure will have its own MJDUTC (the EXPSTART keyword), this is probably
+                # granular enough.
+                mjdutc = prod_obj.edp_list[0].mjdutc
+                if mjdutc >= thresh_time:
+                    self.conditions = ["total_basic_post"]
+                else:
+                    self.conditions = ['total_basic_pre']
+            else:
+                self.conditions = ["total_basic"]
             if len(prod_obj.edp_list) == 1:
                 self.conditions.append("any_n1")
         elif hasattr(prod_obj, "edp_list") and not hasattr(prod_obj, "fdp_list"):  # For filter products
@@ -114,7 +133,7 @@ class HapConfig(object):
             if n_exp == 1:
                 self.conditions.append("any_n1")
             else:
-                # Get the filter of the first exposure in the filter exposure product list.  The filter 
+                # Get the filter of the first exposure in the filter exposure product list.  The filter
                 # will be the same for all the exposures in the list.
                 self.filters = prod_obj.edp_list[0].filters
                 if self.instrument == "acs":
@@ -186,19 +205,6 @@ class HapConfig(object):
             if prod_obj.is_singleton:
                 self.conditions.append("any_n1")
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    def _get_cfg_index(self):
-        """return the contents of the appropriate index cfg file."""
-        code_dir = os.path.abspath(__file__)
-        base_dir = os.path.dirname(os.path.dirname(code_dir))
-        self.pars_dir = os.path.join(base_dir, "pars/hap_pars")
-        cfg_index_fileanme = self.inst_det + "_index.json"
-        cfg_index_filename = os.path.join(self.pars_dir, cfg_index_fileanme)
-
-        with open(cfg_index_filename) as jsonFile:
-            json_string = jsonFile.read()
-            self.full_cfg_index = json.loads(json_string)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def as_single_giant_dict(self):
@@ -235,8 +241,8 @@ class HapConfig(object):
         if step_name in step_list:
             return self.pars[step_name].outpars
         else:
-            print("ERROR! '{}' is not a recognized step name.".format(step_name))
-            print("Recognized step names: \n{}".format(str(step_list)[2:-2].replace("', '", "\n")))
+            log.critical("'{}' is not a recognized step name.".format(step_name))
+            log.critical("Recognized step names: \n{}".format(str(step_list)[2:-2].replace("', '", "\n")))
             sys.exit(1)
 
 
@@ -268,11 +274,11 @@ class HapConfig(object):
 
             with open(self.output_custom_pars_file, 'w') as f:
                 json.dump(json_data, f, indent=4)
-            print("Updated custom pars file {}".format(self.output_custom_pars_file))
+            log.info("Updated custom pars file {}".format(self.output_custom_pars_file))
         else:
             with open(self.output_custom_pars_file, 'w') as f:
                 json.dump(new_json_data, f, indent=4)
-            print("Wrote custom pars file {}".format(self.output_custom_pars_file))
+            log.info("Wrote custom pars file {}".format(self.output_custom_pars_file))
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -324,6 +330,7 @@ class Par():
         """Combine parameters from multiple conditions into a single parameter set.
         """
         self.outpars = {}
+        log.debug("{} step configuration parameter set(s) to be merged: {}".format(self.step_title,", ".join(p for p in list(self.pars_multidict.keys()))))
         for cfg_key in self.pars_multidict.keys():
             self.outpars = self._dict_merge(self.outpars, self.pars_multidict[cfg_key])
 
@@ -501,3 +508,30 @@ class QualityControlPars(Par):
             self._read_custom_pars()
         else:
             self._combine_conditions()
+
+# ------------------------------------------------------------------------------
+
+def read_index(instrument, detector):
+    # Create instrument/detector observing mode
+    inst_det = "{}_{}".format(instrument, detector).lower()
+
+    # Determine directory containing hap_pars index files
+    code_dir = os.path.abspath(__file__)
+    base_dir = os.path.dirname(os.path.dirname(code_dir))
+    pars_dir = os.path.join(base_dir, "pars", "hap_pars")
+
+    # Define name of index appropriate for observing mode
+    cfg_index_filename = "{}_index.json".format(inst_det)
+    cfg_index_filename = os.path.join(pars_dir, cfg_index_filename)
+
+    # Read JSON index file
+    with open(cfg_index_filename) as json_file:
+        json_string = json_file.read()
+        full_cfg_index = json.loads(json_string)
+
+    return full_cfg_index, pars_dir
+
+# ------------------------------------------------------------------------------
+
+step_name_list = [AlignmentPars, AstrodrizzlePars, CatalogGenerationPars, QualityControlPars]
+step_title_list = ['alignment', 'astrodrizzle', 'catalog generation', 'quality control']

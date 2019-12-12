@@ -15,6 +15,7 @@ import traceback
 
 import numpy as np
 from astropy.table import Table
+from astropy.io import fits
 
 from stsci.tools import logutil
 
@@ -23,6 +24,7 @@ from .hlautils import astrometric_utils as amutils
 from .hlautils import astroquery_utils as aqutils
 from .hlautils import get_git_rev_info
 from .hlautils import align_utils
+from .hlautils import config_utils
 
 __taskname__ = 'align'
 
@@ -39,7 +41,7 @@ MAS_TO_ARCSEC = 1000.  # Conversion factor from milli-arcseconds to arcseconds
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout, 
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 __version__ = 0.0
@@ -152,7 +154,8 @@ def check_and_get_data(input_list, **pars):
 # ------------------------------------------------------------------------------------------------------------
 def perform_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
               runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=500,
-              headerlet_filenames=None, catalog_list=['GAIADR2', 'GAIADR1'], **alignment_pars):
+              headerlet_filenames=None, catalog_list=['GAIADR2', 'GAIADR1'], fit_label=None,
+              **alignment_pars):
     """Actual Main calling function.
 
     Parameters
@@ -224,6 +227,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
             log.warning("WARNING: Unable to display Git repository revision information.")
 
     try:
+        # Initialize key variables 
+        filtered_table = None
 
         # 1: Interpret input data and optional parameters
         log.info("{} STEP 1: Get data {}".format("-" * 20, "-" * 66))
@@ -234,6 +239,12 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
 
         log.info(make_label('Processing time of [STEP 1]', starting_dt))
         starting_dt = datetime.datetime.now()
+
+        # Get default alignment parameters if not provided by the user...
+        inst = fits.getval(imglist[0], 'instrume')
+        det = fits.getval(imglist[0], 'detector')
+        apars = get_default_pars(inst, det)
+        alignment_pars.update(apars)
 
         # Instantiate AlignmentTable class with these input files
         alignment_table = align_utils.AlignmentTable(imglist, **alignment_pars)
@@ -274,7 +285,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                 pickle_out.close()
                 log.info("Wrote {}".format(pickle_filename))
         else:
-            alignment_table.find_alignment_sources(output=True)
+            alignment_table.find_alignment_sources(output=output)
+
 
         alignment_table.configure_fit()
 
@@ -318,10 +330,6 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         for group_id, image in enumerate(process_list):
             img = amutils.build_wcscat(image, group_id,
                                        alignment_table.extracted_sources[image])
-            # add the name of the image to the imglist object
-            for im in img:
-            #    im.meta['name'] = image
-                log.info('im.meta[name] = {}'.format(im.meta['name']))
             imglist.extend(img)
         # store mapping of group_id to filename/chip
         group_id_dict = {}
@@ -338,6 +346,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         # best_imglist = []
         fit_info_dict = OrderedDict()
         for algorithm_name in fit_algorithm_list:  # loop over fit algorithm type
+            log.info("Applying {} fit method".format(algorithm_name))
             for catalog_index, catalog_name in enumerate(catalog_list):  # loop over astrometric catalog
                 log.info("{} STEP 5: Detect astrometric sources {}".format("-" * 20, "-" * 48))
                 log.info("Astrometric Catalog: {}".format(catalog_name))
@@ -383,7 +392,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                                                                    algorithm_name, "-" * 18))
                     try:
                         # restore group IDs to their pristine state prior to each run.
-                        alignment_table.reset_group_id()
+                        alignment_table.reset_group_id(len(reference_catalog))
 
                         # execute the correct fitting/matching algorithm
                         imglist = alignment_table.perform_fit(algorithm_name, catalog_name, reference_catalog)
@@ -402,7 +411,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                             table_fit = alignment_table.fit_dict[(catalog_name, algorithm_name)]
                             table_fit[imglist_ctr].meta['fit method'] = algorithm_name
                             table_fit[imglist_ctr].meta['fit quality'] = fit_quality
-                        print(alignment_table.fit_dict[(catalog_name, algorithm_name)][0].meta)
+                        #print(alignment_table.fit_dict[(catalog_name, algorithm_name)][0].meta)
 
                         # populate fit_info_dict
                         fit_info_dict["{} {}".format(catalog_name, algorithm_name)] = \
@@ -414,7 +423,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                         if fit_quality < 5:
                             if fit_quality == 1:  # valid, non-comprimised solution with total rms < 10 mas...go with this solution.
                                 best_fit_rms = fit_rms
-                                best_fit_label = (algorithm_name, catalog_name)
+                                best_fit_label = (catalog_name, algorithm_name)
 
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
@@ -422,7 +431,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                             elif fit_quality < best_fit_qual:  # better solution found. keep looping but with the better solution as "best" for now.
                                 log.info("Better solution found!")
                                 best_fit_rms = fit_rms
-                                best_fit_label = (algorithm_name, catalog_name)
+                                best_fit_label = (catalog_name, algorithm_name)
 
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
@@ -430,7 +439,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                                 if best_fit_rms >= 0.:
                                     if fit_rms < best_fit_rms:
                                         best_fit_rms = fit_rms
-                                        best_fit_label = (algorithm_name, catalog_name)
+                                        best_fit_label = (catalog_name, algorithm_name)
 
                                         best_fit_status_dict = fit_status_dict.copy()
                                         best_fit_qual = fit_quality
@@ -457,7 +466,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
             if fit_quality == 1 or (best_fit_qual in [2, 3, 4] and
                 "relative" in algorithm_name):
                 break
-
+        log.info("best_fit found to be: {}".format(best_fit_label))
+        log.info("FIT_DICT: {}".format(alignment_table.fit_dict.keys()))
         # Reset imglist to point to best solution...
         alignment_table.select_fit(best_fit_label[0], best_fit_label[1])
         imglist = alignment_table.selected_fit
@@ -539,7 +549,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
             result.meta = filtered_table.meta
             for col in filtered_table.colnames:
                 result.add_column(filtered_table[col], name=col)
-        filtered_table.pprint(max_width=-1)
+        if filtered_table is not None:
+            filtered_table.pprint(max_width=-1)
     return filtered_table
 
 
@@ -871,3 +882,22 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
     primary_header['HISTORY'] = '{:>15} : {:9.4f} degrees'.format('rotation', rot)
     primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('scale', scale)
     primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('skew', skew)
+
+
+
+def get_default_pars(instrument, detector, step='alignment',
+                     condition=['filter_basic']):
+
+    step_list = config_utils.step_title_list
+    if step not in step_list:
+        log.error("{} not valid!  Needs to be one of: {}".format(step,
+                  step_list))
+        raise ValueError
+
+    full_cfg_index, pars_dir = config_utils.read_index(instrument, detector)
+
+    par_class = config_utils.step_name_list[step_list.index(step)]
+    apars = par_class(full_cfg_index[step], condition,
+                      pars_dir, step, True, None)
+
+    return apars.outpars

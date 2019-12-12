@@ -2,12 +2,13 @@
     datasets in order to collect statistics on alignment of each dataset to an
     astrometric catalog."""
 import datetime
-import os, shutil
+import os
+import shutil
 import numpy as np
 from astropy.table import Table
 import pytest
 
-from drizzlepac import alignimages
+from drizzlepac import align as alignimages
 
 def pytest_generate_tests(metafunc):
     """Get the command line option."""

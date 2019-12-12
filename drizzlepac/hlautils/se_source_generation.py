@@ -37,7 +37,7 @@ from stsci.tools import logutil
 
 __taskname__ = "se_source_generation"
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
 
 _all__ = ["create_sextractor_like_sourcelists", "measure_source_properties"]
 

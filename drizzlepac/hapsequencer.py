@@ -5,16 +5,35 @@
     products. This script provides similar functionality as compared to the Hubble
     Legacy Archive (HLA) pipeline in that it provides the overall sequence of
     the processing.
+
+    Note regarding logging...
+    During instantiation of the log, the logging level is set to NOTSET which essentially
+    means all message levels (debug, info, etc.) will be passed from the logger to
+    the underlying handlers, and the handlers will dispatch all messages to the associated
+    streams.  When the command line option of setting the logging level is invoked, the
+    logger basically filters which messages are passed on to the handlers according the
+    level chosen. The logger is acting as a gate on the messages which are allowed to be
+    passed to the handlers.
+
+    NOTE: In order for step 9 (run_sourcelist_comparison()) to run, the following environment variables need to be set:
+    - HLA_CLASSIC_BASEPATH
+    - HLA_BUILD_VER
+
+    Alternatively, if the HLA classic path is unavailable, The comparison can be run using locally stored HLA classic
+    files. The relevant HLA classic imagery and sourcelist files must be placed in a subdirectory of the current working
+    directory called 'hla_classic'.
 """
 import datetime
 import glob
 import os
+import pdb
 import sys
 import traceback
 import logging
 
 import drizzlepac
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
+from drizzlepac.devutils.comparison_tools import compare_sourcelists
 from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import hla_flag_filter
 from drizzlepac.hlautils import poller_utils
@@ -22,21 +41,19 @@ from drizzlepac.hlautils import processing_utils as proc_utils
 from stsci.tools import logutil
 from stwcs import wcsutil
 
+
 __taskname__ = 'hapsequencer'
-
-log_level = logging.INFO
-
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout, 
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
-
 __version__ = 0.1
 __version_date__ = '07-Nov-2019'
 
 # --------------------------------------------------------------------------------------------------------------
 
-def create_catalog_products(total_list, diagnostic_mode=False, phot_mode='both'):
+
+def create_catalog_products(total_list, log_level, diagnostic_mode=False, phot_mode='both'):
     """This subroutine utilizes hlautils/catalog_utils module to produce photometric sourcelists for the specified
     total drizzle product and it's associated child filter products.
 
@@ -45,6 +62,9 @@ def create_catalog_products(total_list, diagnostic_mode=False, phot_mode='both')
     total_list : drizzlepac.hlautils.Product.TotalProduct
         total drizzle product that will be processed by catalog_utils. catalog_utils will also create photometric
         sourcelists for the child filter products of this total product.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
 
     diagnostic_mode : bool, optional
         generate ds9 region file counterparts to the photometric sourcelists? Default value is False.
@@ -65,6 +85,7 @@ def create_catalog_products(total_list, diagnostic_mode=False, phot_mode='both')
         total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename,
                                              total_product_obj.configobj_pars.get_pars('catalog generation'),
                                              total_product_obj.configobj_pars.get_pars('quality control'),
+                                             log_level,
                                              types=phot_mode,
                                              diagnostic_mode=diagnostic_mode)
 
@@ -94,6 +115,7 @@ def create_catalog_products(total_list, diagnostic_mode=False, phot_mode='both')
             filter_product_catalogs = HAPCatalogs(filter_product_obj.drizzle_filename,
                                                   total_product_obj.configobj_pars.get_pars('catalog generation'),
                                                   total_product_obj.configobj_pars.get_pars('quality control'),
+                                                  log_level,
                                                   types=phot_mode,
                                                   diagnostic_mode=diagnostic_mode,
                                                   tp_sources=sources_dict)
@@ -105,14 +127,17 @@ def create_catalog_products(total_list, diagnostic_mode=False, phot_mode='both')
             filter_product_catalogs.measure(filter_name)
 
             log.info("Flagging sources in filter product catalog")
-            filter_product_catalogs = run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, diagnostic_mode)
+            filter_product_catalogs = run_sourcelist_flagging(filter_product_obj,
+                                                              filter_product_catalogs,
+                                                              log_level,
+                                                              diagnostic_mode)
 
             # Replace zero-value total-product catalog 'Flags' column values with meaningful filter-product catalog
             # 'Flags' column values
             for cat_type in total_product_catalogs.catalogs.keys():
                 filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat[
                     'Flags_{}'.format(filter_product_obj.filters)] = \
-                filter_product_catalogs.catalogs[cat_type].source_cat['Flags']
+                    filter_product_catalogs.catalogs[cat_type].source_cat['Flags']
 
             log.info("Writing out filter product catalog")
             # Write out photometric (filter) catalog(s)
@@ -122,7 +147,8 @@ def create_catalog_products(total_list, diagnostic_mode=False, phot_mode='both')
             subset_columns_dict = {}
             for cat_type in filter_product_catalogs.catalogs.keys():
                 subset_columns_dict[cat_type] = {}
-                subset_columns_dict[cat_type]['subset'] = filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat
+                subset_columns_dict[cat_type]['subset'] = \
+                    filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat
 
             # ...and append the filter columns to the total detection product catalog.
             total_product_catalogs.combine(subset_columns_dict)
@@ -142,8 +168,6 @@ def create_catalog_products(total_list, diagnostic_mode=False, phot_mode='both')
             product_list.append(total_product_obj.point_cat_filename)
         if phot_mode in ['segment', 'both']:
             product_list.append(total_product_obj.segment_cat_filename)
-
-
     return product_list
 
 
@@ -215,10 +239,10 @@ def create_drizzle_products(total_list):
             log.info("    {}".format(filename))
             proc_utils.refine_product_headers(filename, total_list)
     except Exception:
-        print("Trouble updating drizzle products for CAOM.")
+        log.critical("Trouble updating drizzle products for CAOM.")
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-
+        logging.exception("message")
     # Remove rules files copied to the current working directory
     for rules_filename in glob.glob("*_header_hla.rules"):
         log.info("Removed rules file {}".format(rules_filename))
@@ -247,7 +271,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         Allows printing of additional diagnostic information to the log.  Also, can turn on
         creation and use of pickled information.
 
-    use_default_configs: bool, optional
+    use_defaults_configs: bool, optional
         If True, use the configuration parameters in the 'default' portion of the configuration
         JSON files.  If False, use the configuration parameters in the "parameters" portion of
         the file.  The default is True.
@@ -256,7 +280,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         Represents a fully specified input filename of a configuration JSON file which has been
         customized for specialized processing.  This file should contain ALL the input parameters
         necessary for processing.  If there is a filename present for this parameter, the
-        'use_default_configs' parameter is ignored. The default is None.
+        'use_defaults_configs' parameter is ignored. The default is None.
 
     output_custom_pars_file: string, optional
         Fully specified output filename which contains all the configuration parameters
@@ -266,29 +290,31 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         Which algorithm should be used to generate the sourcelists? 'aperture' for aperture photometry;
         'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
 
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
+
 
     RETURNS
     -------
     return_value: integer
         A return exit code used by the calling Condor/OWL workflow code: 0 (zero) for success, 1 for error
-
     """
     # This routine needs to return an exit code, return_value, for use by the calling
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
-
+    log.setLevel(log_level)
     # Define trailer file (log file) that will contain the log entries for all processing
     if isinstance(input_filename, str):  # input file is a poller file -- easy case
         logname = input_filename.replace('.out', '.log')
     else:
         logname = 'svm_process.log'
-    print("Trailer filename: {}".format(logname))
     # Initialize total trailer filename as temp logname
-    logging.basicConfig(filename=logname)
-
+    logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
     # start processing
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
+    total_list = []
     product_list = []
     try:
         # Parse the poller file and generate the the obs_info_dict, as well as the total detection
@@ -298,38 +324,44 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # where its FilterProduct is distinguished by the filter in use, and the ExposureProduct
         # is the atomic exposure data.
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
-        obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename)
+        obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename,log_level)
 
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to use only one of the Total Products to generate the manifest name as the name is not
         # dependent on the detector.
         # Example: instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
         manifest_name = total_list[0].manifest_name
-        log.info("\nGenerate the manifest name for this visit.  The manifest will contain the names of all the output products.")
+        log.info("\nGenerate the manifest name for this visit.")
+        log.info("The manifest will contain the names of all the output products.")
 
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
 
         # Update all of the product objects with their associated configuration information.
         for total_item in total_list:
+            log.info("Preparing configuration parameter values for total product {}".format(total_item.drizzle_filename))
             total_item.configobj_pars = config_utils.HapConfig(total_item,
+                                                               log_level=log_level,
                                                                use_defaults=use_defaults_configs,
                                                                input_custom_pars_file=input_custom_pars_file,
                                                                output_custom_pars_file=output_custom_pars_file)
             for filter_item in total_item.fdp_list:
+                log.info("Preparing configuration parameter values for filter product {}".format(filter_item.drizzle_filename))
                 filter_item.configobj_pars = config_utils.HapConfig(filter_item,
+                                                                    log_level=log_level,
                                                                     use_defaults=use_defaults_configs,
                                                                     input_custom_pars_file=input_custom_pars_file,
                                                                     output_custom_pars_file=output_custom_pars_file)
             for expo_item in total_item.edp_list:
+                log.info("Preparing configuration parameter values for exposure product {}".format(expo_item.drizzle_filename))
                 expo_item.configobj_pars = config_utils.HapConfig(expo_item,
+                                                                  log_level=log_level,
                                                                   use_defaults=use_defaults_configs,
                                                                   input_custom_pars_file=input_custom_pars_file,
                                                                   output_custom_pars_file=output_custom_pars_file)
-
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
 
-        # Run alignimages.py on images on a filter-by-filter basis.
+        # Run align.py on images on a filter-by-filter basis.
         # Process each filter object which contains a list of exposure objects/products.
         log.info("\n{}: Align the images on a filter-by-filter basis.".format(str(datetime.datetime.now())))
         for tot_obj in total_list:
@@ -339,16 +371,13 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                 # Report results and track the output files
                 if align_table:
                     log.info("ALIGN_TABLE: {}".format(align_table.filtered_table))
-                    # os.remove("alignimages.log")  # FIX This log needs to be included in total product trailer file
                     for row in align_table.filtered_table:
                         log.info(row['status'])
                         if row['status'] == 0:
                             log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
 
                         # Alignment did not work for this particular image
-                        # FIX - If alignment did not work for an image, it seems this exposure should
-                        # be removed from the exposure lists.  TotalProduct and FilterProduct need
-                        # methods to do this.
+                        # If alignment did not work for an image, image still has WCS so continue processing.
                         else:
                             log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
 
@@ -372,10 +401,12 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # Create source catalogs from newly defined products (HLA-204)
         log.info("{}: Create source catalog from newly defined product.\n".format(str(datetime.datetime.now())))
         if "total detection product 00" in obs_info_dict.keys():
-            catalog_list = create_catalog_products(total_list, diagnostic_mode=diagnostic_mode, phot_mode=phot_mode)
+            catalog_list = create_catalog_products(total_list, log_level,
+                                                   diagnostic_mode=diagnostic_mode,
+                                                   phot_mode=phot_mode)
             product_list += catalog_list
         else:
-            log.warning("No total detection product has been produced.  The sourcelist generation step has been skipped.")
+            log.warning("No total detection product has been produced. The sourcelist generation step has been skipped")
         """
         # 8: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
         log.info("8: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry"
@@ -383,19 +414,23 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # TODO: QUALITY CONTROL SUBROUTINE CALL GOES HERE.
         """
 
+        # 9: Compare results to HLA classic counterparts (if possible)
+        if diagnostic_mode:
+            run_sourcelist_comparision(total_list,log_level=log_level)
         # Write out manifest file listing all products generated during processing
         log.info("Creating manifest file {}.".format(manifest_name))
         log.info("  The manifest contains the names of products generated during processing.")
         with open(manifest_name, mode='w') as catfile:
             [catfile.write("{}\n".format(name)) for name in product_list]
-
         # 10: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
     except Exception:
         return_value = 1
-        log.info("\a\a\a")
+        print("\a\a\a")
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+        logging.exception("message")
+
     finally:
         end_dt = datetime.datetime.now()
         log.info('Processing completed at {}'.format(str(end_dt)))
@@ -404,8 +439,9 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         log.info("Return condition {}".format(return_value))
         logging.shutdown()
         # Append total trailer file (from astrodrizzle) to all total log files
-        for tot_obj in total_list:
-            proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
+        if total_list:
+            for tot_obj in total_list:
+                proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
         # Now remove single temp log file
         if os.path.exists(logname):
             os.remove(logname)
@@ -416,7 +452,74 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, diagnostic_mode = False):
+def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
+    """ This subroutine automates execution of drizzlepac/devutils/comparison_tools/compare_sourcelist_flagging.py to
+    compare HAP-generated filter catalogs with their HLA classic counterparts.
+
+    NOTE: In order for this subroutine to run, the following environment variables need to be set:
+    - HLA_CLASSIC_BASEPATH
+    - HLA_BUILD_VER
+
+    Alternatively, if the HLA classic path is unavailable, The comparison can be run using locally stored HLA classic
+    files. The relevant HLA classic imagery and sourcelist files must be placed in a subdirectory of the current working
+    directory called 'hla_classic'.
+
+    Parameters
+    ----------
+    total_list: list
+        List of TotalProduct objects, one object per instrument/detector combination is
+        a visit.  The TotalProduct objects are comprised of FilterProduct and ExposureProduct
+        objects.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
+
+    RETURNS
+    -------
+    Nothing.
+    """
+    #get HLA classic path details from envroment variables
+    hla_classic_basepath = os.getenv('HLA_CLASSIC_BASEPATH')
+    hla_build_ver = os.getenv("HLA_BUILD_VER")
+    for tot_obj in total_list:
+        if hla_classic_basepath and hla_build_ver and os.path.exists(hla_classic_basepath):
+            hla_cassic_basepath = os.path.join(hla_classic_basepath,tot_obj.instrument,hla_build_ver)
+            hla_classic_path = os.path.join(hla_cassic_basepath,tot_obj.prop_id,tot_obj.prop_id+"_"+tot_obj.obset_id) # Generate path to HLA classic products
+        elif os.path.exists(os.path.join(os.getcwd(),"hla_classic")): # For local testing
+            hla_classic_basepath = os.path.join(os.getcwd(), "hla_classic")
+            hla_classic_path = hla_classic_basepath
+        else:
+            return # bail out if HLA classic path can't be found.
+        for filt_obj in tot_obj.fdp_list:
+            hap_imgname = filt_obj.drizzle_filename
+            hla_imgname = glob.glob("{}/{}{}_dr*.fits".format(hla_classic_path,filt_obj.basename, filt_obj.filters))[0]
+            if not os.path.exists(hap_imgname) or not os.path.exists(hla_imgname): # Skip filter if one or both of the images can't be found
+                continue
+            for hap_sourcelist_name in [filt_obj.point_cat_filename, filt_obj.segment_cat_filename]:
+                if hap_sourcelist_name.endswith("point-cat.ecsv"):
+                    hla_classic_cat_type = "dao"
+                    plotfile_prefix=filt_obj.product_basename+"_point"
+                else:
+                    hla_classic_cat_type = "sex"
+                    plotfile_prefix = filt_obj.product_basename + "_segment"
+                if hla_classic_basepath and hla_build_ver and os.path.exists(hla_classic_basepath):
+                    hla_sourcelist_name = "{}/logs/{}{}_{}phot.txt".format(hla_classic_path,filt_obj.basename, filt_obj.filters, hla_classic_cat_type)
+                else:
+                    hla_sourcelist_name = "{}/{}{}_{}phot.txt".format(hla_classic_path, filt_obj.basename,
+                                                                           filt_obj.filters, hla_classic_cat_type)
+                if not os.path.exists(hap_sourcelist_name) or not os.path.exists(hla_sourcelist_name): # Skip catalog type if one or both of the catalogs can't be found
+                    continue
+                log.info("HAP image:           {}".format(os.path.basename(hap_imgname)))
+                log.info("HLA Classic image:   {}".format(os.path.basename(hla_imgname)))
+                log.info("HAP catalog:         {}".format(os.path.basename(hap_sourcelist_name)))
+                log.info("HLA Classic catalog: {}".format(os.path.basename(hla_sourcelist_name)))
+                # once all file exist checks are passed, execute sourcelist comparision
+                return_status = compare_sourcelists.comparesourcelists([hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="absolute",plotfile_prefix=plotfile_prefix, verbose=True,log_level=log_level, debugMode=False)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_level, diagnostic_mode=False):
     """
     Super-basic and profoundly inelegant interface to hla_flag_filter.py.
 
@@ -430,6 +533,9 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, diagnos
 
     filter_product_catalogs : drizzlepac.hlautils.catalog_utils.HAPCatalogs object
         drizzled filter product catalog object
+
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
 
     diagnostic_mode : Boolean, optional.
         create intermediate diagnostic files? Default value is False.
@@ -458,24 +564,25 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, diagnos
         ci_lookup_file_path = "user_parameters/any"
     output_custom_pars_file = filter_product_obj.configobj_pars.output_custom_pars_file
     for cat_type in filter_product_catalogs.catalogs.keys():
-        exptime = filter_product_catalogs.catalogs[cat_type].image.imghdu[0].header['exptime'] #TODO: This works for ACS. Make sure that it also works for WFC3. Look at "TEXPTIME"
+        exptime = filter_product_catalogs.catalogs[cat_type].image.imghdu[0].header['exptime']  # TODO: This works for ACS. Make sure that it also works for WFC3. Look at "TEXPTIME"
         catalog_name = filter_product_catalogs.catalogs[cat_type].sourcelist_filename
         catalog_data = filter_product_catalogs.catalogs[cat_type].source_cat
         drz_root_dir = os.getcwd()
         log.info("Run source list flagging on catalog file {}.".format(catalog_name))
         filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image,
-                                                 flt_list,
-                                                 param_dict,
-                                                 exptime,
-                                                 plate_scale,
-                                                 median_sky,
-                                                 catalog_name,
-                                                 catalog_data,
-                                                 cat_type,
-                                                 drz_root_dir,
-                                                 filter_product_obj.hla_flag_msk,
-                                                 ci_lookup_file_path,
-                                                 output_custom_pars_file,
-                                                 diagnostic_mode)
+                                                                                                         flt_list,
+                                                                                                         param_dict,
+                                                                                                         exptime,
+                                                                                                         plate_scale,
+                                                                                                         median_sky,
+                                                                                                         catalog_name,
+                                                                                                         catalog_data,
+                                                                                                         cat_type,
+                                                                                                         drz_root_dir,
+                                                                                                         filter_product_obj.hla_flag_msk,
+                                                                                                         ci_lookup_file_path,
+                                                                                                         output_custom_pars_file,
+                                                                                                         log_level,
+                                                                                                         diagnostic_mode)
 
     return filter_product_catalogs

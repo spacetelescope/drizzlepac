@@ -12,12 +12,16 @@ import sys
 from enum import Enum
 from astropy.io.fits import getheader
 from astropy.table import Table
+import numpy as np
 
 from stsci.tools import logutil
 
 __taskname__ = 'analyze'
 
-log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout)
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 __all__ = ['analyze_data']
 
@@ -34,8 +38,11 @@ EXPKEY = 'EXPTIME'
 FGSKEY = 'FGSLOCK'
 CHINKEY = 'CHINJECT'
 
+
 # Annotates level to which image can be aligned according observational parameters
 # as described through FITS keywords
+
+
 class Messages(Enum):
     """
     Define a local classification for OK, Warning, and NoProcess messages
@@ -43,20 +50,63 @@ class Messages(Enum):
 
     OK, WARN, NOPROC = 1, -1, -2
 
-def analyze_data(input_file_list):
+
+def analyze_wrapper(input_file_list, log_level=logutil.logging.NOTSET):
     """
-    Determine if images within the dataset can be aligned
+    Thin wrapper for the analyze_data function to return a list of viable images.
 
     Parameters
     ==========
-    input_file_list: list
+    input_file_list : list
         List containing FLT and/or FLC filenames for all input images which comprise an associated
         dataset where 'associated dataset' may be a single image, multiple images, an HST
         association, or a number of HST associations
 
     Returns
     =======
-    output_table: object
+    viable_images_list : list
+       List of images which can be used in the drizzle process.
+
+    This routine returns a list containing only viable images instead of a table which
+    provides information, as well as a doProcess bool, regarding each image.
+    """
+    # set logging level to user-specified level
+    log.setLevel(log_level)
+
+    process_list = []
+
+    # Analyze the input file list and get the full table assessment
+    filtered_table = analyze_data(input_file_list)
+
+    # Extract only the filenames of viable images for processing (i.e., doProcess == 1)
+    if filtered_table['doProcess'].sum() == 0:
+        log.error("No viable images in single/multiple visit table - no processing done.\n")
+    else:
+        # Get the list of all "good" files to use for the alignment
+        process_list = filtered_table['imageName'][np.where(filtered_table['doProcess'])]
+        process_list = list(process_list)  # Convert process_list from numpy list to regular python list
+
+    return process_list
+
+
+def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
+    """
+    Determine if images within the dataset can be aligned
+
+    Parameters
+    ==========
+    input_file_list : list
+        List containing FLT and/or FLC filenames for all input images which comprise an associated
+        dataset where 'associated dataset' may be a single image, multiple images, an HST
+        association, or a number of HST associations
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
+
+    Returns
+    =======
+    output_table : object
         Astropy Table object containing data pertaining to the associated dataset, including
         the do_process bool.  It is intended this table is updated by subsequent functions for
         bookkeeping purposes.
@@ -83,6 +133,8 @@ def analyze_data(input_file_list):
 
     Please be aware of the FITS keyword value NONE vs the Python None.
     """
+    # set logging level to user-specified level
+    log.setLevel(log_level)
 
     acs_filt_name_list = [FILKEY1, FILKEY2]
 
@@ -257,7 +309,6 @@ def analyze_data(input_file_list):
                               total_rms, dataset_key, status, fit_qual, headerlet_file,
                               compromised])
         process_msg = None
-    # output_table.pprint(max_width=-1)
 
     return output_table
 
@@ -268,8 +319,8 @@ def generate_msg(filename, msg, key, value):
         with alignment.
     """
 
-    log.info('Dataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
+    log.warning('Dataset ' + filename + ' has (keyword = value) of (' + key + ' = ' + str(value) + ').')
     if msg == Messages.NOPROC.value:
-        log.info('Dataset cannot be aligned.')
+        log.warning('Dataset cannot be aligned.')
     else:
-        log.info('Dataset can be aligned, but the result may be compromised.')
+        log.warning('Dataset can be aligned, but the result may be compromised.')

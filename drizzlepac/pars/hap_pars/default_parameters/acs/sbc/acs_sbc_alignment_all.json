@@ -17,7 +17,7 @@
     },
   "generate_source_catalogs":
     {
-      "box_size":50,
+      "box_size":27,
       "win_size":3,
       "nsigma":5.0,
       "centering_mode": "starfind",
