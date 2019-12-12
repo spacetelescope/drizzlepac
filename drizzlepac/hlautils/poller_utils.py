@@ -352,13 +352,17 @@ def build_poller_table(input, log_level):
 
             # Convert to a string column, instead of int64
             input_table['obset_id'] = input_table['obset_id'].astype(np.str)
+            is_poller_file = True
+
         elif len(input_table.columns) == 1:
             input_table.columns[0].name = 'filename'
+            is_poller_file = False
 
         # Since a poller file was the input, it is assumed all the input
         # data is in the locale directory so just collect the filenames.
         datasets = input_table[input_table.colnames[0]].tolist()
-        is_poller_file = True
+        filenames = list(input_table.columns[0])
+
     elif isinstance(input, list):
         filenames = input
 
@@ -392,12 +396,12 @@ def build_poller_table(input, log_level):
     if not usable_datasets:
         log.warning("No usable images in poller file or input list for drizzling. The processing of this data is ending.")
         sys.exit(0)
-    print(usable_datasets)
+
     cols = OrderedDict()
     for cname in POLLER_COLNAMES:
         cols[cname] = []
     cols['filename'] = usable_datasets
-    print(input_table)
+
     # If processing a list of files, evaluate each input dataset for the information needed
     # for the poller file
     if not is_poller_file:
@@ -414,7 +418,7 @@ def build_poller_table(input, log_level):
                 if d[0] == 'j':  # ACS data
                     filters = processing_utils.get_acs_filters(dhdu, all=True)
                 elif d[0] == 'i':
-                    filters = dhdu['filter']
+                    filters = hdr['filter']
                 cols['filters'].append(filters)
 
         # Build output table
