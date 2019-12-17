@@ -34,7 +34,6 @@ import logging
 import drizzlepac
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
 from drizzlepac.devutils.comparison_tools import compare_sourcelists
-from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
 from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import hla_flag_filter
 from drizzlepac.hlautils import poller_utils
@@ -504,11 +503,11 @@ def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
                 else:
                     hla_classic_cat_type = "sex"
                     plotfile_prefix = filt_obj.product_basename + "_segment"
-                hla_sourcelist_name = "{}{}_{}phot.txt".format(filt_obj.basename, filt_obj.filters, hla_classic_cat_type)
-                hla_classic_dataset = "{}_{}".format(filt_obj.basename, filt_obj.filters)
-                hla_classic_corr_cat = read_hla_catalog.read_hla_catalog(hla_classic_dataset, cattype=hla_classic_cat_type, applyomega=True, multiwave=False, verbose=False, trim=False)
-                hla_classic_corr_cat.write(hla_sourcelist_name,format='ascii')
-
+                if hla_classic_basepath and hla_build_ver and os.path.exists(hla_classic_basepath):
+                    hla_sourcelist_name = "{}/logs/{}{}_{}phot.txt".format(hla_classic_path,filt_obj.basename, filt_obj.filters, hla_classic_cat_type)
+                else:
+                    hla_sourcelist_name = "{}/{}{}_{}phot.txt".format(hla_classic_path, filt_obj.basename,
+                                                                           filt_obj.filters, hla_classic_cat_type)
                 if not os.path.exists(hap_sourcelist_name) or not os.path.exists(hla_sourcelist_name): # Skip catalog type if one or both of the catalogs can't be found
                     continue
                 log.info("HAP image:           {}".format(os.path.basename(hap_imgname)))
