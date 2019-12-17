@@ -4,7 +4,8 @@ R. White, 2019 June 12
 """
 
 from __future__ import print_function
-import omegaxyz, os
+from . import omegaxyz
+import os
 from astropy.table import Table
 
 formatlist = [ "text", "votable", "tsv", "csv", "html", "kml", "json" ]
