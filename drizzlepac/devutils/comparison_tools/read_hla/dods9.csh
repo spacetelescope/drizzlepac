@@ -2,7 +2,7 @@
 
 anaconda3
 
-set catcorr=hst_10188_10_acs_wfc_f814w_sexphot_corr.cat
+set catcorr=hst_11708_02_wfc3_ir_f125w_sexphot_corr.cat
 set regcorr=${catcorr:r}.reg
 cat >! ${regcorr} <<EOF
 # Region file format: DS9 version 4.1
@@ -12,7 +12,7 @@ fk5
 EOF
 tail -n +3 ${catcorr} | awk '{printf "ellipse(%s,%s,0.2\",0.2\",0.0) # tag={%s}\n", $4,$5,$1;}' >> ${regcorr}
 
-set catname=hst_10188_10_acs_wfc_f814w_sexphot.cat
+set catname=hst_11708_02_wfc3_ir_f125w_sexphot.cat
 set regname=${catname:r}.reg
 cat >! ${regname} <<EOF
 # Region file format: DS9 version 4.1
@@ -24,19 +24,19 @@ tail -n +3 ${catname} | awk '{printf "ellipse(%s,%s,0.2\",0.2\",0.0) # tag={%s}\
 
 set scale=98.0
 ds9 \
-	hst_10188_10_acs_wfc_f814w_corr.fits \
+	hst_11708_02_wfc3_ir_f125w_corr.fits \
 	-scale mode ${scale} \
 	-regions ${regname} \
-	hst_10188_10_acs_wfc_f814w_corr.fits \
+	hst_11708_02_wfc3_ir_f125w_corr.fits \
 	-scale mode ${scale} \
 	-regions ${regcorr} \
 	&
 
 ds9 \
-	hst_10188_10_acs_wfc_f814w_drz.fits \
+	hst_11708_02_wfc3_ir_f125w_drz.fits \
 	-scale mode ${scale} \
 	-regions ${regname} \
-	hst_10188_10_acs_wfc_f814w_drz.fits \
+	hst_11708_02_wfc3_ir_f125w_drz.fits \
 	-scale mode ${scale} \
 	-regions ${regcorr} \
 	&

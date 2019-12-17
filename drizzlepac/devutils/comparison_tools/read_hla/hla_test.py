@@ -5,7 +5,7 @@ from read_hla_catalog import read_hla_catalog
 from read_hla_image import write_hla_image
 
 if __name__ == "__main__":
-    dataset = 'hst_10188_10_acs_wfc_f814w'
+    dataset = 'hst_11708_02_wfc3_ir_f125w'
     cattype = "sex"
 
     # without astrometry correction
