@@ -31,6 +31,7 @@ import sys
 import traceback
 import logging
 
+from astropy.table import Table
 import drizzlepac
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
 from drizzlepac.devutils.comparison_tools import compare_sourcelists
@@ -85,12 +86,12 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype):
         for ra_col_title in ["ra", "RA", "ALPHA_J2000", "alpha_j2000"]:
             if ra_col_title in modcat.colnames:
                 true_ra_col_title = ra_col_title
-                print("RA Col_name: {}".format(true_ra_col_title))
+                log.debug("RA Col_name: {}".format(true_ra_col_title))
                 break
         for dec_col_title in ["dec", "DEC", "Dec", "DELTA_J2000", "delta_j2000"]:
             if dec_col_title in modcat.colnames:
                 true_dec_col_title = dec_col_title
-                print("DEC Col_name: {}".format(true_dec_col_title))
+                log.debug("DEC Col_name: {}".format(true_dec_col_title))
                 break
 
         # get HLA Classic sourcelist data, replace existing RA and Dec column data with the converted RA and Dec column data
@@ -105,8 +106,8 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype):
         return mod_sl_name
 
     except:
-        log.warning("There was a problem converting the RA and Dec values. Using origional uncorrected HLA Classic sourcelist instead.")
-        log.warning("Comparision quality may be of questionable quality")
+        log.warning("There was a problem converting the RA and Dec values. Using original uncorrected HLA Classic sourcelist instead.")
+        log.warning("Comparisons may be of questionable quality.")
         return orig_hla_classic_sl_name
 
 
@@ -169,7 +170,6 @@ def create_catalog_products(total_list, log_level, diagnostic_mode=False, phot_m
 
         log.info("Generating filter product source catalogs")
         for filter_product_obj in total_product_obj.fdp_list:
-
             # Instantiate filter catalog product object
             filter_product_catalogs = HAPCatalogs(filter_product_obj.drizzle_filename,
                                                   total_product_obj.configobj_pars.get_pars('catalog generation'),

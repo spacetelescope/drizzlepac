@@ -26,48 +26,47 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name,cattype):
     mod_sl_name : string
         Name of the new version of the input file with the converted RA and DEC values
     """
-    try:
-        mod_sl_name = os.path.basename(orig_hla_classic_sl_name)
 
-        # Execute read_hla_catalog.read_hla_catalog() to convert RA and Dec values
-        dataset = mod_sl_name.replace("_{}phot.txt".format(cattype),"")
-        modcat = read_hla_catalog.read_hla_catalog(dataset, cattype=cattype, applyomega=True, multiwave=False, verbose=False, trim=False)
+    mod_sl_name = os.path.basename(orig_hla_classic_sl_name)
+
+    # Execute read_hla_catalog.read_hla_catalog() to convert RA and Dec values
+    dataset = mod_sl_name.replace("_{}phot.txt".format(cattype),"")
+    modcat = read_hla_catalog.read_hla_catalog(dataset, cattype=cattype, applyomega=True, multiwave=False, verbose=False, trim=False)
 
 
-        # Identify RA and Dec column names in the new catalog table object
-        for ra_col_title in ["ra", "RA", "ALPHA_J2000", "alpha_j2000"]:
-            if ra_col_title in modcat.colnames:
-                true_ra_col_title = ra_col_title
-                print("RA Col_name: {}".format(true_ra_col_title))
-                break
-        for dec_col_title in ["dec", "DEC", "Dec", "DELTA_J2000", "delta_j2000"]:
-            if dec_col_title in modcat.colnames:
-                true_dec_col_title = dec_col_title
-                print("DEC Col_name: {}".format(true_dec_col_title))
-                break
+    # Identify RA and Dec column names in the new catalog table object
+    for ra_col_title in ["ra", "RA", "ALPHA_J2000", "alpha_j2000"]:
+        if ra_col_title in modcat.colnames:
+            true_ra_col_title = ra_col_title
+            print("RA Col_name: {}".format(true_ra_col_title))
+            break
+    for dec_col_title in ["dec", "DEC", "Dec", "DELTA_J2000", "delta_j2000"]:
+        if dec_col_title in modcat.colnames:
+            true_dec_col_title = dec_col_title
+            print("DEC Col_name: {}".format(true_dec_col_title))
+            break
 
-        # get HLA Classic sourcelist data, replace existing RA and Dec column data with the converted RA and Dec column data
-        cat = Table.read(orig_hla_classic_sl_name, format='ascii')
-        cat['RA'] = modcat[true_ra_col_title]
-        cat['DEC'] = modcat[true_dec_col_title]
+    # get HLA Classic sourcelist data, replace existing RA and Dec column data with the converted RA and Dec column data
+    cat = Table.read(orig_hla_classic_sl_name, format='ascii')
+    cat['RA'] = modcat[true_ra_col_title]
+    cat['DEC'] = modcat[true_dec_col_title]
 
-        # Write updated version of HLA Classic sourcelist to current working directory
-        mod_sl_name = mod_sl_name.replace(".txt","_corrected.txt")
-        print("RA/DEC corrected version of HLA Classic file {} written to {}.".format(orig_hla_classic_sl_name,mod_sl_name))
-        cat.write(mod_sl_name,format="ascii.csv")
+    # Write updated version of HLA Classic sourcelist to current working directory
+    mod_sl_name = mod_sl_name.replace(".txt","_corrected.txt")
+    print("RA/DEC corrected version of HLA Classic file {} written to {}.".format(orig_hla_classic_sl_name,mod_sl_name))
+    cat.write(mod_sl_name,format="ascii.csv")
 
-        return mod_sl_name
+    return mod_sl_name
 
-    except:
-        print("There was a problem converting the RA and Dec values. Using origional uncorrected HLA Classic sourcelist instead.")
-        print("Comparision quality may be of questionable quality")
-        return orig_hla_classic_sl_name
+
 
 
 if __name__ == "__main__":
-    orig_hla_classic_sl_name = "orig/hst_11708_02_wfc3_ir_f125w_sexphot.txt"
-    imgname = "orig/hst_11708_02_wfc3_ir_f125w_drz.fits"
-    mod_sl_name = correct_hla_classic_ra_dec(orig_hla_classic_sl_name,'sex')
+    hla_sourcelist_name = "hla_classic/hst_10265_01_acs_wfc_f606w_daophot.txt"
+    hla_imgname = "hla_classic/hst_10265_01_acs_wfc_f606w_drz.fits"
+    hap_sourcelist_name = "hst_10265_01_acs_wfc_f606w_j92c01_point-cat.ecsv"
+    hap_imgname = "hst_10265_01_acs_wfc_f606w_j92c01_drc.fits"
+    updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name,'dao')
 
-    return_status = compare_sourcelists.comparesourcelists(["orig/blarg_sexphot.txt", mod_sl_name], [imgname, imgname],
+    return_status = compare_sourcelists.comparesourcelists([updated_hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],
                                                            plotGen="screen", diffMode="absolute", verbose=True)
