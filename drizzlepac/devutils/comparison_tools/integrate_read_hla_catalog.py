@@ -62,10 +62,10 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name,cattype):
 
 
 if __name__ == "__main__":
-    hla_sourcelist_name = "hla_classic/hst_10265_01_acs_wfc_f606w_daophot.txt"
-    hla_imgname = "hla_classic/hst_10265_01_acs_wfc_f606w_drz.fits"
-    hap_sourcelist_name = "hst_10265_01_acs_wfc_f606w_j92c01_point-cat.ecsv"
-    hap_imgname = "hst_10265_01_acs_wfc_f606w_j92c01_drc.fits"
+    hla_sourcelist_name = "hla_classic/hst_11665_06_wfc3_uvis_f555w_daophot.txt"
+    hla_imgname = "hla_classic/hst_11665_06_wfc3_uvis_f555w_drz.fits"
+    hap_sourcelist_name = "hst_11665_06_wfc3_uvis_f555w_ib4606_point-cat.ecsv"
+    hap_imgname = "hst_11665_06_wfc3_uvis_f555w_ib4606_drc.fits"
     updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name,'dao')
 
     return_status = compare_sourcelists.comparesourcelists([updated_hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],

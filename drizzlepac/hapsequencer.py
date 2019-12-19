@@ -57,14 +57,14 @@ __version_date__ = '07-Nov-2019'
 
 def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype):
     """
-    This subroutine runs Rick White's read_hla_catalog script to convert the HLA Classic sourcelist RA and DEC values
-    into same reference frame used by the HAP sourcelists. A new version of the input file with the converted RA and DEC
-    values is written to the current working directory named <INPUT SOURCELIST NAME>_corrected.txt.
+    This subroutine runs Rick White's read_hla_catalog script to convert the RA and Dec values from a HLA Classic
+    sourcelist into same reference frame used by the HAP sourcelists. A new version of the input file with the
+    converted RA and Dec values is written to the current working directory named <INPUT SOURCELIST NAME>_corrected.txt.
 
     Parameters
     ----------
     orig_hla_classic_sl_name : string
-        name of the HLA Classic sourcelist whose RA and DEC values will be converted.
+        name of the HLA Classic sourcelist whose RA and Dec values will be converted.
 
     cattype : string
         HLA Classic catalog type. Either 'sex' (source extractor) or 'dao' (DAOphot).
@@ -72,7 +72,7 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype):
     Returns
     -------
     mod_sl_name : string
-        Name of the new version of the input file with the converted RA and DEC values
+        Name of the new version of the input file with the converted RA and Dec values
     """
     try:
         mod_sl_name = os.path.basename(orig_hla_classic_sl_name)

@@ -119,8 +119,6 @@ def dotproduct(a, b):
     c :  3-element list of floats
         result of dot-product calculation
     """
-
-
     return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]
 
 
@@ -455,7 +453,7 @@ def radec2xyz(ra, dec, radians=False):
     ra : numpy.ndarray
         Input right ascension positions in degrees
 
-    decin : numpy.ndarray
+    dec : numpy.ndarray
         Input declination positions in degrees
 
     radians : bool, optional
@@ -473,7 +471,7 @@ def radec2xyz(ra, dec, radians=False):
     if s != dec.shape:
         raise ValueError("ra, dec must be same-shape arrays")
     if not radians:
-        dtor =  np.pi/180
+        dtor = np.pi/180
         ra = ra * dtor
         dec = dec * dtor
     c = np.empty(s + (3, ), dtype=float)
@@ -527,7 +525,7 @@ def xyz2radec(xyz, radians=False):
     ra[w] = ra[w] + 2*np.pi
     if not radians:
         # convert to degrees
-        radeg =  180/np.pi
+        radeg = 180/np.pi
         ra = ra * radeg
         dec = dec * radeg
     # reshape using original dimensions of xyz
