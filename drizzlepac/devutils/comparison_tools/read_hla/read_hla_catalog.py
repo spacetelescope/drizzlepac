@@ -12,20 +12,38 @@ catlist = ["sex", "dao"]
 
 def read_hla_catalog(dataset, cattype="sex", catformat="csv", trim=True, multiwave=False, applyomega=True,
                      verbose=False, url="https://hla.stsci.edu/HLA/Catalogs/HLAcat.aspx"):
-
     """Return a astropy table with the given HLA catalog.
     
-    Parameters:
-    dataset     HLA dataset name (e.g. "hst_10188_10_acs_wfc_f814w")
-    cattype     "sex" or "dao"
-    catformat   One of the formats in formatlist
-    trim        If false, includes sources flagged as bad
-    multiwave   Return multiwavelength version of catalog (fewer columns with multiple filter info)
-    verbose     If true, print information about the results
-    applyomega  If true, applies the HSCv3 astrometric correction to the RA and Dec columns
-    url         URL for the HLA catalog access (default should be fine)
+    Parameters
+    ----------
+    dataset : str
+        HLA dataset name (e.g. "hst_10188_10_acs_wfc_f814w")
 
-    Returns an astropy.table with the catalog.  
+    cattype : str
+        HLA dataset type (either "sex" or "dao")
+
+    catformat : str
+        One of the formats in formatlist
+
+    trim : bool
+        If false, includes sources flagged as bad
+
+    multiwave : bool
+        Return multiwavelength version of catalog (fewer columns with multiple filter info)
+
+    verbose : bool
+        If true, print information about the results
+
+    applyomega : bool
+        If true, applies the HSCv3 astrometric correction to the RA and Dec columns
+
+    url : str
+        URL for the HLA catalog access (default should be fine)
+
+    Returns
+    -------
+    cat : astropy.table
+        The HLA classic catalog with updated RA/Dec values
     """
 
     cattype = cattype.lower()
@@ -82,7 +100,21 @@ def read_hla_catalog(dataset, cattype="sex", catformat="csv", trim=True, multiwa
 
 def get_radec_cols(cat):
 
-    """Return names of the RA and Dec columns for this catalog."""
+    """Return names of the RA and Dec columns for this catalog.
+
+    Parameters
+    ----------
+    cat : Astropy Table object
+        catalog to extract RA and Dec columns from
+
+    Returns
+    -------
+    racol : Astropy.table.column object
+        RA column values
+
+    deccol : Astropy.table.column object
+        Dec column values
+    """
 
     # create a column name dictionary
     d = dict([(x, 1) for x in cat.colnames])
