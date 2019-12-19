@@ -7,7 +7,7 @@ from drizzlepac.devutils.comparison_tools import compare_sourcelists
 from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
 
 
-def correct_hla_classic_ra_dec(orig_hla_classic_sl_name,cattype):
+def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype, log_level):
     """
     This subroutine runs Rick White's read_hla_catalog script to convert the HLA Classic sourcelist RA and DEC values
     into same reference frame used by the HAP sourcelists. A new version of the input file with the converted RA and DEC
@@ -21,6 +21,9 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name,cattype):
     cattype : string
         HLA Classic catalog type. Either 'sex' (source extractor) or 'dao' (DAOphot).
 
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
     Returns
     -------
     mod_sl_name : string
@@ -31,7 +34,8 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name,cattype):
 
     # Execute read_hla_catalog.read_hla_catalog() to convert RA and Dec values
     dataset = mod_sl_name.replace("_{}phot.txt".format(cattype),"")
-    modcat = read_hla_catalog.read_hla_catalog(dataset, cattype=cattype, applyomega=True, multiwave=False, verbose=False, trim=False)
+    modcat = read_hla_catalog.read_hla_catalog(dataset, cattype=cattype, applyomega=True, multiwave=False,
+                                               verbose=True, trim=False, log_level=log_level)
 
 
     # Identify RA and Dec column names in the new catalog table object
@@ -66,7 +70,7 @@ if __name__ == "__main__":
     hla_imgname = "hla_classic/hst_11665_06_wfc3_uvis_f555w_drz.fits"
     hap_sourcelist_name = "hst_11665_06_wfc3_uvis_f555w_ib4606_point-cat.ecsv"
     hap_imgname = "hst_11665_06_wfc3_uvis_f555w_ib4606_drc.fits"
-    updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name,'dao')
+    updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name,'dao',20)
 
     return_status = compare_sourcelists.comparesourcelists([updated_hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],
                                                            plotGen="screen", diffMode="absolute", verbose=True)

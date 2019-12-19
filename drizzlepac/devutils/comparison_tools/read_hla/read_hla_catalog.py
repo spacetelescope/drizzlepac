@@ -2,16 +2,24 @@
 
 R. White, 2019 June 12
 """
+import sys
 from . import omegaxyz
-import os
 from astropy.table import Table
+from stsci.tools import logutil
+
+__taskname__ = 'read_hla_catalog'
+
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 formatlist = ["text", "votable", "tsv", "csv", "html", "kml", "json"]
 catlist = ["sex", "dao"]
 
 
 def read_hla_catalog(dataset, cattype="sex", catformat="csv", trim=True, multiwave=False, applyomega=True,
-                     verbose=False, url="https://hla.stsci.edu/HLA/Catalogs/HLAcat.aspx"):
+                     verbose=False, url="https://hla.stsci.edu/HLA/Catalogs/HLAcat.aspx", log_level=logutil.logging.NOTSET):
     """Return a astropy table with the given HLA catalog.
     
     Parameters
@@ -40,12 +48,16 @@ def read_hla_catalog(dataset, cattype="sex", catformat="csv", trim=True, multiwa
     url : str
         URL for the HLA catalog access (default should be fine)
 
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 'NOTSET'.
+
     Returns
     -------
     cat : astropy.table
         The HLA classic catalog with updated RA/Dec values
     """
-
+    log.setLevel(log_level)
     cattype = cattype.lower()
     if cattype not in catlist:
         raise ValueError("cattype '{}' must be one of {}".format(cattype, " ".join(catlist)))
@@ -75,21 +87,21 @@ def read_hla_catalog(dataset, cattype="sex", catformat="csv", trim=True, multiwa
         cat = Table.read(caturl, format=catformat, comment='#')
     if verbose:
         if multiwave:
-            print("Retrieved multiwave {} catalog for {} with {} rows".format(cattype, dataset, len(cat)))
+            log.info("Retrieved multiwave {} catalog for {} with {} rows".format(cattype, dataset, len(cat)))
         else:
-            print("Retrieved {} catalog for {} with {} rows".format(cattype, dataset, len(cat)))
+            log.info("Retrieved {} catalog for {} with {} rows".format(cattype, dataset, len(cat)))
         ncols = 10
         for i in range(0, len(cat.colnames), ncols):
             cc = cat.colnames[i:i+ncols]
-            print(("{:15} "*len(cc)).format(*cc))
+            log.info(("{:15} "*len(cc)).format(*cc))
     if applyomega:
         omega = omegaxyz.getomegaxyz(dataset)
         if omega == (0.0, 0.0, 0.0):
             if verbose:
-                print("Omega correction is zero for this visit, no correction applied")
+                log.info("Omega correction is zero for this visit, no correction applied")
         else:
             if verbose:
-                print("Applying omega correction to astrometry")
+                log.info("Applying omega correction to astrometry")
             # names of RA and Dec columns varies for different catalogs
             racol, deccol = get_radec_cols(cat)
             newra, newdec = omegaxyz.applyomegacat(cat[racol], cat[deccol], omega)

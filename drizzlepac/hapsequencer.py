@@ -55,7 +55,7 @@ __version_date__ = '07-Nov-2019'
 # --------------------------------------------------------------------------------------------------------------
 
 
-def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype):
+def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype, log_level):
     """
     This subroutine runs Rick White's read_hla_catalog script to convert the RA and Dec values from a HLA Classic
     sourcelist into same reference frame used by the HAP sourcelists. A new version of the input file with the
@@ -69,6 +69,9 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype):
     cattype : string
         HLA Classic catalog type. Either 'sex' (source extractor) or 'dao' (DAOphot).
 
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
     Returns
     -------
     mod_sl_name : string
@@ -80,7 +83,7 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype):
         # Execute read_hla_catalog.read_hla_catalog() to convert RA and Dec values
         dataset = mod_sl_name.replace("_{}phot.txt".format(cattype), "")
         modcat = read_hla_catalog.read_hla_catalog(dataset, cattype=cattype, applyomega=True, multiwave=False,
-                                                   verbose=False, trim=False)
+                                                   verbose=True, trim=False, log_level=log_level)
 
         # Identify RA and Dec column names in the new catalog table object
         for ra_col_title in ["ra", "RA", "ALPHA_J2000", "alpha_j2000"]:
@@ -571,7 +574,7 @@ def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
                     continue
 
                 # convert HLA Classic RA and Dec values to HAP reference frame so the RA and Dec comparisons are correct
-                updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name, hla_classic_cat_type)
+                updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name, hla_classic_cat_type, log_level)
                 log.info("HAP image:                   {}".format(os.path.basename(hap_imgname)))
                 log.info("HLA Classic image:           {}".format(os.path.basename(hla_imgname)))
                 log.info("HAP catalog:                 {}".format(os.path.basename(hap_sourcelist_name)))
