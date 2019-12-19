@@ -99,9 +99,9 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype):
         cat['RA'] = modcat[true_ra_col_title]
         cat['DEC'] = modcat[true_dec_col_title]
 
-        # Write updated version of HLA Classic sourcelist to current working directory
+        # Write updated version of HLA Classic catalog to current working directory
         mod_sl_name = mod_sl_name.replace(".txt", "_corrected.txt")
-        log.info("Updated version of HLA Classic file {} with converted RA/Dec values written to {}.".format(orig_hla_classic_sl_name, mod_sl_name))
+        log.info("Updated version of HLA Classic catalog {} with converted RA/Dec values written to {}.".format(os.path.basename(orig_hla_classic_sl_name), mod_sl_name))
         cat.write(mod_sl_name, format="ascii.csv")
         return mod_sl_name
 
