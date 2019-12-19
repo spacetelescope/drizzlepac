@@ -27,26 +27,26 @@ def read_hla_catalog(dataset, cattype="sex", catformat="csv", trim=True, multiwa
     dataset : str
         HLA dataset name (e.g. "hst_10188_10_acs_wfc_f814w")
 
-    cattype : str
-        HLA dataset type (either "sex" or "dao")
+    cattype : str, optional
+        HLA dataset type (either "sex" or "dao"). Default value = 'sex'
 
-    catformat : str
-        One of the formats in formatlist
+    catformat : str, optional
+        One of the formats in formatlist. Default value = 'csv'
 
-    trim : bool
-        If false, includes sources flagged as bad
+    trim : bool, optional
+        If false, includes sources flagged as bad. Default value = True
 
-    multiwave : bool
-        Return multiwavelength version of catalog (fewer columns with multiple filter info)
+    multiwave : bool, optional
+        Return multiwavelength version of catalog (fewer columns with multiple filter info). Default value = False
 
-    verbose : bool
-        If true, print information about the results
+    applyomega : bool, optional
+        If true, applies the HSCv3 astrometric correction to the RA and Dec columns Default value = True
 
-    applyomega : bool
-        If true, applies the HSCv3 astrometric correction to the RA and Dec columns
+    verbose : bool, optional
+        If true, print information about the results. Default value = False
 
-    url : str
-        URL for the HLA catalog access (default should be fine)
+    url : str, optional
+        URL for the HLA catalog access. Default value = 'https://hla.stsci.edu/HLA/Catalogs/HLAcat.aspx'
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
