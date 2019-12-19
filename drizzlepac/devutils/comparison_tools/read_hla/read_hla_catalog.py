@@ -2,17 +2,16 @@
 
 R. White, 2019 June 12
 """
-
-from __future__ import print_function
 from . import omegaxyz
 import os
 from astropy.table import Table
 
-formatlist = [ "text", "votable", "tsv", "csv", "html", "kml", "json" ]
-catlist = [ "sex", "dao" ]
+formatlist = ["text", "votable", "tsv", "csv", "html", "kml", "json"]
+catlist = ["sex", "dao"]
 
-def read_hla_catalog(dataset, cattype="sex", catformat="csv", trim=True, multiwave=False,
-        applyomega=True, verbose=False, url="https://hla.stsci.edu/HLA/Catalogs/HLAcat.aspx"):
+
+def read_hla_catalog(dataset, cattype="sex", catformat="csv", trim=True, multiwave=False, applyomega=True,
+                     verbose=False, url="https://hla.stsci.edu/HLA/Catalogs/HLAcat.aspx"):
 
     """Return a astropy table with the given HLA catalog.
     
@@ -49,25 +48,25 @@ def read_hla_catalog(dataset, cattype="sex", catformat="csv", trim=True, multiwa
     else:
         catname = dataset
     params.append('image={}'.format(dataset))
-    params.append('filename={}_{}'.format(catname,suffix))
+    params.append('filename={}_{}'.format(catname, suffix))
     caturl = "{}?{}".format(url, "&".join(params))
     if catformat == "votable":
-        cat = Table.read(caturl,format=catformat)
+        cat = Table.read(caturl, format=catformat)
     else:
         # csv (and other?) formats start with a comment
-        cat = Table.read(caturl,format=catformat,comment='#')
+        cat = Table.read(caturl, format=catformat, comment='#')
     if verbose:
         if multiwave:
-            print("Retrieved multiwave {} catalog for {} with {} rows".format(cattype,dataset,len(cat)))
+            print("Retrieved multiwave {} catalog for {} with {} rows".format(cattype, dataset, len(cat)))
         else:
-            print("Retrieved {} catalog for {} with {} rows".format(cattype,dataset,len(cat)))
+            print("Retrieved {} catalog for {} with {} rows".format(cattype, dataset, len(cat)))
         ncols = 10
-        for i in range(0,len(cat.colnames),ncols):
+        for i in range(0, len(cat.colnames), ncols):
             cc = cat.colnames[i:i+ncols]
             print(("{:15} "*len(cc)).format(*cc))
     if applyomega:
         omega = omegaxyz.getomegaxyz(dataset)
-        if omega == (0.0,0.0,0.0):
+        if omega == (0.0, 0.0, 0.0):
             if verbose:
                 print("Omega correction is zero for this visit, no correction applied")
         else:
@@ -86,7 +85,7 @@ def get_radec_cols(cat):
     """Return names of the RA and Dec columns for this catalog."""
 
     # create a column name dictionary
-    d = dict([(x,1) for x in cat.colnames])
+    d = dict([(x, 1) for x in cat.colnames])
     for v in ["ra", "RA", "ALPHA_J2000", "alpha_j2000"]:
         if v in d:
             racol = v
@@ -108,5 +107,6 @@ if __name__ == "__main__":
     for cattype in ("sex", "dao"):
         for multiwave in (False, True):
             for applyomega in (False, True):
-                cat = read_hla_catalog(dataset, cattype=cattype, applyomega=applyomega, multiwave=multiwave, verbose=True)
+                cat = read_hla_catalog(dataset, cattype=cattype, applyomega=applyomega,
+                                       multiwave=multiwave, verbose=True)
                 cat[:2].pprint()
