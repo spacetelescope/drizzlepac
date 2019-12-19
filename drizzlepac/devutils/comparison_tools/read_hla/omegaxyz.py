@@ -6,9 +6,9 @@ vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4 ai :
 
 2019 June 12, Rick White
 """
-
-from __future__ import print_function
-import os, sys, math
+import math
+import os
+import sys
 import numpy as np
 from astropy.io import fits
 import requests
@@ -16,11 +16,12 @@ import requests
 # cache of omega vectors that have already been retrieved
 getomegaxyz_cache = {}
 
+
 def getomegaxyz(dataset, service="https://hla.stsci.edu/cgi-bin/getomega.cgi"):
 
-    """Return tuple (omegax,omegay,omegaz) with rotation vector for an image
+    """Return tuple (omegax, omegay, omegaz) with rotation vector for an image
     
-    Returns (0,0,0) if the image does not have a rotation correction
+    Returns (0, 0, 0) if the image does not have a rotation correction
     """
 
     if not dataset:
@@ -30,9 +31,10 @@ def getomegaxyz(dataset, service="https://hla.stsci.edu/cgi-bin/getomega.cgi"):
         return getomegaxyz_cache[dataset]
     r = requests.get(service, params=dict(image=dataset))
     result = r.json()
-    omega = tuple(result.get("omega",(0.0,0.0,0.0)))
+    omega = tuple(result.get("omega", (0.0, 0.0, 0.0)))
     getomegaxyz_cache[dataset] = omega
     return omega
+
 
 getwcs_cache = {}
 def getwcs(dataset, applyomega=True, service="https://hla.stsci.edu/cgi-bin/fitscut.cgi"):
@@ -47,7 +49,7 @@ def getwcs(dataset, applyomega=True, service="https://hla.stsci.edu/cgi-bin/fits
     key = (dataset, bool(applyomega))
     if key in getwcs_cache:
         return getwcs_cache[key]
-    r = requests.get(service, params=dict(red=dataset,getwcs=1,applyomega=applyomega))
+    r = requests.get(service, params=dict(red=dataset, getwcs=1, applyomega=applyomega))
     result = r.json()
     getwcs_cache[key] = result
     return result
@@ -116,13 +118,13 @@ def applyomegawcs(filename, crval, cdmatrix, omega=None):
         p0 = [cdec0*math.cos(ra0), cdec0*math.sin(ra0), math.sin(dec0)]
         dp0 = crossproduct(omega, p0)
         decnew = math.asin(p0[2]+dp0[2])
-        ranew = math.atan2(p0[1]+dp0[1],p0[0]+dp0[0])
+        ranew = math.atan2(p0[1]+dp0[1], p0[0]+dp0[0])
         crval[0] = ranew/d2r
         crval[1] = decnew/d2r
         # compute angle of rotation
         # the 2 terms are the rotation from omega and from the shift of the north
         # vector at the new reference position
-        rot = math.atan(dotproduct(p0,omega)) + math.asin(math.sin(decnew)*math.sin(ra0-ranew))
+        rot = math.atan(dotproduct(p0, omega)) + math.asin(math.sin(decnew)*math.sin(ra0-ranew))
         cth = math.cos(rot)
         sth = math.sin(rot)
         cd = cdmatrix[:]
@@ -138,20 +140,20 @@ def getdeltas(filename, crval, cdmatrix, omega=None):
 
     """Get the omega values for this dataset and return the shifts and rotation
     
-    Returns (dra,ddec,rot) in (arcsec,arcsec,deg)
+    Returns (dra, ddec, rot) in (arcsec, arcsec, deg)
     
     Similar to applyomegaxyz but returns deltas instead of offsets
     """
 
     dx = dy = rot = 0.0
     if (not crval) or (not cdmatrix):
-        return (dx,dy,rot)
+        return (dx, dy, rot)
 
     if not omega:
         # parse the filename and extract the visit identification
         dataset = getdataset(filename)
         if not dataset:
-            return (dx,dy,rot)
+            return (dx, dy, rot)
         omega = getomegaxyz(dataset)
 
     if omega[0] != 0 or omega[1] != 0 or omega[2] != 0:
@@ -163,7 +165,7 @@ def getdeltas(filename, crval, cdmatrix, omega=None):
         p0 = [cdec0*math.cos(ra0), cdec0*math.sin(ra0), math.sin(dec0)]
         dp0 = crossproduct(omega, p0)
         decnew = math.asin(p0[2]+dp0[2])
-        ranew = math.atan2(p0[1]+dp0[1],p0[0]+dp0[0])
+        ranew = math.atan2(p0[1]+dp0[1], p0[0]+dp0[0])
         dx = (ranew - ra0)/d2r
         if dx > 180:
             dx = dx-360
@@ -174,9 +176,9 @@ def getdeltas(filename, crval, cdmatrix, omega=None):
         # compute angle of rotation
         # the 2 terms are the rotation from omega and from the shift of the north
         # vector at the new reference position
-        rot = (math.atan(dotproduct(p0,omega)) + math.asin(math.sin(decnew)*math.sin(ra0-ranew)))/d2r
+        rot = (math.atan(dotproduct(p0, omega)) + math.asin(math.sin(decnew)*math.sin(ra0-ranew)))/d2r
 
-    return (dx,dy,rot)
+    return (dx, dy, rot)
 
 
 def updatefits(infile, outfile=None, dataset=None, omega=None, wcsname='HLA_HSC', verbose=False, overwrite=False):
@@ -197,22 +199,22 @@ def updatefits(infile, outfile=None, dataset=None, omega=None, wcsname='HLA_HSC'
                 raise ValueError("Unable to determine dataset for file")
         omega = getomegaxyz(dataset)
     if verbose:
-        print("omega=",omega)
+        print("omega=", omega)
     nonzero = omega[0] != 0 or omega[1] != 0 or omega[2] != 0
 
     if verbose:
-        print("reading",infile)
+        print("reading", infile)
     pin = fits.open(infile)
     if outfile:
         if os.path.exists(outfile):
             if overwrite:
-                if verbose: print("Replacing existing file", outfile)
+                if verbose:
+                    print("Replacing existing file", outfile)
                 os.remove(outfile)
             else:
-                raise ValueError("Output file {} exists; specify overwrite=True to replace it".
-                        format(outfile))
+                raise ValueError("Output file {} exists; specify overwrite=True to replace it".format(outfile))
         if verbose:
-            print("creating",outfile)
+            print("creating", outfile)
         pout = fits.open(outfile, mode='append')
     else:
         if verbose:
@@ -223,7 +225,7 @@ def updatefits(infile, outfile=None, dataset=None, omega=None, wcsname='HLA_HSC'
             # update WCS keywords if present
             try:
                 # skip update if the wcsname indicates correction has already been made
-                oldwcsname = hdu.header.get("wcsname","")
+                oldwcsname = hdu.header.get("wcsname", "")
                 if not oldwcsname.upper().find(wcsname.upper()) >= 0:
                     crval = [hdu.header['crval1'], hdu.header['crval2']]
                     try:
@@ -256,14 +258,14 @@ def updatefits(infile, outfile=None, dataset=None, omega=None, wcsname='HLA_HSC'
                     hdu.header['cd2_2'] = cdmatrix[3]
                     hdu.header['wcsname'] = wcsname
                     if verbose:
-                        print("updated WCS in extension {} ({})".format(i,hdu.header.get('extname','primary')))
+                        print("updated WCS in extension {} ({})".format(i, hdu.header.get('extname', 'primary')))
                 else:
                     if verbose:
-                        print("wcsname in extension {} = {}, no update".format(i,hdu.header['wcsname']))
+                        print("wcsname in extension {} = {}, no update".format(i, hdu.header['wcsname']))
             except KeyError:
                 # OK, no WCS
                 if verbose:
-                    print("no WCS found in extension {} ({})".format(i,hdu.header.get('extname','primary')))
+                    print("no WCS found in extension {} ({})".format(i, hdu.header.get('extname', 'primary')))
         pout.append(hdu)
         if outfile:
             pout.flush()
@@ -274,7 +276,7 @@ def updatefits(infile, outfile=None, dataset=None, omega=None, wcsname='HLA_HSC'
     if outfile:
         pout.close()
         if verbose:
-            print("wrote",outfile)
+            print("wrote", outfile)
     else:
         return pout
 
@@ -297,15 +299,15 @@ def applyomegacat(rain, decin, omega, radians=False):
     :return: the RA and Dec output positions in degrees (or radians)
     """
 
-    xyz = radec2xyz(rain,decin,radians=radians)
-    xyz += np.cross(omega,xyz)
+    xyz = radec2xyz(rain, decin, radians=radians)
+    xyz += np.cross(omega, xyz)
     raout, decout = xyz2radec(xyz, radians=radians)
     return raout, decout
 
+
 def radec2xyz(ra, dec, radians=False):
 
-    """
-    Convert RA, Dec to Cartesian (x, y, z) coordinates
+    """Convert RA, Dec to Cartesian (x, y, z) coordinates
 
     Usage: xyz = radec2xyz(ra, dec)
     
@@ -326,16 +328,16 @@ def radec2xyz(ra, dec, radians=False):
     dec = np.asarray(dec)
     s = ra.shape
     if s != dec.shape:
-        raise ValueError("ra,dec must be same-shape arrays")
+        raise ValueError("ra, dec must be same-shape arrays")
     if not radians:
         dtor =  np.pi/180
         ra = ra * dtor
         dec = dec * dtor
-    c = np.empty(s + (3,), dtype=float)
+    c = np.empty(s + (3, ), dtype=float)
     cdec = np.cos(dec)
-    c[:,0] = np.cos(ra)*cdec
-    c[:,1] = np.sin(ra)*cdec
-    c[:,2] = np.sin(dec)
+    c[:, 0] = np.cos(ra)*cdec
+    c[:, 1] = np.sin(ra)*cdec
+    c[:, 2] = np.sin(dec)
     return c
 
 
@@ -359,13 +361,13 @@ def xyz2radec(xyz, radians=False):
         raise ValueError('xyz last dimension must be 3')
     # reshape to be a 2-D array [n,3]
     n = xyz.size//3
-    c = np.reshape(xyz,(n,3))
+    c = np.reshape(xyz, (n, 3))
     # normalize to unity (for safety)
     norm = np.sqrt((c**2).sum(axis=-1))
-    c = c/norm[:,None]
+    c = c/norm[:, None]
 
-    dec = np.arcsin(c[:,2])
-    ra = np.arctan2(c[:,1],c[:,0])
+    dec = np.arcsin(c[:, 2])
+    ra = np.arctan2(c[:, 1], c[:, 0])
     # force into range 0 to 2*pi
     w = np.where(ra < 0)
     ra[w] = ra[w] + 2*np.pi
@@ -392,7 +394,7 @@ if __name__ == "__main__":
     print(dataset, v)
     v = getwcs(dataset)
     print(dataset, v)
-    v = getwcs(dataset,applyomega=False)
+    v = getwcs(dataset, applyomega=False)
     print(dataset, v)
     # filename = '/ifs/public/hst/hla/acs/V10.0/10188/10188_10/hst_10188_10_acs_wfc_f814w_drz.fits'
     # hdu = fits.open(filename)[1]
