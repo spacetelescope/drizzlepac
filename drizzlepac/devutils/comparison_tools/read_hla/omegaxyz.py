@@ -8,6 +8,7 @@ vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4 ai :
 """
 import math
 import os
+import pdb
 import sys
 import numpy as np
 from astropy.io import fits
@@ -18,10 +19,22 @@ getomegaxyz_cache = {}
 
 
 def getomegaxyz(dataset, service="https://hla.stsci.edu/cgi-bin/getomega.cgi"):
+    """Return tuple (omegax, omegay, omegaz) with rotation vector for an image. (0, 0, 0) will be returned if the image
+    does not have a rotation correction.
 
-    """Return tuple (omegax, omegay, omegaz) with rotation vector for an image
-    
-    Returns (0, 0, 0) if the image does not have a rotation correction
+    Parameters
+    ----------
+    dataset : str
+        dataset name
+
+    service : str, optional
+        URL of web service used to get omega values. Default value = https://hla.stsci.edu/cgi-bin/getomega.cgi
+
+    Returns
+    -------
+    omega : tuple
+        3-element tuple containing omega X, Y, and Z components. (0, 0, 0) if the image does not have a rotation
+        correction
     """
 
     if not dataset:
@@ -38,10 +51,22 @@ def getomegaxyz(dataset, service="https://hla.stsci.edu/cgi-bin/getomega.cgi"):
 
 getwcs_cache = {}
 def getwcs(dataset, applyomega=True, service="https://hla.stsci.edu/cgi-bin/fitscut.cgi"):
+    """Return dictionary with WCS information for an image.
 
-    """Return dictionary with WCS information for an image
-    
-    Applies HSC correction if applyomega=True
+    Parameters
+    ----------
+    dataset : str
+        dataset name
+
+    applyomega : bool, optional
+        Apply HSC correction? Default value = True
+
+    service : str, optional
+        web service URL. Default value = https://hla.stsci.edu/cgi-bin/fitscut.cgi
+
+    Returns
+    -------
+    updated WCS values
     """
 
     if not dataset:
@@ -56,9 +81,21 @@ def getwcs(dataset, applyomega=True, service="https://hla.stsci.edu/cgi-bin/fits
 
 
 def crossproduct(a, b):
+    """Return cross product (a X b)
 
-    """Return a X b"""
+    Parameters
+    ----------
+    a : 3-element list of floats
+        first set of values in cross-product calculation
 
+    b : 3-element list of floats
+        second set of values in cross-product calculation
+
+    Returns
+    -------
+    c :  3-element list of floats
+        result of cross-product calculation
+    """
     c = [0]*3
     c[0] = a[1]*b[2] - a[2]*b[1]
     c[1] = a[2]*b[0] - a[0]*b[2]
@@ -67,19 +104,42 @@ def crossproduct(a, b):
 
 
 def dotproduct(a, b):
+    """Return a . b
 
-    """Return a . b"""
+    Parameters
+    ----------
+    a : 3-element list of floats
+        first set of values in dot-product calculation
+
+    b : 3-element list of floats
+        second set of values in dot-product calculation
+
+    Returns
+    -------
+    c :  3-element list of floats
+        result of dot-product calculation
+    """
+
 
     return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]
 
 
 def getdataset(fitsfile):
-
     """Extract visit identifier from FITS filename
     
     Returns None if this does not look like an HLA dataset name
     This works on either a plain dataset name (hst_10188_10_acs_wfc_f814) or a
     getdata.cgi URL (http://hla.stsci.edu/getdata.cgi?dataset=hst_10888_10_acs_wfc_f814w)
+
+    Parameters
+    ----------
+    fitsfile : str
+        fits file name
+
+    Returns
+    -------
+    vis_id : str
+        visit identifier value. Returns logical 'None' if this does not look like an HLA dataset name
     """
 
     f = os.path.split(fitsfile)[-1].split('_')
@@ -92,13 +152,32 @@ def getdataset(fitsfile):
     if f[3].lower() == 'wfpc2':
         # look for shift for either WFPC2 or PC using WFPC2 catalogs
         f[4] = 'wfpc2'
-    return '_'.join(f[:5])
+    vis_id = '_'.join(f[:5])
+    return vis_id
 
 
 def applyomegawcs(filename, crval, cdmatrix, omega=None):
 
-    """Get the omega values for this dataset and return the updated (crval, cdmatrix) values"""
+    """Get the omega values for this dataset and return the updated (crval, cdmatrix) values
 
+    Parameters
+    ----------
+    filename : str
+        dataset filename
+
+    crval : list of floats
+        Right Ascension and Declination position at the reference pixel
+
+    cdmatrix : list of floats
+        Description of linear distortions: plate scale, rotation, and skew of the image
+
+    omega : tuple, optional. Default value = None
+        3-element tuple containing omega X, Y, and Z components.
+
+    Returns
+    -------
+    Updated versions of input variables crval and omega
+    """
     if (not crval) or (not cdmatrix):
         return (crval, cdmatrix)
 
@@ -137,12 +216,34 @@ def applyomegawcs(filename, crval, cdmatrix, omega=None):
 
 
 def getdeltas(filename, crval, cdmatrix, omega=None):
+    """Get the omega values for this dataset and return the shifts and rotation.
 
-    """Get the omega values for this dataset and return the shifts and rotation
-    
-    Returns (dra, ddec, rot) in (arcsec, arcsec, deg)
-    
     Similar to applyomegaxyz but returns deltas instead of offsets
+
+    Parameters
+    ----------
+    filename : str
+        dataset filename
+
+    crval : list of floats
+        Right Ascension and Declination position at the reference pixel
+
+    cdmatrix : list of floats
+        Description of linear distortions: plate scale, rotation, and skew of the image
+
+    omega : tuple, optional. Default value = None
+        3-element tuple containing omega X, Y, and Z components.
+
+    Returns
+    -------
+    dra : float
+        delta ra in arcseconds
+
+    ddec : float
+        delta dec in arcseconds
+
+    rot : float
+        delta rotation in degrees
     """
 
     dx = dy = rot = 0.0
@@ -182,13 +283,38 @@ def getdeltas(filename, crval, cdmatrix, omega=None):
 
 
 def updatefits(infile, outfile=None, dataset=None, omega=None, wcsname='HLA_HSC', verbose=False, overwrite=False):
-
     """Read input FITS file infile, update astrometry keyword, write outfile
 
-    If dataset is specified then it is used as the dataset name for the wcs query.
     Default is to assume infile gives the dataset name.
-    If outfile is omitted (or None), the data is not written but the function returns the
-    updated astropy.io.fits object
+
+    Parameters
+    ----------
+    infile : str
+        fits image filename
+
+    outfile : str, optional
+        optional output filename. If outfile is omitted (or None), the data is not written but the function returns the
+        updated astropy.io.fits object. Default value = None
+
+    dataset : str, optional
+        dataset filename. If it is specified then it is used as the dataset name for the wcs query. Default value = None
+
+    omega : tuple, optional. Default value = None
+        3-element tuple containing omega X, Y, and Z components.
+
+    wcsname : str, optional
+        WCS name. Default value = 'HLA_HSC'
+
+    verbose : bool, optional
+        display extra information? Default value = False
+
+    overwrite : bool, optional
+        if outfile is specified and a file with the same name already exists, overwrite? Default value = False
+
+    Returns
+    -------
+    pout : astropy.io.fits object
+        Updated fits data object
     """
 
     if not omega:
@@ -282,23 +408,32 @@ def updatefits(infile, outfile=None, dataset=None, omega=None, wcsname='HLA_HSC'
 
 
 def applyomegacat(rain, decin, omega, radians=False):
-
-    """
-    Apply the 3-element infinitesimal rotation vector to a set of RA and Dec positions.
+    """Apply the 3-element infinitesimal rotation vector to a set of RA and Dec positions.
     
     Usage: raout, decout = applyomegacat(rain, decin, omega)
-   
-    :param rain: Input right ascension positions in degrees (or radians)
-    :param decin: Input declination positions in degrees (or radians)
-    :param omega: 3-element infinitesimal rotation vector
-    :param radians: If True, ra/dec values are in radians instead of degrees. Default value = False
-    :type rain: numpy.ndarray
-    :type decin: numpy.ndarray
-    :type omega: numpy.ndarray
-    :type radians: Boolean
-    :return: the RA and Dec output positions in degrees (or radians)
-    """
 
+    Parameters
+    ----------
+    rain : numpy.ndarray
+        Input right ascension positions in degrees (or radians)
+
+    decin : numpy.ndarray
+        Input declination positions in degrees (or radians)
+
+    omega : numpy.ndarray
+        3-element infinitesimal rotation vector
+
+    radians : bool, optional
+        If True, ra/dec values are in radians instead of degrees. Default value = False
+
+    Returns
+    -------
+    raout : float
+        RA output position in degrees (or radians if input argument radians = True)
+
+    decout : float
+        Dec output position in degrees (or radians if input argument radians = True)
+    """
     xyz = radec2xyz(rain, decin, radians=radians)
     xyz += np.cross(omega, xyz)
     raout, decout = xyz2radec(xyz, radians=radians)
@@ -314,14 +449,22 @@ def radec2xyz(ra, dec, radians=False):
     Important Notes:
     
     - inputs *ra* and *dec* must match in shape
-    
-    :param ra: Input right ascension positions in degrees
-    :param dec: Input declination positions in degrees 
-    :param radians: If True, ra/dec values are in radians instead of degrees. Default value = False
-    :type ra: numpy.ndarray 
-    :type dec: numpy.ndarray 
-    :type radians: Boolean
-    :return: [\*,3] array with normalized cartesian coordinates
+
+    Parameters
+    ----------
+    ra : numpy.ndarray
+        Input right ascension positions in degrees
+
+    decin : numpy.ndarray
+        Input declination positions in degrees
+
+    radians : bool, optional
+        If True, ra/dec values are in radians instead of degrees. Default value = False
+
+    Returns
+    -------
+    c : numpy.ndarray
+        [\*,3] array with normalized cartesian coordinates
     """
 
     ra = np.asarray(ra)
@@ -347,12 +490,23 @@ def xyz2radec(xyz, radians=False):
     Convert Cartesian (x, y, z) coordinates to RA, Dec
 
     Usage: ra, dec = xyz2radec(xyz)
-   
-    :param xyz: [\*,3] array with normalized cartesian coordinates.  May be multi-dimensional but last dimension must be 3, e.g., shape = (10,10,3).
-    :param radians: If True, ra/dec values are returned in radians instead of degrees. Default value = False
-    :type xyz: numpy.ndarray
-    :type radians: Boolean
-    :return: ra and dec arrays with normalized cartesian coordinates in degrees
+
+    Parameters
+    ----------
+    xyz : numpy.ndarray
+        [\*,3] array with normalized cartesian coordinates. May be multi-dimensional but last dimension must be 3,
+        e.g., shape = (10,10,3).
+
+    radians : bool, optional
+        If True, ra/dec values are in radians instead of degrees. Default value = False
+
+    Returns
+    -------
+    ra : numpy.ndarray
+        right ascension values with normalized cartesian coordinates in degrees
+
+    dec : numpy.ndarray
+        declination values with normalized cartesian coordinates in degrees
     """
 
     xyz = np.asarray(xyz)
