@@ -43,7 +43,7 @@ def read_hla_catalog(dataset, cattype="sex", catformat="csv", trim=True, multiwa
         If true, applies the HSCv3 astrometric correction to the RA and Dec columns Default value = True
 
     verbose : bool, optional
-        If true, print information about the results. Default value = False
+        If true, display detailed information about the results. Default value = False
 
     url : str, optional
         URL for the HLA catalog access. Default value = 'https://hla.stsci.edu/HLA/Catalogs/HLAcat.aspx'
