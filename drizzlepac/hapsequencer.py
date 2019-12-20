@@ -86,12 +86,12 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype, log_level):
                                                    verbose=True, trim=False, log_level=log_level)
 
         # Identify RA and Dec column names in the new catalog table object
-        for ra_col_title in ["ra", "RA", "ALPHA_J2000", "alpha_j2000"]:
+        for ra_col_title.lower() in ["ra", "alpha_j2000"]:
             if ra_col_title in modcat.colnames:
                 true_ra_col_title = ra_col_title
                 log.debug("RA Col_name: {}".format(true_ra_col_title))
                 break
-        for dec_col_title in ["dec", "DEC", "Dec", "DELTA_J2000", "delta_j2000"]:
+        for dec_col_title.lower() in ["dec", "delta_j2000"]:
             if dec_col_title in modcat.colnames:
                 true_dec_col_title = dec_col_title
                 log.debug("DEC Col_name: {}".format(true_dec_col_title))
