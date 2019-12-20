@@ -6,6 +6,7 @@ import os
 from astropy.io import fits
 from drizzlepac.devutils.comparison_tools.read_hla import omegaxyz
 
+
 def read_hla_image(dataset, applyomega=True, verbose=False, url="https://hla.stsci.edu/cgi-bin/getdata.cgi"):
 
     """Return a astropy.io.fits HDUlist for the given HLA dataset.
@@ -35,7 +36,7 @@ def read_hla_image(dataset, applyomega=True, verbose=False, url="https://hla.sts
     """
 
     if not os.path.exists(dataset):
-        dataloc = "{}?dataset={}".format(url,dataset)
+        dataloc = "{}?dataset={}".format(url, dataset)
     else:
         dataloc = dataset
     if applyomega:
@@ -46,7 +47,7 @@ def read_hla_image(dataset, applyomega=True, verbose=False, url="https://hla.sts
 
 
 def write_hla_image(dataset, outfile, applyomega=True, overwrite=False, verbose=False,
-        url="https://hla.stsci.edu/cgi-bin/getdata.cgi"):
+                    url="https://hla.stsci.edu/cgi-bin/getdata.cgi"):
 
     """Write FITS file for the HLA dataset to outfile.
     
@@ -80,7 +81,7 @@ def write_hla_image(dataset, outfile, applyomega=True, overwrite=False, verbose=
     """
 
     if not os.path.exists(dataset):
-        dataloc = "{}?dataset={}".format(url,dataset)
+        dataloc = "{}?dataset={}".format(url, dataset)
     else:
         dataloc = dataset
     if applyomega:
@@ -93,8 +94,8 @@ def write_hla_image(dataset, outfile, applyomega=True, overwrite=False, verbose=
 if __name__ == "__main__":
     dataset = 'hst_10188_10_acs_wfc_f814w'
     fh = read_hla_image(dataset, verbose=True)
-    print("Retrieved FITS HDUlist for {} with {} extensions".format(dataset,len(fh)))
+    print("Retrieved FITS HDUlist for {} with {} extensions".format(dataset, len(fh)))
     outfile = dataset+'_corr.fits'
     write_hla_image(dataset, outfile, verbose=True, overwrite=True)
-    print("Wrote {} to {}".format(dataset,outfile))
+    print("Wrote {} to {}".format(dataset, outfile))
 
