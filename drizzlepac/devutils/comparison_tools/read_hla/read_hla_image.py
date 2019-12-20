@@ -4,7 +4,7 @@ R. White, 2019 June 20
 """
 import os
 from astropy.io import fits
-drizzlepac.devutils.comparison_tools.read_hla import omegaxyz
+from drizzlepac.devutils.comparison_tools.read_hla import omegaxyz
 
 def read_hla_image(dataset, applyomega=True, verbose=False, url="https://hla.stsci.edu/cgi-bin/getdata.cgi"):
 
