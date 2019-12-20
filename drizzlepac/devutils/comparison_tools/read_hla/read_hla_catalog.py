@@ -130,13 +130,13 @@ def get_radec_cols(cat):
 
     # create a column name dictionary
     d = dict([(x, 1) for x in cat.colnames])
-    for v in ["ra", "RA", "ALPHA_J2000", "alpha_j2000"]:
+    for v.lower() in ["ra", "alpha_j2000"]:
         if v in d:
             racol = v
             break
     else:
         raise ValueError("RA column not found in", " ".join(cat.colnames))
-    for v in ["dec", "DEC", "Dec", "DELTA_J2000", "delta_j2000"]:
+    for v.lower() in ["dec", "delta_j2000"]:
         if v in d:
             deccol = v
             break
