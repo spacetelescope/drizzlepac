@@ -1,8 +1,7 @@
 # write image and catalogs with and without WCS correction
 
-from __future__ import print_function
-from read_hla_catalog import read_hla_catalog
-from read_hla_image import write_hla_image
+from drizzlepac.devutils.comparison_tools.read_hla.read_hla_catalog import read_hla_catalog
+from drizzlepac.devutils.comparison_tools.read_hla.read_hla_image import write_hla_image
 
 if __name__ == "__main__":
     dataset = 'hst_11708_02_wfc3_ir_f125w'
