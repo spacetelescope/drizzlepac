@@ -256,26 +256,25 @@ def getdeltas(filename, crval, cdmatrix, omega=None):
         omega = getomegaxyz(dataset)
 
     if omega[0] != 0 or omega[1] != 0 or omega[2] != 0:
-        d2r = math.pi/180
         # apply rotation to the tangent point
-        ra0 = crval[0]*d2r
-        dec0 = crval[1]*d2r
+        ra0 = math.radians(crval[0])
+        dec0 = math.radians(crval[1])
         cdec0 = math.cos(dec0)
         p0 = [cdec0*math.cos(ra0), cdec0*math.sin(ra0), math.sin(dec0)]
         dp0 = crossproduct(omega, p0)
         decnew = math.asin(p0[2]+dp0[2])
         ranew = math.atan2(p0[1]+dp0[1], p0[0]+dp0[0])
-        dx = (ranew - ra0)/d2r
+        dx = math.degrees((ranew - ra0))
         if dx > 180:
             dx = dx-360
         elif dx < -180:
             dx = dx+360
         dx = dx*math.cos(dec0) * 3600
-        dy = (decnew-dec0)*3600/d2r
+        dy = math.degrees(((decnew-dec0)*3600))
         # compute angle of rotation
         # the 2 terms are the rotation from omega and from the shift of the north
         # vector at the new reference position
-        rot = (math.atan(dotproduct(p0, omega)) + math.asin(math.sin(decnew)*math.sin(ra0-ranew)))/d2r
+        rot = math.degrees((math.atan(dotproduct(p0, omega)) + math.asin(math.sin(decnew)*math.sin(ra0-ranew))))
 
     return (dx, dy, rot)
 
