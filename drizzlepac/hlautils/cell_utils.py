@@ -160,7 +160,7 @@ class SkyFootprint(object):
                 ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
                 blank = np.array(img)
 
-            self.total_mask += blank.astype(np.int16)
+                self.total_mask += blank.astype(np.int16)
 
     # Methods with 'find' compute values
     # Methods with 'get' return values
