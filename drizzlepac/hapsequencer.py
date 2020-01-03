@@ -31,9 +31,11 @@ import sys
 import traceback
 import logging
 
+from astropy.table import Table
 import drizzlepac
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
 from drizzlepac.devutils.comparison_tools import compare_sourcelists
+from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
 from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import hla_flag_filter
 from drizzlepac.hlautils import poller_utils
@@ -52,6 +54,67 @@ __version_date__ = '07-Nov-2019'
 
 # --------------------------------------------------------------------------------------------------------------
 
+
+def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype, log_level):
+    """
+    This subroutine runs Rick White's read_hla_catalog script to convert the RA and Dec values from a HLA Classic
+    sourcelist into same reference frame used by the HAP sourcelists. A new version of the input file with the
+    converted RA and Dec values is written to the current working directory named <INPUT SOURCELIST NAME>_corrected.txt.
+
+    Parameters
+    ----------
+    orig_hla_classic_sl_name : string
+        name of the HLA Classic sourcelist whose RA and Dec values will be converted.
+
+    cattype : string
+        HLA Classic catalog type. Either 'sex' (source extractor) or 'dao' (DAOphot).
+
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
+    Returns
+    -------
+    mod_sl_name : string
+        Name of the new version of the input file with the converted RA and Dec values
+    """
+    try:
+        mod_sl_name = os.path.basename(orig_hla_classic_sl_name)
+
+        # Execute read_hla_catalog.read_hla_catalog() to convert RA and Dec values
+        dataset = mod_sl_name.replace("_{}phot.txt".format(cattype), "")
+        modcat = read_hla_catalog.read_hla_catalog(dataset, cattype=cattype, applyomega=True, multiwave=False,
+                                                   verbose=True, trim=False, log_level=log_level)
+
+        # Identify RA and Dec column names in the new catalog table object
+        for ra_col_title in ["ra", "RA", "ALPHA_J2000", "alpha_j2000"]:
+            if ra_col_title in modcat.colnames:
+                true_ra_col_title = ra_col_title
+                log.debug("RA Col_name: {}".format(true_ra_col_title))
+                break
+        for dec_col_title in ["dec", "DEC", "Dec", "DELTA_J2000", "delta_j2000"]:
+            if dec_col_title in modcat.colnames:
+                true_dec_col_title = dec_col_title
+                log.debug("DEC Col_name: {}".format(true_dec_col_title))
+                break
+
+        # get HLA Classic sourcelist data, replace existing RA and Dec column data with the converted RA and Dec column data
+        cat = Table.read(orig_hla_classic_sl_name, format='ascii')
+        cat['RA'] = modcat[true_ra_col_title]
+        cat['DEC'] = modcat[true_dec_col_title]
+
+        # Write updated version of HLA Classic catalog to current working directory
+        mod_sl_name = mod_sl_name.replace(".txt", "_corrected.txt")
+        log.info("Updated version of HLA Classic catalog {} with converted RA/Dec values written to {}.".format(os.path.basename(orig_hla_classic_sl_name), mod_sl_name))
+        cat.write(mod_sl_name, format="ascii.csv")
+        return mod_sl_name
+
+    except:
+        log.warning("There was a problem converting the RA and Dec values. Using original uncorrected HLA Classic sourcelist instead.")
+        log.warning("Comparisons may be of questionable quality.")
+        return orig_hla_classic_sl_name
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 def create_catalog_products(total_list, log_level, diagnostic_mode=False, phot_mode='both'):
     """This subroutine utilizes hlautils/catalog_utils module to produce photometric sourcelists for the specified
@@ -110,7 +173,6 @@ def create_catalog_products(total_list, log_level, diagnostic_mode=False, phot_m
 
         log.info("Generating filter product source catalogs")
         for filter_product_obj in total_product_obj.fdp_list:
-
             # Instantiate filter catalog product object
             filter_product_catalogs = HAPCatalogs(filter_product_obj.drizzle_filename,
                                                   total_product_obj.configobj_pars.get_pars('catalog generation'),
@@ -510,12 +572,16 @@ def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
                                                                            filt_obj.filters, hla_classic_cat_type)
                 if not os.path.exists(hap_sourcelist_name) or not os.path.exists(hla_sourcelist_name): # Skip catalog type if one or both of the catalogs can't be found
                     continue
-                log.info("HAP image:           {}".format(os.path.basename(hap_imgname)))
-                log.info("HLA Classic image:   {}".format(os.path.basename(hla_imgname)))
-                log.info("HAP catalog:         {}".format(os.path.basename(hap_sourcelist_name)))
-                log.info("HLA Classic catalog: {}".format(os.path.basename(hla_sourcelist_name)))
+
+                # convert HLA Classic RA and Dec values to HAP reference frame so the RA and Dec comparisons are correct
+                updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name, hla_classic_cat_type, log_level)
+                log.info("HAP image:                   {}".format(os.path.basename(hap_imgname)))
+                log.info("HLA Classic image:           {}".format(os.path.basename(hla_imgname)))
+                log.info("HAP catalog:                 {}".format(os.path.basename(hap_sourcelist_name)))
+                log.info("HLA Classic catalog:         {}".format(os.path.basename(updated_hla_sourcelist_name)))
+
                 # once all file exist checks are passed, execute sourcelist comparision
-                return_status = compare_sourcelists.comparesourcelists([hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="absolute",plotfile_prefix=plotfile_prefix, verbose=True,log_level=log_level, debugMode=False)
+                return_status = compare_sourcelists.comparesourcelists([updated_hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="absolute",plotfile_prefix=plotfile_prefix, verbose=True,log_level=log_level, debugMode=False)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
