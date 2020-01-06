@@ -398,7 +398,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
-
+        pdb.set_trace()
         # Update all of the product objects with their associated configuration information.
         for total_item in total_list:
             log.info("Preparing configuration parameter values for total product {}".format(total_item.drizzle_filename))
@@ -544,6 +544,7 @@ def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
     #get HLA classic path details from envroment variables
     hla_classic_basepath = os.getenv('HLA_CLASSIC_BASEPATH')
     hla_build_ver = os.getenv("HLA_BUILD_VER")
+    combo_comp_pdf_list = []
     for tot_obj in total_list:
         if hla_classic_basepath and hla_build_ver and os.path.exists(hla_classic_basepath):
             hla_cassic_basepath = os.path.join(hla_classic_basepath,tot_obj.instrument,hla_build_ver)
@@ -582,7 +583,9 @@ def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
 
                 # once all file exist checks are passed, execute sourcelist comparision
                 return_status = compare_sourcelists.comparesourcelists([updated_hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="absolute",plotfile_prefix=plotfile_prefix, verbose=True,log_level=log_level, debugMode=False)
-
+                combo_comp_pdf_filename = "{}_comparision_plots.pdf".format(plotfile_prefix)
+                if os.path.exists(combo_comp_pdf_filename):
+                    combo_comp_pdf_list.append(combo_comp_pdf_filename)
 # ----------------------------------------------------------------------------------------------------------------------
 
 def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_level, diagnostic_mode=False):
