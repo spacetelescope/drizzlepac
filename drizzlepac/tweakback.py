@@ -381,7 +381,7 @@ def determine_orig_wcsname(header, wnames, wkeys):
     Determine the name of the original, unmodified WCS solution
     """
     orig_wcsname = None
-    orig_key = None
+    orig_key = " "
     if orig_wcsname is None:
         for k,w in wnames.items():
             if w[:4] == 'IDC_':
