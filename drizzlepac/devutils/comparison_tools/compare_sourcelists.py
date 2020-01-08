@@ -367,6 +367,7 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
         else:
             regTestStatus = "FAILURE "
     if ((verbose == True) or (regTestStatus == "FAILURE ")):
+        log_output_string_list = []
         log.info("       Sigma-clipped Statistics; Sigma = {}, # steps = {}".format(sigVal,intersVal))
         log.info("Sigma-clipped mean........................ {}".format(clippedStats[0]))
         log.info("Sigma-clipped median...................... {}".format(clippedStats[1]))
@@ -431,7 +432,14 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
                 plotFileName=plotFileName[1:]
             plt.savefig(plotFileName)
             plt.close()
+            #generate second pdf page with statistics
+            fig = plt.figure(figsize=(11, 8.5))
+            fig.text(0.15, 0.95, "TEST TEST TEST", transform=fig.transFigure, size=12, ha="right")
+            fig.savefig(plotFileName.replace(".pdf","_stats.pdf"))
+            plt.close()
             log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
+
+
     log.info("\n")
     return(regTestStatus+out_stats,plotFileName)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
