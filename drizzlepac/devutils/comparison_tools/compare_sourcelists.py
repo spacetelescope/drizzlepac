@@ -368,22 +368,24 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
             regTestStatus = "FAILURE "
     if ((verbose == True) or (regTestStatus == "FAILURE ")):
         log_output_string_list = []
-        log.info("       Sigma-clipped Statistics; Sigma = {}, # steps = {}".format(sigVal,intersVal))
-        log.info("Sigma-clipped mean........................ {}".format(clippedStats[0]))
-        log.info("Sigma-clipped median...................... {}".format(clippedStats[1]))
-        log.info("Sigma-clipped standard deviation.......... {}".format(clippedStats[2]))
-        log.info("Sigma-clipped mean in units of SD......... {}".format(np.divide(clippedStats[0],clippedStats[2])))
-        log.info("\n")
-        log.info("\n")
-        log.info("            Non-Clipped Statistics")
-        log.info("Non-clipped mean.......................... {}".format(np.mean(diffRA)))
-        log.info("Non-clipped median........................ {}".format(np.median(diffRA)))
-        log.info("Non-clipped standard deviation............ {}".format(np.std(diffRA)))
-        log.info("Non-clipped mean in units of SD........... {}".format(np.divide(np.mean(diffRA), np.std(diffRA))))
-        log.info("Non-clipped minimum....................... {}".format(np.min(diffRA)))
-        log.info("Non-clipped maximum....................... {}".format(np.max(diffRA)))
-        log.info("% all diff values within 1 sigma of 0.0... {}".format( pct_1sig))
-        log.info("% all diff values within 5% of 0.0........ {}".format(pct_five))
+        log_output_string_list.append("       Sigma-clipped Statistics; Sigma = {}, # steps = {}".format(sigVal,intersVal))
+        log_output_string_list.append("Sigma-clipped mean........................ {}".format(clippedStats[0]))
+        log_output_string_list.append("Sigma-clipped median...................... {}".format(clippedStats[1]))
+        log_output_string_list.append("Sigma-clipped standard deviation.......... {}".format(clippedStats[2]))
+        log_output_string_list.append("Sigma-clipped mean in units of SD......... {}".format(np.divide(clippedStats[0],clippedStats[2])))
+        log_output_string_list.append("\n")
+        log_output_string_list.append("\n")
+        log_output_string_list.append("            Non-Clipped Statistics")
+        log_output_string_list.append("Non-clipped mean.......................... {}".format(np.mean(diffRA)))
+        log_output_string_list.append("Non-clipped median........................ {}".format(np.median(diffRA)))
+        log_output_string_list.append("Non-clipped standard deviation............ {}".format(np.std(diffRA)))
+        log_output_string_list.append("Non-clipped mean in units of SD........... {}".format(np.divide(np.mean(diffRA), np.std(diffRA))))
+        log_output_string_list.append("Non-clipped minimum....................... {}".format(np.min(diffRA)))
+        log_output_string_list.append("Non-clipped maximum....................... {}".format(np.max(diffRA)))
+        log_output_string_list.append("% all diff values within 1 sigma of 0.0... {}".format( pct_1sig))
+        log_output_string_list.append("% all diff values within 5% of 0.0........ {}".format(pct_five))
+        for log_line in log_output_string_list:
+            log.info(log_line)
     log.info("Regression test status.................... {}".format(regTestStatus))
 
     if plotGen != "none":
@@ -434,7 +436,13 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
             plt.close()
             #generate second pdf page with statistics
             fig = plt.figure(figsize=(11, 8.5))
-            fig.text(0.15, 0.95, "TEST TEST TEST", transform=fig.transFigure, size=12, ha="right")
+            stat_text_blob=""
+            for log_line in log_output_string_list:
+                if log_line != "\n":
+                    stat_text_blob+=log_line+"\n"
+                else:
+                    stat_text_blob+="\n"
+            fig.text(0.15, 0.15, stat_text_blob, transform=fig.transFigure, size=12, ha="left")
             fig.savefig(plotFileName.replace(".pdf","_stats.pdf"))
             plt.close()
             log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
