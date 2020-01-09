@@ -197,33 +197,35 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
     pct_diff_refbits=(np.sum([off_on_FlagFlips,on_off_FlagFlips],dtype=float)/np.sum(refFlagBreakdown, dtype=float))*100.0
     if pct_diff_refbits >=5.0:
         regTestStatus = "FAILURE"
+    log_output_string_list = []
     if ((verbose == True) or (regTestStatus == "FAILURE")):
         #Generate result tables
         n = np.sum(refFlagBreakdown, dtype=float)
-        log.info("        Statistical Breakdown of Reference List Flagging Differences")
-        log.info("  Flagging differences by number         Flagging differences by percentage")
-        log.info("--------------------------------------------------------------------------------")
-        log.info("%5s%9s%12s%10s%5s%5s %9s %12s %10s" % ("FLAG", "# TOTAL", "# UNCHANGED", "# ON->OFF","  |  ","FLAG", "% TOTAL", "% UNCHANGED", "% ON->OFF"))
+        log_output_string_list.append("        Statistical Breakdown of Reference List Flagging Differences")
+        log_output_string_list.append("  Flagging differences by number         Flagging differences by percentage")
+        log_output_string_list.append("--------------------------------------------------------------------------------")
+        log_output_string_list.append("%5s%9s%12s%10s%5s%5s %9s %12s %10s" % ("FLAG", "# TOTAL", "# UNCHANGED", "# ON->OFF","  |  ","FLAG", "% TOTAL", "% UNCHANGED", "% ON->OFF"))
         for ctr in range(0, len(bit_list)):
-            log.info("%5d%9d%12d%10d%5s%5d  %8.4f %12.4f %10.4f" % (bit_list[ctr], refFlagBreakdown[ctr], unchangedFlagBreakdown[ctr],on_off_FlagFlips[ctr],"  |  ",bit_list[ctr],(float(refFlagBreakdown[ctr]) / n) * 100.0,(float(unchangedFlagBreakdown[ctr]) / n) * 100.0,(float(on_off_FlagFlips[ctr]) / n) * 100.0))
-        log.info("%5s%9d%12d%10d%5s%5s  %8.4f %12.4f %10.4f"%("TOTAL",np.sum(refFlagBreakdown), np.sum(unchangedFlagBreakdown),np.sum(on_off_FlagFlips),"  |  ","TOTAL",(float(np.sum(refFlagBreakdown)) / n) * 100.0,(float(np.sum(unchangedFlagBreakdown)) / n) * 100.0,(float(np.sum(on_off_FlagFlips)) / n) * 100.0))
-        log.info("\n")
+            log_output_string_list.append("%5d%9d%12d%10d%5s%5d  %8.4f %12.4f %10.4f" % (bit_list[ctr], refFlagBreakdown[ctr], unchangedFlagBreakdown[ctr],on_off_FlagFlips[ctr],"  |  ",bit_list[ctr],(float(refFlagBreakdown[ctr]) / n) * 100.0,(float(unchangedFlagBreakdown[ctr]) / n) * 100.0,(float(on_off_FlagFlips[ctr]) / n) * 100.0))
+        log_output_string_list.append("%5s%9d%12d%10d%5s%5s  %8.4f %12.4f %10.4f"%("TOTAL",np.sum(refFlagBreakdown), np.sum(unchangedFlagBreakdown),np.sum(on_off_FlagFlips),"  |  ","TOTAL",(float(np.sum(refFlagBreakdown)) / n) * 100.0,(float(np.sum(unchangedFlagBreakdown)) / n) * 100.0,(float(np.sum(on_off_FlagFlips)) / n) * 100.0))
+        log_output_string_list.append("\n")
         n = np.sum(compFlagBreakdown,dtype=float)
-        log.info("        Statistical Breakdown of Comparison List Flagging Differences")
-        log.info("  Flagging differences by number         Flagging differences by percentage")
-        log.info("--------------------------------------------------------------------------------")
-        log.info("%5s%9s%12s%10s%5s%5s %9s %12s %10s" % ("FLAG", "# TOTAL", "# UNCHANGED", "# OFF->ON", "  |  ", "FLAG", "% TOTAL", "% UNCHANGED", "% OFF->ON"))
+        log_output_string_list.append("        Statistical Breakdown of Comparison List Flagging Differences")
+        log_output_string_list.append("  Flagging differences by number         Flagging differences by percentage")
+        log_output_string_list.append("--------------------------------------------------------------------------------")
+        log_output_string_list.append("%5s%9s%12s%10s%5s%5s %9s %12s %10s" % ("FLAG", "# TOTAL", "# UNCHANGED", "# OFF->ON", "  |  ", "FLAG", "% TOTAL", "% UNCHANGED", "% OFF->ON"))
         for ctr in range(0, len(bit_list)):
-            log.info("%5d%9d%12d%10d%5s%5d  %8.4f %12.4f %10.4f" % (
+            log_output_string_list.append("%5d%9d%12d%10d%5s%5d  %8.4f %12.4f %10.4f" % (
             bit_list[ctr], compFlagBreakdown[ctr], unchangedFlagBreakdown[ctr], off_on_FlagFlips[ctr], "  |  ",bit_list[ctr], (float(compFlagBreakdown[ctr]) / n) * 100.0, (float(unchangedFlagBreakdown[ctr]) / n) * 100.0,(float(off_on_FlagFlips[ctr]) / n) * 100.0))
-        log.info("%5s%9d%12d%10d%5s%5s  %8.4f %12.4f %10.4f" % ("TOTAL", np.sum(compFlagBreakdown), np.sum(unchangedFlagBreakdown), np.sum(off_on_FlagFlips), "  |  ","TOTAL", (float(np.sum(compFlagBreakdown)) / n) * 100.0, (float(np.sum(unchangedFlagBreakdown)) / n) * 100.0,(float(np.sum(off_on_FlagFlips)) / n) * 100.0))
-        log.info("\n")
-        log.info("Total flag bit differences......... {}".format(np.sum([off_on_FlagFlips,on_off_FlagFlips])))
-        log.info("Percentage change of all ref bits.. {}%".format(pct_diff_refbits))
+        log_output_string_list.append("%5s%9d%12d%10d%5s%5s  %8.4f %12.4f %10.4f" % ("TOTAL", np.sum(compFlagBreakdown), np.sum(unchangedFlagBreakdown), np.sum(off_on_FlagFlips), "  |  ","TOTAL", (float(np.sum(compFlagBreakdown)) / n) * 100.0, (float(np.sum(unchangedFlagBreakdown)) / n) * 100.0,(float(np.sum(off_on_FlagFlips)) / n) * 100.0))
+        log_output_string_list.append("\n")
+        log_output_string_list.append("Total flag bit differences......... {}".format(np.sum([off_on_FlagFlips,on_off_FlagFlips])))
+        log_output_string_list.append("Percentage change of all ref bits.. {}%".format(pct_diff_refbits))
 
-    log.info("Regression test status............. {}".format(regTestStatus))
+    log_output_string_list.append("Regression test status............. {}".format(regTestStatus))
 
-
+    for log_line in log_output_string_list:
+        log.info(log_line)
 
     if plotGen != "none":
         idx=np.arange(9)
@@ -245,7 +247,6 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
 
         if plotGen == "screen":
             plt.show()
-            plotFileName = ""
         if plotGen == "file":
             # Put timestamp and plotfile_prefix text string in lower left corner below plot
             timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
@@ -291,6 +292,7 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
             plt.close()
             log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
         pdf_file_list.append(plotFileName)
+
     regTestStatus = "%s %11.7f"%(regTestStatus,pct_diff_refbits)
     return (regTestStatus,pdf_file_list)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
@@ -384,10 +386,11 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
         log_output_string_list.append("Non-clipped maximum....................... {}".format(np.max(diffRA)))
         log_output_string_list.append("% all diff values within 1 sigma of 0.0... {}".format( pct_1sig))
         log_output_string_list.append("% all diff values within 5% of 0.0........ {}".format(pct_five))
-        for log_line in log_output_string_list:
-            log.info(log_line)
-    log.info("Regression test status.................... {}".format(regTestStatus))
 
+    log_output_string_list.append("Regression test status.................... {}".format(regTestStatus))
+
+    for log_line in log_output_string_list:
+        log.info(log_line)
     if plotGen != "none":
         if diffMode.startswith("p"): xAxisString="{} (percent)".format(plot_title.split(" ")[0])
         else: xAxisString="{}".format(plot_title.split(" ")[0])
@@ -421,7 +424,8 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
 
         if plotGen == "screen":
             plt.show()
-            plotFileName =""
+            plotFileName = ""
+            stat_file_name =  ""
         if plotGen == "file":
             # Put timestamp and plotfile_prefix text string in lower left corner below plot
             timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
@@ -436,7 +440,7 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
             plt.close()
             #generate second pdf page with statistics
             stat_file_name = plotFileName.replace(".pdf","_stats.pdf")
-            fig = plt.figure()#figsize=(11, 8.5))
+            fig = plt.figure()
             stat_text_blob=""
             for log_line in log_output_string_list:
                 if log_line != "\n":
