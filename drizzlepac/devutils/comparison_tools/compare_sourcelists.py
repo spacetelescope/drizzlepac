@@ -43,6 +43,23 @@ The following criteria must be met for the test to be declared "successful":
 .. note::
     Sigma-clipped values for mean, sigma, and median are computed using the astropy.stats.sigma_clipped_stats() routine with three rounds of three-sigma clipping.
 
+
+Plots
+-----
+Plots will be generated if the optional plot input is set to 'screen' or 'file'. If set to 'screen', the plots will be
+simply displayed on-screen, and not written to disk. If set to 'file', a plot and statistical summary (on a second
+page) is generated for each valid comparison. All plots and summaries saved to a single multiple-page pdf file. The
+default name of the combined plot pdf file is 'combined_plot.pdf'. If a user-specified filename prefix string was
+specified, it will be prepended to the default name.
+
+The code generates up to three different types of plots:
+
+* Difference histogram plots: These are the most commonly generated plot products are are produced for all column
+comparisions excet for the bit-wise comparion.
+* Bit value barcharts
+* X-Y absolute difference vector plot
+
+
 Path
 ----
 drizzlepac/drizzlepac/devutils/comparison_tools/compare_sourcelists.py
