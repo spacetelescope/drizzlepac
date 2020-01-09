@@ -265,6 +265,7 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
             #generate second pdf page with statistics
             stat_file_name = plotFileName.replace(".pdf","_stats.pdf")
             fig = plt.figure(figsize=(11,8.5))
+            fig.text(0.5,0.87,fullPlotTitle,transform=fig.transFigure, size=12, ha="center")
             stat_text_blob=""
             for log_line in log_output_string_list:
                 if log_line != "\n":
@@ -273,7 +274,7 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
                     stat_text_blob+="\n"
             stat_text_blob += "\n" + timestamp + "\n"
             stat_text_blob += plotfile_prefix
-            fig.text(0.05, 0.05, stat_text_blob, transform=fig.transFigure, size=10, ha="left",family="monospace")
+            fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center",va="center",multialignment="left", family="monospace")
             fig.savefig(stat_file_name)
             plt.close()
 
@@ -460,6 +461,7 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
             #generate second pdf page with statistics
             stat_file_name = plotFileName.replace(".pdf","_stats.pdf")
             fig = plt.figure(figsize=(11,8.5))
+            fig.text(0.5, 0.87, fullPlotTitle[:-1]+" statistics", transform=fig.transFigure, size=12, ha="center")
             stat_text_blob=""
             for log_line in log_output_string_list:
                 if log_line != "\n":
@@ -468,7 +470,7 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
                     stat_text_blob+="\n"
             stat_text_blob += "\n" + timestamp + "\n"
             stat_text_blob += plotfile_prefix
-            fig.text(0.05, 0.05, stat_text_blob, transform=fig.transFigure, size=10, ha="left",family="monospace")
+            fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center",va="center",multialignment="left",family="monospace")
             fig.savefig(plotFileName.replace(".pdf","_stats.pdf"))
             plt.close()
             log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
