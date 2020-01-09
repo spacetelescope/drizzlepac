@@ -278,7 +278,6 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
                 plotFileName=plotFileName[1:]
             plt.savefig(plotFileName)
             plt.close()
-            log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
             #generate second pdf page with statistics
             stat_file_name = plotFileName.replace(".pdf","_stats.pdf")
             fig = plt.figure(figsize=(11,8.5))
@@ -327,7 +326,6 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
                 plotFileName=plotFileName[1:]
             plt.savefig(plotFileName)
             plt.close()
-            log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
         pdf_file_list.append(plotFileName)
 
     regTestStatus = "%s %11.7f"%(regTestStatus,pct_diff_refbits)
@@ -490,7 +488,7 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
             fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center",va="center",multialignment="left",family="monospace")
             fig.savefig(plotFileName.replace(".pdf","_stats.pdf"))
             plt.close()
-            log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
+
 
 
     log.info("\n")
@@ -959,6 +957,7 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",plotfile_p
             final_plot_filename ="{}_{}".format(plotfile_prefix,final_plot_filename)
 
         pdf_merger(final_plot_filename,pdf_file_list)
+        log.info("Sourcelist comparison plots saved to file {}.".format(final_plot_filename))
     return(overallStatus)
 #-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def slFiles2dataTables(slNames):
