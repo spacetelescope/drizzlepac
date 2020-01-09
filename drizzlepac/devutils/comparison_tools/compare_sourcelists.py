@@ -234,7 +234,7 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
 
         #plot flag breakdown by bit for all matched sources in the reference and comparison sourcelists
         width = 0.35
-        fig = plt.figure()
+        fig = plt.figure(figsize=(11,8.5))
         ax1 = fig.add_subplot(111)
         p1=plt.bar(idx - width/2,refFlagBreakdown,width,label='Reference')
         p2 = plt.bar(idx + width/2, compFlagBreakdown,width, label='Comparison')
@@ -247,6 +247,8 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
 
         if plotGen == "screen":
             plt.show()
+            plotfile_prefix =""
+            stat_file_name = ""
         if plotGen == "file":
             # Put timestamp and plotfile_prefix text string in lower left corner below plot
             timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
@@ -260,9 +262,26 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
             plt.savefig(plotFileName)
             plt.close()
             log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
-        pdf_file_list.append(plotFileName)
+            #generate second pdf page with statistics
+            stat_file_name = plotFileName.replace(".pdf","_stats.pdf")
+            fig = plt.figure(figsize=(11,8.5))
+            stat_text_blob=""
+            for log_line in log_output_string_list:
+                if log_line != "\n":
+                    stat_text_blob = "{}{}\n".format(stat_text_blob,log_line)
+                else:
+                    stat_text_blob+="\n"
+            stat_text_blob += "\n" + timestamp + "\n"
+            stat_text_blob += plotfile_prefix
+            fig.text(0.05, 0.05, stat_text_blob, transform=fig.transFigure, size=10, ha="left",family="monospace")
+            fig.savefig(stat_file_name)
+            plt.close()
+
+        pdf_file_list += [plotFileName, stat_file_name]
+
+
         #plot flag changes broken down by bit
-        fig = plt.figure()
+        fig = plt.figure(figsize=(11,8.5))
         ax2 = fig.add_subplot(111)
         p_unchanged=plt.bar(idx,unchangedFlagBreakdown)
         p_offOn=plt.bar(idx,off_on_FlagFlips,bottom=unchangedFlagBreakdown)
@@ -401,7 +420,7 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
             goodIdx=np.where(np.abs(diffRA)<=plotCutoff)
             diffRA=diffRA[goodIdx]
             log.info("%d values (%7.4f percent) clipped from plot."%(origSize-len(diffRA),(float(origSize-len(diffRA))/float(origSize))*100.0))
-        fig = plt.figure()
+        fig = plt.figure(figsize=(11,8.5))
         ax1 = fig.add_subplot(111)
         fullPlotTitle = "Comparision - reference sourcelist %s differences" % (plot_title)
         plt.title(fullPlotTitle)
@@ -440,7 +459,7 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
             plt.close()
             #generate second pdf page with statistics
             stat_file_name = plotFileName.replace(".pdf","_stats.pdf")
-            fig = plt.figure()
+            fig = plt.figure(figsize=(11,8.5))
             stat_text_blob=""
             for log_line in log_output_string_list:
                 if log_line != "\n":
@@ -449,7 +468,7 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
                     stat_text_blob+="\n"
             stat_text_blob += "\n" + timestamp + "\n"
             stat_text_blob += plotfile_prefix
-            fig.text(0.05, 0.05, stat_text_blob, transform=fig.transFigure, size=10, ha="left")
+            fig.text(0.05, 0.05, stat_text_blob, transform=fig.transFigure, size=10, ha="left",family="monospace")
             fig.savefig(plotFileName.replace(".pdf","_stats.pdf"))
             plt.close()
             log.info("{} plot saved to file {}.".format(fullPlotTitle, plotFileName))
@@ -662,7 +681,7 @@ def makeVectorPlot(x,y,plotDest,plotfile_prefix,binThresh = 10000,binSize=250):
     plt_mean = np.mean(np.hypot(p_dx, p_dy))
     e = np.log10(5.0*plt_mean).round()
     plt_scaleValue=10**e
-    fig = plt.figure()
+    fig = plt.figure(figsize=(11,8.5))
     ax1 = fig.add_subplot(111)
     if len(dx) > binThresh: Q = plt.quiver(p_x, p_y, p_dx, p_dy,color=color_ra,units="xy")
     else: Q = plt.quiver(p_x, p_y, p_dx, p_dy)
