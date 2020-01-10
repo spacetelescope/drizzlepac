@@ -264,7 +264,7 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
 
         if plotGen == "screen":
             plt.show()
-            plotfile_prefix =""
+            plotFileName =""
             stat_file_name = ""
         if plotGen == "file":
             # Put timestamp and plotfile_prefix text string in lower left corner below plot
@@ -426,7 +426,9 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
 
     for log_line in log_output_string_list:
         log.info(log_line)
-    if plotGen != "none":
+    if plotGen == "none":
+        pdf_files = []
+    else:
         if diffMode.startswith("p"): xAxisString="{} (percent)".format(plot_title.split(" ")[0])
         else: xAxisString="{}".format(plot_title.split(" ")[0])
         plotCutoff=(10.0*np.abs(clippedStats[2]))+np.abs(clippedStats[0])
@@ -488,11 +490,12 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
             fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center",va="center",multialignment="left",family="monospace")
             fig.savefig(plotFileName.replace(".pdf","_stats.pdf"))
             plt.close()
-
+        pdf_files = [plotFileName,stat_file_name]
 
 
     log.info("\n")
-    return(regTestStatus+out_stats,[plotFileName,stat_file_name])
+
+    return(regTestStatus+out_stats,pdf_files)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
 def deconstruct_flag(flagval):
     """Breaks down an integer flag value into individual component bit values.
@@ -940,8 +943,8 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",plotfile_p
     overallStatus="OK"
     log.info("\n"*2)
     log.info(">---> REGRESSION TESTING SUMMARY <---<")
-    log.info("                                                                                 % within     % within")
-    log.info("COLUMN                             STATUS   MEAN        MEDIAN       STD DEV     5% of 0.     1 SD of 0.")
+    log.info("                                                                           % within     % within")
+    log.info("COLUMN                       STATUS   MEAN        MEDIAN       STD DEV     5% of 0.     1 SD of 0.")
     lenList=[]
     for item in colTitles:
         lenList.append(len(item))
