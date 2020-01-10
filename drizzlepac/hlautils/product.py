@@ -40,6 +40,7 @@ class HAPProduct:
     def __init__(self, prop_id, obset_id, instrument, detector, filename, filetype, log_level):
         # set logging level to user-specified level
         log.setLevel(log_level)
+        self.log_level = log_level
 
         # Make sure the proposal ID is a 5-character string
         self.prop_id = prop_id.zfill(5)
@@ -216,7 +217,8 @@ class FilterProduct(HAPProduct):
         """
         self.edp_list.append(edp)
 
-    def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True):
+    def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
+                        fit_label='EVM', align_table=None):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment
            routine.
@@ -237,9 +239,12 @@ class FilterProduct(HAPProduct):
                     exposure_filenames.append(edp.full_filename)
                     headerlet_filenames[edp.full_filename] = edp.headerlet_filename
 
-                align_table = align_utils.AlignmentTable(exposure_filenames, **alignment_pars)
-                align_table.find_alignment_sources(output=output)
-                align_table.configure_fit()
+                if align_table is None:
+                    align_table = align_utils.AlignmentTable(exposure_filenames,
+                                                             log_level=self.log_level,
+                                                             **alignment_pars)
+                    align_table.find_alignment_sources(output=output)
+                    align_table.configure_fit()
                 refname = "{}_ref_cat.ecsv".format(self.product_basename)
                 log.debug('Creating reference catalog {}'.format(refname))
                 ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
@@ -253,7 +258,7 @@ class FilterProduct(HAPProduct):
                     align_table.perform_fit(method_name, catalog_name, ref_catalog)
                     align_table.select_fit(catalog_name, method_name)
                     align_table.apply_fit(headerlet_filenames=headerlet_filenames,
-                                         fit_label='SVM')
+                                         fit_label=fit_label)
                 else:
                     log.warning("Not enough reference sources for absolute alignment...")
                     raise ValueError

@@ -61,6 +61,7 @@ class AlignmentTable:
                           plot=False, vmax=None, deblend=False
         """
         log.setLevel(log_level)
+
         # Register fit methods with the class
         self.fit_methods = {'relative': match_relative_fit,
                             '2dhist': match_2dhist_fit,
@@ -193,6 +194,9 @@ class AlignmentTable:
 
     def perform_fit(self, method_name, catalog_name, reference_catalog):
         """Perform fit using specified method, then determine fit quality"""
+        inputs = [img.meta['name'] for img in self.imglist]
+        log.info("Performing {} astrometric fit to {} for: \n    {}".format(method_name,
+                                                                            reference_catalog, inputs))
         imglist = self.fit_methods[method_name](self.imglist, reference_catalog,
                                                 **self.fit_pars[method_name])
 
@@ -496,10 +500,10 @@ class HAPImage:
         # from one image to a single source in the
         # other or vice-versa.
         # Create temp DQ mask containing all pixels flagged with any value EXCEPT 256
-        non_sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=256+2048)
+        non_sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=256 + 2048)
 
         # Create temp DQ mask containing saturated pixels ONLY
-        sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=~(256+2048))
+        sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=~(256 + 2048))
 
         # Ignore sources where only a couple of pixels are flagged as saturated
         sat_mask = ndimage.binary_erosion(sat_mask, iterations=1)
@@ -562,6 +566,8 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     log.info("{} (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
+    log.debug("Relative fit configured with: \n  {}".format(fit_pars))
+
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
     #                          tolerance=100, use2dhist=False)
 
