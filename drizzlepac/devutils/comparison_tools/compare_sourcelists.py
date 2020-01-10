@@ -940,21 +940,51 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",plotfile_p
             pdf_file_list += flag_pdf_list
         regressionTestResults["Source Flagging"]=rt_status
         colTitles.append("Source Flagging")
-    overallStatus="OK"
-    log.info("\n"*2)
-    log.info(">---> REGRESSION TESTING SUMMARY <---<")
-    log.info("                                                                           % within     % within")
-    log.info("COLUMN                       STATUS   MEAN        MEDIAN       STD DEV     5% of 0.     1 SD of 0.")
+
+    log.info("\n")
+    log_output_string_list = []
+
+    log_output_string_list.append("{}{}".format(" "*35,"REGRESSION TESTING SUMMARY"))
+    log_output_string_list.append("-" * 99)
+    log_output_string_list.append("                                                                           % within     % within")
+    log_output_string_list.append("COLUMN                       STATUS   MEAN        MEDIAN       STD DEV     5% of 0.     1 SD of 0.")
     lenList=[]
     for item in colTitles:
         lenList.append(len(item))
     totalPaddedSize=max(lenList)+3
 
+    overallStatus = "OK"
     for colTitle in colTitles:
-        log.info("%s%s%s"%(colTitle,"."*(totalPaddedSize-len(colTitle)),regressionTestResults[colTitle]))
+        log_output_string_list.append("%s%s%s"%(colTitle,"."*(totalPaddedSize-len(colTitle)),regressionTestResults[colTitle]))
         if not regressionTestResults[colTitle].startswith("OK"):overallStatus="FAILURE"
+    log_output_string_list.append("-"*99)
+    log_output_string_list.append("OVERALL TEST STATUS..........{}".format(overallStatus))
+    for log_line in log_output_string_list:
+        log.info(log_line)
 
     if plotGen == "file":
+
+        # generate final overall summary pdf page
+        stat_summary_file_name = "stats_summary.pdf"
+        if plotfile_prefix != None:
+            stat_summary_file_name = "{}_{}".format(plotfile_prefix,stat_summary_file_name)
+        fig = plt.figure(figsize=(11, 8.5))
+        #fig.text(0.5, 0.87, fullPlotTitle[:-1] + " statistics", transform=fig.transFigure, size=12, ha="center")
+        stat_text_blob = ""
+        for log_line in log_output_string_list:
+            if log_line != "\n":
+                stat_text_blob += log_line + "\n"
+            else:
+                stat_text_blob += "\n"
+
+        stat_text_blob += "\n\nGenerated {}\n".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
+        stat_text_blob += plotfile_prefix
+        fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center", va="center",
+                 multialignment="left", family="monospace")
+        fig.savefig(stat_summary_file_name)
+        plt.close()
+        pdf_file_list.append(stat_summary_file_name)
+        # combine all individual plot files into a single multiple-page pdf file
         final_plot_filename = "comparision_plots.pdf"
         if plotfile_prefix:
             final_plot_filename ="{}_{}".format(plotfile_prefix,final_plot_filename)
