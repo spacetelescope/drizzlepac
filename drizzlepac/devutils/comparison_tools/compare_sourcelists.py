@@ -189,6 +189,13 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
     """
     pdf_file_list = []
     log.info(">>>>>> Comparision - reference sourcelist {} differences <<<<<<".format(plot_title))
+    # compute overall percentage of matched sources with flagging differences
+    flag_diff_list = list(matchedRA[0]-matchedRA[1])
+    n_total = len(matchedRA[0])
+    n_unchanged = flag_diff_list.count(0)
+    n_changed = n_total - n_unchanged
+    pct_changed = (float(n_changed)/float(n_total))*100.0
+
     #set up arrays to count stuff up
     bit_list = [0, 1, 2, 4, 8, 16, 32, 64, 128]
     refFlagBreakdown=np.zeros(9,dtype=int)
@@ -211,10 +218,20 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
         if np.array_equal(refFlagRA, compFlagRA): #if there are absolutely no differences
             unchangedFlagBreakdown+=refFlagRA
     regTestStatus = "OK     "
-    pct_diff_refbits=(np.sum([off_on_FlagFlips,on_off_FlagFlips],dtype=float)/np.sum(refFlagBreakdown, dtype=float))*100.0
-    if pct_diff_refbits >=5.0:
+    if pct_changed > 5.0: # Failure criteria: Greater than 5% of all matched sources have differences in their flag values
         regTestStatus = "FAILURE"
     log_output_string_list = []
+
+    log_output_string_list.append("{}{}".format(" "*8,"Overall Percentage of Matched Sources with Flagging Differences"))
+    tot_str_len=len(str(n_total))
+    uch_padding = tot_str_len - len(str(n_unchanged))
+    ch_padding = tot_str_len - len(str(n_changed))
+
+    log_output_string_list.append("Total number of matched sources with unchanged flag values...... {}{}".format(" "*uch_padding,n_unchanged))
+    log_output_string_list.append("Total number of matched sources with flag value differences..... {}{}".format(" "*ch_padding,n_changed))
+    log_output_string_list.append("Total number of matched sources................................. {}".format(n_total))
+    log_output_string_list.append("Percentage of all matched sources with flag value differences... {:7.4f}%\n".format(pct_changed))
+
     if ((verbose == True) or (regTestStatus == "FAILURE")):
         #Generate result tables
         n = np.sum(refFlagBreakdown, dtype=float)
@@ -237,12 +254,15 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
         log_output_string_list.append("%5s%9d%12d%10d%5s%5s  %8.4f %12.4f %10.4f" % ("TOTAL", np.sum(compFlagBreakdown), np.sum(unchangedFlagBreakdown), np.sum(off_on_FlagFlips), "  |  ","TOTAL", (float(np.sum(compFlagBreakdown)) / n) * 100.0, (float(np.sum(unchangedFlagBreakdown)) / n) * 100.0,(float(np.sum(off_on_FlagFlips)) / n) * 100.0))
         log_output_string_list.append("\n")
         log_output_string_list.append("Total flag bit differences......... {}".format(np.sum([off_on_FlagFlips,on_off_FlagFlips])))
-        log_output_string_list.append("Percentage change of all ref bits.. {}%".format(pct_diff_refbits))
 
+    log_output_string_list.append("Percentage of all matched sources with flag value differences... {:7.4f}%\n".format(pct_changed))
     log_output_string_list.append("Regression test status............. {}".format(regTestStatus))
 
     for log_line in log_output_string_list:
-        log.info(log_line)
+        if log_line == "\n":
+            log.info("")
+        else:
+            log.info(log_line)
 
     if plotGen != "none":
         idx=np.arange(9)
@@ -285,9 +305,9 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
             stat_text_blob=""
             for log_line in log_output_string_list:
                 if log_line != "\n":
-                    stat_text_blob = "{}{}\n".format(stat_text_blob,log_line)
+                    stat_text_blob = ">>{}{}\n".format(stat_text_blob,log_line)
                 else:
-                    stat_text_blob+="\n"
+                    stat_text_blob+="<<\n"
             stat_text_blob += "\n" + timestamp + "\n"
             stat_text_blob += plotfile_prefix
             fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center",va="center",multialignment="left", family="monospace")
@@ -328,7 +348,7 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
             plt.close()
         pdf_file_list.append(plotFileName)
 
-    regTestStatus = "%s %11.7f"%(regTestStatus,pct_diff_refbits)
+    regTestStatus = "%s %11.7f"%(regTestStatus,pct_changed)
     return (regTestStatus,pdf_file_list)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
 def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,verbose):
