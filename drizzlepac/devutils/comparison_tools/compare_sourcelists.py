@@ -55,7 +55,7 @@ specified, it will be prepended to the default name.
 The code generates up to three different types of plots:
 
 * Difference histogram plots: These are the most commonly generated plot products are are produced for all column
-comparisions excet for the bit-wise comparion.
+comparisions except for the bit-wise comparion.
 * Bit value barcharts
 * X-Y absolute difference vector plot
 
@@ -222,16 +222,10 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
         regTestStatus = "FAILURE"
     log_output_string_list = []
 
-    log_output_string_list.append("{}{}".format(" "*8,"Overall Percentage of Matched Sources with Flagging Differences"))
+
     tot_str_len=len(str(n_total))
     uch_padding = tot_str_len - len(str(n_unchanged))
     ch_padding = tot_str_len - len(str(n_changed))
-
-    log_output_string_list.append("Total number of matched sources with unchanged flag values...... {}{}".format(" "*uch_padding,n_unchanged))
-    log_output_string_list.append("Total number of matched sources with flag value differences..... {}{}".format(" "*ch_padding,n_changed))
-    log_output_string_list.append("Total number of matched sources................................. {}".format(n_total))
-    log_output_string_list.append("Percentage of all matched sources with flag value differences... {:7.4f}%\n".format(pct_changed))
-
     if ((verbose == True) or (regTestStatus == "FAILURE")):
         #Generate result tables
         n = np.sum(refFlagBreakdown, dtype=float)
@@ -253,9 +247,13 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
             bit_list[ctr], compFlagBreakdown[ctr], unchangedFlagBreakdown[ctr], off_on_FlagFlips[ctr], "  |  ",bit_list[ctr], (float(compFlagBreakdown[ctr]) / n) * 100.0, (float(unchangedFlagBreakdown[ctr]) / n) * 100.0,(float(off_on_FlagFlips[ctr]) / n) * 100.0))
         log_output_string_list.append("%5s%9d%12d%10d%5s%5s  %8.4f %12.4f %10.4f" % ("TOTAL", np.sum(compFlagBreakdown), np.sum(unchangedFlagBreakdown), np.sum(off_on_FlagFlips), "  |  ","TOTAL", (float(np.sum(compFlagBreakdown)) / n) * 100.0, (float(np.sum(unchangedFlagBreakdown)) / n) * 100.0,(float(np.sum(off_on_FlagFlips)) / n) * 100.0))
         log_output_string_list.append("\n")
-        log_output_string_list.append("Total flag bit differences......... {}".format(np.sum([off_on_FlagFlips,on_off_FlagFlips])))
-
-    log_output_string_list.append("Percentage of all matched sources with flag value differences... {:7.4f}%\n".format(pct_changed))
+        log_output_string_list.append("Total flag bit differences......... {}\n".format(np.sum([off_on_FlagFlips,on_off_FlagFlips])))
+    log_output_string_list.append(
+        "{}{}".format(" " * 8, "Overall Percentage of Matched Sources with Flagging Differences"))
+    log_output_string_list.append("Total number of matched sources with unchanged flag values...... {}{}".format(" "*uch_padding,n_unchanged))
+    log_output_string_list.append("Total number of matched sources with flag value differences..... {}{}".format(" "*ch_padding,n_changed))
+    log_output_string_list.append("Total number of matched sources................................. {}".format(n_total))
+    log_output_string_list.append("Percentage of all matched sources with flag value differences... {:7.4f}%".format(pct_changed))
     log_output_string_list.append("Regression test status............. {}".format(regTestStatus))
 
     for log_line in log_output_string_list:
@@ -301,13 +299,13 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
             #generate second pdf page with statistics
             stat_file_name = plotFileName.replace(".pdf","_stats.pdf")
             fig = plt.figure(figsize=(11,8.5))
-            fig.text(0.5,0.87,fullPlotTitle,transform=fig.transFigure, size=12, ha="center")
+            fig.text(0.5,0.92,fullPlotTitle,transform=fig.transFigure, size=12, ha="center")
             stat_text_blob=""
             for log_line in log_output_string_list:
                 if log_line != "\n":
-                    stat_text_blob = ">>{}{}\n".format(stat_text_blob,log_line)
+                    stat_text_blob = "{}{}\n".format(stat_text_blob,log_line)
                 else:
-                    stat_text_blob+="<<\n"
+                    stat_text_blob+="\n"
             stat_text_blob += "\n" + timestamp + "\n"
             stat_text_blob += plotfile_prefix
             fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center",va="center",multialignment="left", family="monospace")
@@ -431,7 +429,6 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
         log_output_string_list.append("Sigma-clipped standard deviation.......... {}".format(clippedStats[2]))
         log_output_string_list.append("Sigma-clipped mean in units of SD......... {}".format(np.divide(clippedStats[0],clippedStats[2])))
         log_output_string_list.append("\n")
-        log_output_string_list.append("\n")
         log_output_string_list.append("            Non-Clipped Statistics")
         log_output_string_list.append("Non-clipped mean.......................... {}".format(np.mean(diffRA)))
         log_output_string_list.append("Non-clipped median........................ {}".format(np.median(diffRA)))
@@ -443,9 +440,8 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
         log_output_string_list.append("% all diff values within 5% of 0.0........ {}".format(pct_five))
 
     log_output_string_list.append("Regression test status.................... {}".format(regTestStatus))
+    log_output_string_list.append("\n")
 
-    for log_line in log_output_string_list:
-        log.info(log_line)
     if plotGen == "none":
         pdf_files = []
     else:
@@ -454,10 +450,10 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
         plotCutoff=(10.0*np.abs(clippedStats[2]))+np.abs(clippedStats[0])
         if plotCutoff != 0.0:
             origSize=len(diffRA)
-            log.info("Plot cutoff: {}".format(plotCutoff))
+            log_output_string_list.append("Plot cutoff: {}".format(plotCutoff))
             goodIdx=np.where(np.abs(diffRA)<=plotCutoff)
             diffRA=diffRA[goodIdx]
-            log.info("%d values (%7.4f percent) clipped from plot."%(origSize-len(diffRA),(float(origSize-len(diffRA))/float(origSize))*100.0))
+            log_output_string_list.append("%d values (%7.4f percent) clipped from plot."%(origSize-len(diffRA),(float(origSize-len(diffRA))/float(origSize))*100.0))
         fig = plt.figure(figsize=(11,8.5))
         ax1 = fig.add_subplot(111)
         fullPlotTitle = "Comparision - reference sourcelist %s differences" % (plot_title)
@@ -512,9 +508,12 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
             plt.close()
         pdf_files = [plotFileName,stat_file_name]
 
-
-    log.info("\n")
-
+    log_output_string_list.append("\n")
+    for log_line in log_output_string_list:
+        if log_line == "\n":
+            log.info("")
+        else:
+            log.info(log_line)
     return(regTestStatus+out_stats,pdf_files)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
 def deconstruct_flag(flagval):
@@ -964,21 +963,21 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",plotfile_p
     log.info("\n")
     log_output_string_list = []
 
-    log_output_string_list.append("{}{}".format(" "*35,"REGRESSION TESTING SUMMARY"))
-    log_output_string_list.append("-" * 99)
-    log_output_string_list.append("                                                                           % within     % within")
-    log_output_string_list.append("COLUMN                       STATUS   MEAN        MEDIAN       STD DEV     5% of 0.     1 SD of 0.")
     lenList=[]
     for item in colTitles:
         lenList.append(len(item))
     totalPaddedSize=max(lenList)+3
-
+    log_output_string_list.append("{}{}".format(" "*35,"REGRESSION TESTING SUMMARY"))
+    log_output_string_list.append("-" * (70+totalPaddedSize))
+    log_output_string_list.append("{}{}".format(" "*(totalPaddedSize+46),"% within     % within"))
+    log_output_string_list.append("COLUMN{}STATUS   MEAN        MEDIAN       STD DEV     5% of 0.     1 SD of 0.".format(" "*(totalPaddedSize-6)))
     overallStatus = "OK"
     for colTitle in colTitles:
         log_output_string_list.append("%s%s%s"%(colTitle,"."*(totalPaddedSize-len(colTitle)),regressionTestResults[colTitle]))
-        if not regressionTestResults[colTitle].startswith("OK"):overallStatus="FAILURE"
-    log_output_string_list.append("-"*99)
-    log_output_string_list.append("OVERALL TEST STATUS..........{}".format(overallStatus))
+        if not regressionTestResults[colTitle].startswith("OK"):
+            overallStatus="FAILURE"
+    log_output_string_list.append("-" * (70+totalPaddedSize))
+    log_output_string_list.append("OVERALL TEST STATUS{}{}".format("."*(totalPaddedSize-19),overallStatus))
     for log_line in log_output_string_list:
         log.info(log_line)
 
