@@ -1,28 +1,39 @@
 #!/usr/bin/env python
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4 ai :
-# TODO: UPDATE main docstring.
-"""This script compares two sourcelists and displays various measures of their differences. 3x3-sigma clipped mean,
-median and standard deviation, and non-sigma clipped min and max values are computed for the following:
+# TODO: UPDATE 'Regression testing' section of docstring
+"""This script compares sources common to two user-specified sourcelists and displays various measures of their
+differences. The differences can be calculated using one of three user-selectable methods:
 
-* X position
-* Y position
-* Right Ascension
-* Declination
-* Flux (Inner Aperture)
+* Absolute: Just a simple difference e.g. Comparision - Reference.
+* Overall mean percent difference:  Percent difference based on the **overall mean** reference value e.g. ((Comparision-Reference)/mean_overall(Reference)) x 100.
+* Dynamic percent difference: Percent difference values are calculated discretly for each pair of comparision/reference values e.g. ((Comparision[n]-Reference[n])/Reference[n]) x 100.
+
+3x3-sigma clipped mean, median and standard deviation, and non-sigma clipped min and max values are
+computed for the following:
+
+* Image X position (in pixels)
+* Image Y position (in pixels)
+* Right Ascension (in arcseconds)
+* Declination (in arcseconds)
 * Flux (Outer Aperture)
 * Magnitude (Inner Aperture)
 * Magnitude (Outer Aperture)
 * Magnitude Error (Inner Aperture)
 * Magnitude Error (Outer Aperture)
+* MSKY
+* STDDEV
+* CI (Concentration Index)
 
-Bit-wise comparisons are also performed for the following item:
+Absolute bit-wise comparisons are also performed for the following item:
 
 * Flag Value
 
 .. note::
-    Statistics (and optionally plots) for 'X position' and 'Y position' differences will always be displayed. However,
-    not every sourcelist or catalog file is guaranteed to have any of the seven remaining data columns in the above
-    list. Results for these seven columns will only be displayed if data columns are found in both input files.
+    Not all sourcelist types compatible with this comparision script contain all of the columns listed above.
+    Statistics (and optionally plots) can only be generated for columns common to both user-specified sourcelists.
+    Thus, it is to be expected that not all runs will yield comparisons for all columns listed above.
+
+
 
 Regression Testing
 ------------------
@@ -170,21 +181,21 @@ def computeFlagStats(matchedRA,plotGen,plot_title,plotfile_prefix, verbose):
         A 2 x len(refLines) sized numpy array. Column 1: matched reference values.
         Column 2: The corresponding matched comparision values
 
-    plotGen : Boolean
+    plotGen : bool
         Generate plots and display them to the screen (True/False)?
 
-    plot_title : string
+    plot_title : str
         text string that will be used in plot title.
 
-    plotfile_prefix : string
+    plotfile_prefix : str
         text string that will prepend the plot files generated if plots are written to files
 
-    verbose : Boolean
+    verbose : bool
         display verbose output?
 
     Returns
     -------
-    regTestStatus : string
+    regTestStatus : str
         overall test result and statistics
     """
     pdf_file_list = []
@@ -359,24 +370,24 @@ def computeLinearStats(matchedRA,plotGen,diffMode,plot_title,plotfile_prefix,ver
     A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The corresponding matched
     comparision values
 
-    plotGen : string
+    plotGen : str
         Generate plots?
 
-    diffMode : string
+    diffMode : str
         Method used to compute diffRA
 
-    plot_title : string
+    plot_title : str
         text string that will be used in plot title.
 
-    plotfile_prefix : string
+    plotfile_prefix : str
         text string that will prepend the plot files generated if plots are written to files
 
-    verbose : Boolean
+    verbose : bool
         display verbose output?
 
     Returns
     -------
-    regTestStatus : string
+    regTestStatus : str
         overall test result and statistics
     """
     log.info(">>>>>> Comparision - reference sourcelist {} differences <<<<<<".format(plot_title))
@@ -553,7 +564,7 @@ def extractMatchedLines(col2get,refData,compData,refLines,compLines):
 
     Parameters
     ----------
-    col2get : string
+    col2get : str
         Title of the column to return
 
     refData : astropy Table object
@@ -652,16 +663,16 @@ def makeVectorPlot(x,y,plotDest,plotfile_prefix,binThresh = 10000,binSize=250):
         A 2 x n sized numpy array. Column 1: matched reference Y values. Column 2: The corresponding matched
         comparision Y values
 
-    plotDest : string
+    plotDest : str
         plot destination; screen or file
 
-    plotfile_prefix : string
+    plotfile_prefix : str
         text string that will prepend the plot files generated if plots are written to files
 
-    binThresh : int
+    binThresh : int, optional
         Minimum size of list *x* and *y* that will trigger generation of a binned vector plot. Default value = 10000.
 
-    binSize : int
+    binSize : int, optional
         Size of binning box in pixels. When generating a binned vector plot, mean dx and dy values are computed by
         taking the mean of all points located within the box. Default value = 250.
 
@@ -756,7 +767,7 @@ def round2ArbatraryBase(value,direction,roundingBase):
     value : float
         Value to be rounded.
 
-    direction : string
+    direction : str
         Round up, down to the nearest base (choices: "up","down","nearest")
 
     roundingBase : int
@@ -787,16 +798,16 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",plotfile_p
     imgNames : list
         optional list of input images that starmatch_hist will use to improve sourcelist matching
 
-    plotfile_prefix : string
+    plotfile_prefix : str, optional
         text string that will prepend the plot files generated if plots are written to files
 
-    plotGen : Boolean
+    plotGen : bool, optional
         Generate plots and display them to the screen (True/False)?
 
-    diffMode : string
+    diffMode : str, optional
         method used to compute comp-ref difference in computeLinearStats().
 
-    verbose : Boolean
+    verbose : bool, optional
         display verbose output?
 
     log_level : int, optional
@@ -805,7 +816,7 @@ def comparesourcelists(slNames,imgNames,plotGen=None,diffMode="pmean",plotfile_p
 
     Returns
     -------
-    overallStatus : string
+    overallStatus : str
         "OK" if all tests were passed, or "FAILURE" if inconsistencies were found.
     """
     log.setLevel(log_level)
