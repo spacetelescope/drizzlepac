@@ -419,7 +419,11 @@ def computeLinearStats(matchedRA, plotGen, diffMode, plot_title, plotfile_prefix
     regTestStatus : str
         overall test result and statistics
     """
-    log.info(">>>>>> Comparision - reference sourcelist {} differences <<<<<<".format(plot_title))
+    if diffMode == "absolute":
+        difftype_string = "absolute"
+    else:
+        difftype_string = "percent"
+    log.info(">>>>>> Comparision - reference sourcelist {} {} differences <<<<<<".format(plot_title, difftype_string))
     # remove any "inf" or "nan" values in matchedRA.
     nanIdx = np.where(np.isnan(matchedRA) == True)[1]
     if len(nanIdx) > 0:
@@ -504,7 +508,7 @@ def computeLinearStats(matchedRA, plotGen, diffMode, plot_title, plotfile_prefix
             log_output_string_list.append("%d values (%7.4f percent) clipped from plot." % (origSize - len(diffRA), (float(origSize - len(diffRA)) / float(origSize)) * 100.0))
         fig = plt.figure(figsize=(11, 8.5))
         ax1 = fig.add_subplot(111)
-        fullPlotTitle = "Comparision - reference sourcelist %s differences" % (plot_title)
+        fullPlotTitle = "Comparision - reference sourcelist %s %s differences" % (plot_title, difftype_string)
         plt.title(fullPlotTitle)
         bins = "auto"
         ax1.hist(diffRA, bins=bins)
