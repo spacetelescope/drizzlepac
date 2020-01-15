@@ -38,16 +38,16 @@ Regression Testing
 ------------------
 **All** of the following criteria must be met for the test to be declared "successful":
 
-* X position: The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
-* Y position: The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
-* Right Ascension: The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
-* Declination: The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
-* Flux (Inner Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
-* Flux (Outer Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
-* Magnitude (Inner Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
-* Magnitude (Outer Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
-* Magnitude error (Inner Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
-* Magnitude error (Outer Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 1 sigma from zero.
+* X position: The sigma-clipped mean of all comparison - reference difference values is less than 5%.
+* Y position: The sigma-clipped mean of all comparison - reference difference values is less than 5%.
+* Right Ascension: The sigma-clipped mean of all comparison - reference difference values is less than 5%.
+* Declination: The sigma-clipped mean of all comparison - reference difference values is less than 5%.
+* Flux (Inner Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 5%.
+* Flux (Outer Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 5%.
+* Magnitude (Inner Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 5%.
+* Magnitude (Outer Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 5%.
+* Magnitude error (Inner Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 5%.
+* Magnitude error (Outer Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 5%.
 * Flag Value: Less than 5% of all matched sources have differing flag values.
 
 .. note::
@@ -459,17 +459,11 @@ def computeLinearStats(matchedRA, plotGen, diffMode, plot_title, plotfile_prefix
     pct_five = (float(np.shape(np.where(abs(diffRA) <= 5.0))[1]) / float(np.shape(diffRA)[0])) * 100.0
 
     out_stats = "%11.7f %11.7f  %11.7f  %11.7f  %11.7f " % (clippedStats[0], clippedStats[1], clippedStats[2], pct_five, pct_1sig)
-    if diffMode == "absolute":
-        if abs(clippedStats[0]) <= abs(
-                clippedStats[2]):  # success condition: sigma clippped mean less then 1 sigma from Zero.
-            regTestStatus = "OK      "
-        else:
-            regTestStatus = "FAILURE "
+
+    if np.abs(clippedStats[0]) <= 5.0:  # success condition: sigma-clipped mean less then 5%
+        regTestStatus = "OK      "
     else:
-        if np.abs(clippedStats[0]) <= 5.0:  # success condition: sigma-clipped mean less then 5%
-            regTestStatus = "OK      "
-        else:
-            regTestStatus = "FAILURE "
+        regTestStatus = "FAILURE "
     if ((verbose == True) or (regTestStatus == "FAILURE ")):
         log_output_string_list = []
         log_output_string_list.append("       Sigma-clipped Statistics; Sigma = {}, # steps = {}".format(sigVal, intersVal))
