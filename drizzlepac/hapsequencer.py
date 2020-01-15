@@ -386,7 +386,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # where its FilterProduct is distinguished by the filter in use, and the ExposureProduct
         # is the atomic exposure data.
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
-        obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename,log_level)
+        obs_info_dict, total_list = poller_utils.interpret_obset_input(input_filename, log_level)
 
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to use only one of the Total Products to generate the manifest name as the name is not
@@ -478,7 +478,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
         # 9: Compare results to HLA classic counterparts (if possible)
         if diagnostic_mode:
-            run_sourcelist_comparision(total_list,log_level=log_level)
+            run_sourcelist_comparision(total_list, log_level=log_level)
         # Write out manifest file listing all products generated during processing
         log.info("Creating manifest file {}.".format(manifest_name))
         log.info("  The manifest contains the names of products generated during processing.")
@@ -514,7 +514,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
+def run_sourcelist_comparision(total_list, log_level=logutil.logging.INFO):
     """ This subroutine automates execution of drizzlepac/devutils/comparison_tools/compare_sourcelist_flagging.py to
     compare HAP-generated filter catalogs with their HLA classic counterparts.
 
@@ -541,37 +541,38 @@ def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
     -------
     Nothing.
     """
-    #get HLA classic path details from envroment variables
+    # get HLA classic path details from envroment variables
     hla_classic_basepath = os.getenv('HLA_CLASSIC_BASEPATH')
     hla_build_ver = os.getenv("HLA_BUILD_VER")
     for tot_obj in total_list:
         combo_comp_pdf_list = []
         if hla_classic_basepath and hla_build_ver and os.path.exists(hla_classic_basepath):
-            hla_cassic_basepath = os.path.join(hla_classic_basepath,tot_obj.instrument,hla_build_ver)
-            hla_classic_path = os.path.join(hla_cassic_basepath,tot_obj.prop_id,tot_obj.prop_id+"_"+tot_obj.obset_id) # Generate path to HLA classic products
-        elif os.path.exists(os.path.join(os.getcwd(),"hla_classic")): # For local testing
+            hla_cassic_basepath = os.path.join(hla_classic_basepath, tot_obj.instrument, hla_build_ver)
+            hla_classic_path = os.path.join(hla_cassic_basepath, tot_obj.prop_id, tot_obj.prop_id + "_" + tot_obj.obset_id)  # Generate path to HLA classic products
+        elif os.path.exists(os.path.join(os.getcwd(), "hla_classic")):  # For local testing
             hla_classic_basepath = os.path.join(os.getcwd(), "hla_classic")
             hla_classic_path = hla_classic_basepath
         else:
-            return # bail out if HLA classic path can't be found.
+            return  # bail out if HLA classic path can't be found.
         for filt_obj in tot_obj.fdp_list:
             hap_imgname = filt_obj.drizzle_filename
-            hla_imgname = glob.glob("{}/{}{}_dr*.fits".format(hla_classic_path,filt_obj.basename, filt_obj.filters))[0]
-            if not os.path.exists(hap_imgname) or not os.path.exists(hla_imgname): # Skip filter if one or both of the images can't be found
+            hla_imgname = glob.glob("{}/{}{}_dr*.fits".format(hla_classic_path, filt_obj.basename, filt_obj.filters))[0]
+            if not os.path.exists(hap_imgname) or not os.path.exists(hla_imgname):  # Skip filter if one or both of the images can't be found
                 continue
             for hap_sourcelist_name in [filt_obj.point_cat_filename, filt_obj.segment_cat_filename]:
                 if hap_sourcelist_name.endswith("point-cat.ecsv"):
                     hla_classic_cat_type = "dao"
-                    plotfile_prefix=filt_obj.product_basename+"_point"
+                    plotfile_prefix = filt_obj.product_basename + "_point"
                 else:
                     hla_classic_cat_type = "sex"
                     plotfile_prefix = filt_obj.product_basename + "_segment"
                 if hla_classic_basepath and hla_build_ver and os.path.exists(hla_classic_basepath):
-                    hla_sourcelist_name = "{}/logs/{}{}_{}phot.txt".format(hla_classic_path,filt_obj.basename, filt_obj.filters, hla_classic_cat_type)
+                    hla_sourcelist_name = "{}/logs/{}{}_{}phot.txt".format(hla_classic_path, filt_obj.basename,
+                                                                           filt_obj.filters, hla_classic_cat_type)
                 else:
                     hla_sourcelist_name = "{}/{}{}_{}phot.txt".format(hla_classic_path, filt_obj.basename,
-                                                                           filt_obj.filters, hla_classic_cat_type)
-                if not os.path.exists(hap_sourcelist_name) or not os.path.exists(hla_sourcelist_name): # Skip catalog type if one or both of the catalogs can't be found
+                                                                      filt_obj.filters, hla_classic_cat_type)
+                if not os.path.exists(hap_sourcelist_name) or not os.path.exists(hla_sourcelist_name):  # Skip catalog type if one or both of the catalogs can't be found
                     continue
 
                 # convert HLA Classic RA and Dec values to HAP reference frame so the RA and Dec comparisons are correct
@@ -582,15 +583,24 @@ def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
                 log.info("HLA Classic catalog:         {}".format(os.path.basename(updated_hla_sourcelist_name)))
 
                 # once all file exist checks are passed, execute sourcelist comparision
-                return_status = compare_sourcelists.comparesourcelists([updated_hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="pmean",plotfile_prefix=plotfile_prefix, verbose=True,log_level=log_level, debugMode=False)
+                return_status = compare_sourcelists.comparesourcelists([updated_hla_sourcelist_name,
+                                                                        hap_sourcelist_name],
+                                                                       [hla_imgname, hap_imgname],
+                                                                       plotGen="file",
+                                                                       diffMode="pmean",
+                                                                       plotfile_prefix=plotfile_prefix,
+                                                                       verbose=True,
+                                                                       log_level=log_level,
+                                                                       debugMode=False)
                 combo_comp_pdf_filename = "{}_comparision_plots.pdf".format(plotfile_prefix)
                 if os.path.exists(combo_comp_pdf_filename):
                     combo_comp_pdf_list.append(combo_comp_pdf_filename)
-        if len(combo_comp_pdf_list) > 0: #combine all plots generated by compare_sourcelists.py for this total object into a single pdf file
+        if len(combo_comp_pdf_list) > 0:  # combine all plots generated by compare_sourcelists.py for this total object into a single pdf file
             total_combo_comp_pdf_filename = "{}_comparision_plots.pdf".format(tot_obj.basename)
-            compare_sourcelists.pdf_merger(total_combo_comp_pdf_filename,combo_comp_pdf_list)
+            compare_sourcelists.pdf_merger(total_combo_comp_pdf_filename, combo_comp_pdf_list)
             log.info("Sourcelist comparison plots saved to file {}.".format(total_combo_comp_pdf_filename))
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_level, diagnostic_mode=False):
     """
