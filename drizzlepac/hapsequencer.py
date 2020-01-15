@@ -582,7 +582,7 @@ def run_sourcelist_comparision(total_list,log_level=logutil.logging.INFO):
                 log.info("HLA Classic catalog:         {}".format(os.path.basename(updated_hla_sourcelist_name)))
 
                 # once all file exist checks are passed, execute sourcelist comparision
-                return_status = compare_sourcelists.comparesourcelists([updated_hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="absolute",plotfile_prefix=plotfile_prefix, verbose=True,log_level=log_level, debugMode=False)
+                return_status = compare_sourcelists.comparesourcelists([updated_hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],plotGen="file",diffMode="pmean",plotfile_prefix=plotfile_prefix, verbose=True,log_level=log_level, debugMode=False)
                 combo_comp_pdf_filename = "{}_comparision_plots.pdf".format(plotfile_prefix)
                 if os.path.exists(combo_comp_pdf_filename):
                     combo_comp_pdf_list.append(combo_comp_pdf_filename)
