@@ -77,7 +77,7 @@ drizzlepac/drizzlepac/devutils/comparison_tools/compare_sourcelists.py
 Dependencies
 ------------
 - drizzlepac/drizzlepac/devutils/comparison_tools/starmatch_hist.py
-- The "PyPDF2" python library
+- The `PyPDF2 <https://pypi.org/project/PyPDF2/>`_ python library
 
 Inputs
 ------
