@@ -311,8 +311,8 @@ def computeFlagStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose):
         width = 0.35
         fig = plt.figure(figsize=(11, 8.5))
         ax1 = fig.add_subplot(111)
-        p1 = plt.bar(idx - width / 2, refFlagBreakdown, width, label='Reference')
-        p2 = plt.bar(idx + width / 2, compFlagBreakdown, width, label='Comparison')
+        plt.bar(idx - width / 2, refFlagBreakdown, width, label='Reference')
+        plt.bar(idx + width / 2, compFlagBreakdown, width, label='Comparison')
         plt.legend()
         plt.xticks(idx, x_title_list)
         plt.xlabel("Flag Bit Value")
@@ -674,7 +674,7 @@ def getMatchedLists(slNames, imgNames, slLengths, log_level):
         xref = fh[0].header['crpix1']
         yref = fh[0].header['crpix2']
         fh.close()
-    except:
+    except Exception:
         log.info(
             "WARNING: Unable to fetch values for xref and yref from fits file headers. Using xref = 0.0 and yref = 0.0.")
         xref = 0.0
@@ -884,6 +884,10 @@ def comparesourcelists(slNames, imgNames, plotGen=None, diffMode="pmean", plotfi
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
         Default value is 'NOTSET'.
+
+    debugMode : bool, optional
+        executes subroutine check_match_quality(), which the writes the matched sources (x, y) coordinates of the
+        comparision and reference source lists to ds9 region files for follow-up human visual inspection.
 
     Returns
     -------
@@ -1150,14 +1154,14 @@ def slFiles2dataTables(slNames):
     else:
         try:
             refData_in = Table.read(slNames[0], format='ascii.daophot')
-        except:
+        except Exception:
             refData_in = Table.read(slNames[0], format='ascii')
     if slNames[1].endswith(".ecsv"):
         compData_in = Table.read(slNames[1], format='ascii.ecsv')
     else:
         try:
             compData_in = Table.read(slNames[1], format='ascii.daophot')
-        except:
+        except Exception:
             compData_in = Table.read(slNames[1], format='ascii')
     titleSwapDict_dao1 = {"X": "X-Center", "Y": "Y-Center", "RA": "RA", "DEC": "DEC", "FLUX1": "n/a",
                           "FLUX2": "Flux(0.15)", "MAGNITUDE1": "MagAp(0.05)", "MAGNITUDE2": "MagAp(0.15)",
@@ -1187,8 +1191,8 @@ def slFiles2dataTables(slNames):
                              "FLAGS": "FLAGS", "ID": "NUMBER"}
     titleSwapDict_cooNew = {"X": "col1", "Y": "col2", "RA": "n/a", "DEC": "n/a", "FLUX1": "n/a", "FLUX2": "n/a",
                             "MAGNITUDE1": "n/a", "MAGNITUDE2": "n/a", "FLAGS": "n/a", "ID": "col7"}
-    titleSwapDict_cooOld = {"X": "XCENTER", "Y": "YCENTER", "RA": "n/a", "DEC": "n/a", "FLUX1": "n/a", "FLUX2": "n/a",
-                            "MAGNITUDE1": "n/a", "MAGNITUDE2": "n/a", "FLAGS": "n/a", "ID": "ID"}
+    # titleSwapDict_cooOld = {"X": "XCENTER", "Y": "YCENTER", "RA": "n/a", "DEC": "n/a", "FLUX1": "n/a", "FLUX2": "n/a",
+    #                         "MAGNITUDE1": "n/a", "MAGNITUDE2": "n/a", "FLAGS": "n/a", "ID": "ID"}
 
     titleSwapDict_cooOld2 = {"X": "XCENTER", "Y": "YCENTER", "RA": "RA", "DEC": "DEC", "FLUX1": "FLUX_0.05",
                              "FLUX2": "FLUX_0.15", "MAGNITUDE1": "MAG_0.05", "MAGNITUDE2": "MAG_0.15", "FLAGS": "n/a",
@@ -1269,7 +1273,6 @@ def pdf_merger(output_path, input_paths):
     nothing.
     """
     pdf_merger = PdfFileMerger()
-    file_handles = []
 
     for path in input_paths:
         pdf_merger.append(path)
