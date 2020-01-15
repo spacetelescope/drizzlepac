@@ -486,42 +486,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 # ------------------------------------------------------------------------------------------------------------
 
 def run_align_to_gaia(total_list, product_list, log_level=logutil.logging.INFO, diagnostic_mode=False):
-
-        # Run align.py on images on a filter-by-filter basis.
-        # Process each filter object which contains a list of exposure objects/products.
-        log.info("\n{}: Align the images on a filter-by-filter basis.".format(str(datetime.datetime.now())))
-        for tot_obj in total_list:
-            for filt_obj in tot_obj.fdp_list:
-                align_table, filt_exposures = filt_obj.align_to_gaia(output=diagnostic_mode)
-                # Retain output results as attributes of each filter object for use in aligning across filters
-                filt_obj.align_table = align_table
-                filt_obj.filt_exposures = filt_exposures
-
-                # Report results and track the output files
-                if align_table:
-                    log.info("ALIGN_TABLE: {}".format(align_table.filtered_table))
-                    for row in align_table.filtered_table:
-                        log.info(row['status'])
-                        if row['status'] == 0:
-                            log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
-
-                        # Alignment did not work for this particular image
-                        # If alignment did not work for an image, image still has WCS so continue processing.
-                        else:
-                            log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
-
-                    hdrlet_list = align_table.filtered_table['headerletFile'].tolist()
-                    product_list += hdrlet_list
-                    product_list += filt_exposures
-
-                    # Remove reference catalogs created for alignment of each filter product
-                    for catalog_name in align_table.reference_catalogs:
-                        log.info("Looking to clean up reference catalog: {}".format(catalog_name))
-                        if os.path.exists(catalog_name):
-                            os.remove(catalog_name)
-                else:
-                    log.warning("Step to align the images has failed. No alignment table has been generated.")
-
         # Run align.py on all input images sorted by overlap with GAIA bandpass
         log.info("\n{}: Align the all filters to GAIA with the same fit".format(str(datetime.datetime.now())))
         gaia_obj = None
@@ -538,6 +502,7 @@ def run_align_to_gaia(total_list, product_list, log_level=logutil.logging.INFO, 
                     gaia_obj.add_member(exp_obj)
 
         log.info("\n{}: Combined all filter objects in gaia_obj".format(str(datetime.datetime.now())))
+
         # Now, perform alignment to GAIA with 'match_relative_fit' across all inputs
         # Need to start with one filt_obj.align_table instance as gaia_obj.align_table
         #  - append imglist from each filt_obj.align_table to the gaia_obj.align_table.imglist
@@ -546,18 +511,8 @@ def run_align_to_gaia(total_list, product_list, log_level=logutil.logging.INFO, 
         #  - migrate updated WCS solutions to exp_obj instances, if necessary (probably not?)
         #  - re-run tot_obj.generate_metawcs() method to recompute total object meta_wcs based on updated
         #    input exposure's WCSs
-        gaia_align_table = None
-        for tot_obj in total_list:
-            for filt_obj in tot_obj.fdp_list:
-                if gaia_align_table is None:
-                    gaia_align_table = filt_obj.align_table
-                else:
-                    gaia_align_table.imglist.extend(filt_obj.align_table.imglist)
-                    gaia_align_table.process_list.extend(filt_obj.align_table.process_list)
+        align_table, filt_exposures = gaia_obj.align_to_gaia(output=diagnostic_mode, fit_label='SVM')
 
-        for group_id, img in enumerate(gaia_align_table.imglist):
-            img.meta['group_id'] = group_id
-        gaia_obj.align_to_gaia(align_table=gaia_align_table, fit_label='SVM')
         for tot_obj in total_list:
             tot_obj.generate_metawcs()
         log.info("\n{}: Finished aligning gaia_obj to GAIA".format(str(datetime.datetime.now())))
