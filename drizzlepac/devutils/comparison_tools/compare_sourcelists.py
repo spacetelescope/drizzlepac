@@ -434,12 +434,15 @@ def computeLinearStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose)
     sigVal = 3
     intersVal = 3
 
-
     diffRA = matchedRA[1, :] - matchedRA[0, :]  # simple difference
     clippedStats = sigma_clipped_stats(diffRA, sigma=sigVal, maxiters=intersVal)
     pct_1sig = (float(np.shape(np.where(abs(diffRA) <= clippedStats[2]))[1]) / float(np.shape(diffRA)[0])) * 100.0
+    sigma_percentages = []
+    for sig_val in [1.0, 2.0, 3.0]:
+        sigma_percentages.append((float(np.shape(np.where((diffRA >= (clippedStats[0] - sig_val * clippedStats[2])) & (diffRA <= (clippedStats[0] + sig_val * clippedStats[2]))))[1])/float(np.shape(diffRA)[0])) * 100.0)
+    #pct_3sig = ((float(np.shape(np.where(diffRA <= 3.0*clippedStats[2] + clippedStats[0]))[1]) + float(np.shape(np.where(diffRA >= clippedStats[0] - 3.0 * clippedStats[2]))[1]))/float(np.shape(diffRA)[0])) * 100.0
     pct_five = (float(np.shape(np.where(abs(diffRA) <= 5.0))[1]) / float(np.shape(diffRA)[0])) * 100.0
-
+    print(3.0 * clippedStats[2] - clippedStats[0],3.0 * clippedStats[2] + clippedStats[0])
     out_stats = "%11.7f %11.7f  %11.7f  %11.7f  %11.7f " % (clippedStats[0], clippedStats[1], clippedStats[2], pct_five, pct_1sig)
 
     if np.abs(clippedStats[0]) <= 5.0:  # success condition: sigma-clipped mean less then 5%
@@ -464,12 +467,22 @@ def computeLinearStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose)
         log_output_string_list.append("Non-clipped maximum....................... {}".format(np.max(diffRA)))
         log_output_string_list.append("% all diff values within 1 sigma of 0.0... {}".format(pct_1sig))
         log_output_string_list.append("% all diff values within 5% of 0.0........ {}".format(pct_five))
+        for sig_val, pct_val in zip([1.0, 2.0, 3.0], sigma_percentages):
+            log_output_string_list.append("% all diff values within {} sigma of mean...{}".format(sig_val,pct_val))
 
     log_output_string_list.append("Regression test status.................... {}".format(regTestStatus))
     log_output_string_list.append("\n")
 
+
     if plotGen == "none":
         pdf_files = []
+        log.info("\n")
+        for log_line in log_output_string_list:
+            if log_line == "\n":
+                log.info("")
+            else:
+                log.info(log_line)
+
     else:
 
         xAxisString = "{}".format(plot_title.split(" ")[0])
@@ -487,11 +500,10 @@ def computeLinearStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose)
         bins = "auto"
         ax1.hist(diffRA, bins=bins)
         ax1.axvline(x=clippedStats[0], color='k', linestyle='--')
-        ax1.axvline(x=clippedStats[0] + clippedStats[2], color='k', linestyle=':')
-        ax1.axvline(x=clippedStats[0] - clippedStats[2], color='k', linestyle=':')
+        ax1.axvline(x=clippedStats[1], color='r', linestyle='--')
+        ax1.axvline(x=clippedStats[0] + 3.0*clippedStats[2], color='k', linestyle=':')
+        ax1.axvline(x=clippedStats[0] - 3.0*clippedStats[2], color='k', linestyle=':')
 
-        ax1.axvline(x=np.mean(diffRA) + np.std(diffRA), color='g', linestyle=':')
-        ax1.axvline(x=np.mean(diffRA) - np.std(diffRA), color='g', linestyle=':')
         ax1.set_xlabel("$\Delta %s$" % (xAxisString))
         ax1.set_ylabel("Number of matched sources")
 
@@ -500,6 +512,13 @@ def computeLinearStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose)
         ax2.set_ylabel("Fraction of all matched sources", color='r')
         for tl in ax2.get_yticklabels():
             tl.set_color('r')
+
+        log.info("\n")
+        for log_line in log_output_string_list:
+            if log_line == "\n":
+                log.info("")
+            else:
+                log.info(log_line)
 
         if plotGen == "screen":
             plt.show()
@@ -536,11 +555,7 @@ def computeLinearStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose)
         pdf_files = [plotFileName, stat_file_name]
 
     log_output_string_list.append("\n")
-    for log_line in log_output_string_list:
-        if log_line == "\n":
-            log.info("")
-        else:
-            log.info(log_line)
+
     return (regTestStatus + out_stats, pdf_files)
 
 
@@ -1298,5 +1313,10 @@ if __name__ == "__main__":
                                    verbose=ARGS.verbose, log_level=logutil.logging.INFO, debugMode=ARGS.debugMode,
                                    plotfile_prefix=ARGS.plotfile_prefix_string)
 
-# TODO: reformat docstrings
+
 # TODO: fix PEP 8 violations
+# TODO: compute RA and Dec differences properly using astropy.skycoordinate (https://docs.astropy.org/en/stable/api/astropy.coordinates.SkyCoord.html)
+# TODO: Compute combined angular seperation based on both RA and DEC values for a given matched pair, then break it down into seperate componants
+# TODO: Have two test criteria for linear comparisions: 1) <=95% of the differences must be withen 3 sigma of the clipped mean, and 2) column-specific maximum alowable mean differences (this will depend on the column -- x, y, ra and dec could be max mean difference of 0.1 arcsec, magntudes wilud be something different, etc)
+# TODO: Convert X and Y difference values into arcsec based on platescale
+# TODO: Compute Magnitude differences properly
