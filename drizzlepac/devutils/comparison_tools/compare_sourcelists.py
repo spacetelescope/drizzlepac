@@ -1320,3 +1320,4 @@ if __name__ == "__main__":
 # TODO: Have two test criteria for linear comparisions: 1) <=95% of the differences must be withen 3 sigma of the clipped mean, and 2) column-specific maximum alowable mean differences (this will depend on the column -- x, y, ra and dec could be max mean difference of 0.1 arcsec, magntudes wilud be something different, etc)
 # TODO: Convert X and Y difference values into arcsec based on platescale
 # TODO: Compute Magnitude differences properly
+# TODO: Add flag-value based rejection (good flag bits = 0, 1, and/or 4, ignore lines containing flag bits other than these). This could also be an optional user-specified input.
