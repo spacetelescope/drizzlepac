@@ -38,16 +38,17 @@ Regression Testing
 ------------------
 **All** of the following criteria must be met for the test to be declared "successful":
 
-* X position: The sigma-clipped mean of all comparison - reference difference values is less than 5%.
-* Y position: The sigma-clipped mean of all comparison - reference difference values is less than 5%.
-* Right Ascension: The sigma-clipped mean of all comparison - reference difference values is less than 5%.
-* Declination: The sigma-clipped mean of all comparison - reference difference values is less than 5%.
-* Flux (Inner Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 5%.
-* Flux (Outer Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 5%.
-* Magnitude (Inner Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 5%.
-* Magnitude (Outer Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 5%.
-* Magnitude error (Inner Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 5%.
-* Magnitude error (Outer Aperture): The sigma-clipped mean of all comparison - reference difference values is less than 5%.
+* All non-flag (linear) column comparisons: Less than 5% of all comparison - reference difference values are greater than 3 sigma from the sigma-clipped mean
+* X position:
+* Y position:
+* Right Ascension:
+* Declination:
+* Flux (Inner Aperture):
+* Flux (Outer Aperture):
+* Magnitude (Inner Aperture):
+* Magnitude (Outer Aperture):
+* Magnitude error (Inner Aperture):
+* Magnitude error (Outer Aperture):
 * Flag Value: Less than 5% of all matched sources have differing flag values.
 
 .. note::
@@ -436,37 +437,30 @@ def computeLinearStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose)
 
     diffRA = matchedRA[1, :] - matchedRA[0, :]  # simple difference
     clippedStats = sigma_clipped_stats(diffRA, sigma=sigVal, maxiters=intersVal)
-    pct_1sig = (float(np.shape(np.where(abs(diffRA) <= clippedStats[2]))[1]) / float(np.shape(diffRA)[0])) * 100.0
     sigma_percentages = []
     for sig_val in [1.0, 2.0, 3.0]:
         sigma_percentages.append((float(np.shape(np.where((diffRA >= (clippedStats[0] - sig_val * clippedStats[2])) & (diffRA <= (clippedStats[0] + sig_val * clippedStats[2]))))[1])/float(np.shape(diffRA)[0])) * 100.0)
-    #pct_3sig = ((float(np.shape(np.where(diffRA <= 3.0*clippedStats[2] + clippedStats[0]))[1]) + float(np.shape(np.where(diffRA >= clippedStats[0] - 3.0 * clippedStats[2]))[1]))/float(np.shape(diffRA)[0])) * 100.0
-    pct_five = (float(np.shape(np.where(abs(diffRA) <= 5.0))[1]) / float(np.shape(diffRA)[0])) * 100.0
-    print(3.0 * clippedStats[2] - clippedStats[0],3.0 * clippedStats[2] + clippedStats[0])
-    out_stats = "%11.7f %11.7f  %11.7f  %11.7f  %11.7f " % (clippedStats[0], clippedStats[1], clippedStats[2], pct_five, pct_1sig)
 
-    if np.abs(clippedStats[0]) <= 5.0:  # success condition: sigma-clipped mean less then 5%
+    out_stats = "%11.7f %11.7f  %11.7f  %11.7f  %11.7f " % (clippedStats[0], clippedStats[1], clippedStats[2], sigma_percentages[2], 100.0-sigma_percentages[2])
+
+    if sigma_percentages[2] >=95.0:  # success condition: Greater than or equal to 95% of all difference values within 3-sigma of sigma-clipped mean
         regTestStatus = "OK      "
     else:
         regTestStatus = "FAILURE "
     if ((verbose == True) or (regTestStatus == "FAILURE ")):
         log_output_string_list = []
-        log_output_string_list.append("       Sigma-clipped Statistics; Sigma = {}, # steps = {}".format(sigVal, intersVal))
-        log_output_string_list.append("Sigma-clipped mean........................ {}".format(clippedStats[0]))
-        log_output_string_list.append("Sigma-clipped median...................... {}".format(clippedStats[1]))
-        log_output_string_list.append("Sigma-clipped standard deviation.......... {}".format(clippedStats[2]))
-        log_output_string_list.append("Sigma-clipped mean in units of SD......... {}".format(np.divide(clippedStats[0], clippedStats[2])))
-        log_output_string_list.append("\n")
         log_output_string_list.append("            Non-Clipped Statistics")
+        log_output_string_list.append("Non-clipped minimum....................... {}".format(np.min(diffRA)))
+        log_output_string_list.append("Non-clipped maximum....................... {}".format(np.max(diffRA)))
         log_output_string_list.append("Non-clipped mean.......................... {}".format(np.mean(diffRA)))
         log_output_string_list.append("Non-clipped median........................ {}".format(np.median(diffRA)))
         log_output_string_list.append("Non-clipped standard deviation............ {}".format(np.std(diffRA)))
         log_output_string_list.append(
-            "Non-clipped mean in units of SD........... {}".format(np.divide(np.mean(diffRA), np.std(diffRA))))
-        log_output_string_list.append("Non-clipped minimum....................... {}".format(np.min(diffRA)))
-        log_output_string_list.append("Non-clipped maximum....................... {}".format(np.max(diffRA)))
-        log_output_string_list.append("% all diff values within 1 sigma of 0.0... {}".format(pct_1sig))
-        log_output_string_list.append("% all diff values within 5% of 0.0........ {}".format(pct_five))
+            "Non-clipped mean in units of SD........... {}\n".format(np.divide(np.mean(diffRA), np.std(diffRA))))
+        log_output_string_list.append("       Sigma-clipped Statistics; Sigma = {}, # steps = {}".format(sigVal, intersVal))
+        log_output_string_list.append("Sigma-clipped mean........................ {}".format(clippedStats[0]))
+        log_output_string_list.append("Sigma-clipped median...................... {}".format(clippedStats[1]))
+        log_output_string_list.append("Sigma-clipped standard deviation.......... {}".format(clippedStats[2]))
         for sig_val, pct_val in zip([1.0, 2.0, 3.0], sigma_percentages):
             log_output_string_list.append("% all diff values within {} sigma of mean...{}".format(sig_val,pct_val))
 
@@ -554,7 +548,7 @@ def computeLinearStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose)
             plt.close()
         pdf_files = [plotFileName, stat_file_name]
 
-    log_output_string_list.append("\n")
+    log.info("\n")
 
     return (regTestStatus + out_stats, pdf_files)
 
@@ -1065,9 +1059,9 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     totalPaddedSize = max(lenList) + 3
     log_output_string_list.append("{}{}".format(" " * 35, "REGRESSION TESTING SUMMARY"))
     log_output_string_list.append("-" * (70 + totalPaddedSize))
-    log_output_string_list.append("{}{}".format(" " * (totalPaddedSize + 46), "% within     % within"))
+    log_output_string_list.append("{}{}".format(" " * (totalPaddedSize + 46), "% within     % outside"))
     log_output_string_list.append(
-        "COLUMN{}STATUS   MEAN        MEDIAN       STD DEV     5% of 0.     1 SD of 0.".format(
+        "COLUMN{}STATUS   MEAN        MEDIAN       STD DEV     3\u03C3 of mean   3\u03C3 of mean".format(
             " " * (totalPaddedSize - 6)))
     overallStatus = "OK"
     for colTitle in colTitles:
