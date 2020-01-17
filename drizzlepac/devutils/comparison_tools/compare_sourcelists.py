@@ -395,7 +395,7 @@ def computeFlagStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, 
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
-def computeLinearStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, verbose, plate_scale=None):
+def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, plotfile_prefix, verbose, plate_scale=None):
     """Compute stats on the quantities with differences that can be computed with simple subtraction 
     (X, Y, RA, Dec, Flux, and Magnitude).
 
@@ -407,6 +407,9 @@ def computeLinearStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix
 
     max_diff : float
         Maximum allowable value for comparison test to be declared a success
+
+    x_axis_units : str
+        units to display on plot X-axis title
 
     plotGen : str
         Generate plots?
@@ -512,7 +515,7 @@ def computeLinearStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix
         ax1.axvline(x=clippedStats[0] + 3.0*clippedStats[2], color='k', linestyle=':')
         ax1.axvline(x=clippedStats[0] - 3.0*clippedStats[2], color='k', linestyle=':')
 
-        ax1.set_xlabel("$\Delta %s$" % (xAxisString))
+        ax1.set_xlabel("$\Delta {}$ ({})".format(xAxisString, x_axis_units))
         ax1.set_ylabel("Number of matched sources")
 
         ax2 = ax1.twinx()
@@ -810,8 +813,8 @@ def makeVectorPlot(x, y, plate_scale, plotDest, plotfile_prefix, binThresh=10000
                   color="k")
     plot_title = "Comparision - reference $\Delta X$, $\Delta Y$ values vs. $(X_{ref}, Y_{ref})$ positions\n%s%s" % (binStatus, lowSampleWarning)
     plt.title(plot_title)
-    plt.xlabel(r"$X_{ref}$ (pixels)")
-    plt.ylabel(r"$Y_{ref}$ (pixels)")
+    plt.xlabel(r"$X_{ref}$ image position (pixels)")
+    plt.ylabel(r"$Y_{ref}$ image position (pixels)")
     if plotDest == "screen":
         plt.show()
         plotFileName = ""
@@ -922,6 +925,19 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
                      "STDEV value": 999.0, # TODO: Get actual value
                      "CI": 999.0, # TODO: Get actual value
                      "Source Flagging": 5.0}
+    x_axis_units_dict = {"X Position": "arcseconds",
+                         "Y Position": "arcseconds",
+                         "RA Position" : "arcseconds",
+                         "DEC Position": "arcseconds",
+                         "Flux (Inner Aperture)": "electrons/sec",
+                         "Flux (Outer Aperture)": "electrons/sec",
+                         "Magnitude (Inner Aperture)": "ABMAG",
+                         "Magnitude (Inner Aperture) Error": "ABMAG",
+                         "Magnitude (Outer Aperture)": "ABMAG",
+                         "Magnitude (Outer Aperture) Error": "ABMAG",
+                         "MSKY value": "ABMAG",
+                         "STDEV value": "ABMAG",
+                         "CI": "ABMAG"}
     # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
     refData, compData = slFiles2dataTables(slNames)
     log.info("Valid reference data columns:   {}".format(list(refData.keys())))
@@ -945,7 +961,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "X Position"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose, plate_scale=plate_scale)
         if plotGen == "file":
             pdf_file_list = pdf_files
@@ -956,7 +972,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "Y Position"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose, plate_scale=plate_scale)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -973,7 +989,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "RA Position"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -984,7 +1000,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "DEC Position"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -995,7 +1011,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("FLUX1", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "Flux (Inner Aperture)"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle,
                                                   plotfile_prefix, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1005,7 +1021,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("FLUX2", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "Flux (Outer Aperture)"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle,
                                                   plotfile_prefix, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1016,7 +1032,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("MAGNITUDE1", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Inner Aperture)"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle,
                                                   plotfile_prefix, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1026,7 +1042,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("MERR1", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Inner Aperture) Error"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1036,7 +1052,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("MAGNITUDE2", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Outer Aperture)"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle,
                                                   plotfile_prefix, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1046,7 +1062,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("MERR2", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Outer Aperture) Error"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1057,7 +1073,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("MSKY", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "MSKY value"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1067,7 +1083,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("STDEV", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "STDEV value"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1078,7 +1094,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("CI", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "CI"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
