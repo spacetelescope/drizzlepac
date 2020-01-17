@@ -133,6 +133,7 @@ from PyPDF2 import PdfFileMerger
 
 from drizzlepac.devutils.comparison_tools import starmatch_hist
 from stsci.tools import logutil
+from stwcs import wcsutil
 
 __taskname__ = 'compare_sourcelists'
 
@@ -390,7 +391,7 @@ def computeFlagStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose):
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
-def computeLinearStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose):
+def computeLinearStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, verbose, plate_scale=None):
     """Compute stats on the quantities with differences that can be computed with simple subtraction 
     (X, Y, RA, Dec, Flux, and Magnitude).
 
@@ -411,6 +412,10 @@ def computeLinearStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose)
 
     verbose : bool
         display verbose output?
+
+    plate_scale : float
+        plate scale, in arcseconds/pixel
+
 
     Returns
     -------
@@ -435,7 +440,9 @@ def computeLinearStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose)
     sigVal = 3
     intersVal = 3
 
-    diffRA = matchedRA[1, :] - matchedRA[0, :]  # simple difference
+    diffRA = matchedRA[1, :] - matchedRA[0, :]
+    if plate_scale:  # Convert X and Y differences from pixels to arcseconds
+        diffRA = diffRA * plate_scale
     clippedStats = sigma_clipped_stats(diffRA, sigma=sigVal, maxiters=intersVal)
     sigma_percentages = []
     for sig_val in [1.0, 2.0, 3.0]:
@@ -443,7 +450,7 @@ def computeLinearStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose)
 
     out_stats = "%11.7f %11.7f  %11.7f  %11.7f  %11.7f " % (clippedStats[0], clippedStats[1], clippedStats[2], sigma_percentages[2], 100.0-sigma_percentages[2])
 
-    if sigma_percentages[2] >=95.0:  # success condition: Greater than or equal to 95% of all difference values within 3-sigma of sigma-clipped mean
+    if ((sigma_percentages[2] >=95.0) and (abs(clippedStats[0])) <= max_diff):  # success condition: Greater than or equal to 95% of all difference values within 3-sigma of sigma-clipped mean
         regTestStatus = "OK      "
     else:
         regTestStatus = "FAILURE "
@@ -904,11 +911,15 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     if len(matching_lines_ref) == 0 or len(matching_lines_img) == 0:
         log.critical("*** Comparisons cannot be computed. No matching sources were found. ***")
         return ("ERROR")
+
     # 3: Compute and display statistics on X position differences for matched sources
+    # Get platescale
+    plate_scale = wcsutil.HSTWCS(imgNames[0], ext=('sci', 1)).pscale
+
     matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, plotGen, "X position", plotfile_prefix,
-                                                  verbose)
+        rt_status, pdf_files = computeLinearStats(matched_values, 0.1, plotGen, "X position", plotfile_prefix,
+                                                  verbose, plate_scale=plate_scale)
         if plotGen == "file":
             pdf_file_list = pdf_files
         regressionTestResults["X Position"] = rt_status
@@ -917,8 +928,8 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     # 4: Compute and display statistics on Y position differences for matched sources
     matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, plotGen, "Y position", plotfile_prefix,
-                                                  verbose)
+        rt_status, pdf_files = computeLinearStats(matched_values, 0.1, plotGen, "Y position", plotfile_prefix,
+                                                  verbose, plate_scale=plate_scale)
         if plotGen == "file":
             pdf_file_list += pdf_files
         regressionTestResults["Y Position"] = rt_status
@@ -933,7 +944,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     # 5: Compute and display statistics on RA position differences for matched sources
     matched_values = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, plotGen, "RA position", plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, "RA position", plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -943,7 +954,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     # 6: Compute and display statistics on DEC position differences for matched sources
     matched_values = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, plotGen, "DEC position", plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, "DEC position", plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -953,7 +964,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     # 7: Compute and display statistics on flux differences for matched sources
     matched_values = extractMatchedLines("FLUX1", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, plotGen, "Flux (Inner Aperture)",
+        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, "Flux (Inner Aperture)",
                                                   plotfile_prefix, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -962,7 +973,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
 
     matched_values = extractMatchedLines("FLUX2", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, plotGen, "Flux (Outer Aperture)",
+        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, "Flux (Outer Aperture)",
                                                   plotfile_prefix, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -972,7 +983,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     # 8: Compute and display statistics on magnitude differences for matched sources
     matched_values = extractMatchedLines("MAGNITUDE1", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, plotGen, "Magnitude (Inner Aperture)",
+        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, "Magnitude (Inner Aperture)",
                                                   plotfile_prefix, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -982,7 +993,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("MERR1", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Inner Aperture) Error"
-        rt_status, pdf_files = computeLinearStats(matched_values, plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -991,7 +1002,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
 
     matched_values = extractMatchedLines("MAGNITUDE2", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, plotGen, "Magnitude (Outer Aperture)",
+        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, "Magnitude (Outer Aperture)",
                                                   plotfile_prefix, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1001,7 +1012,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("MERR2", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Outer Aperture) Error"
-        rt_status, pdf_files = computeLinearStats(matched_values, plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1012,7 +1023,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("MSKY", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "MSKY value"
-        rt_status, pdf_files = computeLinearStats(matched_values, plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1022,7 +1033,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("STDEV", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "STDEV value"
-        rt_status, pdf_files = computeLinearStats(matched_values, plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1033,7 +1044,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("CI", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "CI"
-        rt_status, pdf_files = computeLinearStats(matched_values, plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1311,7 +1322,5 @@ if __name__ == "__main__":
 # TODO: fix PEP 8 violations
 # TODO: compute RA and Dec differences properly using astropy.skycoordinate (https://docs.astropy.org/en/stable/api/astropy.coordinates.SkyCoord.html)
 # TODO: Compute combined angular seperation based on both RA and DEC values for a given matched pair, then break it down into seperate componants
-# TODO: Have two test criteria for linear comparisions: 1) <=95% of the differences must be withen 3 sigma of the clipped mean, and 2) column-specific maximum alowable mean differences (this will depend on the column -- x, y, ra and dec could be max mean difference of 0.1 arcsec, magntudes wilud be something different, etc)
-# TODO: Convert X and Y difference values into arcsec based on platescale
 # TODO: Compute Magnitude differences properly
 # TODO: Add flag-value based rejection (good flag bits = 0, 1, and/or 4, ignore lines containing flag bits other than these). This could also be an optional user-specified input.
