@@ -905,19 +905,19 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     pdf_file_list = []
 
     # 0: define dictionary of max allowable mean sigma-clipped difference values
-    max_diff_dict = {"X Position": 0.1,
-                     "Y Position": 0.1,
-                     "RA Position" : 0.1,
-                     "DEC Position": 0.1,
-                     "Flux (Inner Aperture)": 999.0,
-                     "Flux (Outer Aperture)": 999.0,
-                     "Magnitude (Inner Aperture)": 999.0,
-                     "Magnitude (Inner Aperture) Error": 999.0,
-                     "Magnitude (Outer Aperture)": 999.0,
-                     "Magnitude (Outer Aperture) Error": 999.0,
-                     "MSKY value": 999.0,
-                     "STDEV value": 999.0,
-                     "CI": 999.0,
+    max_diff_dict = {"X Position": 0.1, # TODO: Verify value
+                     "Y Position": 0.1, # TODO: Verify value
+                     "RA Position" : 0.1, # TODO: Verify value
+                     "DEC Position": 0.1, # TODO: Verify value
+                     "Flux (Inner Aperture)": 999.0, # TODO: Get actual value
+                     "Flux (Outer Aperture)": 999.0, # TODO: Get actual value
+                     "Magnitude (Inner Aperture)": 999.0, # TODO: Get actual value
+                     "Magnitude (Inner Aperture) Error": 999.0, # TODO: Get actual value
+                     "Magnitude (Outer Aperture)": 999.0, # TODO: Get actual value
+                     "Magnitude (Outer Aperture) Error": 999.0, # TODO: Get actual value
+                     "MSKY value": 999.0, # TODO: Get actual value
+                     "STDEV value": 999.0, # TODO: Get actual value
+                     "CI": 999.0, # TODO: Get actual value
                      "Flag Value": 5.0}
     # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
     refData, compData = slFiles2dataTables(slNames)
