@@ -420,7 +420,7 @@ def computeLinearStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix
     verbose : bool
         display verbose output?
 
-    plate_scale : float
+    plate_scale : float, optional
         plate scale, in arcseconds/pixel
 
 
@@ -471,12 +471,12 @@ def computeLinearStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix
         log_output_string_list.append("Non-clipped standard deviation............ {}".format(np.std(diffRA)))
         log_output_string_list.append(
             "Non-clipped mean in units of SD........... {}\n".format(np.divide(np.mean(diffRA), np.std(diffRA))))
-        log_output_string_list.append("       Sigma-clipped Statistics; Sigma = {}, # steps = {}".format(sigVal, intersVal))
+        log_output_string_list.append("       Sigma-clipped Statistics; \u03C3 = {}, Number of clipping steps = {}".format(sigVal, intersVal))
         log_output_string_list.append("Sigma-clipped mean........................ {}".format(clippedStats[0]))
         log_output_string_list.append("Sigma-clipped median...................... {}".format(clippedStats[1]))
         log_output_string_list.append("Sigma-clipped standard deviation.......... {}".format(clippedStats[2]))
         for sig_val, pct_val in zip([1.0, 2.0, 3.0], sigma_percentages):
-            log_output_string_list.append("% all diff values within {} sigma of mean...{}".format(sig_val,pct_val))
+            log_output_string_list.append("% all diff values within {}\u03C3 of mean....... {}%".format(int(sig_val),pct_val))
 
     log_output_string_list.append("Regression test status.................... {}".format(regTestStatus))
     log_output_string_list.append("\n")
@@ -708,7 +708,7 @@ def getMatchedLists(slNames, imgNames, slLengths, log_level):
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
-def makeVectorPlot(x, y, plotDest, plotfile_prefix, binThresh=10000, binSize=250):
+def makeVectorPlot(x, y, plate_scale, plotDest, plotfile_prefix, binThresh=10000, binSize=250):
     """Generate vector plot of dx and dy values vs. reference (x,y) positions
 
     Parameters
@@ -720,6 +720,9 @@ def makeVectorPlot(x, y, plotDest, plotfile_prefix, binThresh=10000, binSize=250
     y : numpy.ndarray
         A 2 x n sized numpy array. Column 1: matched reference Y values. Column 2: The corresponding matched
         comparision Y values
+
+    plate_scale : float
+        plate scale, in arcseconds/pixel
 
     plotDest : str
         plot destination; screen or file
@@ -738,8 +741,8 @@ def makeVectorPlot(x, y, plotDest, plotfile_prefix, binThresh=10000, binSize=250
     -------
     nothing
     """
-    dx = x[1, :] - x[0, :]
-    dy = y[1, :] - y[0, :]
+    dx = plate_scale * (x[1, :] - x[0, :])
+    dy = plate_scale * (y[1, :] - y[0, :])
     if len(dx) > binThresh:  # if the input list is larger than binThresh, a binned vector plot will be generated.
         binStatus = "%d x %d Binning" % (binSize, binSize)
         log.info("Input list length greater than threshold length value. Generating binned vector plot using %d pixel x %d pixel bins" % (binSize, binSize))
@@ -803,12 +806,12 @@ def makeVectorPlot(x, y, plotDest, plotfile_prefix, binThresh=10000, binSize=250
         Q = plt.quiver(p_x, p_y, p_dx, p_dy, color=color_ra, units="xy")
     else:
         Q = plt.quiver(p_x, p_y, p_dx, p_dy)
-    plt.quiverkey(Q, 0.75, 0.05, plt_scaleValue, r'%5.3f' % (plt_scaleValue), labelpos='S', coordinates='figure',
+    plt.quiverkey(Q, 0.75, 0.05, plt_scaleValue, r'%5.3f"' % (plt_scaleValue), labelpos='S', coordinates='figure',
                   color="k")
     plot_title = "Comparision - reference $\Delta X$, $\Delta Y$ values vs. $(X_{ref}, Y_{ref})$ positions\n%s%s" % (binStatus, lowSampleWarning)
     plt.title(plot_title)
-    plt.xlabel(r"$X_{ref}$")
-    plt.ylabel(r"$Y_{ref}$")
+    plt.xlabel(r"$X_{ref}$ (pixels)")
+    plt.ylabel(r"$Y_{ref}$ (pixels)")
     if plotDest == "screen":
         plt.show()
         plotFileName = ""
@@ -918,7 +921,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
                      "MSKY value": 999.0, # TODO: Get actual value
                      "STDEV value": 999.0, # TODO: Get actual value
                      "CI": 999.0, # TODO: Get actual value
-                     "Flag Value": 5.0}
+                     "Source Flagging": 5.0}
     # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
     refData, compData = slFiles2dataTables(slNames)
     log.info("Valid reference data columns:   {}".format(list(refData.keys())))
@@ -961,7 +964,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
         colTitles.append(formalTitle)
         matchedYValues = matched_values.copy()
         if plotGen != "none":
-            pdf_file_name = makeVectorPlot(matchedXValues, matchedYValues, plotGen, plotfile_prefix)
+            pdf_file_name = makeVectorPlot(matchedXValues, matchedYValues, plate_scale, plotGen, plotfile_prefix)
             if plotGen == "file":
                 pdf_file_list.append(pdf_file_name)
     if debugMode:
@@ -1086,8 +1089,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "Source Flagging"
-        rt_status, flag_pdf_list = computeFlagStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
-                                                    verbose)
+        rt_status, flag_pdf_list = computeFlagStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, verbose)
         if plotGen == "file":
             pdf_file_list += flag_pdf_list
         regressionTestResults[formalTitle] = rt_status
