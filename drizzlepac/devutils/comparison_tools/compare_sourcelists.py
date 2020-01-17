@@ -605,6 +605,39 @@ def deconstruct_flag(flagval):
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+def make_flag_mask(matchedRA):
+    """
+    Parameters
+    ----------
+    matchedRA : numpy.ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched reference values.
+        Column 2: The corresponding matched comparision values
+
+    Returns
+    -------
+    refFlag_list : list
+        list of reference sourcelist flag values broken down by bit
+
+    compFlag_list : list
+        list of comparison sourcelist flag values broken down by bit
+
+    bitmask : list
+        list of logical True/False values. True = good flag values, values will be included in comparisons;
+        False = bad flag values found, values will be excluded from comparisons
+    """
+    refFlag_list = []
+    compFlag_list = []
+    combo_list = []
+    bitmask = []
+    for refFlagVal, compFlagVal in zip(matchedRA[0], matchedRA[1]):
+        refFlag_list.append(deconstruct_flag(refFlagVal))
+        compFlag_list.append(deconstruct_flag(compFlagVal))
+
+        bitmask.append(True) #TODO: PLACEHOLDER
+    pdb.set_trace()
+
+    return refFlag_list, compFlag_list, bitmask
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def extractMatchedLines(col2get, refData, compData, refLines, compLines):
     """Extracts only matching lines of data for a specific column of refData and compData. Returns empty list if the
     specified column is not found in both tables.
@@ -866,7 +899,7 @@ def round2ArbatraryBase(value, direction, roundingBase):
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
-def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, verbose=False,
+def comparesourcelists(slNames, imgNames, good_flag_bits = np.ones(9, dtype=int), plotGen=None, plotfile_prefix=None, verbose=False,
                        log_level=logutil.logging.NOTSET, debugMode=False):
     """Main calling subroutine to compare sourcelists.
 
@@ -877,6 +910,9 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
 
     imgNames : list
         optional list of input images that starmatch_hist will use to improve sourcelist matching
+
+    good_flag_bits : list, optional
+        list of "good" bits that will be used mask matched sources based on flag values
 
     plotfile_prefix : str, optional
         text string that will prepend the plot files generated if plots are written to files
@@ -953,6 +989,10 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     if len(matching_lines_ref) == 0 or len(matching_lines_img) == 0:
         log.critical("*** Comparisons cannot be computed. No matching sources were found. ***")
         return ("ERROR")
+
+    # 2: create mask based on flag values
+    matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
+    refFlag_list, compFlag_list, bitmask = make_flag_mask(matched_values)
 
     # 3: Compute and display statistics on X position differences for matched sources
     # Get platescale
@@ -1343,6 +1383,7 @@ if __name__ == "__main__":
     # optional input arguments
     PARSER.add_argument('-d', '--debugMode', required=False, choices=["True", "False"], default="False",
                         help="Turn on debug mode? Default value is False.")
+    PARSER.add_argument('-g', '--goodFlagSum', required=False, default=None, help = "a sum of individual bit values (i.e. 0 + 1 + 2 + 4 = 7) that will be considered 'good'. If any of the flag bits for a given set of matched sources contain bits not specified here, the pair will be ignored by the comparisions. See XXX for flag bit definitions. (NOTE: The default value of logical None will be interperated as all bits are good, so no sources will be excluded)")
     PARSER.add_argument('-i', '--imageNames', required=False, nargs=2,
                         help='A space-separated list of the fits images that were used to generate the input sourcelists. The first image corresponds to the first listed sourcelist, and so in. These will be used to improve the sourcelist alignment and matching.')
     PARSER.add_argument('-p', '--plotGen', required=False, choices=["screen", "file", "none"], default="none",
@@ -1364,7 +1405,13 @@ if __name__ == "__main__":
     else:
         ARGS.debugMode = False
 
-    runStatus = comparesourcelists(ARGS.sourcelistNames, ARGS.imageNames, plotGen=ARGS.plotGen,
+    if ARGS.goodFlagSum:
+        good_flag_bits = deconstruct_flag(ARGS.goodFlagSum)
+        good_flag_bits[0] = 1
+    else:
+        good_flag_bits = np.ones(9, dtype=int)
+
+    runStatus = comparesourcelists(ARGS.sourcelistNames, ARGS.imageNames, good_flag_bits = good_flag_bits, plotGen=ARGS.plotGen,
                                    verbose=ARGS.verbose, log_level=logutil.logging.INFO, debugMode=ARGS.debugMode,
                                    plotfile_prefix=ARGS.plotfile_prefix_string)
 
