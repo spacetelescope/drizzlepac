@@ -182,7 +182,7 @@ def check_match_quality(matched_x_list, matched_y_list):
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
-def computeFlagStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose):
+def computeFlagStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, verbose):
     """Compute and report statistics on the differences in flagging.
 
     Parameters
@@ -190,6 +190,10 @@ def computeFlagStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose):
     matchedRA : numpy.ndarray
         A 2 x len(refLines) sized numpy array. Column 1: matched reference values.
         Column 2: The corresponding matched comparision values
+
+    max_diff : float
+        Maximum allowable percentage of all matched sources with differences in their flag values for comparison to be
+        declared a success
 
     plotGen : bool
         Generate plots and display them to the screen (True/False)?
@@ -240,7 +244,7 @@ def computeFlagStats(matchedRA, plotGen, plot_title, plotfile_prefix, verbose):
         if np.array_equal(refFlagRA, compFlagRA):  # if there are absolutely no differences
             unchangedFlagBreakdown += refFlagRA
     regTestStatus = "OK     "
-    if pct_changed > 5.0:  # Failure criteria: Greater than 5% of all matched sources have differences in their flag values
+    if pct_changed > max_diff:
         regTestStatus = "FAILURE"
     log_output_string_list = []
 
@@ -398,8 +402,11 @@ def computeLinearStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix
     Parameters
     ----------  
     matchedRA : numpy.ndarray
-    A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The corresponding matched
+        A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The corresponding matched
     comparision values
+
+    max_diff : float
+        Maximum allowable value for comparison test to be declared a success
 
     plotGen : str
         Generate plots?
@@ -896,6 +903,22 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     regressionTestResults = {}
     colTitles = []
     pdf_file_list = []
+
+    # 0: define dictionary of max allowable mean sigma-clipped difference values
+    max_diff_dict = {"X Position": 0.1,
+                     "Y Position": 0.1,
+                     "RA Position" : 0.1,
+                     "DEC Position": 0.1,
+                     "Flux (Inner Aperture)": 999.0,
+                     "Flux (Outer Aperture)": 999.0,
+                     "Magnitude (Inner Aperture)": 999.0,
+                     "Magnitude (Inner Aperture) Error": 999.0,
+                     "Magnitude (Outer Aperture)": 999.0,
+                     "Magnitude (Outer Aperture) Error": 999.0,
+                     "MSKY value": 999.0,
+                     "STDEV value": 999.0,
+                     "CI": 999.0,
+                     "Flag Value": 5.0}
     # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
     refData, compData = slFiles2dataTables(slNames)
     log.info("Valid reference data columns:   {}".format(list(refData.keys())))
@@ -918,22 +941,24 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
 
     matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, 0.1, plotGen, "X position", plotfile_prefix,
+        formalTitle = "X Position"
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose, plate_scale=plate_scale)
         if plotGen == "file":
             pdf_file_list = pdf_files
-        regressionTestResults["X Position"] = rt_status
-        colTitles.append("X Position")
+        regressionTestResults[formalTitle] = rt_status
+        colTitles.append(formalTitle)
         matchedXValues = matched_values.copy()
     # 4: Compute and display statistics on Y position differences for matched sources
     matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, 0.1, plotGen, "Y position", plotfile_prefix,
+        formalTitle = "Y Position"
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose, plate_scale=plate_scale)
         if plotGen == "file":
             pdf_file_list += pdf_files
-        regressionTestResults["Y Position"] = rt_status
-        colTitles.append("Y Position")
+        regressionTestResults[formalTitle] = rt_status
+        colTitles.append(formalTitle)
         matchedYValues = matched_values.copy()
         if plotGen != "none":
             pdf_file_name = makeVectorPlot(matchedXValues, matchedYValues, plotGen, plotfile_prefix)
@@ -944,56 +969,61 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     # 5: Compute and display statistics on RA position differences for matched sources
     matched_values = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, "RA position", plotfile_prefix,
+        formalTitle = "RA Position"
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
-        regressionTestResults["RA Position"] = rt_status
-        colTitles.append("RA Position")
+        regressionTestResults[formalTitle] = rt_status
+        colTitles.append(formalTitle)
 
     # 6: Compute and display statistics on DEC position differences for matched sources
     matched_values = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, "DEC position", plotfile_prefix,
+        formalTitle = "DEC Position"
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
-        regressionTestResults["DEC Position"] = rt_status
-        colTitles.append("DEC Position")
+        regressionTestResults[formalTitle] = rt_status
+        colTitles.append(formalTitle)
 
     # 7: Compute and display statistics on flux differences for matched sources
     matched_values = extractMatchedLines("FLUX1", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, "Flux (Inner Aperture)",
+        formalTitle = "Flux (Inner Aperture)"
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle,
                                                   plotfile_prefix, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
-        regressionTestResults["Flux (Inner Aperture)"] = rt_status
-        colTitles.append("Flux (Inner Aperture)")
+        regressionTestResults[formalTitle] = rt_status
+        colTitles.append(formalTitle)
 
     matched_values = extractMatchedLines("FLUX2", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, "Flux (Outer Aperture)",
+        formalTitle = "Flux (Outer Aperture)"
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle,
                                                   plotfile_prefix, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
-        regressionTestResults["Flux (Outer Aperture)"] = rt_status
-        colTitles.append("Flux (Outer Aperture)")
+        regressionTestResults[formalTitle] = rt_status
+        colTitles.append(formalTitle)
 
     # 8: Compute and display statistics on magnitude differences for matched sources
     matched_values = extractMatchedLines("MAGNITUDE1", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, "Magnitude (Inner Aperture)",
+        formalTitle = "Magnitude (Inner Aperture)"
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle,
                                                   plotfile_prefix, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
-        regressionTestResults["Magnitude (Inner Aperture)"] = rt_status
-        colTitles.append("Magnitude (Inner Aperture)")
+        regressionTestResults[formalTitle] = rt_status
+        colTitles.append(formalTitle)
 
     matched_values = extractMatchedLines("MERR1", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Inner Aperture) Error"
-        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1002,17 +1032,18 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
 
     matched_values = extractMatchedLines("MAGNITUDE2", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, "Magnitude (Outer Aperture)",
+        formalTitle = "Magnitude (Outer Aperture)"
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle,
                                                   plotfile_prefix, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
-        regressionTestResults["Magnitude (Outer Aperture)"] = rt_status
-        colTitles.append("Magnitude (Outer Aperture)")
+        regressionTestResults[formalTitle] = rt_status
+        colTitles.append(formalTitle)
 
     matched_values = extractMatchedLines("MERR2", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Outer Aperture) Error"
-        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1023,7 +1054,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("MSKY", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "MSKY value"
-        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1033,7 +1064,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("STDEV", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "STDEV value"
-        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1044,7 +1075,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     matched_values = extractMatchedLines("CI", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "CI"
-        rt_status, pdf_files = computeLinearStats(matched_values, 999.0, plotGen, formalTitle, plotfile_prefix,
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
@@ -1054,12 +1085,13 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     # 11: Compute and display statistics on differences in flag populations for matched sources
     matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
-        rt_status, flag_pdf_list = computeFlagStats(matched_values, plotGen, "Source Flagging", plotfile_prefix,
+        formalTitle = "Source Flagging"
+        rt_status, flag_pdf_list = computeFlagStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                     verbose)
         if plotGen == "file":
             pdf_file_list += flag_pdf_list
-        regressionTestResults["Source Flagging"] = rt_status
-        colTitles.append("Source Flagging")
+        regressionTestResults[formalTitle] = rt_status
+        colTitles.append(formalTitle)
 
     log.info("\n")
     log_output_string_list = []
@@ -1070,7 +1102,7 @@ def comparesourcelists(slNames, imgNames, plotGen=None, plotfile_prefix=None, ve
     totalPaddedSize = max(lenList) + 3
     log_output_string_list.append("{}{}".format(" " * 35, "REGRESSION TESTING SUMMARY"))
     log_output_string_list.append("-" * (70 + totalPaddedSize))
-    log_output_string_list.append("{}{}".format(" " * (totalPaddedSize + 46), "% within     % outside"))
+    log_output_string_list.append("{}{}".format(" " * (totalPaddedSize + 46), "% within     % beyond"))
     log_output_string_list.append(
         "COLUMN{}STATUS   MEAN        MEDIAN       STD DEV     3\u03C3 of mean   3\u03C3 of mean".format(
             " " * (totalPaddedSize - 6)))
