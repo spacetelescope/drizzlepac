@@ -611,38 +611,52 @@ def deconstruct_flag(flagval):
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
-def make_flag_mask(matchedRA):
+def make_flag_mask(matched_flag_values, good_flag_sum):
     """
     Parameters
     ----------
-    matchedRA : numpy.ndarray
+    matched_flag_values : numpy.ndarray
         A 2 x len(refLines) sized numpy array. Column 1: matched reference values.
         Column 2: The corresponding matched comparision values
 
+    good_flag_sum : int
+        sum of flag bit values that should be considered "good" for masking purposes
+
     Returns
     -------
-    refFlag_list : list
+    full_refFlag_list : list
         list of reference sourcelist flag values broken down by bit
 
-    compFlag_list : list
+    full_compFlag_list : list
         list of comparison sourcelist flag values broken down by bit
 
     bitmask : list
-        list of logical True/False values. True = good flag values, values will be included in comparisons;
-        False = bad flag values found, values will be excluded from comparisons
+        list of logical True/False values. False = good flag values, values will be included in comparisons;
+        True = bad flag values found, values will be excluded from comparisons
     """
-    refFlag_list = []
-    compFlag_list = []
-    combo_list = []
-    bitmask = []
-    for refFlagVal, compFlagVal in zip(matchedRA[0], matchedRA[1]):
-        refFlag_list.append(deconstruct_flag(refFlagVal))
-        compFlag_list.append(deconstruct_flag(compFlagVal))
+    full_refFlag_list = []
+    full_compFlag_list = []
+    bitmask = np.full(len(matched_flag_values[0]),0,dtype=bool)
+    if good_flag_sum != 255:
+        good_bit_list = deconstruct_flag(good_flag_sum) # break good bit sum into list of componant bits
+        good_bit_list[0] = 1
+        bad_bit_list = np.invert(good_bit_list.astype(bool)) # invert good bit list to make bad bit list
+    ctr = 0
+    for refFlagVal, compFlagVal in zip(matched_flag_values[0], matched_flag_values[1]):
+        refFlag_list = deconstruct_flag(refFlagVal) # break ref flag bit sum into list of componant bits
+        full_refFlag_list.append(refFlag_list)
+        compFlag_list = deconstruct_flag(compFlagVal) # break comp flag bit sum into list of componant bits
+        full_compFlag_list.append(compFlag_list)
+        if good_flag_sum != 255:
+            merged_flag_val = np.logical_or(refFlag_list, compFlag_list) # merge comp and ref flag lists
+            bitmask[ctr]= np.any(np.logical_and(merged_flag_val,bad_bit_list)) # generate mask value by checking to see if any of the bad bits are found in the merged comp+ref bit list
 
-        bitmask.append(True) #TODO: PLACEHOLDER
-    # pdb.set_trace()
+        ctr+=1
 
-    return refFlag_list, compFlag_list, bitmask
+    masked_index_list = np.where(bitmask == True)
+    log.info("{} of {} ({} %) values masked.".format(np.shape(masked_index_list)[1],ctr,100.0*(float(np.shape(masked_index_list)[1])/float(ctr))))
+    pdb.set_trace()
+    return full_refFlag_list, full_compFlag_list, bitmask
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def extractMatchedLines(col2get, refData, compData, refLines, compLines):
     """Extracts only matching lines of data for a specific column of refData and compData. Returns empty list if the
@@ -905,7 +919,7 @@ def round2ArbatraryBase(value, direction, roundingBase):
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
-def comparesourcelists(slNames, imgNames, good_flag_bits = np.ones(9, dtype=int), plotGen=None, plotfile_prefix=None, verbose=False,
+def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plotfile_prefix=None, verbose=False,
                        log_level=logutil.logging.NOTSET, debugMode=False):
     """Main calling subroutine to compare sourcelists.
 
@@ -917,8 +931,8 @@ def comparesourcelists(slNames, imgNames, good_flag_bits = np.ones(9, dtype=int)
     imgNames : list
         optional list of input images that starmatch_hist will use to improve sourcelist matching
 
-    good_flag_bits : list, optional
-        list of "good" bits that will be used mask matched sources based on flag values
+    good_flag_sum : list, optional
+        sum of "good" bits that will be used mask matched sources based on flag values
 
     plotfile_prefix : str, optional
         text string that will prepend the plot files generated if plots are written to files
@@ -998,7 +1012,7 @@ def comparesourcelists(slNames, imgNames, good_flag_bits = np.ones(9, dtype=int)
 
     # 2: create mask based on flag values
     matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
-    refFlag_list, compFlag_list, bitmask = make_flag_mask(matched_values)
+    refFlag_list, compFlag_list, bitmask = make_flag_mask(matched_values, good_flag_sum)
 
     # 3: Compute and display statistics on X position differences for matched sources
     # Get platescale
@@ -1389,7 +1403,7 @@ if __name__ == "__main__":
     # optional input arguments
     PARSER.add_argument('-d', '--debugMode', required=False, choices=["True", "False"], default="False",
                         help="Turn on debug mode? Default value is False.")
-    PARSER.add_argument('-g', '--goodFlagSum', required=False, default=None, help = "a sum of individual bit values (i.e. 0 + 1 + 2 + 4 = 7) that will be considered 'good'. If any of the flag bits for a given set of matched sources contain bits not specified here, the pair will be ignored by the comparisions. See XXX for flag bit definitions. (NOTE: The default value of logical None will be interperated as all bits are good, so no sources will be excluded)")
+    PARSER.add_argument('-g', '--goodFlagSum', required=False, default=255, help = "a sum of individual bit values (i.e. 0 + 1 + 2 + 4 = 7) that will be considered 'good'. If any of the flag bits for a given set of matched sources contain bits not specified here, the pair will be ignored by the comparisions. See XXX for flag bit definitions. (NOTE: The default value of 255 will be interperated as all bits are good, so no sources will be excluded)")
     PARSER.add_argument('-i', '--imageNames', required=False, nargs=2,
                         help='A space-separated list of the fits images that were used to generate the input sourcelists. The first image corresponds to the first listed sourcelist, and so in. These will be used to improve the sourcelist alignment and matching.')
     PARSER.add_argument('-p', '--plotGen', required=False, choices=["screen", "file", "none"], default="none",
@@ -1417,7 +1431,7 @@ if __name__ == "__main__":
     else:
         good_flag_bits = np.ones(9, dtype=int)
 
-    runStatus = comparesourcelists(ARGS.sourcelistNames, ARGS.imageNames, good_flag_bits = good_flag_bits, plotGen=ARGS.plotGen,
+    runStatus = comparesourcelists(ARGS.sourcelistNames, ARGS.imageNames, good_flag_sum = ARGS.goodFlagSum, plotGen=ARGS.plotGen,
                                    verbose=ARGS.verbose, log_level=logutil.logging.INFO, debugMode=ARGS.debugMode,
                                    plotfile_prefix=ARGS.plotfile_prefix_string)
 
