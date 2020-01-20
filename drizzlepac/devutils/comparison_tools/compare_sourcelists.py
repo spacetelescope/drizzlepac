@@ -182,7 +182,7 @@ def check_match_quality(matched_x_list, matched_y_list):
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
-def computeFlagStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, verbose):
+def computeFlagStats(matchedRA, refFlag_list, compFlag_list, max_diff, plotGen, plot_title, plotfile_prefix, verbose):
     """Compute and report statistics on the differences in flagging.
 
     Parameters
@@ -190,6 +190,14 @@ def computeFlagStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, 
     matchedRA : numpy.ndarray
         A 2 x len(refLines) sized numpy array. Column 1: matched reference values.
         Column 2: The corresponding matched comparision values
+
+    refFlag_list  : list
+        Reference sourcelist flag value broken down into it's componant bits. a 9-element numpy array of 0s and 1s. Each element of the array represents the presence of a particular
+        bit value (element 0 = bit 0, element 1 = bit 1, ..., element 3 = bit 4 and so on...)
+
+    compFlag_list  : list
+        Comparison sourcelist flag value broken down into it's componant bits. a 9-element numpy array of 0s and 1s. Each element of the array represents the presence of a particular
+        bit value (element 0 = bit 0, element 1 = bit 1, ..., element 3 = bit 4 and so on...)
 
     max_diff : float
         Maximum allowable percentage of all matched sources with differences in their flag values for comparison to be
@@ -228,11 +236,9 @@ def computeFlagStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, 
     unchangedFlagBreakdown = np.zeros(9, dtype=int)
     on_off_FlagFlips = np.zeros(9, dtype=int)
     off_on_FlagFlips = np.zeros(9, dtype=int)
-    for refFlagVal, compFlagVal in zip(matchedRA[0], matchedRA[1]):
+    for refFlagRA, compFlagRA in zip(refFlag_list, compFlag_list):
         # break down each flag value into component bit values, add values to totals
-        refFlagRA = deconstruct_flag(refFlagVal)
         refFlagBreakdown += refFlagRA
-        compFlagRA = deconstruct_flag(compFlagVal)
         compFlagBreakdown += compFlagRA
         # find differences in flagging, total up which bits were turned on, which were turned off.
         diffFlagRA = compFlagRA - refFlagRA
@@ -634,7 +640,7 @@ def make_flag_mask(matchedRA):
         compFlag_list.append(deconstruct_flag(compFlagVal))
 
         bitmask.append(True) #TODO: PLACEHOLDER
-    pdb.set_trace()
+    # pdb.set_trace()
 
     return refFlag_list, compFlag_list, bitmask
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
@@ -1145,7 +1151,7 @@ def comparesourcelists(slNames, imgNames, good_flag_bits = np.ones(9, dtype=int)
     matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
     if len(matched_values) > 0:
         formalTitle = "Source Flagging"
-        rt_status, flag_pdf_list = computeFlagStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, verbose)
+        rt_status, flag_pdf_list = computeFlagStats(matched_values, refFlag_list, compFlag_list, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, verbose)
         if plotGen == "file":
             pdf_file_list += flag_pdf_list
         regressionTestResults[formalTitle] = rt_status
