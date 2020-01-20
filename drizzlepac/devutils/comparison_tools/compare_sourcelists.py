@@ -630,9 +630,8 @@ def make_flag_mask(matched_flag_values, good_flag_sum):
     full_compFlag_list : list
         list of comparison sourcelist flag values broken down by bit
 
-    bitmask : list
-        list of logical True/False values. False = good flag values, values will be included in comparisons;
-        True = bad flag values found, values will be excluded from comparisons
+    masked_index_list : numpy list
+        list the array index values to mask
     """
     full_refFlag_list = []
     full_compFlag_list = []
@@ -655,10 +654,9 @@ def make_flag_mask(matched_flag_values, good_flag_sum):
 
     masked_index_list = np.where(bitmask == True)
     log.info("{} of {} ({} %) values masked.".format(np.shape(masked_index_list)[1],ctr,100.0*(float(np.shape(masked_index_list)[1])/float(ctr))))
-    pdb.set_trace()
     return full_refFlag_list, full_compFlag_list, bitmask
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
-def extractMatchedLines(col2get, refData, compData, refLines, compLines):
+def extractMatchedLines(col2get, refData, compData, refLines, compLines, bitmask=[]):
     """Extracts only matching lines of data for a specific column of refData and compData. Returns empty list if the
     specified column is not found in both tables.
 
@@ -690,6 +688,10 @@ def extractMatchedLines(col2get, refData, compData, refLines, compLines):
         matching_refData = refData[col2get][refLines].data
         matching_compData = compData[col2get][compLines].data
         return_ra = np.stack((matching_refData, matching_compData))
+    if bitmask != []:
+        return_ra.mask = bitmask.astype(int)
+        return_ra = return_ra.compressed()
+        pdb.set_trace()
     return (return_ra)
 
 
@@ -1018,9 +1020,10 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     # Get platescale
     plate_scale = wcsutil.HSTWCS(imgNames[0], ext=('sci', 1)).pscale
 
-    matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img)
+    matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "X Position"
+        pdb.set_trace()
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose, plate_scale=plate_scale)
         if plotGen == "file":
@@ -1029,7 +1032,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         colTitles.append(formalTitle)
         matchedXValues = matched_values.copy()
     # 4: Compute and display statistics on Y position differences for matched sources
-    matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img)
+    matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "Y Position"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
@@ -1046,7 +1049,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     if debugMode:
         check_match_quality(matchedXValues, matchedYValues)
     # 5: Compute and display statistics on RA position differences for matched sources
-    matched_values = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img)
+    matched_values = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "RA Position"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
@@ -1057,7 +1060,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         colTitles.append(formalTitle)
 
     # 6: Compute and display statistics on DEC position differences for matched sources
-    matched_values = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img)
+    matched_values = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "DEC Position"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
@@ -1068,7 +1071,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         colTitles.append(formalTitle)
 
     # 7: Compute and display statistics on flux differences for matched sources
-    matched_values = extractMatchedLines("FLUX1", refData, compData, matching_lines_ref, matching_lines_img)
+    matched_values = extractMatchedLines("FLUX1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "Flux (Inner Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1078,7 +1081,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    matched_values = extractMatchedLines("FLUX2", refData, compData, matching_lines_ref, matching_lines_img)
+    matched_values = extractMatchedLines("FLUX2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "Flux (Outer Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1089,7 +1092,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         colTitles.append(formalTitle)
 
     # 8: Compute and display statistics on magnitude differences for matched sources
-    matched_values = extractMatchedLines("MAGNITUDE1", refData, compData, matching_lines_ref, matching_lines_img)
+    matched_values = extractMatchedLines("MAGNITUDE1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Inner Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1099,7 +1102,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    matched_values = extractMatchedLines("MERR1", refData, compData, matching_lines_ref, matching_lines_img)
+    matched_values = extractMatchedLines("MERR1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Inner Aperture) Error"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
@@ -1109,7 +1112,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    matched_values = extractMatchedLines("MAGNITUDE2", refData, compData, matching_lines_ref, matching_lines_img)
+    matched_values = extractMatchedLines("MAGNITUDE2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Outer Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1119,7 +1122,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    matched_values = extractMatchedLines("MERR2", refData, compData, matching_lines_ref, matching_lines_img)
+    matched_values = extractMatchedLines("MERR2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Outer Aperture) Error"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
@@ -1130,7 +1133,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         colTitles.append(formalTitle)
 
     # 9: Compute and display statistics on differences in background sky values
-    matched_values = extractMatchedLines("MSKY", refData, compData, matching_lines_ref, matching_lines_img)
+    matched_values = extractMatchedLines("MSKY", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "MSKY value"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
@@ -1140,7 +1143,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    matched_values = extractMatchedLines("STDEV", refData, compData, matching_lines_ref, matching_lines_img)
+    matched_values = extractMatchedLines("STDEV", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "STDEV value"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
@@ -1151,7 +1154,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         colTitles.append(formalTitle)
 
     # 10: Compute and display statistics on differences in concentration index  for matched sources
-    matched_values = extractMatchedLines("CI", refData, compData, matching_lines_ref, matching_lines_img)
+    matched_values = extractMatchedLines("CI", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "CI"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
@@ -1162,7 +1165,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         colTitles.append(formalTitle)
 
     # 11: Compute and display statistics on differences in flag populations for matched sources
-    matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
+    matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "Source Flagging"
         rt_status, flag_pdf_list = computeFlagStats(matched_values, refFlag_list, compFlag_list, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, verbose)
