@@ -677,6 +677,9 @@ def extractMatchedLines(col2get, refData, compData, refLines, compLines, bitmask
     compLines : numpy.ndarray
         List of matching compData line numbers
 
+    bitmask : numpy.ndarray, optional
+        list of True/False values where False corresponds to values to keep, and True corresponds to values to remove
+
     Returns
     -------
     return_ra : numpy ndarray
@@ -687,15 +690,18 @@ def extractMatchedLines(col2get, refData, compData, refLines, compLines, bitmask
     if col2get in list(refData.keys()) and col2get in list(compData.keys()):
         matching_refData = refData[col2get][refLines].data
         matching_compData = compData[col2get][compLines].data
+        if bitmask != []:
+            bitmask = bitmask.astype(int)
+            matching_refData = np.ma.array(matching_refData, mask = bitmask)
+            matching_compData = np.ma.array(matching_compData, mask = bitmask)
+            matching_refData = matching_refData.compressed()
+            matching_compData = matching_compData.compressed()
         return_ra = np.stack((matching_refData, matching_compData))
-    if bitmask != []:
-        return_ra.mask = bitmask.astype(int)
-        return_ra = return_ra.compressed()
-        pdb.set_trace()
-    return (return_ra)
+    return return_ra
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+
 def getMatchedLists(slNames, imgNames, slLengths, log_level):
     """run starmatch_hist to get the indices of matching sources that are common to both input source catalogs
 
@@ -1023,7 +1029,6 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "X Position"
-        pdb.set_trace()
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
                                                   verbose, plate_scale=plate_scale)
         if plotGen == "file":
