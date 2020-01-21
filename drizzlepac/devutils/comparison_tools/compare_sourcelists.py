@@ -126,7 +126,9 @@ import sys
 
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
+from astropy.coordinates import SkyCoord
 from astropy.table import Table
+
 import matplotlib.pyplot as plt
 import numpy as np
 from PyPDF2 import PdfFileMerger
@@ -439,24 +441,27 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
         overall test result and statistics
     """
     log.info(">>>>>> Comparision - reference sourcelist {} absolute differences <<<<<<".format(plot_title))
-    # remove any "inf" or "nan" values in matchedRA.
-    nanIdx = np.where(np.isnan(matchedRA) == True)[1]
-    if len(nanIdx) > 0:
-        if verbose:
-            log.info("{} np.nan values will be removed from input list. New input list contains {} values.".format(len(nanIdx), len(matchedRA[0, :]) - len(nanIdx)))
-        matchedRA = np.delete(matchedRA, nanIdx, axis=1)
+    if plot_title != "RA_DEC Positions":
+        # remove any "inf" or "nan" values in matchedRA.
+        nanIdx = np.where(np.isnan(matchedRA) == True)[1]
+        if len(nanIdx) > 0:
+            if verbose:
+                log.info("{} np.nan values will be removed from input list. New input list contains {} values.".format(len(nanIdx), len(matchedRA[0, :]) - len(nanIdx)))
+            matchedRA = np.delete(matchedRA, nanIdx, axis=1)
 
-    infIdx = np.where(np.isinf(matchedRA) == True)[1]
-    if len(infIdx) > 0:
-        if verbose:
-            log.info("{} np.inf values will be removed from input list. New input list contains {} values.".format(len(infIdx), len(matchedRA[0, :]) - len(infIdx)))
-        matchedRA = np.delete(matchedRA, infIdx, axis=1)
+        infIdx = np.where(np.isinf(matchedRA) == True)[1]
+        if len(infIdx) > 0:
+            if verbose:
+                log.info("{} np.inf values will be removed from input list. New input list contains {} values.".format(len(infIdx), len(matchedRA[0, :]) - len(infIdx)))
+            matchedRA = np.delete(matchedRA, infIdx, axis=1)
 
     # 'sigma' and 'iters' input values used for various np.sigma_clipped_stats() runs
     sigVal = 3
     intersVal = 3
-
-    diffRA = matchedRA[1, :] - matchedRA[0, :]
+    if plot_title == "RA_DEC Positions":
+        diffRA = matchedRA[1].separation(matchedRA[0]).arcsec
+    else:
+        diffRA = matchedRA[1, :] - matchedRA[0, :]
     if plate_scale:  # Convert X and Y differences from pixels to arcseconds
         diffRA = diffRA * plate_scale
     clippedStats = sigma_clipped_stats(diffRA, sigma=sigVal, maxiters=intersVal)
@@ -977,8 +982,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     # 0: define dictionary of max allowable mean sigma-clipped difference values
     max_diff_dict = {"X Position": 0.1, # TODO: Verify value
                      "Y Position": 0.1, # TODO: Verify value
-                     "RA Position" : 0.1, # TODO: Verify value
-                     "DEC Position": 0.1, # TODO: Verify value
+                     "RA_DEC Positions" : 0.1, # TODO: Verify value
                      "Flux (Inner Aperture)": 999.0, # TODO: Get actual value
                      "Flux (Outer Aperture)": 999.0, # TODO: Get actual value
                      "Magnitude (Inner Aperture)": 999.0, # TODO: Get actual value
@@ -991,8 +995,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
                      "Source Flagging": 5.0}
     x_axis_units_dict = {"X Position": "arcseconds",
                          "Y Position": "arcseconds",
-                         "RA Position" : "arcseconds",
-                         "DEC Position": "arcseconds",
+                         "RA_DEC Positions" : "arcseconds",
                          "Flux (Inner Aperture)": "electrons/sec",
                          "Flux (Outer Aperture)": "electrons/sec",
                          "Magnitude (Inner Aperture)": "ABMAG",
@@ -1053,27 +1056,24 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
                 pdf_file_list.append(pdf_file_name)
     if debugMode:
         check_match_quality(matchedXValues, matchedYValues)
-    # 5: Compute and display statistics on RA position differences for matched sources
-    matched_values = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if len(matched_values) > 0:
-        formalTitle = "RA Position"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
-                                                  verbose)
+
+    # 5: Compute and display statistics on RA/Dec position differences for matched sources
+    matched_values_ra = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    matched_values_dec = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img,bitmask=bitmask)
+    if len(matched_values_ra) > 0 and len(matched_values_ra) == len(matched_values_dec):
+        ref_frame = fits.getval(imgNames[0],"radesys",ext=('sci', 1)).lower()
+        comp_frame = fits.getval(imgNames[1],"radesys",ext=('sci', 1)).lower()
+        matched_values_ref = SkyCoord(matched_values_ra[0,:],matched_values_dec[0,:], frame=comp_frame, unit="deg")
+        matched_values_comp = SkyCoord(matched_values_ra[1,:],matched_values_dec[1,:], frame=ref_frame, unit="deg")
+        formalTitle = "RA_DEC Positions"
+        matched_values = [matched_values_ref,matched_values_comp]
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
+                                                  x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    # 6: Compute and display statistics on DEC position differences for matched sources
-    matched_values = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if len(matched_values) > 0:
-        formalTitle = "DEC Position"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix,
-                                                  verbose)
-        if plotGen == "file":
-            pdf_file_list += pdf_files
-        regressionTestResults[formalTitle] = rt_status
-        colTitles.append(formalTitle)
 
     # 7: Compute and display statistics on flux differences for matched sources
     matched_values = extractMatchedLines("FLUX1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
