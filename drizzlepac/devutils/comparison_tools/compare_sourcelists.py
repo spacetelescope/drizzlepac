@@ -459,7 +459,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
     sigVal = 3
     intersVal = 3
     if plot_title == "RA_DEC Positions":
-        diffRA = matchedRA[1].separation(matchedRA[0]).arcsec
+        diffRA = matchedRA[1].separation(matchedRA[0]).arcsec #convert seperations from degrees to arcseconds
     else:
         diffRA = matchedRA[1, :] - matchedRA[0, :]
     if plate_scale:  # Convert X and Y differences from pixels to arcseconds
@@ -1058,13 +1058,19 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         check_match_quality(matchedXValues, matchedYValues)
 
     # 5: Compute and display statistics on RA/Dec position differences for matched sources
+    # Get matched pairs of RA and Dec values
     matched_values_ra = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     matched_values_dec = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img,bitmask=bitmask)
     if len(matched_values_ra) > 0 and len(matched_values_ra) == len(matched_values_dec):
+        # get coordinate system type from fits headers
         ref_frame = fits.getval(imgNames[0],"radesys",ext=('sci', 1)).lower()
         comp_frame = fits.getval(imgNames[1],"radesys",ext=('sci', 1)).lower()
+        # convert reference and comparision RA/Dec values into SkyCoord objects
         matched_values_ref = SkyCoord(matched_values_ra[0,:],matched_values_dec[0,:], frame=comp_frame, unit="deg")
         matched_values_comp = SkyCoord(matched_values_ra[1,:],matched_values_dec[1,:], frame=ref_frame, unit="deg")
+        # convert to ICRS coord system
+        matched_values_ref = matched_values_ref.icrs
+        matched_values_comp = matched_values_comp.icrs
         formalTitle = "RA_DEC Positions"
         matched_values = [matched_values_ref,matched_values_comp]
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
