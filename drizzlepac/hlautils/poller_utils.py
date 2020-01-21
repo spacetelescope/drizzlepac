@@ -14,6 +14,7 @@ from stsci.tools import logutil
 
 from astropy.io import fits
 from astropy.io import ascii
+from astropy.io.fits import getheader
 from astropy.table import Table, Column
 from drizzlepac.hlautils.product import ExposureProduct, FilterProduct, TotalProduct
 from . import analyze
@@ -101,9 +102,7 @@ def interpret_obset_input(results, log_level):
     # convert input to an Astropy Table for parsing
     obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
     # Sort the rows of the table in an effort to optimize the number of quality sources found in the initial images
-    print("Before obset_table: {}".format(obset_table))
     obset_table = sort_poller_table(obset_table)
-    print("After obset_table: {}".format(obset_table))
     # parse Table into a tree-like dict
     log.debug("Build the observation set tree.")
     obset_tree = build_obset_tree(obset_table)
@@ -438,17 +437,18 @@ def build_poller_table(input, log_level):
 
 # ----------------------------------------------------------------------------------------------------------
 
+
 def sort_poller_table(obset_table):
     """Sort the input table by photflam and exposure time.
 
     The alignment of data within a single visit is first done in a relative way,
-    successively adding images to the stack within the visit.  The next step is 
+    successively adding images to the stack within the visit.  The next step is
     to achieve absolute alignment of the stack of images to the GAIA catalog.
     One scheme to obtain the largest number of quality (unsaturated) fiducials/sources,
-    is to sort the images first according to their inverse sensitivity (photflam) 
-    and then according to their exposure time.  
+    is to sort the images first according to their inverse sensitivity (photflam)
+    and then according to their exposure time.
 
-    The obset_table has the following columns: 
+    The obset_table has the following columns:
     filename, proposal_id, program_id, obset_id, exptime, filters, detector, and pathname
 
     Parameters
@@ -458,7 +458,7 @@ def sort_poller_table(obset_table):
 
     Returns
     -------
-    updated_obset_table: Astropy table 
+    updated_obset_table: Astropy table
         The sorted version of the input Astropy table
     """
 
@@ -469,11 +469,8 @@ def sort_poller_table(obset_table):
     for row in expanded_obset_table:
         input_file = row[expanded_obset_table.colnames[0]]
 
-        # Obtain the necessary observational parameters from the primary header.
-        # astropy.io.fits.getheader astropy v4
-        # h0 = fits.getheader(input_file, 0) 
-        hdu = fits.open(input_file)
-        h0 = hdu[0].header
+        # Open the specified FITS file
+        h0 = getheader(input_file, 0)
 
         # Need to get the instrument and detector keywords in order to determine
         # where to look for the various necessary keywords (i.e., primary or
@@ -481,27 +478,28 @@ def sort_poller_table(obset_table):
         instrument = h0['instrume'].upper()
         detector = h0['detector'].upper()
 
-        # HST IMAGE 
-        # photflam: inverse sensitivity, ergs/s-/cm2-/A-1 for 1 electron/s 
-        # WFC3-IR: Primary
-        # WFC3-UVIS: Extension
-        # ACS-WFC/HRC/SBC: Extension
-        if instrument == 'WFC3':
-            if detector == 'IR':
-                photflam = h0['photflam']
-            else:
-                # astropy.io.fits.getheader astropy v4
-                # h1 = fits.getheader(input_file, 'sci', 1)
-                h1 = hdu[1].header
-                photflam = h1['photflam']
+        # HST IMAGE
+        # photflam: inverse sensitivity, ergs/s-/cm2-/A-1 for 1 electron/s
+        # PHOTFLAM keyword is found in each science extension for the currently
+        # supported instruments (as of 01 Jan 2020), except for WFC3/IR where
+        # PHOTFLAM is in the Primary.
+        #
+        # Although the PHOTFLAM keyword is science extension-dependent,
+        # the differences in values is so small as to not be relevant in
+        # this particular context.
+        if instrument == 'WFC3' and detector == 'IR':
+            photflam = h0['photflam']
+        else:
+            h1 = getheader(input_file, 'sci', 1)
+            photflam = h1['photflam']
 
         row['flam'] = photflam
-        hdu.close()
 
-    # Now sort the data with a primary key of photflam and a secondary key
-    # of exposure time (in seconds).  The primary key is sorted in decending 
-    # order, and the secondary key is sorted in ascending order.
-    rank = np.lexsort((expanded_obset_table['exptime'],-expanded_obset_table['flam']))
+    # Determine the rank order the data with a primary key of photflam and a secondary key
+    # of exposure time (in seconds).  The primary key is sorted in decending
+    # order, and the secondary key is sorted in ascending order.  Use the rank to sort
+    # the original input table for output.
+    rank = np.lexsort((expanded_obset_table['exptime'], -expanded_obset_table['flam']))
     updated_obset_table = obset_table[rank]
 
     return updated_obset_table
