@@ -1448,4 +1448,3 @@ if __name__ == "__main__":
 # TODO: compute RA and Dec differences properly using astropy.skycoordinate (https://docs.astropy.org/en/stable/api/astropy.coordinates.SkyCoord.html)
 # TODO: Compute combined angular seperation based on both RA and DEC values for a given matched pair, then break it down into seperate componants
 # TODO: Compute Magnitude differences properly
-# TODO: Add flag-value based rejection (good flag bits = 0, 1, and/or 4, ignore lines containing flag bits other than these). This could also be an optional user-specified input.
