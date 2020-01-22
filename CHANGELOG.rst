@@ -14,7 +14,15 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-3.1.0 (unreleased)
+3.1.5 (unreleased)
+==================
+
+- Update calibrated (FLC/FLT) files with RMS and NMATCH keywords when it successfully
+  aligns the data to GAIA using the a posteriori fit.  Headerlet files for this fit
+  which already have these keywords are now retained and provided as the final output
+  headerlets as well.  [#554]
+
+3.1.3 (5-Dec-2019)
 ==================
 
 - Fixed a bug in the ``updatehdr.update_from_shiftfile()`` function that would
@@ -28,10 +36,9 @@ of the list).
 
 - Implementation of grid definition interface to support returning SkyCell
   objects that overlap a mosaic footprint. [#425]
-  
-- Complete rewrite of ``runastrodriz`` for pipeline processing to include
-  multi-level verification of alignment.  [#440]  
 
+- Complete rewrite of ``runastrodriz`` for pipeline processing to include
+  multi-level verification of alignment.  [#440]
 
 3.0.2 (15-Jul-2019)
 ====================
