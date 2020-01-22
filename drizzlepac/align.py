@@ -227,7 +227,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
             log.warning("WARNING: Unable to display Git repository revision information.")
 
     try:
-        # Initialize key variables 
+        # Initialize key variables
         filtered_table = None
 
         # 1: Interpret input data and optional parameters
@@ -303,6 +303,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                 alignment_table.filtered_table[:]['status'] = 1
                 alignment_table.filtered_table[:]['processMsg'] = "No sources found"
                 log.info(make_label('Processing time of [STEP 4]', starting_dt))
+                alignment_table.close()
                 return
 
             # The catalog of observable sources must have at least MIN_OBSERVABLE_THRESHOLD entries to be useful
@@ -318,6 +319,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                 alignment_table.filtered_table[:]['status'] = 1
                 alignment_table.filtered_table[:]['processMsg'] = "Not enough sources found"
                 log.info(make_label('Processing time of [STEP 4]', starting_dt))
+                alignment_table.close()
                 return
         log.info("SUCCESS")
         log.info(make_label('Processing time of [STEP 4]', starting_dt))
@@ -339,6 +341,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         best_fit_rms = -99999.0
         best_fit_status_dict = {}
         best_fit_qual = 5
+        best_fit_label = [None, None]
         # create pristine copy of imglist that will be used to restore imglist back so it always starts exactly the same
         # for each run.
         orig_imglist = copy.deepcopy(imglist)
@@ -543,6 +546,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
 
     finally:
+        # Always make sure that all file handles are closed
+        alignment_table.close()
 
         # Now update the result with the filtered_table contents
         if result:
