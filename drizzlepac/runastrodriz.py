@@ -816,6 +816,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                         trlstr = "Could not align {} to absolute astrometric frame\n"
                         trlmsg += trlstr.format(row['imageName'])
                         print(trlmsg)
+                        _updateTrlFile(trlfile, trlmsg)
                         return None
             except Exception:
                 # Something went wrong with alignment to GAIA, so report this in
