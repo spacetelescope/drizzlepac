@@ -71,7 +71,7 @@ from collections import OrderedDict
 import datetime
 try:
     from psutil import Process
-except:
+except ImportError:
     Process = None
 
 # THIRD-PARTY
@@ -626,6 +626,7 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
                                                         overwrite=False)
         del ivmlist
         calfiles = asndict['original_file_names'] if asndict is not None else calfiles
+
         drz_products.append(drz_product)
 
         # Create trailer marker message for start of astrodrizzle processing
@@ -798,6 +799,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                         sat_flags = 256 + 2048
                 else:
                     sat_flags = 256 + 2048 + 4096 + 8192
+
                 align_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
                                                   clobber=False, output=debug, sat_flags=sat_flags)
                 if align_table is None:
@@ -816,12 +818,15 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                     else:
                         trlstr = "Could not align {} to absolute astrometric frame\n"
                         trlmsg += trlstr.format(row['imageName'])
+                        print(trlmsg)
+                        _updateTrlFile(trlfile, trlmsg)
                         return None
             except Exception:
                 # Something went wrong with alignment to GAIA, so report this in
                 # trailer file
                 _trlmsg = "EXCEPTION encountered in align...\n"
                 _trlmsg += "   No correction to absolute astrometric frame applied!\n"
+                print(_trlmsg)
                 _updateTrlFile(trlfile, _trlmsg)
                 traceback.print_exc()
                 return None

@@ -208,9 +208,14 @@ class AlignmentTable:
 
     def select_fit(self, catalog_name, method_name):
         """Select the fit that has been identified as 'best'"""
+        if catalog_name is None:
+            self.selected_fit = None
+            return
+
         imglist = self.selected_fit = self.fit_dict[(catalog_name, method_name)]
         if imglist[0].meta['fit_info']['status'].startswith("FAILED"):
             self.selected_fit = None
+            return
 
         # Protect the writing of the table within the best_fit_rms
         info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
@@ -238,7 +243,8 @@ class AlignmentTable:
                 self.filtered_table[index]['scale'] = item.meta['fit_info']['scale'][0]
                 self.filtered_table[index]['rotation'] = item.meta['fit_info']['rot']
             else:
-                self.filtered_table[index]['fit_method'] = None
+                self.filtered_table = None
+                # self.filtered_table[index]['fit_method'] = None
 
 
     def apply_fit(self, headerlet_filenames=None, fit_label=None):
