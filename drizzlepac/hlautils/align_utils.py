@@ -814,9 +814,14 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
                 sci_ext_dict["{}".format(sci_ext_ctr)] = fileutil.findExtname(hdulist, 'sci', extver=sci_ext_ctr)
 
         # update header with new WCS info
-        updatehdr.update_wcs(hdulist, sci_ext_dict["{}".format(item.meta['chip'])], item.wcs,
-                             wcsname=wcs_name,
-                             reusename=True)
+        sci_extn = sci_ext_dict["{}".format(item.meta['chip'])]
+        updatehdr.update_wcs(hdulist, sci_extn, item.wcs, wcsname=wcs_name, reusename=True)
+        hdulist[sci_extn].header['RMS_RA'] = item.meta['fit_info']['RMS_RA'].value
+        hdulist[sci_extn].header['RMS_DEC'] = item.meta['fit_info']['RMS_DEC'].value
+        hdulist[sci_extn].header['CRDER1'] = item.meta['fit_info']['RMS_RA'].value
+        hdulist[sci_extn].header['CRDER2'] = item.meta['fit_info']['RMS_DEC'].value
+        hdulist[sci_extn].header['NMATCHES'] = len(item.meta['fit_info']['ref_mag'])
+
         if chipctr == num_sci_ext:
             # Close updated flc.fits or flt.fits file
             hdulist.flush()

@@ -868,6 +868,7 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
     scale = tweakwcs_item.meta['fit_info']['scale'][0]
     skew = tweakwcs_item.meta['fit_info']['skew']
 
+    log.info("Headerlet being updated with RMS_RA={},  RMS_DEC={}".format(rms_ra, rms_dec))
     # Update the existing FITS keywords
     primary_header = headerlet[0].header
     primary_header['RMS_RA'] = rms_ra
