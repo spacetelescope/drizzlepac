@@ -551,7 +551,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # Generate headerlets for each updated FLT image
         hlet_msg = _timestamp("Writing Headerlets started")
         for fname in _calfiles:
-            print("Creating new headerlet from {}".format(fname))
+            hlet_msg += "Creating new headerlet from {}".format(fname)
             frootname = fileutil.buildNewRootname(fname)
             hname = "%s_flt_hlet.fits" % frootname
             # Write out headerlet file used by astrodrizzle, however,
@@ -632,14 +632,12 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
         _trlmsg = _timestamp('astrodrizzle started ')
         _trlmsg += __trlmarker__
         _trlmsg += '%s: Processing %s with astrodrizzle Version %s\n' % (_getTime(), infile, pyver)
-
+        print(_trlmsg)
         _updateTrlFile(trlfile, _trlmsg)
 
         _pyd_err = trlfile.replace('.tra', '_pydriz.stderr')
 
         try:
-            print("Running AstroDrizzle on: {}".format(infile))
-
             drizzlepac.astrodrizzle.AstroDrizzle(input=infile, configobj=None,
                                                  **pipeline_pars)
             util.end_logging(drizlog)
