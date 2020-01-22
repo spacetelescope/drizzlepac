@@ -1069,8 +1069,10 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         matched_values_ref = SkyCoord(matched_values_ra[0,:],matched_values_dec[0,:], frame=comp_frame, unit="deg")
         matched_values_comp = SkyCoord(matched_values_ra[1,:],matched_values_dec[1,:], frame=ref_frame, unit="deg")
         # convert to ICRS coord system
-        matched_values_ref = matched_values_ref.icrs
-        matched_values_comp = matched_values_comp.icrs
+        if ref_frame != "icrs":
+            matched_values_ref = matched_values_ref.icrs
+        if comp_frame != "icrs":
+            matched_values_comp = matched_values_comp.icrs
         formalTitle = "RA_DEC Positions"
         matched_values = [matched_values_ref,matched_values_comp]
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
