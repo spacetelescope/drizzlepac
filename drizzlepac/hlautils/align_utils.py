@@ -494,11 +494,6 @@ class HAPImage:
         else:
             dqarr = np.concatenate([self.imghdu[('DQ', i + 1)].data for i in range(self.num_sci)])
 
-        # "grow out" regions in DQ mask flagged as saturated by several
-        # pixels in every direction to prevent the
-        # source match algorithm from trying to match multiple sources
-        # from one image to a single source in the
-        # other or vice-versa.
         # Create temp DQ mask containing all pixels flagged with any value EXCEPT 512 (bad ref pixel)
         dqmask = bitfield_to_boolean_mask(dqarr, ignore_flags=512)
 

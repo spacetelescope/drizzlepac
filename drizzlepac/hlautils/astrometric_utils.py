@@ -710,9 +710,9 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                 # the center of the PSF (saturated and streaked along the Y axis)
                 max_row = np.where(seg_table['peak'] == seg_table['peak'].max())[0][0]
 
-                # Add logic to remove sources which have more than 8 pixels
+                # Add logic to remove sources which have more than 3 pixels
                 # within 10% of the max value in the source segment, a situation
-                # which would indicate bleeding from a saturated source
+                # which would indicate the presence of a saturated source
                 if (detection_img > detection_img.max() * 0.9).sum() > 3:
 
                     # Revert to segmentation photometry for sat. source posns
