@@ -11,6 +11,7 @@ import shutil
 
 from stsci.tools import logutil
 from astropy.io import fits
+import numpy as np
 
 from .. import astrodrizzle
 from .. import wcs_functions
@@ -23,6 +24,14 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
+# Define keywords to be added to SVM products to describe the overlap of
+# exposures onto the output WCS footprint as determined from the SkyFootprint masks
+MASK_KWS = {"NPIXFRAC": [None, "Fraction of pixels with data"],
+            "MEANEXPT": [None, "Mean exposure time per pixel with data"],
+            "MEDEXPT": [None, "Median exposure time per pixel with data"],
+            "MEANNEXP": [None, "Mean exposures per pixel with data"],
+            "MEDNEXP": [None, "Median exposures per pixel with data"],
+            }
 
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
@@ -90,6 +99,7 @@ class TotalProduct(HAPProduct):
         self.regions_dict = {}
         self.meta_wcs = None
         self.mask = None
+        self.mask_kws = MASK_KWS.copy()
 
         log.debug("Total detection object {}/{} created.".format(self.instrument, self.detector))
 
@@ -142,6 +152,11 @@ class TotalProduct(HAPProduct):
                                   output=self.drizzle_filename,
                                   **drizzle_pars)
 
+        # Update product with SVM-specific keywords based on the footprint
+        with fits.open(self.drizzle_filename, mode='update') as hdu:
+            for kw in self.mask_kws:
+                hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
+
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Total combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         shutil.move(self.trl_logname, self.trl_filename)
@@ -154,8 +169,16 @@ class TotalProduct(HAPProduct):
         """
         footprint = cell_utils.SkyFootprint(self.meta_wcs)
         exposure_names = [element.full_filename for element in self.edp_list]
-        footprint.build(exposure_names)
+        footprint.build(exposure_names, scale=True)
         self.mask = footprint.total_mask
+
+        # Compute footprint-based SVM-specific keywords for product image header
+        good_pixels = self.mask > 0
+        self.mask_kws['NPIXFRAC'][0] = good_pixels.sum()
+        self.mask_kws['MEANEXPT'][0] = np.mean(footprint.scaled_mask[good_pixels])
+        self.mask_kws['MEDEXPT'][0] = np.median(footprint.scaled_mask[good_pixels])
+        self.mask_kws['MEANNEXP'][0] = np.mean(self.mask[good_pixels])
+        self.mask_kws['MEDNEXP'][0] = np.median(self.mask[good_pixels])
 
 
 class FilterProduct(HAPProduct):
@@ -227,7 +250,7 @@ class FilterProduct(HAPProduct):
                 if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
                     align_table.perform_fit(method_name, catalog_name, ref_catalog)
                     align_table.select_fit(catalog_name, method_name)
-                    align_table.apply_fit(headerlet_filenames=headerlet_filenames, 
+                    align_table.apply_fit(headerlet_filenames=headerlet_filenames,
                                          fit_label='SVM')
                 else:
                     log.warning("Not enough reference sources for absolute alignment...")
@@ -242,7 +265,7 @@ class FilterProduct(HAPProduct):
             logging.exception("message")
             align_table = None
 
-            # If the align_table is None, it is necessary to clean-up reference catalogs 
+            # If the align_table is None, it is necessary to clean-up reference catalogs
             # created for alignment of each filter product here.
             if refname and os.path.exists(refname):
                 os.remove(refname)
