@@ -354,11 +354,17 @@ def build_poller_table(input, log_level):
 
             # Convert to a string column, instead of int64
             input_table['obset_id'] = input_table['obset_id'].astype(np.str)
+            is_poller_file = True
+
+        elif len(input_table.columns) == 1:
+            input_table.columns[0].name = 'filename'
+            is_poller_file = False
 
         # Since a poller file was the input, it is assumed all the input
         # data is in the locale directory so just collect the filenames.
         datasets = input_table[input_table.colnames[0]].tolist()
-        is_poller_file = True
+        filenames = list(input_table.columns[0])
+
     elif isinstance(input, list):
         filenames = input
 
@@ -414,7 +420,7 @@ def build_poller_table(input, log_level):
                 if d[0] == 'j':  # ACS data
                     filters = processing_utils.get_acs_filters(dhdu, all=True)
                 elif d[0] == 'i':
-                    filters = dhdu['filter']
+                    filters = hdr['filter']
                 cols['filters'].append(filters)
 
         # Build output table
