@@ -227,7 +227,7 @@ class FilterProduct(HAPProduct):
                 if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
                     align_table.perform_fit(method_name, catalog_name, ref_catalog)
                     align_table.select_fit(catalog_name, method_name)
-                    align_table.apply_fit(headerlet_filenames=headerlet_filenames, 
+                    align_table.apply_fit(headerlet_filenames=headerlet_filenames,
                                          fit_label='SVM')
                 else:
                     log.warning("Not enough reference sources for absolute alignment...")
@@ -242,7 +242,7 @@ class FilterProduct(HAPProduct):
             logging.exception("message")
             align_table = None
 
-            # If the align_table is None, it is necessary to clean-up reference catalogs 
+            # If the align_table is None, it is necessary to clean-up reference catalogs
             # created for alignment of each filter product here.
             if refname and os.path.exists(refname):
                 os.remove(refname)
@@ -286,8 +286,8 @@ class ExposureProduct(HAPProduct):
         super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
 
         self.info = '_'.join([prop_id, obset_id, instrument, detector, filename, filters, filetype])
-        self.full_filename = filename
         self.filters = filters
+        self.full_filename = self.copy_exposure(filename)
 
         # Open the input FITS file to mine some header information.
         hdu_list = fits.open(filename)
@@ -329,3 +329,30 @@ class ExposureProduct(HAPProduct):
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Exposure image {}".format(self.drizzle_filename))
         shutil.move(self.trl_logname, self.trl_filename)
+
+    def copy_exposure(self, filename):
+        """
+            Create a copy of the original input to be renamed and used for single-visit processing.
+
+            New exposure filename needs to follow the convention:
+            hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_fl[ct].fits
+
+            Parameters
+            ----------
+            filename : str
+                Original pipeline filename for input exposure
+
+            Returns
+            -------
+            edp_filename : str
+                New SVM-compatible HAP filename for input exposure
+
+        """
+        suffix = filename.split("_")[1]
+        edp_filename = self.basename + \
+                       "_".join(map(str, [self.filters, filename[:8], suffix]))
+
+        log.info("Copying {} to SVM input: \n    {}".format(filename, edp_filename))
+        shutil.copy(filename, edp_filename)
+
+        return edp_filename
