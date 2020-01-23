@@ -513,14 +513,14 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
             origSize = len(diffRA)
             log_output_string_list.append("Plot cutoff: {}".format(plotCutoff))
             goodIdx = np.where(np.abs(diffRA) <= plotCutoff)
-            diffRA = diffRA[goodIdx]
-            log_output_string_list.append("%d values (%7.4f percent) clipped from plot." % (origSize - len(diffRA), (float(origSize - len(diffRA)) / float(origSize)) * 100.0))
+            good_diffRA = diffRA[goodIdx]
+            log_output_string_list.append("%d values (%7.4f percent) clipped from plot." % (origSize - len(good_diffRA), (float(origSize - len(good_diffRA)) / float(origSize)) * 100.0))
         fig = plt.figure(figsize=(11, 8.5))
         ax1 = fig.add_subplot(111)
         fullPlotTitle = "Comparision - reference sourcelist %s absolute differences" % (plot_title)
         plt.title(fullPlotTitle)
         bins = "auto"
-        ax1.hist(diffRA, bins=bins)
+        ax1.hist(good_diffRA, bins=bins)
         ax1.axvline(x=clippedStats[0], color='k', linestyle='--')
         ax1.axvline(x=clippedStats[1], color='r', linestyle='--')
         ax1.axvline(x=clippedStats[0] + 3.0*clippedStats[2], color='k', linestyle=':')
@@ -530,7 +530,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
         ax1.set_ylabel("Number of matched sources")
 
         ax2 = ax1.twinx()
-        ax2.hist(diffRA, bins=bins, cumulative=-1, density=True, histtype='step', color='r')
+        ax2.hist(good_diffRA, bins=bins, cumulative=-1, density=True, histtype='step', color='r')
         ax2.set_ylabel("Fraction of all matched sources", color='r')
         for tl in ax2.get_yticklabels():
             tl.set_color('r')
@@ -575,6 +575,18 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
             fig.savefig(plotFileName.replace(".pdf", "_stats.pdf"))
             plt.close()
         pdf_files = [plotFileName, stat_file_name]
+
+        # make mag difference vs. mag_comp plot plot
+        if plot_title.startswith("Magnitude") and plot_title.endswith("Aperture)"):
+            fig = plt.figure(figsize=(11, 8.5))
+            ax1 = fig.add_subplot(111)
+            plt.scatter(matchedRA[1],diffRA,marker=".",s=10,color="black")
+            plt.axhline(y=clippedStats[0], color='r', linestyle='--')
+            ax1.set_title("Magnitude vs. Comparison - reference magnitude difference {}".format(plot_title.replace("Magnitude ","")))
+            ax1.set_xlabel("Comparison magnitude (ABMAG)")
+            ax1.set_ylabel("Comparison - reference difference (ABMAG)")
+            ax1.grid(True)
+            plt.show()
 
     log.info("\n")
 
