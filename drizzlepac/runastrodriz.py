@@ -363,6 +363,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         """
         inst_mode = "{}/{}".format(infile_inst, infile_det)
         _good_images = [f for f in _calfiles if fits.getval(f, 'exptime') > 0.]
+        if len(_good_images) == 0:
+            _good_images = _calfiles
         adriz_pars = mdzhandler.getMdriztabParameters(_good_images)
         adriz_pars.update(pipeline_pars)
         adriz_pars['mdriztab'] = False
