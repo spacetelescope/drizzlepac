@@ -341,10 +341,8 @@ def computeFlagStats(matchedRA, refFlag_list, compFlag_list, max_diff, plotGen, 
         if plotGen == "file":
             # Put timestamp and plotfile_prefix text string in lower left corner below plot
             timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
-            plt.text(0.0, -0.081, timestamp, horizontalalignment='left', verticalalignment='center', fontsize=5,
-                     transform=ax1.transAxes)
-            plt.text(0.0, -0.105, plotfile_prefix, horizontalalignment='left', verticalalignment='center', fontsize=5,
-                     transform=ax1.transAxes)
+            plt.text(0.0, -0.081, "{}\n{}".format(timestamp, plotfile_prefix), horizontalalignment='left',
+                     verticalalignment='center', fontsize=5, transform=ax1.transAxes)
             plotFileName = "{}_{}.pdf".format(plotfile_prefix, fullPlotTitle.replace(" ", "_"))
             if plotFileName.startswith("_"):
                 plotFileName = plotFileName[1:]
@@ -549,10 +547,8 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
         if plotGen == "file":
             # Put timestamp and plotfile_prefix text string in lower left corner below plot
             timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
-            plt.text(0.0, -0.081, timestamp, horizontalalignment='left', verticalalignment='center', fontsize=5,
-                     transform=ax1.transAxes)
-            plt.text(0.0, -0.105, plotfile_prefix, horizontalalignment='left', verticalalignment='center', fontsize=5,
-                     transform=ax1.transAxes)
+            plt.text(0.0, -0.081, "{}\n{}".format(timestamp, plotfile_prefix), horizontalalignment='left',
+                     verticalalignment='center', fontsize=5, transform=ax1.transAxes)
             plotFileName = "{}_{}.pdf".format(plotfile_prefix, plot_title.replace(" ", "_"))
             if plotFileName.startswith("_"):
                 plotFileName = plotFileName[1:]
@@ -580,14 +576,26 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
         if plot_title.startswith("Magnitude") and plot_title.endswith("Aperture)"):
             fig = plt.figure(figsize=(11, 8.5))
             ax1 = fig.add_subplot(111)
-            plt.scatter(matchedRA[1],diffRA,marker=".",s=10,color="black")
-            plt.axhline(y=clippedStats[0], color='r', linestyle='--')
+            plt.scatter(matchedRA[1],diffRA,marker=".",s=10,color="blue")
+            plt.axhline(y=clippedStats[0], color='k', linestyle='--')
             ax1.set_title("Magnitude vs. Comparison - reference magnitude difference {}".format(plot_title.replace("Magnitude ","")))
             ax1.set_xlabel("Comparison magnitude (ABMAG)")
             ax1.set_ylabel("Comparison - reference difference (ABMAG)")
             ax1.grid(True)
-            plt.show()
 
+            if plotGen == "screen":
+                plt.show()
+                plotFileName = ""
+
+            if plotGen == "file":
+                # Put timestamp and plotfile_prefix text string in lower left corner below plot
+                timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
+                plt.text(0.0, -0.081, "{}\n{}".format(timestamp,plotfile_prefix), horizontalalignment='left',
+                         verticalalignment='center', fontsize=5,transform=ax1.transAxes)
+                # file output
+                magvsdmag_filename = plotFileName.replace("Magnitude_(", "Magnitude_vs_dmag_(")
+                fig.savefig(magvsdmag_filename)
+                pdf_files.append(magvsdmag_filename)
     log.info("\n")
 
     return (regTestStatus + out_stats, pdf_files)
@@ -899,10 +907,8 @@ def makeVectorPlot(x, y, plate_scale, plotDest, plotfile_prefix, binThresh=10000
     if plotDest == "file":
         # Put timestamp and plotfile_prefix text string in lower left corner below plot
         timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
-        plt.text(0.0, -0.081, timestamp, horizontalalignment='left', verticalalignment='center', fontsize=5,
-                 transform=ax1.transAxes)
-        plt.text(0.0, -0.105, plotfile_prefix, horizontalalignment='left', verticalalignment='center', fontsize=5,
-                 transform=ax1.transAxes)
+        plt.text(0.0, -0.081, "{}\n{}".format(timestamp, plotfile_prefix), horizontalalignment='left',
+                 verticalalignment='center', fontsize=5, transform=ax1.transAxes)
         plotFileName = "{}_xy_vector_plot.pdf".format(plotfile_prefix, plot_title.replace(" ", "_"))
         if plotFileName.startswith("_"):
             plotFileName = plotFileName[1:]
