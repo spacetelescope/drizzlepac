@@ -548,7 +548,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
         if plotGen == "file":
             # Put timestamp and plotfile_prefix text string in lower left corner below plot
             timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
-            plt.text(0.0, -0.081, "{}\nComparison Sourcelist: {}\nReference Sourcelist:    {}".format(timestamp, catalog_names[1], catalog_names[0]), horizontalalignment='left',
+            plt.text(0.0, -0.081, "{}\nComparison Sourcelist: {}\nReference Sourcelist:    {}\nDashed and dotted lines indicate 3 x 3\u03C3-clipped mean and 3\u03C3 confidence limits".format(timestamp, catalog_names[1], catalog_names[0]), horizontalalignment='left',
                      verticalalignment='center', fontsize=5, transform=ax1.transAxes)
             plotFileName = "{}_{}.pdf".format(plotfile_prefix, plot_title.replace(" ", "_"))
             if plotFileName.startswith("_"):
@@ -593,7 +593,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
             if plotGen == "file":
                 # Put timestamp and plotfile_prefix text string in lower left corner below plot
                 timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
-                plt.text(0.0, -0.081, "{}\nComparison Sourcelist: {}\nReference Sourcelist:    {}".format(timestamp,catalog_names[1], catalog_names[0]), horizontalalignment='left', verticalalignment='center', fontsize=5, transform=ax1.transAxes)
+                plt.text(0.0, -0.081, "{}\nComparison Sourcelist: {}\nReference Sourcelist:    {}\nDashed and dotted lines indicate 3 x 3\u03C3-clipped mean and 3\u03C3 confidence limits".format(timestamp,catalog_names[1], catalog_names[0]), horizontalalignment='left', verticalalignment='center', fontsize=5, transform=ax1.transAxes)
                 # file output
                 magvsdmag_filename = plotFileName.replace("Magnitude_(", "Magnitude_vs_dmag_(")
                 fig.savefig(magvsdmag_filename)
