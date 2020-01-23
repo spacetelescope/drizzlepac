@@ -577,7 +577,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
         if plot_title.startswith("Magnitude") and plot_title.endswith("Aperture)"):
             fig = plt.figure(figsize=(11, 8.5))
             ax1 = fig.add_subplot(111)
-            plt.scatter(matchedRA[1],diffRA,marker=".",s=10,color="blue")
+            plt.scatter(matchedRA[1][goodIdx],diffRA[goodIdx],marker=".",s=10,color="blue")
             plt.axhline(y=clippedStats[0], color='k', linestyle='--')
             ax1.axhline(y=clippedStats[0] + 3.0 * clippedStats[2], color='k', linestyle=':')
             ax1.axhline(y=clippedStats[0] - 3.0 * clippedStats[2], color='k', linestyle=':')
@@ -597,7 +597,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
                 # file output
                 magvsdmag_filename = plotFileName.replace("Magnitude_(", "Magnitude_vs_dmag_(")
                 fig.savefig(magvsdmag_filename)
-                pdf_files.append(magvsdmag_filename)
+                pdf_files.insert(-1,magvsdmag_filename)
     log.info("\n")
 
     return (regTestStatus + out_stats, pdf_files)
