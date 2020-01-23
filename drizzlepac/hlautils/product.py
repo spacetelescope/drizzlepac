@@ -206,6 +206,9 @@ class FilterProduct(HAPProduct):
         # These attributes will be populated during processing
         self.edp_list = []
         self.regions_dict = {}
+        self.meta_wcs = None
+        self.mask = None
+        self.mask_kws = MASK_KWS.copy()
 
         log.debug("Filter object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
 
@@ -280,6 +283,11 @@ class FilterProduct(HAPProduct):
         """
             Create the drizzle-combined filter image using the meta_wcs as the reference output
         """
+        # This insures that keywords related to the footprint are generated for this
+        # specific object to use in updating the output drizzle product.
+        self.meta_wcs = meta_wcs
+        if self.mask is None:
+            self.generate_footprint_mask()
 
         # Retrieve the configuration parameters for astrodrizzle
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
@@ -295,9 +303,34 @@ class FilterProduct(HAPProduct):
                                   output=self.drizzle_filename,
                                   **drizzle_pars)
 
+        # Update product with SVM-specific keywords based on the footprint
+        print("\n\nMASK_KWS: \n{}\n\n".format(self.mask_kws))
+        with fits.open(self.drizzle_filename, mode='update') as hdu:
+            for kw in self.mask_kws:
+                hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
+
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Filter combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         shutil.move(self.trl_logname, self.trl_filename)
+
+    def generate_footprint_mask(self):
+        """ Create a footprint mask for a set of exposure images
+
+            Create a mask which is True/1/on for the illuminated portion of the image, and
+            False/0/off for the remainder of the image.
+        """
+        footprint = cell_utils.SkyFootprint(self.meta_wcs)
+        exposure_names = [element.full_filename for element in self.edp_list]
+        footprint.build(exposure_names, scale=True)
+        self.mask = footprint.total_mask
+
+        # Compute footprint-based SVM-specific keywords for product image header
+        good_pixels = self.mask > 0
+        self.mask_kws['NPIXFRAC'][0] = good_pixels.sum()
+        self.mask_kws['MEANEXPT'][0] = np.mean(footprint.scaled_mask[good_pixels])
+        self.mask_kws['MEDEXPT'][0] = np.median(footprint.scaled_mask[good_pixels])
+        self.mask_kws['MEANNEXP'][0] = np.mean(self.mask[good_pixels])
+        self.mask_kws['MEDNEXP'][0] = np.median(self.mask[good_pixels])
 
 
 class ExposureProduct(HAPProduct):
