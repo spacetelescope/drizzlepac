@@ -29,8 +29,8 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 MASK_KWS = {"NPIXFRAC": [None, "Fraction of pixels with data"],
             "MEANEXPT": [None, "Mean exposure time per pixel with data"],
             "MEDEXPT": [None, "Median exposure time per pixel with data"],
-            "MEANNEXP": [None, "Mean exposures per pixel with data"],
-            "MEDNEXP": [None, "Median exposures per pixel with data"],
+            "MEANNEXP": [None, "Mean number of exposures per pixel with data"],
+            "MEDNEXP": [None, "Median number of exposures per pixel with data"],
             }
 
 class HAPProduct:
