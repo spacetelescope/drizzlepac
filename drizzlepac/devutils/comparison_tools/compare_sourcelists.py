@@ -512,8 +512,8 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
         plotCutoff = (plot_nsigma_cutoff * np.abs(clippedStats[2])) + np.abs(clippedStats[0])
         if plotCutoff != 0.0:
             origSize = len(diffRA)
-            log_output_string_list.append("Plot cutoff: Sigma-clipped mean\u00B1{}\u03C3".format(plot_nsigma_cutoff,plotCutoff))
-            goodIdx = np.where(np.abs(diffRA) <= plotCutoff)
+            log_output_string_list.append("Plot limits: Sigma-clipped mean\u00B1{}\u03C3".format(plot_nsigma_cutoff,plotCutoff))
+            goodIdx = np.where((diffRA >= (clippedStats[0] - plot_nsigma_cutoff * clippedStats[2])) & (diffRA <= (clippedStats[0] + plot_nsigma_cutoff * clippedStats[2])))
             good_diffRA = diffRA[goodIdx]
             log_output_string_list.append("%d values (%7.4f percent) clipped from plot." % (origSize - len(good_diffRA), (float(origSize - len(good_diffRA)) / float(origSize)) * 100.0))
         fig = plt.figure(figsize=(11, 8.5))
