@@ -61,6 +61,7 @@ class AlignmentTable:
                           plot=False, vmax=None, deblend=False
         """
         log.setLevel(log_level)
+
         # Register fit methods with the class
         self.fit_methods = {'relative': match_relative_fit,
                             '2dhist': match_2dhist_fit,
@@ -193,6 +194,9 @@ class AlignmentTable:
 
     def perform_fit(self, method_name, catalog_name, reference_catalog):
         """Perform fit using specified method, then determine fit quality"""
+        inputs = [img.meta['name'] for img in self.imglist]
+        log.info("Performing {} astrometric fit to {} for: \n    {}".format(method_name,
+                                                                            reference_catalog, inputs))
         imglist = self.fit_methods[method_name](self.imglist, reference_catalog,
                                                 **self.fit_pars[method_name])
 
@@ -490,25 +494,9 @@ class HAPImage:
         else:
             dqarr = np.concatenate([self.imghdu[('DQ', i + 1)].data for i in range(self.num_sci)])
 
-        # "grow out" regions in DQ mask flagged as saturated by several
-        # pixels in every direction to prevent the
-        # source match algorithm from trying to match multiple sources
-        # from one image to a single source in the
-        # other or vice-versa.
-        # Create temp DQ mask containing all pixels flagged with any value EXCEPT 256
-        non_sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=256+2048)
+        # Create temp DQ mask containing all pixels flagged with any value EXCEPT 512 (bad ref pixel)
+        dqmask = bitfield_to_boolean_mask(dqarr, ignore_flags=512)
 
-        # Create temp DQ mask containing saturated pixels ONLY
-        sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=~(256+2048))
-
-        # Ignore sources where only a couple of pixels are flagged as saturated
-        sat_mask = ndimage.binary_erosion(sat_mask, iterations=1)
-
-        # Grow out saturated pixels by a few pixels in every direction
-        grown_sat_mask = ndimage.binary_dilation(sat_mask, iterations=5)
-
-        # combine the two temporary DQ masks into a single composite DQ mask.
-        dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
         return dqmask
 
     def find_alignment_sources(self, output=True, dqname='DQ', **alignment_pars):
@@ -562,6 +550,8 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     log.info("{} (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
+    log.debug("Relative fit configured with: \n  {}".format(fit_pars))
+
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
     #                          tolerance=100, use2dhist=False)
 

@@ -89,7 +89,7 @@ FOCUS_DICT = {'exp': [], 'prod': [], 'stats': {},
               'exp_pos': None, 'prod_pos': None,
               'alignment_verified': False, 'alignment_quality': -1,
               'expnames': "", 'prodname': ""}
-              
+
 EXP_LIMIT = 0.05  # hard-limit of exptime weighting for comparing images
 EXP_RATIO = 0.2
 
@@ -457,7 +457,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     if peaks is None or (peaks is not None and len(peaks) == 0):
         peaks = photutils.detection.find_peaks(kern_img, threshold=threshold,
                                               box_size=isolation_size)
-        
+
     # Sort based on peak_value to identify brightest sources for use as a kernel
     peaks.sort('peak_value', reverse=True)
 
@@ -674,6 +674,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
 
         for indx in src_brightest:
             segment = segm.segments[indx]
+
         # for segment in segm.segments:
             # check needed for photutils <= 0.6; it can be removed when
             # the drizzlepac depends on photutils >= 0.7
@@ -700,6 +701,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
             # Pick out brightest source only
             if src_table is None and seg_table:
                 # Initialize final master source list catalog
+                log.debug("Defining initial src_table based on: {}".format(seg_table.colnames))
                 src_table = Table(names=seg_table.colnames,
                                   dtype=[dt[1] for dt in seg_table.dtype.descr])
 
@@ -707,31 +709,41 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                 # This logic will eliminate saturated sources, where the max pixel value is not
                 # the center of the PSF (saturated and streaked along the Y axis)
                 max_row = np.where(seg_table['peak'] == seg_table['peak'].max())[0][0]
-                peak_posx = int(seg_table[max_row]['xcentroid'] + 0.5)
-                peak_posy = int(seg_table[max_row]['ycentroid'] + 0.5)
-                delta = (source_box - 1) // 2
-                min_x = peak_posx - delta if peak_posx - delta > 0 else 0
-                max_x = peak_posx + delta + 1 if peak_posx + delta + 1 < seg_slice[1].stop else seg_slice[1].stop
-                min_y = peak_posy - delta if peak_posy - delta > 0 else 0
-                max_y = peak_posy + delta + 1 if peak_posy + delta + 1 < seg_slice[0].stop else seg_slice[0].stop
-                peak_region = detection_img[min_y:max_y, min_x:max_x]
 
-                if np.isclose(peak_region, seg_table['peak'].max()).any():
-                    # Add row for detected source to master catalog
-                    # apply offset to slice to convert positions into full-frame coordinates
-                    seg_table['xcentroid'] += seg_xoffset
-                    seg_table['ycentroid'] += seg_yoffset
-                    src_table.add_row(seg_table[max_row])
+                # Add logic to remove sources which have more than 3 pixels
+                # within 10% of the max value in the source segment, a situation
+                # which would indicate the presence of a saturated source
+                if (detection_img > detection_img.max() * 0.9).sum() > 3:
+
+                    # Revert to segmentation photometry for sat. source posns
+                    segment_properties = source_properties(detection_img, segment.data)
+                    sat_table = segment_properties.to_table()
+                    seg_table['flux'][max_row] = sat_table['source_sum'][0]
+                    seg_table['peak'][max_row] = sat_table['max_value'][0]
+                    seg_table['xcentroid'][max_row] = sat_table['xcentroid'][0].value
+                    seg_table['ycentroid'][max_row] = sat_table['ycentroid'][0].value
+                    seg_table['npix'][max_row] = sat_table['area'][0].value
+                    sky = sat_table['background_mean'][0]
+                    seg_table['sky'][max_row] = sky.value if sky is not None and not np.isnan(sky) else 0.0
+                    seg_table['mag'][max_row] = -2.5 * np.log10(sat_table['source_sum'][0])
+
+                # Add row for detected source to master catalog
+                # apply offset to slice to convert positions into full-frame coordinates
+                seg_table['xcentroid'] += seg_xoffset
+                seg_table['ycentroid'] += seg_yoffset
+                src_table.add_row(seg_table[max_row])
 
             # If we have accumulated the desired number of sources, stop looking for more...
             if nlargest is not None and src_table is not None and len(src_table) == nlargest:
                 break
     else:
+        log.debug("Determining source properties as src_table...")
         cat = source_properties(img, segm)
         src_table = cat.to_table()
         # Make column names consistent with IRAFStarFinder column names
         src_table.rename_column('source_sum', 'flux')
         src_table.rename_column('source_sum_err', 'flux_err')
+        src_table.rename_column('max_value', 'peak')
 
     if src_table is not None:
         log.info("Total Number of detected sources: {}".format(len(src_table)))
@@ -1710,7 +1722,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
         sfile_arr = sfile_region[yslice, xslice]
 
         # The number of sources detected is subject to crowding/blending of sources
-        # as well as noise from the background (if too low 
+        # as well as noise from the background (if too low
         #  a background value is used)
         drzlabels, drznum = detect_point_sources(drz_arr, scale=scale)
         slabels, snum = detect_point_sources(sfile_arr, scale=scale, exp_weight=exp_weight)
