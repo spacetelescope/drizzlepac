@@ -441,7 +441,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
         overall test result and statistics
     """
     log.info(">>>>>> Comparision - reference sourcelist {} absolute differences <<<<<<".format(plot_title))
-    if plot_title != "RA_DEC Positions":
+    if plot_title != "On-Sky Separation":
         # remove any "inf" or "nan" values in matchedRA.
         nanIdx = np.where(np.isnan(matchedRA) == True)[1]
         if len(nanIdx) > 0:
@@ -458,7 +458,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
     # 'sigma' and 'iters' input values used for various np.sigma_clipped_stats() runs
     sigVal = 3
     intersVal = 3
-    if plot_title == "RA_DEC Positions":
+    if plot_title == "On-Sky Separation":
         diffRA = matchedRA[1].separation(matchedRA[0]).arcsec #convert seperations from degrees to arcseconds
     else:
         diffRA = matchedRA[1, :] - matchedRA[0, :]
@@ -508,24 +508,30 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
     else:
 
         xAxisString = "{}".format(plot_title.split(" ")[0])
-        plotCutoff = (10.0 * np.abs(clippedStats[2])) + np.abs(clippedStats[0])
+        plot_nsigma_cutoff = 10.0
+        plotCutoff = (plot_nsigma_cutoff * np.abs(clippedStats[2])) + np.abs(clippedStats[0])
         if plotCutoff != 0.0:
             origSize = len(diffRA)
-            log_output_string_list.append("Plot cutoff: {}".format(plotCutoff))
+            log_output_string_list.append("Plot cutoff: Sigma-clipped mean\u00B1{}\u03C3".format(plot_nsigma_cutoff,plotCutoff))
             goodIdx = np.where(np.abs(diffRA) <= plotCutoff)
             good_diffRA = diffRA[goodIdx]
             log_output_string_list.append("%d values (%7.4f percent) clipped from plot." % (origSize - len(good_diffRA), (float(origSize - len(good_diffRA)) / float(origSize)) * 100.0))
         fig = plt.figure(figsize=(11, 8.5))
         ax1 = fig.add_subplot(111)
-        fullPlotTitle = "Comparision - reference sourcelist %s absolute differences" % (plot_title)
+        if plot_title == "On-Sky Separation":
+            fullPlotTitle = "Comparision - reference combined RA & Dec on-sky separation absolute differences"
+        else:
+            fullPlotTitle = "Comparision - reference sourcelist %s absolute differences" % (plot_title)
         plt.title(fullPlotTitle)
         bins = "auto"
         ax1.hist(good_diffRA, bins=bins)
         ax1.axvline(x=clippedStats[0], color='k', linestyle='--')
         ax1.axvline(x=clippedStats[0] + 3.0*clippedStats[2], color='k', linestyle=':')
         ax1.axvline(x=clippedStats[0] - 3.0*clippedStats[2], color='k', linestyle=':')
-
-        ax1.set_xlabel("$\Delta {}$ ({})".format(xAxisString, x_axis_units))
+        if plot_title == "On-Sky Separation":
+            ax1.set_xlabel("Combined RA & Dec on-sky separation (arcseconds)")
+        else:
+            ax1.set_xlabel("$\Delta {}$ ({})".format(xAxisString, x_axis_units))
         ax1.set_ylabel("Number of matched sources")
 
         ax2 = ax1.twinx()
@@ -1048,7 +1054,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     # 0: define dictionary of max allowable mean sigma-clipped difference values
     max_diff_dict = {"X Position": 0.1, # TODO: Verify value
                      "Y Position": 0.1, # TODO: Verify value
-                     "RA_DEC Positions" : 0.1, # TODO: Verify value
+                     "On-Sky Separation" : 0.1, # TODO: Verify value
                      "Flux (Inner Aperture)": 999.0, # TODO: Get actual value
                      "Flux (Outer Aperture)": 999.0, # TODO: Get actual value
                      "Magnitude (Inner Aperture)": 999.0, # TODO: Get actual value
@@ -1061,7 +1067,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
                      "Source Flagging": 5.0}
     x_axis_units_dict = {"X Position": "arcseconds",
                          "Y Position": "arcseconds",
-                         "RA_DEC Positions" : "arcseconds",
+                         "On-Sky Separation" : "arcseconds",
                          "Flux (Inner Aperture)": "electrons/sec",
                          "Flux (Outer Aperture)": "electrons/sec",
                          "Magnitude (Inner Aperture)": "ABMAG",
@@ -1140,7 +1146,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
             matched_values_ref = matched_values_ref.icrs
         if comp_frame != "icrs":
             matched_values_comp = matched_values_comp.icrs
-        formalTitle = "RA_DEC Positions"
+        formalTitle = "On-Sky Separation"
         matched_values = [matched_values_ref,matched_values_comp]
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
         if plotGen == "file":
