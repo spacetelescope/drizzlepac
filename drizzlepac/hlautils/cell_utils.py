@@ -127,6 +127,7 @@ class SkyFootprint(object):
         self.meta_wcs = meta_wcs
 
         self.total_mask = np.zeros(meta_wcs.array_shape, dtype=np.int16)
+        self.scaled_mask = np.zeros(meta_wcs.array_shape, dtype=np.float32)
         self.footprint = None
 
         self.edges = None
@@ -134,21 +135,43 @@ class SkyFootprint(object):
         self.edges_dec = None
         self.polygon = None
 
-    def build(self, expnames):
+    def build(self, expnames, scale=False, scale_kw='EXPTIME'):
+        """ Create mask showing where all input exposures overlap the footprint's WCS
+
+        Notes
+        -----
+        This method populates the following attributes (initialized as all zeros):
+          - total_mask : shows number of chips per pixel
+          - scaled_mask : if computed, shows (by default) exposure time per pixel
+
+        Parameters
+        -----------
+        expnames : list
+            List of filenames for all input exposures that overlap the SkyFootprint WCS
+
+        scale : bool, optional
+            If specified, scale each chip by the value of the `scale_kw` keyword from the input exposure.
+
+        scale_kw : str, optional
+            If `scale` is `True`, get the scaling value from this keyword.  This keyword is assumed to be
+            in the PRIMARY header.
+
+        """
         for exposure in expnames:
             blank = np.zeros(self.meta_wcs.array_shape, dtype=np.int16)
             exp = fits.open(exposure)
+
             sci_extns = wcs_functions.get_extns(exp)
             for sci in sci_extns:
                 wcs = HSTWCS(exp, ext=sci)
-                edges_x = [0]*wcs.naxis2 + [wcs.naxis1-1]*wcs.naxis2 + list(range(wcs.naxis1)) * 2
-                edges_y = list(range(wcs.naxis2)) * 2 + [0]*wcs.naxis1 + [wcs.naxis2-1]*wcs.naxis1
+                edges_x = [0] * wcs.naxis2 + [wcs.naxis1 - 1] * wcs.naxis2 + list(range(wcs.naxis1)) * 2
+                edges_y = list(range(wcs.naxis2)) * 2 + [0] * wcs.naxis1 + [wcs.naxis2 - 1] * wcs.naxis1
 
                 sky_edges = wcs.pixel_to_world_values(np.vstack([edges_x, edges_y]).T)
                 meta_edges = self.meta_wcs.world_to_pixel_values(sky_edges).astype(np.int32)
                 # Account for rounding problems with creating meta_wcs
-                meta_edges[:,1] = np.clip(meta_edges[:,1], 0, self.meta_wcs.array_shape[0]-1)
-                meta_edges[:,0] = np.clip(meta_edges[:,0], 0, self.meta_wcs.array_shape[1]-1)
+                meta_edges[:, 1] = np.clip(meta_edges[:, 1], 0, self.meta_wcs.array_shape[0] - 1)
+                meta_edges[:, 0] = np.clip(meta_edges[:, 0], 0, self.meta_wcs.array_shape[1] - 1)
 
                 # apply meta_edges to blank mask
                 # Use PIL to create mask
@@ -156,11 +179,16 @@ class SkyFootprint(object):
                 polygon = list(zip(parray[0], parray[1]))
                 nx = self.meta_wcs.array_shape[1]
                 ny = self.meta_wcs.array_shape[0]
-                img = Image.new('L', (nx, ny) , 0)
+                img = Image.new('L', (nx, ny), 0)
                 ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
                 blank = np.array(img)
 
                 self.total_mask += blank.astype(np.int16)
+
+                # Compute scaled mask if specified...
+                if scale:
+                    scale_val = fits.getval(exposure, scale_kw)
+                    self.scaled_mask += blank.astype(np.int16) * scale_val
 
     # Methods with 'find' compute values
     # Methods with 'get' return values
