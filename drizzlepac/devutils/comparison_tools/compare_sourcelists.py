@@ -548,7 +548,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
         if plotGen == "file":
             # Put timestamp and plotfile_prefix text string in lower left corner below plot
             timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
-            plt.text(0.0, -0.081, "{}\nComparison Sourcelist: {}\nReference Sourcelist:    {}\nDashed and dotted lines indicate 3 x 3\u03C3-clipped mean and 3\u03C3 confidence limits".format(timestamp, catalog_names[1], catalog_names[0]), horizontalalignment='left',
+            plt.text(0.0, -0.081, "{}\nComparison Sourcelist: {}\nReference Sourcelist:    {}\nDashed and dotted lines indicate 3 x 3\u03C3-clipped mean and \u00B13\u03C3 confidence limits".format(timestamp, catalog_names[1], catalog_names[0]), horizontalalignment='left',
                      verticalalignment='center', fontsize=5, transform=ax1.transAxes)
             plotFileName = "{}_{}.pdf".format(plotfile_prefix, plot_title.replace(" ", "_"))
             if plotFileName.startswith("_"):
@@ -593,7 +593,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
             if plotGen == "file":
                 # Put timestamp and plotfile_prefix text string in lower left corner below plot
                 timestamp = "Generated {}".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
-                plt.text(0.0, -0.081, "{}\nComparison Sourcelist: {}\nReference Sourcelist:    {}\nDashed and dotted lines indicate 3 x 3\u03C3-clipped mean and 3\u03C3 confidence limits".format(timestamp,catalog_names[1], catalog_names[0]), horizontalalignment='left', verticalalignment='center', fontsize=5, transform=ax1.transAxes)
+                plt.text(0.0, -0.081, "{}\nComparison Sourcelist: {}\nReference Sourcelist:    {}\nDashed and dotted lines indicate 3 x 3\u03C3-clipped mean and \u00B13\u03C3 confidence limits respectively".format(timestamp,catalog_names[1], catalog_names[0]), horizontalalignment='left', verticalalignment='center', fontsize=5, transform=ax1.transAxes)
                 # file output
                 magvsdmag_filename = plotFileName.replace("Magnitude_(", "Magnitude_vs_dmag_(")
                 fig.savefig(magvsdmag_filename)
@@ -638,7 +638,7 @@ def deconstruct_flag(flagval):
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
-def make_flag_mask(matched_flag_values, good_flag_sum):
+def make_flag_mask(matched_flag_values, good_flag_sum, missing_mask):
     """
     Parameters
     ----------
@@ -662,9 +662,9 @@ def make_flag_mask(matched_flag_values, good_flag_sum):
     """
     full_refFlag_list = []
     full_compFlag_list = []
-    bitmask = np.full(len(matched_flag_values[0]),0,dtype=bool)
+    bitmask = missing_mask#np.full(len(matched_flag_values[0]),0,dtype=bool)
     if good_flag_sum != 255:
-        good_bit_list = deconstruct_flag(good_flag_sum) # break good bit sum into list of componant bits
+        good_bit_list = deconstruct_flag(good_flag_sum) # break good bit sum into list of component bits
         good_bit_list[0] = 1
         bad_bit_list = np.invert(good_bit_list.astype(bool)) # invert good bit list to make bad bit list
     ctr = 0
@@ -681,7 +681,51 @@ def make_flag_mask(matched_flag_values, good_flag_sum):
 
     masked_index_list = np.where(bitmask == True)
     log.info("{} of {} ({} %) values masked.".format(np.shape(masked_index_list)[1],ctr,100.0*(float(np.shape(masked_index_list)[1])/float(ctr))))
+    log.info("{} remain.".format(ctr-np.shape(masked_index_list)[1]))
     return full_refFlag_list, full_compFlag_list, bitmask
+
+
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+
+def mask_missing_values(refData, compData, refLines, compLines, columns_to_compare):
+    """Update the bitmask to include lines where any values are missing, nan, or inf from any column in either the comp or ref matched catalogs
+
+    Parameters
+    ----------
+    refData : astropy Table object
+        reference data table
+
+    compData : astropy Table object
+        comparison data table
+
+    refLines : numpy.ndarray
+        List of matching refData line numbers
+
+    compLines : numpy.ndarray
+        List of matching compData line numbers
+
+    columns_to_compare : list
+        list of columns that are common to both comparison and reference catalogs and will be used in the comparisons
+
+    Returns
+    -------
+    out_mask : numpy.ndarray, optional
+        Updated list of True/False values where False corresponds to values to keep, and True corresponds to values to remove
+    """
+    out_mask = np.full(np.shape(refLines),0,dtype=bool)
+
+    for col_title in columns_to_compare:
+        matching_refData = refData[col_title][refLines].data
+        matching_compData = compData[col_title][compLines].data
+        for data_set in [matching_refData, matching_compData]: # merge together all input mask arrays
+            if hasattr(data_set, "mask"):
+                out_mask = np.logical_or(out_mask, data_set.mask)
+            inf_nan_idx = np.where((np.isnan(data_set) == True) | (np.isinf(data_set) == True)) # identify any 'nan' or 'inf' values and flag them out as well
+            for mask_idx in inf_nan_idx:
+                out_mask[mask_idx] = True
+    return out_mask
+
+
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def extractMatchedLines(col2get, refData, compData, refLines, compLines, bitmask=[]):
     """Extracts only matching lines of data for a specific column of refData and compData. Returns empty list if the
@@ -1033,7 +1077,8 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     log.info("Valid comparision data columns: {}".format(list(compData.keys())))
     log.info("\n")
     log.info("Data columns to be compared:")
-    for listItem in sorted(list(set(refData.keys()).intersection(set(compData.keys())))):
+    columns_to_compare = list(set(refData.keys()).intersection(set(compData.keys())))
+    for listItem in sorted(columns_to_compare):
         log.info(listItem)
     log.info("\n")
     # 2: Run starmatch_hist to get list of matched sources common to both input sourcelists
@@ -1042,10 +1087,12 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     if len(matching_lines_ref) == 0 or len(matching_lines_img) == 0:
         log.critical("*** Comparisons cannot be computed. No matching sources were found. ***")
         return ("ERROR")
-
-    # 2: create mask based on flag values
+    # 2: Create masks to remove missing values or values not considered "good" according to user-specified good bit values
+    # 2a: create mask that identifies lines any value from any column is missing
+    missing_mask = mask_missing_values(refData, compData, matching_lines_ref, matching_lines_img, columns_to_compare)
+    # 2b: create mask based on flag values
     matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
-    refFlag_list, compFlag_list, bitmask = make_flag_mask(matched_values, good_flag_sum)
+    refFlag_list, compFlag_list, bitmask = make_flag_mask(matched_values, good_flag_sum, missing_mask)
 
     # 3: Compute and display statistics on X position differences for matched sources
     # Get platescale
