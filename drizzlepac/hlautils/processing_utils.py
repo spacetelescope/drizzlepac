@@ -130,6 +130,11 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
 
     for row in orig_tab:
         rootname = str(row['rootname'])
+
+        # The rootname is ipppssoot, but the expname is only contains ipppssoo,
+        # so remove the last character for the comparisons
+        rootname = rootname[0:-1]
+
         for expname in input_exposures:
             if rootname in expname:
                 if level == 1:
