@@ -1516,5 +1516,4 @@ if __name__ == "__main__":
 
 
 # TODO: fix PEP 8 violations
-# TODO: RA/DEC differneces seem wrong, they don't seem to line up with the X and Y differences Figure out whats going on.
 # TODO: Compute Magnitude differences properly
