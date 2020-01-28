@@ -138,6 +138,10 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
 
     acs_filt_name_list = [FILKEY1, FILKEY2]
 
+    # Interpret input filenames and adjust size of column accordingly
+    max_name_length = max([len(f) for f in input_file_list])
+    name_data_type = 'S{}'.format(max_name_length + 2)  # add a couple of spaces to insure separation of cols
+
     # Initialize the column entries which will be populated in successive
     # processing steps
     fit_method = None  # Fit algorithm used for alignment
@@ -174,7 +178,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
                    'rotation', 'scale', 'rms_x', 'rms_y', 'rms_ra', 'rms_dec',
                    'completed', 'fit_rms', 'total_rms', 'datasetKey', 'status',
                    'fit_qual', 'headerletFile', 'compromised')
-    data_type = ('S20', 'S20', 'S20', 'S20', 'S20', 'S20', 'b', 'S20', 'f8', 'b',
+    data_type = (name_data_type, 'S20', 'S20', 'S20', 'S20', 'S20', 'b', 'S20', 'f8', 'b',
                  'S30', 'S20', 'S20', 'i4', 'i4', 'i4', 'f8', 'f8', 'f8', 'f8',
                  'f8', 'f8', 'f8', 'f8', 'b', 'f8', 'f8', 'i8', 'i4', 'i4',
                  'S60', 'i4')
@@ -189,7 +193,6 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
     # to determine the data is not viable for alignment.
 
     for input_file in input_file_list:
-
         header_hdu = 0
         header_data = getheader(input_file, header_hdu)
 
