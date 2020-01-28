@@ -130,12 +130,18 @@ def make_regions(sl_name, shape, color):
     n_sources : int
         total number of sources in sourcelist
     """
-    table_data = Table.read(sl_name, format='ascii.ecsv')
+    if sl_name.endswith(".ecsv"):
+        table_data = Table.read(sl_name, format='ascii.ecsv')
+    elif sl_name.endswith("daophot.txt"):
+        table_data = Table.read(sl_name, format='ascii')
+    elif sl_name.endswith("sexphot.txt"):
+        table_data = Table.read(sl_name, format='ascii')
+    else:
+        sys.exit("ERROR! Unrecognized catalog filetype!")
     flag_counts = np.zeros(9, dtype=int)
     reg_dict = {}
     for bit_val in bit_list:
         reg_dict[bit_val] = ""
-
     for table_line in table_data:
         if sl_name.endswith("point-cat.ecsv"):
             x = table_line["X-Center"]
@@ -143,6 +149,12 @@ def make_regions(sl_name, shape, color):
         elif sl_name.endswith("segment-cat.ecsv"):
             x = table_line["X-Centroid"]
             y = table_line["Y-Centroid"]
+        elif sl_name.endswith("daophot.txt"):
+            x = table_line["X-Center"]
+            y = table_line["Y-Center"]
+        elif sl_name.endswith("sexphot.txt"):
+            x = table_line["X-IMAGE"]
+            y = table_line["Y-IMAGE"]
         else:
             sys.exit("ERROR! Unrecognized catalog filetype!")
         flagval  = table_line["Flags"]
