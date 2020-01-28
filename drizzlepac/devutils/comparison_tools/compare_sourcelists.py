@@ -400,7 +400,7 @@ def computeFlagStats(matchedRA, refFlag_list, compFlag_list, max_diff, plotGen, 
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
-def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, plotfile_prefix, catalog_names, verbose, plate_scale=None):
+def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, plotfile_prefix, catalog_names, verbose):
     """Compute stats on the quantities with differences that can be computed with simple subtraction 
     (X, Y, RA, Dec, Flux, and Magnitude).
 
@@ -431,10 +431,6 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
     verbose : bool
         display verbose output?
 
-    plate_scale : float, optional
-        plate scale, in arcseconds/pixel
-
-
     Returns
     -------
     regTestStatus : str
@@ -462,8 +458,6 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
         diffRA = matchedRA[1].separation(matchedRA[0]).arcsec #convert seperations from degrees to arcseconds
     else:
         diffRA = matchedRA[1, :] - matchedRA[0, :]
-    if plate_scale:  # Convert X and Y differences from pixels to arcseconds
-        diffRA = diffRA * plate_scale
     clippedStats = sigma_clipped_stats(diffRA, sigma=sigVal, maxiters=intersVal)
     sigma_percentages = []
     for sig_val in [1.0, 2.0, 3.0]:
@@ -950,8 +944,7 @@ def makeVectorPlot(x, y, plate_scale, plotDest, plotfile_prefix, catalog_names, 
         Q = plt.quiver(p_x, p_y, p_dx, p_dy, color=color_ra, units="xy")
     else:
         Q = plt.quiver(p_x, p_y, p_dx, p_dy)
-    plt.quiverkey(Q, 0.75, 0.05, plt_scaleValue, r'%5.3f"' % (plt_scaleValue), labelpos='S', coordinates='figure',
-                  color="k")
+    plt.quiverkey(Q, 0.75, 0.05, plt_scaleValue, r'%5.3f pixels' % (plt_scaleValue), labelpos='S', coordinates='figure', color="k")
     plot_title = "Comparision - reference $\Delta X$, $\Delta Y$ values vs. $(X_{ref}, Y_{ref})$ positions\n%s%s" % (binStatus, lowSampleWarning)
     plt.title(plot_title)
     plt.xlabel(r"$X_{ref}$ image position (pixels)")
@@ -1052,21 +1045,21 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     pdf_file_list = []
 
     # 0: define dictionary of max allowable mean sigma-clipped difference values
-    max_diff_dict = {"X Position": 0.1, # TODO: Verify value
-                     "Y Position": 0.1, # TODO: Verify value
-                     "On-Sky Separation" : 0.1, # TODO: Verify value
-                     "Flux (Inner Aperture)": 999.0, # TODO: Get actual value
-                     "Flux (Outer Aperture)": 999.0, # TODO: Get actual value
-                     "Magnitude (Inner Aperture)": 999.0, # TODO: Get actual value
-                     "Magnitude (Inner Aperture) Error": 999.0, # TODO: Get actual value
-                     "Magnitude (Outer Aperture)": 999.0, # TODO: Get actual value
-                     "Magnitude (Outer Aperture) Error": 999.0, # TODO: Get actual value
-                     "MSKY value": 999.0, # TODO: Get actual value
-                     "STDEV value": 999.0, # TODO: Get actual value
-                     "CI": 999.0, # TODO: Get actual value
-                     "Source Flagging": 5.0}
-    x_axis_units_dict = {"X Position": "arcseconds",
-                         "Y Position": "arcseconds",
+    max_diff_dict = {"X Position": 0.1,  # TODO: Initial "good" value. Optimize as necessary later
+                     "Y Position": 0.1,  # TODO: Initial "good" value. Optimize as necessary later
+                     "On-Sky Separation" : 0.1,  # TODO: Initial "good" value. Optimize as necessary later
+                     "Flux (Inner Aperture)": 1.0,  # TODO: Initial "good" value. Optimize as necessary later
+                     "Flux (Outer Aperture)": 1.0,  # TODO: Initial "good" value. Optimize as necessary later
+                     "Magnitude (Inner Aperture)": 0.1,  # TODO: Initial "good" value. Optimize as necessary later
+                     "Magnitude (Inner Aperture) Error": 0.05,  # TODO: Initial "good" value. Optimize as necessary later
+                     "Magnitude (Outer Aperture)": 0.1,  # TODO: Initial "good" value. Optimize as necessary later
+                     "Magnitude (Outer Aperture) Error": 0.05,  # TODO: Initial "good" value. Optimize as necessary later
+                     "MSKY value": 0.1,  # TODO: Initial "good" value. Optimize as necessary later
+                     "STDEV value": 0.05,  # TODO: Initial "good" value. Optimize as necessary later
+                     "CI": 0.15,  # TODO: Initial "good" value. Optimize as necessary later
+                     "Source Flagging": 5.0}  # TODO: Initial "good" value. Optimize as necessary later
+    x_axis_units_dict = {"X Position": "pixels",
+                         "Y Position": "pixels",
                          "On-Sky Separation" : "arcseconds",
                          "Flux (Inner Aperture)": "electrons/sec",
                          "Flux (Outer Aperture)": "electrons/sec",
@@ -1107,7 +1100,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "X Position"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose, plate_scale=plate_scale)
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list = pdf_files
         regressionTestResults[formalTitle] = rt_status
@@ -1117,7 +1110,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if len(matched_values) > 0:
         formalTitle = "Y Position"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose, plate_scale=plate_scale)
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
         regressionTestResults[formalTitle] = rt_status
