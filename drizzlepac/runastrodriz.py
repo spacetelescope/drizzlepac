@@ -528,6 +528,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 find_crs = not align_dicts[0]['alignment_verified']
             else:
                 find_crs = False
+            trlmsg += "Setting find_crs to {} for a posteriori alignment".format(find_crs)
             tmpname = "_".join([_trlroot, 'aposteriori'])
             sub_dirs.append(tmpname)
             align_aposteriori = verify_alignment(_inlist,

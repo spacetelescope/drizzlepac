@@ -61,6 +61,7 @@ from stsci.tools import fileutil as fu
 from stsci.tools import parseinput
 from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
+from stsci.tools import bitmask
 
 from ..tweakutils import build_xy_zeropoint, ndfind
 
@@ -599,38 +600,69 @@ def find_fwhm(psf, default_fwhm):
 
     return fwhm
 
-def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
-                            nbright=1000,
-                            threshold=200.0, sigma=3.0, source_box=7):
-    """Use photutils to replicate the IRAF point-source catalogs"""
+def evaluate_dq_mask(img, dqarr, kernel=None, source_box=7, segment_threshold=None,
+                    crbit=4096, valid_limit=0.25, max_sources=100):
+    """Use photutils to recognize whether mis-alignment caused the DQ array to mask out all sources.
 
-    # Detect threshold using a relatively fast method and
-    # subtract off that background.
-    nsigma = 5.0
-    bkg_thresh, bkg = sigma_clipped_bkg(img, sigma=sigma, nsigma=nsigma)
+    This algorithm compares the fluxes with and without applying the DQ mask
+    to the identified image source segments.  Should the masked fluxes for
+    the sources with the largest unmasked areas (top 10% or top 10 sources)
+    is less than 80% of the unmasked fluxes.
 
-    sigma = np.sqrt(2.0 * np.abs(bkg[1]))
-    x, y, flux, src_id, sharp, round1, round2 = ndfind(img, 
-                                                     sigma*threshold, 
-                                                     fwhm, bkg[1],
-                                                     nbright=nbright,
-                                                     use_sharp_round=True)
-    srcs = Table([x,y,flux,src_id], names=['xcentroid', 'ycentroid', 'flux', 'id'])
-    
-    """   
-    # Now, use IRAFStarFinder to identify sources across chip
-    starfind = IRAFStarFinder(threshold=bkg[2]*nsigma, fwhm=fwhm)
-    srcs = starfind.find_stars(img, mask=dqmask)
-    if srcs is not None and high_sn is not None and len(srcs) > high_sn:
-        # sort by flux, return high_sn srcs only...
-        indx = np.argsort(srcs['flux'])[:high_sn]
-        srcs = srcs[indx]
+    Parameters
+    -----------
+    img : ndarray
+        Numpy array of the science extension from the observations FITS file.
+    dqarr : ndarray
+        Unmodified DQ array for SCI image `img`
+    threshold : float or None
+        Value from the image which serves as the limit for determining sources.
+        If None, compute a default value of (background+5*rms(background)).
+        If threshold < 0.0, use absolute value as scaling factor for default value.
+    source_box : int
+        Size of box (in pixels) which defines the minimum size of a valid source.
+    valid_limit : float, optional
+        Fraction of unmasked total flux to use for recognizing that mask did not
+        remove valid sources.  This should allow for some masking to occur since
+        CRs can occur anywhere within a source and contribute to the unmasked total
+        flux.
+    max_sources : int, optional
+        Maximum number of identified sources to evaluate
+
+    Returns
+    --------
+    valid : bool
+        Returns True if masked sources have >80% flux of unmasked sources.
     """
-    num_srcs = len(srcs) if srcs is not None else 0
-    log.info("Found {} sources".format(num_srcs))
+    # Look for sources in unmasked SCI image
+    segm = detect_sources(img, segment_threshold, npixels=source_box,
+                          filter_kernel=kernel)
 
-    return srcs
+    # Compute bitmask for CRs
+    # Generates a mask where only pixels flagged as CRs are included in the mask as 1 (True)
+    dqmask = bitmask.bitfield_to_boolean_mask(dqarr, ignore_flags=~4096, good_mask_value=False)
 
+    # Determine source properties for identified sources with and without dqmask
+    srcs_data = source_properties(img, segm)
+    srcs_masked = source_properties(img, segm, mask=dqmask)
+
+    # Identify largest sources in unmasked catalog: between 5 and 100 sources
+    areas = np.argsort(srcs_data.area)[::-1]
+    nlargest = len(srcs_data) // 20 if len(srcs_data) // 20 >= 5 else 5
+    nlargest = nlargest if nlargest < max_sources else max_sources
+    sums_data = np.array(srcs_data.source_sum)[areas][:nlargest]
+    sums_masked = np.array(srcs_masked.source_sum)[areas][:nlargest]
+    log.debug("Evaluated {} sources from DQ array".format(nlargest))
+
+    # Set any 'nan' values to 0. in `source_sum` arrays
+    sums_data[np.isnan(sums_data)] = 0.
+    sums_masked[np.isnan(sums_masked)] = 0.
+    log.debug("sum_data: {}   sum_masked: {}".format(sums_data.sum(), sums_masked.sum()))
+
+    # Evaluate unmasked vs masked fluxes
+    valid = sums_masked.sum() >= (sums_data.sum() * valid_limit)
+
+    return valid
 
 def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     segment_threshold=None, dao_threshold=None, source_box=7,
