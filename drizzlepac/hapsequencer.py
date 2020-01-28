@@ -26,7 +26,6 @@
 import datetime
 import glob
 import os
-import pdb
 import sys
 import traceback
 import logging
@@ -39,6 +38,8 @@ from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
 from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import hla_flag_filter
 from drizzlepac.hlautils import poller_utils
+from drizzlepac.hlautils import product
+
 from drizzlepac.hlautils import processing_utils as proc_utils
 from stsci.tools import logutil
 from stwcs import wcsutil
@@ -108,7 +109,7 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype, log_level):
         cat.write(mod_sl_name, format="ascii.csv")
         return mod_sl_name
 
-    except:
+    except Exception:
         log.warning("There was a problem converting the RA and Dec values. Using original uncorrected HLA Classic sourcelist instead.")
         log.warning("Comparisons may be of questionable quality.")
         return orig_hla_classic_sl_name
@@ -423,37 +424,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                                                                   output_custom_pars_file=output_custom_pars_file)
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
 
-        # Run align.py on images on a filter-by-filter basis.
-        # Process each filter object which contains a list of exposure objects/products.
-        log.info("\n{}: Align the images on a filter-by-filter basis.".format(str(datetime.datetime.now())))
-        for tot_obj in total_list:
-            for filt_obj in tot_obj.fdp_list:
-                align_table, filt_exposures = filt_obj.align_to_gaia(output=diagnostic_mode)
-
-                # Report results and track the output files
-                if align_table:
-                    log.info("ALIGN_TABLE: {}".format(align_table.filtered_table))
-                    for row in align_table.filtered_table:
-                        log.info(row['status'])
-                        if row['status'] == 0:
-                            log.info("Successfully aligned {} to {} astrometric frame\n".format(row['imageName'], row['catalog']))
-
-                        # Alignment did not work for this particular image
-                        # If alignment did not work for an image, image still has WCS so continue processing.
-                        else:
-                            log.info("Could not align {} to absolute astrometric frame\n".format(row['imageName']))
-
-                    hdrlet_list = align_table.filtered_table['headerletFile'].tolist()
-                    product_list += hdrlet_list
-                    product_list += filt_exposures
-
-                    # Remove reference catalogs created for alignment of each filter product
-                    for catalog_name in align_table.reference_catalogs:
-                        log.info("Looking to clean up reference catalog: {}".format(catalog_name))
-                        if os.path.exists(catalog_name):
-                            os.remove(catalog_name)
-                else:
-                    log.warning("Step to align the images has failed. No alignment table has been generated.")
+        run_align_to_gaia(total_list, product_list, log_level=log_level, diagnostic_mode=diagnostic_mode)
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
@@ -511,6 +482,45 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             print("Master log file not found.  Please check logs to locate processing messages.")
         return return_value
 
+
+# ------------------------------------------------------------------------------------------------------------
+
+def run_align_to_gaia(total_list, product_list, log_level=logutil.logging.INFO, diagnostic_mode=False):
+        # Run align.py on all input images sorted by overlap with GAIA bandpass
+        log.info("\n{}: Align the all filters to GAIA with the same fit".format(str(datetime.datetime.now())))
+        gaia_obj = None
+        # Start by creating a FilterProduct instance which includes ALL input exposures
+        for tot_obj in total_list:
+            for exp_obj in tot_obj.edp_list:
+                    if gaia_obj is None:
+                        prod_list = exp_obj.info.split("_")
+                        prod_list[4] = "metawcs"
+                        gaia_obj = product.FilterProduct(prod_list[0], prod_list[1], prod_list[2],
+                                                         prod_list[3], prod_list[4], prod_list[5],
+                                                         prod_list[6], log_level)
+                        gaia_obj.configobj_pars = tot_obj.configobj_pars
+                    gaia_obj.add_member(exp_obj)
+
+        log.info("\n{}: Combined all filter objects in gaia_obj".format(str(datetime.datetime.now())))
+
+        # Now, perform alignment to GAIA with 'match_relative_fit' across all inputs
+        # Need to start with one filt_obj.align_table instance as gaia_obj.align_table
+        #  - append imglist from each filt_obj.align_table to the gaia_obj.align_table.imglist
+        #  - reset group_id for all members of gaia_obj.align_table.imglist to the unique incremental values
+        #  - run gaia_obj.align_table.perform_fit() with 'match_relative_fit' only
+        #  - migrate updated WCS solutions to exp_obj instances, if necessary (probably not?)
+        #  - re-run tot_obj.generate_metawcs() method to recompute total object meta_wcs based on updated
+        #    input exposure's WCSs
+        align_table, filt_exposures = gaia_obj.align_to_gaia(output=diagnostic_mode, fit_label='SVM')
+
+        for tot_obj in total_list:
+            tot_obj.generate_metawcs()
+        log.info("\n{}: Finished aligning gaia_obj to GAIA".format(str(datetime.datetime.now())))
+
+        #
+        # Composite WCS fitting should be done at this point so that all exposures have been fit to GAIA at
+        # the same time (on the same frame)
+        #
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -653,19 +663,19 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
         drz_root_dir = os.getcwd()
         log.info("Run source list flagging on catalog file {}.".format(catalog_name))
         filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image,
-                                                                                                         flt_list,
-                                                                                                         param_dict,
-                                                                                                         exptime,
-                                                                                                         plate_scale,
-                                                                                                         median_sky,
-                                                                                                         catalog_name,
-                                                                                                         catalog_data,
-                                                                                                         cat_type,
-                                                                                                         drz_root_dir,
-                                                                                                         filter_product_obj.hla_flag_msk,
-                                                                                                         ci_lookup_file_path,
-                                                                                                         output_custom_pars_file,
-                                                                                                         log_level,
-                                                                                                         diagnostic_mode)
+                                                     flt_list,
+                                                     param_dict,
+                                                     exptime,
+                                                     plate_scale,
+                                                     median_sky,
+                                                     catalog_name,
+                                                     catalog_data,
+                                                     cat_type,
+                                                     drz_root_dir,
+                                                     filter_product_obj.hla_flag_msk,
+                                                     ci_lookup_file_path,
+                                                     output_custom_pars_file,
+                                                     log_level,
+                                                     diagnostic_mode)
 
     return filter_product_catalogs

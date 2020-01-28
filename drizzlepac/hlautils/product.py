@@ -11,6 +11,7 @@ import shutil
 
 from stsci.tools import logutil
 from astropy.io import fits
+import numpy as np
 
 from .. import astrodrizzle
 from .. import wcs_functions
@@ -23,6 +24,14 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
+# Define keywords to be added to SVM products to describe the overlap of
+# exposures onto the output WCS footprint as determined from the SkyFootprint masks
+MASK_KWS = {"NPIXFRAC": [None, "Fraction of pixels with data"],
+            "MEANEXPT": [None, "Mean exposure time per pixel with data"],
+            "MEDEXPT": [None, "Median exposure time per pixel with data"],
+            "MEANNEXP": [None, "Mean number of exposures per pixel with data"],
+            "MEDNEXP": [None, "Median number of exposures per pixel with data"],
+            }
 
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
@@ -31,6 +40,7 @@ class HAPProduct:
     def __init__(self, prop_id, obset_id, instrument, detector, filename, filetype, log_level):
         # set logging level to user-specified level
         log.setLevel(log_level)
+        self.log_level = log_level
 
         # Make sure the proposal ID is a 5-character string
         self.prop_id = prop_id.zfill(5)
@@ -51,11 +61,56 @@ class HAPProduct:
         # this attribute is updated in the hapsequncer.py module (run_hla_processing()).
         self.configobj_pars = None
 
+        # Initialize attributes for use in generating the output products
+        self.meta_wcs = None
+        self.mask = None
+        self.mask_kws = MASK_KWS.copy()
+
     # def print_info(self):
         # """ Generic print at this time to indicate the information used in the
         #     construction of the object for debug purposes.
         # """
         # print("Object information: {}".format(self.info))
+
+    def generate_footprint_mask(self):
+        """ Create a footprint mask for a set of exposure images
+
+            Create a mask which is True/1/on for the illuminated portion of the image, and
+            False/0/off for the remainder of the image.
+        """
+        footprint = cell_utils.SkyFootprint(self.meta_wcs)
+        exposure_names = [element.full_filename for element in self.edp_list]
+        footprint.build(exposure_names, scale=True)
+        self.mask = footprint.total_mask
+
+        # Compute footprint-based SVM-specific keywords for product image header
+        good_pixels = self.mask > 0
+        self.mask_kws['NPIXFRAC'][0] = good_pixels.sum() / self.mask.size
+        self.mask_kws['MEANEXPT'][0] = np.mean(footprint.scaled_mask[good_pixels])
+        self.mask_kws['MEDEXPT'][0] = np.median(footprint.scaled_mask[good_pixels])
+        self.mask_kws['MEANNEXP'][0] = np.mean(self.mask[good_pixels])
+        self.mask_kws['MEDNEXP'][0] = np.median(self.mask[good_pixels])
+
+    def generate_metawcs(self):
+        """ A method to build a unique WCS for each TotalProduct product which is
+            generated based upon the merging of all the ExposureProducts which comprise the
+            specific TotalProduct.  This is done on a per TotalProduct basis as the Single
+            Visit Mosaics need to be represented in their native scale.
+
+        """
+        exposure_filenames = [element.full_filename for element in self.edp_list]
+        log.debug("\n\nRun make_mosaic_wcs to create a common WCS.")
+        log.debug("The following images will be used: ")
+        log.debug("{}\n".format(exposure_filenames))
+
+        # Set the rotation to 0.0 to force North as up
+        if exposure_filenames:
+            meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames, rot=0.0)
+
+        # Used in generation of SkyFootprints
+        self.meta_wcs = meta_wcs
+
+        return meta_wcs
 
 
 class TotalProduct(HAPProduct):
@@ -88,8 +143,6 @@ class TotalProduct(HAPProduct):
         self.edp_list = []
         self.fdp_list = []
         self.regions_dict = {}
-        self.meta_wcs = None
-        self.mask = None
 
         log.debug("Total detection object {}/{} created.".format(self.instrument, self.detector))
 
@@ -102,27 +155,6 @@ class TotalProduct(HAPProduct):
         """ Add a FilterProduct object to the list - composition.
         """
         self.fdp_list.append(fdp)
-
-    def generate_metawcs(self):
-        """ A method to build a unique WCS for each TotalProduct product which is
-            generated based upon the merging of all the ExposureProducts which comprise the
-            specific TotalProduct.  This is done on a per TotalProduct basis as the Single
-            Visit Mosaics need to be represented in their native scale.
-
-        """
-        exposure_filenames = [element.full_filename for element in self.edp_list]
-        log.debug("\n\nRun make_mosaic_wcs to create a common WCS.")
-        log.debug("The following images will be used: ")
-        log.debug("{}\n".format(exposure_filenames))
-
-        # Set the rotation to 0.0 to force North as up
-        if exposure_filenames:
-            meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames, rot=0.0)
-
-        # Used in generation of SkyFootprints
-        self.meta_wcs = meta_wcs
-
-        return meta_wcs
 
     def wcs_drizzle_product(self, meta_wcs):
         """
@@ -142,20 +174,14 @@ class TotalProduct(HAPProduct):
                                   output=self.drizzle_filename,
                                   **drizzle_pars)
 
+        # Update product with SVM-specific keywords based on the footprint
+        with fits.open(self.drizzle_filename, mode='update') as hdu:
+            for kw in self.mask_kws:
+                hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
+
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Total combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         shutil.move(self.trl_logname, self.trl_filename)
-
-    def generate_footprint_mask(self):
-        """ Create a footprint mask for a set of exposure images
-
-            Create a mask which is True/1/on for the illuminated portion of the image, and
-            False/0/off for the remainder of the image.
-        """
-        footprint = cell_utils.SkyFootprint(self.meta_wcs)
-        exposure_names = [element.full_filename for element in self.edp_list]
-        footprint.build(exposure_names)
-        self.mask = footprint.total_mask
 
 
 class FilterProduct(HAPProduct):
@@ -191,7 +217,8 @@ class FilterProduct(HAPProduct):
         """
         self.edp_list.append(edp)
 
-    def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True):
+    def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
+                        fit_label='EVM', align_table=None):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment
            routine.
@@ -212,9 +239,12 @@ class FilterProduct(HAPProduct):
                     exposure_filenames.append(edp.full_filename)
                     headerlet_filenames[edp.full_filename] = edp.headerlet_filename
 
-                align_table = align_utils.AlignmentTable(exposure_filenames, **alignment_pars)
-                align_table.find_alignment_sources(output=output)
-                align_table.configure_fit()
+                if align_table is None:
+                    align_table = align_utils.AlignmentTable(exposure_filenames,
+                                                             log_level=self.log_level,
+                                                             **alignment_pars)
+                    align_table.find_alignment_sources(output=output)
+                    align_table.configure_fit()
                 refname = "{}_ref_cat.ecsv".format(self.product_basename)
                 log.debug('Creating reference catalog {}'.format(refname))
                 ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
@@ -227,8 +257,8 @@ class FilterProduct(HAPProduct):
                 if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
                     align_table.perform_fit(method_name, catalog_name, ref_catalog)
                     align_table.select_fit(catalog_name, method_name)
-                    align_table.apply_fit(headerlet_filenames=headerlet_filenames, 
-                                         fit_label='SVM')
+                    align_table.apply_fit(headerlet_filenames=headerlet_filenames,
+                                         fit_label=fit_label)
                 else:
                     log.warning("Not enough reference sources for absolute alignment...")
                     raise ValueError
@@ -242,7 +272,7 @@ class FilterProduct(HAPProduct):
             logging.exception("message")
             align_table = None
 
-            # If the align_table is None, it is necessary to clean-up reference catalogs 
+            # If the align_table is None, it is necessary to clean-up reference catalogs
             # created for alignment of each filter product here.
             if refname and os.path.exists(refname):
                 os.remove(refname)
@@ -257,6 +287,11 @@ class FilterProduct(HAPProduct):
         """
             Create the drizzle-combined filter image using the meta_wcs as the reference output
         """
+        # This insures that keywords related to the footprint are generated for this
+        # specific object to use in updating the output drizzle product.
+        self.meta_wcs = meta_wcs
+        if self.mask is None:
+            self.generate_footprint_mask()
 
         # Retrieve the configuration parameters for astrodrizzle
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
@@ -272,6 +307,11 @@ class FilterProduct(HAPProduct):
                                   output=self.drizzle_filename,
                                   **drizzle_pars)
 
+        # Update product with SVM-specific keywords based on the footprint
+        with fits.open(self.drizzle_filename, mode='update') as hdu:
+            for kw in self.mask_kws:
+                hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
+
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Filter combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         shutil.move(self.trl_logname, self.trl_filename)
@@ -286,8 +326,8 @@ class ExposureProduct(HAPProduct):
         super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
 
         self.info = '_'.join([prop_id, obset_id, instrument, detector, filename, filters, filetype])
-        self.full_filename = filename
         self.filters = filters
+        self.full_filename = self.copy_exposure(filename)
 
         # Open the input FITS file to mine some header information.
         hdu_list = fits.open(filename)
@@ -307,6 +347,17 @@ class ExposureProduct(HAPProduct):
         self.is_singleton = False
 
         log.info("Exposure object {} created.".format(self.full_filename[0:9]))
+
+    def __getattribute__(self, name):
+        if name in ["generate_footprint_mask", "generate_metawcs", "meta_wcs", "mask_kws", "mask"]:
+            raise AttributeError(name)
+        else:
+            return super(ExposureProduct, self).__getattribute__(name)
+
+    def __dir__(self):
+        class_set = (set(dir(self.__class__)) | set(self.__dict__.keys()))
+        unwanted_set = set(["generate_footprint_mask", "generate_metawcs", "meta_wcs", "mask_kws", "mask"])
+        return sorted(class_set - unwanted_set)
 
     def wcs_drizzle_product(self, meta_wcs):
         """
@@ -329,3 +380,30 @@ class ExposureProduct(HAPProduct):
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Exposure image {}".format(self.drizzle_filename))
         shutil.move(self.trl_logname, self.trl_filename)
+
+    def copy_exposure(self, filename):
+        """
+            Create a copy of the original input to be renamed and used for single-visit processing.
+
+            New exposure filename needs to follow the convention:
+            hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_fl[ct].fits
+
+            Parameters
+            ----------
+            filename : str
+                Original pipeline filename for input exposure
+
+            Returns
+            -------
+            edp_filename : str
+                New SVM-compatible HAP filename for input exposure
+
+        """
+        suffix = filename.split("_")[1]
+        edp_filename = self.basename + \
+                       "_".join(map(str, [self.filters, filename[:8], suffix]))
+
+        log.info("Copying {} to SVM input: \n    {}".format(filename, edp_filename))
+        shutil.copy(filename, edp_filename)
+
+        return edp_filename

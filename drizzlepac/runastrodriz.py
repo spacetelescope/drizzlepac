@@ -71,7 +71,7 @@ from collections import OrderedDict
 import datetime
 try:
     from psutil import Process
-except:
+except ImportError:
     Process = None
 
 # THIRD-PARTY
@@ -362,7 +362,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             5. Remove all processing sub-directories
         """
         inst_mode = "{}/{}".format(infile_inst, infile_det)
-        adriz_pars = mdzhandler.getMdriztabParameters(_calfiles)
+        _good_images = [f for f in _calfiles if fits.getval(f, 'exptime') > 0.]
+        if len(_good_images) == 0:
+            _good_images = _calfiles
+        adriz_pars = mdzhandler.getMdriztabParameters(_good_images)
         adriz_pars.update(pipeline_pars)
         adriz_pars['mdriztab'] = False
         adriz_pars['final_fillval'] = "INDEF"
@@ -550,6 +553,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # Generate headerlets for each updated FLT image
         hlet_msg = _timestamp("Writing Headerlets started")
         for fname in _calfiles:
+            hlet_msg += "Creating new headerlet from {}".format(fname)
             frootname = fileutil.buildNewRootname(fname)
             hname = "%s_flt_hlet.fits" % frootname
             # Write out headerlet file used by astrodrizzle, however,
@@ -624,13 +628,14 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
                                                         overwrite=False)
         del ivmlist
         calfiles = asndict['original_file_names'] if asndict is not None else calfiles
+
         drz_products.append(drz_product)
 
         # Create trailer marker message for start of astrodrizzle processing
         _trlmsg = _timestamp('astrodrizzle started ')
         _trlmsg += __trlmarker__
         _trlmsg += '%s: Processing %s with astrodrizzle Version %s\n' % (_getTime(), infile, pyver)
-
+        print(_trlmsg)
         _updateTrlFile(trlfile, _trlmsg)
 
         _pyd_err = trlfile.replace('.tra', '_pydriz.stderr')
@@ -727,6 +732,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                      alignment_mode=None, force_alignment=False,
                      **pipeline_pars):
 
+    headerlet_files = []
     for infile in inlist:
         asndict, ivmlist, drz_product = processInput.process_input(infile, updatewcs=False,
                                                     preserve=False,
@@ -795,6 +801,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                         sat_flags = 256 + 2048
                 else:
                     sat_flags = 256 + 2048 + 4096 + 8192
+
                 align_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
                                                   clobber=False, output=debug, sat_flags=sat_flags)
                 if align_table is None:
@@ -813,12 +820,15 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                     else:
                         trlstr = "Could not align {} to absolute astrometric frame\n"
                         trlmsg += trlstr.format(row['imageName'])
+                        print(trlmsg)
+                        _updateTrlFile(trlfile, trlmsg)
                         return None
             except Exception:
                 # Something went wrong with alignment to GAIA, so report this in
                 # trailer file
                 _trlmsg = "EXCEPTION encountered in align...\n"
                 _trlmsg += "   No correction to absolute astrometric frame applied!\n"
+                print(_trlmsg)
                 _updateTrlFile(trlfile, _trlmsg)
                 traceback.print_exc()
                 return None
@@ -828,7 +838,6 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             if os.path.exists(alignlog):
                 shutil.copy(alignlog, alignlog_copy)
                 _appendTrlFile(trlfile, alignlog_copy)
-
 
             _trlmsg = ""
             # Check to see whether there are any additional input files that need to
@@ -841,6 +850,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                     if headerlet_file != "None":
                         headerlet.apply_headerlet_as_primary(fltfile, headerlet_file,
                                                             attach=True, archive=True)
+                        headerlet_files.append(headerlet_file)
                         # append log file contents to _trlmsg for inclusion in trailer file
                         _trlstr = "Applying headerlet {} as Primary WCS to {}\n"
                         _trlmsg += _trlstr.format(headerlet_file, fltfile)
@@ -943,7 +953,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             if calfiles_flc:
                 _ = [shutil.copy(f, parent_dir) for f in calfiles_flc]
             # Copy drizzle products to parent directory to replace 'less aligned' versions
-            _ = [shutil.copy(f, parent_dir) for f in drz_products]
+            _ = [shutil.copy(f, parent_dir) for f in drz_products + headerlet_files]
 
         _trlmsg += _timestamp('Verification of alignment completed ')
         _updateTrlFile(trlfile, _trlmsg)
