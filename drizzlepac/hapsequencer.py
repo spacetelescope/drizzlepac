@@ -505,8 +505,8 @@ def run_align_to_gaia(total_obj_list, product_list, log_level=logutil.logging.IN
                         prod_list = exp_obj.info.split("_")
                         prod_list[4] = "metawcs"
                         gaia_obj = product.FilterProduct(prod_list[0], prod_list[1], prod_list[2],
-                                                         prod_list[3], prod_list[4], prod_list[5],
-                                                         prod_list[6], log_level)
+                                                         prod_list[3], prod_list[4], "all",
+                                                         prod_list[5][0:3], log_level)
                         gaia_obj.configobj_pars = tot_obj.configobj_pars
                     gaia_obj.add_member(exp_obj)
 
