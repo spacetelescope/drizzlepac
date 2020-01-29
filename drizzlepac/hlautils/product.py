@@ -195,10 +195,15 @@ class FilterProduct(HAPProduct):
         super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
 
         self.info = '_'.join([prop_id, obset_id, instrument, detector, filename, filters, filetype])
-        self.exposure_name = filename[0:6]
+        if filename[0:7].lower() != "metawcs":
+            self.exposure_name = filename[0:6]
+            self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
+        else:
+            self.exposure_name = "metawcs"
+            self.product_basename = self.basename + "_".join(map(str, [filetype, self.exposure_name, filters]))
+
         self.filters = filters
 
-        self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
         # Trailer names .txt or .log
         self.trl_logname = self.product_basename + "_trl.log"
         self.trl_filename = self.product_basename + "_trl.txt"
@@ -276,6 +281,11 @@ class FilterProduct(HAPProduct):
             # created for alignment of each filter product here.
             if refname and os.path.exists(refname):
                 os.remove(refname)
+
+        # Clean up under nominal circumstances unless output=True
+        if not output and refname and os.path.exists(refname):
+                os.remove(refname)
+
 
         # Return a table which contains data regarding the alignment, as well as the
         # list of the flt/flc exposures which were part of the alignment process
