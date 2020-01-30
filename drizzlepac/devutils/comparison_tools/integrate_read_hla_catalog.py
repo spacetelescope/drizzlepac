@@ -82,7 +82,8 @@ if __name__ == "__main__":
     hap_imgname = "hst_10265_01_acs_wfc_f606w_j92c01_drc.fits"
     log_level = 10
     log.setLevel(log_level)
-    updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name,'dao',log_level)
+    hla_cat_type = hla_sourcelist_name.replace("_corrected","")[-11:-8]
+    updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name,hla_cat_type,log_level)
 
     return_status = compare_sourcelists.comparesourcelists([updated_hla_sourcelist_name,hap_sourcelist_name], [hla_imgname, hap_imgname],
-                                                           plotfile_prefix="hst_10265_01_acs_wfc_f606w_j92c01_point", plotGen="screen", verbose=True, debugMode = True,log_level=log_level)
+                                                           plotfile_prefix=hap_sourcelist_name.replace("-cat.ecsv",""), plotGen="screen", verbose=True, debugMode = True,log_level=log_level)
