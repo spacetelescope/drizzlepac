@@ -102,6 +102,7 @@ setup(
         'photutils>=0.7',
         'pysynphot',
         'lxml',
+        'PyPDF2',
         'scikit-image>=0.14.2',
     ],
     extras_require={

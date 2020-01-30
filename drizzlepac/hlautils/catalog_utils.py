@@ -1036,7 +1036,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Capture specified filter columns in order to append to the total detection table
         self.subset_filter_source_cat = self.source_cat["ID", "MagAp2", "CI", "Flags"]
-        self.subset_filter_source_cat.rename_column("MagAp2", "MagAp2_" + filter_name)
+        self.subset_filter_source_cat.rename_column("MagAp2", "MagAP2_" + filter_name)
         self.subset_filter_source_cat.rename_column("CI", "CI_" + filter_name)
         self.subset_filter_source_cat.rename_column("Flags", "Flags_" + filter_name)
 
