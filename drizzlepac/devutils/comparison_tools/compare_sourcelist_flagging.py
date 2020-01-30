@@ -47,19 +47,19 @@ def display_regions(imgname, coordsys, reg_dict_list, flag_counts_list, n_source
     """
     imghdu = fits.open(imgname)
     d = pyds9.DS9()
-    print("{}Catalog #1{}Catalog #2".format(" " * 52, " " * 3))
+    print("{}Catalog #1{}Catalog #2".format(" " * 56, " " * 10))
     for ctr in range(0, len(bit_list)):
         bit_val = bit_list[ctr]
         padding1 = 6 - len(str(bit_val))
         padding2 = 27 - len(flag_meanings[ctr])
-        print("Frame {}: Bit value {}{}{}{}{}{}{}".format(ctr+1,
-                                                          bit_val,
-                                                          "."*padding1,
-                                                          flag_meanings[ctr],
-                                                          padding2*".",
-                                                          flag_counts_list[0][ctr],
-                                                          (13-len(str(flag_counts_list[0][ctr])))*".",
-                                                          flag_counts_list[1][ctr]))
+
+
+        text_stuff = "Frame {}: Bit value {}{}{}{}".format(ctr+1,bit_val,"."*padding1,flag_meanings[ctr],padding2*".")
+        pct_1 = (float(flag_counts_list[0][ctr])/float(n_sources_list[0]))*100.0
+        pct_2 = (float(flag_counts_list[1][ctr]) / float(n_sources_list[1])) * 100.0
+        out_string = "{:9d} {:8.3f}% {:9d} {:8.3f}%".format(flag_counts_list[0][ctr],pct_1,flag_counts_list[1][ctr],pct_2)
+
+        print("{}{}".format(text_stuff,out_string.replace(" ",".")))
         if ctr != 0:
             d.set("frame new")
         d.set_fits(imghdu)
@@ -73,7 +73,8 @@ def display_regions(imgname, coordsys, reg_dict_list, flag_counts_list, n_source
                     d.set('regions', 'physical; {}'.format(reg_dict[bit_val]))
                 if coordsys == "radec":
                     d.set('regions', 'fk5; {}'.format(reg_dict[bit_val]))
-    print("{}TOTAL CATALOG LENGTH.......{}{}{}".format(" " * 25, n_sources_list[0], "." * (13 - len(str(n_sources_list[0]))), n_sources_list[1]))
+    out_string = ".......{:9d}{}{:9d}".format(n_sources_list[0], "." * 11 , n_sources_list[1])
+    print("{}TOTAL CATALOG LENGTH{}".format(" " * 25,out_string.replace(" ",".")))
     d.set("lock frame image")
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
 
@@ -228,7 +229,7 @@ if __name__ == "__main__":
     if sl_name_a.split("_")[5] == "total" or sl_name_b.split("_")[5] == "total":
         sys.exit("Invalid catalog input. This script only compares filter catalogs, not total catalogs.")
     shapes = ['box', 'circle']
-    colors = ['red', 'blue']
+    colors = ['red', 'green']
 
     reg_dict_list = ["", ""]
     flag_counts_list = ["", ""]
