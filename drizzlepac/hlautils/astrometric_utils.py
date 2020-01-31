@@ -26,6 +26,8 @@ import numpy as np
 import scipy.stats as st
 from scipy import ndimage
 from scipy.stats import pearsonr
+from skimage import feature
+from skimage.transform import hough_line, hough_line_peaks
 from lxml import etree
 try:
     from matplotlib import pyplot as plt
@@ -525,7 +527,8 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     wht_box = 2  # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
     fwhm_attempts = 0
     # Identify position of brightest, non-saturated peak (in numpy index order)
-    for peak_ctr in range(len(peaks)):
+    num_peaks = len(peaks)
+    for peak_ctr in range(num_peaks):
         kernel_pos = [peaks['y_peak'][peak_ctr], peaks['x_peak'][peak_ctr]]
 
         kernel = imgarr[kernel_pos[0] - source_box:kernel_pos[0] + source_box + 1,
@@ -947,9 +950,22 @@ def classify_sources(catalog, sources=None):
         src_y = catalog[src].ycentroid
         if np.isnan(src_x) or np.isnan(src_y):
             continue
+
+        # Now look at moments for non-PSF-like(sharply peaked) CRs
         x, y = np.where(moments[src] == moments[src].max())
         if (x[0] > 1) and (y[0] > 1):
             srctype[src] = 1
+            continue
+
+        # Hough line detection of the data_cutout object can also be inserted here
+        # Classic straight-line Hough transform
+        # Set a precision of 0.5 degree.
+        tested_angles = np.linspace(-np.pi / 2, np.pi / 2, 360)
+        h, theta, d = hough_line(catalog[src].data_cutout, theta=tested_angles)
+        if len(d) > 0:
+            accum, angles, dists = hough_line_peaks(h, theta, d)
+            if len(angles) > 0:  # We found at least 1 line
+                srctype[src] = 1
 
     return srctype
 
@@ -1493,6 +1509,15 @@ def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
 # Functions to support working with Tweakwcs
 #
 ##############################
+def build_imglist(process_list, src_catalogs):
+
+    imglist = []
+    for group_id, image in enumerate(process_list):
+        img = build_wcscat(image, group_id, src_catalogs[image])
+        imglist.extend(img)
+
+    return imglist
+
 def build_wcscat(image, group_id, source_catalog):
     """ Return a list of `~tweakwcs.tpwcs.FITSWCS` objects for all chips in an image.
 
@@ -1567,6 +1592,76 @@ def build_wcscat(image, group_id, source_catalog):
 
     return wcs_catalogs
 
+def determine_initial_shifts(imglist):
+    """Determine initial shifts in pixels to image objects being aligned using cross-correlation
+
+    Parameters
+    -----------
+    imglist : list
+        List of FITSWCS objects for all chip's being aligned
+
+    """
+    # Start by creating raw frames containing all chip's data for each exposure
+    raw_frames = {}
+    raw_shifts = {}
+    ref_filename = None
+    for img in imglist:
+        filename = img.meta['filename']
+        if ref_filename is None:
+            ref_filename = filename
+        chip = img.meta['chip']
+        chip = fits.getdata(filename, ext=("SCI", chip))
+
+        if filename not in raw_frames:
+            raw_frames[filename] = {}
+            raw_frames[filename]['chips'] = [chip]
+            raw_shifts[filename] = []
+            continue
+        raw_frames[filename]['chips'].append(chip)
+
+    # Get the raw SCI data for all chips and concatenate them into a single array for each filename
+    # These composite raw frames will then be cross-correlated to determine the initial
+    # offset between the images.  Errors in the offset caused by the distortion are expected
+    # and should be small enough to not affect the subsequent alignment by tweakwcs.
+    # This also insures that the same offset is used for all chips in an single exposure.
+    for filename in raw_frames:
+        raw_frames[filename]['full_frame'] = np.concatenate(raw_frames[filename]['chips'])
+
+    # Now, use these composite full-frames of the raw data to determine an initial
+    # guess at the offsets using the first in the list as the reference
+    ref = raw_frames[ref_filename]['full_frame']
+    for fname in raw_frames:
+        if fname == ref_filename:
+            offset = [0, 0]
+        else:
+            # Compute shifts here using skimage.feature with fast cross-correlation
+            offset, err, phasediff = feature.register_translation(raw_frames[fname]['full_frame'], ref)
+            # Convert numpy (y,x) ordering to (x,y) and return as a list not ndarray
+            offset = offset.tolist()
+
+        raw_shifts[fname].append(offset)
+
+    # Match up computed shifts with original input list of FITSWCS objects
+    shifts = []
+    for img in imglist:
+        filename = img.meta['filename']
+        shifts += raw_shifts[filename]
+
+    print("Initial offsets between images, not WCSs, in pixels: \n    {}".format(raw_shifts))
+    ref_sky = imglist[0].wcs.wcs.crval
+
+    # Apply computed shifts to FITSWCS objects
+    for img, shift in zip(imglist, shifts):
+        # Convert shifts from raw pixels to tangent plane coordinates used by FITSWCS
+        print("Computing sky_pix for {}, {}".format(ref_sky[0], ref_sky[1]))
+        sky_pix = img.wcs.all_world2pix([ref_sky[0]], [ref_sky[1]], 1)
+        ref_pix = [img.wcs.wcs.crpix[0] - sky_pix[0], img.wcs.wcs.crpix[1] - sky_pix[1]]
+        print("Reference Pixel at pix {} compared to ref_pix {}".format(ref_pix, img.wcs.wcs.crpix))
+        off_tanp_ref = img.det_to_tanp(ref_pix[0], ref_pix[1])
+        off_tanp = img.det_to_tanp(ref_pix[0] + shift[0], ref_pix[1] + shift[1])
+        off_xy = [off_tanp[0] - off_tanp_ref[0], off_tanp[1] - off_tanp_ref[1]]
+        # apply correction and record applied offset (in pixels) in metadata
+        img.set_correction(offset=off_xy, meta={'XCORR_offset': shift})
 
 # -------------------------------------------------------------------------------------------------------------
 #
@@ -1980,6 +2075,7 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
                 sigma = 3.
             else:
                 pass
+        maxiters = int(np.log10(rebin_arr.max() / 2) + 0.5)
 
         bkg_total, bkg = sigma_clipped_bkg(rebin_arr, sigma=sigma, nsigma=nsigma)
         log.debug("sigma clipped background value: {}".format(bkg_total))

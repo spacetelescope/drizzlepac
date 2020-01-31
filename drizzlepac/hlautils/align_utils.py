@@ -8,7 +8,6 @@ import warnings
 from collections import OrderedDict
 
 import numpy as np
-from scipy import ndimage
 
 from astropy.io import fits
 from astropy.table import Table, vstack
@@ -577,8 +576,10 @@ class HAPImage:
                                                           **extract_pars)
 
             self.catalog_table[chip] = seg_tab
-# ----------------------------------------------------------------------------------------------------------------------
 
+
+
+# ------------------------------------------------------------------------------------------------------------
 
 def match_relative_fit(imglist, reference_catalog, **fit_pars):
     """Perform cross-matching and final fit using relative matching algorithm
@@ -597,6 +598,15 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
+    # Compute initial guess for shift only with fast cross-correlation
+    # and use those shifts to get the images roughly aligned prior to fitting with
+    # tweakwcs.  This should allow MUCH tighter parameters to be used which would
+    # be less susceptible to source confusion (bad matches/fits) and errors.
+    amutils.determine_initial_shifts(imglist)
+#    fit_pars['searchrad'] = fit_pars['searchrad'] if fit_pars['searchrad'] < 25.0 else 25.0
+#    fit_pars['separation'] = fit_pars['separation'] if fit_pars['separation'] > 2.0 else 2.0
+#    fit_pars['tolerance'] = fit_pars['tolerance'] if fit_pars['tolerance'] > 5.0 else 5.0
+
     log.info("{} (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
     if 'fitgeom' in fit_pars:
         fitgeom=fit_pars['fitgeom']
@@ -654,6 +664,54 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     interpret_fit_rms(imglist, reference_catalog)
 
     del match_relcat
+    return imglist
+
+
+# ------------------------------------------------------------------------------------------------------------
+
+def match_relative_blindfit(imglist, reference_catalog, **fit_pars):
+    """Perform cross-matching and final fit using relative matching algorithm
+
+    Parameters
+    ----------
+    imglist : list
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+
+    reference_catalog : Table
+        Astropy Table of reference sources for this field
+
+    Returns
+    --------
+    imglist : list
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+
+    """
+    log.info("{} (match_relative_blindfit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
+    # 0: Specify matching algorithm to use
+    match = tweakwcs.TPMatch(**fit_pars)
+    log.debug("Relative fit configured with: \n  {}".format(fit_pars))
+
+    # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
+    #                          tolerance=100, use2dhist=False)
+
+    # Align images and correct WCS
+    # NOTE: this invocation does not use an astrometric catalog. This call allows all the input images to be aligned in
+    # a relative way using the first input image as the reference.
+    # 1: Perform relative alignment
+    tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True)
+
+    # Set all the group_id values to be the same so the various images/chips will be aligned to the astrometric
+    # reference catalog as an ensemble.
+    # astrometric reference catalog as an ensemble. BEWARE: If additional iterations of solutions are to be
+    # done, the group_id values need to be restored.
+    for image in imglist:
+        image.meta["group_id"] = 1234567
+    # 2: Perform absolute alignment
+    tweakwcs.align_wcs(imglist, reference_catalog, match=match)
+
+    # 3: Interpret RMS values from tweakwcs
+    interpret_fit_rms(imglist, reference_catalog)
+
     return imglist
 
 # ----------------------------------------------------------------------------------------------------------
@@ -738,6 +796,53 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     interpret_fit_rms(imglist, reference_catalog)
     
     del matched_cat
+
+    return imglist
+
+# ------------------------------------------------------------------------------------------------------------
+
+def match_relative_shift(imglist, reference_catalog, **fit_pars):
+    """Perform cross-matching and final fit using relative matching algorithm with a shift only fit
+
+    Parameters
+    ----------
+    imglist : list
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+
+    reference_catalog : Table
+        Astropy Table of reference sources for this field
+
+    Returns
+    --------
+    imglist : list
+        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+
+    """
+    log.info("{} (match_relative_shift) Cross matching and fitting {}".format("-" * 20, "-" * 27))
+    # 0: Specify matching algorithm to use
+    match = tweakwcs.TPMatch(**fit_pars)
+    log.debug("Relative fit configured with: \n  {}".format(fit_pars))
+
+    # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
+    #                          tolerance=100, use2dhist=False)
+
+    # Align images and correct WCS
+    # NOTE: this invocation does not use an astrometric catalog. This call allows all the input images to be aligned in
+    # a relative way using the first input image as the reference.
+    # 1: Perform relative alignment
+    tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True, fitgeom='shift')
+
+    # Set all the group_id values to be the same so the various images/chips will be aligned to the astrometric
+    # reference catalog as an ensemble.
+    # astrometric reference catalog as an ensemble. BEWARE: If additional iterations of solutions are to be
+    # done, the group_id values need to be restored.
+    for image in imglist:
+        image.meta["group_id"] = 1234567
+    # 2: Perform absolute alignment
+    tweakwcs.align_wcs(imglist, reference_catalog, match=match, fitgeom='shift')
+
+    # 3: Interpret RMS values from tweakwcs
+    interpret_fit_rms(imglist, reference_catalog)
 
     return imglist
 

@@ -421,6 +421,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                             table_fit = alignment_table.fit_dict[(catalog_name, algorithm_name)]
                             table_fit[imglist_ctr].meta['fit method'] = algorithm_name
                             table_fit[imglist_ctr].meta['fit quality'] = fit_quality
+                        log.debug("FIT determined was: {}".format(
+                                    alignment_table.fit_dict[(catalog_name, algorithm_name)][0].meta))
 
                         # populate fit_info_dict
                         fit_info_dict["{} {}".format(catalog_name, algorithm_name)] = \
@@ -475,7 +477,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
             if fit_quality == 1 or (best_fit_qual in [2, 3, 4] and
                 "relative" in algorithm_name):
                 break
-        log.info("best_fit found to be: {}".format(best_fit_label))
+        log.info("\nBEST FIT found to be: \n    {}\n".format(best_fit_label))
         log.info("FIT_DICT: {}".format(alignment_table.fit_dict.keys()))
         # Reset imglist to point to best solution...
         alignment_table.select_fit(best_fit_label[0], best_fit_label[1])
@@ -562,8 +564,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                 result.add_column(filtered_table[col], name=col)
         if filtered_table is not None:
             filtered_table.pprint(max_width=-1)
-    return filtered_table
-
+    return filtered_table, alignment_table
 
 
 # ----------------------------------------------------------------------------------------------------------
