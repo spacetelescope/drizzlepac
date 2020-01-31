@@ -433,7 +433,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                                                                   output_custom_pars_file=output_custom_pars_file)
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
 
-        run_align_to_gaia(total_obj_list, product_list, log_level=log_level, diagnostic_mode=diagnostic_mode)
+        reference_catalog = run_align_to_gaia(total_obj_list, log_level=log_level, diagnostic_mode=diagnostic_mode)
+        product_list += [reference_catalog]
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
@@ -494,7 +495,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
 # ------------------------------------------------------------------------------------------------------------
 
-def run_align_to_gaia(total_obj_list, product_list, log_level=logutil.logging.INFO, diagnostic_mode=False):
+def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic_mode=False):
         # Run align.py on all input images sorted by overlap with GAIA bandpass
         log.info("\n{}: Align the all filters to GAIA with the same fit".format(str(datetime.datetime.now())))
         gaia_obj = None
@@ -525,6 +526,9 @@ def run_align_to_gaia(total_obj_list, product_list, log_level=logutil.logging.IN
         for tot_obj in total_obj_list:
             tot_obj.generate_metawcs()
         log.info("\n{}: Finished aligning gaia_obj to GAIA".format(str(datetime.datetime.now())))
+
+        # Return the name of the alignment catalog
+        return gaia_obj.refname
 
         #
         # Composite WCS fitting should be done at this point so that all exposures have been fit to GAIA at
