@@ -213,6 +213,7 @@ class FilterProduct(HAPProduct):
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
+        self.refname = self.product_basename + "_ref_cat.ecsv"
 
         # These attributes will be populated during processing
         self.edp_list = []
@@ -240,7 +241,6 @@ class FilterProduct(HAPProduct):
         exposure_filenames = []
         headerlet_filenames = {}
         align_table = None
-        refname = None
         try:
             if self.edp_list:
                 for edp in self.edp_list:
@@ -253,15 +253,14 @@ class FilterProduct(HAPProduct):
                                                              **alignment_pars)
                     align_table.find_alignment_sources(output=output)
                     align_table.configure_fit()
-                refname = "{}_ref_cat.ecsv".format(self.product_basename)
-                log.debug('Creating reference catalog {}'.format(refname))
+                log.debug('Creating reference catalog {}'.format(self.refname))
                 ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
                                                                  catalog=catalog_name,
-                                                                 output=refname,
+                                                                 output=self.refname,
                                                                  gaia_only=False)
 
                 log.debug("Abbreviated reference catalog displayed below\n{}".format(ref_catalog))
-                align_table.reference_catalogs[refname] = ref_catalog
+                align_table.reference_catalogs[self.refname] = ref_catalog
                 if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
                     align_table.perform_fit(method_name, catalog_name, ref_catalog)
                     align_table.select_fit(catalog_name, method_name)
@@ -282,12 +281,8 @@ class FilterProduct(HAPProduct):
 
             # If the align_table is None, it is necessary to clean-up reference catalogs
             # created for alignment of each filter product here.
-            if refname and os.path.exists(refname):
-                os.remove(refname)
-
-        # Clean up under nominal circumstances unless output=True
-        if not output and refname and os.path.exists(refname):
-                os.remove(refname)
+            if self.refname and os.path.exists(self.refname):
+                os.remove(self.refname)
 
 
         # Return a table which contains data regarding the alignment, as well as the
