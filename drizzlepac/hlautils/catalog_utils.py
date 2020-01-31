@@ -849,12 +849,18 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Check the pars to see if the "n" exposure mask has been passed.  If it has, it must be
         # converted into a boolean mask where False = actual image footprint, and True = the
         # non-illuminated portion of the images.  The True indicates to detect_sources()
-        # which pixels to ignore.
+        # which pixels to IGNORE.
         mask = pars.get('mask', None)
         if hasattr(mask, 'shape'):
+            # At this point this general mask has zeros in the non-illuminated portion, and non-zeros in
+            # the illuminated portion.  We are decreasing the footprint of the illuminated portion.
+            mask = ndimage.binary_erosion(mask, iterations=10)
+            # Now convert the mask for the purposes needed here: the non-illuminated portion is True,
+            # and the illuminated portion is False.
             mask = mask < 1
-            # outname = self.imgname.replace(".fits","_mask.fits")
-            # fits.PrimaryHDU(data=mask.astype(np.uint16)).writeto(outname)
+            if self.diagnostic_mode:
+                outname = self.imgname.replace(".fits","_mask.fits")
+                fits.PrimaryHDU(data=mask.astype(np.uint16)).writeto(outname)
 
         # If the total product sources have not been identified, then this needs to be done!
         if not self.tp_sources:
@@ -889,6 +895,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
             self.segm_img = detect_sources(imgarr_bkgsub, threshold, npixels=self._size_source_box,
                                            filter_kernel=self.image.kernel,
                                            mask=mask)
+            if self.diagnostic_mode:
+                outname = self.imgname.replace(".fits","_segment.fits")
+                fits.PrimaryHDU(data = self.segm_img.data).writeto(outname)
 
             try:
                 # Deblending is a combination of multi-thresholding and watershed
@@ -898,6 +907,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 segm_deblended_img = deblend_sources(imgarr_bkgsub, self.segm_img, npixels=self._size_source_box,
                                                      filter_kernel=self.image.kernel, nlevels=self._nlevels,
                                                      contrast=self._contrast)
+                if self.diagnostic_mode:
+                    outname = self.imgname.replace(".fits","_segment_deblended.fits")
+                    fits.PrimaryHDU(data = self.segm_deblended_img.data).writeto(outname)
 
                 # The deblending was successful, so just copy the deblended sources back to the sources attribute.
                 self.segm_img = copy.deepcopy(segm_deblended_img)
@@ -909,10 +921,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
             # Regardless of whether or not deblending worked, this variable can be reset to None
             segm_deblended_img = None
-
-            # Clean up segments that are near or partially overlap the border of the image and relabel
-            # the segments to be sequential
-            self.segm_img.remove_border_labels(self._border, partial_overlap=True, relabel=True)
 
             # The total product catalog consists of at least the X/Y and RA/Dec coordinates for the detected
             # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
@@ -956,14 +964,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
             self.sources = self.tp_sources['segment']['sources']
             self.kernel = self.tp_sources['segment']['kernel']
 
-        # For debugging purposes only, create a segmentation image and a "regions" files to use for ds9 overlay
+        # For debugging purposes only, create a "regions" files to use for ds9 overlay of the segm_img.
         # Create the image regions file here in case there is a failure
-        if self.diagnostic_mode and self.segm_img:
-            # Generate a diagnostic_mode segmentation image
-            # indx = self.sourcelist_filename.find("-cat.ecsv")
-            # outname = self.sourcelist_filename[0:indx] + ".fits"
-            # fits.PrimaryHDU(data = self.segm_img.data).writeto(outname)
-
+        if self.diagnostic_mode:
             # Copy out only the X and Y coordinates to a "diagnostic_mode table" and cast as an Astropy Table
             # so a scalar can be added to the centroid coordinates
             tbl = self.source_cat["X-Centroid", "Y-Centroid"]

@@ -165,6 +165,9 @@ class TotalProduct(HAPProduct):
         # ...and set parameters which are computed on-the-fly
         drizzle_pars["final_refimage"] = meta_wcs
         drizzle_pars["runfile"] = self.trl_logname
+        # Setting "preserve" to false so the OrIg_files directory is deleted as the purpose
+        # of this directory is now obsolete.
+        drizzle_pars["preserve"] = False
         log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
                   "have been updated for the drizzle step of the total drizzle product."
                   .format(meta_wcs, self.trl_logname))
@@ -308,6 +311,9 @@ class FilterProduct(HAPProduct):
         # ...and set parameters which are computed on-the-fly
         drizzle_pars["final_refimage"] = meta_wcs
         drizzle_pars["runfile"] = self.trl_logname
+        # Setting "preserve" to false so the OrIg_files directory is deleted as the purpose
+        # of this directory is now obsolete.
+        drizzle_pars["preserve"] = False
         log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
                   "have been updated for the drizzle step of the filter drizzle product."
                   .format(meta_wcs, self.trl_logname))
@@ -379,6 +385,9 @@ class ExposureProduct(HAPProduct):
         # ...and set parameters which are computed on-the-fly
         drizzle_pars["final_refimage"] = meta_wcs
         drizzle_pars["runfile"] = self.trl_logname
+        # Setting "preserve" to false so the OrIg_files directory is deleted as the purpose
+        # of this directory is now obsolete.
+        drizzle_pars["preserve"] = False
         log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
                   "have been updated for the drizzle step of the exposure drizzle product."
                   .format(meta_wcs, self.trl_logname))
