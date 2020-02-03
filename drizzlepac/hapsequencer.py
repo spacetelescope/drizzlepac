@@ -31,6 +31,7 @@ import traceback
 import logging
 
 from astropy.table import Table
+import numpy as np
 import drizzlepac
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
 from drizzlepac.devutils.comparison_tools import compare_sourcelists
@@ -56,16 +57,22 @@ __version_date__ = '07-Nov-2019'
 # --------------------------------------------------------------------------------------------------------------
 
 
-def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype, log_level):
+def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, hap_imgname, cattype, log_level):
     """
     This subroutine runs Rick White's read_hla_catalog script to convert the RA and Dec values from a HLA Classic
-    sourcelist into same reference frame used by the HAP sourcelists. A new version of the input file with the
-    converted RA and Dec values is written to the current working directory named <INPUT SOURCELIST NAME>_corrected.txt.
+    sourcelist into same reference frame used by the HAP sourcelists. Additionally, the new RA and Dec values
+    are then transformed to produce X and Y coordinates that are in the HAP image frame of reference. A new
+    version of the input file with the converted X and Y and RA and Dec values is written to the current
+    working directory named <INPUT SOURCELIST NAME>_corrected.txt.
 
     Parameters
     ----------
     orig_hla_classic_sl_name : string
         name of the HLA Classic sourcelist whose RA and Dec values will be converted.
+
+    hap_imgname : string
+        name of HAP image. The WCS info from this image will be used to transform the updated RA and DEC
+        values to new X and Y values in the this image's frame of reference
 
     cattype : string
         HLA Classic catalog type. Either 'sex' (source extractor) or 'dao' (DAOphot).
@@ -88,8 +95,13 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype, log_level):
         # sort catalog with updated RA, DEC values so that ordering is the same as the uncorrected table and everything maps correclty.
         if cattype == "dao":
             sortcoltitle = "ID"
+            x_coltitle = "X-Center"
+            y_coltitle = "Y-Center"
         if cattype == "sex":
             sortcoltitle = "NUMBER"
+            x_coltitle = "X-IMAGE"
+            y_coltitle = "Y-IMAGE"
+
         modcat.sort(sortcoltitle)
 
         # Identify RA and Dec column names in the new catalog table object
@@ -104,14 +116,22 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype, log_level):
                 log.debug("DEC Col_name: {}".format(true_dec_col_title))
                 break
 
+        # transform new RA and Dec values into X and Y values in the HAP reference frame
+        ra_dec_values = np.stack((modcat[true_ra_col_title], modcat[true_dec_col_title]), axis=1)
+        new_xy_values = hla_flag_filter.rdtoxy(ra_dec_values, hap_imgname, '[sci,1]')
+
         # get HLA Classic sourcelist data, replace existing RA and Dec column data with the converted RA and Dec column data
         cat = Table.read(orig_hla_classic_sl_name, format='ascii')
         cat['RA'] = modcat[true_ra_col_title]
         cat['DEC'] = modcat[true_dec_col_title]
 
+        # update existing X and Y values with new X and Y values transformed from new RA and Dec values.
+        cat[x_coltitle] = new_xy_values[:, 0]
+        cat[y_coltitle] = new_xy_values[:, 1]
+
         # Write updated version of HLA Classic catalog to current working directory
         mod_sl_name = mod_sl_name.replace(".txt", "_corrected.txt")
-        log.info("Updated version of HLA Classic catalog {} with converted RA/Dec values written to {}.".format(os.path.basename(orig_hla_classic_sl_name), mod_sl_name))
+        log.info("Corrected version of HLA Classic file {} with new X, Y and RA, Dec values written to {}.".format(os.path.basename(orig_hla_classic_sl_name), mod_sl_name))
         cat.write(mod_sl_name, format="ascii.csv")
         return mod_sl_name
 
@@ -595,7 +615,7 @@ def run_sourcelist_comparision(total_list, diagnostic_mode = False, log_level=lo
                     continue
 
                 # convert HLA Classic RA and Dec values to HAP reference frame so the RA and Dec comparisons are correct
-                updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name, hla_classic_cat_type, log_level)
+                updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name, hap_imgname, hla_classic_cat_type, log_level)
                 log.info("HAP image:                   {}".format(os.path.basename(hap_imgname)))
                 log.info("HLA Classic image:           {}".format(os.path.basename(hla_imgname)))
                 log.info("HAP catalog:                 {}".format(os.path.basename(hap_sourcelist_name)))
