@@ -965,8 +965,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
             self.kernel = self.tp_sources['segment']['kernel']
 
         # For debugging purposes only, create a "regions" files to use for ds9 overlay of the segm_img.
-        # Create the image regions file here in case there is a failure
-        if self.diagnostic_mode:
+        # Create the image regions file here in case there is a failure.  This diagnostic portion of the
+        # code should only be invoked when working on the total object catalog (self.segm_img is defined).
+        if self.diagnostic_mode and self.segm_img:
             # Copy out only the X and Y coordinates to a "diagnostic_mode table" and cast as an Astropy Table
             # so a scalar can be added to the centroid coordinates
             tbl = self.source_cat["X-Centroid", "Y-Centroid"]
