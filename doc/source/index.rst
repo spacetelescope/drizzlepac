@@ -83,6 +83,7 @@ are available.
    updatehdr
    mapreg
    photeq
+   pixreplace
 
 Coordinate Transformation Tasks
 -------------------------------
@@ -95,7 +96,6 @@ distorted and drizzled images.
    pixtopix
    pixtosky
    skytopix
-
 
 
 ACS Header Update Task
