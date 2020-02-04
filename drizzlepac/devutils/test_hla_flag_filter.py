@@ -11,8 +11,8 @@ from drizzlepac.hlautils import hla_flag_filter
 from stsci.tools import logutil
 from stwcs import wcsutil
 
-def run_stuff(input_pickle_filename)
-    hff_inputs = pickle.load( open( "input_pickle_filename", "rb" ) )
+def run_stuff(input_pickle_filename):
+    hff_inputs = pickle.load(open(input_pickle_filename, "rb"))
     pdb.set_trace()
 
 # =======================================================================================================================
