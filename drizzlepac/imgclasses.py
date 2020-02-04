@@ -1618,7 +1618,7 @@ def _estimate_2dhist_shift(imgxy, refxy, searchrad=3.0):
     print("Computing initial guess for X and Y shifts...")
 
     # create ZP matrix
-    zpmat = _xy_2dhist(imgxy, refxy, r=searchrad)
+    zpmat = _xy_2dhist(imgxy, refxy, r=int(round(searchrad)))
 
     nonzeros = np.count_nonzero(zpmat)
     if nonzeros == 0:
