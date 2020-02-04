@@ -811,6 +811,7 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
         hdulist[sci_extn].header['CRDER1'] = item.meta['fit_info']['RMS_RA'].value
         hdulist[sci_extn].header['CRDER2'] = item.meta['fit_info']['RMS_DEC'].value
         hdulist[sci_extn].header['NMATCHES'] = len(item.meta['fit_info']['ref_mag'])
+        hdulist[sci_extn].header['HDRNAME'] = "{}_{}".format(image_name.rstrip(".fits"), wcs_name)
 
         if chipctr == num_sci_ext:
             # Close updated flc.fits or flt.fits file
