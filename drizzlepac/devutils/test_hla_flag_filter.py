@@ -36,9 +36,23 @@ def hff_parameter_manager(hff_inputs):
         shutil.copy(full_pars_path,".")
     with open(local_pars_path) as f_cfg:
         hff_params = json.load(f_cfg)
+    resursive_print_all_nested_dict_values(hff_params)
     pdb.set_trace()
     return hff_inputs
 
+# ----------------------------------------------------------------------------------------------------------------------
+def resursive_print_all_nested_dict_values(dict2print,level=0):
+    if level == 20:
+        sys.exit("RECURSION LIMIT REACHED!")
+    sorted_key_list = list(dict2print.keys())
+    for item in sorted(sorted_key_list):
+        if isinstance(dict2print[item], dict):
+            log.info("{}{}\u2798".format("     "*level,item))
+            level+=1
+            resursive_print_all_nested_dict_values(dict2print[item],level=level)
+            level-=1
+        else:
+            log.info("{}{}: {}".format("     "*level,item,dict2print[item]))
 
 # ----------------------------------------------------------------------------------------------------------------------
 def run_compare_sourcelists(hff_inputs, log_level):
