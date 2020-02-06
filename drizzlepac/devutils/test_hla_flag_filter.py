@@ -191,7 +191,7 @@ def run_stuff(input_pickle_filename, qc_json_filename):
 if __name__ == "__main__":
     PARSER = argparse.ArgumentParser(description='Test hla_flag_filter.py')
     PARSER.add_argument('input_pickle_filename',nargs=1,help="Name of pickle file containing hla_flag_filter.py input parameters")
-    PARSER.add_argument('-p', '--qc_parameter_file', required=False, help="Name of quality control .json file to use instead for hla_flag_filter params")
+    PARSER.add_argument('-p', '--qc_json_filename',required=False,default=None,help="Name of quality control .json file to use instead for hla_flag_filter params")
     ARGS = PARSER.parse_args()
     print(ARGS)
     run_stuff(ARGS.input_pickle_filename,ARGS.qc_json_filename)
