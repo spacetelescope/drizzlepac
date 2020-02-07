@@ -60,9 +60,9 @@ def resursive_print_all_nested_dict_values(old_dict,new_dict,level=0,recursion_l
             level-=1
         else:
             if old_dict[item] == new_dict[item]:
-                log.info(" {}{}: {} {}".format("     "*level,item,old_dict[item],new_dict[item]))
+                log.info(" {}{}: {}".format("     "*level,item,new_dict[item]))
             else:
-                log.info(">{}{}: {} \033[1m{}\033[0m".format("     "*level,item,old_dict[item],new_dict[item]))
+                log.info(">{}{}: {} -> {}".format("     "*level,item,old_dict[item],new_dict[item]))
 
 # ----------------------------------------------------------------------------------------------------------------------
 def run_compare_sourcelists(hff_inputs, log_level):
