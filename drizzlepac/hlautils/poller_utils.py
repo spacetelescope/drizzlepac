@@ -320,16 +320,18 @@ def determine_filter_name(raw_filter):
         if 'clear' not in filt:
             output_filter_list.append(filt)
 
+    print(output_filter_list)
+
     if not output_filter_list:
-        filter_name = 'clear'
+        output_filter_list = ['clear']
     elif output_filter_list[0].startswith('pol'):
         output_filter_list.reverse()
     else:
         if output_filter_list[0].startswith('none'):
             output_filter_list.reverse()
 
-        delimiter = '-'
-        filter_name = delimiter.join(output_filter_list)
+    delimiter = '-'
+    filter_name = delimiter.join(output_filter_list)
 
     return filter_name
 
