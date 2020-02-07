@@ -17,6 +17,9 @@ of the list).
 3.1.5 (unreleased)
 ==================
 
+- Fix a crash in ``tweakreg`` when ``2dhist`` is enabled and ``numpy``
+  version is ``1.18.1`` and later. [#583, #587]
+
 - Update calibrated (FLC/FLT) files with RMS and NMATCH keywords when it successfully
   aligns the data to GAIA using the a posteriori fit.  Headerlet files for this fit
   which already have these keywords are now retained and provided as the final output
