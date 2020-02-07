@@ -341,6 +341,11 @@ def build_poller_table(input, log_level):
     """
     log.setLevel(log_level)
 
+    # Check the input file is not empty
+    if not os.path.getsize(input):
+        log.error('Input poller manifest file, {}, is empty - processing is exiting.'.format(input))
+        sys.exit(0)
+
     datasets = []
     is_poller_file = False
     obs_converters = {'col4': [ascii.convert_numpy(np.str)]}
