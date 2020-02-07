@@ -36,28 +36,35 @@ def hff_parameter_manager(hff_inputs,qc_json_filename):
     if not os.path.exists(local_pars_path):
         shutil.copy(full_pars_path,local_pars_path)
         log.info("Created local copy of default quality control .json file {}.".format(local_pars_path))
-    with open(local_pars_path) as f_cfg:
-        hff_params = json.load(f_cfg)
-
-    resursive_print_all_nested_dict_values(hff_params)
+    hff_params = hff_inputs['param_dict']['quality control']
+    if qc_json_filename:
+        with open(qc_json_filename) as f_cfg:
+            new_params = json.load(f_cfg)
+    else:
+        new_params = hff_params
+    resursive_print_all_nested_dict_values(hff_params,new_params)
     pdb.set_trace()
     return hff_inputs
 
 # ----------------------------------------------------------------------------------------------------------------------
-def resursive_print_all_nested_dict_values(dict2print,level=0,recursion_limit=20):
+def resursive_print_all_nested_dict_values(orig_dict,new_dict,level=0,recursion_limit=20):
     """print """
 
     if level == recursion_limit:
         sys.exit("RECURSION LIMIT REACHED!")
-    sorted_key_list = list(dict2print.keys())
+    sorted_key_list = list(old_dict.keys())
     for item in sorted(sorted_key_list):
-        if isinstance(dict2print[item], dict):
+        if isinstance(old_dict[item], dict):
             log.info("{}{}\u2798".format("     "*level,item))
             level+=1
-            resursive_print_all_nested_dict_values(dict2print[item],level=level)
+            resursive_print_all_nested_dict_values(old_dict[item],new_dict[item],level=level)
             level-=1
         else:
-            log.info("{}{}: {}".format("     "*level,item,dict2print[item]))
+            if old_dict[item] == new_dict[item]:
+                diff_flag = " "
+            else:
+                diff_flag = "*"
+            log.info("{}{}{}: {} {}".format(diff_flag,"     "*level,item,old_dict[item],new_dict[item]))
 
 # ----------------------------------------------------------------------------------------------------------------------
 def run_compare_sourcelists(hff_inputs, log_level):
