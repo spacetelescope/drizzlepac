@@ -47,9 +47,8 @@ def hff_parameter_manager(hff_inputs,qc_json_filename):
     return hff_inputs
 
 # ----------------------------------------------------------------------------------------------------------------------
-def resursive_print_all_nested_dict_values(orig_dict,new_dict,level=0,recursion_limit=20):
+def resursive_print_all_nested_dict_values(old_dict,new_dict,level=0,recursion_limit=20):
     """print """
-
     if level == recursion_limit:
         sys.exit("RECURSION LIMIT REACHED!")
     sorted_key_list = list(old_dict.keys())
