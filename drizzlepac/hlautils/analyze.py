@@ -246,7 +246,6 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
         no_proc_value = None
         do_process = True
         # Imaging vs spectroscopic or coronagraphic
-        print("******OBSTYPE: {}".format(obstype))
         if obstype != 'IMAGING':
             no_proc_key = OBSKEY
             no_proc_value = obstype
