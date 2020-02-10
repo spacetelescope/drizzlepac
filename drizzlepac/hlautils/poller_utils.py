@@ -296,38 +296,32 @@ def determine_filter_name(raw_filter):
     - If there are two filters in use, then use 'filter1-filter2'.
     - If one filter is a polarizer ('pol*'), then always put the polarizer
       name second (e.g., 'f606w-pol60').
+    - If one filter is 'n/a' (as is the case for SBC), then use the other filter
+      name. NOTE: At this time (February 2020) the filter names for the SBC
+      detector of ACS have malformed names (e.g., F140LP;N/A;F140LP) where the
+      final token delimited by the ";" should not be present. Remove the final
+      delimiter and entry.  Unlike the other ACS detectors, SBC only uses a
+      single filter wheel.
+
     - NOTE: There should always be at least one filter name provided to
       this routine or this input is invalid.
-
-    - If one filter is 'n/a', then convert to 'none' (as the slash causes problems
-      on Linux-like systems) and always put this filter name second (e.g., 'pr130l-none').
-    - NOTE: At this time (February 2020) the filter names for the SBC detector of
-      ACS have malformed names (e.g., F140LP;N/A;F140LP) where the final token delimited by
-      the ";" should not be present. Remove the final delimiter and entry.
     """
 
     raw_filter = raw_filter.lower()
 
     # There might be multiple filters, so split the filter names into a list
-    # and only retain the first two entries
+    # and only retain the first two entries.  SBC has a bogus third entry.
     filter_list = raw_filter.split(';')[0:2]
     output_filter_list = []
 
     for filt in filter_list:
-        if filt == 'n/a':
-            filt = 'none'
-        # Get the names of the non-clear filters
-        if 'clear' not in filt:
+        if not any(x in filt for x in ['clear', 'n/a']):
             output_filter_list.append(filt)
-
-    print(output_filter_list)
 
     if not output_filter_list:
         output_filter_list = ['clear']
-    elif output_filter_list[0].startswith('pol'):
-        output_filter_list.reverse()
     else:
-        if output_filter_list[0].startswith('none'):
+        if output_filter_list[0].startswith('pol'):
             output_filter_list.reverse()
 
     delimiter = '-'
