@@ -761,8 +761,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
 
     if deblend:
         segm = deblend_sources(imgarr, segm, npixels=5,
-                               filter_kernel=kernel, nlevels=32,
-                               contrast=0.01)
+                               filter_kernel=kernel, nlevels=256,
+                               contrast=0.001)
 
     # If classify is turned on, it should modify the segmentation map
     if classify:
@@ -800,6 +800,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
             src_brightest = np.arange(len(segm.labels))
 
         log.info("Looking for sources in {} segments".format(len(segm.labels)))
+        print("Looking for sources in {} segments".format(len(segm.labels)))
 
         for indx in src_brightest:
             segment = segm.segments[indx]
@@ -1611,13 +1612,17 @@ def determine_initial_shifts(imglist):
             ref_filename = filename
         chip = img.meta['chip']
         chip = fits.getdata(filename, ext=("SCI", chip))
+        chipwcs = HSTWCS(filename, ext=("SCI", chip))
 
         if filename not in raw_frames:
             raw_frames[filename] = {}
             raw_frames[filename]['chips'] = [chip]
+            raw_frames[filename]['chipwcs'] = [chipwcs]
             raw_shifts[filename] = []
             continue
         raw_frames[filename]['chips'].append(chip)
+        raw_frames[filename]['chipwcs'].append(chipwcs)
+    
 
     # Get the raw SCI data for all chips and concatenate them into a single array for each filename
     # These composite raw frames will then be cross-correlated to determine the initial
@@ -1626,10 +1631,13 @@ def determine_initial_shifts(imglist):
     # This also insures that the same offset is used for all chips in an single exposure.
     for filename in raw_frames:
         raw_frames[filename]['full_frame'] = np.concatenate(raw_frames[filename]['chips'])
+        raw_frames[filename]['metawcs'] = utils.output_wcs(raw_frames[filename]['chipwcs'])
 
     # Now, use these composite full-frames of the raw data to determine an initial
     # guess at the offsets using the first in the list as the reference
     ref = raw_frames[ref_filename]['full_frame']
+    refwcs = raw_frames[ref_filename]['metawcs']
+    ref_crval = refwcs.wcs.crval
     for fname in raw_frames:
         if fname == ref_filename:
             offset = [0, 0]
@@ -1638,9 +1646,16 @@ def determine_initial_shifts(imglist):
             offset, err, phasediff = feature.register_translation(raw_frames[fname]['full_frame'], ref)
             # Convert numpy (y,x) ordering to (x,y) and return as a list not ndarray
             offset = offset.tolist()
-
+            # Now, any pixel/pointing offset 'known' by the WCS's
+            metawcs = raw_frames[fname]['metawcs']
+            crpix = metawcs.wcs.crpix
+            x,y = metawcs.all_world2pix(ref_crval[0], ref_crval[1], 1)
+            offset = [offset[0] - (x - crpix[0]), offset[1] - (y - crpix[1])] 
+            
         raw_shifts[fname].append(offset)
-
+    print(raw_shifts)
+    input("Quit?")
+    
     # Match up computed shifts with original input list of FITSWCS objects
     shifts = []
     for img in imglist:

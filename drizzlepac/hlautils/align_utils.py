@@ -3,7 +3,7 @@ import datetime
 import copy
 import sys
 import traceback
-import warnings
+import pickle
 
 from collections import OrderedDict
 
@@ -602,6 +602,9 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     # and use those shifts to get the images roughly aligned prior to fitting with
     # tweakwcs.  This should allow MUCH tighter parameters to be used which would
     # be less susceptible to source confusion (bad matches/fits) and errors.
+    with open('imglist.pickle', mode='w') as imgpickle:
+        pickle.dump(imglist, imgpickle)
+
     amutils.determine_initial_shifts(imglist)
 #    fit_pars['searchrad'] = fit_pars['searchrad'] if fit_pars['searchrad'] < 25.0 else 25.0
 #    fit_pars['separation'] = fit_pars['separation'] if fit_pars['separation'] > 2.0 else 2.0
@@ -1043,17 +1046,17 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
         # Update headerlet
         update_headerlet_phdu(item, out_headerlet)
 
-        # Write headerlet
-        if headerlet_filenames:
-            headerlet_filename = headerlet_filenames[image_name]  # Use HAP-compatible filename defined in runhlaprocessing.py
-        else:
-            if image_name.endswith("flc.fits"):
-                headerlet_filename = image_name.replace("flc", "flt_hlet")
-            if image_name.endswith("flt.fits"):
-                headerlet_filename = image_name.replace("flt", "flt_hlet")
-        out_headerlet.writeto(headerlet_filename, overwrite=True)
-        log.info("Wrote headerlet file {}.\n\n".format(headerlet_filename))
-        out_headerlet_dict[image_name] = headerlet_filename
+            # Write headerlet
+            if headerlet_filenames:
+                headerlet_filename = headerlet_filenames[image_name]  # Use HAP-compatible filename defined in runhlaprocessing.py
+            else:
+                if image_name.endswith("flc.fits"):
+                    headerlet_filename = image_name.replace("flc", "flt_hlet")
+                if image_name.endswith("flt.fits"):
+                    headerlet_filename = image_name.replace("flt", "flt_hlet")
+            out_headerlet.writeto(headerlet_filename, overwrite=True)
+            log.info("Wrote headerlet file {}.\n\n".format(headerlet_filename))
+            out_headerlet_dict[image_name] = headerlet_filename
 
         # Attach headerlet as HDRLET extension
         if headerlet.verify_hdrname_is_unique(hdulist, hdr_name):

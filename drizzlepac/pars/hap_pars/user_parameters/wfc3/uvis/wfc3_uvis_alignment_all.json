@@ -38,7 +38,7 @@
       {
         "searchrad": 75,
         "separation": 4.0,
-        "tolerance": 2.0,
+        "tolerance": 1.0,
         "use2dhist": true
       },
     "match_default_fit":
