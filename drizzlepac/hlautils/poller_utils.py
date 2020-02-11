@@ -296,29 +296,36 @@ def determine_filter_name(raw_filter):
     - If there are two filters in use, then use 'filter1-filter2'.
     - If one filter is a polarizer ('pol*'), then always put the polarizer
       name second (e.g., 'f606w-pol60').
+    - If one filter is 'n/a' (as is the case for SBC), then use the other filter
+      name. NOTE: At this time (February 2020) the filter names for the SBC
+      detector of ACS have malformed names (e.g., F140LP;N/A;F140LP) where the
+      final token delimited by the ";" should not be present. Remove the final
+      delimiter and entry.  Unlike the other ACS detectors, SBC only uses a
+      single filter wheel.
+
     - NOTE: There should always be at least one filter name provided to
       this routine or this input is invalid.
     """
 
     raw_filter = raw_filter.lower()
 
-    # There might be two filters, so split the filter names into a list
-    filter_list = raw_filter.split(';')
+    # There might be multiple filters, so split the filter names into a list
+    # and only retain the first two entries.  SBC has a bogus third entry.
+    filter_list = raw_filter.split(';')[0:2]
     output_filter_list = []
 
     for filt in filter_list:
-        # Get the names of the non-clear filters
-        if 'clear' not in filt:
+        if not any(x in filt for x in ['clear', 'n/a']):
             output_filter_list.append(filt)
 
     if not output_filter_list:
-        filter_name = 'clear'
+        output_filter_list = ['clear']
     else:
         if output_filter_list[0].startswith('pol'):
             output_filter_list.reverse()
 
-        delimiter = '-'
-        filter_name = delimiter.join(output_filter_list)
+    delimiter = '-'
+    filter_name = delimiter.join(output_filter_list)
 
     return filter_name
 
@@ -430,7 +437,8 @@ def build_poller_table(input, log_level):
 
         # Build output table
         poller_data = [col for col in cols.values()]
-        poller_table = Table(data=poller_data)
+        poller_table = Table(data=poller_data,
+                             dtype=('str', 'int', 'str', 'str', 'float', 'object', 'str', 'str'))
 
         # Now assign column names to obset_table
         for i, colname in enumerate(POLLER_COLNAMES):
@@ -442,7 +450,8 @@ def build_poller_table(input, log_level):
             for i, old_row in enumerate(input_table):
                 if d == input_table['filename'][i]:
                     good_rows.append(old_row)
-            poller_table = Table(rows=good_rows, names=input_table.colnames)
+            poller_table = Table(rows=good_rows, names=input_table.colnames,
+                                 dtype=('str', 'int', 'str', 'str', 'float', 'object', 'str', 'str'))
 
     return poller_table
 
