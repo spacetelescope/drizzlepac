@@ -28,7 +28,6 @@ def hff_parameter_manager(hff_inputs,qc_json_filename):
     :param hff_inputs:
     :return:
     """
-    pdb.set_trace()
     instrument = hff_inputs['drizzled_image'].split("_")[3]
     detector = hff_inputs['drizzled_image'].split("_")[4]
     full_pars_path = "{}pars/hap_pars/default_parameters/{}/{}/{}_{}_quality_control_all.json".format(os.path.realpath(__file__).split("devutils")[0],instrument,detector,instrument,detector)
