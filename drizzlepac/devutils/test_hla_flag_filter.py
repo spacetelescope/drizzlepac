@@ -53,7 +53,7 @@ def resursive_print_all_nested_dict_values(old_dict,new_dict,level=0,recursion_l
     sorted_key_list = list(old_dict.keys())
     for item in sorted(sorted_key_list):
         if isinstance(old_dict[item], dict):
-            log.info("  {}{}\u2798".format("     "*level,item))
+            log.info("{}{}\u2798".format("     "*level,item))
             level+=1
             resursive_print_all_nested_dict_values(old_dict[item],new_dict[item],level=level)
             level-=1
@@ -61,7 +61,7 @@ def resursive_print_all_nested_dict_values(old_dict,new_dict,level=0,recursion_l
             if old_dict[item] == new_dict[item]:
                 log.info("  {}{}: {}".format("     "*level,item,new_dict[item]))
             else:
-                log.info("->{}{}: {} -> {}".format("     "*level,item,old_dict[item],new_dict[item]))
+                log.info("!!{}{}: {} -> {}".format("     "*level,item,old_dict[item],new_dict[item]))
 
 # ----------------------------------------------------------------------------------------------------------------------
 def run_compare_sourcelists(hff_inputs, log_level):
