@@ -67,6 +67,11 @@ def hff_parameter_manager(hff_inputs,qc_json_filename):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+def preserve_orig_files(hff_inputs):
+    pdb.set_trace()
+
+# ----------------------------------------------------------------------------------------------------------------------
+
 def resursive_print_all_nested_dict_values(old_dict,new_dict,recursion_level=0,recursion_limit=20):
     """recursively print all elemnets of dictonary and highlight any changes.
     NOTE: This is a recursive subroutine.
@@ -229,7 +234,7 @@ def run_stuff(input_pickle_filename, qc_json_filename):
 
     hff_inputs = hff_parameter_manager(hff_inputs,qc_json_filename)
 
-    pdb.set_trace() # TODO: REMOVE
+    preserve_orig_files(hff_inputs)
 
     run_hla_flag_filter(hff_inputs)
 
