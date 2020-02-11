@@ -67,7 +67,8 @@ def hff_parameter_manager(hff_inputs,qc_json_filename):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def preserve_orig_files(hff_inputs):
+def preserve_orig_files(hff_inputs,source_path=None,dest_path=None):
+
     pdb.set_trace()
 
 # ----------------------------------------------------------------------------------------------------------------------
