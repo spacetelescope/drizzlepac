@@ -68,7 +68,10 @@ def hff_parameter_manager(hff_inputs,qc_json_filename):
 # ----------------------------------------------------------------------------------------------------------------------
 
 def preserve_orig_files(hff_inputs,source_path=None,dest_path=None):
+    """either move origionl files already produced by the original run of hla_flag_filter.py to a safe place
+    so they don't get clobbered by the new run, or move new files to final directory and move orig. files back
 
+    """
     pdb.set_trace()
 
 # ----------------------------------------------------------------------------------------------------------------------
