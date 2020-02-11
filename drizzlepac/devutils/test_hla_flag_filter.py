@@ -37,10 +37,15 @@ def hff_parameter_manager(hff_inputs,qc_json_filename):
         log.info("Created local copy of default quality control .json file {}.".format(local_pars_path))
     hff_params = hff_inputs['param_dict']['quality control']
     if qc_json_filename:
+        extra_text_string = " and parameters updates from {}".format(qc_json_filename)
         with open(qc_json_filename) as f_cfg:
             new_params = json.load(f_cfg)
     else:
         new_params = hff_params
+    log.info("Summary of original hla_flag_filter parameters{}")
+    if qc_json_filename:
+        log.info("NOTE: updated parameters listed with double exclamation points (!!)")
+    log.info()
     resursive_print_all_nested_dict_values(hff_params,new_params)
     pdb.set_trace()
     return hff_inputs
