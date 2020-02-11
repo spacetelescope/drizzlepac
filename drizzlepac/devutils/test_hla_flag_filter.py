@@ -24,9 +24,22 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 def hff_parameter_manager(hff_inputs,qc_json_filename):
     """displays and updates (as needed) hla_flag_filter.py parameters stored in hff_inputs['param_dict'].
+    NOTE: For this to work, the hff_inputs quality control parameters and the parameters from the user-specified QC
+    param file MUST have the exact same overall structure.
 
-    :param hff_inputs:
-    :return:
+    Parameters
+    ----------
+    hff_inputs : dict
+        dictionary containing all necessary inputs to run hla_flag_filter.run_source_list_flagging().
+
+    qc_json_filename : str
+        Name of the quality_control .json file that will provide the parameters for the hla_flag_filter run.
+
+    Returns
+    -------
+    hff_inputs : dict
+        if qc_json_filename was specified, an updated version of hff_inputs will be returned with the updated quality
+        control parameters. Otherwise, hff_inputs will be returned unchanged
     """
     instrument = hff_inputs['drizzled_image'].split("_")[3]
     detector = hff_inputs['drizzled_image'].split("_")[4]
@@ -45,30 +58,55 @@ def hff_parameter_manager(hff_inputs,qc_json_filename):
         new_params = hff_params
     log.info("Summary of original hla_flag_filter parameters{}".format(extra_text_string))
     if qc_json_filename:
-        log.info("NOTE: updated parameters listed with double exclamation points (!!)")
+        log.info("NOTE: updated parameters listed with a exclamation point")
     resursive_print_all_nested_dict_values(hff_params,new_params)
-    pdb.set_trace()
+
+    if qc_json_filename:
+        hff_inputs['param_dict']['quality control'] = new_params
     return hff_inputs
 
 # ----------------------------------------------------------------------------------------------------------------------
-def resursive_print_all_nested_dict_values(old_dict,new_dict,level=0,recursion_limit=20):
-    """print """
-    if level == recursion_limit:
+
+def resursive_print_all_nested_dict_values(old_dict,new_dict,recursion_level=0,recursion_limit=20):
+    """recursively print all elemnets of dictonary and highlight any changes.
+    NOTE: This is a recursive subroutine.
+
+    Parameters
+    ----------
+    old_dict : dictionary
+        origional dictionary whose elements will be printed and compared to corresponding new_dict elements
+
+    new_dict : dictionary
+        new dictioanry whose elements will be printed and compared to corresponding old_dict elements
+
+    recursion_level : int, optional
+        current recursive depth. if not explicitly specified, the default value is 0.
+
+    recursion_limit : int, optional
+        maximum allowed recursive depth. This here to prevent unexpected recursive runaway. if not explicitly
+        specified, the default value is 20.
+
+    Returns
+    -------
+    Nothing.
+    """
+    if recursion_level == recursion_limit:
         sys.exit("RECURSION LIMIT REACHED!")
     sorted_key_list = list(old_dict.keys())
     for item in sorted(sorted_key_list):
         if isinstance(old_dict[item], dict):
-            log.info("{}{}\u2798".format("     "*level,item))
-            level+=1
-            resursive_print_all_nested_dict_values(old_dict[item],new_dict[item],level=level)
-            level-=1
+            log.info("  {}{}\u2798".format("     "*recursion_level,item))
+            recursion_level+=1
+            resursive_print_all_nested_dict_values(old_dict[item],new_dict[item],recursion_level=recursion_level)
+            recursion_level-=1
         else:
             if old_dict[item] == new_dict[item]:
-                log.info("  {}{}: {}".format("     "*level,item,new_dict[item]))
+                log.info("  {}{}: {}".format("     "*recursion_level,item,new_dict[item]))
             else:
-                log.info("!!{}{}: {} -> {}".format("     "*level,item,old_dict[item],new_dict[item]))
+                log.info("! {}{}: {} \u21E8  {}".format("     "*recursion_level,item,old_dict[item],new_dict[item]))
 
 # ----------------------------------------------------------------------------------------------------------------------
+
 def run_compare_sourcelists(hff_inputs, log_level):
     """locate HLA classic image and sourcelists, convert HLA classic sorucelist X, Y, RA and Dec to HAP ref frame for
     apples-to-apples comparision, and run comparision code
@@ -144,6 +182,7 @@ def run_compare_sourcelists(hff_inputs, log_level):
                                                            [hla_imgname, hap_imgname], good_flag_sum=255,
                                                            plotGen="file", plotfile_prefix=plotfile_prefix,
                                                            verbose=True, log_level=log_level, debugMode=True)
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 def run_hla_flag_filter(hff_inputs):
@@ -179,7 +218,6 @@ def run_hla_flag_filter(hff_inputs):
     source_list.write(hff_inputs['catalog_name'], format='ascii.ecsv')
     log.info('Wrote new catalog {}.'.format(hff_inputs["catalog_name"]))
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -190,6 +228,8 @@ def run_stuff(input_pickle_filename, qc_json_filename):
     hff_inputs = pickle.load(open(input_pickle_filename, "rb"))
 
     hff_inputs = hff_parameter_manager(hff_inputs,qc_json_filename)
+
+    pdb.set_trace() # TODO: REMOVE
 
     run_hla_flag_filter(hff_inputs)
 
@@ -202,9 +242,8 @@ if __name__ == "__main__":
     PARSER.add_argument('input_pickle_filename',nargs=1,help="Name of pickle file containing hla_flag_filter.py input parameters")
     PARSER.add_argument('-p', '--qc_json_filename',required=False,default=None,help="Name of quality control .json file to use instead for hla_flag_filter params")
     ARGS = PARSER.parse_args()
-    print(ARGS)
+
     run_stuff(ARGS.input_pickle_filename[0],ARGS.qc_json_filename)
 
     # TODO: figure out way to store all existing files generated by hla_flag_filter, hapsequencer.correct_hla_classic_ra_dec() and compare_sourcelists.py
     # TODO: get logging working so this script produces a log file!
-    # TODO: finish param mamager
