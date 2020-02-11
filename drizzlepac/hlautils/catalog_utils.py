@@ -202,7 +202,8 @@ class CatalogImage:
         keyword_dict["target_dec"] = self.imghdu[0].header["DEC_TARG"]
         keyword_dict["expo_start"] = self.imghdu[0].header["EXPSTART"]
         keyword_dict["texpo_time"] = self.imghdu[0].header["TEXPTIME"]
-        keyword_dict["ccd_gain"] = self.imghdu[0].header["CCDGAIN"]
+        if keyword_dict["detector"] != "SBC":
+            keyword_dict["ccd_gain"] = self.imghdu[0].header["CCDGAIN"]
         keyword_dict["aperture_pa"] = self.imghdu[0].header["PA_V3"]
 
         # The total detection product has the FILTER keyword in
@@ -456,7 +457,8 @@ class HAPCatalogBase:
         data_table.meta["Aperture PA"] = self.image.keyword_dict["aperture_pa"]
         data_table.meta["Exposure Start"] = self.image.keyword_dict["expo_start"]
         data_table.meta["Total Exposure Time"] = self.image.keyword_dict["texpo_time"]
-        data_table.meta["CCD Gain"] = self.image.keyword_dict["ccd_gain"]
+        if self.image.keyword_dict["detector"] != "SBC":
+            data_table.meta["CCD Gain"] = self.image.keyword_dict["ccd_gain"]
         if product.lower() == "tdp" or self.image.keyword_dict["instrument"].upper() == "WFC3":
             data_table.meta["Filter 1"] = self.image.keyword_dict["filter1"]
             data_table.meta["Filter 2"] = ""
