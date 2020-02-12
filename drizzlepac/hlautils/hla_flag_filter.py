@@ -519,6 +519,32 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
     for row_count, detection in enumerate(all_detections):
         full_coord_list[row_count, 0] = float(detection[column_titles["x_coltitle"]])
         full_coord_list[row_count, 1] = float(detection[column_titles["y_coltitle"]])
+    """
+    # This option to determine saturation from the drizzled image alone should complement
+    # the computation based on the DQ array, since the IR (and MAMA?) detectors will not
+    # have saturated sources that 'bleed' or 'top out'...
+    #
+    # Extract Ap2 radius from parameter dict
+    #
+    ap2 = param_dict['catalog generation']['aperture_2']
+
+    #
+    # Convert source positions into slices
+    #
+    apers = CircularAperture(full_coord_list, ap2)
+
+    #
+    # Determine whether any source (slice) has more than 3 pixels
+    # within 10% of the max value in the source slice.
+    # If True, flag as saturated.
+    #
+    drz_img = fits.getdata(drizzled_image, ext=1)
+    img_sat = numpy.zeros(len(full_coord_list), dtype=bool)
+    for n,aper in enumerate(apers):
+        if (drz_img[aper.bbox.slices] > drz_img[aper.bbox.slices].max() * 0.9).sum() > 3:
+            img_sat[n] = True
+    del drz_img
+    """
 
     # ----------------------------------------------------
     # CREATE SUB-GROUPS OF SATURATION-FLAGGED COORDINATES

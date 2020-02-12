@@ -18,6 +18,8 @@ Python USAGE:
 import argparse
 import sys
 
+from memory_profiler import profile
+
 # THIRD-PARTY
 from stsci.tools import logutil
 
@@ -37,7 +39,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 # ----------------------------------------------------------------------------------------------------------------------
-
+@profile
 def perform(input_filename, **kwargs):
     """
     Main calling subroutine.
