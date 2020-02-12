@@ -1605,6 +1605,7 @@ def _xy_2dhist(imgxy, refxy, r):
     dy = np.subtract.outer(imgxy[:, 1], refxy[:, 1]).ravel()
     idx = np.where((dx < r + 0.5) & (dx >= -r - 0.5) &
                    (dy < r + 0.5) & (dy >= -r - 0.5))
+    r = int(np.ceil(r))
     h = np.histogram2d(dx[idx], dy[idx], 2 * r + 1,
                        [[-r - 0.5, r + 0.5], [-r - 0.5, r + 0.5]])
     return h[0].T
