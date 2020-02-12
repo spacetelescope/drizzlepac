@@ -442,7 +442,7 @@ class ImageCatalog(Catalog):
         super().__init__(wcs, catalog_source, **kwargs)
         extind = self.fname.rfind('[')
         self.fnamenoext = self.fname if extind < 0 else self.fname[:extind]
-        if self.wcs.extname == ('',None):
+        if (self.wcs.extname == ('',None) or self.wcs.extname == ('',1)):
             self.wcs.extname = (0)
         self.source = fits.getdata(self.wcs.filename,ext=self.wcs.extname, memmap=False)
         self.nbright = None # No GUI parameter defined yet for this filtering
