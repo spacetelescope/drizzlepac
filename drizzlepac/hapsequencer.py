@@ -175,9 +175,11 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
         for cat_type in total_product_catalogs.catalogs.keys():
             sources_dict[cat_type] = {}
             sources_dict[cat_type]['sources'] = total_product_catalogs.catalogs[cat_type].sources
-            # FIX MDD Remove?
+            # For the segmentation source finding, both the segmentation image AND the segmentation catalog 
+            # computed for the total object need to be provided to the filter objects
             if cat_type == "segment":
                 sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
+                sources_dict['segment']['source_cat'] = total_product_catalogs.catalogs['segment'].source_cat
 
         log.info("Generating filter product source catalogs")
         for filter_product_obj in total_product_obj.fdp_list:

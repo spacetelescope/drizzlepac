@@ -225,6 +225,9 @@ def parse_obset_tree(det_tree, log_level):
                 obset_products[sep] = {'info': prod_info,
                                        'files': [filename[1]]}
 
+                # Clean up the filter name
+                # filt = determine_filter_name(prod_list[5])
+
                 # Create a single exposure product object
                 prod_list = prod_info.split(" ")
                 sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
