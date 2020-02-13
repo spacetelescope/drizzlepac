@@ -511,6 +511,7 @@ def interpret_wcsname_type(wcsname):
     wcstype = ''
     fit_terms = {'REL': 'relatively aligned to {}',
                  'IMG': 'aligned image-by-image to {}',
+                 'XCR': 'relatively aligned to {}',
                  'EVM': 'aligned by visit-exposures to {}',
                  'SVM': 'aligned by visit to {}'}
     post_fit = 'a posteriori solution '

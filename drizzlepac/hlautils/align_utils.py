@@ -69,12 +69,14 @@ class AlignmentTable:
         # Register fit methods with the class
         self.fit_methods = {'relative': match_relative_fit,
                             '2dhist': match_2dhist_fit,
-                            'default': match_default_fit}
+                            'default': match_default_fit,
+                            'xcorr': match_xcorr_fit}
 
         # Also, register fit method default parameters with the class
         self.fit_pars = {'relative': alignment_pars['match_relative_fit'],
                          '2dhist': alignment_pars['match_2dhist_fit'],
-                         'default': alignment_pars['match_default_fit']}
+                         'default': alignment_pars['match_default_fit'],
+                         'xcorr': alignment_pars['match_relative_fit']}
 
         # merge remaining parameters for individual alignment steps into single set
         self.alignment_pars = alignment_pars['run_align'].copy()
@@ -282,13 +284,14 @@ class AlignmentTable:
 
         fit_label : str
             Name of fit to apply to indicate how the fit was performed in
-            the WCSNAME keyword.  Common options: IMG, REL, SVM.
+            the WCSNAME keyword.  Common options: IMG, REL, XCR, SVM.
 
         """
         if not self.selected_fit:
             log.error("No FIT selected for application.  Please run 'select_fit()' method.")
             raise ValueError
         # Call update_hdr_wcs()
+
         headerlet_dict = update_image_wcs_info(self.selected_fit,
                                                headerlet_filenames=headerlet_filenames,
                                                fit_label=fit_label)
@@ -581,7 +584,7 @@ class HAPImage:
 
 # ------------------------------------------------------------------------------------------------------------
 
-def match_relative_fit(imglist, reference_catalog, **fit_pars):
+def match_xcorr_fit(imglist, reference_catalog, **fit_pars):
     """Perform cross-matching and final fit using relative matching algorithm
 
     Parameters
@@ -598,24 +601,16 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
+    log.info("{} (match_relative_xcorrfit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
     # Compute initial guess for shift only with fast cross-correlation
     # and use those shifts to get the images roughly aligned prior to fitting with
     # tweakwcs.  This should allow MUCH tighter parameters to be used which would
     # be less susceptible to source confusion (bad matches/fits) and errors.
-    with open('imglist.pickle', mode='w') as imgpickle:
-        pickle.dump(imglist, imgpickle)
-
     amutils.determine_initial_shifts(imglist)
-#    fit_pars['searchrad'] = fit_pars['searchrad'] if fit_pars['searchrad'] < 25.0 else 25.0
-#    fit_pars['separation'] = fit_pars['separation'] if fit_pars['separation'] > 2.0 else 2.0
-#    fit_pars['tolerance'] = fit_pars['tolerance'] if fit_pars['tolerance'] > 5.0 else 5.0
 
-    log.info("{} (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
-    if 'fitgeom' in fit_pars:
-        fitgeom=fit_pars['fitgeom']
-        del fit_pars['fitgeom']
-    else:
-        fitgeom='general'
+    fit_pars['searchrad'] = fit_pars['searchrad'] if fit_pars['searchrad'] < 10.0 else 10.0
+    fit_pars['separation'] = fit_pars['separation'] if fit_pars['separation'] > 2.0 else 2.0
+    fit_pars['tolerance'] = fit_pars['tolerance'] if fit_pars['tolerance'] > 5.0 else 5.0
 
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
@@ -672,7 +667,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def match_relative_blindfit(imglist, reference_catalog, **fit_pars):
+def match_relative_fit(imglist, reference_catalog, **fit_pars):
     """Perform cross-matching and final fit using relative matching algorithm
 
     Parameters
@@ -689,7 +684,7 @@ def match_relative_blindfit(imglist, reference_catalog, **fit_pars):
         List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
-    log.info("{} (match_relative_blindfit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
+    log.info("{} (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
     log.debug("Relative fit configured with: \n  {}".format(fit_pars))
@@ -1005,6 +1000,8 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
             if fit_label is None:
                 if 'relative' in item.meta['fit method']:
                     fit_label = 'REL'
+                elif 'xcorr' in item.meta['fit method']:
+                    fit_label = 'XCR'
                 else:
                     fit_label = 'IMG'
 
@@ -1115,10 +1112,39 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
         primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('scale', scale)
         primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('skew', skew)
 
-# --------------------------------------------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------------------------------------
 def register_photutils_function(name):
     """Convert photutils name as a string into a pointer to the actual photutils function"""
 
     if name in dir(photutils):
         func = eval("photutils.{}".format(name))
     return func
+
+
+# -----------------------------------------------------------------------------------------------------------
+def build_imglist(filenames, catalogs):
+    """Turned a set of files and source catalogs into a list of FITSWCS objects.
+
+    Parameters
+    ----------
+    filenames : list
+        List of filenames for the input exposures to be aligned
+
+    catalogs : dict
+        Dict of source catalogs keyed by `filename` with a list of catalogs for each filename (one per chip)
+    """
+
+    num_chips = fileutil.countExtn(filenames[0], extname='SCI')
+    imglist = []
+    for indx, fname in enumerate(filenames):
+        for chip in range(num_chips):
+            cat = catalogs[fname][chip]
+            wcat = tweakwcs.FITSWCS(HSTWCS(fname, ext=('sci', chip + 1)))
+            wcat.meta['catalog'] = cat
+            wcat.meta['group_id'] = indx
+            wcat.meta['filename'] = fname
+            wcat.meta['chip'] = chip + 1
+            indx += 1
+            imglist.append(wcat)
+    return imglist

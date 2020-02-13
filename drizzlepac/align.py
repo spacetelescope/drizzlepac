@@ -349,6 +349,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         best_fit_status_dict = {}
         best_fit_qual = 5
         best_fit_label = [None, None]
+        relax_consistency = False
         # create pristine copy of imglist that will be used to restore imglist back so it always starts exactly the same
         # for each run.
         orig_imglist = copy.deepcopy(imglist)
@@ -394,7 +395,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                 else:
                     log.info("{} Cross matching and "
                          "fitting {}".format("-" * 20, "-" * 47))
-                    imglist = copy.deepcopy(orig_imglist)  # reset imglist to pristine state
+                    alignment_table.imglist = copy.deepcopy(orig_imglist)  # reset imglist to pristine state
 
                     log.info(
                         "{} Catalog {} matched using {} {}".format("-" * 18,
@@ -405,24 +406,25 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                         alignment_table.reset_group_id(len(reference_catalog))
 
                         # execute the correct fitting/matching algorithm
-                        alignment_table.imglist = alignment_table.perform_fit(algorithm_name, catalog_name, reference_catalog)
+                        imglist = alignment_table.perform_fit(algorithm_name, catalog_name, reference_catalog)
+                        if 'xcorr' in algorithm_name:
+                            relax_consistency = True
 
                         # determine the quality of the fit
                         fit_rms, fit_num, fit_quality, filtered_table, fit_status_dict = \
-                            determine_fit_quality(
-                                alignment_table.imglist,
+                            determine_fit_quality(imglist,
                                 alignment_table.filtered_table,
                                 (catalog_index < (len(catalog_list) - 1)),
-                                print_fit_parameters=print_fit_parameters)
+                                print_fit_parameters=print_fit_parameters,
+                                relax_consistency=relax_consistency)
                         alignment_table.filtered_table = filtered_table
+                        alignment_table.fit_dict[(catalog_name, algorithm_name)] = imglist
 
                         # save fit algorithm name to dictionary key "fit method" in imglist.
                         for imglist_ctr in range(0, len(imglist)):
-                            table_fit = alignment_table.fit_dict[(catalog_name, algorithm_name)]
-                            table_fit[imglist_ctr].meta['fit method'] = algorithm_name
-                            table_fit[imglist_ctr].meta['fit quality'] = fit_quality
-                        log.debug("FIT determined was: {}".format(
-                                    alignment_table.fit_dict[(catalog_name, algorithm_name)][0].meta))
+                            imglist[imglist_ctr].meta['fit method'] = algorithm_name
+                            imglist[imglist_ctr].meta['fit quality'] = fit_quality
+                        log.debug("FIT determined was: {}".format(imglist[0].meta))
 
                         # populate fit_info_dict
                         fit_info_dict["{} {}".format(catalog_name, algorithm_name)] = \
@@ -474,14 +476,15 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                         break
             # break out of outer fit algorithm loop
             # either with a fit_rms < 10 or a 'valid' relative fit
-            if fit_quality == 1 or (best_fit_qual in [2, 3, 4] and
-                "relative" in algorithm_name):
+            if fit_quality == 1:  # or (best_fit_qual in [2, 3, 4] and
+                # "relative" in algorithm_name):
                 break
         log.info("\nBEST FIT found to be: \n    {}\n".format(best_fit_label))
         log.info("FIT_DICT: {}".format(alignment_table.fit_dict.keys()))
         # Reset imglist to point to best solution...
         alignment_table.select_fit(best_fit_label[0], best_fit_label[1])
         imglist = alignment_table.selected_fit
+
         filtered_table = alignment_table.filtered_table
 
         # Report processing time for this step
@@ -567,8 +570,6 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
     return filtered_table, alignment_table
 
 
-# ----------------------------------------------------------------------------------------------------------
-
 def make_label(label, starting_dt):
     """Create a time-stamped label for use in log messages"""
     current_dt = datetime.datetime.now()
@@ -580,7 +581,8 @@ def make_label(label, starting_dt):
 # ----------------------------------------------------------------------------------------------------------
 
 
-def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit_parameters=True):
+def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit_parameters=True,
+                            relax_consistency=False):
     """Determine the quality of the fit to the data
 
     Parameters
@@ -606,6 +608,11 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
 
     print_fit_parameters : bool
         Specify whether or not to print out FIT results for each chip
+
+    relax_consistency : bool
+        Turn on/off the consistency check.  Some situations are expected to violate this condition
+        due to the nature of the input alignment error (FINE/GYRO mode, for example) where each
+        image is expected to have a very different correction.
 
     Returns
     -------
@@ -710,11 +717,12 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         #     fitRmsCheck = True
 
         consistency_check = True
-        rms_limit = max(item.meta['fit_info']['TOTAL_RMS'], 10.)
-        if not math.sqrt(np.std(np.asarray(xshifts)) ** 2 + np.std(
-                         np.asarray(yshifts)) ** 2) <= (rms_limit / MAS_TO_ARCSEC) / (item.wcs.pscale):  # \
-                         # or rms_ratio > MAX_RMS_RATIO:
-            consistency_check = False
+        if not relax_consistency:
+            rms_limit = max(item.meta['fit_info']['TOTAL_RMS'], 10.)
+            if not math.sqrt(np.std(np.asarray(xshifts)) ** 2 + np.std(
+                             np.asarray(yshifts)) ** 2) <= (rms_limit / MAS_TO_ARCSEC) / (item.wcs.pscale):  # \
+                             # or rms_ratio > MAX_RMS_RATIO:
+                consistency_check = False
 
         # Decide if fit solutions are valid based on checks
         if not consistency_check:  # Failed consistency check
@@ -816,7 +824,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
     return max_rms_val, num_xmatches, fit_quality, filtered_table, fit_status_dict
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------
 
 
 def generate_astrometric_catalog(imglist, **pars):
@@ -850,7 +858,56 @@ def generate_astrometric_catalog(imglist, **pars):
 
     return(out_catalog)
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------
+def update_headerlet_phdu(tweakwcs_item, headerlet):
+    """Update the primary header data unit keywords of a headerlet object in-place
+
+    Parameters
+    ==========
+    tweakwcs_item :
+        Basically the output from tweakwcs which contains the cross match and fit information for every chip
+        of every valid input image.
+
+    headerlet : headerlet object
+        object containing WCS information
+    """
+
+    # Get the data to be used as values for FITS keywords
+    rms_ra = tweakwcs_item.meta['fit_info']['RMS_RA'].value
+    rms_dec = tweakwcs_item.meta['fit_info']['RMS_DEC'].value
+    fit_rms = tweakwcs_item.meta['fit_info']['FIT_RMS']
+    nmatch = tweakwcs_item.meta['fit_info']['nmatches']
+    catalog = tweakwcs_item.meta['fit_info']['catalog']
+    fit_method = tweakwcs_item.meta['fit method']
+
+    x_shift = (tweakwcs_item.meta['fit_info']['shift'])[0]
+    y_shift = (tweakwcs_item.meta['fit_info']['shift'])[1]
+    rot = tweakwcs_item.meta['fit_info']['rot']
+    scale = tweakwcs_item.meta['fit_info']['scale'][0]
+    skew = tweakwcs_item.meta['fit_info']['skew']
+
+    log.info("Headerlet being updated with RMS_RA={},  RMS_DEC={}".format(rms_ra, rms_dec))
+    # Update the existing FITS keywords
+    primary_header = headerlet[0].header
+    primary_header['RMS_RA'] = rms_ra
+    primary_header['RMS_DEC'] = rms_dec
+    primary_header['NMATCH'] = nmatch
+    primary_header['CATALOG'] = catalog
+    primary_header['FITMETH'] = fit_method
+
+    # Create a new FITS keyword
+    primary_header['FIT_RMS'] = (fit_rms, 'RMS (mas) of the 2D fit of the headerlet solution')
+
+    # Create the set of HISTORY keywords
+    primary_header['HISTORY'] = '~~~~~ FIT PARAMETERS ~~~~~'
+    primary_header['HISTORY'] = '{:>15} : {:9.4f} "/pixels'.format('platescale', tweakwcs_item.wcs.pscale)
+    primary_header['HISTORY'] = '{:>15} : {:9.4f} pixels'.format('x_shift', x_shift)
+    primary_header['HISTORY'] = '{:>15} : {:9.4f} pixels'.format('y_shift', y_shift)
+    primary_header['HISTORY'] = '{:>15} : {:9.4f} degrees'.format('rotation', rot)
+    primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('scale', scale)
+    primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('skew', skew)
+
+
 
 def get_default_pars(instrument, detector, step='alignment',
                      condition=['filter_basic']):

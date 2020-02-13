@@ -21,6 +21,7 @@ import requests
 import inspect
 import sys
 from distutils.version import LooseVersion
+import warnings
 
 import numpy as np
 import scipy.stats as st
@@ -790,14 +791,13 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         if nlargest is not None:
             nlargest = min(nlargest, len(segm.labels))
 
-            # Look for brightest sources by flux...
-            src_fluxes = np.array([imgarr[src].max() for src in segm.slices])
-            src_labels = np.array([label for label in segm.labels])
-            src_brightest = np.flip(np.argsort(src_fluxes))
-            large_labels = src_labels[src_brightest]
-            log.debug("Brightest sources in segments: \n{}".format(large_labels))
-        else:
-            src_brightest = np.arange(len(segm.labels))
+        # Look for brightest sources by flux...
+        src_fluxes = np.array([imgarr[src].max() for src in segm.slices])
+        src_labels = np.array([label for label in segm.labels])
+        src_brightest = np.flip(np.argsort(src_fluxes))
+        large_labels = src_labels[src_brightest]
+        log.debug("Brightest sources in segments: \n{}".format(large_labels))
+
 
         log.info("Looking for sources in {} segments".format(len(segm.labels)))
         print("Looking for sources in {} segments".format(len(segm.labels)))
@@ -825,8 +825,10 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
             # zero out any pixels which do not have this segments label
             detection_img[segm.data[seg_slice] == 0] = 0
 
-            # Detect sources in this specific segment
-            seg_table = daofind.find_stars(detection_img)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                # Detect sources in this specific segment
+                seg_table = daofind.find_stars(detection_img)
 
             # Pick out brightest source only
             if src_table is None and seg_table:
@@ -1610,9 +1612,10 @@ def determine_initial_shifts(imglist):
         filename = img.meta['filename']
         if ref_filename is None:
             ref_filename = filename
-        chip = img.meta['chip']
-        chip = fits.getdata(filename, ext=("SCI", chip))
-        chipwcs = HSTWCS(filename, ext=("SCI", chip))
+
+        chipnum = img.meta['chip']
+        chip = fits.getdata(filename, ext=("SCI", chipnum))
+        chipwcs = wcsutil.HSTWCS(filename, ext=("SCI", chipnum))
 
         if filename not in raw_frames:
             raw_frames[filename] = {}
@@ -1622,7 +1625,7 @@ def determine_initial_shifts(imglist):
             continue
         raw_frames[filename]['chips'].append(chip)
         raw_frames[filename]['chipwcs'].append(chipwcs)
-    
+
 
     # Get the raw SCI data for all chips and concatenate them into a single array for each filename
     # These composite raw frames will then be cross-correlated to determine the initial
@@ -1643,19 +1646,19 @@ def determine_initial_shifts(imglist):
             offset = [0, 0]
         else:
             # Compute shifts here using skimage.feature with fast cross-correlation
-            offset, err, phasediff = feature.register_translation(raw_frames[fname]['full_frame'], ref)
+            (shift_y, shift_x), err, phasediff = \
+                feature.register_translation(ref, raw_frames[fname]['full_frame'])
             # Convert numpy (y,x) ordering to (x,y) and return as a list not ndarray
-            offset = offset.tolist()
+            offset = (shift_x, shift_y)
+
             # Now, any pixel/pointing offset 'known' by the WCS's
             metawcs = raw_frames[fname]['metawcs']
             crpix = metawcs.wcs.crpix
-            x,y = metawcs.all_world2pix(ref_crval[0], ref_crval[1], 1)
-            offset = [offset[0] - (x - crpix[0]), offset[1] - (y - crpix[1])] 
-            
+            x, y = metawcs.all_world2pix(ref_crval[0], ref_crval[1], 1)
+            offset = [offset[0] + (x - crpix[0]), offset[1] + (y - crpix[1])]
+
         raw_shifts[fname].append(offset)
-    print(raw_shifts)
-    input("Quit?")
-    
+
     # Match up computed shifts with original input list of FITSWCS objects
     shifts = []
     for img in imglist:
@@ -1673,11 +1676,11 @@ def determine_initial_shifts(imglist):
         ref_pix = [img.wcs.wcs.crpix[0] - sky_pix[0], img.wcs.wcs.crpix[1] - sky_pix[1]]
         print("Reference Pixel at pix {} compared to ref_pix {}".format(ref_pix, img.wcs.wcs.crpix))
         off_tanp_ref = img.det_to_tanp(ref_pix[0], ref_pix[1])
-        off_tanp = img.det_to_tanp(ref_pix[0] + shift[0], ref_pix[1] + shift[1])
-        off_xy = [off_tanp[0] - off_tanp_ref[0], off_tanp[1] - off_tanp_ref[1]]
+        off_tanp = img.det_to_tanp(ref_pix[0] - shift[0], ref_pix[1] - shift[1])
+        off_xy = [float(off_tanp[0] - off_tanp_ref[0]), float(off_tanp[1] - off_tanp_ref[1])]
+        print("Applying correction of: {}".format(off_xy))
         # apply correction and record applied offset (in pixels) in metadata
-        img.set_correction(offset=off_xy, meta={'XCORR_offset': shift})
-
+        img.set_correction(shift=off_xy, meta={'XCORR_offset': shift, 'XCORR_tanxy': off_xy})
 # -------------------------------------------------------------------------------------------------------------
 #
 #  Utilities and supporting functions for verifying alignment
