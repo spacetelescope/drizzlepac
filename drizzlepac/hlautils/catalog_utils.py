@@ -825,6 +825,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._border = self.param_dict["sourcex"]["border"]
         self._nsigma = self.param_dict["nsigma"]
 
+        # Columns to include from the computation of source properties to save
+        # computation time from computing values which are not used
+        self.include_filter_cols = ['background_at_centroid', 'bbox_xmax', 'bbox_xmin', 'bbox_ymax', 'bbox_ymin',
+                                    'covar_sigx2', 'covar_sigxy', 'covar_sigy2', 'cxx', 'cxy', 'cyy',
+                                    'ellipticity', 'elongation', 'id', 'orientation', 'sky_centroid_icrs',
+                                    'source_sum', 'xcentroid', 'ycentroid']
+
         # Initialize attributes to be computed later
         self.segm_img = None  # Segmentation image
 
@@ -862,7 +869,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # and the illuminated portion is False.
             mask = mask < 1
             if self.diagnostic_mode:
-                outname = self.imgname.replace(".fits","_mask.fits")
+                outname = self.imgname.replace(".fits", "_mask.fits")
                 fits.PrimaryHDU(data=mask.astype(np.uint16)).writeto(outname)
 
         # If the total product sources have not been identified, then this needs to be done!
@@ -900,8 +907,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                            filter_kernel=self.image.kernel,
                                            mask=mask)
             if self.diagnostic_mode:
-                outname = self.imgname.replace(".fits","_segment.fits")
-                fits.PrimaryHDU(data = self.segm_img.data).writeto(outname)
+                outname = self.imgname.replace(".fits", "_segment.fits")
+                fits.PrimaryHDU(data=self.segm_img.data).writeto(outname)
 
             try:
                 # Deblending is a combination of multi-thresholding and watershed
@@ -912,14 +919,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                      filter_kernel=self.image.kernel, nlevels=self._nlevels,
                                                      contrast=self._contrast)
                 if self.diagnostic_mode:
-                    outname = self.imgname.replace(".fits","_segment_deblended.fits")
-                    fits.PrimaryHDU(data = self.segm_deblended_img.data).writeto(outname)
+                    outname = self.imgname.replace(".fits", "_segment_deblended.fits")
+                    fits.PrimaryHDU(data=self.segm_deblended_img.data).writeto(outname)
 
                 # The deblending was successful, so just copy the deblended sources back to the sources attribute.
                 self.segm_img = copy.deepcopy(segm_deblended_img)
             except Exception as x_cept:
                 log.warning("Deblending the sources in image {} was not successful: {}.".format(self.imgname,
-                                                                                                         x_cept))
+                            x_cept))
                 log.warning("Processing can continue with the non-deblended sources, but the user should\n"
                             "check the output catalog for issues.")
 
@@ -934,8 +941,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
             # form to filter out bad rows and correspondingly bad segments before the filter images are processed.
-            total_measurements_table = Table(self.source_cat.to_table())
-            print("Total measurements table: {}".format(total_measurements_table))
+            total_measurements_table = Table(self.source_cat.to_table(columns=['id', 'xcentroid', 'ycentroid', 'sky_centroid_icrs']))
 
             # Filter the table to eliminate nans or inf based on the coordinates, then remove these segments from
             # the segmentation image
@@ -950,7 +956,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
             updated_table = Table(rows=good_rows, names=total_measurements_table.colnames)
             if self.diagnostic_mode and bad_segm_rows_by_id:
                 log.info("Bad segments removed from segmentation image for Total detection image {}.".format(self.imgname))
-            print("Updated Total measurements table: {}".format(updated_table))
 
             # Remove the bad segments from the image
             self.segm_img.remove_labels(bad_segm_rows_by_id, relabel=True)
@@ -1030,7 +1035,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                             filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
 
         # Convert source_cat which is a SourceCatalog to an Astropy Table
-        filter_measurements_table = Table(self.source_cat.to_table())
+        filter_measurements_table = Table(self.source_cat.to_table(columns=self.include_filter_cols))
 
         # Compute aperture photometry measurements and append the columns to the measurements table
         self.do_aperture_photometry(imgarr_bkgsub, filter_measurements_table, self.imgname, filter_name)
@@ -1089,7 +1094,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                      self.image.imghdu[1].header['photplam'])
 
         # Determine the "good rows" as defined by the X and Y coordinates not being nans as
-        # the pos_xy array cannot contain any nan values.  Note: It is possible for a filter 
+        # the pos_xy array cannot contain any nan values.  Note: It is possible for a filter
         # catalog to have NO sources (subarray data).  The "bad rows" will have the RA and DEC values
         # in the filter catalog replaced with the corresponding RA and Dec values from the total
         # catalog to give the user some perspective.
@@ -1149,7 +1154,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
             try:
                 # Compute the Concentration Index (CI)
-                ci_col = []
                 ci_data = mag_inner_data - mag_outer_data
                 ci_mask = np.logical_and(np.abs(ci_data) > 0.0, np.abs(ci_data) < 1.0e-30)
                 big_bad_index = np.where(abs(ci_data) > 1.0e20)
@@ -1160,11 +1164,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 log.warning("Computation of concentration index (CI) was not successful: {} - {}.".format(self.imgname, x_cept))
                 log.warning("CI measurements may be missing from the output filter catalog.\n")
 
-            # OK to insert *entire* column here to preserve any values which have been computed.  The 
+            # OK to insert *entire* column here to preserve any values which have been computed.  The
             # column already exists and contains nans.
             if isinstance(ci_col, MaskedColumn):
-                filter_measurements_table['CI'] = ci_col
+                filter_measurements_table['CI'][good_rows_index] = ci_col
 
+        # Case: no good rows in the table
         # Issue a message for the case no good rows at all being found in the filter image.
         # The bad rows will be "filled in" with the same code (below) where all the rows are bad.
         else:
@@ -1172,18 +1177,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Fill in any bad rows - this code fills in sporadic missing rows, as well as all rows being missing.
         # The bad rows have nan values for the xcentroid/ycentroid coordinates, as well as the RA/Dec values,
-        # so recover these values from the total source catalog to make it easy for the user to map the filter 
-        # catalog rows back to the total detection catalog 
+        # so recover these values from the total source catalog to make it easy for the user to map the filter
+        # catalog rows back to the total detection catalog
         filter_measurements_table['xcentroid'][bad_rows_index] = self.total_source_table['X-Centroid'][bad_rows_index]
         filter_measurements_table['ycentroid'][bad_rows_index] = self.total_source_table['Y-Centroid'][bad_rows_index]
         filter_measurements_table['RA'][bad_rows_index] = self.total_source_table['RA'][bad_rows_index]
         filter_measurements_table['DEC'][bad_rows_index] = self.total_source_table['DEC'][bad_rows_index]
-
-        # Protect against None for source_sum_error
-        # FIX MDD
-        # log.info("*************** source sum err: {}".format(updated_table["source_sum_err"]))
-        # None_index = np.where(filter_measurements_table['source_sum_err'] is None)
-        # filter_measurements_table['source_sum_error'][None_index] = float('nan')
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1268,19 +1267,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 for catalog generation.
         """
 
-        """
-        radec_data = SkyCoord(filter_table["sky_centroid_icrs"])
-        ra_icrs = radec_data.ra.degree
-        dec_icrs = radec_data.dec.degree
-        rr = Column(ra_icrs, name="RA", unit=u.deg)
-        dd = Column(dec_icrs, name="DEC", unit=u.deg)
-        filter_table.add_columns([dd, rr])
-        """
-
         # Rename columns to names used when HLA Classic catalog distributed by MAST
         final_col_names = {"id": "ID", "xcentroid": "X-Centroid", "ycentroid": "Y-Centroid",
                            "background_at_centroid": "Bck", "source_sum": "FluxIso",
-                           ## "background_at_centroid": "Bck", "source_sum": "FluxIso", "source_sum_err": "FluxIsoErr",
                            "bbox_xmin": "Xmin", "bbox_ymin": "Ymin", "bbox_xmax": "Xmax", "bbox_ymax": "Ymax",
                            "cxx": "CXX", "cyy": "CYY", "cxy": "CXY",
                            "covar_sigx2": "X2", "covar_sigy2": "Y2", "covar_sigxy": "XY",
@@ -1294,7 +1283,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
                            "CI", "Flags", "MagAp1", "MagErrAp1", "FluxAp1", "FluxErrAp1",
                            "MagAp2", "MagErrAp2", "FluxAp2", "FluxErrAp2", "MSkyAp2",
                            "Bck", "MagIso", "FluxIso",
-                           ## "Bck", "MagIso", "FluxIso", "FluxIsoErr",
                            "Xmin", "Ymin", "Xmax", "Ymax",
                            "X2", "Y2", "XY",
                            "CXX", "CYY", "CXY",
@@ -1307,7 +1295,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
                             "MagAp1": "8.2f", "MagErrAp1": "9.4f", "FluxAp1": "9.2f", "FluxErrAp1": "10.5f",
                             "MagAp2": "8.2f", "MagErrAp2": "9.4f", "FluxAp2": "9.2f", "FluxErrAp2": "10.5f",
                             "MSkyAp2": "8.2f", "Bck": "9.4f", "MagIso": "8.2f", "FluxIso": "9.2f",
-                            ## "Bck": "9.4f", "MagIso": "8.2f", "FluxIso": "9.2f", "FluxIsoErr": "10.5f",
                             "Xmin": "8.0f", "Ymin": "8.0f", "Xmax": "8.0f", "Ymax": "8.0f",
                             "X2": "8.4f", "Y2": "8.4f", "XY": "10.5f",
                             "CXX": "9.5f", "CYY": "9.5f", "CXY": "9.5f",
@@ -1331,9 +1318,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                              "FluxErrAp2": "Error of FluxAp2",
                              "MSkyAp2": "ABMAG of sky based on outer (larger) aperture",
                              "FluxIso": "Sum of unmasked data values in the source segment",
-                             # "FluxIsoErr": "Uncertainty of FluxIso propagated from the input error array",
                              "MagIso": "Magnitude corresponding to FluxIso",
-                             # "MagIsoErr: "Uncertainty of MagIso corresponding to FluxIsoErr"
                              "X2": "Variance along X",
                              "Y2": "Variance along Y",
                              "XY": "Covariance of position between X and Y",
