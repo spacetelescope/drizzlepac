@@ -896,7 +896,7 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
             photmode = None
 
         imgarr = image['sci', chip].data
-        wcs = wcsutil.HSTWCS(image, ext=('sci',chip))
+        wcs = wcsutil.HSTWCS(image, ext=('sci', chip))
         def_fwhm = def_fwhmpsf / wcs.pscale
 
         # apply any DQ array, if available
@@ -1605,7 +1605,7 @@ def evaluate_focus(focus_dict, tolerance=0.8):
 
     return alignment_verified
 
-def get_align_fwhm(focus_dict, default_fwhm, src_size=32):
+def get_align_fwhm(focus_dict, default_fwhm, src_size=11):
     """Determine FWHM based on position of sharpest focus in the product"""
     pimg = fits.open(focus_dict['prodname'])
     posy, posx = focus_dict['prod_pos']
@@ -1679,6 +1679,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
 
     exptimes = np.array([fits.getval(s, 'exptime') for s in singlefiles])
     exp_weights = exptimes / exptimes.max()
+    log.info("Computing diffs for: {}".format(singlefiles))
 
     diff_dict = {}
     for sfile, exp_weight in zip(singlefiles, exp_weights):
@@ -1784,7 +1785,7 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
                 sigma = 3.
             else:
                 pass
-        maxiters = int(np.log10(rebin_arr.max()/2)+0.5)
+        maxiters = int(np.log10(rebin_arr.max() / 2) + 0.5)
 
         # Use simple constant background to avoid problems with nebulosity
         bkg = sigma_clipped_stats(rebin_arr, sigma=sigma, maxiters=maxiters)
