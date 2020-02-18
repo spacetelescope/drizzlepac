@@ -1688,6 +1688,18 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
 
         # Create exposure mask corresponding to pixels with drizzled data
         smask = sdata > 0
+        if smask.sum() == 0:
+            # In some error cases (e.g., jcx552010), blank images get to this point, so treat them as blank
+            log.info("Overlap difference for {}: (No valid data)".format(sfile))
+            diff_dict[sfile] = {"distance": -1, "xslice": None, "yslice": None}
+            diff_dict[sfile]['product_num_sources'] = 0
+            diff_dict[sfile]['num_sources'] = 0
+            diff_dict[sfile]['focus'] = 0.0
+            diff_dict[sfile]['focus_pos'] = (None, None)
+            diff_dict[sfile]['product_focus'] = 0.0
+            diff_dict[sfile]['product_focus_pos'] = (None, None)
+            log.debug("Overlap differences for {} found to be: \n{}".format(sfile, diff_dict[sfile]))
+            continue
 
         # Trim mask down to only include region where the most exposures overlap
         soverlap = smask * max_overlap
