@@ -767,7 +767,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         tbl['flux'].info.format = '.10f'
         if not outroot.endswith('.cat'):
             outroot += '.cat'
-        tbl.write(outroot, format='ascii.commented_header')
+        tbl.write(outroot, format='ascii.commented_header', overwrite=True)
         log.info("Wrote source catalog: {}".format(outroot))
 
     if plot and plt is not None:
