@@ -173,6 +173,19 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             raise ValueError(msg)
 
         os.environ[envvar_old_apriori_name] = envvar_dict[val]
+    else:
+        # Insure os.environ ALWAYS contains an entry for envvar_new_apriori_name
+        # and it will default to being 'on'
+        if envvar_old_apriori_name in os.environ:
+            val = os.environ[envvar_old_apriori_name].lower()
+        else:
+            val = 'on'
+        os.environ[envvar_new_apriori_name] = val
+
+    align_with_apriori = True
+    if envvar_new_apriori_name in os.environ:
+        val = os.environ[envvar_new_apriori_name].lower()
+        align_with_apriori = envvar_bool_dict[val]
 
     if headerlets or align_to_gaia:
         from stwcs.wcsutil import headerlet
@@ -363,6 +376,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         """
         inst_mode = "{}/{}".format(infile_inst, infile_det)
         _good_images = [f for f in _calfiles if fits.getval(f, 'exptime') > 0.]
+        _good_images = [f for f in _good_images if fits.getval(f, 'ngoodpix', ext=("SCI", 1)) > 0.]
         if len(_good_images) == 0:
             _good_images = _calfiles
         adriz_pars = mdzhandler.getMdriztabParameters(_good_images)
@@ -389,77 +403,79 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         _trlmsg += __trlmarker__
         _updateTrlFile(_trlfile, _trlmsg)
 
-        # Generate initial default products and perform verification
-        align_dicts = verify_alignment(_inlist,
-                                         _calfiles, _calfiles_flc,
-                                         _trlfile,
-                                         tmpdir=None, debug=debug,
-                                         force_alignment=force_alignment,
-                                         find_crs=True, **adriz_pars)
-
-        _trlmsg = _timestamp('Starting alignment with a priori solutions')
-        _trlmsg += __trlmarker__
-        if align_dicts is not None:
-            find_crs = not align_dicts[0]['alignment_verified']
-        else:
-            find_crs = False
-
-        # run updatewcs with use_db=True to insure all products have
-        # have a priori solutions as extensions
-        updatewcs.updatewcs(_calfiles)
-        _trlmsg += verify_gaia_wcsnames(_calfiles)
-        if _calfiles_flc:
-            updatewcs.updatewcs(_calfiles_flc)
-            _trlmsg += verify_gaia_wcsnames(_calfiles_flc)
-
-        # Check for the case where no update was performed due to all inputs
-        # having EXPTIME==0 (for example) and apply updatewcs anyway to allow
-        # for successful creation of updated headerlets for this data.
-        force_updatewcs = False
-        for cfile in _calfiles:
-            # If any file in the input list was NOT updated, force update with use_db now...
-            with fits.open(cfile) as img0:
-                if 'wcsname' not in img0[1].header:
-                    force_updatewcs = True
-                    _trlmsg += "Forcing reference file update for WCS for: {}".format(_calfiles)
-                    break
-        if force_updatewcs:
-            updatewcs.updatewcs(_calfiles, checkfiles=False)
-            if _calfiles_flc:
-                updatewcs.updatewcs(_calfiles_flc, checkfiles=False)
-
-        try:
-            tmpname = "_".join([_trlroot, 'apriori'])
-            sub_dirs.append(tmpname)
+        if align_with_apriori or force_alignment or align_to_gaia:
             # Generate initial default products and perform verification
-            align_apriori = verify_alignment(_inlist,
+            align_dicts = verify_alignment(_inlist,
                                              _calfiles, _calfiles_flc,
                                              _trlfile,
-                                             tmpdir=tmpname, debug=debug,
-                                             good_bits=focus_pars[inst_mode]['good_bits'],
-                                             alignment_mode='apriori',
+                                             tmpdir=None, debug=debug,
                                              force_alignment=force_alignment,
-                                             find_crs=find_crs,
-                                             **adriz_pars)
-        except Exception:
-            # Reset to state prior to applying a priori solutions
-            updatewcs.updatewcs(_calfiles, use_db=False)
+                                             find_crs=True, **adriz_pars)
+
+        if align_with_apriori:
+            _trlmsg = _timestamp('Starting alignment with a priori solutions')
+            _trlmsg += __trlmarker__
+            if align_dicts is not None:
+                find_crs = not align_dicts[0]['alignment_verified']
+            else:
+                find_crs = False
+
+            # run updatewcs with use_db=True to insure all products have
+            # have a priori solutions as extensions
+            updatewcs.updatewcs(_calfiles)
+            _trlmsg += verify_gaia_wcsnames(_calfiles)
             if _calfiles_flc:
-                updatewcs.updatewcs(_calfiles_flc, use_db=False)
+                updatewcs.updatewcs(_calfiles_flc)
+                _trlmsg += verify_gaia_wcsnames(_calfiles_flc)
 
-            traceback.print_exc()
-            align_apriori = None
-            _trlmsg += "ERROR in applying a priori solution.\n"
+            # Check for the case where no update was performed due to all inputs
+            # having EXPTIME==0 (for example) and apply updatewcs anyway to allow
+            # for successful creation of updated headerlets for this data.
+            force_updatewcs = False
+            for cfile in _calfiles:
+                # If any file in the input list was NOT updated, force update with use_db now...
+                with fits.open(cfile) as img0:
+                    if 'wcsname' not in img0[1].header:
+                        force_updatewcs = True
+                        _trlmsg += "Forcing reference file update for WCS for: {}".format(_calfiles)
+                        break
+            if force_updatewcs:
+                updatewcs.updatewcs(_calfiles, checkfiles=False)
+                if _calfiles_flc:
+                    updatewcs.updatewcs(_calfiles_flc, checkfiles=False)
 
-        if align_apriori:
-            align_dicts = align_apriori
-            if align_dicts[0]['alignment_quality'] == 0:
-                _trlmsg += 'A priori alignment SUCCESSFUL.\n'
-            if align_dicts[0]['alignment_quality'] == 1:
-                _trlmsg += 'A priori alignment potentially compromised.  Please review final product!\n'
-            if align_dicts[0]['alignment_quality'] > 1:
-                _trlmsg += 'A priori alignment FAILED! No a priori astrometry correction applied.\n'
-        _updateTrlFile(_trlfile, _trlmsg)
+            try:
+                tmpname = "_".join([_trlroot, 'apriori'])
+                sub_dirs.append(tmpname)
+                # Generate initial default products and perform verification
+                align_apriori = verify_alignment(_inlist,
+                                                 _calfiles, _calfiles_flc,
+                                                 _trlfile,
+                                                 tmpdir=tmpname, debug=debug,
+                                                 good_bits=focus_pars[inst_mode]['good_bits'],
+                                                 alignment_mode='apriori',
+                                                 force_alignment=force_alignment,
+                                                 find_crs=find_crs,
+                                                 **adriz_pars)
+            except Exception:
+                # Reset to state prior to applying a priori solutions
+                updatewcs.updatewcs(_calfiles, use_db=False)
+                if _calfiles_flc:
+                    updatewcs.updatewcs(_calfiles_flc, use_db=False)
+
+                traceback.print_exc()
+                align_apriori = None
+                _trlmsg += "ERROR in applying a priori solution.\n"
+
+            if align_apriori:
+                align_dicts = align_apriori
+                if align_dicts[0]['alignment_quality'] == 0:
+                    _trlmsg += 'A priori alignment SUCCESSFUL.\n'
+                if align_dicts[0]['alignment_quality'] == 1:
+                    _trlmsg += 'A priori alignment potentially compromised.  Please review final product!\n'
+                if align_dicts[0]['alignment_quality'] > 1:
+                    _trlmsg += 'A priori alignment FAILED! No a priori astrometry correction applied.\n'
+            _updateTrlFile(_trlfile, _trlmsg)
 
 
         if align_to_gaia:
@@ -595,12 +611,21 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
     if debug and Process is not None:
         print("Files still open for this process include: ")
-        print(Process().open_files())
+        print([ofile.path for ofile in Process().open_files()])
 
     if not debug:
-        # Remove all temp sub-directories now that we are done
-        for sd in sub_dirs:
-            if os.path.exists(sd): rmtree2(sd)
+        try:
+            # Remove all temp sub-directories now that we are done
+            for sd in sub_dirs:
+                if os.path.exists(sd): rmtree2(sd)
+        except Exception:
+            # If we are unable to remove any of these sub-directories,
+            # leave them for the user or calling routine/pipeline to clean up.
+            print("WARNING: Unable to remove any or all of these sub-directories: \n{}\n".format(sub_dirs))
+            if Process is not None:
+                print("Files still open at this time include: ")
+                print([ofile.path for ofile in Process().open_files()])
+            pass
 
     # Append final timestamp to trailer file...
     _final_msg = '%s: Finished processing %s \n' % (_getTime(), inFilename)
@@ -695,19 +720,19 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
         else:
             focus_dicts = None
 
-        # Now, append comments created by PyDrizzle to CALXXX trailer file
-        print('Updating trailer file %s with astrodrizzle comments.' % trlfile)
-        drizlog_copy = drizlog.replace('.log', '_copy.log')
-        if os.path.exists(drizlog):
-            shutil.copy(drizlog, drizlog_copy)
-        _appendTrlFile(trlfile, drizlog_copy)
-        # clean up log files
-        if os.path.exists(drizlog):
-            os.remove(drizlog)
-        # Clean up intermediate files generated by astrodrizzle
-        if not debug:
-            for ftype in ['*mask*.fits']:
-                [os.remove(file) for file in glob.glob(ftype)]
+    # Now, append comments created by PyDrizzle to CALXXX trailer file
+    print('Updating trailer file %s with astrodrizzle comments.' % trlfile)
+    drizlog_copy = drizlog.replace('.log', '_copy.log')
+    if os.path.exists(drizlog):
+        shutil.copy(drizlog, drizlog_copy)
+    _appendTrlFile(trlfile, drizlog_copy)
+    # clean up log files
+    if os.path.exists(drizlog):
+        os.remove(drizlog)
+    # Clean up intermediate files generated by astrodrizzle
+    if not debug:
+        for ftype in ['*mask*.fits']:
+            [os.remove(file) for file in glob.glob(ftype)]
 
     return drz_products, focus_dicts, diff_dicts
 
@@ -886,6 +911,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             det_pars = align.get_default_pars(inst, det)['generate_source_catalogs']
             default_fwhm = det_pars['fwhmpsf'] / pscale
             align_fwhm = amutils.get_align_fwhm(align_focus, default_fwhm)
+
             if align_fwhm:
                 _trlmsg += "align_fwhm: {}[{},{}]={:0.4f}pix\n".format(align_focus['prodname'],
                                                             align_focus['prod_pos'][1],
