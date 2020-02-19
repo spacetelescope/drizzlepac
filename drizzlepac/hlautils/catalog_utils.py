@@ -17,6 +17,7 @@ from photutils import CircularAperture, CircularAnnulus, DAOStarFinder
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import make_source_mask
+from photutils.utils import calc_total_error
 from stsci.tools import logutil
 from stwcs.wcsutil import HSTWCS
 
@@ -133,15 +134,26 @@ class CatalogImage:
         # SExtractorBackground ans StdBackgroundRMS are the defaults
         bkg = None
 
+        # Make a local copy of the data(image) being processed in order to reset any
+        # data values which equal nan (e.g., subarrays) to zero.
+        imgdata = self.data.copy()
+        imgdata[np.isnan(imgdata)] = 0
+
+        # Create the mask to ignore pixels with the value of 0
+        mask = (imgdata == 0)
+
         exclude_percentiles = [10, 25, 50, 75]
         for percentile in exclude_percentiles:
             log.info("Percentile in use: {}".format(percentile))
             try:
-                bkg = Background2D(self.data, (box_size, box_size), filter_size=(win_size, win_size),
+                bkg = Background2D(imgdata, (box_size, box_size), filter_size=(win_size, win_size),
                                    bkg_estimator=bkg_estimator(),
                                    bkgrms_estimator=rms_estimator(),
                                    exclude_percentile=percentile, edge_method="pad",
-                                   mask=(self.data == 0))
+                                   mask=mask)
+
+                # Apply the coverage mask to the returned background image
+                bkg.background *= ~mask
 
             except Exception:
                 bkg = None
@@ -158,14 +170,14 @@ class CatalogImage:
         # the background to be used in source identification
         if bkg is None:
             log.info("Background2D failure detected. Using alternative background calculation instead....")
-            mask = make_source_mask(self.data, nsigma=2, npixels=5, dilate_size=11)
-            sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(self.data, sigma=3.0, mask=mask, maxiters=9)
+            mask = make_source_mask(imgdata, nsigma=2, npixels=5, dilate_size=11)
+            sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(imgdata, sigma=3.0, mask=mask, maxiters=9)
             bkg_median = sigcl_median
             bkg_rms_median = sigcl_std
-            # create background frame shaped like self.data populated with sigma-clipped median value
-            bkg_background_ra = np.full_like(self.data, sigcl_median)
-            # create background frame shaped like self.data populated with sigma-clipped standard deviation value
-            bkg_rms_ra = np.full_like(self.data, sigcl_std)
+            # create background frame shaped like imgdata populated with sigma-clipped median value
+            bkg_background_ra = np.full_like(imgdata, sigcl_median)
+            # create background frame shaped like imgdata populated with sigma-clipped standard deviation value
+            bkg_rms_ra = np.full_like(imgdata, sigcl_std)
 
         log.info("Computation of image background complete")
         log.info("Found: ")
@@ -827,10 +839,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Columns to include from the computation of source properties to save
         # computation time from computing values which are not used
-        self.include_filter_cols = ['background_at_centroid', 'bbox_xmax', 'bbox_xmin', 'bbox_ymax', 'bbox_ymin',
+        self.include_filter_cols = ['area', 'background_at_centroid', 'bbox_xmax', 'bbox_xmin', 'bbox_ymax', 'bbox_ymin',
                                     'covar_sigx2', 'covar_sigxy', 'covar_sigy2', 'cxx', 'cxy', 'cyy',
                                     'ellipticity', 'elongation', 'id', 'orientation', 'sky_centroid_icrs',
-                                    'source_sum', 'xcentroid', 'ycentroid']
+                                    'source_sum', 'source_sum_err', 'xcentroid', 'ycentroid']
 
         # Initialize attributes to be computed later
         self.segm_img = None  # Segmentation image
@@ -909,6 +921,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
             if self.diagnostic_mode:
                 outname = self.imgname.replace(".fits", "_segment.fits")
                 fits.PrimaryHDU(data=self.segm_img.data).writeto(outname)
+
+                outname = self.imgname.replace(".fits", "_bkg.fits")
+                fits.PrimaryHDU(data=self.image.bkg_background_ra).writeto(outname)
 
             try:
                 # Deblending is a combination of multi-thresholding and watershed
@@ -1030,15 +1045,18 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # This is the filter science data and its computed background
         imgarr_bkgsub = imgarr - self.image.bkg_background_ra
 
+        # Compute the Poisson error of the sources...
+        total_error = calc_total_error(imgarr_bkgsub, self.image.bkg_rms_ra, 1.0)
+
         # Compute source properties...
         self.source_cat = source_properties(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
-                                            filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
+                                            error=total_error, filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
 
         # Convert source_cat which is a SourceCatalog to an Astropy Table
         filter_measurements_table = Table(self.source_cat.to_table(columns=self.include_filter_cols))
 
         # Compute aperture photometry measurements and append the columns to the measurements table
-        self.do_aperture_photometry(imgarr_bkgsub, filter_measurements_table, self.imgname, filter_name)
+        self.do_aperture_photometry(imgarr, filter_measurements_table, self.imgname, filter_name)
 
         # Now clean up and prepare the filter table for output
         self.source_cat = self._define_filter_table(filter_measurements_table)
@@ -1076,7 +1094,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def do_aperture_photometry(self, bkg_subtracted_image, filter_measurements_table, image_name, filter_name):
+    def do_aperture_photometry(self, input_image, filter_measurements_table, image_name, filter_name):
         """Perform aperture photometry measurements as a means to distinguish point versus extended sources.
         """
 
@@ -1125,10 +1143,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Create list of photometric apertures to measure
             phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
 
-            # Perform aperture photometry
+            # Perform aperture photometry - the input data should NOT be background subtracted
             photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers,
                                                                     bg_apers,
-                                                                    data=bkg_subtracted_image,
+                                                                    data=input_image,
                                                                     photflam=self.image.imghdu[1].header['photflam'],
                                                                     photplam=self.image.imghdu[1].header['photplam'],
                                                                     error_array=self.bkg.background_rms,
@@ -1269,12 +1287,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Rename columns to names used when HLA Classic catalog distributed by MAST
         final_col_names = {"id": "ID", "xcentroid": "X-Centroid", "ycentroid": "Y-Centroid",
-                           "background_at_centroid": "Bck", "source_sum": "FluxIso",
+                           "background_at_centroid": "Bck", "source_sum": "FluxIso", "source_sum_err": "FluxIsoErr",
                            "bbox_xmin": "Xmin", "bbox_ymin": "Ymin", "bbox_xmax": "Xmax", "bbox_ymax": "Ymax",
                            "cxx": "CXX", "cyy": "CYY", "cxy": "CXY",
                            "covar_sigx2": "X2", "covar_sigy2": "Y2", "covar_sigxy": "XY",
                            "orientation": "Theta",
-                           "elongation": "Elongation", "ellipticity": "Ellipticity"}
+                           "elongation": "Elongation", "ellipticity": "Ellipticity", "area": "Area"}
         for old_col_title in final_col_names:
             filter_table.rename_column(old_col_title, final_col_names[old_col_title])
 
@@ -1282,7 +1300,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         final_col_order = ["X-Centroid", "Y-Centroid", "RA", "DEC", "ID",
                            "CI", "Flags", "MagAp1", "MagErrAp1", "FluxAp1", "FluxErrAp1",
                            "MagAp2", "MagErrAp2", "FluxAp2", "FluxErrAp2", "MSkyAp2",
-                           "Bck", "MagIso", "FluxIso",
+                           "Bck", "Area", "MagIso", "FluxIso", "FluxIsoErr",
                            "Xmin", "Ymin", "Xmax", "Ymax",
                            "X2", "Y2", "XY",
                            "CXX", "CYY", "CXY",
@@ -1294,11 +1312,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
                             "CI": "7.3f", "Flags": "5d",
                             "MagAp1": "8.2f", "MagErrAp1": "9.4f", "FluxAp1": "9.2f", "FluxErrAp1": "10.5f",
                             "MagAp2": "8.2f", "MagErrAp2": "9.4f", "FluxAp2": "9.2f", "FluxErrAp2": "10.5f",
-                            "MSkyAp2": "8.2f", "Bck": "9.4f", "MagIso": "8.2f", "FluxIso": "9.2f",
+                            "MSkyAp2": "8.2f", "Bck": "9.4f", "MagIso": "8.2f", "FluxIso": "9.2f", "FluxIsoErr": "10.5f",
                             "Xmin": "8.0f", "Ymin": "8.0f", "Xmax": "8.0f", "Ymax": "8.0f",
                             "X2": "8.4f", "Y2": "8.4f", "XY": "10.5f",
                             "CXX": "9.5f", "CYY": "9.5f", "CXY": "9.5f",
-                            "Elongation": "7.2f", "Ellipticity": "7.2f", "Theta": "8.3f"}
+                            "Elongation": "7.2f", "Ellipticity": "7.2f", "Theta": "8.3f", "Area": "8.3f"}
         for fcf_key in final_col_format.keys():
             final_filter_table[fcf_key].format = final_col_format[fcf_key]
 
@@ -1308,6 +1326,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                              "RA": "Sky coordinate at epoch of observation and fit to GAIA",
                              "DEC": "Sky coordinate at epoch of observation and fit to GAIA",
                              "Bck": "Background at the position of the source centroid",
+                             "Area": "Total unmasked area of the source segment",
                              "MagAp1": "ABMAG of source based on the inner (smaller) aperture",
                              "MagErrAp1": "Error of MagAp1",
                              "FluxAp1": "Flux of source based on the inner (smaller) aperture",
@@ -1318,6 +1337,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                              "FluxErrAp2": "Error of FluxAp2",
                              "MSkyAp2": "ABMAG of sky based on outer (larger) aperture",
                              "FluxIso": "Sum of unmasked data values in the source segment",
+                             "FluxIsoErr": "Uncertainty of FluxIso, propagated from the input error array",
                              "MagIso": "Magnitude corresponding to FluxIso",
                              "X2": "Variance along X",
                              "Y2": "Variance along Y",
@@ -1340,6 +1360,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         final_col_unit = {"X-Centroid": u.pix, "Y-Centroid": u.pix,
                           "RA": u.deg, "DEC": u.deg,
                           "Bck": "electrons/s",
+                          "Area": "pixels**2",
                           "MagAp1": "ABMAG",
                           "MagErrAp1": "ABMAG",
                           "FluxAp1": "electrons/s",
@@ -1350,6 +1371,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                           "FluxErrAp2": "electrons/s",
                           "MagIso": "ABMAG",
                           "FluxIso": "electrons/s",
+                          "FluxIsoErr": "electrons/s",
                           "X2": "pixel**2",
                           "Y2": "pixel**2",
                           "XY": "pixel**2",
