@@ -583,7 +583,7 @@ class HAPPointCatalog(HAPCatalogBase):
         log.info("Performing aperture photometry on identified point-sources")
         # Open and background subtract image
         image = self.image.data.copy()
-        image -= self.bkg_used
+        # image -= self.bkg_used # <<< COMMENTED OUT 2/17/20 1114
 
         # load in coords of sources identified in total product
         try:
