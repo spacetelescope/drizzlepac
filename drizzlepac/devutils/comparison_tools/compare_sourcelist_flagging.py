@@ -183,8 +183,8 @@ def make_regions(sl_name, coordsys, shape, color):
         elif (sl_name.endswith("sexphot.txt") or sl_name.endswith("sexphot_corrected.txt")):
             flag_col_name = "FLAGS"
             if coordsys == "xy":
-                x = table_line["X-IMAGE"]
-                y = table_line["Y-IMAGE"]
+                x = table_line["X_IMAGE"]
+                y = table_line["Y_IMAGE"]
             if coordsys == "radec":
                 x = table_line["RA"]
                 y = table_line["DEC"]
