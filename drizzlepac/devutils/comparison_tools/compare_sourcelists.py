@@ -1472,8 +1472,14 @@ def pdf_merger(output_path, input_paths):
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
 def write_matched_catalogs(x,y,ra,dec,flags,slnames):
-    """Writes only matched elements of the input catalogs for columns X, Y, RA, Dec, and Flags ONLY. These catalogs will are
-    to be used as inputs for compare_sourcelist_flagging.py
+    """Writes only matched elements of the input catalogs for columns X, Y, RA, Dec, and Flags ONLY. These catalogs will
+    are to be used as inputs for compare_sourcelist_flagging.py. The output file names are based on the input file
+    names, with the string 'matched_files_only' inserted after all the proposal/visit/instrument/detector and
+    (HAP only) ippss information. For example, the output file produced from HAP point catalog
+    'hst_11665_06_wfc3_uvis_f555w_ib4606_point-cat.ecsv' is
+    'hst_11665_06_wfc3_uvis_f555w_ib4606_matched_sources_only_point-cat.ecsv', and the output file produced from
+    the corrected HLA Classic daophot catalog 'hst_11665_06_wfc3_uvis_f555w_daophot_corrected.txt' is
+    'hst_11665_06_wfc3_uvis_f555w_matched_sources_only_daophot_corrected.txt'.
 
     Parameters
     ----------
