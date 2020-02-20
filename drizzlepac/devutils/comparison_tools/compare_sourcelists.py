@@ -1243,6 +1243,9 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
+        if debugMode:
+            write_matched_catalogs(matchedXValues,matchedYValues,matched_values_ra,matched_values_dec,matched_values,slNames)
+
     log.info("\n")
     log_output_string_list = []
 
@@ -1465,6 +1468,67 @@ def pdf_merger(output_path, input_paths):
     for path in input_paths:
         os.remove(path)
 
+
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+
+def write_matched_catalogs(x,y,ra,dec,flags,slnames):
+    """Writes only matched elements of the input catalogs for columns X, Y, RA, Dec, and Flags ONLY. These catalogs will are
+    to be used as inputs for compare_sourcelist_flagging.py
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched x reference values.
+        Column 2: The corresponding matched comparision values
+
+    y : numpy.ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched y reference values.
+        Column 2: The corresponding matched comparision values
+
+    ra : numpy.ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched RA reference values.
+        Column 2: The corresponding matched comparision values
+
+    dec : numpy.ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched Dec reference values.
+        Column 2: The corresponding matched comparision values
+
+    flags : numpy.ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched flag reference values.
+        Column 2: The corresponding matched comparision values
+
+    slNames : list
+        list of input sourcelist filenames. it is assumed here and throughout the code that the first file listed is
+        the reference, and the second is the comparision
+
+    Returns
+    -------
+    Nothing.
+    """
+    for ctr in range(0,2):
+        sl_name = slnames[ctr]
+        for file_ending in ["daophot.txt", "daophot_corrected.txt", "point-cat.ecsv", "sexphot.txt",
+                            "sexphot_corrected.txt", "segment-cat.ecsv"]:
+            if sl_name.endswith(file_ending):
+                output_filename = sl_name.replace(file_ending,"matched_sources_only_{}".format(file_ending))
+        flagscolname = "Flags"
+        if (sl_name.endswith("daophot.txt") or sl_name.endswith("daophot_corrected.txt") or sl_name.endswith("point-cat.ecsv")):
+            xcolname = "X-Center"
+            ycolname = "Y-Center"
+        elif sl_name.endswith("segment-cat.ecsv"):
+            xcolname = "X-Centroid"
+            ycolname = "Y-Centroid"
+        else:
+            xcolname = "X_IMAGE"
+            ycolname = "Y_IMAGE"
+            flagscolname = "FLAGS"
+        output_table = Table([x[ctr,:],y[ctr,:],ra[ctr,:],dec[ctr,:],flags[ctr,:]],names=(xcolname,ycolname,"RA","DEC",flagscolname))
+        if output_filename.endswith(".ecsv"):
+            output_format = "ascii.ecsv"
+        if output_filename.endswith(".txt"):
+            output_format = "ascii.csv"
+        output_table.write(output_filename, format = output_format)
+        log.info("Wrote matched sources only catalog {}".format(output_filename))
 
 # =======================================================================================================================
 if __name__ == "__main__":
