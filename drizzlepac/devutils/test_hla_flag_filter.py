@@ -106,15 +106,17 @@ def preserve_orig_files(hff_inputs,source_path,dest_path,verbose):
         for item in files_to_move:
             full_source_path = os.path.join(source_path,item)
             full_dest_path = os.path.join(dest_path,item)
-            if verbose:
-                log.info("Move {} \u21E8  {}".format(item,full_dest_path))
-            shutil.move(item,full_dest_path) # TODO: change from copy to move
+            if os.path.exists(item):
+                if verbose:
+                    log.info("Move {} \u21E8  {}".format(item,full_dest_path))
+                shutil.move(item,full_dest_path) # TODO: change from copy to move
     else:
         for file_name in glob.glob(os.path.join(source_path,"*")):
             full_dest_path = os.path.join(dest_path,file_name.split("/")[1])
-            if verbose:
-                log.info("Move {} \u21E8  {}".format(file_name,full_dest_path))
-            shutil.move(file_name,full_dest_path) # TODO: change from copy to move
+            if os.path.exists(file_name):
+                if verbose:
+                    log.info("Move {} \u21E8  {}".format(file_name,full_dest_path))
+                shutil.move(file_name,full_dest_path) # TODO: change from copy to move
         log.info("Removing temp dir {}".format(source_path))
         os.rmdir(source_path)
 
