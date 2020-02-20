@@ -274,9 +274,11 @@ class FilterProduct(HAPProduct):
             # Report a problem with the alignment
             log.warning("EXCEPTION encountered in align_to_gaia for the FilteredProduct.\n")
             log.warning("No correction to absolute astrometric frame applied.\n")
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-            logging.exception("message")
+            log.warning("Proceeding with previous best solution.\n")
+
+            # Only write out the traceback if in "debug" mode since not being able to
+            # align the data to an absolute astrometric frame is not actually a failure.
+            log.debug(traceback.format_exc())
             align_table = None
 
             # If the align_table is None, it is necessary to clean-up reference catalogs
