@@ -1,6 +1,7 @@
 """This script contains code to support creation of photometric sourcelists using two techniques: aperture photometry
 segmentation-map based photometry.
 """
+import pdb
 import sys
 import pickle  # FIX Remove
 import copy
@@ -13,7 +14,7 @@ from astropy.coordinates import SkyCoord
 import numpy as np
 from scipy import ndimage
 
-from photutils import CircularAperture, CircularAnnulus, DAOStarFinder
+from photutils import CircularAperture, CircularAnnulus, DAOStarFinder, IRAFStarFinder
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import make_source_mask
@@ -556,16 +557,15 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                       self.image.bkg_rms_median))
             log.info("{}".format("=" * 80))
 
-            daofind = DAOStarFinder(fwhm=source_fwhm,
-                                    threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
-
+             # daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median) # TODO: UNCOMMENT!
+            isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median) # TODO: TESTING ONLY!
             # create mask to reject any sources located less than 10 pixels from a image/chip edge
             wht_image = self.image.data.copy()
             binary_inverted_wht = np.where(wht_image == 0, 1, 0)
             exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
 
-            sources = daofind(image, mask=exclusion_mask)
-
+            # sources = daofind(image, mask=exclusion_mask) #TODO: UNCOMMENT!
+            sources = isf(image, mask=exclusion_mask) # TODO: TESTING ONLY!
             for col in sources.colnames:
                 sources[col].info.format = '%.8g'  # for consistent table output
 

@@ -27,6 +27,7 @@ import datetime
 import glob
 import logging
 import os
+import pdb
 import pickle
 import sys
 import traceback
@@ -221,6 +222,11 @@ def create_catalog_products(total_list, log_level, diagnostic_mode=False, phot_m
                                                               filter_product_catalogs,
                                                               log_level,
                                                               diagnostic_mode)
+            # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
+            if diagnostic_mode:
+                if "fwhm" in total_product_catalogs.catalogs['aperture'].sources.colnames:
+                    output_table = Table([filter_product_catalogs.catalogs['aperture'].source_cat['CI'], total_product_catalogs.catalogs['aperture'].sources['fwhm']],names=("CI","FWHM"))
+                    output_table.write(filter_product_obj.point_cat_filename.replace(".ecsv","_ci_fwhm.csv"), format="ascii.csv")
 
             # Replace zero-value total-product catalog 'Flags' column values with meaningful filter-product catalog
             # 'Flags' column values
