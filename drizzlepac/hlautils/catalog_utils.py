@@ -581,6 +581,12 @@ class HAPPointCatalog(HAPCatalogBase):
 
             sources = daofind(image, mask=exclusion_mask)
 
+            # If there are no detectable sources in the total detection image, return as there is nothing more to do.
+            if not sources:
+                log.warning("No point sources were found in Total Detection Product, {}.".format(self.imgname))
+                log.warning("Processing for point source catalogs for this product is ending.")
+                return
+
             for col in sources.colnames:
                 sources[col].info.format = '%.8g'  # for consistent table output
 
@@ -918,6 +924,15 @@ class HAPSegmentCatalog(HAPCatalogBase):
             self.segm_img = detect_sources(imgarr_bkgsub, threshold, npixels=self._size_source_box,
                                            filter_kernel=self.image.kernel,
                                            mask=mask)
+            self.segm_img = None
+
+            # If no segments were found, there are no detectable sources in the total detection image.
+            # Return as there is nothing more to do.
+            if self.segm_img is None:
+                log.warning("No segments were found in Total Detection Product, {}.".format(self.imgname))
+                log.warning("Processing for segmentation source catalogs for this product is ending.")
+                return
+
             if self.diagnostic_mode:
                 outname = self.imgname.replace(".fits", "_segment.fits")
                 fits.PrimaryHDU(data=self.segm_img.data).writeto(outname)

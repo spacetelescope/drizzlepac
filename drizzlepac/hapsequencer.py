@@ -151,13 +151,15 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
     """
     product_list = []
     log.info("Generating total product source catalogs")
+    phot_mode = phot_mode.lower()
+    input_phot_mode = phot_mode
     for total_product_obj in total_obj_list:
         # Instantiate filter catalog product object
         total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename,
                                              total_product_obj.configobj_pars.get_pars('catalog generation'),
                                              total_product_obj.configobj_pars.get_pars('quality control'),
                                              log_level,
-                                             types=phot_mode,
+                                             types=input_phot_mode,
                                              diagnostic_mode=diagnostic_mode)
 
         # Generate an "n" exposure mask which has the image footprint set to the number
@@ -168,6 +170,45 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
         # catalog until the photometric measurements have been done on the filter
         # images and some of the measurements can be appended to the total catalog
         total_product_catalogs.identify(mask=total_product_obj.mask)
+
+        # Determine how to continue if "aperture" or "segment" fails to find sources for this total 
+        # detection product - take into account the initial setting of phot_mode.
+        # If no sources were found by either the point or segmentation algorithms, go on to 
+        # the next total detection product (detector) in the visit with the initially requested
+        # phot_mode.  If the point or segmentation algorithms found sources, need to continue 
+        # processing for that (those) algorithm(s) only.
+
+        # When both algorithms have been requested...
+        if phot_mode == 'both':
+            # If no sources found with either algorithm, skip to the next total detection product
+            if not isinstance(total_product_catalogs.catalogs['aperture'].sources, Table) and not isinstance(total_product_catalogs.catalogs['segment'].sources, Table):
+                del total_product_catalogs.catalogs['aperture']
+                del total_product_catalogs.catalogs['segment']
+                continue
+
+            # Only point algorithm found sources, continue to the filter catalogs for just point
+            if isinstance(total_product_catalogs.catalogs['aperture'].sources, Table) and not isinstance(total_product_catalogs.catalogs['segment'].sources, Table):
+                phot_mode='aperture'
+                del total_product_catalogs.catalogs['segment']
+
+            # Only segment algorithm found sources, continue to the filter catalogs for just segmentation
+            if not isinstance(total_product_catalogs.catalogs['aperture'].sources, Table) and isinstance(total_product_catalogs.catalogs['segment'].sources, Table):
+                phot_mode='segment'
+                del total_product_catalogs.catalogs['aperture']
+
+        # Only requested the point algorithm
+        elif phot_mode == 'aperture':
+            if not isinstance(total_product_catalogs.catalogs['aperture'].sources, Table):
+                del total_product_catalogs.catalogs['aperture']
+                continue
+
+        # Only requested the segmentation algorithm
+        elif phot_mode == 'segment':
+            if not isinstance(total_product_catalogs.catalogs['segment'].sources, Table):
+                del total_product_catalogs.catalogs['segment']
+                continue
+
+        print("Updated phot_mode: {}".format(phot_mode))
 
         # Build dictionary of total_product_catalogs.catalogs[*].sources to use for
         # filter photometric catalog generation
@@ -206,10 +247,10 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
 
             # Replace zero-value total-product catalog 'Flags' column values with meaningful filter-product catalog
             # 'Flags' column values
-            for cat_type in total_product_catalogs.catalogs.keys():
+            for cat_type in filter_product_catalogs.catalogs.keys():
                 filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat[
-                    'Flags_{}'.format(filter_product_obj.filters)] = \
-                    filter_product_catalogs.catalogs[cat_type].source_cat['Flags']
+                   'Flags_{}'.format(filter_product_obj.filters)] = \
+                   filter_product_catalogs.catalogs[cat_type].source_cat['Flags']
 
             log.info("Writing out filter product catalog")
             # Write out photometric (filter) catalog(s)
@@ -436,7 +477,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
 
         reference_catalog = run_align_to_gaia(total_obj_list, log_level=log_level, diagnostic_mode=diagnostic_mode)
-        product_list += [reference_catalog]
+        if reference_catalog:
+            product_list += [reference_catalog]
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
@@ -530,6 +572,9 @@ def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic
         log.info("\n{}: Finished aligning gaia_obj to GAIA".format(str(datetime.datetime.now())))
 
         # Return the name of the alignment catalog
+        if align_table == None:
+            gaia_obj.refname = None
+
         return gaia_obj.refname
 
         #
