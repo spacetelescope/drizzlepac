@@ -361,7 +361,7 @@ def computeFlagStats(matchedRA, refFlag_list, compFlag_list, max_diff, plotGen, 
                 else:
                     stat_text_blob += "\n"
             stat_text_blob += "\n" + timestamp + "\n"
-            stat_text_blob += plotfile_prefix
+            stat_text_blob += "Comparison Sourcelist: {}\nReference Sourcelist:  {}".format(catalog_names[1], catalog_names[0])
             fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center", va="center",
                      multialignment="left", family="monospace")
             fig.savefig(stat_file_name)
