@@ -232,12 +232,11 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     snr = float(param_dict['quality control']['ci filter'][proc_type]['bthresh'])
 
     # replace CI limits with values from table if possible
-    # TODO: UNCOMMENT THESE LINES ONCE WE HAVE DETECTOR/INSTRUMENT/WAVELENGTH-DEPENDANT CI VALUES
-    # cidict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path, log_level,
-    #                                    diagnostic_mode=diagnostic_mode, ci_lower=ci_lower_limit,
-    #                                    ci_upper=ci_upper_limit)  # TODO: add values for ACS/SBC
-    # ci_lower_limit = cidict['ci_lower_limit']
-    # ci_upper_limit = cidict['ci_upper_limit']
+    cidict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path, log_level,
+                                       diagnostic_mode=diagnostic_mode, ci_lower=ci_lower_limit,
+                                       ci_upper=ci_upper_limit)  # TODO: add values for ACS/SBC
+    ci_lower_limit = cidict['ci_lower_limit']
+    ci_upper_limit = cidict['ci_upper_limit']
 
     # if an output custom param file was created and the CI values were updated by ci_table.get_ci_from_file,
     # update output custom param file with new CI values
