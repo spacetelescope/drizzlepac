@@ -595,9 +595,9 @@ class HAPPointCatalog(HAPCatalogBase):
 
         # define list of background annulii
         bg_apers = CircularAnnulus(pos_xy,
-                                   r_in=self.param_dict['skyannulus_arcsec'],
-                                   r_out=self.param_dict['skyannulus_arcsec'] +
-                                   self.param_dict['dskyannulus_arcsec'])
+                                   r_in=self.param_dict['skyannulus_arcsec']/self.image.imgwcs.pscale,
+                                   r_out=(self.param_dict['skyannulus_arcsec'] +
+                                   self.param_dict['dskyannulus_arcsec'])/self.image.imgwcs.pscale)
 
         # Create the list of photometric apertures to measure
         phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
@@ -1087,9 +1087,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Define list of background annulii
         bg_apers = CircularAnnulus(pos_xy,
-                                   r_in=self.param_dict['skyannulus_arcsec'],
-                                   r_out=self.param_dict['skyannulus_arcsec'] +
-                                   self.param_dict['dskyannulus_arcsec'])
+                                   r_in=self.param_dict['skyannulus_arcsec']/self.image.imgwcs.pscale,
+                                   r_out=(self.param_dict['skyannulus_arcsec'] +
+                                   self.param_dict['dskyannulus_arcsec'])/self.image.imgwcs.pscale)
 
         # Create list of photometric apertures to measure
         phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
