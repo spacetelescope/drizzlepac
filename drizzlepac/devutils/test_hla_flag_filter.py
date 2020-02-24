@@ -85,9 +85,13 @@ def preserve_orig_files(hff_inputs,source_path,dest_path,verbose):
 
         if hff_inputs['catalog_name'].endswith("point-cat.ecsv"):
             hla_classic_phot_type = "dao"
+            files_to_move.append(hff_inputs['catalog_name'].replace("_point-cat.ecsv","_matched_sources_only_point-cat.ecsv"))
         else:
             hla_classic_phot_type = "sex"
+            files_to_move.append(
+            hff_inputs['catalog_name'].replace("_segment-cat.ecsv", "_matched_sources_only_point-cat.ecsv"))
         files_to_move.append("{}_{}phot_corrected.txt".format(hff_inputs['drizzled_image'][:-16],hla_classic_phot_type))
+        files_to_move.append("{}_matched_sources_only_{}phot_corrected.txt".format(hff_inputs['drizzled_image'][:-16],hla_classic_phot_type))
 
         for item in ["_INTERMEDIATE.txt","_ALL_FLT_SAT_FLAG_PIX.txt"]:
             files_to_move.append("{}{}".format( hff_inputs['drizzled_image'][:-5],item))
@@ -100,7 +104,6 @@ def preserve_orig_files(hff_inputs,source_path,dest_path,verbose):
         found_files = glob.glob("*_comparision_plots.pdf")
         if len(found_files) > 0:
             files_to_move = files_to_move + found_files
-
         if not os.path.exists(dest_path):
             os.mkdir(dest_path)
         for item in files_to_move:
@@ -268,7 +271,7 @@ def run_hla_flag_filter(hff_inputs):
                                                            hff_inputs["ci_lookup_file_path"],
                                                            hff_inputs["output_custom_pars_file"],
                                                            hff_inputs["log_level"],
-                                                           hff_inputs["diagnostic_mode"])
+                                                           True)
     # log.info("renamed existing catalog {} -> {}".format(hff_inputs["catalog_name"],
     #                                                     hff_inputs["catalog_name"].replace(".ecsv","_old.ecsv")))
     # os.rename(hff_inputs["catalog_name"],hff_inputs["catalog_name"].replace(".ecsv","_old.ecsv"))
