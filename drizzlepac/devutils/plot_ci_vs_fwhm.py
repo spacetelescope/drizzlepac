@@ -38,7 +38,7 @@ def get_data(input_files):
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
-def run_stuff(input_files,bin_size,ci_limits):
+def run_stuff(input_files,bin_size,ci_limits,plot_title):
     """Main calling subroutine
 
     Parameters
@@ -55,17 +55,20 @@ def run_stuff(input_files,bin_size,ci_limits):
     """
     data_table = get_data(input_files)
     processed_data_table = process_data(data_table,bin_size)
-    plot_stuff(processed_data_table,bin_size,ci_limits=ci_limits)
+    plot_stuff(processed_data_table,bin_size,ci_limits=ci_limits,plot_title=plot_title)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
-def plot_stuff(data_table,bin_size,ci_limits=[-1.0, -1.0]):
+def plot_stuff(data_table,bin_size,ci_limits=[-1.0, -1.0],plot_title=None):
     fig = plt.figure(figsize=(11, 8.5))
     ax1 = fig.add_subplot(111)
     plt.scatter(data_table['CI'], data_table['FWHM'], marker=".", s=10, color="blue")
     if ci_limits[0] != -1.0 and ci_limits[1] != -1.0:
         ax1.axvline(x=ci_limits[0], color='k', linestyle='--')
         ax1.axvline(x=ci_limits[1], color='k', linestyle='--')
-    ax1.set_title("Binned CI vs Mean FWHM value; CI binsize = {}".format(bin_size))
+    full_plot_title = "Binned CI vs Mean FWHM value; CI binsize = {}".format(bin_size)
+    if plot_title:
+        full_plot_title = "{}\n{}".format(plot_title,full_plot_title)
+    ax1.set_title(full_plot_title)
     ax1.set_xlabel("CI")
     ax1.set_ylabel("Mean FWHM Value (Pixels)")
     ax1.grid(True)
@@ -109,7 +112,10 @@ def process_data(data_table,bin_size):
 if __name__ == "__main__":
     PARSER = argparse.ArgumentParser(description='Plot binned CI values vs. mean FWHM values')
     PARSER.add_argument('input_files', nargs='+',help='one or more space-separated ci vs fwhm csv files')
-    PARSER.add_argument('-b', '--bin_size', required=False, default=0.01, type=float, help = "Size of the bin to use for CI values. Default value is 0.01")
-    PARSER.add_argument('-c', '--ci_limits',nargs=2, required=False, type=float,default=[-1.0, -1.0], help = "Size of the bin to use for CI values. Default value is 0.01")
+    PARSER.add_argument('-b', '--bin_size', required=False, default=0.01, type=float,
+                        help = "Size of the bin to use for CI values. Default value is 0.01")
+    PARSER.add_argument('-c', '--ci_limits',nargs=2, required=False, type=float, default=[-1.0, -1.0],
+                        help = "Optional values for ci_lower_limit and ci_upper_limit to be plotted as vertical lines in scatter plot")
+    PARSER.add_argument('-t', '--plot_title', required=False, default=None, help="Optional plot title")
     ARGS = PARSER.parse_args()
-    run_stuff(ARGS.input_files,ARGS.bin_size,ARGS.ci_limits)
+    run_stuff(ARGS.input_files,ARGS.bin_size,ARGS.ci_limits,ARGS.plot_title)
