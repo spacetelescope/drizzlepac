@@ -669,6 +669,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
             src_brightest = np.flip(np.argsort(src_fluxes))
             large_labels = src_labels[src_brightest]
             log.debug("Brightest sources in segments: \n{}".format(large_labels))
+        else:
+            src_brightest = np.arange(len(segm.labels))
 
         log.info("Looking for sources in {} segments".format(len(segm.labels)))
 
@@ -1728,7 +1730,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
         #  (modulo slicing limits)
         yr, xr = np.where(soverlap > 0)
         yslice = slice(yr.min(), yr.max(), 1)
-        xslice = slice(xr.min(), yr.max(), 1)
+        xslice = slice(xr.min(), xr.max(), 1)
         log.debug("overlap region: xslice {}, yslice {}".format(xslice, yslice))
 
         drz_arr = drz_region[yslice, xslice]
