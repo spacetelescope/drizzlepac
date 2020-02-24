@@ -38,7 +38,7 @@ def get_data(input_files):
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
-def run_stuff(input_files,bin_size):
+def run_stuff(input_files,bin_size,ci_limits):
     """Main calling subroutine
 
     Parameters
@@ -55,14 +55,16 @@ def run_stuff(input_files,bin_size):
     """
     data_table = get_data(input_files)
     processed_data_table = process_data(data_table,bin_size)
-    plot_stuff(processed_data_table,bin_size)
+    plot_stuff(processed_data_table,bin_size,ci_limits=ci_limits)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
-def plot_stuff(data_table,bin_size):
+def plot_stuff(data_table,bin_size,ci_limits=[-1.0, -1.0]):
     fig = plt.figure(figsize=(11, 8.5))
     ax1 = fig.add_subplot(111)
     plt.scatter(data_table['CI'], data_table['FWHM'], marker=".", s=10, color="blue")
-
+    if ci_limits[0] != -1.0 and ci_limits[1] != -1.0:
+        ax1.axvline(x=ci_limits[0], color='k', linestyle='--')
+        ax1.axvline(x=ci_limits[1], color='k', linestyle='--')
     ax1.set_title("Binned CI vs Mean FWHM value; CI binsize = {}".format(bin_size))
     ax1.set_xlabel("CI")
     ax1.set_ylabel("Mean FWHM Value (Pixels)")
@@ -98,7 +100,7 @@ def process_data(data_table,bin_size):
         ix = np.where((data_table['CI'] >= start_value) & (data_table['CI'] < bin_upper_limit))
         ix = ix[0]
         if len(ix >0):
-            clippedStats = sigma_clipped_stats(data_table['FWHM'][ix])
+            clippedStats = sigma_clipped_stats([data_table['FWHM'][ix]])
             processed_data_table.add_row([start_value,clippedStats[0]])
         start_value += bin_size
     return processed_data_table
@@ -106,7 +108,8 @@ def process_data(data_table,bin_size):
 # =======================================================================================================================
 if __name__ == "__main__":
     PARSER = argparse.ArgumentParser(description='Plot binned CI values vs. mean FWHM values')
-    PARSER.add_argument('input_files', nargs='+',help='one or more space-seperateed ci vs fwhm csv files')
+    PARSER.add_argument('input_files', nargs='+',help='one or more space-separated ci vs fwhm csv files')
     PARSER.add_argument('-b', '--bin_size', required=False, default=0.01, type=float, help = "Size of the bin to use for CI values. Default value is 0.01")
+    PARSER.add_argument('-c', '--ci_limits',nargs=2, required=False, type=float,default=[-1.0, -1.0], help = "Size of the bin to use for CI values. Default value is 0.01")
     ARGS = PARSER.parse_args()
-    run_stuff(ARGS.input_files,ARGS.bin_size)
+    run_stuff(ARGS.input_files,ARGS.bin_size,ARGS.ci_limits)
