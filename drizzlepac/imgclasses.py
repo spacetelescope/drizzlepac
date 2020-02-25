@@ -1666,7 +1666,7 @@ def _estimate_2dhist_shift(imgxy, refxy, searchrad=3.0):
     if np.any(zpmat_mask):
         bkg = zpmat[zpmat_mask].mean()
         sig = maxval / np.sqrt(bkg)
-    
+
     flux = int(zpmat[fit_sl].sum())
     print("Found initial X and Y shifts of {:.4g}, {:.4g} "
           "with significance of {:.4g} and {:d} matches"
