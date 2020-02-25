@@ -171,11 +171,11 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
         # images and some of the measurements can be appended to the total catalog
         total_product_catalogs.identify(mask=total_product_obj.mask)
 
-        # Determine how to continue if "aperture" or "segment" fails to find sources for this total 
+        # Determine how to continue if "aperture" or "segment" fails to find sources for this total
         # detection product - take into account the initial setting of phot_mode.
-        # If no sources were found by either the point or segmentation algorithms, go on to 
+        # If no sources were found by either the point or segmentation algorithms, go on to
         # the next total detection product (detector) in the visit with the initially requested
-        # phot_mode.  If the point or segmentation algorithms found sources, need to continue 
+        # phot_mode.  If the point or segmentation algorithms found sources, need to continue
         # processing for that (those) algorithm(s) only.
 
         # When both algorithms have been requested...
@@ -188,12 +188,12 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
 
             # Only point algorithm found sources, continue to the filter catalogs for just point
             if total_product_catalogs.catalogs['aperture'].sources is not None and total_product_catalogs.catalogs['segment'].sources is None:
-                phot_mode='aperture'
+                phot_mode = 'aperture'
                 del total_product_catalogs.catalogs['segment']
 
             # Only segment algorithm found sources, continue to the filter catalogs for just segmentation
             if total_product_catalogs.catalogs['aperture'].sources is None and total_product_catalogs.catalogs['segment'].sources is not None:
-                phot_mode='segment'
+                phot_mode = 'segment'
                 del total_product_catalogs.catalogs['aperture']
 
         # Only requested the point algorithm
@@ -214,7 +214,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
         for cat_type in total_product_catalogs.catalogs.keys():
             sources_dict[cat_type] = {}
             sources_dict[cat_type]['sources'] = total_product_catalogs.catalogs[cat_type].sources
-            # For the segmentation source finding, both the segmentation image AND the segmentation catalog 
+            # For the segmentation source finding, both the segmentation image AND the segmentation catalog
             # computed for the total object need to be provided to the filter objects
             if cat_type == "segment":
                 sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
@@ -538,20 +538,20 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 # ------------------------------------------------------------------------------------------------------------
 
 def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic_mode=False):
-        # Run align.py on all input images sorted by overlap with GAIA bandpass
-        log.info("\n{}: Align the all filters to GAIA with the same fit".format(str(datetime.datetime.now())))
-        gaia_obj = None
-        # Start by creating a FilterProduct instance which includes ALL input exposures
-        for tot_obj in total_obj_list:
-            for exp_obj in tot_obj.edp_list:
-                    if gaia_obj is None:
-                        prod_list = exp_obj.info.split("_")
-                        prod_list[4] = "metawcs"
-                        gaia_obj = product.FilterProduct(prod_list[0], prod_list[1], prod_list[2],
-                                                         prod_list[3], prod_list[4], "all",
-                                                         prod_list[5][0:3], log_level)
-                        gaia_obj.configobj_pars = tot_obj.configobj_pars
-                    gaia_obj.add_member(exp_obj)
+    # Run align.py on all input images sorted by overlap with GAIA bandpass
+    log.info("\n{}: Align the all filters to GAIA with the same fit".format(str(datetime.datetime.now())))
+    gaia_obj = None
+    # Start by creating a FilterProduct instance which includes ALL input exposures
+    for tot_obj in total_obj_list:
+        for exp_obj in tot_obj.edp_list:
+            if gaia_obj is None:
+                prod_list = exp_obj.info.split("_")
+                prod_list[4] = "metawcs"
+                gaia_obj = product.FilterProduct(prod_list[0], prod_list[1], prod_list[2],
+                                                 prod_list[3], prod_list[4], "all",
+                                                 prod_list[5][0:3], log_level)
+                gaia_obj.configobj_pars = tot_obj.configobj_pars
+            gaia_obj.add_member(exp_obj)
 
         log.info("\n{}: Combined all filter objects in gaia_obj".format(str(datetime.datetime.now())))
 
@@ -570,7 +570,7 @@ def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic
         log.info("\n{}: Finished aligning gaia_obj to GAIA".format(str(datetime.datetime.now())))
 
         # Return the name of the alignment catalog
-        if align_table == None:
+        if align_table is None:
             gaia_obj.refname = None
 
         return gaia_obj.refname
@@ -582,7 +582,8 @@ def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def run_sourcelist_comparision(total_list, diagnostic_mode = False, log_level=logutil.logging.INFO):
+
+def run_sourcelist_comparision(total_list, diagnostic_mode=False, log_level=logutil.logging.INFO):
     """ This subroutine automates execution of drizzlepac/devutils/comparison_tools/compare_sourcelist_flagging.py to
     compare HAP-generated filter catalogs with their HLA classic counterparts.
 
