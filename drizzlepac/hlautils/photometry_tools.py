@@ -126,8 +126,7 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam
         ap_area = phot_apertures[aperCtr].area
         bg_method_name = 'aperture_{}'.format(bg_method)
 
-        # NOTE background subtraction below commented out 8/14/19
-        flux = phot['aperture_sum_{}'.format(aperCtr)]  # - bg_phot[bg_method_name] * ap_area
+        flux = phot['aperture_sum_{}'.format(aperCtr)] - bg_phot[bg_method_name] * ap_area
 
         # Need to use variance of the sources
         # for Poisson noise term in error computation.
