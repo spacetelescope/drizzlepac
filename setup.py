@@ -79,11 +79,11 @@ setup(
     ],
     python_requires='>=3.5',
     install_requires=[
-        'astropy>=3.1.2',
+        'astropy>=4.0.0',
         'fitsblender',
         'nictools',
         'nose',
-        'numpy>=1.16',
+        'numpy>=1.18',
         'scipy',
         'matplotlib',
         'acstools',
@@ -94,7 +94,7 @@ setup(
         'stsci.skypac',
         'stsci.stimage',
         'stwcs',
-        'tweakwcs>=0.5.0',
+        'tweakwcs>=0.6.0',
         'stregion',
         'requests',
         # HAP-pipeline specific:
