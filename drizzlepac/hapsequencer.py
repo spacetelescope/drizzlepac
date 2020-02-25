@@ -179,36 +179,34 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
         # processing for that (those) algorithm(s) only.
 
         # When both algorithms have been requested...
-        if phot_mode == 'both':
+        if input_phot_mode == 'both':
             # If no sources found with either algorithm, skip to the next total detection product
-            if not isinstance(total_product_catalogs.catalogs['aperture'].sources, Table) and not isinstance(total_product_catalogs.catalogs['segment'].sources, Table):
+            if total_product_catalogs.catalogs['aperture'].sources is None and total_product_catalogs.catalogs['segment'].sources is None:
                 del total_product_catalogs.catalogs['aperture']
                 del total_product_catalogs.catalogs['segment']
                 continue
 
             # Only point algorithm found sources, continue to the filter catalogs for just point
-            if isinstance(total_product_catalogs.catalogs['aperture'].sources, Table) and not isinstance(total_product_catalogs.catalogs['segment'].sources, Table):
+            if total_product_catalogs.catalogs['aperture'].sources is not None and total_product_catalogs.catalogs['segment'].sources is None:
                 phot_mode='aperture'
                 del total_product_catalogs.catalogs['segment']
 
             # Only segment algorithm found sources, continue to the filter catalogs for just segmentation
-            if not isinstance(total_product_catalogs.catalogs['aperture'].sources, Table) and isinstance(total_product_catalogs.catalogs['segment'].sources, Table):
+            if total_product_catalogs.catalogs['aperture'].sources is None and total_product_catalogs.catalogs['segment'].sources is not None:
                 phot_mode='segment'
                 del total_product_catalogs.catalogs['aperture']
 
         # Only requested the point algorithm
-        elif phot_mode == 'aperture':
-            if not isinstance(total_product_catalogs.catalogs['aperture'].sources, Table):
+        elif input_phot_mode == 'aperture':
+            if total_product_catalogs.catalogs['aperture'].sources is None:
                 del total_product_catalogs.catalogs['aperture']
                 continue
 
         # Only requested the segmentation algorithm
-        elif phot_mode == 'segment':
-            if not isinstance(total_product_catalogs.catalogs['segment'].sources, Table):
+        elif input_phot_mode == 'segment':
+            if total_product_catalogs.catalogs['segment'].sources is None:
                 del total_product_catalogs.catalogs['segment']
                 continue
-
-        print("Updated phot_mode: {}".format(phot_mode))
 
         # Build dictionary of total_product_catalogs.catalogs[*].sources to use for
         # filter photometric catalog generation

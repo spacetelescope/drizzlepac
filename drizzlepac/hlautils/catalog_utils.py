@@ -924,7 +924,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
             self.segm_img = detect_sources(imgarr_bkgsub, threshold, npixels=self._size_source_box,
                                            filter_kernel=self.image.kernel,
                                            mask=mask)
-            self.segm_img = None
 
             # If no segments were found, there are no detectable sources in the total detection image.
             # Return as there is nothing more to do.
