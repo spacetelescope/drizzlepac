@@ -32,6 +32,9 @@ of the list).
   recast an input to histogram2d as int,  defined default values for tables when no
   sources were found. [#593]
 
+- Updated to be compatible with tweakwcs v0.6.0 to correct chip-to-chip alignment issues
+  in aposteriori WCS solutions. [#596]
+
 
 3.1.3 (5-Dec-2019)
 ==================
