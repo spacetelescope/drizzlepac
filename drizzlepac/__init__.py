@@ -85,6 +85,7 @@ drizzlepac:
       imagefindpars - sub-task containing parameters to find point sources used by tweakreg to build source catalogs for each tweakreg input image
           tweakback - apply an updated WCS solution created by tweakreg for a drizzled image to the constituent distorted (flt.fits) images
              mapreg - task to map a DS9 region file to multiple images based on the WCS information of each image.
+           pixreplace - task to replace pixel values such as NaNs in images with another value
            pixtopix - task to convert pixel positions from an input image to pixel positions in an output WCS or image
            pixtosky - task to convert pixel positions from an input image to sky coordinates with full distortion correction as appropriate
            photeq   - task to equalize sensitivities of images across chips and epochs

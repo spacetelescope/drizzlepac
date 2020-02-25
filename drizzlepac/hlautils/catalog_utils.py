@@ -8,7 +8,7 @@ import copy
 import astropy.units as u
 from astropy.io import fits as fits
 from astropy.stats import sigma_clipped_stats
-from astropy.table import Column, MaskedColumn, Table, join
+from astropy.table import Column, MaskedColumn, Table, join, vstack
 from astropy.coordinates import SkyCoord
 import numpy as np
 from scipy import ndimage
@@ -17,6 +17,7 @@ from photutils import CircularAperture, CircularAnnulus, DAOStarFinder
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import make_source_mask
+from photutils.utils import calc_total_error
 from stsci.tools import logutil
 from stwcs.wcsutil import HSTWCS
 
@@ -133,15 +134,26 @@ class CatalogImage:
         # SExtractorBackground ans StdBackgroundRMS are the defaults
         bkg = None
 
+        # Make a local copy of the data(image) being processed in order to reset any
+        # data values which equal nan (e.g., subarrays) to zero.
+        imgdata = self.data.copy()
+        imgdata[np.isnan(imgdata)] = 0
+
+        # Create the mask to ignore pixels with the value of 0
+        mask = (imgdata == 0)
+
         exclude_percentiles = [10, 25, 50, 75]
         for percentile in exclude_percentiles:
             log.info("Percentile in use: {}".format(percentile))
             try:
-                bkg = Background2D(self.data, (box_size, box_size), filter_size=(win_size, win_size),
+                bkg = Background2D(imgdata, (box_size, box_size), filter_size=(win_size, win_size),
                                    bkg_estimator=bkg_estimator(),
                                    bkgrms_estimator=rms_estimator(),
                                    exclude_percentile=percentile, edge_method="pad",
-                                   mask=(self.data == 0))
+                                   mask=mask)
+
+                # Apply the coverage mask to the returned background image
+                bkg.background *= ~mask
 
             except Exception:
                 bkg = None
@@ -158,14 +170,14 @@ class CatalogImage:
         # the background to be used in source identification
         if bkg is None:
             log.info("Background2D failure detected. Using alternative background calculation instead....")
-            mask = make_source_mask(self.data, nsigma=2, npixels=5, dilate_size=11)
-            sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(self.data, sigma=3.0, mask=mask, maxiters=9)
+            mask = make_source_mask(imgdata, nsigma=2, npixels=5, dilate_size=11)
+            sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(imgdata, sigma=3.0, mask=mask, maxiters=9)
             bkg_median = sigcl_median
             bkg_rms_median = sigcl_std
-            # create background frame shaped like self.data populated with sigma-clipped median value
-            bkg_background_ra = np.full_like(self.data, sigcl_median)
-            # create background frame shaped like self.data populated with sigma-clipped standard deviation value
-            bkg_rms_ra = np.full_like(self.data, sigcl_std)
+            # create background frame shaped like imgdata populated with sigma-clipped median value
+            bkg_background_ra = np.full_like(imgdata, sigcl_median)
+            # create background frame shaped like imgdata populated with sigma-clipped standard deviation value
+            bkg_rms_ra = np.full_like(imgdata, sigcl_std)
 
         log.info("Computation of image background complete")
         log.info("Found: ")
@@ -202,7 +214,8 @@ class CatalogImage:
         keyword_dict["target_dec"] = self.imghdu[0].header["DEC_TARG"]
         keyword_dict["expo_start"] = self.imghdu[0].header["EXPSTART"]
         keyword_dict["texpo_time"] = self.imghdu[0].header["TEXPTIME"]
-        keyword_dict["ccd_gain"] = self.imghdu[0].header["CCDGAIN"]
+        if keyword_dict["detector"] != "SBC":
+            keyword_dict["ccd_gain"] = self.imghdu[0].header["CCDGAIN"]
         keyword_dict["aperture_pa"] = self.imghdu[0].header["PA_V3"]
 
         # The total detection product has the FILTER keyword in
@@ -378,7 +391,7 @@ class HAPCatalogBase:
             log.info("")
             log.info("")
             log.info("SUMMARY OF INPUT PARAMETERS FOR PHOTOMETRY")
-            log.info("self.imgname:   {}".format(self.imgname))
+            log.info("image name:       {}".format(self.imgname))
             log.info("platescale:       {}".format(self.image.imgwcs.pscale))
             log.info("radii (pixels):   {}".format(self.aper_radius_list_pixels))
             log.info("radii (arcsec):   {}".format(self.aper_radius_arcsec))
@@ -456,7 +469,8 @@ class HAPCatalogBase:
         data_table.meta["Aperture PA"] = self.image.keyword_dict["aperture_pa"]
         data_table.meta["Exposure Start"] = self.image.keyword_dict["expo_start"]
         data_table.meta["Total Exposure Time"] = self.image.keyword_dict["texpo_time"]
-        data_table.meta["CCD Gain"] = self.image.keyword_dict["ccd_gain"]
+        if self.image.keyword_dict["detector"] != "SBC":
+            data_table.meta["CCD Gain"] = self.image.keyword_dict["ccd_gain"]
         if product.lower() == "tdp" or self.image.keyword_dict["instrument"].upper() == "WFC3":
             data_table.meta["Filter 1"] = self.image.keyword_dict["filter1"]
             data_table.meta["Filter 2"] = ""
@@ -539,6 +553,7 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("Point-source finding settings")
             log.info("Total Detection Product - Input Parameters")
             log.info("INPUT PARAMETERS")
+            log.info("image name: {}".format(self.imgname))
             log.info("{}: {}".format("self.param_dict['dao']['bkgsig_sf']", self.param_dict["dao"]["bkgsig_sf"]))
             log.info("{}: {}".format("self.param_dict['dao']['kernel_sd_aspect_ratio']",
                                      self.param_dict['dao']['kernel_sd_aspect_ratio']))
@@ -822,6 +837,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._border = self.param_dict["sourcex"]["border"]
         self._nsigma = self.param_dict["nsigma"]
 
+        # Columns to include from the computation of source properties to save
+        # computation time from computing values which are not used
+        self.include_filter_cols = ['area', 'background_at_centroid', 'bbox_xmax', 'bbox_xmin', 'bbox_ymax', 'bbox_ymin',
+                                    'covar_sigx2', 'covar_sigxy', 'covar_sigy2', 'cxx', 'cxy', 'cyy',
+                                    'ellipticity', 'elongation', 'id', 'orientation', 'sky_centroid_icrs',
+                                    'source_sum', 'source_sum_err', 'xcentroid', 'ycentroid']
+
         # Initialize attributes to be computed later
         self.segm_img = None  # Segmentation image
 
@@ -849,12 +871,18 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Check the pars to see if the "n" exposure mask has been passed.  If it has, it must be
         # converted into a boolean mask where False = actual image footprint, and True = the
         # non-illuminated portion of the images.  The True indicates to detect_sources()
-        # which pixels to ignore.
+        # which pixels to IGNORE.
         mask = pars.get('mask', None)
         if hasattr(mask, 'shape'):
+            # At this point this general mask has zeros in the non-illuminated portion, and non-zeros in
+            # the illuminated portion.  We are decreasing the footprint of the illuminated portion.
+            mask = ndimage.binary_erosion(mask, iterations=10)
+            # Now convert the mask for the purposes needed here: the non-illuminated portion is True,
+            # and the illuminated portion is False.
             mask = mask < 1
-            # outname = self.imgname.replace(".fits","_mask.fits")
-            # fits.PrimaryHDU(data=mask.astype(np.uint16)).writeto(outname)
+            if self.diagnostic_mode:
+                outname = self.imgname.replace(".fits", "_mask.fits")
+                fits.PrimaryHDU(data=mask.astype(np.uint16)).writeto(outname)
 
         # If the total product sources have not been identified, then this needs to be done!
         if not self.tp_sources:
@@ -864,6 +892,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("")
             log.info("SExtractor-like source finding settings - Photutils segmentation")
             log.info("Total Detection Product - Input Parameters")
+            log.info("Image: {}".format(self.imgname))
             log.info("FWHM: {}".format(self._fwhm))
             log.info("size_source_box (no. of connected pixels needed for a detection): {}".format(self._size_source_box))
             log.info("nsigma (sigma * background_rms): {}".format(self._nsigma))
@@ -889,6 +918,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
             self.segm_img = detect_sources(imgarr_bkgsub, threshold, npixels=self._size_source_box,
                                            filter_kernel=self.image.kernel,
                                            mask=mask)
+            if self.diagnostic_mode:
+                outname = self.imgname.replace(".fits", "_segment.fits")
+                fits.PrimaryHDU(data=self.segm_img.data).writeto(outname)
+
+                outname = self.imgname.replace(".fits", "_bkg.fits")
+                fits.PrimaryHDU(data=self.image.bkg_background_ra).writeto(outname)
 
             try:
                 # Deblending is a combination of multi-thresholding and watershed
@@ -898,21 +933,20 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 segm_deblended_img = deblend_sources(imgarr_bkgsub, self.segm_img, npixels=self._size_source_box,
                                                      filter_kernel=self.image.kernel, nlevels=self._nlevels,
                                                      contrast=self._contrast)
+                if self.diagnostic_mode:
+                    outname = self.imgname.replace(".fits", "_segment_deblended.fits")
+                    fits.PrimaryHDU(data=self.segm_deblended_img.data).writeto(outname)
 
                 # The deblending was successful, so just copy the deblended sources back to the sources attribute.
                 self.segm_img = copy.deepcopy(segm_deblended_img)
             except Exception as x_cept:
                 log.warning("Deblending the sources in image {} was not successful: {}.".format(self.imgname,
-                                                                                                         x_cept))
+                            x_cept))
                 log.warning("Processing can continue with the non-deblended sources, but the user should\n"
                             "check the output catalog for issues.")
 
             # Regardless of whether or not deblending worked, this variable can be reset to None
             segm_deblended_img = None
-
-            # Clean up segments that are near or partially overlap the border of the image and relabel
-            # the segments to be sequential
-            self.segm_img.remove_border_labels(self._border, partial_overlap=True, relabel=True)
 
             # The total product catalog consists of at least the X/Y and RA/Dec coordinates for the detected
             # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
@@ -922,7 +956,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
             # form to filter out bad rows and correspondingly bad segments before the filter images are processed.
-            total_measurements_table = Table(self.source_cat.to_table())
+            total_measurements_table = Table(self.source_cat.to_table(columns=['id', 'xcentroid', 'ycentroid', 'sky_centroid_icrs']))
 
             # Filter the table to eliminate nans or inf based on the coordinates, then remove these segments from
             # the segmentation image
@@ -935,9 +969,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 else:
                     bad_segm_rows_by_id.append(total_measurements_table['id'][i])
             updated_table = Table(rows=good_rows, names=total_measurements_table.colnames)
-            if self.diagnostic_mode:
-                log.info("Bad total rows: {}".format(bad_segm_rows_by_id))
-            log.info("Bad segments removed from segmentation image.")
+            if self.diagnostic_mode and bad_segm_rows_by_id:
+                log.info("Bad segments removed from segmentation image for Total detection image {}.".format(self.imgname))
 
             # Remove the bad segments from the image
             self.segm_img.remove_labels(bad_segm_rows_by_id, relabel=True)
@@ -955,15 +988,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
         else:
             self.sources = self.tp_sources['segment']['sources']
             self.kernel = self.tp_sources['segment']['kernel']
+            self.total_source_table = self.tp_sources['segment']['source_cat']
 
-        # For debugging purposes only, create a segmentation image and a "regions" files to use for ds9 overlay
-        # Create the image regions file here in case there is a failure
+        # For debugging purposes only, create a "regions" files to use for ds9 overlay of the segm_img.
+        # Create the image regions file here in case there is a failure.  This diagnostic portion of the
+        # code should only be invoked when working on the total object catalog (self.segm_img is defined).
         if self.diagnostic_mode and self.segm_img:
-            # Generate a diagnostic_mode segmentation image
-            # indx = self.sourcelist_filename.find("-cat.ecsv")
-            # outname = self.sourcelist_filename[0:indx] + ".fits"
-            # fits.PrimaryHDU(data = self.segm_img.data).writeto(outname)
-
             # Copy out only the X and Y coordinates to a "diagnostic_mode table" and cast as an Astropy Table
             # so a scalar can be added to the centroid coordinates
             tbl = self.source_cat["X-Centroid", "Y-Centroid"]
@@ -1006,6 +1036,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         log.info("")
         log.info("SExtractor-like source property measurements based on Photutils segmentation")
         log.info("Filter Level Product - Input Parameters")
+        log.info("image name: {}".format(self.imgname))
         log.info("FWHM: {}".format(self._fwhm))
         log.info("size_source_box: {}".format(self._size_source_box))
         log.info("")
@@ -1014,23 +1045,21 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # This is the filter science data and its computed background
         imgarr_bkgsub = imgarr - self.image.bkg_background_ra
 
+        # Compute the Poisson error of the sources...
+        total_error = calc_total_error(imgarr_bkgsub, self.image.bkg_rms_ra, 1.0)
+
         # Compute source properties...
         self.source_cat = source_properties(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
-                                            filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
+                                            error=total_error, filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
 
         # Convert source_cat which is a SourceCatalog to an Astropy Table
-        filter_measurements_table = Table(self.source_cat.to_table())
-
-        # Compute the MagIso
-        filter_measurements_table["MagIso"] = photometry_tools.convert_flux_to_abmag(filter_measurements_table["source_sum"],
-                                                                                     self.image.imghdu[1].header['photflam'],
-                                                                                     self.image.imghdu[1].header['photplam'])
+        filter_measurements_table = Table(self.source_cat.to_table(columns=self.include_filter_cols))
 
         # Compute aperture photometry measurements and append the columns to the measurements table
-        updated_table = self.do_aperture_photometry(imgarr_bkgsub, filter_measurements_table)
+        self.do_aperture_photometry(imgarr, filter_measurements_table, self.imgname, filter_name)
 
         # Now clean up and prepare the filter table for output
-        self.source_cat = self._define_filter_table(updated_table)
+        self.source_cat = self._define_filter_table(filter_measurements_table)
 
         log.info("Found and measured {} sources from segmentation map.".format(len(self.source_cat)))
 
@@ -1065,107 +1094,175 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def do_aperture_photometry(self, bkg_subtracted_image, filter_measurements_table):
+    def do_aperture_photometry(self, input_image, filter_measurements_table, image_name, filter_name):
         """Perform aperture photometry measurements as a means to distinguish point versus extended sources.
         """
-        # Filter the table to eliminate nans or inf based on the coordinates now that
-        # measurements have been done on the filter image
-        good_rows = []
-        bad_rows = []
-        updated_table = None
+
+        # Convert the SkyCoord column to separate RA and Dec columns
+        radec_data = SkyCoord(filter_measurements_table["sky_centroid_icrs"])
+        ra_icrs = radec_data.ra.degree
+        dec_icrs = radec_data.dec.degree
+        rr = Column(ra_icrs, name="RA", unit=u.deg)
+        dd = Column(dec_icrs, name="DEC", unit=u.deg)
+        filter_measurements_table.add_columns([dd, rr])
+
+        # Compute the MagIso
+        filter_measurements_table["MagIso"] = photometry_tools.convert_flux_to_abmag(filter_measurements_table["source_sum"],
+                                                                                     self.image.imghdu[1].header['photflam'],
+                                                                                     self.image.imghdu[1].header['photplam'])
+
+        # Determine the "good rows" as defined by the X and Y coordinates not being nans as
+        # the pos_xy array cannot contain any nan values.  Note: It is possible for a filter
+        # catalog to have NO sources (subarray data).  The "bad rows" will have the RA and DEC values
+        # in the filter catalog replaced with the corresponding RA and Dec values from the total
+        # catalog to give the user some perspective.
+        good_rows_index = []
+        bad_rows_index = []
         for i, old_row in enumerate(filter_measurements_table):
             if np.isfinite(old_row["xcentroid"]):
-                good_rows.append(old_row)
+                good_rows_index.append(i)
             else:
-                bad_rows.append(filter_measurements_table['id'][i])
-        updated_table = Table(rows=good_rows, names=filter_measurements_table.colnames)
-        # FIX What filter?
-        log.info("Bad rows removed from coordinate list for filter data based on invalid positions after source property measurements.")
+                bad_rows_index.append(i)
 
-        positions = (updated_table["xcentroid"], updated_table["ycentroid"])
-        pos_xy = np.vstack(positions).T
+        # Create placeholder columns for the output table
+        self._create_table_columns(filter_measurements_table)
 
-        # Define list of background annulii
-        bg_apers = CircularAnnulus(pos_xy,
-                                   r_in=self.param_dict['skyannulus_arcsec'],
-                                   r_out=self.param_dict['skyannulus_arcsec'] +
-                                   self.param_dict['dskyannulus_arcsec'])
+        # Case: there are good/measurable sources in the input table
+        if good_rows_index:
 
-        # Create list of photometric apertures to measure
-        phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
+            # Obtain the X and Y positions to compute the circular annulus
+            positions = (filter_measurements_table["xcentroid"][good_rows_index], filter_measurements_table["ycentroid"][good_rows_index])
+            pos_xy = np.vstack(positions).T
 
-        # Perform aperture photometry
-        photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers,
-                                                                bg_apers,
-                                                                data=bkg_subtracted_image,
-                                                                photflam=self.image.imghdu[1].header['photflam'],
-                                                                photplam=self.image.imghdu[1].header['photplam'],
-                                                                error_array=self.bkg.background_rms,
-                                                                bg_method=self.param_dict['salgorithm'],
-                                                                epadu=self.gain)
+            # Define list of background annulii - the pos_xy input cannot contain any nan values
+            bg_apers = CircularAnnulus(pos_xy,
+                                       r_in=self.param_dict['skyannulus_arcsec'],
+                                       r_out=self.param_dict['skyannulus_arcsec'] +
+                                       self.param_dict['dskyannulus_arcsec'])
 
-        # Capture data computed by the photometry tools and append to the output table
-        try:
-            flux_inner_data = photometry_tbl["FluxAp1"].data
-            flux_inner_data_err = photometry_tbl["FluxErrAp1"].data
+            # Create list of photometric apertures to measure
+            phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
+
+            # Perform aperture photometry - the input data should NOT be background subtracted
+            photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers,
+                                                                    bg_apers,
+                                                                    data=input_image,
+                                                                    photflam=self.image.imghdu[1].header['photflam'],
+                                                                    photplam=self.image.imghdu[1].header['photplam'],
+                                                                    error_array=self.bkg.background_rms,
+                                                                    bg_method=self.param_dict['salgorithm'],
+                                                                    epadu=self.gain)
+
+            # Capture data computed by the photometry tools and append to the output table
+            filter_measurements_table['FluxAp1'][good_rows_index] = photometry_tbl['FluxAp1']
+            filter_measurements_table['FluxErrAp1'][good_rows_index] = photometry_tbl['FluxErrAp1']
+            filter_measurements_table['MagAp1'][good_rows_index] = photometry_tbl['MagAp1']
+            filter_measurements_table['MagErrAp1'][good_rows_index] = photometry_tbl['MagErrAp1']
+
+            filter_measurements_table['FluxAp2'][good_rows_index] = photometry_tbl['FluxAp2']
+            filter_measurements_table['FluxErrAp2'][good_rows_index] = photometry_tbl['FluxErrAp2']
+            filter_measurements_table['MagAp2'][good_rows_index] = photometry_tbl['MagAp2']
+            filter_measurements_table['MagErrAp2'][good_rows_index] = photometry_tbl['MagErrAp2']
+
+            filter_measurements_table['MSkyAp2'][good_rows_index] = photometry_tbl['MSkyAp2']
+            filter_measurements_table['StdevAp2'][good_rows_index] = photometry_tbl['StdevAp2']
+
             mag_inner_data = photometry_tbl["MagAp1"].data
-            mag_inner_data_err = photometry_tbl["MagErrAp1"].data
-
-            flux_outer_data = photometry_tbl["FluxAp2"].data
-            flux_outer_data_err = photometry_tbl["FluxErrAp2"].data
             mag_outer_data = photometry_tbl["MagAp2"].data
-            mag_outer_data_err = photometry_tbl["MagErrAp2"].data
 
-            mskyap2_data = photometry_tbl["MSkyAp2"].data
-            stdevap2_data = photometry_tbl["StdevAp2"].data
+            try:
+                # Compute the Concentration Index (CI)
+                ci_data = mag_inner_data - mag_outer_data
+                ci_mask = np.logical_and(np.abs(ci_data) > 0.0, np.abs(ci_data) < 1.0e-30)
+                big_bad_index = np.where(abs(ci_data) > 1.0e20)
+                ci_mask[big_bad_index] = True
+                ci_col = MaskedColumn(name='CI', data=ci_data, dtype=np.float64, mask=ci_mask)
 
-            ci_data = mag_inner_data - mag_outer_data
-            ci_mask = np.logical_and(np.abs(ci_data) > 0.0, np.abs(ci_data) < 1.0e-30)
-            big_bad_index = np.where(abs(ci_data) > 1.0e20)
-            ci_mask[big_bad_index] = True
-            ci_col = MaskedColumn(name="CI", data=ci_data, dtype=np.float64, mask=ci_mask)
-            updated_table.add_column(ci_col)
+            except Exception as x_cept:
+                log.warning("Computation of concentration index (CI) was not successful: {} - {}.".format(self.imgname, x_cept))
+                log.warning("CI measurements may be missing from the output filter catalog.\n")
 
-            # Append these additional photometric measurements to the filter table
-            flux_col = Column(data=flux_inner_data, name="FluxAp1", dtype=np.float64)
-            flux_col_err = Column(data=flux_inner_data_err, name="FluxErrAp1", dtype=np.float64)
-            mag_col = Column(data=mag_inner_data, name="MagAp1", dtype=np.float64)
-            mag_col_err = Column(data=mag_inner_data_err, name="MagErrAp1", dtype=np.float64)
-            updated_table.add_column(flux_col)
-            updated_table.add_column(flux_col_err)
-            updated_table.add_column(mag_col)
-            updated_table.add_column(mag_col_err)
+            # OK to insert *entire* column here to preserve any values which have been computed.  The
+            # column already exists and contains nans.
+            if isinstance(ci_col, MaskedColumn):
+                filter_measurements_table['CI'][good_rows_index] = ci_col
 
-            flux_col = Column(data=flux_outer_data, name="FluxAp2", dtype=np.float64)
-            flux_col_err = Column(data=flux_outer_data_err, name="FluxErrAp2", dtype=np.float64)
-            mag_col = Column(data=mag_outer_data, name="MagAp2", dtype=np.float64)
-            mag_col_err = Column(data=mag_outer_data_err, name="MagErrAp2", dtype=np.float64)
-            updated_table.add_column(flux_col)
-            updated_table.add_column(flux_col_err)
-            updated_table.add_column(mag_col)
-            updated_table.add_column(mag_col_err)
+        # Case: no good rows in the table
+        # Issue a message for the case no good rows at all being found in the filter image.
+        # The bad rows will be "filled in" with the same code (below) where all the rows are bad.
+        else:
+            log.info("There are no valid rows in the output Segmentation filter catalog for image %s (filter: %s).", image_name, filter_name)
 
-            msky_col = Column(data=mskyap2_data, name="MSkyAp2", dtype=np.float64)
-            stdev_col = Column(data=stdevap2_data, name="StdevAp2", dtype=np.float64)
-            updated_table.add_column(msky_col)
-            updated_table.add_column(stdev_col)
+        # Fill in any bad rows - this code fills in sporadic missing rows, as well as all rows being missing.
+        # The bad rows have nan values for the xcentroid/ycentroid coordinates, as well as the RA/Dec values,
+        # so recover these values from the total source catalog to make it easy for the user to map the filter
+        # catalog rows back to the total detection catalog
+        filter_measurements_table['xcentroid'][bad_rows_index] = self.total_source_table['X-Centroid'][bad_rows_index]
+        filter_measurements_table['ycentroid'][bad_rows_index] = self.total_source_table['Y-Centroid'][bad_rows_index]
+        filter_measurements_table['RA'][bad_rows_index] = self.total_source_table['RA'][bad_rows_index]
+        filter_measurements_table['DEC'][bad_rows_index] = self.total_source_table['DEC'][bad_rows_index]
 
-        except Exception as x_cept:
-            log.warning("Computation of additional photometric measurements was not successful: {} - {}.".format(self.imgname, x_cept))
-            log.warning("Additional measurements have not been added to the output catalog.\n")
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def _create_table_columns(self, table):
+        """Create placeholder columns for the output filter table.
+
+           The output filter table becomes the filter catalog ECSV file.
+
+           Define the column order, data format, output column names, descriptions, and units
+           for the table.
+
+           Parameters
+           ----------
+           table : Astropy table
+
+           Returns
+           -------
+           table : Astropy table
+               A modified version of the input table which now has additional placeholder
+               columns appended.
+        """
+
+        tblLen = len(table)
+        ci_col = MaskedColumn(data=np.ones(tblLen)*float('nan'), name="CI")
+        table.add_column(ci_col)
+
+        flux_col = Column(data=np.ones(tblLen)*float('nan'), name="FluxAp1")
+        table.add_column(flux_col)
+
+        flux_col_err = Column(data=np.ones(tblLen)*float('nan'), name="FluxErrAp1")
+        table.add_column(flux_col_err)
+
+        mag_col = Column(data=np.ones(tblLen)*float('nan'), name="MagAp1")
+        table.add_column(mag_col)
+
+        mag_col_err = Column(data=np.ones(tblLen)*float('nan'), name="MagErrAp1")
+        table.add_column(mag_col_err)
+
+        flux_col = Column(data=np.ones(tblLen)*float('nan'), name="FluxAp2")
+        table.add_column(flux_col)
+
+        flux_col_err = Column(data=np.ones(tblLen)*float('nan'), name="FluxErrAp2")
+        table.add_column(flux_col_err)
+
+        mag_col = Column(data=np.ones(tblLen)*float('nan'), name="MagAp2")
+        table.add_column(mag_col)
+
+        mag_col_err = Column(data=np.ones(tblLen)*float('nan'), name="MagErrAp2")
+        table.add_column(mag_col_err)
+
+        msky_col = Column(data=np.ones(tblLen)*float('nan'), name="MSkyAp2")
+        table.add_column(msky_col)
+
+        stdev_col = Column(data=np.ones(tblLen)*float('nan'), name="StdevAp2")
+        table.add_column(stdev_col)
+
+        # iso_col = Column(data=np.ones(tblLen)*float('nan')), name="MagIso")
+        # table.add_column(iso_col)
 
         # Add zero-value "Flags" column in preparation for source flagging
-        flag_col = Column(name="Flags", data=np.zeros_like(updated_table["id"]))
-        updated_table.add_column(flag_col)
-
-        # Protect against None for source_sum_error
-        # FIX MDD
-        # log.info("*************** source sum err: {}".format(updated_table["source_sum_err"]))
-        # None_index = np.where(source_sum_err is None)
-        # sse_mask[None_index] = True
-        # ci_col = MaskedColumn(name="CI", data=source_sum_err, dtype=np.float64, mask=sse_mask)
-
-        return updated_table
+        flag_col = Column(name="Flags", data=np.zeros_like(table["id"]))
+        table.add_column(flag_col)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1182,28 +1279,20 @@ class HAPSegmentCatalog(HAPCatalogBase):
                many properties calculated for each segmented source.
 
            Returns
-           ------
+           -------
            final_filter_table : Astropy table
                 A modified version of the input table which has been reformatted in preparation
                 for catalog generation.
         """
 
-        radec_data = SkyCoord(filter_table["sky_centroid_icrs"])
-        ra_icrs = radec_data.ra.degree
-        dec_icrs = radec_data.dec.degree
-        rr = Column(ra_icrs, name="RA", unit=u.deg)
-        dd = Column(dec_icrs, name="DEC", unit=u.deg)
-        filter_table.add_columns([dd, rr])
-
         # Rename columns to names used when HLA Classic catalog distributed by MAST
         final_col_names = {"id": "ID", "xcentroid": "X-Centroid", "ycentroid": "Y-Centroid",
-                           "background_at_centroid": "Bck", "source_sum": "FluxIso",
-                           # "background_at_centroid": "Bck", "source_sum": "FluxIso", "source_sum_err": "FluxIsoErr",
+                           "background_at_centroid": "Bck", "source_sum": "FluxIso", "source_sum_err": "FluxIsoErr",
                            "bbox_xmin": "Xmin", "bbox_ymin": "Ymin", "bbox_xmax": "Xmax", "bbox_ymax": "Ymax",
                            "cxx": "CXX", "cyy": "CYY", "cxy": "CXY",
                            "covar_sigx2": "X2", "covar_sigy2": "Y2", "covar_sigxy": "XY",
                            "orientation": "Theta",
-                           "elongation": "Elongation", "ellipticity": "Ellipticity"}
+                           "elongation": "Elongation", "ellipticity": "Ellipticity", "area": "Area"}
         for old_col_title in final_col_names:
             filter_table.rename_column(old_col_title, final_col_names[old_col_title])
 
@@ -1211,8 +1300,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         final_col_order = ["X-Centroid", "Y-Centroid", "RA", "DEC", "ID",
                            "CI", "Flags", "MagAp1", "MagErrAp1", "FluxAp1", "FluxErrAp1",
                            "MagAp2", "MagErrAp2", "FluxAp2", "FluxErrAp2", "MSkyAp2",
-                           "Bck", "MagIso", "FluxIso",
-                           # "Bck", "MagIso", "FluxIso", "FluxIsoErr",
+                           "Bck", "Area", "MagIso", "FluxIso", "FluxIsoErr",
                            "Xmin", "Ymin", "Xmax", "Ymax",
                            "X2", "Y2", "XY",
                            "CXX", "CYY", "CXY",
@@ -1224,12 +1312,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
                             "CI": "7.3f", "Flags": "5d",
                             "MagAp1": "8.2f", "MagErrAp1": "9.4f", "FluxAp1": "9.2f", "FluxErrAp1": "10.5f",
                             "MagAp2": "8.2f", "MagErrAp2": "9.4f", "FluxAp2": "9.2f", "FluxErrAp2": "10.5f",
-                            "MSkyAp2": "8.2f", "Bck": "9.4f", "MagIso": "8.2f", "FluxIso": "9.2f",
-                            # "Bck": "9.4f", "MagIso": "8.2f", "FluxIso": "9.2f", "FluxIsoErr": "10.5f",
+                            "MSkyAp2": "8.2f", "Bck": "9.4f", "MagIso": "8.2f", "FluxIso": "9.2f", "FluxIsoErr": "10.5f",
                             "Xmin": "8.0f", "Ymin": "8.0f", "Xmax": "8.0f", "Ymax": "8.0f",
                             "X2": "8.4f", "Y2": "8.4f", "XY": "10.5f",
                             "CXX": "9.5f", "CYY": "9.5f", "CXY": "9.5f",
-                            "Elongation": "7.2f", "Ellipticity": "7.2f", "Theta": "8.3f"}
+                            "Elongation": "7.2f", "Ellipticity": "7.2f", "Theta": "8.3f", "Area": "8.3f"}
         for fcf_key in final_col_format.keys():
             final_filter_table[fcf_key].format = final_col_format[fcf_key]
 
@@ -1239,6 +1326,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                              "RA": "Sky coordinate at epoch of observation and fit to GAIA",
                              "DEC": "Sky coordinate at epoch of observation and fit to GAIA",
                              "Bck": "Background at the position of the source centroid",
+                             "Area": "Total unmasked area of the source segment",
                              "MagAp1": "ABMAG of source based on the inner (smaller) aperture",
                              "MagErrAp1": "Error of MagAp1",
                              "FluxAp1": "Flux of source based on the inner (smaller) aperture",
@@ -1249,9 +1337,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                              "FluxErrAp2": "Error of FluxAp2",
                              "MSkyAp2": "ABMAG of sky based on outer (larger) aperture",
                              "FluxIso": "Sum of unmasked data values in the source segment",
-                             # "FluxIsoErr": "Uncertainty of FluxIso propagated from the input error array",
+                             "FluxIsoErr": "Uncertainty of FluxIso, propagated from the input error array",
                              "MagIso": "Magnitude corresponding to FluxIso",
-                             # "MagIsoErr: "Uncertainty of MagIso corresponding to FluxIsoErr"
                              "X2": "Variance along X",
                              "Y2": "Variance along Y",
                              "XY": "Covariance of position between X and Y",
@@ -1273,6 +1360,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         final_col_unit = {"X-Centroid": u.pix, "Y-Centroid": u.pix,
                           "RA": u.deg, "DEC": u.deg,
                           "Bck": "electrons/s",
+                          "Area": "pixels**2",
                           "MagAp1": "ABMAG",
                           "MagErrAp1": "ABMAG",
                           "FluxAp1": "electrons/s",
@@ -1283,6 +1371,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                           "FluxErrAp2": "electrons/s",
                           "MagIso": "ABMAG",
                           "FluxIso": "electrons/s",
+                          "FluxIsoErr": "electrons/s",
                           "X2": "pixel**2",
                           "Y2": "pixel**2",
                           "XY": "pixel**2",
