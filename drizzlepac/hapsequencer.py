@@ -461,7 +461,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
         # 9: Compare results to HLA classic counterparts (if possible)
         if diagnostic_mode:
-            run_sourcelist_comparision(total_list, diagnostic_mode=diagnostic_mode, log_level=log_level)
+            run_sourcelist_comparision(total_obj_list, diagnostic_mode=diagnostic_mode, log_level=log_level)
         # Write out manifest file listing all products generated during processing
         log.info("Creating manifest file {}.".format(manifest_name))
         log.info("  The manifest contains the names of products generated during processing.")
