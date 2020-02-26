@@ -144,8 +144,8 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
 
     # Initialize the column entries which will be populated in successive
     # processing steps
-    fit_method = None  # Fit algorithm used for alignment
-    catalog = None     # Astrometric catalog used for alignment
+    fit_method = ""  # Fit algorithm used for alignment
+    catalog = ""     # Astrometric catalog used for alignment
     catalog_sources = 0  # No. of astrometric catalog sources found based on coordinate overlap with image
     found_sources = 0   # No. of sources detected in images
     match_sources = 0   # No. of sources cross matched between astrometric catalog and detected in image
@@ -161,10 +161,10 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
     date_obs = None     # Human readable date
     mjdutc = -1.0      # MJD UTC start of exposure
     fgslock = None
-    process_msg = None
+    process_msg = ""
     status = 9999
     compromised = 0
-    headerlet_file = None
+    headerlet_file = ""
     fit_qual = -1
 
     fit_rms = -1.0
@@ -312,7 +312,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
                               rot, scale, rms_x, rms_y, rms_ra, rms_dec, completed, fit_rms,
                               total_rms, dataset_key, status, fit_qual, headerlet_file,
                               compromised])
-        process_msg = None
+        process_msg = ""
 
     return output_table
 
