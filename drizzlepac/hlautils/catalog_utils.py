@@ -1129,16 +1129,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Case: there are good/measurable sources in the input table
         if good_rows_index:
-
             # Obtain the X and Y positions to compute the circular annulus
             positions = (filter_measurements_table["xcentroid"][good_rows_index], filter_measurements_table["ycentroid"][good_rows_index])
             pos_xy = np.vstack(positions).T
 
-        # Define list of background annulii
-        bg_apers = CircularAnnulus(pos_xy,
-                                   r_in=self.param_dict['skyannulus_arcsec']/self.image.imgwcs.pscale,
-                                   r_out=(self.param_dict['skyannulus_arcsec'] +
-                                   self.param_dict['dskyannulus_arcsec'])/self.image.imgwcs.pscale)
+            # Define list of background annulii
+            bg_apers = CircularAnnulus(pos_xy,
+                                       r_in=self.param_dict['skyannulus_arcsec']/self.image.imgwcs.pscale,
+                                       r_out=(self.param_dict['skyannulus_arcsec'] + self.param_dict['dskyannulus_arcsec'])/self.image.imgwcs.pscale)
 
             # Create list of photometric apertures to measure
             phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
