@@ -242,7 +242,7 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         # if an output custom param file was created and the CI values were updated by ci_table.get_ci_from_file,
         # update output custom param file with new CI values
         if output_custom_pars_file:
-            if ci_upper_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_lower_limit']) or \
+            if ci_lower_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_lower_limit']) or \
                     ci_upper_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_upper_limit']):
                 log.info("CI limits updated.")
                 with open(output_custom_pars_file) as f:
