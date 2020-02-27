@@ -750,8 +750,9 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
                                           num_xmatches))
         # print fit params to screen
         if print_fit_parameters:
-            log_info_keys = ['status', 'fitgeom', 'eff_minobj', 'matrix', 'shift', 'center', 'rot', 'proper',
-                'rotxy', 'scale', 'skew', 'rmse', 'mae', 'nmatches', 'FIT_RMS', 'TOTAL_RMS', 'NUM_FITS',
+            log_info_keys = ['status', 'fitgeom', 'eff_minobj', 'matrix', 'shift', 'center',
+                'proper_rot', 'proper',
+                '<rot>', '<scale>', 'skew', 'rmse', 'mae', 'nmatches', 'FIT_RMS', 'TOTAL_RMS', 'NUM_FITS',
                 'RMS_RA', 'RMS_DEC', 'catalog']
             log.info("{} FIT PARAMETERS {}".format("~" * 35, "~" * 34))
             log.info("image: {}".format(image_name))
