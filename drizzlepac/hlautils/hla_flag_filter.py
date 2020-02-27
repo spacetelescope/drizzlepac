@@ -230,7 +230,7 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     ci_lower_limit = float(param_dict['quality control']['ci filter'][proc_type]['ci_lower_limit'])
     ci_upper_limit = float(param_dict['quality control']['ci filter'][proc_type]['ci_upper_limit'])
     snr = float(param_dict['quality control']['ci filter'][proc_type]['bthresh'])
-
+par_dict = param_dict['quality control']['ci filter'][proc_type]
     if param_dict['quality control']['ci filter'][proc_type]['lookup_ci_limits_from_table']:
         # replace CI limits with values from table if possible
         cidict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path, log_level,
