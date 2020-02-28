@@ -557,14 +557,15 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                       self.image.bkg_rms_median))
             log.info("{}".format("=" * 80))
 
-            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median) # TODO: UNCOMMENT!
+            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
             # isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median) # TODO: TESTING ONLY!
+
             # create mask to reject any sources located less than 10 pixels from a image/chip edge
             wht_image = self.image.data.copy()
             binary_inverted_wht = np.where(wht_image == 0, 1, 0)
             exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
 
-            sources = daofind(image, mask=exclusion_mask) #TODO: UNCOMMENT!
+            sources = daofind(image, mask=exclusion_mask)
             # sources = isf(image, mask=exclusion_mask) # TODO: TESTING ONLY!
             for col in sources.colnames:
                 sources[col].info.format = '%.8g'  # for consistent table output
@@ -583,7 +584,6 @@ class HAPPointCatalog(HAPCatalogBase):
         log.info("Performing aperture photometry on identified point-sources")
         # Open and background subtract image
         image = self.image.data.copy()
-        # image -= self.bkg_used # <<< COMMENTED OUT 2/17/20 1114
 
         # load in coords of sources identified in total product
         try:
