@@ -227,11 +227,12 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         drizzled filter product catalog data with updated flag values
     """
     catalog_name_root = catalog_name.split('.')[0]
-    ci_lower_limit = float(param_dict['quality control']['ci filter'][proc_type]['ci_lower_limit'])
-    ci_upper_limit = float(param_dict['quality control']['ci filter'][proc_type]['ci_upper_limit'])
-    snr = float(param_dict['quality control']['ci filter'][proc_type]['bthresh'])
-par_dict = param_dict['quality control']['ci filter'][proc_type]
-    if param_dict['quality control']['ci filter'][proc_type]['lookup_ci_limits_from_table']:
+    par_dict = param_dict['quality control']['ci filter'][proc_type]
+    ci_lower_limit = float(par_dict['ci_lower_limit'])
+    ci_upper_limit = float(par_dict['ci_upper_limit'])
+    snr = float(par_dict['bthresh'])
+
+    if par_dict['lookup_ci_limits_from_table']:
         # replace CI limits with values from table if possible
         cidict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path, log_level,
                                            diagnostic_mode=diagnostic_mode, ci_lower=ci_lower_limit,
@@ -242,8 +243,8 @@ par_dict = param_dict['quality control']['ci filter'][proc_type]
         # if an output custom param file was created and the CI values were updated by ci_table.get_ci_from_file,
         # update output custom param file with new CI values
         if output_custom_pars_file:
-            if ci_lower_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_lower_limit']) or \
-                    ci_upper_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_upper_limit']):
+            if ci_lower_limit != float(par_dict['ci_lower_limit']) or \
+                    ci_upper_limit != float(par_dict['ci_upper_limit']):
                 log.info("CI limits updated.")
                 with open(output_custom_pars_file) as f:
                     json_data = json.load(f)
@@ -252,11 +253,11 @@ par_dict = param_dict['quality control']['ci filter'][proc_type]
                 else:
                     param_set = "parameters"
 
-                if ci_lower_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_lower_limit']):
+                if ci_lower_limit != float(par_dict['ci_lower_limit']):
                     json_data[drizzled_image[:-9]][param_set]["quality control"]["ci filter"][proc_type]["ci_lower_limit"]\
                         = ci_lower_limit
 
-                if ci_upper_limit != float(param_dict['quality control']['ci filter'][proc_type]['ci_upper_limit']):
+                if ci_upper_limit != float(par_dict['ci_upper_limit']):
                     json_data[drizzled_image[:-9]][param_set]["quality control"]["ci filter"][proc_type]["ci_upper_limit"]\
                         = ci_upper_limit
 
