@@ -240,8 +240,8 @@ class AlignmentTable:
                 self.filtered_table[index]['fit_rms'] = item.meta['fit_info']['FIT_RMS']
                 self.filtered_table[index]['total_rms'] = item.meta['fit_info']['TOTAL_RMS']
                 self.filtered_table[index]['offset_x'], self.filtered_table[index]['offset_y'] = item.meta['fit_info']['shift']
-                self.filtered_table[index]['scale'] = item.meta['fit_info']['scale'][0]
-                self.filtered_table[index]['rotation'] = item.meta['fit_info']['<rot>']
+                self.filtered_table[index]['scale'] = item.meta['fit_info']['<scale>']
+                self.filtered_table[index]['rotation'] = item.meta['fit_info']['rot'][1]
             else:
                 self.filtered_table = None
                 # self.filtered_table[index]['fit_method'] = None
@@ -822,7 +822,7 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
         hdulist[sci_extn].header['CRDER2'] = item.meta['fit_info']['RMS_DEC'].value
         hdulist[sci_extn].header['NMATCHES'] = len(item.meta['fit_info']['ref_mag'])
         hdulist[sci_extn].header['HDRNAME'] = "{}_{}".format(image_name.rstrip(".fits"), wcs_name)
-        
+
         if chipctr == num_sci_ext:
             # Close updated flc.fits or flt.fits file
             hdulist.flush()
@@ -877,8 +877,8 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
 
     x_shift = (tweakwcs_item.meta['fit_info']['shift'])[0]
     y_shift = (tweakwcs_item.meta['fit_info']['shift'])[1]
-    rot = tweakwcs_item.meta['fit_info']['<rot>']
-    scale = tweakwcs_item.meta['fit_info']['scale'][0]
+    rot = tweakwcs_item.meta['fit_info']['rot'][1]  # report rotation of Y axis only
+    scale = tweakwcs_item.meta['fit_info']['<scale>']
     skew = tweakwcs_item.meta['fit_info']['skew']
 
     # Update the existing FITS keywords
