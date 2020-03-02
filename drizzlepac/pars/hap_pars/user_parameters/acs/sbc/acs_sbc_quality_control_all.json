@@ -2,11 +2,13 @@
     "ci filter": {
       "aperture": {
         "bthresh": 5.0,
+        "lookup_ci_limits_from_table": true,
         "ci_lower_limit": 0.15,
         "ci_upper_limit": 0.45
       },
       "segment": {
         "bthresh": 5.0,
+        "lookup_ci_limits_from_table": true,
         "ci_lower_limit": 0.15,
         "ci_upper_limit": 0.45
       }

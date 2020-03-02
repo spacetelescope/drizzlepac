@@ -14,13 +14,27 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-3.1.5 (unreleased)
+3.1.7 (unreleased)
 ==================
+
+- Fix a crash in ``tweakreg`` when ``2dhist`` is enabled and ``numpy``
+  version is ``1.18.1`` and later. [#583, #587]
 
 - Update calibrated (FLC/FLT) files with RMS and NMATCH keywords when it successfully
   aligns the data to GAIA using the a posteriori fit.  Headerlet files for this fit
   which already have these keywords are now retained and provided as the final output
   headerlets as well.  [#554]
+
+- Fix problems found in processing data with NGOODPIX==0, DRC files not getting
+  generated for singletons, alignment trying to use a source too near the chip edge,
+  catch the case were all inputs have zero exposure time, lazily remove alignment
+  sub-directories, fixed a bug in overlap computation that showed up in oblong mosaics,
+  recast an input to histogram2d as int,  defined default values for tables when no
+  sources were found. [#593]
+
+- Updated to be compatible with tweakwcs v0.6.0 to correct chip-to-chip alignment issues
+  in aposteriori WCS solutions. [#596]
+
 
 3.1.3 (5-Dec-2019)
 ==================

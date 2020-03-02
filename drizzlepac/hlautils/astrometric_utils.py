@@ -669,6 +669,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
             src_brightest = np.flip(np.argsort(src_fluxes))
             large_labels = src_labels[src_brightest]
             log.debug("Brightest sources in segments: \n{}".format(large_labels))
+        else:
+            src_brightest = np.arange(len(segm.labels))
 
         log.info("Looking for sources in {} segments".format(len(segm.labels)))
 
@@ -767,7 +769,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         tbl['flux'].info.format = '.10f'
         if not outroot.endswith('.cat'):
             outroot += '.cat'
-        tbl.write(outroot, format='ascii.commented_header')
+        tbl.write(outroot, format='ascii.commented_header', overwrite=True)
         log.info("Wrote source catalog: {}".format(outroot))
 
     if plot and plt is not None:
@@ -896,7 +898,7 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
             photmode = None
 
         imgarr = image['sci', chip].data
-        wcs = wcsutil.HSTWCS(image, ext=('sci',chip))
+        wcs = wcsutil.HSTWCS(image, ext=('sci', chip))
         def_fwhm = def_fwhmpsf / wcs.pscale
 
         # apply any DQ array, if available
@@ -1605,7 +1607,7 @@ def evaluate_focus(focus_dict, tolerance=0.8):
 
     return alignment_verified
 
-def get_align_fwhm(focus_dict, default_fwhm, src_size=32):
+def get_align_fwhm(focus_dict, default_fwhm, src_size=11):
     """Determine FWHM based on position of sharpest focus in the product"""
     pimg = fits.open(focus_dict['prodname'])
     posy, posx = focus_dict['prod_pos']
@@ -1679,6 +1681,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
 
     exptimes = np.array([fits.getval(s, 'exptime') for s in singlefiles])
     exp_weights = exptimes / exptimes.max()
+    log.info("Computing diffs for: {}".format(singlefiles))
 
     diff_dict = {}
     for sfile, exp_weight in zip(singlefiles, exp_weights):
@@ -1687,6 +1690,18 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
 
         # Create exposure mask corresponding to pixels with drizzled data
         smask = sdata > 0
+        if smask.sum() == 0:
+            # In some error cases (e.g., jcx552010), blank images get to this point, so treat them as blank
+            log.info("Overlap difference for {}: (No valid data)".format(sfile))
+            diff_dict[sfile] = {"distance": -1, "xslice": None, "yslice": None}
+            diff_dict[sfile]['product_num_sources'] = 0
+            diff_dict[sfile]['num_sources'] = 0
+            diff_dict[sfile]['focus'] = 0.0
+            diff_dict[sfile]['focus_pos'] = (None, None)
+            diff_dict[sfile]['product_focus'] = 0.0
+            diff_dict[sfile]['product_focus_pos'] = (None, None)
+            log.debug("Overlap differences for {} found to be: \n{}".format(sfile, diff_dict[sfile]))
+            continue
 
         # Trim mask down to only include region where the most exposures overlap
         soverlap = smask * max_overlap
@@ -1715,7 +1730,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
         #  (modulo slicing limits)
         yr, xr = np.where(soverlap > 0)
         yslice = slice(yr.min(), yr.max(), 1)
-        xslice = slice(xr.min(), yr.max(), 1)
+        xslice = slice(xr.min(), xr.max(), 1)
         log.debug("overlap region: xslice {}, yslice {}".format(xslice, yslice))
 
         drz_arr = drz_region[yslice, xslice]
@@ -1784,7 +1799,7 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
                 sigma = 3.
             else:
                 pass
-        maxiters = int(np.log10(rebin_arr.max()/2)+0.5)
+        maxiters = int(np.log10(rebin_arr.max() / 2) + 0.5)
 
         # Use simple constant background to avoid problems with nebulosity
         bkg = sigma_clipped_stats(rebin_arr, sigma=sigma, maxiters=maxiters)

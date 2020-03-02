@@ -1603,8 +1603,10 @@ def _xy_2dhist(imgxy, refxy, r):
     # It is about 5-8 times slower than the C version.
     dx = np.subtract.outer(imgxy[:, 0], refxy[:, 0]).ravel()
     dy = np.subtract.outer(imgxy[:, 1], refxy[:, 1]).ravel()
+    r = int(np.ceil(r))
     idx = np.where((dx < r + 0.5) & (dx >= -r - 0.5) &
                    (dy < r + 0.5) & (dy >= -r - 0.5))
+    r = int(np.ceil(r))
     h = np.histogram2d(dx[idx], dy[idx], 2 * r + 1,
                        [[-r - 0.5, r + 0.5], [-r - 0.5, r + 0.5]])
     return h[0].T
@@ -1660,6 +1662,7 @@ def _estimate_2dhist_shift(imgxy, refxy, searchrad=3.0):
     maxval = zpmat.max()
     zpmat_mask = (zpmat > 0) & (zpmat < maxval)
 
+    sig = 0.0
     if np.any(zpmat_mask):
         bkg = zpmat[zpmat_mask].mean()
         sig = maxval / np.sqrt(bkg)
