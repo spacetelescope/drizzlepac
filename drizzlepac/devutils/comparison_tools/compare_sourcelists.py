@@ -1012,17 +1012,14 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     good_flag_sum : list, optional
         sum of "good" bits that will be used mask matched sources based on flag values
 
-    plotfile_prefix : str, optional
-        text string that will prepend the plot files generated if plots are written to files
-
     plotGen : bool, optional
         Generate plots and display them to the screen (True/False)?
 
-    diffMode : str, optional
-        method used to compute comp-ref difference in computeLinearStats().
+    plotfile_prefix : str, optional
+        text string that will prepend the plot files generated if plots are written to files
 
     verbose : bool, optional
-        display verbose output?
+        display verbose output? Default value is False.
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
@@ -1030,7 +1027,9 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
 
     debugMode : bool, optional
         executes subroutine check_match_quality(), which the writes the matched sources (x, y) coordinates of the
-        comparision and reference source lists to ds9 region files for follow-up human visual inspection.
+        comparision and reference source lists to ds9 region files for follow-up human visual inspection, and
+        write_matched_catalogs() which generates abbreviated versions of the input catalogs that only contain matched
+        sources. Default value is False.
 
     Returns
     -------
