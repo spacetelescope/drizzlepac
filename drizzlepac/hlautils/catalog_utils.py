@@ -553,22 +553,29 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("{}".format("=" * 80))
 
             # find ALL the sources!!!
-            log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
-                                                                      self.image.bkg_rms_median)) # TODO: UNCOMMENT FOR NORMAL USE!
-            # log.info("IrafStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
-            #                                                           self.image.bkg_rms_median)) # TODO: TESTING ONLY!
+            use_DaoStarFinder = True # Set to "True" to use DaoStarFinder (The default method), instead of IrafStarFinder to identifiy soruces
+            if use_DaoStarFinder:
+                log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
+                                                                          self.image.bkg_rms_median))
+            else:
+                log.info("IrafStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
+                                                                           self.image.bkg_rms_median))
             log.info("{}".format("=" * 80))
-
-            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median) # TODO: UNCOMMENT FOR NORMAL USE!
-            # isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median) # TODO: TESTING ONLY!
+            if use_DaoStarFinder:
+                daofind = DAOStarFinder(fwhm=source_fwhm,
+                                        threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
+            else:
+                isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
 
             # create mask to reject any sources located less than 10 pixels from a image/chip edge
             wht_image = self.image.data.copy()
             binary_inverted_wht = np.where(wht_image == 0, 1, 0)
             exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
 
-            sources = daofind(image, mask=exclusion_mask) # TODO: UNCOMMENT FOR NORMAL USE!
-            # sources = isf(image, mask=exclusion_mask) # TODO: TESTING ONLY!
+            if use_DaoStarFinder:
+                sources = daofind(image, mask=exclusion_mask)
+            else:
+                sources = isf(image, mask=exclusion_mask)
 
             for col in sources.colnames:
                 sources[col].info.format = '%.8g'  # for consistent table output
