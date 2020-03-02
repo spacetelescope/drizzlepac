@@ -554,10 +554,12 @@ class HAPPointCatalog(HAPCatalogBase):
 
             # find ALL the sources!!!
             log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
-                                                                      self.image.bkg_rms_median))
+                                                                      self.image.bkg_rms_median)) # TODO: UNCOMMENT FOR NORMAL USE!
+            # log.info("IrafStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
+            #                                                           self.image.bkg_rms_median)) # TODO: TESTING ONLY!
             log.info("{}".format("=" * 80))
 
-            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
+            daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median) # TODO: UNCOMMENT FOR NORMAL USE!
             # isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median) # TODO: TESTING ONLY!
 
             # create mask to reject any sources located less than 10 pixels from a image/chip edge
@@ -565,8 +567,9 @@ class HAPPointCatalog(HAPCatalogBase):
             binary_inverted_wht = np.where(wht_image == 0, 1, 0)
             exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
 
-            sources = daofind(image, mask=exclusion_mask)
+            sources = daofind(image, mask=exclusion_mask) # TODO: UNCOMMENT FOR NORMAL USE!
             # sources = isf(image, mask=exclusion_mask) # TODO: TESTING ONLY!
+
             for col in sources.colnames:
                 sources[col].info.format = '%.8g'  # for consistent table output
 
