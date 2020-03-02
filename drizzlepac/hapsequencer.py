@@ -698,27 +698,30 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
         catalog_data = filter_product_catalogs.catalogs[cat_type].source_cat
         drz_root_dir = os.getcwd()
         log.info("Run source list flagging on catalog file {}.".format(catalog_name))
+
         # TODO: REMOVE BELOW CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
-        pickle_dict={"drizzled_image": drizzled_image,
-                     "flt_list": flt_list,
-                     "param_dict": param_dict,
-                     "exptime": exptime,
-                     "plate_scale": plate_scale,
-                     "median_sky": median_sky,
-                     "catalog_name": catalog_name,
-                     "catalog_data": catalog_data,
-                     "cat_type": cat_type,
-                     "drz_root_dir": drz_root_dir,
-                     "hla_flag_msk": filter_product_obj.hla_flag_msk,
-                     "ci_lookup_file_path": ci_lookup_file_path,
-                     "output_custom_pars_file": output_custom_pars_file,
-                     "log_level": log_level,
-                     "diagnostic_mode": diagnostic_mode}
-        out_pickle_filename = "hla_flag_filter_{}.pickle".format(cat_type)
-        pickle_out = open(out_pickle_filename, "wb")
-        pickle.dump(pickle_dict, pickle_out)
-        pickle_out.close()
-        log.info("Wrote hla_flag_filter param pickle file {} ".format(out_pickle_filename))
+        write_flag_filter_pickle_file = False
+        if write_flag_filter_pickle_file:
+            pickle_dict={"drizzled_image": drizzled_image,
+                         "flt_list": flt_list,
+                         "param_dict": param_dict,
+                         "exptime": exptime,
+                         "plate_scale": plate_scale,
+                         "median_sky": median_sky,
+                         "catalog_name": catalog_name,
+                         "catalog_data": catalog_data,
+                         "cat_type": cat_type,
+                         "drz_root_dir": drz_root_dir,
+                         "hla_flag_msk": filter_product_obj.hla_flag_msk,
+                         "ci_lookup_file_path": ci_lookup_file_path,
+                         "output_custom_pars_file": output_custom_pars_file,
+                         "log_level": log_level,
+                         "diagnostic_mode": diagnostic_mode}
+            out_pickle_filename = catalog_name.replace("-cat.ecsv","_flag_filter_inputs.pickle")
+            pickle_out = open(out_pickle_filename, "wb")
+            pickle.dump(pickle_dict, pickle_out)
+            pickle_out.close()
+            log.info("Wrote hla_flag_filter param pickle file {} ".format(out_pickle_filename))
         # TODO: REMOVE ABOVE CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
 
 
