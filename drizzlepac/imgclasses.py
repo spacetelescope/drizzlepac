@@ -582,7 +582,7 @@ class Image:
                                 tolerance=matchpars['tolerance'],
                                 separation=matchpars['separation'])
 
-            if len(matches) > minobj:
+            if len(matches) >= minobj:
                 self.matches['image'] = np.column_stack([matches['input_x'][:,
                                 np.newaxis],matches['input_y'][:,np.newaxis]])
                 self.matches['ref'] = np.column_stack([matches['ref_x'][:,
