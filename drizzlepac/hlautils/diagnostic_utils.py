@@ -20,8 +20,8 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # ======================================================================================================================
 
 class HapDiagnostic(object):
-    def __init__(self, diag_prod, log_level=logutil.logging.NOTSET):
-        """Add insightful docstring content here! # TODO: FLESH OUT!
+    def __init__(self,prop_id,obset_id,telescope,instrument,detector,filter,cattype,description,log_level=logutil.logging.NOTSET):
+        """HapDiagnostic is the base class used for
 
         Parameters
         ----------
@@ -36,12 +36,21 @@ class HapDiagnostic(object):
         -------
         Nothing.
         """
+        progress
+        self.prop_id = prop_id
+        self.obset_id = obset_id
+        self.telescope = telescope
+        self.instrument = instrument
+        self.detector =  detector
+        self.filter = filter
+        self.cattype = cattype
+        self.description = description
         log.setLevel(log_level)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def instantiate_dict(self):
+    def instantiateDict(self):
         """Creates a new diagnostic dictionary using the standard format. # TODO: FLESH OUT!
 
         Parameters
@@ -60,7 +69,23 @@ class HapDiagnostic(object):
         with open("diag_test.json","w") as json_file:
             json.dump(out_dict, json_file, indent=4)
 
-        pdb.set_trace()
+
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def addData(self):
+        pass
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def writeJson(self):
+        pass
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def readJson(self):
+        pass
 
 # ======================================================================================================================
 if __name__ == "__main__":
@@ -85,4 +110,5 @@ if __name__ == "__main__":
     - data
     - masking information
     """
-    HapDiagnostic.instantiate_dict(12)
+
+    HapDiagnostic.instantiateDict(12)
