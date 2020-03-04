@@ -3,11 +3,15 @@
 """Code related to the creation and modifaction of diagnostic .json files"""
 
 import collections
+from datetime import datetime
 import json
+import os
 import pdb
+import random
+import string
 import sys
-import numpy as np
 
+import numpy as np
 
 from stsci.tools import logutil
 
@@ -20,13 +24,34 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # ======================================================================================================================
 
 class HapDiagnostic(object):
-    def __init__(self,prop_id,obset_id,telescope,instrument,detector,filter,cattype,description,log_level=logutil.logging.NOTSET):
-        """HapDiagnostic is the base class used for
+    def __init__(self,prop_id,obset_id,telescope,instrument,detector,filter,data_source,description,log_level=logutil.logging.NOTSET):
+        """base class used to set up a HapDiagnostic object.
 
         Parameters
         ----------
-        diag_prod : Not sure yet.
-            Definitely something, just not sure what yet. # TODO: FLESH OUT!
+        prop_id : string
+            proposal ID
+
+        obset_id : string
+            obset ID
+
+        telescope: string
+            telescope name (e.g. hst, jwst, etc)
+
+        instrument : string
+            instrument name
+
+        detector : string
+            detector name
+
+        filter : string
+            filter name
+
+        data_source : string
+            name of the script that generated the data that will be stored in the "data" section
+
+        description : string
+            brief description of what the data is, and how it should be used.
 
         log_level : int, optional
             The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
@@ -36,22 +61,32 @@ class HapDiagnostic(object):
         -------
         Nothing.
         """
-        progress
         self.prop_id = prop_id
         self.obset_id = obset_id
         self.telescope = telescope
         self.instrument = instrument
         self.detector =  detector
         self.filter = filter
-        self.cattype = cattype
+        self.data_source = data_source
         self.description = description
         log.setLevel(log_level)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def instantiateDict(self):
-        """Creates a new diagnostic dictionary using the standard format. # TODO: FLESH OUT!
+    def instantiate(self):
+        """Creates a new diagnostic dictionary using the standard format. The standard header values are as follows:
+
+        - Generation date
+        - Generation time (local 24-hour format)
+        - Proposal ID
+        - Obset ID
+        - Telescope name
+        - Instrument name
+        - Detector name
+        - Filter name
+        - Data source (name of the piece of code that produced the data)
+        - Description (brief description of what the data is, and how it should be used)
 
         Parameters
         ----------
@@ -59,49 +94,69 @@ class HapDiagnostic(object):
 
         Returns
         -------
-        # TODO: FLESH OUT!
+        Nothing.
         """
+        # summon nested orderedDict into existence
+        self.out_dict = collections.OrderedDict()
+        self.out_dict['header'] = collections.OrderedDict()
+        self.out_dict['data'] = {}
 
-        out_dict = collections.OrderedDict()
-        out_dict['header'] = collections.OrderedDict()
-        out_dict['data'] = {}
-
-        with open("diag_test.json","w") as json_file:
-            json.dump(out_dict, json_file, indent=4)
-
-
-
+        # Populate standard header fields
+        timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
+        self.out_dict['header']['generation date'] = timestamp.split("T")[0]
+        self.out_dict['header']['generation time'] = timestamp.split("T")[1]
+        header_item_list = ["prop_id", "obset_id", "telescope", "instrument", "detector", "filter", "data_source", "description"]
+        for header_item in header_item_list:
+            self.out_dict['header'][header_item] = self.__dict__[header_item]
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def addData(self):
+    def addDataItem(self):
+        pass
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def addheaderItem(self):
+        pass
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def readJsonFile(self):
         pass
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def writeJson(self):
-        pass
+    def writeJsonFile(self,json_filename,clobber=False):
+        """Writes self.out_dict to user-specified filename.
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        Parameters
+        ----------
+        json_filename : string
+            name of the json file to write
 
-    def readJson(self):
-        pass
+        clobber : bool, optional
+            Overwrite file with same name? Default value = False
+
+        Returns
+        -------
+        Nothing.
+        """
+        file_exists = os.path.exists(json_filename)
+        print(file_exists,clobber)
+        if clobber:
+            if file_exists:
+                os.remove(json_filename)
+        else:
+            if file_exists:
+                random_string = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+                json_filename = json_filename.replace(".json","_{}.json".format(random_string))
+        with open(json_filename,"w") as json_file:
+            json.dump(self.out_dict, json_file, indent=4)
+        log.info("Wrote json file {}".format(json_filename))
+
 
 # ======================================================================================================================
 if __name__ == "__main__":
     """
-    Preliminary list of standardized header values:
-    - git revision id
-    - creation date/time
-    - ippsss
-    - proposal
-    - visit
-    - instrument
-    - detector
-    - filter
-    - catalog type
-    - source script (what generated the data?)
-    
     Preliminary data section item format:
     Each numpy table column would be converted into a nested dictionary with the fillowing items
     - title (same as the key to this dictionary(?)
@@ -111,4 +166,14 @@ if __name__ == "__main__":
     - masking information
     """
 
-    HapDiagnostic.instantiateDict(12)
+    blarg = HapDiagnostic(telescope="hst",
+                          instrument = "wfc3",
+                          detector = "ir",
+                          filter = "f160w",
+                          prop_id = "11979",
+                          obset_id = "01",
+                          data_source = "hla_flag_filter",
+                          description = "test item please ignore",
+                          log_level=10)
+    blarg.instantiate()
+    blarg.writeJsonFile("diag_test.json", clobber=True)
