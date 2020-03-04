@@ -92,9 +92,10 @@ class HapDiagnosticObj(object):
         ----------
         Nothing.
 
-        Returns
+        Updates
         -------
-        Nothing.
+        self.out_dict : Ordered dictionary
+            dictionary that will ultimately be written to a json file
         """
         # summon nested orderedDict into existence
         self.out_dict = collections.OrderedDict()
@@ -122,9 +123,13 @@ class HapDiagnosticObj(object):
         title : str
             Name of the dictionary key that will be used to store dataset in self.out_dict
 
+        Updates
+        -------
+        self.out_dict : Ordered dictionary
+            dictionary that will ultimately be written to a json file
         """
         dataset_type = str(type(dataset))
-        if dataset_type == "<class 'numpy.ndarray'>":
+        if dataset_type == "<class 'numpy.ndarray'>": #For numpy arrays
             self.out_dict['data'][title]=collections.OrderedDict()
             self.out_dict['data'][title]["original format"] = dataset_type
             self.out_dict['data'][title]["data"] = dataset.tolist()
