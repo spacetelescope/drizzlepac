@@ -23,7 +23,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 # ======================================================================================================================
 
-class HapDiagnostic(object):
+class HapDiagnosticObj(object):
     def __init__(self,prop_id,obset_id,telescope,instrument,detector,filter,data_source,description,log_level=logutil.logging.NOTSET):
         """base class used to set up a HapDiagnostic object.
 
@@ -99,7 +99,7 @@ class HapDiagnostic(object):
         # summon nested orderedDict into existence
         self.out_dict = collections.OrderedDict()
         self.out_dict['header'] = collections.OrderedDict()
-        self.out_dict['data'] = {}
+        self.out_dict['data'] = collections.OrderedDict()
 
         # Populate standard header fields
         timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
@@ -111,10 +111,25 @@ class HapDiagnostic(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def addDataItem(self):
-        pass
+    def addDataItem(self,dataset,title):
+        """main subroutine for adding data to self.out_table.
 
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        Parameters
+        ----------
+        dataset : varies
+            data to add to self.out_dict
+
+        title : str
+            Name of the dictionary key that will be used to store dataset in self.out_dict
+
+        """
+        dataset_type = str(type(dataset))
+        if dataset_type == "<class 'numpy.ndarray'>":
+            self.out_dict['data'][title]=collections.OrderedDict()
+            self.out_dict['data'][title]["original format"] = dataset_type
+            self.out_dict['data'][title]["data"] = dataset.tolist()
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def addheaderItem(self):
         pass
@@ -166,14 +181,16 @@ if __name__ == "__main__":
     - masking information
     """
 
-    blarg = HapDiagnostic(telescope="hst",
-                          instrument = "wfc3",
-                          detector = "ir",
-                          filter = "f160w",
-                          prop_id = "11979",
-                          obset_id = "01",
-                          data_source = "hla_flag_filter",
-                          description = "test item please ignore",
-                          log_level=10)
+    blarg = HapDiagnosticObj(telescope="hst",
+                             instrument = "wfc3",
+                             detector = "ir",
+                             filter = "f160w",
+                             prop_id = "11979",
+                             obset_id = "01",
+                             data_source = "hla_flag_filter",
+                             description = "test item please ignore",
+                             log_level=10)
     blarg.instantiate()
+
     blarg.writeJsonFile("diag_test.json", clobber=True)
+
