@@ -75,13 +75,16 @@ except ImportError:
     Process = None
 
 # THIRD-PARTY
-from astropy.io import fits
-from stsci.tools import fileutil, asnutil
-from stwcs.wcsutil import HSTWCS
 import numpy as np
+from astropy.io import fits
+
+from stwcs.wcsutil import HSTWCS
+from stwcs import updatewcs
+from stwcs.wcsutil import headerlet
+
+from stsci.tools import fileutil, asnutil
 
 from drizzlepac import processInput  # used for creating new ASNs for _flc inputs
-from stwcs import updatewcs
 
 from drizzlepac import align
 from drizzlepac import resetbits
@@ -94,8 +97,8 @@ from drizzlepac import updatehdr
 __taskname__ = "runastrodriz"
 
 # Local variables
-__version__ = "2.1.0"
-__version_date__ = "(06-Dec-2019)"
+__version__ = "2.2.0"
+__version_date__ = "(06-Mar-2020)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
@@ -312,7 +315,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             _infile_flc = fileutil.buildRootname(_cal_prodname, ext=['_flc.fits'])
 
             _cal_prodname = _infile
-            _calfiles = [_infile] 
+            _calfiles = [_infile]
             _inlist = [_infile, _infile_flc]
             print("_calfiles initialized as: {}".format(_calfiles))
             if len(_calfiles) == 1 and "_raw" in _calfiles[0]:
@@ -424,9 +427,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             # run updatewcs with use_db=True to insure all products have
             # have a priori solutions as extensions
             updatewcs.updatewcs(_calfiles)
+            _trlmsg += "Adding apriori WCS solutions to {}".format(_calfiles)
             _trlmsg += verify_gaia_wcsnames(_calfiles)
             if _calfiles_flc:
-                print("Adding apriori WCS solutions to {}".format(_calfiles_flc))
+                _trlmsg += "Adding apriori WCS solutions to {}".format(_calfiles_flc)
                 updatewcs.updatewcs(_calfiles_flc)
                 _trlmsg += verify_gaia_wcsnames(_calfiles_flc)
 
@@ -461,15 +465,24 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                                                  **adriz_pars)
             except Exception:
                 # Reset to state prior to applying a priori solutions
-                updatewcs.updatewcs(_calfiles, use_db=False)
-                if _calfiles_flc:
-                    updatewcs.updatewcs(_calfiles_flc, use_db=False)
-
                 traceback.print_exc()
                 align_apriori = None
                 _trlmsg += "ERROR in applying a priori solution.\n"
 
-            if align_apriori:
+            if align_apriori is None or (not align_apriori[0]['alignment_verified']):
+                _trlmsg += "Resetting WCS to pipeline-default solutions..."
+                # This operation replaces the PRIMARY WCS with one from the attached
+                # headerlet extensions that corresponds to the distortion-model
+                # solution created in the first place with 'updatewcs(use_db=False)'
+                # Doing so, retains all solutions added from the astrometry database
+                # while resetting to use whatever solution was defined by the instrument
+                # calibration, since 'updatewcs' does not by default replace solutions
+                # it finds in the files.
+                restore_pipeline_default(_calfiles)
+                if _calfiles_flc:
+                    restore_pipeline_default(_calfiles_flc)
+
+            else:
                 align_dicts = align_apriori
                 if align_dicts[0]['alignment_quality'] == 0:
                     _trlmsg += 'A priori alignment SUCCESSFUL.\n'
@@ -478,7 +491,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 if align_dicts[0]['alignment_quality'] > 1:
                     _trlmsg += 'A priori alignment FAILED! No a priori astrometry correction applied.\n'
             _updateTrlFile(_trlfile, _trlmsg)
-
 
         if align_to_gaia:
             _trlmsg = _timestamp('Starting a posteriori alignment')
@@ -519,7 +531,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     _trlmsg += 'Please review final product!\n'
                 else:
                     _trlmsg += 'A posteriori alignment FAILED! No a posteriori astrometry correction applied.\n'
-
             _updateTrlFile(_trlfile, _trlmsg)
 
         _trlmsg = _timestamp('Creating final combined,corrected product based on best alignment')
@@ -930,7 +941,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 alignment_verified = True if (diff_verification and focus_verification) else False
                 alignment_quality = 0 if alignment_verified else 3
             else:
-                alignment_verified = True if diff_verification else False
+                alignment_verified = diff_verification
                 alignment_quality = 0 if diff_verification else 3
 
             if alignment_verified:
@@ -961,7 +972,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
             print("Computing sim_indx for: {} ".format(os.path.join(tmpdir, prodname)))
             sim_indx = amutils.compute_similarity(alignprod, align_ref)
-            align_sim_fail = True if sim_indx > 1 else False
+            align_sim_fail = sim_indx > 1
 
             if not align_sim_fail and alignment_verified:
                 _trlmsg += "Alignment appeared to succeed based on similarity index of {:0.4f} \n".format(sim_indx)
@@ -1018,6 +1029,21 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                     msg += "Updating WCSNAME of {}[sci,{}] for use of {} catalog \n".format(f,
                             sciext + 1, catalog_name)
     return msg
+
+def restore_pipeline_default(files):
+    """Restore pipeline-default IDC_* WCS as PRIMARY WCS in all input files"""
+    for f in files:
+        rootname = f.replace('.fits', '')
+        with fits.open(f, mode='update') as hdu:
+            hdrnames = headerlet.get_headerlet_kw_names(hdu, kw='hdrname')
+            def_hdrname = "{}_OPUS".format(rootname)
+            for h in hdrnames:
+                if '-' not in h and 'IDC' in h:
+                    def_hdrname = h
+                    break
+            def_extn = headerlet.find_headerlet_HDUs(hdu, hdrname=def_hdrname)[0]
+            print("Restoring WCS from EXTN with hdrname of {}".format(def_extn, def_hdrname))
+            headerlet.restore_from_headerlet(hdu, hdrext=def_extn, archive=False)
 
 def _lowerAsn(asnfile):
     """ Create a copy of the original asn file and change
