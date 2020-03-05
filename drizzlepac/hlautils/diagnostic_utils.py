@@ -11,6 +11,7 @@ import random
 import string
 import sys
 
+from astropy.table import Table
 import numpy as np
 
 from stsci.tools import logutil
@@ -119,6 +120,22 @@ class HapDiagnosticObj(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    def _table_to_python(self,table):
+        """Convert Astropy Table to Python dict.
+
+        Numpy arrays are converted to lists, so that
+        the output is JSON serialisable.
+
+        Can work with multi-dimensional array columns,
+        by representing them as list of list.
+        """
+        total_data = {}
+        for name in table.colnames:
+            data = table[name].tolist()
+            total_data[name] = data
+        return total_data
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def addDataItem(self,dataset,title):
         """main subroutine for adding data to self.out_table.
@@ -138,10 +155,12 @@ class HapDiagnosticObj(object):
         """
         dataset_type = str(type(dataset))
         self.out_dict['data'][title] = collections.OrderedDict()
+        self.out_dict['data'][title]["original format"] = dataset_type
         if dataset_type == "<class 'numpy.ndarray'>": #For numpy arrays
-            self.out_dict['data'][title]["original format"] = dataset_type
             self.out_dict['data'][title]["dtype"] = str(dataset.dtype)
             self.out_dict['data'][title]["data"] = dataset.tolist()
+        elif dataset_type =="<class 'astropy.table.table.Table'>":
+            self.out_dict['data'][title]["data"] = self._table_to_python(dataset)
         else: # For everything else. Add more types!
             self.out_dict['data'][title]["original format"] = dataset_type
             self.out_dict['data'][title]["data"] = dataset
@@ -278,9 +297,11 @@ if __name__ == "__main__":
                              data_source = "hla_flag_filter",
                              description = "test item please ignore",
                              log_level=10)
-    blarg.instantiate()
-    
-    blarg.addUpdateHeaderItem("filter3",None,clobber=False,addnew=True)
+    catfile = "hst_10265_01_acs_wfc_f606w_j92c01_point-cat.ecsv"
+    catdata = Table.read(catfile, format='ascii.ecsv')
+    blarg.addDataItem(catdata,"CATALOG")
+
     blarg.writeJsonFile("diag_test.json", clobber=True)
 
     foo = readJsonFile("diag_test.json")
+    pdb.set_trace()
