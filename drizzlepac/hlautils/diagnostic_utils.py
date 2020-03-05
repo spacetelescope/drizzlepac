@@ -74,44 +74,6 @@ class HapDiagnosticObj(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def instantiate(self):
-        """Creates a new diagnostic dictionary using the standard format. The standard header values are as follows:
-
-        - Generation date
-        - Generation time (local 24-hour format)
-        - Proposal ID
-        - Obset ID
-        - Telescope name
-        - Instrument name
-        - Detector name
-        - Filter name
-        - Data source (name of the piece of code that produced the data)
-        - Description (brief description of what the data is, and how it should be used)
-
-        Parameters
-        ----------
-        Nothing.
-
-        Updates
-        -------
-        self.out_dict : Ordered dictionary
-            dictionary that will ultimately be written to a json file
-        """
-        # summon nested orderedDict into existence
-        self.out_dict = collections.OrderedDict()
-        self.out_dict['header'] = collections.OrderedDict()
-        self.out_dict['data'] = collections.OrderedDict()
-
-        # Populate standard header fields
-        timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
-        self.out_dict['header']['generation date'] = timestamp.split("T")[0]
-        self.out_dict['header']['generation time'] = timestamp.split("T")[1]
-        header_item_list = ["prop_id", "obset_id", "telescope", "instrument", "detector", "filter", "data_source", "description"]
-        for header_item in header_item_list:
-            self.out_dict['header'][header_item] = self.__dict__[header_item]
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
     def addDataItem(self,dataset,title):
         """main subroutine for adding data to self.out_table.
 
@@ -175,11 +137,45 @@ class HapDiagnosticObj(object):
             else:
                 log.warning("Unable to add new element {} = {} to header".format(element_name,new_element_value))
 
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def readJsonFile(self):
-        pass
+    def instantiate(self):
+        """Creates a new diagnostic dictionary using the standard format. The standard header values are as follows:
+
+        - Generation date
+        - Generation time (local 24-hour format)
+        - Proposal ID
+        - Obset ID
+        - Telescope name
+        - Instrument name
+        - Detector name
+        - Filter name
+        - Data source (name of the piece of code that produced the data)
+        - Description (brief description of what the data is, and how it should be used)
+
+        Parameters
+        ----------
+        Nothing.
+
+        Updates
+        -------
+        self.out_dict : Ordered dictionary
+            dictionary that will ultimately be written to a json file
+        """
+        # summon nested orderedDict into existence
+        self.out_dict = collections.OrderedDict()
+        self.out_dict['header'] = collections.OrderedDict()
+        self.out_dict['data'] = collections.OrderedDict()
+
+        # Populate standard header fields
+        timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
+        self.out_dict['header']['generation date'] = timestamp.split("T")[0]
+        self.out_dict['header']['generation time'] = timestamp.split("T")[1]
+        header_item_list = ["prop_id", "obset_id", "telescope", "instrument", "detector", "filter", "data_source",
+                            "description"]
+        for header_item in header_item_list:
+            self.out_dict['header'][header_item] = self.__dict__[header_item]
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -212,6 +208,33 @@ class HapDiagnosticObj(object):
         log.info("Wrote json file {}".format(json_filename))
 
 
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+def readJsonFile(json_filename):
+    """extracts header and data sections from specified json file.
+
+    Parameters
+    ----------
+    json_filename : str
+        Name of the json file to extract data from
+
+    Returns
+    -------
+    json_data : dictionary
+        dictionary structured similarly to self.out_dict with seperate 'header' and 'data' sections. The
+        information stored in the 'data' section will be in the same format that it was in before it was serialized
+        and stored as a json file.
+    """
+    if os.path.exists(json_filename):
+        with open(json_filename) as f:
+            json_data = json.load(f)
+
+    else:
+        errmsg = "json file {} not found!".format(json_filename)
+        log.error(errmsg)
+        raise Exception(errmsg)
+    return(json_data)
 # ======================================================================================================================
 if __name__ == "__main__":
     """
@@ -235,6 +258,6 @@ if __name__ == "__main__":
                              log_level=10)
     blarg.instantiate()
     
-    blarg.addUpdateHeaderItem("filter3","f666w",clobber=False,addnew=False)
+    blarg.addUpdateHeaderItem("filter3",None,clobber=False,addnew=True)
     blarg.writeJsonFile("diag_test.json", clobber=True)
 
