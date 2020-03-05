@@ -133,6 +133,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PyPDF2 import PdfFileMerger
 
+from drizzlepac.hlautils import diagnostic_utils
 from drizzlepac.devutils.comparison_tools import starmatch_hist
 from stsci.tools import logutil
 from stwcs import wcsutil
@@ -1098,10 +1099,7 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
 
     # XXXXXXXX TESTING OF DIAGNOSTIC_UTILS XXXXXXXX  #TODO: Remove once testing of diagnostic_utils is complete!
-    from drizzlepac.hlautils import diagnostic_utils
     parse_cat_name = slNames[1].split("_")
-
-    print("\a")
     blarg = diagnostic_utils.HapDiagnosticObj(prop_id=parse_cat_name[1],obset_id=parse_cat_name[2],
                                               telescope=parse_cat_name[0],instrument=parse_cat_name[3],
                                               detector=parse_cat_name[4],filter=parse_cat_name[5],
@@ -1111,9 +1109,9 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     blarg.addDataItem(matched_values,"X")
     blarg.writeJsonFile("diag_test.json", clobber=True)
 
+    print("\a")
     pdb.set_trace()
-
-    # XXX END DIAGNOSTIC_UTILS TESTING
+    # XXXXXXXX END DIAGNOSTIC_UTILS TESTING XXXXXXXX #TODO: Remove once testing of diagnostic_utils is complete!
     if len(matched_values) > 0:
         formalTitle = "X Position"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)

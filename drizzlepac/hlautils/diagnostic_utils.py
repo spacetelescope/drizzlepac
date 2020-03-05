@@ -136,8 +136,46 @@ class HapDiagnosticObj(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def addheaderItem(self):
-        pass
+    def addUpdateHeaderItem(self,element_name, new_element_value, clobber=True, addnew=True):
+        """add or update a single user-specified header item
+
+        Parameters
+        ----------
+        element_name : str
+            Name of the header element to add or update
+
+        new_element_value : varies
+            desired new value for the header element
+
+        clobber : bool, optional
+            overwrite existing value if specified header element exists? Default = True
+
+        addnew : bool, optional
+            if specified header element does not already exist, add it as a new header element? Default = True
+
+        Updates
+        -------
+        self.out_dict : Ordered dictionary
+            dictionary that will ultimately be written to a json file
+        """
+
+        if element_name in self.out_dict['header'].keys():
+            if clobber:
+                log.info("{}: {} -> {} value update successful.".format(element_name,
+                                                                        self.out_dict['header'][element_name],
+                                                                        new_element_value))
+                self.out_dict['header'][element_name] = new_element_value
+
+            else:
+                log.warning("Header element '{}' already exists. Update NOT performed.".format(element_name))
+        else:
+            if addnew:
+                self.out_dict['header'][element_name] = new_element_value
+                log.info("New element {} = {} successfully added to header".format(element_name,new_element_value))
+            else:
+                log.warning("Unable to add new element {} = {} to header".format(element_name,new_element_value))
+
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def readJsonFile(self):
@@ -196,6 +234,7 @@ if __name__ == "__main__":
                              description = "test item please ignore",
                              log_level=10)
     blarg.instantiate()
-
+    
+    blarg.addUpdateHeaderItem("filter3","f666w",clobber=False,addnew=False)
     blarg.writeJsonFile("diag_test.json", clobber=True)
 
