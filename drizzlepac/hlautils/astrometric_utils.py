@@ -865,16 +865,19 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
 
     # remove parameters that are not needed by subsequent functions
     def_fwhmpsf = detector_pars.get('fwhmpsf', 0.13) / 2.0
-    del detector_pars['fwhmpsf']
+    if 'fwhmpsf' in detector_pars:
+        del detector_pars['fwhmpsf']
     source_box = detector_pars.get('source_box', 7)
     isolation_size = detector_pars.get('isolation_size', 11)
     saturation_limit = detector_pars.get('saturation_limit', 70000.0)
-    del detector_pars['threshold']
+    if 'threshold' in detector_pars:
+        del detector_pars['threshold']
     box_size = detector_pars.get('bkg_box_size', 27)
     win_size = detector_pars.get('bkg_filter_size', 3)
     nsigma = detector_pars.get('nsigma', 5)
     sat_flags = detector_pars.get('detector_pars', 256)
-    if 'sat_flags' in detector_pars: del detector_pars['sat_flags']
+    if 'sat_flags' in detector_pars:
+        del detector_pars['sat_flags']
 
     # Build source catalog for entire image
     source_cats = {}
@@ -1489,7 +1492,9 @@ def compute_similarity(image, reference):
     window = 2**window_bit
 
     # Define how big the rebinned image should be for computing the sim index
-    sim_size = 2**(window_bit - 2) if window > 16 else window
+    # Insure a minimum rebinned size of 64x64
+    sim_bit = (window_bit - 2) if (window_bit - 2) > 6 else window_bit
+    sim_size = 2**sim_bit
 
     # rebin image and reference
     img = rebin(image[:window, :window], (sim_size, sim_size))
@@ -1853,11 +1858,11 @@ def diff_score(arr):
     return np.hstack((diff_row, diff_col)).flatten()
 
 
-def evaluate_overlap_diffs(diff_dict, limit=0.5):
+def evaluate_overlap_diffs(diff_dict, limit=1.0):
     """Evaluate whether overlap diffs indicate good alignment or not. """
 
     max_diff = max([d['distance'] for d in diff_dict.values()])
-    verified = False if max_diff > limit else True
+    verified = max_diff <= limit
     log.info("Maximum overlap difference: {:0.4f}".format(max_diff))
     if verified:
         log.info("Alignment verified based on overlap...")
