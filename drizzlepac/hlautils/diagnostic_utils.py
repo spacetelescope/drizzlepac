@@ -246,7 +246,36 @@ class HapDiagnosticObj(object):
         log.info("Wrote json file {}".format(json_filename))
 
 
+#----------------------------------------------------------------------------------------------------------------------
+def dict_to_astropy_table(in_dict):
+    """Converts a dictionary back to astropy table format.
+
+    Parameters
+    ----------
+    in_dict : dictionary
+        dataset to convert back to astropy table format
+
+    Returns
+    -------
+    out_table : astropy.table.table.Table
+        astropy table generated in_data
+    """
+    colname_list = []
+    dtype_list = []
+    data_list = []
+    for colname in in_dict.keys(): # load up lists by dictionary item type in preparation for table generation
+        colname_list.append(colname)
+        dtype_list.append(in_dict[colname]['dtype'])
+        data_list.append(in_dict[colname]['data'])
+    out_table = Table(data_list, names=colname_list, dtype=dtype_list) # generate table, but without units or format details
+    for colname in colname_list: # add units and format details
+        out_table[colname].unit = in_dict[colname]['unit']
+        out_table[colname].format = in_dict[colname]['format']
+    return out_table
+
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
 def readJsonFile(json_filename):
     """extracts header and data sections from specified json file and returns the header and data (in it's original
@@ -277,6 +306,10 @@ def readJsonFile(json_filename):
                                                                                           json_data['data'][datakey]['dtype']))
                 out_dict['data'][datakey] = np.asarray(json_data['data'][datakey]['data'],
                                                        dtype=json_data['data'][datakey]['dtype'])
+            elif json_data['data'][datakey]['original format'] == "<class 'astropy.table.table.Table'>":
+                log.info("Converting dataset '{}' back to format '{}'".format(datakey,
+                                                                              json_data['data'][datakey]['original format']))
+                out_dict['data'][datakey] = dict_to_astropy_table(json_data['data'][datakey]['data'])
             else: # Catchall for everything else
                 out_dict['data'][datakey] = json_data['data'][datakey]['data']
 
