@@ -475,6 +475,9 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         imglist = alignment_table.selected_fit
         filtered_table = alignment_table.filtered_table
 
+        if debug:
+            alignment_table.write()
+
         # Report processing time for this step
         log.info(make_label('Processing time of [STEP 5b]', starting_dt))
         starting_dt = datetime.datetime.now()

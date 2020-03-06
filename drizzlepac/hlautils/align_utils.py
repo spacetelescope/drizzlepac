@@ -3,6 +3,7 @@ import datetime
 import copy
 import sys
 import traceback
+import pickle
 
 from collections import OrderedDict
 
@@ -274,7 +275,17 @@ class AlignmentTable:
             self.filtered_table[table_index]['headerletFile'] = headerlet_dict[
                 self.filtered_table[table_index]['imageName']]
 
-
+    def write(self, output=None):
+        """Write out selected fit to disk"""
+        if output is None:
+            rootname = self.selected_fit[0].meta['filename'][:6]        
+            output = "{}_selected_fit.pickle".format(rootname)
+        with open(output, 'wb') as pickle_file:
+            pickle.dump(self.selected_fit, pickle_file)
+            pickle_file.close()
+        log.info("Wrote {}".format(output))
+            
+            
 class HAPImage:
     """Core class defining interface for each input exposure/product
 
