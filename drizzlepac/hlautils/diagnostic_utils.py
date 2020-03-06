@@ -14,7 +14,9 @@ import sys
 from astropy.table import Table
 import numpy as np
 
+from drizzlepac.hlautils import get_git_rev_info
 from stsci.tools import logutil
+
 
 __taskname__ = 'diagnostic_utils'
 
@@ -112,6 +114,7 @@ class HapDiagnosticObj(object):
 
         - Generation date
         - Generation time (local 24-hour format)
+        - git commit ID
         - Proposal ID
         - Obset ID
         - Telescope name
@@ -136,9 +139,16 @@ class HapDiagnosticObj(object):
         self.out_dict['data'] = collections.OrderedDict()
 
         # Populate standard header fields
+        # Add generation date/time
         timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
         self.out_dict['header']['generation date'] = timestamp.split("T")[0]
         self.out_dict['header']['generation time'] = timestamp.split("T")[1]
+        # add git commit id
+        reporootpath = "/"
+        for item in __file__.split("/")[0:-3]:
+            reporootpath = os.path.join(reporootpath, item)
+        self.out_dict['header']['commit id'] = get_git_rev_info.get_rev_id(reporootpath)
+        del reporootpath
         header_item_list = ["prop_id", "obset_id", "telescope", "instrument", "detector", "filter", "data_source",
                             "description"]
         for header_item in header_item_list:
@@ -148,6 +158,16 @@ class HapDiagnosticObj(object):
 
     def addDataItem(self,dataset,title):
         """main subroutine for adding data to self.out_table.
+
+        Supported data types:
+
+        - all basic single-value python datatypes (float, int, string, Boolean, etc.)
+        - lists
+        - simple key-value dictionaries/ordered dictionaries
+        - multi-layer nested dictionaries and ordered dictionaries
+        - tuples
+        - numpy arrays
+        - astropy tables
 
         Parameters
         ----------
@@ -168,7 +188,7 @@ class HapDiagnosticObj(object):
         if dataset_type == "<class 'numpy.ndarray'>": #For numpy arrays
             self.out_dict['data'][title]["dtype"] = str(dataset.dtype)
             self.out_dict['data'][title]["data"] = dataset.tolist()
-        elif dataset_type =="<class 'astropy.table.table.Table'>":
+        elif dataset_type =="<class 'astropy.table.table.Table'>": # for astropy tables
             self.out_dict['data'][title]["data"] = self._astropy_table_to_dict(dataset)
         else: # For everything else. Add more types!
             self.out_dict['data'][title]["original format"] = dataset_type
@@ -281,6 +301,16 @@ def readJsonFile(json_filename):
     """extracts header and data sections from specified json file and returns the header and data (in it's original
     pre-json format) as a nested ordered dictionary
 
+    Supported output data types:
+
+    - all basic single-value python datatypes (float, int, string, Boolean, etc.)
+    - lists
+    - simple key-value dictionaries and ordered dictionaries
+    - multi-layer nested dictionaries and ordered dictionaries
+    - tuples
+    - numpy arrays
+    - astropy tables
+
     Parameters
     ----------
     json_filename : str
@@ -306,11 +336,11 @@ def readJsonFile(json_filename):
                                                                                           json_data['data'][datakey]['dtype']))
                 out_dict['data'][datakey] = np.asarray(json_data['data'][datakey]['data'],
                                                        dtype=json_data['data'][datakey]['dtype'])
-            elif json_data['data'][datakey]['original format'] == "<class 'astropy.table.table.Table'>":
+            elif json_data['data'][datakey]['original format'] == "<class 'astropy.table.table.Table'>": #Extract astropy tables
                 log.info("Converting dataset '{}' back to format '{}'".format(datakey,
                                                                               json_data['data'][datakey]['original format']))
                 out_dict['data'][datakey] = dict_to_astropy_table(json_data['data'][datakey]['data'])
-            elif json_data['data'][datakey]['original format'] == "<class 'tuple'>":
+            elif json_data['data'][datakey]['original format'] == "<class 'tuple'>": # Extract tuples
                 out_dict['data'][datakey] = tuple(json_data['data'][datakey]['data'])
             else: # Catchall for everything else
                 out_dict['data'][datakey] = json_data['data'][datakey]['data']
@@ -334,7 +364,16 @@ if __name__ == "__main__":
     catfile = "hst_11665_06_wfc3_ir_f160w_ib4606_point-cat.ecsv"
     catdata = Table.read(catfile, format='ascii.ecsv')
     blarg.addDataItem(catdata,"CATALOG")
-    blarg.addDataItem((True,None,"A",4,5,6,7,8,9,10), "test_tuple")
+    test_tuple = (True,None,"A",4,5,6,7,8,9,10)
+    blarg.addDataItem(test_tuple, "test_tuple")
+    test_nested_dict = {}
+    test_nested_dict["a"] = "AA"
+    test_nested_dict["b"] = {}
+    test_nested_dict["b"]["b0"] = "BA"
+    test_nested_dict["b"]["b1"] = "BB"
+    test_nested_dict["b"]["b2"] = {}
+    test_nested_dict["b"]["b2"]["BB0"] = "BBB"
+    blarg.addDataItem(test_nested_dict, "test_nested_dict")
     blarg.writeJsonFile("diag_test.json", clobber=True)
 
     foo = readJsonFile("diag_test.json")
