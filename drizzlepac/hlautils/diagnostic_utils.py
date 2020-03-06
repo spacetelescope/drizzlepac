@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Code related to the creation and modifaction of diagnostic .json files"""
+"""Code related to the creation and modification of diagnostic .json files"""
 
 import collections
 from datetime import datetime
@@ -320,17 +320,7 @@ def readJsonFile(json_filename):
     return(out_dict)
 # ======================================================================================================================
 if __name__ == "__main__":
-    """
-    Preliminary data section item format:
-    Each numpy table column would be converted into a nested dictionary with the fillowing items
-    - title (same as the key to this dictionary(?)
-    - units
-    - dtype
-    - data
-    - masking information
-    """
-
-    blarg = HapDiagnosticObj(telescope="hst",
+    blarg = HapDiagnosticObj(telescope = "hst",
                              instrument = "wfc3",
                              detector = "ir",
                              filter = "f160w",
