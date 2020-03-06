@@ -310,6 +310,8 @@ def readJsonFile(json_filename):
                 log.info("Converting dataset '{}' back to format '{}'".format(datakey,
                                                                               json_data['data'][datakey]['original format']))
                 out_dict['data'][datakey] = dict_to_astropy_table(json_data['data'][datakey]['data'])
+            elif json_data['data'][datakey]['original format'] == "<class 'tuple'>":
+                out_dict['data'][datakey] = tuple(json_data['data'][datakey]['data'])
             else: # Catchall for everything else
                 out_dict['data'][datakey] = json_data['data'][datakey]['data']
 
@@ -332,7 +334,7 @@ if __name__ == "__main__":
     catfile = "hst_11665_06_wfc3_ir_f160w_ib4606_point-cat.ecsv"
     catdata = Table.read(catfile, format='ascii.ecsv')
     blarg.addDataItem(catdata,"CATALOG")
-
+    blarg.addDataItem((True,None,"A",4,5,6,7,8,9,10), "test_tuple")
     blarg.writeJsonFile("diag_test.json", clobber=True)
 
     foo = readJsonFile("diag_test.json")
