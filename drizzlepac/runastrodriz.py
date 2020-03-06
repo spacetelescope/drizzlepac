@@ -841,7 +841,8 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                     sat_flags = 256 + 2048 + 4096 + 8192
 
                 align_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
-                                                  clobber=False, output=debug, sat_flags=sat_flags)
+                                                  clobber=False, output=debug, 
+                                                  debug=debug, sat_flags=sat_flags)
                 if align_table is None:
                     raise Exception
 
