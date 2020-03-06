@@ -80,7 +80,33 @@ class HapDiagnosticObj(object):
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    def _astropy_table_to_dict(self, table):
+        """Convert Astropy Table to Python dict.
 
+        Numpy arrays are converted to lists, so that
+        the output is JSON serialisable.
+
+        Can work with multi-dimensional array columns,
+        by representing them as list of list.
+
+        Method based on code written by Christoph Deil.
+        URL = https://github.com/astropy/astropy/issues/4604#issuecomment-184551578
+
+        Parameters
+        ----------
+        table : astropy.table.table.Table
+            Astropy table to be converted to python dictionary format.
+        """
+        total_data = collections.OrderedDict()
+        for colname in table.colnames:
+            total_data[colname] = collections.OrderedDict()
+            total_data[colname]['dtype'] = str(table[colname].dtype)
+            total_data[colname]['unit'] = str(table[colname].unit)
+            total_data[colname]['format'] = table[colname].format
+            total_data[colname]['data'] = table[colname].tolist()
+        return total_data
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def _instantiate(self):
         """Creates a new diagnostic dictionary using the standard format. The standard header values are as follows:
 
@@ -120,23 +146,6 @@ class HapDiagnosticObj(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _table_to_python(self,table):
-        """Convert Astropy Table to Python dict.
-
-        Numpy arrays are converted to lists, so that
-        the output is JSON serialisable.
-
-        Can work with multi-dimensional array columns,
-        by representing them as list of list.
-        """
-        total_data = {}
-        for name in table.colnames:
-            data = table[name].tolist()
-            total_data[name] = data
-        return total_data
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
     def addDataItem(self,dataset,title):
         """main subroutine for adding data to self.out_table.
 
@@ -160,7 +169,7 @@ class HapDiagnosticObj(object):
             self.out_dict['data'][title]["dtype"] = str(dataset.dtype)
             self.out_dict['data'][title]["data"] = dataset.tolist()
         elif dataset_type =="<class 'astropy.table.table.Table'>":
-            self.out_dict['data'][title]["data"] = self._table_to_python(dataset)
+            self.out_dict['data'][title]["data"] = self._astropy_table_to_dict(dataset)
         else: # For everything else. Add more types!
             self.out_dict['data'][title]["original format"] = dataset_type
             self.out_dict['data'][title]["data"] = dataset
@@ -297,7 +306,7 @@ if __name__ == "__main__":
                              data_source = "hla_flag_filter",
                              description = "test item please ignore",
                              log_level=10)
-    catfile = "hst_10265_01_acs_wfc_f606w_j92c01_point-cat.ecsv"
+    catfile = "hst_11665_06_wfc3_ir_f160w_ib4606_point-cat.ecsv"
     catdata = Table.read(catfile, format='ascii.ecsv')
     blarg.addDataItem(catdata,"CATALOG")
 
