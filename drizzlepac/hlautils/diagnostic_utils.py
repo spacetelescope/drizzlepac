@@ -26,8 +26,10 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 # ======================================================================================================================
 
+
 class HapDiagnosticObj(object):
-    def __init__(self,prop_id,obset_id,telescope,instrument,detector,filter,data_source,description,log_level=logutil.logging.NOTSET):
+    def __init__(self, prop_id, obset_id, telescope, instrument, detector, filter, data_source, description,
+                 log_level=logutil.logging.NOTSET):
         """base class used to set up a HapDiagnostic object.
 
         Parameters
@@ -69,19 +71,19 @@ class HapDiagnosticObj(object):
         self.obset_id = obset_id
         self.telescope = telescope
         self.instrument = instrument
-        self.detector =  detector
+        self.detector = detector
         self.filter = filter
         self.data_source = data_source
         self.description = description
 
-        #set logging level
+        # set logging level
         log.setLevel(log_level)
 
-        #instantiate data storage dictionary
+        # instantiate data storage dictionary
         self._instantiate()
 
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     def _astropy_table_to_dict(self, table):
         """Convert Astropy Table to Python dict.
 
@@ -161,7 +163,7 @@ class HapDiagnosticObj(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def addDataItem(self,dataset,title):
+    def add_data_item(self, dataset, title):
         """main subroutine for adding data to self.out_table.
 
         Supported data types:
@@ -190,18 +192,18 @@ class HapDiagnosticObj(object):
         dataset_type = str(type(dataset))
         self.out_dict['data'][title] = collections.OrderedDict()
         self.out_dict['data'][title]["original format"] = dataset_type
-        if dataset_type == "<class 'numpy.ndarray'>": #For numpy arrays
+        if dataset_type == "<class 'numpy.ndarray'>":  # For numpy arrays
             self.out_dict['data'][title]["dtype"] = str(dataset.dtype)
             self.out_dict['data'][title]["data"] = dataset.tolist()
-        elif dataset_type =="<class 'astropy.table.table.Table'>": # for astropy tables
+        elif dataset_type == "<class 'astropy.table.table.Table'>":  # for astropy tables
             self.out_dict['data'][title]["data"] = self._astropy_table_to_dict(dataset)
-        else: # For everything else. Add more types!
+        else:  # For everything else. Add more types!
             self.out_dict['data'][title]["original format"] = dataset_type
             self.out_dict['data'][title]["data"] = dataset
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def addUpdateHeaderItem(self,element_name, new_element_value, clobber=True, addnew=True):
+    def add_update_header_item(self, element_name, new_element_value, clobber=True, addnew=True):
         """add or update a single user-specified header item
 
         Parameters
@@ -235,13 +237,13 @@ class HapDiagnosticObj(object):
         else:
             if addnew:
                 self.out_dict['header'][element_name] = new_element_value
-                log.info("New element {} = {} successfully added to header".format(element_name,new_element_value))
+                log.info("New element {} = {} successfully added to header".format(element_name, new_element_value))
             else:
-                log.warning("Unable to add new element {} = {} to header".format(element_name,new_element_value))
+                log.warning("Unable to add new element {} = {} to header".format(element_name, new_element_value))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def writeJsonFile(self,json_filename,clobber=False):
+    def write_json_file(self, json_filename, clobber=False):
         """Writes self.out_dict to user-specified filename.
 
         Parameters
@@ -257,20 +259,18 @@ class HapDiagnosticObj(object):
         Nothing.
         """
         file_exists = os.path.exists(json_filename)
-        print(file_exists,clobber)
         if clobber:
             if file_exists:
                 os.remove(json_filename)
         else:
             if file_exists:
                 random_string = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
-                json_filename = json_filename.replace(".json","_{}.json".format(random_string))
-        with open(json_filename,"w") as json_file:
+                json_filename = json_filename.replace(".json", "_{}.json".format(random_string))
+        with open(json_filename, "w") as json_file:
             json.dump(self.out_dict, json_file, indent=4)
         log.info("Wrote json file {}".format(json_filename))
 
 
-#----------------------------------------------------------------------------------------------------------------------
 def dict_to_astropy_table(in_dict):
     """Converts an astropy table stored as a dictionary back to astropy table format.
 
@@ -287,12 +287,12 @@ def dict_to_astropy_table(in_dict):
     colname_list = []
     dtype_list = []
     data_list = []
-    for colname in in_dict.keys(): # load up lists by dictionary item type in preparation for table generation
+    for colname in in_dict.keys():  # load up lists by dictionary item type in preparation for table generation
         colname_list.append(colname)
         dtype_list.append(in_dict[colname]['dtype'])
         data_list.append(in_dict[colname]['data'])
-    out_table = Table(data_list, names=colname_list, dtype=dtype_list) # generate table, but without units or format details
-    for colname in colname_list: # add units and format details
+    out_table = Table(data_list, names=colname_list, dtype=dtype_list)  # generate table, but without units or format details
+    for colname in colname_list:  # add units and format details
         out_table[colname].unit = in_dict[colname]['unit']
         out_table[colname].format = in_dict[colname]['format']
     return out_table
@@ -301,7 +301,7 @@ def dict_to_astropy_table(in_dict):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-def readJsonFile(json_filename):
+def read_json_file(json_filename):
     """extracts header and data sections from specified json file and returns the header and data (in it's original
     pre-json format) as a nested ordered dictionary
 
@@ -331,22 +331,22 @@ def readJsonFile(json_filename):
         out_dict = collections.OrderedDict()
         with open(json_filename) as f:
             json_data = json.load(f)
-        out_dict['header'] = json_data['header'] # copy over the 'header' section directly.
-        out_dict['data'] = collections.OrderedDict() # set up blank data section
+        out_dict['header'] = json_data['header']  # copy over the 'header' section directly.
+        out_dict['data'] = collections.OrderedDict()  # set up blank data section
         for datakey in json_data['data'].keys():
-            if json_data['data'][datakey]['original format'] == "<class 'numpy.ndarray'>": # Extract numpy array
+            if json_data['data'][datakey]['original format'] == "<class 'numpy.ndarray'>":  # Extract numpy array
                 log.info("Converting dataset '{}' back to format '{}', dtype = {}".format(datakey,
                                                                                           json_data['data'][datakey]['original format'],
                                                                                           json_data['data'][datakey]['dtype']))
                 out_dict['data'][datakey] = np.asarray(json_data['data'][datakey]['data'],
                                                        dtype=json_data['data'][datakey]['dtype'])
-            elif json_data['data'][datakey]['original format'] == "<class 'astropy.table.table.Table'>": #Extract astropy tables
+            elif json_data['data'][datakey]['original format'] == "<class 'astropy.table.table.Table'>":  # Extract astropy tables
                 log.info("Converting dataset '{}' back to format '{}'".format(datakey,
                                                                               json_data['data'][datakey]['original format']))
                 out_dict['data'][datakey] = dict_to_astropy_table(json_data['data'][datakey]['data'])
-            elif json_data['data'][datakey]['original format'] == "<class 'tuple'>": # Extract tuples
+            elif json_data['data'][datakey]['original format'] == "<class 'tuple'>":  # Extract tuples
                 out_dict['data'][datakey] = tuple(json_data['data'][datakey]['data'])
-            else: # Catchall for everything else
+            else:  # Catchall for everything else
                 out_dict['data'][datakey] = json_data['data'][datakey]['data']
 
     else:
@@ -355,22 +355,24 @@ def readJsonFile(json_filename):
         raise Exception(errmsg)
     return(out_dict)
 # ======================================================================================================================
+
+
 if __name__ == "__main__":
     # Testing
-    blarg = HapDiagnosticObj(telescope = "hst",
-                             instrument = "wfc3",
-                             detector = "ir",
-                             filter = "f160w",
-                             prop_id = "11979",
-                             obset_id = "01",
-                             data_source = "hla_flag_filter",
-                             description = "test item please ignore",
+    blarg = HapDiagnosticObj(telescope="hst",
+                             instrument="wfc3",
+                             detector="ir",
+                             filter="f160w",
+                             prop_id="11979",
+                             obset_id="01",
+                             data_source="hla_flag_filter",
+                             description="test item please ignore",
                              log_level=10)
-    catfile = "hst_11665_06_wfc3_ir_f160w_ib4606_point-cat.ecsv"
+    catfile = "hst_10265_01_acs_wfc_f606w_j92c01_point-cat.ecsv"
     catdata = Table.read(catfile, format='ascii.ecsv')
-    blarg.addDataItem(catdata,"CATALOG")
-    test_tuple = (True,None,"A",4,5,6,7,8,9,10)
-    blarg.addDataItem(test_tuple, "test_tuple")
+    blarg.add_data_item(catdata, "CATALOG")
+    test_tuple = (True, None, "A", 4, 5, 6, 7, 8, 9, 10)
+    blarg.add_data_item(test_tuple, "test_tuple")
     test_nested_dict = {}
     test_nested_dict["a"] = "AA"
     test_nested_dict["b"] = {}
@@ -378,8 +380,8 @@ if __name__ == "__main__":
     test_nested_dict["b"]["b1"] = "BB"
     test_nested_dict["b"]["b2"] = {}
     test_nested_dict["b"]["b2"]["BB0"] = "BBB"
-    blarg.addDataItem(test_nested_dict, "test_nested_dict")
-    blarg.writeJsonFile("diag_test.json", clobber=True)
+    blarg.add_data_item(test_nested_dict, "test_nested_dict")
+    blarg.write_json_file("diag_test.json", clobber=True)
 
-    foo = readJsonFile("diag_test.json")
+    foo = read_json_file("diag_test.json")
     pdb.set_trace()
