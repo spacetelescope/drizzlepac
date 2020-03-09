@@ -86,7 +86,7 @@ class HapDiagnosticObj(object):
         """Convert Astropy Table to Python dict.
 
         Numpy arrays are converted to lists, so that
-        the output is JSON serialisable.
+        the output is JSON serializable.
 
         Can work with multi-dimensional array columns,
         by representing them as list of list.
@@ -98,6 +98,11 @@ class HapDiagnosticObj(object):
         ----------
         table : astropy.table.table.Table
             Astropy table to be converted to python dictionary format.
+
+        Returns
+        -------
+        total_data : dict
+            input astropy table 'table' converted to dictionary form.
         """
         total_data = collections.OrderedDict()
         for colname in table.colnames:
@@ -161,7 +166,7 @@ class HapDiagnosticObj(object):
 
         Supported data types:
 
-        - all basic single-value python datatypes (float, int, string, Boolean, etc.)
+        - all basic single-value python data types (float, int, string, Boolean, etc.)
         - lists
         - simple key-value dictionaries/ordered dictionaries
         - multi-layer nested dictionaries and ordered dictionaries
@@ -225,7 +230,6 @@ class HapDiagnosticObj(object):
                                                                         self.out_dict['header'][element_name],
                                                                         new_element_value))
                 self.out_dict['header'][element_name] = new_element_value
-
             else:
                 log.warning("Header element '{}' already exists. Update NOT performed.".format(element_name))
         else:
@@ -268,7 +272,7 @@ class HapDiagnosticObj(object):
 
 #----------------------------------------------------------------------------------------------------------------------
 def dict_to_astropy_table(in_dict):
-    """Converts a dictionary back to astropy table format.
+    """Converts an astropy table stored as a dictionary back to astropy table format.
 
     Parameters
     ----------
@@ -303,7 +307,7 @@ def readJsonFile(json_filename):
 
     Supported output data types:
 
-    - all basic single-value python datatypes (float, int, string, Boolean, etc.)
+    - all basic single-value python data types (float, int, string, Boolean, etc.)
     - lists
     - simple key-value dictionaries and ordered dictionaries
     - multi-layer nested dictionaries and ordered dictionaries
@@ -352,6 +356,7 @@ def readJsonFile(json_filename):
     return(out_dict)
 # ======================================================================================================================
 if __name__ == "__main__":
+    # Testing
     blarg = HapDiagnosticObj(telescope = "hst",
                              instrument = "wfc3",
                              detector = "ir",
