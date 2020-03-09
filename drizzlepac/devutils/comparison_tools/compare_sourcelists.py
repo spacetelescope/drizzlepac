@@ -1323,9 +1323,12 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         colTitles.append(formalTitle)
 
     # 10: Compute and display statistics on differences in concentration index  for matched sources
-    matched_values = extractMatchedLines("CI", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if output_json_filename:  # Add matched values to diag_obj
-        diag_obj.add_data_item(matched_values,"CI")
+    if input_json_filename:
+        matched_values = json_data['data']['CI']
+    else:
+        matched_values = extractMatchedLines("CI", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"CI")
     if len(matched_values) > 0:
         formalTitle = "CI"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
