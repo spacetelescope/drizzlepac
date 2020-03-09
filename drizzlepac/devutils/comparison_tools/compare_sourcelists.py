@@ -998,16 +998,17 @@ def round2ArbatraryBase(value, direction, roundingBase):
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
-def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plotfile_prefix=None, verbose=False,
-                       log_level=logutil.logging.NOTSET, debugMode=False):
+def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen=None, plotfile_prefix=None,
+                       verbose=False, log_level=logutil.logging.NOTSET, debugMode=False, input_json_filename=None,
+                       output_json_filename=None):
     """Main calling subroutine to compare sourcelists.
 
     Parameters
     ----------
-    slNames : list
+    slNames : list, optional
         list of input source lists
 
-    imgNames : list
+    imgNames : list, optional
         optional list of input images that starmatch_hist will use to improve sourcelist matching
 
     good_flag_sum : list, optional
@@ -1032,6 +1033,14 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         write_matched_catalogs() which generates abbreviated versions of the input catalogs that only contain matched
         sources. Default value is False.
 
+    input_json_filename : str, optional
+        name of input diagnostic_utils json file to use for test duplication purposes.  # TODO: REWORD THIS!
+
+    output_json_filename : str, optional
+        Name of the output diagnostic_utils json file that all matched column values from the input sourcelists will be
+        written to so that this compare_sourcelist.py run can be duplicated in the future. If not specified, no json
+        file will be created.
+
     Returns
     -------
     overallStatus : str
@@ -1043,6 +1052,14 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     regressionTestResults = {}
     colTitles = []
     pdf_file_list = []
+    # -1: set up output
+    if output_json_filename:
+        parse_cat_name = slNames[1].split("_")
+        diag_obj = diagnostic_utils.HapDiagnosticObj(prop_id=parse_cat_name[1], obset_id=parse_cat_name[2],
+                                                     telescope=parse_cat_name[0], instrument=parse_cat_name[3],
+                                                     detector=parse_cat_name[4], filter=parse_cat_name[5],
+                                                     data_source=__taskname__,
+                                                     description="matched comp and ref values.", log_level=log_level)
 
     # 0: define dictionary of max allowable mean sigma-clipped difference values
     max_diff_dict = {"X Position": 0.1,  # TODO: Initial "good" value. Optimize as necessary later
@@ -1093,28 +1110,14 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
     refFlag_list, compFlag_list, bitmask = make_flag_mask(matched_values, good_flag_sum, missing_mask)
 
+
+
     # 3: Compute and display statistics on X position differences for matched sources
     # Get platescale
     plate_scale = wcsutil.HSTWCS(imgNames[0], ext=('sci', 1)).pscale
     matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-
-    # XXXXXXXX TESTING OF DIAGNOSTIC_UTILS XXXXXXXX  #TODO: Remove once testing of diagnostic_utils is complete!
-    parse_cat_name = slNames[1].split("_")
-    blarg = diagnostic_utils.HapDiagnosticObj(prop_id=parse_cat_name[1],obset_id=parse_cat_name[2],
-                                              telescope=parse_cat_name[0],instrument=parse_cat_name[3],
-                                              detector=parse_cat_name[4],filter=parse_cat_name[5],
-                                              data_source=__taskname__,description="matched X values.",
-                                              log_level = log_level)
-
-    blarg.add_data_item([1,2,3,4,5,6,7,8,9],"TEST LIST")
-
-    blarg.add_data_item(matched_values,"X")
-    blarg.write_json_file("diag_test.json", clobber=True)
-
-    foo = diagnostic_utils.read_json_file("diag_test.json")
-    print("\a")
-    pdb.set_trace()
-    # XXXXXXXX END DIAGNOSTIC_UTILS TESTING XXXXXXXX #TODO: Remove once testing of diagnostic_utils is complete!
+    if output_json_filename:
+        diag_obj.add_data_item(matched_values,"X")
     if len(matched_values) > 0:
         formalTitle = "X Position"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1125,6 +1128,8 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         matchedXValues = matched_values.copy()
     # 4: Compute and display statistics on Y position differences for matched sources
     matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if output_json_filename:
+        diag_obj.add_data_item(matched_values,"Y")
     if len(matched_values) > 0:
         formalTitle = "Y Position"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1316,6 +1321,10 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
 
         pdf_merger(final_plot_filename, pdf_file_list)
         log.info("Sourcelist comparison plots saved to file {}.".format(final_plot_filename))
+
+    # Optionally write out diagnostic_utils .json file
+    if output_json_filename:
+        diag_obj.write_json_file(output_json_filename, clobber=True)
     return (overallStatus)
 
 
@@ -1557,7 +1566,7 @@ def write_matched_catalogs(x,y,ra,dec,flags,slnames):
 if __name__ == "__main__":
     PARSER = argparse.ArgumentParser(description='Compare Sourcelists')
     # required positional input arguments
-    PARSER.add_argument('sourcelistNames', nargs=2,
+    PARSER.add_argument('-sl','--sourcelistNames', nargs=2,
                         help='A space-separated pair of sourcelists to compare. The first sourcelist is assumed to be the reference sourcelist that the second is being compared to.')
     # optional input arguments
     PARSER.add_argument('-d', '--debugMode', required=False, choices=["True", "False"], default="False",
@@ -1565,6 +1574,8 @@ if __name__ == "__main__":
     PARSER.add_argument('-g', '--goodFlagSum', required=False, default=255, help = "a sum of individual bit values (i.e. 0 + 1 + 2 + 4 = 7) that will be considered 'good'. If any of the flag bits for a given set of matched sources contain bits not specified here, the pair will be ignored by the comparisions. See XXX for flag bit definitions. (NOTE: The default value of 255 will be interperated as all bits are good, so no sources will be excluded)")
     PARSER.add_argument('-i', '--imageNames', required=False, nargs=2,
                         help='A space-separated list of the fits images that were used to generate the input sourcelists. The first image corresponds to the first listed sourcelist, and so in. These will be used to improve the sourcelist alignment and matching.')
+    PARSER.add_argument('-ji', '--input_json_filename', required=False,default=None,help="name of input diagnostic_utils json file to use for test duplication purposes. If not specified, it is assumed that the user intends to run the script with new inputs, and should specify sourcelist names and image names.")  # TODO: Reads sort of clunky. Rewrite to sound better.
+    PARSER.add_argument('-jo', '--output_json_filename', required=False, default=None, help="Name of the output diagnostic_utils json file that all matched column values from the input sourcelists will be written to so that this compare_sourcelist.py run can be duplicated in the future. If not specified, no json file will be created.")
     PARSER.add_argument('-p', '--plotGen', required=False, choices=["screen", "file", "none"], default="none",
                         help='Generate Plots? "screen" displays plots on-screen. "file" saves them to a .pdf file, and "none" skips all plot generation.')
     PARSER.add_argument('-s', '--plotfile_prefix_string', required=False, default="",
@@ -1589,11 +1600,16 @@ if __name__ == "__main__":
         good_flag_bits[0] = 1
     else:
         good_flag_bits = np.ones(9, dtype=int)
-
-    runStatus = comparesourcelists(ARGS.sourcelistNames, ARGS.imageNames, good_flag_sum = ARGS.goodFlagSum, plotGen=ARGS.plotGen,
-                                   verbose=ARGS.verbose, log_level=logutil.logging.INFO, debugMode=ARGS.debugMode,
-                                   plotfile_prefix=ARGS.plotfile_prefix_string)
+    runStatus = comparesourcelists(slNames=ARGS.sourcelistNames,
+                                   imgNames=ARGS.imageNames,
+                                   good_flag_sum=ARGS.goodFlagSum,
+                                   plotGen=ARGS.plotGen,
+                                   verbose=ARGS.verbose,
+                                   log_level=logutil.logging.INFO,
+                                   debugMode=ARGS.debugMode,
+                                   plotfile_prefix=ARGS.plotfile_prefix_string,
+                                   input_json_filename=ARGS.input_json_filename,
+                                   output_json_filename=ARGS.output_json_filename)
 
 
 # TODO: fix PEP 8 violations
-# TODO: Compute Magnitude differences properly
