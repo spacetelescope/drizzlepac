@@ -1805,10 +1805,17 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
         bkg = sigma_clipped_stats(rebin_arr, sigma=sigma, maxiters=maxiters)
         bkg_total = bkg[0] + nsigma * bkg[2]  # mean + 4 * sigma
         log.debug("sigma clipped background value: {}".format(bkg_total))
+        blank_image = True if bkg[1] < bkg[2] else False
+
     elif isinstance(background, Background2D):
         bkg_total = background.background + nsigma * background.background_rms
         log.debug("background: max={}, mean={}".format(bkg_total.max(),
                     bkg_total.mean()))
+        blank_image = True if background.median < background.median_rms else False
+
+    if blank_image:
+        # median filter image to limit noise-induced variations into overlap differences
+        rebin_arr = ndimage.median_filter(rebin_arr, size=5)
 
     rebin_arr -= bkg_total
     rebin_arr = np.clip(rebin_arr, 0, rebin_arr.max())
