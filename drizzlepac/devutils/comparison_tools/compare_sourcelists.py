@@ -1086,9 +1086,6 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         slNames = []
         slNames.append(json_data['header']['reference catalog filename'])
         slNames.append(json_data['header']['comparison catalog filename'])
-        ref_frame = json_data['header']['ref_frame']
-        comp_frame = json_data['header']['comp_frame']
-        plate_scale = json_data['header']['plate_scale']
     else:
         # 0: optionally instantiate diag_obj
         if output_json_filename:
@@ -1130,6 +1127,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     # 3: Compute and display statistics on X position differences for matched sources
     if input_json_filename:
         matched_values = json_data['data']['X']
+        plate_scale = json_data['header']['plate_scale']
     else:
         # Get platescale
         plate_scale = wcsutil.HSTWCS(imgNames[0], ext=('sci', 1)).pscale
@@ -1145,6 +1143,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
         matchedXValues = matched_values.copy()
+
     # 4: Compute and display statistics on Y position differences for matched sources
     if input_json_filename:
         matched_values = json_data['data']['Y']
@@ -1169,19 +1168,27 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
 
     # 5: Compute and display statistics on RA/Dec position differences for matched sources
     # Get matched pairs of RA and Dec values
-    matched_values_ra = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if output_json_filename:  # Add matched values to diag_obj
-        diag_obj.add_data_item(matched_values_ra,"RA")
-    matched_values_dec = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img,bitmask=bitmask)
-    if output_json_filename:  # Add matched values to diag_obj
-        diag_obj.add_data_item(matched_values_dec,"DEC")
+    if input_json_filename:
+        matched_values_ra = json_data['data']['RA']
+        matched_values_dec = json_data['data']['DEC']
+    else:
+        matched_values_ra = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values_ra,"RA")
+        matched_values_dec = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img,bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values_dec,"DEC")
     if len(matched_values_ra) > 0 and len(matched_values_ra) == len(matched_values_dec):
         # get coordinate system type from fits headers
-        ref_frame = fits.getval(imgNames[0],"radesys",ext=('sci', 1)).lower()
-        comp_frame = fits.getval(imgNames[1],"radesys",ext=('sci', 1)).lower()
-        if output_json_filename:  # Add 'ref_frame' and 'comp_frame" values to header so that will SkyCoord() execute OK
-            diag_obj.add_update_header_item("ref_frame", ref_frame)
-            diag_obj.add_update_header_item("comp_frame", comp_frame)
+        if input_json_filename:
+            ref_frame = json_data['header']['ref_frame']
+            comp_frame = json_data['header']['comp_frame']
+        else:
+            ref_frame = fits.getval(imgNames[0],"radesys",ext=('sci', 1)).lower()
+            comp_frame = fits.getval(imgNames[1],"radesys",ext=('sci', 1)).lower()
+            if output_json_filename:  # Add 'ref_frame' and 'comp_frame" values to header so that will SkyCoord() execute OK
+                diag_obj.add_update_header_item("ref_frame", ref_frame)
+                diag_obj.add_update_header_item("comp_frame", comp_frame)
 
         # convert reference and comparision RA/Dec values into SkyCoord objects
         matched_values_ref = SkyCoord(matched_values_ra[0,:],matched_values_dec[0,:], frame=comp_frame, unit="deg")
