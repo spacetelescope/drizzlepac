@@ -1052,14 +1052,18 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     regressionTestResults = {}
     colTitles = []
     pdf_file_list = []
-    # -1: set up output
+
+    # -1: optionally instantiate diag_obj
     if output_json_filename:
         parse_cat_name = slNames[1].split("_")
         diag_obj = diagnostic_utils.HapDiagnosticObj(prop_id=parse_cat_name[1], obset_id=parse_cat_name[2],
                                                      telescope=parse_cat_name[0], instrument=parse_cat_name[3],
                                                      detector=parse_cat_name[4], filter=parse_cat_name[5],
                                                      data_source=__taskname__,
-                                                     description="matched comp and ref values.", log_level=log_level)
+                                                     description="matched ref and comp values.", log_level=log_level)
+        # add reference and comparision catalog filenames as header elements
+        diag_obj.add_update_header_item("reference catalog filename",slNames[0])
+        diag_obj.add_update_header_item("comparison catalog filename", slNames[1])
 
     # 0: define dictionary of max allowable mean sigma-clipped difference values
     max_diff_dict = {"X Position": 0.1,  # TODO: Initial "good" value. Optimize as necessary later
@@ -1116,7 +1120,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     # Get platescale
     plate_scale = wcsutil.HSTWCS(imgNames[0], ext=('sci', 1)).pscale
     matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if output_json_filename:
+    if output_json_filename:  # Add matched values to diag_obj
         diag_obj.add_data_item(matched_values,"X")
     if len(matched_values) > 0:
         formalTitle = "X Position"
@@ -1128,7 +1132,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matchedXValues = matched_values.copy()
     # 4: Compute and display statistics on Y position differences for matched sources
     matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if output_json_filename:
+    if output_json_filename:  # Add matched values to diag_obj
         diag_obj.add_data_item(matched_values,"Y")
     if len(matched_values) > 0:
         formalTitle = "Y Position"
@@ -1148,7 +1152,11 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     # 5: Compute and display statistics on RA/Dec position differences for matched sources
     # Get matched pairs of RA and Dec values
     matched_values_ra = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if output_json_filename:  # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values_ra,"RA")
     matched_values_dec = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img,bitmask=bitmask)
+    if output_json_filename:  # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values_dec,"DEC")
     if len(matched_values_ra) > 0 and len(matched_values_ra) == len(matched_values_dec):
         # get coordinate system type from fits headers
         ref_frame = fits.getval(imgNames[0],"radesys",ext=('sci', 1)).lower()
@@ -1172,6 +1180,8 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
 
     # 7: Compute and display statistics on flux differences for matched sources
     matched_values = extractMatchedLines("FLUX1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if output_json_filename:  # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values,"FLUX1")
     if len(matched_values) > 0:
         formalTitle = "Flux (Inner Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1181,6 +1191,8 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         colTitles.append(formalTitle)
 
     matched_values = extractMatchedLines("FLUX2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if output_json_filename:  # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values,"FLUX2")
     if len(matched_values) > 0:
         formalTitle = "Flux (Outer Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1191,6 +1203,8 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
 
     # 8: Compute and display statistics on magnitude differences for matched sources
     matched_values = extractMatchedLines("MAGNITUDE1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if output_json_filename:  # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values,"MAGNITUDE1")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Inner Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1200,6 +1214,8 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         colTitles.append(formalTitle)
 
     matched_values = extractMatchedLines("MERR1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if output_json_filename: # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values,"MERR1")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Inner Aperture) Error"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1209,6 +1225,8 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         colTitles.append(formalTitle)
 
     matched_values = extractMatchedLines("MAGNITUDE2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if output_json_filename:  # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values,"MAGNITUDE2")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Outer Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1218,6 +1236,8 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         colTitles.append(formalTitle)
 
     matched_values = extractMatchedLines("MERR2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if output_json_filename:  # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values,"MERR2")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Outer Aperture) Error"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1228,6 +1248,8 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
 
     # 9: Compute and display statistics on differences in background sky values
     matched_values = extractMatchedLines("MSKY", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if output_json_filename:  # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values,"MSKY")
     if len(matched_values) > 0:
         formalTitle = "MSKY value"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1237,6 +1259,8 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         colTitles.append(formalTitle)
 
     matched_values = extractMatchedLines("STDEV", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if output_json_filename:  # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values,"STDEV")
     if len(matched_values) > 0:
         formalTitle = "STDEV value"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1247,6 +1271,8 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
 
     # 10: Compute and display statistics on differences in concentration index  for matched sources
     matched_values = extractMatchedLines("CI", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if output_json_filename:  # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values,"CI")
     if len(matched_values) > 0:
         formalTitle = "CI"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1257,6 +1283,8 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
 
     # 11: Compute and display statistics on differences in flag populations for matched sources
     matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if output_json_filename:  # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values,"FLAGS")
     if len(matched_values) > 0:
         formalTitle = "Source Flagging"
         rt_status, flag_pdf_list = computeFlagStats(matched_values, refFlag_list, compFlag_list, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
