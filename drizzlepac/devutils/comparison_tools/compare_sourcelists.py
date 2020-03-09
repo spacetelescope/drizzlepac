@@ -1053,19 +1053,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     colTitles = []
     pdf_file_list = []
 
-    # -1: optionally instantiate diag_obj
-    if output_json_filename:
-        parse_cat_name = slNames[1].split("_")
-        diag_obj = diagnostic_utils.HapDiagnosticObj(prop_id=parse_cat_name[1], obset_id=parse_cat_name[2],
-                                                     telescope=parse_cat_name[0], instrument=parse_cat_name[3],
-                                                     detector=parse_cat_name[4], filter=parse_cat_name[5],
-                                                     data_source=__taskname__,
-                                                     description="matched ref and comp values.", log_level=log_level)
-        # add reference and comparision catalog filenames as header elements
-        diag_obj.add_update_header_item("reference catalog filename",slNames[0])
-        diag_obj.add_update_header_item("comparison catalog filename", slNames[1])
 
-    # 0: define dictionary of max allowable mean sigma-clipped difference values
+
+    # -1: define dictionary of max allowable mean sigma-clipped difference values
     max_diff_dict = {"X Position": 0.1,  # TODO: Initial "good" value. Optimize as necessary later
                      "Y Position": 0.1,  # TODO: Initial "good" value. Optimize as necessary later
                      "On-Sky Separation" : 0.1,  # TODO: Initial "good" value. Optimize as necessary later
@@ -1091,28 +1081,48 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
                          "MSKY value": "ABMAG",
                          "STDEV value": "ABMAG",
                          "CI": "ABMAG"}
-    # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
-    refData, compData = slFiles2dataTables(slNames)
-    log.info("Valid reference data columns:   {}".format(list(refData.keys())))
-    log.info("Valid comparision data columns: {}".format(list(compData.keys())))
-    log.info("\n")
-    log.info("Data columns to be compared:")
-    columns_to_compare = list(set(refData.keys()).intersection(set(compData.keys())))
-    for listItem in sorted(columns_to_compare):
-        log.info(listItem)
-    log.info("\n")
-    # 2: Run starmatch_hist to get list of matched sources common to both input sourcelists
-    slLengths = [len(refData['X']), len(compData['X'])]
-    matching_lines_ref, matching_lines_img = getMatchedLists(slNames, imgNames, slLengths, log_level)
-    if len(matching_lines_ref) == 0 or len(matching_lines_img) == 0:
-        log.critical("*** Comparisons cannot be computed. No matching sources were found. ***")
-        return ("ERROR")
-    # 2: Create masks to remove missing values or values not considered "good" according to user-specified good bit values
-    # 2a: create mask that identifies lines any value from any column is missing
-    missing_mask = mask_missing_values(refData, compData, matching_lines_ref, matching_lines_img, columns_to_compare)
-    # 2b: create mask based on flag values
-    matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
-    refFlag_list, compFlag_list, bitmask = make_flag_mask(matched_values, good_flag_sum, missing_mask)
+    if input_json_filename:
+        json_data = diagnostic_utils.read_json_file(input_json_filename)
+        slNames = []
+        slNames.append(json_data['header']['reference catalog filename'])
+        slNames.append(json_data['header']['comparision catalog filename'])
+
+
+    else:
+        # 0: optionally instantiate diag_obj
+        if output_json_filename:
+            parse_cat_name = slNames[1].split("_")
+            diag_obj = diagnostic_utils.HapDiagnosticObj(prop_id=parse_cat_name[1], obset_id=parse_cat_name[2],
+                                                         telescope=parse_cat_name[0], instrument=parse_cat_name[3],
+                                                         detector=parse_cat_name[4], filter=parse_cat_name[5],
+                                                         data_source=__taskname__,
+                                                         description="matched ref and comp values.", log_level=log_level)
+            # add reference and comparision catalog filenames as header elements
+            diag_obj.add_update_header_item("reference catalog filename",slNames[0])
+            diag_obj.add_update_header_item("comparison catalog filename", slNames[1])
+
+        # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
+        refData, compData = slFiles2dataTables(slNames)
+        log.info("Valid reference data columns:   {}".format(list(refData.keys())))
+        log.info("Valid comparision data columns: {}".format(list(compData.keys())))
+        log.info("\n")
+        log.info("Data columns to be compared:")
+        columns_to_compare = list(set(refData.keys()).intersection(set(compData.keys())))
+        for listItem in sorted(columns_to_compare):
+            log.info(listItem)
+        log.info("\n")
+        # 2: Run starmatch_hist to get list of matched sources common to both input sourcelists
+        slLengths = [len(refData['X']), len(compData['X'])]
+        matching_lines_ref, matching_lines_img = getMatchedLists(slNames, imgNames, slLengths, log_level)
+        if len(matching_lines_ref) == 0 or len(matching_lines_img) == 0:
+            log.critical("*** Comparisons cannot be computed. No matching sources were found. ***")
+            return ("ERROR")
+        # 2: Create masks to remove missing values or values not considered "good" according to user-specified good bit values
+        # 2a: create mask that identifies lines any value from any column is missing
+        missing_mask = mask_missing_values(refData, compData, matching_lines_ref, matching_lines_img, columns_to_compare)
+        # 2b: create mask based on flag values
+        matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
+        refFlag_list, compFlag_list, bitmask = make_flag_mask(matched_values, good_flag_sum, missing_mask)
 
 
 
@@ -1161,6 +1171,10 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         # get coordinate system type from fits headers
         ref_frame = fits.getval(imgNames[0],"radesys",ext=('sci', 1)).lower()
         comp_frame = fits.getval(imgNames[1],"radesys",ext=('sci', 1)).lower()
+        if output_json_filename:  # Add 'ref_frame' and 'comp_frame" values to header so that will SkyCoord() execute OK
+            diag_obj.add_update_header_item("ref_frame", ref_frame)
+            diag_obj.add_update_header_item("comp_frame", comp_frame)
+
         # convert reference and comparision RA/Dec values into SkyCoord objects
         matched_values_ref = SkyCoord(matched_values_ra[0,:],matched_values_dec[0,:], frame=comp_frame, unit="deg")
         matched_values_comp = SkyCoord(matched_values_ra[1,:],matched_values_dec[1,:], frame=ref_frame, unit="deg")
