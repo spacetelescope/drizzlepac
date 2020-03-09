@@ -1237,9 +1237,12 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         colTitles.append(formalTitle)
 
     # 8: Compute and display statistics on magnitude differences for matched sources
-    matched_values = extractMatchedLines("MAGNITUDE1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if output_json_filename:  # Add matched values to diag_obj
-        diag_obj.add_data_item(matched_values,"MAGNITUDE1")
+    if input_json_filename:
+        matched_values = json_data['data']['MAGNITUDE1']
+    else:
+        matched_values = extractMatchedLines("MAGNITUDE1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"MAGNITUDE1")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Inner Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1248,9 +1251,12 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    matched_values = extractMatchedLines("MERR1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if output_json_filename: # Add matched values to diag_obj
-        diag_obj.add_data_item(matched_values,"MERR1")
+    if input_json_filename:
+        matched_values = json_data['data']['MERR1']
+    else:
+        matched_values = extractMatchedLines("MERR1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename: # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"MERR1")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Inner Aperture) Error"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1259,9 +1265,12 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    matched_values = extractMatchedLines("MAGNITUDE2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if output_json_filename:  # Add matched values to diag_obj
-        diag_obj.add_data_item(matched_values,"MAGNITUDE2")
+    if input_json_filename:
+        matched_values = json_data['data']['MAGNITUDE2']
+    else:
+        matched_values = extractMatchedLines("MAGNITUDE2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"MAGNITUDE2")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Outer Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1270,9 +1279,12 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    matched_values = extractMatchedLines("MERR2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if output_json_filename:  # Add matched values to diag_obj
-        diag_obj.add_data_item(matched_values,"MERR2")
+    if input_json_filename:
+        matched_values = json_data['data']['MERR2']
+    else:
+        matched_values = extractMatchedLines("MERR2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"MERR2")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Outer Aperture) Error"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
