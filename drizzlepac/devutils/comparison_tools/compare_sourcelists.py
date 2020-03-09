@@ -1208,9 +1208,12 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
 
 
     # 7: Compute and display statistics on flux differences for matched sources
-    matched_values = extractMatchedLines("FLUX1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if output_json_filename:  # Add matched values to diag_obj
-        diag_obj.add_data_item(matched_values,"FLUX1")
+    if input_json_filename:
+        matched_values = json_data['data']['FLUX1']
+    else:
+        matched_values = extractMatchedLines("FLUX1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"FLUX1")
     if len(matched_values) > 0:
         formalTitle = "Flux (Inner Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1219,9 +1222,12 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    matched_values = extractMatchedLines("FLUX2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if output_json_filename:  # Add matched values to diag_obj
-        diag_obj.add_data_item(matched_values,"FLUX2")
+    if input_json_filename:
+        matched_values = json_data['data']['FLUX2']
+    else:
+        matched_values = extractMatchedLines("FLUX2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"FLUX2")
     if len(matched_values) > 0:
         formalTitle = "Flux (Outer Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
