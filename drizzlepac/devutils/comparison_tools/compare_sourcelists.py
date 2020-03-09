@@ -1146,7 +1146,10 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         colTitles.append(formalTitle)
         matchedXValues = matched_values.copy()
     # 4: Compute and display statistics on Y position differences for matched sources
-    matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if input_json_filename:
+        matched_values = json_data['data']['Y']
+    else:
+        matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if output_json_filename:  # Add matched values to diag_obj
         diag_obj.add_data_item(matched_values,"Y")
     if len(matched_values) > 0:
