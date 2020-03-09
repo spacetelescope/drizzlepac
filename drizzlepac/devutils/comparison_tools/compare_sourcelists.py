@@ -1085,9 +1085,10 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         json_data = diagnostic_utils.read_json_file(input_json_filename)
         slNames = []
         slNames.append(json_data['header']['reference catalog filename'])
-        slNames.append(json_data['header']['comparision catalog filename'])
-
-
+        slNames.append(json_data['header']['comparison catalog filename'])
+        ref_frame = json_data['header']['ref_frame']
+        comp_frame = json_data['header']['comp_frame']
+        plate_scale = json_data['header']['plate_scale']
     else:
         # 0: optionally instantiate diag_obj
         if output_json_filename:
@@ -1127,11 +1128,15 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
 
 
     # 3: Compute and display statistics on X position differences for matched sources
-    # Get platescale
-    plate_scale = wcsutil.HSTWCS(imgNames[0], ext=('sci', 1)).pscale
-    matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if output_json_filename:  # Add matched values to diag_obj
-        diag_obj.add_data_item(matched_values,"X")
+    if input_json_filename:
+        matched_values = json_data['data']['X']
+    else:
+        # Get platescale
+        plate_scale = wcsutil.HSTWCS(imgNames[0], ext=('sci', 1)).pscale
+        matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"X")
+            diag_obj.add_update_header_item("plate_scale", plate_scale)
     if len(matched_values) > 0:
         formalTitle = "X Position"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
