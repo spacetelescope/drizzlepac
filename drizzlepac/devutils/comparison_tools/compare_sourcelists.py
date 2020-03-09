@@ -1106,12 +1106,12 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
                                               data_source=__taskname__,description="matched X values.",
                                               log_level = log_level)
 
-    blarg.addDataItem([1,2,3,4,5,6,7,8,9],"TEST LIST")
+    blarg.add_data_item([1,2,3,4,5,6,7,8,9],"TEST LIST")
 
-    blarg.addDataItem(matched_values,"X")
-    blarg.writeJsonFile("diag_test.json", clobber=True)
+    blarg.add_data_item(matched_values,"X")
+    blarg.write_json_file("diag_test.json", clobber=True)
 
-    foo = diagnostic_utils.readJsonFile("diag_test.json")
+    foo = diagnostic_utils.read_json_file("diag_test.json")
     print("\a")
     pdb.set_trace()
     # XXXXXXXX END DIAGNOSTIC_UTILS TESTING XXXXXXXX #TODO: Remove once testing of diagnostic_utils is complete!
