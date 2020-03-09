@@ -44,6 +44,14 @@ environment variables:
       If this is set, it will override any value set in the old variable.
       Values (case-insensitive) can be 'on','off','yes','no'.
 
+Additionally, the output products can be evaluated to determine the quality of
+the alignment and output data through the use of the environment variable:
+
+    - PIPELINE_QUALITY_TESTING : Turn on quality assessment processing.
+      This environment variable, if found with any value, will turn on
+      processing to generate a JSON file which contains the results of
+      evaluating the quality of the generated products.
+
 *** INITIAL VERSION
 W.J. Hack  12 Aug 2011: Initial version based on Version 1.2.0 of
                         STSDAS$pkg/hst_calib/wfc3/runwf3driz.py
@@ -93,6 +101,8 @@ from drizzlepac.hlautils import cell_utils
 from drizzlepac import util
 from drizzlepac import mdzhandler
 from drizzlepac import updatehdr
+from drizzlepac.hlautils import quality_analysis as qa
+
 
 __taskname__ = "runastrodriz"
 
@@ -140,6 +150,7 @@ envvar_compute_name = 'ASTROMETRY_COMPUTE_APOSTERIORI'
 # Replace ASTROMETRY_STEP_CONTROL with this new related name
 envvar_new_apriori_name = "ASTROMETRY_APPLY_APRIORI"
 envvar_old_apriori_name = "ASTROMETRY_STEP_CONTROL"
+envvar_qa_stats_name = "PIPELINE_QUALITY_TESTING"
 
 # History:
 # Version 1.0.0 - Derived from v1.2.0 of wfc3.runwf3driz to run astrodrizzle
@@ -649,6 +660,20 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # Provide feedback to user
     print(_final_msg)
 
+    # Look to see whether we have products which can be evaluated
+    # wcsname = fits.getval(drz_products[0], 'wcsname', ext=1)
+
+    # interpret envvar variable, if specified
+    qa_switch = _get_envvar_switch(envvar_qa_stats_name)
+
+    if qa_switch:
+        # Generate quality statistics for astrometry if specified
+        calfiles = _calfiles_flc if _calfiles_flc else _calfiles
+        json_file = qa.run_all(inFile, calfiles)
+
+        print("Generated quality statistics as {}".format(json_file))
+
+
 def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignment=True,
             debug=False, good_bits=512, **pipeline_pars):
 
@@ -841,7 +866,8 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                     sat_flags = 256 + 2048 + 4096 + 8192
 
                 align_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
-                                                  clobber=False, output=debug, sat_flags=sat_flags)
+                                                  clobber=False, output=debug,
+                                                  debug=debug, sat_flags=sat_flags)
                 if align_table is None:
                     raise Exception
 
@@ -1145,6 +1171,20 @@ def _copyToNewWorkingDir(newdir, input):
     for rootname in flist:
         for fname in glob.glob(rootname + '*'):
             shutil.copy(fname, os.path.join(newdir, fname))
+
+def _get_envvar_switch(envvar_name):
+    # interpret envvar variable, if specified
+    if envvar_name in os.environ:
+        val = os.environ[envvar_name].lower()
+        if val not in envvar_bool_dict:
+            msg = "ERROR: invalid value for {}.".format(envvar_name)
+            msg += "  \n    Valid Values: on, off, yes, no, true, false"
+            raise ValueError(msg)
+        switch_val = envvar_bool_dict[val]
+    else:
+        switch_val = None
+
+    return switch_val
 
 def _restoreResults(newdir, origdir):
     """ Move (not copy) all files from newdir back to the original directory

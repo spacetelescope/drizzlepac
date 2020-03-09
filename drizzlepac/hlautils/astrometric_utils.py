@@ -47,7 +47,7 @@ import photutils  # needed to check version
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import Background2D
 from photutils import SExtractorBackground, StdBackgroundRMS
-from photutils import DAOStarFinder
+from photutils import DAOStarFinder, IRAFStarFinder
 from photutils import MMMBackground
 from photutils.psf import IntegratedGaussianPRF, DAOGroup
 from photutils.psf import IterativelySubtractedPSFPhotometry
@@ -543,6 +543,27 @@ def find_fwhm(psf, default_fwhm):
     log.debug("Found FWHM: {}".format(fwhm))
 
     return fwhm
+
+def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
+                            high_sn=1000,
+                            nsigma=5.0, sigma=3.0, source_box=7):
+    """Use photutils to replicate the IRAF point-source catalogs"""
+
+    # Detect threshold using a relatively fast method and
+    # subtract off that background.
+    bkg = sigma_clipped_bkg(img, sigma=sigma, nsigma=nsigma)
+
+    # Now, use IRAFStarFinder to identify sources across chip
+    starfind = IRAFStarFinder(threshold=bkg, fwhm=fwhm)
+    srcs = starfind.find_stars(img, mask=dqmask)
+    if high_sn is not None and len(srcs) > high_sn:
+        # sort by flux, return high_sn srcs only...
+        indx = np.argsort(srcs['flux'])[:high_sn]
+        srcs = srcs[indx]
+    log.info("Found {} sources".format(len(srcs)))
+
+    return srcs
+
 
 def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     segment_threshold=None, dao_threshold=None, source_box=7,
@@ -1774,6 +1795,15 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
 
     return diff_dict
 
+def sigma_clipped_bkg(arr, sigma=3.0, nsigma=4, maxiters=None):
+    if maxiters is None:
+        maxiters = int(np.log10(arr.max() / 2) + 0.5)
+
+    # Use simple constant background to avoid problems with nebulosity
+    bkg = sigma_clipped_stats(arr, sigma=sigma, maxiters=maxiters)
+    bkg_total = bkg[0] + nsigma * bkg[2]  # mean + 4 * sigma
+
+    return bkg_total
 
 def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
                         sigma=3.0, exp_weight=None):
@@ -1804,11 +1834,8 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
                 sigma = 3.
             else:
                 pass
-        maxiters = int(np.log10(rebin_arr.max() / 2) + 0.5)
 
-        # Use simple constant background to avoid problems with nebulosity
-        bkg = sigma_clipped_stats(rebin_arr, sigma=sigma, maxiters=maxiters)
-        bkg_total = bkg[0] + nsigma * bkg[2]  # mean + 4 * sigma
+        bkg_total = sigma_clipped_bkg(rebin_arr, sigma=sigma, nsigma=nsigma)
         log.debug("sigma clipped background value: {}".format(bkg_total))
         blank_image = True if (bkg[1] < bkg[2] and bkg[1] < 1.0) else False
 
