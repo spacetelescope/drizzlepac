@@ -1121,7 +1121,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         # 2b: create mask based on flag values
         matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
         refFlag_list, compFlag_list, bitmask = make_flag_mask(matched_values, good_flag_sum, missing_mask)
-
+        pdb.set_trace()
 
 
     # 3: Compute and display statistics on X position differences for matched sources
@@ -1338,9 +1338,12 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         colTitles.append(formalTitle)
 
     # 11: Compute and display statistics on differences in flag populations for matched sources
-    matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if output_json_filename:  # Add matched values to diag_obj
-        diag_obj.add_data_item(matched_values,"FLAGS")
+    if input_json_filename:
+        matched_values = json_data['data']['FLAGS']
+    else:
+        matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"FLAGS")
     if len(matched_values) > 0:
         formalTitle = "Source Flagging"
         rt_status, flag_pdf_list = computeFlagStats(matched_values, refFlag_list, compFlag_list, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
