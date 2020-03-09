@@ -1294,9 +1294,12 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         colTitles.append(formalTitle)
 
     # 9: Compute and display statistics on differences in background sky values
-    matched_values = extractMatchedLines("MSKY", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if output_json_filename:  # Add matched values to diag_obj
-        diag_obj.add_data_item(matched_values,"MSKY")
+    if input_json_filename:
+        matched_values = json_data['data']['MSKY']
+    else:
+        matched_values = extractMatchedLines("MSKY", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"MSKY")
     if len(matched_values) > 0:
         formalTitle = "MSKY value"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
