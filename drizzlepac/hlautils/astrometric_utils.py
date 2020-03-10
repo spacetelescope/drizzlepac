@@ -47,7 +47,7 @@ import photutils  # needed to check version
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import Background2D
 from photutils import SExtractorBackground, StdBackgroundRMS
-from photutils import DAOStarFinder
+from photutils import DAOStarFinder, IRAFStarFinder
 from photutils import MMMBackground
 from photutils.psf import IntegratedGaussianPRF, DAOGroup
 from photutils.psf import IterativelySubtractedPSFPhotometry
@@ -544,6 +544,27 @@ def find_fwhm(psf, default_fwhm):
 
     return fwhm
 
+def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
+                            high_sn=1000,
+                            nsigma=5.0, sigma=3.0, source_box=7):
+    """Use photutils to replicate the IRAF point-source catalogs"""
+
+    # Detect threshold using a relatively fast method and
+    # subtract off that background.
+    bkg = sigma_clipped_bkg(img, sigma=sigma, nsigma=nsigma)
+
+    # Now, use IRAFStarFinder to identify sources across chip
+    starfind = IRAFStarFinder(threshold=bkg, fwhm=fwhm)
+    srcs = starfind.find_stars(img, mask=dqmask)
+    if high_sn is not None and len(srcs) > high_sn:
+        # sort by flux, return high_sn srcs only...
+        indx = np.argsort(srcs['flux'])[:high_sn]
+        srcs = srcs[indx]
+    log.info("Found {} sources".format(len(srcs)))
+
+    return srcs
+
+
 def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     segment_threshold=None, dao_threshold=None, source_box=7,
                     classify=True, centering_mode="starfind", nlargest=None,
@@ -865,16 +886,19 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
 
     # remove parameters that are not needed by subsequent functions
     def_fwhmpsf = detector_pars.get('fwhmpsf', 0.13) / 2.0
-    del detector_pars['fwhmpsf']
+    if 'fwhmpsf' in detector_pars:
+        del detector_pars['fwhmpsf']
     source_box = detector_pars.get('source_box', 7)
     isolation_size = detector_pars.get('isolation_size', 11)
     saturation_limit = detector_pars.get('saturation_limit', 70000.0)
-    del detector_pars['threshold']
+    if 'threshold' in detector_pars:
+        del detector_pars['threshold']
     box_size = detector_pars.get('bkg_box_size', 27)
     win_size = detector_pars.get('bkg_filter_size', 3)
     nsigma = detector_pars.get('nsigma', 5)
     sat_flags = detector_pars.get('detector_pars', 256)
-    if 'sat_flags' in detector_pars: del detector_pars['sat_flags']
+    if 'sat_flags' in detector_pars:
+        del detector_pars['sat_flags']
 
     # Build source catalog for entire image
     source_cats = {}
@@ -1489,7 +1513,9 @@ def compute_similarity(image, reference):
     window = 2**window_bit
 
     # Define how big the rebinned image should be for computing the sim index
-    sim_size = 2**(window_bit - 2) if window > 16 else window
+    # Insure a minimum rebinned size of 64x64
+    sim_bit = (window_bit - 2) if (window_bit - 2) > 6 else window_bit
+    sim_size = 2**sim_bit
 
     # rebin image and reference
     img = rebin(image[:window, :window], (sim_size, sim_size))
@@ -1769,6 +1795,15 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
 
     return diff_dict
 
+def sigma_clipped_bkg(arr, sigma=3.0, nsigma=4, maxiters=None):
+    if maxiters is None:
+        maxiters = int(np.log10(arr.max() / 2) + 0.5)
+
+    # Use simple constant background to avoid problems with nebulosity
+    bkg = sigma_clipped_stats(arr, sigma=sigma, maxiters=maxiters)
+    bkg_total = bkg[0] + nsigma * bkg[2]  # mean + 4 * sigma
+
+    return bkg_total
 
 def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
                         sigma=3.0, exp_weight=None):
@@ -1799,11 +1834,8 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
                 sigma = 3.
             else:
                 pass
-        maxiters = int(np.log10(rebin_arr.max() / 2) + 0.5)
 
-        # Use simple constant background to avoid problems with nebulosity
-        bkg = sigma_clipped_stats(rebin_arr, sigma=sigma, maxiters=maxiters)
-        bkg_total = bkg[0] + nsigma * bkg[2]  # mean + 4 * sigma
+        bkg_total = sigma_clipped_bkg(rebin_arr, sigma=sigma, nsigma=nsigma)
         log.debug("sigma clipped background value: {}".format(bkg_total))
         blank_image = True if (bkg[1] < bkg[2] and bkg[1] < 1.0) else False
 
@@ -1853,11 +1885,11 @@ def diff_score(arr):
     return np.hstack((diff_row, diff_col)).flatten()
 
 
-def evaluate_overlap_diffs(diff_dict, limit=0.5):
+def evaluate_overlap_diffs(diff_dict, limit=1.0):
     """Evaluate whether overlap diffs indicate good alignment or not. """
 
     max_diff = max([d['distance'] for d in diff_dict.values()])
-    verified = False if max_diff > limit else True
+    verified = max_diff <= limit
     log.info("Maximum overlap difference: {:0.4f}".format(max_diff))
     if verified:
         log.info("Alignment verified based on overlap...")
