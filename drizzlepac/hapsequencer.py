@@ -697,12 +697,13 @@ def run_sourcelist_comparision(total_list, diagnostic_mode=False, log_level=logu
                 log.info("HLA Classic catalog:         {}".format(os.path.basename(updated_hla_sourcelist_name)))
 
                 # once all file exist checks are passed, execute sourcelist comparision
-                return_status = compare_sourcelists.comparesourcelists([updated_hla_sourcelist_name,
+                return_status = compare_sourcelists.comparesourcelists(slNames=[updated_hla_sourcelist_name,
                                                                         hap_sourcelist_name],
-                                                                       [hla_imgname, hap_imgname],
+                                                                       imgNames=[hla_imgname, hap_imgname],
                                                                        good_flag_sum=255,
                                                                        plotGen="file",
                                                                        plotfile_prefix=plotfile_prefix,
+                                                                       output_json_filename=hap_sourcelist_name.replace(".ecsv","_compare_sourcelists.json"),
                                                                        verbose=True,
                                                                        log_level=log_level,
                                                                        debugMode=diagnostic_mode)
