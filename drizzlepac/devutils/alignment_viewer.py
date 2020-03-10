@@ -27,6 +27,13 @@ the report can be generated in the Python shell (like ipython) using:
 
 The "num_levels" parameter provides a mechanism for looking for processed products in that many directories below the "parent_dir" (starting directory).
 
+Alternatively, a single dataset can be summarized by simply using:
+
+>>> from drizzlepac.devutils import alignment_viewer
+>>> figure = create_product_page("iaal01hxq/iaal01hxq_drc.fits")
+>>> figure.savefig("iaal01hxq_summmary.pdf")  # to write out a PDF file
+
+
 """
 
 import glob
@@ -136,7 +143,8 @@ class Datasets:
 
 
 def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
-    
+    """Create a matplotlib Figure() object which summarizes this product FITS file."""
+
     # obtain image data to display
     with fits.open(prodname) as prod:
         data = prod[1].data
