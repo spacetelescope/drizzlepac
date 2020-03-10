@@ -36,15 +36,17 @@ import traceback
 from astropy.table import Table
 import numpy as np
 import drizzlepac
-from drizzlepac.hlautils.catalog_utils import HAPCatalogs
+
 from drizzlepac.devutils.comparison_tools import compare_sourcelists
 from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
 from drizzlepac.hlautils import config_utils
+from drizzlepac.hlautils import diagnostic_utils
 from drizzlepac.hlautils import hla_flag_filter
 from drizzlepac.hlautils import poller_utils
 from drizzlepac.hlautils import product
-
 from drizzlepac.hlautils import processing_utils as proc_utils
+from drizzlepac.hlautils.catalog_utils import HAPCatalogs
+
 from stsci.tools import logutil
 from stwcs import wcsutil
 
@@ -264,11 +266,25 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                                                               filter_product_catalogs,
                                                               log_level,
                                                               diagnostic_mode)
+
             # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
             if diagnostic_mode:
                 if "fwhm" in total_product_catalogs.catalogs['aperture'].sources.colnames:
+                    parse_cat_name = filter_product_obj.point_cat_filename.split("_")
+                    diag_obj = diagnostic_utils.HapDiagnosticObj(prop_id=parse_cat_name[1], obset_id=parse_cat_name[2],
+                                                                 telescope=parse_cat_name[0],
+                                                                 instrument=parse_cat_name[3],
+                                                                 detector=parse_cat_name[4], filter=parse_cat_name[5],
+                                                                 data_source=__taskname__,
+                                                                 description="CI vs. FWHM values",
+                                                                 log_level=log_level)
+
                     output_table = Table([filter_product_catalogs.catalogs['aperture'].source_cat['CI'], total_product_catalogs.catalogs['aperture'].sources['fwhm']],names=("CI","FWHM"))
-                    output_table.write(filter_product_obj.point_cat_filename.replace(".ecsv","_ci_fwhm.csv"), format="ascii.csv")
+
+                    diag_obj.add_data_item(output_table,"CI_FWHM")
+                    diag_obj.write_json_file(filter_product_obj.point_cat_filename.replace(".ecsv","_ci_fwhm.json"))
+                    del output_table
+                    del diag_obj
 
             # Replace zero-value total-product catalog 'Flags' column values with meaningful filter-product catalog
             # 'Flags' column values
@@ -465,7 +481,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # is the atomic exposure data.
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
         obs_info_dict, total_obj_list = poller_utils.interpret_obset_input(input_filename, log_level)
-
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to use only one of the Total Products to generate the manifest name as the name is not
         # dependent on the detector.
