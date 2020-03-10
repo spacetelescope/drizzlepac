@@ -156,7 +156,7 @@ class HapDiagnosticObj(object):
             reporootpath = os.path.join(reporootpath, item)
         self.out_dict['header']['commit id'] = get_git_rev_info.get_rev_id(reporootpath)
         del reporootpath
-        header_item_list = ["prop_id", "obset_id", "telescope", "instrument", "detector", "filter", "data_source",
+        header_item_list = ["telescope", "instrument", "detector", "prop_id", "obset_id", "filter", "data_source",
                             "description"]
         for header_item in header_item_list:
             self.out_dict['header'][header_item] = self.__dict__[header_item]
