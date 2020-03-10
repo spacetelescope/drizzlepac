@@ -1,4 +1,33 @@
-"""Viewer for aligned datasets"""
+"""Viewer for aligned datasets
+
+This code can be used to summarize a set of results after running runastrodriz.
+The results will be a multi-page PDF document with a title page that summarizes
+the number of tests found along with stats on the number of various types of
+WCS solutions in the final drizzle products.  A separate page will then be generated
+for each dataset with either a DRZ or DRC product.  That page will contain:
+    - a full-frame view of the final product image
+    - a view of the centeral 256x256 region from the final product image
+    - positions of any GAIA catalog sources overplotted on both images
+    - a summary of the product; including:
+        * WCSNAME
+        * WCSTYPE value
+        * Target name
+        * Instrument configuration
+        * total exposure time for the final product image
+        * number of GAIA sources in the field
+        * If an aposteriori fit was found, statistics on the fit such as shift, rot, scale and RMS
+
+If you are in a directory with 2 sub-directories 'iaal01hxq' and 'iacs01t4q'
+containing the standard-pipeline processing results for those 2 datasets, then
+the report can be generated in the Python shell (like ipython) using:
+
+>>> from drizzlepac.devutils import alignment_viewer
+>>> d = alignment_viewer.Datasets('.', num_levels=1)
+>>> d.create(pdfname='pipeline_results.pdf')
+
+The "num_levels" parameter provides a mechanism for looking for processed products in that many directories below the "parent_dir" (starting directory).
+
+"""
 
 import glob
 import os
