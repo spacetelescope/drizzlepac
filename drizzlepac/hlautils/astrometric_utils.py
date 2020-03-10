@@ -1803,7 +1803,7 @@ def sigma_clipped_bkg(arr, sigma=3.0, nsigma=4, maxiters=None):
     bkg = sigma_clipped_stats(arr, sigma=sigma, maxiters=maxiters)
     bkg_total = bkg[0] + nsigma * bkg[2]  # mean + 4 * sigma
 
-    return bkg_total
+    return bkg_total, bkg
 
 def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
                         sigma=3.0, exp_weight=None):
@@ -1835,7 +1835,7 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
             else:
                 pass
 
-        bkg_total = sigma_clipped_bkg(rebin_arr, sigma=sigma, nsigma=nsigma)
+        bkg_total, bkg = sigma_clipped_bkg(rebin_arr, sigma=sigma, nsigma=nsigma)
         log.debug("sigma clipped background value: {}".format(bkg_total))
         blank_image = True if (bkg[1] < bkg[2] and bkg[1] < 1.0) else False
 
