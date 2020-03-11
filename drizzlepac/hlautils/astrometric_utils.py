@@ -551,10 +551,10 @@ def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
 
     # Detect threshold using a relatively fast method and
     # subtract off that background.
-    bkg = sigma_clipped_bkg(img, sigma=sigma, nsigma=nsigma)
+    bkg_thresh, bkg = sigma_clipped_bkg(img, sigma=sigma, nsigma=nsigma)
 
     # Now, use IRAFStarFinder to identify sources across chip
-    starfind = IRAFStarFinder(threshold=bkg, fwhm=fwhm)
+    starfind = IRAFStarFinder(threshold=bkg_thresh, fwhm=fwhm)
     srcs = starfind.find_stars(img, mask=dqmask)
     if high_sn is not None and len(srcs) > high_sn:
         # sort by flux, return high_sn srcs only...
@@ -1656,7 +1656,7 @@ def get_align_fwhm(focus_dict, default_fwhm, src_size=11):
     return fwhm
 
 
-def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
+def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsigma=3.0):
     """Determines the difference in the region of max overlap for all drizzled products
 
     Parameters
@@ -1765,8 +1765,9 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1):
         # The number of sources detected is subject to crowding/blending of sources
         # as well as noise from the background (if too low
         #  a background value is used)
-        drzlabels, drznum = detect_point_sources(drz_arr, scale=scale)
-        slabels, snum = detect_point_sources(sfile_arr, scale=scale, exp_weight=exp_weight)
+        drzlabels, drznum = detect_point_sources(drz_arr, scale=scale, log_sigma=lsigma)
+        slabels, snum = detect_point_sources(sfile_arr, scale=scale, exp_weight=exp_weight,
+                                                log_sigma=lsigma)
 
         drzsrcs = np.clip(drzlabels, 0, 1).astype(np.int16)
         sfilesrcs = np.clip(slabels, 0, 1).astype(np.int16)
@@ -1855,7 +1856,7 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
 
     return rebin_arr
 
-def detect_point_sources(arr, background=None, nsigma=4, log_sigma=2.0, scale=1,
+def detect_point_sources(arr, background=None, nsigma=4, log_sigma=3.0, scale=1,
                          sigma=3.0, exp_weight=None):
     # Remove background entirely from input array (clip at 0)
     src_arr = reduce_diff_region(arr, background=background, nsigma=nsigma, scale=scale,
