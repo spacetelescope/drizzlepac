@@ -6,7 +6,9 @@ if (utils.scm_checkout()) return
 // Pass this object in the argument list to the`run()` function below
 // to apply these settings to the job's execution.
 jobconfig = new JobConfig()
-jobconfig.credentials = ['drizzlepac_codecov']
+jobconfig.credentials = [
+        ['drizzlepac_codecov', 'CODECOV_TOKEN']
+    ]
 // jobconfig.post_test_summary = true
 
 // Configure artifactory ingest
