@@ -2,6 +2,7 @@
 
 import glob
 import os
+import json
 
 from datetime import datetime
 
@@ -82,6 +83,7 @@ class Datasets:
 
     def create(self, pdfname='multipage_pdf.pdf'):
 
+        json_summary = {}
         with PdfPages(pdfname) as pdf:
             first_page = self.create_summary()
             pdf.savefig(first_page)
@@ -89,17 +91,23 @@ class Datasets:
 
             # Now generate a separate page for each dataset
             for p, w in zip(self.prodnames, self.wcsnames):
-                result = create_product_page(p, wcsname=w)
-                pdf.savefig(result)
-                plt.close()
-
+                result, summary = create_product_page(p, wcsname=w)
+                if result is not None:
+                    pdf.savefig(result)
+                    plt.close()
+                    json_summary[p] = summary
+        with open(pdfname.replace('.pdf', '_summary.json'), 'w') as jsonfile:
+            json.dump(json_summary, jsonfile)
 
 def create_product_page(prodname, zoom_size=128, wcsname=""):
+    summary = {}
 
     # obtain image data to display
     with fits.open(prodname) as prod:
         data = prod[1].data
         phdr = prod[0].header
+        if 'texptime' not in phdr:
+            return None, None
         targname = phdr['targname']
         inst = phdr['instrume']
         det = phdr['detector']
@@ -158,8 +166,8 @@ def create_product_page(prodname, zoom_size=128, wcsname=""):
     mstyle = markers.MarkerStyle(marker='o')
     mstyle.set_fillstyle('none')
     # plot GAIA sources onto full size image
-    fig_img.scatter(rx, ry, marker=mstyle, alpha=0.25, c='cyan', s=3)
-    fig_zoom.scatter(zx, zy, marker=mstyle, alpha=0.25, c='cyan')
+    fig_img.scatter(rx, ry, marker=mstyle, alpha=0.25, c='magenta', s=3)
+    fig_zoom.scatter(zx, zy, marker=mstyle, alpha=0.25, c='magenta')
 
     # Print summary info
     fsize = 8
@@ -172,6 +180,13 @@ def create_product_page(prodname, zoom_size=128, wcsname=""):
     fig_summary.text(0.01, 0.65, "WCSTYPE: {}".format(wcstype), fontsize=fsize)
     fig_summary.text(0.01, 0.5, "# of GAIA sources: {}".format(len(rx)), fontsize=fsize)
 
+    # populate JSON summary info
+    meta_data = dict(wcsname=wcsname, targname=targname,
+                    instrument=(inst, det), exptime=texptime,
+                    wcstype=wcstype, num_gaia=len(rx),
+                    rms_ra=-1, rms_dec=-1, nmatch=-1, catalog="")
+    summary[prodname] = meta_data
+
     if 'FIT' in wcsname:
         # Look for FIT RMS and other stats from headerlet
         exp = fits.open(os.path.join(prod_path, inexp))
@@ -183,10 +198,13 @@ def create_product_page(prodname, zoom_size=128, wcsname=""):
                 rms_dec = hdrlet[0].header['rms_dec']
                 nmatch = hdrlet[0].header['nmatch']
                 catalog = hdrlet[0].header['catalog']
+
+                fit_vals = dict(rms_ra=rms_ra, rms_dec=rms_dec, nmatch=nmatch, catalog=catalog)
+                summary[prodname].update(fit_vals)
                 break
         exp.close()
-        fig_summary.text(0.01, 0.4, "RMS: RA={:0.3}mas, DEC={:0.3}mas".format(rms_ra, rms_dec), fontsize=fsize)
+        fig_summary.text(0.01, 0.4, "RMS: RA={:0.3f}mas, DEC={:0.3f}mas".format(rms_ra, rms_dec), fontsize=fsize)
         fig_summary.text(0.01, 0.35, "# matches: {}".format(nmatch), fontsize=fsize)
         fig_summary.text(0.01, 0.3, "Matched to {} catalog".format(catalog), fontsize=fsize)
 
-    return fig
+    return fig, summary
