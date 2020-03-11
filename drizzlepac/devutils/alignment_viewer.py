@@ -99,7 +99,7 @@ class Datasets:
         with open(pdfname.replace('.pdf', '_summary.json'), 'w') as jsonfile:
             json.dump(json_summary, jsonfile)
 
-def create_product_page(prodname, zoom_size=128, wcsname=""):
+def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='red'):
     summary = {}
 
     # obtain image data to display
@@ -151,8 +151,8 @@ def create_product_page(prodname, zoom_size=128, wcsname=""):
     fig_summary = fig.add_subplot(gs[3:, :2])
 
     # Compute display range
-    dmax = (data.max() // 10)
-    dscaled = np.log10(np.clip(data, -0.9, dmax) + 1)
+    dmax = (data.max() // 10) if data.max() <= 1000. else 100
+    dscaled = np.log10(np.clip(data, -0.1, dmax) + 0.10001)
     # identify zoom region around center of data
     zoom = dscaled[center[0] - zoom_size:center[0] + zoom_size,
                    center[1] - zoom_size:center[1] + zoom_size]
@@ -166,8 +166,8 @@ def create_product_page(prodname, zoom_size=128, wcsname=""):
     mstyle = markers.MarkerStyle(marker='o')
     mstyle.set_fillstyle('none')
     # plot GAIA sources onto full size image
-    fig_img.scatter(rx, ry, marker=mstyle, alpha=0.25, c='magenta', s=3)
-    fig_zoom.scatter(zx, zy, marker=mstyle, alpha=0.25, c='magenta')
+    fig_img.scatter(rx, ry, marker=mstyle, alpha=0.35, c=gcolor, s=3)
+    fig_zoom.scatter(zx, zy, marker=mstyle, alpha=0.35, c=gcolor)
 
     # Print summary info
     fsize = 8
