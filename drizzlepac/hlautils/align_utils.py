@@ -843,7 +843,7 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
                     headerlet_filename = image_name.replace("flc", "flt_hlet")
                 if image_name.endswith("flt.fits"):
                     headerlet_filename = image_name.replace("flt", "flt_hlet")
-            out_headerlet.writeto(headerlet_filename, clobber=True)
+            out_headerlet.writeto(headerlet_filename, overwrite=True)
             log.info("Wrote headerlet file {}.\n\n".format(headerlet_filename))
             out_headerlet_dict[image_name] = headerlet_filename
 

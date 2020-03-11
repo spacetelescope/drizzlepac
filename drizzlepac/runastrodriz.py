@@ -847,6 +847,16 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         alignfiles = calfiles_flc if calfiles_flc else calfiles
         align_update_files = calfiles if calfiles_flc else None
 
+        if find_crs:
+            trlmsg = _timestamp("Resetting CRs ")
+            # reset all DQ flags associated with CRs assuming previous attempts were inaccurate
+            for f in alignfiles:
+                trlmsg += "Resetting CR DQ bits for {}\n".format(f)
+                resetbits.reset_dq_bits(f, "4096,8192")
+                sat_flags = 256 + 2048
+        else:
+            sat_flags = 256 + 2048 + 4096 + 8192
+
         # Perform any requested alignment here...
         if alignment_mode == 'aposteriori':
             # Create trailer marker message for start of align_to_GAIA processing
@@ -856,14 +866,6 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             alignlog = trlfile.replace('.tra', '_align.log')
             alignlog_copy = alignlog.replace('_align', '_align_copy')
             try:
-                if find_crs:
-                    # reset all DQ flags associated with CRs assuming previous attempts were inaccurate
-                    for f in alignfiles:
-                        trlmsg += "Resetting CR DQ bits for {}\n".format(f)
-                        resetbits.reset_dq_bits(f, "4096,8192")
-                        sat_flags = 256 + 2048
-                else:
-                    sat_flags = 256 + 2048 + 4096 + 8192
 
                 align_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
                                                   clobber=False, output=debug,
