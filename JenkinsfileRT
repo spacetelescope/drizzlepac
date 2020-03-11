@@ -27,7 +27,7 @@ bc.build_cmds = ["pip install numpy astropy codecov pytest-cov",
 		 "pip install --upgrade -e '.[test]'",
                  "pip freeze"]
 bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata",
-                "codecov --token=${drizzlepac_codecov}"]
+                "codecov"]
 bc.test_configs = [data_config]
 
 bc1 = utils.copy(bc)
