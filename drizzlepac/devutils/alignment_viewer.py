@@ -97,7 +97,6 @@ class Datasets:
 
             # Now generate a separate page for each dataset
             for p, w in zip(prodnames, wcsnames):
-<<<<<<< Updated upstream
                 result, summary = create_product_page(p, wcsname=w)
                 if result is not None:
                     pdf.savefig(result)
@@ -106,17 +105,10 @@ class Datasets:
         with open(pdfname.replace('.pdf', '_summary.json'), 'w') as jsonfile:
             json.dump(json_summary, jsonfile)
 
-def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='red'):
-    summary = {}
-=======
-                result = create_product_page(p, wcsname=w)
-                pdf.savefig(result)
-                plt.close()
-
 
 def create_product_page(prodname, zoom_size=128, wcsname=""):
->>>>>>> Stashed changes
-
+    summary = {}
+    
     # obtain image data to display
     with fits.open(prodname) as prod:
         data = prod[1].data
