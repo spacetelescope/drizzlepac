@@ -106,7 +106,7 @@ class Datasets:
             json.dump(json_summary, jsonfile)
 
 
-def create_product_page(prodname, zoom_size=128, wcsname=""):
+def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
     summary = {}
     
     # obtain image data to display
