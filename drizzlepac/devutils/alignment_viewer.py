@@ -192,7 +192,7 @@ def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
                     instrument=(inst, det), exptime=texptime,
                     wcstype=wcstype, num_gaia=len(rx),
                     rms_ra=-1, rms_dec=-1, nmatch=-1, catalog="")
-    summary[prodname] = meta_data
+    summary[os.path.basename(prodname)] = meta_data
 
     if 'FIT' in wcsname:
         # Look for FIT RMS and other stats from headerlet
