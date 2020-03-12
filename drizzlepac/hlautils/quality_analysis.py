@@ -10,7 +10,7 @@ from stsci.tools.fileutil import countExtn
 import tweakwcs
 
 from . import astrometric_utils as amutils
-
+from .. import tweakutils
 
 
 def determine_alignment_residuals(input, files, max_srcs=2000):
@@ -102,7 +102,8 @@ def extract_residuals(imglist):
         fitinfo = chip.meta['fit_info']
         if group_id not in group_dict:
             group_dict[group_name] = {'group_id': group_id, 'type': None,
-                         'x': [], 'y': [], 'dx': [], 'dy': [],
+                         'x': [], 'y': [], 
+                         'ref_x': [], 'ref_y':[],
                          'rms_x': None, 'rms_y': None}
             cum_indx = 0
 
@@ -123,8 +124,6 @@ def extract_residuals(imglist):
         cum_indx += max_indx
         # Extract X, Y for sources from reference image
         ref_x, ref_y = chip.world_to_tanp(ref_ra[ref_indx][chip_mask], ref_dec[ref_indx][chip_mask])
-        dx = np.array(img_x) - np.array(ref_x)
-        dy = np.array(img_y) - np.array(ref_y)
 
         # store results in dict
         group_dict[group_name]['type'] = 'IMAGE'
@@ -135,10 +134,10 @@ def extract_residuals(imglist):
 
         group_dict[group_name]['x'].extend(img_x)
         group_dict[group_name]['y'].extend(img_y)
-        group_dict[group_name]['dx'].extend(dx.tolist())
-        group_dict[group_name]['dy'].extend(dy.tolist())
-        group_dict[group_name]['rms_x'] = sigma_clipped_stats(dx)[-1]
-        group_dict[group_name]['rms_y'] = sigma_clipped_stats(dy)[-1]
+        group_dict[group_name]['ref_x'].extend(ref_x)
+        group_dict[group_name]['ref_y'].extend(ref_y)        
+        group_dict[group_name]['rms_x'] = sigma_clipped_stats((img_x - ref_x))[-1]
+        group_dict[group_name]['rms_y'] = sigma_clipped_stats((img_y - ref_y))[-1]
 
 
     return group_dict
@@ -162,8 +161,6 @@ def get_tangent_positions(chip, indices, start_indx=0):
     return img_x, img_y, max_indx, chip_indx
 
 
-
-
 # -------------------------------------------------------------------------------
 # Simple interface for running all the analysis functions defined for this package
 def run_all(input, files):
@@ -171,3 +168,45 @@ def run_all(input, files):
     json_file = determine_alignment_residuals(input, files)
 
     return json_file
+
+
+# -------------------------------------------------------------------------------
+#  Code for generating relevant plots from these results
+def generate_plots(json_data):
+    """Create plots from json file or json data"""
+    
+    if isinstance(json_data, str):
+        # Open json file and read in data
+        with open(json_data) as jfile:
+            json_data = json.load(jfile)
+            
+    fig_id = 0
+    for fname in json_data:
+        data = json_data[fname]
+        if data['type'] == 'REFERENCE':
+            continue
+        rootname = fname.split("_")[0]
+        coldata = [data['x'], data['y'], data['ref_x'], data['ref_y']]
+        # Insure all columns are numpy arrays
+        coldata = [np.array(c) for c in coldata]
+        title_str = 'Residuals\ for\ {0}\ using\ {1:6d}\ sources'.format(
+                    fname.replace('_','\_'),data['nmatches'])
+        
+        vector_name = '{}_vector_quality.png'.format(rootname)
+        resids_name = '{}_resids_quality.png'.format(rootname)
+        # Generate plots
+        tweakutils.make_vector_plot(None, data=coldata,
+                     figure_id=fig_id, title=title_str, vector=True,
+                     plotname=vector_name)
+        fig_id += 1
+        tweakutils.make_vector_plot(None, data=coldata, ylimit=0.5,
+                     figure_id=fig_id, title=title_str, vector=False,
+                     plotname=resids_name)
+        fig_id += 1
+
+
+                     
+
+    
+    
+    

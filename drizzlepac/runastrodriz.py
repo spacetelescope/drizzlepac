@@ -666,6 +666,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # interpret envvar variable, if specified
     qa_switch = _get_envvar_switch(envvar_qa_stats_name)
 
+    import pdb; pdb.set_trace()
+
     if qa_switch:
         # Generate quality statistics for astrometry if specified
         calfiles = _calfiles_flc if _calfiles_flc else _calfiles

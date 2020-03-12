@@ -81,7 +81,13 @@ class Datasets:
 
         return first_page
 
-    def create(self, pdfname='multipage_pdf.pdf'):
+    def create(self, pdfname='multipage_pdf.pdf', num_datasets=None):
+        if num_datasets is not None:
+            prodnames = self.prodnames[:num_datasets]
+            wcsnames = self.wcsnames[:num_datasets]
+        else:
+            prodnames = self.prodnames
+            wcsnames = self.wcsnames
 
         json_summary = {}
         with PdfPages(pdfname) as pdf:
@@ -90,7 +96,8 @@ class Datasets:
             plt.close()
 
             # Now generate a separate page for each dataset
-            for p, w in zip(self.prodnames, self.wcsnames):
+            for p, w in zip(prodnames, wcsnames):
+<<<<<<< Updated upstream
                 result, summary = create_product_page(p, wcsname=w)
                 if result is not None:
                     pdf.savefig(result)
@@ -101,6 +108,14 @@ class Datasets:
 
 def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='red'):
     summary = {}
+=======
+                result = create_product_page(p, wcsname=w)
+                pdf.savefig(result)
+                plt.close()
+
+
+def create_product_page(prodname, zoom_size=128, wcsname=""):
+>>>>>>> Stashed changes
 
     # obtain image data to display
     with fits.open(prodname) as prod:
