@@ -780,7 +780,7 @@ def reset_mdriztab_nocr(pipeline_pars, good_bits):
     pipeline_pars['build'] = True
     pipeline_pars['resetbits'] = 0
     pipeline_pars['static'] = False
-    pipeline_pars['skysub'] = False
+    pipeline_pars['skysub'] = True
     pipeline_pars['driz_separate'] = True
     pipeline_pars['driz_sep_bits'] = good_bits
     pipeline_pars['driz_sep_fillval'] = 0.0
@@ -1002,6 +1002,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             sim_indx = amutils.compute_similarity(alignprod, align_ref)
             align_sim_fail = sim_indx > 1
 
+        
             if not align_sim_fail and alignment_verified:
                 _trlmsg += "Alignment appeared to succeed based on similarity index of {:0.4f} \n".format(sim_indx)
             else:
