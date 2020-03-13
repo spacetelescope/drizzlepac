@@ -271,13 +271,13 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             if diagnostic_mode:
                 if "fwhm" in total_product_catalogs.catalogs['aperture'].sources.colnames:
                     parse_cat_name = filter_product_obj.point_cat_filename.split("_")
-                    diag_obj = diagnostic_utils.HapDiagnosticObj(prop_id=parse_cat_name[1], obset_id=parse_cat_name[2],
-                                                                 telescope=parse_cat_name[0],
-                                                                 instrument=parse_cat_name[3],
-                                                                 detector=parse_cat_name[4], filter=parse_cat_name[5],
-                                                                 data_source=__taskname__,
-                                                                 description="CI vs. FWHM values",
-                                                                 log_level=log_level)
+                    diag_obj = diagnostic_utils.HapDiagnostic(prop_id=parse_cat_name[1], obset_id=parse_cat_name[2],
+                                                              telescope=parse_cat_name[0],
+                                                              instrument=parse_cat_name[3],
+                                                              detector=parse_cat_name[4], filter=parse_cat_name[5],
+                                                              data_source=__taskname__,
+                                                              description="CI vs. FWHM values",
+                                                              log_level=log_level)
 
                     output_table = Table([filter_product_catalogs.catalogs['aperture'].source_cat['CI'], total_product_catalogs.catalogs['aperture'].sources['fwhm']],names=("CI","FWHM"))
 

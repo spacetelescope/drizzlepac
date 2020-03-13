@@ -27,7 +27,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # ======================================================================================================================
 
 
-class HapDiagnosticObj(object):
+class HapDiagnostic(object):
     def __init__(self, prop_id, obset_id, telescope, instrument, detector, filter, data_source, description,
                  log_level=logutil.logging.NOTSET):
         """base class used to set up a HapDiagnostic object.
@@ -359,15 +359,15 @@ def read_json_file(json_filename):
 
 if __name__ == "__main__":
     # Testing
-    blarg = HapDiagnosticObj(telescope="hst",
-                             instrument="wfc3",
-                             detector="ir",
-                             filter="f160w",
-                             prop_id="11979",
-                             obset_id="01",
-                             data_source="hla_flag_filter",
-                             description="test item please ignore",
-                             log_level=10)
+    blarg = HapDiagnostic(telescope="hst",
+                          instrument="wfc3",
+                          detector="ir",
+                          filter="f160w",
+                          prop_id="11979",
+                          obset_id="01",
+                          data_source="hla_flag_filter",
+                          description="test item please ignore",
+                          log_level=10)
     catfile = "hst_10265_01_acs_wfc_f606w_j92c01_point-cat.ecsv"
     catdata = Table.read(catfile, format='ascii.ecsv')
     blarg.add_data_item(catdata, "CATALOG")
