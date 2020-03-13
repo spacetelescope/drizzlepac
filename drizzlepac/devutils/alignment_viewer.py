@@ -107,7 +107,6 @@ class Datasets:
 
 
 def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
-    summary = {}
     
     # obtain image data to display
     with fits.open(prodname) as prod:
@@ -188,11 +187,10 @@ def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
     fig_summary.text(0.01, 0.5, "# of GAIA sources: {}".format(len(rx)), fontsize=fsize)
 
     # populate JSON summary info
-    meta_data = dict(wcsname=wcsname, targname=targname,
+    summary = dict(wcsname=wcsname, targname=targname,
                     instrument=(inst, det), exptime=texptime,
                     wcstype=wcstype, num_gaia=len(rx),
                     rms_ra=-1, rms_dec=-1, nmatch=-1, catalog="")
-    summary[os.path.basename(prodname)] = meta_data
 
     if 'FIT' in wcsname:
         # Look for FIT RMS and other stats from headerlet
@@ -207,7 +205,7 @@ def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
                 catalog = hdrlet[0].header['catalog']
 
                 fit_vals = dict(rms_ra=rms_ra, rms_dec=rms_dec, nmatch=nmatch, catalog=catalog)
-                summary[prodname].update(fit_vals)
+                summary.update(fit_vals)
                 break
         exp.close()
         fig_summary.text(0.01, 0.4, "RMS: RA={:0.3f}mas, DEC={:0.3f}mas".format(rms_ra, rms_dec), fontsize=fsize)
