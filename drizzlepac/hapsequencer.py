@@ -404,7 +404,16 @@ def create_drizzle_products(total_obj_list):
         log.info("Removed rules file {}".format(rules_filename))
         os.remove(rules_filename)
 
+    # Add primary header information to all objects
+    for total_obj in total_obj_list:
+        total_obj = poller_utils.add_primary_fits_header_as_attr(total_obj)
+        for filt_obj in total_obj.fdp_list:
+            filt_obj = poller_utils.add_primary_fits_header_as_attr(filt_obj)
+            for exposure_obj in filt_obj.edp_list:
+                exposure_obj = poller_utils.add_primary_fits_header_as_attr(exposure_obj)
+
     # Return product list for creation of pipeline manifest file
+    pdb.set_trace()
     return product_list
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -514,6 +523,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                                                                   use_defaults=use_defaults_configs,
                                                                   input_custom_pars_file=input_custom_pars_file,
                                                                   output_custom_pars_file=output_custom_pars_file)
+                expo_item = poller_utils.add_primary_fits_header_as_attr(expo_item,log_level)
+
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
 
         reference_catalog = run_align_to_gaia(total_obj_list, log_level=log_level, diagnostic_mode=diagnostic_mode)

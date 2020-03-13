@@ -523,3 +523,34 @@ def sort_poller_table(obset_table):
     updated_obset_table = obset_table[rank]
 
     return updated_obset_table
+
+# ----------------------------------------------------------------------------------------------------------
+
+
+def add_primary_fits_header_as_attr(hap_obj, log_level=logutil.logging.NOTSET):
+    """create object attribute containing image primary header info
+
+    Parameters
+    ----------
+    hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
+    drizzlepac.hlautils.Product.ExposureProduct, depending on input
+        object to update
+
+    log_level : int, optional.
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
+    Returns
+    -------
+    hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
+    drizzlepac.hlautils.Product.ExposureProduct, depending on input
+        updated version of input object
+    """
+    if os.path.exists(hap_obj.drizzle_filename):
+        file_name = hap_obj.drizzle_filename
+    else:
+        file_name = hap_obj.full_filename
+
+    hap_obj.primary_header = fits.getheader(file_name)
+    log.info("added primary header info from file {} to {}".format(file_name,hap_obj))
+
+    return hap_obj
