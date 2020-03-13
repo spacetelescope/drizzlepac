@@ -101,7 +101,7 @@ class Datasets:
                 if result is not None:
                     pdf.savefig(result)
                     plt.close()
-                    json_summary[p] = summary
+                    json_summary[os.path.basename(p)] = summary
         with open(pdfname.replace('.pdf', '_summary.json'), 'w') as jsonfile:
             json.dump(json_summary, jsonfile)
 
@@ -121,6 +121,9 @@ def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
         inexp = phdr['d001data'].split('[')[0]
         wcstype = prod[1].header['wcstype']
         wcs = wcsutil.HSTWCS(prod, ext=1)
+        hdrtab = prod['hdrtab'].data
+        filters = ';'.join([phdr[f] for f in phdr['filter*']]) 
+
     center = (data.shape[0] // 2, data.shape[1] // 2)
     prod_path = os.path.split(prodname)[0]
 
@@ -182,15 +185,28 @@ def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
     fig_summary.text(0.01, 0.9, "WCSNAME: {}".format(wcsname), fontsize=fsize)
     fig_summary.text(0.01, 0.85, "TARGET: {}".format(targname), fontsize=fsize)
     fig_summary.text(0.01, 0.8, "Instrument: {}/{}".format(inst, det), fontsize=fsize)
+    fig_summary.text(0.01, 0.75, "Filters: {}".format(filters, fontsize=fsize)
     fig_summary.text(0.01, 0.7, "Total Exptime: {}".format(texptime), fontsize=fsize)
     fig_summary.text(0.01, 0.65, "WCSTYPE: {}".format(wcstype), fontsize=fsize)
-    fig_summary.text(0.01, 0.5, "# of GAIA sources: {}".format(len(rx)), fontsize=fsize)
+    fig_summary.text(0.01, 0.5, "Total # of GAIA sources: {}".format(len(refx)), fontsize=fsize)
+    fig_summary.text(0.01, 0.45, "# of GAIA matches: {}".format(len(rx)), fontsize=fsize)
 
+    # Get extended information about observation
+    hdrtab_cols = hdrtab.columns.names
+    mtflag = get_col_val(hdrtab, 'mtflag', default="")
+    gyromode = get_col_val(hdrtab, 'gyromode', default='N/A')
+    
+        
     # populate JSON summary info
     summary = dict(wcsname=wcsname, targname=targname,
                     instrument=(inst, det), exptime=texptime,
-                    wcstype=wcstype, num_gaia=len(rx),
+                    wcstype=wcstype, num_gaia=len(refx), filters=filters,
                     rms_ra=-1, rms_dec=-1, nmatch=-1, catalog="")
+    obs_kws = ['gyromode', 'fgslock', 'aperture', 'mtflag', 'subarray', 
+                'obstype', 'obsmode', 'scan_typ', 'photmode']
+    for kw in obs_kws:
+        summary[kw] = get_col_val(hdrtab, kw, default="")
+
 
     if 'FIT' in wcsname:
         # Look for FIT RMS and other stats from headerlet
@@ -213,3 +229,9 @@ def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
         fig_summary.text(0.01, 0.3, "Matched to {} catalog".format(catalog), fontsize=fsize)
 
     return fig, summary
+    
+def get_col_val(hdrtab, keyword, default=None):
+    val = hdrtab[0][keyword.upper()] if keyword.upper() in hdrtab.columns.names else default
+    if isinstance(val, bool) or isinstance(val, np.bool_): val = str(val)
+    return val
+    

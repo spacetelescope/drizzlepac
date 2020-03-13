@@ -666,8 +666,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # interpret envvar variable, if specified
     qa_switch = _get_envvar_switch(envvar_qa_stats_name)
 
-    import pdb; pdb.set_trace()
-
     if qa_switch:
         # Generate quality statistics for astrometry if specified
         calfiles = _calfiles_flc if _calfiles_flc else _calfiles
@@ -782,7 +780,7 @@ def reset_mdriztab_nocr(pipeline_pars, good_bits):
     pipeline_pars['build'] = True
     pipeline_pars['resetbits'] = 0
     pipeline_pars['static'] = False
-    pipeline_pars['skysub'] = False
+    pipeline_pars['skysub'] = True
     pipeline_pars['driz_separate'] = True
     pipeline_pars['driz_sep_bits'] = good_bits
     pipeline_pars['driz_sep_fillval'] = 0.0
@@ -1004,6 +1002,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             sim_indx = amutils.compute_similarity(alignprod, align_ref)
             align_sim_fail = sim_indx > 1
 
+        
             if not align_sim_fail and alignment_verified:
                 _trlmsg += "Alignment appeared to succeed based on similarity index of {:0.4f} \n".format(sim_indx)
             else:

@@ -29,9 +29,9 @@ from .hlautils import config_utils
 __taskname__ = 'align'
 
 MIN_CATALOG_THRESHOLD = 3
-MIN_OBSERVABLE_THRESHOLD = 10
+MIN_OBSERVABLE_THRESHOLD = 4
 MIN_CROSS_MATCHES = 3
-MIN_FIT_MATCHES = 6
+MIN_FIT_MATCHES = 4
 MAX_FIT_RMS = 10  # RMS now in mas, 1.0
 MAX_FIT_LIMIT = 150  # Maximum RMS that a result is useful
 MAX_SOURCES_PER_CHIP = 250  # Maximum number of sources per chip to include in source catalog
