@@ -44,6 +44,14 @@ environment variables:
       If this is set, it will override any value set in the old variable.
       Values (case-insensitive) can be 'on','off','yes','no'.
 
+Additionally, the output products can be evaluated to determine the quality of
+the alignment and output data through the use of the environment variable:
+
+    - PIPELINE_QUALITY_TESTING : Turn on quality assessment processing.
+      This environment variable, if found with any value, will turn on
+      processing to generate a JSON file which contains the results of
+      evaluating the quality of the generated products.
+
 *** INITIAL VERSION
 W.J. Hack  12 Aug 2011: Initial version based on Version 1.2.0 of
                         STSDAS$pkg/hst_calib/wfc3/runwf3driz.py
@@ -75,13 +83,16 @@ except ImportError:
     Process = None
 
 # THIRD-PARTY
-from astropy.io import fits
-from stsci.tools import fileutil, asnutil
-from stwcs.wcsutil import HSTWCS
 import numpy as np
+from astropy.io import fits
+
+from stwcs.wcsutil import HSTWCS
+from stwcs import updatewcs
+from stwcs.wcsutil import headerlet
+
+from stsci.tools import fileutil, asnutil
 
 from drizzlepac import processInput  # used for creating new ASNs for _flc inputs
-from stwcs import updatewcs
 
 from drizzlepac import align
 from drizzlepac import resetbits
@@ -90,12 +101,14 @@ from drizzlepac.hlautils import cell_utils
 from drizzlepac import util
 from drizzlepac import mdzhandler
 from drizzlepac import updatehdr
+from drizzlepac.hlautils import quality_analysis as qa
+
 
 __taskname__ = "runastrodriz"
 
 # Local variables
-__version__ = "2.1.0"
-__version_date__ = "(06-Dec-2019)"
+__version__ = "2.2.0"
+__version_date__ = "(06-Mar-2020)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
@@ -137,6 +150,7 @@ envvar_compute_name = 'ASTROMETRY_COMPUTE_APOSTERIORI'
 # Replace ASTROMETRY_STEP_CONTROL with this new related name
 envvar_new_apriori_name = "ASTROMETRY_APPLY_APRIORI"
 envvar_old_apriori_name = "ASTROMETRY_STEP_CONTROL"
+envvar_qa_stats_name = "PIPELINE_QUALITY_TESTING"
 
 # History:
 # Version 1.0.0 - Derived from v1.2.0 of wfc3.runwf3driz to run astrodrizzle
@@ -173,6 +187,19 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             raise ValueError(msg)
 
         os.environ[envvar_old_apriori_name] = envvar_dict[val]
+    else:
+        # Insure os.environ ALWAYS contains an entry for envvar_new_apriori_name
+        # and it will default to being 'on'
+        if envvar_old_apriori_name in os.environ:
+            val = os.environ[envvar_old_apriori_name].lower()
+        else:
+            val = 'on'
+        os.environ[envvar_new_apriori_name] = val
+
+    align_with_apriori = True
+    if envvar_new_apriori_name in os.environ:
+        val = os.environ[envvar_new_apriori_name].lower()
+        align_with_apriori = envvar_bool_dict[val]
 
     if headerlets or align_to_gaia:
         from stwcs.wcsutil import headerlet
@@ -299,7 +326,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             _infile_flc = fileutil.buildRootname(_cal_prodname, ext=['_flc.fits'])
 
             _cal_prodname = _infile
-            _inlist = _calfiles = [_infile]
+            _calfiles = [_infile]
+            _inlist = [_infile, _infile_flc]
             print("_calfiles initialized as: {}".format(_calfiles))
             if len(_calfiles) == 1 and "_raw" in _calfiles[0]:
                 _verify = False
@@ -363,6 +391,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         """
         inst_mode = "{}/{}".format(infile_inst, infile_det)
         _good_images = [f for f in _calfiles if fits.getval(f, 'exptime') > 0.]
+        _good_images = [f for f in _good_images if fits.getval(f, 'ngoodpix', ext=("SCI", 1)) > 0.]
         if len(_good_images) == 0:
             _good_images = _calfiles
         adriz_pars = mdzhandler.getMdriztabParameters(_good_images)
@@ -389,78 +418,90 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         _trlmsg += __trlmarker__
         _updateTrlFile(_trlfile, _trlmsg)
 
-        # Generate initial default products and perform verification
-        align_dicts = verify_alignment(_inlist,
-                                         _calfiles, _calfiles_flc,
-                                         _trlfile,
-                                         tmpdir=None, debug=debug,
-                                         force_alignment=force_alignment,
-                                         find_crs=True, **adriz_pars)
-
-        _trlmsg = _timestamp('Starting alignment with a priori solutions')
-        _trlmsg += __trlmarker__
-        if align_dicts is not None:
-            find_crs = not align_dicts[0]['alignment_verified']
-        else:
-            find_crs = False
-
-        # run updatewcs with use_db=True to insure all products have
-        # have a priori solutions as extensions
-        updatewcs.updatewcs(_calfiles)
-        _trlmsg += verify_gaia_wcsnames(_calfiles)
-        if _calfiles_flc:
-            updatewcs.updatewcs(_calfiles_flc)
-            _trlmsg += verify_gaia_wcsnames(_calfiles_flc)
-
-        # Check for the case where no update was performed due to all inputs
-        # having EXPTIME==0 (for example) and apply updatewcs anyway to allow
-        # for successful creation of updated headerlets for this data.
-        force_updatewcs = False
-        for cfile in _calfiles:
-            # If any file in the input list was NOT updated, force update with use_db now...
-            with fits.open(cfile) as img0:
-                if 'wcsname' not in img0[1].header:
-                    force_updatewcs = True
-                    _trlmsg += "Forcing reference file update for WCS for: {}".format(_calfiles)
-                    break
-        if force_updatewcs:
-            updatewcs.updatewcs(_calfiles, checkfiles=False)
-            if _calfiles_flc:
-                updatewcs.updatewcs(_calfiles_flc, checkfiles=False)
-
-        try:
-            tmpname = "_".join([_trlroot, 'apriori'])
-            sub_dirs.append(tmpname)
+        if align_with_apriori or force_alignment or align_to_gaia:
             # Generate initial default products and perform verification
-            align_apriori = verify_alignment(_inlist,
+            align_dicts = verify_alignment(_inlist,
                                              _calfiles, _calfiles_flc,
                                              _trlfile,
-                                             tmpdir=tmpname, debug=debug,
-                                             good_bits=focus_pars[inst_mode]['good_bits'],
-                                             alignment_mode='apriori',
+                                             tmpdir=None, debug=debug,
                                              force_alignment=force_alignment,
-                                             find_crs=find_crs,
-                                             **adriz_pars)
-        except Exception:
-            # Reset to state prior to applying a priori solutions
-            updatewcs.updatewcs(_calfiles, use_db=False)
+                                             find_crs=True, **adriz_pars)
+
+        if align_with_apriori:
+            _trlmsg = _timestamp('Starting alignment with a priori solutions')
+            _trlmsg += __trlmarker__
+            if align_dicts is not None:
+                find_crs = not align_dicts[0]['alignment_verified']
+            else:
+                find_crs = False
+
+            # run updatewcs with use_db=True to insure all products have
+            # have a priori solutions as extensions
+            updatewcs.updatewcs(_calfiles)
+            _trlmsg += "Adding apriori WCS solutions to {}".format(_calfiles)
+            _trlmsg += verify_gaia_wcsnames(_calfiles)
             if _calfiles_flc:
-                updatewcs.updatewcs(_calfiles_flc, use_db=False)
+                _trlmsg += "Adding apriori WCS solutions to {}".format(_calfiles_flc)
+                updatewcs.updatewcs(_calfiles_flc)
+                _trlmsg += verify_gaia_wcsnames(_calfiles_flc)
 
-            traceback.print_exc()
-            align_apriori = None
-            _trlmsg += "ERROR in applying a priori solution.\n"
+            # Check for the case where no update was performed due to all inputs
+            # having EXPTIME==0 (for example) and apply updatewcs anyway to allow
+            # for successful creation of updated headerlets for this data.
+            force_updatewcs = False
+            for cfile in _calfiles:
+                # If any file in the input list was NOT updated, force update with use_db now...
+                with fits.open(cfile) as img0:
+                    if 'wcsname' not in img0[1].header:
+                        force_updatewcs = True
+                        _trlmsg += "Forcing reference file update for WCS for: {}".format(_calfiles)
+                        break
+            if force_updatewcs:
+                updatewcs.updatewcs(_calfiles, checkfiles=False)
+                if _calfiles_flc:
+                    updatewcs.updatewcs(_calfiles_flc, checkfiles=False)
 
-        if align_apriori:
-            align_dicts = align_apriori
-            if align_dicts[0]['alignment_quality'] == 0:
-                _trlmsg += 'A priori alignment SUCCESSFUL.\n'
-            if align_dicts[0]['alignment_quality'] == 1:
-                _trlmsg += 'A priori alignment potentially compromised.  Please review final product!\n'
-            if align_dicts[0]['alignment_quality'] > 1:
-                _trlmsg += 'A priori alignment FAILED! No a priori astrometry correction applied.\n'
-        _updateTrlFile(_trlfile, _trlmsg)
+            try:
+                tmpname = "_".join([_trlroot, 'apriori'])
+                sub_dirs.append(tmpname)
+                # Generate initial default products and perform verification
+                align_apriori = verify_alignment(_inlist,
+                                                 _calfiles, _calfiles_flc,
+                                                 _trlfile,
+                                                 tmpdir=tmpname, debug=debug,
+                                                 good_bits=focus_pars[inst_mode]['good_bits'],
+                                                 alignment_mode='apriori',
+                                                 force_alignment=force_alignment,
+                                                 find_crs=find_crs,
+                                                 **adriz_pars)
+            except Exception:
+                # Reset to state prior to applying a priori solutions
+                traceback.print_exc()
+                align_apriori = None
+                _trlmsg += "ERROR in applying a priori solution.\n"
 
+            if align_apriori is None or (not align_apriori[0]['alignment_verified']):
+                _trlmsg += "Resetting WCS to pipeline-default solutions..."
+                # This operation replaces the PRIMARY WCS with one from the attached
+                # headerlet extensions that corresponds to the distortion-model
+                # solution created in the first place with 'updatewcs(use_db=False)'
+                # Doing so, retains all solutions added from the astrometry database
+                # while resetting to use whatever solution was defined by the instrument
+                # calibration, since 'updatewcs' does not by default replace solutions
+                # it finds in the files.
+                restore_pipeline_default(_calfiles)
+                if _calfiles_flc:
+                    restore_pipeline_default(_calfiles_flc)
+
+            else:
+                align_dicts = align_apriori
+                if align_dicts[0]['alignment_quality'] == 0:
+                    _trlmsg += 'A priori alignment SUCCESSFUL.\n'
+                if align_dicts[0]['alignment_quality'] == 1:
+                    _trlmsg += 'A priori alignment potentially compromised.  Please review final product!\n'
+                if align_dicts[0]['alignment_quality'] > 1:
+                    _trlmsg += 'A priori alignment FAILED! No a priori astrometry correction applied.\n'
+            _updateTrlFile(_trlfile, _trlmsg)
 
         if align_to_gaia:
             _trlmsg = _timestamp('Starting a posteriori alignment')
@@ -501,7 +542,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     _trlmsg += 'Please review final product!\n'
                 else:
                     _trlmsg += 'A posteriori alignment FAILED! No a posteriori astrometry correction applied.\n'
-
             _updateTrlFile(_trlfile, _trlmsg)
 
         _trlmsg = _timestamp('Creating final combined,corrected product based on best alignment')
@@ -595,12 +635,21 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
     if debug and Process is not None:
         print("Files still open for this process include: ")
-        print(Process().open_files())
+        print([ofile.path for ofile in Process().open_files()])
 
     if not debug:
-        # Remove all temp sub-directories now that we are done
-        for sd in sub_dirs:
-            if os.path.exists(sd): rmtree2(sd)
+        try:
+            # Remove all temp sub-directories now that we are done
+            for sd in sub_dirs:
+                if os.path.exists(sd): rmtree2(sd)
+        except Exception:
+            # If we are unable to remove any of these sub-directories,
+            # leave them for the user or calling routine/pipeline to clean up.
+            print("WARNING: Unable to remove any or all of these sub-directories: \n{}\n".format(sub_dirs))
+            if Process is not None:
+                print("Files still open at this time include: ")
+                print([ofile.path for ofile in Process().open_files()])
+            pass
 
     # Append final timestamp to trailer file...
     _final_msg = '%s: Finished processing %s \n' % (_getTime(), inFilename)
@@ -610,6 +659,20 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
     # Provide feedback to user
     print(_final_msg)
+
+    # Look to see whether we have products which can be evaluated
+    # wcsname = fits.getval(drz_products[0], 'wcsname', ext=1)
+
+    # interpret envvar variable, if specified
+    qa_switch = _get_envvar_switch(envvar_qa_stats_name)
+
+    if qa_switch:
+        # Generate quality statistics for astrometry if specified
+        calfiles = _calfiles_flc if _calfiles_flc else _calfiles
+        json_file = qa.run_all(inFile, calfiles)
+
+        print("Generated quality statistics as {}".format(json_file))
+
 
 def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignment=True,
             debug=False, good_bits=512, **pipeline_pars):
@@ -695,19 +758,19 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
         else:
             focus_dicts = None
 
-        # Now, append comments created by PyDrizzle to CALXXX trailer file
-        print('Updating trailer file %s with astrodrizzle comments.' % trlfile)
-        drizlog_copy = drizlog.replace('.log', '_copy.log')
-        if os.path.exists(drizlog):
-            shutil.copy(drizlog, drizlog_copy)
-        _appendTrlFile(trlfile, drizlog_copy)
-        # clean up log files
-        if os.path.exists(drizlog):
-            os.remove(drizlog)
-        # Clean up intermediate files generated by astrodrizzle
-        if not debug:
-            for ftype in ['*mask*.fits']:
-                [os.remove(file) for file in glob.glob(ftype)]
+    # Now, append comments created by PyDrizzle to CALXXX trailer file
+    print('Updating trailer file %s with astrodrizzle comments.' % trlfile)
+    drizlog_copy = drizlog.replace('.log', '_copy.log')
+    if os.path.exists(drizlog):
+        shutil.copy(drizlog, drizlog_copy)
+    _appendTrlFile(trlfile, drizlog_copy)
+    # clean up log files
+    if os.path.exists(drizlog):
+        os.remove(drizlog)
+    # Clean up intermediate files generated by astrodrizzle
+    if not debug:
+        for ftype in ['*mask*.fits']:
+            [os.remove(file) for file in glob.glob(ftype)]
 
     return drz_products, focus_dicts, diff_dicts
 
@@ -717,7 +780,7 @@ def reset_mdriztab_nocr(pipeline_pars, good_bits):
     pipeline_pars['build'] = True
     pipeline_pars['resetbits'] = 0
     pipeline_pars['static'] = False
-    pipeline_pars['skysub'] = False
+    pipeline_pars['skysub'] = True
     pipeline_pars['driz_separate'] = True
     pipeline_pars['driz_sep_bits'] = good_bits
     pipeline_pars['driz_sep_fillval'] = 0.0
@@ -784,6 +847,16 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         alignfiles = calfiles_flc if calfiles_flc else calfiles
         align_update_files = calfiles if calfiles_flc else None
 
+        if find_crs:
+            trlmsg = _timestamp("Resetting CRs ")
+            # reset all DQ flags associated with CRs assuming previous attempts were inaccurate
+            for f in alignfiles:
+                trlmsg += "Resetting CR DQ bits for {}\n".format(f)
+                resetbits.reset_dq_bits(f, "4096,8192")
+                sat_flags = 256 + 2048
+        else:
+            sat_flags = 256 + 2048 + 4096 + 8192
+
         # Perform any requested alignment here...
         if alignment_mode == 'aposteriori':
             # Create trailer marker message for start of align_to_GAIA processing
@@ -793,17 +866,10 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             alignlog = trlfile.replace('.tra', '_align.log')
             alignlog_copy = alignlog.replace('_align', '_align_copy')
             try:
-                if find_crs:
-                    # reset all DQ flags associated with CRs assuming previous attempts were inaccurate
-                    for f in alignfiles:
-                        trlmsg += "Resetting CR DQ bits for {}\n".format(f)
-                        resetbits.reset_dq_bits(f, "4096,8192")
-                        sat_flags = 256 + 2048
-                else:
-                    sat_flags = 256 + 2048 + 4096 + 8192
 
                 align_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
-                                                  clobber=False, output=debug, sat_flags=sat_flags)
+                                                  clobber=False, output=debug,
+                                                  debug=debug, sat_flags=sat_flags)
                 if align_table is None:
                     raise Exception
 
@@ -886,6 +952,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             det_pars = align.get_default_pars(inst, det)['generate_source_catalogs']
             default_fwhm = det_pars['fwhmpsf'] / pscale
             align_fwhm = amutils.get_align_fwhm(align_focus, default_fwhm)
+
             if align_fwhm:
                 _trlmsg += "align_fwhm: {}[{},{}]={:0.4f}pix\n".format(align_focus['prodname'],
                                                             align_focus['prod_pos'][1],
@@ -902,7 +969,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 alignment_verified = True if (diff_verification and focus_verification) else False
                 alignment_quality = 0 if alignment_verified else 3
             else:
-                alignment_verified = True if diff_verification else False
+                alignment_verified = diff_verification
                 alignment_quality = 0 if diff_verification else 3
 
             if alignment_verified:
@@ -933,8 +1000,9 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
             print("Computing sim_indx for: {} ".format(os.path.join(tmpdir, prodname)))
             sim_indx = amutils.compute_similarity(alignprod, align_ref)
-            align_sim_fail = True if sim_indx > 1 else False
+            align_sim_fail = sim_indx > 1
 
+        
             if not align_sim_fail and alignment_verified:
                 _trlmsg += "Alignment appeared to succeed based on similarity index of {:0.4f} \n".format(sim_indx)
             else:
@@ -990,6 +1058,21 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                     msg += "Updating WCSNAME of {}[sci,{}] for use of {} catalog \n".format(f,
                             sciext + 1, catalog_name)
     return msg
+
+def restore_pipeline_default(files):
+    """Restore pipeline-default IDC_* WCS as PRIMARY WCS in all input files"""
+    for f in files:
+        rootname = f.replace('.fits', '')
+        with fits.open(f, mode='update') as hdu:
+            hdrnames = headerlet.get_headerlet_kw_names(hdu, kw='hdrname')
+            def_hdrname = "{}_OPUS".format(rootname)
+            for h in hdrnames:
+                if '-' not in h and 'IDC' in h:
+                    def_hdrname = h
+                    break
+            def_extn = headerlet.find_headerlet_HDUs(hdu, hdrname=def_hdrname)[0]
+            print("Restoring WCS from EXTN with hdrname of {}".format(def_extn, def_hdrname))
+            headerlet.restore_from_headerlet(hdu, hdrext=def_extn, archive=False)
 
 def _lowerAsn(asnfile):
     """ Create a copy of the original asn file and change
@@ -1091,6 +1174,20 @@ def _copyToNewWorkingDir(newdir, input):
     for rootname in flist:
         for fname in glob.glob(rootname + '*'):
             shutil.copy(fname, os.path.join(newdir, fname))
+
+def _get_envvar_switch(envvar_name):
+    # interpret envvar variable, if specified
+    if envvar_name in os.environ:
+        val = os.environ[envvar_name].lower()
+        if val not in envvar_bool_dict:
+            msg = "ERROR: invalid value for {}.".format(envvar_name)
+            msg += "  \n    Valid Values: on, off, yes, no, true, false"
+            raise ValueError(msg)
+        switch_val = envvar_bool_dict[val]
+    else:
+        switch_val = None
+
+    return switch_val
 
 def _restoreResults(newdir, origdir):
     """ Move (not copy) all files from newdir back to the original directory

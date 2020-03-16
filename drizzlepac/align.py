@@ -29,9 +29,9 @@ from .hlautils import config_utils
 __taskname__ = 'align'
 
 MIN_CATALOG_THRESHOLD = 3
-MIN_OBSERVABLE_THRESHOLD = 10
+MIN_OBSERVABLE_THRESHOLD = 4
 MIN_CROSS_MATCHES = 3
-MIN_FIT_MATCHES = 6
+MIN_FIT_MATCHES = 4
 MAX_FIT_RMS = 10  # RMS now in mas, 1.0
 MAX_FIT_LIMIT = 150  # Maximum RMS that a result is useful
 MAX_SOURCES_PER_CHIP = 250  # Maximum number of sources per chip to include in source catalog
@@ -398,7 +398,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                         alignment_table.reset_group_id(len(reference_catalog))
 
                         # execute the correct fitting/matching algorithm
-                        imglist = alignment_table.perform_fit(algorithm_name, catalog_name, reference_catalog)
+                        alignment_table.imglist = alignment_table.perform_fit(algorithm_name, catalog_name, reference_catalog)
 
                         # determine the quality of the fit
                         fit_rms, fit_num, fit_quality, filtered_table, fit_status_dict = \
@@ -414,7 +414,6 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                             table_fit = alignment_table.fit_dict[(catalog_name, algorithm_name)]
                             table_fit[imglist_ctr].meta['fit method'] = algorithm_name
                             table_fit[imglist_ctr].meta['fit quality'] = fit_quality
-                        #print(alignment_table.fit_dict[(catalog_name, algorithm_name)][0].meta)
 
                         # populate fit_info_dict
                         fit_info_dict["{} {}".format(catalog_name, algorithm_name)] = \
@@ -628,7 +627,6 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
             * fit compromised status (Boolean)
             * reason fit is considered 'compromised' (only populated if "compromised" field is "True")
     """
-    tweakwcs_info_keys = OrderedDict(imglist[0].meta['fit_info']).keys()
     max_rms_val = 1e9
     num_xmatches = 0
     fit_status_dict = {}
@@ -750,8 +748,9 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
                                           num_xmatches))
         # print fit params to screen
         if print_fit_parameters:
-            log_info_keys = ['status', 'fitgeom', 'eff_minobj', 'matrix', 'shift', 'center', 'rot', 'proper',
-                'rotxy', 'scale', 'skew', 'rmse', 'mae', 'nmatches', 'FIT_RMS', 'TOTAL_RMS', 'NUM_FITS',
+            log_info_keys = ['status', 'fitgeom', 'eff_minobj', 'matrix', 'shift', 'center',
+                'proper_rot', 'proper',
+                '<rot>', '<scale>', 'skew', 'rmse', 'mae', 'nmatches', 'FIT_RMS', 'TOTAL_RMS', 'NUM_FITS',
                 'RMS_RA', 'RMS_DEC', 'catalog']
             log.info("{} FIT PARAMETERS {}".format("~" * 35, "~" * 34))
             log.info("image: {}".format(image_name))
@@ -840,56 +839,6 @@ def generate_astrometric_catalog(imglist, **pars):
     return(out_catalog)
 
 # ----------------------------------------------------------------------------------------------------------------------
-
-def update_headerlet_phdu(tweakwcs_item, headerlet):
-    """Update the primary header data unit keywords of a headerlet object in-place
-
-    Parameters
-    ==========
-    tweakwcs_item :
-        Basically the output from tweakwcs which contains the cross match and fit information for every chip
-        of every valid input image.
-
-    headerlet : headerlet object
-        object containing WCS information
-    """
-
-    # Get the data to be used as values for FITS keywords
-    rms_ra = tweakwcs_item.meta['fit_info']['RMS_RA'].value
-    rms_dec = tweakwcs_item.meta['fit_info']['RMS_DEC'].value
-    fit_rms = tweakwcs_item.meta['fit_info']['FIT_RMS']
-    nmatch = tweakwcs_item.meta['fit_info']['nmatches']
-    catalog = tweakwcs_item.meta['fit_info']['catalog']
-    fit_method = tweakwcs_item.meta['fit method']
-
-    x_shift = (tweakwcs_item.meta['fit_info']['shift'])[0]
-    y_shift = (tweakwcs_item.meta['fit_info']['shift'])[1]
-    rot = tweakwcs_item.meta['fit_info']['rot']
-    scale = tweakwcs_item.meta['fit_info']['scale'][0]
-    skew = tweakwcs_item.meta['fit_info']['skew']
-
-    log.info("Headerlet being updated with RMS_RA={},  RMS_DEC={}".format(rms_ra, rms_dec))
-    # Update the existing FITS keywords
-    primary_header = headerlet[0].header
-    primary_header['RMS_RA'] = rms_ra
-    primary_header['RMS_DEC'] = rms_dec
-    primary_header['NMATCH'] = nmatch
-    primary_header['CATALOG'] = catalog
-    primary_header['FITMETH'] = fit_method
-
-    # Create a new FITS keyword
-    primary_header['FIT_RMS'] = (fit_rms, 'RMS (mas) of the 2D fit of the headerlet solution')
-
-    # Create the set of HISTORY keywords
-    primary_header['HISTORY'] = '~~~~~ FIT PARAMETERS ~~~~~'
-    primary_header['HISTORY'] = '{:>15} : {:9.4f} "/pixels'.format('platescale', tweakwcs_item.wcs.pscale)
-    primary_header['HISTORY'] = '{:>15} : {:9.4f} pixels'.format('x_shift', x_shift)
-    primary_header['HISTORY'] = '{:>15} : {:9.4f} pixels'.format('y_shift', y_shift)
-    primary_header['HISTORY'] = '{:>15} : {:9.4f} degrees'.format('rotation', rot)
-    primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('scale', scale)
-    primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('skew', skew)
-
-
 
 def get_default_pars(instrument, detector, step='alignment',
                      condition=['filter_basic']):

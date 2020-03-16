@@ -2,6 +2,7 @@
 
 import glob
 import os
+import json
 
 from datetime import datetime
 
@@ -80,26 +81,39 @@ class Datasets:
 
         return first_page
 
-    def create(self, pdfname='multipage_pdf.pdf'):
+    def create(self, pdfname='multipage_pdf.pdf', num_datasets=None):
+        if num_datasets is not None:
+            prodnames = self.prodnames[:num_datasets]
+            wcsnames = self.wcsnames[:num_datasets]
+        else:
+            prodnames = self.prodnames
+            wcsnames = self.wcsnames
 
+        json_summary = {}
         with PdfPages(pdfname) as pdf:
             first_page = self.create_summary()
             pdf.savefig(first_page)
             plt.close()
 
             # Now generate a separate page for each dataset
-            for p, w in zip(self.prodnames, self.wcsnames):
-                result = create_product_page(p, wcsname=w)
-                pdf.savefig(result)
-                plt.close()
+            for p, w in zip(prodnames, wcsnames):
+                result, summary = create_product_page(p, wcsname=w)
+                if result is not None:
+                    pdf.savefig(result)
+                    plt.close()
+                    json_summary[os.path.basename(p)] = summary
+        with open(pdfname.replace('.pdf', '_summary.json'), 'w') as jsonfile:
+            json.dump(json_summary, jsonfile)
 
 
-def create_product_page(prodname, zoom_size=128, wcsname=""):
-
+def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
+    
     # obtain image data to display
     with fits.open(prodname) as prod:
         data = prod[1].data
         phdr = prod[0].header
+        if 'texptime' not in phdr:
+            return None, None
         targname = phdr['targname']
         inst = phdr['instrume']
         det = phdr['detector']
@@ -107,6 +121,9 @@ def create_product_page(prodname, zoom_size=128, wcsname=""):
         inexp = phdr['d001data'].split('[')[0]
         wcstype = prod[1].header['wcstype']
         wcs = wcsutil.HSTWCS(prod, ext=1)
+        hdrtab = prod['hdrtab'].data
+        filters = ';'.join([phdr[f] for f in phdr['filter*']]) 
+
     center = (data.shape[0] // 2, data.shape[1] // 2)
     prod_path = os.path.split(prodname)[0]
 
@@ -143,8 +160,8 @@ def create_product_page(prodname, zoom_size=128, wcsname=""):
     fig_summary = fig.add_subplot(gs[3:, :2])
 
     # Compute display range
-    dmax = (data.max() // 10)
-    dscaled = np.log10(np.clip(data, -0.9, dmax) + 1)
+    dmax = (data.max() // 10) if data.max() <= 1000. else 100
+    dscaled = np.log10(np.clip(data, -0.1, dmax) + 0.10001)
     # identify zoom region around center of data
     zoom = dscaled[center[0] - zoom_size:center[0] + zoom_size,
                    center[1] - zoom_size:center[1] + zoom_size]
@@ -158,8 +175,8 @@ def create_product_page(prodname, zoom_size=128, wcsname=""):
     mstyle = markers.MarkerStyle(marker='o')
     mstyle.set_fillstyle('none')
     # plot GAIA sources onto full size image
-    fig_img.scatter(rx, ry, marker=mstyle, alpha=0.25, c='cyan', s=3)
-    fig_zoom.scatter(zx, zy, marker=mstyle, alpha=0.25, c='cyan')
+    fig_img.scatter(rx, ry, marker=mstyle, alpha=0.35, c=gcolor, s=3)
+    fig_zoom.scatter(zx, zy, marker=mstyle, alpha=0.35, c=gcolor)
 
     # Print summary info
     fsize = 8
@@ -168,9 +185,28 @@ def create_product_page(prodname, zoom_size=128, wcsname=""):
     fig_summary.text(0.01, 0.9, "WCSNAME: {}".format(wcsname), fontsize=fsize)
     fig_summary.text(0.01, 0.85, "TARGET: {}".format(targname), fontsize=fsize)
     fig_summary.text(0.01, 0.8, "Instrument: {}/{}".format(inst, det), fontsize=fsize)
+    fig_summary.text(0.01, 0.75, "Filters: {}".format(filters, fontsize=fsize)
     fig_summary.text(0.01, 0.7, "Total Exptime: {}".format(texptime), fontsize=fsize)
     fig_summary.text(0.01, 0.65, "WCSTYPE: {}".format(wcstype), fontsize=fsize)
-    fig_summary.text(0.01, 0.5, "# of GAIA sources: {}".format(len(rx)), fontsize=fsize)
+    fig_summary.text(0.01, 0.5, "Total # of GAIA sources: {}".format(len(refx)), fontsize=fsize)
+    fig_summary.text(0.01, 0.45, "# of GAIA matches: {}".format(len(rx)), fontsize=fsize)
+
+    # Get extended information about observation
+    hdrtab_cols = hdrtab.columns.names
+    mtflag = get_col_val(hdrtab, 'mtflag', default="")
+    gyromode = get_col_val(hdrtab, 'gyromode', default='N/A')
+    
+        
+    # populate JSON summary info
+    summary = dict(wcsname=wcsname, targname=targname,
+                    instrument=(inst, det), exptime=texptime,
+                    wcstype=wcstype, num_gaia=len(refx), filters=filters,
+                    rms_ra=-1, rms_dec=-1, nmatch=-1, catalog="")
+    obs_kws = ['gyromode', 'fgslock', 'aperture', 'mtflag', 'subarray', 
+                'obstype', 'obsmode', 'scan_typ', 'photmode']
+    for kw in obs_kws:
+        summary[kw] = get_col_val(hdrtab, kw, default="")
+
 
     if 'FIT' in wcsname:
         # Look for FIT RMS and other stats from headerlet
@@ -183,10 +219,19 @@ def create_product_page(prodname, zoom_size=128, wcsname=""):
                 rms_dec = hdrlet[0].header['rms_dec']
                 nmatch = hdrlet[0].header['nmatch']
                 catalog = hdrlet[0].header['catalog']
+
+                fit_vals = dict(rms_ra=rms_ra, rms_dec=rms_dec, nmatch=nmatch, catalog=catalog)
+                summary.update(fit_vals)
                 break
         exp.close()
-        fig_summary.text(0.01, 0.4, "RMS: RA={:0.3}mas, DEC={:0.3}mas".format(rms_ra, rms_dec), fontsize=fsize)
+        fig_summary.text(0.01, 0.4, "RMS: RA={:0.3f}mas, DEC={:0.3f}mas".format(rms_ra, rms_dec), fontsize=fsize)
         fig_summary.text(0.01, 0.35, "# matches: {}".format(nmatch), fontsize=fsize)
         fig_summary.text(0.01, 0.3, "Matched to {} catalog".format(catalog), fontsize=fsize)
 
-    return fig
+    return fig, summary
+    
+def get_col_val(hdrtab, keyword, default=None):
+    val = hdrtab[0][keyword.upper()] if keyword.upper() in hdrtab.columns.names else default
+    if isinstance(val, bool) or isinstance(val, np.bool_): val = str(val)
+    return val
+    

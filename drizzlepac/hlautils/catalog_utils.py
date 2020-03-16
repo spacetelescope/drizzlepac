@@ -581,6 +581,12 @@ class HAPPointCatalog(HAPCatalogBase):
 
             sources = daofind(image, mask=exclusion_mask)
 
+            # If there are no detectable sources in the total detection image, return as there is nothing more to do.
+            if not sources:
+                log.warning("No point sources were found in Total Detection Product, {}.".format(self.imgname))
+                log.warning("Processing for point source catalogs for this product is ending.")
+                return
+
             for col in sources.colnames:
                 sources[col].info.format = '%.8g'  # for consistent table output
 
@@ -598,7 +604,7 @@ class HAPPointCatalog(HAPCatalogBase):
         log.info("Performing aperture photometry on identified point-sources")
         # Open and background subtract image
         image = self.image.data.copy()
-        image -= self.bkg_used
+
 
         # load in coords of sources identified in total product
         try:
@@ -610,9 +616,9 @@ class HAPPointCatalog(HAPCatalogBase):
 
         # define list of background annulii
         bg_apers = CircularAnnulus(pos_xy,
-                                   r_in=self.param_dict['skyannulus_arcsec'],
-                                   r_out=self.param_dict['skyannulus_arcsec'] +
-                                   self.param_dict['dskyannulus_arcsec'])
+                                   r_in=self.param_dict['skyannulus_arcsec']/self.image.imgwcs.pscale,
+                                   r_out=(self.param_dict['skyannulus_arcsec'] +
+                                   self.param_dict['dskyannulus_arcsec'])/self.image.imgwcs.pscale)
 
         # Create the list of photometric apertures to measure
         phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
@@ -918,6 +924,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
             self.segm_img = detect_sources(imgarr_bkgsub, threshold, npixels=self._size_source_box,
                                            filter_kernel=self.image.kernel,
                                            mask=mask)
+
+            # If no segments were found, there are no detectable sources in the total detection image.
+            # Return as there is nothing more to do.
+            if self.segm_img is None:
+                log.warning("No segments were found in Total Detection Product, {}.".format(self.imgname))
+                log.warning("Processing for segmentation source catalogs for this product is ending.")
+                return
+
             if self.diagnostic_mode:
                 outname = self.imgname.replace(".fits", "_segment.fits")
                 fits.PrimaryHDU(data=self.segm_img.data).writeto(outname)
@@ -1129,16 +1143,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Case: there are good/measurable sources in the input table
         if good_rows_index:
-
             # Obtain the X and Y positions to compute the circular annulus
             positions = (filter_measurements_table["xcentroid"][good_rows_index], filter_measurements_table["ycentroid"][good_rows_index])
             pos_xy = np.vstack(positions).T
 
-            # Define list of background annulii - the pos_xy input cannot contain any nan values
+            # Define list of background annulii
             bg_apers = CircularAnnulus(pos_xy,
-                                       r_in=self.param_dict['skyannulus_arcsec'],
-                                       r_out=self.param_dict['skyannulus_arcsec'] +
-                                       self.param_dict['dskyannulus_arcsec'])
+                                       r_in=self.param_dict['skyannulus_arcsec']/self.image.imgwcs.pscale,
+                                       r_out=(self.param_dict['skyannulus_arcsec'] + self.param_dict['dskyannulus_arcsec'])/self.image.imgwcs.pscale)
 
             # Create list of photometric apertures to measure
             phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
