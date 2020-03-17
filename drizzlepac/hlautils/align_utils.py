@@ -6,6 +6,8 @@ import traceback
 
 from collections import OrderedDict
 
+from memory_profiler import profile
+
 import numpy as np
 from scipy import ndimage
 
@@ -44,6 +46,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 class AlignmentTable:
+    @profile
     def __init__(self, input_list, clobber=False, dqname='DQ',
                  log_level=logutil.logging.NOTSET, **alignment_pars):
         """
@@ -139,6 +142,7 @@ class AlignmentTable:
         for img in self.haplist:
             img.close()
 
+    @profile
     def find_alignment_sources(self, output=True):
         """Find observable sources in each input exposure."""
         self.extracted_sources = {}
@@ -171,6 +175,7 @@ class AlignmentTable:
             image.meta["group_id"] = self.group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])]
             image.meta['num_ref_catalog'] = num_ref
 
+    @profile
     def configure_fit(self):
         # Convert input images to tweakwcs-compatible FITSWCS objects and
         # attach source catalogs to them.
@@ -216,6 +221,7 @@ class AlignmentTable:
 
         return imglist
 
+    @profile
     def select_fit(self, catalog_name, method_name):
         """Select the fit that has been identified as 'best'"""
         if catalog_name is None:
@@ -256,7 +262,7 @@ class AlignmentTable:
                 self.filtered_table = None
                 # self.filtered_table[index]['fit_method'] = None
 
-
+    @profile
     def apply_fit(self, headerlet_filenames=None, fit_label=None):
         """Apply solution from identified fit to image WCS's
 
@@ -293,7 +299,7 @@ class HAPImage:
     catalog generation.
 
     """
-
+    @profile
     def __init__(self, filename):
         if isinstance(filename, str):
             self.imghdu = fits.open(filename)
@@ -349,6 +355,10 @@ class HAPImage:
 
     def close(self):
         self.imghdu.close()
+        self.imghdu = None
+        self.dqmask = None
+        self.wht_image = None
+        self._wht_image = None
 
     def build_kernel(self, fwhmpsf):
         """
@@ -389,6 +399,7 @@ class HAPImage:
 
         self.fwhmpsf = self.kernel_fwhm * self.pscale
 
+    @profile
     def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
                            bkg_estimator="SExtractorBackground", rms_estimator="StdBackgroundRMS",
                            nsigma=5., threshold_flag=None):
@@ -521,6 +532,7 @@ class HAPImage:
         dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
         return dqmask
 
+    @profile
     def find_alignment_sources(self, output=True, dqname='DQ', **alignment_pars):
         """Find sources in all chips for this exposure."""
 
@@ -551,7 +563,7 @@ class HAPImage:
             self.catalog_table[chip] = seg_tab
 # ----------------------------------------------------------------------------------------------------------------------
 
-
+@profile
 def match_relative_fit(imglist, reference_catalog, **fit_pars):
     """Perform cross-matching and final fit using relative matching algorithm
 

@@ -9,6 +9,8 @@ import os
 import traceback
 import shutil
 
+from memory_profiler import profile
+
 from stsci.tools import logutil
 from astropy.io import fits
 import numpy as np
@@ -72,6 +74,7 @@ class HAPProduct:
         # """
         # print("Object information: {}".format(self.info))
 
+    @profile
     def generate_footprint_mask(self):
         """ Create a footprint mask for a set of exposure images
 
@@ -111,7 +114,6 @@ class HAPProduct:
         self.meta_wcs = meta_wcs
 
         return meta_wcs
-
 
 class TotalProduct(HAPProduct):
     """ A Total Detection Product is a 'white' light mosaic comprised of
@@ -156,6 +158,7 @@ class TotalProduct(HAPProduct):
         """
         self.fdp_list.append(fdp)
 
+    @profile
     def wcs_drizzle_product(self, meta_wcs):
         """
             Create the drizzle-combined total image using the meta_wcs as the reference output
@@ -186,7 +189,7 @@ class TotalProduct(HAPProduct):
         log.debug("Total combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         shutil.move(self.trl_logname, self.trl_filename)
 
-
+@profile
 class FilterProduct(HAPProduct):
     """ A Filter Detection Product is a mosaic comprised of images acquired
         during a single visit with one instrument, one detector, a single filter,
@@ -226,6 +229,7 @@ class FilterProduct(HAPProduct):
         """
         self.edp_list.append(edp)
 
+    @profile
     def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
                         fit_label='EVM', align_table=None, fitgeom='rscale'):
         """Extract the flt/flc filenames from the exposure product list, as
@@ -294,6 +298,7 @@ class FilterProduct(HAPProduct):
         # excluded from alignment.
         return align_table, exposure_filenames
 
+    @profile
     def wcs_drizzle_product(self, meta_wcs):
         """
             Create the drizzle-combined filter image using the meta_wcs as the reference output
@@ -373,6 +378,7 @@ class ExposureProduct(HAPProduct):
         unwanted_set = set(["generate_footprint_mask", "generate_metawcs", "meta_wcs", "mask_kws", "mask"])
         return sorted(class_set - unwanted_set)
 
+    @profile
     def wcs_drizzle_product(self, meta_wcs):
         """
             Create the drizzle-combined exposure image using the meta_wcs as the reference output

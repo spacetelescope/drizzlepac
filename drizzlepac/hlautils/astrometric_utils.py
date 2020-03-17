@@ -22,6 +22,8 @@ import inspect
 import sys
 from distutils.version import LooseVersion
 
+from memory_profiler import profile
+
 import numpy as np
 import scipy.stats as st
 from scipy import ndimage
@@ -631,7 +633,7 @@ def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
 
     return srcs
 
-
+@profile
 def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     segment_threshold=None, dao_threshold=None, source_box=7,
                     classify=True, centering_mode="starfind", nlargest=None,
