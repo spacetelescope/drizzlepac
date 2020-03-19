@@ -65,9 +65,13 @@ class Datasets:
 
         # Determine list of products to be reviewed
         drznames = glob.glob(os.path.join(dirnames, '*drz.fits'))
-        drcnames = glob.glob(os.path.join(dirnames, '*drc.fits'))
-        # Now, remove duplicates (keep drc, del drz)
-        prodnames = [d if d.replace('drz.fits', 'drc.fits') not in drcnames else d.replace('drz.fits', 'drc.fits') for d in drznames]
+        prodnames = glob.glob(os.path.join(dirnames, '*drc.fits'))
+        # Now, add any DRZ-only products to the list of DRC products
+        for drz in drznames:
+            drzc = drz.replace('drz.fits', 'drc.fits')
+            if drzc not in prodnames:
+                prodnames.append(drz)
+
         # Insure that pytest-temp directories are not included either
         self.prodnames = [d for d in prodnames if 'current' not in d]
 
@@ -222,7 +226,7 @@ def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
     fig_summary.text(0.01, 0.9, "WCSNAME: {}".format(wcsname), fontsize=fsize)
     fig_summary.text(0.01, 0.85, "TARGET: {}".format(targname), fontsize=fsize)
     fig_summary.text(0.01, 0.8, "Instrument: {}/{}".format(inst, det), fontsize=fsize)
-    fig_summary.text(0.01, 0.75, "Filters: {}".format(filters, fontsize=fsize)
+    fig_summary.text(0.01, 0.75, "Filters: {}".format(filters), fontsize=fsize)
     fig_summary.text(0.01, 0.7, "Total Exptime: {}".format(texptime), fontsize=fsize)
     fig_summary.text(0.01, 0.65, "WCSTYPE: {}".format(wcstype), fontsize=fsize)
     fig_summary.text(0.01, 0.5, "Total # of GAIA sources: {}".format(len(refx)), fontsize=fsize)
