@@ -106,12 +106,8 @@ class HapDiagnostic(object):
 
         self.data_source = data_source
         self.description = description
-        # self.time_since_epoch = ""  # TODO: Add header info: seconds since the unix epoch (jan 1 1970)
         # self.target_name = ""  # TODO: add header info: target name
         # self.target_descrip = ""  # TODO: add header info: target description/category
-        # self.exptime = ""  # TODO: add header info: exposure time (or total exposure time for drizzle product)
-        # self.imgtype = ""  # TODO: add header info: image type (spectroscopic vs image/accum) obstype in header
-        # self.mtflag = ""  # TODO: add header info: value of MTFLAG keyword zeroth header
         # self.fgslock =''
         # set logging level
         log.setLevel(log_level)
