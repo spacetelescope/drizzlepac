@@ -118,4 +118,4 @@ if __name__ == "__main__":
                         help = "Optional values for ci_lower_limit and ci_upper_limit to be plotted as vertical lines in scatter plot")
     PARSER.add_argument('-t', '--plot_title', required=False, default=None, help="Optional plot title")
     ARGS = PARSER.parse_args()
-    run_stuff(ARGS.input_files,ARGS.bin_size,ARGS.ci_limits,ARGS.plot_title)
+    run(ARGS.input_files,ARGS.bin_size,ARGS.ci_limits,ARGS.plot_title)
