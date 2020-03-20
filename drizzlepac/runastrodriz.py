@@ -733,7 +733,7 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
             if not os.path.exists(sfile):
                 # Working with data where CR is turned off by default (ACS/SBC, for example)
                 # Reset astrodrizzle parameters to generate single_sci images
-                reset_mdriztab_nocr(pipeline_pars, good_bits)
+                reset_mdriztab_nocr(pipeline_pars, good_bits, pipeline_pars['skysub'])
 
                 drizzlepac.astrodrizzle.AstroDrizzle(input=infile, configobj=None,
                                                     **pipeline_pars)
@@ -774,13 +774,13 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
 
     return drz_products, focus_dicts, diff_dicts
 
-def reset_mdriztab_nocr(pipeline_pars, good_bits):
+def reset_mdriztab_nocr(pipeline_pars, good_bits, skysub):
     # Need to turn off MDRIZTAB if any other parameters are to be set
     pipeline_pars['mdriztab'] = False
     pipeline_pars['build'] = True
     pipeline_pars['resetbits'] = 0
     pipeline_pars['static'] = False
-    pipeline_pars['skysub'] = True
+    pipeline_pars['skysub'] = skysub
     pipeline_pars['driz_separate'] = True
     pipeline_pars['driz_sep_bits'] = good_bits
     pipeline_pars['driz_sep_fillval'] = 0.0
@@ -824,7 +824,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
     try:
         if not find_crs:
             # Need to turn off MDRIZTAB if any other parameters are to be set
-            reset_mdriztab_nocr(pipeline_pars, good_bits)
+            reset_mdriztab_nocr(pipeline_pars, good_bits, pipeline_pars['skysub'])
 
         if tmpdir:
             # Create tmp directory for processing
@@ -1002,10 +1002,10 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             sim_indx = amutils.compute_similarity(alignprod, align_ref)
             align_sim_fail = sim_indx > 1
 
-        
             if not align_sim_fail and alignment_verified:
-                _trlmsg += "Alignment appeared to succeed based on similarity index of {:0.4f} \n".format(sim_indx)
+                _trlmsg += "Alignment appeared to SUCCEED based on similarity index of {:0.4f} \n".format(sim_indx)
             else:
+                _trlmsg += "Alignment appeared to FAIL based on similarity index of {:0.4f} \n".format(sim_indx)
                 _trlmsg += "  Reverting to previously determined WCS alignment.\n"
                 alignment_verified = False
                 alignment_quality += 3
