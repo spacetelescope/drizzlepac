@@ -61,7 +61,7 @@ from stsci.tools import parseinput
 from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
 
-from ..tweakutils import build_xy_zeropoint
+from ..tweakutils import build_xy_zeropoint, ndfind
 
 __taskname__ = 'astrometric_utils'
 
@@ -545,22 +545,30 @@ def find_fwhm(psf, default_fwhm):
     return fwhm
 
 def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
-                            high_sn=1000,
-                            nsigma=5.0, sigma=3.0, source_box=7):
+                            nbright=1000,
+                            threshold=200.0, sigma=3.0, source_box=7):
     """Use photutils to replicate the IRAF point-source catalogs"""
 
     # Detect threshold using a relatively fast method and
     # subtract off that background.
+    nsigma = 5.0
     bkg_thresh, bkg = sigma_clipped_bkg(img, sigma=sigma, nsigma=nsigma)
 
+    sigma = np.sqrt(2.0 * np.abs(bkg[1]))
+    x, y, flux, src_id, sharp, round1, round2 = ndfind(img, 
+                                                     sigma*threshold, 
+                                                     fwhm, bkg[1],
+                                                     nbright=nbright)
+    srcs = Table([x,y,flux,src_id], names=['xcentroid', 'ycentroid', 'flux', 'id'])
+    
+    """   
     # Now, use IRAFStarFinder to identify sources across chip
-    starfind = IRAFStarFinder(threshold=bkg_thresh, fwhm=fwhm)
+    starfind = IRAFStarFinder(threshold=bkg[2]*nsigma, fwhm=fwhm)
     srcs = starfind.find_stars(img, mask=dqmask)
     if srcs is not None and high_sn is not None and len(srcs) > high_sn:
         # sort by flux, return high_sn srcs only...
         indx = np.argsort(srcs['flux'])[:high_sn]
         srcs = srcs[indx]
-    num_srcs = len(srcs) if srcs is not None else 0
     log.info("Found {} sources".format(len(srcs)))
 
     return srcs
