@@ -38,7 +38,7 @@ def get_data(input_files):
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
-def run_stuff(input_files,bin_size,ci_limits,plot_title):
+def run(input_files,bin_size,ci_limits,plot_title):
     """Main calling subroutine
 
     Parameters
