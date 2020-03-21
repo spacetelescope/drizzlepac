@@ -1006,8 +1006,8 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 _trlmsg += "Alignment appeared to SUCCEED based on similarity index of {:0.4f} \n".format(sim_indx)
             else:
                 _trlmsg += "Alignment appeared to FAIL based on similarity index of {:0.4f} \n".format(sim_indx)
-                _trlmsg += "  Reverting to previously determined WCS alignment.\n"
-                alignment_verified = False
+                # _trlmsg += "  Reverting to previously determined WCS alignment.\n"
+                # alignment_verified = False
                 alignment_quality += 3
 
         for fd in focus_dicts:
