@@ -78,6 +78,8 @@ class AlignmentTable:
         self.alignment_pars.update(alignment_pars['determine_fit_quality'])
 
         self.dqname = dqname
+        self.haplist = []
+        self.process_list = None
 
         self.zero_dt = starting_dt = datetime.datetime.now()
         log.info(str(starting_dt))
@@ -102,7 +104,7 @@ class AlignmentTable:
         default_fwhm_set = False
 
         try:
-            self.haplist = []
+
             for img in self.process_list:
                 catimg = HAPImage(img)
                 # Build image properties needed for alignment
