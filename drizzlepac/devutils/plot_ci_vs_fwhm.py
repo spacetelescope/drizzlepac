@@ -55,10 +55,10 @@ def run(input_files,bin_size,ci_limits,plot_title):
     """
     data_table = get_data(input_files)
     processed_data_table = process_data(data_table,bin_size)
-    plot_stuff(processed_data_table,bin_size,ci_limits=ci_limits,plot_title=plot_title)
+    plot_data(processed_data_table,bin_size,ci_limits=ci_limits,plot_title=plot_title)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
-def plot_stuff(data_table,bin_size,ci_limits=[-1.0, -1.0],plot_title=None):
+def plot_data(data_table,bin_size,ci_limits=[-1.0, -1.0],plot_title=None):
     fig = plt.figure(figsize=(11, 8.5))
     ax1 = fig.add_subplot(111)
     plt.scatter(data_table['CI'], data_table['FWHM'], marker=".", s=10, color="blue")
