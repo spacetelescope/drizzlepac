@@ -567,15 +567,14 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("{}".format("=" * 80))
 
             # find ALL the sources!!!
-            use_DaoStarFinder = True # Set to "True" to use DaoStarFinder (The default method), instead of IrafStarFinder to identifiy soruces
-            if use_DaoStarFinder:
+            if self.param_dict["starfinder_algorithm"] == "dao":
                 log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
                                                                           self.image.bkg_rms_median))
             else:
                 log.info("IrafStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
                                                                            self.image.bkg_rms_median))
             log.info("{}".format("=" * 80))
-            if use_DaoStarFinder:
+            if self.param_dict["starfinder_algorithm"] == "dao":
                 daofind = DAOStarFinder(fwhm=source_fwhm,
                                         threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
             else:
@@ -586,7 +585,7 @@ class HAPPointCatalog(HAPCatalogBase):
             binary_inverted_wht = np.where(wht_image == 0, 1, 0)
             exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
 
-            if use_DaoStarFinder:
+            if self.param_dict["starfinder_algorithm"] == "dao":
                 sources = daofind(image, mask=exclusion_mask)
             else:
                 sources = isf(image, mask=exclusion_mask)
