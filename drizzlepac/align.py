@@ -29,9 +29,9 @@ from .hlautils import config_utils
 __taskname__ = 'align'
 
 MIN_CATALOG_THRESHOLD = 3
-MIN_OBSERVABLE_THRESHOLD = 10
+MIN_OBSERVABLE_THRESHOLD = 4
 MIN_CROSS_MATCHES = 3
-MIN_FIT_MATCHES = 6
+MIN_FIT_MATCHES = 4
 MAX_FIT_RMS = 10  # RMS now in mas, 1.0
 MAX_FIT_LIMIT = 150  # Maximum RMS that a result is useful
 MAX_SOURCES_PER_CHIP = 250  # Maximum number of sources per chip to include in source catalog
@@ -226,28 +226,33 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         else:
             log.warning("WARNING: Unable to display Git repository revision information.")
 
+    # Initialize key variables
+    filtered_table = None
+
+    # 1: Interpret input data and optional parameters
+    log.info("{} STEP 1: Get data {}".format("-" * 20, "-" * 66))
+    zero_dt = starting_dt = datetime.datetime.now()
+    log.info(str(starting_dt))
+    imglist = check_and_get_data(input_list, archive=archive, clobber=clobber)
+    log.info("SUCCESS")
+
+    log.info(make_label('Processing time of [STEP 1]', starting_dt))
+    starting_dt = datetime.datetime.now()
+
+    # Get default alignment parameters if not provided by the user...
+    inst = fits.getval(imglist[0], 'instrume')
+    det = fits.getval(imglist[0], 'detector')
+    apars = get_default_pars(inst, det)
+    alignment_pars.update(apars)
+    
     try:
-        # Initialize key variables
-        filtered_table = None
-
-        # 1: Interpret input data and optional parameters
-        log.info("{} STEP 1: Get data {}".format("-" * 20, "-" * 66))
-        zero_dt = starting_dt = datetime.datetime.now()
-        log.info(str(starting_dt))
-        imglist = check_and_get_data(input_list, archive=archive, clobber=clobber)
-        log.info("SUCCESS")
-
-        log.info(make_label('Processing time of [STEP 1]', starting_dt))
-        starting_dt = datetime.datetime.now()
-
-        # Get default alignment parameters if not provided by the user...
-        inst = fits.getval(imglist[0], 'instrume')
-        det = fits.getval(imglist[0], 'detector')
-        apars = get_default_pars(inst, det)
-        alignment_pars.update(apars)
-
         # Instantiate AlignmentTable class with these input files
         alignment_table = align_utils.AlignmentTable(imglist, **alignment_pars)
+        if alignment_table.process_list is None:
+            log.warning("NO viable images to align.") 
+            alignment_table.close()
+            return None
+            
         process_list = alignment_table.process_list
 
         # Define fitting algorithm list in priority order
@@ -304,7 +309,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                 alignment_table.filtered_table[:]['processMsg'] = "No sources found"
                 log.info(make_label('Processing time of [STEP 4]', starting_dt))
                 alignment_table.close()
-                return
+                return None
 
             # The catalog of observable sources must have at least MIN_OBSERVABLE_THRESHOLD entries to be useful
             total_num_sources = 0
@@ -320,7 +325,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                 alignment_table.filtered_table[:]['processMsg'] = "Not enough sources found"
                 log.info(make_label('Processing time of [STEP 4]', starting_dt))
                 alignment_table.close()
-                return
+                return None
+                
         log.info("SUCCESS")
         log.info(make_label('Processing time of [STEP 4]', starting_dt))
         starting_dt = datetime.datetime.now()

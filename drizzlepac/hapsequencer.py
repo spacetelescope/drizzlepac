@@ -266,6 +266,11 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                                                               filter_product_catalogs,
                                                               log_level,
                                                               diagnostic_mode)
+            # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
+            if diagnostic_mode:
+                if "fwhm" in total_product_catalogs.catalogs['aperture'].sources.colnames:
+                    output_table = Table([filter_product_catalogs.catalogs['aperture'].source_cat['CI'], total_product_catalogs.catalogs['aperture'].sources['fwhm']],names=("CI","FWHM"))
+                    output_table.write(filter_product_obj.point_cat_filename.replace(".ecsv","_ci_fwhm.csv"), format="ascii.csv")
 
             # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
             if diagnostic_mode:

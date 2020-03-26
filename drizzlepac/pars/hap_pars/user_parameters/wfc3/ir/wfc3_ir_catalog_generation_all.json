@@ -7,6 +7,7 @@
     "aperture_1": 0.15,
     "aperture_2": 0.45,
     "salgorithm": "mode",
+    "starfinder_algorithm": "dao",
     "dao": {
         "bkgsig_sf": 4.0,
         "kernel_sd_aspect_ratio": 0.8,

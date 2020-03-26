@@ -43,7 +43,7 @@ def get_data(input_files):
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
-def run_stuff(input_files,bin_size,ci_limits,plot_title):
+def run(input_files,bin_size,ci_limits,plot_title):
     """Main calling subroutine
 
     Parameters
@@ -60,10 +60,10 @@ def run_stuff(input_files,bin_size,ci_limits,plot_title):
     """
     data_table = get_data(input_files)
     processed_data_table = process_data(data_table,bin_size)
-    plot_stuff(processed_data_table,bin_size,ci_limits=ci_limits,plot_title=plot_title)
+    plot_data(processed_data_table,bin_size,ci_limits=ci_limits,plot_title=plot_title)
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
-def plot_stuff(data_table,bin_size,ci_limits=[-1.0, -1.0],plot_title=None):
+def plot_data(data_table,bin_size,ci_limits=[-1.0, -1.0],plot_title=None):
     fig = plt.figure(figsize=(11, 8.5))
     ax1 = fig.add_subplot(111)
     plt.scatter(data_table['CI'], data_table['FWHM'], marker=".", s=10, color="blue")
@@ -123,4 +123,4 @@ if __name__ == "__main__":
                         help = "Optional values for ci_lower_limit and ci_upper_limit to be plotted as vertical lines in scatter plot")
     PARSER.add_argument('-t', '--plot_title', required=False, default=None, help="Optional plot title")
     ARGS = PARSER.parse_args()
-    run_stuff(ARGS.input_files,ARGS.bin_size,ARGS.ci_limits,ARGS.plot_title)
+    run(ARGS.input_files,ARGS.bin_size,ARGS.ci_limits,ARGS.plot_title)

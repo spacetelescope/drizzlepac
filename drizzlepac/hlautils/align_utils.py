@@ -78,6 +78,8 @@ class AlignmentTable:
         self.alignment_pars.update(alignment_pars['determine_fit_quality'])
 
         self.dqname = dqname
+        self.haplist = []
+        self.process_list = None
 
         self.zero_dt = starting_dt = datetime.datetime.now()
         log.info(str(starting_dt))
@@ -102,7 +104,7 @@ class AlignmentTable:
         default_fwhm_set = False
 
         try:
-            self.haplist = []
+
             for img in self.process_list:
                 catimg = HAPImage(img)
                 # Build image properties needed for alignment
@@ -843,7 +845,7 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
                     headerlet_filename = image_name.replace("flc", "flt_hlet")
                 if image_name.endswith("flt.fits"):
                     headerlet_filename = image_name.replace("flt", "flt_hlet")
-            out_headerlet.writeto(headerlet_filename, clobber=True)
+            out_headerlet.writeto(headerlet_filename, overwrite=True)
             log.info("Wrote headerlet file {}.\n\n".format(headerlet_filename))
             out_headerlet_dict[image_name] = headerlet_filename
 

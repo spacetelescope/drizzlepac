@@ -54,7 +54,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
 
     # Query MAST for the data with an observation type of either "science" or
     # "calibration"
-    obs_table = Observations.query_criteria(obs_id=obsid, obstype='all')
+    obs_table = Observations.query_criteria(obs_id=obsid)
     # Catch the case where no files are found for download
     if not obs_table:
         log.info("WARNING: Query for {} returned NO RESULTS!".format(obsid))
