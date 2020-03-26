@@ -361,7 +361,7 @@ def computeFlagStats(matchedRA, refFlag_list, compFlag_list, max_diff, plotGen, 
                 else:
                     stat_text_blob += "\n"
             stat_text_blob += "\n" + timestamp + "\n"
-            stat_text_blob += plotfile_prefix
+            stat_text_blob += "Comparison Sourcelist: {}\nReference Sourcelist:  {}".format(catalog_names[1], catalog_names[0])
             fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center", va="center",
                      multialignment="left", family="monospace")
             fig.savefig(stat_file_name)
@@ -1012,17 +1012,14 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     good_flag_sum : list, optional
         sum of "good" bits that will be used mask matched sources based on flag values
 
-    plotfile_prefix : str, optional
-        text string that will prepend the plot files generated if plots are written to files
-
     plotGen : bool, optional
         Generate plots and display them to the screen (True/False)?
 
-    diffMode : str, optional
-        method used to compute comp-ref difference in computeLinearStats().
+    plotfile_prefix : str, optional
+        text string that will prepend the plot files generated if plots are written to files
 
     verbose : bool, optional
-        display verbose output?
+        display verbose output? Default value is False.
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
@@ -1030,7 +1027,9 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
 
     debugMode : bool, optional
         executes subroutine check_match_quality(), which the writes the matched sources (x, y) coordinates of the
-        comparision and reference source lists to ds9 region files for follow-up human visual inspection.
+        comparision and reference source lists to ds9 region files for follow-up human visual inspection, and
+        write_matched_catalogs() which generates abbreviated versions of the input catalogs that only contain matched
+        sources. Default value is False.
 
     Returns
     -------
@@ -1242,6 +1241,9 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
             pdf_file_list += flag_pdf_list
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
+
+        if debugMode:
+            write_matched_catalogs(matchedXValues,matchedYValues,matched_values_ra,matched_values_dec,matched_values,slNames)
 
     log.info("\n")
     log_output_string_list = []
@@ -1465,6 +1467,73 @@ def pdf_merger(output_path, input_paths):
     for path in input_paths:
         os.remove(path)
 
+
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+
+def write_matched_catalogs(x,y,ra,dec,flags,slnames):
+    """Writes only matched elements of the input catalogs for columns X, Y, RA, Dec, and Flags ONLY. These catalogs will
+    are to be used as inputs for compare_sourcelist_flagging.py. The output file names are based on the input file
+    names, with the string 'matched_files_only' inserted after all the proposal/visit/instrument/detector and
+    (HAP only) ippss information. For example, the output file produced from HAP point catalog
+    'hst_11665_06_wfc3_uvis_f555w_ib4606_point-cat.ecsv' is
+    'hst_11665_06_wfc3_uvis_f555w_ib4606_matched_sources_only_point-cat.ecsv', and the output file produced from
+    the corrected HLA Classic daophot catalog 'hst_11665_06_wfc3_uvis_f555w_daophot_corrected.txt' is
+    'hst_11665_06_wfc3_uvis_f555w_matched_sources_only_daophot_corrected.txt'.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched x reference values.
+        Column 2: The corresponding matched comparision values
+
+    y : numpy.ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched y reference values.
+        Column 2: The corresponding matched comparision values
+
+    ra : numpy.ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched RA reference values.
+        Column 2: The corresponding matched comparision values
+
+    dec : numpy.ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched Dec reference values.
+        Column 2: The corresponding matched comparision values
+
+    flags : numpy.ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched flag reference values.
+        Column 2: The corresponding matched comparision values
+
+    slNames : list
+        list of input sourcelist filenames. it is assumed here and throughout the code that the first file listed is
+        the reference, and the second is the comparision
+
+    Returns
+    -------
+    Nothing.
+    """
+    for ctr in range(0,2):
+        sl_name = slnames[ctr]
+        for file_ending in ["daophot.txt", "daophot_corrected.txt", "point-cat.ecsv", "sexphot.txt",
+                            "sexphot_corrected.txt", "segment-cat.ecsv"]:
+            if sl_name.endswith(file_ending):
+                output_filename = sl_name.replace(file_ending,"matched_sources_only_{}".format(file_ending))
+        flagscolname = "Flags"
+        if (sl_name.endswith("daophot.txt") or sl_name.endswith("daophot_corrected.txt") or sl_name.endswith("point-cat.ecsv")):
+            xcolname = "X-Center"
+            ycolname = "Y-Center"
+        elif sl_name.endswith("segment-cat.ecsv"):
+            xcolname = "X-Centroid"
+            ycolname = "Y-Centroid"
+        else:
+            xcolname = "X_IMAGE"
+            ycolname = "Y_IMAGE"
+            flagscolname = "FLAGS"
+        output_table = Table([x[ctr,:],y[ctr,:],ra[ctr,:],dec[ctr,:],flags[ctr,:]],names=(xcolname,ycolname,"RA","DEC",flagscolname))
+        if output_filename.endswith(".ecsv"):
+            output_format = "ascii.ecsv"
+        if output_filename.endswith(".txt"):
+            output_format = "ascii.csv"
+        output_table.write(output_filename, format = output_format)
+        log.info("Wrote matched sources only catalog {}".format(output_filename))
 
 # =======================================================================================================================
 if __name__ == "__main__":
