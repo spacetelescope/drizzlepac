@@ -92,18 +92,18 @@ class Datasets:
 
     def create_summary(self):
         font_size = 12
-        first_page = plt.figure(figsize=(8.2, 11.69))
+        first_page = plt.figure(figsize=(8.5, 11))
         first_page.clf()
         txt = 'Summary of Alignment Results from {}'.format(self.parent_dir)
-        first_page.text(0.05, 0.95, txt, transform=first_page.transFigure, size=font_size, ha="center")
+        first_page.text(0.5, 0.95, txt, transform=first_page.transFigure, size=font_size, ha="center")
         txt = 'Total Datasets : {}'.format(len(self.prodnames))
         first_page.text(0.1, 0.85, txt, transform=first_page.transFigure, size=font_size, ha="left")
 
         # compute basic stats on final WCS solutions
         apost = len([w for w in self.wcsnames if 'FIT' in w])
-        defwcs = len([w for w in self.wcsnames if '-' not in w])
+        defwcs = len([w for w in self.wcsnames if '-' not in w or 'None' in w or w.strip()==''])
         apri = len(self.wcsnames) - apost - defwcs
-        relonly = len([w for w in self.wcsnames if 'NONE' in w])
+        relonly = len([w for w in self.wcsnames if 'NONE' in w ])
 
         txt = 'Datasets with a posteriori WCS : {}'.format(apost)
         first_page.text(0.1, 0.8, txt, transform=first_page.transFigure, size=font_size, ha="left")
@@ -115,9 +115,9 @@ class Datasets:
         first_page.text(0.1, 0.65, txt, transform=first_page.transFigure, size=font_size, ha="left")
 
         now = datetime.now()
-        rtime = datetime.strftime(now, "b %d %Y  %H:%M:%S")
+        rtime = datetime.strftime(now, "%b %d %Y  %H:%M:%S")
         txt = 'Report created at {}'.format(rtime)
-        first_page.text(0.1, 0.1, txt, transform=first_page.transFigure, size=font_size, ha="center")
+        first_page.text(0.1, 0.1, txt, transform=first_page.transFigure, size=font_size, ha="left")
 
         return first_page
 
@@ -149,7 +149,8 @@ class Datasets:
             json.dump(json_summary, jsonfile)
         
 
-def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
+def create_product_page(prodname, zoom_size=128, wcsname="", 
+                        gcolor='magenta', fsize=8):
     """Create a matplotlib Figure() object which summarizes this product FITS file."""
 
     # obtain image data to display
@@ -167,7 +168,7 @@ def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
         wcs = wcsutil.HSTWCS(prod, ext=1)
         hdrtab = prod['hdrtab'].data
         filters = ';'.join([phdr[f] for f in phdr['filter*']]) 
-        date-obs = phdr['date-obs']  # human-readable date
+        dateobs = phdr['date-obs']  # human-readable date
         expstart = phdr['expstart']  # MJD float value
         asnid = phdr.get('asn_id', '')
 
@@ -194,12 +195,13 @@ def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
             zy.append(y - center[0] + zoom_size)
 
     # Define subplot regions on page
-    fig = plt.figure(constrained_layout=True, figsize=(7, 10))
+    fig = plt.figure(constrained_layout=True, figsize=(8.5, 11))
     gs = fig.add_gridspec(ncols=4, nrows=5)
 
     # title plots
-    img_title = "{} image of {} with WCSNAME={}".format(prodname, targname, wcsname)
-    plt.title(img_title, loc='center', fontsize=8)
+    rootname = os.path.basename(prodname)
+    img_title = "{} image of {} with WCSNAME={}".format(rootname, targname, wcsname)
+    fig.suptitle(img_title, ha='center', va='top', fontsize=fsize)
 
     # Define image display
     fig_img = fig.add_subplot(gs[:3, :])
@@ -226,7 +228,6 @@ def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
     fig_zoom.scatter(zx, zy, marker=mstyle, alpha=0.35, c=gcolor)
 
     # Print summary info
-    fsize = 8
     pname = os.path.split(prodname)[1]
     fig_summary.text(0.01, 0.95, "Summary for {}".format(pname), fontsize=fsize)
     fig_summary.text(0.01, 0.9, "WCSNAME: {}".format(wcsname), fontsize=fsize)
@@ -246,7 +247,7 @@ def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
         
     # populate JSON summary info
     summary = dict(wcsname=wcsname, targname=targname, asnid=asnid,
-                    date-obs=date-obs, expstart=expstart,
+                    dateobs=dateobs, expstart=expstart,
                     instrument=(inst, det), exptime=texptime,
                     wcstype=wcstype, num_gaia=len(refx), filters=filters,
                     rms_ra=-1, rms_dec=-1, nmatch=-1, catalog="")
