@@ -62,7 +62,7 @@ class HapDiagnostic(object):
         -------
         Nothing.
         """
-
+        # TODO: restructure to account for the fact that total objects don't have filter information
         if hap_obj and header_fits_filename:
             errmsg = "Invalid inputs. Either 'hap_obj' OR 'header_fits_filename' needs to be specified. NOT BOTH."
             log.error(errmsg)
@@ -75,7 +75,7 @@ class HapDiagnostic(object):
             if hap_obj:  # populate json header with HAP product information
                 self.header = hap_obj.primary_header
                 if hasattr(hap_obj,"filters"):
-                    self.filter = hap_obj.filter
+                    self.filter = hap_obj.filters
                 else:
                     if self.header['INSTRUME'].lower() == "acs":
                         self.filter = poller_utils.determine_filter_name("{};{}".format(self.header['FILTER1'],self.header['FILTER2']))
@@ -85,7 +85,7 @@ class HapDiagnostic(object):
                         errmsg = "Invalid instrument."
                         log.error(errmsg)
                         raise Exception(errmsg)
-            else:  # populate json header with HAP product information
+            if header_fits_filename:  # populate json header with HAP product information
                 if os.path.exists(header_fits_filename):
                     self.header = getheader(header_fits_filename)
                     if self.header['INSTRUME'].lower() == "acs":
@@ -101,15 +101,9 @@ class HapDiagnostic(object):
                     log.error(errmsg)
                     raise Exception(errmsg)
 
-
-        # gobble up inputs
-
+        # gobble up other inputs
         self.data_source = data_source
         self.description = description
-        # self.target_name = ""  # TODO: add header info: target name
-        # self.target_descrip = ""  # TODO: add header info: target description/category
-        # self.fgslock =''
-        # set logging level
         log.setLevel(log_level)
 
         # instantiate data storage dictionary
