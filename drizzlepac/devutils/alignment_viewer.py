@@ -135,6 +135,7 @@ class Datasets:
             pdf.savefig(first_page)
             plt.close()
 
+            plt.ioff()
             # Now generate a separate page for each dataset
             for p, w in zip(prodnames, wcsnames):
                 result, summary = create_product_page(p, wcsname=w)
@@ -142,9 +143,11 @@ class Datasets:
                     pdf.savefig(result)
                     plt.close()
                     json_summary[os.path.basename(p)] = summary
+            plt.ion()
+            
         with open(pdfname.replace('.pdf', '_summary.json'), 'w') as jsonfile:
             json.dump(json_summary, jsonfile)
-
+        
 
 def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
     """Create a matplotlib Figure() object which summarizes this product FITS file."""
@@ -164,6 +167,9 @@ def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
         wcs = wcsutil.HSTWCS(prod, ext=1)
         hdrtab = prod['hdrtab'].data
         filters = ';'.join([phdr[f] for f in phdr['filter*']]) 
+        date-obs = phdr['date-obs']  # human-readable date
+        expstart = phdr['expstart']  # MJD float value
+        asnid = phdr.get('asn_id', '')
 
     center = (data.shape[0] // 2, data.shape[1] // 2)
     prod_path = os.path.split(prodname)[0]
@@ -239,7 +245,8 @@ def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
     
         
     # populate JSON summary info
-    summary = dict(wcsname=wcsname, targname=targname,
+    summary = dict(wcsname=wcsname, targname=targname, asnid=asnid,
+                    date-obs=date-obs, expstart=expstart,
                     instrument=(inst, det), exptime=texptime,
                     wcstype=wcstype, num_gaia=len(refx), filters=filters,
                     rms_ra=-1, rms_dec=-1, nmatch=-1, catalog="")
@@ -265,10 +272,15 @@ def create_product_page(prodname, zoom_size=128, wcsname="", gcolor='magenta'):
                 summary.update(fit_vals)
                 break
         exp.close()
-        fig_summary.text(0.01, 0.4, "RMS: RA={:0.3f}mas, DEC={:0.3f}mas".format(rms_ra, rms_dec), fontsize=fsize)
-        fig_summary.text(0.01, 0.35, "# matches: {}".format(nmatch), fontsize=fsize)
-        fig_summary.text(0.01, 0.3, "Matched to {} catalog".format(catalog), fontsize=fsize)
-
+        try:
+            fig_summary.text(0.01, 0.4, "RMS: RA={:0.3f}mas, DEC={:0.3f}mas".format(rms_ra, rms_dec), fontsize=fsize)
+            fig_summary.text(0.01, 0.35, "# matches: {}".format(nmatch), fontsize=fsize)
+            fig_summary.text(0.01, 0.3, "Matched to {} catalog".format(catalog), fontsize=fsize)
+        except:
+            fig_summary.text(0.01, 0.35, "No MATCH to GAIA") 
+            print("Data without a match to GAIA: {},{}".format(inexp, wcsname))
+            
+    
     return fig, summary
     
 def get_col_val(hdrtab, keyword, default=None):
