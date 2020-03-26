@@ -266,20 +266,11 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                                                               filter_product_catalogs,
                                                               log_level,
                                                               diagnostic_mode)
-            # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
-            if diagnostic_mode:
-                if "fwhm" in total_product_catalogs.catalogs['aperture'].sources.colnames:
-                    output_table = Table([filter_product_catalogs.catalogs['aperture'].source_cat['CI'], total_product_catalogs.catalogs['aperture'].sources['fwhm']],names=("CI","FWHM"))
-                    output_table.write(filter_product_obj.point_cat_filename.replace(".ecsv","_ci_fwhm.csv"), format="ascii.csv")
 
             # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
             if diagnostic_mode:
                 if "fwhm" in total_product_catalogs.catalogs['aperture'].sources.colnames:
-                    parse_cat_name = filter_product_obj.point_cat_filename.split("_")
-                    diag_obj = diagnostic_utils.HapDiagnostic(prop_id=parse_cat_name[1], obset_id=parse_cat_name[2],
-                                                              telescope=parse_cat_name[0],
-                                                              instrument=parse_cat_name[3],
-                                                              detector=parse_cat_name[4], filter=parse_cat_name[5],
+                    diag_obj = diagnostic_utils.HapDiagnostic(hap_obj=filter_product_obj,
                                                               data_source=__taskname__,
                                                               description="CI vs. FWHM values",
                                                               log_level=log_level)
@@ -418,7 +409,6 @@ def create_drizzle_products(total_obj_list):
                 exposure_obj = poller_utils.add_primary_fits_header_as_attr(exposure_obj)
 
     # Return product list for creation of pipeline manifest file
-    pdb.set_trace()
     return product_list
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -505,7 +495,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
-
         # Update all of the product objects with their associated configuration information.
         for total_item in total_obj_list:
             log.info("Preparing configuration parameter values for total product {}".format(total_item.drizzle_filename))
