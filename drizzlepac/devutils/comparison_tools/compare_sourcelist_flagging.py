@@ -5,6 +5,7 @@ the flag values in the specified sourcelists by flag bit value and plots source 
 
 NOTE: This script requires the "pyds9" library.
 """
+import argparse
 import sys
 from astropy.io import fits as fits
 from astropy.table import Table
@@ -19,7 +20,7 @@ flag_meanings = ['Point Source', 'Extended Source', 'Single-Pixel Saturation', '
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
 
-def display_regions(imgname, reg_dict_list, flag_counts_list, n_sources_list):
+def display_regions(imgname, coordsys, reg_dict_list, flag_counts_list, n_sources_list):
     """
     Display the input input image overplot the positions of flagged sources
 
@@ -27,6 +28,9 @@ def display_regions(imgname, reg_dict_list, flag_counts_list, n_sources_list):
     ----------
     imgname : string
         input image name
+
+    coordsys : string
+        coordinate system to use
 
     reg_dict_list : list
         list of dictionaries containing region info keyed by flag bit for both sourcelists
@@ -43,27 +47,35 @@ def display_regions(imgname, reg_dict_list, flag_counts_list, n_sources_list):
     """
     imghdu = fits.open(imgname)
     d = pyds9.DS9()
-    print("{}Cat. #1{}Cat. #2".format(" " * 52, " " * 3))
+    print("{}Catalog #1{}Catalog #2".format(" " * 56, " " * 10))
     for ctr in range(0, len(bit_list)):
         bit_val = bit_list[ctr]
         padding1 = 6 - len(str(bit_val))
         padding2 = 27 - len(flag_meanings[ctr])
-        print("Frame {}: Bit value {}{}{}{}{}{}{}".format(ctr+1,
-                                                          bit_val,
-                                                          "."*padding1,
-                                                          flag_meanings[ctr],
-                                                          padding2*".",
-                                                          flag_counts_list[0][ctr],
-                                                          (10-len(str(flag_counts_list[0][ctr])))*".",
-                                                          flag_counts_list[1][ctr]))
+
+
+        text_stuff = "Frame {}: Bit value {}{}{}{}".format(ctr+1,bit_val,"."*padding1,flag_meanings[ctr],padding2*".")
+        pct_1 = (float(flag_counts_list[0][ctr])/float(n_sources_list[0]))*100.0
+        pct_2 = (float(flag_counts_list[1][ctr]) / float(n_sources_list[1])) * 100.0
+        out_string = "{:9d} {:8.3f}% {:9d} {:8.3f}%".format(flag_counts_list[0][ctr],pct_1,flag_counts_list[1][ctr],pct_2)
+
+        print("{}{}".format(text_stuff,out_string.replace(" ",".")))
         if ctr != 0:
             d.set("frame new")
         d.set_fits(imghdu)
         d.set("scale zscale")
+        if coordsys == "radec":
+            d.set("wcs fk5")
+            d.set("wcs degrees")
         for reg_dict in reg_dict_list:
             if reg_dict[bit_val]:
-                d.set('regions', 'physical; {}'.format(reg_dict[bit_val]))
-
+                if coordsys == "xy":
+                    d.set('regions', 'physical; {}'.format(reg_dict[bit_val]))
+                if coordsys == "radec":
+                    d.set('regions', 'fk5; {}'.format(reg_dict[bit_val]))
+    out_string = ".......{:9d}{}{:9d}".format(n_sources_list[0], "." * 11 , n_sources_list[1])
+    print("{}TOTAL CATALOG LENGTH{}".format(" " * 25,out_string.replace(" ",".")))
+    d.set("lock frame image")
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
 
 
@@ -103,7 +115,7 @@ def deconstruct_flag(flagval):
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
 
 
-def make_regions(sl_name, shape, color):
+def make_regions(sl_name, coordsys, shape, color):
     """
     generate a dictionary of dictionary region info to plot in ds9. Assumes that X and Y coords are stored the first
     two (leftmost) columns, and flag values are stored in the last (rightmost) column.
@@ -112,6 +124,9 @@ def make_regions(sl_name, shape, color):
     ----------
     sl_name : string
         sourcelist name
+
+    coordsys : string
+        coordinate system to use (either "xy" or radec)
 
     shape : string
         desired region shape
@@ -130,27 +145,62 @@ def make_regions(sl_name, shape, color):
     n_sources : int
         total number of sources in sourcelist
     """
-    table_data = Table.read(sl_name, format='ascii.ecsv')
+    if sl_name.endswith(".ecsv"):
+        table_data = Table.read(sl_name, format='ascii.ecsv')
+    elif (sl_name.endswith("daophot.txt") or sl_name.endswith("daophot_corrected.txt")):
+        table_data = Table.read(sl_name, format='ascii')
+    elif (sl_name.endswith("sexphot.txt") or sl_name.endswith("sexphot_corrected.txt")):
+        table_data = Table.read(sl_name, format='ascii')
+    else:
+        sys.exit("ERROR! Unrecognized catalog filetype!")
     flag_counts = np.zeros(9, dtype=int)
     reg_dict = {}
     for bit_val in bit_list:
         reg_dict[bit_val] = ""
-
+        flag_col_name = "Flags"
     for table_line in table_data:
         if sl_name.endswith("point-cat.ecsv"):
-            x = table_line["X-Center"]
-            y = table_line["Y-Center"]
+            if coordsys == "xy":
+                x = table_line["X-Center"]
+                y = table_line["Y-Center"]
+            if coordsys == "radec":
+                x = table_line["RA"]
+                y = table_line["DEC"]
         elif sl_name.endswith("segment-cat.ecsv"):
-            x = table_line["X-Centroid"]
-            y = table_line["Y-Centroid"]
+            if coordsys == "xy":
+                x = table_line["X-Centroid"]
+                y = table_line["Y-Centroid"]
+            if coordsys == "radec":
+                x = table_line["RA"]
+                y = table_line["DEC"]
+        elif (sl_name.endswith("daophot.txt") or sl_name.endswith("daophot_corrected.txt")):
+            if coordsys == "xy":
+                x = table_line["X-Center"]
+                y = table_line["Y-Center"]
+            if coordsys == "radec":
+                x = table_line["RA"]
+                y = table_line["DEC"]
+        elif (sl_name.endswith("sexphot.txt") or sl_name.endswith("sexphot_corrected.txt")):
+            flag_col_name = "FLAGS"
+            if coordsys == "xy":
+                x = table_line["X_IMAGE"]
+                y = table_line["Y_IMAGE"]
+            if coordsys == "radec":
+                x = table_line["RA"]
+                y = table_line["DEC"]
+
         else:
             sys.exit("ERROR! Unrecognized catalog filetype!")
-        flagval  = table_line["Flags"]
+
+        flagval  = table_line[flag_col_name]
         flag_bits = deconstruct_flag((flagval))
         flag_counts += flag_bits
         for bit_val, flag_element in zip(bit_list, flag_bits):
             if flag_element == 1:
-                reg_dict[bit_val] += "point({}, {}) #point={} color={}; ".format(x+1.0, y+1.0, shape, color)
+                if coordsys == "xy":
+                    reg_dict[bit_val] += "point({}, {}) #point={} color={}; ".format(x+1.0, y+1.0, shape, color)
+                if coordsys == "radec":
+                    reg_dict[bit_val] += "point({}, {}) #point={} color={}; ".format(x, y, shape, color)
 
     for bit_val in bit_list:
         if len(reg_dict[bit_val]) > 0:
@@ -162,9 +212,20 @@ def make_regions(sl_name, shape, color):
 
 
 if __name__ == "__main__":
-    imgname = sys.argv[1]
-    sl_name_a = sys.argv[2]
-    sl_name_b = sys.argv[3]
+
+
+    PARSER = argparse.ArgumentParser(description='Compare Sourcelists')
+    # required positional input arguments
+    PARSER.add_argument('sourcelistNames', nargs=2,help='A space-separated pair of sourcelists to compare. The first sourcelist is assumed to be the reference sourcelist that the second is being compared to.')
+    PARSER.add_argument('-c', '--coordsys',required=False,default='xy',choices=['xy','radec'],help='Coordinate system to use for plotting sources. Choices are either "xy" for simple x-y coords, or "radec" for fk5 right ascention and declination values in degrees. Default is "xy".')
+    PARSER.add_argument('-i', '--imageName', required=True, help='Image to overplot flags on in ds9')
+    ARGS = PARSER.parse_args()
+
+    imgname = ARGS.imageName
+    sl_name_a = ARGS.sourcelistNames[0]
+    sl_name_b = ARGS.sourcelistNames[1]
+    coordsys = ARGS.coordsys
+
     if sl_name_a.split("_")[5] == "total" or sl_name_b.split("_")[5] == "total":
         sys.exit("Invalid catalog input. This script only compares filter catalogs, not total catalogs.")
     shapes = ['box', 'circle']
@@ -174,12 +235,12 @@ if __name__ == "__main__":
     flag_counts_list = ["", ""]
     n_sources_list = ["", ""]
     print("Creating regions for catalog " + sl_name_a)
-    reg_dict_list[0], flag_counts_list[0], n_sources_list[0] = make_regions(sl_name_a, shapes[0], colors[0])
+    reg_dict_list[0], flag_counts_list[0], n_sources_list[0] = make_regions(sl_name_a, coordsys, shapes[0], colors[0])
     print("Creating regions for catalog " + sl_name_b+"\n")
-    reg_dict_list[1], flag_counts_list[1], n_sources_list[1] = make_regions(sl_name_b, shapes[1], colors[1])
+    reg_dict_list[1], flag_counts_list[1], n_sources_list[1] = make_regions(sl_name_b, coordsys, shapes[1], colors[1])
     len_list = [len("{} {}".format(colors[0], shapes[0])), len("{} {}".format(colors[1], shapes[1]))]
     max_width = max(len_list)
     print("Catalog #1 ({} {}):{} {}".format(colors[0], shapes[0], (max_width - len_list[0])*" ", sl_name_a))
     print("Catalog #2 ({} {}):{} {}".format(colors[1], shapes[1], (max_width - len_list[1])*" ", sl_name_b))
 
-    display_regions(imgname, reg_dict_list, flag_counts_list, n_sources_list)
+    display_regions(imgname, coordsys, reg_dict_list, flag_counts_list, n_sources_list)

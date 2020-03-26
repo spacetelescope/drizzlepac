@@ -26,12 +26,15 @@
 import datetime
 import fnmatch
 import glob
+import logging
 import os
+import pdb
+import pickle
 import sys
 import traceback
-import logging
 
 from astropy.table import Table
+import numpy as np
 import drizzlepac
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
 from drizzlepac.devutils.comparison_tools import compare_sourcelists
@@ -57,16 +60,22 @@ __version_date__ = '07-Nov-2019'
 # --------------------------------------------------------------------------------------------------------------
 
 
-def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype, log_level):
+def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, hap_imgname, cattype, log_level):
     """
     This subroutine runs Rick White's read_hla_catalog script to convert the RA and Dec values from a HLA Classic
-    sourcelist into same reference frame used by the HAP sourcelists. A new version of the input file with the
-    converted RA and Dec values is written to the current working directory named <INPUT SOURCELIST NAME>_corrected.txt.
+    sourcelist into same reference frame used by the HAP sourcelists. Additionally, the new RA and Dec values
+    are then transformed to produce X and Y coordinates that are in the HAP image frame of reference. A new
+    version of the input file with the converted X and Y and RA and Dec values is written to the current
+    working directory named <INPUT SOURCELIST NAME>_corrected.txt.
 
     Parameters
     ----------
     orig_hla_classic_sl_name : string
         name of the HLA Classic sourcelist whose RA and Dec values will be converted.
+
+    hap_imgname : string
+        name of HAP image. The WCS info from this image will be used to transform the updated RA and DEC
+        values to new X and Y values in the this image's frame of reference
 
     cattype : string
         HLA Classic catalog type. Either 'sex' (source extractor) or 'dao' (DAOphot).
@@ -89,8 +98,13 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype, log_level):
         # sort catalog with updated RA, DEC values so that ordering is the same as the uncorrected table and everything maps correclty.
         if cattype == "dao":
             sortcoltitle = "ID"
+            x_coltitle = "X-Center"
+            y_coltitle = "Y-Center"
         if cattype == "sex":
             sortcoltitle = "NUMBER"
+            x_coltitle = "X-IMAGE"
+            y_coltitle = "Y-IMAGE"
+
         modcat.sort(sortcoltitle)
 
         # Identify RA and Dec column names in the new catalog table object
@@ -105,14 +119,22 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, cattype, log_level):
                 log.debug("DEC Col_name: {}".format(true_dec_col_title))
                 break
 
+        # transform new RA and Dec values into X and Y values in the HAP reference frame
+        ra_dec_values = np.stack((modcat[true_ra_col_title], modcat[true_dec_col_title]), axis=1)
+        new_xy_values = hla_flag_filter.rdtoxy(ra_dec_values, hap_imgname, '[sci,1]')
+
         # get HLA Classic sourcelist data, replace existing RA and Dec column data with the converted RA and Dec column data
         cat = Table.read(orig_hla_classic_sl_name, format='ascii')
         cat['RA'] = modcat[true_ra_col_title]
         cat['DEC'] = modcat[true_dec_col_title]
 
+        # update existing X and Y values with new X and Y values transformed from new RA and Dec values.
+        cat[x_coltitle] = new_xy_values[:, 0]
+        cat[y_coltitle] = new_xy_values[:, 1]
+
         # Write updated version of HLA Classic catalog to current working directory
         mod_sl_name = mod_sl_name.replace(".txt", "_corrected.txt")
-        log.info("Updated version of HLA Classic catalog {} with converted RA/Dec values written to {}.".format(os.path.basename(orig_hla_classic_sl_name), mod_sl_name))
+        log.info("Corrected version of HLA Classic file {} with new X, Y and RA, Dec values written to {}.".format(os.path.basename(orig_hla_classic_sl_name), mod_sl_name))
         cat.write(mod_sl_name, format="ascii.csv")
         return mod_sl_name
 
@@ -242,6 +264,11 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                                                               filter_product_catalogs,
                                                               log_level,
                                                               diagnostic_mode)
+            # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
+            if diagnostic_mode:
+                if "fwhm" in total_product_catalogs.catalogs['aperture'].sources.colnames:
+                    output_table = Table([filter_product_catalogs.catalogs['aperture'].source_cat['CI'], total_product_catalogs.catalogs['aperture'].sources['fwhm']],names=("CI","FWHM"))
+                    output_table.write(filter_product_obj.point_cat_filename.replace(".ecsv","_ci_fwhm.csv"), format="ascii.csv")
 
             # Replace zero-value total-product catalog 'Flags' column values with meaningful filter-product catalog
             # 'Flags' column values
@@ -648,7 +675,7 @@ def run_sourcelist_comparision(total_list, diagnostic_mode=False, log_level=logu
                     continue
 
                 # convert HLA Classic RA and Dec values to HAP reference frame so the RA and Dec comparisons are correct
-                updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name, hla_classic_cat_type, log_level)
+                updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name, hap_imgname, hla_classic_cat_type, log_level)
                 log.info("HAP image:                   {}".format(os.path.basename(hap_imgname)))
                 log.info("HLA Classic image:           {}".format(os.path.basename(hla_imgname)))
                 log.info("HAP catalog:                 {}".format(os.path.basename(hap_sourcelist_name)))
@@ -664,11 +691,11 @@ def run_sourcelist_comparision(total_list, diagnostic_mode=False, log_level=logu
                                                                        verbose=True,
                                                                        log_level=log_level,
                                                                        debugMode=diagnostic_mode)
-                combo_comp_pdf_filename = "{}comparision_plots.pdf".format(plotfile_prefix)
+                combo_comp_pdf_filename = "{}_comparision_plots.pdf".format(plotfile_prefix)
                 if os.path.exists(combo_comp_pdf_filename):
                     combo_comp_pdf_list.append(combo_comp_pdf_filename)
         if len(combo_comp_pdf_list) > 0:  # combine all plots generated by compare_sourcelists.py for this total object into a single pdf file
-            total_combo_comp_pdf_filename = "{}_comparision_plots.pdf".format(tot_obj.basename)
+            total_combo_comp_pdf_filename = "{}_comparision_plots.pdf".format(tot_obj.drizzle_filename[:-9].replace("_total",""))
             compare_sourcelists.pdf_merger(total_combo_comp_pdf_filename, combo_comp_pdf_list)
             log.info("Sourcelist comparison plots saved to file {}.".format(total_combo_comp_pdf_filename))
 # ----------------------------------------------------------------------------------------------------------------------
@@ -724,6 +751,34 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
         catalog_data = filter_product_catalogs.catalogs[cat_type].source_cat
         drz_root_dir = os.getcwd()
         log.info("Run source list flagging on catalog file {}.".format(catalog_name))
+
+        # TODO: REMOVE BELOW CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
+        write_flag_filter_pickle_file = False
+        if write_flag_filter_pickle_file:
+            pickle_dict={"drizzled_image": drizzled_image,
+                         "flt_list": flt_list,
+                         "param_dict": param_dict,
+                         "exptime": exptime,
+                         "plate_scale": plate_scale,
+                         "median_sky": median_sky,
+                         "catalog_name": catalog_name,
+                         "catalog_data": catalog_data,
+                         "cat_type": cat_type,
+                         "drz_root_dir": drz_root_dir,
+                         "hla_flag_msk": filter_product_obj.hla_flag_msk,
+                         "ci_lookup_file_path": ci_lookup_file_path,
+                         "output_custom_pars_file": output_custom_pars_file,
+                         "log_level": log_level,
+                         "diagnostic_mode": diagnostic_mode}
+            out_pickle_filename = catalog_name.replace("-cat.ecsv","_flag_filter_inputs.pickle")
+            pickle_out = open(out_pickle_filename, "wb")
+            pickle.dump(pickle_dict, pickle_out)
+            pickle_out.close()
+            log.info("Wrote hla_flag_filter param pickle file {} ".format(out_pickle_filename))
+        # TODO: REMOVE ABOVE CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
+
+
+
         filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image,
                                                      flt_list,
                                                      param_dict,

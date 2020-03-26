@@ -167,15 +167,24 @@ class SkyFootprint(object):
                 edges_x = [0] * wcs.naxis2 + [wcs.naxis1 - 1] * wcs.naxis2 + list(range(wcs.naxis1)) * 2
                 edges_y = list(range(wcs.naxis2)) * 2 + [0] * wcs.naxis1 + [wcs.naxis2 - 1] * wcs.naxis1
 
+                """
                 sky_edges = wcs.pixel_to_world_values(np.vstack([edges_x, edges_y]).T)
+                import pdb; pdb.set_trace()
                 meta_edges = self.meta_wcs.world_to_pixel_values(sky_edges).astype(np.int32)
+                """
+                sky_edges = wcs.pixel_to_world_values(edges_x, edges_y)
+                meta_x, meta_y = self.meta_wcs.world_to_pixel_values(sky_edges[0], sky_edges[1])
+                meta_x = meta_x.astype(np.int32)
+                meta_y = meta_y.astype(np.int32)
+                
                 # Account for rounding problems with creating meta_wcs
-                meta_edges[:, 1] = np.clip(meta_edges[:, 1], 0, self.meta_wcs.array_shape[0] - 1)
-                meta_edges[:, 0] = np.clip(meta_edges[:, 0], 0, self.meta_wcs.array_shape[1] - 1)
+                meta_y = np.clip(meta_y, 0, self.meta_wcs.array_shape[0] - 1)
+                meta_x = np.clip(meta_x, 0, self.meta_wcs.array_shape[1] - 1)
 
                 # apply meta_edges to blank mask
                 # Use PIL to create mask
-                parray = np.array(meta_edges.T)
+                # parray = np.array(meta_edges.T)
+                parray = (meta_x, meta_y)
                 polygon = list(zip(parray[0], parray[1]))
                 nx = self.meta_wcs.array_shape[1]
                 ny = self.meta_wcs.array_shape[0]
