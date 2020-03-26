@@ -103,15 +103,17 @@ def determine_alignment_residuals(input, files, max_srcs=2000):
     if align_success:
         # extract results in the style of 'tweakreg'
         resids = extract_residuals(imglist)
-
-        # Define name for output JSON file...
-        resids_file = "{}_astrometry_resids.json".format(input[:9])
-        # Remove any previously computed results
-        if os.path.exists(resids_file):
-            os.remove(resids_file)
-        # Dump the results to a JSON file now...
-        with open(resids_file, 'w') as jfile:
-            json.dump(resids, jfile)
+        if resids is None:
+            resids_file = None
+        else:
+            # Define name for output JSON file...
+            resids_file = "{}_astrometry_resids.json".format(input[:9])
+            # Remove any previously computed results
+            if os.path.exists(resids_file):
+                os.remove(resids_file)
+            # Dump the results to a JSON file now...
+            with open(resids_file, 'w') as jfile:
+                json.dump(resids, jfile)
     else:
         resids_file = None
 
@@ -141,29 +143,39 @@ def extract_residuals(imglist):
             ref_dec = np.concatenate([ref_dec, rdec])
             continue
 
-        img_mask = fitinfo['fitmask']
-        ref_indx = fitinfo['matched_ref_idx'][img_mask]
-        img_indx = fitinfo['matched_input_idx'][img_mask]
-        # Extract X, Y for sources image being updated
-        img_x, img_y, max_indx, chip_mask = get_tangent_positions(chip, img_indx,
-                                                       start_indx=cum_indx)
-        cum_indx += max_indx
-        # Extract X, Y for sources from reference image
-        ref_x, ref_y = chip.world_to_tanp(ref_ra[ref_indx][chip_mask], ref_dec[ref_indx][chip_mask])
 
         # store results in dict
         group_dict[group_name]['type'] = 'IMAGE'
         group_dict[group_name].update(
              {'xsh': fitinfo['shift'][0], 'ysh': fitinfo['shift'][1],
              'rot': fitinfo['<rot>'], 'scale': fitinfo['<scale>'],
+             'rot_fit': fitinfo['rot'], 'scale_fit': fitinfo['scale'],
              'nmatches': fitinfo['nmatches'], 'skew': fitinfo['skew']})
 
-        group_dict[group_name]['x'].extend(img_x)
-        group_dict[group_name]['y'].extend(img_y)
-        group_dict[group_name]['ref_x'].extend(ref_x)
-        group_dict[group_name]['ref_y'].extend(ref_y)        
-        group_dict[group_name]['rms_x'] = sigma_clipped_stats((img_x - ref_x))[-1]
-        group_dict[group_name]['rms_y'] = sigma_clipped_stats((img_y - ref_y))[-1]
+        if 'fitmask' in fitinfo:
+            img_mask = fitinfo['fitmask']
+            ref_indx = fitinfo['matched_ref_idx'][img_mask]
+            img_indx = fitinfo['matched_input_idx'][img_mask]
+            # Extract X, Y for sources image being updated
+            img_x, img_y, max_indx, chip_mask = get_tangent_positions(chip, img_indx,
+                                                           start_indx=cum_indx)
+            cum_indx += max_indx
+            # Extract X, Y for sources from reference image
+            ref_x, ref_y = chip.world_to_tanp(ref_ra[ref_indx][chip_mask], ref_dec[ref_indx][chip_mask])
+
+            group_dict[group_name]['x'].extend(img_x)
+            group_dict[group_name]['y'].extend(img_y)
+            group_dict[group_name]['ref_x'].extend(ref_x)
+            group_dict[group_name]['ref_y'].extend(ref_y)        
+            group_dict[group_name]['rms_x'] = sigma_clipped_stats((img_x - ref_x))[-1]
+            group_dict[group_name]['rms_y'] = sigma_clipped_stats((img_y - ref_y))[-1]
+        else: 
+            group_dict[group_name]['x'].extend([])
+            group_dict[group_name]['y'].extend([])
+            group_dict[group_name]['ref_x'].extend([])
+            group_dict[group_name]['ref_y'].extend([])        
+            group_dict[group_name]['rms_x'] = -1
+            group_dict[group_name]['rms_y'] = -1
 
 
     return group_dict

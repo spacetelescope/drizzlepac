@@ -686,9 +686,11 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
     for group_id in group_ids:
         input_mag = None
         for item in tweakwcs_output:
+            tinfo = item.meta['fit_info']
             # When status = FAILED (fit failed) or REFERENCE (relative alignment done with first image
             # as the reference), skip to the beginning of the loop as there is no 'fit_info'.
-            if item.meta['fit_info']['status'] != 'SUCCESS':
+            if tinfo['status'] != 'SUCCESS' or (tinfo['status'] == 'SUCCESSS' and \
+                'fitmask' not in tinfo):
                 continue
             # Make sure to store data for any particular group_id only once.
             if item.meta['group_id'] == group_id and \
@@ -698,7 +700,6 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
 
                 log.debug("fit_info: {}".format(item.meta['fit_info']))
 
-                tinfo = item.meta['fit_info']
                 ref_idx = tinfo['matched_ref_idx']
                 fitmask = tinfo['fitmask']
                 group_dict[group_id]['ref_idx'] = ref_idx
@@ -737,7 +738,7 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
     # Now, append computed results to tweakwcs_output
     for item in tweakwcs_output:
         group_id = item.meta['group_id']
-        fitmask = item.meta['fit_info']['fitmask']
+        fitmask = item.meta['fit_info'].get('fitmask', None)
         if group_id in group_dict:
             fit_rms = group_dict[group_id]['FIT_RMS']
             ra_rms = group_dict[group_id]['RMS_RA']

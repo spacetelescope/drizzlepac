@@ -556,10 +556,11 @@ def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
     # Now, use IRAFStarFinder to identify sources across chip
     starfind = IRAFStarFinder(threshold=bkg_thresh, fwhm=fwhm)
     srcs = starfind.find_stars(img, mask=dqmask)
-    if high_sn is not None and len(srcs) > high_sn:
+    if srcs is not None and high_sn is not None and len(srcs) > high_sn:
         # sort by flux, return high_sn srcs only...
         indx = np.argsort(srcs['flux'])[:high_sn]
         srcs = srcs[indx]
+    num_srcs = len(srcs) if srcs is not None else 0
     log.info("Found {} sources".format(len(srcs)))
 
     return srcs
