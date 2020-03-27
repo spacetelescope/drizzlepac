@@ -871,7 +871,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                                                   clobber=False, output=debug,
                                                   debug=debug, sat_flags=sat_flags)
                 if align_table is None:
-                    raise Exception
+                    raise Exception("No successful aposteriori fit determined.")
 
                 num_sources = align_table['matchSources'][0]
                 fraction_matched = num_sources / align_table['catalogSources'][0]
@@ -889,14 +889,17 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                         print(trlmsg)
                         _updateTrlFile(trlfile, trlmsg)
                         return None
-            except Exception:
+            except Exception as err:
                 # Something went wrong with alignment to GAIA, so report this in
                 # trailer file
                 _trlmsg = "EXCEPTION encountered in align...\n"
                 _trlmsg += "   No correction to absolute astrometric frame applied!\n"
                 print(_trlmsg)
                 _updateTrlFile(trlfile, _trlmsg)
-                traceback.print_exc()
+                if 'aposteriori' not in err.args[0]:
+                    traceback.print_exc()
+                else:
+                    print("WARNING: {}".format(err.args[0]))
                 return None
 
             _updateTrlFile(trlfile, trlmsg)

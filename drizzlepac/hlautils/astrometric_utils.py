@@ -558,7 +558,8 @@ def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
     x, y, flux, src_id, sharp, round1, round2 = ndfind(img, 
                                                      sigma*threshold, 
                                                      fwhm, bkg[1],
-                                                     nbright=nbright)
+                                                     nbright=nbright,
+                                                     use_sharp_round=True)
     srcs = Table([x,y,flux,src_id], names=['xcentroid', 'ycentroid', 'flux', 'id'])
     
     """   
