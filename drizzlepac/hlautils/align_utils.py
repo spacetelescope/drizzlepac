@@ -148,8 +148,10 @@ class AlignmentTable:
 
             # Allow user to decide when and how to write out catalogs to files
             if output:
-                # write out coord lists to files for diagnostic purposes. Protip: To display the sources in these files in DS9,
-                # set the "Coordinate System" option to "Physical" when loading the region file.
+                # write out coord lists to files for diagnostic purposes. 
+                # Protip: To display the sources in these files in DS9,
+                #         set the "Coordinate System" option to "Physical" 
+                #         when loading the region file.
                 imgroot = os.path.basename(img.imgname).split('_')[0]
                 for chip in range(1, img.num_sci + 1):
                     chip_cat = img.catalog_table[chip]

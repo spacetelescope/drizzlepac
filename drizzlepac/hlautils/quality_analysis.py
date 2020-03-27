@@ -71,7 +71,7 @@ def determine_alignment_residuals(input, files, max_srcs=2000, fit_dict=None):
         img_cats = {}
         for chip in range(numsci):
             chip += 1
-            img_cats[chip] = amutils.extract_point_sources(hdu[("SCI", chip)].data, high_sn=max_srcs)
+            img_cats[chip] = amutils.extract_point_sources(hdu[("SCI", chip)].data, nbright=max_srcs)
             nums += len(img_cats[chip])
         num_srcs.append(nums)
         src_cats.append(img_cats)

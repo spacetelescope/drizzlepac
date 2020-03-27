@@ -569,7 +569,9 @@ def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
         # sort by flux, return high_sn srcs only...
         indx = np.argsort(srcs['flux'])[:high_sn]
         srcs = srcs[indx]
-    log.info("Found {} sources".format(len(srcs)))
+    """
+    num_srcs = len(srcs) if srcs is not None else 0
+    log.info("Found {} sources".format(num_srcs))
 
     return srcs
 
@@ -627,7 +629,11 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         imgarr[dqmask] = 0
     else:
         imgarr = img
-
+        
+    if segment_threshold is None:
+        dao_threshold, bkg = sigma_clipped_bkg(imgarr, sigma=4.0, nsigma=3)
+        segment_threshold = np.ones(imgarr.shape, imgarr.dtype)*dao_threshold
+    
     segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
                           filter_kernel=kernel, connectivity=4)
 
@@ -1416,10 +1422,12 @@ def build_wcscat(image, group_id, source_catalog):
 
         imcat = source_catalog[chip]
         # rename xcentroid/ycentroid columns, if necessary, to be consistent with tweakwcs
-        if 'xcentroid' in imcat.colnames:
+        if imcat is not None and 'xcentroid' in imcat.colnames:
             imcat.rename_column('xcentroid', 'x')
             imcat.rename_column('ycentroid', 'y')
-
+        else:
+            imcat = Table(names=['xcentroid','ycentroid'])
+            
         wcscat = FITSWCS(
             w,
             meta={
