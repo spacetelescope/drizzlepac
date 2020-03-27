@@ -86,7 +86,7 @@ class HapDiagnostic(object):
                 log.error(errmsg)
                 raise Exception(errmsg)
         else:
-            errmsg = "Invalid input. 'header_source' needs to be either the name of an existing fits file or a drizzlepac.hlautils.product object.".format(header_source)
+            errmsg = "Invalid input. 'header_source' needs to be either the name of an existing fits file or a drizzlepac.hlautils.product object."
             log.error(errmsg)
             raise Exception(errmsg)
 
