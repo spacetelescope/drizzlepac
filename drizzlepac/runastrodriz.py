@@ -669,7 +669,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     if qa_switch:
         # Generate quality statistics for astrometry if specified
         calfiles = _calfiles_flc if _calfiles_flc else _calfiles
-        json_file = qa.run_all(inFile, calfiles)
+        json_file = qa.run_all(inFile, calfiles, fit_dict=align_dicts)
 
         print("Generated quality statistics as {}".format(json_file))
 
