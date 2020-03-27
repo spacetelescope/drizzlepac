@@ -32,74 +32,63 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 
 class HapDiagnostic(object):
-    def __init__(self, hap_obj=None, header_fits_filename=None, data_source=None, description=None,
-                 log_level=logutil.logging.NOTSET):
+    def __init__(self, header_source, data_source=None, description=None, log_level=logutil.logging.NOTSET):
         """base class used to set up a HapDiagnostic object.
 
         Parameters
         ----------
-        description : string, optional
+        header_source : str, or drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
+        drizzlepac.hlautils.Product.ExposureProduct, depending on input.
+            Either the name of a fits file whose primary header information will be used to populate the json
+        "header" section or hap product object to pull header information and filter information from to populate the json
+        "header" section.
+
+        data_source : str, optional
+            name of the script that generated the data that will be stored in the "data" section
+
+        description : str, optional
             brief description of what the data is, and how it should be used.
 
         log_level : int, optional
             The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
             Default value is 'NOTSET'.
 
-        hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
-        drizzlepac.hlautils.Product.ExposureProduct, depending on input, optional.
-            hap product object to pull header information and filter information from to populate the json
-        "header" section. If not specified, it is assumed that a fits filename will be specified by the input
-        "header_fits_filename" as a source of the header information.
-
-        header_fits_filename : str, optional
-            Name of a fits file whose primary header information will be used to populate the json
-        "header" section. If not specified, it is assumed that the information will be provided by a
-        hap product object specified by the "hap_obj" input.
-        data_source : string
-            name of the script that generated the data that will be stored in the "data" section
-
         Returns
         -------
         Nothing.
         """
-        # TODO: restructure to account for the fact that total objects don't have filter information
-        if hap_obj and header_fits_filename:
-            errmsg = "Invalid inputs. Either 'hap_obj' OR 'header_fits_filename' needs to be specified. NOT BOTH."
-            log.error(errmsg)
-            raise Exception(errmsg)
-        elif not hap_obj and not header_fits_filename:
-            errmsg = "Invalid inputs. Either 'hap_obj' OR 'header_fits_filename' needs to be specified."
-            log.error(errmsg)
-            raise Exception(errmsg)
-        else:
-            if hap_obj:  # populate json header with HAP product information
-                self.header = hap_obj.primary_header
-                if hasattr(hap_obj,"filters"):
-                    self.filter = hap_obj.filters
+        if str(type(header_source)).startswith("<class 'drizzlepac.hlautils.product"): # populate json header with HAP product information
+            self.header = header_source.primary_header
+            if hasattr(header_source,"filters"):
+                self.filter = header_source.filters
+            else:
+                if self.header['INSTRUME'].lower() == "acs":
+                    self.filter = poller_utils.determine_filter_name("{};{}".format(self.header['FILTER1'],self.header['FILTER2']))
+                elif self.header['INSTRUME'].lower() == "wfc3":
+                    self.filter = poller_utils.determine_filter_name(self.header['FILTER'])
                 else:
-                    if self.header['INSTRUME'].lower() == "acs":
-                        self.filter = poller_utils.determine_filter_name("{};{}".format(self.header['FILTER1'],self.header['FILTER2']))
-                    elif self.header['INSTRUME'].lower() == "wfc3":
-                        self.filter = poller_utils.determine_filter_name(self.header['FILTER'])
-                    else:
-                        errmsg = "Invalid instrument."
-                        log.error(errmsg)
-                        raise Exception(errmsg)
-            if header_fits_filename:  # populate json header with HAP product information
-                if os.path.exists(header_fits_filename):
-                    self.header = getheader(header_fits_filename)
-                    if self.header['INSTRUME'].lower() == "acs":
-                        self.filter = poller_utils.determine_filter_name("{};{}".format(self.header['FILTER1'],self.header['FILTER2']))
-                    elif self.header['INSTRUME'].lower() == "wfc3":
-                        self.filter = poller_utils.determine_filter_name(self.header['FILTER'])
-                    else:
-                        errmsg = "Invalid instrument."
-                        log.error(errmsg)
-                        raise Exception(errmsg)
-                else:
-                    errmsg = "Invalid input. File {} does not exist.".format(header_fits_filename)
+                    errmsg = "Invalid instrument."
                     log.error(errmsg)
                     raise Exception(errmsg)
+        elif ((str(type(header_source)) == "<class 'str'>") and (header_source.endswith(".fits"))):  # populate json header with HAP product information
+            if os.path.exists(header_source):
+                self.header = getheader(header_source)
+                if self.header['INSTRUME'].lower() == "acs":
+                    self.filter = poller_utils.determine_filter_name("{};{}".format(self.header['FILTER1'],self.header['FILTER2']))
+                elif self.header['INSTRUME'].lower() == "wfc3":
+                    self.filter = poller_utils.determine_filter_name(self.header['FILTER'])
+                else:
+                    errmsg = "Invalid instrument."
+                    log.error(errmsg)
+                    raise Exception(errmsg)
+            else:
+                errmsg = "Invalid input. File {} does not exist.".format(header_source)
+                log.error(errmsg)
+                raise Exception(errmsg)
+        else:
+            errmsg = "Invalid input. 'header_source' needs to be either the name of an existing fits file or a drizzlepac.hlautils.product object.".format(header_source)
+            log.error(errmsg)
+            raise Exception(errmsg)
 
         # gobble up other inputs
         self.data_source = data_source
@@ -407,7 +396,7 @@ if __name__ == "__main__":
     # Testing
     header_fits_filename = "hst_10265_01_acs_wfc_f606w_j92c01_drc.fits"
     print(header_fits_filename)
-    blarg = HapDiagnostic(header_fits_filename = header_fits_filename,
+    blarg = HapDiagnostic(header_fits_filename,
                           data_source="hla_flag_filter",
                           description="test item please ignore",
                           log_level=10)

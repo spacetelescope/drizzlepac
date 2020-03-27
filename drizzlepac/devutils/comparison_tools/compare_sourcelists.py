@@ -1078,7 +1078,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         # 0: optionally instantiate diag_obj
         if output_json_filename:
-            diag_obj = diagnostic_utils.HapDiagnostic(header_fits_filename=imgNames[1],
+            diag_obj = diagnostic_utils.HapDiagnostic(imgNames[1],
                                                       data_source=__taskname__,
                                                       description="matched ref and comp values.",
                                                       log_level=log_level)
