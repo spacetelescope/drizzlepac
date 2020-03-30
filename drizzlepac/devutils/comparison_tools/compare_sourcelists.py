@@ -1078,10 +1078,10 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         # 0: optionally instantiate diag_obj
         if output_json_filename:
-            diag_obj = diagnostic_utils.HapDiagnostic(imgNames[1],
-                                                      data_source=__taskname__,
-                                                      description="matched ref and comp values.",
-                                                      log_level=log_level)
+            diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
+            diag_obj.instantiate_from_fitsfile(imgNames[1],
+                                               data_source=__taskname__,
+                                               description="matched ref and comp values.")
             # add reference and comparision catalog filenames as header elements
             diag_obj.add_update_header_item("reference catalog filename",slNames[0])
             diag_obj.add_update_header_item("comparison catalog filename", slNames[1])
