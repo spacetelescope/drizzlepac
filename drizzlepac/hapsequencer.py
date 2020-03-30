@@ -270,11 +270,10 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
             if diagnostic_mode:
                 if "fwhm" in total_product_catalogs.catalogs['aperture'].sources.colnames:
-                    diag_obj = diagnostic_utils.HapDiagnostic(filter_product_obj,
-                                                              data_source=__taskname__,
-                                                              description="CI vs. FWHM values",
-                                                              log_level=log_level)
-
+                    diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
+                    diag_obj.instantiate_from_hap_obj(filter_product_obj,
+                                                      data_source=__taskname__,
+                                                      description="CI vs. FWHM values")
                     output_table = Table([filter_product_catalogs.catalogs['aperture'].source_cat['CI'], total_product_catalogs.catalogs['aperture'].sources['fwhm']],names=("CI","FWHM"))
 
                     diag_obj.add_data_item(output_table,"CI_FWHM")
