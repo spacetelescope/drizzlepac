@@ -956,7 +956,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                      contrast=self._contrast)
                 if self.diagnostic_mode:
                     outname = self.imgname.replace(".fits", "_segment_deblended.fits")
-                    fits.PrimaryHDU(data=self.segm_deblended_img.data).writeto(outname)
+                    fits.PrimaryHDU(data=segm_deblended_img.data).writeto(outname)
 
                 # The deblending was successful, so just copy the deblended sources back to the sources attribute.
                 self.segm_img = copy.deepcopy(segm_deblended_img)

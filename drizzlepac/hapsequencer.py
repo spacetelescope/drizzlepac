@@ -15,6 +15,13 @@
     level chosen. The logger is acting as a gate on the messages which are allowed to be
     passed to the handlers.
 
+    The output products can be evaluated to determine the quality of the alignment and
+    output data through the use of the environment variable:
+
+    - SVM_QUALITY_TESTING : Turn on quality assessment processing.  This environment
+      variable, if found with an affirmative value, will turn on processing to generate a JSON
+      file which contains the results of evaluating the quality of the generated products.
+
     NOTE: In order for step 9 (run_sourcelist_comparison()) to run, the following environment variables need to be set:
     - HLA_CLASSIC_BASEPATH
     - HLA_BUILD_VER
@@ -47,6 +54,8 @@ from drizzlepac.hlautils import product
 from drizzlepac.hlautils import processing_utils as proc_utils
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
 
+# Placeholder for at least one set of SVM quality assurance tests
+# from drizzlepac.hlautils import svm_quality_assurance as svm_qa
 from stsci.tools import logutil
 from stwcs import wcsutil
 
@@ -58,6 +67,11 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 __version__ = 0.1
 __version_date__ = '07-Nov-2019'
+
+# Environment variable which controls the quality assurance testing
+# for the Single Visit Mosaic processing.
+envvar_bool_dict = {'off': False, 'on': True, 'no': False, 'yes': True, 'false': False, 'true': True}
+envvar_qa_svm = "SVM_QUALITY_TESTING"
 
 # --------------------------------------------------------------------------------------------------------------
 
@@ -274,10 +288,10 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                     diag_obj.instantiate_from_hap_obj(filter_product_obj,
                                                       data_source=__taskname__,
                                                       description="CI vs. FWHM values")
-                    output_table = Table([filter_product_catalogs.catalogs['aperture'].source_cat['CI'], total_product_catalogs.catalogs['aperture'].sources['fwhm']],names=("CI","FWHM"))
+                    output_table = Table([filter_product_catalogs.catalogs['aperture'].source_cat['CI'], total_product_catalogs.catalogs['aperture'].sources['fwhm']], names=("CI", "FWHM"))
 
-                    diag_obj.add_data_item(output_table,"CI_FWHM")
-                    diag_obj.write_json_file(filter_product_obj.point_cat_filename.replace(".ecsv","_ci_fwhm.json"))
+                    diag_obj.add_data_item(output_table, "CI_FWHM")
+                    diag_obj.write_json_file(filter_product_obj.point_cat_filename.replace(".ecsv", "_ci_fwhm.json"))
                     del output_table
                     del diag_obj
 
@@ -484,6 +498,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # is the atomic exposure data.
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
         obs_info_dict, total_obj_list = poller_utils.interpret_obset_input(input_filename, log_level)
+
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to use only one of the Total Products to generate the manifest name as the name is not
         # dependent on the detector.
@@ -494,6 +509,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
+
         # Update all of the product objects with their associated configuration information.
         for total_item in total_obj_list:
             log.info("Preparing configuration parameter values for total product {}".format(total_item.drizzle_filename))
@@ -516,7 +532,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                                                                   use_defaults=use_defaults_configs,
                                                                   input_custom_pars_file=input_custom_pars_file,
                                                                   output_custom_pars_file=output_custom_pars_file)
-                expo_item = poller_utils.add_primary_fits_header_as_attr(expo_item,log_level)
+                expo_item = poller_utils.add_primary_fits_header_as_attr(expo_item, log_level)
 
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
 
@@ -538,12 +554,21 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             product_list += catalog_list
         else:
             log.warning("No total detection product has been produced. The sourcelist generation step has been skipped")
-        """
-        # 8: (OPTIONAL) Determine whether there are any problems with alignment or photometry of product
-        log.info("8: (TODO) (OPTIONAL) Determine whether there are any problems with alignment or photometry"
-                 "of product")
-        # TODO: QUALITY CONTROL SUBROUTINE CALL GOES HERE.
-        """
+
+        # Quality assurance portion of the processing - done only if the environment
+        # variable, SVM_QUALITY_TESTING, is set to 'on', 'yes', or 'true'.
+        qa_switch = _get_envvar_switch(envvar_qa_svm)
+
+        # If requested, generate quality assessment statistics for the SVM products
+        if qa_switch:
+            log.info("SVM Quality Assurance statistics have been requested for this dataset.")
+            log.info("No statistics at ths time.")
+
+            # The number of sources found in the Point and Segment catalogs can only
+            # be compared if both catalogs were produced, regardless of what was requested.
+            # num_sources_json = svm_qa.run_num(svm_poller_rootname, catalog_list)
+
+            # log.info("Generated quality statistics as {}.".format(num_sources_json))
 
         # 9: Compare results to HLA classic counterparts (if possible)
         if diagnostic_mode:
@@ -643,7 +668,7 @@ def run_sourcelist_comparision(total_list, diagnostic_mode=False, log_level=logu
 
     Parameters
     ----------
-    total_obj_list: list
+    total_list: list
         List of TotalProduct objects, one object per instrument/detector combination is
         a visit.  The TotalProduct objects are comprised of FilterProduct and ExposureProduct
         objects.
@@ -702,12 +727,12 @@ def run_sourcelist_comparision(total_list, diagnostic_mode=False, log_level=logu
 
                 # once all file exist checks are passed, execute sourcelist comparision
                 return_status = compare_sourcelists.comparesourcelists(slNames=[updated_hla_sourcelist_name,
-                                                                        hap_sourcelist_name],
+                                                                       hap_sourcelist_name],
                                                                        imgNames=[hla_imgname, hap_imgname],
                                                                        good_flag_sum=255,
                                                                        plotGen="file",
                                                                        plotfile_prefix=plotfile_prefix,
-                                                                       output_json_filename=hap_sourcelist_name.replace(".ecsv","_compare_sourcelists.json"),
+                                                                       output_json_filename=hap_sourcelist_name.replace(".ecsv", "_compare_sourcelists.json"),
                                                                        verbose=True,
                                                                        log_level=log_level,
                                                                        debugMode=diagnostic_mode)
@@ -715,7 +740,7 @@ def run_sourcelist_comparision(total_list, diagnostic_mode=False, log_level=logu
                 if os.path.exists(combo_comp_pdf_filename):
                     combo_comp_pdf_list.append(combo_comp_pdf_filename)
         if len(combo_comp_pdf_list) > 0:  # combine all plots generated by compare_sourcelists.py for this total object into a single pdf file
-            total_combo_comp_pdf_filename = "{}_comparision_plots.pdf".format(tot_obj.drizzle_filename[:-9].replace("_total",""))
+            total_combo_comp_pdf_filename = "{}_comparision_plots.pdf".format(tot_obj.drizzle_filename[:-9].replace("_total", ""))
             compare_sourcelists.pdf_merger(total_combo_comp_pdf_filename, combo_comp_pdf_list)
             log.info("Sourcelist comparison plots saved to file {}.".format(total_combo_comp_pdf_filename))
 # ----------------------------------------------------------------------------------------------------------------------
@@ -775,44 +800,61 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
         # TODO: REMOVE BELOW CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
         write_flag_filter_pickle_file = False
         if write_flag_filter_pickle_file:
-            pickle_dict={"drizzled_image": drizzled_image,
-                         "flt_list": flt_list,
-                         "param_dict": param_dict,
-                         "exptime": exptime,
-                         "plate_scale": plate_scale,
-                         "median_sky": median_sky,
-                         "catalog_name": catalog_name,
-                         "catalog_data": catalog_data,
-                         "cat_type": cat_type,
-                         "drz_root_dir": drz_root_dir,
-                         "hla_flag_msk": filter_product_obj.hla_flag_msk,
-                         "ci_lookup_file_path": ci_lookup_file_path,
-                         "output_custom_pars_file": output_custom_pars_file,
-                         "log_level": log_level,
-                         "diagnostic_mode": diagnostic_mode}
-            out_pickle_filename = catalog_name.replace("-cat.ecsv","_flag_filter_inputs.pickle")
+            pickle_dict = {"drizzled_image": drizzled_image,
+                           "flt_list": flt_list,
+                           "param_dict": param_dict,
+                           "exptime": exptime,
+                           "plate_scale": plate_scale,
+                           "median_sky": median_sky,
+                           "catalog_name": catalog_name,
+                           "catalog_data": catalog_data,
+                           "cat_type": cat_type,
+                           "drz_root_dir": drz_root_dir,
+                           "hla_flag_msk": filter_product_obj.hla_flag_msk,
+                           "ci_lookup_file_path": ci_lookup_file_path,
+                           "output_custom_pars_file": output_custom_pars_file,
+                           "log_level": log_level,
+                           "diagnostic_mode": diagnostic_mode}
+            out_pickle_filename = catalog_name.replace("-cat.ecsv", "_flag_filter_inputs.pickle")
             pickle_out = open(out_pickle_filename, "wb")
             pickle.dump(pickle_dict, pickle_out)
             pickle_out.close()
             log.info("Wrote hla_flag_filter param pickle file {} ".format(out_pickle_filename))
         # TODO: REMOVE ABOVE CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
 
-
-
         filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image,
-                                                     flt_list,
-                                                     param_dict,
-                                                     exptime,
-                                                     plate_scale,
-                                                     median_sky,
-                                                     catalog_name,
-                                                     catalog_data,
-                                                     cat_type,
-                                                     drz_root_dir,
-                                                     filter_product_obj.hla_flag_msk,
-                                                     ci_lookup_file_path,
-                                                     output_custom_pars_file,
-                                                     log_level,
-                                                     diagnostic_mode)
+                                                                                                         flt_list,
+                                                                                                         param_dict,
+                                                                                                         exptime,
+                                                                                                         plate_scale,
+                                                                                                         median_sky,
+                                                                                                         catalog_name,
+                                                                                                         catalog_data,
+                                                                                                         cat_type,
+                                                                                                         drz_root_dir,
+                                                                                                         filter_product_obj.hla_flag_msk,
+                                                                                                         ci_lookup_file_path,
+                                                                                                         output_custom_pars_file,
+                                                                                                         log_level,
+                                                                                                         diagnostic_mode)
 
     return filter_product_catalogs
+
+
+def _get_envvar_switch(envvar_name):
+    """
+    This private routine interprets the environment variable, SVM_QUALITY_TEST,
+    if specified.  NOTE: This is a copy of the routine in runastrodriz.py.  This
+    code should be put in a common place.
+    """
+    if envvar_name in os.environ:
+        val = os.environ[envvar_name].lower()
+        if val not in envvar_bool_dict:
+            msg = "ERROR: invalid value for {}.".format(envvar_name)
+            msg += "  \n    Valid Values: on, off, yes, no, true, false"
+            raise ValueError(msg)
+        switch_val = envvar_bool_dict[val]
+    else:
+        switch_val = None
+
+    return switch_val
