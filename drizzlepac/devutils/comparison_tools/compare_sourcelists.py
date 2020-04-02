@@ -133,6 +133,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PyPDF2 import PdfFileMerger
 
+from drizzlepac.hlautils import diagnostic_utils
 from drizzlepac.devutils.comparison_tools import starmatch_hist
 from stsci.tools import logutil
 from stwcs import wcsutil
@@ -184,7 +185,7 @@ def check_match_quality(matched_x_list, matched_y_list):
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
-def computeFlagStats(matchedRA, refFlag_list, compFlag_list, max_diff, plotGen, plot_title, plotfile_prefix, catalog_names, verbose):
+def computeFlagStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, catalog_names, verbose):
     """Compute and report statistics on the differences in flagging.
 
     Parameters
@@ -192,14 +193,6 @@ def computeFlagStats(matchedRA, refFlag_list, compFlag_list, max_diff, plotGen, 
     matchedRA : numpy.ndarray
         A 2 x len(refLines) sized numpy array. Column 1: matched reference values.
         Column 2: The corresponding matched comparision values
-
-    refFlag_list  : list
-        Reference sourcelist flag value broken down into it's componant bits. a 9-element numpy array of 0s and 1s. Each element of the array represents the presence of a particular
-        bit value (element 0 = bit 0, element 1 = bit 1, ..., element 3 = bit 4 and so on...)
-
-    compFlag_list  : list
-        Comparison sourcelist flag value broken down into it's componant bits. a 9-element numpy array of 0s and 1s. Each element of the array represents the presence of a particular
-        bit value (element 0 = bit 0, element 1 = bit 1, ..., element 3 = bit 4 and so on...)
 
     max_diff : float
         Maximum allowable percentage of all matched sources with differences in their flag values for comparison to be
@@ -241,8 +234,10 @@ def computeFlagStats(matchedRA, refFlag_list, compFlag_list, max_diff, plotGen, 
     unchangedFlagBreakdown = np.zeros(9, dtype=int)
     on_off_FlagFlips = np.zeros(9, dtype=int)
     off_on_FlagFlips = np.zeros(9, dtype=int)
-    for refFlagRA, compFlagRA in zip(refFlag_list, compFlag_list):
+    for refFlag, compFlag in zip(matchedRA[0], matchedRA[1]):
         # break down each flag value into component bit values, add values to totals
+        refFlagRA = deconstruct_flag(refFlag)
+        compFlagRA = deconstruct_flag(compFlag)
         refFlagBreakdown += refFlagRA
         compFlagBreakdown += compFlagRA
         # find differences in flagging, total up which bits were turned on, which were turned off.
@@ -639,7 +634,7 @@ def deconstruct_flag(flagval):
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 def make_flag_mask(matched_flag_values, good_flag_sum, missing_mask):
-    """
+    """Returns a list of the array index values to mask based on user-specified good flag value, and missing mask
     Parameters
     ----------
     matched_flag_values : numpy.ndarray
@@ -651,14 +646,8 @@ def make_flag_mask(matched_flag_values, good_flag_sum, missing_mask):
 
     Returns
     -------
-    full_refFlag_list : list
-        list of reference sourcelist flag values broken down by bit
-
-    full_compFlag_list : list
-        list of comparison sourcelist flag values broken down by bit
-
     masked_index_list : numpy list
-        list the array index values to mask
+        list of the array index values to mask
     """
     full_refFlag_list = []
     full_compFlag_list = []
@@ -680,9 +669,10 @@ def make_flag_mask(matched_flag_values, good_flag_sum, missing_mask):
         ctr+=1
 
     masked_index_list = np.where(bitmask == True)
-    log.info("{} of {} ({} %) values masked.".format(np.shape(masked_index_list)[1],ctr,100.0*(float(np.shape(masked_index_list)[1])/float(ctr))))
+    log.info("{} of {} ({} %) values masked.".format(np.shape(masked_index_list)[1],ctr,
+                                                     100.0*(float(np.shape(masked_index_list)[1])/float(ctr))))
     log.info("{} remain.".format(ctr-np.shape(masked_index_list)[1]))
-    return full_refFlag_list, full_compFlag_list, bitmask
+    return bitmask
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
@@ -997,16 +987,17 @@ def round2ArbatraryBase(value, direction, roundingBase):
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
-def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plotfile_prefix=None, verbose=False,
-                       log_level=logutil.logging.NOTSET, debugMode=False):
+def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen=None, plotfile_prefix=None,
+                       verbose=False, log_level=logutil.logging.NOTSET, debugMode=False, input_json_filename=None,
+                       output_json_filename=None):
     """Main calling subroutine to compare sourcelists.
 
     Parameters
     ----------
-    slNames : list
+    slNames : list, optional
         list of input source lists
 
-    imgNames : list
+    imgNames : list, optional
         optional list of input images that starmatch_hist will use to improve sourcelist matching
 
     good_flag_sum : list, optional
@@ -1031,6 +1022,14 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         write_matched_catalogs() which generates abbreviated versions of the input catalogs that only contain matched
         sources. Default value is False.
 
+    input_json_filename : str, optional
+        name of input diagnostic_utils json file to use for test duplication purposes.  # TODO: REWORD THIS!
+
+    output_json_filename : str, optional
+        Name of the output diagnostic_utils json file that all matched column values from the input sourcelists will be
+        written to so that this compare_sourcelist.py run can be duplicated in the future. If not specified, no json
+        file will be created.
+
     Returns
     -------
     overallStatus : str
@@ -1043,7 +1042,9 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
     colTitles = []
     pdf_file_list = []
 
-    # 0: define dictionary of max allowable mean sigma-clipped difference values
+
+
+    # -1: define dictionary of max allowable mean sigma-clipped difference values
     max_diff_dict = {"X Position": 0.1,  # TODO: Initial "good" value. Optimize as necessary later
                      "Y Position": 0.1,  # TODO: Initial "good" value. Optimize as necessary later
                      "On-Sky Separation" : 0.1,  # TODO: Initial "good" value. Optimize as necessary later
@@ -1069,34 +1070,57 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
                          "MSKY value": "ABMAG",
                          "STDEV value": "ABMAG",
                          "CI": "ABMAG"}
-    # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
-    refData, compData = slFiles2dataTables(slNames)
-    log.info("Valid reference data columns:   {}".format(list(refData.keys())))
-    log.info("Valid comparision data columns: {}".format(list(compData.keys())))
-    log.info("\n")
-    log.info("Data columns to be compared:")
-    columns_to_compare = list(set(refData.keys()).intersection(set(compData.keys())))
-    for listItem in sorted(columns_to_compare):
-        log.info(listItem)
-    log.info("\n")
-    # 2: Run starmatch_hist to get list of matched sources common to both input sourcelists
-    slLengths = [len(refData['X']), len(compData['X'])]
-    matching_lines_ref, matching_lines_img = getMatchedLists(slNames, imgNames, slLengths, log_level)
-    if len(matching_lines_ref) == 0 or len(matching_lines_img) == 0:
-        log.critical("*** Comparisons cannot be computed. No matching sources were found. ***")
-        return ("ERROR")
-    # 2: Create masks to remove missing values or values not considered "good" according to user-specified good bit values
-    # 2a: create mask that identifies lines any value from any column is missing
-    missing_mask = mask_missing_values(refData, compData, matching_lines_ref, matching_lines_img, columns_to_compare)
-    # 2b: create mask based on flag values
-    matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
-    refFlag_list, compFlag_list, bitmask = make_flag_mask(matched_values, good_flag_sum, missing_mask)
+    if input_json_filename:
+        json_data = diagnostic_utils.read_json_file(input_json_filename)
+        slNames = []
+        slNames.append(json_data['header']['reference catalog filename'])
+        slNames.append(json_data['header']['comparison catalog filename'])
+    else:
+        # 0: optionally instantiate diag_obj
+        if output_json_filename:
+            diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
+            diag_obj.instantiate_from_fitsfile(imgNames[1],
+                                               data_source=__taskname__,
+                                               description="matched ref and comp values.")
+            # add reference and comparision catalog filenames as header elements
+            diag_obj.add_update_header_item("reference catalog filename",slNames[0])
+            diag_obj.add_update_header_item("comparison catalog filename", slNames[1])
+
+        # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
+        refData, compData = slFiles2dataTables(slNames)
+        log.info("Valid reference data columns:   {}".format(list(refData.keys())))
+        log.info("Valid comparision data columns: {}".format(list(compData.keys())))
+        log.info("\n")
+        log.info("Data columns to be compared:")
+        columns_to_compare = list(set(refData.keys()).intersection(set(compData.keys())))
+        for listItem in sorted(columns_to_compare):
+            log.info(listItem)
+        log.info("\n")
+        # 2: Run starmatch_hist to get list of matched sources common to both input sourcelists
+        slLengths = [len(refData['X']), len(compData['X'])]
+        matching_lines_ref, matching_lines_img = getMatchedLists(slNames, imgNames, slLengths, log_level)
+        if len(matching_lines_ref) == 0 or len(matching_lines_img) == 0:
+            log.critical("*** Comparisons cannot be computed. No matching sources were found. ***")
+            return ("ERROR")
+        # 2: Create masks to remove missing values or values not considered "good" according to user-specified good bit values
+        # 2a: create mask that identifies lines any value from any column is missing
+        missing_mask = mask_missing_values(refData, compData, matching_lines_ref, matching_lines_img, columns_to_compare)
+        # 2b: create mask based on flag values
+        matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
+        bitmask = make_flag_mask(matched_values, good_flag_sum, missing_mask)
+
 
     # 3: Compute and display statistics on X position differences for matched sources
-    # Get platescale
-    plate_scale = wcsutil.HSTWCS(imgNames[0], ext=('sci', 1)).pscale
-
-    matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if input_json_filename:
+        matched_values = json_data['data']['X']
+        plate_scale = json_data['header']['plate_scale']
+    else:
+        # Get platescale
+        plate_scale = wcsutil.HSTWCS(imgNames[0], ext=('sci', 1)).pscale
+        matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"X")
+            diag_obj.add_update_header_item("plate_scale", plate_scale)
     if len(matched_values) > 0:
         formalTitle = "X Position"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1105,8 +1129,14 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
         matchedXValues = matched_values.copy()
+
     # 4: Compute and display statistics on Y position differences for matched sources
-    matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if input_json_filename:
+        matched_values = json_data['data']['Y']
+    else:
+        matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if output_json_filename:  # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values,"Y")
     if len(matched_values) > 0:
         formalTitle = "Y Position"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1124,12 +1154,28 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
 
     # 5: Compute and display statistics on RA/Dec position differences for matched sources
     # Get matched pairs of RA and Dec values
-    matched_values_ra = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    matched_values_dec = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img,bitmask=bitmask)
+    if input_json_filename:
+        matched_values_ra = json_data['data']['RA']
+        matched_values_dec = json_data['data']['DEC']
+    else:
+        matched_values_ra = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values_ra,"RA")
+        matched_values_dec = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img,bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values_dec,"DEC")
     if len(matched_values_ra) > 0 and len(matched_values_ra) == len(matched_values_dec):
         # get coordinate system type from fits headers
-        ref_frame = fits.getval(imgNames[0],"radesys",ext=('sci', 1)).lower()
-        comp_frame = fits.getval(imgNames[1],"radesys",ext=('sci', 1)).lower()
+        if input_json_filename:
+            ref_frame = json_data['header']['ref_frame']
+            comp_frame = json_data['header']['comp_frame']
+        else:
+            ref_frame = fits.getval(imgNames[0],"radesys",ext=('sci', 1)).lower()
+            comp_frame = fits.getval(imgNames[1],"radesys",ext=('sci', 1)).lower()
+            if output_json_filename:  # Add 'ref_frame' and 'comp_frame" values to header so that will SkyCoord() execute OK
+                diag_obj.add_update_header_item("ref_frame", ref_frame)
+                diag_obj.add_update_header_item("comp_frame", comp_frame)
+
         # convert reference and comparision RA/Dec values into SkyCoord objects
         matched_values_ref = SkyCoord(matched_values_ra[0,:],matched_values_dec[0,:], frame=comp_frame, unit="deg")
         matched_values_comp = SkyCoord(matched_values_ra[1,:],matched_values_dec[1,:], frame=ref_frame, unit="deg")
@@ -1148,7 +1194,12 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
 
 
     # 7: Compute and display statistics on flux differences for matched sources
-    matched_values = extractMatchedLines("FLUX1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if input_json_filename:
+        matched_values = json_data['data']['FLUX1']
+    else:
+        matched_values = extractMatchedLines("FLUX1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"FLUX1")
     if len(matched_values) > 0:
         formalTitle = "Flux (Inner Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1157,7 +1208,12 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    matched_values = extractMatchedLines("FLUX2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if input_json_filename:
+        matched_values = json_data['data']['FLUX2']
+    else:
+        matched_values = extractMatchedLines("FLUX2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"FLUX2")
     if len(matched_values) > 0:
         formalTitle = "Flux (Outer Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1167,7 +1223,12 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         colTitles.append(formalTitle)
 
     # 8: Compute and display statistics on magnitude differences for matched sources
-    matched_values = extractMatchedLines("MAGNITUDE1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if input_json_filename:
+        matched_values = json_data['data']['MAGNITUDE1']
+    else:
+        matched_values = extractMatchedLines("MAGNITUDE1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"MAGNITUDE1")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Inner Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1176,7 +1237,12 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    matched_values = extractMatchedLines("MERR1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if input_json_filename:
+        matched_values = json_data['data']['MERR1']
+    else:
+        matched_values = extractMatchedLines("MERR1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename: # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"MERR1")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Inner Aperture) Error"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1185,7 +1251,12 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    matched_values = extractMatchedLines("MAGNITUDE2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if input_json_filename:
+        matched_values = json_data['data']['MAGNITUDE2']
+    else:
+        matched_values = extractMatchedLines("MAGNITUDE2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"MAGNITUDE2")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Outer Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1194,7 +1265,12 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    matched_values = extractMatchedLines("MERR2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if input_json_filename:
+        matched_values = json_data['data']['MERR2']
+    else:
+        matched_values = extractMatchedLines("MERR2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"MERR2")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Outer Aperture) Error"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1204,7 +1280,12 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         colTitles.append(formalTitle)
 
     # 9: Compute and display statistics on differences in background sky values
-    matched_values = extractMatchedLines("MSKY", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if input_json_filename:
+        matched_values = json_data['data']['MSKY']
+    else:
+        matched_values = extractMatchedLines("MSKY", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"MSKY")
     if len(matched_values) > 0:
         formalTitle = "MSKY value"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1213,7 +1294,12 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         regressionTestResults[formalTitle] = rt_status
         colTitles.append(formalTitle)
 
-    matched_values = extractMatchedLines("STDEV", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if input_json_filename:
+        matched_values = json_data['data']['STDEV']
+    else:
+        matched_values = extractMatchedLines("STDEV", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"STDEV")
     if len(matched_values) > 0:
         formalTitle = "STDEV value"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1223,7 +1309,12 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         colTitles.append(formalTitle)
 
     # 10: Compute and display statistics on differences in concentration index  for matched sources
-    matched_values = extractMatchedLines("CI", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if input_json_filename:
+        matched_values = json_data['data']['CI']
+    else:
+        matched_values = extractMatchedLines("CI", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"CI")
     if len(matched_values) > 0:
         formalTitle = "CI"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
@@ -1233,10 +1324,15 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
         colTitles.append(formalTitle)
 
     # 11: Compute and display statistics on differences in flag populations for matched sources
-    matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+    if input_json_filename:
+        matched_values = json_data['data']['FLAGS']
+    else:
+        matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
+        if output_json_filename:  # Add matched values to diag_obj
+            diag_obj.add_data_item(matched_values,"FLAGS")
     if len(matched_values) > 0:
         formalTitle = "Source Flagging"
-        rt_status, flag_pdf_list = computeFlagStats(matched_values, refFlag_list, compFlag_list, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
+        rt_status, flag_pdf_list = computeFlagStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list += flag_pdf_list
         regressionTestResults[formalTitle] = rt_status
@@ -1298,6 +1394,10 @@ def comparesourcelists(slNames, imgNames, good_flag_sum = 255, plotGen=None, plo
 
         pdf_merger(final_plot_filename, pdf_file_list)
         log.info("Sourcelist comparison plots saved to file {}.".format(final_plot_filename))
+
+    # Optionally write out diagnostic_utils .json file
+    if output_json_filename:
+        diag_obj.write_json_file(output_json_filename, clobber=True)
     return (overallStatus)
 
 
@@ -1539,7 +1639,7 @@ def write_matched_catalogs(x,y,ra,dec,flags,slnames):
 if __name__ == "__main__":
     PARSER = argparse.ArgumentParser(description='Compare Sourcelists')
     # required positional input arguments
-    PARSER.add_argument('sourcelistNames', nargs=2,
+    PARSER.add_argument('-sl','--sourcelistNames', nargs=2,
                         help='A space-separated pair of sourcelists to compare. The first sourcelist is assumed to be the reference sourcelist that the second is being compared to.')
     # optional input arguments
     PARSER.add_argument('-d', '--debugMode', required=False, choices=["True", "False"], default="False",
@@ -1547,6 +1647,8 @@ if __name__ == "__main__":
     PARSER.add_argument('-g', '--goodFlagSum', required=False, default=255, help = "a sum of individual bit values (i.e. 0 + 1 + 2 + 4 = 7) that will be considered 'good'. If any of the flag bits for a given set of matched sources contain bits not specified here, the pair will be ignored by the comparisions. See XXX for flag bit definitions. (NOTE: The default value of 255 will be interperated as all bits are good, so no sources will be excluded)")
     PARSER.add_argument('-i', '--imageNames', required=False, nargs=2,
                         help='A space-separated list of the fits images that were used to generate the input sourcelists. The first image corresponds to the first listed sourcelist, and so in. These will be used to improve the sourcelist alignment and matching.')
+    PARSER.add_argument('-ji', '--input_json_filename', required=False,default=None,help="name of input diagnostic_utils json file to use for test duplication purposes. If not specified, it is assumed that the user intends to run the script with new inputs, and should specify sourcelist names and image names.")  # TODO: Reads sort of clunky. Rewrite to sound better.
+    PARSER.add_argument('-jo', '--output_json_filename', required=False, default=None, help="Name of the output diagnostic_utils json file that all matched column values from the input sourcelists will be written to so that this compare_sourcelist.py run can be duplicated in the future. If not specified, no json file will be created.")
     PARSER.add_argument('-p', '--plotGen', required=False, choices=["screen", "file", "none"], default="none",
                         help='Generate Plots? "screen" displays plots on-screen. "file" saves them to a .pdf file, and "none" skips all plot generation.')
     PARSER.add_argument('-s', '--plotfile_prefix_string', required=False, default="",
@@ -1571,11 +1673,16 @@ if __name__ == "__main__":
         good_flag_bits[0] = 1
     else:
         good_flag_bits = np.ones(9, dtype=int)
-
-    runStatus = comparesourcelists(ARGS.sourcelistNames, ARGS.imageNames, good_flag_sum = ARGS.goodFlagSum, plotGen=ARGS.plotGen,
-                                   verbose=ARGS.verbose, log_level=logutil.logging.INFO, debugMode=ARGS.debugMode,
-                                   plotfile_prefix=ARGS.plotfile_prefix_string)
+    runStatus = comparesourcelists(slNames=ARGS.sourcelistNames,
+                                   imgNames=ARGS.imageNames,
+                                   good_flag_sum=ARGS.goodFlagSum,
+                                   plotGen=ARGS.plotGen,
+                                   verbose=ARGS.verbose,
+                                   log_level=logutil.logging.INFO,
+                                   debugMode=ARGS.debugMode,
+                                   plotfile_prefix=ARGS.plotfile_prefix_string,
+                                   input_json_filename=ARGS.input_json_filename,
+                                   output_json_filename=ARGS.output_json_filename)
 
 
 # TODO: fix PEP 8 violations
-# TODO: Compute Magnitude differences properly

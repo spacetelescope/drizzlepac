@@ -43,15 +43,17 @@ import traceback
 from astropy.table import Table
 import numpy as np
 import drizzlepac
-from drizzlepac.hlautils.catalog_utils import HAPCatalogs
+
 from drizzlepac.devutils.comparison_tools import compare_sourcelists
 from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
 from drizzlepac.hlautils import config_utils
+from drizzlepac.hlautils import diagnostic_utils
 from drizzlepac.hlautils import hla_flag_filter
 from drizzlepac.hlautils import poller_utils
 from drizzlepac.hlautils import product
-
 from drizzlepac.hlautils import processing_utils as proc_utils
+from drizzlepac.hlautils.catalog_utils import HAPCatalogs
+
 # Placeholder for at least one set of SVM quality assurance tests
 # from drizzlepac.hlautils import svm_quality_assurance as svm_qa
 from stsci.tools import logutil
@@ -278,11 +280,20 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                                                               filter_product_catalogs,
                                                               log_level,
                                                               diagnostic_mode)
+
             # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
             if diagnostic_mode:
                 if "fwhm" in total_product_catalogs.catalogs['aperture'].sources.colnames:
+                    diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
+                    diag_obj.instantiate_from_hap_obj(filter_product_obj,
+                                                      data_source=__taskname__,
+                                                      description="CI vs. FWHM values")
                     output_table = Table([filter_product_catalogs.catalogs['aperture'].source_cat['CI'], total_product_catalogs.catalogs['aperture'].sources['fwhm']], names=("CI", "FWHM"))
-                    output_table.write(filter_product_obj.point_cat_filename.replace(".ecsv", "_ci_fwhm.csv"), format="ascii.csv")
+
+                    diag_obj.add_data_item(output_table, "CI_FWHM")
+                    diag_obj.write_json_file(filter_product_obj.point_cat_filename.replace(".ecsv", "_ci_fwhm.json"))
+                    del output_table
+                    del diag_obj
 
             # Replace zero-value total-product catalog 'Flags' column values with meaningful filter-product catalog
             # 'Flags' column values
@@ -402,6 +413,14 @@ def create_drizzle_products(total_obj_list):
         log.info("Removed rules file {}".format(rules_filename))
         os.remove(rules_filename)
 
+    # Add primary header information to all objects
+    for total_obj in total_obj_list:
+        total_obj = poller_utils.add_primary_fits_header_as_attr(total_obj)
+        for filt_obj in total_obj.fdp_list:
+            filt_obj = poller_utils.add_primary_fits_header_as_attr(filt_obj)
+            for exposure_obj in filt_obj.edp_list:
+                exposure_obj = poller_utils.add_primary_fits_header_as_attr(exposure_obj)
+
     # Return product list for creation of pipeline manifest file
     return product_list
 
@@ -513,6 +532,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                                                                   use_defaults=use_defaults_configs,
                                                                   input_custom_pars_file=input_custom_pars_file,
                                                                   output_custom_pars_file=output_custom_pars_file)
+                expo_item = poller_utils.add_primary_fits_header_as_attr(expo_item, log_level)
+
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
 
         reference_catalog = run_align_to_gaia(total_obj_list, log_level=log_level, diagnostic_mode=diagnostic_mode)
@@ -647,7 +668,7 @@ def run_sourcelist_comparision(total_list, diagnostic_mode=False, log_level=logu
 
     Parameters
     ----------
-    total_obj_list: list
+    total_list: list
         List of TotalProduct objects, one object per instrument/detector combination is
         a visit.  The TotalProduct objects are comprised of FilterProduct and ExposureProduct
         objects.
@@ -705,12 +726,13 @@ def run_sourcelist_comparision(total_list, diagnostic_mode=False, log_level=logu
                 log.info("HLA Classic catalog:         {}".format(os.path.basename(updated_hla_sourcelist_name)))
 
                 # once all file exist checks are passed, execute sourcelist comparision
-                return_status = compare_sourcelists.comparesourcelists([updated_hla_sourcelist_name,
-                                                                        hap_sourcelist_name],
-                                                                       [hla_imgname, hap_imgname],
+                return_status = compare_sourcelists.comparesourcelists(slNames=[updated_hla_sourcelist_name,
+                                                                       hap_sourcelist_name],
+                                                                       imgNames=[hla_imgname, hap_imgname],
                                                                        good_flag_sum=255,
                                                                        plotGen="file",
                                                                        plotfile_prefix=plotfile_prefix,
+                                                                       output_json_filename=hap_sourcelist_name.replace(".ecsv", "_compare_sourcelists.json"),
                                                                        verbose=True,
                                                                        log_level=log_level,
                                                                        debugMode=diagnostic_mode)
@@ -801,20 +823,20 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
         # TODO: REMOVE ABOVE CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
 
         filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image,
-                                                     flt_list,
-                                                     param_dict,
-                                                     exptime,
-                                                     plate_scale,
-                                                     median_sky,
-                                                     catalog_name,
-                                                     catalog_data,
-                                                     cat_type,
-                                                     drz_root_dir,
-                                                     filter_product_obj.hla_flag_msk,
-                                                     ci_lookup_file_path,
-                                                     output_custom_pars_file,
-                                                     log_level,
-                                                     diagnostic_mode)
+                                                                                                         flt_list,
+                                                                                                         param_dict,
+                                                                                                         exptime,
+                                                                                                         plate_scale,
+                                                                                                         median_sky,
+                                                                                                         catalog_name,
+                                                                                                         catalog_data,
+                                                                                                         cat_type,
+                                                                                                         drz_root_dir,
+                                                                                                         filter_product_obj.hla_flag_msk,
+                                                                                                         ci_lookup_file_path,
+                                                                                                         output_custom_pars_file,
+                                                                                                         log_level,
+                                                                                                         diagnostic_mode)
 
     return filter_product_catalogs
 
