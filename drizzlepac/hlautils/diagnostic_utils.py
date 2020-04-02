@@ -106,7 +106,7 @@ class HapDiagnostic(object):
         self.out_dict : Ordered dictionary
             dictionary that will ultimately be written to a json file
         """
-        #Trim off select items from self.header
+        # Trim off select items from self.header
         header_items_to_remove = ['',
                                   'HISTORY',
                                   'COMMENT']
@@ -138,7 +138,7 @@ class HapDiagnostic(object):
         self.out_dict['header']['commit id'] = get_git_rev_info.get_rev_id(reporootpath)
         del reporootpath
         # add filter, data_source, and description
-        header_item_list = ["filter", "data_source","description"]
+        header_item_list = ["filter", "data_source", "description"]
         for header_item in header_item_list:
             self.out_dict['header'][header_item] = self.__dict__[header_item]
         # add trimmed fits header from self.header
@@ -170,7 +170,7 @@ class HapDiagnostic(object):
         if os.path.exists(filename):
             self.header = getheader(filename)
             if self.header['INSTRUME'].lower() == "acs":
-                self.filter = poller_utils.determine_filter_name("{};{}".format(self.header['FILTER1'],self.header['FILTER2']))
+                self.filter = poller_utils.determine_filter_name("{};{}".format(self.header['FILTER1'], self.header['FILTER2']))
             elif self.header['INSTRUME'].lower() == "wfc3":
                 self.filter = poller_utils.determine_filter_name(self.header['FILTER'])
             else:
@@ -191,7 +191,7 @@ class HapDiagnostic(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def instantiate_from_hap_obj(self, hap_obj, data_source=None, description=None):
-        """Get nessessary information for execution of _instantiate() from user-specified hap product, and
+        """Get necessary information for execution of _instantiate() from user-specified hap product, and
         execute _instantiate()
 
         Parameters
@@ -433,7 +433,7 @@ if __name__ == "__main__":
     header_fits_filename = "hst_10265_01_acs_wfc_f606w_j92c01_drc.fits"
     print(header_fits_filename)
     blarg = HapDiagnostic(log_level=10)
-    blarg.instantiate_from_fitsfile(header_fits_filename,data_source="hla_flag_filter",description="test item please ignore",)
+    blarg.instantiate_from_fitsfile(header_fits_filename, data_source="hla_flag_filter", description="test item please ignore",)
     catfile = glob.glob("*_point-cat.ecsv")[0]
     catdata = Table.read(catfile, format='ascii.ecsv')
     blarg.add_data_item(catdata, "CATALOG")
