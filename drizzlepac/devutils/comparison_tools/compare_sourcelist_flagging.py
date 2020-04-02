@@ -157,42 +157,38 @@ def make_regions(sl_name, coordsys, shape, color):
     reg_dict = {}
     for bit_val in bit_list:
         reg_dict[bit_val] = ""
-        flag_col_name = "Flags"
+
+    table_col_titles = {
+        "point-cat.ecsv": {"xy": ("X-Center", "Y-Center", "Flags"),
+                           "radec": ("RA", "DEC", "Flags")},
+        "segment-cat.ecsv": {"xy": ("X-Centroid", "Y-Centroid", "Flags"),
+                             "radec": ("RA", "DEC", "Flags")},
+        "daophot.txt": {"xy": ("X-Center", "Y-Center", "Flags"),
+                        "radec": ("RA", "DEC", "Flags")},
+        "daophot_corrected.txt": {"xy": ("X-Center", "Y-Center", "Flags"),
+                                  "radec": ("RA", "DEC", "Flags")},
+        "sexphot.txt": {"xy": ("X_IMAGE", "Y_IMAGE", "FLAGS"),
+                        "radec": ("RA", "DEC", "FLAGS")},
+        "sexphot_corrected.txt": {"xy": ("X_IMAGE", "Y_IMAGE", "FLAGS"),
+                                  "radec": ("RA", "DEC", "FLAGS")}}
+    found_ending = False
+    fileendinglist = ""
+    for filenameending in table_col_titles.keys():
+        fileendinglist += filenameending+"\n"
+        if sl_name.endswith(filenameending):
+            x_col_name = table_col_titles[filenameending][coordsys][0]
+            y_col_name = table_col_titles[filenameending][coordsys][1]
+            flag_col_name = table_col_titles[filenameending][coordsys][2]
+            found_ending = True
+            break
+    if not found_ending:
+        errmsg = "'{}' is not a valid filetype. Valid filetypes are as follows:\n{}".format(sl_name,fileendinglist)
+        log.error(errmsg)
+        raise Exception(errmsg)
     for table_line in table_data:
-        if sl_name.endswith("point-cat.ecsv"):
-            if coordsys == "xy":
-                x = table_line["X-Center"]
-                y = table_line["Y-Center"]
-            if coordsys == "radec":
-                x = table_line["RA"]
-                y = table_line["DEC"]
-        elif sl_name.endswith("segment-cat.ecsv"):
-            if coordsys == "xy":
-                x = table_line["X-Centroid"]
-                y = table_line["Y-Centroid"]
-            if coordsys == "radec":
-                x = table_line["RA"]
-                y = table_line["DEC"]
-        elif (sl_name.endswith("daophot.txt") or sl_name.endswith("daophot_corrected.txt")):
-            if coordsys == "xy":
-                x = table_line["X-Center"]
-                y = table_line["Y-Center"]
-            if coordsys == "radec":
-                x = table_line["RA"]
-                y = table_line["DEC"]
-        elif (sl_name.endswith("sexphot.txt") or sl_name.endswith("sexphot_corrected.txt")):
-            flag_col_name = "FLAGS"
-            if coordsys == "xy":
-                x = table_line["X_IMAGE"]
-                y = table_line["Y_IMAGE"]
-            if coordsys == "radec":
-                x = table_line["RA"]
-                y = table_line["DEC"]
-
-        else:
-            sys.exit("ERROR! Unrecognized catalog filetype!")
-
-        flagval  = table_line[flag_col_name]
+        x = table_line[x_col_name]
+        y = table_line[y_col_name]
+        flagval = table_line[flag_col_name]
         flag_bits = deconstruct_flag((flagval))
         flag_counts += flag_bits
         for bit_val, flag_element in zip(bit_list, flag_bits):
@@ -201,7 +197,6 @@ def make_regions(sl_name, coordsys, shape, color):
                     reg_dict[bit_val] += "point({}, {}) #point={} color={}; ".format(x+1.0, y+1.0, shape, color)
                 if coordsys == "radec":
                     reg_dict[bit_val] += "point({}, {}) #point={} color={}; ".format(x, y, shape, color)
-
     for bit_val in bit_list:
         if len(reg_dict[bit_val]) > 0:
             reg_dict[bit_val] = reg_dict[bit_val][:-2]
@@ -212,8 +207,6 @@ def make_regions(sl_name, coordsys, shape, color):
 
 
 if __name__ == "__main__":
-
-
     PARSER = argparse.ArgumentParser(description='Compare Sourcelists')
     # required positional input arguments
     PARSER.add_argument('sourcelistNames', nargs=2,help='A space-separated pair of sourcelists to compare. The first sourcelist is assumed to be the reference sourcelist that the second is being compared to.')

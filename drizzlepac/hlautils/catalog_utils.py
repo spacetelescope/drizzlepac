@@ -566,29 +566,28 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("")
             log.info("{}".format("=" * 80))
 
-            # find ALL the sources!!!
-            if self.param_dict["starfinder_algorithm"] == "dao":
-                log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
-                                                                          self.image.bkg_rms_median))
-            else:
-                log.info("IrafStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
-                                                                           self.image.bkg_rms_median))
-            log.info("{}".format("=" * 80))
-            if self.param_dict["starfinder_algorithm"] == "dao":
-                daofind = DAOStarFinder(fwhm=source_fwhm,
-                                        threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
-            else:
-                isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
-
             # create mask to reject any sources located less than 10 pixels from a image/chip edge
             wht_image = self.image.data.copy()
             binary_inverted_wht = np.where(wht_image == 0, 1, 0)
             exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
 
+            # find ALL the sources!!!
             if self.param_dict["starfinder_algorithm"] == "dao":
+                log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
+                                                                          self.image.bkg_rms_median))
+                daofind = DAOStarFinder(fwhm=source_fwhm,
+                                        threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
                 sources = daofind(image, mask=exclusion_mask)
-            else:
+            elif self.param_dict["starfinder_algorithm"] == "iraf":
+                log.info("IRAFStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
+                                                                           self.image.bkg_rms_median))
+                isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
                 sources = isf(image, mask=exclusion_mask)
+            else:
+                err_msg = "'{}' is not a valid 'starfinder_algorithm' parameter input in the catalog_generation parameters json file. Valid options are 'dao' for photutils.detection.DAOStarFinder() or 'iraf' for photutils.detection.IRAFStarFinder().".format(self.param_dict["starfinder_algorithm"])
+                log.error(err_msg)
+                raise ValueError(err_msg)
+            log.info("{}".format("=" * 80))
 
             # If there are no detectable sources in the total detection image, return as there is nothing more to do.
             if not sources:
