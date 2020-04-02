@@ -98,7 +98,7 @@ setup(
         'stregion',
         'requests',
         # HAP-pipeline specific:
-        'astroquery',
+        'astroquery>=0.4',
         'photutils>=0.7',
         'pysynphot',
         'lxml',
