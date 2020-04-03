@@ -555,6 +555,13 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         else:
             log.warning("No total detection product has been produced. The sourcelist generation step has been skipped")
 
+        # Store total_obj_list to a pickle file to speed up development
+        # pickle_filename = total_obj_list_full.pickle
+        # pickle_out = open(pickle_filename, "wb")
+        # pickle.dump(total_obj_list, pickle_out)
+        # pickle_out.close()
+        # log.info("Successfully wrote total_obj_list to pickle file {}!".format(pickle_filename))
+
         # Quality assurance portion of the processing - done only if the environment
         # variable, SVM_QUALITY_TESTING, is set to 'on', 'yes', or 'true'.
         qa_switch = _get_envvar_switch(envvar_qa_svm)

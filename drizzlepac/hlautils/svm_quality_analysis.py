@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-import glob
-import os
-import pdb
+import pdb  # TODO: remove once everything is working
+import pickle  # TODO: remove once everything is working
 import sys
+
 
 from drizzlepac.hlautils import astrometric_utils
 from drizzlepac.hlautils import diagnostic_utils
@@ -16,12 +16,52 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+
+
+def run_find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
+    """Creates a catalog of all GAIA sources in the footprint of a specified HAP final product image, and
+    stores the GAIA object catalog as a hap diagnostic json file.
+
+    Parameters
+    ----------
+    hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
+        drizzlepac.hlautils.Product.ExposureProduct, depending on input.
+        hap product object to process
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 'NOTSET'.
+
+    Returns
+    -------
+    Nothing.
+    """
+    log.setLevel(log_level)
+
+    # Generate table of GAIA sources
+    img_list = []
+    log.info("GAIA catalog will be created using the following input images:")
+    for edp_item in hap_obj.edp_list:
+        parse_info = edp_item.info.split("_")
+        imgname = "{}_{}".format(parse_info[4], parse_info[5])
+        log.info(imgname)
+        img_list.append(imgname)
+    ref_table = astrometric_utils.create_astrometric_catalog(img_list)
+    ref_table.remove_columns(['objID', 'GaiaID'])
+    log.debug("\n{}".format(ref_table))
+
+    # write catalog to HapDiagnostic-formatted .json file.
+    diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
+    diag_obj.instantiate_from_hap_obj(hap_obj, data_source="run_find_gaia_sources", description="A table of GAIA sources in image footprint")
+    diag_obj.add_data_item(ref_table, "GAIA sources")
+    diag_obj.write_json_file(hap_obj.drizzle_filename+"_gaia_sources.json", clobber=True)
+
 # ======================================================================================================================
 
 
 if __name__ == "__main__":
     # Testing
-    img_list = glob.glob("*dr?.fits")
-    for imgname in img_list:
-        print(imgname)
-
+    pfile = "total_obj_list_full.pickle"
+    filehandler = open(pfile, 'rb')
+    total_obj_list = pickle.load(filehandler)
+    run_find_gaia_sources(total_obj_list[0], log_level=logutil.logging.DEBUG)
