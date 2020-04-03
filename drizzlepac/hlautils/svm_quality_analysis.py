@@ -65,3 +65,4 @@ if __name__ == "__main__":
     filehandler = open(pfile, 'rb')
     total_obj_list = pickle.load(filehandler)
     run_find_gaia_sources(total_obj_list[0], log_level=logutil.logging.DEBUG)
+# TODO: add fault tolarance (what happens if no GAIA sources are found?)
