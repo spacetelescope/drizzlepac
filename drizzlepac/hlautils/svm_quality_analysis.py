@@ -6,7 +6,7 @@ import sys
 
 
 from drizzlepac.hlautils import astrometric_utils
-from drizzlepac.hlautils import diagnostic_utils
+from drizzlepac.hlautils import diagnostic_utils as du
 from stsci.tools import logutil
 
 
@@ -64,11 +64,14 @@ def run_find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
         log.info("{} GAIA sources were found.".format(len(ref_table)))
 
     # write catalog to HapDiagnostic-formatted .json file.
-    diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
+    diag_obj = du.HapDiagnostic(log_level=log_level)
     diag_obj.instantiate_from_hap_obj(hap_obj, data_source="run_find_gaia_sources", description="A table of GAIA sources in image footprint")
     diag_obj.add_data_item(ref_table, "GAIA sources")
     diag_obj.write_json_file(hap_obj.drizzle_filename+"_gaia_sources.json", clobber=True)
 
+    # Clean up
+    del diag_obj
+    del ref_table
 
 
 # ======================================================================================================================
