@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-
-import pdb  # TODO: remove once everything is working
-import pickle  # TODO: remove once everything is working
 import sys
-
 
 from drizzlepac.hlautils import astrometric_utils
 from drizzlepac.hlautils import diagnostic_utils as du
@@ -73,13 +69,3 @@ def run_find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     del diag_obj
     del ref_table
 
-
-# ======================================================================================================================
-
-
-if __name__ == "__main__":
-    # Testing
-    pfile = "total_obj_list_full.pickle"
-    filehandler = open(pfile, 'rb')
-    total_obj_list = pickle.load(filehandler)
-    run_find_gaia_sources(total_obj_list[0].edp_list[0], log_level=logutil.logging.DEBUG)
