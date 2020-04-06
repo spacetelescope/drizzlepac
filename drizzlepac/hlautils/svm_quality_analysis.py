@@ -56,15 +56,20 @@ def run_find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     # generate catalog of GAIA sources
     ref_table = astrometric_utils.create_astrometric_catalog(img_list)
     ref_table.remove_columns(['objID', 'GaiaID'])
-    log.debug("\n{}".format(ref_table))
     if len(ref_table) == 0:
         log.warning("No GAIA sources were found!")
+    elif len(ref_table) == 1:
+        log.info("1 GAIA source was found.")
+    else:
+        log.info("{} GAIA sources were found.".format(len(ref_table)))
 
     # write catalog to HapDiagnostic-formatted .json file.
     diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
     diag_obj.instantiate_from_hap_obj(hap_obj, data_source="run_find_gaia_sources", description="A table of GAIA sources in image footprint")
     diag_obj.add_data_item(ref_table, "GAIA sources")
     diag_obj.write_json_file(hap_obj.drizzle_filename+"_gaia_sources.json", clobber=True)
+
+
 
 # ======================================================================================================================
 
