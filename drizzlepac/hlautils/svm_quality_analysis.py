@@ -198,7 +198,7 @@ if __name__ == "__main__":
     # Testing
     import pickle
 
-    pfile = "total_obj_list_full.pickle"
+    pfile = sys.argv[1]
     filehandler = open(pfile, 'rb')
     total_obj_list = pickle.load(filehandler)
 
