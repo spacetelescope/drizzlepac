@@ -52,10 +52,9 @@ from drizzlepac.hlautils import hla_flag_filter
 from drizzlepac.hlautils import poller_utils
 from drizzlepac.hlautils import product
 from drizzlepac.hlautils import processing_utils as proc_utils
+from drizzlepac.hlautils import svm_quality_analysis as svm_qa
 from drizzlepac.hlautils.catalog_utils import HAPCatalogs
 
-# Placeholder for at least one set of SVM quality assurance tests
-# from drizzlepac.hlautils import svm_quality_assurance as svm_qa
 from stsci.tools import logutil
 from stwcs import wcsutil
 
@@ -561,14 +560,15 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
         # If requested, generate quality assessment statistics for the SVM products
         if qa_switch:
-            log.info("SVM Quality Assurance statistics have been requested for this dataset.")
-            log.info("No statistics at ths time.")
+            log.info("SVM Quality Assurance statistics have been requested for this dataset, {}.".format(input_filename))
 
-            # The number of sources found in the Point and Segment catalogs can only
-            # be compared if both catalogs were produced, regardless of what was requested.
-            # num_sources_json = svm_qa.run_num(svm_poller_rootname, catalog_list)
+            # Number of sources in Point and Segment catalogs
+            total_catalog_list = [i for i in catalog_list if 'total' in i]
+            fits_list = [i for i in driz_list if 'fits' in i]
+            total_drizzle_list = [i for i in fits_list if 'total' in i]
+            svm_qa.compare_num_sources(total_catalog_list, total_drizzle_list)
 
-            # log.info("Generated quality statistics as {}.".format(num_sources_json))
+            # Evaluation 2 here
 
         # 9: Compare results to HLA classic counterparts (if possible)
         if diagnostic_mode:
