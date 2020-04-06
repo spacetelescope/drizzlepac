@@ -28,6 +28,7 @@ https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 # Standard library imports
 import json
 import os
+import pdb
 import sys
 
 # Local application imports
@@ -121,7 +122,9 @@ def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NO
 
         # Set up the diagnostic object and write out the results
         diagnostic_obj = du.HapDiagnostic()
-        diagnostic_obj.instantiate_from_fitsfile(drizzle_file, description="Number of sources in Point and Segment catalogs")
+        diagnostic_obj.instantiate_from_fitsfile(drizzle_file,
+                                                 data_source="{}.compare_num_sources".format(__taskname__),
+                                                 description="Number of sources in Point and Segment catalogs")
         diagnostic_obj.add_data_item(sources_dict, 'number_of_sources')
         diagnostic_obj.write_json_file(json_filename)
         log.info("Generated quality statistics (number of sources) as {}.".format(json_filename))
@@ -154,17 +157,17 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
 
     # Gather list of input flc/flt images
     img_list = []
-    log.info("GAIA catalog will be created using the following input images:")
+    log.debug("GAIA catalog will be created using the following input images:")
     if hasattr(hap_obj, "edp_list"):  # for total and filter product objects
         for edp_item in hap_obj.edp_list:
             parse_info = edp_item.info.split("_")
             imgname = "{}_{}".format(parse_info[4], parse_info[5])
-            log.info(imgname)
+            log.debug(imgname)
             img_list.append(imgname)
     else:  # For single-exposure product objects
         parse_info = hap_obj.info.split("_")
         imgname = "{}_{}".format(parse_info[4], parse_info[5])
-        log.info(imgname)
+        log.debug(imgname)
         img_list.append(imgname)
 
     # generate catalog of GAIA sources
@@ -179,7 +182,9 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
 
     # write catalog to HapDiagnostic-formatted .json file.
     diag_obj = du.HapDiagnostic(log_level=log_level)
-    diag_obj.instantiate_from_hap_obj(hap_obj, data_source="find_gaia_sources", description="A table of GAIA sources in image footprint")
+    diag_obj.instantiate_from_hap_obj(hap_obj,
+                                      data_source="{}.find_gaia_sources".format(__taskname__),
+                                      description="A table of GAIA sources in image footprint")
     diag_obj.add_data_item(ref_table, "GAIA sources")  # write catalog of identified GAIA sources
     diag_obj.add_data_item(len(ref_table), "Number of GAIA sources")  # write the number of identified GAIA sources
     diag_obj.write_json_file(hap_obj.drizzle_filename+"_gaia_sources.json", clobber=True)
@@ -187,3 +192,31 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     # Clean up
     del diag_obj
     del ref_table
+
+# ============================================================================================================
+if __name__ == "__main__":
+    # Testing
+    import pickle
+
+    pfile = "total_obj_list_full.pickle"
+    filehandler = open(pfile, 'rb')
+    total_obj_list = pickle.load(filehandler)
+
+    log_level = logutil.logging.INFO
+
+    # Test compare_num_sources
+    total_catalog_list = []
+    total_drizzle_list = []
+    for total_obj in total_obj_list:
+        total_drizzle_list.append(total_obj.drizzle_filename)
+        total_catalog_list.append(total_obj.point_cat_filename)
+        total_catalog_list.append(total_obj.segment_cat_filename)
+    compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
+
+    # test find_gaia_sources
+    for total_obj in total_obj_list:
+        find_gaia_sources(total_obj, log_level=log_level)
+        for filter_obj in total_obj.fdp_list:
+            find_gaia_sources(filter_obj, log_level=log_level)
+            for exp_obj in filter_obj.edp_list:
+                find_gaia_sources(exp_obj, log_level=log_level)
