@@ -57,6 +57,8 @@ def run_find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     ref_table = astrometric_utils.create_astrometric_catalog(img_list)
     ref_table.remove_columns(['objID', 'GaiaID'])
     log.debug("\n{}".format(ref_table))
+    if len(ref_table) == 0:
+        log.warning("No GAIA sources were found!")
 
     # write catalog to HapDiagnostic-formatted .json file.
     diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
@@ -73,4 +75,3 @@ if __name__ == "__main__":
     filehandler = open(pfile, 'rb')
     total_obj_list = pickle.load(filehandler)
     run_find_gaia_sources(total_obj_list[0].edp_list[0], log_level=logutil.logging.DEBUG)
-# TODO: add fault tolarance (what happens if no GAIA sources are found?)
