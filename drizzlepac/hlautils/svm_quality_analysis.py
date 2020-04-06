@@ -38,14 +38,22 @@ def run_find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     """
     log.setLevel(log_level)
 
-    # Generate table of GAIA sources
+    # Gather list of input flc/flt images
     img_list = []
     log.info("GAIA catalog will be created using the following input images:")
-    for edp_item in hap_obj.edp_list:
-        parse_info = edp_item.info.split("_")
+    if hasattr(hap_obj,"edp_list"):  # for total and filter product objects
+        for edp_item in hap_obj.edp_list:
+            parse_info = edp_item.info.split("_")
+            imgname = "{}_{}".format(parse_info[4], parse_info[5])
+            log.info(imgname)
+            img_list.append(imgname)
+    else:  # For single-exposure product objects
+        parse_info = hap_obj.info.split("_")
         imgname = "{}_{}".format(parse_info[4], parse_info[5])
         log.info(imgname)
         img_list.append(imgname)
+
+    # generate catalog of GAIA sources
     ref_table = astrometric_utils.create_astrometric_catalog(img_list)
     ref_table.remove_columns(['objID', 'GaiaID'])
     log.debug("\n{}".format(ref_table))
@@ -64,5 +72,5 @@ if __name__ == "__main__":
     pfile = "total_obj_list_full.pickle"
     filehandler = open(pfile, 'rb')
     total_obj_list = pickle.load(filehandler)
-    run_find_gaia_sources(total_obj_list[0], log_level=logutil.logging.DEBUG)
+    run_find_gaia_sources(total_obj_list[0].edp_list[0], log_level=logutil.logging.DEBUG)
 # TODO: add fault tolarance (what happens if no GAIA sources are found?)
