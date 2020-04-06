@@ -555,7 +555,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             log.warning("No total detection product has been produced. The sourcelist generation step has been skipped")
 
         # Store total_obj_list to a pickle file to speed up development
-        # pickle_filename = total_obj_list_full.pickle
+        # pickle_filename = "total_obj_list_full.pickle"
         # pickle_out = open(pickle_filename, "wb")
         # pickle.dump(total_obj_list, pickle_out)
         # pickle_out.close()

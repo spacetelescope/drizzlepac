@@ -133,7 +133,8 @@ def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NO
 
 def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     """Creates a catalog of all GAIA sources in the footprint of a specified HAP final product image, and
-    stores the GAIA object catalog as a hap diagnostic json file.
+    stores the GAIA object catalog as a hap diagnostic json file. The catalog contains RA, Dec and magnitude
+    of each identified source. The catalog is sorted in decending order by brightness.
 
     Parameters
     ----------
@@ -178,8 +179,9 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
 
     # write catalog to HapDiagnostic-formatted .json file.
     diag_obj = du.HapDiagnostic(log_level=log_level)
-    diag_obj.instantiate_from_hap_obj(hap_obj, data_source="run_find_gaia_sources", description="A table of GAIA sources in image footprint")
-    diag_obj.add_data_item(ref_table, "GAIA sources")
+    diag_obj.instantiate_from_hap_obj(hap_obj, data_source="find_gaia_sources", description="A table of GAIA sources in image footprint")
+    diag_obj.add_data_item(ref_table, "GAIA sources")  # write catalog of identified GAIA sources
+    diag_obj.add_data_item(len(ref_table), "Number of GAIA sources")  # write the number of identified GAIA sources
     diag_obj.write_json_file(hap_obj.drizzle_filename+"_gaia_sources.json", clobber=True)
 
     # Clean up
