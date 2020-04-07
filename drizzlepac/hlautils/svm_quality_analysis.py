@@ -31,10 +31,18 @@ import os
 import pdb
 import sys
 
+# Non-standard library imports
+from astropy.io import fits
+from astropy.stats import sigma_clipped_stats
+from astropy.coordinates import SkyCoord
+from stsci.tools import logutil
+
 # Local application imports
 from drizzlepac.hlautils import astrometric_utils
 import drizzlepac.hlautils.diagnostic_utils as du
-from stsci.tools import logutil
+import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
+
+
 
 
 __taskname__ = 'svm_quality_analysis'
@@ -132,7 +140,107 @@ def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NO
         # Clean up
         del diagnostic_obj
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
+
+def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
+    """Compare the equatorial coordinates of cross-matches sources between the Point and Segment catalogs.\
+
+    Parameters
+    ----------
+    hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
+        drizzlepac.hlautils.Product.ExposureProduct, depending on input.
+        hap product object to process
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 'NOTSET'.
+
+    Returns
+    --------
+
+    """
+    log.setLevel(log_level)
+
+    # construct equivalents to compare_sourcelists.comparesourcelists() inputs
+    slNames = [hap_obj.point_cat_filename,hap_obj.segment_cat_filename]
+    imgNames = [hap_obj.drizzle_filename, hap_obj.drizzle_filename]
+    good_flag_sum = 255 # all bits good
+    output_json_filename = None
+    input_json_filename = None
+    plotGen = "none"
+    verbose = True
+
+    if output_json_filename:
+        diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
+        diag_obj.instantiate_from_fitsfile(imgNames[1],
+                                           data_source=__taskname__,
+                                           description="matched ref and comp values.")
+        # add reference and comparision catalog filenames as header elements
+        diag_obj.add_update_header_item("reference catalog filename", slNames[0])
+        diag_obj.add_update_header_item("comparison catalog filename", slNames[1])
+
+    # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
+    refData, compData = csl.slFiles2dataTables(slNames)
+    log.info("Valid reference data columns:   {}".format(list(refData.keys())))
+    log.info("Valid comparision data columns: {}".format(list(compData.keys())))
+    log.info("\n")
+    log.info("Data columns to be compared:")
+    columns_to_compare = list(set(refData.keys()).intersection(set(compData.keys())))
+    for listItem in sorted(columns_to_compare):
+        log.info(listItem)
+    log.info("\n")
+    # 2: Run starmatch_hist to get list of matched sources common to both input sourcelists
+    slLengths = [len(refData['X']), len(compData['X'])]
+    matching_lines_ref, matching_lines_img = csl.getMatchedLists(slNames, imgNames, slLengths, log_level=log_level)
+    if len(matching_lines_ref) == 0 or len(matching_lines_img) == 0:
+        log.critical("*** Comparisons cannot be computed. No matching sources were found. ***")
+        return ("ERROR")
+    # 2: Create masks to remove missing values or values not considered "good" according to user-specified good bit values
+    # 2a: create mask that identifies lines any value from any column is missing
+    missing_mask = csl.mask_missing_values(refData, compData, matching_lines_ref, matching_lines_img, columns_to_compare)
+    # 2b: create mask based on flag values
+    matched_values = csl.extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
+    bitmask = csl.make_flag_mask(matched_values, good_flag_sum, missing_mask)
+
+    matched_values_ra = csl.extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img,
+                                            bitmask=bitmask)
+    if output_json_filename:  # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values_ra, "RA")
+    matched_values_dec = csl.extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img,
+                                             bitmask=bitmask)
+    if output_json_filename:  # Add matched values to diag_obj
+        diag_obj.add_data_item(matched_values_dec, "DEC")
+
+
+    if len(matched_values_ra) > 0 and len(matched_values_ra) == len(matched_values_dec):
+        # get coordinate system type from fits headers
+
+        ref_frame = fits.getval(imgNames[0], "radesys", ext=('sci', 1)).lower()
+        comp_frame = fits.getval(imgNames[1], "radesys", ext=('sci', 1)).lower()
+        if output_json_filename:  # Add 'ref_frame' and 'comp_frame" values to header so that will SkyCoord() execute OK
+            diag_obj.add_update_header_item("ref_frame", ref_frame)
+            diag_obj.add_update_header_item("comp_frame", comp_frame)
+
+        # convert reference and comparision RA/Dec values into SkyCoord objects
+        matched_values_ref = SkyCoord(matched_values_ra[0, :], matched_values_dec[0, :], frame=comp_frame,
+                                      unit="deg")
+        matched_values_comp = SkyCoord(matched_values_ra[1, :], matched_values_dec[1, :], frame=ref_frame,
+                                       unit="deg")
+        # convert to ICRS coord system
+        if ref_frame != "icrs":
+            matched_values_ref = matched_values_ref.icrs
+        if comp_frame != "icrs":
+            matched_values_comp = matched_values_comp.icrs
+        formalTitle = "On-Sky Separation"
+        matched_values = [matched_values_ref, matched_values_comp]
+        rt_status, pdf_files = csl.computeLinearStats(matched_values, 0.1,
+                                                  "arcseconds", plotGen, formalTitle,
+                                                  "plotfile_prefix", slNames, verbose)
+        # if plotGen == "file":
+        #     pdf_file_list += pdf_files
+        # regressionTestResults[formalTitle] = rt_status
+        # colTitles.append(formalTitle)
+# ------------------------------------------------------------------------------------------------------------
 
 def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     """Creates a catalog of all GAIA sources in the footprint of a specified HAP final product image, and
@@ -205,18 +313,24 @@ if __name__ == "__main__":
     log_level = logutil.logging.INFO
 
     # Test compare_num_sources
-    total_catalog_list = []
-    total_drizzle_list = []
-    for total_obj in total_obj_list:
-        total_drizzle_list.append(total_obj.drizzle_filename)
-        total_catalog_list.append(total_obj.point_cat_filename)
-        total_catalog_list.append(total_obj.segment_cat_filename)
-    compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
+    if False:
+        total_catalog_list = []
+        total_drizzle_list = []
+        for total_obj in total_obj_list:
+            total_drizzle_list.append(total_obj.drizzle_filename)
+            total_catalog_list.append(total_obj.point_cat_filename)
+            total_catalog_list.append(total_obj.segment_cat_filename)
+        compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
 
     # test find_gaia_sources
-    for total_obj in total_obj_list:
-        find_gaia_sources(total_obj, log_level=log_level)
-        for filter_obj in total_obj.fdp_list:
-            find_gaia_sources(filter_obj, log_level=log_level)
-            for exp_obj in filter_obj.edp_list:
-                find_gaia_sources(exp_obj, log_level=log_level)
+    if False:
+        for total_obj in total_obj_list:
+            find_gaia_sources(total_obj, log_level=log_level)
+            for filter_obj in total_obj.fdp_list:
+                find_gaia_sources(filter_obj, log_level=log_level)
+                for exp_obj in filter_obj.edp_list:
+                    find_gaia_sources(exp_obj, log_level=log_level)
+
+    # test compare_ra_dec_crossmatches
+    if True:
+        compare_ra_dec_crossmatches(total_obj_list[0].fdp_list[0], log_level=log_level)
