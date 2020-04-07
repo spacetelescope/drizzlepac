@@ -554,6 +554,13 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         else:
             log.warning("No total detection product has been produced. The sourcelist generation step has been skipped")
 
+        # Store total_obj_list to a pickle file to speed up development
+        # pickle_filename = "total_obj_list_full.pickle"
+        # pickle_out = open(pickle_filename, "wb")
+        # pickle.dump(total_obj_list, pickle_out)
+        # pickle_out.close()
+        # log.info("Successfully wrote total_obj_list to pickle file {}!".format(pickle_filename))
+
         # Quality assurance portion of the processing - done only if the environment
         # variable, SVM_QUALITY_TESTING, is set to 'on', 'yes', or 'true'.
         qa_switch = _get_envvar_switch(envvar_qa_svm)
@@ -566,9 +573,15 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             total_catalog_list = [i for i in catalog_list if 'total' in i]
             fits_list = [i for i in driz_list if 'fits' in i]
             total_drizzle_list = [i for i in fits_list if 'total' in i]
-            svm_qa.compare_num_sources(total_catalog_list, total_drizzle_list)
+            svm_qa.compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
 
-            # Evaluation 2 here
+            # Identify the number of GAIA sources in final product footprints
+            for total_obj in total_obj_list:
+                svm_qa.find_gaia_sources(total_obj, log_level=log_level)
+                for filter_obj in total_obj.fdp_list:
+                    svm_qa.find_gaia_sources(filter_obj, log_level=log_level)
+                    for exp_obj in filter_obj.edp_list:
+                        svm_qa.find_gaia_sources(exp_obj, log_level=log_level)
 
         # 9: Compare results to HLA classic counterparts (if possible)
         if diagnostic_mode:

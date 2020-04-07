@@ -28,12 +28,24 @@ https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 # Standard library imports
 import json
 import os
+import pdb
+import sys
 
 # Local application imports
+from drizzlepac.hlautils import astrometric_utils
 import drizzlepac.hlautils.diagnostic_utils as du
+from stsci.tools import logutil
 
 
-def compare_num_sources(catalog_list, drizzle_list):
+__taskname__ = 'svm_quality_analysis'
+
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+
+
+def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NOTSET):
     """Determine the number of viable sources actually listed in SVM output catalogs.
 
     Parameters
@@ -46,12 +58,18 @@ def compare_num_sources(catalog_list, drizzle_list):
     drizzle_list: list of strings
         Drizzle files for tht Total products which were mined to generate the output catalogs.
 
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 'NOTSET'.
+
     Returns
     --------
     results : string
         Name of JSON file containing all the extracted results from the comparisons
         being performed.
     """
+    log.setLevel(log_level)
+
     pnt_suffix = '_point-cat.ecsv'
     seg_suffix = '_segment-cat.ecsv'
 
@@ -90,13 +108,13 @@ def compare_num_sources(catalog_list, drizzle_list):
                     # All the comments are grouped at the start of the file. When
                     # the first non-comment line is found, there is no need to look further.
                     if not sline.startswith('#'):
-                        print("Number of sources not reported in Catalog: {}.".format(catalog))
+                        log.info("Number of sources not reported in Catalog: {}.".format(catalog))
                         break
 
                     # When the matching comment line is found, get the value.
                     if sline.find('Number of sources') != -1:
                         num_sources = sline.split(' ')[-1][0:-1]
-                        print("Catalog: {} Number of sources: {}.".format(catalog, num_sources))
+                        log.info("Catalog: {} Number of sources: {}.".format(catalog, num_sources))
                         break
 
                 cat_type = 'point' if catalog.find("point") != -1 else 'segment'
@@ -104,10 +122,101 @@ def compare_num_sources(catalog_list, drizzle_list):
 
         # Set up the diagnostic object and write out the results
         diagnostic_obj = du.HapDiagnostic()
-        diagnostic_obj.instantiate_from_fitsfile(drizzle_file, description="Number of sources in Point and Segment catalogs")
+        diagnostic_obj.instantiate_from_fitsfile(drizzle_file,
+                                                 data_source="{}.compare_num_sources".format(__taskname__),
+                                                 description="Number of sources in Point and Segment catalogs")
         diagnostic_obj.add_data_item(sources_dict, 'number_of_sources')
         diagnostic_obj.write_json_file(json_filename)
-        print("Generated quality statistics (number of sources) as {}.".format(json_filename))
+        log.info("Generated quality statistics (number of sources) as {}.".format(json_filename))
 
         # Clean up
         del diagnostic_obj
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
+    """Creates a catalog of all GAIA sources in the footprint of a specified HAP final product image, and
+    stores the GAIA object catalog as a hap diagnostic json file. The catalog contains RA, Dec and magnitude
+    of each identified source. The catalog is sorted in decending order by brightness.
+
+    Parameters
+    ----------
+    hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
+        drizzlepac.hlautils.Product.ExposureProduct, depending on input.
+        hap product object to process
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 'NOTSET'.
+
+    Returns
+    -------
+    Nothing.
+    """
+    log.setLevel(log_level)
+
+    # Gather list of input flc/flt images
+    img_list = []
+    log.debug("GAIA catalog will be created using the following input images:")
+    if hasattr(hap_obj, "edp_list"):  # for total and filter product objects
+        for edp_item in hap_obj.edp_list:
+            parse_info = edp_item.info.split("_")
+            imgname = "{}_{}".format(parse_info[4], parse_info[5])
+            log.debug(imgname)
+            img_list.append(imgname)
+    else:  # For single-exposure product objects
+        parse_info = hap_obj.info.split("_")
+        imgname = "{}_{}".format(parse_info[4], parse_info[5])
+        log.debug(imgname)
+        img_list.append(imgname)
+
+    # generate catalog of GAIA sources
+    ref_table = astrometric_utils.create_astrometric_catalog(img_list)
+    ref_table.remove_columns(['objID', 'GaiaID'])
+    if len(ref_table) == 0:
+        log.warning("No GAIA sources were found!")
+    elif len(ref_table) == 1:
+        log.info("1 GAIA source was found.")
+    else:
+        log.info("{} GAIA sources were found.".format(len(ref_table)))
+
+    # write catalog to HapDiagnostic-formatted .json file.
+    diag_obj = du.HapDiagnostic(log_level=log_level)
+    diag_obj.instantiate_from_hap_obj(hap_obj,
+                                      data_source="{}.find_gaia_sources".format(__taskname__),
+                                      description="A table of GAIA sources in image footprint")
+    diag_obj.add_data_item(ref_table, "GAIA sources")  # write catalog of identified GAIA sources
+    diag_obj.add_data_item(len(ref_table), "Number of GAIA sources")  # write the number of identified GAIA sources
+    diag_obj.write_json_file(hap_obj.drizzle_filename+"_gaia_sources.json", clobber=True)
+
+    # Clean up
+    del diag_obj
+    del ref_table
+
+# ============================================================================================================
+if __name__ == "__main__":
+    # Testing
+    import pickle
+
+    pfile = sys.argv[1]
+    filehandler = open(pfile, 'rb')
+    total_obj_list = pickle.load(filehandler)
+
+    log_level = logutil.logging.INFO
+
+    # Test compare_num_sources
+    total_catalog_list = []
+    total_drizzle_list = []
+    for total_obj in total_obj_list:
+        total_drizzle_list.append(total_obj.drizzle_filename)
+        total_catalog_list.append(total_obj.point_cat_filename)
+        total_catalog_list.append(total_obj.segment_cat_filename)
+    compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
+
+    # test find_gaia_sources
+    for total_obj in total_obj_list:
+        find_gaia_sources(total_obj, log_level=log_level)
+        for filter_obj in total_obj.fdp_list:
+            find_gaia_sources(filter_obj, log_level=log_level)
+            for exp_obj in filter_obj.edp_list:
+                find_gaia_sources(exp_obj, log_level=log_level)
