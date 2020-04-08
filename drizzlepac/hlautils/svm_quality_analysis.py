@@ -167,15 +167,14 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
     nothing.
     """
     log.setLevel(log_level)
-
     slNames = [hap_obj.point_cat_filename,hap_obj.segment_cat_filename]
     imgNames = [hap_obj.drizzle_filename, hap_obj.drizzle_filename]
     good_flag_sum = 255 # all bits good
 
     diag_obj = du.HapDiagnostic(log_level=log_level)
     diag_obj.instantiate_from_hap_obj(hap_obj,
-                                       data_source="{}.compare_ra_dec_crossmatches".format(__taskname__),
-                                       description="matched point and segment catalog RA and Dec values")
+                                      data_source="{}.compare_ra_dec_crossmatches".format(__taskname__),
+                                      description="matched point and segment catalog RA and Dec values")
     json_results_dict = collections.OrderedDict()
     # add reference and comparision catalog filenames as header elements
     json_results_dict["point catalog filename"] = slNames[0]
@@ -264,7 +263,7 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
         diag_obj.add_data_item(sep_stat_dict, "Segment - point on-sky separation statistics")
 
         # write everything out to the json file
-        json_filename = hap_obj.drizzle_filename[:-9]+"point_segment_crossmatch.json"
+        json_filename = hap_obj.drizzle_filename[:-9]+"_point_segment_crossmatch.json"
         diag_obj.write_json_file(json_filename, clobber=True)
 
 
@@ -361,4 +360,6 @@ if __name__ == "__main__":
 
     # test compare_ra_dec_crossmatches
     if True:
-        compare_ra_dec_crossmatches(total_obj_list[0].fdp_list[0], log_level=log_level)
+        for total_obj in total_obj_list:
+            for filter_obj in total_obj.fdp_list:
+                compare_ra_dec_crossmatches(filter_obj, log_level=log_level)

@@ -586,6 +586,11 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                     for exp_obj in filter_obj.edp_list:
                         svm_qa.find_gaia_sources(exp_obj, log_level=log_level)
 
+            # Perform point/segment cross-match test
+            for total_obj in total_obj_list:
+                for filter_obj in total_obj.fdp_list:
+                    svm_qa.compare_ra_dec_crossmatches(filter_obj, log_level=log_level)
+
         # 9: Compare results to HLA classic counterparts (if possible)
         if diagnostic_mode:
             run_sourcelist_comparision(total_obj_list, diagnostic_mode=diagnostic_mode, log_level=log_level)
