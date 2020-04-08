@@ -26,24 +26,24 @@ https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 """
 
 # Standard library imports
+import collections
 import json
 import os
 import pdb
 import sys
 
 # Non-standard library imports
+from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
-from astropy.coordinates import SkyCoord
-from stsci.tools import logutil
+from astropy.table import Table
+import numpy as np
 
 # Local application imports
 from drizzlepac.hlautils import astrometric_utils
 import drizzlepac.hlautils.diagnostic_utils as du
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
-
-
-
+from stsci.tools import logutil
 
 __taskname__ = 'svm_quality_analysis'
 
@@ -161,23 +161,18 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
     """
     log.setLevel(log_level)
 
-    # construct equivalents to compare_sourcelists.comparesourcelists() inputs
     slNames = [hap_obj.point_cat_filename,hap_obj.segment_cat_filename]
     imgNames = [hap_obj.drizzle_filename, hap_obj.drizzle_filename]
     good_flag_sum = 255 # all bits good
-    output_json_filename = None
-    input_json_filename = None
-    plotGen = "none"
-    verbose = True
 
-    if output_json_filename:
-        diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
-        diag_obj.instantiate_from_fitsfile(imgNames[1],
-                                           data_source=__taskname__,
-                                           description="matched ref and comp values.")
-        # add reference and comparision catalog filenames as header elements
-        diag_obj.add_update_header_item("reference catalog filename", slNames[0])
-        diag_obj.add_update_header_item("comparison catalog filename", slNames[1])
+    diag_obj = du.HapDiagnostic(log_level=log_level)
+    diag_obj.instantiate_from_hap_obj(hap_obj,
+                                       data_source="{}.compare_ra_dec_crossmatches".format(__taskname__),
+                                       description="matched point and segment catalog RA and Dec values")
+    json_results_dict = collections.OrderedDict()
+    # add reference and comparision catalog filenames as header elements
+    json_results_dict["reference catalog filename"] = slNames[0]
+    json_results_dict["comparison catalog filename"] = slNames[1]
 
     # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
     refData, compData = csl.slFiles2dataTables(slNames)
@@ -190,8 +185,11 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
         log.info(listItem)
     log.info("\n")
     # 2: Run starmatch_hist to get list of matched sources common to both input sourcelists
-    slLengths = [len(refData['X']), len(compData['X'])]
+    slLengths = [len(refData['RA']), len(compData['RA'])]
+    json_results_dict['reference catalog length'] = slLengths[0]
+    json_results_dict['comparision catalog length'] = slLengths[1]
     matching_lines_ref, matching_lines_img = csl.getMatchedLists(slNames, imgNames, slLengths, log_level=log_level)
+    json_results_dict['number of cross-matches'] = len(matching_lines_ref)
     if len(matching_lines_ref) == 0 or len(matching_lines_img) == 0:
         log.critical("*** Comparisons cannot be computed. No matching sources were found. ***")
         return ("ERROR")
@@ -204,22 +202,17 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
 
     matched_values_ra = csl.extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img,
                                             bitmask=bitmask)
-    if output_json_filename:  # Add matched values to diag_obj
-        diag_obj.add_data_item(matched_values_ra, "RA")
     matched_values_dec = csl.extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img,
                                              bitmask=bitmask)
-    if output_json_filename:  # Add matched values to diag_obj
-        diag_obj.add_data_item(matched_values_dec, "DEC")
-
 
     if len(matched_values_ra) > 0 and len(matched_values_ra) == len(matched_values_dec):
         # get coordinate system type from fits headers
 
         ref_frame = fits.getval(imgNames[0], "radesys", ext=('sci', 1)).lower()
         comp_frame = fits.getval(imgNames[1], "radesys", ext=('sci', 1)).lower()
-        if output_json_filename:  # Add 'ref_frame' and 'comp_frame" values to header so that will SkyCoord() execute OK
-            diag_obj.add_update_header_item("ref_frame", ref_frame)
-            diag_obj.add_update_header_item("comp_frame", comp_frame)
+        # Add 'ref_frame' and 'comp_frame" values to header so that will SkyCoord() execute OK
+        json_results_dict["reference frame"] = ref_frame
+        json_results_dict["comparision frame"] = comp_frame
 
         # convert reference and comparision RA/Dec values into SkyCoord objects
         matched_values_ref = SkyCoord(matched_values_ra[0, :], matched_values_dec[0, :], frame=comp_frame,
@@ -231,15 +224,37 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
             matched_values_ref = matched_values_ref.icrs
         if comp_frame != "icrs":
             matched_values_comp = matched_values_comp.icrs
-        formalTitle = "On-Sky Separation"
-        matched_values = [matched_values_ref, matched_values_comp]
-        rt_status, pdf_files = csl.computeLinearStats(matched_values, 0.1,
-                                                  "arcseconds", plotGen, formalTitle,
-                                                  "plotfile_prefix", slNames, verbose)
-        # if plotGen == "file":
-        #     pdf_file_list += pdf_files
-        # regressionTestResults[formalTitle] = rt_status
-        # colTitles.append(formalTitle)
+
+        # compute on-sky separations in arcseconds
+        sep = matched_values_comp.separation(matched_values_ref).arcsec
+
+        # Compute and store statistics  on separations
+        sep_stat_dict=collections.OrderedDict()
+        sep_stat_dict["units"] = "arcseconds"
+        sep_stat_dict["Non-clipped min"] = np.min(sep)
+        sep_stat_dict["Non-clipped max"] = np.max(sep)
+        sep_stat_dict["Non-clipped mean"] = np.mean(sep)
+        sep_stat_dict["Non-clipped median"] = np.median(sep)
+        sep_stat_dict["Non-clipped standard deviation"] = np.std(sep)
+        sigma = 3
+        maxiters = 3
+        clippedStats = sigma_clipped_stats(sep, sigma=sigma, maxiters=maxiters)
+        sep_stat_dict["{}x{} sigma-clipped mean".format(maxiters, sigma)] = clippedStats[0]
+        sep_stat_dict["{}x{} sigma-clipped median".format(maxiters, sigma)] = clippedStats[1]
+        sep_stat_dict["{}x{} sigma-clipped standard deviation".format(maxiters, sigma)] = clippedStats[2]
+
+        out_cat_ref = Table([matched_values_ra[0], matched_values_dec[0]], names=("Right ascension", "Declination"))
+        out_cat_comp = Table([matched_values_ra[1], matched_values_dec[1]], names=("Right ascension", "Declination"))
+
+        # add various data items to diag_obj and write everything out to the json file.
+        diag_obj.add_data_item(out_cat_ref, "Cross-match reference catalog")
+        diag_obj.add_data_item(out_cat_comp, "Cross-match comparison catalog")
+        diag_obj.add_data_item(json_results_dict, "Cross match details")
+        diag_obj.add_data_item(sep_stat_dict, "On-sky comparision - reference separation statistics")
+        json_filename = hap_obj.drizzle_filename[:-9]+"point_segment_crossmatch.json"
+        diag_obj.write_json_file(json_filename, clobber=True)
+
+
 # ------------------------------------------------------------------------------------------------------------
 
 def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
