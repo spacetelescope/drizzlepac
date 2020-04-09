@@ -578,6 +578,11 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             total_drizzle_list = [i for i in fits_list if 'total' in i]
             svm_qa.compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
 
+            # Get point/segment cross-match RA/Dec statistics
+            for total_obj in total_obj_list:
+                for filter_obj in total_obj.fdp_list:
+                    svm_qa.compare_ra_dec_crossmatches(filter_obj, log_level=log_level)
+
             # Identify the number of GAIA sources in final product footprints
             for total_obj in total_obj_list:
                 svm_qa.find_gaia_sources(total_obj, log_level=log_level)
@@ -585,11 +590,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                     svm_qa.find_gaia_sources(filter_obj, log_level=log_level)
                     for exp_obj in filter_obj.edp_list:
                         svm_qa.find_gaia_sources(exp_obj, log_level=log_level)
-
-            # Perform point/segment cross-match test
-            for total_obj in total_obj_list:
-                for filter_obj in total_obj.fdp_list:
-                    svm_qa.compare_ra_dec_crossmatches(filter_obj, log_level=log_level)
 
         # 9: Compare results to HLA classic counterparts (if possible)
         if diagnostic_mode:
