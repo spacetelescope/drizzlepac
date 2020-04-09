@@ -43,7 +43,12 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+# ----------------------------------------------------------------------------------------------------------------------
 
+def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
+    pass
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NOTSET):
     """Determine the number of viable sources actually listed in SVM output catalogs.
@@ -154,7 +159,42 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     Nothing.
     """
     log.setLevel(log_level)
+    gaia_table = generate_gaia_catalog(hap_obj)
 
+
+    gaia_table.remove_columns(['objID', 'GaiaID'])
+    # write catalog to HapDiagnostic-formatted .json file.
+    diag_obj = du.HapDiagnostic(log_level=log_level)
+    diag_obj.instantiate_from_hap_obj(hap_obj,
+                                      data_source="{}.find_gaia_sources".format(__taskname__),
+                                      description="A table of GAIA sources in image footprint")
+    diag_obj.add_data_item(gaia_table, "GAIA sources")  # write catalog of identified GAIA sources
+    diag_obj.add_data_item(len(gaia_table), "Number of GAIA sources")  # write the number of identified GAIA sources
+    diag_obj.write_json_file(hap_obj.drizzle_filename+"_gaia_sources.json", clobber=True)
+
+    # Clean up
+    del diag_obj
+    del gaia_table
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def generate_gaia_catalog(hap_obj):
+    """Uses astrometric_utils.create_astrometric_catalog() to create a catalog of all GAIA sources in the
+    image footprint. This catalog contains right ascension, declination, and magnitude values, and is sorted
+    in descending order by brightness.
+
+    Parameters
+    ----------
+    hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
+        drizzlepac.hlautils.Product.ExposureProduct, depending on input.
+        hap product object to process
+
+    Returns
+    -------
+    gaia_table : astropy table
+        table containing right ascension, declination, and magnitude of all GAIA sources identified in the
+        image footprint, sorted in descending order by brightness.
+    """
     # Gather list of input flc/flt images
     img_list = []
     log.debug("GAIA catalog will be created using the following input images:")
@@ -171,28 +211,14 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
         img_list.append(imgname)
 
     # generate catalog of GAIA sources
-    ref_table = astrometric_utils.create_astrometric_catalog(img_list)
-    ref_table.remove_columns(['objID', 'GaiaID'])
-    if len(ref_table) == 0:
+    gaia_table = astrometric_utils.create_astrometric_catalog(img_list)
+    if len(gaia_table) == 0:
         log.warning("No GAIA sources were found!")
-    elif len(ref_table) == 1:
+    elif len(gaia_table) == 1:
         log.info("1 GAIA source was found.")
     else:
-        log.info("{} GAIA sources were found.".format(len(ref_table)))
-
-    # write catalog to HapDiagnostic-formatted .json file.
-    diag_obj = du.HapDiagnostic(log_level=log_level)
-    diag_obj.instantiate_from_hap_obj(hap_obj,
-                                      data_source="{}.find_gaia_sources".format(__taskname__),
-                                      description="A table of GAIA sources in image footprint")
-    diag_obj.add_data_item(ref_table, "GAIA sources")  # write catalog of identified GAIA sources
-    diag_obj.add_data_item(len(ref_table), "Number of GAIA sources")  # write the number of identified GAIA sources
-    diag_obj.write_json_file(hap_obj.drizzle_filename+"_gaia_sources.json", clobber=True)
-
-    # Clean up
-    del diag_obj
-    del ref_table
-
+        log.info("{} GAIA sources were found.".format(len(gaia_table)))
+    return gaia_table
 # ============================================================================================================
 if __name__ == "__main__":
     # Testing
@@ -202,21 +228,28 @@ if __name__ == "__main__":
     filehandler = open(pfile, 'rb')
     total_obj_list = pickle.load(filehandler)
 
-    log_level = logutil.logging.INFO
+    log_level = logutil.logging.DEBUG
 
     # Test compare_num_sources
-    total_catalog_list = []
-    total_drizzle_list = []
-    for total_obj in total_obj_list:
-        total_drizzle_list.append(total_obj.drizzle_filename)
-        total_catalog_list.append(total_obj.point_cat_filename)
-        total_catalog_list.append(total_obj.segment_cat_filename)
-    compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
+    if False:
+        total_catalog_list = []
+        total_drizzle_list = []
+        for total_obj in total_obj_list:
+            total_drizzle_list.append(total_obj.drizzle_filename)
+            total_catalog_list.append(total_obj.point_cat_filename)
+            total_catalog_list.append(total_obj.segment_cat_filename)
+        compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
 
     # test find_gaia_sources
-    for total_obj in total_obj_list:
-        find_gaia_sources(total_obj, log_level=log_level)
-        for filter_obj in total_obj.fdp_list:
-            find_gaia_sources(filter_obj, log_level=log_level)
-            for exp_obj in filter_obj.edp_list:
-                find_gaia_sources(exp_obj, log_level=log_level)
+    if True:
+        for total_obj in total_obj_list:
+            find_gaia_sources(total_obj, log_level=log_level)
+            for filter_obj in total_obj.fdp_list:
+                find_gaia_sources(filter_obj, log_level=log_level)
+                for exp_obj in filter_obj.edp_list:
+                    find_gaia_sources(exp_obj, log_level=log_level)
+
+    # test characterize_gaia_distribution
+        for total_obj in total_obj_list:
+            for filter_obj in total_obj.fdp_list:
+                characterize_gaia_distribution(filter_obj, log_level=log_level)
