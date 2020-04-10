@@ -26,16 +26,20 @@ https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 """
 
 # Standard library imports
+import collections
 import json
 import os
 import pdb
 import sys
 
+# external imports
+import numpy as np
+
 # Local application imports
-from drizzlepac.hlautils import astrometric_utils
+from drizzlepac.hlautils import astrometric_utils as au
 import drizzlepac.hlautils.diagnostic_utils as du
 from stsci.tools import logutil
-
+from stwcs.wcsutil import HSTWCS
 
 __taskname__ = 'svm_quality_analysis'
 
@@ -46,7 +50,64 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # ----------------------------------------------------------------------------------------------------------------------
 
 def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
-    pass
+    """Statistically describe distrivution of GAIA sources in footprint.
+
+    Computes and writes the file to a json file:
+
+    - Number of GAIA sources
+    - X centroid location
+    - Y centroid location
+    - X offset of centroid from image center
+    - Y offset of centroid from image center
+    - X standard deviation
+    - Y standard deviation
+
+    Parameters
+    ----------
+    hap_obj : drizzlepac.hlautils.Product.FilterProduct
+        hap product object to process
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 'NOTSET'.
+
+    Returns
+    -------
+    Nothing
+    """
+    log.setLevel(log_level)
+    gaia_table = generate_gaia_catalog(hap_obj, columns_to_remove=['mag','objID', 'GaiaID'])
+    gaia_table.write("gaia_sources2.reg",format='ascii.csv') # TODO: REMOVE BEFORE DEPLOYMENT
+
+    # convert RA, Dec to image X, Y
+    outwcs = HSTWCS(hap_obj.drizzle_filename + "[1]")
+    x, y = outwcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 1)
+
+    # compute stats
+    centroid = [np.mean(x), np.mean(y)]
+    centroid_offset=[]
+    for idx in range(0,2):
+        centroid_offset.append(outwcs.wcs.crpix[idx] - centroid[idx])
+    std_dev = [np.std(x), np.std(y)]
+
+    # add statistics to out_dict
+    out_dict = collections.OrderedDict()
+    out_dict["Number of sources"] = len(gaia_table)
+    axis_list = ["X", "Y"]
+    title_list = ["centroid", "offset of centroid from image center", "standard deviation"]
+    for item_value,item_title in zip([centroid, centroid_offset, std_dev],title_list):
+        for axis_item in enumerate(axis_list):
+            log.debug("{} {} (pixels): {}".format(axis_item[1],item_title,item_value[axis_item[0]]))
+            out_dict["{} {} (pixels)".format(axis_item[1],item_title)] = item_value[axis_item[0]]
+
+    # write catalog to HapDiagnostic-formatted .json file.
+    diag_obj = du.HapDiagnostic(log_level=log_level)
+    diag_obj.instantiate_from_hap_obj(hap_obj,
+                                      data_source="{}.characterize_gaia_distribution".format(__taskname__),
+                                      description="A statistical characterization of the distribution of GAIA sources in image footprint")
+    diag_obj.add_data_item(out_dict, "distribution characterization statistics")
+    diag_obj.write_json_file(hap_obj.drizzle_filename[:-9] + "_distribution_characterization.json", clobber=True)
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -159,10 +220,7 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     Nothing.
     """
     log.setLevel(log_level)
-    gaia_table = generate_gaia_catalog(hap_obj)
-
-
-    gaia_table.remove_columns(['objID', 'GaiaID'])
+    gaia_table = generate_gaia_catalog(hap_obj, columns_to_remove=['objID', 'GaiaID'])
     # write catalog to HapDiagnostic-formatted .json file.
     diag_obj = du.HapDiagnostic(log_level=log_level)
     diag_obj.instantiate_from_hap_obj(hap_obj,
@@ -170,7 +228,7 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
                                       description="A table of GAIA sources in image footprint")
     diag_obj.add_data_item(gaia_table, "GAIA sources")  # write catalog of identified GAIA sources
     diag_obj.add_data_item(len(gaia_table), "Number of GAIA sources")  # write the number of identified GAIA sources
-    diag_obj.write_json_file(hap_obj.drizzle_filename+"_gaia_sources.json", clobber=True)
+    diag_obj.write_json_file(hap_obj.drizzle_filename[:-9]+"_gaia_sources.json", clobber=True)
 
     # Clean up
     del diag_obj
@@ -178,7 +236,7 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def generate_gaia_catalog(hap_obj):
+def generate_gaia_catalog(hap_obj, columns_to_remove = None):
     """Uses astrometric_utils.create_astrometric_catalog() to create a catalog of all GAIA sources in the
     image footprint. This catalog contains right ascension, declination, and magnitude values, and is sorted
     in descending order by brightness.
@@ -211,7 +269,15 @@ def generate_gaia_catalog(hap_obj):
         img_list.append(imgname)
 
     # generate catalog of GAIA sources
-    gaia_table = astrometric_utils.create_astrometric_catalog(img_list)
+    gaia_table = au.create_astrometric_catalog(img_list, gaia_only =True)
+
+    if columns_to_remove:
+        gaia_table.remove_columns(columns_to_remove)
+    # outwcs = HSTWCS(hap_obj.drizzle_filename,ext=1)
+    # outwcs = au.build_self_reference(img_list[0] , clean_wcs=True)    # #
+    # x, y = outwcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 1)
+    # foo,bar = au.within_footprint(hap_obj.drizzle_filename,outwcs,x,y)
+    # # pdb.set_trace()
     if len(gaia_table) == 0:
         log.warning("No GAIA sources were found!")
     elif len(gaia_table) == 1:
@@ -219,6 +285,7 @@ def generate_gaia_catalog(hap_obj):
     else:
         log.info("{} GAIA sources were found.".format(len(gaia_table)))
     return gaia_table
+
 # ============================================================================================================
 if __name__ == "__main__":
     # Testing
@@ -250,6 +317,7 @@ if __name__ == "__main__":
                     find_gaia_sources(exp_obj, log_level=log_level)
 
     # test characterize_gaia_distribution
+    if True:
         for total_obj in total_obj_list:
             for filter_obj in total_obj.fdp_list:
                 characterize_gaia_distribution(filter_obj, log_level=log_level)
