@@ -117,7 +117,8 @@ class HapDiagnostic(object):
             header_items_to_remove.append('FILTER')
 
         for header_item_to_remove in header_items_to_remove:
-            del(self.header[header_item_to_remove])
+            if header_item_to_remove in self.header.keys():
+                del(self.header[header_item_to_remove])
 
         # summon nested orderedDict into existence
         self.out_dict = collections.OrderedDict()
@@ -211,7 +212,7 @@ class HapDiagnostic(object):
         -------
         Nothing.
         """
-        self.header = hap_obj.primary_header
+        self.header = hap_obj.primary_header.copy()
         if hasattr(hap_obj, "filters"):
             self.filter = hap_obj.filters
         else:
