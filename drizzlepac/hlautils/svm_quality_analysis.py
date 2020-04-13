@@ -83,7 +83,7 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
     log.setLevel(log_level)
 
     # get table of GAIA sources in footprint
-    gaia_table = generate_gaia_catalog(hap_obj, columns_to_remove=['mag','objID', 'GaiaID'])
+    gaia_table = generate_gaia_catalog(hap_obj, columns_to_remove=['mag', 'objID', 'GaiaID'])
 
     # if log_level is either 'DEBUG' or 'NOTSET', write out GAIA sources to DS9 region file
     if log_level <= 10:
@@ -136,7 +136,7 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
                                       data_source="{}.characterize_gaia_distribution".format(__taskname__),
                                       description="A statistical characterization of the distribution of GAIA sources in image footprint")
     diag_obj.add_data_item(out_dict, "distribution characterization statistics")
-    diag_obj.write_json_file(hap_obj.drizzle_filename[:-9] + "_distribution_characterization.json", clobber=True)
+    diag_obj.write_json_file(hap_obj.drizzle_filename[:-9] + "_svm_gaia_distribution_characterization.json", clobber=True)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -258,7 +258,7 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
                                       description="A table of GAIA sources in image footprint")
     diag_obj.add_data_item(gaia_table, "GAIA sources")  # write catalog of identified GAIA sources
     diag_obj.add_data_item(len(gaia_table), "Number of GAIA sources")  # write the number of identified GAIA sources
-    diag_obj.write_json_file(hap_obj.drizzle_filename[:-9]+"_gaia_sources.json", clobber=True)
+    diag_obj.write_json_file(hap_obj.drizzle_filename[:-9]+"_svm_gaia_sources.json", clobber=True)
 
     # Clean up
     del diag_obj
