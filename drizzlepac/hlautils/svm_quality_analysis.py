@@ -51,7 +51,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # ----------------------------------------------------------------------------------------------------------------------
 
 def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
-    """Statistically describe distrivution of GAIA sources in footprint.
+    """Statistically describe distribution of GAIA sources in footprint.
 
     Computes and writes the file to a json file:
 
@@ -62,6 +62,10 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
     - Y offset of centroid from image center
     - X standard deviation
     - Y standard deviation
+    - minimum nearest neighbor distance
+    - maximum nearest neighbor distance
+    - mean nearest neighbor distance
+    - standard deviation of nearest neighbor distances
 
     Parameters
     ----------
@@ -77,22 +81,28 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
     Nothing
     """
     log.setLevel(log_level)
+
+    # get table of GAIA sources in footprint
     gaia_table = generate_gaia_catalog(hap_obj, columns_to_remove=['mag','objID', 'GaiaID'])
-    gaia_table.write("gaia_sources2.reg",format='ascii.csv') # TODO: REMOVE BEFORE DEPLOYMENT
+
+    # if log_level is either 'DEBUG' or 'NOTSET', write out GAIA sources to DS9 region file
+    if log_level <= 10:
+        reg_file = "gaia_sources.reg"
+        gaia_table.write(reg_file, format='ascii.csv')
+        log.debug("Wrote GAIA source RA and Dec positions to DS9 region file '{}'".format(reg_file))
 
     # convert RA, Dec to image X, Y
     outwcs = HSTWCS(hap_obj.drizzle_filename + "[1]")
     x, y = outwcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 1)
 
-    # compute stats
-    # basic stats
+    # compute stats for the distribution
     centroid = [np.mean(x), np.mean(y)]
-    centroid_offset=[]
-    for idx in range(0,2):
+    centroid_offset = []
+    for idx in range(0, 2):
         centroid_offset.append(outwcs.wcs.crpix[idx] - centroid[idx])
     std_dev = [np.std(x), np.std(y)]
 
-    # Find distance to nearest neighbor for each GAIA source
+    # Find straight-line distance to the closest neighbor for each GAIA source
     xys = np.array([x, y])
     xys = xys.reshape(len(x), 2)
     tree = KDTree(xys)
@@ -107,17 +117,17 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
     out_dict["Number of GAIA sources"] = len(gaia_table)
     axis_list = ["X", "Y"]
     title_list = ["centroid", "offset of centroid from image center", "standard deviation"]
-    for item_value,item_title in zip([centroid, centroid_offset, std_dev],title_list):
+    for item_value, item_title in zip([centroid, centroid_offset, std_dev], title_list):
         for axis_item in enumerate(axis_list):
-            log.info("{} {} ({}): {}".format(axis_item[1],item_title,out_dict["units"],item_value[axis_item[0]]))
-            out_dict["{} {}".format(axis_item[1],item_title)] = item_value[axis_item[0]]
+            log.info("{} {} ({}): {}".format(axis_item[1], item_title, out_dict["units"], item_value[axis_item[0]]))
+            out_dict["{} {}".format(axis_item[1], item_title)] = item_value[axis_item[0]]
     min_sep_stats = [min_seps.min(), min_seps.max(), min_seps.mean(), min_seps.std()]
-    min_sep_title_list = ["smallest nearest neighbor distance",
-                          "largest nearest neighbor distance",
-                          "mean nearest neighbor distance",
-                          "standard deviation of nearest neighbor distances"]
-    for item_value,item_title in zip(min_sep_stats, min_sep_title_list):
-        log.info("{} ({}): {}".format(item_title, out_dict["units"],item_value))
+    min_sep_title_list = ["minimum closest neighbor distance",
+                          "maximum closest neighbor distance",
+                          "mean closest neighbor distance",
+                          "standard deviation of closest neighbor distances"]
+    for item_value, item_title in zip(min_sep_stats, min_sep_title_list):
+        log.info("{} ({}): {}".format(item_title, out_dict["units"], item_value))
         out_dict[item_title] = item_value
 
     # write catalog to HapDiagnostic-formatted .json file.
