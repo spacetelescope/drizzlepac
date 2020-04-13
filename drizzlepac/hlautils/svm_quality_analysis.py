@@ -103,17 +103,22 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
 
     # add statistics to out_dict
     out_dict = collections.OrderedDict()
-    out_dict["Number of sources"] = len(gaia_table)
+    out_dict["units"] = "pixels"
+    out_dict["Number of GAIA sources"] = len(gaia_table)
     axis_list = ["X", "Y"]
     title_list = ["centroid", "offset of centroid from image center", "standard deviation"]
     for item_value,item_title in zip([centroid, centroid_offset, std_dev],title_list):
         for axis_item in enumerate(axis_list):
-            log.debug("{} {} (pixels): {}".format(axis_item[1],item_title,item_value[axis_item[0]]))
-            out_dict["{} {} (pixels)".format(axis_item[1],item_title)] = item_value[axis_item[0]]
-    out_dict["smallest nearest neighbor distance"] = min_seps.min()
-    out_dict["largest nearest neighbor distance"] = min_seps.max()
-    out_dict["mean nearest neighbor distance"] = min_seps.mean()
-    out_dict['standard deviation of nearest neighbor distances'] = min_seps.std()
+            log.info("{} {} ({}): {}".format(axis_item[1],item_title,out_dict["units"],item_value[axis_item[0]]))
+            out_dict["{} {}".format(axis_item[1],item_title)] = item_value[axis_item[0]]
+    min_sep_stats = [min_seps.min(), min_seps.max(), min_seps.mean(), min_seps.std()]
+    min_sep_title_list = ["smallest nearest neighbor distance",
+                          "largest nearest neighbor distance",
+                          "mean nearest neighbor distance",
+                          "standard deviation of nearest neighbor distances"]
+    for item_value,item_title in zip(min_sep_stats, min_sep_title_list):
+        log.info("{} ({}): {}".format(item_title, out_dict["units"],item_value))
+        out_dict[item_title] = item_value
 
     # write catalog to HapDiagnostic-formatted .json file.
     diag_obj = du.HapDiagnostic(log_level=log_level)
