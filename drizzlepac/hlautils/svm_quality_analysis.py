@@ -62,10 +62,10 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
     - Y offset of centroid from image center
     - X standard deviation
     - Y standard deviation
-    - minimum nearest neighbor distance
-    - maximum nearest neighbor distance
-    - mean nearest neighbor distance
-    - standard deviation of nearest neighbor distances
+    - minimum closest neighbor distance
+    - maximum closest neighbor distance
+    - mean closest neighbor distance
+    - standard deviation of closest neighbor distances
 
     Parameters
     ----------
