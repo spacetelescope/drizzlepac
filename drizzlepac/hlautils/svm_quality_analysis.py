@@ -34,6 +34,7 @@ import sys
 
 # external imports
 import numpy as np
+from scipy.spatial import KDTree
 
 # Local application imports
 from drizzlepac.hlautils import astrometric_utils as au
@@ -84,11 +85,21 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
     x, y = outwcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 1)
 
     # compute stats
+    # basic stats
     centroid = [np.mean(x), np.mean(y)]
     centroid_offset=[]
     for idx in range(0,2):
         centroid_offset.append(outwcs.wcs.crpix[idx] - centroid[idx])
     std_dev = [np.std(x), np.std(y)]
+
+    # Find distance to nearest neighbor for each GAIA source
+    xys = np.array([x, y])
+    xys = xys.reshape(len(x), 2)
+    tree = KDTree(xys)
+    neighborhood = tree.query(xys, 2)
+    min_seps = np.empty([0])
+    for sep_pair in neighborhood[0]:
+        min_seps = np.append(min_seps, sep_pair[1])
 
     # add statistics to out_dict
     out_dict = collections.OrderedDict()
@@ -99,6 +110,10 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
         for axis_item in enumerate(axis_list):
             log.debug("{} {} (pixels): {}".format(axis_item[1],item_title,item_value[axis_item[0]]))
             out_dict["{} {} (pixels)".format(axis_item[1],item_title)] = item_value[axis_item[0]]
+    out_dict["smallest nearest neighbor distance"] = min_seps.min()
+    out_dict["largest nearest neighbor distance"] = min_seps.max()
+    out_dict["mean nearest neighbor distance"] = min_seps.mean()
+    out_dict['standard deviation of nearest neighbor distances'] = min_seps.std()
 
     # write catalog to HapDiagnostic-formatted .json file.
     diag_obj = du.HapDiagnostic(log_level=log_level)
@@ -308,7 +323,7 @@ if __name__ == "__main__":
         compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
 
     # test find_gaia_sources
-    if True:
+    if False:
         for total_obj in total_obj_list:
             find_gaia_sources(total_obj, log_level=log_level)
             for filter_obj in total_obj.fdp_list:
