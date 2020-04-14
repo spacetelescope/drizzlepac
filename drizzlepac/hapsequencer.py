@@ -583,6 +583,15 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                     for exp_obj in filter_obj.edp_list:
                         svm_qa.find_gaia_sources(exp_obj, log_level=log_level)
 
+            # Photometry of cross-matched sources in Point and Segment catalogs for Filter products
+            tot_len = len(total_obj_list)
+            filter_drizzle_list = []
+            temp_list = []
+            for tot in total_obj_list:
+                temp_list = [x.drizzle_filename for x in tot.fdp_list]
+                filter_drizzle_list.append(temp_list)
+            svm_qa.compare_photometry(filter_drizzle_list, log_level=log_level)
+
         # 9: Compare results to HLA classic counterparts (if possible)
         if diagnostic_mode:
             run_sourcelist_comparision(total_obj_list, diagnostic_mode=diagnostic_mode, log_level=log_level)
@@ -856,7 +865,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
 
 def _get_envvar_switch(envvar_name):
     """
-    This private routine interprets the environment variable, SVM_QUALITY_TEST,
+    This private routine interprets the environment variable, SVM_QUALITY_TESTING,
     if specified.  NOTE: This is a copy of the routine in runastrodriz.py.  This
     code should be put in a common place.
     """
