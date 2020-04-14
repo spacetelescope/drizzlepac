@@ -589,7 +589,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             temp_list = []
             for tot in total_obj_list:
                 temp_list = [x.drizzle_filename for x in tot.fdp_list]
-                filter_drizzle_list.append(temp_list)
+                filter_drizzle_list.extend(temp_list)
             svm_qa.compare_photometry(filter_drizzle_list, log_level=log_level)
 
         # 9: Compare results to HLA classic counterparts (if possible)
