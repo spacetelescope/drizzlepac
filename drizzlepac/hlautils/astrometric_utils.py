@@ -14,6 +14,7 @@ reference catalog. ::
 
 """
 import os
+import pdb
 from io import BytesIO
 import csv
 import requests
@@ -157,6 +158,7 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
         outwcs = existing_wcs
     else:
         outwcs = build_reference_wcs(inputs)
+    print(">>",outwcs.calc_footprint(undistort=False))
     radius = compute_radius(outwcs)
     ra, dec = outwcs.wcs.crval
 
@@ -265,6 +267,7 @@ def get_catalog(ra, dec, sr=0.1, catalog='GSC241'):
 
     spec = spec_str.format(ra, dec, sr, fmt, catalog)
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
+    serviceUrl = 'http://gsss.stsci.edu/webservices/vo/CatalogSearch.aspx?STCS=polygon 12.33741589 42.71022872 12.33748098 42.78710368 12.23244607 42.78710368 12.23251117 42.71022872&FORMAT=CSV&CAT=GAIADR2&MINDET=5'
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
     rstr = r_contents.split('\r\n')
@@ -274,6 +277,45 @@ def get_catalog(ra, dec, sr=0.1, catalog='GSC241'):
     r_csv = csv.DictReader(rstr)
 
     return r_csv
+
+
+def get_catalog_from_footprint(footprint, catalog='GSC241'):
+    """ Extract catalog from VO web service.
+
+    Parameters
+    ----------
+    footprint :
+
+    catalog : str, optional
+        Name of catalog to query, as defined by web-service.  Default: 'GSC241'
+
+    Returns
+    -------
+    csv : CSV object
+        CSV object of returned sources with all columns as provided by catalog
+
+    """
+    serviceType = 'vo/CatalogSearch.aspx'
+    spec_str = 'STCS=polygon{}&FORMAT={}&CAT={}&MINDET=5'
+    headers = {'Content-Type': 'text/csv'}
+    fmt = 'CSV'
+    footprint_string = ""
+    for item in footprint:
+        footprint_string += "%20{}%20{}".format(item[0],item[1])
+
+    spec = spec_str.format(footprint_string, fmt, catalog)
+    log.debug(spec)
+    serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
+    rawcat = requests.get(serviceUrl, headers=headers)
+    r_contents = rawcat.content.decode()  # convert from bytes to a String
+    rstr = r_contents.split('\r\n')
+    # remove initial line describing the number of sources returned
+    # CRITICAL to proper interpretation of CSV data
+    del rstr[0]
+    r_csv = csv.DictReader(rstr)
+
+    return r_csv
+
 
 
 def compute_radius(wcs):
