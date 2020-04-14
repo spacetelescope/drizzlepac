@@ -301,7 +301,7 @@ def generate_gaia_catalog(hap_obj, columns_to_remove = None):
     # Create footprint
     outwcs = HSTWCS(hap_obj.drizzle_filename, ext=1)
     footprint = outwcs.calc_footprint()
-
+    log.debug("Footprint: {}".format(footprint))
     # generate catalog of GAIA sources
     gaia_table = au.create_astrometric_catalog(img_list, gaia_only=True)
 
