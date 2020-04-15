@@ -174,6 +174,7 @@ class AlignmentTable:
     def configure_fit(self):
         # Convert input images to tweakwcs-compatible FITSWCS objects and
         # attach source catalogs to them.
+        
 
         self.imglist = []
         for group_id, image in enumerate(self.process_list):
@@ -195,8 +196,11 @@ class AlignmentTable:
         """
         return list(self.fit_methods.keys())
 
-    def perform_fit(self, method_name, catalog_name, reference_catalog):
+    def perform_fit(self, method_name, catalog_name, reference_catalog, 
+                    fitgeom='general'):
         """Perform fit using specified method, then determine fit quality"""
+        # Updated fits_pars with value for fitgeom
+        self.fit_pars[method_name]['fitgeom'] = fitgeom
         imglist = self.fit_methods[method_name](self.imglist, reference_catalog,
                                                 **self.fit_pars[method_name])
 
@@ -564,9 +568,14 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
 
     """
     log.info("{} (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
+    if 'fitgeom' in fit_pars:
+        fitgeom=fit_pars['fitgeom']
+        del fit_pars['fitgeom']
+    else:
+        fitgeom='general'
+
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
-    import pdb; pdb.set_trace()
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
     #                          tolerance=100, use2dhist=False)
 
@@ -574,7 +583,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     # NOTE: this invocation does not use an astrometric catalog. This call allows all the input images to be aligned in
     # a relative way using the first input image as the reference.
     # 1: Perform relative alignment
-    tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True, fitgeom='rscale')
+    tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True, fitgeom=fitgeom)
 
     # Set all the group_id values to be the same so the various images/chips will be aligned to the astrometric
     # reference catalog as an ensemble.
@@ -583,7 +592,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     for image in imglist:
         image.meta["group_id"] = 1234567
     # 2: Perform absolute alignment
-    tweakwcs.align_wcs(imglist, reference_catalog, match=match, fitgeom='rscale')
+    tweakwcs.align_wcs(imglist, reference_catalog, match=match, fitgeom=fitgeom)
 
     # 3: Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
@@ -610,13 +619,20 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
         List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
+    if 'fitgeom' in fit_pars:
+        fitgeom=fit_pars['fitgeom']
+        del fit_pars['fitgeom']
+    else:
+        fitgeom='general'
+
     log.info("{} (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
 
     # Align images and correct WCS
-    tweakwcs.align_wcs(imglist, reference_catalog, match=match, expand_refcat=False)
+    tweakwcs.align_wcs(imglist, reference_catalog, match=match, 
+                        expand_refcat=False, fitgeom=fitgeom)
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
@@ -644,12 +660,20 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
         List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
 
     """
+    if 'fitgeom' in fit_pars:
+        fitgeom=fit_pars['fitgeom']
+        del fit_pars['fitgeom']
+    else:
+        fitgeom='general'
+
+
     log.info("{} (match_2dhist_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 28))
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
     # Align images and correct WCS
-    tweakwcs.align_wcs(imglist, reference_catalog, match=match, expand_refcat=False)
+    tweakwcs.align_wcs(imglist, reference_catalog, match=match, 
+                        expand_refcat=False, fitgeom=fitgeom)
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
