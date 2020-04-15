@@ -298,22 +298,11 @@ def generate_gaia_catalog(hap_obj, columns_to_remove = None):
         log.debug(imgname)
         img_list.append(imgname)
 
-    # Create footprint
-    outwcs = HSTWCS(hap_obj.drizzle_filename, ext=1)
-    footprint = outwcs.calc_footprint()
-    log.debug("Footprint: {}".format(footprint))
     # generate catalog of GAIA sources
-    gaia_table = au.create_astrometric_catalog(img_list, gaia_only=True)
+    gaia_table = au.create_astrometric_catalog(img_list, gaia_only=True, use_footprint=True)
 
     if columns_to_remove:
         gaia_table.remove_columns(columns_to_remove)
-
-    # outwcs = HSTWCS(hap_obj.drizzle_filename,ext=1)
-    #
-    # outwcs = au.build_self_reference(img_list[0] , clean_wcs=True)    # #
-    # x, y = outwcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 1)
-    # foo,bar = au.within_footprint(hap_obj.drizzle_filename,outwcs,x,y)
-    # # pdb.set_trace()
     if len(gaia_table) == 0:
         log.warning("No GAIA sources were found!")
     elif len(gaia_table) == 1:
