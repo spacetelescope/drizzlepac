@@ -555,11 +555,14 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             log.warning("No total detection product has been produced. The sourcelist generation step has been skipped")
 
         # Store total_obj_list to a pickle file to speed up development
-        # pickle_filename = "total_obj_list_full.pickle"
-        # pickle_out = open(pickle_filename, "wb")
-        # pickle.dump(total_obj_list, pickle_out)
-        # pickle_out.close()
-        # log.info("Successfully wrote total_obj_list to pickle file {}!".format(pickle_filename))
+        if False:
+            pickle_filename = "total_obj_list_full.pickle"
+            if os.path.exists(pickle_filename):
+                os.remove(pickle_filename)
+            pickle_out = open(pickle_filename, "wb")
+            pickle.dump(total_obj_list, pickle_out)
+            pickle_out.close()
+            log.info("Successfully wrote total_obj_list to pickle file {}!".format(pickle_filename))
 
         # Quality assurance portion of the processing - done only if the environment
         # variable, SVM_QUALITY_TESTING, is set to 'on', 'yes', or 'true'.
@@ -575,6 +578,11 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             total_drizzle_list = [i for i in fits_list if 'total' in i]
             svm_qa.compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
 
+            # Get point/segment cross-match RA/Dec statistics
+            for total_obj in total_obj_list:
+                for filter_obj in total_obj.fdp_list:
+                    svm_qa.compare_ra_dec_crossmatches(filter_obj, log_level=log_level)
+
             # Identify the number of GAIA sources in final product footprints
             for total_obj in total_obj_list:
                 svm_qa.find_gaia_sources(total_obj, log_level=log_level)
@@ -582,6 +590,15 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                     svm_qa.find_gaia_sources(filter_obj, log_level=log_level)
                     for exp_obj in filter_obj.edp_list:
                         svm_qa.find_gaia_sources(exp_obj, log_level=log_level)
+
+            # Photometry of cross-matched sources in Point and Segment catalogs for Filter products
+            tot_len = len(total_obj_list)
+            filter_drizzle_list = []
+            temp_list = []
+            for tot in total_obj_list:
+                temp_list = [x.drizzle_filename for x in tot.fdp_list]
+                filter_drizzle_list.extend(temp_list)
+            svm_qa.compare_photometry(filter_drizzle_list, log_level=log_level)
 
         # 9: Compare results to HLA classic counterparts (if possible)
         if diagnostic_mode:
@@ -856,7 +873,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
 
 def _get_envvar_switch(envvar_name):
     """
-    This private routine interprets the environment variable, SVM_QUALITY_TEST,
+    This private routine interprets the environment variable, SVM_QUALITY_TESTING,
     if specified.  NOTE: This is a copy of the routine in runastrodriz.py.  This
     code should be put in a common place.
     """

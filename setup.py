@@ -104,6 +104,7 @@ setup(
         'lxml',
         'PyPDF2',
         'scikit-image>=0.14.2',
+        'PyYAML',
     ],
     extras_require={
         'test': TESTS_REQUIRE

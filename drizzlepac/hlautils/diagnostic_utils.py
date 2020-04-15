@@ -115,7 +115,6 @@ class HapDiagnostic(object):
             header_items_to_remove.append('FILTER2')
         if self.header['INSTRUME'] == 'WFC3':
             header_items_to_remove.append('FILTER')
-
         for header_item_to_remove in header_items_to_remove:
             if header_item_to_remove in self.header.keys():
                 del(self.header[header_item_to_remove])

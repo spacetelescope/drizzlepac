@@ -28,10 +28,12 @@ https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 import json
 import os
 
+from astropy.table import Table
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
 import numpy as np
 
+from stwcs.wcsutil import HSTWCS
 from stsci.tools.fileutil import countExtn
 import tweakwcs
 
@@ -39,7 +41,7 @@ from . import astrometric_utils as amutils
 from .. import tweakutils
 
 
-def determine_alignment_residuals(input, files, max_srcs=2000, fit_dict=None):
+def determine_alignment_residuals(input, files, max_srcs=2000):
     """Determine the relative alignment between members of an association.
 
     Parameters
@@ -206,12 +208,78 @@ def get_tangent_positions(chip, indices, start_indx=0):
 
 
 # -------------------------------------------------------------------------------
+# Compare source list with GAIA ref catalog
+def match_to_gaia(imcat, refcat, product, output, searchrad=5.0):
+    """Create a catalog with sources matched to GAIA sources
+    
+    Parameters
+    ----------
+    imcat : str or obj
+        Filename or astropy.Table of source catalog written out as ECSV file
+        
+    refcat : str
+        Filename of GAIA catalog files written out as ECSV file
+        
+    product : str
+        Filename of drizzled product used to derive the source catalog
+        
+    output : str
+        Rootname for matched catalog file to be written as an ECSV file 
+    
+    """
+    if isinstance(imcat, str):
+        imtab = Table.read(imcat, format='ascii.ecsv')
+        imtab.rename_column('X-Center', 'x')
+        imtab.rename_column('Y-Center', 'y')
+    else:
+        imtab = imcat
+        if 'X-Center' in imtab.colnames:
+            imtab.rename_column('X-Center', 'x')
+            imtab.rename_column('Y-Center', 'y')
+            
+    
+    reftab = Table.read(refcat, format='ascii.ecsv')
+    
+    # define WCS for matching
+    tpwcs = tweakwcs.FITSWCS(HSTWCS(product, ext=1))
+    
+    # define matching parameters
+    tpmatch = tweakwcs.TPMatch(searchrad=searchrad)
+    
+    # perform match
+    ref_indx, im_indx = tpmatch(reftab, imtab, tpwcs)
+    print('Found {} matches'.format(len(ref_indx)))
+    
+    # Obtain tangent plane positions for both image sources and refeence sources
+    im_x, im_y = tpwcs.det_to_tanp(imtab['x'][im_indx], imtab['y'][im_indx])
+    ref_x, ref_y = tpwcs.world_to_tanp(reftab['RA'][ref_indx], reftab['DEC'][ref_indx])
+    if 'RA' not in imtab.colnames:
+        im_ra, im_dec = tpwcs.det_to_world(imtab['x'][im_indx], imtab['y'][im_indx])
+    else:
+        im_ra = imtab['RA'][im_indx]
+        im_dec = imtab['DEC'][im_indx]
+        
+
+    # Compile match table
+    match_tab = Table(data=[im_x, im_y, im_ra, im_dec, 
+                            ref_x, ref_y, 
+                            reftab['RA'][ref_indx], reftab['DEC'][ref_indx]],
+                      names=['img_x','img_y', 'img_RA', 'img_DEC', 
+                             'ref_x', 'ref_y', 'ref_RA', 'ref_DEC'])
+    if not output.endswith('.ecsv'):
+        output = '{}.ecsv'.format(output)                             
+    match_tab.write(output, format='ascii.ecsv')
+    
+                       
+
+
+# -------------------------------------------------------------------------------
 # Simple interface for running all the analysis functions defined for this package
-def run_all(input, files, fit_dict=None):
+def run_all(input, files):
 
-    json_file = determine_alignment_residuals(input, files, fit_dict=fit_dict)
-
-    return json_file
+    json_file = determine_alignment_residuals(input, files)
+    
+    print("Generated quality statistics as {}".format(json_file))
 
 
 # -------------------------------------------------------------------------------
