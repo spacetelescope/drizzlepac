@@ -395,7 +395,8 @@ def computeFlagStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, 
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
-def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, plotfile_prefix, catalog_names, verbose):
+def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, plotfile_prefix, catalog_names,
+                       verbose):
     """Compute stats on the quantities with differences that can be computed with simple subtraction 
     (X, Y, RA, Dec, Flux, and Magnitude).
 
@@ -1123,7 +1124,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj.add_update_header_item("plate_scale", plate_scale)
     if len(matched_values) > 0:
         formalTitle = "X Position"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
+                                                  x_axis_units_dict[formalTitle], plotGen, formalTitle,
+                                                  plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list = pdf_files
         regressionTestResults[formalTitle] = rt_status
@@ -1139,7 +1142,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         diag_obj.add_data_item(matched_values,"Y")
     if len(matched_values) > 0:
         formalTitle = "Y Position"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
+                                                  x_axis_units_dict[formalTitle], plotGen, formalTitle,
+                                                  plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
         regressionTestResults[formalTitle] = rt_status
@@ -1186,7 +1191,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             matched_values_comp = matched_values_comp.icrs
         formalTitle = "On-Sky Separation"
         matched_values = [matched_values_ref,matched_values_comp]
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
+                                                  x_axis_units_dict[formalTitle], plotGen, formalTitle,
+                                                  plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
         regressionTestResults[formalTitle] = rt_status
@@ -1202,7 +1209,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj.add_data_item(matched_values,"FLUX1")
     if len(matched_values) > 0:
         formalTitle = "Flux (Inner Aperture)"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
+                                                  x_axis_units_dict[formalTitle], plotGen, formalTitle,
+                                                  plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
         regressionTestResults[formalTitle] = rt_status
@@ -1216,7 +1225,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj.add_data_item(matched_values,"FLUX2")
     if len(matched_values) > 0:
         formalTitle = "Flux (Outer Aperture)"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
+                                                  x_axis_units_dict[formalTitle], plotGen, formalTitle,
+                                                  plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
         regressionTestResults[formalTitle] = rt_status
@@ -1231,7 +1242,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj.add_data_item(matched_values,"MAGNITUDE1")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Inner Aperture)"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
+                                                  x_axis_units_dict[formalTitle], plotGen, formalTitle,
+                                                  plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
         regressionTestResults[formalTitle] = rt_status
@@ -1245,7 +1258,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj.add_data_item(matched_values,"MERR1")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Inner Aperture) Error"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
+                                                  x_axis_units_dict[formalTitle], plotGen, formalTitle,
+                                                  plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
         regressionTestResults[formalTitle] = rt_status
@@ -1259,7 +1274,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj.add_data_item(matched_values,"MAGNITUDE2")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Outer Aperture)"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
+                                                  x_axis_units_dict[formalTitle], plotGen, formalTitle,
+                                                  plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
         regressionTestResults[formalTitle] = rt_status
@@ -1273,7 +1290,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj.add_data_item(matched_values,"MERR2")
     if len(matched_values) > 0:
         formalTitle = "Magnitude (Outer Aperture) Error"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
+                                                  x_axis_units_dict[formalTitle], plotGen, formalTitle,
+                                                  plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
         regressionTestResults[formalTitle] = rt_status
@@ -1288,7 +1307,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj.add_data_item(matched_values,"MSKY")
     if len(matched_values) > 0:
         formalTitle = "MSKY value"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
+                                                  x_axis_units_dict[formalTitle], plotGen, formalTitle,
+                                                  plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
         regressionTestResults[formalTitle] = rt_status
@@ -1302,7 +1323,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj.add_data_item(matched_values,"STDEV")
     if len(matched_values) > 0:
         formalTitle = "STDEV value"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
+                                                  x_axis_units_dict[formalTitle], plotGen, formalTitle,
+                                                  plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
         regressionTestResults[formalTitle] = rt_status
@@ -1317,7 +1340,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj.add_data_item(matched_values,"CI")
     if len(matched_values) > 0:
         formalTitle = "CI"
-        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle], x_axis_units_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
+        rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
+                                                  x_axis_units_dict[formalTitle], plotGen, formalTitle,
+                                                  plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list += pdf_files
         regressionTestResults[formalTitle] = rt_status
@@ -1332,7 +1357,8 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj.add_data_item(matched_values,"FLAGS")
     if len(matched_values) > 0:
         formalTitle = "Source Flagging"
-        rt_status, flag_pdf_list = computeFlagStats(matched_values, max_diff_dict[formalTitle], plotGen, formalTitle, plotfile_prefix, slNames, verbose)
+        rt_status, flag_pdf_list = computeFlagStats(matched_values, max_diff_dict[formalTitle], plotGen,
+                                                    formalTitle, plotfile_prefix, slNames, verbose)
         if plotGen == "file":
             pdf_file_list += flag_pdf_list
         regressionTestResults[formalTitle] = rt_status
