@@ -196,9 +196,23 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
     json_results_dict['segment catalog length'] = slLengths[1]
     matching_lines_ref, matching_lines_img = csl.getMatchedLists(slNames, imgNames, slLengths, log_level=log_level)
     json_results_dict['number of cross-matches'] = len(matching_lines_ref)
+
+    # Report number and percentage of the total number of detected ref and comp sources that were matched
+    log.info("Cross-matching results")
+    log.info(
+        "Point sourcelist:  {} of {} total sources cross-matched ({}%)".format(len(matching_lines_ref), slLengths[0],
+                                                                               100.0 * (float(
+                                                                                   len(matching_lines_ref)) / float(
+                                                                                   slLengths[0]))))
+    log.info(
+        "Segment sourcelist: {} of {} total sources cross-matched ({}%)".format(len(matching_lines_img), slLengths[1],
+                                                                                100.0 * (float(
+                                                                                    len(matching_lines_img)) / float(
+                                                                                    slLengths[1]))))
+    # return without creating a .json if no cross-matches are found
     if len(matching_lines_ref) == 0 or len(matching_lines_img) == 0:
-        log.critical("*** Comparisons cannot be computed. No matching sources were found. ***")
-        return ("ERROR")
+        log.error("*** No matching sources were found. Comparisons cannot be computed. No json file will be produced.***")
+        return
     # 2: Create masks to remove missing values or values not considered "good" according to user-specified good bit values
     # 2a: create mask that identifies lines any value from any column is missing
     missing_mask = csl.mask_missing_values(point_data, seg_data, matching_lines_ref, matching_lines_img, columns_to_compare)
@@ -263,7 +277,7 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
         diag_obj.add_data_item(sep_stat_dict, "Segment - point on-sky separation statistics")
 
         # write everything out to the json file
-        json_filename = hap_obj.drizzle_filename[:-9]+"_point_segment_crossmatch.json"
+        json_filename = hap_obj.drizzle_filename[:-9]+"_svm_point_segment_crossmatch.json"
         diag_obj.write_json_file(json_filename, clobber=True)
 
 
