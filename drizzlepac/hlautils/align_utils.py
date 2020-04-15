@@ -201,6 +201,8 @@ class AlignmentTable:
         """Perform fit using specified method, then determine fit quality"""
         # Updated fits_pars with value for fitgeom
         self.fit_pars[method_name]['fitgeom'] = fitgeom
+        log.info("Setting 'fitgeom' parameter to {}".format(fitgeom))
+        
         imglist = self.fit_methods[method_name](self.imglist, reference_catalog,
                                                 **self.fit_pars[method_name])
 

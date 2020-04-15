@@ -262,10 +262,11 @@ class FilterProduct(HAPProduct):
                 log.debug("Abbreviated reference catalog displayed below\n{}".format(ref_catalog))
                 align_table.reference_catalogs[self.refname] = ref_catalog
                 if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
-                    align_table.perform_fit(method_name, catalog_name, ref_catalog)
+                    align_table.perform_fit(method_name, catalog_name, ref_catalog,
+                                           fitgeom=fitgeom)
                     align_table.select_fit(catalog_name, method_name)
                     align_table.apply_fit(headerlet_filenames=headerlet_filenames,
-                                         fit_label=fit_label, fitgeom=fitgeom)
+                                         fit_label=fit_label)
                 else:
                     log.warning("Not enough reference sources for absolute alignment...")
                     raise ValueError
