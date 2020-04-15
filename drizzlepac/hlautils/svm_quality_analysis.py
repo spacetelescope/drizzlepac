@@ -641,3 +641,13 @@ if __name__ == "__main__":
         for total_obj in total_obj_list:
             for filter_obj in total_obj.fdp_list:
                 characterize_gaia_distribution(filter_obj, log_level=log_level)
+
+    # test compare_photometry
+    if True:
+        tot_len = len(total_obj_list)
+        filter_drizzle_list = []
+        temp_list = []
+        for tot in total_obj_list:
+            temp_list = [x.drizzle_filename for x in tot.fdp_list]
+            filter_drizzle_list.extend(temp_list)
+        compare_photometry(filter_drizzle_list, log_level=log_level)
