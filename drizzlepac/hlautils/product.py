@@ -227,7 +227,7 @@ class FilterProduct(HAPProduct):
         self.edp_list.append(edp)
 
     def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
-                        fit_label='EVM', align_table=None):
+                        fit_label='EVM', align_table=None, fitgeom='rscale'):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment
            routine.
@@ -262,7 +262,8 @@ class FilterProduct(HAPProduct):
                 log.debug("Abbreviated reference catalog displayed below\n{}".format(ref_catalog))
                 align_table.reference_catalogs[self.refname] = ref_catalog
                 if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
-                    align_table.perform_fit(method_name, catalog_name, ref_catalog)
+                    align_table.perform_fit(method_name, catalog_name, ref_catalog,
+                                           fitgeom=fitgeom)
                     align_table.select_fit(catalog_name, method_name)
                     align_table.apply_fit(headerlet_filenames=headerlet_filenames,
                                          fit_label=fit_label)
