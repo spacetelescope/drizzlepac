@@ -39,7 +39,7 @@ from . import astrometric_utils as amutils
 from .. import tweakutils
 
 
-def determine_alignment_residuals(input, files, max_srcs=2000, fit_dict=None):
+def determine_alignment_residuals(input, files, max_srcs=2000):
     """Determine the relative alignment between members of an association.
 
     Parameters
@@ -207,11 +207,11 @@ def get_tangent_positions(chip, indices, start_indx=0):
 
 # -------------------------------------------------------------------------------
 # Simple interface for running all the analysis functions defined for this package
-def run_all(input, files, fit_dict=None):
+def run_all(input, files):
 
-    json_file = determine_alignment_residuals(input, files, fit_dict=fit_dict)
-
-    return json_file
+    json_file = determine_alignment_residuals(input, files)
+    
+    print("Generated quality statistics as {}".format(json_file))
 
 
 # -------------------------------------------------------------------------------

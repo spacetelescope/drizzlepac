@@ -31,9 +31,15 @@ import os
 import pdb
 import sys
 
+# Related third party imports
+import numpy as np
+from astropy.io import ascii
+from astropy.table import Table
+
 # Local application imports
 from drizzlepac.hlautils import astrometric_utils
 import drizzlepac.hlautils.diagnostic_utils as du
+import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
 from stsci.tools import logutil
 
 
@@ -56,17 +62,15 @@ def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NO
         The catalogs are detector-dependent.
 
     drizzle_list: list of strings
-        Drizzle files for tht Total products which were mined to generate the output catalogs.
+        Drizzle files for the Total products which were mined to generate the output catalogs.
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
         Default value is 'NOTSET'.
 
-    Returns
-    --------
-    results : string
-        Name of JSON file containing all the extracted results from the comparisons
-        being performed.
+    .. note:: This routine can be run either as a direct call from the hapsequencer.py routine,
+    or it can invoked by a simple Python driver (or from within a Python session) by providing
+    the names of the previously computed files as lists. The files must exist in the working directory.
     """
     log.setLevel(log_level)
 
@@ -132,7 +136,10 @@ def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NO
         # Clean up
         del diagnostic_obj
 
+    # This routine does not return any values
+
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     """Creates a catalog of all GAIA sources in the footprint of a specified HAP final product image, and
@@ -192,6 +199,150 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     # Clean up
     del diag_obj
     del ref_table
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def compare_photometry(drizzle_list, log_level=logutil.logging.NOTSET):
+    """Compare photometry measurements for sources cross matched between the Point and Segment catalogs.
+
+    Parameters
+    ----------
+    drizzle_list: list of strings
+        Drizzle files for the Filter products which were mined to generate the output catalogs.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 'NOTSET'.
+
+    .. note:: This routine can be run either as a direct call from the hapsequencer.py routine,
+    or it can invoked by a simple Python driver (or from within a Python session) by providing
+    the names of the previously computed files as lists. The files must exist in the working directory.
+    """
+    log.setLevel(log_level)
+
+    pnt_suffix = '_point-cat.ecsv'
+    seg_suffix = '_segment-cat.ecsv'
+
+    good_flag_sum = 255
+
+    phot_column_names = ["MagAp1", "MagAp2"]
+    error_column_names = ["MagErrAp1", "MagErrAp2"]
+
+    # Generate a separate JSON file for each detector and filter product
+    # Drizzle filename example: hst_11665_06_wfc3_ir_f110w_ib4606_drz.fits.
+    # The "product" in this context is a filter name.
+    # The filename is all lower-case by design.
+    for drizzle_file in drizzle_list:
+        tokens = drizzle_file.split('_')
+        detector = tokens[4]
+        filter_name = tokens[5]
+        ipppss = tokens[6]
+
+        # Set up the diagnostic object
+        diagnostic_obj = du.HapDiagnostic()
+        diagnostic_obj.instantiate_from_fitsfile(drizzle_file,
+                                                 data_source="{}.compare_photometry".format(__taskname__),
+                                                 description="Photometry differences in Point and Segment catalogs")
+        summary_dict = {'detector': detector, 'filter_name': filter_name}
+
+        # Construct the output JSON filename
+        json_filename = '_'.join([ipppss, detector, 'svm', filter_name, 'photometry.json'])
+
+        # Construct catalog names for catalogs that should have been produced
+        # For any drizzled product, only two catalogs can be produced at most (point and segment).
+        prefix = '_'.join(tokens[0:-1])
+        cat_names = [prefix + pnt_suffix, prefix + seg_suffix]
+
+        # Check that both catalogs exist
+        for catalog in cat_names:
+            does_exist = os.path.isfile(catalog)
+            if not does_exist:
+                log.warning("Catalog {} does not exist.  Both the Point and Segment catalogs must exist for comparison.".format(catalog))
+                log.warning("Program skipping comparison of catalogs associated with {}.\n".format(drizzle_file))
+                continue
+
+        # If the catalogs were actually produced, then get the data.
+        tab_point_measurements = ascii.read(cat_names[0])
+        tab_seg_measurements = ascii.read(cat_names[1])
+
+        # Unfortunately the Point and Segment catalogs use different names for the X and Y values
+        # Point: ([X|Y]-Center)  Segment: ([X|Y]-Centroid. Reset the coordinate columns to be only X or Y.
+        tab_point_measurements.rename_column('X-Center', 'X')
+        tab_point_measurements.rename_column('Y-Center', 'Y')
+        tab_seg_measurements.rename_column('X-Centroid', 'X')
+        tab_seg_measurements.rename_column('Y-Centroid', 'Y')
+        cat_lengths = [len(tab_point_measurements), len(tab_seg_measurements)]
+
+        # Determine the column names common to both catalogs as a list
+        common_columns = list(set(tab_point_measurements.colnames).intersection(set(tab_seg_measurements.colnames)))
+
+        # Use the utilities in devutils to match the sources in the two lists - get
+        # the indices of the matches.
+        matches_point_to_seg, matches_seg_to_point = csl.getMatchedLists(cat_names,
+                                                                         [drizzle_file,
+                                                                         drizzle_file],
+                                                                         cat_lengths,
+                                                                         log_level=log_level)
+        if len(matches_point_to_seg) == 0 or len(matches_seg_to_point) == 0:
+            log.warning("Catalog {} and Catalog {} had no matching sources.".format(cat_names[0], cat_names[1]))
+            log.warning("Program skipping comparison of catalogindexs associated with {}.\n".format(drizzle_file))
+            continue
+
+        # There are nan values present in the catalogs - create a mask which identifies these rows
+        # which are missing valid data
+        missing_values_mask = csl.mask_missing_values(tab_point_measurements, tab_seg_measurements,
+                                                      matches_point_to_seg, matches_seg_to_point, common_columns)
+
+        # Extract the Flag column from the two catalogs and get an ndarray (2, length)
+        flag_matching = csl.extractMatchedLines('Flags', tab_point_measurements, tab_seg_measurements,
+                                                matches_point_to_seg, matches_seg_to_point)
+
+        # Generate a mask to accommodate the missing, as well as the "flagged" entries
+        flag_values_mask = csl.make_flag_mask(flag_matching, good_flag_sum, missing_values_mask)
+
+        # Extract the columns of interest from the two catalogs for each desired measurement
+        # and get an ndarray (2, length)
+        # array([[21.512, ..., 2.944], [21.6 , ..., 22.98]],
+        #       [[21.872, ..., 2.844], [21.2 , ..., 22.8]])
+        for index, phot_column_name in enumerate(phot_column_names):
+            matching_phot_rows = csl.extractMatchedLines(phot_column_name, tab_point_measurements, tab_seg_measurements,
+                                                         matches_point_to_seg, matches_seg_to_point, bitmask=flag_values_mask)
+
+            # Compute the differences (Point - Segment)
+            delta_phot = np.subtract(matching_phot_rows[0], matching_phot_rows[1])
+
+            # Compute some basic statistics: mean difference and standard deviation, median difference,
+            median_delta_phot = np.median(delta_phot)
+            mean_delta_phot = np.mean(delta_phot)
+            std_delta_phot = np.std(delta_phot)
+
+            # NEED A BETTER WAY TO ASSOCIATE THE ERRORS WITH THE MEASUREMENTS
+            # Compute the corresponding error of the differences
+            matching_error_rows = csl.extractMatchedLines(error_column_names[index],
+                                                          tab_point_measurements, tab_seg_measurements,
+                                                          matches_point_to_seg, matches_seg_to_point,
+                                                          bitmask=flag_values_mask)
+
+            # Compute the error of the delta value (square root of the sum of the squares)
+            result_error = np.sqrt(np.add(np.square(matching_error_rows[0]), np.square(matching_error_rows[1])))
+
+            stat_key = 'Stats for Delta_' + phot_column_name + ' = Point_' + phot_column_name + ' - Segment_' + phot_column_name
+            stat_dict = {stat_key: {'Mean Difference': mean_delta_phot, 'Standard Deviation': std_delta_phot,
+                         'Median Difference': median_delta_phot}}
+            summary_dict.update(stat_dict)
+
+            # Write out the results
+            diagnostic_obj.add_data_item(summary_dict, 'High-level Photometry Statistics on differences of Point - Segment')
+
+        diagnostic_obj.write_json_file(json_filename)
+        log.info("Generated photometry comparison for Point - Segment matches sources {}.".format(json_filename))
+
+        # Clean up
+        del diagnostic_obj
+
+    # This routine does not return any values
+
 
 # ============================================================================================================
 if __name__ == "__main__":
