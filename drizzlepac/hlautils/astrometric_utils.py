@@ -165,6 +165,9 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
 
     if use_footprint:
         footprint = outwcs.calc_footprint()
+        with open('footprint.reg', 'w') as reg_out:
+            for item in footprint:
+                reg_out.write("{}, {}\n".format(item[0], item[1]))
     else:
         radius = compute_radius(outwcs)
         ra, dec = outwcs.wcs.crval
