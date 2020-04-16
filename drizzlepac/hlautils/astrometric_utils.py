@@ -1373,7 +1373,9 @@ def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
 
     # look for only sources within the viewable area of the exposure to
     # determine the offset
-    xref, yref = within_footprint(image, refwcs, xref, yref)
+    mask = within_footprint(image, refwcs, xref, yref)
+    xref = xref[mask]
+    yref = yref[mask]
     ref_xy = np.column_stack((xref, yref))
     log.info("\nWorking with {} astrometric sources for this field".format(len(ref_xy)))
 
