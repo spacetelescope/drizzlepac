@@ -450,8 +450,8 @@ def generate_gaia_catalog(hap_obj, columns_to_remove = None):
         gaia_table.remove_columns(columns_to_remove)
     outwcs = au.build_reference_wcs(img_list)
     x, y = outwcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 1)
-    foo,bar = au.within_footprint(hap_obj.drizzle_filename,outwcs,x,y)
-    # # pdb.set_trace()
+    mask = au.within_footprint(hap_obj.drizzle_filename,outwcs,x,y)
+    pdb.set_trace()
     if len(gaia_table) == 0:
         log.warning("No GAIA sources were found!")
     elif len(gaia_table) == 1:
@@ -615,8 +615,14 @@ if __name__ == "__main__":
 
     log_level = logutil.logging.DEBUG
 
+    test_compare_num_sources = False
+    test_find_gaia_sources = False
+    test_compare_ra_dec_crossmatches = False
+    test_characterize_gaia_distribution = True
+    test_compare_photometry = False
+
     # Test compare_num_sources
-    if False:
+    if test_compare_num_sources:
         total_catalog_list = []
         total_drizzle_list = []
         for total_obj in total_obj_list:
@@ -626,7 +632,7 @@ if __name__ == "__main__":
         compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
 
     # test find_gaia_sources
-    if False:
+    if test_find_gaia_sources:
         for total_obj in total_obj_list:
             find_gaia_sources(total_obj, log_level=log_level)
             for filter_obj in total_obj.fdp_list:
@@ -635,19 +641,19 @@ if __name__ == "__main__":
                     find_gaia_sources(exp_obj, log_level=log_level)
 
     # test compare_ra_dec_crossmatches
-    if False:
+    if test_compare_ra_dec_crossmatches:
         for total_obj in total_obj_list:
             for filter_obj in total_obj.fdp_list:
                 compare_ra_dec_crossmatches(filter_obj, log_level=log_level)
 
     # test characterize_gaia_distribution
-    if True:
+    if test_characterize_gaia_distribution:
         for total_obj in total_obj_list:
             for filter_obj in total_obj.fdp_list:
                 characterize_gaia_distribution(filter_obj, log_level=log_level)
 
     # test compare_photometry
-    if False:
+    if test_compare_photometry:
         tot_len = len(total_obj_list)
         filter_drizzle_list = []
         temp_list = []
