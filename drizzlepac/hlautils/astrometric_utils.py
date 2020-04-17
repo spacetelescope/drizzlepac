@@ -1290,19 +1290,39 @@ def within_footprint(img, wcsobj, x, y):
         arrays of x, y positions for sources to be checked.
 
     Returns
-    -------
-    x, y : ndarray
-        New arrays which have been trimmed of all sources that fall outside
-        the science areas of the image
+    -------    
+    mask : ndarray
+        Boolean array of same length as x,y arrays where sources that fall 
+        within the footprint are True.
 
     """
     # start with limits of WCS shape
 
-    sky = wcsobj.pixel_to_world(x, y, 1)
-    inmask = wcsobj.footprint_contains(sky)
-    x = x[inmask]
-    y = y[inmask]
-    return x, y
+    sky = wcsobj.pixel_to_world(x, y)
+    wcsmask = wcsobj.footprint_contains(sky)
+    xint = x[wcsmask].astype(np.int32)
+    yint = y[wcsmask].astype(np.int32)
+    
+    fprint = ~np.isnan(img)
+    xymask = np.zeros(img.shape, dtype=np.bool)
+    xymask[yint, xint] = True
+    
+    skymask = np.bitwise_and(fprint, xymask)
+    
+    mask = [True if skymask[yx]==True else False for yx in zip(yint, xint)]
+    mask = np.array(mask).astype(np.bool)
+    
+    # NOTE: There is probably a way to use list comprehension to do this, 
+    # but for now, this works as intended.
+    onimg = wcsmask.copy()
+    indx=0
+    for i,w in enumerate(onimg):
+        if w == True:
+            if mask[indx] == False:
+                onimg[i] = False
+            indx += 1
+            
+    return onimg
 
 
 def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
@@ -1408,7 +1428,9 @@ def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
 
     # look for only sources within the viewable area of the exposure to
     # determine the offset
-    xref, yref = within_footprint(image, refwcs, xref, yref)
+    mask = within_footprint(image, refwcs, xref, yref)
+    xref = xref[mask]
+    yref = yref[mask]
     ref_xy = np.column_stack((xref, yref))
     log.info("\nWorking with {} astrometric sources for this field".format(len(ref_xy)))
 
