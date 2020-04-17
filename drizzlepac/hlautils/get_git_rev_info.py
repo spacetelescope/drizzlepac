@@ -92,6 +92,10 @@ def get_rev_id(local_repo_path):
     full git revision ID of the specified repository if everything ran OK, and "FAILURE" if something went
     wrong.
     """
+
+    # Ensure the return variable is initialized
+    rv = "FAILURE: git revision info not found."
+
     start_path = os.getcwd()
     try:
         os.chdir(local_repo_path)
@@ -102,9 +106,9 @@ def get_rev_id(local_repo_path):
             if streamline.startswith("commit "):
                 rv = streamline.replace("commit ", "")
             else:
-                raise
+                raise ValueError("Git revision information not found.")
     except Exception:
-        rv = "FAILURE: git revision info not found"
+        pass
     finally:
         os.chdir(start_path)
 
