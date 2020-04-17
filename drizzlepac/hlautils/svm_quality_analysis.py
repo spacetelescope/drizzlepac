@@ -45,6 +45,7 @@ from drizzlepac.hlautils import astrometric_utils as au
 import drizzlepac.hlautils.diagnostic_utils as du
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
 from stsci.tools import logutil
+from stwcs import wcsutil
 from stwcs.wcsutil import HSTWCS
 
 __taskname__ = 'svm_quality_analysis'
@@ -442,16 +443,24 @@ def generate_gaia_catalog(hap_obj, columns_to_remove = None):
         imgname = "{}_{}".format(parse_info[4], parse_info[5])
         log.debug(imgname)
         img_list.append(imgname)
-    print(img_list)
+
     # generate catalog of GAIA sources
     gaia_table = au.create_astrometric_catalog(img_list, gaia_only=True, use_footprint=True)
 
+    # trim off specified columns
     if columns_to_remove:
         gaia_table.remove_columns(columns_to_remove)
-    outwcs = au.build_reference_wcs(img_list)
+
+    # remove sources outside image footprint
+    outwcs = wcsutil.HSTWCS(hap_obj.drizzle_filename, ext=1)
     x, y = outwcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 1)
-    mask = au.within_footprint(hap_obj.drizzle_filename,outwcs,x,y)
-    pdb.set_trace()
+    imghdu = fits.open(hap_obj.drizzle_filename)
+    in_img_data = imghdu['WHT'].data.copy()
+    in_img_data = np.where(in_img_data == 0, np.nan, in_img_data)
+    mask = au.within_footprint(in_img_data, outwcs, x, y)
+    gaia_table = gaia_table[mask]
+
+    # Report results to log
     if len(gaia_table) == 0:
         log.warning("No GAIA sources were found!")
     elif len(gaia_table) == 1:
@@ -616,7 +625,7 @@ if __name__ == "__main__":
     log_level = logutil.logging.DEBUG
 
     test_compare_num_sources = False
-    test_find_gaia_sources = False
+    test_find_gaia_sources = True
     test_compare_ra_dec_crossmatches = False
     test_characterize_gaia_distribution = True
     test_compare_photometry = False
