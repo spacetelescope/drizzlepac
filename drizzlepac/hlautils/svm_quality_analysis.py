@@ -432,6 +432,12 @@ def generate_gaia_catalog(hap_obj, columns_to_remove = None):
     # Gather list of input flc/flt images
     img_list = []
     log.debug("GAIA catalog will be created using the following input images:")
+    # Create a list of the input flc.fits/flt.fits that were drizzled to create the final HAP product being
+    # processed here. edp_item.info and hap_obj.info are both structured as follows:
+    # <proposal id>_<visit #>_<instrument>_<detector>_<input filename>_<filter>_<drizzled product
+    # image filetype>
+    # Example: '10265_01_acs_wfc_j92c01b9q_flc.fits_f606w_drc'
+    # what is being extracted here is just the input filename, which in this case is 'j92c01b9q_flc.fits'.
     if hasattr(hap_obj, "edp_list"):  # for total and filter product objects
         for edp_item in hap_obj.edp_list:
             parse_info = edp_item.info.split("_")
