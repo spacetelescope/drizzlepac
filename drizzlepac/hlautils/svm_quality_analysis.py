@@ -92,7 +92,7 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
     gaia_table = generate_gaia_catalog(hap_obj, columns_to_remove=['mag', 'objID', 'GaiaID'])
 
     # if log_level is either 'DEBUG' or 'NOTSET', write out GAIA sources to DS9 region file
-    if log_level <= 10:
+    if log_level <= logutil.logging.DEBUG:
         reg_file = "{}_gaia_sources.reg".format(hap_obj.drizzle_filename[:-9])
         gaia_table.write(reg_file, format='ascii.csv')
         log.debug("Wrote GAIA source RA and Dec positions to DS9 region file '{}'".format(reg_file))
