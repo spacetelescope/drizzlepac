@@ -224,7 +224,7 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
     matched_values_dec = csl.extractMatchedLines("DEC", point_data, seg_data, matching_lines_ref, matching_lines_img,
                                                  bitmask=bitmask)
 
-    if len(matched_values_ra) > 0 and len(matched_values_ra) == len(matched_values_dec):
+    if matched_values_ra.shape[1] > 0 and matched_values_ra.shape[1] == matched_values_dec.shape[1]:
         # get coordinate system type from fits headers
 
         point_frame = fits.getval(imgNames[0], "radesys", ext=('sci', 1)).lower()
@@ -278,7 +278,8 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
         # write everything out to the json file
         json_filename = hap_obj.drizzle_filename[:-9]+"_svm_point_segment_crossmatch.json"
         diag_obj.write_json_file(json_filename, clobber=True)
-
+    else:
+        log.warning("Point vs. segment catalog cross match test could not be performed.")
 
 # ------------------------------------------------------------------------------------------------------------
 
