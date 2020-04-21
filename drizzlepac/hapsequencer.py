@@ -555,7 +555,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             log.warning("No total detection product has been produced. The sourcelist generation step has been skipped")
 
         # Store total_obj_list to a pickle file to speed up development
-        if False:
+        if log_level <= logutil.logging.DEBUG:
             pickle_filename = "total_obj_list_full.pickle"
             if os.path.exists(pickle_filename):
                 os.remove(pickle_filename)
@@ -590,6 +590,11 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                     svm_qa.find_gaia_sources(filter_obj, log_level=log_level)
                     for exp_obj in filter_obj.edp_list:
                         svm_qa.find_gaia_sources(exp_obj, log_level=log_level)
+
+            # Characterize GAIA distribution
+            for total_obj in total_obj_list:
+                for filter_obj in total_obj.fdp_list:
+                    svm_qa.characterize_gaia_distribution(filter_obj, log_level=log_level)
 
             # Photometry of cross-matched sources in Point and Segment catalogs for Filter products
             tot_len = len(total_obj_list)
