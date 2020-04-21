@@ -618,7 +618,83 @@ def compare_photometry(drizzle_list, log_level=logutil.logging.NOTSET):
         del diagnostic_obj
 
     # This routine does not return any values
+# ----------------------------------------------------------------------------------------------------------------------
 
+def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_gaia_sources=True,
+                         run_compare_ra_dec_crossmatches=True, run_characterize_gaia_distribution=True,
+                         run_compare_photometry=True, log_level=logutil.logging.NOTSET):
+    """Run the quality analysis functions
+
+    Parameters
+    ----------
+    total_obj_list : list
+        List of one or more HAP drizzlepac.hlautils.Product.TotalProduct object(s) to process
+
+    run_compare_num_sources : bool, optional
+        Run 'compare_num_sources' test? Default value is True.
+
+    run_find_gaia_sources : bool, optional
+        Run 'find_gaia_sources' test? Default value is True.
+
+    run_compare_ra_dec_crossmatches : bool, optional
+        Run 'compare_ra_dec_crossmatches' test? Default value is True.
+
+    run_characterize_gaia_distribution : bool, optional
+        Run 'characterize_gaia_distribution' test? Default value is True.
+
+    run_compare_photometry : bool, optional
+        Run 'compare_photometry' test? Default value is True.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 'NOTSET'.
+
+    Returns
+    -------
+    Nothing.
+    """
+    log.setLevel(log_level)
+
+    # Determine number of sources in Point and Segment catalogs
+    if run_compare_num_sources:
+        total_catalog_list = []
+        total_drizzle_list = []
+        for total_obj in total_obj_list:
+            total_drizzle_list.append(total_obj.drizzle_filename)
+            total_catalog_list.append(total_obj.point_cat_filename)
+            total_catalog_list.append(total_obj.segment_cat_filename)
+        compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
+
+    # Identify the number of GAIA sources in final product footprints
+    if run_find_gaia_sources:
+        for total_obj in total_obj_list:
+            find_gaia_sources(total_obj, log_level=log_level)
+            for filter_obj in total_obj.fdp_list:
+                find_gaia_sources(filter_obj, log_level=log_level)
+                for exp_obj in filter_obj.edp_list:
+                    find_gaia_sources(exp_obj, log_level=log_level)
+
+    # Get point/segment cross-match RA/Dec statistics
+    if run_compare_ra_dec_crossmatches:
+        for total_obj in total_obj_list:
+            for filter_obj in total_obj.fdp_list:
+                compare_ra_dec_crossmatches(filter_obj, log_level=log_level)
+
+    # Statistically characterize GAIA distribution
+    if run_characterize_gaia_distribution:
+        for total_obj in total_obj_list:
+            for filter_obj in total_obj.fdp_list:
+                characterize_gaia_distribution(filter_obj, log_level=log_level)
+
+    # Photometry of cross-matched sources in Point and Segment catalogs for Filter products
+    if run_compare_photometry:
+        tot_len = len(total_obj_list)
+        filter_drizzle_list = []
+        temp_list = []
+        for tot in total_obj_list:
+            temp_list = [x.drizzle_filename for x in tot.fdp_list]
+            filter_drizzle_list.extend(temp_list)
+        compare_photometry(filter_drizzle_list, log_level=log_level)
 
 # ============================================================================================================
 if __name__ == "__main__":
@@ -628,52 +704,6 @@ if __name__ == "__main__":
     pfile = sys.argv[1]
     filehandler = open(pfile, 'rb')
     total_obj_list = pickle.load(filehandler)
-
     log_level = logutil.logging.DEBUG
-
-    test_compare_num_sources = True
-    test_find_gaia_sources = True
-    test_compare_ra_dec_crossmatches = True
-    test_characterize_gaia_distribution = True
-    test_compare_photometry = True
-
-    # Test compare_num_sources
-    if test_compare_num_sources:
-        total_catalog_list = []
-        total_drizzle_list = []
-        for total_obj in total_obj_list:
-            total_drizzle_list.append(total_obj.drizzle_filename)
-            total_catalog_list.append(total_obj.point_cat_filename)
-            total_catalog_list.append(total_obj.segment_cat_filename)
-        compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
-
-    # test find_gaia_sources
-    if test_find_gaia_sources:
-        for total_obj in total_obj_list:
-            find_gaia_sources(total_obj, log_level=log_level)
-            for filter_obj in total_obj.fdp_list:
-                find_gaia_sources(filter_obj, log_level=log_level)
-                for exp_obj in filter_obj.edp_list:
-                    find_gaia_sources(exp_obj, log_level=log_level)
-
-    # test compare_ra_dec_crossmatches
-    if test_compare_ra_dec_crossmatches:
-        for total_obj in total_obj_list:
-            for filter_obj in total_obj.fdp_list:
-                compare_ra_dec_crossmatches(filter_obj, log_level=log_level)
-
-    # test characterize_gaia_distribution
-    if test_characterize_gaia_distribution:
-        for total_obj in total_obj_list:
-            for filter_obj in total_obj.fdp_list:
-                characterize_gaia_distribution(filter_obj, log_level=log_level)
-
-    # test compare_photometry
-    if test_compare_photometry:
-        tot_len = len(total_obj_list)
-        filter_drizzle_list = []
-        temp_list = []
-        for tot in total_obj_list:
-            temp_list = [x.drizzle_filename for x in tot.fdp_list]
-            filter_drizzle_list.extend(temp_list)
-        compare_photometry(filter_drizzle_list, log_level=log_level)
+    # TODO: add argparse inputs so user can turn on or off specific tests during command line execution
+    run_quality_analysis(total_obj_list, log_level=log_level)
