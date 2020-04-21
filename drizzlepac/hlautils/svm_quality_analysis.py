@@ -631,11 +631,11 @@ if __name__ == "__main__":
 
     log_level = logutil.logging.DEBUG
 
-    test_compare_num_sources = False
+    test_compare_num_sources = True
     test_find_gaia_sources = True
-    test_compare_ra_dec_crossmatches = False
+    test_compare_ra_dec_crossmatches = True
     test_characterize_gaia_distribution = True
-    test_compare_photometry = False
+    test_compare_photometry = True
 
     # Test compare_num_sources
     if test_compare_num_sources:
