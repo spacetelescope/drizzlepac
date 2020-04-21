@@ -38,13 +38,15 @@ from astropy.io import ascii, fits
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 import numpy as np
+from scipy.spatial import KDTree
 
 # Local application imports
-from drizzlepac.hlautils import astrometric_utils
+from drizzlepac.hlautils import astrometric_utils as au
 import drizzlepac.hlautils.diagnostic_utils as du
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
 from stsci.tools import logutil
-
+from stwcs import wcsutil
+from stwcs.wcsutil import HSTWCS
 
 __taskname__ = 'svm_quality_analysis'
 
@@ -52,7 +54,98 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+# ----------------------------------------------------------------------------------------------------------------------
 
+def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
+    """Statistically describe distribution of GAIA sources in footprint.
+
+    Computes and writes the file to a json file:
+
+    - Number of GAIA sources
+    - X centroid location
+    - Y centroid location
+    - X offset of centroid from image center
+    - Y offset of centroid from image center
+    - X standard deviation
+    - Y standard deviation
+    - minimum closest neighbor distance
+    - maximum closest neighbor distance
+    - mean closest neighbor distance
+    - standard deviation of closest neighbor distances
+
+    Parameters
+    ----------
+    hap_obj : drizzlepac.hlautils.Product.FilterProduct
+        hap product object to process
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 'NOTSET'.
+
+    Returns
+    -------
+    Nothing
+    """
+    log.setLevel(log_level)
+
+    # get table of GAIA sources in footprint
+    gaia_table = generate_gaia_catalog(hap_obj, columns_to_remove=['mag', 'objID', 'GaiaID'])
+
+    # if log_level is either 'DEBUG' or 'NOTSET', write out GAIA sources to DS9 region file
+    if log_level <= logutil.logging.DEBUG:
+        reg_file = "{}_gaia_sources.reg".format(hap_obj.drizzle_filename[:-9])
+        gaia_table.write(reg_file, format='ascii.csv')
+        log.debug("Wrote GAIA source RA and Dec positions to DS9 region file '{}'".format(reg_file))
+
+    # convert RA, Dec to image X, Y
+    outwcs = HSTWCS(hap_obj.drizzle_filename + "[1]")
+    x, y = outwcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 1)
+
+    # compute stats for the distribution
+    centroid = [np.mean(x), np.mean(y)]
+    centroid_offset = []
+    for idx in range(0, 2):
+        centroid_offset.append(outwcs.wcs.crpix[idx] - centroid[idx])
+    std_dev = [np.std(x), np.std(y)]
+
+    # Find straight-line distance to the closest neighbor for each GAIA source
+    xys = np.array([x, y])
+    xys = xys.reshape(len(x), 2)
+    tree = KDTree(xys)
+    neighborhood = tree.query(xys, 2)
+    min_seps = np.empty([0])
+    for sep_pair in neighborhood[0]:
+        min_seps = np.append(min_seps, sep_pair[1])
+
+    # add statistics to out_dict
+    out_dict = collections.OrderedDict()
+    out_dict["units"] = "pixels"
+    out_dict["Number of GAIA sources"] = len(gaia_table)
+    axis_list = ["X", "Y"]
+    title_list = ["centroid", "offset of centroid from image center", "standard deviation"]
+    for item_value, item_title in zip([centroid, centroid_offset, std_dev], title_list):
+        for axis_item in enumerate(axis_list):
+            log.info("{} {} ({}): {}".format(axis_item[1], item_title, out_dict["units"], item_value[axis_item[0]]))
+            out_dict["{} {}".format(axis_item[1], item_title)] = item_value[axis_item[0]]
+    min_sep_stats = [min_seps.min(), min_seps.max(), min_seps.mean(), min_seps.std()]
+    min_sep_title_list = ["minimum closest neighbor distance",
+                          "maximum closest neighbor distance",
+                          "mean closest neighbor distance",
+                          "standard deviation of closest neighbor distances"]
+    for item_value, item_title in zip(min_sep_stats, min_sep_title_list):
+        log.info("{} ({}): {}".format(item_title, out_dict["units"], item_value))
+        out_dict[item_title] = item_value
+
+    # write catalog to HapDiagnostic-formatted .json file.
+    diag_obj = du.HapDiagnostic(log_level=log_level)
+    diag_obj.instantiate_from_hap_obj(hap_obj,
+                                      data_source="{}.characterize_gaia_distribution".format(__taskname__),
+                                      description="A statistical characterization of the distribution of GAIA sources in image footprint")
+    diag_obj.add_data_item(out_dict, "distribution characterization statistics")
+    diag_obj.write_json_file(hap_obj.drizzle_filename[:-9] + "_svm_gaia_distribution_characterization.json", clobber=True)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NOTSET):
     """Determine the number of viable sources actually listed in SVM output catalogs.
@@ -304,10 +397,48 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     Nothing.
     """
     log.setLevel(log_level)
+    gaia_table = generate_gaia_catalog(hap_obj, columns_to_remove=['objID', 'GaiaID'])
+    # write catalog to HapDiagnostic-formatted .json file.
+    diag_obj = du.HapDiagnostic(log_level=log_level)
+    diag_obj.instantiate_from_hap_obj(hap_obj,
+                                      data_source="{}.find_gaia_sources".format(__taskname__),
+                                      description="A table of GAIA sources in image footprint")
+    diag_obj.add_data_item(gaia_table, "GAIA sources")  # write catalog of identified GAIA sources
+    diag_obj.add_data_item(len(gaia_table), "Number of GAIA sources")  # write the number of identified GAIA sources
+    diag_obj.write_json_file(hap_obj.drizzle_filename[:-9]+"_svm_gaia_sources.json", clobber=True)
 
+    # Clean up
+    del diag_obj
+    del gaia_table
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def generate_gaia_catalog(hap_obj, columns_to_remove = None):
+    """Uses astrometric_utils.create_astrometric_catalog() to create a catalog of all GAIA sources in the
+    image footprint. This catalog contains right ascension, declination, and magnitude values, and is sorted
+    in descending order by brightness.
+
+    Parameters
+    ----------
+    hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
+        drizzlepac.hlautils.Product.ExposureProduct, depending on input.
+        hap product object to process
+
+    Returns
+    -------
+    gaia_table : astropy table
+        table containing right ascension, declination, and magnitude of all GAIA sources identified in the
+        image footprint, sorted in descending order by brightness.
+    """
     # Gather list of input flc/flt images
     img_list = []
     log.debug("GAIA catalog will be created using the following input images:")
+    # Create a list of the input flc.fits/flt.fits that were drizzled to create the final HAP product being
+    # processed here. edp_item.info and hap_obj.info are both structured as follows:
+    # <proposal id>_<visit #>_<instrument>_<detector>_<input filename>_<filter>_<drizzled product
+    # image filetype>
+    # Example: '10265_01_acs_wfc_j92c01b9q_flc.fits_f606w_drc'
+    # what is being extracted here is just the input filename, which in this case is 'j92c01b9q_flc.fits'.
     if hasattr(hap_obj, "edp_list"):  # for total and filter product objects
         for edp_item in hap_obj.edp_list:
             parse_info = edp_item.info.split("_")
@@ -321,27 +452,29 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
         img_list.append(imgname)
 
     # generate catalog of GAIA sources
-    ref_table = astrometric_utils.create_astrometric_catalog(img_list)
-    ref_table.remove_columns(['objID', 'GaiaID'])
-    if len(ref_table) == 0:
+    gaia_table = au.create_astrometric_catalog(img_list, gaia_only=True, use_footprint=True)
+
+    # trim off specified columns
+    if columns_to_remove:
+        gaia_table.remove_columns(columns_to_remove)
+
+    # remove sources outside image footprint
+    outwcs = wcsutil.HSTWCS(hap_obj.drizzle_filename, ext=1)
+    x, y = outwcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 1)
+    imghdu = fits.open(hap_obj.drizzle_filename)
+    in_img_data = imghdu['WHT'].data.copy()
+    in_img_data = np.where(in_img_data == 0, np.nan, in_img_data)
+    mask = au.within_footprint(in_img_data, outwcs, x, y)
+    gaia_table = gaia_table[mask]
+
+    # Report results to log
+    if len(gaia_table) == 0:
         log.warning("No GAIA sources were found!")
-    elif len(ref_table) == 1:
+    elif len(gaia_table) == 1:
         log.info("1 GAIA source was found.")
     else:
-        log.info("{} GAIA sources were found.".format(len(ref_table)))
-
-    # write catalog to HapDiagnostic-formatted .json file.
-    diag_obj = du.HapDiagnostic(log_level=log_level)
-    diag_obj.instantiate_from_hap_obj(hap_obj,
-                                      data_source="{}.find_gaia_sources".format(__taskname__),
-                                      description="A table of GAIA sources in image footprint")
-    diag_obj.add_data_item(ref_table, "GAIA sources")  # write catalog of identified GAIA sources
-    diag_obj.add_data_item(len(ref_table), "Number of GAIA sources")  # write the number of identified GAIA sources
-    diag_obj.write_json_file(hap_obj.drizzle_filename+"_gaia_sources.json", clobber=True)
-
-    # Clean up
-    del diag_obj
-    del ref_table
+        log.info("{} GAIA sources were found.".format(len(gaia_table)))
+    return gaia_table
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -496,10 +629,16 @@ if __name__ == "__main__":
     filehandler = open(pfile, 'rb')
     total_obj_list = pickle.load(filehandler)
 
-    log_level = logutil.logging.INFO
+    log_level = logutil.logging.DEBUG
+
+    test_compare_num_sources = False
+    test_find_gaia_sources = True
+    test_compare_ra_dec_crossmatches = False
+    test_characterize_gaia_distribution = True
+    test_compare_photometry = False
 
     # Test compare_num_sources
-    if False:
+    if test_compare_num_sources:
         total_catalog_list = []
         total_drizzle_list = []
         for total_obj in total_obj_list:
@@ -509,7 +648,7 @@ if __name__ == "__main__":
         compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
 
     # test find_gaia_sources
-    if False:
+    if test_find_gaia_sources:
         for total_obj in total_obj_list:
             find_gaia_sources(total_obj, log_level=log_level)
             for filter_obj in total_obj.fdp_list:
@@ -518,7 +657,23 @@ if __name__ == "__main__":
                     find_gaia_sources(exp_obj, log_level=log_level)
 
     # test compare_ra_dec_crossmatches
-    if True:
+    if test_compare_ra_dec_crossmatches:
         for total_obj in total_obj_list:
             for filter_obj in total_obj.fdp_list:
                 compare_ra_dec_crossmatches(filter_obj, log_level=log_level)
+
+    # test characterize_gaia_distribution
+    if test_characterize_gaia_distribution:
+        for total_obj in total_obj_list:
+            for filter_obj in total_obj.fdp_list:
+                characterize_gaia_distribution(filter_obj, log_level=log_level)
+
+    # test compare_photometry
+    if test_compare_photometry:
+        tot_len = len(total_obj_list)
+        filter_drizzle_list = []
+        temp_list = []
+        for tot in total_obj_list:
+            temp_list = [x.drizzle_filename for x in tot.fdp_list]
+            filter_drizzle_list.extend(temp_list)
+        compare_photometry(filter_drizzle_list, log_level=log_level)
