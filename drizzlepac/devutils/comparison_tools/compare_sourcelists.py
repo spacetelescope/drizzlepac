@@ -748,7 +748,6 @@ def extractMatchedLines(col2get, refData, compData, refLines, compLines, bitmask
         A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The corresponding matched
         comparision values
     """
-    return_ra = []
     if col2get in list(refData.keys()) and col2get in list(compData.keys()):
         matching_refData = refData[col2get][refLines].data
         matching_compData = compData[col2get][compLines].data
@@ -759,6 +758,8 @@ def extractMatchedLines(col2get, refData, compData, refLines, compLines, bitmask
             matching_refData = matching_refData.compressed()
             matching_compData = matching_compData.compressed()
         return_ra = np.stack((matching_refData, matching_compData))
+    else:
+        return_ra = np.empty((2,0))
     return return_ra
 
 
@@ -1110,7 +1111,6 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
         bitmask = make_flag_mask(matched_values, good_flag_sum, missing_mask)
 
-
     # 3: Compute and display statistics on X position differences for matched sources
     if input_json_filename:
         matched_values = json_data['data']['X']
@@ -1122,7 +1122,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         if output_json_filename:  # Add matched values to diag_obj
             diag_obj.add_data_item(matched_values,"X")
             diag_obj.add_update_header_item("plate_scale", plate_scale)
-    if len(matched_values) > 0:
+    if matched_values.shape[1] > 0:
         formalTitle = "X Position"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
                                                   x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1140,7 +1140,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if output_json_filename:  # Add matched values to diag_obj
         diag_obj.add_data_item(matched_values,"Y")
-    if len(matched_values) > 0:
+    if matched_values.shape[1] > 0:
         formalTitle = "Y Position"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
                                                   x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1169,7 +1169,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values_dec = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img,bitmask=bitmask)
         if output_json_filename:  # Add matched values to diag_obj
             diag_obj.add_data_item(matched_values_dec,"DEC")
-    if len(matched_values_ra) > 0 and len(matched_values_ra) == len(matched_values_dec):
+    if matched_values_ra.shape[1] > 0 and matched_values_ra.shape[1] == matched_values_dec.shape[1]:
         # get coordinate system type from fits headers
         if input_json_filename:
             ref_frame = json_data['header']['ref_frame']
@@ -1207,7 +1207,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = extractMatchedLines("FLUX1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename:  # Add matched values to diag_obj
             diag_obj.add_data_item(matched_values,"FLUX1")
-    if len(matched_values) > 0:
+    if matched_values.shape[1] > 0:
         formalTitle = "Flux (Inner Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
                                                   x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1223,7 +1223,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = extractMatchedLines("FLUX2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename:  # Add matched values to diag_obj
             diag_obj.add_data_item(matched_values,"FLUX2")
-    if len(matched_values) > 0:
+    if matched_values.shape[1] > 0:
         formalTitle = "Flux (Outer Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
                                                   x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1240,7 +1240,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = extractMatchedLines("MAGNITUDE1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename:  # Add matched values to diag_obj
             diag_obj.add_data_item(matched_values,"MAGNITUDE1")
-    if len(matched_values) > 0:
+    if matched_values.shape[1] > 0:
         formalTitle = "Magnitude (Inner Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
                                                   x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1256,7 +1256,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = extractMatchedLines("MERR1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename: # Add matched values to diag_obj
             diag_obj.add_data_item(matched_values,"MERR1")
-    if len(matched_values) > 0:
+    if matched_values.shape[1] > 0:
         formalTitle = "Magnitude (Inner Aperture) Error"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
                                                   x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1272,7 +1272,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = extractMatchedLines("MAGNITUDE2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename:  # Add matched values to diag_obj
             diag_obj.add_data_item(matched_values,"MAGNITUDE2")
-    if len(matched_values) > 0:
+    if matched_values.shape[1] > 0:
         formalTitle = "Magnitude (Outer Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
                                                   x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1288,7 +1288,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = extractMatchedLines("MERR2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename:  # Add matched values to diag_obj
             diag_obj.add_data_item(matched_values,"MERR2")
-    if len(matched_values) > 0:
+    if matched_values.shape[1] > 0:
         formalTitle = "Magnitude (Outer Aperture) Error"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
                                                   x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1305,7 +1305,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = extractMatchedLines("MSKY", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename:  # Add matched values to diag_obj
             diag_obj.add_data_item(matched_values,"MSKY")
-    if len(matched_values) > 0:
+    if matched_values.shape[1] > 0:
         formalTitle = "MSKY value"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
                                                   x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1321,7 +1321,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = extractMatchedLines("STDEV", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename:  # Add matched values to diag_obj
             diag_obj.add_data_item(matched_values,"STDEV")
-    if len(matched_values) > 0:
+    if matched_values.shape[1] > 0:
         formalTitle = "STDEV value"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
                                                   x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1338,7 +1338,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = extractMatchedLines("CI", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename:  # Add matched values to diag_obj
             diag_obj.add_data_item(matched_values,"CI")
-    if len(matched_values) > 0:
+    if matched_values.shape[1] > 0:
         formalTitle = "CI"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
                                                   x_axis_units_dict[formalTitle], plotGen, formalTitle,
@@ -1355,7 +1355,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename:  # Add matched values to diag_obj
             diag_obj.add_data_item(matched_values,"FLAGS")
-    if len(matched_values) > 0:
+    if matched_values.shape[1] > 0:
         formalTitle = "Source Flagging"
         rt_status, flag_pdf_list = computeFlagStats(matched_values, max_diff_dict[formalTitle], plotGen,
                                                     formalTitle, plotfile_prefix, slNames, verbose)

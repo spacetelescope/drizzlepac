@@ -14,6 +14,7 @@ reference catalog. ::
 
 """
 import os
+import pdb
 from io import BytesIO
 import csv
 import requests
@@ -107,7 +108,7 @@ Primary function for creating an astrometric reference catalog.
 
 def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
                                gaia_only=False, table_format="ascii.ecsv",
-                               existing_wcs=None, num_sources=None):
+                               existing_wcs=None, num_sources=None, use_footprint=False):
     """Create an astrometric catalog that covers the inputs' field-of-view.
 
     Parameters
@@ -135,6 +136,10 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
         If `num_sources` is negative, return that number of the faintest
         sources.  By default, all sources are returned.
 
+    use_footprint : bool, optional
+        Use the image footprint as the source identification bounds insted of using a circle centered on a
+        given RA and Dec? By default, use_footprint = False.
+
     Notes
     -----
     This function will point to astrometric catalog web service defined
@@ -157,11 +162,22 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
         outwcs = existing_wcs
     else:
         outwcs = build_reference_wcs(inputs)
-    radius = compute_radius(outwcs)
-    ra, dec = outwcs.wcs.crval
+
+    if use_footprint:
+        footprint = outwcs.calc_footprint()
+        with open('footprint.reg', 'w') as reg_out:
+            for item in footprint:
+                reg_out.write("{}, {}\n".format(item[0], item[1]))
+    else:
+        radius = compute_radius(outwcs)
+        ra, dec = outwcs.wcs.crval
 
     # perform query for this field-of-view
-    ref_dict = get_catalog(ra, dec, sr=radius, catalog=catalog)
+    if use_footprint:
+        ref_dict = get_catalog_from_footprint(footprint, catalog=catalog)
+    else:
+        ref_dict = get_catalog(ra, dec, sr=radius, catalog=catalog)
+
     colnames = ('ra', 'dec', 'mag', 'objID', 'GaiaID')
     col_types = ('f8', 'f8', 'f4', 'U25', 'U25')
     ref_table = Table(names=colnames, dtype=col_types)
@@ -274,6 +290,45 @@ def get_catalog(ra, dec, sr=0.1, catalog='GSC241'):
     r_csv = csv.DictReader(rstr)
 
     return r_csv
+
+
+def get_catalog_from_footprint(footprint, catalog='GSC241'):
+    """ Extract catalog from VO web service based on the specified footprint
+
+    Parameters
+    ----------
+    footprint : numpy.ndarray
+        Array of RA, Dec points that describe the footprint polygon
+
+    catalog : str, optional
+        Name of catalog to query, as defined by web-service.  Default: 'GSC241'
+
+    Returns
+    -------
+    csv : CSV object
+        CSV object of returned sources with all columns as provided by catalog
+
+    """
+    serviceType = 'vo/CatalogSearch.aspx'
+    spec_str = 'STCS=polygon{}&FORMAT={}&CAT={}&MINDET=5'
+    headers = {'Content-Type': 'text/csv'}
+    fmt = 'CSV'
+
+    footprint_string = ""
+    for item in footprint:
+        footprint_string += "%20{}%20{}".format(item[0],item[1])
+    spec = spec_str.format(footprint_string, fmt, catalog)
+    serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
+    rawcat = requests.get(serviceUrl, headers=headers)
+    r_contents = rawcat.content.decode()  # convert from bytes to a String
+    rstr = r_contents.split('\r\n')
+    # remove initial line describing the number of sources returned
+    # CRITICAL to proper interpretation of CSV data
+    del rstr[0]
+    r_csv = csv.DictReader(rstr)
+
+    return r_csv
+
 
 
 def compute_radius(wcs):
