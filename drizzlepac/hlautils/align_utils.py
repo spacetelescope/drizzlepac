@@ -170,6 +170,8 @@ class AlignmentTable:
                                         format="ascii.fast_commented_header")
                         log.info("Wrote region file {}\n".format(regfilename))
 
+        self.close()
+
     def reset_group_id(self, num_ref):
         for image in self.imglist:
             image.meta["group_id"] = self.group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])]
@@ -359,6 +361,10 @@ class HAPImage:
         self.dqmask = None
         self.wht_image = None
         self._wht_image = None
+        self.bkg_rms_mean = {}
+        self.bkg = {}
+        self.bkg_dao_rms = {}
+        
 
     def build_kernel(self, fwhmpsf):
         """
@@ -463,7 +469,6 @@ class HAPImage:
                     continue
 
                 if bkg is not None:
-                    bkg_mean = bkg.background_median
                     bkg_dao_rms = bkg.background_rms
                     # Set the bkg_rms at "nsigma" sigma above background
                     default_threshold = bkg.background + nsigma * bkg.background_rms
@@ -483,10 +488,9 @@ class HAPImage:
             # If Background2D does not work at all, define default scalar values for
             # the background to be used in source identification
             if bkg is None:
-                bkg_mean = bkg_rms_mean = max(0.01, self.data.min())
-                bkg_rms = nsigma * bkg_rms_mean
+                bkg_rms_mean = max(0.01, self.data.min())
                 bkg_dao_rms = bkg_rms_mean
-                threshold = bkg_rms_mean + bkg_rms
+                threshold = (nsigma+1) * bkg_rms_mean
 
             # *** FIX: Need to do something for bkg if bkg is None ***
 
@@ -498,10 +502,12 @@ class HAPImage:
             log.debug("")
             log.debug("{}".format("=" * 60))
 
-            self.bkg[chip] = bkg.background
-            self.bkg_dao_rms[chip] = bkg_dao_rms
-            self.bkg_rms_mean[chip] = bkg_rms_mean
-            self.threshold[chip] = threshold
+            self.bkg[chip] = bkg.background.copy()
+            self.bkg_dao_rms[chip] = bkg_dao_rms.copy()
+            self.bkg_rms_mean[chip] = bkg_rms_mean.copy()
+            self.threshold[chip] = threshold.copy()
+
+            del bkg, default_threshold, threshold, bkg_dao_rms, bkg_rms_mean
 
     def build_dqmask(self, chip=None):
         # apply any DQ array, if available
