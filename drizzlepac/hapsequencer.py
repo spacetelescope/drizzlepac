@@ -162,7 +162,7 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, hap_imgname, cattype, l
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-@profile
+
 def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, phot_mode='both'):
     """This subroutine utilizes hlautils/catalog_utils module to produce photometric sourcelists for the specified
     total drizzle product and it's associated child filter products.
@@ -336,7 +336,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-@profile
+
 def create_drizzle_products(total_obj_list):
     """
     Run astrodrizzle to produce products specified in the total_obj_list.
@@ -427,7 +427,7 @@ def create_drizzle_products(total_obj_list):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-@profile
+
 def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_configs=True,
                        input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
                        log_level=logutil.logging.INFO):
@@ -639,7 +639,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
 
 # ------------------------------------------------------------------------------------------------------------
-@profile
+
 def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic_mode=False):
     # Run align.py on all input images sorted by overlap with GAIA bandpass
     log.info("\n{}: Align the all filters to GAIA with the same fit".format(str(datetime.datetime.now())))
@@ -684,7 +684,7 @@ def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic
         #
 
 # ----------------------------------------------------------------------------------------------------------------------
-@profile
+
 def run_sourcelist_comparision(total_list, diagnostic_mode = False, log_level=logutil.logging.INFO):
     """ This subroutine automates execution of drizzlepac/devutils/comparison_tools/compare_sourcelist_flagging.py to
     compare HAP-generated filter catalogs with their HLA classic counterparts.
@@ -776,7 +776,7 @@ def run_sourcelist_comparision(total_list, diagnostic_mode = False, log_level=lo
             log.info("Sourcelist comparison plots saved to file {}.".format(total_combo_comp_pdf_filename))
 # ----------------------------------------------------------------------------------------------------------------------
 
-@profile
+
 def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_level, diagnostic_mode=False):
     """
     Super-basic and profoundly inelegant interface to hla_flag_filter.py.

@@ -74,7 +74,7 @@ class HAPProduct:
         # """
         # print("Object information: {}".format(self.info))
 
-    @profile
+    
     def generate_footprint_mask(self):
         """ Create a footprint mask for a set of exposure images
 
@@ -158,7 +158,7 @@ class TotalProduct(HAPProduct):
         """
         self.fdp_list.append(fdp)
 
-    @profile
+    
     def wcs_drizzle_product(self, meta_wcs):
         """
             Create the drizzle-combined total image using the meta_wcs as the reference output
@@ -189,7 +189,7 @@ class TotalProduct(HAPProduct):
         log.debug("Total combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         shutil.move(self.trl_logname, self.trl_filename)
 
-@profile
+
 class FilterProduct(HAPProduct):
     """ A Filter Detection Product is a mosaic comprised of images acquired
         during a single visit with one instrument, one detector, a single filter,
@@ -229,7 +229,7 @@ class FilterProduct(HAPProduct):
         """
         self.edp_list.append(edp)
 
-    @profile
+    
     def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
                         fit_label='EVM', align_table=None, fitgeom='rscale'):
         """Extract the flt/flc filenames from the exposure product list, as
@@ -298,7 +298,7 @@ class FilterProduct(HAPProduct):
         # excluded from alignment.
         return align_table, exposure_filenames
 
-    @profile
+    
     def wcs_drizzle_product(self, meta_wcs):
         """
             Create the drizzle-combined filter image using the meta_wcs as the reference output
@@ -344,89 +344,5 @@ class ExposureProduct(HAPProduct):
     def __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype, log_level):
         super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
 
-        self.info = '_'.join([prop_id, obset_id, instrument, detector, filename, filters, filetype])
-        self.filters = filters
-        self.full_filename = self.copy_exposure(filename)
-
-        # Open the input FITS file to mine some header information.
-        hdu_list = fits.open(filename)
-        self.mjdutc = hdu_list[0].header['EXPSTART']
-        self.exptime = hdu_list[0].header['EXPTIME']
-        hdu_list.close()
-
-        self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
-        self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
-        self.headerlet_filename = self.product_basename + "_hlet.fits"
-        self.trl_logname = self.product_basename + "_trl.log"
-        self.trl_filename = self.product_basename + "_trl.txt"
-
-        self.regions_dict = {}
-
-        # This attribute is set in poller_utils.py
-        self.is_singleton = False
-
-        log.info("Exposure object {} created.".format(self.full_filename[0:9]))
-
-    def __getattribute__(self, name):
-        if name in ["generate_footprint_mask", "generate_metawcs", "meta_wcs", "mask_kws", "mask"]:
-            raise AttributeError(name)
-        else:
-            return super(ExposureProduct, self).__getattribute__(name)
-
-    def __dir__(self):
-        class_set = (set(dir(self.__class__)) | set(self.__dict__.keys()))
-        unwanted_set = set(["generate_footprint_mask", "generate_metawcs", "meta_wcs", "mask_kws", "mask"])
-        return sorted(class_set - unwanted_set)
-
-    @profile
-    def wcs_drizzle_product(self, meta_wcs):
-        """
-            Create the drizzle-combined exposure image using the meta_wcs as the reference output
-        """
-
-        # Retrieve the configuration parameters for astrodrizzle
-        drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
-        # ...and set parameters which are computed on-the-fly
-        drizzle_pars["final_refimage"] = meta_wcs
-        drizzle_pars["runfile"] = self.trl_logname
-        # Setting "preserve" to false so the OrIg_files directory is deleted as the purpose
-        # of this directory is now obsolete.
-        drizzle_pars["preserve"] = False
-        log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
-                  "have been updated for the drizzle step of the exposure drizzle product."
-                  .format(meta_wcs, self.trl_logname))
-
-        astrodrizzle.AstroDrizzle(input=self.full_filename,
-                                  output=self.drizzle_filename,
-                                  **drizzle_pars)
-
-        # Rename Astrodrizzle log file as a trailer file
-        log.debug("Exposure image {}".format(self.drizzle_filename))
-        shutil.move(self.trl_logname, self.trl_filename)
-
-    def copy_exposure(self, filename):
-        """
-            Create a copy of the original input to be renamed and used for single-visit processing.
-
-            New exposure filename needs to follow the convention:
-            hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_fl[ct].fits
-
-            Parameters
-            ----------
-            filename : str
-                Original pipeline filename for input exposure
-
-            Returns
-            -------
-            edp_filename : str
-                New SVM-compatible HAP filename for input exposure
-
-        """
-        suffix = filename.split("_")[1]
-        edp_filename = self.basename + \
-                       "_".join(map(str, [self.filters, filename[:8], suffix]))
-
-        log.info("Copying {} to SVM input: \n    {}".format(filename, edp_filename))
-        shutil.copy(filename, edp_filename)
-
-        return edp_filename
+        self.info = '_'.join([prop_id, obset_id, in
+        

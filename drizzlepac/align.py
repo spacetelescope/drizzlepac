@@ -154,7 +154,7 @@ def check_and_get_data(input_list, **pars):
     return(total_input_list)
 
 # ------------------------------------------------------------------------------------------------------------
-@profile
+
 def perform_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
               runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=500,
               headerlet_filenames=None, catalog_list=['GAIADR2', 'GAIADR1'], fit_label=None,
