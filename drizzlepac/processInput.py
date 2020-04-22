@@ -1087,10 +1087,12 @@ def checkDGEOFile(filenames):
             Alternatively you may choose to run astrodrizzle without DGEO and detector to image correction.
 
             To stop astrodrizzle and update the dgeo filenames manually , type 'q'.
+            To use currently defined reference files, type 'c':
             """
 
     short_msg = """
             To stop astrodrizzle and update the dgeo files, type 'q'.
+            To use currently defined reference files, type 'c':
     """
     
     for inputfile in filenames:
@@ -1119,7 +1121,7 @@ def userStop(message):
 
     if user_input == 'q':
         return True
-    elif user_input != 'q':
+    elif user_input == 'c':
         return False
     else:
         return None
