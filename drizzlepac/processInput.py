@@ -1065,17 +1065,19 @@ def checkDGEOFile(filenames):
 
     msg = """
             A 'DGEOFILE' keyword is present in the primary header but 'NPOLFILE' keyword was not found.
-            This version of the software uses a new format for the residual distortion DGEO files.
+            This version of the software uses the common format 'NPOLFILE' that replaced
+            the origina DGEO distortion files which describe the for the residual distortion.
             Please consult the instrument web pages for which reference files to download.
-            A small (new style) dgeofile is needed ('_npl.fits' extension) and possibly a
+            The 'NPOLFILE' reference file is needed ('_npl.fits' extension) and possibly a
             detector to image correction file ('_d2i.fits' extension).
             The names of these files must be added to the primary header either using the task XXXX
             or manually, for example:
 
-            hedit {0:s}[0] npolfile fname_npl.fits add+
-            hedit {0:s}[0] d2imfile fname_d2i.fits add+
+            from astropy.io import fits
+            fits.setval("{0:s}","npolfile",value="fname_npl.fits")
+            fits.setval("{0:s}","d2imfile",value="fname_d2i.fits")
 
-            where fname_npl.fits is the name of the new style dgeo file and fname_d2i.fits is
+            where fname_npl.fits is the name of the dgeo file and fname_d2i.fits is
             the name of the detector to image correction. After adding these keywords to the
             primary header, updatewcs must be run to update the science files:
 
@@ -1084,15 +1086,13 @@ def checkDGEOFile(filenames):
 
             Alternatively you may choose to run astrodrizzle without DGEO and detector to image correction.
 
-            To stop astrodrizzle and update the dgeo files, type 'q'.
-            To continue running astrodrizzle without the non-polynomial distortion correction, type 'c':
+            To stop astrodrizzle and update the dgeo filenames manually , type 'q'.
             """
 
     short_msg = """
             To stop astrodrizzle and update the dgeo files, type 'q'.
-            To continue running astrodrizzle without the non-polynomial distortion correction, type 'c':
     """
-
+    
     for inputfile in filenames:
         try:
             dgeofile = fits.getval(inputfile, 'DGEOFILE', memmap=False)
@@ -1119,7 +1119,7 @@ def userStop(message):
 
     if user_input == 'q':
         return True
-    elif user_input == 'c':
+    elif user_input != 'q':
         return False
     else:
         return None
