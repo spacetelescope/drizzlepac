@@ -774,6 +774,12 @@ if __name__ == "__main__":
     log_level = log_dict[user_args.log_level]
     log.setLevel(log_level)
 
+    # verify that input file exists
+    if not os.path.exists(user_args.input_filename):
+        err_msg = "File {} doesn't exist.".format(user_args.input_filename)
+        log.critical(err_msg)
+        raise Exception(err_msg)
+
     #  check that at least one QA switch is turned on
     all_qa_steps_off = True
     max_step_str_length = 0
