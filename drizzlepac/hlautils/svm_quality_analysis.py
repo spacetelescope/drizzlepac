@@ -230,7 +230,8 @@ def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NO
         diagnostic_obj = du.HapDiagnostic()
         diagnostic_obj.instantiate_from_fitsfile(drizzle_file,
                                                  data_source="{}.compare_num_sources".format(__taskname__),
-                                                 description="Number of sources in Point and Segment catalogs")
+                                                 description="Number of sources in Point and Segment "
+                                                             "catalogs")
         diagnostic_obj.add_data_item(sources_dict, 'number_of_sources')
         diagnostic_obj.write_json_file(json_filename)
         log.info("Generated quality statistics (number of sources) as {}.".format(json_filename))
@@ -240,6 +241,7 @@ def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NO
 
 # ------------------------------------------------------------------------------------------------------------
 
+
 def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
     """Compare the equatorial coordinates of cross-matches sources between the Point and Segment catalogs.
     The results .json file contains the following information:
@@ -248,7 +250,7 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
         - cross-match details (input catalog lengths, number of cross-matched sources, coordinate system)
         - catalog containing RA and dec values of cross-matched point catalog sources
         - catalog containing RA and dec values of cross-matched segment catalog sources
-        - Statistics describing the on-sky seperation of the cross-matched point and segment catalogs
+        - Statistics describing the on-sky separation of the cross-matched point and segment catalogs
         (non-clipped and sigma-clipped mean, median and standard deviation values)
 
     Parameters
@@ -257,17 +259,17 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
         hap filter product object to process
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 'NOTSET'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'NOTSET'.
 
     Returns
     --------
     nothing.
     """
     log.setLevel(log_level)
-    slNames = [hap_obj.point_cat_filename,hap_obj.segment_cat_filename]
-    imgNames = [hap_obj.drizzle_filename, hap_obj.drizzle_filename]
-    good_flag_sum = 255 # all bits good
+    sl_names = [hap_obj.point_cat_filename, hap_obj.segment_cat_filename]
+    img_names = [hap_obj.drizzle_filename, hap_obj.drizzle_filename]
+    good_flag_sum = 255  # all bits good
 
     diag_obj = du.HapDiagnostic(log_level=log_level)
     diag_obj.instantiate_from_hap_obj(hap_obj,
@@ -275,11 +277,12 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
                                       description="matched point and segment catalog RA and Dec values")
     json_results_dict = collections.OrderedDict()
     # add reference and comparision catalog filenames as header elements
-    json_results_dict["point catalog filename"] = slNames[0]
-    json_results_dict["segment catalog filename"] = slNames[1]
+    json_results_dict["point catalog filename"] = sl_names[0]
+    json_results_dict["segment catalog filename"] = sl_names[1]
 
-    # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
-    point_data, seg_data = csl.slFiles2dataTables(slNames)
+    # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each
+    # sourcelist can be easily accessed later in the code.
+    point_data, seg_data = csl.slFiles2dataTables(sl_names)
     log.info("Valid point data columns:   {}".format(list(point_data.keys())))
     log.info("Valid segment data columns: {}".format(list(seg_data.keys())))
     log.info("\n")
@@ -289,45 +292,53 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
         log.info(listItem)
     log.info("\n")
     # 2: Run starmatch_hist to get list of matched sources common to both input sourcelists
-    slLengths = [len(point_data['RA']), len(seg_data['RA'])]
-    json_results_dict['point catalog length'] = slLengths[0]
-    json_results_dict['segment catalog length'] = slLengths[1]
-    matching_lines_ref, matching_lines_img = csl.getMatchedLists(slNames, imgNames, slLengths, log_level=log_level)
+    sl_lengths = [len(point_data['RA']), len(seg_data['RA'])]
+    json_results_dict['point catalog length'] = sl_lengths[0]
+    json_results_dict['segment catalog length'] = sl_lengths[1]
+    matching_lines_ref, matching_lines_img = csl.getMatchedLists(sl_names, img_names, sl_lengths,
+                                                                 log_level=log_level)
     json_results_dict['number of cross-matches'] = len(matching_lines_ref)
 
     # Report number and percentage of the total number of detected ref and comp sources that were matched
     log.info("Cross-matching results")
     log.info(
-        "Point sourcelist:  {} of {} total sources cross-matched ({}%)".format(len(matching_lines_ref), slLengths[0],
-                                                                               100.0 * (float(
-                                                                                   len(matching_lines_ref)) / float(
-                                                                                   slLengths[0]))))
+        "Point sourcelist:  {} of {} total sources cross-matched ({}%)".format(len(matching_lines_ref),
+                                                                               sl_lengths[0],
+                                                                               100.0 *
+                                                                               (float(len(matching_lines_ref))
+                                                                                / float(sl_lengths[0]))))
     log.info(
-        "Segment sourcelist: {} of {} total sources cross-matched ({}%)".format(len(matching_lines_img), slLengths[1],
-                                                                                100.0 * (float(
-                                                                                    len(matching_lines_img)) / float(
-                                                                                    slLengths[1]))))
+        "Segment sourcelist: {} of {} total sources cross-matched ({}%)".format(len(matching_lines_img),
+                                                                                sl_lengths[1],
+                                                                                100.0 *
+                                                                                (float(
+                                                                                    len(matching_lines_img))
+                                                                                 / float(sl_lengths[1]))))
     # return without creating a .json if no cross-matches are found
     if len(matching_lines_ref) == 0 or len(matching_lines_img) == 0:
-        log.error("*** No matching sources were found. Comparisons cannot be computed. No json file will be produced.***")
+        log.error("*** No matching sources were found. Comparisons cannot be computed. "
+                  "No json file will be produced.***")
         return
-    # 2: Create masks to remove missing values or values not considered "good" according to user-specified good bit values
+    # 2: Create masks to remove missing values or values not considered "good" according to user-specified
+    # good bit values
     # 2a: create mask that identifies lines any value from any column is missing
-    missing_mask = csl.mask_missing_values(point_data, seg_data, matching_lines_ref, matching_lines_img, columns_to_compare)
+    missing_mask = csl.mask_missing_values(point_data, seg_data, matching_lines_ref, matching_lines_img,
+                                           columns_to_compare)
     # 2b: create mask based on flag values
-    matched_values = csl.extractMatchedLines("FLAGS", point_data, seg_data, matching_lines_ref, matching_lines_img)
+    matched_values = csl.extractMatchedLines("FLAGS", point_data, seg_data, matching_lines_ref,
+                                             matching_lines_img)
     bitmask = csl.make_flag_mask(matched_values, good_flag_sum, missing_mask)
 
-    matched_values_ra = csl.extractMatchedLines("RA", point_data, seg_data, matching_lines_ref, matching_lines_img,
-                                                bitmask=bitmask)
-    matched_values_dec = csl.extractMatchedLines("DEC", point_data, seg_data, matching_lines_ref, matching_lines_img,
-                                                 bitmask=bitmask)
+    matched_values_ra = csl.extractMatchedLines("RA", point_data, seg_data, matching_lines_ref,
+                                                matching_lines_img, bitmask=bitmask)
+    matched_values_dec = csl.extractMatchedLines("DEC", point_data, seg_data, matching_lines_ref,
+                                                 matching_lines_img, bitmask=bitmask)
 
     if matched_values_ra.shape[1] > 0 and matched_values_ra.shape[1] == matched_values_dec.shape[1]:
         # get coordinate system type from fits headers
 
-        point_frame = fits.getval(imgNames[0], "radesys", ext=('sci', 1)).lower()
-        seg_frame = fits.getval(imgNames[1], "radesys", ext=('sci', 1)).lower()
+        point_frame = fits.getval(img_names[0], "radesys", ext=('sci', 1)).lower()
+        seg_frame = fits.getval(img_names[1], "radesys", ext=('sci', 1)).lower()
         # Add 'ref_frame' and 'comp_frame" values to header so that will SkyCoord() execute OK
         json_results_dict["point frame"] = point_frame
         json_results_dict["segment frame"] = seg_frame
@@ -347,7 +358,7 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
         sep = matched_values_seg.separation(matched_values_point).arcsec
 
         # Compute and store statistics  on separations
-        sep_stat_dict=collections.OrderedDict()
+        sep_stat_dict = collections.OrderedDict()
         sep_stat_dict["units"] = "arcseconds"
         sep_stat_dict["Non-clipped min"] = np.min(sep)
         sep_stat_dict["Non-clipped max"] = np.max(sep)
@@ -356,15 +367,17 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
         sep_stat_dict["Non-clipped standard deviation"] = np.std(sep)
         sigma = 3
         maxiters = 3
-        clippedStats = sigma_clipped_stats(sep, sigma=sigma, maxiters=maxiters)
-        sep_stat_dict["{}x{} sigma-clipped mean".format(maxiters, sigma)] = clippedStats[0]
-        sep_stat_dict["{}x{} sigma-clipped median".format(maxiters, sigma)] = clippedStats[1]
-        sep_stat_dict["{}x{} sigma-clipped standard deviation".format(maxiters, sigma)] = clippedStats[2]
+        clipped_stats = sigma_clipped_stats(sep, sigma=sigma, maxiters=maxiters)
+        sep_stat_dict["{}x{} sigma-clipped mean".format(maxiters, sigma)] = clipped_stats[0]
+        sep_stat_dict["{}x{} sigma-clipped median".format(maxiters, sigma)] = clipped_stats[1]
+        sep_stat_dict["{}x{} sigma-clipped standard deviation".format(maxiters, sigma)] = clipped_stats[2]
 
         # Create output catalogs for json file
-        out_cat_point = Table([matched_values_ra[0], matched_values_dec[0]], names=("Right ascension", "Declination"))
-        out_cat_seg = Table([matched_values_ra[1], matched_values_dec[1]], names=("Right ascension", "Declination"))
-        for table_item in [out_cat_point,out_cat_seg]:
+        out_cat_point = Table([matched_values_ra[0], matched_values_dec[0]],
+                              names=("Right ascension", "Declination"))
+        out_cat_seg = Table([matched_values_ra[1], matched_values_dec[1]],
+                            names=("Right ascension", "Declination"))
+        for table_item in [out_cat_point, out_cat_seg]:
             for col_name in ["Right ascension", "Declination"]:
                 table_item[col_name].unit = "degrees"  # Add correct units
 
@@ -386,7 +399,7 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
 def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     """Creates a catalog of all GAIA sources in the footprint of a specified HAP final product image, and
     stores the GAIA object catalog as a hap diagnostic json file. The catalog contains RA, Dec and magnitude
-    of each identified source. The catalog is sorted in decending order by brightness.
+    of each identified source. The catalog is sorted in descending order by brightness.
 
     Parameters
     ----------
@@ -395,8 +408,8 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
         hap product object to process
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 'NOTSET'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'NOTSET'.
 
     Returns
     -------
@@ -410,7 +423,7 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
                                       data_source="{}.find_gaia_sources".format(__taskname__),
                                       description="A table of GAIA sources in image footprint")
     diag_obj.add_data_item(gaia_table, "GAIA sources")  # write catalog of identified GAIA sources
-    diag_obj.add_data_item(len(gaia_table), "Number of GAIA sources")  # write the number of identified GAIA sources
+    diag_obj.add_data_item(len(gaia_table), "Number of GAIA sources")  # write the number of GAIA sources
     diag_obj.write_json_file(hap_obj.drizzle_filename[:-9]+"_svm_gaia_sources.json", clobber=True)
 
     # Clean up
@@ -419,7 +432,8 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def generate_gaia_catalog(hap_obj, columns_to_remove = None):
+
+def generate_gaia_catalog(hap_obj, columns_to_remove=None):
     """Uses astrometric_utils.create_astrometric_catalog() to create a catalog of all GAIA sources in the
     image footprint. This catalog contains right ascension, declination, and magnitude values, and is sorted
     in descending order by brightness.
@@ -429,6 +443,9 @@ def generate_gaia_catalog(hap_obj, columns_to_remove = None):
     hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
         drizzlepac.hlautils.Product.ExposureProduct, depending on input.
         hap product object to process
+
+    columns_to_remove : list
+        list of columns to remove from the table of GAIA sources returned by this function
 
     Returns
     -------
@@ -494,8 +511,8 @@ def compare_photometry(drizzle_list, log_level=logutil.logging.NOTSET):
         Drizzle files for the Filter products which were mined to generate the output catalogs.
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 'NOTSET'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'NOTSET'.
 
     .. note:: This routine can be run either as a direct call from the hapsequencer.py routine,
     or it can invoked by a simple Python driver (or from within a Python session) by providing
@@ -525,7 +542,8 @@ def compare_photometry(drizzle_list, log_level=logutil.logging.NOTSET):
         diagnostic_obj = du.HapDiagnostic()
         diagnostic_obj.instantiate_from_fitsfile(drizzle_file,
                                                  data_source="{}.compare_photometry".format(__taskname__),
-                                                 description="Photometry differences in Point and Segment catalogs")
+                                                 description="Photometry differences in Point and "
+                                                             "Segment catalogs")
         summary_dict = {'detector': detector, 'filter_name': filter_name}
 
         # Construct the output JSON filename
@@ -540,8 +558,10 @@ def compare_photometry(drizzle_list, log_level=logutil.logging.NOTSET):
         for catalog in cat_names:
             does_exist = os.path.isfile(catalog)
             if not does_exist:
-                log.warning("Catalog {} does not exist.  Both the Point and Segment catalogs must exist for comparison.".format(catalog))
-                log.warning("Program skipping comparison of catalogs associated with {}.\n".format(drizzle_file))
+                log.warning("Catalog {} does not exist.  Both the Point and Segment catalogs must exist "
+                            "for comparison.".format(catalog))
+                log.warning("Program skipping comparison of catalogs associated "
+                            "with {}.\n".format(drizzle_file))
                 continue
 
         # If the catalogs were actually produced, then get the data.
@@ -557,24 +577,28 @@ def compare_photometry(drizzle_list, log_level=logutil.logging.NOTSET):
         cat_lengths = [len(tab_point_measurements), len(tab_seg_measurements)]
 
         # Determine the column names common to both catalogs as a list
-        common_columns = list(set(tab_point_measurements.colnames).intersection(set(tab_seg_measurements.colnames)))
+        common_columns = list(set(tab_point_measurements.colnames).intersection(
+            set(tab_seg_measurements.colnames)))
 
         # Use the utilities in devutils to match the sources in the two lists - get
         # the indices of the matches.
         matches_point_to_seg, matches_seg_to_point = csl.getMatchedLists(cat_names,
                                                                          [drizzle_file,
-                                                                         drizzle_file],
+                                                                          drizzle_file],
                                                                          cat_lengths,
                                                                          log_level=log_level)
         if len(matches_point_to_seg) == 0 or len(matches_seg_to_point) == 0:
-            log.warning("Catalog {} and Catalog {} had no matching sources.".format(cat_names[0], cat_names[1]))
-            log.warning("Program skipping comparison of catalogindexs associated with {}.\n".format(drizzle_file))
+            log.warning("Catalog {} and Catalog {} had no matching sources.".format(cat_names[0],
+                                                                                    cat_names[1]))
+            log.warning("Program skipping comparison of catalog indices associated "
+                        "with {}.\n".format(drizzle_file))
             continue
 
         # There are nan values present in the catalogs - create a mask which identifies these rows
         # which are missing valid data
         missing_values_mask = csl.mask_missing_values(tab_point_measurements, tab_seg_measurements,
-                                                      matches_point_to_seg, matches_seg_to_point, common_columns)
+                                                      matches_point_to_seg, matches_seg_to_point,
+                                                      common_columns)
 
         # Extract the Flag column from the two catalogs and get an ndarray (2, length)
         flag_matching = csl.extractMatchedLines('Flags', tab_point_measurements, tab_seg_measurements,
@@ -588,8 +612,9 @@ def compare_photometry(drizzle_list, log_level=logutil.logging.NOTSET):
         # array([[21.512, ..., 2.944], [21.6 , ..., 22.98]],
         #       [[21.872, ..., 2.844], [21.2 , ..., 22.8]])
         for index, phot_column_name in enumerate(phot_column_names):
-            matching_phot_rows = csl.extractMatchedLines(phot_column_name, tab_point_measurements, tab_seg_measurements,
-                                                         matches_point_to_seg, matches_seg_to_point, bitmask=flag_values_mask)
+            matching_phot_rows = csl.extractMatchedLines(phot_column_name, tab_point_measurements,
+                                                         tab_seg_measurements, matches_point_to_seg,
+                                                         matches_seg_to_point, bitmask=flag_values_mask)
 
             # Compute the differences (Point - Segment)
             delta_phot = np.subtract(matching_phot_rows[0], matching_phot_rows[1])
@@ -607,24 +632,28 @@ def compare_photometry(drizzle_list, log_level=logutil.logging.NOTSET):
                                                           bitmask=flag_values_mask)
 
             # Compute the error of the delta value (square root of the sum of the squares)
-            result_error = np.sqrt(np.add(np.square(matching_error_rows[0]), np.square(matching_error_rows[1])))
+            result_error = np.sqrt(np.add(np.square(matching_error_rows[0]),
+                                          np.square(matching_error_rows[1])))
 
-            stat_key = 'Stats for Delta_' + phot_column_name + ' = Point_' + phot_column_name + ' - Segment_' + phot_column_name
+            stat_key = 'Stats for Delta_' + phot_column_name + ' = Point_' + phot_column_name + \
+                       ' - Segment_' + phot_column_name
             stat_dict = {stat_key: {'Mean Difference': mean_delta_phot, 'Standard Deviation': std_delta_phot,
                          'Median Difference': median_delta_phot}}
             summary_dict.update(stat_dict)
 
             # Write out the results
-            diagnostic_obj.add_data_item(summary_dict, 'High-level Photometry Statistics on differences of Point - Segment')
+            diagnostic_obj.add_data_item(summary_dict,
+                                         'High-level Photometry Statistics on differences of Point - Segment')
 
         diagnostic_obj.write_json_file(json_filename)
-        log.info("Generated photometry comparison for Point - Segment matches sources {}.".format(json_filename))
+        log.info("Generated photometry comparison for Point - Segment matches "
+                 "sources {}.".format(json_filename))
 
         # Clean up
         del diagnostic_obj
 
-    # This routine does not return any values
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_gaia_sources=True,
                          run_compare_ra_dec_crossmatches=True, run_characterize_gaia_distribution=True,
@@ -652,8 +681,8 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
         Run 'compare_photometry' test? Default value is True.
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 'NOTSET'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'NOTSET'.
 
     Returns
     -------
@@ -703,6 +732,8 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
         compare_photometry(filter_drizzle_list, log_level=log_level)
 
 # ============================================================================================================
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Perform quality assessments of the SVM products generated '
                                                  'by the drizzlepac package')
@@ -715,11 +746,11 @@ if __name__ == "__main__":
     parser.add_argument('-cns', '--run_compare_num_sources', required=False, action='store_true',
                         help='Determine the number of viable sources actually listed in SVM output catalogs.')
     parser.add_argument('-cp', '--run_compare_photometry', required=False, action='store_true',
-                        help="Compare photometry measurements for sources cross matched between the Point and "
-                             "Segment catalogs.")
-    parser.add_argument('-cxm', '--run_compare_ra_dec_crossmatches', required=False, action='store_true',
-                        help="Compare RA/Dec postion measurements for sources cross matched between the Point "
+                        help="Compare photometry measurements for sources cross matched between the Point "
                              "and Segment catalogs.")
+    parser.add_argument('-cxm', '--run_compare_ra_dec_crossmatches', required=False, action='store_true',
+                        help="Compare RA/Dec position measurements for sources cross matched between the "
+                             "Point and Segment catalogs.")
     parser.add_argument('-fgs', '--run_find_gaia_sources', required=False, action='store_true',
                         help="Determine the number of GAIA sources in the footprint of a specified HAP final "
                              "product image")
