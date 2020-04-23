@@ -18,8 +18,6 @@ Python USAGE:
 import argparse
 import sys
 
-from memory_profiler import profile
-
 # THIRD-PARTY
 from stsci.tools import logutil
 

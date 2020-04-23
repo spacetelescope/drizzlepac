@@ -186,10 +186,12 @@ class CatalogImage:
         log.info("")
 
         self.bkg = bkg
-        self.bkg_background_ra = bkg_background_ra
-        self.bkg_rms_ra = bkg_rms_ra
-        self.bkg_rms_median = bkg_rms_median
-        self.bkg_median = bkg_median
+        self.bkg_background_ra = bkg_background_ra.copy()
+        self.bkg_rms_ra = bkg_rms_ra.copy()
+        self.bkg_rms_median = bkg_rms_median.copy()
+        self.bkg_median = bkg_median.copy()
+        
+        del 
 
     def _get_header_data(self):
         """Read FITS keywords from the primary or extension header and store the

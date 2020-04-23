@@ -9,8 +9,6 @@ import os
 import traceback
 import shutil
 
-from memory_profiler import profile
-
 from stsci.tools import logutil
 from astropy.io import fits
 import numpy as np

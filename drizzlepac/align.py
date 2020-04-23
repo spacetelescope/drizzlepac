@@ -13,8 +13,6 @@ import pickle
 from collections import OrderedDict
 import traceback
 
-from memory_profiler import profile
-
 import numpy as np
 from astropy.table import Table
 from astropy.io import fits

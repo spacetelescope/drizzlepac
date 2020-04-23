@@ -22,8 +22,6 @@ import inspect
 import sys
 from distutils.version import LooseVersion
 
-from memory_profiler import profile
-
 import numpy as np
 import scipy.stats as st
 from scipy import ndimage

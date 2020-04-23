@@ -40,8 +40,6 @@ import pickle
 import sys
 import traceback
 
-from memory_profiler import profile
-
 from astropy.table import Table
 import numpy as np
 import drizzlepac

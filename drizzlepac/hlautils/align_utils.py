@@ -6,8 +6,6 @@ import traceback
 
 from collections import OrderedDict
 
-from memory_profiler import profile
-
 import numpy as np
 from scipy import ndimage
 
