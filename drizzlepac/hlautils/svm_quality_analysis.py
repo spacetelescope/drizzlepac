@@ -735,12 +735,13 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
 
 
 if __name__ == "__main__":
+    # process command-line inputs with argparse
     parser = argparse.ArgumentParser(description='Perform quality assessments of the SVM products generated '
-                                                 'by the drizzlepac package')
+                                                 'by the drizzlepac package. NOTE: if no QA switches (-cgd, '
+                                                 '-cns, -cp, -cxm, or -fgs) are specified, ALL QA steps will '
+                                                 'be executed.')
     parser.add_argument('input_filename', help='_total_list.pickle file that holds vital information about '
                                                'the processing run')
-    parser.add_argument('-all', '--run_all', required=False, action='store_true',
-                        help="Override all individual switches and run all tests")
     parser.add_argument('-cgd', '--run_characterize_gaia_distribution', required=False, action='store_true',
                         help="Statistically describe distribution of GAIA sources in footprint.")
     parser.add_argument('-cns', '--run_compare_num_sources', required=False, action='store_true',
@@ -764,26 +765,7 @@ if __name__ == "__main__":
                              'statements, and so on.')
     user_args = parser.parse_args()
 
-    # override all individual QA switches and run all QA steps
-    if user_args.run_all:
-        user_args.run_characterize_gaia_distribution = True
-        user_args.run_compare_num_sources = True
-        user_args.run_compare_photometry = True
-        user_args.run_compare_ra_dec_crossmatches = True
-        user_args.run_find_gaia_sources = True
-
-    # Is at least one QA switch turned on?
-    run_qa = False
-    max_step_str_length = 0
-    for kv_pair in user_args._get_kwargs():
-        if kv_pair[0] not in ['input_filename', 'run_all', 'log_level']:
-            if len(kv_pair[0])-4 > max_step_str_length:
-                max_step_str_length = len(kv_pair[0])-4
-            if kv_pair[1]:
-                run_qa = True
-
     # set up logging
-    characterize_gaia_distribution
     log_dict = {"critical": logutil.logging.CRITICAL,
                 "error": logutil.logging.ERROR,
                 "warning": logutil.logging.WARNING,
@@ -791,6 +773,25 @@ if __name__ == "__main__":
                 "debug": logutil.logging.DEBUG}
     log_level = log_dict[user_args.log_level]
     log.setLevel(log_level)
+
+    #  check that at least one QA switch is turned on
+    all_qa_steps_off = True
+    max_step_str_length = 0
+    for kv_pair in user_args._get_kwargs():
+        if kv_pair[0] not in ['input_filename', 'run_all', 'log_level']:
+            if len(kv_pair[0])-4 > max_step_str_length:
+                max_step_str_length = len(kv_pair[0])-4
+            if kv_pair[1]:
+                all_qa_steps_off = False
+
+    # if no QA steps are explicitly turned on in the command-line call, run ALL the QA steps
+    if all_qa_steps_off:
+        log.info("No specific QA switches were turned on. All QA steps will be executed.")
+        user_args.run_characterize_gaia_distribution = True
+        user_args.run_compare_num_sources = True
+        user_args.run_compare_photometry = True
+        user_args.run_compare_ra_dec_crossmatches = True
+        user_args.run_find_gaia_sources = True
 
     # display status summary indicating which QA steps are turned on and which steps are turned off
     log.info("{}QA step run status".format(" "*(int(max_step_str_length/2)-6)))
@@ -804,18 +805,14 @@ if __name__ == "__main__":
                                         run_status))
     log.info("-"*(max_step_str_length+6))
 
-    # execute specified tests if at least one QA switch was turned on. If none were turned on, generate a
-    # log message informing the user of the folly of their ways.
-    if run_qa:
-        filehandler = open(user_args.input_filename, 'rb')
-        total_obj_list = pickle.load(filehandler)
-        run_quality_analysis(total_obj_list,
-                             run_compare_num_sources=user_args.run_compare_num_sources,
-                             run_find_gaia_sources=user_args.run_find_gaia_sources,
-                             run_compare_ra_dec_crossmatches=user_args.run_compare_ra_dec_crossmatches,
-                             run_characterize_gaia_distribution=user_args.run_characterize_gaia_distribution,
-                             run_compare_photometry=user_args.run_compare_photometry,
-                             log_level=log_level)
-    else:
-        log.warning("No tests run. Please re-run with at least one of the QA switches turned on (or rerun "
-                    "with the '-h' switch for help)")
+    # execute specified tests
+    filehandler = open(user_args.input_filename, 'rb')
+    total_obj_list = pickle.load(filehandler)
+    run_quality_analysis(total_obj_list,
+                         run_compare_num_sources=user_args.run_compare_num_sources,
+                         run_find_gaia_sources=user_args.run_find_gaia_sources,
+                         run_compare_ra_dec_crossmatches=user_args.run_compare_ra_dec_crossmatches,
+                         run_characterize_gaia_distribution=user_args.run_characterize_gaia_distribution,
+                         run_compare_photometry=user_args.run_compare_photometry,
+                         log_level=log_level)
+
