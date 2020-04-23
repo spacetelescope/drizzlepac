@@ -26,10 +26,12 @@ https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 """
 
 # Standard library imports
+import argparse
 import collections
 import json
 import os
 import pdb
+import pickle
 import sys
 
 # Related third party imports
@@ -56,6 +58,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
     """Statistically describe distribution of GAIA sources in footprint.
 
@@ -79,8 +82,8 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
         hap product object to process
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 'NOTSET'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'NOTSET'.
 
     Returns
     -------
@@ -125,7 +128,8 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
     title_list = ["centroid", "offset of centroid from image center", "standard deviation"]
     for item_value, item_title in zip([centroid, centroid_offset, std_dev], title_list):
         for axis_item in enumerate(axis_list):
-            log.info("{} {} ({}): {}".format(axis_item[1], item_title, out_dict["units"], item_value[axis_item[0]]))
+            log.info("{} {} ({}): {}".format(axis_item[1], item_title, out_dict["units"],
+                                             item_value[axis_item[0]]))
             out_dict["{} {}".format(axis_item[1], item_title)] = item_value[axis_item[0]]
     min_sep_stats = [min_seps.min(), min_seps.max(), min_seps.mean(), min_seps.std()]
     min_sep_title_list = ["minimum closest neighbor distance",
@@ -140,9 +144,11 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
     diag_obj = du.HapDiagnostic(log_level=log_level)
     diag_obj.instantiate_from_hap_obj(hap_obj,
                                       data_source="{}.characterize_gaia_distribution".format(__taskname__),
-                                      description="A statistical characterization of the distribution of GAIA sources in image footprint")
+                                      description="A statistical characterization of the distribution of "
+                                                  "GAIA sources in image footprint")
     diag_obj.add_data_item(out_dict, "distribution characterization statistics")
-    diag_obj.write_json_file(hap_obj.drizzle_filename[:-9] + "_svm_gaia_distribution_characterization.json", clobber=True)
+    diag_obj.write_json_file(hap_obj.drizzle_filename[:-9] + "_svm_gaia_distribution_characterization.json",
+                             clobber=True)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -161,8 +167,8 @@ def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NO
         Drizzle files for the Total products which were mined to generate the output catalogs.
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 'NOTSET'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'NOTSET'.
 
     .. note:: This routine can be run either as a direct call from the hapsequencer.py routine,
     or it can invoked by a simple Python driver (or from within a Python session) by providing
@@ -698,12 +704,87 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
 
 # ============================================================================================================
 if __name__ == "__main__":
-    # Testing
-    import pickle
+    parser = argparse.ArgumentParser(description='Perform quality assessments of the SVM products generated '
+                                                 'by the drizzlepac package')
+    parser.add_argument('input_filename', help='_total_list.pickle file that holds vital information about '
+                                               'the processing run')
+    parser.add_argument('-all', '--run_all', required=False, action='store_true',
+                        help="Override all individual switches and run all tests")
+    parser.add_argument('-cgd', '--run_characterize_gaia_distribution', required=False, action='store_true',
+                        help="Statistically describe distribution of GAIA sources in footprint.")
+    parser.add_argument('-cns', '--run_compare_num_sources', required=False, action='store_true',
+                        help='Determine the number of viable sources actually listed in SVM output catalogs.')
+    parser.add_argument('-cp', '--run_compare_photometry', required=False, action='store_true',
+                        help="Compare photometry measurements for sources cross matched between the Point and "
+                             "Segment catalogs.")
+    parser.add_argument('-cxm', '--run_compare_ra_dec_crossmatches', required=False, action='store_true',
+                        help="Compare RA/Dec postion measurements for sources cross matched between the Point "
+                             "and Segment catalogs.")
+    parser.add_argument('-fgs', '--run_find_gaia_sources', required=False, action='store_true',
+                        help="Determine the number of GAIA sources in the footprint of a specified HAP final "
+                             "product image")
+    parser.add_argument('-l', '--log_level', required=False, default='info',
+                        choices=['critical', 'error', 'warning', 'info', 'debug'],
+                        help='The desired level of verboseness in the log statements displayed on the screen '
+                             'and written to the .log file. The level of verboseness from left to right, and '
+                             'includes all log statements with a log_level left of the specified level. '
+                             'Specifying "critical" will only record/display "critical" log statements, and '
+                             'specifying "error" will record/display both "error" and "critical" log '
+                             'statements, and so on.')
+    user_args = parser.parse_args()
 
-    pfile = sys.argv[1]
-    filehandler = open(pfile, 'rb')
-    total_obj_list = pickle.load(filehandler)
-    log_level = logutil.logging.DEBUG
-    # TODO: add argparse inputs so user can turn on or off specific tests during command line execution
-    run_quality_analysis(total_obj_list, log_level=log_level)
+    # override all individual QA switches and run all QA steps
+    if user_args.run_all:
+        user_args.run_characterize_gaia_distribution = True
+        user_args.run_compare_num_sources = True
+        user_args.run_compare_photometry = True
+        user_args.run_compare_ra_dec_crossmatches = True
+        user_args.run_find_gaia_sources = True
+
+    # Is at least one QA switch turned on?
+    run_qa = False
+    max_step_str_length = 0
+    for kv_pair in user_args._get_kwargs():
+        if kv_pair[0] not in ['input_filename', 'run_all', 'log_level']:
+            if len(kv_pair[0])-4 > max_step_str_length:
+                max_step_str_length = len(kv_pair[0])-4
+            if kv_pair[1]:
+                run_qa = True
+
+    # set up logging
+    characterize_gaia_distribution
+    log_dict = {"critical": logutil.logging.CRITICAL,
+                "error": logutil.logging.ERROR,
+                "warning": logutil.logging.WARNING,
+                "info": logutil.logging.INFO,
+                "debug": logutil.logging.DEBUG}
+    log_level = log_dict[user_args.log_level]
+    log.setLevel(log_level)
+
+    # display status summary indicating which QA steps are turned on and which steps are turned off
+    log.info("{}QA step run status".format(" "*(int(max_step_str_length/2)-6)))
+    for kv_pair in user_args._get_kwargs():
+        if kv_pair[0] not in ['input_filename', 'run_all', 'log_level']:
+            if kv_pair[1]:
+                run_status = "ON"
+            else:
+                run_status = "off"
+            log.info("{}{}   {}".format(kv_pair[0][4:], " "*(max_step_str_length-(len(kv_pair[0])-4)),
+                                        run_status))
+    log.info("-"*(max_step_str_length+6))
+
+    # execute specified tests if at least one QA switch was turned on. If none were turned on, generate a
+    # log message informing the user of the folly of their ways.
+    if run_qa:
+        filehandler = open(user_args.input_filename, 'rb')
+        total_obj_list = pickle.load(filehandler)
+        run_quality_analysis(total_obj_list,
+                             run_compare_num_sources=user_args.run_compare_num_sources,
+                             run_find_gaia_sources=user_args.run_find_gaia_sources,
+                             run_compare_ra_dec_crossmatches=user_args.run_compare_ra_dec_crossmatches,
+                             run_characterize_gaia_distribution=user_args.run_characterize_gaia_distribution,
+                             run_compare_photometry=user_args.run_compare_photometry,
+                             log_level=log_level)
+    else:
+        log.warning("No tests run. Please re-run with at least one of the QA switches turned on (or rerun "
+                    "with the '-h' switch for help)")
