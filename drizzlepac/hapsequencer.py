@@ -683,8 +683,7 @@ def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-
-def run_sourcelist_comparision(total_list, diagnostic_mode=False, log_level=logutil.logging.INFO):
+def run_sourcelist_comparision(total_list, diagnostic_mode = False, log_level=logutil.logging.INFO):
     """ This subroutine automates execution of drizzlepac/devutils/comparison_tools/compare_sourcelist_flagging.py to
     compare HAP-generated filter catalogs with their HLA classic counterparts.
 

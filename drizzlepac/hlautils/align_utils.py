@@ -44,6 +44,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 class AlignmentTable:
+    
     def __init__(self, input_list, clobber=False, dqname='DQ',
                  log_level=logutil.logging.NOTSET, **alignment_pars):
         """
@@ -139,6 +140,7 @@ class AlignmentTable:
         for img in self.haplist:
             img.close()
 
+    
     def find_alignment_sources(self, output=True):
         """Find observable sources in each input exposure."""
         self.extracted_sources = {}
@@ -166,11 +168,14 @@ class AlignmentTable:
                                         format="ascii.fast_commented_header")
                         log.info("Wrote region file {}\n".format(regfilename))
 
+        self.close()
+
     def reset_group_id(self, num_ref):
         for image in self.imglist:
             image.meta["group_id"] = self.group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])]
             image.meta['num_ref_catalog'] = num_ref
 
+    
     def configure_fit(self):
         # Convert input images to tweakwcs-compatible FITSWCS objects and
         # attach source catalogs to them.
@@ -216,6 +221,7 @@ class AlignmentTable:
 
         return imglist
 
+    
     def select_fit(self, catalog_name, method_name):
         """Select the fit that has been identified as 'best'"""
         if catalog_name is None:
@@ -256,7 +262,7 @@ class AlignmentTable:
                 self.filtered_table = None
                 # self.filtered_table[index]['fit_method'] = None
 
-
+    
     def apply_fit(self, headerlet_filenames=None, fit_label=None):
         """Apply solution from identified fit to image WCS's
 
@@ -293,7 +299,7 @@ class HAPImage:
     catalog generation.
 
     """
-
+    
     def __init__(self, filename):
         if isinstance(filename, str):
             self.imghdu = fits.open(filename)
@@ -349,6 +355,14 @@ class HAPImage:
 
     def close(self):
         self.imghdu.close()
+        self.imghdu = None
+        self.dqmask = None
+        self.wht_image = None
+        self._wht_image = None
+        self.bkg_rms_mean = {}
+        self.bkg = {}
+        self.bkg_dao_rms = {}
+        
 
     def build_kernel(self, fwhmpsf):
         """
@@ -389,6 +403,7 @@ class HAPImage:
 
         self.fwhmpsf = self.kernel_fwhm * self.pscale
 
+    
     def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
                            bkg_estimator="SExtractorBackground", rms_estimator="StdBackgroundRMS",
                            nsigma=5., threshold_flag=None):
@@ -452,7 +467,6 @@ class HAPImage:
                     continue
 
                 if bkg is not None:
-                    bkg_mean = bkg.background_median
                     bkg_dao_rms = bkg.background_rms
                     # Set the bkg_rms at "nsigma" sigma above background
                     default_threshold = bkg.background + nsigma * bkg.background_rms
@@ -472,10 +486,9 @@ class HAPImage:
             # If Background2D does not work at all, define default scalar values for
             # the background to be used in source identification
             if bkg is None:
-                bkg_mean = bkg_rms_mean = max(0.01, self.data.min())
-                bkg_rms = nsigma * bkg_rms_mean
+                bkg_rms_mean = max(0.01, self.data.min())
                 bkg_dao_rms = bkg_rms_mean
-                threshold = bkg_rms_mean + bkg_rms
+                threshold = (nsigma+1) * bkg_rms_mean
 
             # *** FIX: Need to do something for bkg if bkg is None ***
 
@@ -487,10 +500,12 @@ class HAPImage:
             log.debug("")
             log.debug("{}".format("=" * 60))
 
-            self.bkg[chip] = bkg.background
-            self.bkg_dao_rms[chip] = bkg_dao_rms
-            self.bkg_rms_mean[chip] = bkg_rms_mean
-            self.threshold[chip] = threshold
+            self.bkg[chip] = bkg.background.copy()
+            self.bkg_dao_rms[chip] = bkg_dao_rms.copy()
+            self.bkg_rms_mean[chip] = bkg_rms_mean.copy()
+            self.threshold[chip] = threshold.copy()
+
+            del bkg, default_threshold, threshold, bkg_dao_rms, bkg_rms_mean
 
     def build_dqmask(self, chip=None):
         # apply any DQ array, if available
@@ -521,6 +536,7 @@ class HAPImage:
         dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
         return dqmask
 
+    
     def find_alignment_sources(self, output=True, dqname='DQ', **alignment_pars):
         """Find sources in all chips for this exposure."""
 
