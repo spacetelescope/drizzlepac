@@ -43,8 +43,7 @@ def get_json_files(search_path="", log_level=logutil.logging.INFO):
     Returns
     -------
     sorted_json_list : list
-        list of json files to harvest, sorted first alphabetically by file type and then alphabetically by
-        filename
+        list of json files to harvest, sorted first alphabetically by filename
     """
 
     # set up search string and use glob to get list of files
@@ -60,17 +59,8 @@ def get_json_files(search_path="", log_level=logutil.logging.INFO):
         log.error(err_msg)
         raise Exception(err_msg)
 
-    # sort list first alphabetically by file type and then alphabetically by filename
-    json_file_dict = {}
-    for json_file in json_list:
-        file_ending = json_file.split("_svm_")[1]
-        if file_ending in json_file_dict.keys():
-            json_file_dict[file_ending].append(json_file)
-        else:
-            json_file_dict[file_ending] = [json_file]
-    sorted_json_list = []
-    for file_ending in sorted(json_file_dict.keys()):
-        sorted_json_list += sorted(json_file_dict[file_ending])
+    # sort list first alphabetically by filename
+    sorted_json_list = sorted(json_list)
 
     return sorted_json_list
 
