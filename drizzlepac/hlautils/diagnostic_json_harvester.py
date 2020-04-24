@@ -46,7 +46,7 @@ def get_json_files(search_path="", log_level=logutil.logging.INFO):
         list of json files to harvest, sorted first alphabetically by file type and then alphabetically by
         filename
     """
-    # TODO: current search misses *_compare_sourcelists.json files. FIX THIS!
+
     # set up search string and use glob to get list of files
     log.setLevel(log_level)
     if search_path != "" and not search_path.endswith("/"):
