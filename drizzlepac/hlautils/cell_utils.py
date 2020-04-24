@@ -167,11 +167,6 @@ class SkyFootprint(object):
                 edges_x = [0] * wcs.naxis2 + [wcs.naxis1 - 1] * wcs.naxis2 + list(range(wcs.naxis1)) * 2
                 edges_y = list(range(wcs.naxis2)) * 2 + [0] * wcs.naxis1 + [wcs.naxis2 - 1] * wcs.naxis1
 
-                """
-                sky_edges = wcs.pixel_to_world_values(np.vstack([edges_x, edges_y]).T)
-                import pdb; pdb.set_trace()
-                meta_edges = self.meta_wcs.world_to_pixel_values(sky_edges).astype(np.int32)
-                """
                 sky_edges = wcs.pixel_to_world_values(edges_x, edges_y)
                 meta_x, meta_y = self.meta_wcs.world_to_pixel_values(sky_edges[0], sky_edges[1])
                 meta_x = meta_x.astype(np.int32)
@@ -438,12 +433,13 @@ class ProjectionCell(object):
         # Get the edges of the mosaic on the sky
         mosaic_ra, mosaic_dec = mosaic.get_edges_sky()
         # Convert edges to positions in projection cell
-        mosaic_edges = self.wcs.world_to_pixel_values(mosaic_ra, mosaic_dec)
+        mosaic_edges_x, mosaic_edges_y = self.wcs.world_to_pixel_values(mosaic_ra, mosaic_dec)
+        
         # Determine roughly what sky cells overlap this mosaic
-        mosaic_edges[0] = (mosaic_edges[0] / skycell00.wcs.pixel_shape[0] + 0.5).astype(np.int32)
-        mosaic_edges[1] = (mosaic_edges[1] / skycell00.wcs.pixel_shape[1] + 0.5).astype(np.int32)
-        mosaic_xr = [mosaic_edges[0].min() - 1, mosaic_edges[0].max() + 1]
-        mosaic_yr = [mosaic_edges[1].min() - 1, mosaic_edges[1].max() + 1]
+        mosaic_edges_x = (mosaic_edges_x / skycell00.wcs.pixel_shape[0] + 0.5).astype(np.int32)
+        mosaic_edges_y = (mosaic_edges_y / skycell00.wcs.pixel_shape[1] + 0.5).astype(np.int32)
+        mosaic_xr = [mosaic_edges_x.min() - 1, mosaic_edges_x.max() + 1]
+        mosaic_yr = [mosaic_edges_y.min() - 1, mosaic_edges_y.max() + 1]
 
         print("SkyCell Ranges: {}, {}".format(mosaic_xr, mosaic_yr))
         # for each suspected sky cell or neighbor, look for any pixel by pixel
