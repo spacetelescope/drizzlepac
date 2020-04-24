@@ -98,7 +98,8 @@ def json_harvester(log_level=logutil.logging.INFO):
         print(json_filename)
         for item in json_data['data'].keys():
             print(" ", item)
-        input()
+        pdb.set_trace()
+
 
 
 # ======================================================================================================================
