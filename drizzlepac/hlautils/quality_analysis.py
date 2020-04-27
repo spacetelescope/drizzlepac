@@ -78,7 +78,7 @@ def determine_alignment_residuals(input, files, max_srcs=2000):
         num_srcs.append(nums)
         src_cats.append(img_cats)
 
-    if max(num_srcs) <= 3:
+    if len(num_srcs) == 0 or (len(num_srcs) > 0 and max(num_srcs) <= 3):
         return None
 
     # src_cats = [amutils.generate_source_catalog(hdu) for hdu in hdus]
