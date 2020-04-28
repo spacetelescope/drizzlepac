@@ -1,9 +1,9 @@
-import os
-import json
-import pandas as pd
 import glob
-
-
+import json
+import os
+import pandas as pd
+import pdb
+import sys
 def make_dataset_df(dirname, pattern='*_photometry.json'):
     """Convert dir full of JSON files into a DataFrame"""
 
@@ -11,8 +11,9 @@ def make_dataset_df(dirname, pattern='*_photometry.json'):
     hdr = None
 
     pdtabs = []
+    print(sorted(glob.glob(jpatt)))
     for jfilename in sorted(glob.glob(jpatt)):
-        print(jfilename)
+        print("JSON FILE: ",jfilename)
         with open(jfilename) as jfile:
             resids = json.load(jfile)
         pdindx = None
@@ -41,7 +42,7 @@ def make_dataset_df(dirname, pattern='*_photometry.json'):
     return allpd
 
 
-def make_master_df(dirname, pattern='*.json', num=None):
+def make_master_df(dirname, pattern='*_photometry.json', num=None):
     dirs = sorted(glob.glob(os.path.join(dirname, '*')))
     allpd = None
     for d in dirs[:num]:
@@ -54,3 +55,7 @@ def make_master_df(dirname, pattern='*.json', num=None):
                 allpd = allpd.append(pdtab)
 
     return allpd
+
+if __name__ == "__main__":
+    foo = make_master_df(sys.argv[1], num=3)
+    pdb.set_trace()
