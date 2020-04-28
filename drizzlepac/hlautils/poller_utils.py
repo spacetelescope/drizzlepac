@@ -10,6 +10,8 @@ import sys
 from collections import OrderedDict
 import numpy as np
 
+from sklearn.cluster import KMeans
+
 from stsci.tools import logutil
 
 from astropy.io import fits
@@ -126,6 +128,17 @@ def interpret_obset_input(results, log_level):
 
     return obset_dict, tdp_list
 
+def split_filter_tree(obset_table, exp_limit=2.0):
+    """Define additional layers from each filter product in obset_tree"""
+    # Start by determining the groupings by year and exptime
+    year_obset_table = define_year_layers(obset_table)
+    exp_obset_table = define_exp_layers(year_obset_table, exp_limit=exp_limit)
+
+    # Use groupings to split filter products into multiple layers
+    filter_tree = {}
+    
+    return exp_obset_table
+        
 
 # Translate the database query on an obset into actionable lists of filenames
 def build_obset_tree(obset_table):
@@ -461,6 +474,35 @@ def build_poller_table(input, log_level):
 
 # ----------------------------------------------------------------------------------------------------------
 
+def define_exp_layers(obset_table, exp_limit=2.0):
+    """Sort the input table subset for this cell by exposure time"""
+    expanded_obset_table = Table(obset_table)
+    expanded_obset_table['exp_layer'] = 0
+
+    exptimes = obset_table['exptime']
+    if max(exptimes) / min(exptimes) > exp_limit:
+       kmeans = KMeans(cluster=3, random_state=0).fit(exptimes.reshape(-1,1))
+       # Create labels by cluster: 2 for 'short', 1 for 'med', 0 for 'long'
+       expanded_obset_table['exp_layer'] = kmeans.labels_
+    
+    return expanded_obset_table
+
+# ----------------------------------------------------------------------------------------------------------
+
+def define_year_layers(obset_table):
+    """Update input table with calendar year of each exposure."""
+    expanded_obset_table = Table(obset_table)
+    expanded_obset_table['year'] = 1990
+    
+    for row in expanded_obset_table:
+        input_file = row[expanded_obset_table.colnames[0]]
+        with fits.open(input_file) as fimg:
+            row['year'] = int(fimg[0].header['date-obs'].split('-')[0])
+
+    return expanded_obset_table   
+
+
+# ----------------------------------------------------------------------------------------------------------
 
 def sort_poller_table(obset_table):
     """Sort the input table by photflam and exposure time.
