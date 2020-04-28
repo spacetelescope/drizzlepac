@@ -354,8 +354,9 @@ class HAPImage:
         return wht_image
 
     def close(self):
-        self.imghdu.close()
-        self.imghdu = None
+        if self.imghdu is not None:
+            self.imghdu.close()
+            self.imghdu = None
         self.dqmask = None
         self.wht_image = None
         self._wht_image = None
