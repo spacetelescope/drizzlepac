@@ -481,7 +481,7 @@ class HAPImage:
 
             # Report other useful quantities
             log.debug("{} CHIP: {}".format(self.rootname, chip))
-            log.debug("Mean background: {}".format(bkg_mean))
+            log.debug("Mean background: {}".format(bkg_rms_mean))
             log.debug("Mean threshold: {}".format(np.mean(threshold)))
             log.debug("Mean RMS      : {}".format(bkg_rms_mean))
             log.debug("")
