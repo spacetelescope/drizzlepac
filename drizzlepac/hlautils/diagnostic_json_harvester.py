@@ -83,12 +83,19 @@ def json_harvester(log_level=logutil.logging.INFO):
     """
     log.setLevel(log_level)
     json_list = get_json_files(log_level=log_level)
+    # json_list = [json_list[1]]
     for json_filename in json_list:
         json_data = du.read_json_file(json_filename)
         print(json_filename)
+        print(json_data.keys())
         for item in json_data['data'].keys():
-            print(" ", item)
-        pdb.set_trace()
+            print(">>", item)
+            if hasattr(json_data['data'][item],"keys"):
+                for item2 in json_data['data'][item].keys():
+                    print(">>>>>{}: {}".format(item2,json_data['data'][item][item2]))
+            else:
+                print(">> {}: {}".format(item,json_data['data'][item]))
+        input("\n")
 
 
 
