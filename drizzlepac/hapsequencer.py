@@ -555,7 +555,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             log.warning("No total detection product has been produced. The sourcelist generation step has been skipped")
 
         # Store total_obj_list to a pickle file to speed up development
-        if False:
+        if log_level <= logutil.logging.DEBUG:
             pickle_filename = "total_obj_list_full.pickle"
             if os.path.exists(pickle_filename):
                 os.remove(pickle_filename)
@@ -571,34 +571,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # If requested, generate quality assessment statistics for the SVM products
         if qa_switch:
             log.info("SVM Quality Assurance statistics have been requested for this dataset, {}.".format(input_filename))
-
-            # Number of sources in Point and Segment catalogs
-            total_catalog_list = [i for i in catalog_list if 'total' in i]
-            fits_list = [i for i in driz_list if 'fits' in i]
-            total_drizzle_list = [i for i in fits_list if 'total' in i]
-            svm_qa.compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
-
-            # Get point/segment cross-match RA/Dec statistics
-            for total_obj in total_obj_list:
-                for filter_obj in total_obj.fdp_list:
-                    svm_qa.compare_ra_dec_crossmatches(filter_obj, log_level=log_level)
-
-            # Identify the number of GAIA sources in final product footprints
-            for total_obj in total_obj_list:
-                svm_qa.find_gaia_sources(total_obj, log_level=log_level)
-                for filter_obj in total_obj.fdp_list:
-                    svm_qa.find_gaia_sources(filter_obj, log_level=log_level)
-                    for exp_obj in filter_obj.edp_list:
-                        svm_qa.find_gaia_sources(exp_obj, log_level=log_level)
-
-            # Photometry of cross-matched sources in Point and Segment catalogs for Filter products
-            tot_len = len(total_obj_list)
-            filter_drizzle_list = []
-            temp_list = []
-            for tot in total_obj_list:
-                temp_list = [x.drizzle_filename for x in tot.fdp_list]
-                filter_drizzle_list.extend(temp_list)
-            svm_qa.compare_photometry(filter_drizzle_list, log_level=log_level)
+            svm_qa.run_quality_analysis(total_obj_list, log_level=log_level)
 
         # 9: Compare results to HLA classic counterparts (if possible)
         if diagnostic_mode:
