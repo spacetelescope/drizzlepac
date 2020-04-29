@@ -45,6 +45,7 @@ def make_dataset_df(dirname, pattern='*_photometry.json'):
 def make_master_df(dirname, pattern='*_photometry.json', num=None):
     dirs = sorted(glob.glob(os.path.join(dirname, '*')))
     allpd = None
+    print(dirs)
     for d in dirs[:num]:
         print(d)
         pdtab = make_dataset_df(d, pattern=pattern)
@@ -57,5 +58,6 @@ def make_master_df(dirname, pattern='*_photometry.json', num=None):
     return allpd
 
 if __name__ == "__main__":
-    foo = make_master_df(sys.argv[1], num=3)
+    foo = make_master_df(sys.argv[1])
+    foo.to_csv("pandas.csv")
     pdb.set_trace()
