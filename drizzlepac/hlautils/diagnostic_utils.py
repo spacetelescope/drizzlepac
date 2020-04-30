@@ -123,6 +123,7 @@ class HapDiagnostic(object):
         self.out_dict = collections.OrderedDict()
         self.out_dict['header'] = collections.OrderedDict()
         self.out_dict['data'] = collections.OrderedDict()
+        self.out_dict['general information'] = collections.OrderedDict()
 
         # Populate standard header fields
         # Add generation date/time
@@ -145,6 +146,8 @@ class HapDiagnostic(object):
         for header_item in self.header.keys():
             self.out_dict['header'][header_item] = self.header[header_item]
 
+        # Generate 'general information' section.
+        header_items_to_get = ['TELESCOP', 'INSTRUME', 'DETECTOR', 'filter']
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def instantiate_from_fitsfile(self, filename, data_source=None, description=None):
