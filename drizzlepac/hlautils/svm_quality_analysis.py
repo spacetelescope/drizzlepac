@@ -732,14 +732,14 @@ def report_wcs(total_product_list, log_level=logutil.logging.NOTSET):
                 reverse_dict.setdefault(value, set()).add(key)
             keys_with_dups = set(chain.from_iterable(values for key, values in reverse_dict.items() if len(values) > 1))
 
-            list_keys = list(keys_with_dups)
-            for key in list_keys:
-                if key is ' ':
-                    continue
-                else:
-                    popkey = key
-
-            dict_of_wcskeys_names.pop(popkey)
+            # Make a list of the keys which contain duplicate values...
+            if keys_with_dups:
+                list_keys = list(keys_with_dups)
+                # ...ignore the primary key as it is important, and...
+                list_keys.remove(' ')
+                # ...remove the duplicates.
+                for popkey in list_keys:
+                    dict_of_wcskeys_names.pop(popkey)
 
             # The remaining dictionary items all need to share the same IDC base
             # solution as the "active" solution in order to make a consistent comparison -
@@ -757,7 +757,7 @@ def report_wcs(total_product_list, log_level=logutil.logging.NOTSET):
             for bad_key in bad_match_key:
                 dict_of_wcskeys_names.pop(bad_key)
 
-            log.info("Removed bad WCS keys and names {}".format(dict_of_wcskeys_names))
+            log.info("Removed any bad WCS keys and names {}".format(dict_of_wcskeys_names))
 
             # If there is anything left to compare, then do it.
             if len(dict_of_wcskeys_names) > 1:
