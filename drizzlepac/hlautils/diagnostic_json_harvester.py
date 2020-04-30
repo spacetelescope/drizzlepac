@@ -102,6 +102,7 @@ def json_harvester(log_level=logutil.logging.INFO):
 
 # ------------------------------------------------------------------------------------------------------------
 
+
 def json_ingest(master_dataframe, json_filename, log_level=logutil.logging.INFO):
     """ingests data from specified json file into a pandas dataframe
 
@@ -130,10 +131,10 @@ def json_ingest(master_dataframe, json_filename, log_level=logutil.logging.INFO)
             pdindex = pdindex.replace("_" + pdindex_ending, "")
             break
     # NEXT TWO LINES ARE FOR TESTING. REMOVE!
-    if not json_filename.endswith("_svm_gaia_distribution_characterization.json"): # TODO: REMOVE!
-        return master_dataframe # TODO: REMOVE!
+    if not json_filename.endswith("crossmatch.json"):  # TODO: REMOVE!
+        return master_dataframe  # TODO: REMOVE!
 
-    print("-----------------------",json_filename, pdindex,"-----------------------")
+    print("-----------------------", json_filename, pdindex, "-----------------------")
     # ingest data from json file into the dataframe
     json_data = du.read_json_file(json_filename)
     json_header = json_data['header']
@@ -162,8 +163,6 @@ def json_ingest(master_dataframe, json_filename, log_level=logutil.logging.INFO)
     #     else:
     #         print(">> {}: {}".format(item,json_data['data'][item]))
     # input("\n")
-
-
     return master_dataframe
 
 
@@ -171,5 +170,8 @@ def json_ingest(master_dataframe, json_filename, log_level=logutil.logging.INFO)
 
 
 if __name__ == "__main__":
-    # Testing
+    #  Testing
     json_harvester(log_level=logutil.logging.DEBUG)
+
+# TODO: automagically ingest data columns into single dataframe cell
+# TODO: join individual
