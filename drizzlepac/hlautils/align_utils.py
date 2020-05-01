@@ -864,21 +864,23 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
 
         # update header with new WCS info
         sci_extn = sci_ext_dict["{}".format(item.meta['chip'])]
+        hdr_name = "{}_{}".format(image_name.rstrip(".fits"), wcs_name)
         updatehdr.update_wcs(hdulist, sci_extn, item.wcs, wcsname=wcs_name, reusename=True)
         hdulist[sci_extn].header['RMS_RA'] = item.meta['fit_info']['RMS_RA'].value
         hdulist[sci_extn].header['RMS_DEC'] = item.meta['fit_info']['RMS_DEC'].value
         hdulist[sci_extn].header['CRDER1'] = item.meta['fit_info']['RMS_RA'].value
         hdulist[sci_extn].header['CRDER2'] = item.meta['fit_info']['RMS_DEC'].value
         hdulist[sci_extn].header['NMATCHES'] = len(item.meta['fit_info']['ref_mag'])
-        hdulist[sci_extn].header['HDRNAME'] = "{}_{}".format(image_name.rstrip(".fits"), wcs_name)
-
+        hdulist[sci_extn].header['HDRNAME'] = hdr_name
+        
+        
         if chipctr == num_sci_ext:
             # Close updated flc.fits or flt.fits file
             hdulist.flush()
             hdulist.close()
 
             # Create headerlet
-            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, wcsname=wcs_name,
+            out_headerlet = headerlet.create_headerlet(image_name, hdrname=hdr_name, wcsname=wcs_name,
                                                        logging=False)
 
             # Update headerlet
@@ -897,7 +899,8 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
             out_headerlet_dict[image_name] = headerlet_filename
 
             # Attach headerlet as HDRLET extension
-            headerlet.attach_headerlet(image_name, headerlet_filename, logging=False)
+            if headerlet.verify_hdrname_is_unique(hdulist, hdr_name):
+                headerlet.attach_headerlet(image_name, headerlet_filename, logging=False)
 
         chipctr += 1
     return (out_headerlet_dict)

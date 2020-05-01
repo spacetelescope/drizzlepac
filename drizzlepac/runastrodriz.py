@@ -854,7 +854,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 sat_flags = 256 + 2048
         else:
             sat_flags = 256 + 2048 + 4096 + 8192
-
+            
         # Perform any requested alignment here...
         if alignment_mode == 'aposteriori':
             # Create trailer marker message for start of align_to_GAIA processing
@@ -1062,17 +1062,36 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
 
 def restore_pipeline_default(files):
     """Restore pipeline-default IDC_* WCS as PRIMARY WCS in all input files"""
+    updatewcs.updatewcs(files, use_db=False)
+
+
+# Function written from (essentially) first principles
+def old_restore_pipeline_default(files):
+    """Restore pipeline-default IDC_* WCS as PRIMARY WCS in all input files"""
     for f in files:
         rootname = f.replace('.fits', '')
         with fits.open(f, mode='update') as hdu:
             hdrnames = headerlet.get_headerlet_kw_names(hdu, kw='hdrname')
+            # Remove '-hlet.fits' from end of HDRNAME values to simplify 
+            # comparison with newly generated solution which does NOT end with 
+            # '-hlet.fits'.
+            hdrnames_clean = [h.rstrip('-hlet.fits') for h in hdrnames]
             def_hdrname = "{}_OPUS".format(rootname)
-            for h in hdrnames:
-                if '-' not in h and 'IDC' in h:
+            for hdrnum,(hclean,h) in enumerate(zip(hdrnames_clean,hdrnames)):
+                hdrnum += 1
+                if '-' not in hclean and 'IDC' in hclean:
                     def_hdrname = h
-                    break
+                    # Check to insure that apriori provided IDC_* default solution
+                    # is complete
+                    hlet = hdu[('hdrlet',hdrnum)].headerlet
+                    if (hlet[1].header['ctype1'].endswith('-SIP') and \
+                        'A_ORDER' not in hlet[1].header) or \
+                        not hlet[1].header['ctype1'].endswith('-SIP'):
+                        del hdu[('hdrlet',hdrnum)]
+                    else:                
+                        break
             def_extn = headerlet.find_headerlet_HDUs(hdu, hdrname=def_hdrname)[0]
-            print("Restoring WCS from EXTN with hdrname of {}".format(def_extn, def_hdrname))
+            print("Restoring WCS from EXTN {} with hdrname of {}".format(def_extn, def_hdrname))
             headerlet.restore_from_headerlet(hdu, hdrext=def_extn, archive=False)
 
 def _lowerAsn(asnfile):
