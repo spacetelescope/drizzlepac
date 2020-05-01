@@ -125,26 +125,10 @@ class HapDiagnostic(object):
         self.out_dict['data'] = collections.OrderedDict()
         self.out_dict['general information'] = collections.OrderedDict()
 
-        # Populate standard header fields
-        # Add generation date/time
-        timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
-        self.out_dict['header']['generation date'] = timestamp.split("T")[0]
-        self.out_dict['header']['generation time'] = timestamp.split("T")[1]
-        # Add time since epoch (January 1, 1970, 00:00:00 UTC)
-        self.out_dict['header']['seconds since epoch'] = time.time()
-        # add git commit id
-        reporootpath = "/"
-        for item in __file__.split("/")[0:-3]:
-            reporootpath = os.path.join(reporootpath, item)
-        self.out_dict['header']['commit id'] = get_git_rev_info.get_rev_id(reporootpath)
-        del reporootpath
-        # add filter, data_source, and description
-        header_item_list = ["filter", "data_source", "description"]
-        for header_item in header_item_list:
-            self.out_dict['header'][header_item] = self.__dict__[header_item]
         # add trimmed fits header from self.header
         for header_item in self.header.keys():
             self.out_dict['header'][header_item] = self.header[header_item]
+
 
         # Generate 'general information' section.
         parse_imgname = self.out_dict['header']['FILENAME'].split("_")
@@ -153,6 +137,22 @@ class HapDiagnostic(object):
             self.out_dict['general information'][item[1]] = parse_imgname[item[0]]
         self.out_dict['general information']["dataframe_index"] = self.out_dict['header']['FILENAME'][:-9]
         self.out_dict['general information']["imgname"] = self.out_dict['header']['FILENAME']
+        # Add generation date/time
+        timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
+        self.out_dict['general information']['generation date'] = timestamp.split("T")[0]
+        self.out_dict['general information']['generation time'] = timestamp.split("T")[1]
+        # Add time since epoch (January 1, 1970, 00:00:00 UTC)
+        self.out_dict['general information']['seconds since epoch'] = time.time()
+        # add git commit id
+        reporootpath = "/"
+        for item in __file__.split("/")[0:-3]:
+            reporootpath = os.path.join(reporootpath, item)
+        self.out_dict['general information']['commit id'] = get_git_rev_info.get_rev_id(reporootpath)
+        del reporootpath
+        # add data_source and description # TODO: THESE MAY BE REMOVED LATER ON
+        header_item_list = ["data_source", "description"]
+        for header_item in header_item_list:
+            self.out_dict['general information'][header_item] = self.__dict__[header_item]
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
