@@ -145,9 +145,13 @@ class HapDiagnostic(object):
         self.out_dict['general information']['generation time'] = timestamp.split("T")[1]  # TODO: is 'generation date' too generic? should this be renamed something more descriptive?
         # Add time since epoch (January 1, 1970, 00:00:00 UTC)
         if self.time_since_epoch:
-            self.out_dict['general information']['seconds since epoch'] = self.time_since_epoch
+            print("using existing TSE")
+            time_since_epoch = self.time_since_epoch
         else:
-            self.out_dict['general information']['seconds since epoch'] = time.time()
+            print("USING NEW TSE")
+            time_since_epoch = time.time()
+        print(">>> time_since_epoch: ", time_since_epoch)
+        self.out_dict['general information']['seconds since epoch'] = time_since_epoch
         # add git commit id
         reporootpath = "/"
         for item in __file__.split("/")[0:-3]:
