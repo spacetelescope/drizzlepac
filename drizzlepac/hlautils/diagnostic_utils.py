@@ -129,7 +129,6 @@ class HapDiagnostic(object):
         for header_item in self.header.keys():
             self.out_dict['header'][header_item] = self.header[header_item]
 
-
         # Generate 'general information' section.
         parse_imgname = self.out_dict['header']['FILENAME'].split("_")
         dict_key_list = ["telescope", "proposal_id", "visit", "instrument", "detector", "filter", "dataset"]
@@ -138,11 +137,17 @@ class HapDiagnostic(object):
         self.out_dict['general information']["dataframe_index"] = self.out_dict['header']['FILENAME'][:-9]
         self.out_dict['general information']["imgname"] = self.out_dict['header']['FILENAME']
         # Add generation date/time
-        timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
-        self.out_dict['general information']['generation date'] = timestamp.split("T")[0]
-        self.out_dict['general information']['generation time'] = timestamp.split("T")[1]
+        if self.timestamp:
+            timestamp = self.timestamp
+        else:
+            timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
+        self.out_dict['general information']['generation date'] = timestamp.split("T")[0]  # TODO: is 'generation date' too generic? should this be renamed something more descriptive?
+        self.out_dict['general information']['generation time'] = timestamp.split("T")[1]  # TODO: is 'generation date' too generic? should this be renamed something more descriptive?
         # Add time since epoch (January 1, 1970, 00:00:00 UTC)
-        self.out_dict['general information']['seconds since epoch'] = time.time()
+        if self.time_since_epoch:
+            self.out_dict['general information']['seconds since epoch'] = self.time_since_epoch
+        else:
+            self.out_dict['general information']['seconds since epoch'] = time.time()
         # add git commit id
         reporootpath = "/"
         for item in __file__.split("/")[0:-3]:
@@ -156,7 +161,7 @@ class HapDiagnostic(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def instantiate_from_fitsfile(self, filename, data_source=None, description=None):
+    def instantiate_from_fitsfile(self, filename, data_source=None, description=None, timestamp=None, time_since_epoch=None):
         """Get necessary information for execution of _instantiate() from user-specified hap product, and
         execute _instantiate()
 
@@ -194,12 +199,14 @@ class HapDiagnostic(object):
         # gobble up other inputs
         self.data_source = data_source
         self.description = description
+        self.timestamp = timestamp
+        self.time_since_epoch = time_since_epoch
 
         # instantiate data storage dictionary
         self._instantiate()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    def instantiate_from_hap_obj(self, hap_obj, data_source=None, description=None):
+    def instantiate_from_hap_obj(self, hap_obj, data_source=None, description=None, timestamp=None, time_since_epoch=None):
         """Get necessary information for execution of _instantiate() from user-specified hap product, and
         execute _instantiate()
 
@@ -237,6 +244,8 @@ class HapDiagnostic(object):
         # gobble up other inputs
         self.data_source = data_source
         self.description = description
+        self.timestamp = timestamp
+        self.time_since_epoch = time_since_epoch
 
         # instantiate data storage dictionary
         self._instantiate()
