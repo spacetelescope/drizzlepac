@@ -412,6 +412,7 @@ def read_json_file(json_filename):
         with open(json_filename) as f:
             json_data = json.load(f)
         out_dict['header'] = json_data['header']  # copy over the 'header' section directly.
+        out_dict['general information'] = json_data['general information']
         out_dict['data'] = collections.OrderedDict()  # set up blank data section
         for datakey in json_data['data'].keys():
             if json_data['data'][datakey]['original format'] == "<class 'numpy.ndarray'>":  # Extract numpy array
