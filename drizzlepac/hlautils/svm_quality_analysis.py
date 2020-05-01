@@ -28,11 +28,13 @@ https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 # Standard library imports
 import argparse
 import collections
+from datetime import datetime
 import json
 import os
 import pdb
 import pickle
 import sys
+import time
 
 # Related third party imports
 from astropy.coordinates import SkyCoord
@@ -59,7 +61,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
+def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since_epoch=None, log_level=logutil.logging.NOTSET):
     """Statistically describe distribution of GAIA sources in footprint.
 
     Computes and writes the file to a json file:
@@ -145,7 +147,8 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
     diag_obj.instantiate_from_hap_obj(hap_obj,
                                       data_source="{}.characterize_gaia_distribution".format(__taskname__),
                                       description="A statistical characterization of the distribution of "
-                                                  "GAIA sources in image footprint")
+                                                  "GAIA sources in image footprint",
+                                      timestamp=json_timestamp, time_since_epoch=json_time_since_epoch)
     diag_obj.add_data_item(out_dict, "distribution characterization statistics")
     diag_obj.write_json_file(hap_obj.drizzle_filename[:-9] + "_svm_gaia_distribution_characterization.json",
                              clobber=True)
@@ -690,6 +693,12 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
     """
     log.setLevel(log_level)
 
+    # generate a timestamp values that will be used to make creation time, creation date and epoch values
+    # common to each json file
+    json_timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
+    json_time_since_epoch = time.time()
+    print("json_time_since_epoch: ", json_time_since_epoch) #TESTING. REMOVE.
+    print("json_timestamp: ",json_timestamp) #TESTING. REMOVE.
     # Determine number of sources in Point and Segment catalogs
     if run_compare_num_sources:
         total_catalog_list = []
@@ -719,7 +728,7 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
     if run_characterize_gaia_distribution:
         for total_obj in total_obj_list:
             for filter_obj in total_obj.fdp_list:
-                characterize_gaia_distribution(filter_obj, log_level=log_level)
+                characterize_gaia_distribution(filter_obj, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch, log_level=log_level)
 
     # Photometry of cross-matched sources in Point and Segment catalogs for Filter products
     if run_compare_photometry:
