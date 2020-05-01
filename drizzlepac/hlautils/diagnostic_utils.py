@@ -147,23 +147,12 @@ class HapDiagnostic(object):
             self.out_dict['header'][header_item] = self.header[header_item]
 
         # Generate 'general information' section.
-        # hst_10265_01_acs_wfc_f606w_j92c01_drc.fits
         parse_imgname = self.out_dict['header']['FILENAME'].split("_")
-        dict_key_list = ["telescope",
-                         "proposal",
-                         "visit",
-                         "instrument",
-                         "detector",
-                         "filter",
-                         "dataset"]
+        dict_key_list = ["telescope", "proposal_id", "visit", "instrument", "detector", "filter", "dataset"]
         for item in enumerate(dict_key_list):
             self.out_dict['general information'][item[1]] = parse_imgname[item[0]]
-
         self.out_dict['general information']["dataframe_index"] = self.out_dict['header']['FILENAME'][:-9]
         self.out_dict['general information']["imgname"] = self.out_dict['header']['FILENAME']
-        for item in self.out_dict['general information'].keys():
-            print(item, self.out_dict['general information'][item])
-
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
