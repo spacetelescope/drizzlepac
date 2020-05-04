@@ -38,8 +38,8 @@ class HapDiagnostic(object):
         Parameters
         ----------
         log_level : int, optional
-            The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-            Default value is 'NOTSET'.
+            The desired level of verboseness in the log statements displayed on the screen and written to the
+            .log file. Default value is 'NOTSET'.
 
         Returns
         -------
@@ -83,7 +83,7 @@ class HapDiagnostic(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _instantiate(self):
-        """Creates a new diagnostic dictionary using the following standardized format: The standard header values are as follows:
+        """Creates a new diagnostic dictionary using the following standardized format:
 
         - 'header' section: Contains the primary fits header of the relevant image
         - 'general information' section: Kind of like the 'header' section of distilled down to just the most
