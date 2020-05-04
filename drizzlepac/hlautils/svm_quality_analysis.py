@@ -63,7 +63,8 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since_epoch=None, log_level=logutil.logging.NOTSET):
+def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since_epoch=None,
+                                   log_level=logutil.logging.NOTSET):
     """Statistically describe distribution of GAIA sources in footprint.
 
     Computes and writes the file to a json file:
@@ -168,7 +169,8 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def compare_num_sources(catalog_list, drizzle_list, json_timestamp=None, json_time_since_epoch=None, log_level=logutil.logging.NOTSET):
+def compare_num_sources(catalog_list, drizzle_list, json_timestamp=None, json_time_since_epoch=None,
+                        log_level=logutil.logging.NOTSET):
     """Determine the number of viable sources actually listed in SVM output catalogs.
 
     Parameters
@@ -269,7 +271,8 @@ def compare_num_sources(catalog_list, drizzle_list, json_timestamp=None, json_ti
 # ------------------------------------------------------------------------------------------------------------
 
 
-def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_epoch=None, log_level=logutil.logging.NOTSET):
+def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_epoch=None,
+                                log_level=logutil.logging.NOTSET):
     """Compare the equatorial coordinates of cross-matches sources between the Point and Segment catalogs.
     The results .json file contains the following information:
 
@@ -435,7 +438,8 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
 # ------------------------------------------------------------------------------------------------------------
 
 
-def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None, log_level=logutil.logging.NOTSET):
+def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
+                      log_level=logutil.logging.NOTSET):
     """Creates a catalog of all GAIA sources in the footprint of a specified HAP final product image, and
     stores the GAIA object catalog as a hap diagnostic json file. The catalog contains RA, Dec and magnitude
     of each identified source. The catalog is sorted in descending order by brightness.
@@ -553,7 +557,8 @@ def generate_gaia_catalog(hap_obj, columns_to_remove=None):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=None, log_level=logutil.logging.NOTSET):
+def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=None,
+                       log_level=logutil.logging.NOTSET):
     """Compare photometry measurements for sources cross matched between the Point and Segment catalogs.
 
     Parameters
@@ -718,7 +723,8 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=None, log_level=logutil.logging.NOTSET):
+def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=None,
+               log_level=logutil.logging.NOTSET):
     """Report the WCS information for each exposure of a total data product.
 
     Parameters
@@ -746,14 +752,8 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
     # consists of a single detector.  Each total product consists of one or
     # more ExposureProduct objects.
     for total_product in total_product_list:
-        total_drizzle_filename = total_product.drizzle_filename
-
-        instrument = total_product.instrument
         detector = total_product.detector
-        filter_name = total_product.edp_list[0].filters
         ipppss = total_product.edp_list[0].exposure_name[0:6]
-        exposure_name = total_product.edp_list[0].exposure_name
-        exposure_filename = total_product.edp_list[0].info
 
         # Set up the diagnostic object
         diagnostic_obj = du.HapDiagnostic()
@@ -762,11 +762,6 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                                                 description="WCS information",
                                                 timestamp=json_timestamp,
                                                 time_since_epoch=json_time_since_epoch)
-
-        summary_dict = {'instrument': instrument, 'detector': detector,
-                        'exposure_name': exposure_name, 'filter_name': filter_name,
-                        'exposure_filename': exposure_filename}
-        diagnostic_obj.add_data_item(summary_dict, 'General Information')
 
         # Construct the output JSON filename
         json_filename = '_'.join([ipppss, detector, 'svm_wcs.json'])
@@ -785,7 +780,8 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
             metawcs = wcs_functions.make_mosaic_wcs(edp_object.full_filename)
 
             # Get information from the active WCS
-            active_wcs_dict = {'primary_wcsname': metawcs.wcs.name, 'wcs_info': {'crpix1': metawcs.wcs.crpix[0],
+            active_wcs_dict = {'primary_wcsname': metawcs.wcs.name,
+                               'wcs_info': {'crpix1': metawcs.wcs.crpix[0],
                                'crpix2': metawcs.wcs.crpix[1],
                                'crval1': metawcs.wcs.crval[0], 'crval2': metawcs.wcs.crval[1],
                                'scale': metawcs.pscale, 'orientation': metawcs.orientat}}
@@ -849,7 +845,8 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                     alt_metawcs = wcs_functions.make_mosaic_wcs(edp_object.full_filename)
 
                     # Get information from the alternate/active WCS
-                    alt_wcs_dict = {'alternate_wcsname': alt_wcs_name, 'wcs_info': {'crpix1': alt_metawcs.wcs.crpix[0],
+                    alt_wcs_dict = {'alternate_wcsname': alt_wcs_name,
+                                    'wcs_info': {'crpix1': alt_metawcs.wcs.crpix[0],
                                     'crpix2': alt_metawcs.wcs.crpix[1],
                                     'crval1': alt_metawcs.wcs.crval[0], 'crval2': alt_metawcs.wcs.crval[1],
                                     'scale': alt_metawcs.pscale, 'orientation': alt_metawcs.orientat}}
@@ -944,8 +941,7 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
     # common to each json file
     json_timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
     json_time_since_epoch = time.time()
-    print("json_time_since_epoch: ", json_time_since_epoch) #TESTING. REMOVE.
-    print("json_timestamp: ",json_timestamp) #TESTING. REMOVE.
+
     # Determine number of sources in Point and Segment catalogs
     if run_compare_num_sources:
         total_catalog_list = []
@@ -954,28 +950,35 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             total_drizzle_list.append(total_obj.drizzle_filename)
             total_catalog_list.append(total_obj.point_cat_filename)
             total_catalog_list.append(total_obj.segment_cat_filename)
-        compare_num_sources(total_catalog_list, total_drizzle_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+        compare_num_sources(total_catalog_list, total_drizzle_list, json_timestamp=json_timestamp,
+                            json_time_since_epoch=json_time_since_epoch, log_level=log_level)
 
     # Identify the number of GAIA sources in final product footprints
     if run_find_gaia_sources:
         for total_obj in total_obj_list:
-            find_gaia_sources(total_obj, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch,log_level=log_level)
+            find_gaia_sources(total_obj, json_timestamp=json_timestamp,
+                              json_time_since_epoch=json_time_since_epoch, log_level=log_level)
             for filter_obj in total_obj.fdp_list:
-                find_gaia_sources(filter_obj, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch,log_level=log_level)
+                find_gaia_sources(filter_obj, json_timestamp=json_timestamp,
+                                  json_time_since_epoch=json_time_since_epoch, log_level=log_level)
                 for exp_obj in filter_obj.edp_list:
-                    find_gaia_sources(exp_obj, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+                    find_gaia_sources(exp_obj, json_timestamp=json_timestamp,
+                                      json_time_since_epoch=json_time_since_epoch, log_level=log_level)
 
     # Get point/segment cross-match RA/Dec statistics
     if run_compare_ra_dec_crossmatches:
         for total_obj in total_obj_list:
             for filter_obj in total_obj.fdp_list:
-                compare_ra_dec_crossmatches(filter_obj, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+                compare_ra_dec_crossmatches(filter_obj, json_timestamp=json_timestamp,
+                                            json_time_since_epoch=json_time_since_epoch, log_level=log_level)
 
     # Statistically characterize GAIA distribution
     if run_characterize_gaia_distribution:
         for total_obj in total_obj_list:
             for filter_obj in total_obj.fdp_list:
-                characterize_gaia_distribution(filter_obj, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+                characterize_gaia_distribution(filter_obj, json_timestamp=json_timestamp,
+                                               json_time_since_epoch=json_time_since_epoch,
+                                               log_level=log_level)
 
     # Photometry of cross-matched sources in Point and Segment catalogs for Filter products
     if run_compare_photometry:
@@ -985,12 +988,13 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
         for tot in total_obj_list:
             temp_list = [x.drizzle_filename for x in tot.fdp_list]
             filter_drizzle_list.extend(temp_list)
-        compare_photometry(filter_drizzle_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+        compare_photometry(filter_drizzle_list, json_timestamp=json_timestamp,
+                           json_time_since_epoch=json_time_since_epoch, log_level=log_level)
 
     # Report WCS info
     if run_report_wcs:
-        report_wcs(total_obj_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch, log_level=log_level)
-
+        report_wcs(total_obj_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch,
+                   log_level=log_level)
 
 
 # ============================================================================================================
@@ -1087,4 +1091,3 @@ if __name__ == "__main__":
                          run_compare_photometry=user_args.run_compare_photometry,
                          run_report_wcs=user_args.run_report_wcs,
                          log_level=log_level)
-
