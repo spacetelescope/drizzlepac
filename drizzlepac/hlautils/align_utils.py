@@ -3,6 +3,7 @@ import datetime
 import copy
 import sys
 import traceback
+import warnings
 
 from collections import OrderedDict
 
@@ -42,6 +43,10 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+                            
+NoDetectionsWarning = photutils.findstars.NoDetectionsWarning if \
+                        hasattr(photutils.findstars, 'NoDetectionsWarning') else \
+                        photutils.utils.NoDetectionsWarning 
 
 class AlignmentTable:
     
@@ -558,13 +563,15 @@ class HAPImage:
                             'nlargest': alignment_pars['num_sources'],
                             'deblend': alignment_pars['deblend']}
 
-            seg_tab, segmap = amutils.extract_sources(sciarr, dqmask=dqmask,
-                                                      outroot=outroot,
-                                                      kernel=self.kernel,
-                                                      segment_threshold=self.threshold[chip],
-                                                      dao_threshold=self.bkg_rms_mean[chip],
-                                                      fwhm=self.kernel_fwhm,
-                                                      **extract_pars)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', NoDetectionsWarning)
+                seg_tab, segmap = amutils.extract_sources(sciarr, dqmask=dqmask,
+                                                          outroot=outroot,
+                                                          kernel=self.kernel,
+                                                          segment_threshold=self.threshold[chip],
+                                                          dao_threshold=self.bkg_rms_mean[chip],
+                                                          fwhm=self.kernel_fwhm,
+                                                          **extract_pars)
 
             self.catalog_table[chip] = seg_tab
 # ----------------------------------------------------------------------------------------------------------------------

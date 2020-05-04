@@ -1070,7 +1070,7 @@ def restore_pipeline_default(files):
             num_sci = fileutil.countExtn(fhdu)
             for sciext in range(num_sci):
                 if 'hdrname' in fhdu[('sci', sciext + 1)].header:
-                del fhdu[('sci', sciext + 1)].header['hdrname']
+                    del fhdu[('sci', sciext + 1)].header['hdrname']
 
 # Function written from (essentially) first principles
 def old_restore_pipeline_default(files):
