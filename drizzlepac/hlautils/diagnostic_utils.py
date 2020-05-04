@@ -83,19 +83,30 @@ class HapDiagnostic(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _instantiate(self):
-        """Creates a new diagnostic dictionary using the standard format. The standard header values are as follows:
+        """Creates a new diagnostic dictionary using the following standardized format: The standard header values are as follows:
 
-        - Generation date
-        - Generation time (local 24-hour format)
-        - git commit ID
-        - Proposal ID
-        - Obset ID
-        - Telescope name
-        - Instrument name
-        - Detector name
-        - Filter name
-        - Data source (name of the piece of code that produced the data)
-        - Description (brief description of what the data is, and how it should be used)
+        - 'header' section: Contains the primary fits header of the relevant image
+        - 'general information' section: Kind of like the 'header' section of distilled down to just the most
+        important pieces of information, some other additional information. Included fields are as follows:
+            - telescope name
+            - proposal ID
+            - visit number
+            - instrument name
+            - detector name
+            - filter name
+            - dataset name
+            - pandas DataFrame index title
+            - fits image name
+            - generation date (local)
+            - generation time (local)
+            - seconds since epoch (UTC)
+            - git commit ID
+            - data source (name of the piece of code that produced the data)
+            - description (brief description of what the data is, and how it should be used)
+
+        - 'data' section: this section will contain the test results and depending on the test, may also
+        contain relevant test data as well. It should be noted that depending on the test being run,
+        additional 'data' sections may be appended to the diagnostic dictionary after instantiation.
 
         Parameters
         ----------
@@ -122,8 +133,8 @@ class HapDiagnostic(object):
         # summon nested orderedDict into existence
         self.out_dict = collections.OrderedDict()
         self.out_dict['header'] = collections.OrderedDict()
-        self.out_dict['data'] = collections.OrderedDict()
         self.out_dict['general information'] = collections.OrderedDict()
+        self.out_dict['data'] = collections.OrderedDict()
 
         # add trimmed fits header from self.header
         for header_item in self.header.keys():
@@ -176,10 +187,20 @@ class HapDiagnostic(object):
             "header" section.
 
         data_source : str, optional
-            name of the script that generated the data that will be stored in the "data" section
+            name of the script that generated the data that will be stored in the "data" section.  If not
+            specified, default value is logical 'None'
 
         description : str, optional
-            brief description of what the data is, and how it should be used.
+            brief description of what the data is, and how it should be used.  If not specified, default
+            value is logical 'None'
+
+        timestamp: str, optional
+            Universal .json file generation date and time (local timezone). Format: MM/DD/YYYYTHH:MM:SS
+            (Example: 05/04/2020T13:46:35). If not specified, default value is logical 'None'
+
+        time_since_epoch : float
+            Universal .json file generation time. Format: Time (in seconds) elapsed since
+            January 1, 1970, 00:00:00 (UTC). If not specified, default value is logical 'None'
 
         Returns
         -------
@@ -222,10 +243,20 @@ class HapDiagnostic(object):
         "header" section.
 
         data_source : str, optional
-            name of the script that generated the data that will be stored in the "data" section
+            name of the script that generated the data that will be stored in the "data" section. If not
+            specified, default value is logical 'None'
 
         description : str, optional
-            brief description of what the data is, and how it should be used.
+            brief description of what the data is, and how it should be used. If not specified,
+            default value is logical 'None'
+
+        timestamp: str, optional
+            Universal .json file generation date and time (local timezone). Format: MM/DD/YYYYTHH:MM:SS
+            (Example: 05/04/2020T13:46:35). If not specified, default value is logical 'None'
+
+        time_since_epoch : float
+            Universal .json file generation time. Format: Time (in seconds) elapsed since
+            January 1, 1970, 00:00:00 (UTC). If not specified, default value is logical 'None'
 
         Returns
         -------
