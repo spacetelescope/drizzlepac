@@ -85,6 +85,16 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
     hap_obj : drizzlepac.hlautils.Product.FilterProduct
         hap product object to process
 
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
+
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
         .log file. Default value is 'NOTSET'.
@@ -170,6 +180,16 @@ def compare_num_sources(catalog_list, drizzle_list, json_timestamp=None, json_ti
 
     drizzle_list: list of strings
         Drizzle files for the Total products which were mined to generate the output catalogs.
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -264,6 +284,16 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
     ----------
     hap_obj : drizzlepac.hlautils.Product.FilterProduct
         hap filter product object to process
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -416,6 +446,16 @@ def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None, 
         drizzlepac.hlautils.Product.ExposureProduct, depending on input.
         hap product object to process
 
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
+
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
         .log file. Default value is 'NOTSET'.
@@ -520,6 +560,16 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
     ----------
     drizzle_list: list of strings
         Drizzle files for the Filter products which were mined to generate the output catalogs.
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -675,6 +725,16 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
     ----------
     total_product_list: list of HAP TotalProduct objects, one object per instrument detector
     (drizzlepac.hlautils.Product.TotalProduct)
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and
