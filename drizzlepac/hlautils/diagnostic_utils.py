@@ -323,8 +323,8 @@ class HapDiagnostic(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def add_update_header_item(self, element_name, new_element_value, clobber=True, addnew=True):
-        """add or update a single user-specified header item
+    def add_update_info_item(self, element_name, new_element_value, clobber=True, addnew=True):
+        """add or update a single user-specified 'header' or 'general information' item
 
         Parameters
         ----------
