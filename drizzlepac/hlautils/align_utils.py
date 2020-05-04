@@ -3,6 +3,7 @@ import datetime
 import copy
 import sys
 import traceback
+import warnings
 
 from collections import OrderedDict
 
@@ -42,6 +43,10 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+                            
+NoDetectionsWarning = photutils.findstars.NoDetectionsWarning if \
+                        hasattr(photutils.findstars, 'NoDetectionsWarning') else \
+                        photutils.utils.NoDetectionsWarning 
 
 class AlignmentTable:
     def __init__(self, input_list, clobber=False, dqname='DQ',
@@ -281,9 +286,10 @@ class AlignmentTable:
                                                fit_label=fit_label)
 
         for table_index in range(0, len(self.filtered_table)):
-            self.filtered_table[table_index]['headerletFile'] = headerlet_dict[
-                self.filtered_table[table_index]['imageName']]
-
+            fname = self.filtered_table[table_index]['imageName']
+            row = self.filtered_table[table_index]
+            row['headerletFile'] = headerlet_dict[fname] if fname in headerlet_dict else "None"
+                
 
 class HAPImage:
     """Core class defining interface for each input exposure/product
@@ -540,13 +546,15 @@ class HAPImage:
                             'nlargest': alignment_pars['num_sources'],
                             'deblend': alignment_pars['deblend']}
 
-            seg_tab, segmap = amutils.extract_sources(sciarr, dqmask=dqmask,
-                                                      outroot=outroot,
-                                                      kernel=self.kernel,
-                                                      segment_threshold=self.threshold[chip],
-                                                      dao_threshold=self.bkg_rms_mean[chip],
-                                                      fwhm=self.kernel_fwhm,
-                                                      **extract_pars)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', NoDetectionsWarning)
+                seg_tab, segmap = amutils.extract_sources(sciarr, dqmask=dqmask,
+                                                          outroot=outroot,
+                                                          kernel=self.kernel,
+                                                          segment_threshold=self.threshold[chip],
+                                                          dao_threshold=self.bkg_rms_mean[chip],
+                                                          fwhm=self.kernel_fwhm,
+                                                          **extract_pars)
 
             self.catalog_table[chip] = seg_tab
 # ----------------------------------------------------------------------------------------------------------------------
@@ -847,21 +855,23 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
 
         # update header with new WCS info
         sci_extn = sci_ext_dict["{}".format(item.meta['chip'])]
+        hdr_name = "{}_{}-hlet.fits".format(image_name.rstrip(".fits"), wcs_name)
         updatehdr.update_wcs(hdulist, sci_extn, item.wcs, wcsname=wcs_name, reusename=True)
         hdulist[sci_extn].header['RMS_RA'] = item.meta['fit_info']['RMS_RA'].value
         hdulist[sci_extn].header['RMS_DEC'] = item.meta['fit_info']['RMS_DEC'].value
         hdulist[sci_extn].header['CRDER1'] = item.meta['fit_info']['RMS_RA'].value
         hdulist[sci_extn].header['CRDER2'] = item.meta['fit_info']['RMS_DEC'].value
         hdulist[sci_extn].header['NMATCHES'] = len(item.meta['fit_info']['ref_mag'])
-        hdulist[sci_extn].header['HDRNAME'] = "{}_{}".format(image_name.rstrip(".fits"), wcs_name)
-
+        hdulist[sci_extn].header['HDRNAME'] = hdr_name
+        
+        
         if chipctr == num_sci_ext:
             # Close updated flc.fits or flt.fits file
             hdulist.flush()
             hdulist.close()
 
             # Create headerlet
-            out_headerlet = headerlet.create_headerlet(image_name, hdrname=wcs_name, wcsname=wcs_name,
+            out_headerlet = headerlet.create_headerlet(image_name, hdrname=hdr_name, wcsname=wcs_name,
                                                        logging=False)
 
             # Update headerlet
@@ -880,7 +890,8 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
             out_headerlet_dict[image_name] = headerlet_filename
 
             # Attach headerlet as HDRLET extension
-            headerlet.attach_headerlet(image_name, headerlet_filename, logging=False)
+            if headerlet.verify_hdrname_is_unique(hdulist, hdr_name):
+                headerlet.attach_headerlet(image_name, headerlet_filename, logging=False)
 
         chipctr += 1
     return (out_headerlet_dict)
