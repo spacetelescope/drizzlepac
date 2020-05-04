@@ -603,7 +603,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 try:
                     wcsname = fits.getval(fname, 'wcsname', ext=1)
                     wcstype = updatehdr.interpret_wcsname_type(wcsname)
-                    hdrname = "{}_{}".format(fname.replace('.fits', ''), wcsname)
+                    hdrname = "{}_{}-hlet.fits".format(fname.replace('.fits', ''), wcsname)
                     headerlet.write_headerlet(fname, hdrname, output='flt',
                                               wcskey='PRIMARY',
                                               author="OPUS",

@@ -287,9 +287,10 @@ class AlignmentTable:
                                                fit_label=fit_label)
 
         for table_index in range(0, len(self.filtered_table)):
-            self.filtered_table[table_index]['headerletFile'] = headerlet_dict[
-                self.filtered_table[table_index]['imageName']]
-
+            fname = self.filtered_table[table_index]['imageName']
+            row = self.filtered_table[table_index]
+            row['headerletFile'] = headerlet_dict[fname] if fname in headerlet_dict else "None"
+                
 
 class HAPImage:
     """Core class defining interface for each input exposure/product
@@ -864,7 +865,7 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
 
         # update header with new WCS info
         sci_extn = sci_ext_dict["{}".format(item.meta['chip'])]
-        hdr_name = "{}_{}".format(image_name.rstrip(".fits"), wcs_name)
+        hdr_name = "{}_{}-hlet.fits".format(image_name.rstrip(".fits"), wcs_name)
         updatehdr.update_wcs(hdulist, sci_extn, item.wcs, wcsname=wcs_name, reusename=True)
         hdulist[sci_extn].header['RMS_RA'] = item.meta['fit_info']['RMS_RA'].value
         hdulist[sci_extn].header['RMS_DEC'] = item.meta['fit_info']['RMS_DEC'].value
