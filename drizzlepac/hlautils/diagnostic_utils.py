@@ -195,11 +195,11 @@ class HapDiagnostic(object):
             value is logical 'None'
 
         timestamp: str, optional
-            Universal .json file generation date and time (local timezone). Format: MM/DD/YYYYTHH:MM:SS
+            .json file generation date and time (local timezone). Format: MM/DD/YYYYTHH:MM:SS
             (Example: 05/04/2020T13:46:35). If not specified, default value is logical 'None'
 
         time_since_epoch : float
-            Universal .json file generation time. Format: Time (in seconds) elapsed since
+            .json file generation time. Format: Time (in seconds) elapsed since
             January 1, 1970, 00:00:00 (UTC). If not specified, default value is logical 'None'
 
         Returns
@@ -251,11 +251,11 @@ class HapDiagnostic(object):
             default value is logical 'None'
 
         timestamp: str, optional
-            Universal .json file generation date and time (local timezone). Format: MM/DD/YYYYTHH:MM:SS
+            .json file generation date and time (local timezone). Format: MM/DD/YYYYTHH:MM:SS
             (Example: 05/04/2020T13:46:35). If not specified, default value is logical 'None'
 
         time_since_epoch : float
-            Universal .json file generation time. Format: Time (in seconds) elapsed since
+            .json file generation time. Format: Time (in seconds) elapsed since
             January 1, 1970, 00:00:00 (UTC). If not specified, default value is logical 'None'
 
         Returns
