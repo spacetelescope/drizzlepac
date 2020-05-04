@@ -39,10 +39,12 @@ from astropy.coordinates import SkyCoord
 from astropy.io import ascii, fits
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
+from itertools import chain
 import numpy as np
 from scipy.spatial import KDTree
 
 # Local application imports
+from drizzlepac import util, wcs_functions
 from drizzlepac.hlautils import astrometric_utils as au
 import drizzlepac.hlautils.diagnostic_utils as du
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
@@ -653,6 +655,176 @@ def compare_photometry(drizzle_list, log_level=logutil.logging.NOTSET):
         del diagnostic_obj
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def report_wcs(total_product_list, log_level=logutil.logging.NOTSET):
+    """Report the WCS information for each exposure of a total data product.
+
+    Parameters
+    ----------
+    total_product_list: list of HAP TotalProduct objects, one object per instrument detector
+    (drizzlepac.hlautils.Product.TotalProduct)
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and
+        written to the .log file.  Default value is 'NOTSET'.
+    """
+    log.setLevel(log_level)
+
+    # Generate a separate JSON file for each total product (a total product
+    # consists of a single detector.  Each total product consists of one or
+    # more ExposureProduct objects.
+    for total_product in total_product_list:
+        total_drizzle_filename = total_product.drizzle_filename
+
+        instrument = total_product.instrument
+        detector = total_product.detector
+        filter_name = total_product.edp_list[0].filters
+        ipppss = total_product.edp_list[0].exposure_name[0:6]
+        exposure_name = total_product.edp_list[0].exposure_name
+        exposure_filename = total_product.edp_list[0].info
+
+        # Set up the diagnostic object
+        diagnostic_obj = du.HapDiagnostic()
+        diagnostic_obj.instantiate_from_hap_obj(total_product,
+                                                data_source="{}.report_wcs".format(__taskname__),
+                                                description="WCS information")
+
+        summary_dict = {'instrument': instrument, 'detector': detector,
+                        'exposure_name': exposure_name, 'filter_name': filter_name,
+                        'exposure_filename': exposure_filename}
+        diagnostic_obj.add_data_item(summary_dict, 'General Information')
+
+        # Construct the output JSON filename
+        json_filename = '_'.join([ipppss, detector, 'svm_wcs.json'])
+
+        # Loop over all the individual exposures in the list which comprise the total product
+        for edp_object in total_product.edp_list:
+            edp_filter = edp_object.filters
+
+            # For exposures with multiple science extensions (multiple chips),
+            # generate a combined WCS
+            num_sci_ext, extname = util.count_sci_extensions(edp_object.full_filename)
+            extname_list = []
+            for x in range(num_sci_ext):
+                extname_list.append((extname, x+1))
+
+            metawcs = wcs_functions.make_mosaic_wcs(edp_object.full_filename)
+
+            # Get information from the active WCS
+            active_wcs_dict = {'primary_wcsname': metawcs.wcs.name, 'wcs_info': {'crpix1': metawcs.wcs.crpix[0],
+                               'crpix2': metawcs.wcs.crpix[1],
+                               'crval1': metawcs.wcs.crval[0], 'crval2': metawcs.wcs.crval[1],
+                               'scale': metawcs.pscale, 'orientation': metawcs.orientat}}
+
+            diagnostic_obj.add_data_item(active_wcs_dict, 'Primary WCS Information')
+
+            # Determine the possible alternate WCS solutions in the header
+            dict_of_wcskeys_names = wcsutil.altwcs.wcsnames(edp_object.full_filename, ext=1)
+
+            # Ignore the OPUS ("O") WCS, as well as the duplicate of the active WCS
+            dict_of_wcskeys_names.pop('O')
+
+            reverse_dict = {}
+            for key, value in dict_of_wcskeys_names.items():
+                reverse_dict.setdefault(value, set()).add(key)
+            keys_with_dups = set(chain.from_iterable(values for key, values in reverse_dict.items() if len(values) > 1))
+
+            # Make a list of the keys which contain duplicate values...
+            if keys_with_dups:
+                list_keys = list(keys_with_dups)
+                # ...ignore the primary key as it is important, and...
+                list_keys.remove(' ')
+                # ...remove the duplicates.
+                for popkey in list_keys:
+                    dict_of_wcskeys_names.pop(popkey)
+
+            # The remaining dictionary items all need to share the same IDC base
+            # solution as the "active" solution in order to make a consistent comparison -
+            # remove any outliers.
+            loc = metawcs.wcs.name.find("_")
+            root_idc = metawcs.wcs.name[0:loc]
+
+            bad_match_key = []
+            for key, value in dict_of_wcskeys_names.items():
+                if root_idc in value:
+                    continue
+                else:
+                    bad_match_key.append(key)
+
+            for bad_key in bad_match_key:
+                dict_of_wcskeys_names.pop(bad_key)
+
+            log.info("Removed any bad WCS keys and names {}".format(dict_of_wcskeys_names))
+
+            # If there is anything left to compare, then do it.
+            if len(dict_of_wcskeys_names) > 1:
+
+                # Activate an alternate WCS in order to gather its information.
+                # First copy the original primary WCS to an alternate (in case there was
+                # not already a duplicate). Use key 'Z'.  *** FIX MDD Should check for Z in use.
+                wcsutil.altwcs.archiveWCS(edp_object.full_filename, ext=extname_list, wcskey='Z')
+
+                # Restore an alternate to be the primary WCS
+                for key, value in dict_of_wcskeys_names.items():
+                    if key != ' ':
+                        wcsutil.altwcs.restoreWCS(edp_object.full_filename, ext=extname_list, wcskey=key)
+                        alt_key = key
+                        alt_wcs_name = value
+
+                    # Create a metawcs for this alternate WCS
+                    alt_metawcs = wcs_functions.make_mosaic_wcs(edp_object.full_filename)
+
+                    # Get information from the alternate/active WCS
+                    alt_wcs_dict = {'alternate_wcsname': alt_wcs_name, 'wcs_info': {'crpix1': alt_metawcs.wcs.crpix[0],
+                                    'crpix2': alt_metawcs.wcs.crpix[1],
+                                    'crval1': alt_metawcs.wcs.crval[0], 'crval2': alt_metawcs.wcs.crval[1],
+                                    'scale': alt_metawcs.pscale, 'orientation': alt_metawcs.orientat}}
+                    diagnostic_obj.add_data_item(alt_wcs_dict, 'Alternate WCS Information')
+
+                    delta_wcs = metawcs.wcs.name + ' - ' + alt_wcs_name
+                    diff_wcs_dict = {'delta_wcsname': delta_wcs, 'wcs_info': {}}
+                    # if or wcs_key in active_wcs_dict.keys():
+                    #    if wcs_key.find('wcsname') != -1:
+                    #        continue
+                    #    print("wcs_key: {}".format(wcs_key))
+                    #    diff_wcs_dict['wcs_info'][wcs_key] = active_wcs_dict['wcs_info'][wcs_key] - alt_wcs_dict['wcs_info'][wcs_key]
+                    diff_wcs_dict['wcs_info']['crpix1'] = active_wcs_dict['wcs_info']['crpix1'] - alt_wcs_dict['wcs_info']['crpix1']
+                    diff_wcs_dict['wcs_info']['crpix2'] = active_wcs_dict['wcs_info']['crpix2'] - alt_wcs_dict['wcs_info']['crpix2']
+                    diff_wcs_dict['wcs_info']['crval1'] = active_wcs_dict['wcs_info']['crval1'] - alt_wcs_dict['wcs_info']['crval1']
+                    diff_wcs_dict['wcs_info']['crval2'] = active_wcs_dict['wcs_info']['crval2'] - alt_wcs_dict['wcs_info']['crval2']
+                    diff_wcs_dict['wcs_info']['scale'] = active_wcs_dict['wcs_info']['scale'] - alt_wcs_dict['wcs_info']['scale']
+                    diff_wcs_dict['wcs_info']['orientation'] = active_wcs_dict['wcs_info']['orientation'] - alt_wcs_dict['wcs_info']['orientation']
+
+                    diagnostic_obj.add_data_item(diff_wcs_dict, 'Delta (Primary WCS - Alternate WCS) Information')
+
+                    # Delete the original alternate WCS...
+                    wcsutil.altwcs.deleteWCS(edp_object.full_filename, ext=extname_list, wcskey=alt_key)
+
+                    # ... and archive the current primary with its original key
+                    wcsutil.altwcs.archiveWCS(edp_object.full_filename, ext=extname_list, wcskey=alt_key)
+
+                # When comparisons are done between the original primary WCS and all
+                # the alternates, restore the original primary WCS with key Z.
+                wcsutil.altwcs.restoreWCS(edp_object.full_filename, ext=extname_list, wcskey='Z')
+
+                # Delete the extra copy of the primary
+                wcsutil.altwcs.deleteWCS(edp_object.full_filename, ext=extname_list, wcskey='Z')
+
+                # Write out the results
+                # diagnostic_obj.add_data_item(summary_dict, 'WCS Information Primary WCS - Alternate WCS')
+            else:
+                log.info("This dataset only has the Primary and OPUS WCS values")
+
+        diagnostic_obj.write_json_file(json_filename)
+        log.info("WCS information Primary WCS - Alternate WCS.".format(json_filename))
+
+        # Clean up
+        del diagnostic_obj
+
+    # This routine does not return any values
 
 
 def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_gaia_sources=True,
