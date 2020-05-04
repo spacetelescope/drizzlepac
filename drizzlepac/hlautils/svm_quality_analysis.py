@@ -667,10 +667,8 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-# ----------------------------------------------------------------------------------------------------------------------
 
-
-def report_wcs(total_product_list, log_level=logutil.logging.NOTSET):
+def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=None, log_level=logutil.logging.NOTSET):
     """Report the WCS information for each exposure of a total data product.
 
     Parameters
@@ -701,7 +699,9 @@ def report_wcs(total_product_list, log_level=logutil.logging.NOTSET):
         diagnostic_obj = du.HapDiagnostic()
         diagnostic_obj.instantiate_from_hap_obj(total_product,
                                                 data_source="{}.report_wcs".format(__taskname__),
-                                                description="WCS information")
+                                                description="WCS information",
+                                                timestamp=json_timestamp,
+                                                time_since_epoch=json_time_since_epoch)
 
         summary_dict = {'instrument': instrument, 'detector': detector,
                         'exposure_name': exposure_name, 'filter_name': filter_name,
@@ -838,9 +838,13 @@ def report_wcs(total_product_list, log_level=logutil.logging.NOTSET):
     # This routine does not return any values
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_gaia_sources=True,
                          run_compare_ra_dec_crossmatches=True, run_characterize_gaia_distribution=True,
-                         run_compare_photometry=True, log_level=logutil.logging.NOTSET):
+                         run_compare_photometry=True, run_report_wcs=True,
+                         log_level=logutil.logging.NOTSET):
     """Run the quality analysis functions
 
     Parameters
@@ -862,6 +866,9 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
 
     run_compare_photometry : bool, optional
         Run 'compare_photometry' test? Default value is True.
+
+    run_report_wcs : bool, optional
+        Run 'report_wcs' test? Devault value is True.
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -920,6 +927,12 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             filter_drizzle_list.extend(temp_list)
         compare_photometry(filter_drizzle_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch, log_level=log_level)
 
+    # Report WCS info
+    if run_report_wcs:
+        report_wcs(total_obj_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+
+
+
 # ============================================================================================================
 
 
@@ -944,6 +957,8 @@ if __name__ == "__main__":
     parser.add_argument('-fgs', '--run_find_gaia_sources', required=False, action='store_true',
                         help="Determine the number of GAIA sources in the footprint of a specified HAP final "
                              "product image")
+    parser.add_argument('-wcs', '--run_report_wcs', required=False, action='store_true',
+                        help="Report the WCS information for each exposure of a total data product")
     parser.add_argument('-l', '--log_level', required=False, default='info',
                         choices=['critical', 'error', 'warning', 'info', 'debug'],
                         help='The desired level of verboseness in the log statements displayed on the screen '
@@ -987,6 +1002,7 @@ if __name__ == "__main__":
         user_args.run_compare_photometry = True
         user_args.run_compare_ra_dec_crossmatches = True
         user_args.run_find_gaia_sources = True
+        user_args.run_report_wcs = True
 
     # display status summary indicating which QA steps are turned on and which steps are turned off
     log.info("{}QA step run status".format(" "*(int(max_step_str_length/2)-6)))
@@ -1009,5 +1025,6 @@ if __name__ == "__main__":
                          run_compare_ra_dec_crossmatches=user_args.run_compare_ra_dec_crossmatches,
                          run_characterize_gaia_distribution=user_args.run_characterize_gaia_distribution,
                          run_compare_photometry=user_args.run_compare_photometry,
+                         run_report_wcs=user_args.run_report_wcs,
                          log_level=log_level)
 
