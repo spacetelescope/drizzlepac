@@ -3,8 +3,8 @@
 """ This script defines the HST Advanced Products (HAP) generation portion of the
     calibration pipeline.  This portion of the pipeline produces mosaic and catalog
     products. This script provides similar functionality as compared to the Hubble
-    Legacy Archive (HLA) pipeline in that it provides the overall sequence of
-    the processing.
+    Legacy Archive (HLA) pipeline in that it acts as the controller for the overall
+    sequence of processing.
 
     Note regarding logging...
     During instantiation of the log, the logging level is set to NOTSET which essentially
@@ -22,13 +22,15 @@
       variable, if found with an affirmative value, will turn on processing to generate a JSON
       file which contains the results of evaluating the quality of the generated products.
 
-    NOTE: In order for step 9 (run_sourcelist_comparison()) to run, the following environment variables need to be set:
+    NOTE: Step 9 compares the output HAP products to the Hubble Legacy Archive (HLA)
+    products. In order for step 9 (run_sourcelist_comparison()) to run, the following
+    environment variables need to be set:
     - HLA_CLASSIC_BASEPATH
     - HLA_BUILD_VER
 
-    Alternatively, if the HLA classic path is unavailable, The comparison can be run using locally stored HLA classic
-    files. The relevant HLA classic imagery and sourcelist files must be placed in a subdirectory of the current working
-    directory called 'hla_classic'.
+    Alternatively, if the HLA classic path is unavailable, The comparison can be run using
+    locally stored HLA classic files. The relevant HLA classic imagery and sourcelist files
+    must be placed in a subdirectory of the current working directory called 'hla_classic'.
 """
 import datetime
 import fnmatch
@@ -572,6 +574,9 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         if qa_switch:
             log.info("SVM Quality Assurance statistics have been requested for this dataset, {}.".format(input_filename))
             svm_qa.run_quality_analysis(total_obj_list, log_level=log_level)
+
+            # Compute WCS differences between the primary WCS and the alternates, except for OPUS WCS
+            svm_qa.report_wcs(total_obj_list)
 
         # 9: Compare results to HLA classic counterparts (if possible)
         if diagnostic_mode:

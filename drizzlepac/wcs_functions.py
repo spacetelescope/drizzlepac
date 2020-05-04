@@ -1022,7 +1022,7 @@ def readAltWCS(fobj, ext, wcskey=' ', verbose=False):
         header object with ONLY the keywords for specified alternate WCS
     """
     if isinstance(fobj, str):
-        fobj = fits.open(fobj, memmap=False)
+        fobj = pyfits.open(fobj, memmap=False)
 
     hdr = altwcs._getheader(fobj, ext)
     try:
