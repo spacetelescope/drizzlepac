@@ -323,11 +323,14 @@ class HapDiagnostic(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def add_update_info_item(self, element_name, new_element_value, clobber=True, addnew=True):
+    def add_update_info_item(self, section_name, element_name, new_element_value, clobber=True, addnew=True):
         """add or update a single user-specified 'header' or 'general information' item
 
         Parameters
         ----------
+        section_name : str
+            dictionary section to update. Choices are either 'header' or 'general information'.
+
         element_name : str
             Name of the header element to add or update
 
@@ -345,21 +348,24 @@ class HapDiagnostic(object):
         self.out_dict : Ordered dictionary
             dictionary that will ultimately be written to a json file
         """
-
-        if element_name in self.out_dict['header'].keys():
-            if clobber:
-                log.info("{}: {} -> {} value update successful.".format(element_name,
-                                                                        self.out_dict['header'][element_name],
-                                                                        new_element_value))
-                self.out_dict['header'][element_name] = new_element_value
+        if section_name in ['header', 'general information']:
+            if element_name in self.out_dict[section_name].keys():
+                if clobber:
+                    log.info("{}: {} -> {} value update successful.".format(element_name,
+                                                                            self.out_dict[section_name][element_name],
+                                                                            new_element_value))
+                    self.out_dict['header'][element_name] = new_element_value
+                else:
+                    log.warning("{} element '{}' already exists. Update NOT performed.".format(section_name, element_name))
             else:
-                log.warning("Header element '{}' already exists. Update NOT performed.".format(element_name))
+                if addnew:
+                    self.out_dict[section_name][element_name] = new_element_value
+                    log.info("New element {} = {} successfully added to {}".format(element_name, new_element_value, section_name))
+                else:
+                    log.warning("Unable to add new element {} = {} to {}".format(element_name, new_element_value, section_name))
         else:
-            if addnew:
-                self.out_dict['header'][element_name] = new_element_value
-                log.info("New element {} = {} successfully added to header".format(element_name, new_element_value))
-            else:
-                log.warning("Unable to add new element {} = {} to header".format(element_name, new_element_value))
+            log.warning("**NO UPDATES PERFORMED** Only the 'header' or 'general information' sections that can be updated.")
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
