@@ -1063,7 +1063,14 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
 def restore_pipeline_default(files):
     """Restore pipeline-default IDC_* WCS as PRIMARY WCS in all input files"""
     updatewcs.updatewcs(files, use_db=False)
-
+    # Remove HDRNAME, if added by some other code.  
+    #  This keyword only needs to be included in the headerlet file itself.
+    for f in files:
+        with fits.open(f, mode='update') as fhdu:
+            num_sci = fileutil.countExtn(fhdu)
+            for sciext in range(num_sci):
+                if 'hdrname' in fhdu[('sci', sciext + 1)].header:
+                del fhdu[('sci', sciext + 1)].header['hdrname']
 
 # Function written from (essentially) first principles
 def old_restore_pipeline_default(files):
