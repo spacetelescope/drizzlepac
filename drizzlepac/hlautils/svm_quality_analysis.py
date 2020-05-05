@@ -900,7 +900,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_hla_sourcelist_comparision(total_list, diagnostic_mode = False, log_level=logutil.logging.INFO):
+def run_hla_sourcelist_comparision(total_list, diagnostic_mode = False, log_level=logutil.logging.NOTSET):
     """ This subroutine automates execution of drizzlepac/devutils/comparison_tools/compare_sourcelists.py to
     compare HAP-generated filter catalogs with their HLA classic counterparts.
 
@@ -908,9 +908,9 @@ def run_hla_sourcelist_comparision(total_list, diagnostic_mode = False, log_leve
     - HLA_CLASSIC_BASEPATH
     - HLA_BUILD_VER
 
-    Alternatively, if the HLA classic path is unavailable, The comparison can be run using locally stored HLA classic
-    files. The relevant HLA classic imagery and sourcelist files must be placed in a subdirectory of the current working
-    directory called 'hla_classic'.
+    Alternatively, if the HLA classic path is unavailable, The comparison can be run using locally stored HLA
+    classic files. The relevant HLA classic imagery and sourcelist files must be placed in a subdirectory of
+    the current working directory called 'hla_classic'.
 
     Parameters
     ----------
@@ -923,8 +923,8 @@ def run_hla_sourcelist_comparision(total_list, diagnostic_mode = False, log_leve
         create intermediate diagnostic files? Default value is False.
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 20, or 'info'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
 
     RETURNS
     -------
@@ -937,7 +937,9 @@ def run_hla_sourcelist_comparision(total_list, diagnostic_mode = False, log_leve
         combo_comp_pdf_list = []
         if hla_classic_basepath and hla_build_ver and os.path.exists(hla_classic_basepath):
             hla_cassic_basepath = os.path.join(hla_classic_basepath, tot_obj.instrument, hla_build_ver)
-            hla_classic_path = os.path.join(hla_cassic_basepath, tot_obj.prop_id, tot_obj.prop_id + "_" + tot_obj.obset_id)  # Generate path to HLA classic products
+            hla_classic_path = os.path.join(hla_cassic_basepath,
+                                            tot_obj.prop_id,
+                                            tot_obj.prop_id + "_" + tot_obj.obset_id)  # Generate path to HLA classic products
         elif os.path.exists(os.path.join(os.getcwd(), "hla_classic")):  # For local testing
             hla_classic_basepath = os.path.join(os.getcwd(), "hla_classic")
             hla_classic_path = hla_classic_basepath
@@ -945,7 +947,9 @@ def run_hla_sourcelist_comparision(total_list, diagnostic_mode = False, log_leve
             return  # bail out if HLA classic path can't be found.
         for filt_obj in tot_obj.fdp_list:
             hap_imgname = filt_obj.drizzle_filename
-            hla_imgname = glob.glob("{}/{}{}_dr*.fits".format(hla_classic_path, filt_obj.basename, filt_obj.filters))[0]
+            hla_imgname = glob.glob("{}/{}{}_dr*.fits".format(hla_classic_path,
+                                                              filt_obj.basename,
+                                                              filt_obj.filters))[0]
             if not os.path.exists(hap_imgname) or not os.path.exists(hla_imgname):  # Skip filter if one or both of the images can't be found
                 continue
             for hap_sourcelist_name in [filt_obj.point_cat_filename, filt_obj.segment_cat_filename]:
@@ -956,8 +960,10 @@ def run_hla_sourcelist_comparision(total_list, diagnostic_mode = False, log_leve
                     hla_classic_cat_type = "sex"
                     plotfile_prefix = filt_obj.product_basename + "_segment"
                 if hla_classic_basepath and hla_build_ver and os.path.exists(hla_classic_basepath):
-                    hla_sourcelist_name = "{}/logs/{}{}_{}phot.txt".format(hla_classic_path, filt_obj.basename,
-                                                                           filt_obj.filters, hla_classic_cat_type)
+                    hla_sourcelist_name = "{}/logs/{}{}_{}phot.txt".format(hla_classic_path,
+                                                                           filt_obj.basename,
+                                                                           filt_obj.filters,
+                                                                           hla_classic_cat_type)
                 else:
                     hla_sourcelist_name = "{}/{}{}_{}phot.txt".format(hla_classic_path, filt_obj.basename,
                                                                       filt_obj.filters, hla_classic_cat_type)
@@ -965,19 +971,24 @@ def run_hla_sourcelist_comparision(total_list, diagnostic_mode = False, log_leve
                     continue
 
                 # convert HLA Classic RA and Dec values to HAP reference frame so the RA and Dec comparisons are correct
-                updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name, hap_imgname, hla_classic_cat_type, log_level)
+                updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name,
+                                                                         hap_imgname,
+                                                                         hla_classic_cat_type,
+                                                                         log_level)
                 log.info("HAP image:                   {}".format(os.path.basename(hap_imgname)))
                 log.info("HLA Classic image:           {}".format(os.path.basename(hla_imgname)))
                 log.info("HAP catalog:                 {}".format(os.path.basename(hap_sourcelist_name)))
                 log.info("HLA Classic catalog:         {}".format(os.path.basename(updated_hla_sourcelist_name)))
 
                 # once all file exist checks are passed, execute sourcelist comparision
-                return_status = csl.comparesourcelists(slNames=[updated_hla_sourcelist_name,hap_sourcelist_name],
+                return_status = csl.comparesourcelists(slNames=[updated_hla_sourcelist_name,
+                                                                hap_sourcelist_name],
                                                        imgNames=[hla_imgname, hap_imgname],
                                                        good_flag_sum=255,
                                                        plotGen="file",
                                                        plotfile_prefix=plotfile_prefix,
-                                                       output_json_filename=hap_sourcelist_name.replace(".ecsv", "_svm_compare_sourcelists.json"),
+                                                       output_json_filename=hap_sourcelist_name.replace(".ecsv",
+                                                                                                        "_svm_compare_sourcelists.json"),
                                                        verbose=True,
                                                        log_level=log_level,
                                                        debugMode=diagnostic_mode)
@@ -1212,7 +1223,7 @@ if __name__ == "__main__":
                         help="Determine the number of GAIA sources in the footprint of a specified HAP final "
                              "product image")
     parser.add_argument('-hla', '--run_compare_hla_sourcelists', required=False, action='store_true',
-                        help="Compare HAP sourcelists to their HLA classic counterparts (if possible)")
+                        help="Compare HAP sourcelists to their HLA classic counterparts")
     parser.add_argument('-wcs', '--run_report_wcs', required=False, action='store_true',
                         help="Report the WCS information for each exposure of a total data product")
     parser.add_argument('-l', '--log_level', required=False, default='info',
@@ -1281,7 +1292,7 @@ if __name__ == "__main__":
                          run_find_gaia_sources=user_args.run_find_gaia_sources,
                          run_compare_ra_dec_crossmatches=user_args.run_compare_ra_dec_crossmatches,
                          run_characterize_gaia_distribution=user_args.run_characterize_gaia_distribution,
-                         run_compare_hla_sourcelists = user_args.run_compare_hla_sourcelists,
+                         run_compare_hla_sourcelists=user_args.run_compare_hla_sourcelists,
                          run_compare_photometry=user_args.run_compare_photometry,
                          run_report_wcs=user_args.run_report_wcs,
                          log_level=log_level)
