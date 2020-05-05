@@ -48,6 +48,7 @@ from scipy.spatial import KDTree
 
 # Local application imports
 from drizzlepac import util, wcs_functions
+from drizzlepac.hlautils import hla_flag_filter
 from drizzlepac.hlautils import astrometric_utils as au
 import drizzlepac.hlautils.diagnostic_utils as du
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
