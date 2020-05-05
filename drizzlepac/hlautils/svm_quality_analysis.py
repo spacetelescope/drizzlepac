@@ -901,7 +901,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_hla_sourcelist_comparision(total_list, diagnostic_mode = False, log_level=logutil.logging.NOTSET):
+def run_hla_sourcelist_comparison(total_list, diagnostic_mode = False, log_level=logutil.logging.NOTSET):
     """ This subroutine automates execution of drizzlepac/devutils/comparison_tools/compare_sourcelists.py to
     compare HAP-generated filter catalogs with their HLA classic counterparts.
 
@@ -1161,11 +1161,12 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
                                       json_time_since_epoch=json_time_since_epoch, log_level=log_level)
 
     # Compare HAP sourcelists to their HLA Classic counterparts
-    if log_level == logutil.logging.DEBUG:
-        diag_mode = True
-    else:
-        diag_mode = False
-    run_hla_sourcelist_comparision(total_obj_list, diagnostic_mode=diag_mode, log_level=log_level)
+    if run_compare_hla_sourcelists:
+        if log_level == logutil.logging.DEBUG:
+            diag_mode = True
+        else:
+            diag_mode = False
+        run_hla_sourcelist_comparison(total_obj_list, diagnostic_mode=diag_mode, log_level=log_level)
 
     # Get point/segment cross-match RA/Dec statistics
     if run_compare_ra_dec_crossmatches:
