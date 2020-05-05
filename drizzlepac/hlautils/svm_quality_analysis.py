@@ -29,6 +29,7 @@ https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 import argparse
 import collections
 from datetime import datetime
+import glob
 import json
 import os
 import pdb
@@ -50,6 +51,7 @@ from drizzlepac import util, wcs_functions
 from drizzlepac.hlautils import astrometric_utils as au
 import drizzlepac.hlautils.diagnostic_utils as du
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
+from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
 from stsci.tools import logutil
 from stwcs import wcsutil
 from stwcs.wcsutil import HSTWCS
@@ -898,10 +900,188 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def run_hla_sourcelist_comparision(total_list, diagnostic_mode = False, log_level=logutil.logging.INFO):
+    """ This subroutine automates execution of drizzlepac/devutils/comparison_tools/compare_sourcelists.py to
+    compare HAP-generated filter catalogs with their HLA classic counterparts.
+
+    NOTE: In order for this subroutine to run, the following environment variables need to be set:
+    - HLA_CLASSIC_BASEPATH
+    - HLA_BUILD_VER
+
+    Alternatively, if the HLA classic path is unavailable, The comparison can be run using locally stored HLA classic
+    files. The relevant HLA classic imagery and sourcelist files must be placed in a subdirectory of the current working
+    directory called 'hla_classic'.
+
+    Parameters
+    ----------
+    total_list: list
+        List of TotalProduct objects, one object per instrument/detector combination is
+        a visit.  The TotalProduct objects are comprised of FilterProduct and ExposureProduct
+        objects.
+
+    diagnostic_mode : Boolean, optional.
+        create intermediate diagnostic files? Default value is False.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
+
+    RETURNS
+    -------
+    Nothing.
+    """
+    # get HLA classic path details from envroment variables
+    hla_classic_basepath = os.getenv('HLA_CLASSIC_BASEPATH')
+    hla_build_ver = os.getenv("HLA_BUILD_VER")
+    for tot_obj in total_list:
+        combo_comp_pdf_list = []
+        if hla_classic_basepath and hla_build_ver and os.path.exists(hla_classic_basepath):
+            hla_cassic_basepath = os.path.join(hla_classic_basepath, tot_obj.instrument, hla_build_ver)
+            hla_classic_path = os.path.join(hla_cassic_basepath, tot_obj.prop_id, tot_obj.prop_id + "_" + tot_obj.obset_id)  # Generate path to HLA classic products
+        elif os.path.exists(os.path.join(os.getcwd(), "hla_classic")):  # For local testing
+            hla_classic_basepath = os.path.join(os.getcwd(), "hla_classic")
+            hla_classic_path = hla_classic_basepath
+        else:
+            return  # bail out if HLA classic path can't be found.
+        for filt_obj in tot_obj.fdp_list:
+            hap_imgname = filt_obj.drizzle_filename
+            hla_imgname = glob.glob("{}/{}{}_dr*.fits".format(hla_classic_path, filt_obj.basename, filt_obj.filters))[0]
+            if not os.path.exists(hap_imgname) or not os.path.exists(hla_imgname):  # Skip filter if one or both of the images can't be found
+                continue
+            for hap_sourcelist_name in [filt_obj.point_cat_filename, filt_obj.segment_cat_filename]:
+                if hap_sourcelist_name.endswith("point-cat.ecsv"):
+                    hla_classic_cat_type = "dao"
+                    plotfile_prefix = filt_obj.product_basename + "_point"
+                else:
+                    hla_classic_cat_type = "sex"
+                    plotfile_prefix = filt_obj.product_basename + "_segment"
+                if hla_classic_basepath and hla_build_ver and os.path.exists(hla_classic_basepath):
+                    hla_sourcelist_name = "{}/logs/{}{}_{}phot.txt".format(hla_classic_path, filt_obj.basename,
+                                                                           filt_obj.filters, hla_classic_cat_type)
+                else:
+                    hla_sourcelist_name = "{}/{}{}_{}phot.txt".format(hla_classic_path, filt_obj.basename,
+                                                                      filt_obj.filters, hla_classic_cat_type)
+                if not os.path.exists(hap_sourcelist_name) or not os.path.exists(hla_sourcelist_name):  # Skip catalog type if one or both of the catalogs can't be found
+                    continue
+
+                # convert HLA Classic RA and Dec values to HAP reference frame so the RA and Dec comparisons are correct
+                updated_hla_sourcelist_name = correct_hla_classic_ra_dec(hla_sourcelist_name, hap_imgname, hla_classic_cat_type, log_level)
+                log.info("HAP image:                   {}".format(os.path.basename(hap_imgname)))
+                log.info("HLA Classic image:           {}".format(os.path.basename(hla_imgname)))
+                log.info("HAP catalog:                 {}".format(os.path.basename(hap_sourcelist_name)))
+                log.info("HLA Classic catalog:         {}".format(os.path.basename(updated_hla_sourcelist_name)))
+
+                # once all file exist checks are passed, execute sourcelist comparision
+                return_status = csl.comparesourcelists(slNames=[updated_hla_sourcelist_name,hap_sourcelist_name],
+                                                       imgNames=[hla_imgname, hap_imgname],
+                                                       good_flag_sum=255,
+                                                       plotGen="file",
+                                                       plotfile_prefix=plotfile_prefix,
+                                                       output_json_filename=hap_sourcelist_name.replace(".ecsv", "_svm_compare_sourcelists.json"),
+                                                       verbose=True,
+                                                       log_level=log_level,
+                                                       debugMode=diagnostic_mode)
+                combo_comp_pdf_filename = "{}_comparision_plots.pdf".format(plotfile_prefix)
+                if os.path.exists(combo_comp_pdf_filename):
+                    combo_comp_pdf_list.append(combo_comp_pdf_filename)
+        if len(combo_comp_pdf_list) > 0:  # combine all plots generated by compare_sourcelists.py for this total object into a single pdf file
+            total_combo_comp_pdf_filename = "{}_svm_comparision_plots.pdf".format(tot_obj.drizzle_filename[:-9].replace("_total", ""))
+            csl.pdf_merger(total_combo_comp_pdf_filename, combo_comp_pdf_list)
+            log.info("Sourcelist comparison plots saved to file {}.".format(total_combo_comp_pdf_filename))
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, hap_imgname, cattype, log_level):
+    """
+    This subroutine runs Rick White's read_hla_catalog script to convert the RA and Dec values from a HLA Classic
+    sourcelist into same reference frame used by the HAP sourcelists. Additionally, the new RA and Dec values
+    are then transformed to produce X and Y coordinates that are in the HAP image frame of reference. A new
+    version of the input file with the converted X and Y and RA and Dec values is written to the current
+    working directory named <INPUT SOURCELIST NAME>_corrected.txt.
+
+    Parameters
+    ----------
+    orig_hla_classic_sl_name : string
+        name of the HLA Classic sourcelist whose RA and Dec values will be converted.
+
+    hap_imgname : string
+        name of HAP image. The WCS info from this image will be used to transform the updated RA and DEC
+        values to new X and Y values in the this image's frame of reference
+
+    cattype : string
+        HLA Classic catalog type. Either 'sex' (source extractor) or 'dao' (DAOphot).
+
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
+    Returns
+    -------
+    mod_sl_name : string
+        Name of the new version of the input file with the converted RA and Dec values
+    """
+    try:
+        mod_sl_name = os.path.basename(orig_hla_classic_sl_name)
+
+        # Execute read_hla_catalog.read_hla_catalog() to convert RA and Dec values
+        dataset = mod_sl_name.replace("_{}phot.txt".format(cattype), "")
+        modcat = read_hla_catalog.read_hla_catalog(dataset, cattype=cattype, applyomega=True, multiwave=False,
+                                                   verbose=True, trim=False, log_level=log_level)
+        # sort catalog with updated RA, DEC values so that ordering is the same as the uncorrected table and everything maps correclty.
+        if cattype == "dao":
+            sortcoltitle = "ID"
+            x_coltitle = "X-Center"
+            y_coltitle = "Y-Center"
+        if cattype == "sex":
+            sortcoltitle = "NUMBER"
+            x_coltitle = "X-IMAGE"
+            y_coltitle = "Y-IMAGE"
+
+        modcat.sort(sortcoltitle)
+
+        # Identify RA and Dec column names in the new catalog table object
+        for ra_col_title in ["ra", "RA", "ALPHA_J2000", "alpha_j2000"]:
+            if ra_col_title in modcat.colnames:
+                true_ra_col_title = ra_col_title
+                log.debug("RA Col_name: {}".format(true_ra_col_title))
+                break
+        for dec_col_title in ["dec", "DEC", "Dec", "DELTA_J2000", "delta_j2000"]:
+            if dec_col_title in modcat.colnames:
+                true_dec_col_title = dec_col_title
+                log.debug("DEC Col_name: {}".format(true_dec_col_title))
+                break
+
+        # transform new RA and Dec values into X and Y values in the HAP reference frame
+        ra_dec_values = np.stack((modcat[true_ra_col_title], modcat[true_dec_col_title]), axis=1)
+        new_xy_values = hla_flag_filter.rdtoxy(ra_dec_values, hap_imgname, '[sci,1]')
+
+        # get HLA Classic sourcelist data, replace existing RA and Dec column data with the converted RA and Dec column data
+        cat = Table.read(orig_hla_classic_sl_name, format='ascii')
+        cat['RA'] = modcat[true_ra_col_title]
+        cat['DEC'] = modcat[true_dec_col_title]
+
+        # update existing X and Y values with new X and Y values transformed from new RA and Dec values.
+        cat[x_coltitle] = new_xy_values[:, 0]
+        cat[y_coltitle] = new_xy_values[:, 1]
+
+        # Write updated version of HLA Classic catalog to current working directory
+        mod_sl_name = mod_sl_name.replace(".txt", "_corrected.txt")
+        log.info("Corrected version of HLA Classic file {} with new X, Y and RA, Dec values written to {}.".format(os.path.basename(orig_hla_classic_sl_name), mod_sl_name))
+        cat.write(mod_sl_name, format="ascii.csv")
+        return mod_sl_name
+
+    except Exception:
+        log.warning("There was a problem converting the RA and Dec values. Using original uncorrected HLA Classic sourcelist instead.")
+        log.warning("Comparisons may be of questionable quality.")
+        return orig_hla_classic_sl_name
+
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_gaia_sources=True,
-                         run_compare_ra_dec_crossmatches=True, run_characterize_gaia_distribution=True,
-                         run_compare_photometry=True, run_report_wcs=True,
-                         log_level=logutil.logging.NOTSET):
+                         run_compare_hla_sourcelists=True, run_compare_ra_dec_crossmatches=True,
+                         run_characterize_gaia_distribution=True, run_compare_photometry=True,
+                         run_report_wcs=True, log_level=logutil.logging.NOTSET):
     """Run the quality analysis functions
 
     Parameters
@@ -914,6 +1094,9 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
 
     run_find_gaia_sources : bool, optional
         Run 'find_gaia_sources' test? Default value is True.
+
+    run_compare_hla_sourcelists : bool, optional
+        Run 'run_compare_sourcelists' test? Default value is True.
 
     run_compare_ra_dec_crossmatches : bool, optional
         Run 'compare_ra_dec_crossmatches' test? Default value is True.
@@ -964,6 +1147,13 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
                 for exp_obj in filter_obj.edp_list:
                     find_gaia_sources(exp_obj, json_timestamp=json_timestamp,
                                       json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+
+    # Compare HAP sourcelists to their HLA Classic counterparts
+    if log_level == logutil.logging.DEBUG:
+        diag_mode = True
+    else:
+        diag_mode = False
+    run_hla_sourcelist_comparision(total_obj_list, diagnostic_mode=diag_mode, log_level=log_level)
 
     # Get point/segment cross-match RA/Dec statistics
     if run_compare_ra_dec_crossmatches:
@@ -1021,6 +1211,8 @@ if __name__ == "__main__":
     parser.add_argument('-fgs', '--run_find_gaia_sources', required=False, action='store_true',
                         help="Determine the number of GAIA sources in the footprint of a specified HAP final "
                              "product image")
+    parser.add_argument('-hla', '--run_compare_hla_sourcelists', required=False, action='store_true',
+                        help="Compare HAP sourcelists to their HLA classic counterparts (if possible)")
     parser.add_argument('-wcs', '--run_report_wcs', required=False, action='store_true',
                         help="Report the WCS information for each exposure of a total data product")
     parser.add_argument('-l', '--log_level', required=False, default='info',
@@ -1064,6 +1256,7 @@ if __name__ == "__main__":
         user_args.run_characterize_gaia_distribution = True
         user_args.run_compare_num_sources = True
         user_args.run_compare_photometry = True
+        user_args.run_compare_hla_sourcelists = True
         user_args.run_compare_ra_dec_crossmatches = True
         user_args.run_find_gaia_sources = True
         user_args.run_report_wcs = True
@@ -1088,6 +1281,7 @@ if __name__ == "__main__":
                          run_find_gaia_sources=user_args.run_find_gaia_sources,
                          run_compare_ra_dec_crossmatches=user_args.run_compare_ra_dec_crossmatches,
                          run_characterize_gaia_distribution=user_args.run_characterize_gaia_distribution,
+                         run_compare_hla_sourcelists = user_args.run_compare_hla_sourcelists,
                          run_compare_photometry=user_args.run_compare_photometry,
                          run_report_wcs=user_args.run_report_wcs,
                          log_level=log_level)
