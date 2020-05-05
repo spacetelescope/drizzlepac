@@ -356,7 +356,15 @@ def computeFlagStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, 
                 else:
                     stat_text_blob += "\n"
             stat_text_blob += "\n" + timestamp + "\n"
-            stat_text_blob += "Comparison Sourcelist: {}\nReference Sourcelist:  {}".format(catalog_names[1], catalog_names[0])
+            if len(catalog_names[1]) > 80:
+                out_compcat_filename = "{}\n{}{}".format(catalog_names[1][:80], " "*23, catalog_names[1][80:])
+            else:
+                out_compcat_filename = catalog_names[1]
+            if len(catalog_names[0]) > 80:
+                out_refcat_filename = "{}\n{}{}".format(catalog_names[0][:80], " "*23, catalog_names[0][80:])
+            else:
+                out_refcat_filename = catalog_names[0]
+            stat_text_blob += "Comparison Sourcelist: {}\nReference Sourcelist:  {}".format(out_compcat_filename, out_refcat_filename)
             fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center", va="center",
                      multialignment="left", family="monospace")
             fig.savefig(stat_file_name)
@@ -562,7 +570,15 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
                 else:
                     stat_text_blob += "\n"
             stat_text_blob += "\n" + timestamp + "\n"
-            stat_text_blob += "Comparison Sourcelist: {}\nReference Sourcelist:  {}".format(catalog_names[1], catalog_names[0])
+            if len(catalog_names[1]) > 80:
+                out_compcat_filename = "{}\n{}{}".format(catalog_names[1][:80], " "*23, catalog_names[1][80:])
+            else:
+                out_compcat_filename = catalog_names[1]
+            if len(catalog_names[0]) > 80:
+                out_refcat_filename = "{}\n{}{}".format(catalog_names[0][:80], " "*23, catalog_names[0][80:])
+            else:
+                out_refcat_filename = catalog_names[0]
+            stat_text_blob += "Comparison Sourcelist: {}\nReference Sourcelist:  {}".format(out_compcat_filename, out_refcat_filename)
             fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center", va="center",
                      multialignment="left", family="monospace")
             fig.savefig(plotFileName.replace(".pdf", "_stats.pdf"))
@@ -1407,7 +1423,16 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
                 stat_text_blob += "\n"
 
         stat_text_blob += "\n\nGenerated {}\n".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
-        stat_text_blob += "Comparison Sourcelist: {}\nReference Sourcelist:  {}".format(slNames[1], slNames[0])
+        if len(slNames[1]) > 80:
+            out_compcat_filename = "{}\n{}{}".format(slNames[1][:80], " " * 23, slNames[1][80:])
+        else:
+            out_compcat_filename = slNames[1]
+        if len(slNames[0]) > 80:
+            out_refcat_filename = "{}\n{}{}".format(slNames[0][:80], " " * 23, slNames[0][80:])
+        else:
+            out_refcat_filename = slNames[0]
+        stat_text_blob += "Comparison Sourcelist: {}\nReference Sourcelist:  {}".format(out_compcat_filename,
+                                                                                        out_refcat_filename)
         fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center", va="center",
                  multialignment="left", family="monospace")
         fig.savefig(stat_summary_file_name)
