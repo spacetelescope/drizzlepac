@@ -1118,6 +1118,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj.add_update_info_item("header", "reference catalog filename", slNames[0])
             diag_obj.add_update_info_item("header", "comparison catalog filename", slNames[1])
 
+
         # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
         refData, compData = slFiles2dataTables(slNames)
         log.info("Valid reference data columns:   {}".format(list(refData.keys())))
@@ -1140,6 +1141,22 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         # 2b: create mask based on flag values
         matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img)
         bitmask = make_flag_mask(matched_values, good_flag_sum, missing_mask)
+
+        # 2c: add "cross match details" section to optionally created json file
+        if output_json_filename:
+            cross_match_details = collections.OrderedDict()
+            cross_match_details["reference catalog filename"] = slNames[0]
+            cross_match_details["comparison catalog filename"] = slNames[1]
+            cross_match_details["reference catalog length"] = slLengths[0]
+            cross_match_details["comparison catalog length"] = slLengths[1]
+            cross_match_details["number of cross-matches"] = len(matching_lines_ref)
+            cross_match_details["reference catalog crossmatch percentage"] = (float(len(matching_lines_ref))/float(slLengths[0]))*100.0
+            cross_match_details["comparison catalog crossmatch percentage"] = (float(
+                len(matching_lines_ref)) / float(slLengths[1])) * 100.0
+            cross_match_details["reference catalog reference frame"] = fits.getval(imgNames[0], "radesys", ext=('sci', 1)).lower()
+            cross_match_details["comparison catalog reference frame"] = fits.getval(imgNames[1], "radesys", ext=('sci', 1)).lower()
+
+            diag_obj.add_data_item(cross_match_details,"Cross-match details")
 
     # 3: Compute and display statistics on X position differences for matched sources
     if input_json_filename:
