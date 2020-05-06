@@ -118,6 +118,7 @@ Classes and Functions
 ---------------------
 """
 import argparse
+import collections
 from datetime import datetime
 import os
 import pdb
@@ -1420,8 +1421,30 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     for log_line in log_output_string_list:
         log.info(log_line)
 
-    if plotGen == "file":
+    # optionally write comparision statistics to json file
+    if output_json_filename:
+        for catalog_colname in regressionTestResults.keys():
+            data_table_dict = collections.OrderedDict()
+            parse_result_line = regressionTestResults[catalog_colname].split()
+            if catalog_colname is "Source Flagging":
+                key_list = ['Comparison Test Status', 'Percentage of all matched sources with flag value differences']
+                units = "unitless"
+            else:
+                key_list = ['Comparison Test Status', '3x3 Sigma-Clipped Mean', '3x3 Sigma-Clipped Median',
+                            '3x3 Sigma-Clipped Standard Deviation',
+                            'Percent of all matched valeus within 3 sigma of mean',
+                            'Percent of all matched valeus beyond 3 sigma of mean']
+                units = x_axis_units_dict[catalog_colname]
+            data_table_dict["Units"] = units
+            for dtd_enum_item in enumerate(key_list):
+                results_idx = dtd_enum_item[0]
+                results_coltitle = dtd_enum_item[1]
+                data_table_dict[results_coltitle] = parse_result_line[results_idx]
+            data_item_name = "{} RESULTS".format(catalog_colname.upper())
+            diag_obj.add_data_item(data_table_dict, data_item_name)
+            log.debug("Added '{}' data section to json output dictionary".format(data_item_name))
 
+    if plotGen == "file":
         # generate final overall summary pdf page
         stat_summary_file_name = "stats_summary.pdf"
         if plotfile_prefix is not None:
