@@ -1006,7 +1006,8 @@ def round2ArbatraryBase(value, direction, roundingBase):
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
 def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen=None, plotfile_prefix=None,
-                       verbose=False, log_level=logutil.logging.NOTSET, debugMode=False, input_json_filename=None,
+                       verbose=False, json_timestamp=None, json_time_since_epoch=None,
+                       log_level=logutil.logging.NOTSET, debugMode=False, input_json_filename=None,
                        output_json_filename=None):
     """Main calling subroutine to compare sourcelists.
 
@@ -1029,6 +1030,16 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
 
     verbose : bool, optional
         display verbose output? Default value is False.
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
@@ -1099,7 +1110,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
             diag_obj.instantiate_from_fitsfile(imgNames[1],
                                                data_source=__taskname__,
-                                               description="matched ref and comp values.")
+                                               description="matched ref and comp values.",
+                                               timestamp=json_timestamp,
+                                               time_since_epoch=json_time_since_epoch)
             # add reference and comparision catalog filenames as header elements
             diag_obj.add_update_info_item("header", "reference catalog filename", slNames[0])
             diag_obj.add_update_info_item("header", "comparison catalog filename", slNames[1])

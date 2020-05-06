@@ -901,7 +901,8 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_hla_sourcelist_comparison(total_list, diagnostic_mode = False, log_level=logutil.logging.NOTSET):
+def run_hla_sourcelist_comparison(total_list, diagnostic_mode=False, json_timestamp=None,
+                                  json_time_since_epoch=None, log_level=logutil.logging.NOTSET):
     """ This subroutine automates execution of drizzlepac/devutils/comparison_tools/compare_sourcelists.py to
     compare HAP-generated filter catalogs with their HLA classic counterparts.
 
@@ -922,6 +923,16 @@ def run_hla_sourcelist_comparison(total_list, diagnostic_mode = False, log_level
 
     diagnostic_mode : Boolean, optional.
         create intermediate diagnostic files? Default value is False.
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -992,6 +1003,8 @@ def run_hla_sourcelist_comparison(total_list, diagnostic_mode = False, log_level
                                                                                                         "_svm_compare_sourcelists.json"),
                                                        verbose=True,
                                                        log_level=log_level,
+                                                       json_timestamp=json_timestamp,
+                                                       json_time_since_epoch=json_time_since_epoch,
                                                        debugMode=diagnostic_mode)
                 combo_comp_pdf_filename = "{}_comparision_plots.pdf".format(plotfile_prefix)
                 if os.path.exists(combo_comp_pdf_filename):
@@ -1166,7 +1179,11 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             diag_mode = True
         else:
             diag_mode = False
-        run_hla_sourcelist_comparison(total_obj_list, diagnostic_mode=diag_mode, log_level=log_level)
+        run_hla_sourcelist_comparison(total_obj_list,
+                                      diagnostic_mode=diag_mode,
+                                      json_timestamp=json_timestamp,
+                                      json_time_since_epoch=json_time_since_epoch,
+                                      log_level=log_level)
 
     # Get point/segment cross-match RA/Dec statistics
     if run_compare_ra_dec_crossmatches:
