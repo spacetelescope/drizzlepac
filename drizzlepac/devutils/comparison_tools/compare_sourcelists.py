@@ -1118,7 +1118,6 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj.add_update_info_item("header", "reference catalog filename", slNames[0])
             diag_obj.add_update_info_item("header", "comparison catalog filename", slNames[1])
 
-
         # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
         refData, compData = slFiles2dataTables(slNames)
         log.info("Valid reference data columns:   {}".format(list(refData.keys())))
