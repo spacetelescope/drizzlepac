@@ -356,7 +356,7 @@ def computeFlagStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, 
                 else:
                     stat_text_blob += "\n"
             stat_text_blob += "\n" + timestamp + "\n"
-            stat_text_blob += "Comparison Sourcelist: {}\nReference Sourcelist:  {}".format(catalog_names[1], catalog_names[0])
+            stat_text_blob = wrap_long_filenames_on_stats_page(stat_text_blob, catalog_names)
             fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center", va="center",
                      multialignment="left", family="monospace")
             fig.savefig(stat_file_name)
@@ -562,7 +562,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
                 else:
                     stat_text_blob += "\n"
             stat_text_blob += "\n" + timestamp + "\n"
-            stat_text_blob += "Comparison Sourcelist: {}\nReference Sourcelist:  {}".format(catalog_names[1], catalog_names[0])
+            stat_text_blob = wrap_long_filenames_on_stats_page(stat_text_blob, catalog_names)
             fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center", va="center",
                      multialignment="left", family="monospace")
             fig.savefig(plotFileName.replace(".pdf", "_stats.pdf"))
@@ -990,7 +990,8 @@ def round2ArbatraryBase(value, direction, roundingBase):
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
 def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen=None, plotfile_prefix=None,
-                       verbose=False, log_level=logutil.logging.NOTSET, debugMode=False, input_json_filename=None,
+                       verbose=False, json_timestamp=None, json_time_since_epoch=None,
+                       log_level=logutil.logging.NOTSET, debugMode=False, input_json_filename=None,
                        output_json_filename=None):
     """Main calling subroutine to compare sourcelists.
 
@@ -1013,6 +1014,16 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
 
     verbose : bool, optional
         display verbose output? Default value is False.
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
@@ -1083,7 +1094,9 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
             diag_obj.instantiate_from_fitsfile(imgNames[1],
                                                data_source=__taskname__,
-                                               description="matched ref and comp values.")
+                                               description="matched ref and comp values.",
+                                               timestamp=json_timestamp,
+                                               time_since_epoch=json_time_since_epoch)
             # add reference and comparision catalog filenames as header elements
             diag_obj.add_update_info_item("header", "reference catalog filename", slNames[0])
             diag_obj.add_update_info_item("header", "comparison catalog filename", slNames[1])
@@ -1407,7 +1420,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
                 stat_text_blob += "\n"
 
         stat_text_blob += "\n\nGenerated {}\n".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
-        stat_text_blob += "Comparison Sourcelist: {}\nReference Sourcelist:  {}".format(slNames[1], slNames[0])
+        stat_text_blob = wrap_long_filenames_on_stats_page(stat_text_blob, slNames)
         fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center", va="center",
                  multialignment="left", family="monospace")
         fig.savefig(stat_summary_file_name)
@@ -1593,6 +1606,38 @@ def pdf_merger(output_path, input_paths):
     for path in input_paths:
         os.remove(path)
 
+
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+
+def wrap_long_filenames_on_stats_page(stat_text_blob, slNames):
+    """wrap long (length > 80 characters) catalog filenames to the next line so the filenames don't run off
+    the edge of the page
+
+    Parameters
+    ----------
+    stat_text_blob : str
+        text block that is updated with properly formatted catalog filenames.
+
+    slNames : list
+        two-element list containing the comparision catalog filename, followed by the reference catalog
+        filename
+
+    Returns
+    -------
+    stat_text_blob : str
+        updated version of input argument stat_text_blob
+    """
+    if len(slNames[1]) > 80:
+        out_compcat_filename = "{}\n{}{}".format(slNames[1][:80], " " * 23, slNames[1][80:])
+    else:
+        out_compcat_filename = slNames[1]
+    if len(slNames[0]) > 80:
+        out_refcat_filename = "{}\n{}{}".format(slNames[0][:80], " " * 23, slNames[0][80:])
+    else:
+        out_refcat_filename = slNames[0]
+    stat_text_blob += "Comparison Sourcelist: {}\nReference Sourcelist:  {}".format(out_compcat_filename,
+                                                                                    out_refcat_filename)
+    return stat_text_blob
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
