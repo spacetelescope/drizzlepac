@@ -1085,8 +1085,8 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
                                                data_source=__taskname__,
                                                description="matched ref and comp values.")
             # add reference and comparision catalog filenames as header elements
-            diag_obj.add_update_header_item("reference catalog filename",slNames[0])
-            diag_obj.add_update_header_item("comparison catalog filename", slNames[1])
+            diag_obj.add_update_info_item("header", "reference catalog filename", slNames[0])
+            diag_obj.add_update_info_item("header", "comparison catalog filename", slNames[1])
 
         # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
         refData, compData = slFiles2dataTables(slNames)
@@ -1121,7 +1121,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename:  # Add matched values to diag_obj
             diag_obj.add_data_item(matched_values,"X")
-            diag_obj.add_update_header_item("plate_scale", plate_scale)
+            diag_obj.add_update_info_item("header", "plate_scale", plate_scale)
     if matched_values.shape[1] > 0:
         formalTitle = "X Position"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
@@ -1178,8 +1178,8 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
             ref_frame = fits.getval(imgNames[0],"radesys",ext=('sci', 1)).lower()
             comp_frame = fits.getval(imgNames[1],"radesys",ext=('sci', 1)).lower()
             if output_json_filename:  # Add 'ref_frame' and 'comp_frame" values to header so that will SkyCoord() execute OK
-                diag_obj.add_update_header_item("ref_frame", ref_frame)
-                diag_obj.add_update_header_item("comp_frame", comp_frame)
+                diag_obj.add_update_info_item("header", "ref_frame", ref_frame)
+                diag_obj.add_update_info_item("header", "comp_frame", comp_frame)
 
         # convert reference and comparision RA/Dec values into SkyCoord objects
         matched_values_ref = SkyCoord(matched_values_ra[0,:],matched_values_dec[0,:], frame=comp_frame, unit="deg")

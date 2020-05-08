@@ -38,8 +38,8 @@ class HapDiagnostic(object):
         Parameters
         ----------
         log_level : int, optional
-            The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-            Default value is 'NOTSET'.
+            The desired level of verboseness in the log statements displayed on the screen and written to the
+            .log file. Default value is 'NOTSET'.
 
         Returns
         -------
@@ -83,19 +83,30 @@ class HapDiagnostic(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _instantiate(self):
-        """Creates a new diagnostic dictionary using the standard format. The standard header values are as follows:
+        """Creates a new diagnostic dictionary using the following standardized format:
 
-        - Generation date
-        - Generation time (local 24-hour format)
-        - git commit ID
-        - Proposal ID
-        - Obset ID
-        - Telescope name
-        - Instrument name
-        - Detector name
-        - Filter name
-        - Data source (name of the piece of code that produced the data)
-        - Description (brief description of what the data is, and how it should be used)
+        - 'header' section: Contains the primary fits header of the relevant image
+        - 'general information' section: Kind of like the 'header' section of distilled down to just the most
+        important pieces of information, some other additional information. Included fields are as follows:
+            - telescope name
+            - proposal ID
+            - visit number
+            - instrument name
+            - detector name
+            - filter name
+            - dataset name
+            - pandas DataFrame index title
+            - fits image name
+            - generation date (local)
+            - generation time (local)
+            - seconds since epoch (UTC)
+            - git commit ID
+            - data source (name of the piece of code that produced the data)
+            - description (brief description of what the data is, and how it should be used)
+
+        - 'data' section: this section will contain the test results and depending on the test, may also
+        contain relevant test data as well. It should be noted that depending on the test being run,
+        additional 'data' sections may be appended to the diagnostic dictionary after instantiation.
 
         Parameters
         ----------
@@ -122,32 +133,47 @@ class HapDiagnostic(object):
         # summon nested orderedDict into existence
         self.out_dict = collections.OrderedDict()
         self.out_dict['header'] = collections.OrderedDict()
+        self.out_dict['general information'] = collections.OrderedDict()
         self.out_dict['data'] = collections.OrderedDict()
 
-        # Populate standard header fields
-        # Add generation date/time
-        timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
-        self.out_dict['header']['generation date'] = timestamp.split("T")[0]
-        self.out_dict['header']['generation time'] = timestamp.split("T")[1]
-        # Add time since epoch (January 1, 1970, 00:00:00 UTC)
-        self.out_dict['header']['seconds since epoch'] = time.time()
-        # add git commit id
-        reporootpath = "/"
-        for item in __file__.split("/")[0:-3]:
-            reporootpath = os.path.join(reporootpath, item)
-        self.out_dict['header']['commit id'] = get_git_rev_info.get_rev_id(reporootpath)
-        del reporootpath
-        # add filter, data_source, and description
-        header_item_list = ["filter", "data_source", "description"]
-        for header_item in header_item_list:
-            self.out_dict['header'][header_item] = self.__dict__[header_item]
         # add trimmed fits header from self.header
         for header_item in self.header.keys():
             self.out_dict['header'][header_item] = self.header[header_item]
 
+        # Generate 'general information' section.
+        parse_imgname = self.out_dict['header']['FILENAME'].split("_")
+        dict_key_list = ["telescope", "proposal_id", "visit", "instrument", "detector", "filter", "dataset"]
+        for item in enumerate(dict_key_list):
+            self.out_dict['general information'][item[1]] = parse_imgname[item[0]]
+        self.out_dict['general information']["dataframe_index"] = self.out_dict['header']['FILENAME'][:-9]
+        self.out_dict['general information']["imgname"] = self.out_dict['header']['FILENAME']
+        # Add generation date/time
+        if self.timestamp:
+            timestamp = self.timestamp
+        else:
+            timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
+        self.out_dict['general information']['generation date'] = timestamp.split("T")[0]  # TODO: is 'generation date' too generic? should this be renamed something more descriptive?
+        self.out_dict['general information']['generation time'] = timestamp.split("T")[1]  # TODO: is 'generation date' too generic? should this be renamed something more descriptive?
+        # Add time since epoch (January 1, 1970, 00:00:00 UTC)
+        if self.time_since_epoch:
+            time_since_epoch = self.time_since_epoch
+        else:
+            time_since_epoch = time.time()
+        self.out_dict['general information']['seconds since epoch'] = time_since_epoch
+        # add git commit id
+        reporootpath = "/"
+        for item in __file__.split("/")[0:-3]:
+            reporootpath = os.path.join(reporootpath, item)
+        self.out_dict['general information']['commit id'] = get_git_rev_info.get_rev_id(reporootpath)
+        del reporootpath
+        # add data_source and description # TODO: THESE MAY BE REMOVED LATER ON
+        header_item_list = ["data_source", "description"]
+        for header_item in header_item_list:
+            self.out_dict['general information'][header_item] = self.__dict__[header_item]
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def instantiate_from_fitsfile(self, filename, data_source=None, description=None):
+    def instantiate_from_fitsfile(self, filename, data_source=None, description=None, timestamp=None, time_since_epoch=None):
         """Get necessary information for execution of _instantiate() from user-specified hap product, and
         execute _instantiate()
 
@@ -158,10 +184,20 @@ class HapDiagnostic(object):
             "header" section.
 
         data_source : str, optional
-            name of the script that generated the data that will be stored in the "data" section
+            name of the script that generated the data that will be stored in the "data" section.  If not
+            specified, default value is logical 'None'
 
         description : str, optional
-            brief description of what the data is, and how it should be used.
+            brief description of what the data is, and how it should be used.  If not specified, default
+            value is logical 'None'
+
+        timestamp: str, optional
+            .json file generation date and time (local timezone). Format: MM/DD/YYYYTHH:MM:SS
+            (Example: 05/04/2020T13:46:35). If not specified, default value is logical 'None'
+
+        time_since_epoch : float
+            .json file generation time. Format: Time (in seconds) elapsed since
+            January 1, 1970, 00:00:00 (UTC). If not specified, default value is logical 'None'
 
         Returns
         -------
@@ -185,12 +221,14 @@ class HapDiagnostic(object):
         # gobble up other inputs
         self.data_source = data_source
         self.description = description
+        self.timestamp = timestamp
+        self.time_since_epoch = time_since_epoch
 
         # instantiate data storage dictionary
         self._instantiate()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    def instantiate_from_hap_obj(self, hap_obj, data_source=None, description=None):
+    def instantiate_from_hap_obj(self, hap_obj, data_source=None, description=None, timestamp=None, time_since_epoch=None):
         """Get necessary information for execution of _instantiate() from user-specified hap product, and
         execute _instantiate()
 
@@ -202,10 +240,20 @@ class HapDiagnostic(object):
         "header" section.
 
         data_source : str, optional
-            name of the script that generated the data that will be stored in the "data" section
+            name of the script that generated the data that will be stored in the "data" section. If not
+            specified, default value is logical 'None'
 
         description : str, optional
-            brief description of what the data is, and how it should be used.
+            brief description of what the data is, and how it should be used. If not specified,
+            default value is logical 'None'
+
+        timestamp: str, optional
+            .json file generation date and time (local timezone). Format: MM/DD/YYYYTHH:MM:SS
+            (Example: 05/04/2020T13:46:35). If not specified, default value is logical 'None'
+
+        time_since_epoch : float
+            .json file generation time. Format: Time (in seconds) elapsed since
+            January 1, 1970, 00:00:00 (UTC). If not specified, default value is logical 'None'
 
         Returns
         -------
@@ -228,6 +276,8 @@ class HapDiagnostic(object):
         # gobble up other inputs
         self.data_source = data_source
         self.description = description
+        self.timestamp = timestamp
+        self.time_since_epoch = time_since_epoch
 
         # instantiate data storage dictionary
         self._instantiate()
@@ -273,11 +323,14 @@ class HapDiagnostic(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def add_update_header_item(self, element_name, new_element_value, clobber=True, addnew=True):
-        """add or update a single user-specified header item
+    def add_update_info_item(self, section_name, element_name, new_element_value, clobber=True, addnew=True):
+        """add or update a single user-specified 'header' or 'general information' item
 
         Parameters
         ----------
+        section_name : str
+            dictionary section to update. Choices are either 'header' or 'general information'.
+
         element_name : str
             Name of the header element to add or update
 
@@ -295,21 +348,24 @@ class HapDiagnostic(object):
         self.out_dict : Ordered dictionary
             dictionary that will ultimately be written to a json file
         """
-
-        if element_name in self.out_dict['header'].keys():
-            if clobber:
-                log.info("{}: {} -> {} value update successful.".format(element_name,
-                                                                        self.out_dict['header'][element_name],
-                                                                        new_element_value))
-                self.out_dict['header'][element_name] = new_element_value
+        if section_name in ['header', 'general information']:
+            if element_name in self.out_dict[section_name].keys():
+                if clobber:
+                    log.info("{}: {} -> {} value update successful.".format(element_name,
+                                                                            self.out_dict[section_name][element_name],
+                                                                            new_element_value))
+                    self.out_dict['header'][element_name] = new_element_value
+                else:
+                    log.warning("{} element '{}' already exists. Update NOT performed.".format(section_name, element_name))
             else:
-                log.warning("Header element '{}' already exists. Update NOT performed.".format(element_name))
+                if addnew:
+                    self.out_dict[section_name][element_name] = new_element_value
+                    log.info("New element {} = {} successfully added to {}".format(element_name, new_element_value, section_name))
+                else:
+                    log.warning("Unable to add new element {} = {} to {}".format(element_name, new_element_value, section_name))
         else:
-            if addnew:
-                self.out_dict['header'][element_name] = new_element_value
-                log.info("New element {} = {} successfully added to header".format(element_name, new_element_value))
-            else:
-                log.warning("Unable to add new element {} = {} to header".format(element_name, new_element_value))
+            log.warning("**NO UPDATES PERFORMED** Only the 'header' or 'general information' sections that can be updated.")
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -403,6 +459,7 @@ def read_json_file(json_filename):
         with open(json_filename) as f:
             json_data = json.load(f)
         out_dict['header'] = json_data['header']  # copy over the 'header' section directly.
+        out_dict['general information'] = json_data['general information']
         out_dict['data'] = collections.OrderedDict()  # set up blank data section
         for datakey in json_data['data'].keys():
             if json_data['data'][datakey]['original format'] == "<class 'numpy.ndarray'>":  # Extract numpy array

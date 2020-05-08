@@ -28,21 +28,25 @@ https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 # Standard library imports
 import argparse
 import collections
+from datetime import datetime
 import json
 import os
 import pdb
 import pickle
 import sys
+import time
 
 # Related third party imports
 from astropy.coordinates import SkyCoord
 from astropy.io import ascii, fits
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
+from itertools import chain
 import numpy as np
 from scipy.spatial import KDTree
 
 # Local application imports
+from drizzlepac import util, wcs_functions
 from drizzlepac.hlautils import astrometric_utils as au
 import drizzlepac.hlautils.diagnostic_utils as du
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
@@ -59,7 +63,8 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
+def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since_epoch=None,
+                                   log_level=logutil.logging.NOTSET):
     """Statistically describe distribution of GAIA sources in footprint.
 
     Computes and writes the file to a json file:
@@ -80,6 +85,16 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
     ----------
     hap_obj : drizzlepac.hlautils.Product.FilterProduct
         hap product object to process
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -145,7 +160,8 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
     diag_obj.instantiate_from_hap_obj(hap_obj,
                                       data_source="{}.characterize_gaia_distribution".format(__taskname__),
                                       description="A statistical characterization of the distribution of "
-                                                  "GAIA sources in image footprint")
+                                                  "GAIA sources in image footprint",
+                                      timestamp=json_timestamp, time_since_epoch=json_time_since_epoch)
     diag_obj.add_data_item(out_dict, "distribution characterization statistics")
     diag_obj.write_json_file(hap_obj.drizzle_filename[:-9] + "_svm_gaia_distribution_characterization.json",
                              clobber=True)
@@ -153,7 +169,8 @@ def characterize_gaia_distribution(hap_obj, log_level=logutil.logging.NOTSET):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NOTSET):
+def compare_num_sources(catalog_list, drizzle_list, json_timestamp=None, json_time_since_epoch=None,
+                        log_level=logutil.logging.NOTSET):
     """Determine the number of viable sources actually listed in SVM output catalogs.
 
     Parameters
@@ -165,6 +182,16 @@ def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NO
 
     drizzle_list: list of strings
         Drizzle files for the Total products which were mined to generate the output catalogs.
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -231,7 +258,9 @@ def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NO
         diagnostic_obj.instantiate_from_fitsfile(drizzle_file,
                                                  data_source="{}.compare_num_sources".format(__taskname__),
                                                  description="Number of sources in Point and Segment "
-                                                             "catalogs")
+                                                             "catalogs",
+                                                 timestamp=json_timestamp,
+                                                 time_since_epoch=json_time_since_epoch)
         diagnostic_obj.add_data_item(sources_dict, 'number_of_sources')
         diagnostic_obj.write_json_file(json_filename)
         log.info("Generated quality statistics (number of sources) as {}.".format(json_filename))
@@ -242,7 +271,8 @@ def compare_num_sources(catalog_list, drizzle_list, log_level=logutil.logging.NO
 # ------------------------------------------------------------------------------------------------------------
 
 
-def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
+def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_epoch=None,
+                                log_level=logutil.logging.NOTSET):
     """Compare the equatorial coordinates of cross-matches sources between the Point and Segment catalogs.
     The results .json file contains the following information:
 
@@ -257,6 +287,16 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
     ----------
     hap_obj : drizzlepac.hlautils.Product.FilterProduct
         hap filter product object to process
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -274,7 +314,9 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
     diag_obj = du.HapDiagnostic(log_level=log_level)
     diag_obj.instantiate_from_hap_obj(hap_obj,
                                       data_source="{}.compare_ra_dec_crossmatches".format(__taskname__),
-                                      description="matched point and segment catalog RA and Dec values")
+                                      description="matched point and segment catalog RA and Dec values",
+                                      timestamp=json_timestamp,
+                                      time_since_epoch=json_time_since_epoch)
     json_results_dict = collections.OrderedDict()
     # add reference and comparision catalog filenames as header elements
     json_results_dict["point catalog filename"] = sl_names[0]
@@ -396,7 +438,8 @@ def compare_ra_dec_crossmatches(hap_obj, log_level=logutil.logging.NOTSET):
 # ------------------------------------------------------------------------------------------------------------
 
 
-def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
+def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
+                      log_level=logutil.logging.NOTSET):
     """Creates a catalog of all GAIA sources in the footprint of a specified HAP final product image, and
     stores the GAIA object catalog as a hap diagnostic json file. The catalog contains RA, Dec and magnitude
     of each identified source. The catalog is sorted in descending order by brightness.
@@ -406,6 +449,16 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
         drizzlepac.hlautils.Product.ExposureProduct, depending on input.
         hap product object to process
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -421,7 +474,9 @@ def find_gaia_sources(hap_obj, log_level=logutil.logging.NOTSET):
     diag_obj = du.HapDiagnostic(log_level=log_level)
     diag_obj.instantiate_from_hap_obj(hap_obj,
                                       data_source="{}.find_gaia_sources".format(__taskname__),
-                                      description="A table of GAIA sources in image footprint")
+                                      description="A table of GAIA sources in image footprint",
+                                      timestamp=json_timestamp,
+                                      time_since_epoch=json_time_since_epoch)
     diag_obj.add_data_item(gaia_table, "GAIA sources")  # write catalog of identified GAIA sources
     diag_obj.add_data_item(len(gaia_table), "Number of GAIA sources")  # write the number of GAIA sources
     diag_obj.write_json_file(hap_obj.drizzle_filename[:-9]+"_svm_gaia_sources.json", clobber=True)
@@ -502,13 +557,24 @@ def generate_gaia_catalog(hap_obj, columns_to_remove=None):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def compare_photometry(drizzle_list, log_level=logutil.logging.NOTSET):
+def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=None,
+                       log_level=logutil.logging.NOTSET):
     """Compare photometry measurements for sources cross matched between the Point and Segment catalogs.
 
     Parameters
     ----------
     drizzle_list: list of strings
         Drizzle files for the Filter products which were mined to generate the output catalogs.
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -543,7 +609,9 @@ def compare_photometry(drizzle_list, log_level=logutil.logging.NOTSET):
         diagnostic_obj.instantiate_from_fitsfile(drizzle_file,
                                                  data_source="{}.compare_photometry".format(__taskname__),
                                                  description="Photometry differences in Point and "
-                                                             "Segment catalogs")
+                                                             "Segment catalogs",
+                                                 timestamp=json_timestamp,
+                                                 time_since_epoch=json_time_since_epoch)
         summary_dict = {'detector': detector, 'filter_name': filter_name}
 
         # Construct the output JSON filename
@@ -655,9 +723,185 @@ def compare_photometry(drizzle_list, log_level=logutil.logging.NOTSET):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=None,
+               log_level=logutil.logging.NOTSET):
+    """Report the WCS information for each exposure of a total data product.
+
+    Parameters
+    ----------
+    total_product_list: list of HAP TotalProduct objects, one object per instrument detector
+    (drizzlepac.hlautils.Product.TotalProduct)
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and
+        written to the .log file.  Default value is 'NOTSET'.
+    """
+    log.setLevel(log_level)
+
+    # Generate a separate JSON file for each total product (a total product
+    # consists of a single detector.  Each total product consists of one or
+    # more ExposureProduct objects.
+    for total_product in total_product_list:
+        detector = total_product.detector
+        ipppss = total_product.edp_list[0].exposure_name[0:6]
+
+        # Set up the diagnostic object
+        diagnostic_obj = du.HapDiagnostic()
+        diagnostic_obj.instantiate_from_hap_obj(total_product,
+                                                data_source="{}.report_wcs".format(__taskname__),
+                                                description="WCS information",
+                                                timestamp=json_timestamp,
+                                                time_since_epoch=json_time_since_epoch)
+
+        # Construct the output JSON filename
+        json_filename = '_'.join([ipppss, detector, 'svm_wcs.json'])
+
+        # Loop over all the individual exposures in the list which comprise the total product
+        for edp_object in total_product.edp_list:
+            edp_filter = edp_object.filters
+
+            # For exposures with multiple science extensions (multiple chips),
+            # generate a combined WCS
+            num_sci_ext, extname = util.count_sci_extensions(edp_object.full_filename)
+            extname_list = []
+            for x in range(num_sci_ext):
+                extname_list.append((extname, x+1))
+
+            metawcs = wcs_functions.make_mosaic_wcs(edp_object.full_filename)
+
+            # Get information from the active WCS
+            active_wcs_dict = {'primary_wcsname': metawcs.wcs.name,
+                               'wcs_info': {'crpix1': metawcs.wcs.crpix[0],
+                               'crpix2': metawcs.wcs.crpix[1],
+                               'crval1': metawcs.wcs.crval[0], 'crval2': metawcs.wcs.crval[1],
+                               'scale': metawcs.pscale, 'orientation': metawcs.orientat}}
+
+            diagnostic_obj.add_data_item(active_wcs_dict, 'Primary WCS Information')
+
+            # Determine the possible alternate WCS solutions in the header
+            dict_of_wcskeys_names = wcsutil.altwcs.wcsnames(edp_object.full_filename, ext=1)
+
+            # Ignore the OPUS ("O") WCS, as well as the duplicate of the active WCS
+            dict_of_wcskeys_names.pop('O')
+
+            reverse_dict = {}
+            for key, value in dict_of_wcskeys_names.items():
+                reverse_dict.setdefault(value, set()).add(key)
+            keys_with_dups = set(chain.from_iterable(values for key, values in reverse_dict.items() if len(values) > 1))
+
+            # Make a list of the keys which contain duplicate values...
+            if keys_with_dups:
+                list_keys = list(keys_with_dups)
+                # ...ignore the primary key as it is important, and...
+                list_keys.remove(' ')
+                # ...remove the duplicates.
+                for popkey in list_keys:
+                    dict_of_wcskeys_names.pop(popkey)
+
+            # The remaining dictionary items all need to share the same IDC base
+            # solution as the "active" solution in order to make a consistent comparison -
+            # remove any outliers.
+            loc = metawcs.wcs.name.find("_")
+            root_idc = metawcs.wcs.name[0:loc]
+
+            bad_match_key = []
+            for key, value in dict_of_wcskeys_names.items():
+                if root_idc in value:
+                    continue
+                else:
+                    bad_match_key.append(key)
+
+            for bad_key in bad_match_key:
+                dict_of_wcskeys_names.pop(bad_key)
+
+            log.info("Removed any bad WCS keys and names {}".format(dict_of_wcskeys_names))
+
+            # If there is anything left to compare, then do it.
+            if len(dict_of_wcskeys_names) > 1:
+
+                # Activate an alternate WCS in order to gather its information.
+                # First copy the original primary WCS to an alternate (in case there was
+                # not already a duplicate). Use key 'Z'.  *** FIX MDD Should check for Z in use.
+                wcsutil.altwcs.archiveWCS(edp_object.full_filename, ext=extname_list, wcskey='Z')
+
+                # Restore an alternate to be the primary WCS
+                for key, value in dict_of_wcskeys_names.items():
+                    if key != ' ':
+                        wcsutil.altwcs.restoreWCS(edp_object.full_filename, ext=extname_list, wcskey=key)
+                        alt_key = key
+                        alt_wcs_name = value
+
+                    # Create a metawcs for this alternate WCS
+                    alt_metawcs = wcs_functions.make_mosaic_wcs(edp_object.full_filename)
+
+                    # Get information from the alternate/active WCS
+                    alt_wcs_dict = {'alternate_wcsname': alt_wcs_name,
+                                    'wcs_info': {'crpix1': alt_metawcs.wcs.crpix[0],
+                                    'crpix2': alt_metawcs.wcs.crpix[1],
+                                    'crval1': alt_metawcs.wcs.crval[0], 'crval2': alt_metawcs.wcs.crval[1],
+                                    'scale': alt_metawcs.pscale, 'orientation': alt_metawcs.orientat}}
+                    diagnostic_obj.add_data_item(alt_wcs_dict, 'Alternate WCS Information')
+
+                    delta_wcs = metawcs.wcs.name + ' - ' + alt_wcs_name
+                    diff_wcs_dict = {'delta_wcsname': delta_wcs, 'wcs_info': {}}
+                    # if or wcs_key in active_wcs_dict.keys():
+                    #    if wcs_key.find('wcsname') != -1:
+                    #        continue
+                    #    print("wcs_key: {}".format(wcs_key))
+                    #    diff_wcs_dict['wcs_info'][wcs_key] = active_wcs_dict['wcs_info'][wcs_key] - alt_wcs_dict['wcs_info'][wcs_key]
+                    diff_wcs_dict['wcs_info']['crpix1'] = active_wcs_dict['wcs_info']['crpix1'] - alt_wcs_dict['wcs_info']['crpix1']
+                    diff_wcs_dict['wcs_info']['crpix2'] = active_wcs_dict['wcs_info']['crpix2'] - alt_wcs_dict['wcs_info']['crpix2']
+                    diff_wcs_dict['wcs_info']['crval1'] = active_wcs_dict['wcs_info']['crval1'] - alt_wcs_dict['wcs_info']['crval1']
+                    diff_wcs_dict['wcs_info']['crval2'] = active_wcs_dict['wcs_info']['crval2'] - alt_wcs_dict['wcs_info']['crval2']
+                    diff_wcs_dict['wcs_info']['scale'] = active_wcs_dict['wcs_info']['scale'] - alt_wcs_dict['wcs_info']['scale']
+                    diff_wcs_dict['wcs_info']['orientation'] = active_wcs_dict['wcs_info']['orientation'] - alt_wcs_dict['wcs_info']['orientation']
+
+                    diagnostic_obj.add_data_item(diff_wcs_dict, 'Delta (Primary WCS - Alternate WCS) Information')
+
+                    # Delete the original alternate WCS...
+                    wcsutil.altwcs.deleteWCS(edp_object.full_filename, ext=extname_list, wcskey=alt_key)
+
+                    # ... and archive the current primary with its original key
+                    wcsutil.altwcs.archiveWCS(edp_object.full_filename, ext=extname_list, wcskey=alt_key)
+
+                # When comparisons are done between the original primary WCS and all
+                # the alternates, restore the original primary WCS with key Z.
+                wcsutil.altwcs.restoreWCS(edp_object.full_filename, ext=extname_list, wcskey='Z')
+
+                # Delete the extra copy of the primary
+                wcsutil.altwcs.deleteWCS(edp_object.full_filename, ext=extname_list, wcskey='Z')
+
+                # Write out the results
+                # diagnostic_obj.add_data_item(summary_dict, 'WCS Information Primary WCS - Alternate WCS')
+            else:
+                log.info("This dataset only has the Primary and OPUS WCS values")
+
+        diagnostic_obj.write_json_file(json_filename)
+        log.info("WCS information Primary WCS - Alternate WCS.".format(json_filename))
+
+        # Clean up
+        del diagnostic_obj
+
+    # This routine does not return any values
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_gaia_sources=True,
                          run_compare_ra_dec_crossmatches=True, run_characterize_gaia_distribution=True,
-                         run_compare_photometry=True, log_level=logutil.logging.NOTSET):
+                         run_compare_photometry=True, run_report_wcs=True,
+                         log_level=logutil.logging.NOTSET):
     """Run the quality analysis functions
 
     Parameters
@@ -680,6 +924,9 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
     run_compare_photometry : bool, optional
         Run 'compare_photometry' test? Default value is True.
 
+    run_report_wcs : bool, optional
+        Run 'report_wcs' test? Devault value is True.
+
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
         .log file. Default value is 'NOTSET'.
@@ -690,6 +937,11 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
     """
     log.setLevel(log_level)
 
+    # generate a timestamp values that will be used to make creation time, creation date and epoch values
+    # common to each json file
+    json_timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
+    json_time_since_epoch = time.time()
+
     # Determine number of sources in Point and Segment catalogs
     if run_compare_num_sources:
         total_catalog_list = []
@@ -698,28 +950,35 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             total_drizzle_list.append(total_obj.drizzle_filename)
             total_catalog_list.append(total_obj.point_cat_filename)
             total_catalog_list.append(total_obj.segment_cat_filename)
-        compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
+        compare_num_sources(total_catalog_list, total_drizzle_list, json_timestamp=json_timestamp,
+                            json_time_since_epoch=json_time_since_epoch, log_level=log_level)
 
     # Identify the number of GAIA sources in final product footprints
     if run_find_gaia_sources:
         for total_obj in total_obj_list:
-            find_gaia_sources(total_obj, log_level=log_level)
+            find_gaia_sources(total_obj, json_timestamp=json_timestamp,
+                              json_time_since_epoch=json_time_since_epoch, log_level=log_level)
             for filter_obj in total_obj.fdp_list:
-                find_gaia_sources(filter_obj, log_level=log_level)
+                find_gaia_sources(filter_obj, json_timestamp=json_timestamp,
+                                  json_time_since_epoch=json_time_since_epoch, log_level=log_level)
                 for exp_obj in filter_obj.edp_list:
-                    find_gaia_sources(exp_obj, log_level=log_level)
+                    find_gaia_sources(exp_obj, json_timestamp=json_timestamp,
+                                      json_time_since_epoch=json_time_since_epoch, log_level=log_level)
 
     # Get point/segment cross-match RA/Dec statistics
     if run_compare_ra_dec_crossmatches:
         for total_obj in total_obj_list:
             for filter_obj in total_obj.fdp_list:
-                compare_ra_dec_crossmatches(filter_obj, log_level=log_level)
+                compare_ra_dec_crossmatches(filter_obj, json_timestamp=json_timestamp,
+                                            json_time_since_epoch=json_time_since_epoch, log_level=log_level)
 
     # Statistically characterize GAIA distribution
     if run_characterize_gaia_distribution:
         for total_obj in total_obj_list:
             for filter_obj in total_obj.fdp_list:
-                characterize_gaia_distribution(filter_obj, log_level=log_level)
+                characterize_gaia_distribution(filter_obj, json_timestamp=json_timestamp,
+                                               json_time_since_epoch=json_time_since_epoch,
+                                               log_level=log_level)
 
     # Photometry of cross-matched sources in Point and Segment catalogs for Filter products
     if run_compare_photometry:
@@ -729,7 +988,14 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
         for tot in total_obj_list:
             temp_list = [x.drizzle_filename for x in tot.fdp_list]
             filter_drizzle_list.extend(temp_list)
-        compare_photometry(filter_drizzle_list, log_level=log_level)
+        compare_photometry(filter_drizzle_list, json_timestamp=json_timestamp,
+                           json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+
+    # Report WCS info
+    if run_report_wcs:
+        report_wcs(total_obj_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch,
+                   log_level=log_level)
+
 
 # ============================================================================================================
 
@@ -755,6 +1021,8 @@ if __name__ == "__main__":
     parser.add_argument('-fgs', '--run_find_gaia_sources', required=False, action='store_true',
                         help="Determine the number of GAIA sources in the footprint of a specified HAP final "
                              "product image")
+    parser.add_argument('-wcs', '--run_report_wcs', required=False, action='store_true',
+                        help="Report the WCS information for each exposure of a total data product")
     parser.add_argument('-l', '--log_level', required=False, default='info',
                         choices=['critical', 'error', 'warning', 'info', 'debug'],
                         help='The desired level of verboseness in the log statements displayed on the screen '
@@ -798,6 +1066,7 @@ if __name__ == "__main__":
         user_args.run_compare_photometry = True
         user_args.run_compare_ra_dec_crossmatches = True
         user_args.run_find_gaia_sources = True
+        user_args.run_report_wcs = True
 
     # display status summary indicating which QA steps are turned on and which steps are turned off
     log.info("{}QA step run status".format(" "*(int(max_step_str_length/2)-6)))
@@ -820,5 +1089,5 @@ if __name__ == "__main__":
                          run_compare_ra_dec_crossmatches=user_args.run_compare_ra_dec_crossmatches,
                          run_characterize_gaia_distribution=user_args.run_characterize_gaia_distribution,
                          run_compare_photometry=user_args.run_compare_photometry,
+                         run_report_wcs=user_args.run_report_wcs,
                          log_level=log_level)
-

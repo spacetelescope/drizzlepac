@@ -780,7 +780,11 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         log.info("FIT SOLUTION REJECTED")
         filtered_table['status'][:] = 1
         for ctr in range(0, len(filtered_table)):
-            filtered_table[ctr]['processMsg'] = fit_status_dict[filtered_table[ctr]['imageName'] + ",1"]["reason"]
+            imgname = filtered_table[ctr]['imageName'] + ",1"
+            if imgname in fit_status_dict:
+                filtered_table[ctr]['processMsg'] = fit_status_dict[imgname]["reason"]
+            else:
+                filtered_table[ctr]['processMsg'] = "Not a valid exposure"
     else:
         for ctr in range(0, len(filtered_table)):
             filtered_table[ctr]['processMsg'] = ""

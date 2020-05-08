@@ -49,9 +49,7 @@ def get_json_files(search_path="", log_level=logutil.logging.INFO):
 
     # set up search string and use glob to get list of files
     log.setLevel(log_level)
-    if search_path != "" and not search_path.endswith("/"):
-        search_path += "/"
-    search_string = search_path + "*_svm_*.json"
+    search_string = os.path.join(search_path, "*_svm_*.json")
     json_list = glob.glob(search_string)
 
     # Fail gracefully if no .json files were found
