@@ -4,7 +4,7 @@
 drizzlepac/hlautils/svm_quality_analysis.py and stores it as a Pandas DataFrame"""
 
 # Standard library imports
-from collections import OrderedDict
+import collections
 import glob
 import json
 import os
@@ -43,25 +43,35 @@ def get_json_files(search_path="", log_level=logutil.logging.INFO):
 
     Returns
     -------
-    sorted_json_list : list
-        list of json files to harvest, sorted first alphabetically by filename
+    out_json_dict : ordered dictionary
+        dictionary containing lists of all identified json files, grouped by and  keyed by Pandas Dataframe
+        index value
     """
+    log.setLevel(log_level)
 
     # set up search string and use glob to get list of files
-    log.setLevel(log_level)
     search_string = os.path.join(search_path, "*_svm_*.json")
     json_list = glob.glob(search_string)
 
+    # store json filenames in a dictionary keyed by Pandas DataFrame index value
+    if json_list:
+        out_json_dict = collections.OrderedDict()
+        for json_filename in sorted(json_list):
+            json_data = du.read_json_file(json_filename)
+            dataframe_idx = json_data['general information']['dataframe_index']
+            if dataframe_idx in out_json_dict.keys():
+                out_json_dict[dataframe_idx].append(json_filename)
+            else:
+                out_json_dict[dataframe_idx]=[json_filename]
+            del(json_data)  # Housekeeping!
+
     # Fail gracefully if no .json files were found
-    if not json_list:
+    else:
         err_msg = "No .json files were found!"
         log.error(err_msg)
         raise Exception(err_msg)
 
-    # sort list first alphabetically by filename
-    sorted_json_list = sorted(json_list)
-
-    return sorted_json_list
+    return out_json_dict
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -83,20 +93,25 @@ def json_harvester(log_level=logutil.logging.INFO):
     log.setLevel(log_level)
 
     # Get sorted list of json files
-    json_list = get_json_files(log_level=log_level)
+    json_dict = get_json_files(log_level=log_level)
+    for idx in json_dict.keys():
+        print(idx)  # TODO: REMOVE
+        for json_file in json_dict[idx]:
+            print("   ",json_file)  # TODO: REMOVE
 
-    master_dataframe = None
-    for json_filename in json_list:
-        master_dataframe = json_ingest(master_dataframe, json_filename, log_level=log_level)
-    if len(master_dataframe) > 0:
-        master_dataframe = pd.concat(master_dataframe)
-    if master_dataframe is not None:
-        out_csv_filename = "master_dataframe.csv"
-        if os.path.exists(out_csv_filename):
-            os.remove(out_csv_filename)
-
-        master_dataframe.to_csv(out_csv_filename)
-        print("Wrote "+out_csv_filename)
+    # master_dataframe = None
+    #
+    # for json_filename in json_list:
+    #     master_dataframe = json_ingest(master_dataframe, json_filename, log_level=log_level)
+    # if len(master_dataframe) > 0:
+    #     master_dataframe = pd.concat(master_dataframe)
+    # if master_dataframe is not None:
+    #     out_csv_filename = "master_dataframe.csv"
+    #     if os.path.exists(out_csv_filename):
+    #         os.remove(out_csv_filename)
+    #
+    #     master_dataframe.to_csv(out_csv_filename)
+    #     print("Wrote "+out_csv_filename)
 
 # ------------------------------------------------------------------------------------------------------------
 
