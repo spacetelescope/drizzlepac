@@ -33,6 +33,8 @@ INSTRUMENT_DICT = {'i': 'WFC3', 'j': 'ACS', 'o': 'STIS', 'u': 'WFPC2', 'x': 'FOC
 POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
                    'exptime', 'filters', 'detector', 'pathname']
 
+EXP_LABELS = {2: 'short', 1: 'med', 0: 'long', None: 'all'}
+
 __taskname__ = 'poller_utils'
 
 MSG_DATEFMT = '%Y%j%H%M%S'
@@ -40,7 +42,9 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
-
+# -----------------------------------------------------------------------------
+# Single Visit Processing Functions
+#
 def interpret_obset_input(results, log_level):
     """
 
@@ -103,6 +107,7 @@ def interpret_obset_input(results, log_level):
     instr = INSTRUMENT_DICT[obset_table['filename'][0][0]]
     # convert input to an Astropy Table for parsing
     obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
+
     # Sort the rows of the table in an effort to optimize the number of quality sources found in the initial images
     obset_table = sort_poller_table(obset_table)
     log.debug("Sorted input:")
@@ -115,8 +120,8 @@ def interpret_obset_input(results, log_level):
     log.debug("Parse the observation set tree and create the exposure, filter, and total detection objects.")
     obset_dict, tdp_list = parse_obset_tree(obset_tree, log_level)
 
-    # This little bit of code adds an attribute to single exposure objects that is True if a given filter only contains
-    # one input (e.g. n_exp = 1)
+    # This little bit of code adds an attribute to single exposure objects that is True 
+    # if a given filter only contains one input (e.g. n_exp = 1)
     for tot_obj in tdp_list:
         for filt_obj in tot_obj.fdp_list:
             if len(filt_obj.edp_list) == 1:
@@ -127,18 +132,6 @@ def interpret_obset_input(results, log_level):
                 edp_obj.is_singleton = is_singleton
 
     return obset_dict, tdp_list
-
-def split_filter_tree(obset_table, exp_limit=2.0):
-    """Define additional layers from each filter product in obset_tree"""
-    # Start by determining the groupings by year and exptime
-    year_obset_table = define_year_layers(obset_table)
-    exp_obset_table = define_exp_layers(year_obset_table, exp_limit=exp_limit)
-
-    # Use groupings to split filter products into multiple layers
-    filter_tree = {}
-    
-    return exp_obset_table
-        
 
 # Translate the database query on an obset into actionable lists of filenames
 def build_obset_tree(obset_table):
@@ -181,6 +174,156 @@ def create_row_info(row):
     return ' '.join(map(str.upper, info_list)), row['filename']
 
 
+# -----------------------------------------------------------------------------
+# Multi-Visit Processing Functions
+#
+def interpret_mvm_input(results, skycells, log_level, exp_limit=2.0):
+    """
+
+    Parameters
+    -----------
+    results : str or list
+        Input poller file name or Python list of dataset names to be processed as a single visit.
+        Dataset names have to be either the filename of a singleton (non-associated exposure) or the
+        name of an ASN file (e.g., jabc01010_asn.fits).
+        
+    skycells : str 
+        Input file name containing the list of existing sky cell layers and the 
+        exposures names that are members of each layer. This will be used to 
+        reprocess any layer which has new observations from the `results` input
+        that contribute to that layer. If there is no existing layer for that 
+        skycell that matches the new input exposures, a new layer will be defined. 
+
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
+    exp_limit : float, optional
+        This specifies the ratio between long and short exposures that should 
+        be used to define each exposure time bin (short, med, long).  If None, 
+        all exposure times will be combined into a single bin (all). Splitting 
+        of the bins gets computed using Kmeans clustering for 3 output bins.  
+
+
+    Notes
+    -------
+    Interpret the database query for a given obset to prepare the returned
+    values for use in generating the names of all the expected output products.
+
+    Input will have format of:
+        ib4606c5q_flc.fits,11665,B46,06,1.0,F555W,UVIS,/ifs/archive/ops/hst/public/ib46/ib4606c5q/ib4606c5q_flc.fits
+        which are
+        filename, proposal_id, program_id, obset_id, exptime, filters, detector, pathname
+
+    Output dict will have only have definitions for each defined sky cell layer to
+    be either created or updated based on the input exposures being processed.
+    There will be a layer defined for each unique combination of filter/exp class/year.
+    An example would be:
+
+        obs_info_dict["layer 00": {"info": '11665 06 wfc3 uvis f555w short 2011 drc',
+                                   "files": ['ib4606c5q_flc.fits', 'ib4606cgq_flc.fits']}
+        .
+        .
+        .
+
+        obs_info_dict["layer 01": {"info": '11665 06 wfc3 uvis f555w med 2011 drc',
+                                   "files": ['ib4606c6q_flc.fits', 'ib4606cdq_flc.fits']}
+        .
+        .
+        .
+        obs_info_dict["layer 01": {"info": '11665 06 wfc3 uvis f555w long 2011 drc',
+                                   "files": ['ib4606c9q_flc.fits', 'ib4606ceq_flc.fits']}
+        .
+        .
+        .
+
+    """
+    # set logging level to user-specified level
+    log.setLevel(log_level)
+
+    log.debug("Interpret the poller file for the observation set.")
+    obset_table = build_poller_table(results, log_level)
+    # Add INSTRUMENT column
+    instr = INSTRUMENT_DICT[obset_table['filename'][0][0]]
+    # convert input to an Astropy Table for parsing
+    obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
+
+    # Add Date column    
+    years = [int(its.getval(f, 'date-obs').split('-')[0]) for f in obset_table['filename']]
+    obset_table.add_column(Column(years), name='year')
+
+    # Sort the rows of the table in an effort to optimize the number of quality 
+    # sources found in the initial images
+    obset_table = sort_poller_table(obset_table)
+    exp_obset_table = define_exp_layers(year_obset_table, exp_limit=exp_limit)
+        
+    # parse Table into a tree-like dict
+    log.debug("Build the multi-visit layers tree.")
+    obset_tree = build_mvm_tree(obset_table)
+    # Now create the output product objects
+    log.debug("Parse the observation set tree and create the exposure, filter, and total detection objects.")
+    obset_dict, tdp_list = parse_obset_tree(obset_tree, log_level)
+
+    # This little bit of code adds an attribute to single exposure objects that is True 
+    # if a given filter only contains one input (e.g. n_exp = 1)
+    for tot_obj in tdp_list:
+        for filt_obj in tot_obj.fdp_list:
+            if len(filt_obj.edp_list) == 1:
+                is_singleton = True
+            else:
+                is_singleton = False
+            for edp_obj in filt_obj.edp_list:
+                edp_obj.is_singleton = is_singleton
+
+    return obset_dict, tdp_list
+
+# Translate the database query on an obset into actionable lists of filenames
+def build_mvm_tree(obset_table):
+    """Convert obset table into a tree listing all products to be created."""
+
+    # Each product will consist of the appropriate string as the key and
+    # a dict of 'info' and 'files' information
+
+    # Start interpreting the obset table
+    obset_tree = {}
+    for row in obset_table:
+        # Get some basic information from the first row - no need to check
+        # for multiple instruments as data from different instruments will
+        # not be combined.
+        det = row['detector']
+        orig_filt = row['filters']
+        exp_layer = row['exp_layer']
+        year_layer = row['year_layer']
+
+        # Potentially need to manipulate the 'filters' string for instruments
+        # with two filter wheels
+        filt = determine_filter_name(orig_filt)
+        row['filters'] = filt
+        layer = (filt, exp_layer, year_layer)
+        row_info, filename = create_mvm_info(row)
+        # Initial population of the obset tree for this detector
+        if det not in obset_tree:
+            obset_tree[det] = {}
+            obset_tree[det][layer] = [(row_info, filename)]
+        else:
+            det_node = obset_tree[det]
+            if layer not in det_node:
+                det_node[layer] = [(row_info, filename)]
+            else:
+                det_node[layer].append((row_info, filename))
+
+    return obset_tree
+
+
+def create_mvm_info(row):
+    """Build info string for a row from the obset table"""
+    info_list = [str(row['proposal_id']), "{}".format(row['obset_id']), row['instrument'],
+                 row['detector'], row['filters'], row['exp_layer'], row['year_layer']]
+    return ' '.join(map(str.upper, info_list)), row['filename']
+
+
+# -----------------------------------------------------------------------------
+# Utility Functions
+#
 def parse_obset_tree(det_tree, log_level):
     """Convert tree into products
 
@@ -287,7 +430,7 @@ def parse_obset_tree(det_tree, log_level):
     # Done... return dict and object product list
     return obset_products, tdp_list
 
-# ----------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def determine_filter_name(raw_filter):
@@ -345,7 +488,7 @@ def determine_filter_name(raw_filter):
 
     return filter_name
 
-# ----------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def build_poller_table(input, log_level):
@@ -472,37 +615,8 @@ def build_poller_table(input, log_level):
 
     return poller_table
 
-# ----------------------------------------------------------------------------------------------------------
 
-def define_exp_layers(obset_table, exp_limit=2.0):
-    """Sort the input table subset for this cell by exposure time"""
-    expanded_obset_table = Table(obset_table)
-    expanded_obset_table['exp_layer'] = 0
-
-    exptimes = obset_table['exptime']
-    if max(exptimes) / min(exptimes) > exp_limit:
-       kmeans = KMeans(cluster=3, random_state=0).fit(exptimes.reshape(-1,1))
-       # Create labels by cluster: 2 for 'short', 1 for 'med', 0 for 'long'
-       expanded_obset_table['exp_layer'] = kmeans.labels_
-    
-    return expanded_obset_table
-
-# ----------------------------------------------------------------------------------------------------------
-
-def define_year_layers(obset_table):
-    """Update input table with calendar year of each exposure."""
-    expanded_obset_table = Table(obset_table)
-    expanded_obset_table['year'] = 1990
-    
-    for row in expanded_obset_table:
-        input_file = row[expanded_obset_table.colnames[0]]
-        with fits.open(input_file) as fimg:
-            row['year'] = int(fimg[0].header['date-obs'].split('-')[0])
-
-    return expanded_obset_table   
-
-
-# ----------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 def sort_poller_table(obset_table):
     """Sort the input table by photflam and exposure time.
@@ -576,7 +690,7 @@ def sort_poller_table(obset_table):
 
     return updated_obset_table
 
-# ----------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def add_primary_fits_header_as_attr(hap_obj, log_level=logutil.logging.NOTSET):
