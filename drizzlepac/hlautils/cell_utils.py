@@ -26,7 +26,7 @@ PCELL_FILENAME = 'allsky_cells.fits'
 PCELL_STRLEN = 4
 
 # SkyCell format: "skycell_p0000_x000y000"
-SKYCELL_NAME_FMT = f"skycell_p{{:{str(PCELL_STRLEN).zfill(2)}d}}_x{{:03d}}y{{:03d}}"
+SKYCELL_NAME_FMT = f"skycell_p{{:{str(PCELL_STRLEN).zfill(2)}d}}x{{:02d}}y{{:02d}}"
 SKYCELL_NXY = 50
 SKYCELL_OVERLAP = 256
 
@@ -394,6 +394,8 @@ class ProjectionCell(object):
         # apply new definition to cell WCS
         self.wcs.wcs.crpix = [naxis1 / 2. + 0.5, naxis2 / 2. + 0.5]
         self.wcs.pixel_shape = (naxis1, naxis2)
+        self.wcs.pscale = self.scale
+        self.wcs.orientat = 0.0
         self.footprint = self.wcs.calc_footprint()
         # close the polygon
         self.corners = np.append(self.footprint, [self.footprint[0]], axis=0)
@@ -534,6 +536,8 @@ class SkyCell(object):
         self.wcs.pixel_shape = (naxis1, naxis2)
         self.wcs.ltv1 = self.projection_cell.wcs.wcs.crpix[0] - crpix1
         self.wcs.ltv2 = self.projection_cell.wcs.wcs.crpix[1] - crpix2
+        self.wcs.orientat = self.projection_cell.wcs.orientat
+        self.wcs.pscale = self.projection_cell.wcs.pscale
 
         self.corners = self.wcs.calc_footprint()
         # close the polygon
