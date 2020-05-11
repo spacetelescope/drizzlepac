@@ -261,7 +261,7 @@ def interpret_mvm_input(results, skycells, log_level, exp_limit=2.0):
     obset_tree = build_mvm_tree(obset_table)
     # Now create the output product objects
     log.debug("Parse the observation set tree and create the exposure, filter, and total detection objects.")
-    obset_dict, tdp_list = parse_obset_tree(obset_tree, log_level)
+    obset_dict, tdp_list = parse_mvm_tree(obset_tree, log_level)
 
     # This little bit of code adds an attribute to single exposure objects that is True 
     # if a given filter only contains one input (e.g. n_exp = 1)
