@@ -96,8 +96,8 @@ def json_harvester(log_level=logutil.logging.INFO):
     json_dict = get_json_files(log_level=log_level)
     for idx in json_dict.keys():
         print(idx)  # TODO: REMOVE
-        for json_file in json_dict[idx]:
-            print("   ",json_file)  # TODO: REMOVE
+        for json_filename in json_dict[idx]:
+            print("   ",json_filename)  # TODO: REMOVE
 
     # master_dataframe = None
     #
