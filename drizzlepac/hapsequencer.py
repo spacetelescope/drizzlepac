@@ -42,6 +42,8 @@ import pickle
 import sys
 import traceback
 
+from memory_profiler import profile
+
 from astropy.table import Table
 import numpy as np
 import drizzlepac
@@ -75,7 +77,7 @@ envvar_qa_svm = "SVM_QUALITY_TESTING"
 
 # --------------------------------------------------------------------------------------------------------------
 
-
+@profile
 def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, phot_mode='both'):
     """This subroutine utilizes hlautils/catalog_utils module to produce photometric sourcelists for the specified
     total drizzle product and it's associated child filter products.
@@ -249,7 +251,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-
+@profile
 def create_drizzle_products(total_obj_list):
     """
     Run astrodrizzle to produce products specified in the total_obj_list.
@@ -340,7 +342,7 @@ def create_drizzle_products(total_obj_list):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-
+@profile
 def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_configs=True,
                        input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
                        log_level=logutil.logging.INFO):
@@ -528,7 +530,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
 
 # ------------------------------------------------------------------------------------------------------------
-
+@profile
 def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic_mode=False):
     # Run align.py on all input images sorted by overlap with GAIA bandpass
     log.info("\n{}: Align the all filters to GAIA with the same fit".format(str(datetime.datetime.now())))
@@ -574,7 +576,7 @@ def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-
+@profile
 def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_level, diagnostic_mode=False):
     """
     Super-basic and profoundly inelegant interface to hla_flag_filter.py.
