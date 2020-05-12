@@ -94,10 +94,7 @@ def json_harvester(log_level=logutil.logging.INFO):
 
     # Get sorted list of json files
     json_dict = get_json_files(log_level=log_level)
-    for idx in json_dict.keys():
-        print(idx)  # TODO: REMOVE
-        for json_filename in json_dict[idx]:
-            print("   ",json_filename)  # TODO: REMOVE
+    df_line = make_dataframe_line(json_dict, log_level=log_level)
 
     # master_dataframe = None
     #
@@ -113,6 +110,55 @@ def json_harvester(log_level=logutil.logging.INFO):
     #     master_dataframe.to_csv(out_csv_filename)
     #     print("Wrote "+out_csv_filename)
 
+
+# ------------------------------------------------------------------------------------------------------------
+
+
+def make_dataframe_line(json_dict, log_level=logutil.logging.INFO):
+    allowed_json_types = ['_svm_gaia_distribution_characterization.json',
+                          '_svm_num_sources.json',
+                          '_photometry.json',
+                          '_svm_wcs.json']
+    allowed_json_types=['_photometry.json']
+    for idx in json_dict.keys():
+        dataframe_line = None
+        header_ingested = True # TODO: RESET TO FALSE
+        gen_info_ingested = False
+        ingest_dict = collections.OrderedDict()
+
+        print(idx)  # TODO: REMOVE
+        for json_filename in json_dict[idx]:
+
+            file_status = False
+            for ending in allowed_json_types:
+                if json_filename.endswith(ending):
+                    file_status = True
+                    break
+            if file_status: # TODO: REMOVE ONCE THIGNS are working and de-indent everything by one level.
+                json_data = du.read_json_file(json_filename)
+                if not header_ingested:
+                    for header_item in json_data['header'].keys():
+                        ingest_dict["header-"+header_item] = json_data['header'][header_item]
+                    header_ingested = True
+                if not gen_info_ingested:
+                    dataframe_index = json_data['general information']["dataframe_index"]
+                    for gi_item in json_data['general information'].keys():
+                        ingest_dict["gen_info-"+gi_item] = json_data['general information'][gi_item]
+                    gen_info_ingested = True
+                print(json_filename)
+
+                foo = flatten_dict(json_data['data'], '', {})
+                for item in foo.keys():
+                    print(item,foo[item])
+
+
+
+
+
+
+            print("   {} {}".format(file_status,json_filename))  # TODO: REMOVE
+
+    return 0
 # ------------------------------------------------------------------------------------------------------------
 
 
@@ -152,7 +198,7 @@ def json_ingest(master_dataframe, json_filename, log_level=logutil.logging.INFO)
     json_data = du.read_json_file(json_filename)
     json_header = json_data['header']
     json_data = json_data['data']
-    ingest_dict = OrderedDict()
+    ingest_dict = collections.OrderedDict()
     for data_item in json_data.keys():
         for diag_key in json_data[data_item].keys():
             new_key = "{}-{}".format(data_item.replace(" ","_"), diag_key.replace(" ","_"))
@@ -178,6 +224,29 @@ def json_ingest(master_dataframe, json_filename, log_level=logutil.logging.INFO)
     # input("\n")
     return master_dataframe
 
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Mike's new stuff
+def flatten_dict(current, key, result):
+    """Flatten nested dictionaries into a non-nested dictionary. Assumes that there are no non-unique keys.
+    Code credit: https://stackoverflow.com/questions/24448543/how-would-i-flatten-a-nested-dictionary-in-python-3
+    Solution submitted by user 'Matthew Franglen'.
+    """
+    print(current,isinstance(current, dict))
+    print(key)
+    print(result)
+    print("============================================\n")
+    if isinstance(current, dict):
+        for k in current:
+            new_key = "{1}".format(key, k) if len(key) > 0 else k
+            flatten_dict(current[k], new_key, result)
+    else:
+        result[key] = current
+    input()
+    return result
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # ======================================================================================================================
 
