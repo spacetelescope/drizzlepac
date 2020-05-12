@@ -196,7 +196,7 @@ class CatalogImage:
         self.bkg_rms_ra = bkg_rms_ra.copy()
         self.bkg_rms_median = bkg_rms_median.copy()
         
-        del bkg, bkg_backgroun_ra, bkg_rms_ra, bkg_rms_median, bkg_median
+        del bkg, bkg_background_ra, bkg_rms_ra, bkg_rms_median, bkg_median
 
     def _get_header_data(self):
         """Read FITS keywords from the primary or extension header and store the
@@ -225,7 +225,7 @@ class CatalogImage:
         if keyword_dict["detector"] != "SBC":
             keyword_dict["ccd_gain"] = self.imghdu[0].header["CCDGAIN"]
         keyword_dict["aperture_pa"] = self.imghdu[0].header["PA_V3"]
-        keyword_dict["gain_keys"] = [imghdu[0].header[k[:8]] for k in imghdu[0].header["ATODGN*"]]
+        keyword_dict["gain_keys"] = [self.imghdu[0].header[k[:8]] for k in self.imghdu[0].header["ATODGN*"]]
 
         # The total detection product has the FILTER keyword in
         # the primary header - read it for any instrument.
