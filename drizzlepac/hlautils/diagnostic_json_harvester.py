@@ -72,7 +72,7 @@ def get_json_files(search_path="", log_level=logutil.logging.INFO):
         raise Exception(err_msg)
 
     return out_json_dict
-
+# TODO: add logic so that HAP point vs. HLA daophot compare_sourcelist json isn't overwritten by HAP segment vs. HLA sexphot compare_sourcelist json data in dataframe.
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -101,7 +101,6 @@ def json_harvester(log_level=logutil.logging.INFO):
             if master_dataframe is not None:
                 print("APPENDED DATAFRAME")
                 master_dataframe = master_dataframe.append(pd.DataFrame(ingest_dict, index=[idx]))
-
             else:
                 print("CREATED DATAFRAME")
                 master_dataframe = pd.DataFrame(ingest_dict, index=[idx])
@@ -118,42 +117,33 @@ def json_harvester(log_level=logutil.logging.INFO):
 
 
 def make_dataframe_line(json_filename_list, idx, log_level=logutil.logging.INFO):
-    allowed_json_types = ['_svm_gaia_distribution_characterization.json',
-                          '_svm_num_sources.json',
-                          '_photometry.json',
-                          '_svm_wcs.json']
-
-
-    dataframe_line = None
-    header_ingested = True # TODO: RESET TO FALSE
+    header_ingested = True # TODO: RESET TO FALSE BEFORE DEPLOYMENT
     gen_info_ingested = False
     ingest_dict = collections.OrderedDict()
 
-    print(idx)  # TODO: REMOVE
+    print(idx)  # TODO: REMOVE BEFORE DEPLOYMENT
     for json_filename in json_filename_list:
-        file_status = False
-        for ending in allowed_json_types:
-            if json_filename.endswith(ending):
-                file_status = True
-                break
-        if file_status: # TODO: REMOVE ONCE THIGNS are working and de-indent everything by one level.
-            json_data = du.read_json_file(json_filename)
-            if not header_ingested:
-                for header_item in json_data['header'].keys():
-                    ingest_dict["header."+header_item] = json_data['header'][header_item]
-                header_ingested = True
-            if not gen_info_ingested:
-                for gi_item in json_data['general information'].keys():
-                    ingest_dict["gen_info."+gi_item] = json_data['general information'][gi_item]
-                gen_info_ingested = True
-            print(json_filename)
-            flattened_data = flatten_dict(json_data['data'])
-            for fd_key in flattened_data.keys():
-                ingest_dict[fd_key.replace(" ","_")] = flattened_data[fd_key]
-
-
-        print("   {} {}".format(file_status,json_filename))  # TODO: REMOVE
-
+        print("     ",json_filename)  # TODO: REMOVE BEFORE DEPLOYMENT
+        json_data = du.read_json_file(json_filename)
+        if not header_ingested:
+            for header_item in json_data['header'].keys():
+                ingest_dict["header."+header_item] = json_data['header'][header_item]
+            header_ingested = True
+        if not gen_info_ingested:
+            for gi_item in json_data['general information'].keys():
+                ingest_dict["gen_info."+gi_item] = json_data['general information'][gi_item]
+            gen_info_ingested = True
+        flattened_data = flatten_dict(json_data['data'])
+        for fd_key in flattened_data.keys():
+            json_data_item = flattened_data[fd_key]
+            ingest_key = fd_key.replace(" ","_")
+            if str(type(json_data_item)) == "<class 'astropy.table.table.Table'>":
+                for coltitle in json_data_item.colnames:
+                    ingest_value = json_data_item[coltitle].tolist()
+                    ingest_dict[ingest_key + "." + coltitle] = [ingest_value]
+            else:
+                ingest_value = json_data_item
+                ingest_dict[ingest_key] = ingest_value
     return ingest_dict
 # ------------------------------------------------------------------------------------------------------------
 

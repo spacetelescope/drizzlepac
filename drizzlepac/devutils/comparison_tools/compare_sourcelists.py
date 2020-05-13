@@ -1195,10 +1195,10 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         matched_values_ra = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename:  # Add matched values to diag_obj
-            diag_obj.add_data_item(matched_values_ra, "RA MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values_ra[0], matched_values_ra[1]], names=('reference', 'comparison')), "RA MATCHED VALUES")
         matched_values_dec = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img,bitmask=bitmask)
         if output_json_filename:  # Add matched values to diag_obj
-            diag_obj.add_data_item(matched_values_dec,"DEC MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values_dec[0], matched_values_dec[1]], names=('reference', 'comparison')),"DEC MATCHED VALUES")
     if matched_values_ra.shape[1] > 0 and matched_values_ra.shape[1] == matched_values_dec.shape[1]:
         # get coordinate system type from fits headers
         if input_json_filename:
