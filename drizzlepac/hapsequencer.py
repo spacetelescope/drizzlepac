@@ -37,13 +37,11 @@ import fnmatch
 import glob
 import logging
 import os
-import pdb
 import pickle
 import sys
 import traceback
 
 from astropy.table import Table
-import numpy as np
 import drizzlepac
 
 
