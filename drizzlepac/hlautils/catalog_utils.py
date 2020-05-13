@@ -67,11 +67,9 @@ class CatalogImage:
         self.keyword_dict = self._get_header_data()
 
         # Populated by self.compute_background()
-        self.bkg = None
         self.bkg_background_ra = None
         self.bkg_rms_ra = None
         self.bkg_rms_median = None
-        self.bkg_median = None
 
         # Populated by self.build_kernel()
         self.kernel = None
@@ -80,10 +78,14 @@ class CatalogImage:
 
     def close(self):
         self.imghdu.close()
+        self.bkg_background_ra = None
+        self.bkg_rms_ra = None
+        self.bkg_rms_median = None
+        
 
     # def build_kernel(self, box_size, win_size, fwhmpsf):
     def build_kernel(self, box_size, win_size, fwhmpsf):
-        if self.bkg is None:
+        if self.bkg_background_ra is None:
             self.compute_background(box_size, win_size)
 
         k, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
@@ -91,6 +93,11 @@ class CatalogImage:
                                                                   threshold=self.bkg_rms_ra,
                                                                   fwhm=fwhmpsf / self.imgwcs.pscale)
         (self.kernel, self.kernel_psf) = k
+
+        # Finished with wht_image, clean up memory immediately...
+        del self.wht_image
+        self.wht_image = None
+        
 
     def compute_background(self, box_size, win_size,
                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS):
@@ -185,12 +192,12 @@ class CatalogImage:
         log.info("    Median RMS background: {}".format(bkg_rms_median))
         log.info("")
 
-        self.bkg = bkg
         self.bkg_background_ra = bkg_background_ra.copy()
         self.bkg_rms_ra = bkg_rms_ra.copy()
         self.bkg_rms_median = bkg_rms_median.copy()
         self.bkg_median = bkg_median.copy()
         
+        del bkg, bkg_background_ra, bkg_rms_ra, bkg_rms_median, bkg_median
 
     def _get_header_data(self):
         """Read FITS keywords from the primary or extension header and store the
@@ -215,9 +222,11 @@ class CatalogImage:
         keyword_dict["target_dec"] = self.imghdu[0].header["DEC_TARG"]
         keyword_dict["expo_start"] = self.imghdu[0].header["EXPSTART"]
         keyword_dict["texpo_time"] = self.imghdu[0].header["TEXPTIME"]
+        keyword_dict["exptime"] = self.imghdu[0].header["EXPTIME"]
         if keyword_dict["detector"] != "SBC":
             keyword_dict["ccd_gain"] = self.imghdu[0].header["CCDGAIN"]
         keyword_dict["aperture_pa"] = self.imghdu[0].header["PA_V3"]
+        keyword_dict["gain_keys"] = [self.imghdu[0].header[k[:8]] for k in self.imghdu[0].header["ATODGN*"]]
 
         # The total detection product has the FILTER keyword in
         # the primary header - read it for any instrument.
@@ -242,6 +251,8 @@ class CatalogImage:
         keyword_dict["orientation"] = self.imghdu[1].header["ORIENTAT"]
         keyword_dict["aperture_ra"] = self.imghdu[1].header["RA_APER"]
         keyword_dict["aperture_dec"] = self.imghdu[1].header["DEC_APER"]
+        keyword_dict["photflam"] = self.imghdu[1].header["PHOTFLAM"]
+        keyword_dict["photplam"] = self.imghdu[1].header["PHOTPLAM"]
 
         return keyword_dict
 
@@ -327,6 +338,9 @@ class HAPCatalogs:
         for catalog in self.catalogs.values():
             catalog.measure_sources(filter_name, **pars)
 
+        for catalog in self.catalogs.values():
+            catalog.image.close()
+
     def write(self, **pars):
         """Write catalogs for this image to output files.
 
@@ -367,7 +381,6 @@ class HAPCatalogBase:
     def __init__(self, image, param_dict, param_dict_qc, diagnostic_mode, tp_sources):
         self.image = image
         self.imgname = image.imgname
-        self.bkg = image.bkg
         self.param_dict = param_dict
         self.param_dict_qc = param_dict_qc
         self.diagnostic_mode = diagnostic_mode
@@ -375,9 +388,9 @@ class HAPCatalogBase:
         self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
 
         # Compute average gain - there will always be at least one gain value in the primary header
-        gain_keys = self.image.imghdu[0].header['atodgn*']
-        gain_values = [gain_keys[g] for g in gain_keys if gain_keys[g] > 0.0]
-        self.gain = self.image.imghdu[0].header['exptime'] * np.mean(gain_values)
+        gain_keys = self.image.keyword_dict['gain_keys']
+        gain_values = [g for g in gain_keys if g > 0.0]
+        self.gain = self.image.keyword_dict['exptime'] * np.mean(gain_values)
 
         # Convert photometric aperture radii from arcsec to pixels
         self.aper_radius_arcsec = [self.param_dict['aperture_1'], self.param_dict['aperture_2']]
@@ -634,8 +647,8 @@ class HAPPointCatalog(HAPCatalogBase):
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers,
                                                                 bg_apers,
                                                                 data=image,
-                                                                photflam=self.image.imghdu[1].header['photflam'],
-                                                                photplam=self.image.imghdu[1].header['photplam'],
+                                                                photflam=self.image.keyword_dict['photflam'],
+                                                                photplam=self.image.keyword_dict['photplam'],
                                                                 error_array=self.image.bkg_rms_ra,
                                                                 bg_method=self.param_dict['salgorithm'],
                                                                 epadu=self.gain)
@@ -1130,8 +1143,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Compute the MagIso
         filter_measurements_table["MagIso"] = photometry_tools.convert_flux_to_abmag(filter_measurements_table["source_sum"],
-                                                                                     self.image.imghdu[1].header['photflam'],
-                                                                                     self.image.imghdu[1].header['photplam'])
+                                                                                     self.image.keyword_dict['photflam'],
+                                                                                     self.image.keyword_dict['photplam'])
 
         # Determine the "good rows" as defined by the X and Y coordinates not being nans as
         # the pos_xy array cannot contain any nan values.  Note: It is possible for a filter
@@ -1167,9 +1180,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
             photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers,
                                                                     bg_apers,
                                                                     data=input_image,
-                                                                    photflam=self.image.imghdu[1].header['photflam'],
-                                                                    photplam=self.image.imghdu[1].header['photplam'],
-                                                                    error_array=self.bkg.background_rms,
+                                                                    photflam=self.image.keyword_dict['photflam'],
+                                                                    photplam=self.image.keyword_dict['photplam'],
+                                                                    error_array=self.image.bkg_rms_ra,
                                                                     bg_method=self.param_dict['salgorithm'],
                                                                     epadu=self.gain)
 

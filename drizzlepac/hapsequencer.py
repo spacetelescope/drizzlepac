@@ -75,7 +75,6 @@ envvar_qa_svm = "SVM_QUALITY_TESTING"
 
 # --------------------------------------------------------------------------------------------------------------
 
-
 def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, phot_mode='both'):
     """This subroutine utilizes hlautils/catalog_utils module to produce photometric sourcelists for the specified
     total drizzle product and it's associated child filter products.
@@ -340,7 +339,6 @@ def create_drizzle_products(total_obj_list):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-
 def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_configs=True,
                        input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
                        log_level=logutil.logging.INFO):
@@ -491,9 +489,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             # Compute WCS differences between the primary WCS and the alternates, except for OPUS WCS
             svm_qa.report_wcs(total_obj_list)
 
-        # 9: Compare results to HLA classic counterparts (if possible)
-        if diagnostic_mode:
-            run_sourcelist_comparision(total_obj_list, diagnostic_mode=diagnostic_mode, log_level=log_level)
         # Write out manifest file listing all products generated during processing
         log.info("Creating manifest file {}.".format(manifest_name))
         log.info("  The manifest contains the names of products generated during processing.")
@@ -573,7 +568,6 @@ def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic
         #
 
 # ----------------------------------------------------------------------------------------------------------------------
-
 
 def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_level, diagnostic_mode=False):
     """
