@@ -85,7 +85,7 @@ class CatalogImage:
 
     # def build_kernel(self, box_size, win_size, fwhmpsf):
     def build_kernel(self, box_size, win_size, fwhmpsf):
-        if self.bkg is None:
+        if self.bkg_background_ra is None:
             self.compute_background(box_size, win_size)
 
         k, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
@@ -195,6 +195,7 @@ class CatalogImage:
         self.bkg_background_ra = bkg_background_ra.copy()
         self.bkg_rms_ra = bkg_rms_ra.copy()
         self.bkg_rms_median = bkg_rms_median.copy()
+        self.bkg_median = bkg_median.copy()
         
         del bkg, bkg_background_ra, bkg_rms_ra, bkg_rms_median, bkg_median
 
@@ -336,7 +337,9 @@ class HAPCatalogs:
 
         for catalog in self.catalogs.values():
             catalog.measure_sources(filter_name, **pars)
-            catalog.close()
+
+        for catalog in self.catalogs.values():
+            catalog.image.close()
 
     def write(self, **pars):
         """Write catalogs for this image to output files.
@@ -378,7 +381,6 @@ class HAPCatalogBase:
     def __init__(self, image, param_dict, param_dict_qc, diagnostic_mode, tp_sources):
         self.image = image
         self.imgname = image.imgname
-        self.bkg = image.bkg
         self.param_dict = param_dict
         self.param_dict_qc = param_dict_qc
         self.diagnostic_mode = diagnostic_mode
@@ -387,7 +389,7 @@ class HAPCatalogBase:
 
         # Compute average gain - there will always be at least one gain value in the primary header
         gain_keys = self.image.keyword_dict['gain_keys']
-        gain_values = [gain_keys[g] for g in gain_keys if gain_keys[g] > 0.0]
+        gain_values = [g for g in gain_keys if g > 0.0]
         self.gain = self.image.keyword_dict['exptime'] * np.mean(gain_values)
 
         # Convert photometric aperture radii from arcsec to pixels
