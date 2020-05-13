@@ -299,7 +299,7 @@ def create_drizzle_products(total_obj_list):
                 exposure_obj.wcs_drizzle_product(meta_wcs)
                 product_list.append(exposure_obj.drizzle_filename)
                 product_list.append(exposure_obj.full_filename)
-                product_list.append(exposure_obj.headerlet_filename)
+                # product_list.append(exposure_obj.headerlet_filename)
                 product_list.append(exposure_obj.trl_filename)
 
         # Create drizzle-combined total detection image after the drizzle-combined filter image and
@@ -450,7 +450,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
         reference_catalog = run_align_to_gaia(total_obj_list, log_level=log_level, diagnostic_mode=diagnostic_mode)
         if reference_catalog:
-            product_list += [reference_catalog]
+            product_list += reference_catalog
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
@@ -560,7 +560,10 @@ def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic
         if align_table is None:
             gaia_obj.refname = None
 
-        return gaia_obj.refname
+        # Get names of all headerlet files written out to file
+        headerlet_filenames = [f for f in align_table.filtered_table['headerletFile'] if f != "None"]
+        
+        return [gaia_obj.refname]+headerlet_filenames
 
         #
         # Composite WCS fitting should be done at this point so that all exposures have been fit to GAIA at
