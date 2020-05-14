@@ -27,6 +27,28 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 # ------------------------------------------------------------------------------------------------------------
 
+def filter_header_info(unfiltered_header):
+    """removes unwanted/unneeded keywords from header according to various rules prior to insertion to pandas
+    DataFrame ingest dictionary.
+
+    NOTE: For the time being, this subroutine is an inert placeholder. In the near future, header keywords
+    will be filtered using a keyword whitelsit stored in a json harvester settings paramter file.
+
+    Parameters
+    ----------
+    unfiltered_header : dictionary
+        dictionary of unfiltered header information to process
+
+    Returns
+    -------
+    filtered_header : dictionary
+        filtered version of input dictionary *unfiltered_header*
+    """
+    # TODO: IMPLEMENT KEYWORD FILTERING AT A LATER DATE!
+    filtered_header = unfiltered_header
+    return filtered_header
+# ------------------------------------------------------------------------------------------------------------
+
 
 def flatten_dict(dd, separator='.', prefix=''):
     """Recursive subroutine to flatten nested dictionaries down into a single-layer dictionary.
@@ -175,8 +197,9 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
             title_suffex = ""
         json_data = du.read_json_file(json_filename)
         if not header_ingested:
-            for header_item in json_data['header'].keys():
-                ingest_dict["header."+header_item] = json_data['header'][header_item]
+            filtered_header = filter_header_info(json_data['header'])
+            for header_item in filtered_header.keys():
+                ingest_dict["header."+header_item] = filtered_header[header_item]
             header_ingested = True
         if not gen_info_ingested:
             for gi_item in json_data['general information'].keys():
