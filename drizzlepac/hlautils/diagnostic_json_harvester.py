@@ -25,6 +25,33 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
+# ------------------------------------------------------------------------------------------------------------
+
+
+def flatten_dict(dd, separator='.', prefix=''):
+    """Recursive subroutine to flatten nested dictionaries down into a single-layer dictionary.
+    Borrowed from https://www.geeksforgeeks.org/python-convert-nested-dictionary-into-flattened-dictionary/
+
+    Parameters
+    ----------
+    dd : dict
+        dictionary to flatten
+
+    separator : str, optional
+        separator character used in constructing flattened dictionary key names from multiple recursive
+        elements. Default value is '.'
+
+    prefix : str, optional
+        flattened dictionary key prefix. Default value is an empty string ('').
+
+    Returns
+    -------
+    a version of input dictionary *dd* that has been flattened by one layer
+    """
+    return {prefix + separator + k if prefix else k: v
+            for kk, vv in dd.items()
+            for k, v in flatten_dict(vv, separator, kk).items()
+            } if isinstance(dd, dict) else {prefix: dd}
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -87,7 +114,8 @@ def json_harvester(log_level=logutil.logging.INFO):
 
     Returns
     -------
-    TBD
+    master_dataframe : Pandas DataFrame
+        pandas DataFrame containing all information harvested from the json files.
     """
     log.setLevel(log_level)
 
@@ -95,13 +123,13 @@ def json_harvester(log_level=logutil.logging.INFO):
     json_dict = get_json_files(log_level=log_level)
     master_dataframe = None
     for idx in json_dict.keys():
-        ingest_dict = make_dataframe_line(json_dict[idx], idx, log_level=log_level)
+        ingest_dict = make_dataframe_line(json_dict[idx], log_level=log_level)
         if ingest_dict:
             if master_dataframe is not None:
-                print("APPENDED DATAFRAME")
+                log.debug("APPENDED DATAFRAME")
                 master_dataframe = master_dataframe.append(pd.DataFrame(ingest_dict, index=[idx]))
             else:
-                print("CREATED DATAFRAME")
+                log.debug("CREATED DATAFRAME")
                 master_dataframe = pd.DataFrame(ingest_dict, index=[idx])
     if master_dataframe is not None:
         out_csv_filename = "master_dataframe.csv"
@@ -111,16 +139,33 @@ def json_harvester(log_level=logutil.logging.INFO):
         master_dataframe.to_csv(out_csv_filename)
         print("Wrote "+out_csv_filename)
 
+    return master_dataframe
+
 
 # ------------------------------------------------------------------------------------------------------------
 
 
-def make_dataframe_line(json_filename_list, idx, log_level=logutil.logging.INFO):
-    header_ingested = True # TODO: RESET TO FALSE BEFORE DEPLOYMENT
+def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
+    """extracts information from the json files specified by the input list *json_filename_list*.
+
+    Parameters
+    ----------
+    json_filename_list : list
+        list of json files to process
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'INFO'.
+
+    Returns
+    -------
+    ingest_dict : collections.OrderedDict
+        ordered dictionary containing all information extracted from json files specified by the input list
+        *json_filename_list*.
+    """
+    header_ingested = False
     gen_info_ingested = False
     ingest_dict = collections.OrderedDict()
-
-    print(idx)  # TODO: REMOVE BEFORE DEPLOYMENT
     for json_filename in json_filename_list:
         if json_filename.endswith("_point-cat_svm_compare_sourcelists.json"):
             title_suffex = "hap_vs_hla_point_"
@@ -149,13 +194,7 @@ def make_dataframe_line(json_filename_list, idx, log_level=logutil.logging.INFO)
                 ingest_value = json_data_item
                 ingest_dict[title_suffex + ingest_key] = ingest_value
     return ingest_dict
-# ------------------------------------------------------------------------------------------------------------
 
-def flatten_dict(dd, separator ='.', prefix =''):
-    return { prefix + separator + k if prefix else k : v
-             for kk, vv in dd.items()
-             for k, v in flatten_dict(vv, separator, kk).items()
-             } if isinstance(dd, dict) else { prefix : dd }
 
 
 # ======================================================================================================================
