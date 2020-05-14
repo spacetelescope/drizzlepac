@@ -13,6 +13,7 @@ import copy
 import numpy as np
 
 from astropy import wcs as pywcs
+from astropy.nddata import interpret_bit_flags
 import stwcs
 from astropy.io import fits
 from spherical_geometry.polygon import SphericalPolygon
@@ -26,10 +27,7 @@ from stwcs.wcsutil import altwcs
 from stsci.tools import fileutil as fu
 from stsci.stimage import xyxymatch
 from stsci.tools import logutil, textutil
-try:
-    from stsci.tools.bitmask import interpret_bit_flags
-except ImportError:
-    from stsci.tools.bitmask import interpret_bits_value as interpret_bit_flags
+
 
 from . import catalogs
 from . import linearfit

@@ -64,13 +64,10 @@ EXAMPLES
 """
 import os
 import numpy as np
+from astropy.nddata import interpret_bit_flags
+
 from stsci.tools import stpyfits as fits
 from stsci.tools import parseinput, logutil
-
-try:
-    from stsci.tools.bitmask import interpret_bit_flags
-except ImportError:
-    from stsci.tools.bitmask import interpret_bits_value as interpret_bit_flags
 
 from . import util
 

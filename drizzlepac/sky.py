@@ -11,13 +11,11 @@ input image while recording the subtracted value in the image header.
 """
 import os, sys
 
-from .imageObject import imageObject
-from stsci.tools import fileutil, teal, logutil
-try:
-    from stsci.tools.bitmask import interpret_bit_flags
-except ImportError:
-    from stsci.tools.bitmask import interpret_bits_value as interpret_bit_flags
+import numpy as np
+from astropy.nddata import interpret_bit_flags
 
+from stsci.tools import fileutil, teal, logutil
+import stsci.imagestats as imagestats
 
 from stsci.skypac.skymatch import skymatch
 from stsci.skypac.utils import MultiFileLog, ResourceRefCount, ext2str, \
@@ -25,8 +23,7 @@ from stsci.skypac.utils import MultiFileLog, ResourceRefCount, ext2str, \
 from stsci.skypac.parseat import FileExtMaskInfo, parse_at_file
 
 from . import processInput
-import stsci.imagestats as imagestats
-import numpy as np
+from .imageObject import imageObject
 
 from . import util
 from .version import *
