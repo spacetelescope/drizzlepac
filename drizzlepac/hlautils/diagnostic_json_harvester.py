@@ -6,9 +6,7 @@ drizzlepac/hlautils/svm_quality_analysis.py and stores it as a Pandas DataFrame"
 # Standard library imports
 import collections
 import glob
-import json
 import os
-import pdb
 import sys
 
 # Related third party imports
@@ -47,6 +45,7 @@ def filter_header_info(unfiltered_header):
     # TODO: IMPLEMENT KEYWORD FILTERING AT A LATER DATE!
     filtered_header = unfiltered_header
     return filtered_header
+
 # ------------------------------------------------------------------------------------------------------------
 
 
@@ -144,6 +143,8 @@ def json_harvester(log_level=logutil.logging.INFO):
     # Get sorted list of json files
     json_dict = get_json_files(log_level=log_level)
     master_dataframe = None
+    # extract all information from all json files related to a specific pandas dataframe index value into a
+    # single line in the master dataframe
     for idx in json_dict.keys():
         ingest_dict = make_dataframe_line(json_dict[idx], log_level=log_level)
         if ingest_dict:
@@ -153,6 +154,8 @@ def json_harvester(log_level=logutil.logging.INFO):
             else:
                 log.debug("CREATED DATAFRAME")
                 master_dataframe = pd.DataFrame(ingest_dict, index=[idx])
+
+    # Write master_dataframe out to a .csv comma-seperated file
     if master_dataframe is not None:
         out_csv_filename = "master_dataframe.csv"
         if os.path.exists(out_csv_filename):
@@ -189,6 +192,8 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
     gen_info_ingested = False
     ingest_dict = collections.OrderedDict()
     for json_filename in json_filename_list:
+        # This is to differentiate point catalog compare_sourcelists columns from segment catalog
+        # compare_sourcelists columns in the dataframe
         if json_filename.endswith("_point-cat_svm_compare_sourcelists.json"):
             title_suffex = "hap_vs_hla_point_"
         elif json_filename.endswith("_segment-cat_svm_compare_sourcelists.json"):
@@ -196,15 +201,21 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
         else:
             title_suffex = ""
         json_data = du.read_json_file(json_filename)
+
+        # add information from "header" section to ingest_dict just once
         if not header_ingested:
             filtered_header = filter_header_info(json_data['header'])
             for header_item in filtered_header.keys():
                 ingest_dict["header."+header_item] = filtered_header[header_item]
             header_ingested = True
+
+        # add information from "general information" section to ingest_dict just once
         if not gen_info_ingested:
             for gi_item in json_data['general information'].keys():
                 ingest_dict["gen_info."+gi_item] = json_data['general information'][gi_item]
             gen_info_ingested = True
+
+        # recursivly flatten nested "data" section dictionaries and build ingest_dict
         flattened_data = flatten_dict(json_data['data'])
         for fd_key in flattened_data.keys():
             json_data_item = flattened_data[fd_key]
