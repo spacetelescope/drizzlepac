@@ -1149,7 +1149,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         # Get platescale
         plate_scale = wcsutil.HSTWCS(imgNames[0], ext=('sci', 1)).pscale
         matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-        if output_json_filename:  # Add matched values to diag_obj
+        if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
             diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"X MATCHED VALUES")
             diag_obj.add_update_info_item("header", "plate_scale", plate_scale)
     if matched_values.shape[1] > 0:
@@ -1168,7 +1168,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = json_data['data']['Y']
     else:
         matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-    if output_json_filename:  # Add matched values to diag_obj
+    if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
         diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"Y MATCHED VALUES")
     if matched_values.shape[1] > 0:
         formalTitle = "Y Position"
@@ -1194,10 +1194,10 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values_dec = json_data['data']['DEC']
     else:
         matched_values_ra = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-        if output_json_filename:  # Add matched values to diag_obj
+        if output_json_filename and matched_values_ra.shape[1] > 0:  # Add matched values to diag_obj
             diag_obj.add_data_item(Table([matched_values_ra[0], matched_values_ra[1]], names=('reference', 'comparison')), "RA MATCHED VALUES")
         matched_values_dec = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img,bitmask=bitmask)
-        if output_json_filename:  # Add matched values to diag_obj
+        if output_json_filename and matched_values_dec.shape[1] > 0:  # Add matched values to diag_obj
             diag_obj.add_data_item(Table([matched_values_dec[0], matched_values_dec[1]], names=('reference', 'comparison')),"DEC MATCHED VALUES")
     if matched_values_ra.shape[1] > 0 and matched_values_ra.shape[1] == matched_values_dec.shape[1]:
         # get coordinate system type from fits headers
@@ -1235,7 +1235,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = json_data['data']['FLUX1']
     else:
         matched_values = extractMatchedLines("FLUX1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-        if output_json_filename:  # Add matched values to diag_obj
+        if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
             diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"FLUX1 MATCHED VALUES")
     if matched_values.shape[1] > 0:
         formalTitle = "Flux (Inner Aperture)"
@@ -1251,7 +1251,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = json_data['data']['FLUX2']
     else:
         matched_values = extractMatchedLines("FLUX2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-        if output_json_filename:  # Add matched values to diag_obj
+        if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
             diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"FLUX2 MATCHED VALUES")
     if matched_values.shape[1] > 0:
         formalTitle = "Flux (Outer Aperture)"
@@ -1268,7 +1268,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = json_data['data']['MAGNITUDE1']
     else:
         matched_values = extractMatchedLines("MAGNITUDE1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-        if output_json_filename:  # Add matched values to diag_obj
+        if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
             diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MAGNITUDE1 MATCHED VALUES")
     if matched_values.shape[1] > 0:
         formalTitle = "Magnitude (Inner Aperture)"
@@ -1284,7 +1284,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = json_data['data']['MERR1']
     else:
         matched_values = extractMatchedLines("MERR1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-        if output_json_filename: # Add matched values to diag_obj
+        if output_json_filename and matched_values.shape[1] > 0: # Add matched values to diag_obj
             diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MERR1 MATCHED VALUES")
     if matched_values.shape[1] > 0:
         formalTitle = "Magnitude (Inner Aperture) Error"
@@ -1300,7 +1300,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = json_data['data']['MAGNITUDE2']
     else:
         matched_values = extractMatchedLines("MAGNITUDE2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-        if output_json_filename:  # Add matched values to diag_obj
+        if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
             diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MAGNITUDE2 MATCHED VALUES")
     if matched_values.shape[1] > 0:
         formalTitle = "Magnitude (Outer Aperture)"
@@ -1316,7 +1316,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = json_data['data']['MERR2']
     else:
         matched_values = extractMatchedLines("MERR2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-        if output_json_filename:  # Add matched values to diag_obj
+        if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
             diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MERR2 MATCHED VALUES")
     if matched_values.shape[1] > 0:
         formalTitle = "Magnitude (Outer Aperture) Error"
@@ -1333,7 +1333,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = json_data['data']['MSKY']
     else:
         matched_values = extractMatchedLines("MSKY", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-        if output_json_filename:  # Add matched values to diag_obj
+        if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
             diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MSKY MATCHED VALUES")
     if matched_values.shape[1] > 0:
         formalTitle = "MSKY value"
@@ -1349,7 +1349,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = json_data['data']['STDEV']
     else:
         matched_values = extractMatchedLines("STDEV", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-        if output_json_filename:  # Add matched values to diag_obj
+        if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
             diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"STDEV MATCHED VALUES")
     if matched_values.shape[1] > 0:
         formalTitle = "STDEV value"
@@ -1366,7 +1366,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = json_data['data']['CI']
     else:
         matched_values = extractMatchedLines("CI", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-        if output_json_filename:  # Add matched values to diag_obj
+        if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
             diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"CI MATCHED VALUES")
     if matched_values.shape[1] > 0:
         formalTitle = "CI"
@@ -1383,7 +1383,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         matched_values = json_data['data']['FLAGS']
     else:
         matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
-        if output_json_filename:  # Add matched values to diag_obj
+        if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
             diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"FLAGS MATCHED VALUES")
     if matched_values.shape[1] > 0:
         formalTitle = "Source Flagging"
