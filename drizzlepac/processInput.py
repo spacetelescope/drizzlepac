@@ -37,16 +37,12 @@ import sys
 import numpy as np
 import astropy
 from astropy.io import fits
+from astropy.nddata import interpret_bit_flags
 
 from stwcs import updatewcs as uw
 from stwcs.wcsutil import altwcs, wcscorr
 from stsci.tools import (cfgpars, parseinput, fileutil, asnutil, irafglob,
                          check_files, logutil, mputil, textutil)
-try:
-    from stsci.tools.bitmask import interpret_bit_flags
-except ImportError:
-    from stsci.tools.bitmask import interpret_bits_value as interpret_bit_flags
-
 
 from . import wcs_functions
 from . import util
