@@ -72,7 +72,6 @@ def get_json_files(search_path="", log_level=logutil.logging.INFO):
         raise Exception(err_msg)
 
     return out_json_dict
-# TODO: add logic so that HAP point vs. HLA daophot compare_sourcelist json isn't overwritten by HAP segment vs. HLA sexphot compare_sourcelist json data in dataframe.
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -123,7 +122,12 @@ def make_dataframe_line(json_filename_list, idx, log_level=logutil.logging.INFO)
 
     print(idx)  # TODO: REMOVE BEFORE DEPLOYMENT
     for json_filename in json_filename_list:
-        print("     ",json_filename)  # TODO: REMOVE BEFORE DEPLOYMENT
+        if json_filename.endswith("_point-cat_svm_compare_sourcelists.json"):
+            title_suffex = "hap_vs_hla_point_"
+        elif json_filename.endswith("_segment-cat_svm_compare_sourcelists.json"):
+            title_suffex = "hap_vs_hla_segment_"
+        else:
+            title_suffex = ""
         json_data = du.read_json_file(json_filename)
         if not header_ingested:
             for header_item in json_data['header'].keys():
@@ -140,10 +144,10 @@ def make_dataframe_line(json_filename_list, idx, log_level=logutil.logging.INFO)
             if str(type(json_data_item)) == "<class 'astropy.table.table.Table'>":
                 for coltitle in json_data_item.colnames:
                     ingest_value = json_data_item[coltitle].tolist()
-                    ingest_dict[ingest_key + "." + coltitle] = [ingest_value]
+                    ingest_dict[title_suffex + ingest_key + "." + coltitle] = [ingest_value]
             else:
                 ingest_value = json_data_item
-                ingest_dict[ingest_key] = ingest_value
+                ingest_dict[title_suffex + ingest_key] = ingest_value
     return ingest_dict
 # ------------------------------------------------------------------------------------------------------------
 
@@ -160,6 +164,3 @@ def flatten_dict(dd, separator ='.', prefix =''):
 if __name__ == "__main__":
     #  Testing
     json_harvester(log_level=logutil.logging.DEBUG)
-
-# TODO: automagically ingest data columns into single dataframe cell
-# TODO: join individual
