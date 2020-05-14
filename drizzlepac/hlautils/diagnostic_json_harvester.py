@@ -25,12 +25,13 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 # ------------------------------------------------------------------------------------------------------------
 
+
 def filter_header_info(unfiltered_header):
     """removes unwanted/unneeded keywords from header according to various rules prior to insertion to pandas
     DataFrame ingest dictionary.
 
     NOTE: For the time being, this subroutine is an inert placeholder. In the near future, header keywords
-    will be filtered using a keyword whitelsit stored in a json harvester settings paramter file.
+    will be filtered using a keyword whitelist stored in a json harvester settings parameter file.
 
     Parameters
     ----------
@@ -92,7 +93,7 @@ def get_json_files(search_path="", log_level=logutil.logging.INFO):
     Returns
     -------
     out_json_dict : ordered dictionary
-        dictionary containing lists of all identified json files, grouped by and  keyed by Pandas Dataframe
+        dictionary containing lists of all identified json files, grouped by and  keyed by Pandas DataFrame
         index value
     """
     log.setLevel(log_level)
@@ -110,7 +111,7 @@ def get_json_files(search_path="", log_level=logutil.logging.INFO):
             if dataframe_idx in out_json_dict.keys():
                 out_json_dict[dataframe_idx].append(json_filename)
             else:
-                out_json_dict[dataframe_idx]=[json_filename]
+                out_json_dict[dataframe_idx] = [json_filename]
             del(json_data)  # Housekeeping!
 
     # Fail gracefully if no .json files were found
@@ -143,7 +144,7 @@ def json_harvester(log_level=logutil.logging.INFO):
     # Get sorted list of json files
     json_dict = get_json_files(log_level=log_level)
     master_dataframe = None
-    # extract all information from all json files related to a specific pandas dataframe index value into a
+    # extract all information from all json files related to a specific Pandas DataFrame index value into a
     # single line in the master dataframe
     for idx in json_dict.keys():
         ingest_dict = make_dataframe_line(json_dict[idx], log_level=log_level)
@@ -155,7 +156,7 @@ def json_harvester(log_level=logutil.logging.INFO):
                 log.debug("CREATED DATAFRAME")
                 master_dataframe = pd.DataFrame(ingest_dict, index=[idx])
 
-    # Write master_dataframe out to a .csv comma-seperated file
+    # Write master_dataframe out to a .csv comma-separated file
     if master_dataframe is not None:
         out_csv_filename = "master_dataframe.csv"
         if os.path.exists(out_csv_filename):
@@ -195,11 +196,11 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
         # This is to differentiate point catalog compare_sourcelists columns from segment catalog
         # compare_sourcelists columns in the dataframe
         if json_filename.endswith("_point-cat_svm_compare_sourcelists.json"):
-            title_suffex = "hap_vs_hla_point_"
+            title_suffix = "hap_vs_hla_point_"
         elif json_filename.endswith("_segment-cat_svm_compare_sourcelists.json"):
-            title_suffex = "hap_vs_hla_segment_"
+            title_suffix = "hap_vs_hla_segment_"
         else:
-            title_suffex = ""
+            title_suffix = ""
         json_data = du.read_json_file(json_filename)
 
         # add information from "header" section to ingest_dict just once
@@ -215,20 +216,19 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
                 ingest_dict["gen_info."+gi_item] = json_data['general information'][gi_item]
             gen_info_ingested = True
 
-        # recursivly flatten nested "data" section dictionaries and build ingest_dict
+        # recursively flatten nested "data" section dictionaries and build ingest_dict
         flattened_data = flatten_dict(json_data['data'])
         for fd_key in flattened_data.keys():
             json_data_item = flattened_data[fd_key]
-            ingest_key = fd_key.replace(" ","_")
+            ingest_key = fd_key.replace(" ", "_")
             if str(type(json_data_item)) == "<class 'astropy.table.table.Table'>":
                 for coltitle in json_data_item.colnames:
                     ingest_value = json_data_item[coltitle].tolist()
-                    ingest_dict[title_suffex + ingest_key + "." + coltitle] = [ingest_value]
+                    ingest_dict[title_suffix + ingest_key + "." + coltitle] = [ingest_value]
             else:
                 ingest_value = json_data_item
-                ingest_dict[title_suffex + ingest_key] = ingest_value
+                ingest_dict[title_suffix + ingest_key] = ingest_value
     return ingest_dict
-
 
 
 # ======================================================================================================================
