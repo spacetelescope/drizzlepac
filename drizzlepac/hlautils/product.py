@@ -433,3 +433,151 @@ class ExposureProduct(HAPProduct):
         shutil.copy(filename, edp_filename)
 
         return edp_filename
+        
+        
+class SkyCellProduct(HAPProduct):
+    """ A SkyCell Product is a mosaic comprised of images acquired
+        during a multiple visits with one instrument, one detector, a single filter,
+        and all exposure times.  The exposure time characteristic may change - TBD.
+
+        The "scp" is short hand for SkyCellProduct.
+    """
+    def __init__(self, prop_id, obset_id, instrument, detector, filename, layer, filetype, log_level):
+        super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
+
+        self.info = '_'.join([prop_id, obset_id, instrument, detector, filename, layer, filetype])
+        if filename[0:7].lower() != "layerwcs":
+            self.exposure_name = filename[0:6]
+            self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
+        else:
+            self.exposure_name = "layerwcs"
+            self.product_basename = self.basename + "_".join(map(str, 
+                                                                [filetype, 
+                                                                self.exposure_name]+ 
+                                                                list(layer)))
+
+        self.filters = filters
+
+        # Trailer names .txt or .log
+        self.trl_logname = self.product_basename + "_trl.log"
+        self.trl_filename = self.product_basename + "_trl.txt"
+        self.point_cat_filename = None
+        self.segment_cat_filename = None
+        self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
+        self.refname = self.product_basename + "_ref_cat.ecsv"
+
+        # These attributes will be populated during processing
+        self.edp_list = []
+        self.regions_dict = {}
+
+        log.debug("SkyCell object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
+
+    def add_member(self, edp):
+        """ Add an ExposureProduct object to the list - composition.
+        """
+        self.edp_list.append(edp)
+
+    def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
+                        fit_label='MVM', align_table=None, fitgeom='rscale'):
+        """Extract the flt/flc filenames from the exposure product list, as
+           well as the corresponding headerlet filenames to use legacy alignment
+           routine.
+        """
+        log.info('Starting alignment to absolute astrometric reference frame {}'.format(catalog_name))
+        alignment_pars = self.configobj_pars.get_pars('alignment')
+
+        # Only perform the relative alignment
+        method_name = 'relative'
+
+        exposure_filenames = []
+        headerlet_filenames = {}
+        align_table = None
+        try:
+            if self.edp_list:
+                for edp in self.edp_list:
+                    exposure_filenames.append(edp.full_filename)
+                    headerlet_filenames[edp.full_filename] = edp.headerlet_filename
+
+                if align_table is None:
+                    align_table = align_utils.AlignmentTable(exposure_filenames,
+                                                             log_level=self.log_level,
+                                                             **alignment_pars)
+                    align_table.find_alignment_sources(output=output)
+                    align_table.configure_fit()
+                log.debug('Creating reference catalog {}'.format(self.refname))
+                ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
+                                                                 catalog=catalog_name,
+                                                                 output=self.refname,
+                                                                 gaia_only=False)
+
+                log.debug("Abbreviated reference catalog displayed below\n{}".format(ref_catalog))
+                align_table.reference_catalogs[self.refname] = ref_catalog
+                if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
+                    align_table.perform_fit(method_name, catalog_name, ref_catalog,
+                                           fitgeom=fitgeom)
+                    align_table.select_fit(catalog_name, method_name)
+                    align_table.apply_fit(headerlet_filenames=headerlet_filenames,
+                                         fit_label=fit_label)
+                else:
+                    log.warning("Not enough reference sources for absolute alignment...")
+                    raise ValueError
+
+        except Exception:
+            # Report a problem with the alignment
+            log.warning("EXCEPTION encountered in align_to_gaia for the FilteredProduct.\n")
+            log.warning("No correction to absolute astrometric frame applied.\n")
+            log.warning("Proceeding with previous best solution.\n")
+
+            # Only write out the traceback if in "debug" mode since not being able to
+            # align the data to an absolute astrometric frame is not actually a failure.
+            log.debug(traceback.format_exc())
+            align_table = None
+
+            # If the align_table is None, it is necessary to clean-up reference catalogs
+            # created for alignment of each filter product here.
+            if self.refname and os.path.exists(self.refname):
+                os.remove(self.refname)
+
+
+        # Return a table which contains data regarding the alignment, as well as the
+        # list of the flt/flc exposures which were part of the alignment process
+        # TODO: This does not account for individual exposures which might have been
+        # excluded from alignment.
+        return align_table, exposure_filenames
+
+    def wcs_drizzle_product(self, meta_wcs):
+        """
+            Create the drizzle-combined sky-cell layer image using the meta_wcs as the reference output
+        """
+        # This insures that keywords related to the footprint are generated for this
+        # specific object to use in updating the output drizzle product.
+        self.meta_wcs = meta_wcs
+        if self.mask is None:
+            self.generate_footprint_mask()
+
+        # Retrieve the configuration parameters for astrodrizzle
+        drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
+        # ...and set parameters which are computed on-the-fly
+        drizzle_pars["final_refimage"] = meta_wcs
+        drizzle_pars["runfile"] = self.trl_logname
+        # Setting "preserve" to false so the OrIg_files directory is deleted as the purpose
+        # of this directory is now obsolete.
+        drizzle_pars["preserve"] = False
+        log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
+                  "have been updated for the drizzle step of the filter drizzle product."
+                  .format(meta_wcs, self.trl_logname))
+
+        edp_filenames = [element.full_filename for element in self.edp_list]
+        astrodrizzle.AstroDrizzle(input=edp_filenames,
+                                  output=self.drizzle_filename,
+                                  **drizzle_pars)
+
+        # Update product with SVM-specific keywords based on the footprint
+        with fits.open(self.drizzle_filename, mode='update') as hdu:
+            for kw in self.mask_kws:
+                hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
+
+        # Rename Astrodrizzle log file as a trailer file
+        log.debug("Sky-cell layer image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
+        shutil.move(self.trl_logname, self.trl_filename)
+
