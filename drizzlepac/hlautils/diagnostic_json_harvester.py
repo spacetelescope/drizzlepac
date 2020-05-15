@@ -4,9 +4,11 @@
 drizzlepac/hlautils/svm_quality_analysis.py and stores it as a Pandas DataFrame"""
 
 # Standard library imports
+import argparse
 import collections
 import glob
 import os
+import pdb
 import sys
 
 # Related third party imports
@@ -78,7 +80,7 @@ def flatten_dict(dd, separator='.', prefix=''):
 # ------------------------------------------------------------------------------------------------------------
 
 
-def get_json_files(search_path="", log_level=logutil.logging.INFO):
+def get_json_files(search_path=os.getcwd(), log_level=logutil.logging.INFO):
     """use grep to create a list of json files to harvest
 
     Parameters
@@ -125,14 +127,24 @@ def get_json_files(search_path="", log_level=logutil.logging.INFO):
 # ------------------------------------------------------------------------------------------------------------
 
 
-def json_harvester(log_level=logutil.logging.INFO):
+def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
+                   output_filename="svm_qa_dataframe.csv"):
     """Main calling function
 
     Parameters
     ----------
+    json_search_path : str, optional
+        The full path of the directory that will be searched for json files to process. If not explicitly
+        specified, the current working directory will be used.
+
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
         .log file. Default value is 'INFO'.
+
+    output_filename : str, optional
+        Name of the output .csv file that the Pandas DataFrame will be written to. If not explicitly
+        specified, the DataFrame will be written to the file 'svm_qa_dataframe.csv' in the current working
+        directory.
 
     Returns
     -------
@@ -142,7 +154,7 @@ def json_harvester(log_level=logutil.logging.INFO):
     log.setLevel(log_level)
 
     # Get sorted list of json files
-    json_dict = get_json_files(log_level=log_level)
+    json_dict = get_json_files(search_path=json_search_path, log_level=log_level)
     master_dataframe = None
     # extract all information from all json files related to a specific Pandas DataFrame index value into a
     # single line in the master dataframe
@@ -158,12 +170,10 @@ def json_harvester(log_level=logutil.logging.INFO):
 
     # Write master_dataframe out to a .csv comma-separated file
     if master_dataframe is not None:
-        out_csv_filename = "master_dataframe.csv"
-        if os.path.exists(out_csv_filename):
-            os.remove(out_csv_filename)
-
-        master_dataframe.to_csv(out_csv_filename)
-        print("Wrote "+out_csv_filename)
+        # if os.path.exists(output_filename):
+        #     os.remove(output_filename)
+        master_dataframe.to_csv(output_filename)
+        log.info("Wrote dataframe to {}".format(output_filename))
 
     return master_dataframe
 
@@ -189,6 +199,7 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
         ordered dictionary containing all information extracted from json files specified by the input list
         *json_filename_list*.
     """
+    log.setLevel(log_level)
     header_ingested = False
     gen_info_ingested = False
     ingest_dict = collections.OrderedDict()
@@ -235,5 +246,36 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
 
 
 if __name__ == "__main__":
-    #  Testing
-    json_harvester(log_level=logutil.logging.DEBUG)
+    # process command-line inputs with argparse
+    parser = argparse.ArgumentParser(description='ingest all SVM QA json files into a Pandas DataFrame and'
+                                                 'and write DataFrame to an .csv file.')
+    parser.add_argument('-j', '--json_search_path', required=False, default=os.getcwd(),
+                        help='The full path of the directory that will be searched for json files to '
+                             'process. If not explicitly specified, the current working dirctory will be '
+                             'used.')
+    parser.add_argument('-l', '--log_level', required=False, default='info',
+                        choices=['critical', 'error', 'warning', 'info', 'debug'],
+                        help='The desired level of verboseness in the log statements displayed on the screen '
+                             'and written to the .log file. The level of verboseness from left to right, and '
+                             'includes all log statements with a log_level left of the specified level. '
+                             'Specifying "critical" will only record/display "critical" log statements, and '
+                             'specifying "error" will record/display both "error" and "critical" log '
+                             'statements, and so on.')
+    parser.add_argument('-o', '--output_filename', required=False, default="svm_qa_dataframe.csv",
+                        help='Name of the output .csv file that the Pandas DataFrame will be written to. If'
+                             'not explicitly specified, the DataFrame will be written to the file '
+                             '"svm_qa_dataframe.csv" in the current working directory')
+    user_args = parser.parse_args()
+
+    # set up logging
+    log_dict = {"critical": logutil.logging.CRITICAL,
+                "error": logutil.logging.ERROR,
+                "warning": logutil.logging.WARNING,
+                "info": logutil.logging.INFO,
+                "debug": logutil.logging.DEBUG}
+    log_level = log_dict[user_args.log_level]
+    log.setLevel(log_level)
+
+    json_harvester(json_search_path=user_args.json_search_path,
+                   log_level=log_level,
+                   output_filename=user_args.output_filename)
