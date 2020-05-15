@@ -1,7 +1,7 @@
 from configobj import ConfigObj
 from validate import Validator
 import os
-import pdb
+
 param_dict = {
     "ACS HRC": {
         "astrodrizzle": {

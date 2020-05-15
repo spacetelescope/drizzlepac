@@ -1,6 +1,5 @@
 import os
 import shutil
-import sys
 
 from matplotlib import pyplot as plt
 from scipy import ndimage
@@ -648,8 +647,6 @@ def compute_band_height(wcs):
 # CKmeans implementation from github/llimllib/ckmeans
 #
 #
-import numpy as np
-
 def ssq(j, i, sum_x, sum_x_sq):
     if (j > 0):
         muji = (sum_x[i] - sum_x[j-1]) / (i - j + 1)
@@ -780,7 +777,6 @@ def partition_n(iterable, n):
     s = sliceable(iterable)
     l = len(s)
     b, mid, e = [0], list(range(1, l)), [l]
-    getslice = s.__getitem__
     splits = (d for i in range(l) for d in combinations(mid, n-1))
     return [[s[sl] for sl in map(slice, chain(b, d), chain(d, e))]
             for d in splits]
@@ -828,7 +824,7 @@ def ckmeans_test():
         args, expected = test
         try:
             result = ckmeans(*args)
-        except:
+        except Exception:
             print("✗ {}, {}".format(args[0], args[1], result))
             raise
         errormsg = "✗ ckmeans({}) = {} != {}\n{} > {}".format(

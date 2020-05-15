@@ -3,8 +3,6 @@ import pdb
 import sys
 
 
-import drizzlepac
-from drizzlepac import hapsequencer
 from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import poller_utils
 

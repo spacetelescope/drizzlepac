@@ -9,7 +9,6 @@ from stsci.tools import logutil
 
 from drizzlepac import util
 from drizzlepac.devutils.confirm_execution import confirm_execution
-from drizzlepac.hlautils.catalog_utils import HAPCatalogs
 from drizzlepac import hapsequencer
 from drizzlepac.hlautils import config_utils
 from drizzlepac.hlautils import poller_utils
