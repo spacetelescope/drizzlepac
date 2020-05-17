@@ -485,7 +485,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             svm_qa.run_quality_analysis(total_obj_list, log_level=log_level)
 
             # Compute WCS differences between the primary WCS and the alternates, except for OPUS WCS
-            svm_qa.report_wcs(total_obj_list)
+            #svm_qa.report_wcs(total_obj_list)
 
         # Write out manifest file listing all products generated during processing
         log.info("Creating manifest file {}.".format(manifest_name))
