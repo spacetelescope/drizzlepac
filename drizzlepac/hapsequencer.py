@@ -444,11 +444,11 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                                                                   output_custom_pars_file=output_custom_pars_file)
                 expo_item = poller_utils.add_primary_fits_header_as_attr(expo_item, log_level)
 
-        log.info("The configuration parameters have been read and applied to the drizzle objects.")
+            log.info("The configuration parameters have been read and applied to the drizzle objects.")
 
-        reference_catalog = run_align_to_gaia(total_obj_list, log_level=log_level, diagnostic_mode=diagnostic_mode)
-        if reference_catalog:
-            product_list += reference_catalog
+            reference_catalog = run_align_to_gaia(total_item, log_level=log_level, diagnostic_mode=diagnostic_mode)
+            if reference_catalog:
+                product_list += reference_catalog
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
@@ -519,51 +519,48 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
 # ------------------------------------------------------------------------------------------------------------
 
-def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic_mode=False):
+def run_align_to_gaia(tot_obj, log_level=logutil.logging.INFO, diagnostic_mode=False):
     # Run align.py on all input images sorted by overlap with GAIA bandpass
     log.info("\n{}: Align the all filters to GAIA with the same fit".format(str(datetime.datetime.now())))
     gaia_obj = None
+    headerlet_filenames = []
+    
     # Start by creating a FilterProduct instance which includes ALL input exposures
-    for tot_obj in total_obj_list:
-        for exp_obj in tot_obj.edp_list:
-            if gaia_obj is None:
-                prod_list = exp_obj.info.split("_")
-                prod_list[4] = "metawcs"
-                gaia_obj = product.FilterProduct(prod_list[0], prod_list[1], prod_list[2],
-                                                 prod_list[3], prod_list[4], "all",
-                                                 prod_list[5][0:3], log_level)
-                gaia_obj.configobj_pars = tot_obj.configobj_pars
-            gaia_obj.add_member(exp_obj)
+    for exp_obj in tot_obj.edp_list:
+        if gaia_obj is None:
+            prod_list = exp_obj.info.split("_")
+            prod_list[4] = "metawcs"
+            gaia_obj = product.FilterProduct(prod_list[0], prod_list[1], prod_list[2],
+                                             prod_list[3], prod_list[4], "all",
+                                             prod_list[5][0:3], log_level)
+            gaia_obj.configobj_pars = tot_obj.configobj_pars
+        gaia_obj.add_member(exp_obj)
 
-        log.info("\n{}: Combined all filter objects in gaia_obj".format(str(datetime.datetime.now())))
+    log.info("\n{}: Combined all filter objects in gaia_obj".format(str(datetime.datetime.now())))
 
-        # Now, perform alignment to GAIA with 'match_relative_fit' across all inputs
-        # Need to start with one filt_obj.align_table instance as gaia_obj.align_table
-        #  - append imglist from each filt_obj.align_table to the gaia_obj.align_table.imglist
-        #  - reset group_id for all members of gaia_obj.align_table.imglist to the unique incremental values
-        #  - run gaia_obj.align_table.perform_fit() with 'match_relative_fit' only
-        #  - migrate updated WCS solutions to exp_obj instances, if necessary (probably not?)
-        #  - re-run tot_obj.generate_metawcs() method to recompute total object meta_wcs based on updated
-        #    input exposure's WCSs
-        align_table, filt_exposures = gaia_obj.align_to_gaia(output=diagnostic_mode, fit_label='SVM')
+    # Now, perform alignment to GAIA with 'match_relative_fit' across all inputs
+    # Need to start with one filt_obj.align_table instance as gaia_obj.align_table
+    #  - append imglist from each filt_obj.align_table to the gaia_obj.align_table.imglist
+    #  - reset group_id for all members of gaia_obj.align_table.imglist to the unique incremental values
+    #  - run gaia_obj.align_table.perform_fit() with 'match_relative_fit' only
+    #  - migrate updated WCS solutions to exp_obj instances, if necessary (probably not?)
+    #  - re-run tot_obj.generate_metawcs() method to recompute total object meta_wcs based on updated
+    #    input exposure's WCSs
+    align_table, filt_exposures = gaia_obj.align_to_gaia(output=diagnostic_mode, fit_label='SVM')
 
-        for tot_obj in total_obj_list:
-            tot_obj.generate_metawcs()
-        log.info("\n{}: Finished aligning gaia_obj to GAIA".format(str(datetime.datetime.now())))
+    tot_obj.generate_metawcs()
 
-        # Return the name of the alignment catalog
-        if align_table is None:
-            gaia_obj.refname = None
+    log.info("\n{}: Finished aligning gaia_obj to GAIA".format(str(datetime.datetime.now())))
+    log.info("ALIGNED WCS: \n{}".format(tot_obj.meta_wcs))
 
+    # Return the name of the alignment catalog
+    if align_table is None:
+        gaia_obj.refname = None
+    else:
         # Get names of all headerlet files written out to file
         headerlet_filenames = [f for f in align_table.filtered_table['headerletFile'] if f != "None"]
         
-        return [gaia_obj.refname]+headerlet_filenames
-
-        #
-        # Composite WCS fitting should be done at this point so that all exposures have been fit to GAIA at
-        # the same time (on the same frame)
-        #
+    return [gaia_obj.refname]+headerlet_filenames
 
 # ----------------------------------------------------------------------------------------------------------------------
 
