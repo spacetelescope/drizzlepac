@@ -787,9 +787,10 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                                'wcs_info': {'crpix1': metawcs.wcs.crpix[0],
                                'crpix2': metawcs.wcs.crpix[1],
                                'crval1': metawcs.wcs.crval[0], 'crval2': metawcs.wcs.crval[1],
-                               'scale': metawcs.pscale, 'orientation': metawcs.orientat}}
+                               'scale': metawcs.pscale, 'orientation': metawcs.orientat,
+                               'exposure': edp_object.exposure_name}}
 
-            diagnostic_obj.add_data_item(active_wcs_dict, 'Primary WCS Information')
+            diagnostic_obj.add_data_item(active_wcs_dict, 'PrimaryWCS_' + edp_object.exposure_name)
 
             # Determine the possible alternate WCS solutions in the header
             dict_of_wcskeys_names = wcsutil.altwcs.wcsnames(edp_object.full_filename, ext=1)
@@ -827,7 +828,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
             for bad_key in bad_match_key:
                 dict_of_wcskeys_names.pop(bad_key)
 
-            log.info("Removed any bad WCS keys and names {}".format(dict_of_wcskeys_names))
+            log.info("Remaining WCS keys and names based on same reference root {}".format(dict_of_wcskeys_names))
 
             # If there is anything left to compare, then do it.
             if len(dict_of_wcskeys_names) > 1:
@@ -837,6 +838,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                 # not already a duplicate). Use key 'Z'.  *** FIX MDD Should check for Z in use.
                 wcsutil.altwcs.archiveWCS(edp_object.full_filename, ext=extname_list, wcskey='Z')
 
+                icnt = 0
                 # Restore an alternate to be the primary WCS
                 for key, value in dict_of_wcskeys_names.items():
                     if key != ' ':
@@ -844,38 +846,46 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                         alt_key = key
                         alt_wcs_name = value
 
-                    # Create a metawcs for this alternate WCS
-                    alt_metawcs = wcs_functions.make_mosaic_wcs(edp_object.full_filename)
+                        # Create a metawcs for this alternate WCS
+                        alt_metawcs = wcs_functions.make_mosaic_wcs(edp_object.full_filename)
 
-                    # Get information from the alternate/active WCS
-                    alt_wcs_dict = {'alternate_wcsname': alt_wcs_name,
-                                    'wcs_info': {'crpix1': alt_metawcs.wcs.crpix[0],
-                                    'crpix2': alt_metawcs.wcs.crpix[1],
-                                    'crval1': alt_metawcs.wcs.crval[0], 'crval2': alt_metawcs.wcs.crval[1],
-                                    'scale': alt_metawcs.pscale, 'orientation': alt_metawcs.orientat}}
-                    diagnostic_obj.add_data_item(alt_wcs_dict, 'Alternate WCS Information')
+                        # Get information from the alternate/active WCS
+                        alt_wcs_dict = {'alternate_wcsname': alt_wcs_name,
+                                        'wcs_info': {'crpix1': alt_metawcs.wcs.crpix[0],
+                                        'crpix2': alt_metawcs.wcs.crpix[1],
+                                        'crval1': alt_metawcs.wcs.crval[0], 'crval2': alt_metawcs.wcs.crval[1],
+                                        'scale': alt_metawcs.pscale, 'orientation': alt_metawcs.orientat,
+                                        'exposure': edp_object.exposure_name}}
 
-                    delta_wcs = metawcs.wcs.name + ' - ' + alt_wcs_name
-                    diff_wcs_dict = {'delta_wcsname': delta_wcs, 'wcs_info': {}}
-                    # if or wcs_key in active_wcs_dict.keys():
-                    #    if wcs_key.find('wcsname') != -1:
-                    #        continue
-                    #    print("wcs_key: {}".format(wcs_key))
-                    #    diff_wcs_dict['wcs_info'][wcs_key] = active_wcs_dict['wcs_info'][wcs_key] - alt_wcs_dict['wcs_info'][wcs_key]
-                    diff_wcs_dict['wcs_info']['crpix1'] = active_wcs_dict['wcs_info']['crpix1'] - alt_wcs_dict['wcs_info']['crpix1']
-                    diff_wcs_dict['wcs_info']['crpix2'] = active_wcs_dict['wcs_info']['crpix2'] - alt_wcs_dict['wcs_info']['crpix2']
-                    diff_wcs_dict['wcs_info']['crval1'] = active_wcs_dict['wcs_info']['crval1'] - alt_wcs_dict['wcs_info']['crval1']
-                    diff_wcs_dict['wcs_info']['crval2'] = active_wcs_dict['wcs_info']['crval2'] - alt_wcs_dict['wcs_info']['crval2']
-                    diff_wcs_dict['wcs_info']['scale'] = active_wcs_dict['wcs_info']['scale'] - alt_wcs_dict['wcs_info']['scale']
-                    diff_wcs_dict['wcs_info']['orientation'] = active_wcs_dict['wcs_info']['orientation'] - alt_wcs_dict['wcs_info']['orientation']
+                        diagnostic_obj.add_data_item(alt_wcs_dict, 'AlternateWCS_' + edp_object.exposure_name + '_' + str(icnt))
 
-                    diagnostic_obj.add_data_item(diff_wcs_dict, 'Delta (Primary WCS - Alternate WCS) Information')
+                        delta_wcs = metawcs.wcs.name + '-' + alt_wcs_name
+                        diff_wcs_dict = {'delta_wcsname': delta_wcs, 'wcs_info': {}}
+                        # if or wcs_key in active_wcs_dict.keys():
+                        #    if wcs_key.find('wcsname') != -1:
+                        #        continue
+                        #    print("wcs_key: {}".format(wcs_key))
+                        #    diff_wcs_dict['wcs_info'][wcs_key] = active_wcs_dict['wcs_info'][wcs_key] - alt_wcs_dict['wcs_info'][wcs_key]
+                        diff_wcs_dict['wcs_info']['d_crpix1'] = active_wcs_dict['wcs_info']['crpix1'] - alt_wcs_dict['wcs_info']['crpix1']
+                        diff_wcs_dict['wcs_info']['d_crpix2'] = active_wcs_dict['wcs_info']['crpix2'] - alt_wcs_dict['wcs_info']['crpix2']
+                        diff_wcs_dict['wcs_info']['d_crval1'] = active_wcs_dict['wcs_info']['crval1'] - alt_wcs_dict['wcs_info']['crval1']
+                        diff_wcs_dict['wcs_info']['d_crval2'] = active_wcs_dict['wcs_info']['crval2'] - alt_wcs_dict['wcs_info']['crval2']
+                        diff_wcs_dict['wcs_info']['d_scale'] = active_wcs_dict['wcs_info']['scale'] - alt_wcs_dict['wcs_info']['scale']
+                        diff_wcs_dict['wcs_info']['d_orientation'] = active_wcs_dict['wcs_info']['orientation'] - alt_wcs_dict['wcs_info']['orientation']
+                        diff_wcs_dict['wcs_info']['exposure'] = edp_object.exposure_name
 
-                    # Delete the original alternate WCS...
-                    wcsutil.altwcs.deleteWCS(edp_object.full_filename, ext=extname_list, wcskey=alt_key)
+                        diagnostic_obj.add_data_item(diff_wcs_dict, 'Delta(Primary-Alternate)WCS_' + edp_object.exposure_name + '_' + str(icnt))
 
-                    # ... and archive the current primary with its original key
-                    wcsutil.altwcs.archiveWCS(edp_object.full_filename, ext=extname_list, wcskey=alt_key)
+                        # Delete the original alternate WCS...
+                        wcsutil.altwcs.deleteWCS(edp_object.full_filename, ext=extname_list, wcskey=alt_key)
+
+                        # ... and archive the current primary with its original key
+                        wcsutil.altwcs.archiveWCS(edp_object.full_filename, ext=extname_list, wcskey=alt_key)
+
+                        icnt += 1
+
+                    else:
+                        continue
 
                 # When comparisons are done between the original primary WCS and all
                 # the alternates, restore the original primary WCS with key Z.
