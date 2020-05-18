@@ -374,7 +374,6 @@ def build_poller_table(input, log_level):
 
         # Since a poller file was the input, it is assumed all the input
         # data is in the locale directory so just collect the filenames.
-        datasets = input_table[input_table.colnames[0]].tolist()
         filenames = list(input_table.columns[0])
 
     elif isinstance(input, list):
