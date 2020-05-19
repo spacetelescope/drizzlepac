@@ -612,6 +612,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     # 1: Perform relative alignment
     match_relcat = tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True, fitgeom=fitgeom)
 
+    # This logic enables performing only relative fitting and skipping fitting to GAIA
     if reference_catalog is not None:
         # Set all the group_id values to be the same so the various images/chips will be aligned to the astrometric
         # reference catalog as an ensemble.
@@ -627,6 +628,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     # 3: Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
 
+    del match_relcat, match_gaiacat
     return imglist
 
 # ----------------------------------------------------------------------------------------------------------
