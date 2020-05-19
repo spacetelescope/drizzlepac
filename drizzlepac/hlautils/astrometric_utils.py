@@ -1500,11 +1500,17 @@ def build_wcscat(image, group_id, source_catalog):
 
         imcat = source_catalog[chip]
         # rename xcentroid/ycentroid columns, if necessary, to be consistent with tweakwcs
-        if imcat is not None and 'xcentroid' in imcat.colnames:
+        if imcat is None:
+            imcat = Table(names=['xcentroid','ycentroid','mag'])
+        if isinstance(imcat, str):
+            imcat = Table.read(imcat, format='ascii.fast_commented_header', 
+                                names=['x','y'])
+            if 'mag' not in imcat.colnames:
+                imcat['mag'] = [-999.9]*len(imcat['x'])
+
+        if 'xcentroid' in imcat.colnames:
             imcat.rename_column('xcentroid', 'x')
             imcat.rename_column('ycentroid', 'y')
-        else:
-            imcat = Table(names=['xcentroid','ycentroid'])
             
         wcscat = FITSWCS(
             w,
@@ -1512,6 +1518,7 @@ def build_wcscat(image, group_id, source_catalog):
                 'chip': chip,
                 'group_id': group_id,
                 'filename': image,
+                'rootname': "_".join(image.split("_")[:-1]),
                 'catalog': imcat,
                 'name': image
             }

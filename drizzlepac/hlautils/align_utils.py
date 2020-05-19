@@ -159,7 +159,7 @@ class AlignmentTable:
                 # Protip: To display the sources in these files in DS9,
                 #         set the "Coordinate System" option to "Physical" 
                 #         when loading the region file.
-                imgroot = os.path.basename(img.imgname).split('_')[0]
+                imgroot = "_".join(os.path.basename(img.imgname).split('_')[:-1])
                 for chip in range(1, img.num_sci + 1):
                     chip_cat = img.catalog_table[chip]
                     if chip_cat and len(chip_cat) > 0:
@@ -169,7 +169,7 @@ class AlignmentTable:
                         out_table['xcentroid'] += 1
                         out_table['ycentroid'] += 1
                         out_table.write(regfilename,
-                                        include_names=["xcentroid", "ycentroid"],
+                                        include_names=["xcentroid", "ycentroid", "mag"],
                                         format="ascii.fast_commented_header")
                         log.info("Wrote region file {}\n".format(regfilename))
 
@@ -177,7 +177,7 @@ class AlignmentTable:
 
     def reset_group_id(self, num_ref):
         for image in self.imglist:
-            image.meta["group_id"] = self.group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])]
+            image.meta["group_id"] = self.group_id_dict["{}_{}".format(image.meta["rootname"], image.meta["chip"])]
             image.meta['num_ref_catalog'] = num_ref
 
     
@@ -198,7 +198,7 @@ class AlignmentTable:
 
         self.group_id_dict = {}
         for image in self.imglist:
-            self.group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])] = image.meta["group_id"]
+            self.group_id_dict["{}_{}".format(image.meta["rootname"], image.meta["chip"])] = image.meta["group_id"]
 
     def get_fit_methods(self):
         """Return the list of method names for all registered functions
@@ -610,16 +610,19 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     # NOTE: this invocation does not use an astrometric catalog. This call allows all the input images to be aligned in
     # a relative way using the first input image as the reference.
     # 1: Perform relative alignment
-    tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True, fitgeom=fitgeom)
+    match_relcat = tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True, fitgeom=fitgeom)
 
-    # Set all the group_id values to be the same so the various images/chips will be aligned to the astrometric
-    # reference catalog as an ensemble.
-    # astrometric reference catalog as an ensemble. BEWARE: If additional iterations of solutions are to be
-    # done, the group_id values need to be restored.
-    for image in imglist:
-        image.meta["group_id"] = 1234567
-    # 2: Perform absolute alignment
-    tweakwcs.align_wcs(imglist, reference_catalog, match=match, fitgeom=fitgeom)
+    if reference_catalog is not None:
+        # Set all the group_id values to be the same so the various images/chips will be aligned to the astrometric
+        # reference catalog as an ensemble.
+        # astrometric reference catalog as an ensemble. BEWARE: If additional iterations of solutions are to be
+        # done, the group_id values need to be restored.
+        for image in imglist:
+            image.meta["group_id"] = 1234567
+        # 2: Perform absolute alignment
+        match_gaiacat = tweakwcs.align_wcs(imglist, reference_catalog, match=match, fitgeom=fitgeom)
+    else:
+        reference_catalog = imglist[0].meta['catalog']
 
     # 3: Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
@@ -757,8 +760,6 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
                 ref_idx = tinfo['matched_ref_idx']
                 fitmask = tinfo['fitmask']
                 group_dict[group_id]['ref_idx'] = ref_idx
-                ref_RA = reference_catalog[ref_idx]['RA'][fitmask]
-                ref_DEC = reference_catalog[ref_idx]['DEC'][fitmask]
                 input_RA = tinfo['fit_RA']
                 input_DEC = tinfo['fit_DEC']
                 img_coords = SkyCoord(input_RA, input_DEC,
@@ -768,11 +769,14 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
                 ra_rms = np.std(dra.to(u.mas))
                 dec_rms = np.std(ddec.to(u.mas))
                 fit_rms = np.std(Angle(img_coords.separation(ref_coords), unit=u.mas)).value
+                ref_RA = reference_catalog[ref_idx]['RA'][fitmask]
+                ref_DEC = reference_catalog[ref_idx]['DEC'][fitmask]
+
+                group_dict[group_id]['ref_mag'] = reference_catalog[ref_idx]['mag'][fitmask]
+
                 group_dict[group_id]['FIT_RMS'] = fit_rms
                 group_dict[group_id]['RMS_RA'] = ra_rms
                 group_dict[group_id]['RMS_DEC'] = dec_rms
-
-                group_dict[group_id]['ref_mag'] = reference_catalog[ref_idx]['mag'][fitmask]
 
                 input_mag = item.meta['catalog']['mag']
                 group_dict[group_id]['input_mag'] = input_mag

@@ -343,7 +343,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         # store mapping of group_id to filename/chip
         group_id_dict = {}
         for image in imglist:
-            group_id_dict["{}_{}".format(image.meta["filename"], image.meta["chip"])] = image.meta["group_id"]
+            group_id_dict["{}_{}".format(image.meta["rootname"], image.meta["chip"])] = image.meta["group_id"]
 
         best_fit_rms = -99999.0
         best_fit_status_dict = {}

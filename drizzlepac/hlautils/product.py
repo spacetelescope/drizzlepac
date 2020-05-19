@@ -241,6 +241,7 @@ class FilterProduct(HAPProduct):
         exposure_filenames = []
         headerlet_filenames = {}
         align_table = None
+
         try:
             if self.edp_list:
                 for edp in self.edp_list:
