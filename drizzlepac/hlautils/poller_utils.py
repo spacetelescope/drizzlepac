@@ -401,7 +401,9 @@ def build_poller_table(input, log_level):
             else:
                 files = [filename]
             datasets += files
-
+    else:
+        datasets = filenames
+        
     # Each image, whether from a poller file or from an input list needs to be
     # analyzed to ensure it is viable for drizzle processing.  If the image is not
     # viable, it should not be included in the output "poller" table.
