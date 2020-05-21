@@ -764,6 +764,9 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
                 group_dict[group_id]['ref_idx'] = ref_idx
                 input_RA = tinfo['fit_RA']
                 input_DEC = tinfo['fit_DEC']
+                ref_RA = reference_catalog[ref_idx]['RA'][fitmask]
+                ref_DEC = reference_catalog[ref_idx]['DEC'][fitmask]
+
                 img_coords = SkyCoord(input_RA, input_DEC,
                                       unit='deg', frame='icrs')
                 ref_coords = SkyCoord(ref_RA, ref_DEC, unit='deg', frame='icrs')
@@ -771,8 +774,6 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
                 ra_rms = np.std(dra.to(u.mas))
                 dec_rms = np.std(ddec.to(u.mas))
                 fit_rms = np.std(Angle(img_coords.separation(ref_coords), unit=u.mas)).value
-                ref_RA = reference_catalog[ref_idx]['RA'][fitmask]
-                ref_DEC = reference_catalog[ref_idx]['DEC'][fitmask]
 
                 group_dict[group_id]['ref_mag'] = reference_catalog[ref_idx]['mag'][fitmask]
 
