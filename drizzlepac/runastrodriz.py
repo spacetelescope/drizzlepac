@@ -806,9 +806,6 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         if asndict is None:
             return None
 
-    if alignment_mode == 'aposteriori':
-        from stwcs.wcsutil import headerlet
-
     # if tmpdir is turned off (== None), tmpname set to 'default-pipeline'
     tmpname = tmpdir if tmpdir else 'default-pipeline'
     tmpmode = None
@@ -1069,6 +1066,14 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                     if wcsnames is None:
                         wcsnames = headerlet.get_headerlet_kw_names(fhdu, kw='WCSNAME')
                         hdrnames = headerlet.get_headerlet_kw_names(fhdu)
+                        # Remove OPUS based solutions
+                        opus_indx = []
+                        for i,w in enumerate(wcsnames):
+                            if 'OPUS' in w: opus_indx.append(i)
+                        opus_indx.reverse()
+                        for i in opus_indx: 
+                            del wcsnames[i]
+                            del hdrnames[i]
                         gscwcs = any(['GSC' in w for w in wcsnames])
                         if not gscwcs:
                             priwcs = fhdu['sci', sciext + 1].header['wcsname']
