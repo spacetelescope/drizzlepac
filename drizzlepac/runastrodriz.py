@@ -139,6 +139,8 @@ focus_pars = {"WFC3/IR": {'sigma': 2.0, 'good_bits': 512},
 sub_dirs = ['OrIg_files', 'pipeline-default']
 valid_alignment_modes = ['apriori', 'aposteriori', 'default-pipeline']
 gsc240_date = '2017-10-01'
+apriori_priority = ['HSC', 'GSC', '']
+
 
 # default marker for trailer files
 __trlmarker__ = '*** astrodrizzle Processing Version ' + __version__ + __version_date__ + '***\n'
@@ -371,6 +373,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             3. If alignment is verified,
                 0. copy inputs to separate sub-directory for processing
                 a. run updatewcs to get a priori updates
+                a.1.  apply 'best' apriori (not aposteriori) solution
                 b. generate drizzle products for all sets of inputs (FLC and/or FLT) without CR identification
                 c. verify alignment using focus index on FLC or, if no FLC, FLT products
                 d. if alignment fails, update trailer file with info on failure
@@ -1040,6 +1043,7 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
     gsc240 = catalog_date.split('-')
     gdate = datetime.date(int(gsc240[0]), int(gsc240[1]), int(gsc240[2]))
     msg = ''
+    wcsnames = None
     print(filenames)
     for f in filenames:
         with fits.open(f, mode='update') as fhdu:
@@ -1058,6 +1062,43 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                     fhdu['sci', sciext + 1].header['wcsname'] = wcsname
                     msg += "Updating WCSNAME of {}[sci,{}] for use of {} catalog \n".format(f,
                             sciext + 1, catalog_name)
+                    continue
+                # Check to see whether it is an aposteriori solution
+                # If so, replace it with an apriori solution instead
+                if '-FIT' in wcsname:
+                    if wcsnames is None:
+                        wcsnames = headerlet.get_headerlet_kw_names(fhdu, kw='WCSNAME')
+                        hdrnames = headerlet.get_headerlet_kw_names(fhdu)
+                        gscwcs = any(['GSC' in w for w in wcsnames])
+                        if not gscwcs:
+                            priwcs = fhdu['sci', sciext + 1].header['wcsname']
+                            if priwcs not in wcsnames:
+                                wcsnames.append(priwcs)
+                                hdrnames.append(priwcs)
+                                # Build IDC_* only WCSNAME
+                                defwcs = priwcs.split("-")[0]
+                                # delete this from list of WCSNAMEs since it was 
+                                # already replaced by GSC240 WCSNAME
+                                indx = wcsnames.index(defwcs)
+                                del wcsnames[indx]
+                                del hdrnames[indx]
+
+                    # Look for priority apriori WCS
+                    restored = False
+                    for apriori_type in apriori_priority:
+                        for w,h in zip(wcsnames, hdrnames):
+                            if apriori_type in w:
+                                # restore this WCS
+                                msg += 'Restoring {} as primary WCS'.format(w)
+                                headerlet.restore_from_headerlet(fhdu,
+                                                                 force=True,
+                                                                 hdrname=h,
+                                                                 archive=False)
+                                restored = True
+                                break
+                        if restored:
+                            break
+
     return msg
 
 def restore_pipeline_default(files):
