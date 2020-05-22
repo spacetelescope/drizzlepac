@@ -81,7 +81,7 @@ def flatten_dict(dd, separator='.', prefix=''):
 
 
 def get_json_files(search_path=os.getcwd(), log_level=logutil.logging.INFO):
-    """use grep to create a list of json files to harvest
+    """use glob to create a list of json files to harvest
 
     Parameters
     ----------
