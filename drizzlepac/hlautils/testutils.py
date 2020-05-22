@@ -105,14 +105,15 @@ def compare_wcs_alignment(dataset, force=False):
             for img in imglist:
                 wnames = headerlet.get_headerlet_kw_names(img, kw='WCSNAME')
                 hnames = headerlet.get_headerlet_kw_names(img)
-                print("[testutils]WCSNAMES[{}]: {}".format(img, wnames))
+                # print("[testutils]WCSNAMES[{}]: {}".format(img, wnames))
 
                 if wcs in wnames:
                     hdrname = hnames[wnames.index(wcs)]
-                    log.info("Applying WCS {} to {}".format(hdrname, img))
+                    log.info("[testutils] Applying WCS {} to {}".format(hdrname, img))
                     headerlet.restore_from_headerlet(img, hdrname=hdrname,
                                                      archive=False, force=True)
-
+        
+            print("[testutils] Aligning: {} for WCSNAME: {}".format(dataset, wcs))
             results = align.perform_align([dataset], clobber=False, debug=True)
             alignment[wcs] = extract_results(results)
 

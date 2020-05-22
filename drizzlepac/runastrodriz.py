@@ -1086,7 +1086,9 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                     # Look for priority apriori WCS
                     restored = False
                     for apriori_type in apriori_priority:
+                        # For each WCSNAME/HDRNAME in the file...
                         for w,h in zip(wcsnames, hdrnames):
+                            # Look for apriori_type (HSC, GSC,...)
                             if apriori_type in w:
                                 # restore this WCS
                                 msg += 'Restoring {} as primary WCS'.format(w)
