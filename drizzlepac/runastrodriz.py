@@ -108,7 +108,7 @@ __taskname__ = "runastrodriz"
 
 # Local variables
 __version__ = "2.2.0"
-__version_date__ = "(06-Mar-2020)"
+__version_date__ = "(22-May-2020)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
@@ -915,8 +915,9 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                     row = align_table[align_table['imageName'] == flcfile]
                     headerlet_file = row['headerletFile'][0]
                     if headerlet_file != "None":
-                        headerlet.apply_headerlet_as_primary(fltfile, headerlet_file,
-                                                            attach=True, archive=True)
+                        apply_headerlet(fltfile, headerlet_file, flcfile=flcfile)
+                        # headerlet.apply_headerlet_as_primary(fltfile, headerlet_file,
+                        #                                     attach=True, archive=True)
                         headerlet_files.append(headerlet_file)
                         # append log file contents to _trlmsg for inclusion in trailer file
                         _trlstr = "Applying headerlet {} as Primary WCS to {}\n"
@@ -1034,6 +1035,21 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             os.chdir(parent_dir)
 
     return focus_dicts
+
+def apply_headerlet(filename, headerlet_file, flcfile=None):
+    
+    # Use headerlet module to apply headerlet as PRIMARY WCS 
+    headerlet.apply_headerlet_as_primary(filename, headerlet_file,
+                                        attach=True, archive=True)
+    # Verify that all keywords from headerlet got applied
+    hlet = headerlet.Headerlet.fromfile(headerlet_file)
+    if flcfile is not None:
+        with fits.open(filename, mode='update') as fhdu:
+            num_sci = fileutil.countExtn(fhdu)
+            for sciext in range(1, num_sci + 1):
+                extn = ('sci', sciext)
+                fhdu[extn].header['wcstype'] = fits.getval(flcfile, 'wcstype', extn)
+    
 
 def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_date):
     """Insure that data taken with GAIA has WCSNAME reflecting that"""
