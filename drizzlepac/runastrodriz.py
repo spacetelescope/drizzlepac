@@ -92,6 +92,7 @@ from stwcs.wcsutil import headerlet
 
 from stsci.tools import fileutil, asnutil
 
+import drizzlepac
 from drizzlepac import processInput  # used for creating new ASNs for _flc inputs
 
 from drizzlepac import align
@@ -166,6 +167,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     """
     trlmsg = "{}: Calibration pipeline processing of {} started.\n".format(_getTime(), inFile)
     trlmsg += __trlmarker__
+    trlmsg += "    drizzlepac version {}".format(drizzlepac.__version__)
+    trlmsg += "    tweakwcs version {}".format(tweakwcs.__version__)
+    trlmsg += "    stwcs version {}".format(stwcs.__version__)
+    trlmsg += "    numpy version {}".format(np.__version__)
     pipeline_pars = PIPELINE_PARS.copy()
     _verify = True  # Switch to control whether to verify alignment or not
 
