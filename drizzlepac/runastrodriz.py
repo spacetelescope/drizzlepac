@@ -1126,6 +1126,7 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
 
 def restore_pipeline_default(files):
     """Restore pipeline-default IDC_* WCS as PRIMARY WCS in all input files"""
+    print("Restoring pipeline-default WCS as PRIMARY WCS... using updatewcs.")
     updatewcs.updatewcs(files, use_db=False)
     # Remove HDRNAME, if added by some other code.  
     #  This keyword only needs to be included in the headerlet file itself.
@@ -1135,35 +1136,6 @@ def restore_pipeline_default(files):
             for sciext in range(num_sci):
                 if 'hdrname' in fhdu[('sci', sciext + 1)].header:
                     del fhdu[('sci', sciext + 1)].header['hdrname']
-
-# Function written from (essentially) first principles
-def old_restore_pipeline_default(files):
-    """Restore pipeline-default IDC_* WCS as PRIMARY WCS in all input files"""
-    for f in files:
-        rootname = f.replace('.fits', '')
-        with fits.open(f, mode='update') as hdu:
-            hdrnames = headerlet.get_headerlet_kw_names(hdu, kw='hdrname')
-            # Remove '-hlet.fits' from end of HDRNAME values to simplify 
-            # comparison with newly generated solution which does NOT end with 
-            # '-hlet.fits'.
-            hdrnames_clean = [h.rstrip('-hlet.fits') for h in hdrnames]
-            def_hdrname = "{}_OPUS".format(rootname)
-            for hdrnum,(hclean,h) in enumerate(zip(hdrnames_clean,hdrnames)):
-                hdrnum += 1
-                if '-' not in hclean and 'IDC' in hclean:
-                    def_hdrname = h
-                    # Check to insure that apriori provided IDC_* default solution
-                    # is complete
-                    hlet = hdu[('hdrlet',hdrnum)].headerlet
-                    if (hlet[1].header['ctype1'].endswith('-SIP') and \
-                        'A_ORDER' not in hlet[1].header) or \
-                        not hlet[1].header['ctype1'].endswith('-SIP'):
-                        del hdu[('hdrlet',hdrnum)]
-                    else:                
-                        break
-            def_extn = headerlet.find_headerlet_HDUs(hdu, hdrname=def_hdrname)[0]
-            print("Restoring WCS from EXTN {} with hdrname of {}".format(def_extn, def_hdrname))
-            headerlet.restore_from_headerlet(hdu, hdrext=def_extn, archive=False)
 
 def _lowerAsn(asnfile):
     """ Create a copy of the original asn file and change
