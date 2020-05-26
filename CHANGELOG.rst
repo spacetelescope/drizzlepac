@@ -14,8 +14,26 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-3.1.7 (unreleased)
+3.1.8 (unreleased)
 ==================
+
+In addition to a few dozen bug fixes, the following updates to the algorithms
+were also implemented.  
+
+- Only apply solutions from the astrometry database which were non-aposteriori
+  WCS solutions as the PRIMARY WCS.  This allows the pipeline to compare the
+  true apriori WCS solutions (e.g., GSC or HSC WCSs) to aposteriori solutions 
+  computed using the latest distortion-models and alignment algorithms being 
+  used at the time of processing. [#669]
+
+- Verification using a similarity index gets reported in the trailer file and 
+  does not get used as a Pass/Fail criteria for alignment.  [#619] 
+
+- If verification fails for either pipeline-default or apriori solution, reset
+  cosmic-ray(CR) flag (4096) in DQ arrays.  This will allow subsequent attempt to
+  align the images to not be impacted by potentially mis-identified CRs that most
+  likely blanked out real sources in the field.  As a result, the image alignment
+  process became more robust when computing the aposteriori alignment.  [#614]
 
 - Fix a bug in tweakreg due to which the number of matched sources needed to be
   *strictly* greater than ``minobj``. Now the minimum number of matched sources
@@ -23,11 +41,15 @@ of the list).
 
 - Fix a crash in ``tweakreg`` when ``2dhist`` is enabled and ``numpy``
   version is ``1.18.1`` and later. [#583, #587]
-
+  
 - Update calibrated (FLC/FLT) files with RMS and NMATCH keywords when it successfully
   aligns the data to GAIA using the a posteriori fit.  Headerlet files for this fit
   which already have these keywords are now retained and provided as the final output
-  headerlets as well.  [#554]
+  headerlets as well.  [#555]
+  
+- Insure HDRNAME keyword gets added to successfully aligned FLC/FLT files. [#580]
+
+- Fix problem with 'tweakback' task when trying to work with updated WCS names. [#551]
 
 - Fix problems found in processing data with NGOODPIX==0, DRC files not getting
   generated for singletons, alignment trying to use a source too near the chip edge,
@@ -38,6 +60,28 @@ of the list).
 
 - Updated to be compatible with tweakwcs v0.6.0 to correct chip-to-chip alignment issues
   in aposteriori WCS solutions. [#596]
+
+- Correctly define output drizzle product filename during pipeline processing 
+  for exposures with 'drz' in the rootname. [#523]
+
+- Implement multiple levels of verification for the drizzle products generated 
+  during pipeline processing (using runastrodriz); including overlapp difference
+  computations [#520], and magnitude correlation [#512].
+  
+- Replace alignimages module with O-O based align [#512]
+
+- Fix problem with NaNs when looking for sources to use for aligning images [#512]
+
+- Fixed code that selected the brightest sources to use for alignment allowing 
+  alignment to work (more often) for images with saturated sources. [#512]
+  
+- Use logic for defining the PSF extracted from the images to shrink it in each
+  axis by one-half for images of crowded fields to allow for more sources to be 
+  extracted by daofind-like algorithm. This enables source finding and alignment
+  to work more reliably on crowded field images. [#512]
+   
+- Insure all input files, especially those with zero exposure time or grism
+  images, get updated with the latest pipeline calibration for the distortion. [ #495]
 
 
 3.1.3 (5-Dec-2019)

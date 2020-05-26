@@ -93,8 +93,8 @@ setup(
         'stsci.imagestats',
         'stsci.skypac>=1.0',
         'stsci.stimage',
-        'stwcs',
-        'tweakwcs>=0.6.0',
+        'stwcs>=1.5.4',
+        'tweakwcs>=0.6.3',
         'stregion',
         'requests',
         # HAP-pipeline specific:
