@@ -384,7 +384,7 @@ class HAPImage:
         threshold_rms = np.concatenate([rms for rms in self.threshold.values()])
         bkg = np.concatenate([background for background in self.bkg.values()])
         log.info("Looking for sample PSF in {}".format(self.rootname))
-        log.debug("  based on RMS of {}".format(threshold_rms.mean()))
+        log.debug("  based on RMS of {:9.4f}".format(threshold_rms.mean()))
         fwhm = fwhmpsf / self.pscale
 
         k, self.kernel_fwhm = amutils.build_auto_kernel(self.data - bkg,
@@ -397,7 +397,7 @@ class HAPImage:
             threshold_rms = np.concatenate([rms for rms in self.threshold.values()])
             bkg = np.concatenate([background for background in self.bkg.values()])
             log.info("Looking for sample PSF in {}".format(self.rootname))
-            log.debug("  based on RMS of {}".format(threshold_rms.mean()))
+            log.debug("  based on RMS of {:9.4f}".format(threshold_rms.mean()))
             fwhm = fwhmpsf / self.pscale
 
             k, self.kernel_fwhm = amutils.build_auto_kernel(self.data - bkg,
@@ -406,7 +406,7 @@ class HAPImage:
                                                             fwhm=fwhm)
 
         self.kernel, self.kernel_psf = k
-        log.info("  Found PSF with FWHM = {}".format(self.kernel_fwhm))
+        log.info("  Found PSF with FWHM = {:9.4f}".format(self.kernel_fwhm))
 
         self.fwhmpsf = self.kernel_fwhm * self.pscale
 
@@ -451,7 +451,7 @@ class HAPImage:
         log.debug("Computation of {} background - Input Parameters".format(self.rootname))
         log.debug("Box size: {}".format(box_size))
         log.debug("Window size: {}".format(win_size))
-        log.debug("NSigma: {}".format(nsigma))
+        log.debug("NSigma: {:9.4f}".format(nsigma))
         log.debug("BKG Estimator: {}".format(bkg_estimator.__name__))
 
         # SExtractorBackground ans StdBackgroundRMS are the defaults
@@ -501,9 +501,9 @@ class HAPImage:
 
             # Report other useful quantities
             log.debug("{} CHIP: {}".format(self.rootname, chip))
-            log.debug("Mean background: {}".format(bkg_rms_mean))
-            log.debug("Mean threshold: {}".format(np.mean(threshold)))
-            log.debug("Mean RMS      : {}".format(bkg_rms_mean))
+            log.debug("Mean background: {:9.4g}".format(bkg_rms_mean))
+            log.debug("Mean threshold: {:9.4g}".format(np.mean(threshold)))
+            log.debug("Mean RMS      : {:9.4g}".format(bkg_rms_mean))
             log.debug("")
             log.debug("{}".format("=" * 60))
 
