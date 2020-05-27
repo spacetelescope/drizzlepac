@@ -86,11 +86,13 @@ except ImportError:
 import numpy as np
 from astropy.io import fits
 
+import stwcs
 from stwcs.wcsutil import HSTWCS
 from stwcs import updatewcs
 from stwcs.wcsutil import headerlet
 
 from stsci.tools import fileutil, asnutil
+import tweakwcs
 
 import drizzlepac
 from drizzlepac import processInput  # used for creating new ASNs for _flc inputs
