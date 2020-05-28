@@ -1,5 +1,6 @@
 import os
 import shutil
+import pytest
 
 from stsci.tools import teal
 from stwcs import updatewcs
