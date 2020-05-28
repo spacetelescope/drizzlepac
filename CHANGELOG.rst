@@ -38,7 +38,7 @@ were also implemented.
 - Fix a bug in tweakreg due to which the number of matched sources needed to be
   *strictly* greater than ``minobj``. Now the minimum number of matched sources
   maust be *at least* equal or greater than ``minobj``. [#604]
-
+  
 - Fix a crash in ``tweakreg`` when ``2dhist`` is enabled and ``numpy``
   version is ``1.18.1`` and later. [#583, #587]
 
