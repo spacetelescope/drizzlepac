@@ -10,7 +10,7 @@ import sys
 import math
 
 import numpy as np
-from scipy import signal, ndimage
+from scipy import ndimage
 
 import stsci.imagestats as imagestats
 
@@ -180,7 +180,7 @@ def findstars(jdata, fwhm, threshold, skymode,
     ysigsq = (ratio**2) * xsigsq
 
     # convolve image with gaussian kernel
-    convdata = signal.convolve2d(jdata, nkern, boundary='symm', mode='same').astype(np.float32)
+    convdata = ndimage.convolve(jdata, nkern, mode='reflect').astype(np.float32)
 
     # clip image to create regions around each source for segmentation
     if mask is None:

@@ -4,10 +4,11 @@
 drizzlepac/hlautils/svm_quality_analysis.py and stores it as a Pandas DataFrame"""
 
 # Standard library imports
-from collections import OrderedDict
+import argparse
+import collections
 import glob
-import json
 import os
+import pdb
 import sys
 
 # Related third party imports
@@ -24,12 +25,63 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
+# ------------------------------------------------------------------------------------------------------------
+
+
+def filter_header_info(unfiltered_header):
+    """removes unwanted/unneeded keywords from header according to various rules prior to insertion to pandas
+    DataFrame ingest dictionary.
+
+    NOTE: For the time being, this subroutine is an inert placeholder. In the near future, header keywords
+    will be filtered using a keyword whitelist stored in a json harvester settings parameter file.
+
+    Parameters
+    ----------
+    unfiltered_header : dictionary
+        dictionary of unfiltered header information to process
+
+    Returns
+    -------
+    filtered_header : dictionary
+        filtered version of input dictionary *unfiltered_header*
+    """
+    # TODO: IMPLEMENT KEYWORD FILTERING AT A LATER DATE!
+    filtered_header = unfiltered_header
+    return filtered_header
 
 # ------------------------------------------------------------------------------------------------------------
 
 
-def get_json_files(search_path="", log_level=logutil.logging.INFO):
-    """use grep to create a list of json files to harvest
+def flatten_dict(dd, separator='.', prefix=''):
+    """Recursive subroutine to flatten nested dictionaries down into a single-layer dictionary.
+    Borrowed from https://www.geeksforgeeks.org/python-convert-nested-dictionary-into-flattened-dictionary/
+
+    Parameters
+    ----------
+    dd : dict
+        dictionary to flatten
+
+    separator : str, optional
+        separator character used in constructing flattened dictionary key names from multiple recursive
+        elements. Default value is '.'
+
+    prefix : str, optional
+        flattened dictionary key prefix. Default value is an empty string ('').
+
+    Returns
+    -------
+    a version of input dictionary *dd* that has been flattened by one layer
+    """
+    return {prefix + separator + k if prefix else k: v
+            for kk, vv in dd.items()
+            for k, v in flatten_dict(vv, separator, kk).items()
+            } if isinstance(dd, dict) else {prefix: dd}
+
+# ------------------------------------------------------------------------------------------------------------
+
+
+def get_json_files(search_path=os.getcwd(), log_level=logutil.logging.INFO):
+    """use glob to create a list of json files to harvest
 
     Parameters
     ----------
@@ -42,74 +94,100 @@ def get_json_files(search_path="", log_level=logutil.logging.INFO):
 
     Returns
     -------
-    sorted_json_list : list
-        list of json files to harvest, sorted first alphabetically by filename
+    out_json_dict : ordered dictionary
+        dictionary containing lists of all identified json files, grouped by and  keyed by Pandas DataFrame
+        index value
     """
+    log.setLevel(log_level)
 
     # set up search string and use glob to get list of files
-    log.setLevel(log_level)
     search_string = os.path.join(search_path, "*_svm_*.json")
     json_list = glob.glob(search_string)
 
+    # store json filenames in a dictionary keyed by Pandas DataFrame index value
+    if json_list:
+        out_json_dict = collections.OrderedDict()
+        for json_filename in sorted(json_list):
+            json_data = du.read_json_file(json_filename)
+            dataframe_idx = json_data['general information']['dataframe_index']
+            if dataframe_idx in out_json_dict.keys():
+                out_json_dict[dataframe_idx].append(json_filename)
+            else:
+                out_json_dict[dataframe_idx] = [json_filename]
+            del(json_data)  # Housekeeping!
+
     # Fail gracefully if no .json files were found
-    if not json_list:
+    else:
         err_msg = "No .json files were found!"
         log.error(err_msg)
         raise Exception(err_msg)
 
-    # sort list first alphabetically by filename
-    sorted_json_list = sorted(json_list)
-
-    return sorted_json_list
-
+    return out_json_dict
 
 # ------------------------------------------------------------------------------------------------------------
 
 
-def json_harvester(log_level=logutil.logging.INFO):
+def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
+                   output_filename="svm_qa_dataframe.csv"):
     """Main calling function
 
     Parameters
     ----------
+    json_search_path : str, optional
+        The full path of the directory that will be searched for json files to process. If not explicitly
+        specified, the current working directory will be used.
+
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
         .log file. Default value is 'INFO'.
 
+    output_filename : str, optional
+        Name of the output .csv file that the Pandas DataFrame will be written to. If not explicitly
+        specified, the DataFrame will be written to the file 'svm_qa_dataframe.csv' in the current working
+        directory.
+
     Returns
     -------
-    TBD
+    master_dataframe : Pandas DataFrame
+        pandas DataFrame containing all information harvested from the json files.
     """
     log.setLevel(log_level)
 
     # Get sorted list of json files
-    json_list = get_json_files(log_level=log_level)
-
+    json_dict = get_json_files(search_path=json_search_path, log_level=log_level)
     master_dataframe = None
-    for json_filename in json_list:
-        master_dataframe = json_ingest(master_dataframe, json_filename, log_level=log_level)
-    if len(master_dataframe) > 0:
-        master_dataframe = pd.concat(master_dataframe)
-    if master_dataframe is not None:
-        out_csv_filename = "master_dataframe.csv"
-        if os.path.exists(out_csv_filename):
-            os.remove(out_csv_filename)
+    # extract all information from all json files related to a specific Pandas DataFrame index value into a
+    # single line in the master dataframe
+    for idx in json_dict.keys():
+        ingest_dict = make_dataframe_line(json_dict[idx], log_level=log_level)
+        if ingest_dict:
+            if master_dataframe is not None:
+                log.debug("APPENDED DATAFRAME")
+                master_dataframe = master_dataframe.append(pd.DataFrame(ingest_dict, index=[idx]))
+            else:
+                log.debug("CREATED DATAFRAME")
+                master_dataframe = pd.DataFrame(ingest_dict, index=[idx])
 
-        master_dataframe.to_csv(out_csv_filename)
-        print("Wrote "+out_csv_filename)
+    # Write master_dataframe out to a .csv comma-separated file
+    if master_dataframe is not None:
+        # if os.path.exists(output_filename):
+        #     os.remove(output_filename)
+        master_dataframe.to_csv(output_filename)
+        log.info("Wrote dataframe to {}".format(output_filename))
+
+    return master_dataframe
+
 
 # ------------------------------------------------------------------------------------------------------------
 
 
-def json_ingest(master_dataframe, json_filename, log_level=logutil.logging.INFO):
-    """ingests data from specified json file into a pandas dataframe
+def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
+    """extracts information from the json files specified by the input list *json_filename_list*.
 
     Parameters
     ----------
-    master_dataframe : pandas DataFrame
-        The pandas DataFrame that information from the specified json file will be appended to
-
-    json_filename : str
-        The json file to ingest into a master_datagrame
+    json_filename_list : list
+        list of json files to process
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -117,58 +195,87 @@ def json_ingest(master_dataframe, json_filename, log_level=logutil.logging.INFO)
 
     Returns
     -------
-    master_dataframe : pandas DataFrame
-        an updated version the input master_dataframe that now includes information harvested from the json
-        file specified in json_filename
+    ingest_dict : collections.OrderedDict
+        ordered dictionary containing all information extracted from json files specified by the input list
+        *json_filename_list*.
     """
-    # Generate pandas dataframe index string
-    pdindex = json_filename.split("_svm_")[0]
-    for pdindex_ending in ["point-cat", "segment-cat"]:
-        if pdindex.endswith(pdindex_ending):
-            pdindex = pdindex.replace("_" + pdindex_ending, "")
-            break
-    # NEXT TWO LINES ARE FOR TESTING. REMOVE!
-    if not json_filename.endswith("crossmatch.json"):  # TODO: REMOVE!
-        return master_dataframe  # TODO: REMOVE!
+    log.setLevel(log_level)
+    header_ingested = False
+    gen_info_ingested = False
+    ingest_dict = collections.OrderedDict()
+    for json_filename in json_filename_list:
+        # This is to differentiate point catalog compare_sourcelists columns from segment catalog
+        # compare_sourcelists columns in the dataframe
+        if json_filename.endswith("_point-cat_svm_compare_sourcelists.json"):
+            title_suffix = "hap_vs_hla_point_"
+        elif json_filename.endswith("_segment-cat_svm_compare_sourcelists.json"):
+            title_suffix = "hap_vs_hla_segment_"
+        else:
+            title_suffix = ""
+        json_data = du.read_json_file(json_filename)
 
-    print("-----------------------", json_filename, pdindex, "-----------------------")
-    # ingest data from json file into the dataframe
-    json_data = du.read_json_file(json_filename)
-    json_header = json_data['header']
-    json_data = json_data['data']
-    ingest_dict = OrderedDict()
-    for data_item in json_data.keys():
-        for diag_key in json_data[data_item].keys():
-            new_key = "{}-{}".format(data_item.replace(" ","_"), diag_key.replace(" ","_"))
-            print(new_key, json_data[data_item][diag_key])
-            ingest_dict[new_key] = json_data[data_item][diag_key]
+        # add information from "header" section to ingest_dict just once
+        if not header_ingested:
+            filtered_header = filter_header_info(json_data['header'])
+            for header_item in filtered_header.keys():
+                ingest_dict["header."+header_item] = filtered_header[header_item]
+            header_ingested = True
 
-    if master_dataframe is not None:
-        print("APPENDED DATAFRAME")
-        master_dataframe.append(pd.DataFrame(ingest_dict, index=[pdindex]))
+        # add information from "general information" section to ingest_dict just once
+        if not gen_info_ingested:
+            for gi_item in json_data['general information'].keys():
+                ingest_dict["gen_info."+gi_item] = json_data['general information'][gi_item]
+            gen_info_ingested = True
 
-    else:
-        print("CREATED DATAFRAME")
-        master_dataframe = [pd.DataFrame(ingest_dict, index=[pdindex])]
-
-    # print(json_data.keys())
-    # for item in json_data['data'].keys():
-    #     print(">>", item)
-    #     if hasattr(json_data['data'][item],"keys"):
-    #         for item2 in json_data['data'][item].keys():
-    #             print(">>>>>{}: {}".format(item2,json_data['data'][item][item2]))
-    #     else:
-    #         print(">> {}: {}".format(item,json_data['data'][item]))
-    # input("\n")
-    return master_dataframe
+        # recursively flatten nested "data" section dictionaries and build ingest_dict
+        flattened_data = flatten_dict(json_data['data'])
+        for fd_key in flattened_data.keys():
+            json_data_item = flattened_data[fd_key]
+            ingest_key = fd_key.replace(" ", "_")
+            if str(type(json_data_item)) == "<class 'astropy.table.table.Table'>":
+                for coltitle in json_data_item.colnames:
+                    ingest_value = json_data_item[coltitle].tolist()
+                    ingest_dict[title_suffix + ingest_key + "." + coltitle] = [ingest_value]
+            else:
+                ingest_value = json_data_item
+                ingest_dict[title_suffix + ingest_key] = ingest_value
+    return ingest_dict
 
 
 # ======================================================================================================================
 
 
 if __name__ == "__main__":
-    #  Testing
-    json_harvester(log_level=logutil.logging.DEBUG)
+    # process command-line inputs with argparse
+    parser = argparse.ArgumentParser(description='ingest all SVM QA json files into a Pandas DataFrame and'
+                                                 'and write DataFrame to an .csv file.')
+    parser.add_argument('-j', '--json_search_path', required=False, default=os.getcwd(),
+                        help='The full path of the directory that will be searched for json files to '
+                             'process. If not explicitly specified, the current working dirctory will be '
+                             'used.')
+    parser.add_argument('-l', '--log_level', required=False, default='info',
+                        choices=['critical', 'error', 'warning', 'info', 'debug'],
+                        help='The desired level of verboseness in the log statements displayed on the screen '
+                             'and written to the .log file. The level of verboseness from left to right, and '
+                             'includes all log statements with a log_level left of the specified level. '
+                             'Specifying "critical" will only record/display "critical" log statements, and '
+                             'specifying "error" will record/display both "error" and "critical" log '
+                             'statements, and so on.')
+    parser.add_argument('-o', '--output_filename', required=False, default="svm_qa_dataframe.csv",
+                        help='Name of the output .csv file that the Pandas DataFrame will be written to. If'
+                             'not explicitly specified, the DataFrame will be written to the file '
+                             '"svm_qa_dataframe.csv" in the current working directory')
+    user_args = parser.parse_args()
 
-# TODO: automagically ingest data columns into single dataframe cell
-# TODO: join individual
+    # set up logging
+    log_dict = {"critical": logutil.logging.CRITICAL,
+                "error": logutil.logging.ERROR,
+                "warning": logutil.logging.WARNING,
+                "info": logutil.logging.INFO,
+                "debug": logutil.logging.DEBUG}
+    log_level = log_dict[user_args.log_level]
+    log.setLevel(log_level)
+
+    json_harvester(json_search_path=user_args.json_search_path,
+                   log_level=log_level,
+                   output_filename=user_args.output_filename)

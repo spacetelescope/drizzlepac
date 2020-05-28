@@ -35,7 +35,10 @@ were also implemented.
   likely blanked out real sources in the field.  As a result, the image alignment
   process became more robust when computing the aposteriori alignment.  [#614]
 
-- Fix a bug in tweakreg due to which the number of matched sources needed to be
+- Fix a crash in ``tweakreg`` when finding sources in very large images
+  due to a bug in ``scipy.signal.convolve2d``. [#670]
+
+- Fix a bug in ``tweakreg`` due to which the number of matched sources needed to be
   *strictly* greater than ``minobj``. Now the minimum number of matched sources
   maust be *at least* equal or greater than ``minobj``. [#604]
   
