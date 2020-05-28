@@ -103,6 +103,9 @@ def interpret_obset_input(results, log_level):
     obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
     # Sort the rows of the table in an effort to optimize the number of quality sources found in the initial images
     obset_table = sort_poller_table(obset_table)
+    log.debug("Sorted input:")
+    log.debug(obset_table)
+    log.debug("\n\n")
     # parse Table into a tree-like dict
     log.debug("Build the observation set tree.")
     obset_tree = build_obset_tree(obset_table)
@@ -520,7 +523,8 @@ def sort_poller_table(obset_table):
     # of exposure time (in seconds).  The primary key is sorted in decending
     # order, and the secondary key is sorted in ascending order.  Use the rank to sort
     # the original input table for output.
-    rank = np.lexsort((expanded_obset_table['exptime'], -expanded_obset_table['flam']))
+    rank = np.lexsort((-expanded_obset_table['flam'], expanded_obset_table['exptime']))
+    # rank = np.lexsort((expanded_obset_table['exptime'], -expanded_obset_table['flam']))
     updated_obset_table = obset_table[rank]
 
     return updated_obset_table

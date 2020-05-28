@@ -11,7 +11,7 @@ import numpy as np
 from scipy import ndimage
 
 from astropy.io import fits
-from astropy.table import Table
+from astropy.table import Table, vstack
 from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
@@ -93,6 +93,7 @@ class AlignmentTable:
         log.info(
             "{} AlignmentTable: Filter STEP {}".format("-" * 20, "-" * 63))
         self.filtered_table = analyze.analyze_data(input_list)
+        log.debug("Input sorted as: \n{}".format(self.filtered_table))
 
         if self.filtered_table['doProcess'].sum() == 0:
             log.warning("No viable images in filtered table - no processing done.\n")
@@ -211,7 +212,7 @@ class AlignmentTable:
         """Perform fit using specified method, then determine fit quality"""
         # Updated fits_pars with value for fitgeom
         self.fit_pars[method_name]['fitgeom'] = fitgeom
-        log.info("Setting 'fitgeom' parameter to {}".format(fitgeom))
+        log.info("Setting 'fitgeom' parameter to {} for {} fit".format(fitgeom, method_name))
         
         imglist = self.fit_methods[method_name](self.imglist, reference_catalog,
                                                 **self.fit_pars[method_name])
@@ -244,8 +245,14 @@ class AlignmentTable:
         for item in imglist:
             imgname = item.meta['name']
             index = np.where(self.filtered_table['imageName'] == imgname)[0][0]
+            status = item.meta['fit_info']['status']
+            if not status.startswith("FAILED"):
+                self.filtered_table[index]['catalog'] = item.meta['fit_info']['catalog']
+                self.filtered_table[index]['fit_rms'] = item.meta['fit_info']['FIT_RMS']
+                self.filtered_table[index]['total_rms'] = item.meta['fit_info']['TOTAL_RMS']
+                if status.startswith('REF'):
+                    continue
 
-            if not item.meta['fit_info']['status'].startswith("FAILED"):
                 for tweakwcs_info_key in info_keys:
                     if not tweakwcs_info_key.startswith("matched"):
                         if tweakwcs_info_key.lower() == 'rms':
@@ -253,19 +260,15 @@ class AlignmentTable:
                             self.filtered_table[index]['rms_y'] = item.meta['fit_info'][tweakwcs_info_key][1]
 
                 self.filtered_table[index]['fit_method'] = item.meta['fit method']
-                self.filtered_table[index]['catalog'] = item.meta['fit_info']['catalog']
                 self.filtered_table[index]['catalogSources'] = len(self.reference_catalogs[catalog_name])
                 self.filtered_table[index]['matchSources'] = item.meta['fit_info']['nmatches']
                 self.filtered_table[index]['rms_ra'] = item.meta['fit_info']['RMS_RA'].value
                 self.filtered_table[index]['rms_dec'] = item.meta['fit_info']['RMS_DEC'].value
-                self.filtered_table[index]['fit_rms'] = item.meta['fit_info']['FIT_RMS']
-                self.filtered_table[index]['total_rms'] = item.meta['fit_info']['TOTAL_RMS']
                 self.filtered_table[index]['offset_x'], self.filtered_table[index]['offset_y'] = item.meta['fit_info']['shift']
                 self.filtered_table[index]['scale'] = item.meta['fit_info']['<scale>']
                 self.filtered_table[index]['rotation'] = item.meta['fit_info']['rot'][1]
             else:
                 self.filtered_table = None
-                # self.filtered_table[index]['fit_method'] = None
 
     
     def apply_fit(self, headerlet_filenames=None, fit_label=None):
@@ -621,14 +624,21 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         for image in imglist:
             image.meta["group_id"] = 1234567
         # 2: Perform absolute alignment
-        match_gaiacat = tweakwcs.align_wcs(imglist, reference_catalog, match=match, fitgeom=fitgeom)
+        matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, match=match, fitgeom=fitgeom)
     else:
-        reference_catalog = imglist[0].meta['catalog']
-
+        # Insure the expanded reference catalog has all the information needed
+        # to complete processing.
+        # TODO: Work out how to get the 'mag' column from input source catalog
+        #       into this extended reference catalog...
+        reference_catalog = match_relcat
+        reference_catalog['mag'] = np.array([-999.9]*len(reference_catalog), 
+                                            np.float32)
+        reference_catalog.meta['catalog'] = 'relative'
+        
     # 3: Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
 
-    del match_relcat, match_gaiacat
+    del match_relcat
     return imglist
 
 # ----------------------------------------------------------------------------------------------------------
@@ -663,11 +673,13 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
     match = tweakwcs.TPMatch(**fit_pars)
 
     # Align images and correct WCS
-    tweakwcs.align_wcs(imglist, reference_catalog, match=match, 
+    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, match=match, 
                         expand_refcat=False, fitgeom=fitgeom)
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
+    
+    del matched_cat
 
     return imglist
 
@@ -704,11 +716,13 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
     # Align images and correct WCS
-    tweakwcs.align_wcs(imglist, reference_catalog, match=match, 
+    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, match=match, 
                         expand_refcat=False, fitgeom=fitgeom)
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
+    
+    del matched_cat
 
     return imglist
 
@@ -742,6 +756,7 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
     group_ids = list(set(group_ids))
     group_dict = {'avg_RMS': None}
     obs_rms = []
+
     for group_id in group_ids:
         input_mag = None
         for item in tweakwcs_output:
@@ -756,6 +771,13 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
                group_id not in group_dict:
                 group_dict[group_id] = {'ref_idx': None, 'FIT_RMS': None,
                                         'input_mag': None, 'ref_mag': None, 'input_idx': None}
+
+                # Perform checks to insure that fit was successful
+                # Namely, rot < 0.1 degree and scale < 1%.  
+                if abs(tinfo['<scale>'] - 1) > 0.01 or abs(tinfo['<rot>']) > 0.1 or \
+                   tinfo['skew'] > 0.01:
+                   # fit is bad
+                   tinfo['status'] = 'FAILED: singularity in fit'
 
                 log.debug("fit_info: {}".format(item.meta['fit_info']))
 
@@ -774,8 +796,10 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
                 ra_rms = np.std(dra.to(u.mas))
                 dec_rms = np.std(ddec.to(u.mas))
                 fit_rms = np.std(Angle(img_coords.separation(ref_coords), unit=u.mas)).value
-
+            
+                # Get mag from reference catalog, or input image catalog as needed
                 group_dict[group_id]['ref_mag'] = reference_catalog[ref_idx]['mag'][fitmask]
+
 
                 group_dict[group_id]['FIT_RMS'] = fit_rms
                 group_dict[group_id]['RMS_RA'] = ra_rms
@@ -848,9 +872,9 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
     for item in tweakwcs_output:
         image_name = item.meta['filename']
         chipnum = item.meta['chip']
+        hdulist = fits.open(image_name, mode='update')
         if chipnum == 1:
             chipctr = 1
-            hdulist = fits.open(image_name, mode='update')
             num_sci_ext = amutils.countExtn(hdulist)
 
             # generate wcs name for updated image header, headerlet
@@ -881,41 +905,38 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
         sci_extn = sci_ext_dict["{}".format(item.meta['chip'])]
         hdr_name = "{}_{}-hlet.fits".format(image_name.rstrip(".fits"), wcs_name)
         updatehdr.update_wcs(hdulist, sci_extn, item.wcs, wcsname=wcs_name, reusename=True)
-        hdulist[sci_extn].header['RMS_RA'] = item.meta['fit_info']['RMS_RA'].value
-        hdulist[sci_extn].header['RMS_DEC'] = item.meta['fit_info']['RMS_DEC'].value
-        hdulist[sci_extn].header['CRDER1'] = item.meta['fit_info']['RMS_RA'].value
-        hdulist[sci_extn].header['CRDER2'] = item.meta['fit_info']['RMS_DEC'].value
-        hdulist[sci_extn].header['NMATCHES'] = len(item.meta['fit_info']['ref_mag'])
+        info = item.meta['fit_info']
+        hdulist[sci_extn].header['RMS_RA'] = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
+        hdulist[sci_extn].header['RMS_DEC'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
+        hdulist[sci_extn].header['CRDER1'] = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
+        hdulist[sci_extn].header['CRDER2'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
+        hdulist[sci_extn].header['NMATCHES'] = len(info['ref_mag']) if info['ref_mag'] is not None else -1.0
         hdulist[sci_extn].header['HDRNAME'] = hdr_name
-        
-        
-        if chipctr == num_sci_ext:
-            # Close updated flc.fits or flt.fits file
-            hdulist.flush()
-            hdulist.close()
+        hdulist.flush()
+        hdulist.close()
 
-            # Create headerlet
-            out_headerlet = headerlet.create_headerlet(image_name, hdrname=hdr_name, wcsname=wcs_name,
-                                                       logging=False)
+        # Create headerlet
+        out_headerlet = headerlet.create_headerlet(image_name, hdrname=hdr_name, wcsname=wcs_name,
+                                                   logging=False)
 
-            # Update headerlet
-            update_headerlet_phdu(item, out_headerlet)
+        # Update headerlet
+        update_headerlet_phdu(item, out_headerlet)
 
-            # Write headerlet
-            if headerlet_filenames:
-                headerlet_filename = headerlet_filenames[image_name]  # Use HAP-compatible filename defined in runhlaprocessing.py
-            else:
-                if image_name.endswith("flc.fits"):
-                    headerlet_filename = image_name.replace("flc", "flt_hlet")
-                if image_name.endswith("flt.fits"):
-                    headerlet_filename = image_name.replace("flt", "flt_hlet")
-            out_headerlet.writeto(headerlet_filename, overwrite=True)
-            log.info("Wrote headerlet file {}.\n\n".format(headerlet_filename))
-            out_headerlet_dict[image_name] = headerlet_filename
+        # Write headerlet
+        if headerlet_filenames:
+            headerlet_filename = headerlet_filenames[image_name]  # Use HAP-compatible filename defined in runhlaprocessing.py
+        else:
+            if image_name.endswith("flc.fits"):
+                headerlet_filename = image_name.replace("flc", "flt_hlet")
+            if image_name.endswith("flt.fits"):
+                headerlet_filename = image_name.replace("flt", "flt_hlet")
+        out_headerlet.writeto(headerlet_filename, overwrite=True)
+        log.info("Wrote headerlet file {}.\n\n".format(headerlet_filename))
+        out_headerlet_dict[image_name] = headerlet_filename
 
-            # Attach headerlet as HDRLET extension
-            if headerlet.verify_hdrname_is_unique(hdulist, hdr_name):
-                headerlet.attach_headerlet(image_name, headerlet_filename, logging=False)
+        # Attach headerlet as HDRLET extension
+        if headerlet.verify_hdrname_is_unique(hdulist, hdr_name):
+            headerlet.attach_headerlet(image_name, headerlet_filename, logging=False)
 
         chipctr += 1
     return (out_headerlet_dict)
@@ -935,38 +956,40 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
     """
 
     # Get the data to be used as values for FITS keywords
-    rms_ra = tweakwcs_item.meta['fit_info']['RMS_RA'].value
-    rms_dec = tweakwcs_item.meta['fit_info']['RMS_DEC'].value
-    fit_rms = tweakwcs_item.meta['fit_info']['FIT_RMS']
-    nmatch = tweakwcs_item.meta['fit_info']['nmatches']
-    catalog = tweakwcs_item.meta['fit_info']['catalog']
-    fit_method = tweakwcs_item.meta['fit method']
+    info = tweakwcs_item.meta['fit_info']
+    if 'nmatches' in info:
+        rms_ra = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
+        rms_dec = info['RMS_DEC'].value if info['RMS_RA'] is not None else -1.0
+        fit_rms = info['FIT_RMS']
+        nmatch = info['nmatches']
+        catalog = info['catalog']
+        fit_method = tweakwcs_item.meta['fit method']
 
-    x_shift = (tweakwcs_item.meta['fit_info']['shift'])[0]
-    y_shift = (tweakwcs_item.meta['fit_info']['shift'])[1]
-    rot = tweakwcs_item.meta['fit_info']['rot'][1]  # report rotation of Y axis only
-    scale = tweakwcs_item.meta['fit_info']['<scale>']
-    skew = tweakwcs_item.meta['fit_info']['skew']
+        x_shift = (info['shift'])[0]
+        y_shift = (info['shift'])[1]
+        rot = info['rot'][1]  # report rotation of Y axis only
+        scale = info['<scale>']
+        skew = info['skew']
 
-    # Update the existing FITS keywords
-    primary_header = headerlet[0].header
-    primary_header['RMS_RA'] = rms_ra
-    primary_header['RMS_DEC'] = rms_dec
-    primary_header['NMATCH'] = nmatch
-    primary_header['CATALOG'] = catalog
-    primary_header['FITMETH'] = fit_method
+        # Update the existing FITS keywords
+        primary_header = headerlet[0].header
+        primary_header['RMS_RA'] = rms_ra
+        primary_header['RMS_DEC'] = rms_dec
+        primary_header['NMATCH'] = nmatch
+        primary_header['CATALOG'] = catalog
+        primary_header['FITMETH'] = fit_method
 
-    # Create a new FITS keyword
-    primary_header['FIT_RMS'] = (fit_rms, 'RMS (mas) of the 2D fit of the headerlet solution')
+        # Create a new FITS keyword
+        primary_header['FIT_RMS'] = (fit_rms, 'RMS (mas) of the 2D fit of the headerlet solution')
 
-    # Create the set of HISTORY keywords
-    primary_header['HISTORY'] = '~~~~~ FIT PARAMETERS ~~~~~'
-    primary_header['HISTORY'] = '{:>15} : {:9.4f} "/pixels'.format('platescale', tweakwcs_item.wcs.pscale)
-    primary_header['HISTORY'] = '{:>15} : {:9.4f} pixels'.format('x_shift', x_shift)
-    primary_header['HISTORY'] = '{:>15} : {:9.4f} pixels'.format('y_shift', y_shift)
-    primary_header['HISTORY'] = '{:>15} : {:9.4f} degrees'.format('rotation', rot)
-    primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('scale', scale)
-    primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('skew', skew)
+        # Create the set of HISTORY keywords
+        primary_header['HISTORY'] = '~~~~~ FIT PARAMETERS ~~~~~'
+        primary_header['HISTORY'] = '{:>15} : {:9.4f} "/pixels'.format('platescale', tweakwcs_item.wcs.pscale)
+        primary_header['HISTORY'] = '{:>15} : {:9.4f} pixels'.format('x_shift', x_shift)
+        primary_header['HISTORY'] = '{:>15} : {:9.4f} pixels'.format('y_shift', y_shift)
+        primary_header['HISTORY'] = '{:>15} : {:9.4f} degrees'.format('rotation', rot)
+        primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('scale', scale)
+        primary_header['HISTORY'] = '{:>15} : {:9.4f}'.format('skew', skew)
 
 # --------------------------------------------------------------------------------------------------------------
 def register_photutils_function(name):

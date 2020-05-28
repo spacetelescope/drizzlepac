@@ -854,7 +854,11 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     # Include magnitudes for each source for use in verification of alignment through
     # comparison with GAIA magnitudes
     tbl = compute_photometry(tbl, photmode)
-
+    
+    # Insure all IDs are sequential and unique (at least in this catalog)
+    tbl['cat_id'] = np.arange(1, len(tbl) + 1)
+    del tbl['id']
+    
     if outroot:
         tbl['xcentroid'].info.format = '.10f'  # optional format
         tbl['ycentroid'].info.format = '.10f'
