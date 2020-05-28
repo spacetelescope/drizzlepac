@@ -241,6 +241,7 @@ class FilterProduct(HAPProduct):
         exposure_filenames = []
         headerlet_filenames = {}
         align_table = None
+
         try:
             if self.edp_list:
                 for edp in self.edp_list:
@@ -279,7 +280,7 @@ class FilterProduct(HAPProduct):
 
             # Only write out the traceback if in "debug" mode since not being able to
             # align the data to an absolute astrometric frame is not actually a failure.
-            log.debug(traceback.format_exc())
+            log.info(traceback.format_exc())
             align_table = None
 
             # If the align_table is None, it is necessary to clean-up reference catalogs

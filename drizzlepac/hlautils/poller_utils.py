@@ -103,6 +103,9 @@ def interpret_obset_input(results, log_level):
     obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
     # Sort the rows of the table in an effort to optimize the number of quality sources found in the initial images
     obset_table = sort_poller_table(obset_table)
+    log.debug("Sorted input:")
+    log.debug(obset_table)
+    log.debug("\n\n")
     # parse Table into a tree-like dict
     log.debug("Build the observation set tree.")
     obset_tree = build_obset_tree(obset_table)
@@ -374,7 +377,6 @@ def build_poller_table(input, log_level):
 
         # Since a poller file was the input, it is assumed all the input
         # data is in the locale directory so just collect the filenames.
-        datasets = input_table[input_table.colnames[0]].tolist()
         filenames = list(input_table.columns[0])
 
     elif isinstance(input, list):
@@ -402,7 +404,9 @@ def build_poller_table(input, log_level):
             else:
                 files = [filename]
             datasets += files
-
+    else:
+        datasets = filenames
+        
     # Each image, whether from a poller file or from an input list needs to be
     # analyzed to ensure it is viable for drizzle processing.  If the image is not
     # viable, it should not be included in the output "poller" table.
@@ -519,7 +523,8 @@ def sort_poller_table(obset_table):
     # of exposure time (in seconds).  The primary key is sorted in decending
     # order, and the secondary key is sorted in ascending order.  Use the rank to sort
     # the original input table for output.
-    rank = np.lexsort((expanded_obset_table['exptime'], -expanded_obset_table['flam']))
+    rank = np.lexsort((-expanded_obset_table['flam'], expanded_obset_table['exptime']))
+    # rank = np.lexsort((expanded_obset_table['exptime'], -expanded_obset_table['flam']))
     updated_obset_table = obset_table[rank]
 
     return updated_obset_table

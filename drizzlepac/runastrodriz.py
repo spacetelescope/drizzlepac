@@ -86,12 +86,15 @@ except ImportError:
 import numpy as np
 from astropy.io import fits
 
+import stwcs
 from stwcs.wcsutil import HSTWCS
 from stwcs import updatewcs
 from stwcs.wcsutil import headerlet
 
 from stsci.tools import fileutil, asnutil
+import tweakwcs
 
+import drizzlepac
 from drizzlepac import processInput  # used for creating new ASNs for _flc inputs
 
 from drizzlepac import align
@@ -108,7 +111,7 @@ __taskname__ = "runastrodriz"
 
 # Local variables
 __version__ = "2.2.0"
-__version_date__ = "(06-Mar-2020)"
+__version_date__ = "(22-May-2020)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
@@ -139,6 +142,8 @@ focus_pars = {"WFC3/IR": {'sigma': 2.0, 'good_bits': 512},
 sub_dirs = ['OrIg_files', 'pipeline-default']
 valid_alignment_modes = ['apriori', 'aposteriori', 'default-pipeline']
 gsc240_date = '2017-10-01'
+apriori_priority = ['HSC', 'GSC', '']
+
 
 # default marker for trailer files
 __trlmarker__ = '*** astrodrizzle Processing Version ' + __version__ + __version_date__ + '***\n'
@@ -164,6 +169,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     """
     trlmsg = "{}: Calibration pipeline processing of {} started.\n".format(_getTime(), inFile)
     trlmsg += __trlmarker__
+    trlmsg += "    drizzlepac version {}".format(drizzlepac.__version__)
+    trlmsg += "    tweakwcs version {}".format(tweakwcs.__version__)
+    trlmsg += "    stwcs version {}".format(stwcs.__version__)
+    trlmsg += "    numpy version {}".format(np.__version__)
     pipeline_pars = PIPELINE_PARS.copy()
     _verify = True  # Switch to control whether to verify alignment or not
 
@@ -371,6 +380,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             3. If alignment is verified,
                 0. copy inputs to separate sub-directory for processing
                 a. run updatewcs to get a priori updates
+                a.1.  apply 'best' apriori (not aposteriori) solution
                 b. generate drizzle products for all sets of inputs (FLC and/or FLT) without CR identification
                 c. verify alignment using focus index on FLC or, if no FLC, FLT products
                 d. if alignment fails, update trailer file with info on failure
@@ -803,9 +813,6 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         if asndict is None:
             return None
 
-    if alignment_mode == 'aposteriori':
-        from stwcs.wcsutil import headerlet
-
     # if tmpdir is turned off (== None), tmpname set to 'default-pipeline'
     tmpname = tmpdir if tmpdir else 'default-pipeline'
     tmpmode = None
@@ -915,8 +922,9 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                     row = align_table[align_table['imageName'] == flcfile]
                     headerlet_file = row['headerletFile'][0]
                     if headerlet_file != "None":
-                        headerlet.apply_headerlet_as_primary(fltfile, headerlet_file,
-                                                            attach=True, archive=True)
+                        apply_headerlet(fltfile, headerlet_file, flcfile=flcfile)
+                        # headerlet.apply_headerlet_as_primary(fltfile, headerlet_file,
+                        #                                     attach=True, archive=True)
                         headerlet_files.append(headerlet_file)
                         # append log file contents to _trlmsg for inclusion in trailer file
                         _trlstr = "Applying headerlet {} as Primary WCS to {}\n"
@@ -1035,11 +1043,27 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
     return focus_dicts
 
+def apply_headerlet(filename, headerlet_file, flcfile=None):
+    
+    # Use headerlet module to apply headerlet as PRIMARY WCS 
+    headerlet.apply_headerlet_as_primary(filename, headerlet_file,
+                                        attach=True, archive=True)
+    # Verify that all keywords from headerlet got applied
+    hlet = headerlet.Headerlet.fromfile(headerlet_file)
+    if flcfile is not None:
+        with fits.open(filename, mode='update') as fhdu:
+            num_sci = fileutil.countExtn(fhdu)
+            for sciext in range(1, num_sci + 1):
+                extn = ('sci', sciext)
+                fhdu[extn].header['wcstype'] = fits.getval(flcfile, 'wcstype', extn)
+    
+
 def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_date):
     """Insure that data taken with GAIA has WCSNAME reflecting that"""
     gsc240 = catalog_date.split('-')
     gdate = datetime.date(int(gsc240[0]), int(gsc240[1]), int(gsc240[2]))
     msg = ''
+    wcsnames = None
     print(filenames)
     for f in filenames:
         with fits.open(f, mode='update') as fhdu:
@@ -1058,10 +1082,58 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                     fhdu['sci', sciext + 1].header['wcsname'] = wcsname
                     msg += "Updating WCSNAME of {}[sci,{}] for use of {} catalog \n".format(f,
                             sciext + 1, catalog_name)
+                    continue
+                # Check to see whether it is an aposteriori solution
+                # If so, replace it with an apriori solution instead
+                if '-FIT' in wcsname:
+                    if wcsnames is None:
+                        wcsnames = headerlet.get_headerlet_kw_names(fhdu, kw='WCSNAME')
+                        hdrnames = headerlet.get_headerlet_kw_names(fhdu)
+                        # Remove OPUS based solutions
+                        opus_indx = []
+                        for i,w in enumerate(wcsnames):
+                            if 'OPUS' in w: opus_indx.append(i)
+                        opus_indx.reverse()
+                        for i in opus_indx: 
+                            del wcsnames[i]
+                            del hdrnames[i]
+                        gscwcs = any(['GSC' in w for w in wcsnames])
+                        if not gscwcs:
+                            priwcs = fhdu['sci', sciext + 1].header['wcsname']
+                            if priwcs not in wcsnames:
+                                wcsnames.append(priwcs)
+                                hdrnames.append(priwcs)
+                                # Build IDC_* only WCSNAME
+                                defwcs = priwcs.split("-")[0]
+                                # delete this from list of WCSNAMEs since it was 
+                                # already replaced by GSC240 WCSNAME
+                                indx = wcsnames.index(defwcs)
+                                del wcsnames[indx]
+                                del hdrnames[indx]
+
+                    # Look for priority apriori WCS
+                    restored = False
+                    for apriori_type in apriori_priority:
+                        # For each WCSNAME/HDRNAME in the file...
+                        for w,h in zip(wcsnames, hdrnames):
+                            # Look for apriori_type (HSC, GSC,...)
+                            if apriori_type in w:
+                                # restore this WCS
+                                msg += 'Restoring {} as primary WCS'.format(w)
+                                headerlet.restore_from_headerlet(fhdu,
+                                                                 force=True,
+                                                                 hdrname=h,
+                                                                 archive=False)
+                                restored = True
+                                break
+                        if restored:
+                            break
+
     return msg
 
 def restore_pipeline_default(files):
     """Restore pipeline-default IDC_* WCS as PRIMARY WCS in all input files"""
+    print("Restoring pipeline-default WCS as PRIMARY WCS... using updatewcs.")
     updatewcs.updatewcs(files, use_db=False)
     # Remove HDRNAME, if added by some other code.  
     #  This keyword only needs to be included in the headerlet file itself.
@@ -1071,35 +1143,6 @@ def restore_pipeline_default(files):
             for sciext in range(num_sci):
                 if 'hdrname' in fhdu[('sci', sciext + 1)].header:
                     del fhdu[('sci', sciext + 1)].header['hdrname']
-
-# Function written from (essentially) first principles
-def old_restore_pipeline_default(files):
-    """Restore pipeline-default IDC_* WCS as PRIMARY WCS in all input files"""
-    for f in files:
-        rootname = f.replace('.fits', '')
-        with fits.open(f, mode='update') as hdu:
-            hdrnames = headerlet.get_headerlet_kw_names(hdu, kw='hdrname')
-            # Remove '-hlet.fits' from end of HDRNAME values to simplify 
-            # comparison with newly generated solution which does NOT end with 
-            # '-hlet.fits'.
-            hdrnames_clean = [h.rstrip('-hlet.fits') for h in hdrnames]
-            def_hdrname = "{}_OPUS".format(rootname)
-            for hdrnum,(hclean,h) in enumerate(zip(hdrnames_clean,hdrnames)):
-                hdrnum += 1
-                if '-' not in hclean and 'IDC' in hclean:
-                    def_hdrname = h
-                    # Check to insure that apriori provided IDC_* default solution
-                    # is complete
-                    hlet = hdu[('hdrlet',hdrnum)].headerlet
-                    if (hlet[1].header['ctype1'].endswith('-SIP') and \
-                        'A_ORDER' not in hlet[1].header) or \
-                        not hlet[1].header['ctype1'].endswith('-SIP'):
-                        del hdu[('hdrlet',hdrnum)]
-                    else:                
-                        break
-            def_extn = headerlet.find_headerlet_HDUs(hdu, hdrname=def_hdrname)[0]
-            print("Restoring WCS from EXTN {} with hdrname of {}".format(def_extn, def_hdrname))
-            headerlet.restore_from_headerlet(hdu, hdrext=def_extn, archive=False)
 
 def _lowerAsn(asnfile):
     """ Create a copy of the original asn file and change
