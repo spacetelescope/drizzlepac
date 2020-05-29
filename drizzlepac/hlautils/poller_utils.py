@@ -527,7 +527,9 @@ def sort_poller_table(obset_table):
     # fields with few point sources which are bright that are saturated in the
     # longer exposure time images (like j8cw03 and j8cw53).  
     # rank = np.lexsort((-expanded_obset_table['flam'], -expanded_obset_table['exptime']))
-    rank = np.lexsort((expanded_obset_table['exptime'], -expanded_obset_table['flam']))
+    # Original implementation:
+    # rank = np.lexsort((expanded_obset_table['exptime'], -expanded_obset_table['flam']))
+    rank = np.lexsort((-expanded_obset_table['flam'], expanded_obset_table['exptime']))
     updated_obset_table = obset_table[rank]
 
     return updated_obset_table
