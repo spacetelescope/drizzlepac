@@ -4,6 +4,7 @@ import copy
 import sys
 import traceback
 import pickle
+import warnings
 
 from collections import OrderedDict
 
@@ -14,6 +15,8 @@ from astropy.table import Table, vstack
 from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
+
+from scipy import ndimage
 
 import photutils
 from photutils import Background2D
@@ -187,7 +190,6 @@ class AlignmentTable:
         # Convert input images to tweakwcs-compatible FITSWCS objects and
         # attach source catalogs to them.
         
-
         self.imglist = []
         for group_id, image in enumerate(self.process_list):
             img = amutils.build_wcscat(image, group_id,
@@ -608,9 +610,15 @@ def match_xcorr_fit(imglist, reference_catalog, **fit_pars):
     # be less susceptible to source confusion (bad matches/fits) and errors.
     amutils.determine_initial_shifts(imglist)
 
-    fit_pars['searchrad'] = fit_pars['searchrad'] if fit_pars['searchrad'] < 10.0 else 10.0
+    if 'fitgeom' in fit_pars:
+        fitgeom=fit_pars['fitgeom']
+        del fit_pars['fitgeom']
+    else:
+        fitgeom='general'
+
+    fit_pars['searchrad'] = fit_pars['searchrad'] if fit_pars['searchrad'] < 1.0 else 1.0
     fit_pars['separation'] = fit_pars['separation'] if fit_pars['separation'] > 2.0 else 2.0
-    fit_pars['tolerance'] = fit_pars['tolerance'] if fit_pars['tolerance'] > 5.0 else 5.0
+    fit_pars['tolerance'] = fit_pars['tolerance'] if fit_pars['tolerance'] > 0.5 else 0.5
 
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
@@ -685,31 +693,62 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
 
     """
     log.info("{} (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
+    if 'fitgeom' in fit_pars:
+        fitgeom=fit_pars['fitgeom']
+        del fit_pars['fitgeom']
+    else:
+        fitgeom='general'
+
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
-    log.debug("Relative fit configured with: \n  {}".format(fit_pars))
-
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
     #                          tolerance=100, use2dhist=False)
-
     # Align images and correct WCS
     # NOTE: this invocation does not use an astrometric catalog. This call allows all the input images to be aligned in
     # a relative way using the first input image as the reference.
     # 1: Perform relative alignment
-    tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True)
+    match_relcat = tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True, fitgeom=fitgeom)
 
-    # Set all the group_id values to be the same so the various images/chips will be aligned to the astrometric
-    # reference catalog as an ensemble.
-    # astrometric reference catalog as an ensemble. BEWARE: If additional iterations of solutions are to be
-    # done, the group_id values need to be restored.
-    for image in imglist:
-        image.meta["group_id"] = 1234567
-    # 2: Perform absolute alignment
-    tweakwcs.align_wcs(imglist, reference_catalog, match=match)
+    log.info("Relative alignment found: ")
+    for i in imglist:
+        info = i.meta['fit_info']
+        if 'shift' not in info:
+            off = (0., 0.)
+            rot = 0.
+            scale = -1.
+        else:
+            off = info['shift']
+            rot = info['<rot>']
+            scale = info['<scale>']
+        msg = "Image {} --".format(i.meta['name'])
+        msg += "\n    SHIFT:({:9.4f},{:9.4f})  ".format(off[0], off[1])
+        msg += " ROT:{:9.4f}  SCALE:{:9.4f}".format(rot, scale)
+        log.info(msg)
 
+    # This logic enables performing only relative fitting and skipping fitting to GAIA
+    if reference_catalog is not None:
+        # Set all the group_id values to be the same so the various images/chips will be aligned to the astrometric
+        # reference catalog as an ensemble.
+        # astrometric reference catalog as an ensemble. BEWARE: If additional iterations of solutions are to be
+        # done, the group_id values need to be restored.
+        for image in imglist:
+            image.meta["group_id"] = 1234567
+        # 2: Perform absolute alignment
+        matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, match=match, fitgeom=fitgeom)
+    else:
+        # Insure the expanded reference catalog has all the information needed
+        # to complete processing.
+        # TODO: Work out how to get the 'mag' column from input source catalog
+        #       into this extended reference catalog...
+        reference_catalog = match_relcat
+        reference_catalog['mag'] = np.array([-999.9]*len(reference_catalog), 
+                                            np.float32)
+        reference_catalog.meta['catalog'] = 'relative'
+        
     # 3: Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
 
+    del match_relcat
     return imglist
 
 # ----------------------------------------------------------------------------------------------------------
@@ -1043,17 +1082,17 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
         # Update headerlet
         update_headerlet_phdu(item, out_headerlet)
 
-            # Write headerlet
-            if headerlet_filenames:
-                headerlet_filename = headerlet_filenames[image_name]  # Use HAP-compatible filename defined in runhlaprocessing.py
-            else:
-                if image_name.endswith("flc.fits"):
-                    headerlet_filename = image_name.replace("flc", "flt_hlet")
-                if image_name.endswith("flt.fits"):
-                    headerlet_filename = image_name.replace("flt", "flt_hlet")
-            out_headerlet.writeto(headerlet_filename, overwrite=True)
-            log.info("Wrote headerlet file {}.\n\n".format(headerlet_filename))
-            out_headerlet_dict[image_name] = headerlet_filename
+        # Write headerlet
+        if headerlet_filenames:
+            headerlet_filename = headerlet_filenames[image_name]  # Use HAP-compatible filename defined in runhlaprocessing.py
+        else:
+            if image_name.endswith("flc.fits"):
+                headerlet_filename = image_name.replace("flc", "flt_hlet")
+            if image_name.endswith("flt.fits"):
+                headerlet_filename = image_name.replace("flt", "flt_hlet")
+        out_headerlet.writeto(headerlet_filename, overwrite=True)
+        log.info("Wrote headerlet file {}.\n\n".format(headerlet_filename))
+        out_headerlet_dict[image_name] = headerlet_filename
 
         # Attach headerlet as HDRLET extension
         if headerlet.verify_hdrname_is_unique(hdulist, hdr_name):

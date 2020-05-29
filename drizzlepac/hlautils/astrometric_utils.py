@@ -14,7 +14,6 @@ reference catalog. ::
 
 """
 import os
-import pdb
 from io import BytesIO
 import csv
 import requests

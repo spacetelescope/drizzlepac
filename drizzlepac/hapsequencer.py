@@ -553,13 +553,13 @@ def run_align_to_gaia(tot_obj, log_level=logutil.logging.INFO, diagnostic_mode=F
     log.info("\n{}: Finished aligning gaia_obj to GAIA".format(str(datetime.datetime.now())))
     log.info("ALIGNED WCS: \n{}".format(tot_obj.meta_wcs))
 
-        # Return the name of the alignment catalog
-        return gaia_obj.refname
+    # Return the name of the alignment catalog
+    return gaia_obj.refname
 
-        #
-        # Composite WCS fitting should be done at this point so that all exposures have been fit to GAIA at
-        # the same time (on the same frame)
-        #
+    #
+    # Composite WCS fitting should be done at this point so that all exposures have been fit to GAIA at
+    # the same time (on the same frame)
+    #
 
 # ----------------------------------------------------------------------------------------------------------------------
 

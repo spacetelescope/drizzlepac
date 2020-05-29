@@ -236,7 +236,8 @@ class FilterProduct(HAPProduct):
         alignment_pars = self.configobj_pars.get_pars('alignment')
 
         # Only perform the relative alignment
-        method_name = 'relative'
+        # method_name = 'relative'
+        method_name = 'xcorr'
 
         exposure_filenames = []
         headerlet_filenames = {}
