@@ -110,8 +110,8 @@ from drizzlepac.hlautils import quality_analysis as qa
 __taskname__ = "runastrodriz"
 
 # Local variables
-__version__ = "2.2.0"
-__version_date__ = "(22-May-2020)"
+__version__ = "2.3.0"
+__version_date__ = "(29-May-2020)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
@@ -1063,9 +1063,9 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
     gsc240 = catalog_date.split('-')
     gdate = datetime.date(int(gsc240[0]), int(gsc240[1]), int(gsc240[2]))
     msg = ''
-    wcsnames = None
-    print(filenames)
+
     for f in filenames:
+        wcsnames = None
         with fits.open(f, mode='update') as fhdu:
             # Check to see whether a RAW/uncalibrated file has been provided
             # If so, skip it since updatewcs has not been run on it yet.
@@ -1119,7 +1119,7 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                             # Look for apriori_type (HSC, GSC,...)
                             if apriori_type in w:
                                 # restore this WCS
-                                msg += 'Restoring {} as primary WCS'.format(w)
+                                msg += 'Restoring apriori WCS {} as primary WCS in {}\n'.format(w, f)
                                 headerlet.restore_from_headerlet(fhdu,
                                                                  force=True,
                                                                  hdrname=h,

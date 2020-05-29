@@ -520,11 +520,14 @@ def sort_poller_table(obset_table):
         row['flam'] = photflam
 
     # Determine the rank order the data with a primary key of photflam and a secondary key
-    # of exposure time (in seconds).  The primary key is sorted in decending
-    # order, and the secondary key is sorted in ascending order.  Use the rank to sort
+    # of exposure time (in seconds).  The primary and secondary keys both need 
+    # to be sorted in descending order.  Use the rank to sort
     # the original input table for output.
-    rank = np.lexsort((-expanded_obset_table['flam'], expanded_obset_table['exptime']))
-    # rank = np.lexsort((expanded_obset_table['exptime'], -expanded_obset_table['flam']))
+    # Unfortunately, there are cases where the default works better; namely, 
+    # fields with few point sources which are bright that are saturated in the
+    # longer exposure time images (like j8cw03 and j8cw53).  
+    # rank = np.lexsort((-expanded_obset_table['flam'], -expanded_obset_table['exptime']))
+    rank = np.lexsort((expanded_obset_table['exptime'], -expanded_obset_table['flam']))
     updated_obset_table = obset_table[rank]
 
     return updated_obset_table
