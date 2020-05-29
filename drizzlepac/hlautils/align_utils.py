@@ -210,7 +210,7 @@ class AlignmentTable:
     def perform_fit(self, method_name, catalog_name, reference_catalog, 
                     fitgeom='general'):
         """Perform fit using specified method, then determine fit quality"""
-        # Updated fits_pars with value for fitgeom
+        # Updated fits_pars with value for fitgeom        
         self.fit_pars[method_name]['fitgeom'] = fitgeom
         log.info("Setting 'fitgeom' parameter to {} for {} fit".format(fitgeom, method_name))
         
@@ -608,12 +608,27 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     match = tweakwcs.TPMatch(**fit_pars)
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
     #                          tolerance=100, use2dhist=False)
-
     # Align images and correct WCS
     # NOTE: this invocation does not use an astrometric catalog. This call allows all the input images to be aligned in
     # a relative way using the first input image as the reference.
     # 1: Perform relative alignment
     match_relcat = tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True, fitgeom=fitgeom)
+
+    log.info("Relative alignment found: ")
+    for i in imglist:
+        info = i.meta['fit_info']
+        if 'shift' not in info:
+            off = (0., 0.)
+            rot = 0.
+            scale = -1.
+        else:
+            off = info['shift']
+            rot = info['<rot>']
+            scale = info['<scale>']
+        msg = "Image {} --".format(i.meta['name'])
+        msg += "\n    SHIFT:({:9.4f},{:9.4f})  ".format(off[0], off[1])
+        msg += " ROT:{:9.4f}  SCALE:{:9.4f}".format(rot, scale)
+        log.info(msg)
 
     # This logic enables performing only relative fitting and skipping fitting to GAIA
     if reference_catalog is not None:
