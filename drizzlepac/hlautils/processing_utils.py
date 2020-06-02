@@ -24,15 +24,15 @@ __taskname__ = 'processing_utils'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
 
 def get_rules_file(product):
-    """Copies default HLA rules file to local directory."""
+    """Copies default HAP rules file to local directory."""
     hdu, closefits = _process_input(product)
     rootname = '_'.join(product.split("_")[:-1])
     phdu = hdu[0].header
     instrument = phdu['instrume']
     code_dir = os.path.abspath(__file__)
     base_dir = os.path.dirname(os.path.dirname(code_dir))
-    def_rules_name = "{}_header_hla.rules".format(instrument.lower())
-    new_rules_name = "{}_header_hla.rules".format(rootname)
+    def_rules_name = "{}_header_hap.rules".format(instrument.lower())
+    new_rules_name = "{}_header_hap.rules".format(rootname)
     rules_filename = os.path.join(base_dir, 'pars', def_rules_name)
     new_rules_filename = os.path.join(os.getcwd(), new_rules_name)
     
