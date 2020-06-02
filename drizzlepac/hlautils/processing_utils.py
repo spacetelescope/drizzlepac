@@ -26,14 +26,20 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 def get_rules_file(product):
     """Copies default HLA rules file to local directory."""
     hdu, closefits = _process_input(product)
+    rootname = '_'.join(product.split("_")[:-1])
     phdu = hdu[0].header
     instrument = phdu['instrume']
     code_dir = os.path.abspath(__file__)
     base_dir = os.path.dirname(os.path.dirname(code_dir))
-    rules_name = "{}_header_hla.rules".format(instrument.lower())
-    rules_filename = os.path.join(base_dir, 'pars', rules_name)
-    if rules_name not in os.listdir('.'):
-        shutil.copy(rules_filename, os.getcwd())
+    def_rules_name = "{}_header_hla.rules".format(instrument.lower())
+    new_rules_name = "{}_header_hla.rules".format(rootname)
+    rules_filename = os.path.join(base_dir, 'pars', def_rules_name)
+    new_rules_filename = os.path.join(os.getcwd(), new_rules_name)
+    
+    if new_rules_name not in os.listdir('.'):
+        shutil.copy(rules_filename, new_rules_filename)
+        #shutil.copy(rules_filename, os.getcwd())
+    return new_rules_name
 
 def refine_product_headers(product, total_obj_list):
     """Refines output product headers to include values not available to AstroDrizzle.

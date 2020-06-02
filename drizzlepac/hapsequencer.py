@@ -265,9 +265,12 @@ def create_drizzle_products(total_obj_list):
     """
     log.info("Processing with astrodrizzle version {}".format(drizzlepac.astrodrizzle.__version__))
     # Get rules files
+    rules_files = {}
     for imgname in glob.glob("*fl?.fits"):
-        proc_utils.get_rules_file(imgname)
-
+        rules_files[imgname] = proc_utils.get_rules_file(imgname)
+        
+    print('Generated RULES_FILE names of: \n{}\n'.format(rules_files))
+    
     # Keep track of all the products created for the output manifest
     product_list = []
 
@@ -283,6 +286,7 @@ def create_drizzle_products(total_obj_list):
         # Create drizzle-combined filter image as well as the single exposure drizzled image
         for filt_obj in total_obj.fdp_list:
             log.info("~" * 118)
+            filt_obj.rules_file = rules_files[filt_obj.edp_list[0].full_filename]                
 
             log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
             filt_obj.wcs_drizzle_product(meta_wcs)
@@ -292,7 +296,8 @@ def create_drizzle_products(total_obj_list):
             # Create individual single drizzled images
             for exposure_obj in filt_obj.edp_list:
                 log.info("~" * 118)
-
+                exposure_obj.rules_file = rules_files[exposure_obj.full_filename]
+                
                 log.info("CREATE SINGLE DRIZZLED IMAGE: {}".format(exposure_obj.drizzle_filename))
                 exposure_obj.wcs_drizzle_product(meta_wcs)
                 product_list.append(exposure_obj.drizzle_filename)
@@ -303,6 +308,7 @@ def create_drizzle_products(total_obj_list):
         # Create drizzle-combined total detection image after the drizzle-combined filter image and
         # drizzled exposure images in order to take advantage of the cosmic ray flagging.
         log.info("CREATE DRIZZLE-COMBINED TOTAL IMAGE: {}\n".format(total_obj.drizzle_filename))
+        total_obj.rules_file = total_obj.fdp_list[0].rules_file
         total_obj.wcs_drizzle_product(meta_wcs)
         product_list.append(total_obj.drizzle_filename)
         product_list.append(total_obj.trl_filename)

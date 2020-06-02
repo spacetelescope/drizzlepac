@@ -154,11 +154,11 @@ resetbits : int (Default = 4096)
     ``AstroDrizzle`` processing steps (static mask, sky subtraction,
     and so on).
 
-num_cores: int (Default = None)
+num_cores : int (Default = None)
     This specifies the number of CPU cores to use during processing. Any value
     less than 2 will disable all use of parallel processing.
 
-in_memory: bool (Default = False)
+in_memory : bool (Default = False)
     This parameter sets whether or not to keep all intermediate products
     in memory when processing. This includes all single drizzle products
     (``*single_sci`` and ``*single_wht``), median image, blot images, and
@@ -167,6 +167,14 @@ in_memory: bool (Default = False)
     processing time by eliminating most of the disk activity.
     *Only* the products of the final drizzle step will get written out when
     this parameter gets specified as `True`.
+
+rules_file : str (Default = "")
+    Rules for how to blend the header keyword values for all the input 
+    exposures into a single header for the drizzle products are specified
+    using this `rules_file`.  The `fitsblender` package uses this file to determine
+    what keywords should be written out to the drizzle product headers.  If 
+    no file is specified (default), the rules file for the instrument as included
+    with the `fitsblender` package will be used for defining the product headers.
 
 
 **STATE OF INPUT FILES**

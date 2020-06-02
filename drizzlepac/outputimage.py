@@ -172,7 +172,8 @@ class OutputImage:
         self.units = units
 
     def writeFITS(self, template, sciarr, whtarr, ctxarr=None,
-                versions=None, overwrite=yes, blend=True, virtual=False):
+                versions=None, overwrite=yes, blend=True, virtual=False,
+                rules_file=None):
         """
         Generate PyFITS objects for each output extension
         using the file given by 'template' for populating
@@ -240,9 +241,11 @@ class OutputImage:
         # file FITS headers.
         # NOTE: These are HEADER objects, not HDUs
         #prihdr,scihdr,errhdr,dqhdr = getTemplates(template)
-        self.fullhdrs, intab = getTemplates(template, blend=False)
+        self.fullhdrs, intab = getTemplates(template, blend=False,
+                                            rules_file=rules_file)
 
-        newhdrs, newtab = getTemplates(template,blend=blend)
+        newhdrs, newtab = getTemplates(template,blend=blend,
+                                        rules_file=rules_file)
         if newtab is not None: nextend += 1 # account for new table extn
 
         prihdr = newhdrs[0]
@@ -680,7 +683,7 @@ def cleanTemplates(scihdr,errhdr,dqhdr):
                 if keyword not in dqhdr:
                     dqhdr[keyword]= scihdr[keyword]
 
-def getTemplates(fnames, blend=True):
+def getTemplates(fnames, blend=True, rules_file=None):
     """ Process all headers to produce a set of combined headers
         that follows the rules defined by each instrument.
 
@@ -690,7 +693,10 @@ def getTemplates(fnames, blend=True):
         newtab = None
     else:
         # apply rules to create final version of headers, plus table
-        newhdrs, newtab = blendheaders.get_blended_headers(inputs=fnames)
+        # TODO:  NEED to add pointer to dataset-specific rules file as 
+        #        'rules_file' parameter.
+        newhdrs, newtab = blendheaders.get_blended_headers(inputs=fnames,
+                                                            rules_file=rules_file)
 
     cleanTemplates(newhdrs[1],newhdrs[2],newhdrs[3])
 
@@ -743,7 +749,8 @@ def deleteDistortionKeywords(hdr):
             pass
 
 
-def writeSingleFITS(data,wcs,output,template,clobber=True,verbose=True):
+def writeSingleFITS(data,wcs,output,template,clobber=True,verbose=True, 
+                    rules_file=None):
     """ Write out a simple FITS file given a numpy array and the name of another
     FITS file to use as a template for the output image header.
     """
@@ -772,7 +779,8 @@ def writeSingleFITS(data,wcs,output,template,clobber=True,verbose=True):
         # Get default headers from multi-extension FITS file
         # If input data is not in MEF FITS format, it will return 'None'
         # NOTE: These are HEADER objects, not HDUs
-        (prihdr,scihdr,errhdr,dqhdr),newtab = getTemplates(template,EXTLIST)
+        (prihdr,scihdr,errhdr,dqhdr),newtab = getTemplates(template,EXTLIST, 
+                                                           rules_file=rules_file)
 
         if scihdr is None:
             scihdr = fits.Header()
