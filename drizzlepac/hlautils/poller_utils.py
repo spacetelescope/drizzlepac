@@ -32,7 +32,12 @@ TDP_STR = 'total detection product {:02d}'
 INSTRUMENT_DICT = {'i': 'WFC3', 'j': 'ACS', 'o': 'STIS', 'u': 'WFPC2', 'x': 'FOC', 'w': 'WFPC'}
 POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
                    'exptime', 'filters', 'detector', 'pathname']
+POLLER_DTYPE = ('str', 'int', 'str', 'str', 'float', 'object', 'str', 'str')
 
+MVM_POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
+                       'exptime', 'filters', 'detector', 'pathname', 'skycell_id']
+MVM_POLLER_DTYPE = ('str', 'int', 'str', 'str', 'float', 'object', 'str', 'str', 'str') 
+                  
 EXP_LABELS = {2: 'short', 1: 'med', 0: 'long', None: 'all'}
 
 __taskname__ = 'poller_utils'
@@ -247,14 +252,16 @@ def interpret_mvm_input(results, skycells, log_level, exp_limit=2.0):
     log.setLevel(log_level)
 
     log.debug("Interpret the poller file for the observation set.")
-    obset_table = build_poller_table(results, log_level)
+    obset_table = build_poller_table(results, log_level, 
+                                     poller_type='mvm')
+
     # Add INSTRUMENT column
     instr = INSTRUMENT_DICT[obset_table['filename'][0][0]]
     # convert input to an Astropy Table for parsing
     obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
 
     # Add Date column    
-    years = [int(its.getval(f, 'date-obs').split('-')[0]) for f in obset_table['filename']]
+    years = [int(fits.getval(f, 'date-obs').split('-')[0]) for f in obset_table['filename']]
     obset_table.add_column(Column(years), name='year')
 
     # Sort the rows of the table in an effort to optimize the number of quality 
@@ -433,9 +440,11 @@ def parse_mvm_tree(det_tree, log_level):
                 sep_indx += 1
 
             # Append filter object to the list of filter objects for this specific total product object
-            log.debug("Attach the sky cell layer object {} to its associated total product object {}/{}.".format(filt_obj.filters,
-                                                                                                                   tdp_obj.instrument,
-                                                                                                                   tdp_obj.detector))
+            log1 = "Attach the sky cell layer object {}"
+            log2 = "to its associated total product object {}/{}."
+            log.debug(log1+log2.format(filt_obj.filters,
+                                       tdp_obj.instrument,
+                                       tdp_obj.detector))
             tdp_obj.add_product(filt_obj)
 
         # Add the total product object to the list of TotalProducts
@@ -616,7 +625,7 @@ def determine_filter_name(raw_filter):
 # ------------------------------------------------------------------------------
 
 
-def build_poller_table(input, log_level):
+def build_poller_table(input, log_level, poller_type='svm'):
     """Create a poller file from dataset names.
 
     Parameters
@@ -637,15 +646,22 @@ def build_poller_table(input, log_level):
         log.error('Input poller manifest file, {}, is empty - processing is exiting.'.format(input))
         sys.exit(0)
 
+    if poller_type == 'mvm':
+        poller_colnames = MVM_POLLER_COLNAMES
+        poller_dtype = MVM_POLLER_DTYPE
+    else:
+        poller_colnames = POLLER_COLNAMES
+        poller_dtype = POLLER_DTYPE
+
     datasets = []
     is_poller_file = False
     obs_converters = {'col4': [ascii.convert_numpy(np.str)]}
     if isinstance(input, str):
         input_table = ascii.read(input, format='no_header', converters=obs_converters)
-        if len(input_table.columns) == len(POLLER_COLNAMES):
+        if len(input_table.columns) == len(poller_colnames):
             # We were provided a poller file
             # Now assign column names to table
-            for i, colname in enumerate(POLLER_COLNAMES):
+            for i, colname in enumerate(poller_colnames):
                 input_table.columns[i].name = colname
 
             # Convert to a string column, instead of int64
@@ -698,7 +714,7 @@ def build_poller_table(input, log_level):
         sys.exit(0)
 
     cols = OrderedDict()
-    for cname in POLLER_COLNAMES:
+    for cname in poller_colnames:
         cols[cname] = []
     cols['filename'] = usable_datasets
 
@@ -720,14 +736,17 @@ def build_poller_table(input, log_level):
                 elif d[0] == 'i':
                     filters = hdr['filter']
                 cols['filters'].append(filters)
+            if poller_type == 'mvm':
+                # determine sky-cell ID for input exposures now...
+                scells = cutils.get_sky_cells(d)
 
         # Build output table
         poller_data = [col for col in cols.values()]
         poller_table = Table(data=poller_data,
-                             dtype=('str', 'int', 'str', 'str', 'float', 'object', 'str', 'str'))
+                             dtype=poller_dtype)
 
         # Now assign column names to obset_table
-        for i, colname in enumerate(POLLER_COLNAMES):
+        for i, colname in enumerate(poller_colnames):
             poller_table.columns[i].name = colname
     # The input was a poller file, so just keep the viable data rows for output
     else:
@@ -737,7 +756,7 @@ def build_poller_table(input, log_level):
                 if d == input_table['filename'][i]:
                     good_rows.append(old_row)
             poller_table = Table(rows=good_rows, names=input_table.colnames,
-                                 dtype=('str', 'int', 'str', 'str', 'float', 'object', 'str', 'str'))
+                                 dtype=poller_dtype)
 
     return poller_table
 
