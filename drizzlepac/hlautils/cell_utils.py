@@ -124,6 +124,10 @@ class SkyFootprint(object):
     def __init__(self, meta_wcs):
 
         self.meta_wcs = meta_wcs
+        
+        # the exp_masks dict records the individual footprints of each exposure
+        self.exp_masks = {}
+        self.members = []
 
         self.total_mask = np.zeros(meta_wcs.array_shape, dtype=np.int16)
         self.scaled_mask = np.zeros(meta_wcs.array_shape, dtype=np.float32)
@@ -157,7 +161,9 @@ class SkyFootprint(object):
 
         """
         for exposure in expnames:
-            blank = np.zeros(self.meta_wcs.array_shape, dtype=np.int16)
+            if exposure not in self.members:
+                self.members.append(exposure)
+            self.exp_masks[exposure] = np.zeros(self.meta_wcs.array_shape, dtype=np.int16)
             exp = fits.open(exposure)
 
             sci_extns = wcs_functions.get_extns(exp)
@@ -184,33 +190,53 @@ class SkyFootprint(object):
                 ny = self.meta_wcs.array_shape[0]
                 img = Image.new('L', (nx, ny), 0)
                 ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
-                blank = np.array(img)
+                blank = np.array(img).astype(np.int16)
 
-                self.total_mask += blank.astype(np.int16)
+                self.exp_masks[exposure] += blank
 
-                # Compute scaled mask if specified...
-                if scale:
-                    scale_val = fits.getval(exposure, scale_kw)
-                    self.scaled_mask += blank.astype(np.int16) * scale_val
+            self.total_mask += self.exp_masks[exposure]
+
+            # Compute scaled mask if specified...
+            if scale:
+                scale_val = fits.getval(exposure, scale_kw)
+                self.scaled_mask += self.exp_masks[exposure] * scale_val
+
+            """
+            self.total_mask += blank.astype(np.int16)
+
+            # Compute scaled mask if specified...
+            if scale:
+                scale_val = fits.getval(exposure, scale_kw)
+                self.scaled_mask += blank.astype(np.int16) * scale_val
+            """
+
+
 
     # Methods with 'find' compute values
     # Methods with 'get' return values
-    def find_footprint(self):
+    def find_footprint(self, member='total'):
         if self.total_mask is None:
             print("Please add exposures before computing footprint...")
-        self.footprint = np.clip(self.total_mask, 0, 1)
+        if member == 'total':
+            mask = self.total_mask
+        else:
+            if member not in self.exp_masks:
+                raise ValueError("Member {} not added to footprint".format(member))
+            mask = self.exp_masks[member]
+        self.footprint = np.clip(mask, 0, 1)
+        # self.footprint = np.clip(self.total_mask, 0, 1)
 
-    def find_edges(self):
-        if self.footprint is None:
-            self.find_footprint()
+    def find_edges(self, member='total'):
+        self.find_footprint(member=member)
+
         edges = morphology.binary_erosion(self.footprint).astype(np.int16)
         self.edges = self.footprint - edges
 
-    def find_corners(self):
-        if self.footprint is None:
-            self.find_footprint()
+    def find_corners(self, member='total'):
+        self.find_footprint(member=member)
 
-    def get_edges_sky(self):
+    def get_edges_sky(self, member='total'):
+        self.find_footprint(member=member)
         if self.edges is None:
             self.find_edges()
         edges = np.where(self.edges)
@@ -220,9 +246,9 @@ class SkyFootprint(object):
         self.edges_dec = np.append(self.edges_dec, [self.edges_dec[0]], axis=0)
         return self.edges_ra, self.edges_dec
 
-    def build_polygon(self):
+    def build_polygon(self, member='total'):
         if self.edges_ra is None:
-            self.get_edges_sky()
+            self.get_edges_sky(member=member)
 
         self.polygon = SphericalPolygon.from_radec(self.edges_ra,
                                                    self.edges_dec,
@@ -236,14 +262,12 @@ class SkyFootprint(object):
             hdulist.writeto(filename, overwrite=overwrite)
         return hdulist
 
-    def get_footprint_hdu(self, filename=None, overwrite=True):
-        if self.footprint is None:
-            self.find_footprint()
+    def get_footprint_hdu(self, filename=None, overwrite=True, mmeber='total'):
+        self.find_footprint(member=member)
         return self._get_fits_hdu(self.footprint, filename=filename, overwrite=overwrite)
 
-    def get_edges_hdu(self, filename=None, overwrite=True):
-        if self.edges is None:
-            self.find_edges()
+    def get_edges_hdu(self, filename=None, overwrite=True, member='total'):
+        self.find_edges(member=member)
         return self._get_fits_hdu(self.edges, filename=filename, overwrite=overwrite)
 
     def get_mask_hdu(self, filename=None, overwrite=True):
@@ -269,11 +293,12 @@ class GridDefs(object):
     def find_ring_by_id(self, id):
         return self.rings[np.searchsorted(self.rings['projcell'], id) - 1]
 
-    def get_projection_cells(self, skyfootprint=None, ra=None, dec=None, id=None):
+    def get_projection_cells(self, skyfootprint=None, member='total', 
+                             ra=None, dec=None, id=None):
         # Interpret footprint to get range of declination in mask
         if id is None:
             if ra is None:
-                ra, dec = skyfootprint.get_edges_sky()
+                ra, dec = skyfootprint.get_edges_sky(member=member)
             # Find band[s] that overlap footprint
             self._find_bands(dec)
 
@@ -289,14 +314,16 @@ class GridDefs(object):
         else:
             self.projection_cells = [ProjectionCell(index=i, scale=self.scale) for i in id]
 
-    def get_sky_cells(self, skyfootprint):
+    def get_sky_cells(self, skyfootprint, member='total'):
 
         self.get_projection_cells(skyfootprint)
 
         # Find sky cells from identified projection cell(s) that overlap footprint
         sky_cells = {}
         for pcell in self.projection_cells:
-            sky_cells.update(pcell.find_sky_cells(skyfootprint, self.sc_nxy, self.sc_overlap))
+            sky_cells.update(pcell.find_sky_cells(skyfootprint, 
+                                                 nxy=self.sc_nxy, 
+                                                 overlap=self.sc_overlap))
 
         return sky_cells
 
@@ -430,9 +457,11 @@ class ProjectionCell(object):
 
         skycell00 = SkyCell(x=0, y=0, projection_cell=self)
         skycells = {}
+        
+        member = 'total'
 
         # Get the edges of the mosaic on the sky
-        mosaic_ra, mosaic_dec = mosaic.get_edges_sky()
+        mosaic_ra, mosaic_dec = mosaic.get_edges_sky(member=member)
         # Convert edges to positions in projection cell
         mosaic_edges_x, mosaic_edges_y = self.wcs.world_to_pixel_values(mosaic_ra, mosaic_dec)
         
@@ -450,28 +479,42 @@ class ProjectionCell(object):
                 skycell = SkyCell(x=xi, y=yi, projection_cell=self)
                 skycell.build_mask()
 
-                # Translate mosaic edges into SkyCell WCS coordinate frame
-                mosaic_xy = skycell.wcs.world_to_pixel_values(mosaic_ra, mosaic_dec)
-
-                # Identify edge pixels which fall outside the sky cell
-                #  by comparing to each direction (-X, +X, -Y, +Y) separately
-                mosaic_offcell = mosaic_xy[0] < 0
-                mosaic_offcell = np.bitwise_or(mosaic_offcell,
-                                                mosaic_xy[0] > skycell.wcs.pixel_shape[0])
-                mosaic_offcell = np.bitwise_or(mosaic_offcell, mosaic_xy[1] < 0)
-                mosaic_offcell = np.bitwise_or(mosaic_offcell,
-                                                mosaic_xy[1] > skycell.wcs.pixel_shape[1])
-
-                # With all out of bounds pixels masked out, see if any are left
-                sc_overlap = np.any(~mosaic_offcell)
-
+                sc_overlap = self.compute_overlap(skycell, mosaic_ra, mosaic_dec)
+                
                 print("    Checking SkyCell {},{} for overlap: {}".format(xi, yi, sc_overlap))
                 if sc_overlap:
+                    # Within this SkyCell, determine which members of the 
+                    # mosaic overlap with this SkyCell.
+                    for filename in mosaic.members:
+                        member_ra, member_dec = mosaic.get_edges_sky(member=filename)
+                        member_overlap = self.compute_overlap(skycell,
+                                                              member_ra,
+                                                              member_dec)
+                        if member_overlap:
+                            skycell.members.append(filename)
                     # We found overlapping pixels from mosaic, so return this SkyCell
                     print("   Found overlap in SkyCell {}".format(skycell.sky_cell_id))
                     skycells[skycell.sky_cell_id] = skycell
 
         return skycells
+
+    def compute_overlap(self, skycell, mosaic_ra, mosaic_dec):
+        # Translate mosaic edges into SkyCell WCS coordinate frame
+        mosaic_xy = skycell.wcs.world_to_pixel_values(mosaic_ra, mosaic_dec)
+
+        # Identify edge pixels which fall outside the sky cell
+        #  by comparing to each direction (-X, +X, -Y, +Y) separately
+        mosaic_offcell = mosaic_xy[0] < 0
+        mosaic_offcell = np.bitwise_or(mosaic_offcell,
+                                        mosaic_xy[0] > skycell.wcs.pixel_shape[0])
+        mosaic_offcell = np.bitwise_or(mosaic_offcell, mosaic_xy[1] < 0)
+        mosaic_offcell = np.bitwise_or(mosaic_offcell,
+                                        mosaic_xy[1] > skycell.wcs.pixel_shape[1])
+
+        # With all out of bounds pixels masked out, see if any are left
+        sc_overlap = np.any(~mosaic_offcell)
+        
+        return sc_overlap
 
     def plot(self, output=None, color='b'):
         fig = plt.figure(figsize=(8, 6))
@@ -497,6 +540,7 @@ class SkyCell(object):
             self.sky_cell_id = SKYCELL_NAME_FMT.format(projection_cell.cell_id, x, y)
             self.projection_cell = projection_cell
 
+        self.members = []
         self.overlap = self.projection_cell.sc_overlap  # overlap between sky cells
         self.nxy = self.projection_cell.sc_nxy
 
