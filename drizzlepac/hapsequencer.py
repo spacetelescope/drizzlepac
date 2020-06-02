@@ -34,7 +34,6 @@
 """
 import datetime
 import fnmatch
-import glob
 import logging
 import os
 import pickle
@@ -333,7 +332,7 @@ def create_drizzle_products(total_obj_list):
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         logging.exception("message")
     # Remove rules files copied to the current working directory
-    for rules_filename in glob.glob("*_header_hla.rules"):
+    for rules_filename in list(rules_files.values()):
         log.info("Removed rules file {}".format(rules_filename))
         os.remove(rules_filename)
 
