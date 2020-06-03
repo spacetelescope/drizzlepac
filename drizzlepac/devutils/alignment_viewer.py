@@ -51,7 +51,7 @@ import numpy as np
 
 from stwcs import wcsutil
 
-from drizzlepac.hlautils import astrometric_utils as amutils
+from drizzlepac.haputils import astrometric_utils as amutils
 
 plt.ioff()
 

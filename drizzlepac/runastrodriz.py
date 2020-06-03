@@ -99,12 +99,12 @@ from drizzlepac import processInput  # used for creating new ASNs for _flc input
 
 from drizzlepac import align
 from drizzlepac import resetbits
-from drizzlepac.hlautils import astrometric_utils as amutils
-from drizzlepac.hlautils import cell_utils
+from drizzlepac.haputils import astrometric_utils as amutils
+from drizzlepac.haputils import cell_utils
 from drizzlepac import util
 from drizzlepac import mdzhandler
 from drizzlepac import updatehdr
-from drizzlepac.hlautils import quality_analysis as qa
+from drizzlepac.haputils import quality_analysis as qa
 
 
 __taskname__ = "runastrodriz"

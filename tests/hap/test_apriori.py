@@ -6,7 +6,7 @@ import pytest
 
 import numpy as np
 
-from drizzlepac.hlautils import testutils
+from drizzlepac.haputils import testutils
 
 from ..resources import BaseACS, BaseWFC3
 

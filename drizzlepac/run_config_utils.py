@@ -3,8 +3,8 @@ import pdb
 import sys
 
 
-from drizzlepac.hlautils import config_utils
-from drizzlepac.hlautils import poller_utils
+from drizzlepac.haputils import config_utils
+from drizzlepac.haputils import poller_utils
 
 
 

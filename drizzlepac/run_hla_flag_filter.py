@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""This script simply calls drizzlepac/hlautils/hla_flag_filter.py for test purposes"""
+"""This script simply calls drizzlepac/haputils/hla_flag_filter.py for test purposes"""
 import json
 import glob
 import os
@@ -9,11 +9,11 @@ import sys
 from astropy.table import Table
 import drizzlepac
 
-from drizzlepac.hlautils import config_utils
-from drizzlepac.hlautils import poller_utils
+from drizzlepac.haputils import config_utils
+from drizzlepac.haputils import poller_utils
 
 def run_hla_flag_filter():
-    from drizzlepac.hlautils import hla_flag_filter
+    from drizzlepac.haputils import hla_flag_filter
 
     #   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +
     # All below lines are to get it working, not actual final code.
@@ -101,7 +101,7 @@ def run_hla_flag_filter():
 
 #=======================================================================================================================
 def run_hla_flag_filter_HLAClassic():
-    from drizzlepac.hlautils import hla_flag_filter_HLAClassic
+    from drizzlepac.haputils import hla_flag_filter_HLAClassic
 
     #   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +
     # All below lines are to get it working, not actual final code.

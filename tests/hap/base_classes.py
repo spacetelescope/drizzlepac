@@ -8,7 +8,7 @@ from astropy.utils.data import conf
 from ci_watson.artifactory_helpers import get_bigdata
 from ci_watson.artifactory_helpers import compare_outputs
 
-from drizzlepac.hlautils.astroquery_utils import retrieve_observation
+from drizzlepac.haputils.astroquery_utils import retrieve_observation
 
 # Base classes for actual tests.
 # NOTE: Named in a way so pytest will not pick them up here.

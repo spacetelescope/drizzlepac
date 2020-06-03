@@ -134,7 +134,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PyPDF2 import PdfFileMerger
 
-from drizzlepac.hlautils import diagnostic_utils
+from drizzlepac.haputils import diagnostic_utils
 from drizzlepac.devutils.comparison_tools import starmatch_hist
 from stsci.tools import logutil
 from stwcs import wcsutil
