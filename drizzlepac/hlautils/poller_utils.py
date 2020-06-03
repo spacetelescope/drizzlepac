@@ -428,11 +428,6 @@ def parse_mvm_tree(det_tree, log_level):
                 layer = (prod_list[3], prod_list[4], prod_list[5])
                 ftype = prod_list[-1]
                 
-                # Set up the single exposure product dictionary
-                # sep = SEP_STR.format(sep_indx)
-                # obset_products[sep] = {'info': prod_info,
-                #                       'files': [filename[1]]}
-
                 # Create a single exposure product object
                 sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
                                           filename[1], prod_list[3], ftype, log_level)
