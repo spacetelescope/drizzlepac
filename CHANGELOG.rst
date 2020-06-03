@@ -20,6 +20,9 @@ of the list).
 In addition to a few dozen bug fixes, the following updates to the algorithms
 were also implemented.  
 
+- Added ``rules_file`` parameter to AstroDrizzle to enable use of custom 
+  files in pipeline processing. [#674]
+
 - Only apply solutions from the astrometry database which were non-aposteriori
   WCS solutions as the PRIMARY WCS.  This allows the pipeline to compare the
   true apriori WCS solutions (e.g., GSC or HSC WCSs) to aposteriori solutions 

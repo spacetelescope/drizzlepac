@@ -14,6 +14,7 @@ stepsize = integer_kw(default=10, comment="Step size for drizzle coordinate comp
 resetbits = string_kw(default="4096", comment="Bit values to reset in all input DQ arrays")
 num_cores = integer_or_none_kw(default=None, inactive_if='_rule_mem_', comment="Max CPU cores to use (n<2 disables, None = auto-decide)")
 in_memory = boolean_kw(default=False, triggers='_rule_mem_', comment="Process everything in memory to minimize disk I/O?")
+rules_file = string_kw(default="", comment="Rules file to be used for blending headers")
 
 [STATE OF INPUT FILES]
 restore = boolean_kw(default=False, comment="Copy input files FROM archive directory for processing?")

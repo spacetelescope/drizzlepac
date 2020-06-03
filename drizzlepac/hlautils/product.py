@@ -48,6 +48,7 @@ class HAPProduct:
         self.instrument = instrument
         self.detector = detector
         self.filetype = filetype
+        self.rules_file = None
 
         self.basename = "hst_" + "_".join(map(str, [prop_id, obset_id, instrument, detector])) + "_"
 
@@ -165,9 +166,12 @@ class TotalProduct(HAPProduct):
         # ...and set parameters which are computed on-the-fly
         drizzle_pars["final_refimage"] = meta_wcs
         drizzle_pars["runfile"] = self.trl_logname
+
         # Setting "preserve" to false so the OrIg_files directory is deleted as the purpose
         # of this directory is now obsolete.
         drizzle_pars["preserve"] = False
+        drizzle_pars['rules_file'] = self.rules_file
+        
         log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
                   "have been updated for the drizzle step of the total drizzle product."
                   .format(meta_wcs, self.trl_logname))
@@ -313,6 +317,8 @@ class FilterProduct(HAPProduct):
         # Setting "preserve" to false so the OrIg_files directory is deleted as the purpose
         # of this directory is now obsolete.
         drizzle_pars["preserve"] = False
+        drizzle_pars['rules_file'] = self.rules_file
+
         log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
                   "have been updated for the drizzle step of the filter drizzle product."
                   .format(meta_wcs, self.trl_logname))
@@ -387,6 +393,8 @@ class ExposureProduct(HAPProduct):
         # Setting "preserve" to false so the OrIg_files directory is deleted as the purpose
         # of this directory is now obsolete.
         drizzle_pars["preserve"] = False
+        drizzle_pars['rules_file'] = self.rules_file
+
         log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
                   "have been updated for the drizzle step of the exposure drizzle product."
                   .format(meta_wcs, self.trl_logname))

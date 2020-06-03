@@ -342,6 +342,7 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None
         # Record whether or not intermediate files should be deleted when finished
         paramDict['clean'] = configObj['STATE OF INPUT FILES']['clean']
         paramDict['num_cores'] = configObj.get('num_cores')
+        paramDict['rules_file'] = configObj['rules_file'] if configObj['rules_file'] != "" else None
 
         log.info('USER INPUT PARAMETERS for Separate Drizzle Step:')
         util.printParams(paramDict, log=log)
@@ -371,6 +372,7 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,proc
         paramDict['crbit'] = configObj['crbit']
         paramDict['proc_unit'] = configObj['proc_unit']
         paramDict['wht_type'] = configObj[final_step]['final_wht_type']
+        paramDict['rules_file'] = configObj['rules_file'] if configObj['rules_file'] != "" else None
 
         # override configObj[build] value with the value of the build parameter
         # this is necessary in order for MultiDrizzle to always have build=False
@@ -976,7 +978,8 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         _outimg.set_bunit(_bunit)
         _outimg.set_units(paramDict['units'])
         outimgs = _outimg.writeFITS(template,_outsci,_outwht,ctxarr=_outctx,
-                                        versions=_versions,virtual=img.inmemory)
+                                        versions=_versions,virtual=img.inmemory,
+                                        rules_file=paramDict['rules_file'])
         del _outimg
 
         # update imageObject with product in memory
