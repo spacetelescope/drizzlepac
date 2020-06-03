@@ -25,8 +25,8 @@ PCELL_PATH = os.path.join(os.path.dirname(_fpath), 'pars')
 PCELL_FILENAME = 'allsky_cells.fits'
 PCELL_STRLEN = 4
 
-# SkyCell format: "skycell_p0000_x000y000"
-SKYCELL_NAME_FMT = f"skycell_p{{:{str(PCELL_STRLEN).zfill(2)}d}}x{{:02d}}y{{:02d}}"
+# SkyCell format: "skycell-p0000x000y000"
+SKYCELL_NAME_FMT = f"skycell-p{{:{str(PCELL_STRLEN).zfill(2)}d}}x{{:02d}}y{{:02d}}"
 SKYCELL_NXY = 50
 SKYCELL_OVERLAP = 256
 

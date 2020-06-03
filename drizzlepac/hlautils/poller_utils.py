@@ -322,16 +322,26 @@ def build_mvm_tree(obset_table):
         row['filters'] = filt
         layer = (filt, exp_layer, year_layer)
         row_info, filename = create_mvm_info(row)
+        row_info_all = row_info.split(" ")
+        row_info_all[4] = 'ALL'
+        row_info_all = ' '.join(row_info_all)
+        layer_all = (filt, 'ALL', year_layer)
         # Initial population of the obset tree for this detector
         if det not in obset_tree:
             obset_tree[det] = {}
             obset_tree[det][layer] = [(row_info, filename)]
+            obset_tree[det][layer_all] = [(row_info_all, filename)]           
         else:
             det_node = obset_tree[det]
             if layer not in det_node:
                 det_node[layer] = [(row_info, filename)]
             else:
                 det_node[layer].append((row_info, filename))
+
+            if layer_all not in det_node:
+                det_node[layer_all] = [(row_info_all, filename)]
+            else:
+                det_node[layer_all].append((row_info_all, filename))
 
     return obset_tree
 
@@ -442,8 +452,8 @@ def parse_mvm_tree(det_tree, log_level):
                     # Create a filter product object for this instrument/detector
                     # FilterProduct(prop_id, obset_id, instrument, detector, 
                     #               filename, filters, filetype, log_level)
-                    filt_obj = SkyCellProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
-                                             'layerwcs', layer, ftype, log_level)
+                    filt_obj = SkyCellProduct(str(0), str(0), prod_list[1], prod_list[2],
+                                             prod_list[0], layer, ftype, log_level)
                 # Append exposure object to the list of exposure objects for this specific filter product object
                 filt_obj.add_member(sep_obj)
                 # Populate filter product dictionary with input filename
@@ -462,8 +472,8 @@ def parse_mvm_tree(det_tree, log_level):
                 log.debug(log1+log2.format(filt_obj.filters,
                                            filt_obj.instrument,
                                            filt_obj.detector))
-        # Add the total product object to the list of TotalProducts
-        tdp_list.append(filt_obj)
+            # Add the total product object to the list of TotalProducts
+            tdp_list.append(filt_obj)
 
     # Done... return dict and object product list
     return obset_products, tdp_list
