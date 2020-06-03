@@ -19,6 +19,7 @@ from astropy.io import ascii
 from astropy.io.fits import getheader
 from astropy.table import Table, Column
 from drizzlepac.hlautils.product import ExposureProduct, FilterProduct, TotalProduct
+from drizzlepac.hlautils.product import SkyCellProduct
 from . import analyze
 from . import astroquery_utils as aqutils
 from . import processing_utils
@@ -44,7 +45,9 @@ MVM_POLLER_DTYPE = ('str', 'int', 'str', 'str',
                     
 BOOL_STR_DICT = {'TRUE':True, 'FALSE':False, 'T':True, 'F':False}
                   
-EXP_LABELS = {2: 'short', 1: 'med', 0: 'long', None: 'all'}
+EXP_LABELS = {2: 'long', 1: 'med', 0: 'short', None: 'all'}
+EXP_LIMITS = [0, 15, 120]
+SUPPORTED_EXP_METHODS = {'kmeans', 'hard'}
 
 __taskname__ = 'poller_utils'
 
@@ -188,7 +191,7 @@ def create_row_info(row):
 # -----------------------------------------------------------------------------
 # Multi-Visit Processing Functions
 #
-def interpret_mvm_input(results, skycells, log_level, exp_limit=2.0):
+def interpret_mvm_input(results, log_level, exp_limit=2.0):
     """
 
     Parameters
@@ -197,13 +200,6 @@ def interpret_mvm_input(results, skycells, log_level, exp_limit=2.0):
         Input poller file name or Python list of dataset names to be processed as a single visit.
         Dataset names have to be either the filename of a singleton (non-associated exposure) or the
         name of an ASN file (e.g., jabc01010_asn.fits).
-
-    skycells : str
-        Input file name containing the list of existing sky cell layers and the
-        exposures names that are members of each layer. This will be used to
-        reprocess any layer which has new observations from the `results` input
-        that contribute to that layer. If there is no existing layer for that
-        skycell that matches the new input exposures, a new layer will be defined.
 
     log_level : int
         The desired level of verboseness in the log statements displayed on the screen
@@ -226,7 +222,7 @@ def interpret_mvm_input(results, skycells, log_level, exp_limit=2.0):
         ib4606c5q_flc.fits,11665,B46,06,1.0,F555W,UVIS,/ifs/archive/ops/hst/public/ib46/ib4606c5q/ib4606c5q_flc.fits
 
         which are
-        filename, proposal_id, program_id, obset_id, exptime, filters, detector, pathname
+        filename, proposal_id, program_id, obset_id, exptime, filters, detector, pathname, skycell_ids, skycell_processed
     
     The SkyCell ID will be included in this input information to allow for 
     grouping of exposures into the same SkyCell layer based on filter, exptime and year.
@@ -268,12 +264,13 @@ def interpret_mvm_input(results, skycells, log_level, exp_limit=2.0):
 
     # Add Date column    
     years = [int(fits.getval(f, 'date-obs').split('-')[0]) for f in obset_table['filename']]
-    obset_table.add_column(Column(years), name='year')
+    obset_table.add_column(Column(years), name='year_layer')
 
     # Sort the rows of the table in an effort to optimize the number of quality 
     # sources found in the initial images
     obset_table = sort_poller_table(obset_table)
-    exp_obset_table = define_exp_layers(year_obset_table, exp_limit=exp_limit)
+
+    exp_obset_table = define_exp_layers(obset_table, exp_limit=exp_limit)
         
     # parse Table into a tree-like dict
     log.debug("Build the multi-visit layers tree.")
@@ -291,14 +288,13 @@ def interpret_mvm_input(results, skycells, log_level, exp_limit=2.0):
 
     # This little bit of code adds an attribute to single exposure objects that is True 
     # if a given filter only contains one input (e.g. n_exp = 1)
-    for tot_obj in tdp_list:
-        for filt_obj in tot_obj.fdp_list:
-            if len(filt_obj.edp_list) == 1:
-                is_singleton = True
-            else:
-                is_singleton = False
-            for edp_obj in filt_obj.edp_list:
-                edp_obj.is_singleton = is_singleton
+    for filt_obj in tdp_list:
+        if len(filt_obj.edp_list) == 1:
+            is_singleton = True
+        else:
+            is_singleton = False
+        for edp_obj in filt_obj.edp_list:
+            edp_obj.is_singleton = is_singleton
 
     return obset_dict, tdp_list
 
@@ -342,11 +338,12 @@ def build_mvm_tree(obset_table):
 
 def create_mvm_info(row):
     """Build info string for a row from the obset table"""
-    # info_list = [str(row['skycell_id']), row['instrument'],
-    #             row['detector'], row['filters'], row['exp_layer'], row['year_layer'],
-    #             int(row['skycell_new'])]
-    info_list = [str(row['proposal_id']), "{}".format(row['obset_id']), row['instrument'],
-                 row['detector'], row['filters'], row['exp_layer'], row['year_layer']]
+    info_list = [str(row['skycell_id']), row['instrument'],
+                 row['detector'], row['filters'], 
+                 str(row['exp_layer']), str(row['year_layer']),
+                 str(row['skycell_new'])]
+    # info_list = [str(row['proposal_id']), "{}".format(row['obset_id']), row['instrument'],
+    #             row['detector'], row['filters'], row['exp_layer'], row['year_layer']]
     return ' '.join(map(str.upper, info_list)), row['filename']
 
 
@@ -387,8 +384,6 @@ def parse_mvm_tree(det_tree, log_level):
     #             'IR': {'f160w': [('skycell_p1234_x01y01 WFC3 IR IACS01T4Q F160W 1', 'iacs01t4q_flt.fits')]}}
     
     for filt_tree in det_tree.values():
-        totprod = TDP_STR.format(det_indx)
-        obset_products[totprod] = {'info': "", 'files': []}
         det_indx += 1
         # Find all filters used...
         # filt_tree = {'f200lp': [('skycell_p1234_x01y01 WFC3 UVIS IACS01T9Q F200LP 1', 'iacs01t9q_flt.fits'), 
@@ -465,12 +460,10 @@ def parse_mvm_tree(det_tree, log_level):
                 log1 = "Attach the sky cell layer object {}"
                 log2 = "to its associated total product object {}/{}."
                 log.debug(log1+log2.format(filt_obj.filters,
-                                           tdp_obj.instrument,
-                                           tdp_obj.detector))
-                tdp_obj.add_product(filt_obj)
-
+                                           filt_obj.instrument,
+                                           filt_obj.detector))
         # Add the total product object to the list of TotalProducts
-        tdp_list.append(tdp_obj)
+        tdp_list.append(filt_obj)
 
     # Done... return dict and object product list
     return obset_products, tdp_list
@@ -585,6 +578,37 @@ def parse_obset_tree(det_tree, log_level):
 
     # Done... return dict and object product list
     return obset_products, tdp_list
+
+# ------------------------------------------------------------------------------
+
+def define_exp_layers(obset_table, method='hard', exp_limit=None):
+    """Determine what exposures will be grouped into the same layer of a sky cell"""
+    # Add 'exp_layer' column to table
+    if method not in SUPPORTED_EXP_METHODS:
+        raise ValueError("Please use a supported method: {}".format(SUPPORTED_EXP_METHODS))
+    
+    import pdb;pdb.set_trace()
+    if method == 'kmeans':
+        # Use pre-defined limits on exposure times for clusters
+    
+        exptime_range = obset_table['exptime'].max() / obset_table['exptime'].min()
+
+        if exp_limit is not None and exptime_range > exp_limit:
+            kmeans = KMeans(n_clusters=3, random_state=0).fit(obset_table['exptime'])
+            # Sort and identify the clusters in increasing duration
+            centers = kmeans.cluster_centers_.reshape(1, -1)[0].argsort()
+            exp_layer = [centers[l] for l in kmeans.labels_]
+        else:
+            exp_layer = [None]*len(obset_table)
+    else:
+        # Use pre-defined limits for selecting layer members
+        # Subtraction by 1 puts the range from 0-2 to be consistent with KMeans
+        exp_layer = np.digitize(obset_table['exptime'], EXP_LIMITS) - 1
+        
+    # Add column to the table as labelled values ('short', 'med', 'long', 'all')
+    obset_table['exp_layer'] = [EXP_LABELS[e] for e in exp_layer]
+            
+    return obset_table
 
 # ------------------------------------------------------------------------------
 

@@ -447,10 +447,11 @@ class SkyCellProduct(HAPProduct):
     """
     def __init__(self, prop_id, obset_id, instrument, detector, filename, layer, filetype, log_level):
         super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
-
-        self.info = '_'.join([prop_id, obset_id, instrument, detector, filename, layer, filetype])
+        layer_str = '-'.join(layer)
+        self.info = '_'.join([prop_id, obset_id, instrument, detector, filename, layer_str, filetype])
         if filename[0:7].lower() != "layerwcs":
             self.exposure_name = filename[0:6]
+            filters = layer[0]
             self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
         else:
             self.exposure_name = "layerwcs"
