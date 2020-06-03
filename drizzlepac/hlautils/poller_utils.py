@@ -587,7 +587,6 @@ def define_exp_layers(obset_table, method='hard', exp_limit=None):
     if method not in SUPPORTED_EXP_METHODS:
         raise ValueError("Please use a supported method: {}".format(SUPPORTED_EXP_METHODS))
     
-    import pdb;pdb.set_trace()
     if method == 'kmeans':
         # Use pre-defined limits on exposure times for clusters
     
