@@ -367,6 +367,9 @@ class ExposureProduct(HAPProduct):
         # This attribute is set in poller_utils.py
         self.is_singleton = False
 
+        # Flag whether this exposure is being processed for the 'first' time or not
+        self.new_process = True
+
         log.info("Exposure object {} created.".format(self.full_filename[0:9]))
 
     def __getattribute__(self, name):
@@ -468,6 +471,7 @@ class SkyCellProduct(HAPProduct):
 
         # These attributes will be populated during processing
         self.edp_list = []
+        self.new_to_layer = 0
         self.regions_dict = {}
 
         log.debug("SkyCell object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
@@ -476,6 +480,7 @@ class SkyCellProduct(HAPProduct):
         """ Add an ExposureProduct object to the list - composition.
         """
         self.edp_list.append(edp)
+        self.new_to_layer += edp.new_process
 
     def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
                         fit_label='MVM', align_table=None, fitgeom='rscale'):

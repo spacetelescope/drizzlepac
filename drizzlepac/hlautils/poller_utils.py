@@ -35,8 +35,10 @@ POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
 POLLER_DTYPE = ('str', 'int', 'str', 'str', 'float', 'object', 'str', 'str')
 
 MVM_POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
-                       'exptime', 'filters', 'detector', 'pathname', 'skycell_id']
-MVM_POLLER_DTYPE = ('str', 'int', 'str', 'str', 'float', 'object', 'str', 'str', 'str') 
+                       'exptime', 'filters', 'detector', 'pathname', 
+                       'skycell_id', 'skycell_aligned']
+MVM_POLLER_DTYPE = ('str', 'int', 'str', 'str', 'float', 'object', 'str', 
+                    'str', 'str', 'str') 
                   
 EXP_LABELS = {2: 'short', 1: 'med', 0: 'long', None: 'all'}
 
@@ -336,6 +338,9 @@ def build_mvm_tree(obset_table):
 
 def create_mvm_info(row):
     """Build info string for a row from the obset table"""
+    # info_list = [str(row['skycell_id']), row['instrument'],
+    #             row['detector'], row['filters'], row['exp_layer'], row['year_layer'],
+    #             int(row['new_process'])]
     info_list = [str(row['proposal_id']), "{}".format(row['obset_id']), row['instrument'],
                  row['detector'], row['filters'], row['exp_layer'], row['year_layer']]
     return ' '.join(map(str.upper, info_list)), row['filename']
@@ -373,15 +378,17 @@ def parse_mvm_tree(det_tree, log_level):
     filetype = ''
     # Setup products for each detector used
     #
-    # det_tree = {'UVIS': {'f200lp': [('11515 01 WFC3 UVIS IACS01T9Q F200LP', 'iacs01t9q_flt.fits'), ('11515 01 WFC3 UVIS IACS01TBQ F200LP', 'iacs01tbq_flt.fits')]}, 'IR': {'f160w': [('11515 01 WFC3 IR IACS01T4Q F160W', 'iacs01t4q_flt.fits')]}}
+    # det_tree = {'UVIS': {'f200lp': [('skycell_p1234_x01y01 WFC3 UVIS IACS01T9Q F200LP 1', 'iacs01t9q_flt.fits'), 
+    #                     ('skycell_p1234_x01y01 WFC3 UVIS IACS01TBQ F200LP 1', 'iacs01tbq_flt.fits')]}, 
+    #             'IR': {'f160w': [('skycell_p1234_x01y01 WFC3 IR IACS01T4Q F160W 1', 'iacs01t4q_flt.fits')]}}
     
     for filt_tree in det_tree.values():
         totprod = TDP_STR.format(det_indx)
         obset_products[totprod] = {'info': "", 'files': []}
         det_indx += 1
         # Find all filters used...
-        # filt_tree = {'f200lp': [('11515 01 WFC3 UVIS IACS01T9Q F200LP', 'iacs01t9q_flt.fits'), 
-        #            ('11515 01 WFC3 UVIS IACS01TBQ F200LP', 'iacs01tbq_flt.fits')]}
+        # filt_tree = {'f200lp': [('skycell_p1234_x01y01 WFC3 UVIS IACS01T9Q F200LP 1', 'iacs01t9q_flt.fits'), 
+        #            ('skycell_p1234_x01y01 WFC3 UVIS IACS01TBQ F200LP 1', 'iacs01tbq_flt.fits')]}
 
         for filter_files in filt_tree.values():
             # Use this to create and populate filter product dictionary entry
@@ -389,7 +396,7 @@ def parse_mvm_tree(det_tree, log_level):
             obset_products[fprod] = {'info': "", 'files': []}
             filt_indx += 1
             # Populate single exposure dictionary entry now as well
-            # filename = ('11515 01 WFC3 UVIS IACS01T9Q F200LP', 'iacs01t9q_flt.fits')
+            # filename = ('skycell_p1234_x01y01 WFC3 UVIS IACS01T9Q F200LP 1', 'iacs01t9q_flt.fits')
             #
             for filename in filter_files:
                 # Parse the first filename[1] to determine if the products are flt or flc
@@ -406,10 +413,10 @@ def parse_mvm_tree(det_tree, log_level):
                 #
                 prod_info = (filename[0] + " " + filetype).lower()
                 #
-                # svm prod_info = '11515 01 wfc3 uvis f200lp all 2009 drz'
+                # svm prod_info = 'skycell_p1234_x01y01 wfc3 uvis f200lp all 2009 1 drz'
                 #
                 prod_list = prod_info.split(" ")
-                layer = (prod_list[4], prod_list[5], prod_list[6])
+                layer = (prod_list[3], prod_list[4], prod_list[5])
                 ftype = prod_list[-1]
                 
                 # Set up the single exposure product dictionary
@@ -419,7 +426,14 @@ def parse_mvm_tree(det_tree, log_level):
 
                 # Create a single exposure product object
                 sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
-                                          filename[1], prod_list[4], ftype, log_level)
+                                          filename[1], prod_list[3], ftype, log_level)
+
+                # set flag to record whether this is a 'new' exposure or one that
+                # has already been aligned to a layer already:
+                #   1 means it is 'new' to the layer
+                #   0 means it is being reprocessed
+                #
+                sep_obj.new_process = int(prod_list[-2])
 
                 # Set up the filter product dictionary and create a filter product object
                 # Initialize `info` key for this filter product dictionary
@@ -439,13 +453,17 @@ def parse_mvm_tree(det_tree, log_level):
                 # Increment single exposure index
                 sep_indx += 1
 
-            # Append filter object to the list of filter objects for this specific total product object
-            log1 = "Attach the sky cell layer object {}"
-            log2 = "to its associated total product object {}/{}."
-            log.debug(log1+log2.format(filt_obj.filters,
-                                       tdp_obj.instrument,
-                                       tdp_obj.detector))
-            tdp_obj.add_product(filt_obj)
+            # Add this filter object to the list for creating that layer BUT
+            # ONLY if there are new exposures being processed for this layer,
+            # 
+            if filt_obj.new_to_layer > 0:
+                # Append filter object to the list of filter objects for this specific total product object
+                log1 = "Attach the sky cell layer object {}"
+                log2 = "to its associated total product object {}/{}."
+                log.debug(log1+log2.format(filt_obj.filters,
+                                           tdp_obj.instrument,
+                                           tdp_obj.detector))
+                tdp_obj.add_product(filt_obj)
 
         # Add the total product object to the list of TotalProducts
         tdp_list.append(tdp_obj)
@@ -739,6 +757,9 @@ def build_poller_table(input, log_level, poller_type='svm'):
             if poller_type == 'mvm':
                 # determine sky-cell ID for input exposures now...
                 scells = cutils.get_sky_cells(d)
+                ids = {}
+                for fname in cols['filename']:
+                    
 
         # Build output table
         poller_data = [col for col in cols.values()]

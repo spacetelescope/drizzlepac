@@ -201,16 +201,6 @@ class SkyFootprint(object):
                 scale_val = fits.getval(exposure, scale_kw)
                 self.scaled_mask += self.exp_masks[exposure] * scale_val
 
-            """
-            self.total_mask += blank.astype(np.int16)
-
-            # Compute scaled mask if specified...
-            if scale:
-                scale_val = fits.getval(exposure, scale_kw)
-                self.scaled_mask += blank.astype(np.int16) * scale_val
-            """
-
-
 
     # Methods with 'find' compute values
     # Methods with 'get' return values
