@@ -22,6 +22,7 @@ from drizzlepac.hlautils.product import ExposureProduct, FilterProduct, TotalPro
 from . import analyze
 from . import astroquery_utils as aqutils
 from . import processing_utils
+from . import cell_utils
 
 # Define information/formatted strings to be included in output dict
 SEP_STR = 'single exposure product {:02d}'
@@ -36,9 +37,12 @@ POLLER_DTYPE = ('str', 'int', 'str', 'str', 'float', 'object', 'str', 'str')
 
 MVM_POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
                        'exptime', 'filters', 'detector', 'pathname', 
-                       'skycell_id', 'skycell_aligned']
-MVM_POLLER_DTYPE = ('str', 'int', 'str', 'str', 'float', 'object', 'str', 
-                    'str', 'str', 'str') 
+                       'skycell_id', 'skycell_new']
+MVM_POLLER_DTYPE = ('str', 'int', 'str', 'str', 
+                    'float', 'object', 'str', 'str',
+                    'str', 'int')
+                    
+BOOL_STR_DICT = {'TRUE':True, 'FALSE':False, 'T':True, 'F':False}
                   
 EXP_LABELS = {2: 'short', 1: 'med', 0: 'long', None: 'all'}
 
@@ -340,7 +344,7 @@ def create_mvm_info(row):
     """Build info string for a row from the obset table"""
     # info_list = [str(row['skycell_id']), row['instrument'],
     #             row['detector'], row['filters'], row['exp_layer'], row['year_layer'],
-    #             int(row['new_process'])]
+    #             int(row['skycell_new'])]
     info_list = [str(row['proposal_id']), "{}".format(row['obset_id']), row['instrument'],
                  row['detector'], row['filters'], row['exp_layer'], row['year_layer']]
     return ' '.join(map(str.upper, info_list)), row['filename']
@@ -659,8 +663,9 @@ def build_poller_table(input, log_level, poller_type='svm'):
     """
     log.setLevel(log_level)
 
+    is_poller_file = False
     # Check the input file is not empty
-    if not os.path.getsize(input):
+    if not isinstance(input, list) and not os.path.getsize(input):
         log.error('Input poller manifest file, {}, is empty - processing is exiting.'.format(input))
         sys.exit(0)
 
@@ -672,7 +677,6 @@ def build_poller_table(input, log_level, poller_type='svm'):
         poller_dtype = POLLER_DTYPE
 
     datasets = []
-    is_poller_file = False
     obs_converters = {'col4': [ascii.convert_numpy(np.str)]}
     if isinstance(input, str):
         input_table = ascii.read(input, format='no_header', converters=obs_converters)
@@ -684,6 +688,12 @@ def build_poller_table(input, log_level, poller_type='svm'):
 
             # Convert to a string column, instead of int64
             input_table['obset_id'] = input_table['obset_id'].astype(np.str)
+            # Convert string column into a Bool column
+            # The input poller file reports True if it has been reprocessed.
+            # This code interprets that as False since it is NOT new, so the code
+            # inverts the meaning from the pipeline poller file.  
+            if poller_type == 'mvm':
+                input_table['skycell_new'] = [int(~BOOL_STR_DICT(val.upper())) for val in input_table['skycell_new']] 
             is_poller_file = True
 
         elif len(input_table.columns) == 1:
@@ -754,12 +764,12 @@ def build_poller_table(input, log_level, poller_type='svm'):
                 elif d[0] == 'i':
                     filters = hdr['filter']
                 cols['filters'].append(filters)
-            if poller_type == 'mvm':
-                # determine sky-cell ID for input exposures now...
-                scells = cutils.get_sky_cells(d)
-                ids = {}
-                for fname in cols['filename']:
-                    
+        if poller_type == 'mvm':
+            # determine sky-cell ID for input exposures now...
+            scells = cell_utils.get_sky_cells(usable_datasets)
+            scell_files = cell_utils.interpret_scells(scells) 
+            cols['skycell_id'] = [scell_files[fname] for fname in cols['filename']]                 
+            cols['skycell_new'] = [1]*len(cols['filename'])
 
         # Build output table
         poller_data = [col for col in cols.values()]

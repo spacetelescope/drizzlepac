@@ -118,6 +118,36 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
 
     return sky_cells
 
+def interpret_scells(sky_cells):
+    """Return dict of filenames each with the skycell name they overlap
+    
+    Parameters
+    ----------
+    sky_cells : dict
+        Dictionary of sky-cell objects from `get_sky_cells`
+        
+    Returns
+    -------
+    sky_cell_files : dict
+        Dictionary of ALL sky-cell IDs as a ';'-delimited string for each 
+        exposure(sky cell member), with exposure filenames as keys.  
+    
+    """
+    scell_files = {}
+    for scell in sky_cells.values():
+        for member in scell.members:
+            if member not in scell_files:
+                scell_files[member] = [scell.sky_cell_id]
+            else:
+                scell_files[member] += [scell.sky_cell_id]
+    
+    # convert each entry into a ';'-delimited string instead of a list of IDs
+    for member in scell_files:
+        scell_files[member] = ';'.join(scell_files[member])
+    
+    return scell_files
+
+
 
 class SkyFootprint(object):
 
