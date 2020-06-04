@@ -84,7 +84,7 @@ def create_drizzle_products(total_obj_list):
     
     log.info("Processing with astrodrizzle version {}".format(drizzlepac.astrodrizzle.__version__))
     # Get rules files
-    for imgname in glob.glob("*fl?.fits"):
+    for imgname in glob.glob("*skycell*fl?.fits"):
         rules_files[imgname] = proc_utils.get_rules_file(imgname)
 
     # Keep track of all the products created for the output manifest
@@ -105,19 +105,20 @@ def create_drizzle_products(total_obj_list):
         filt_obj.wcs_drizzle_product(meta_wcs)
         product_list.append(filt_obj.drizzle_filename)
         product_list.append(filt_obj.trl_filename)
-
+        
     # Ensure that all drizzled products have headers that are to specification
     try:
         log.info("Updating these drizzle products for CAOM compatibility:")
         fits_files = fnmatch.filter(product_list, "*dr?.fits")
         for filename in fits_files:
             log.info("    {}".format(filename))
-            proc_utils.refine_product_headers(filename, total_obj_list)
+            # proc_utils.refine_product_headers(filename, total_obj_list)
     except Exception:
         log.critical("Trouble updating drizzle products for CAOM.")
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         logging.exception("message")
+
     # Remove rules files copied to the current working directory
     for rules_filename in list(rules_files.values()):
         log.info("Removed rules file {}".format(rules_filename))
