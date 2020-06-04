@@ -315,17 +315,18 @@ def build_mvm_tree(obset_table):
         orig_filt = row['filters']
         exp_layer = row['exp_layer']
         year_layer = row['year_layer']
+        skycell = row['skycell_id']
 
         # Potentially need to manipulate the 'filters' string for instruments
         # with two filter wheels
         filt = determine_filter_name(orig_filt)
         row['filters'] = filt
-        layer = (filt, exp_layer, year_layer)
+        layer = (skycell, filt, exp_layer, year_layer)
         row_info, filename = create_mvm_info(row)
         row_info_all = row_info.split(" ")
         row_info_all[4] = 'ALL'
         row_info_all = ' '.join(row_info_all)
-        layer_all = (filt, 'ALL', year_layer)
+        layer_all = (skycell, filt, 'ALL', year_layer)
         # Initial population of the obset tree for this detector
         if det not in obset_tree:
             obset_tree[det] = {}
