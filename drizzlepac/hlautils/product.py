@@ -462,14 +462,21 @@ class SkyCellProduct(HAPProduct):
         self.trl_filename = self.product_basename + "_trl.txt"
         self.point_cat_filename = None
         self.segment_cat_filename = None
-        self.drizzle_filename = '_'.join(['hst', self.product_basename, self.filetype, ".fits"])
+        self.drizzle_filename = '_'.join(['hst', self.product_basename, self.filetype]) + ".fits"
         self.refname = self.product_basename + "_ref_cat.ecsv"
+        # Generate the name for the manifest file which is for the entire visit.  It is fine
+        # to create it as an attribute of a TotalProduct as it is independent of
+        # the detector in use.
+        # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
+        self.manifest_name = '_'.join(['hst', self.product_basename, "manifest.txt"])
+
 
         # These attributes will be populated during processing
         self.edp_list = []
         self.new_to_layer = 0
         self.regions_dict = {}
         self.skycell = cell_utils.SkyCell(name=skycell_name)
+        self.configobj_pars = None
 
         log.debug("SkyCell object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
 
