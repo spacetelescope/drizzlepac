@@ -473,7 +473,7 @@ class SkyCellProduct(HAPProduct):
 
         log.debug("SkyCell object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
 
-    def add_member(self, edp, skycell_obj):
+    def add_member(self, edp):
         """ Add an ExposureProduct object to the list - composition.
         """
         self.edp_list.append(edp)
