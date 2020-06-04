@@ -565,13 +565,13 @@ def run_align_to_gaia(tot_obj, log_level=logutil.logging.INFO, diagnostic_mode=F
     log.info("\n{}: Finished aligning gaia_obj to GAIA".format(str(datetime.datetime.now())))
     log.info("ALIGNED WCS: \n{}".format(tot_obj.meta_wcs))
 
-        # Return the name of the alignment catalog
-        if align_table is None:
-            gaia_obj.refname = None
-            headerlet_filenames = []
-        else:
-            # Get names of all headerlet files written out to file
-            headerlet_filenames = [f for f in align_table.filtered_table['headerletFile'] if f != "None"]
+    # Return the name of the alignment catalog
+    if align_table is None:
+        gaia_obj.refname = None
+        headerlet_filenames = []
+    else:
+        # Get names of all headerlet files written out to file
+        headerlet_filenames = [f for f in align_table.filtered_table['headerletFile'] if f != "None"]
         
     return [gaia_obj.refname]+headerlet_filenames
 
