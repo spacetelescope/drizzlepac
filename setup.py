@@ -87,6 +87,7 @@ setup(
         'scipy',
         'matplotlib',
         'acstools',
+        'scikit-learn>=0.20',
         'spherical-geometry>=1.2.17',
         'stsci.tools>=3.6',
         'stsci.image>=2.3.0',
