@@ -137,14 +137,13 @@ def interpret_scells(sky_cells):
     for scell in sky_cells.values():
         for member in scell.members:
             if member not in scell_files:
-                scell_files[member] = [scell.sky_cell_id]
-            else:
-                scell_files[member] += [scell.sky_cell_id]
+                scell_files[member] = {}
+                scell_files[member][scell.sky_cell_id] = scell                    
     
     # convert each entry into a ';'-delimited string instead of a list of IDs
     for member in scell_files:
-        scell_files[member] = ';'.join(scell_files[member])
-    
+        scell_files[member]['id'] = ';'.join([id for id in scell_files[member]])
+
     return scell_files
 
 
@@ -568,11 +567,12 @@ class SkyCell(object):
 
     def _from_name(self, name):
         # parse name into projection cell and sky cell designations
-        sc_names = name.split('_')
-        pcell_id = int(sc_names[1][1:])
+        sc_names = name.split('-')
+        scell_id = sc_names[1]
+        pcell_id = int(scell_id[1:5])
 
-        self.x_index = int(sc_names[2][1:4])
-        self.y_index = int(sc_names[2][5:8])
+        self.x_index = int(scell_id[6:8])
+        self.y_index = int(scell_id[9:11])
         self.projection_cell = ProjectionCell(index=pcell_id)
         self.sky_cell_id = name
 

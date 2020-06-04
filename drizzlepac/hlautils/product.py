@@ -445,13 +445,13 @@ class SkyCellProduct(HAPProduct):
 
         The "scp" is short hand for SkyCellProduct.
     """
-    def __init__(self, prop_id, obset_id, instrument, detector, filename, layer, filetype, log_level):
-        super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
+    def __init__(self, prop_id, obset_id, instrument, detector, skycell_name, layer, filetype, log_level):
+        super().__init__(prop_id, obset_id, instrument, detector, skycell_name, filetype, log_level)
         layer_str = '-'.join(layer)
 
-        self.info = '_'.join([filename, instrument, detector, layer_str])
+        self.info = '_'.join([skycell_name, instrument, detector, layer_str])
 
-        self.exposure_name = filename
+        self.exposure_name = skycell_name
         filters = layer[0]
         self.product_basename = self.info
 
@@ -469,14 +469,19 @@ class SkyCellProduct(HAPProduct):
         self.edp_list = []
         self.new_to_layer = 0
         self.regions_dict = {}
+        self.skycell = cell_utils.SkyCell(name=skycell_name)
 
         log.debug("SkyCell object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
 
-    def add_member(self, edp):
+    def add_member(self, edp, skycell_obj):
         """ Add an ExposureProduct object to the list - composition.
         """
         self.edp_list.append(edp)
         self.new_to_layer += edp.new_process
+
+    def generate_metawcs(self):
+        self.meta_wcs = self..wcs 
+        return self.meta_wcs
 
     def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
                         fit_label='MVM', align_table=None, fitgeom='rscale'):
