@@ -43,7 +43,7 @@ MVM_POLLER_DTYPE = ('str', 'int', 'str', 'str',
                     'float', 'object', 'str', 'str',
                     'str', 'int')
                     
-BOOL_STR_DICT = {'TRUE':True, 'FALSE':False, 'T':True, 'F':False}
+BOOL_STR_DICT = {'TRUE':True, 'FALSE':False, 'T':True, 'F':False, '1':True, '0':False}
                   
 EXP_LABELS = {2: 'long', 1: 'med', 0: 'short', None: 'all'}
 EXP_LIMITS = [0, 15, 120]
@@ -271,10 +271,11 @@ def interpret_mvm_input(results, log_level, exp_limit=2.0):
     obset_table = sort_poller_table(obset_table)
 
     exp_obset_table = define_exp_layers(obset_table, exp_limit=exp_limit)
-        
+
     # parse Table into a tree-like dict
     log.debug("Build the multi-visit layers tree.")
     obset_tree = build_mvm_tree(obset_table)
+
     # Now create the output product objects
     log.debug("Parse the observation set tree and create the exposure, filter, and total detection objects.")
     obset_dict, tdp_list = parse_mvm_tree(obset_tree, log_level)
@@ -722,7 +723,7 @@ def build_poller_table(input, log_level, poller_type='svm'):
             # This code interprets that as False since it is NOT new, so the code
             # inverts the meaning from the pipeline poller file.  
             if poller_type == 'mvm':
-                input_table['skycell_new'] = [int(~BOOL_STR_DICT(val.upper())) for val in input_table['skycell_new']] 
+                input_table['skycell_new'] = [int(not BOOL_STR_DICT[str(val).upper()]) for val in input_table['skycell_new']] 
             is_poller_file = True
 
         elif len(input_table.columns) == 1:
@@ -775,6 +776,12 @@ def build_poller_table(input, log_level, poller_type='svm'):
         cols[cname] = []
     cols['filename'] = usable_datasets
 
+
+    if poller_type == 'mvm':
+        # determine sky-cell ID for input exposures now...
+        scells = cell_utils.get_sky_cells(usable_datasets)
+        scell_files = cell_utils.interpret_scells(scells) 
+
     # If processing a list of files, evaluate each input dataset for the information needed
     # for the poller file
     if not is_poller_file:
@@ -794,9 +801,6 @@ def build_poller_table(input, log_level, poller_type='svm'):
                     filters = hdr['filter']
                 cols['filters'].append(filters)
         if poller_type == 'mvm':
-            # determine sky-cell ID for input exposures now...
-            scells = cell_utils.get_sky_cells(usable_datasets)
-            scell_files = cell_utils.interpret_scells(scells) 
             # interpret_scells returns:
             #  {'filename1':{'<sky cell id1>': SkyCell1, 
             #               '<sky cell id2>':SkyCell2,
@@ -807,52 +811,16 @@ def build_poller_table(input, log_level, poller_type='svm'):
             #
             cols['skycell_id'] = [scell_files[fname]['id'] for fname in cols['filename']]                 
             cols['skycell_new'] = [1]*len(cols['filename'])
-            cols['skycell_obj'] = [None]*len(cols['filename'])  # placeholder column
-            # add entry for skycell_obj column to dtype
-            poller_tab_dtype = tuple([t for t in poller_dtype]+['object'])
-        else:
-            poller_tab_dtype = poller_dtype
+
         #
         # Build output table
         #
         poller_data = [col for col in cols.values()]
         poller_names = [colname for colname in cols]
         poller_table = Table(data=poller_data, names=poller_names,
-                             dtype=poller_tab_dtype)
-        #
-        # If 'mvm' poller file, expand any multiple skycell entries into separate rows
-        #
-        if poller_type == 'mvm':
-            # A new row will need to be added for each additional SkyCell that the 
-            # file overlaps...
-            #
-            # Make a copy of the original poller_table
-            new_poller_table = poller_table[poller_table['filename'] != None]
-            for name in scell_files:
-                for scell_id in scell_files[name]:
-                    if scell_id != 'id':
-                        scell_obj = scell_files[name][scell_id]
-                        for indx,row in enumerate(poller_table):
-                            if row['filename'] != name:
-                                continue
-                            if new_poller_table[indx]['skycell_obj'] is None:
-                                new_poller_table[indx]['skycell_obj'] = scell_obj
-                                new_poller_table[indx]['skycell_id'] = scell_id
-                            else:
-                                poller_rows = poller_table[poller_table['filename'] == name]
-                                sobj0 = poller_rows['skycell_obj'][0]
-                                # Select only 1 row regardless of how many we have already
-                                # added for this filename (in case file overlapped more than 
-                                # 2 sky cells at once).
-                                poller_row = poller_rows[poller_rows['skycell_obj'] == sobj0]
-                                # make copy of row for this filename
-                                # assign updated values to skycell columns
-                                poller_row['skycell_id'] = scell_id
-                                poller_row['skycell_obj'] = scell_obj
-                                # append new row to table
-                                new_poller_table.add_row(poller_row[0])
+                             dtype=poller_dtype)
 
-            poller_table = new_poller_table                        
+
     # The input was a poller file, so just keep the viable data rows for output
     else:
         good_rows = []
@@ -860,39 +828,48 @@ def build_poller_table(input, log_level, poller_type='svm'):
             for i, old_row in enumerate(input_table):
                 if d == input_table['filename'][i]:
                     good_rows.append(old_row)
-            poller_table = Table(rows=good_rows, names=input_table.colnames,
-                                 dtype=poller_dtype)
-            if poller_type == 'mvm':
-                scell_objs = {}
-                # TODO: Need to expand the skycell IDs from the poller file as well
-                poller_table['skycell_obj'] = [None]*len(poller_table)
-                # Now expand skycell_id values and replace with only
-                # 1 skycell_id per row, adding new rows for the additional 
-                # skycells listed.
-                new_poller_table = poller_table[poller_table['filename'] != None]
-                for row in poller_table:
-                    scell_ids = row['skycell_id'].split(";")
-                    if len(scell_ids) > 1:
-                        # Define skycell object for first skycell listed
-                        row['skycell_id'] = scell_ids[0]
-                        if scell_ids[0] not in scell_objs:
-                            sobj = cell_utils.SkyCell(name=scell_ids[0])
-                            scell_objs[scell_ids[0]] = sobj
-                        # add that object to the row already in the table
-                        row['skycell_obj'] = scell_objs[scell_ids[0]]
-                        # now for additional skycell's listed:
-                        for scell_id in scell_ids[1:]:
-                            if scell_id not in scell_objs:
-                                sobj = cell_utils.SkyCell(name=scell_id)
-                                scell_objs[scell_id] = sobj
-                            # make copy of row to modify with new skycell info
-                            new_row = copy.deepcopy(row)
-                            new_row['skycell_obj'] = scell_objs[scell_id]
-                            # Now append the new row
-                            new_poller_table.add_row(new_row)
-                poller_table = new_poller_table
 
-    return poller_table
+        poller_table = Table(rows=good_rows, names=input_table.colnames,
+                             dtype=poller_dtype)
+
+    #
+    # If 'mvm' poller file, expand any multiple skycell entries into separate rows
+    #
+    if poller_type == 'mvm':
+        # A new row will need to be added for each additional SkyCell that the 
+        # file overlaps...
+        #
+        poller_table['skycell_obj'] = [None]*len(poller_table)
+
+        #
+        # Make a copy of the original poller_table
+        #
+        new_poller_table = poller_table[poller_table['filename'] != None]
+        for name in scell_files:
+            for scell_id in scell_files[name]:
+                if scell_id != 'id':
+                    scell_obj = scell_files[name][scell_id]
+                    for indx,row in enumerate(poller_table):
+                        if row['filename'] != name:
+                            continue
+                        if new_poller_table[indx]['skycell_obj'] is None:
+                            new_poller_table[indx]['skycell_obj'] = scell_obj
+                            new_poller_table[indx]['skycell_id'] = scell_id
+                        else:
+                            poller_rows = poller_table[poller_table['filename'] == name]
+                            sobj0 = poller_rows['skycell_obj'][0]
+                            # Select only 1 row regardless of how many we have already
+                            # added for this filename (in case file overlapped more than 
+                            # 2 sky cells at once).
+                            poller_row = poller_rows[poller_rows['skycell_obj'] == sobj0]
+                            # make copy of row for this filename
+                            # assign updated values to skycell columns
+                            poller_row['skycell_id'] = scell_id
+                            poller_row['skycell_obj'] = scell_obj
+                            # append new row to table
+                            new_poller_table.add_row(poller_row[0])
+
+    return new_poller_table
 
 
 # ------------------------------------------------------------------------------
