@@ -480,7 +480,7 @@ class SkyCellProduct(HAPProduct):
         self.new_to_layer += edp.new_process
 
     def generate_metawcs(self):
-        self.meta_wcs = self..wcs 
+        self.meta_wcs = self.skycell.wcs 
         return self.meta_wcs
 
     def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,

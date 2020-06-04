@@ -138,7 +138,7 @@ def interpret_scells(sky_cells):
         for member in scell.members:
             if member not in scell_files:
                 scell_files[member] = {}
-                scell_files[member][scell.sky_cell_id] = scell                    
+            scell_files[member][scell.sky_cell_id] = scell
     
     # convert each entry into a ';'-delimited string instead of a list of IDs
     for member in scell_files:
