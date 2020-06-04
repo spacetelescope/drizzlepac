@@ -822,7 +822,6 @@ def build_poller_table(input, log_level, poller_type='svm'):
         # If 'mvm' poller file, expand any multiple skycell entries into separate rows
         #
         if poller_type == 'mvm':
-            import pdb;pdb.set_trace()
             # A new row will need to be added for each additional SkyCell that the 
             # file overlaps...
             #
@@ -832,11 +831,12 @@ def build_poller_table(input, log_level, poller_type='svm'):
                 for scell_id in scell_files[name]:
                     if scell_id != 'id':
                         scell_obj = scell_files[name][scell_id]
-                        for row in poller_table:
+                        for indx,row in enumerate(poller_table):
                             if row['filename'] != name:
                                 continue
-                            if row['skycell_obj'] is None:
-                                row['skycell_obj'] = scell_obj
+                            if new_poller_table[indx]['skycell_obj'] is None:
+                                new_poller_table[indx]['skycell_obj'] = scell_obj
+                                new_poller_table[indx]['skycell_id'] = scell_id
                             else:
                                 poller_rows = poller_table[poller_table['filename'] == name]
                                 sobj0 = poller_rows['skycell_obj'][0]
