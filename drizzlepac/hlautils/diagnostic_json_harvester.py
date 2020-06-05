@@ -167,7 +167,7 @@ def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
             else:
                 log.debug("CREATED DATAFRAME")
                 master_dataframe = pd.DataFrame(ingest_dict, index=[idx])
-
+    pdb.set_trace()
     # Write master_dataframe out to a .csv comma-separated file
     if master_dataframe is not None:
         # if os.path.exists(output_filename):
