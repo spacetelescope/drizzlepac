@@ -283,7 +283,7 @@ class HapDiagnostic(object):
         self._instantiate()
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    def add_data_item(self, dataset, title):
+    def add_data_item(self, dataset, title, descriptions=None, units=None):
         """main subroutine for adding data to self.out_table.
 
         Supported data types:
@@ -304,6 +304,13 @@ class HapDiagnostic(object):
         title : str
             Name of the dictionary key that will be used to store dataset in self.out_dict
 
+        descriptions : dict, optional
+            dictionary containing description strings for each element of the dataset stored in the 'data'
+            section
+
+        units : dict, optional
+            dictionary containing units for each element of the dataset stored in the 'data' section
+
         Updates
         -------
         self.out_dict : Ordered dictionary
@@ -315,11 +322,17 @@ class HapDiagnostic(object):
         if dataset_type == "<class 'numpy.ndarray'>":  # For numpy arrays
             self.out_dict['data'][title]["dtype"] = str(dataset.dtype)
             self.out_dict['data'][title]["data"] = dataset.tolist()
+            self.out_dict['data'][title]["descriptions"] = descriptions
+            self.out_dict['data'][title]["units"] = units
         elif dataset_type == "<class 'astropy.table.table.Table'>":  # for astropy tables
             self.out_dict['data'][title]["data"] = self._astropy_table_to_dict(dataset)
+            self.out_dict['data'][title]["descriptions"] = descriptions
+            self.out_dict['data'][title]["units"] = units
         else:  # For everything else. Add more types!
             self.out_dict['data'][title]["original format"] = dataset_type
             self.out_dict['data'][title]["data"] = dataset
+            self.out_dict['data'][title]["descriptions"] = descriptions
+            self.out_dict['data'][title]["units"] = units
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -458,10 +471,15 @@ def read_json_file(json_filename):
         out_dict = collections.OrderedDict()
         with open(json_filename) as f:
             json_data = json.load(f)
+
         out_dict['header'] = json_data['header']  # copy over the 'header' section directly.
         out_dict['general information'] = json_data['general information']
         out_dict['data'] = collections.OrderedDict()  # set up blank data section
+        out_dict['descriptions'] = collections.OrderedDict()
+        out_dict['units'] = collections.OrderedDict()
         for datakey in json_data['data'].keys():
+            out_dict['descriptions'][datakey] = json_data['data'][datakey]['descriptions']
+            out_dict['units'][datakey] = json_data['data'][datakey]['units']
             if json_data['data'][datakey]['original format'] == "<class 'numpy.ndarray'>":  # Extract numpy array
                 log.info("Converting dataset '{}' back to format '{}', dtype = {}".format(datakey,
                                                                                           json_data['data'][datakey]['original format'],
