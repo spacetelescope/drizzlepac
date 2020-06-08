@@ -568,6 +568,7 @@ def run_align_to_gaia(tot_obj, log_level=logutil.logging.INFO, diagnostic_mode=F
     # Return the name of the alignment catalog
     if align_table is None:
         gaia_obj.refname = None
+        headerlet_filenames = []
     else:
         # Get names of all headerlet files written out to file
         headerlet_filenames = [f for f in align_table.filtered_table['headerletFile'] if f != "None"]

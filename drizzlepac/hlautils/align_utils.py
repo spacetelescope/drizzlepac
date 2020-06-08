@@ -381,7 +381,7 @@ class HAPImage:
         fwhmpsf : float
             Default FWHM of PSF in units of arcseconds.
         """
-        if self.bkg is None:
+        if self.bkg is None or self.bkg == {}:
             self.compute_background()
 
         threshold_rms = np.concatenate([rms for rms in self.threshold.values()])
