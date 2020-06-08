@@ -5,7 +5,7 @@ import sys
 from astropy.table import Table
 import numpy as np
 from drizzlepac import hapsequencer
-from drizzlepac.hlautils import hla_flag_filter
+from drizzlepac.haputils import hla_flag_filter
 from drizzlepac.devutils.comparison_tools import compare_sourcelists
 from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
 from stsci.tools import logutil

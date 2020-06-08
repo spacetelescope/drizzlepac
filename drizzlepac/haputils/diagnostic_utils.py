@@ -17,8 +17,8 @@ from astropy.io.fits import getheader
 from astropy.table import Table
 import numpy as np
 
-from drizzlepac.hlautils import get_git_rev_info
-from drizzlepac.hlautils import poller_utils
+from drizzlepac.haputils import get_git_rev_info
+from drizzlepac.haputils import poller_utils
 from stsci.tools import logutil
 
 
@@ -234,8 +234,8 @@ class HapDiagnostic(object):
 
         Parameters
         ----------
-        header_source : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
-        drizzlepac.hlautils.Product.ExposureProduct, depending on input.
+        header_source : drizzlepac.haputils.Product.TotalProduct, drizzlepac.haputils.Product.FilterProduct, or
+        drizzlepac.haputils.Product.ExposureProduct, depending on input.
             hap product object to pull header information and filter information from to populate the json
         "header" section.
 

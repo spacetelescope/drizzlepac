@@ -48,9 +48,9 @@ from scipy.spatial import KDTree
 
 # Local application imports
 from drizzlepac import util, wcs_functions
-from drizzlepac.hlautils import hla_flag_filter
-from drizzlepac.hlautils import astrometric_utils as au
-import drizzlepac.hlautils.diagnostic_utils as du
+from drizzlepac.haputils import hla_flag_filter
+from drizzlepac.haputils import astrometric_utils as au
+import drizzlepac.haputils.diagnostic_utils as du
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
 from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
 from stsci.tools import logutil
@@ -86,7 +86,7 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
 
     Parameters
     ----------
-    hap_obj : drizzlepac.hlautils.Product.FilterProduct
+    hap_obj : drizzlepac.haputils.Product.FilterProduct
         hap product object to process
 
     json_timestamp: str, optional
@@ -288,7 +288,7 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
 
     Parameters
     ----------
-    hap_obj : drizzlepac.hlautils.Product.FilterProduct
+    hap_obj : drizzlepac.haputils.Product.FilterProduct
         hap filter product object to process
 
     json_timestamp: str, optional
@@ -449,8 +449,8 @@ def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
 
     Parameters
     ----------
-    hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
-        drizzlepac.hlautils.Product.ExposureProduct, depending on input.
+    hap_obj : drizzlepac.haputils.Product.TotalProduct, drizzlepac.haputils.Product.FilterProduct, or
+        drizzlepac.haputils.Product.ExposureProduct, depending on input.
         hap product object to process
 
     json_timestamp: str, optional
@@ -481,7 +481,7 @@ def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
                                       timestamp=json_timestamp,
                                       time_since_epoch=json_time_since_epoch)
     diag_obj.add_data_item(gaia_table, "GAIA sources", descriptions={"RA": "Right Ascension", "DEC": "Declination", "MAG": "AB Magnitude"}, units={"RA": "degrees", "DEC": "degrees", "MAG": "unitless"})  # write catalog of identified GAIA sources
-    diag_obj.add_data_item(len(gaia_table), "Number of GAIA sources", descriptions={"Number of GAIA sources":'Number of GAIA sources in image footprint'}, units={"Number of GAIA sources": "unitless"})  # write the number of GAIA sources
+    diag_obj.add_data_item(len(gaia_table), "Number of GAIA sources", descriptions={"Number of GAIA sources": 'Number of GAIA sources in image footprint'}, units={"Number of GAIA sources": "unitless"})  # write the number of GAIA sources
     diag_obj.write_json_file(hap_obj.drizzle_filename[:-9]+"_svm_gaia_sources.json", clobber=True)
 
     # Clean up
@@ -498,8 +498,8 @@ def generate_gaia_catalog(hap_obj, columns_to_remove=None):
 
     Parameters
     ----------
-    hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
-        drizzlepac.hlautils.Product.ExposureProduct, depending on input.
+    hap_obj : drizzlepac.haputils.Product.TotalProduct, drizzlepac.haputils.Product.FilterProduct, or
+        drizzlepac.haputils.Product.ExposureProduct, depending on input.
         hap product object to process
 
     columns_to_remove : list
@@ -733,7 +733,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
     Parameters
     ----------
     total_product_list: list of HAP TotalProduct objects, one object per instrument detector
-    (drizzlepac.hlautils.Product.TotalProduct)
+    (drizzlepac.haputils.Product.TotalProduct)
 
     json_timestamp: str, optional
         Universal .json file generation date and time (local timezone) that will be used in the instantiation
@@ -785,10 +785,12 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
             # Get information from the active WCS
             active_wcs_dict = {'primary_wcsname': metawcs.wcs.name,
                                'wcs_info': {'crpix1': metawcs.wcs.crpix[0],
-                               'crpix2': metawcs.wcs.crpix[1],
-                               'crval1': metawcs.wcs.crval[0], 'crval2': metawcs.wcs.crval[1],
-                               'scale': metawcs.pscale, 'orientation': metawcs.orientat,
-                               'exposure': edp_object.exposure_name}}
+                                            'crpix2': metawcs.wcs.crpix[1],
+                                            'crval1': metawcs.wcs.crval[0],
+                                            'crval2': metawcs.wcs.crval[1],
+                                            'scale': metawcs.pscale,
+                                            'orientation': metawcs.orientat,
+                                            'exposure': edp_object.exposure_name}}
 
             diagnostic_obj.add_data_item(active_wcs_dict, 'PrimaryWCS_' + edp_object.exposure_name)
 
@@ -852,10 +854,12 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                         # Get information from the alternate/active WCS
                         alt_wcs_dict = {'alternate_wcsname': alt_wcs_name,
                                         'wcs_info': {'crpix1': alt_metawcs.wcs.crpix[0],
-                                        'crpix2': alt_metawcs.wcs.crpix[1],
-                                        'crval1': alt_metawcs.wcs.crval[0], 'crval2': alt_metawcs.wcs.crval[1],
-                                        'scale': alt_metawcs.pscale, 'orientation': alt_metawcs.orientat,
-                                        'exposure': edp_object.exposure_name}}
+                                                     'crpix2': alt_metawcs.wcs.crpix[1],
+                                                     'crval1': alt_metawcs.wcs.crval[0],
+                                                     'crval2': alt_metawcs.wcs.crval[1],
+                                                     'scale': alt_metawcs.pscale,
+                                                     'orientation': alt_metawcs.orientat,
+                                                     'exposure': edp_object.exposure_name}}
 
                         diagnostic_obj.add_data_item(alt_wcs_dict, 'AlternateWCS_' + edp_object.exposure_name + '_' + str(icnt))
 
@@ -1111,7 +1115,6 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, hap_imgname, cattype, l
         return orig_hla_classic_sl_name
 
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_gaia_sources=True,
                          run_compare_hla_sourcelists=True, run_compare_ra_dec_crossmatches=True,
@@ -1122,7 +1125,7 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
     Parameters
     ----------
     total_obj_list : list
-        List of one or more HAP drizzlepac.hlautils.Product.TotalProduct object(s) to process
+        List of one or more HAP drizzlepac.haputils.Product.TotalProduct object(s) to process
 
     run_compare_num_sources : bool, optional
         Run 'compare_num_sources' test? Default value is True.

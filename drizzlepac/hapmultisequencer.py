@@ -37,11 +37,11 @@ from astropy.table import Table
 import numpy as np
 import drizzlepac
 
-from drizzlepac.hlautils import config_utils
-from drizzlepac.hlautils import poller_utils
-from drizzlepac.hlautils import product
-from drizzlepac.hlautils import processing_utils as proc_utils
-from drizzlepac.hlautils import svm_quality_analysis as svm_qa
+from drizzlepac.haputils import config_utils
+from drizzlepac.haputils import poller_utils
+from drizzlepac.haputils import product
+from drizzlepac.haputils import processing_utils as proc_utils
+from drizzlepac.haputils import svm_quality_analysis as svm_qa
 
 from stsci.tools import logutil
 from stwcs import wcsutil

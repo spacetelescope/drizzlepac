@@ -87,7 +87,7 @@ def test_randomlist(tmpdir, dataset):
             been installed where `#` is the number of cpus to use.
           * Note: When running this test, the `--basetemp` directory should be set to a unique
             existing directory to avoid deleting previous test output.
-          * The default master list exists in the tests/hla directory and contains 50 datasets.  The
+          * The default master list exists in the tests/hap directory and contains 50 datasets.  The
             full master list of thousands of datasets resides in Artifactory as ACSWFC3List.csv
             (https://bytesalad.stsci.edu/artifactory/hst-hla-pipeline/dev/master_lists).
 

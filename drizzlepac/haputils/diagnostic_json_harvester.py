@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """This script 'harvests' information stored in the .json files produced by
-drizzlepac/hlautils/svm_quality_analysis.py and stores it as a Pandas DataFrame"""
+drizzlepac/haputils/svm_quality_analysis.py and stores it as a Pandas DataFrame"""
 
 # Standard library imports
 import argparse
@@ -15,7 +15,7 @@ import sys
 import pandas as pd
 
 # Local application imports
-import drizzlepac.hlautils.diagnostic_utils as du
+import drizzlepac.haputils.diagnostic_utils as du
 from stsci.tools import logutil
 
 __taskname__ = 'diagnostic_json_harvester'

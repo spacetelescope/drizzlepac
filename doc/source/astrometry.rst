@@ -180,8 +180,8 @@ All the necessary libraries for working on this example can be imported using:
 
 .. code-block:: python
 
-    from drizzlepac.hlautils import astroquery_utils as aqutils
-    from drizzlepac.hlautils import astrometric_utils as amutils
+    from drizzlepac.haputils import astroquery_utils as aqutils
+    from drizzlepac.haputils import astrometric_utils as amutils
     from astropy.io import fits
     from stwcs.wcsutil import headerlet
 

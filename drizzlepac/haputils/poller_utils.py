@@ -18,8 +18,8 @@ from astropy.io import fits
 from astropy.io import ascii
 from astropy.io.fits import getheader
 from astropy.table import Table, Column
-from drizzlepac.hlautils.product import ExposureProduct, FilterProduct, TotalProduct
-from drizzlepac.hlautils.product import SkyCellProduct
+from drizzlepac.haputils.product import ExposureProduct, FilterProduct, TotalProduct
+from drizzlepac.haputils.product import SkyCellProduct
 from . import analyze
 from . import astroquery_utils as aqutils
 from . import processing_utils
@@ -954,8 +954,8 @@ def add_primary_fits_header_as_attr(hap_obj, log_level=logutil.logging.NOTSET):
 
     Parameters
     ----------
-    hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
-    drizzlepac.hlautils.Product.ExposureProduct, depending on input
+    hap_obj : drizzlepac.haputils.Product.TotalProduct, drizzlepac.haputils.Product.FilterProduct, or
+    drizzlepac.haputils.Product.ExposureProduct, depending on input
         object to update
 
     log_level : int, optional.
@@ -963,8 +963,8 @@ def add_primary_fits_header_as_attr(hap_obj, log_level=logutil.logging.NOTSET):
 
     Returns
     -------
-    hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
-    drizzlepac.hlautils.Product.ExposureProduct, depending on input
+    hap_obj : drizzlepac.haputils.Product.TotalProduct, drizzlepac.haputils.Product.FilterProduct, or
+    drizzlepac.haputils.Product.ExposureProduct, depending on input
         updated version of input object
     """
     if os.path.exists(hap_obj.drizzle_filename):

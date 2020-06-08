@@ -10,8 +10,8 @@ from stsci.tools import logutil
 from drizzlepac import util
 from drizzlepac.devutils.confirm_execution import confirm_execution
 from drizzlepac import hapsequencer
-from drizzlepac.hlautils import config_utils
-from drizzlepac.hlautils import poller_utils
+from drizzlepac.haputils import config_utils
+from drizzlepac.haputils import poller_utils
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
 

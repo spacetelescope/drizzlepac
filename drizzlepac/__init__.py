@@ -62,7 +62,7 @@ from . import tweakback
 # This module enables users to replace NaNs in images with another value easily
 from . import pixreplace
 
-from . import hlautils
+from . import haputils
 from . import align
 from . import runastrodriz
 

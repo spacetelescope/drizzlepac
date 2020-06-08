@@ -9,7 +9,7 @@ from astropy.utils.data import conf
 from ci_watson.artifactory_helpers import get_bigdata
 from ci_watson.hst_helpers import download_crds, ref_from_image
 
-from drizzlepac.hlautils import astroquery_utils as aqutils
+from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runastrodriz
 from astropy.io import fits
 
