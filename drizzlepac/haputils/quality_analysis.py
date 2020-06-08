@@ -27,6 +27,8 @@ https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 """
 import json
 import os
+from datetime import datetime
+import time
 
 from astropy.table import Table
 from astropy.io import fits
@@ -39,9 +41,12 @@ import tweakwcs
 
 from . import astrometric_utils as amutils
 from .. import tweakutils
+from . import diagnostic_utils as du
 
-
-def determine_alignment_residuals(input, files, max_srcs=2000):
+def determine_alignment_residuals(input, files, max_srcs=2000,
+                                  json_timestamp=None, 
+                                  json_time_since_epoch=None,
+                                  log_level=logutil.logging.NOTSET):
     """Determine the relative alignment between members of an association.
 
     Parameters
@@ -56,12 +61,28 @@ def determine_alignment_residuals(input, files, max_srcs=2000):
         but this comparison will only be performed on CTE-corrected
         products when available.
 
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'NOTSET'.
+
     Returns
     --------
-    results : string
-        Name of JSON file containing all the extracted results from the comparisons
+    resids_files : list of string
+        Name of JSON files containing all the extracted results from the comparisons
         being performed.
     """
+    log.setLevel(log_level)
+    
     # Open all files as HDUList objects
     hdus = [fits.open(f) for f in files]
     # Determine sources from each chip
@@ -105,21 +126,79 @@ def determine_alignment_residuals(input, files, max_srcs=2000):
     if align_success:
         # extract results in the style of 'tweakreg'
         resids = extract_residuals(imglist)
-        if resids is None:
-            resids_file = None
-        else:
-            # Define name for output JSON file...
-            resids_file = "{}_astrometry_resids.json".format(input[:9])
-            # Remove any previously computed results
-            if os.path.exists(resids_file):
-                os.remove(resids_file)
-            # Dump the results to a JSON file now...
-            with open(resids_file, 'w') as jfile:
-                json.dump(resids, jfile)
-    else:
-        resids_file = None
 
-    return resids_file
+        if resids is None:
+            resids_files = []
+        else:
+            resids_files = generate_output_files(resids_dict, 
+                                 json_timestamp=None, 
+                                 json_time_since_epoch=None, 
+                                 exclude_fields=['group_id'])
+    else:
+        resids_file = []
+
+    return resids_files
+
+def generate_output_files(resids_dict, 
+                         json_timestamp=None, 
+                         json_time_since_epoch=None, 
+                         exclude_fields=['group_id']):
+    """Write out results to JSON files, one per image"""
+    resids_files = []
+    for image in resids_dict:
+        # Remove any extraneous information from output 
+        for field in exclude_fields:
+            del resids_dict[image][field]
+        # Define name for output JSON file...
+        rootname = image.split("_")[0]
+        json_filename = "{}_qa_astrometry_resids.json".format(rootname)
+        resids_files.append(json_filename)
+        
+        # Define output diagnostic object
+        diagnostic_obj = du.HapDiagnostic()
+        src_str = "{}.determine_alignment_residuals".format(__taskname__) 
+        diagnostic_obj.instantiate_from_fitsfile(image,
+                                               data_source=src_str,
+                                               description="X and Y residuals from \
+                                                            relative alignment ",
+                                               timestamp=json_timestamp,
+                                               time_since_epoch=json_time_since_epoch)
+        diagnostic_obj.add_data_item(resids_dict[image], 'relative alignment residuals',
+                                     descriptions={"aligned_to":"Reference image for relative alignment",
+                                                   "x":"X position from source image on tangent plane",
+                                                   "y":"Y position from source image on tangent plane",
+                                                   "ref_x":"X position from ref image on tangent plane",
+                                                   "ref_y":"Y position from ref image on tangent plane",
+                                                   "rms_x":"RMS in X for fit",
+                                                   "rms_y":"RMS in Y for fit",
+                                                   "xsh":"X offset from fit",
+                                                   "ysh":"Y offset from fit",
+                                                   "rot":"Average Rotation from fit",
+                                                   "scale":"Average Scale change from fit",
+                                                   "rot_fit":"Rotation of each axis from fit",
+                                                   "scale_fit":"Scale of each axis from fit",
+                                                   "nmatches":"Number of matched sources used in fit",
+                                                   "skew":"Skew between axes from fit"},
+                                     units={"aligned_to":"unitless",
+                                            'x':'pixels',
+                                            'y':'pixels',
+                                            'ref_x':'pixels',
+                                            'ref_y':'pixels',
+                                            'rms_x':'pixels',
+                                            'rms_y':'pixels',
+                                            'xsh':'pixels',
+                                            'ysh':'pixels',
+                                            'rot':'degrees',
+                                            'scale':'unitless',
+                                            'rot_fit':'degrees',
+                                            'scale_fit':'unitless',
+                                            'nmatches':'unitless',
+                                            'skew':'unitless'}
+                                                                )
+        diagnostic_obj.write_json_file(json_filename)
+        log.info("Generated relative astrometri residuals results for {} as {}.".format(image, json_filename))
+
+    return resids_files
 
 def extract_residuals(imglist):
     """Convert fit results and catalogs from tweakwcs into list of residuals"""
@@ -138,7 +217,8 @@ def extract_residuals(imglist):
             cum_indx = 0
 
         if fitinfo['status'] == 'REFERENCE':
-            group_dict[group_name]['type'] = 'REFERENCE'
+            align_ref = group_name
+            group_dict[group_name]['aligned_to'] = 'self'
             rra, rdec = chip.det_to_world(chip.meta['catalog']['x'],
                                           chip.meta['catalog']['y'])
             ref_ra = np.concatenate([ref_ra, rra])
@@ -147,7 +227,7 @@ def extract_residuals(imglist):
 
 
         # store results in dict
-        group_dict[group_name]['type'] = 'IMAGE'
+        group_dict[group_name]['aligned_to'] = align_ref
 
         if 'fitmask' in fitinfo:
             img_mask = fitinfo['fitmask']
@@ -250,7 +330,7 @@ def match_to_gaia(imcat, refcat, product, output, searchrad=5.0):
     ref_indx, im_indx = tpmatch(reftab, imtab, tpwcs)
     print('Found {} matches'.format(len(ref_indx)))
     
-    # Obtain tangent plane positions for both image sources and refeence sources
+    # Obtain tangent plane positions for both image sources and reference sources
     im_x, im_y = tpwcs.det_to_tanp(imtab['x'][im_indx], imtab['y'][im_indx])
     ref_x, ref_y = tpwcs.world_to_tanp(reftab['RA'][ref_indx], reftab['DEC'][ref_indx])
     if 'RA' not in imtab.colnames:
@@ -275,11 +355,18 @@ def match_to_gaia(imcat, refcat, product, output, searchrad=5.0):
 
 # -------------------------------------------------------------------------------
 # Simple interface for running all the analysis functions defined for this package
-def run_all(input, files):
+def run_all(input, files, log_level=logutil.logging.NOTSET):
 
-    json_file = determine_alignment_residuals(input, files)
+    # generate a timestamp values that will be used to make creation time, creation date and epoch values
+    # common to each json file
+    json_timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
+    json_time_since_epoch = time.time()
+
+    json_files = determine_alignment_residuals(input, files,
+                                             json_timestamp=json_timestamp,
+                                             json_time_since_epoch=json_time_since_epoch)
     
-    print("Generated quality statistics as {}".format(json_file))
+    print("Generated quality statistics as {}".format(json_files))
 
 
 # -------------------------------------------------------------------------------
