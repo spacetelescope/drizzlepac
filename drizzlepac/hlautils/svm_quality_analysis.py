@@ -480,8 +480,8 @@ def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
                                       description="A table of GAIA sources in image footprint",
                                       timestamp=json_timestamp,
                                       time_since_epoch=json_time_since_epoch)
-    diag_obj.add_data_item(gaia_table, "GAIA sources", descriptions={"RA": "Right Ascension", "DEC": "Declination", "MAG": "AB Magnitude"}, units={"RA": "degrees", "DEC": "degrees", "MAG": "unitless"})  # write catalog of identified GAIA sources
-    diag_obj.add_data_item(len(gaia_table), "Number of GAIA sources", descriptions={"Number of GAIA sources":'Number of GAIA sources in image footprint'}, units={"Number of GAIA sources": "unitless"})  # write the number of GAIA sources
+    diag_obj.add_data_item(gaia_table, "GAIA sources", descriptions={"RA": "Right Ascension", "DEC": "Declination", "mag": "AB Magnitude"}, units={"RA": "degrees", "DEC": "degrees", "mag": "unitless"})  # write catalog of identified GAIA sources
+    diag_obj.add_data_item({"Number of GAIA sources": len(gaia_table)}, "Number of GAIA sources", descriptions={"Number of GAIA sources":'Number of GAIA sources in image footprint'}, units={"Number of GAIA sources": "unitless"})  # write the number of GAIA sources
     diag_obj.write_json_file(hap_obj.drizzle_filename[:-9]+"_svm_gaia_sources.json", clobber=True)
 
     # Clean up
