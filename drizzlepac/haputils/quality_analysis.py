@@ -37,6 +37,7 @@ import numpy as np
 
 from stwcs.wcsutil import HSTWCS
 from stsci.tools.fileutil import countExtn
+from stsci.tools import logutil
 import tweakwcs
 
 from . import astrometric_utils as amutils
