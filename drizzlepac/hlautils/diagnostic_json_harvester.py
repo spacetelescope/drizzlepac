@@ -174,7 +174,7 @@ def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
                 master_dataframe_units = ingest_dict['units']
     master_dataframe.descriptions = master_dataframe_descriptions
     master_dataframe.units = master_dataframe_units
-    pdb.set_trace()
+
     # Write master_dataframe out to a .csv comma-separated file
     if master_dataframe is not None:
         # if os.path.exists(output_filename):
@@ -262,8 +262,6 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
                 except:  # TODO: remove once all json files have units and descriptions filled in
                     ingest_dict["descriptions"][title_suffix + ingest_key] = ">>>UNDEFINED<<<"
                     ingest_dict["units"][title_suffix + ingest_key] = ">>>UNDEFINED<<<"
-        # if json_filename.endswith("_svm_gaia_sources.json"):
-        #     pdb.set_trace()
     return ingest_dict
 
 
