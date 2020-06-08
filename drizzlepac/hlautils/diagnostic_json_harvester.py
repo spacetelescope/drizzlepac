@@ -121,7 +121,6 @@ def get_json_files(search_path=os.getcwd(), log_level=logutil.logging.INFO):
         err_msg = "No .json files were found!"
         log.error(err_msg)
         raise Exception(err_msg)
-
     return out_json_dict
 
 # ------------------------------------------------------------------------------------------------------------
@@ -163,10 +162,18 @@ def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
         if ingest_dict:
             if master_dataframe is not None:
                 log.debug("APPENDED DATAFRAME")
-                master_dataframe = master_dataframe.append(pd.DataFrame(ingest_dict, index=[idx]))
+                master_dataframe = master_dataframe.append(pd.DataFrame(ingest_dict["data"], index=[idx]))
+                for key_item in ingest_dict['descriptions'].keys():
+                    if key_item not in master_dataframe_descriptions.keys(): # only have to check descriptions dict because units dict has same keys
+                        master_dataframe_descriptions[key_item] = ingest_dict['descriptions'][key_item]
+                        master_dataframe_units[key_item] = ingest_dict['units'][key_item]
             else:
                 log.debug("CREATED DATAFRAME")
-                master_dataframe = pd.DataFrame(ingest_dict, index=[idx])
+                master_dataframe = pd.DataFrame(ingest_dict["data"], index=[idx])
+                master_dataframe_descriptions = ingest_dict['descriptions']
+                master_dataframe_units = ingest_dict['units']
+    master_dataframe.descriptions = master_dataframe_descriptions
+    master_dataframe.units = master_dataframe_units
     pdb.set_trace()
     # Write master_dataframe out to a .csv comma-separated file
     if master_dataframe is not None:
@@ -203,6 +210,9 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
     header_ingested = False
     gen_info_ingested = False
     ingest_dict = collections.OrderedDict()
+    ingest_dict['data'] = collections.OrderedDict()
+    ingest_dict['descriptions'] = collections.OrderedDict()
+    ingest_dict['units'] = collections.OrderedDict()
     for json_filename in json_filename_list:
         # This is to differentiate point catalog compare_sourcelists columns from segment catalog
         # compare_sourcelists columns in the dataframe
@@ -213,32 +223,47 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
         else:
             title_suffix = ""
         json_data = du.read_json_file(json_filename)
-
         # add information from "header" section to ingest_dict just once
         if not header_ingested:
             filtered_header = filter_header_info(json_data['header'])
             for header_item in filtered_header.keys():
-                ingest_dict["header."+header_item] = filtered_header[header_item]
+                ingest_dict["data"]["header."+header_item] = filtered_header[header_item]
             header_ingested = True
 
         # add information from "general information" section to ingest_dict just once
         if not gen_info_ingested:
             for gi_item in json_data['general information'].keys():
-                ingest_dict["gen_info."+gi_item] = json_data['general information'][gi_item]
+                ingest_dict["data"]["gen_info."+gi_item] = json_data['general information'][gi_item]
             gen_info_ingested = True
 
         # recursively flatten nested "data" section dictionaries and build ingest_dict
         flattened_data = flatten_dict(json_data['data'])
+        flattened_descriptions = flatten_dict(json_data['descriptions'])
+        flattened_units = flatten_dict(json_data['units'])
         for fd_key in flattened_data.keys():
             json_data_item = flattened_data[fd_key]
             ingest_key = fd_key.replace(" ", "_")
             if str(type(json_data_item)) == "<class 'astropy.table.table.Table'>":
                 for coltitle in json_data_item.colnames:
                     ingest_value = json_data_item[coltitle].tolist()
-                    ingest_dict[title_suffix + ingest_key + "." + coltitle] = [ingest_value]
+                    ingest_dict["data"][title_suffix + ingest_key + "." + coltitle] = [ingest_value]
+                    try:
+                        ingest_dict["descriptions"][title_suffix + ingest_key + "." + coltitle] = flattened_descriptions[title_suffix + fd_key + "." + coltitle]
+                        ingest_dict["units"][title_suffix + ingest_key + "." + coltitle] = flattened_units[title_suffix + fd_key + "." + coltitle]
+                    except:  # TODO: remove once all json files have units and descriptions filled in
+                        ingest_dict["descriptions"][title_suffix + ingest_key + "." + coltitle] = ">>>UNDEFINED<<<"
+                        ingest_dict["units"][title_suffix + ingest_key + "." + coltitle] = ">>>UNDEFINED<<<"
             else:
                 ingest_value = json_data_item
-                ingest_dict[title_suffix + ingest_key] = ingest_value
+                ingest_dict["data"][title_suffix + ingest_key] = ingest_value
+                try:
+                    ingest_dict["descriptions"][title_suffix + ingest_key] = flattened_descriptions[fd_key]
+                    ingest_dict["units"][title_suffix + ingest_key] = flattened_units[fd_key]
+                except:  # TODO: remove once all json files have units and descriptions filled in
+                    ingest_dict["descriptions"][title_suffix + ingest_key] = ">>>UNDEFINED<<<"
+                    ingest_dict["units"][title_suffix + ingest_key] = ">>>UNDEFINED<<<"
+        # if json_filename.endswith("_svm_gaia_sources.json"):
+        #     pdb.set_trace()
     return ingest_dict
 
 
