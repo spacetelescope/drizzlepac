@@ -3,10 +3,8 @@
 Enhanced Pipeline Products code API
 -------------------------------------
 
-.. automodule:: drizzlepac.alignimages
-.. autofunction:: drizzlepac.alignimages.perform_align
-.. autofunction:: drizzlepac.alignimages.generate_source_catalogs
-
+.. automodule:: drizzlepac.align
+.. autofunction:: drizzlepac.align.perform_align
 
 .. automodule:: drizzlepac.haputils.astrometric_utils
 .. autofunction:: drizzlepac.haputils.astrometric_utils.create_astrometric_catalog
