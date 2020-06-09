@@ -126,6 +126,60 @@ def get_json_files(search_path=os.getcwd(), log_level=logutil.logging.INFO):
 # ------------------------------------------------------------------------------------------------------------
 
 
+def h5load(filename):
+    """Load pandas DataFrame and metadata stored in specified HDF5 file.
+    Code borrowed from https://stackoverflow.com/questions/29129095/save-additional-attributes-in-pandas-dataframe/29130146#29130146
+
+    Parameters
+    ----------
+    filename : str
+        Name of the HDF5 file to open
+
+    Returns
+    -------
+    data : Pandas DataFrame
+        Pandas Dataframe read in from specified HDF5 file
+
+    metadata : dict
+        dictionary containing dataFrame metadata
+    """
+    if os.path.exists(filename):
+        with pd.HDFStore(filename) as store:
+            data = store['mydata']
+            metadata = store.get_storer('mydata').attrs.metadata
+    else:
+        errmsg = "HDF5 file {} not found!".format(filename)
+        log.error(errmsg)
+        raise Exception(errmsg)
+    return data, metadata
+
+
+# ------------------------------------------------------------------------------------------------------------
+
+def h5store(filename, df, **kwargs):
+    """Write a pandas Dataframe and metadata to a HDF5 file.
+    Code borrowed from https://stackoverflow.com/questions/29129095/save-additional-attributes-in-pandas-dataframe/29130146#29130146
+
+    Parameters
+    ----------
+    filename : str
+        Name of the output HDF5 file
+
+    df : Pandas DataFrame
+        Pandas DataFrame to write to output file
+
+    Returns
+    -------
+    Nothing.
+    """
+    store = pd.HDFStore(filename)
+    store.put('mydata', df)
+    store.get_storer('mydata').attrs.metadata = kwargs
+    store.close()
+
+
+# ------------------------------------------------------------------------------------------------------------
+
 def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
                    output_filename="svm_qa_dataframe.csv"):
     """Main calling function
@@ -144,11 +198,6 @@ def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
         Name of the output .csv file that the Pandas DataFrame will be written to. If not explicitly
         specified, the DataFrame will be written to the file 'svm_qa_dataframe.csv' in the current working
         directory.
-
-    Returns
-    -------
-    master_dataframe : Pandas DataFrame
-        pandas DataFrame containing all information harvested from the json files.
     """
     log.setLevel(log_level)
 
@@ -164,26 +213,29 @@ def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
                 log.debug("APPENDED DATAFRAME")
                 master_dataframe = master_dataframe.append(pd.DataFrame(ingest_dict["data"], index=[idx]))
                 for key_item in ingest_dict['descriptions'].keys():
-                    if key_item not in master_dataframe_descriptions.keys(): # only have to check descriptions dict because units dict has same keys
-                        master_dataframe_descriptions[key_item] = ingest_dict['descriptions'][key_item]
-                        master_dataframe_units[key_item] = ingest_dict['units'][key_item]
+                    if key_item not in metadata['descriptions'].keys(): # only have to check descriptions dict because units dict has same keys
+                        metadata['descriptions'][key_item] = ingest_dict['descriptions'][key_item]
+                        metadata['units'][key_item] = ingest_dict['units'][key_item]
             else:
                 log.debug("CREATED DATAFRAME")
                 master_dataframe = pd.DataFrame(ingest_dict["data"], index=[idx])
-                master_dataframe_descriptions = ingest_dict['descriptions']
-                master_dataframe_units = ingest_dict['units']
-    master_dataframe.descriptions = master_dataframe_descriptions
-    master_dataframe.units = master_dataframe_units
+                metadata = {}
+                metadata['descriptions'] = ingest_dict['descriptions']
+                metadata['units'] = ingest_dict['units']
 
-    # Write master_dataframe out to a .csv comma-separated file
+    # Write master_dataframe out to a HDF5 .hdfile
     if master_dataframe is not None:
-        # if os.path.exists(output_filename):
-        #     os.remove(output_filename)
-        master_dataframe.to_csv(output_filename)
-        log.info("Wrote dataframe to {}".format(output_filename))
+        if os.path.exists(output_filename):
+            os.remove(output_filename)
+        h5store(output_filename, master_dataframe, **metadata)
+        log.info("Wrote dataframe to HDF5 file {}".format(output_filename))
 
-    return master_dataframe
-
+        output_csvfile = output_filename.replace(".h5", ".csv")
+        if log_level == logutil.logging.DEBUG:
+            if os.path.exists(output_csvfile):
+                os.remove(output_csvfile)
+            master_dataframe.to_csv(output_csvfile)
+            log.debug("Wrote dataframe to csv file {}".format(output_csvfile))
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -246,24 +298,33 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
             if str(type(json_data_item)) == "<class 'astropy.table.table.Table'>":
                 for coltitle in json_data_item.colnames:
                     ingest_value = json_data_item[coltitle].tolist()
-                    ingest_dict["data"][title_suffix + ingest_key + "." + coltitle] = [ingest_value]
+                    id_key = title_suffix + ingest_key + "." + coltitle
+                    ingest_dict["data"][id_key] = [ingest_value]
                     try:
-                        ingest_dict["descriptions"][title_suffix + ingest_key + "." + coltitle] = flattened_descriptions[title_suffix + fd_key + "." + coltitle]
-                        ingest_dict["units"][title_suffix + ingest_key + "." + coltitle] = flattened_units[title_suffix + fd_key + "." + coltitle]
-                    except:  # TODO: remove once all json files have units and descriptions filled in
-                        ingest_dict["descriptions"][title_suffix + ingest_key + "." + coltitle] = ">>>UNDEFINED<<<"
-                        ingest_dict["units"][title_suffix + ingest_key + "." + coltitle] = ">>>UNDEFINED<<<"
+                        ingest_dict["descriptions"][id_key] = flattened_descriptions[title_suffix + fd_key + "." + coltitle]
+                    except:  # insert placeholders if the code runs into trouble getting descriptions
+                        log.warning("Descriptions not found for {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key))
+                        ingest_dict["descriptions"][id_key] = ">>>UNDEFINED<<<"
+                    try:
+                        ingest_dict["units"][id_key] = flattened_units[title_suffix + fd_key + "." + coltitle]
+                    except:  # insert placeholders if the code runs into trouble getting units
+                        log.warning("Units not found for {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key))
+                        ingest_dict["units"][id_key] = ">>>UNDEFINED<<<"
             else:
                 ingest_value = json_data_item
-                ingest_dict["data"][title_suffix + ingest_key] = ingest_value
+                id_key = title_suffix + ingest_key
+                ingest_dict["data"][id_key] = ingest_value
                 try:
-                    ingest_dict["descriptions"][title_suffix + ingest_key] = flattened_descriptions[fd_key]
-                    ingest_dict["units"][title_suffix + ingest_key] = flattened_units[fd_key]
-                except:  # TODO: remove once all json files have units and descriptions filled in
-                    ingest_dict["descriptions"][title_suffix + ingest_key] = ">>>UNDEFINED<<<"
-                    ingest_dict["units"][title_suffix + ingest_key] = ">>>UNDEFINED<<<"
+                    ingest_dict["descriptions"][id_key] = flattened_descriptions[fd_key]
+                except:  # insert placeholders if the code runs into trouble getting the descriptions
+                    log.warning("Descriptions not found for {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key))
+                    ingest_dict["descriptions"][id_key] = ">>>UNDEFINED<<<"
+                try:
+                    ingest_dict["units"][id_key] = flattened_units[fd_key]
+                except:  # insert placeholders if the code runs into trouble getting units
+                    log.warning("Units not found for {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key))
+                    ingest_dict["units"][id_key] = ">>>UNDEFINED<<<"
     return ingest_dict
-
 
 # ======================================================================================================================
 
@@ -274,7 +335,7 @@ if __name__ == "__main__":
                                                  'and write DataFrame to an .csv file.')
     parser.add_argument('-j', '--json_search_path', required=False, default=os.getcwd(),
                         help='The full path of the directory that will be searched for json files to '
-                             'process. If not explicitly specified, the current working dirctory will be '
+                             'process. If not explicitly specified, the current working directory will be '
                              'used.')
     parser.add_argument('-l', '--log_level', required=False, default='info',
                         choices=['critical', 'error', 'warning', 'info', 'debug'],
@@ -284,10 +345,11 @@ if __name__ == "__main__":
                              'Specifying "critical" will only record/display "critical" log statements, and '
                              'specifying "error" will record/display both "error" and "critical" log '
                              'statements, and so on.')
-    parser.add_argument('-o', '--output_filename', required=False, default="svm_qa_dataframe.csv",
-                        help='Name of the output .csv file that the Pandas DataFrame will be written to. If'
-                             'not explicitly specified, the DataFrame will be written to the file '
-                             '"svm_qa_dataframe.csv" in the current working directory')
+    parser.add_argument('-o', '--output_filename', required=False, default="svm_qa_dataframe.h5",
+                        help='Name of the output Hierarchical Data Format version 5 (HDF5) .h5 file that the '
+                             'Pandas DataFrame will be written to. If not explicitly specified, the '
+                             'DataFrame will be written to the file "svm_qa_dataframe.h5" in the current '
+                             'working directory')
     user_args = parser.parse_args()
 
     # set up logging
