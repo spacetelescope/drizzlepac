@@ -27,6 +27,7 @@ https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 """
 import json
 import os
+import sys
 from datetime import datetime
 import time
 
@@ -44,7 +45,15 @@ from . import astrometric_utils as amutils
 from .. import tweakutils
 from . import diagnostic_utils as du
 
-def determine_alignment_residuals(input, files, max_srcs=2000,
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+
+__taskname__ = 'qa_astrometry'
+
+
+def determine_alignment_residuals(input, files, max_srcs=None,
                                   json_timestamp=None, 
                                   json_time_since_epoch=None,
                                   log_level=logutil.logging.NOTSET):
@@ -101,6 +110,7 @@ def determine_alignment_residuals(input, files, max_srcs=2000,
         src_cats.append(img_cats)
 
     if len(num_srcs) == 0 or (len(num_srcs) > 0 and  max(num_srcs) <= 3):
+        log.warning("Not enough sources identified in input images for comparison")
         return None
 
     # src_cats = [amutils.generate_source_catalog(hdu) for hdu in hdus]
@@ -110,14 +120,24 @@ def determine_alignment_residuals(input, files, max_srcs=2000,
         imglist += amutils.build_wcscat(f, i, cat)
 
     # Setup matching algorithm using parameters tuned to well-aligned images
-    match = tweakwcs.TPMatch(searchrad=5, separation=1.0,
-                             tolerance=4.0, use2dhist=True)
+    match = tweakwcs.TPMatch(searchrad=5, separation=4.0,
+                             tolerance=1.0, use2dhist=True)
     try:
         # perform relative fitting
         matchlist = tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=False)
         del matchlist
     except Exception:
-        return None
+        try:
+            # Try without 2dHist use to see whether we can get any matches at all
+            match = tweakwcs.TPMatch(searchrad=5, separation=4.0,
+                                     tolerance=1.0, use2dhist=False)
+            matchlist = tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=False)
+            del matchlist
+
+        except Exception:    
+            log.warning("Problem encountered during matching of sources")
+            return None
+            
     # Check to see whether there were any successful fits...
     align_success = False
     for img in imglist:
@@ -131,7 +151,7 @@ def determine_alignment_residuals(input, files, max_srcs=2000,
         if resids is None:
             resids_files = []
         else:
-            resids_files = generate_output_files(resids_dict, 
+            resids_files = generate_output_files(resids, 
                                  json_timestamp=None, 
                                  json_time_since_epoch=None, 
                                  exclude_fields=['group_id'])
@@ -143,7 +163,8 @@ def determine_alignment_residuals(input, files, max_srcs=2000,
 def generate_output_files(resids_dict, 
                          json_timestamp=None, 
                          json_time_since_epoch=None, 
-                         exclude_fields=['group_id']):
+                         exclude_fields=['group_id'],
+                         calling_name='determine_alignment_residuals'):
     """Write out results to JSON files, one per image"""
     resids_files = []
     for image in resids_dict:
@@ -157,7 +178,7 @@ def generate_output_files(resids_dict,
         
         # Define output diagnostic object
         diagnostic_obj = du.HapDiagnostic()
-        src_str = "{}.determine_alignment_residuals".format(__taskname__) 
+        src_str = "{}.{}".format(__taskname__, calling_name) 
         diagnostic_obj.instantiate_from_fitsfile(image,
                                                data_source=src_str,
                                                description="X and Y residuals from \
