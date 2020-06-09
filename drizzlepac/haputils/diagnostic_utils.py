@@ -126,9 +126,6 @@ class HapDiagnostic(object):
             header_items_to_remove.append('FILTER2')
         if self.header['INSTRUME'] == 'WFC3':
             header_items_to_remove.append('FILTER')
-        for header_item_to_remove in header_items_to_remove:
-            if header_item_to_remove in self.header.keys():
-                del(self.header[header_item_to_remove])
 
         # summon nested orderedDict into existence
         self.out_dict = collections.OrderedDict()
@@ -137,14 +134,36 @@ class HapDiagnostic(object):
         self.out_dict['data'] = collections.OrderedDict()
 
         # add trimmed fits header from self.header
+        # and also generate the 'general information' section.
         for header_item in self.header.keys():
             self.out_dict['header'][header_item] = self.header[header_item]
 
-        # Generate 'general information' section.
-        parse_imgname = self.out_dict['header']['FILENAME'].split("_")
-        dict_key_list = ["telescope", "proposal_id", "visit", "instrument", "detector", "filter", "dataset"]
-        for item in enumerate(dict_key_list):
-            self.out_dict['general information'][item[1]] = parse_imgname[item[0]]
+        for header_item_to_remove in header_items_to_remove:
+            if header_item_to_remove in self.out_dict['header'].keys():
+                del(self.out_dict['header'][header_item_to_remove])
+        
+        # Now populate the general informaiton section
+        dict_keys = {"TELESCOP": "telescope", 
+                     "PROPOSID": "proposal_id", 
+                     "INSTRUME": "instrument", 
+                     "DETECTOR": "detector"}
+        for key in dict_keys:
+            self.out_dict['general information'][dict_keys[key]] = self.header[key]
+        # Now, add items which require more interpretation
+        self.out_dict['general information']['visit'] = self.header['linenum'].split(".")[0]
+        # determine filter...
+        filter_names =  ';'.join([self.header[f] for f in self.header['filter*']])
+        self.out_dict['general information']['filter'] = poller_utils.determine_filter_name(filter_names)
+
+        rootname = self.header['rootname'].split('_')
+        if len(rootname) > 2:
+            # This case is the SVM-compatible filename format
+            dataset = rootname[-1]
+        else:
+            # Pipeline default filename format 
+            dataset = rootname[0]
+        self.out_dict['general information']['dataset'] = dataset
+        
         self.out_dict['general information']["dataframe_index"] = self.out_dict['header']['FILENAME'][:-9]
         self.out_dict['general information']["imgname"] = self.out_dict['header']['FILENAME']
         # Add generation date/time
