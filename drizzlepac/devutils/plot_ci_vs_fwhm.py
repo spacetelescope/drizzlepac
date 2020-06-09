@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from drizzlepac.devutils.comparison_tools import compare_sourcelists
-from drizzlepac.hlautils.diagnostic_utils import read_json_file
+from drizzlepac.haputils.diagnostic_utils import read_json_file
 """
 1: read in ci_fwhm file(s)
 2: smash all input datasets into a single dataset

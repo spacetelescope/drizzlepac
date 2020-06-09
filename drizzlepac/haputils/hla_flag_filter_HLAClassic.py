@@ -59,7 +59,7 @@ getdata = pyfits.getdata
 from stwcs import wcsutil
 from scipy import spatial
 
-from drizzlepac.hlautils import ci_table
+from drizzlepac.haputils import ci_table
 from drizzlepac import util
 from stsci.tools import logutil
 

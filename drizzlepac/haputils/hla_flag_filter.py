@@ -46,7 +46,7 @@ import numpy
 import scipy
 import scipy.ndimage
 
-from drizzlepac.hlautils import ci_table
+from drizzlepac.haputils import ci_table
 from stsci.tools import logutil
 from stwcs import wcsutil
 

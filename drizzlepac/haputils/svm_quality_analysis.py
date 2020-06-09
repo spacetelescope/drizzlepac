@@ -48,9 +48,9 @@ from scipy.spatial import KDTree
 
 # Local application imports
 from drizzlepac import util, wcs_functions
-from drizzlepac.hlautils import hla_flag_filter
-from drizzlepac.hlautils import astrometric_utils as au
-import drizzlepac.hlautils.diagnostic_utils as du
+from drizzlepac.haputils import hla_flag_filter
+from drizzlepac.haputils import astrometric_utils as au
+import drizzlepac.haputils.diagnostic_utils as du
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
 from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
 from stsci.tools import logutil
@@ -86,7 +86,7 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
 
     Parameters
     ----------
-    hap_obj : drizzlepac.hlautils.Product.FilterProduct
+    hap_obj : drizzlepac.haputils.Product.FilterProduct
         hap product object to process
 
     json_timestamp: str, optional
@@ -143,17 +143,17 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
     out_dict["units"] = "pixels"
     out_dict["Number of GAIA sources"] = len(gaia_table)
     axis_list = ["X", "Y"]
-    title_list = ["centroid", "offset of centroid from image center", "standard deviation"]
+    title_list = ["centroid", "offset", "standard deviation"]
     for item_value, item_title in zip([centroid, centroid_offset, std_dev], title_list):
         for axis_item in enumerate(axis_list):
             log.info("{} {} ({}): {}".format(axis_item[1], item_title, out_dict["units"],
                                              item_value[axis_item[0]]))
             out_dict["{} {}".format(axis_item[1], item_title)] = item_value[axis_item[0]]
     min_sep_stats = [min_seps.min(), min_seps.max(), min_seps.mean(), min_seps.std()]
-    min_sep_title_list = ["minimum closest neighbor distance",
-                          "maximum closest neighbor distance",
-                          "mean closest neighbor distance",
-                          "standard deviation of closest neighbor distances"]
+    min_sep_title_list = ["minimum neighbor distance",
+                          "maximum neighbor distance",
+                          "mean neighbor distance",
+                          "standard deviation of neighbor distances"]
     for item_value, item_title in zip(min_sep_stats, min_sep_title_list):
         log.info("{} ({}): {}".format(item_title, out_dict["units"], item_value))
         out_dict[item_title] = item_value
@@ -165,7 +165,27 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
                                       description="A statistical characterization of the distribution of "
                                                   "GAIA sources in image footprint",
                                       timestamp=json_timestamp, time_since_epoch=json_time_since_epoch)
-    diag_obj.add_data_item(out_dict, "distribution characterization statistics")
+    diag_obj.add_data_item(out_dict, "distribution characterization statistics",
+                           descriptions={"Number of GAIA sources": "Number of GAIA sources in image footprint",
+                                         "X centroid": "X centroid", "Y centroid": "Y centroid",
+                                         "X offset": "X offset of centroid from image center",
+                                         "Y offset": "Y offset of centroid from image center",
+                                         "X standard deviation": "X standard deviation of mean offset",
+                                         "Y standard deviation": "Y standard deviation of mean offset",
+                                         "minimum neighbor distance": "distance of closest neighbor",
+                                         "maximum neighbor distance": "distance of furthest neighbor",
+                                         "mean neighbor distance": "mean distance of neighbors",
+                                         "standard deviation of neighbor distances": "standard deviation of mean distance"},
+                           units={"Number of GAIA sources": "unitless",
+                                  "X centroid": "pixels", "Y centroid": "pixels",
+                                  "X offset": "pixels",
+                                  "Y offset": "pixels",
+                                  "X standard deviation": "pixels",
+                                  "Y standard deviation": "pixels",
+                                  "minimum neighbor distance": "pixels",
+                                  "maximum neighbor distance": "pixels",
+                                  "mean neighbor distance": "pixels",
+                                  "standard deviation of neighbor distances": "pixels"})
     diag_obj.write_json_file(hap_obj.drizzle_filename[:-9] + "_svm_gaia_distribution_characterization.json",
                              clobber=True)
 
@@ -264,7 +284,11 @@ def compare_num_sources(catalog_list, drizzle_list, json_timestamp=None, json_ti
                                                              "catalogs",
                                                  timestamp=json_timestamp,
                                                  time_since_epoch=json_time_since_epoch)
-        diagnostic_obj.add_data_item(sources_dict, 'number_of_sources')
+        diagnostic_obj.add_data_item(sources_dict, 'number_of_sources',
+                                     descriptions={'detector': 'Detector in use',
+                                                   'point': 'Number of detected sources in Point catalog',
+                                                   'segment': 'Number of detected sources in Segmented catalog'},
+                                     units={'detector': 'unitless', 'point': 'unitless', 'segment': 'unitless'})
         diagnostic_obj.write_json_file(json_filename)
         log.info("Generated quality statistics (number of sources) as {}.".format(json_filename))
 
@@ -288,7 +312,7 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
 
     Parameters
     ----------
-    hap_obj : drizzlepac.hlautils.Product.FilterProduct
+    hap_obj : drizzlepac.haputils.Product.FilterProduct
         hap filter product object to process
 
     json_timestamp: str, optional
@@ -427,12 +451,44 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
                 table_item[col_name].unit = "degrees"  # Add correct units
 
         # add various data items to diag_obj
-        diag_obj.add_data_item(json_results_dict, "Cross-match details")
-        diag_obj.add_data_item(out_cat_point, "Cross-matched point catalog")
-        diag_obj.add_data_item(out_cat_seg, "Cross-matched segment catalog")
-        diag_obj.add_data_item(sep_stat_dict, "Segment - point on-sky separation statistics")
-
-        # write everything out to the json file
+        diag_obj.add_data_item(json_results_dict, "Cross-match details",
+                               descriptions={"point catalog filename": "ECSV point catalog filename",
+                                             "segment catalog filename": "ECSV segment catalog filename",
+                                             "point catalog length": "Number of entries in point catalog",
+                                             "segment catalog length": "Number of entries in segment catalog",
+                                             "number of cross-matches": "Number of cross-matches between point and segment catalogs",
+                                             "point frame": "Coordinate reference frame",
+                                             "segment frame": "Coordinate reference frame"},
+                               units={"point catalog filename": "unitless",
+                                      "segment catalog filename": "unitless",
+                                      "point catalog length": "unitless",
+                                      "segment catalog length": "unitless",
+                                      "number of cross-matches": "unitless",
+                                      "point frame": "unitless",
+                                      "segment frame": "unitless"})
+        diag_obj.add_data_item(out_cat_point, "Cross-matched point catalog",
+                               descriptions={"Right ascension": "ICRS Right ascension",
+                                             "Declination": "ICRS Declination"},
+                               units={"Right ascension": "degrees", "Declination": "degrees"})
+        diag_obj.add_data_item(out_cat_seg, "Cross-matched segment catalog",
+                               descriptions={"Right ascension": "ICRS Right ascension",
+                                             "Declination": "ICRS Declination"},
+                               units={"Right ascension": "degrees", "Declination": "degrees"})
+        diag_obj.add_data_item(sep_stat_dict, "Segment - point on-sky separation statistics",
+                               descriptions={"Non-clipped min": "Non-clipped min difference",
+                                             "Non-clipped max": "Non-clipped max difference",
+                                             "Non-clipped mean": "Non-clipped mean difference",
+                                             "Non-clipped median": "Non-clipped median difference",
+                                             "Non-clipped standard deviation": "Non-clipped standard deviation of differences",
+                                             "3x3 sigma-clipped mean": "3x3 sigma-clipped mean difference",
+                                             "3x3 sigma-clipped median": "3x3 sigma-clipped median difference",
+                                             "3x3 sigma-clipped standard deviation": "3x3 sigma-clipped standard deviation of differences"},
+                               units={"Non-clipped min": "arcseconds", "Non-clipped max": "arcseconds",
+                                      "Non-clipped mean": "arcseonds", "Non-clipped median": "arcseconds",
+                                      "Non-clipped standard deviation": "arcseconds",
+                                      "3x3 sigma-clipped mean": "arcseonds", "3x3 sigma-clipped median": "arcseconds",
+                                      "3x3 sigma-clipped standard deviation": "arcseconds"})
+# write everything out to the json file
         json_filename = hap_obj.drizzle_filename[:-9]+"_svm_point_segment_crossmatch.json"
         diag_obj.write_json_file(json_filename, clobber=True)
     else:
@@ -449,8 +505,8 @@ def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
 
     Parameters
     ----------
-    hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
-        drizzlepac.hlautils.Product.ExposureProduct, depending on input.
+    hap_obj : drizzlepac.haputils.Product.TotalProduct, drizzlepac.haputils.Product.FilterProduct, or
+        drizzlepac.haputils.Product.ExposureProduct, depending on input.
         hap product object to process
 
     json_timestamp: str, optional
@@ -498,8 +554,8 @@ def generate_gaia_catalog(hap_obj, columns_to_remove=None):
 
     Parameters
     ----------
-    hap_obj : drizzlepac.hlautils.Product.TotalProduct, drizzlepac.hlautils.Product.FilterProduct, or
-        drizzlepac.hlautils.Product.ExposureProduct, depending on input.
+    hap_obj : drizzlepac.haputils.Product.TotalProduct, drizzlepac.haputils.Product.FilterProduct, or
+        drizzlepac.haputils.Product.ExposureProduct, depending on input.
         hap product object to process
 
     columns_to_remove : list
@@ -706,15 +762,19 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
             result_error = np.sqrt(np.add(np.square(matching_error_rows[0]),
                                           np.square(matching_error_rows[1])))
 
-            stat_key = 'Stats for Delta_' + phot_column_name + ' = Point_' + phot_column_name + \
-                       ' - Segment_' + phot_column_name
+            stat_key = 'Delta_' + phot_column_name + '=Point_' + phot_column_name + \
+                       '_-_Segment_' + phot_column_name
             stat_dict = {stat_key: {'Mean Difference': mean_delta_phot, 'Standard Deviation': std_delta_phot,
                          'Median Difference': median_delta_phot}}
-            summary_dict.update(stat_dict)
 
             # Write out the results
-            diagnostic_obj.add_data_item(summary_dict,
-                                         'High-level Photometry Statistics on differences of Point - Segment')
+            diagnostic_obj.add_data_item(stat_dict,
+                                         'High-level Photometry Statistics ' + phot_column_name,
+                                         descriptions={'Mean Difference': phot_column_name + '_Mean(Point-Segment)',
+                                                       'Standard Deviation': phot_column_name + '_STD of Mean Differences',
+                                                       'Median Difference': phot_column_name + '_Median(Point-Segment)'},
+                                         units={'Mean Difference': 'ABMag', 'Standard Deviation': 'ABMag',
+                                                'Median Difference': 'ABMag'})
 
         diagnostic_obj.write_json_file(json_filename)
         log.info("Generated photometry comparison for Point - Segment matches "
@@ -733,7 +793,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
     Parameters
     ----------
     total_product_list: list of HAP TotalProduct objects, one object per instrument detector
-    (drizzlepac.hlautils.Product.TotalProduct)
+    (drizzlepac.haputils.Product.TotalProduct)
 
     json_timestamp: str, optional
         Universal .json file generation date and time (local timezone) that will be used in the instantiation
@@ -785,12 +845,24 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
             # Get information from the active WCS
             active_wcs_dict = {'primary_wcsname': metawcs.wcs.name,
                                'wcs_info': {'crpix1': metawcs.wcs.crpix[0],
-                               'crpix2': metawcs.wcs.crpix[1],
-                               'crval1': metawcs.wcs.crval[0], 'crval2': metawcs.wcs.crval[1],
-                               'scale': metawcs.pscale, 'orientation': metawcs.orientat,
-                               'exposure': edp_object.exposure_name}}
+                                            'crpix2': metawcs.wcs.crpix[1],
+                                            'crval1': metawcs.wcs.crval[0],
+                                            'crval2': metawcs.wcs.crval[1],
+                                            'scale': metawcs.pscale,
+                                            'orientation': metawcs.orientat,
+                                            'exposure': edp_object.exposure_name}}
 
-            diagnostic_obj.add_data_item(active_wcs_dict, 'PrimaryWCS_' + edp_object.exposure_name)
+            diagnostic_obj.add_data_item(active_wcs_dict, 'PrimaryWCS_' + edp_object.exposure_name,
+                                         descriptions={'primary_wcsname': 'Active WCS', 'wcs_info': 'WCS',
+                                                       'crpix1': 'X coord of reference pixel', 'crpix2': 'Y coord of reference pixel',
+                                                       'crval1': 'RA of reference pixel', 'crval2': 'Dec of reference pixel',
+                                                       'scale': 'Plate scale',
+                                                       'orientation': 'Position angle of Image Y axis (East of North)',
+                                                       'exposure': 'Exposure name'},
+                                         units={'primary_wcsname': 'unitless', 'wcs_info': 'unitless', 'crpix1': 'pixels',
+                                                'crpix2': 'pixels', 'crval1': 'degrees', 'crval2': 'degrees',
+                                                'scale': 'pixels/arcseconds', 'orientation': 'degrees',
+                                                'exposure': 'unitless'})
 
             # Determine the possible alternate WCS solutions in the header
             dict_of_wcskeys_names = wcsutil.altwcs.wcsnames(edp_object.full_filename, ext=1)
@@ -852,12 +924,24 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                         # Get information from the alternate/active WCS
                         alt_wcs_dict = {'alternate_wcsname': alt_wcs_name,
                                         'wcs_info': {'crpix1': alt_metawcs.wcs.crpix[0],
-                                        'crpix2': alt_metawcs.wcs.crpix[1],
-                                        'crval1': alt_metawcs.wcs.crval[0], 'crval2': alt_metawcs.wcs.crval[1],
-                                        'scale': alt_metawcs.pscale, 'orientation': alt_metawcs.orientat,
-                                        'exposure': edp_object.exposure_name}}
+                                                     'crpix2': alt_metawcs.wcs.crpix[1],
+                                                     'crval1': alt_metawcs.wcs.crval[0],
+                                                     'crval2': alt_metawcs.wcs.crval[1],
+                                                     'scale': alt_metawcs.pscale,
+                                                     'orientation': alt_metawcs.orientat,
+                                                     'exposure': edp_object.exposure_name}}
 
-                        diagnostic_obj.add_data_item(alt_wcs_dict, 'AlternateWCS_' + edp_object.exposure_name + '_' + str(icnt))
+                        diagnostic_obj.add_data_item(alt_wcs_dict, 'AlternateWCS_' + edp_object.exposure_name + '_' + str(icnt),
+                                                     descriptions={'alternate_wcsname': 'Alternate WCS', 'wcs_info': 'WCS',
+                                                                   'crpix1': 'X coord of reference pixel', 'crpix2': 'Y coord of reference pixel',
+                                                                   'crval1': 'RA of reference pixel', 'crval2': 'Dec of reference pixel',
+                                                                   'scale': 'Plate scale',
+                                                                   'orientation': 'Position angle of Image Y axis (East of North)',
+                                                                   'exposure': 'Exposure name'},
+                                                     units={'alternate_wcsname': 'unitless', 'wcs_info': 'unitless', 'crpix1': 'pixels',
+                                                            'crpix2': 'pixels', 'crval1': 'degrees', 'crval2': 'degrees',
+                                                            'scale': 'pixels/arcseconds', 'orientation': 'degrees',
+                                                            'exposure': 'unitless'})
 
                         delta_wcs = metawcs.wcs.name + '-' + alt_wcs_name
                         diff_wcs_dict = {'delta_wcsname': delta_wcs, 'wcs_info': {}}
@@ -874,7 +958,18 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                         diff_wcs_dict['wcs_info']['d_orientation'] = active_wcs_dict['wcs_info']['orientation'] - alt_wcs_dict['wcs_info']['orientation']
                         diff_wcs_dict['wcs_info']['exposure'] = edp_object.exposure_name
 
-                        diagnostic_obj.add_data_item(diff_wcs_dict, 'Delta(Primary-Alternate)WCS_' + edp_object.exposure_name + '_' + str(icnt))
+                        diagnostic_obj.add_data_item(diff_wcs_dict, 'Delta(Primary-Alternate)WCS_' + edp_object.exposure_name + '_' + str(icnt),
+                                                     descriptions={'delta_wcsname': 'Active-Alternate WCS', 'wcs_info': 'WCS',
+                                                                   'd_crpix1': 'delta_X of reference pixel',
+                                                                   'd_crpix2': 'delta_Y of reference pixel', 'd_crval1': 'delta_RA of reference pixel',
+                                                                   'd_crval2': 'delta_Dec of reference pixel',
+                                                                   'd_scale': 'delta_Plate scale',
+                                                                   'd_orientation': 'delta_Position angle of Image Y axis (East of North)',
+                                                                   'exposure': 'Exposure name'},
+                                                     units={'delta_wcsname': 'unitless', 'wcs_info': 'unitless', 'd_crpix1': 'pixels',
+                                                            'd_crpix2': 'pixels', 'd_crval1': 'degrees', 'd_crval2': 'degrees',
+                                                            'd_scale': 'pixels/arcseconds', 'd_orientation': 'degrees',
+                                                            'exposure': 'unitless'})
 
                         # Delete the original alternate WCS...
                         wcsutil.altwcs.deleteWCS(edp_object.full_filename, ext=extname_list, wcskey=alt_key)
@@ -894,8 +989,6 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                 # Delete the extra copy of the primary
                 wcsutil.altwcs.deleteWCS(edp_object.full_filename, ext=extname_list, wcskey='Z')
 
-                # Write out the results
-                # diagnostic_obj.add_data_item(summary_dict, 'WCS Information Primary WCS - Alternate WCS')
             else:
                 log.info("This dataset only has the Primary and OPUS WCS values")
 
@@ -1111,7 +1204,6 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, hap_imgname, cattype, l
         return orig_hla_classic_sl_name
 
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_gaia_sources=True,
                          run_compare_hla_sourcelists=True, run_compare_ra_dec_crossmatches=True,
@@ -1122,7 +1214,7 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
     Parameters
     ----------
     total_obj_list : list
-        List of one or more HAP drizzlepac.hlautils.Product.TotalProduct object(s) to process
+        List of one or more HAP drizzlepac.haputils.Product.TotalProduct object(s) to process
 
     run_compare_num_sources : bool, optional
         Run 'compare_num_sources' test? Default value is True.

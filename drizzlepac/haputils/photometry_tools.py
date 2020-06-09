@@ -59,7 +59,7 @@ Classes and Functions
 """
 import numpy as np
 from astropy.table import Table
-from drizzlepac.hlautils.background_median import aperture_stats_tbl
+from drizzlepac.haputils.background_median import aperture_stats_tbl
 from photutils import aperture_photometry
 
 

@@ -17,7 +17,7 @@ import glob
 from stsci.tools import logutil
 from astropy.io import fits
 
-from drizzlepac.hlautils import astroquery_utils as aqutils
+from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runastrodriz
 
 

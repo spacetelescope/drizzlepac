@@ -44,14 +44,14 @@ from astropy.table import Table
 import drizzlepac
 
 
-from drizzlepac.hlautils import config_utils
-from drizzlepac.hlautils import diagnostic_utils
-from drizzlepac.hlautils import hla_flag_filter
-from drizzlepac.hlautils import poller_utils
-from drizzlepac.hlautils import product
-from drizzlepac.hlautils import processing_utils as proc_utils
-from drizzlepac.hlautils import svm_quality_analysis as svm_qa
-from drizzlepac.hlautils.catalog_utils import HAPCatalogs
+from drizzlepac.haputils import config_utils
+from drizzlepac.haputils import diagnostic_utils
+from drizzlepac.haputils import hla_flag_filter
+from drizzlepac.haputils import poller_utils
+from drizzlepac.haputils import product
+from drizzlepac.haputils import processing_utils as proc_utils
+from drizzlepac.haputils import svm_quality_analysis as svm_qa
+from drizzlepac.haputils.catalog_utils import HAPCatalogs
 
 from stsci.tools import logutil
 from stwcs import wcsutil
@@ -73,12 +73,12 @@ envvar_qa_svm = "SVM_QUALITY_TESTING"
 # --------------------------------------------------------------------------------------------------------------
 
 def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, phot_mode='both'):
-    """This subroutine utilizes hlautils/catalog_utils module to produce photometric sourcelists for the specified
+    """This subroutine utilizes haputils/catalog_utils module to produce photometric sourcelists for the specified
     total drizzle product and it's associated child filter products.
 
     Parameters
     ----------
-    total_obj_list : drizzlepac.hlautils.Product.TotalProduct
+    total_obj_list : drizzlepac.haputils.Product.TotalProduct
         total drizzle product that will be processed by catalog_utils. catalog_utils will also create photometric
         sourcelists for the child filter products of this total product.
 
@@ -568,6 +568,7 @@ def run_align_to_gaia(tot_obj, log_level=logutil.logging.INFO, diagnostic_mode=F
     # Return the name of the alignment catalog
     if align_table is None:
         gaia_obj.refname = None
+        headerlet_filenames = []
     else:
         # Get names of all headerlet files written out to file
         headerlet_filenames = [f for f in align_table.filtered_table['headerletFile'] if f != "None"]
@@ -585,10 +586,10 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
 
     Parameters
     ----------
-    filter_product_obj : drizzlepac.hlautils.product.FilterProduct object
+    filter_product_obj : drizzlepac.haputils.product.FilterProduct object
         object containing all the relevant info for the drizzled filter product
 
-    filter_product_catalogs : drizzlepac.hlautils.catalog_utils.HAPCatalogs object
+    filter_product_catalogs : drizzlepac.haputils.catalog_utils.HAPCatalogs object
         drizzled filter product catalog object
 
     log_level : int
@@ -599,7 +600,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
 
     Returns
     -------
-    filter_product_catalogs : drizzlepac.hlautils.catalog_utils.HAPCatalogs object
+    filter_product_catalogs : drizzlepac.haputils.catalog_utils.HAPCatalogs object
         updated version of filter_product_catalogs object with fully populated source flags
 
     """

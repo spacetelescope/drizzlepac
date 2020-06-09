@@ -15,7 +15,7 @@ from stsci.tools import logutil
 
 from drizzlepac import hapsequencer
 from drizzlepac.devutils.comparison_tools import compare_sourcelists
-from drizzlepac.hlautils import hla_flag_filter
+from drizzlepac.haputils import hla_flag_filter
 
 
 __taskname__ = 'validate_hla_flag_filter'
