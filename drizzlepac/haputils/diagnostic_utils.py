@@ -302,7 +302,7 @@ class HapDiagnostic(object):
         self._instantiate()
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    def add_data_item(self, dataset, title, descriptions=None, units=None):
+    def add_data_item(self, dataset, title, item_description="", descriptions=None, units=None):
         """main subroutine for adding data to self.out_table.
 
         Supported data types:
@@ -322,6 +322,9 @@ class HapDiagnostic(object):
 
         title : str
             Name of the dictionary key that will be used to store dataset in self.out_dict
+            
+        item_description : str
+            Single string description for this item as a whole
 
         descriptions : dict, optional
             dictionary containing description strings for each element of the dataset stored in the 'data'
@@ -338,6 +341,7 @@ class HapDiagnostic(object):
         dataset_type = str(type(dataset))
         self.out_dict['data'][title] = collections.OrderedDict()
         self.out_dict['data'][title]["original format"] = dataset_type
+        self.out_dict['data'][title]["description"] = item_description
         if dataset_type == "<class 'numpy.ndarray'>":  # For numpy arrays
             self.out_dict['data'][title]["dtype"] = str(dataset.dtype)
             self.out_dict['data'][title]["data"] = dataset.tolist()
