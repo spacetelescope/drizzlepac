@@ -173,7 +173,7 @@ def generate_output_files(resids_dict,
             del resids_dict[image][field]
         # Define name for output JSON file...
         rootname = image.split("_")[0]
-        json_filename = "{}_qa_astrometry_resids.json".format(rootname)
+        json_filename = "{}_cal_qa_astrometry_resids.json".format(rootname)
         resids_files.append(json_filename)
         
         # Define output diagnostic object
