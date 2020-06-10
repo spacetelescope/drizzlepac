@@ -140,13 +140,12 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
 
     # add statistics to out_dict
     out_dict = collections.OrderedDict()
-    out_dict["units"] = "pixels"
     out_dict["Number of GAIA sources"] = len(gaia_table)
     axis_list = ["X", "Y"]
     title_list = ["centroid", "offset", "standard deviation"]
     for item_value, item_title in zip([centroid, centroid_offset, std_dev], title_list):
         for axis_item in enumerate(axis_list):
-            log.info("{} {} ({}): {}".format(axis_item[1], item_title, out_dict["units"],
+            log.info("{} {} ({}): {}".format(axis_item[1], item_title, "pixels",
                                              item_value[axis_item[0]]))
             out_dict["{} {}".format(axis_item[1], item_title)] = item_value[axis_item[0]]
     min_sep_stats = [min_seps.min(), min_seps.max(), min_seps.mean(), min_seps.std()]
@@ -155,7 +154,7 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
                           "mean neighbor distance",
                           "standard deviation of neighbor distances"]
     for item_value, item_title in zip(min_sep_stats, min_sep_title_list):
-        log.info("{} ({}): {}".format(item_title, out_dict["units"], item_value))
+        log.info("{} ({}): {}".format(item_title, "pixles", item_value))
         out_dict[item_title] = item_value
 
     # write catalog to HapDiagnostic-formatted .json file.
