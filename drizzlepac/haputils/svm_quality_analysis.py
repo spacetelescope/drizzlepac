@@ -768,11 +768,12 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
             # Write out the results
             diagnostic_obj.add_data_item(stat_dict,
                                          'High-level Photometry Statistics ' + phot_column_name,
-                                         descriptions={'Mean Difference': phot_column_name + '_Mean(Point-Segment)',
-                                                       'Standard Deviation': phot_column_name + '_STD of Mean Differences',
-                                                       'Median Difference': phot_column_name + '_Median(Point-Segment)'},
-                                         units={'Mean Difference': 'ABMag', 'Standard Deviation': 'ABMag',
-                                                'Median Difference': 'ABMag'})
+                                         descriptions={stat_key + '.Mean Difference': phot_column_name + '_Mean(Point-Segment)',
+                                                       stat_key + '.Standard Deviation': phot_column_name + '_STD of Mean Differences',
+                                                       stat_key + '.Median Difference': phot_column_name + '_Median(Point-Segment)'},
+                                         units={stat_key + '.Mean Difference': 'ABMag',
+                                                stat_key + '.Standard Deviation': 'ABMag',
+                                                stat_key + '.Median Difference': 'ABMag'})
 
         diagnostic_obj.write_json_file(json_filename)
         log.info("Generated photometry comparison for Point - Segment matches "
@@ -851,16 +852,22 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                                             'exposure': edp_object.exposure_name}}
 
             diagnostic_obj.add_data_item(active_wcs_dict, 'PrimaryWCS_' + edp_object.exposure_name,
-                                         descriptions={'primary_wcsname': 'Active WCS', 'wcs_info': 'WCS',
-                                                       'crpix1': 'X coord of reference pixel', 'crpix2': 'Y coord of reference pixel',
-                                                       'crval1': 'RA of reference pixel', 'crval2': 'Dec of reference pixel',
-                                                       'scale': 'Plate scale',
-                                                       'orientation': 'Position angle of Image Y axis (East of North)',
-                                                       'exposure': 'Exposure name'},
-                                         units={'primary_wcsname': 'unitless', 'wcs_info': 'unitless', 'crpix1': 'pixels',
-                                                'crpix2': 'pixels', 'crval1': 'degrees', 'crval2': 'degrees',
-                                                'scale': 'pixels/arcseconds', 'orientation': 'degrees',
-                                                'exposure': 'unitless'})
+                                         descriptions = {'primary_wcsname': 'Active WCS',
+                                                         'wcs_info': {'crpix1': 'X coord of reference pixel',
+                                                                      'crpix2': 'Y coord of reference pixel',
+                                                                      'crval1': 'RA of reference pixel',
+                                                                      'crval2': 'Dec of reference pixel',
+                                                                      'scale': 'Plate scale',
+                                                                      'orientation': 'Position angle of Image Y axis (East of North)',
+                                                                      'exposure': 'Exposure name'}},
+                                         units = {'primary_wcsname': 'unitless',
+                                                'wcs_info': {'crpix1': 'pixels',
+                                                             'crpix2': 'pixels',
+                                                             'crval1': 'degrees',
+                                                             'crval2': 'degrees',
+                                                             'scale': 'pixels/arcseconds',
+                                                             'orientation': 'degrees',
+                                                             'exposure': 'unitless'}})
 
             # Determine the possible alternate WCS solutions in the header
             dict_of_wcskeys_names = wcsutil.altwcs.wcsnames(edp_object.full_filename, ext=1)
