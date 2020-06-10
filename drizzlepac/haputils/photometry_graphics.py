@@ -33,17 +33,40 @@
 # To use hover, MUST have all data columns coming from ColumnDataSource.
 # ColumnDataSource needs to use columns names, so use succinct names.
 # Think about information useful for hover.
+####  Fix the docs above.
 
-import array
+from drizzlepac.haputils.pandas_utils import PandasDFReader_CSV
+from stsci.tools import logutil
+
 from bokeh.layouts import row
 from bokeh.plotting import figure, output_file, show
 from bokeh.models import ColumnDataSource, Label
+from bokeh.models.tools import HoverTool
 import csv
 import glob
 import json
+import logging
 import os
-import pandas as pd
+import sys
 
+PHOT_COLUMNS = ["Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Mean Difference",
+                "Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Standard Deviation",
+                "Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Median Difference",
+                "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Mean Difference",
+                "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Standard Deviation",
+                "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Median Difference"]
+
+# FIX MDD: Create an enumeration and use a map function
+# FIX MDD: Fix names again svm_quality_analysis.py in JSON generation
+# FIX MDD: Need to use the real harvester for data and metadata
+# FIX MDD: Fix hovertool 
+# FIX MDD: Where should this code live?  Join with svm_quality_analysis.py?
+
+
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 def compute_global_stats(value_array):
     """Compute the mean of the input array values.
@@ -63,21 +86,20 @@ def compute_global_stats(value_array):
     return mean_value
 
 
-def load_data_to_arrays(csv_filename):
+def get_data(csv_filename):
     """Load the harvested data, stored in a CSV file, into local arrays.
 
     Parameters
     ==========
     csv_filename: str
-    Name of the CSV file created by generate_photometry_df.
+    Name of the CSV file created by the harvester.
 
     Returns
     =======
-    (d_MagAp1_mean, d_MagAp1_std, d_MagAp1_median): tuple
-    Aperture 1 statistics
-
-    (d_MagAp2_mean, d_MagAp2_std, d_MagAp2_median): tuple
-    Aperture 2 statistics
+    phot_data: Pandas dataframe
+    Dataframe which is a subset of the input Pandas dataframe written out as
+    a CSV file.  The subset dataframe consists of only the requested columns
+    and rows where all of the requested columns did not contain NaNs.
 
     (mean_dMagAp1_mean, mean_dMagAp1_median): tuple
     Aperture 1 mean of means and mean of medians
@@ -85,90 +107,97 @@ def load_data_to_arrays(csv_filename):
     (mean_dMagAp2_mean, mean_dMagAp2_median): tuple
     Aperture 2 mean of means and mean of medians
     """
+    
+    # Instantiate a Pandas Dataframe Reader (lazy instantiation)
+    # df_handle = PandasDFReader_CSV("svm_qa_dataframe.csv")
+    df_handle = PandasDFReader_CSV(csv_filename, log_level=logutil.logging.NOTSET)
 
-    df = pd.read_csv(csv_filename)
-    key_MagAp1_mean = 'Delta_MagAp1-Mean Difference'
-    key_MagAp2_mean = 'Delta_MagAp2-Mean Difference'
-    key_MagAp1_std = 'Delta_MagAp1-Standard Deviation'
-    key_MagAp2_std = 'Delta_MagAp2-Standard Deviation'
-    key_MagAp1_median = 'Delta_MagAp1-Median Difference'
-    key_MagAp2_median = 'Delta_MagAp2-Median Difference'
+    # In this particular case, the names of the desired columns do not
+    # have to be further manipulated, for example, to add dataset specific
+    # names.
+    # 
+    # Get the relevant column data, eliminating all rows which have NaNs
+    # in any of the relevant columns.
+    phot_data = df_handle.get_columns(PHOT_COLUMNS)
 
-    d_MagAp1_mean = df[key_MagAp1_mean]
-    d_MagAp2_mean = df[key_MagAp2_mean]
-    d_MagAp1_std = df[key_MagAp1_std]
-    d_MagAp2_std = df[key_MagAp2_std]
-    d_MagAp1_median = df[key_MagAp1_median]
-    d_MagAp2_median = df[key_MagAp2_median]
+    # Generate a general index array and add it to the dataframe
+    x_index = list(range(0, len(phot_data.index)))
+    phot_data['x_index'] = x_index
+    x_index.clear()
 
-    mean_dMagAp1_mean = compute_global_stats(d_MagAp1_mean)
-    mean_dMagAp2_mean = compute_global_stats(d_MagAp2_mean)
+    # mean_dMagAp1mean = compute_global_stats(phot_data[PHOTC[0]])
+    # mean_dMagAp2mean = compute_global_stats(phot_data[PHOTC[3]])
 
-    mean_dMagAp1_median = compute_global_stats(d_MagAp1_median)
-    mean_dMagAp2_median = compute_global_stats(d_MagAp2_median)
+    # mean_dMagAp1median = compute_global_stats(phot_data[PHOT[2]])
+    # mean_dMagAp2median = compute_global_stats(phot_data[PHOT[5]])
+    mean_dMagAp1mean = 10.0
+    mean_dMagAp2mean = 11.0
+    mean_dMagAp1median = 12.0
+    mean_dMagAp2median = 13.0
 
-    return (d_MagAp1_mean, d_MagAp1_std, d_MagAp1_median), \
-        (d_MagAp2_mean, d_MagAp2_std, d_MagAp2_median), \
-        (mean_dMagAp1_mean, mean_dMagAp1_median), \
-        (mean_dMagAp2_mean, mean_dMagAp2_median)
+    return phot_data, (mean_dMagAp1mean, mean_dMagAp1median), \
+        (mean_dMagAp2mean, mean_dMagAp2median)
 
 
 # Generate the actual plot for the "svm_graphic_type" data.
-def generate_graphic(ap1, ap2, means_ap1, means_ap2):
+def generate_graphic(phot_data, stat_Ap1, stat_Ap2):
     """Generate the graphics associated with this particular type of data.
 
     Parameters
     ==========
-    ap1: tuple
-    Tuple containing the mean, std, and median statistics for Aperture 1
+    phot_data: Pandas dataframe
+    Dataframe consisting of the Magnitude statistics of mean, std, and median for Aperture 1
+    and Aperture 2
 
-    ap2: tuple
-    Tuple containing the mean, std, and median statistics for Aperture 2
-
-    means_ap1: tuple
+    stat_Ap1: tuple
     Tuple containing the average of the means and the average of the medians for Aperture 1
 
-    means_ap2: tuple
+    stat_Ap2: tuple
     Tuple containing the average of the means and the average of the medians for Aperture 2
     """
 
     # Set the output file immediately as advised by Bokeh.
     output_file('photometry_grahics.html')
 
-    # Generate a general index array
-    x_index = array.array('i', (i for i in range(0, len(ap1[0]))))
-    num_of_datasets = len(x_index)
+    # Setup the source of the data to be plotted so the axis variables can be
+    # referenced by column name in the Pandas dataframe
+    sourceDF = ColumnDataSource(phot_data)
+    num_of_datasets = len(phot_data.index)
     print('Number of datasets: {}'.format(num_of_datasets))
 
     # Define a figure object
     p1 = figure()
 
     # Add the glyphs
-    p1.circle(x_index, ap1[0], fill_alpha=0.5, line_alpha=0.5, size=10, color='green',
+    p1.circle(x='x_index', y=PHOT_COLUMNS[0], source=sourceDF, fill_alpha=0.5, line_alpha=0.5, size=10, color='green',
               legend_label='Mean Aperture 1 Magnitude Differences')
-    p1.cross(x_index, ap1[2], size=10, color='blue', legend_label='Median Aperture 1 Magnitude Differences')
+    p1.cross(x='x_index', y=PHOT_COLUMNS[2], source=sourceDF, size=10, color='blue', legend_label='Median Aperture 1 Magnitude Differences')
     info_text = 'Number of datasets: ' + str(num_of_datasets)
     p1.legend.click_policy = 'hide'
-
+    
     p1.title.text = 'Differences Point - Segment Ap1 Magnitude'
     p1.xaxis.axis_label = 'Index     ' + info_text
     p1.yaxis.axis_label = 'Difference (Magnitudes)'
 
-    stat_text = ('Mean deltaMAp1_mean: {:6.2f}     Mean deltaMAp1_median: {:6.2f}'.format(means_ap1[0], means_ap1[1]))
+    hover_p1 = HoverTool()
+    hover_p1.tooltips=[('STD', '@Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Standard Deviation')]
+    p1.add_tools(hover_p1)
+
+    stat_text = ('Mean deltaMAp1_mean: {:6.2f}     Mean deltaMAp1_median: {:6.2f}'.format(stat_Ap1[0], stat_Ap1[1]))
     stat_label = Label(x=20, y=20, x_units='screen', y_units='screen', text=stat_text)
     p1.add_layout(stat_label)
 
     p2 = figure()
-    p2.circle(x_index, ap2[0], fill_alpha=0.5, line_alpha=0.5, size=10, color='green',
+    p2.circle(x='x_index', y=PHOT_COLUMNS[3], source=sourceDF, fill_alpha=0.5, line_alpha=0.5, size=10, color='green',
               legend_label='Mean Aperture 2 Magnitude Differences')
-    p2.cross(x_index, ap2[2], size=10, color='blue', legend_label='Median Aperture 2 Magnitude Differences')
+    p2.cross(x='x_index', y=PHOT_COLUMNS[5], source=sourceDF, size=10, color='blue', legend_label='Median Aperture 2 Magnitude Differences')
     p2.legend.click_policy = 'hide'
 
     p2.title.text = 'Differences Point - Segment Ap2 Magnitude'
     p2.xaxis.axis_label = 'Index     ' + info_text
     p2.yaxis.axis_label = 'Difference (Magnitudes)'
 
-    stat_text = ('Mean deltaMAp2_mean: {:6.2f}     Mean deltaMAp2_median: {:6.2f}'.format(means_ap2[0], means_ap2[1]))
+    stat_text = ('Mean deltaMAp2_mean: {:6.2f}     Mean deltaMAp2_median: {:6.2f}'.format(stat_Ap2[0], stat_Ap2[1]))
     stat_label = Label(x=20, y=20, x_units='screen', y_units='screen', text=stat_text)
     p2.add_layout(stat_label)
 
@@ -182,82 +211,14 @@ def photometry_graphics_driver(csv_filename):
     Parameters
     ==========
     csv_filename: str
-    Name of the CSV file created by generate_photometry_df.
+    Name of the CSV file created by the harvester.
     """
 
-    # Get the data back as two tuples which contain mean, std, and median
-    ap1, ap2, means_ap1, means_ap2 = load_data_to_arrays(csv_filename)
+    # Retrieve the relevant dataframe and statistics (mean of
+    # means and mean of medians) for Aperture 1 and Aperture 2
+    phot_data, stat_Ap1, stat_Ap2 = get_data(csv_filename)
 
-    generate_graphic(ap1, ap2, means_ap1, means_ap2)
-
-
-def generate_photometry_df(input_directory, output_csv_filename='svm_photometry_stats.csv'):
-    """Generate a CSV file containing the Pandas dataframe for statistics.
-
-    This routine searches the named directory for a specified JSON file
-    and extracts the statistics to generate a Pandas dataframe.  The dataframe
-    is written out to a CSV file for safe keeping.  In this way, if there were to
-    be an error generating the graphics, the summary file still exists and the
-    harvesting does not have to be redone.
-
-    Parameters
-    ==========
-    input_directory: str
-    Directory to search for *.json files
-
-    output_csv_filename: str
-    Filename for the output CSV file
-    """
-
-    df = make_master_df(input_directory, pattern='*photometry.json')
-    df.to_csv(output_csv_filename)
+    # Generate the photometric graphic
+    generate_graphic(phot_data, stat_Ap1, stat_Ap2)
 
 
-def make_dataset_df(dirname, pattern='*.json'):
-    """Convert dir full of JSON files into a DataFrame"""
-
-    jpatt = os.path.join(dirname, pattern)
-    hdr = None
-
-    pdtabs = []
-    for jfilename in sorted(glob.glob(jpatt)):
-        with open(jfilename) as jfile:
-            resids = json.load(jfile)
-        pdindx = None
-        if hdr is None:
-            hdr = resids['header']
-        rootname = hdr['FILENAME'].replace('.fits', '')
-        k = resids['data'].keys()
-        for key in k:
-            dat = resids['data'][key]['data']
-
-            det = dat['detector']
-            filtname = dat['filter_name']
-            del dat['detector']
-            del dat['filter_name']
-            if pdindx is None:
-                pdindx = '-'.join([rootname, det, filtname])
-            for dk in dat.keys():
-                for di in dat[dk].keys():
-                    hdr.update(dict([('-'.join([dk.split(" ")[2], di]), dat[dk][di])]))
-
-        pdtabs.append(pd.DataFrame(hdr, index=[pdindx]))
-    if len(pdtabs) == 0:
-        allpd = None
-    else:
-        allpd = pd.concat(pdtabs)
-    return allpd
-
-
-def make_master_df(dirname, pattern='*.json', num=None):
-    dirs = sorted(glob.glob(os.path.join(dirname, '*')))
-    allpd = None
-    for d in dirs[:num]:
-        pdtab = make_dataset_df(d, pattern=pattern)
-        if pdtab is not None:
-            if allpd is None:
-                allpd = pdtab
-            else:
-                allpd = allpd.append(pdtab)
-
-    return allpd
