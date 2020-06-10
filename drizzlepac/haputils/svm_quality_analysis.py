@@ -427,7 +427,6 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
 
         # Compute and store statistics  on separations
         sep_stat_dict = collections.OrderedDict()
-        sep_stat_dict["units"] = "arcseconds"
         sep_stat_dict["Non-clipped min"] = np.min(sep)
         sep_stat_dict["Non-clipped max"] = np.max(sep)
         sep_stat_dict["Non-clipped mean"] = np.mean(sep)

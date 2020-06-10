@@ -266,6 +266,7 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
     ingest_dict['descriptions'] = collections.OrderedDict()
     ingest_dict['units'] = collections.OrderedDict()
     for json_filename in json_filename_list:
+        short_json_filename = os.path.basename(json_filename)
         # This is to differentiate point catalog compare_sourcelists columns from segment catalog
         # compare_sourcelists columns in the dataframe
         if json_filename.endswith("_point-cat_svm_compare_sourcelists.json"):
@@ -300,19 +301,21 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
                     ingest_value = json_data_item[coltitle].tolist()
                     id_key = title_suffix + ingest_key + "." + coltitle
                     ingest_dict["data"][id_key] = [ingest_value]
+                    # print(">>>>",short_json_filename,id_key, title_suffix + fd_key + "." + coltitle)
                     try:
-                        ingest_dict["descriptions"][id_key] = flattened_descriptions[title_suffix + fd_key + "." + coltitle]
-                        log.info("Added Description {} = {}".format(id_key, flattened_descriptions[title_suffix + fd_key + "." + coltitle]))
+                        ingest_dict["descriptions"][id_key] = flattened_descriptions[fd_key + "." + coltitle]
+                        log.info("Added Description {} = {}".format(id_key, flattened_descriptions[fd_key + "." + coltitle]))
                     except:  # insert placeholders if the code runs into trouble getting descriptions
                         log.warning("Descriptions not found for {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key))
                         ingest_dict["descriptions"][id_key] = ">>>UNDEFINED<<<"
+                        pdb.set_trace()
                     try:
-                        ingest_dict["units"][id_key] = flattened_units[title_suffix + fd_key + "." + coltitle]
-                        log.info("Added Unit {} = {}".format(id_key, flattened_units[
-                            title_suffix + fd_key + "." + coltitle]))
+                        ingest_dict["units"][id_key] = flattened_units[fd_key + "." + coltitle]
+                        log.info("Added Unit {} = {}".format(id_key, flattened_units[fd_key + "." + coltitle]))
                     except:  # insert placeholders if the code runs into trouble getting units
                         log.warning("Units not found for {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key))
                         ingest_dict["units"][id_key] = ">>>UNDEFINED<<<"
+                        pdb.set_trace()
             else:
                 ingest_value = json_data_item
                 id_key = title_suffix + ingest_key
@@ -321,14 +324,16 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
                     ingest_dict["descriptions"][id_key] = flattened_descriptions[fd_key]
                     log.info("Added Description {} = {}".format(id_key, flattened_descriptions[fd_key]))
                 except:  # insert placeholders if the code runs into trouble getting the descriptions
-                    log.warning("Descriptions not found for {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key))
+                    log.warning("Descriptions not found for {} in file {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key, short_json_filename))
                     ingest_dict["descriptions"][id_key] = ">>>UNDEFINED<<<"
+                    pdb.set_trace()
                 try:
                     ingest_dict["units"][id_key] = flattened_units[fd_key]
                     log.info("Added unit {} = {}".format(id_key, flattened_units[fd_key]))
                 except:  # insert placeholders if the code runs into trouble getting units
-                    log.warning("Units not found for {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key))
+                    log.warning("Units not found for {} in file {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key, short_json_filename))
                     ingest_dict["units"][id_key] = ">>>UNDEFINED<<<"
+                    pdb.set_trace()
     return ingest_dict
 
 # ======================================================================================================================
