@@ -302,11 +302,14 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
                     ingest_dict["data"][id_key] = [ingest_value]
                     try:
                         ingest_dict["descriptions"][id_key] = flattened_descriptions[title_suffix + fd_key + "." + coltitle]
+                        log.info("Added Description {} = {}".format(id_key, flattened_descriptions[title_suffix + fd_key + "." + coltitle]))
                     except:  # insert placeholders if the code runs into trouble getting descriptions
                         log.warning("Descriptions not found for {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key))
                         ingest_dict["descriptions"][id_key] = ">>>UNDEFINED<<<"
                     try:
                         ingest_dict["units"][id_key] = flattened_units[title_suffix + fd_key + "." + coltitle]
+                        log.info("Added Unit {} = {}".format(id_key, flattened_units[
+                            title_suffix + fd_key + "." + coltitle]))
                     except:  # insert placeholders if the code runs into trouble getting units
                         log.warning("Units not found for {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key))
                         ingest_dict["units"][id_key] = ">>>UNDEFINED<<<"
@@ -316,11 +319,13 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
                 ingest_dict["data"][id_key] = ingest_value
                 try:
                     ingest_dict["descriptions"][id_key] = flattened_descriptions[fd_key]
+                    log.info("Added Description {} = {}".format(id_key, flattened_descriptions[fd_key]))
                 except:  # insert placeholders if the code runs into trouble getting the descriptions
                     log.warning("Descriptions not found for {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key))
                     ingest_dict["descriptions"][id_key] = ">>>UNDEFINED<<<"
                 try:
                     ingest_dict["units"][id_key] = flattened_units[fd_key]
+                    log.info("Added unit {} = {}".format(id_key, flattened_units[fd_key]))
                 except:  # insert placeholders if the code runs into trouble getting units
                     log.warning("Units not found for {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key))
                     ingest_dict["units"][id_key] = ">>>UNDEFINED<<<"
