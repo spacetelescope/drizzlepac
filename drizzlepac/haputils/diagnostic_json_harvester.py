@@ -28,30 +28,6 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # ------------------------------------------------------------------------------------------------------------
 
 
-def filter_header_info(unfiltered_header):
-    """removes unwanted/unneeded keywords from header according to various rules prior to insertion to pandas
-    DataFrame ingest dictionary.
-
-    NOTE: For the time being, this subroutine is an inert placeholder. In the near future, header keywords
-    will be filtered using a keyword whitelist stored in a json harvester settings parameter file.
-
-    Parameters
-    ----------
-    unfiltered_header : dictionary
-        dictionary of unfiltered header information to process
-
-    Returns
-    -------
-    filtered_header : dictionary
-        filtered version of input dictionary *unfiltered_header*
-    """
-    # TODO: IMPLEMENT KEYWORD FILTERING AT A LATER DATE!
-    filtered_header = unfiltered_header
-    return filtered_header
-
-# ------------------------------------------------------------------------------------------------------------
-
-
 def flatten_dict(dd, separator='.', prefix=''):
     """Recursive subroutine to flatten nested dictionaries down into a single-layer dictionary.
     Borrowed from https://www.geeksforgeeks.org/python-convert-nested-dictionary-into-flattened-dictionary/
@@ -278,9 +254,8 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
         json_data = du.read_json_file(json_filename)
         # add information from "header" section to ingest_dict just once
         if not header_ingested:
-            filtered_header = filter_header_info(json_data['header'])
-            for header_item in filtered_header.keys():
-                ingest_dict["data"]["header."+header_item] = filtered_header[header_item]
+            for header_item in json_data['header'].keys():
+                ingest_dict["data"]["header."+header_item] = json_data['header'][header_item]
             header_ingested = True
 
         # add information from "general information" section to ingest_dict just once
@@ -304,36 +279,36 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
                     # print(">>>>",short_json_filename,id_key, title_suffix + fd_key + "." + coltitle)
                     try:
                         ingest_dict["descriptions"][id_key] = flattened_descriptions[fd_key + "." + coltitle]
-                        log.info("Added Description {} = {}".format(id_key, flattened_descriptions[fd_key + "." + coltitle]))
+                        log.debug("Added Description {} = {}".format(id_key, flattened_descriptions[fd_key + "." + coltitle]))
                     except:  # insert placeholders if the code runs into trouble getting descriptions
-                        log.warning("Descriptions not found for {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key))
+                        log.warning("Descriptions not found for {} in file{}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key, short_json_filename))
                         ingest_dict["descriptions"][id_key] = ">>>UNDEFINED<<<"
-                        pdb.set_trace()
+
                     try:
                         ingest_dict["units"][id_key] = flattened_units[fd_key + "." + coltitle]
-                        log.info("Added Unit {} = {}".format(id_key, flattened_units[fd_key + "." + coltitle]))
+                        log.debug("Added Unit {} = {}".format(id_key, flattened_units[fd_key + "." + coltitle]))
                     except:  # insert placeholders if the code runs into trouble getting units
-                        log.warning("Units not found for {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key))
+                        log.warning("Units not found for {} in file {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key, short_json_filename))
                         ingest_dict["units"][id_key] = ">>>UNDEFINED<<<"
-                        pdb.set_trace()
+
             else:
                 ingest_value = json_data_item
                 id_key = title_suffix + ingest_key
                 ingest_dict["data"][id_key] = ingest_value
                 try:
                     ingest_dict["descriptions"][id_key] = flattened_descriptions[fd_key]
-                    log.info("Added Description {} = {}".format(id_key, flattened_descriptions[fd_key]))
+                    log.debug("Added Description {} = {}".format(id_key, flattened_descriptions[fd_key]))
                 except:  # insert placeholders if the code runs into trouble getting the descriptions
                     log.warning("Descriptions not found for {} in file {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key, short_json_filename))
                     ingest_dict["descriptions"][id_key] = ">>>UNDEFINED<<<"
-                    pdb.set_trace()
+
                 try:
                     ingest_dict["units"][id_key] = flattened_units[fd_key]
-                    log.info("Added unit {} = {}".format(id_key, flattened_units[fd_key]))
+                    log.debug("Added unit {} = {}".format(id_key, flattened_units[fd_key]))
                 except:  # insert placeholders if the code runs into trouble getting units
                     log.warning("Units not found for {} in file {}. Using placeholder value '>>>UNDEFINED<<<' instead.".format(id_key, short_json_filename))
                     ingest_dict["units"][id_key] = ">>>UNDEFINED<<<"
-                    pdb.set_trace()
+
     return ingest_dict
 
 # ======================================================================================================================
