@@ -300,7 +300,10 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
             else:
                 ingest_value = json_data_item
                 id_key = title_suffix + ingest_key
-                ingest_dict["data"][id_key] = ingest_value
+                if str(type(ingest_value)) == "<class 'list'>":
+                    ingest_dict["data"][id_key] = [ingest_value]
+                else:
+                    ingest_dict["data"][id_key] = ingest_value
                 try:
                     ingest_dict["descriptions"][id_key] = flattened_descriptions[fd_key]
                     log.debug("Added Description {} = {}".format(id_key, flattened_descriptions[fd_key]))
