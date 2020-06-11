@@ -109,7 +109,8 @@ def get_json_files(search_path=os.getcwd(), log_level=logutil.logging.INFO):
 
 
 def h5load(filename):
-    """Load pandas DataFrame and metadata stored in specified HDF5 file.
+    """Load pandas DataFrame and metadata stored in specified HDF5 file. If filename does not end with a '.h5'
+    extension,  an exception will be raised.
     Code borrowed from https://stackoverflow.com/questions/29129095/save-additional-attributes-in-pandas-dataframe/29130146#29130146
 
     Parameters
@@ -126,6 +127,11 @@ def h5load(filename):
         dictionary containing dataFrame metadata
     """
     if os.path.exists(filename):
+        if not filename.endswith(".h5"):
+            errmsg = "Incorrect input file extension. The expected input filetype is HDF5, and should have "
+            errmsg += "the extension '.h5', not '{}'.".format(os.path.splitext(filename)[1])
+            log.error(errmsg)
+            raise Exception(errmsg)
         with pd.HDFStore(filename) as store:
             data = store['mydata']
             metadata = store.get_storer('mydata').attrs.metadata
@@ -139,7 +145,8 @@ def h5load(filename):
 # ------------------------------------------------------------------------------------------------------------
 
 def h5store(filename, df, **kwargs):
-    """Write a pandas Dataframe and metadata to a HDF5 file.
+    """Write a pandas Dataframe and metadata to a HDF5 file. If filename does not end with a '.h5' extension,
+    an exception will be raised.
     Code borrowed from https://stackoverflow.com/questions/29129095/save-additional-attributes-in-pandas-dataframe/29130146#29130146
 
     Parameters
@@ -154,6 +161,13 @@ def h5store(filename, df, **kwargs):
     -------
     Nothing.
     """
+    if not filename.endswith(".h5"):
+        errmsg = "Incorrect output file extension. The output filetype is HDF5, and should have the extension"
+        errmsg += " '.h5', not '{}'. To generate a .h5 file and a .csv file with the same basename, set the ".format(os.path.splitext(filename)[1])
+        errmsg += "log level to 'debug' (add '-l debug' to a command-line call or set 'log_level=10' when "
+        errmsg += "calling json_harvester()."
+        log.error(errmsg)
+        raise Exception(errmsg)
     store = pd.HDFStore(filename)
     store.put('mydata', df)
     store.get_storer('mydata').attrs.metadata = kwargs
@@ -163,7 +177,7 @@ def h5store(filename, df, **kwargs):
 # ------------------------------------------------------------------------------------------------------------
 
 def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
-                   output_filename="svm_qa_dataframe.csv"):
+                   output_filename="svm_qa_dataframe.h5"):
     """Main calling function
 
     Parameters
@@ -177,8 +191,8 @@ def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
         .log file. Default value is 'INFO'.
 
     output_filename : str, optional
-        Name of the output .csv file that the Pandas DataFrame will be written to. If not explicitly
-        specified, the DataFrame will be written to the file 'svm_qa_dataframe.csv' in the current working
+        Name of the output .h5 HDF5 file that the Pandas DataFrame will be written to. If not explicitly
+        specified, the DataFrame will be written to the file 'svm_qa_dataframe.h5' in the current working
         directory.
     """
     log.setLevel(log_level)
@@ -338,7 +352,8 @@ if __name__ == "__main__":
                              'includes all log statements with a log_level left of the specified level. '
                              'Specifying "critical" will only record/display "critical" log statements, and '
                              'specifying "error" will record/display both "error" and "critical" log '
-                             'statements, and so on.')
+                             'statements, and so on. If the log_level is set to "debug", a human-readable'
+                             '.csv will be generated along with the .h5 file.')
     parser.add_argument('-o', '--output_filename', required=False, default="svm_qa_dataframe.h5",
                         help='Name of the output Hierarchical Data Format version 5 (HDF5) .h5 file that the '
                              'Pandas DataFrame will be written to. If not explicitly specified, the '
