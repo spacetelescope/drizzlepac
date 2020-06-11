@@ -208,7 +208,7 @@ class AlignmentTable:
         return list(self.fit_methods.keys())
 
     def perform_fit(self, method_name, catalog_name, reference_catalog, 
-                    fitgeom='general'):
+                    fitgeom='rscale'):
         """Perform fit using specified method, then determine fit quality"""
         # Updated fits_pars with value for fitgeom        
         self.fit_pars[method_name]['fitgeom'] = fitgeom
@@ -602,7 +602,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         fitgeom=fit_pars['fitgeom']
         del fit_pars['fitgeom']
     else:
-        fitgeom='general'
+        fitgeom='rscale'
 
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
@@ -680,7 +680,7 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
         fitgeom=fit_pars['fitgeom']
         del fit_pars['fitgeom']
     else:
-        fitgeom='general'
+        fitgeom='rscale'
 
     log.info("{} (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
@@ -723,7 +723,7 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
         fitgeom=fit_pars['fitgeom']
         del fit_pars['fitgeom']
     else:
-        fitgeom='general'
+        fitgeom='rscale'
 
 
     log.info("{} (match_2dhist_fit) Cross matching and fitting "
