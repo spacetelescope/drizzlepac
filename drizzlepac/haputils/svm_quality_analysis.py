@@ -154,7 +154,7 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
                           "mean neighbor distance",
                           "standard deviation of neighbor distances"]
     for item_value, item_title in zip(min_sep_stats, min_sep_title_list):
-        log.info("{} ({}): {}".format(item_title, "pixles", item_value))
+        log.info("{} ({}): {}".format(item_title, "pixels", item_value))
         out_dict[item_title] = item_value
 
     # write catalog to HapDiagnostic-formatted .json file.
@@ -482,9 +482,9 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
                                              "3x3 sigma-clipped median": "3x3 sigma-clipped median difference",
                                              "3x3 sigma-clipped standard deviation": "3x3 sigma-clipped standard deviation of differences"},
                                units={"Non-clipped min": "arcseconds", "Non-clipped max": "arcseconds",
-                                      "Non-clipped mean": "arcseonds", "Non-clipped median": "arcseconds",
+                                      "Non-clipped mean": "arcseconds", "Non-clipped median": "arcseconds",
                                       "Non-clipped standard deviation": "arcseconds",
-                                      "3x3 sigma-clipped mean": "arcseonds", "3x3 sigma-clipped median": "arcseconds",
+                                      "3x3 sigma-clipped mean": "arcseconds", "3x3 sigma-clipped median": "arcseconds",
                                       "3x3 sigma-clipped standard deviation": "arcseconds"})
 # write everything out to the json file
         json_filename = hap_obj.drizzle_filename[:-9]+"_svm_point_segment_crossmatch.json"
@@ -535,7 +535,7 @@ def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
                                       timestamp=json_timestamp,
                                       time_since_epoch=json_time_since_epoch)
     diag_obj.add_data_item(gaia_table, "GAIA sources", descriptions={"RA": "Right Ascension", "DEC": "Declination", "mag": "AB Magnitude"}, units={"RA": "degrees", "DEC": "degrees", "mag": "unitless"})  # write catalog of identified GAIA sources
-    diag_obj.add_data_item({"Number of GAIA sources": len(gaia_table)}, "Number of GAIA sources", descriptions={"Number of GAIA sources":'Number of GAIA sources in image footprint'}, units={"Number of GAIA sources": "unitless"})  # write the number of GAIA sources
+    diag_obj.add_data_item({"Number of GAIA sources": len(gaia_table)}, "Number of GAIA sources", descriptions={"Number of GAIA sources": 'Number of GAIA sources in image footprint'}, units={"Number of GAIA sources": "unitless"})  # write the number of GAIA sources
     diag_obj.write_json_file(hap_obj.drizzle_filename[:-9]+"_svm_gaia_sources.json", clobber=True)
 
     # Clean up
@@ -852,15 +852,15 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                                             'exposure': edp_object.exposure_name}}
 
             diagnostic_obj.add_data_item(active_wcs_dict, 'PrimaryWCS_' + edp_object.exposure_name,
-                                         descriptions = {'primary_wcsname': 'Active WCS',
-                                                         'wcs_info': {'crpix1': 'X coord of reference pixel',
-                                                                      'crpix2': 'Y coord of reference pixel',
-                                                                      'crval1': 'RA of reference pixel',
-                                                                      'crval2': 'Dec of reference pixel',
-                                                                      'scale': 'Plate scale',
-                                                                      'orientation': 'Position angle of Image Y axis (East of North)',
-                                                                      'exposure': 'Exposure name'}},
-                                         units = {'primary_wcsname': 'unitless',
+                                         descriptions={'primary_wcsname': 'Active WCS',
+                                                       'wcs_info': {'crpix1': 'X coord of reference pixel',
+                                                                    'crpix2': 'Y coord of reference pixel',
+                                                                    'crval1': 'RA of reference pixel',
+                                                                    'crval2': 'Dec of reference pixel',
+                                                                    'scale': 'Plate scale',
+                                                                    'orientation': 'Position angle of Image Y axis (East of North)',
+                                                                    'exposure': 'Exposure name'}},
+                                         units={'primary_wcsname': 'unitless',
                                                 'wcs_info': {'crpix1': 'pixels',
                                                              'crpix2': 'pixels',
                                                              'crval1': 'degrees',
