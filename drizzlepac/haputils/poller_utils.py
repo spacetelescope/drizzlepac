@@ -254,8 +254,7 @@ def interpret_mvm_input(results, log_level, exp_limit=2.0):
     log.setLevel(log_level)
 
     log.debug("Interpret the poller file for the observation set.")
-    obset_table = build_poller_table(results, log_level, 
-                                     poller_type='svm')
+    obset_table = build_poller_table(results, log_level, poller_type='mvm')
 
     # Add INSTRUMENT column
     instr = INSTRUMENT_DICT[obset_table['filename'][0][0]]
