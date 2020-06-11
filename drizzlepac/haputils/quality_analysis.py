@@ -31,7 +31,7 @@ import sys
 from datetime import datetime
 import time
 
-from astropy.table import Table
+from astropy.table import Table, vstack
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
 import numpy as np
@@ -170,7 +170,7 @@ def generate_output_files(resids_dict,
     for image in resids_dict:
         # Remove any extraneous information from output 
         for field in exclude_fields:
-            del resids_dict[image][field]
+            del resids_dict[image]['fit_results'][field]
         # Define name for output JSON file...
         rootname = image.split("_")[0]
         json_filename = "{}_cal_qa_astrometry_resids.json".format(rootname)
@@ -185,13 +185,9 @@ def generate_output_files(resids_dict,
                                                             relative alignment ",
                                                timestamp=json_timestamp,
                                                time_since_epoch=json_time_since_epoch)
-        diagnostic_obj.add_data_item(resids_dict[image], 'residuals',
-                                     item_description="Residuals from relative alignment of input exposures",
+        diagnostic_obj.add_data_item(resids_dict[image]['fit_results'], 'fit_results',
+                                     item_description="Fit results for relative alignment of input exposures",
                                      descriptions={"aligned_to":"Reference image for relative alignment",
-                                                   "x":"X position from source image on tangent plane",
-                                                   "y":"Y position from source image on tangent plane",
-                                                   "ref_x":"X position from ref image on tangent plane",
-                                                   "ref_y":"Y position from ref image on tangent plane",
                                                    "rms_x":"RMS in X for fit",
                                                    "rms_y":"RMS in Y for fit",
                                                    "xsh":"X offset from fit",
@@ -203,10 +199,6 @@ def generate_output_files(resids_dict,
                                                    "nmatches":"Number of matched sources used in fit",
                                                    "skew":"Skew between axes from fit"},
                                      units={"aligned_to":"unitless",
-                                            'x':'pixels',
-                                            'y':'pixels',
-                                            'ref_x':'pixels',
-                                            'ref_y':'pixels',
                                             'rms_x':'pixels',
                                             'rms_y':'pixels',
                                             'xsh':'pixels',
@@ -217,7 +209,19 @@ def generate_output_files(resids_dict,
                                             'scale_fit':'unitless',
                                             'nmatches':'unitless',
                                             'skew':'unitless'}
-                                                                )
+                                     )
+        diagnostic_obj.add_data_item(resids_dict[image]['sources'], 'residuals',
+                                     item_description="Matched source positions from input exposures",
+                                     descriptions={"x":"X position from source image on tangent plane",
+                                                   "y":"Y position from source image on tangent plane",
+                                                   "ref_x":"X position from ref image on tangent plane",
+                                                   "ref_y":"Y position from ref image on tangent plane"},
+                                     units={'x':'pixels',
+                                            'y':'pixels',
+                                            'ref_x':'pixels',
+                                            'ref_y':'pixels'}
+                                     )
+
         diagnostic_obj.write_json_file(json_filename)
         log.info("Generated relative astrometri residuals results for {} as {}.".format(image, json_filename))
 
@@ -232,25 +236,26 @@ def extract_residuals(imglist):
         group_id = chip.meta['group_id']
         group_name = chip.meta['filename']
         fitinfo = chip.meta['fit_info']
-        if group_id not in group_dict:
-            group_dict[group_name] = {'group_id': group_id, 'type': None,
-                         'x': [], 'y': [], 
-                         'ref_x': [], 'ref_y':[],
-                         'rms_x': None, 'rms_y': None}
-            cum_indx = 0
 
         if fitinfo['status'] == 'REFERENCE':
             align_ref = group_name
-            group_dict[group_name]['aligned_to'] = 'self'
+            #group_dict[group_name]['aligned_to'] = 'self'
             rra, rdec = chip.det_to_world(chip.meta['catalog']['x'],
                                           chip.meta['catalog']['y'])
             ref_ra = np.concatenate([ref_ra, rra])
             ref_dec = np.concatenate([ref_dec, rdec])
             continue
 
+        if group_id not in group_dict:
+            group_dict[group_name] = {}
+            group_dict[group_name]['fit_results'] = {'group_id': group_id,
+                         'rms_x': None, 'rms_y': None}
+            group_dict[group_name]['sources'] = Table(names=['x', 'y', 
+                                                             'ref_x', 'ref_y'])
+            cum_indx = 0
 
         # store results in dict
-        group_dict[group_name]['aligned_to'] = align_ref
+        group_dict[group_name]['fit_results']['aligned_to'] = align_ref
 
         if 'fitmask' in fitinfo:
             img_mask = fitinfo['fitmask']
@@ -260,33 +265,28 @@ def extract_residuals(imglist):
             img_x, img_y, max_indx, chip_mask = get_tangent_positions(chip, img_indx,
                                                            start_indx=cum_indx)
             cum_indx += max_indx
+            
             # Extract X, Y for sources from reference image
             ref_x, ref_y = chip.world_to_tanp(ref_ra[ref_indx][chip_mask], ref_dec[ref_indx][chip_mask])
-            group_dict[group_name].update(
+            group_dict[group_name]['fit_results'].update(
                  {'xsh': fitinfo['shift'][0], 'ysh': fitinfo['shift'][1],
                  'rot': fitinfo['<rot>'], 'scale': fitinfo['<scale>'],
                  'rot_fit': fitinfo['rot'], 'scale_fit': fitinfo['scale'],
-                 'nmatches': fitinfo['nmatches'], 'skew': fitinfo['skew']})
+                 'nmatches': fitinfo['nmatches'], 'skew': fitinfo['skew'],
+                 'rms_x': sigma_clipped_stats((img_x - ref_x))[-1],
+                 'rms_y': sigma_clipped_stats((img_y - ref_y))[-1]})
 
-            group_dict[group_name]['x'].extend(img_x)
-            group_dict[group_name]['y'].extend(img_y)
-            group_dict[group_name]['ref_x'].extend(ref_x)
-            group_dict[group_name]['ref_y'].extend(ref_y)        
-            group_dict[group_name]['rms_x'] = sigma_clipped_stats((img_x - ref_x))[-1]
-            group_dict[group_name]['rms_y'] = sigma_clipped_stats((img_y - ref_y))[-1]
+            new_vals = Table(data=[img_x, img_y, ref_x, ref_y], 
+                                    names=['x', 'y', 'ref_x', 'ref_y'])
+            group_dict[group_name]['sources'] = vstack([group_dict[group_name]['sources'], new_vals])
+            
         else: 
-            group_dict[group_name].update(
+            group_dict[group_name]['fit_results'].update(
                      {'xsh': None, 'ysh': None,
                      'rot': None, 'scale': None,
                      'rot_fit': None, 'scale_fit': None,
-                     'nmatches': -1, 'skew': None})
-
-            group_dict[group_name]['x'].extend([])
-            group_dict[group_name]['y'].extend([])
-            group_dict[group_name]['ref_x'].extend([])
-            group_dict[group_name]['ref_y'].extend([])        
-            group_dict[group_name]['rms_x'] = -1
-            group_dict[group_name]['rms_y'] = -1
+                     'nmatches': -1, 'skew': None,
+                     'rms_x': -1, 'rms_y': -1})
 
 
     return group_dict
@@ -405,8 +405,7 @@ def generate_plots(json_data):
     fig_id = 0
     for fname in json_data:
         data = json_data[fname]
-        if data['type'] == 'REFERENCE':
-            continue
+
         rootname = fname.split("_")[0]
         coldata = [data['x'], data['y'], data['ref_x'], data['ref_y']]
         # Insure all columns are numpy arrays
