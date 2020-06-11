@@ -106,7 +106,6 @@ sections providing additional detail on each step.
         b) verify relative alignment with focus index after masking out CRs
         c) copy all drizzle products to parent directory
         d) if alignment fails, update trailer file with failure information
-        e) if alignment verified, copy updated input exposures to parent directory
 
     #. If alignment is verified,
 
@@ -198,8 +197,29 @@ Data to be Processed
 Once the code has performed all the initialization, it prepares the processing by defining what files need to be combined together from the input files it can find.  This includes looking for CTE-corrected versions of the calibrated exposures (FLC files) as well as all the non-CTE-corrected files (FLT files) and creating a separate list of each type.  Many types of data do not get CTE-corrected by the instruments calibration software, such as calacs.e or calwf3.e, and so no list of FLC files will be made.  This will tell the code that it only needs to process the FLT files by themselves.  If FLC files are found, all updates to the astrometry and WCS will be performed on those files and the results then get copied into the FLT file headers upon completion of the processing.  
 
 
+Updating the WCS
+----------------
+The first operation on the calibrated input files focuses on applying the calibrations
+for the distortion model to the WCS.  This operation gets performed using the 
+`updatewcs` task using the syntax:
 
+.. code:: python
 
+    from stwcs.updatewcs import updatewcs
+    updatewcs(calfiles_flc, use_db=False)
+    
+where `calfiles_flc' is the list of CTE-corrected FLC files or in the case there are
+no CTE-corrected files, the list of calibrated FLT files.  Crucially, the use
+of `use_db=False` forces `updatewcs` to only apply the distortion model to the
+default WCS to create what is referred to as the **pipeline-default WCS**.  This
+WCS has a `WCSNAME` associated with it that has the format ``IDC_<rootname>`` where
+``<rootname>`` is the rootname of the `IDCTAB` reference files applied to the WCS. 
+
+This default WCS serves as the basis for all subsequent processing as the code
+tries to determine the WCS which is aligned most closely to the GAIA astrometric
+coordinate system.  
+
+ 
 
 
 
