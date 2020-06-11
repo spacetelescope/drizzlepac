@@ -867,7 +867,7 @@ def build_poller_table(input, log_level, poller_type='svm'):
                             poller_row['skycell_obj'] = scell_obj
                             # append new row to table
                             new_poller_table.add_row(poller_row[0])
-                            poller_table = new_poller_table
+        poller_table = new_poller_table
 
     return poller_table
 
