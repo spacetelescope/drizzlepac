@@ -96,7 +96,7 @@ Inputs
         * A space-separated list of the fits images that were used to generate the input sourcelists. The first image corresponds to the first listed sourcelist, and so in. These will be used to improve the sourcelist alignment and matching.
 
     #. -m *diffMode*
-        * How should the comp-ref difference be calculated? "absolute" is simply the straight comp-ref difference. "peman" is the mean percent difference ((C-R)/avg(R)) x 100. "pdynamic" is the dynamic percent difference ((C-R)/R) x 100
+        * How should the comp-ref difference be calculated? "absolute" is simply the straight comp-ref difference. "pmean" is the mean percent difference ((C-R)/avg(R)) x 100. "pdynamic" is the dynamic percent difference ((C-R)/R) x 100
         * Input choices: "absolute", "pmean" or "pdynamic"
         * Default value: "pmean"
 
@@ -452,7 +452,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
     sigVal = 3
     intersVal = 3
     if plot_title == "On-Sky Separation":
-        diffRA = matchedRA[1].separation(matchedRA[0]).arcsec #convert seperations from degrees to arcseconds
+        diffRA = matchedRA[1].separation(matchedRA[0]).arcsec #convert separations from degrees to arcseconds
     else:
         diffRA = matchedRA[1, :] - matchedRA[0, :]
     clippedStats = sigma_clipped_stats(diffRA, sigma=sigVal, maxiters=intersVal)
