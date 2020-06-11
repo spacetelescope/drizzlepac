@@ -77,8 +77,14 @@ def get_json_files(search_path=os.getcwd(), log_level=logutil.logging.INFO):
     log.setLevel(log_level)
 
     # set up search string and use glob to get list of files
-    search_string = os.path.join(search_path, "*_svm_*.json")
-    json_list = glob.glob(search_string)
+    search_patterns = ["*_svm_*.json", "*_mvm_*.json", "*_cal_qa_*.json"]
+    json_list = []
+    for search_pattern in search_patterns:
+        search_string = os.path.join(search_path, search_pattern)
+        search_results = glob.glob(search_string)
+        log.info("{} files found: {}".format(search_pattern, len(search_results)))
+        if len(search_results) > 0:
+            json_list += glob.glob(search_string)
 
     # store json filenames in a dictionary keyed by Pandas DataFrame index value
     if json_list:
