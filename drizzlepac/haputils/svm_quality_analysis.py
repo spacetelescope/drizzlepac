@@ -741,6 +741,9 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
                                                          tab_seg_measurements, matches_point_to_seg,
                                                          matches_seg_to_point, bitmask=flag_values_mask)
 
+            # Check if there are any matching rows
+            # MDD FIX 
+
             # Compute the differences (Point - Segment)
             delta_phot = np.subtract(matching_phot_rows[0], matching_phot_rows[1])
 
@@ -760,20 +763,19 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
             result_error = np.sqrt(np.add(np.square(matching_error_rows[0]),
                                           np.square(matching_error_rows[1])))
 
-            stat_key = 'Delta_' + phot_column_name + '=Point_' + phot_column_name + \
-                       '_-_Segment_' + phot_column_name
-            stat_dict = {stat_key: {'Mean Difference': mean_delta_phot, 'Standard Deviation': std_delta_phot,
-                         'Median Difference': median_delta_phot}}
+            stat_key = 'Delta_' + phot_column_name
+            stat_dict = {stat_key: {'Mean': mean_delta_phot, 'StdDev': std_delta_phot,
+                         'Median': median_delta_phot}}
 
             # Write out the results
             diagnostic_obj.add_data_item(stat_dict,
-                                         'High-level Photometry Statistics ' + phot_column_name,
-                                         descriptions={stat_key + '.Mean Difference': phot_column_name + '_Mean(Point-Segment)',
-                                                       stat_key + '.Standard Deviation': phot_column_name + '_STD of Mean Differences',
-                                                       stat_key + '.Median Difference': phot_column_name + '_Median(Point-Segment)'},
-                                         units={stat_key + '.Mean Difference': 'ABMag',
-                                                stat_key + '.Standard Deviation': 'ABMag',
-                                                stat_key + '.Median Difference': 'ABMag'})
+                                         'Statistics_' + phot_column_name,
+                                         descriptions={stat_key + '.Mean': phot_column_name + '_Mean_Differences(Point-Segment)',
+                                                       stat_key + '.StdDev': phot_column_name + '_StdDev_of_Mean_Differences',
+                                                       stat_key + '.Median': phot_column_name + '_Median_Differences(Point-Segment)'},
+                                         units={stat_key + '.Mean': 'ABMag',
+                                                stat_key + '.StdDev': 'ABMag',
+                                                stat_key + '.Median': 'ABMag'})
 
         diagnostic_obj.write_json_file(json_filename)
         log.info("Generated photometry comparison for Point - Segment matches "

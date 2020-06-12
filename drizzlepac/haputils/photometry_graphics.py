@@ -7,35 +7,15 @@
 # To use:
 # 1) Start a Python session
 # 2) import photometry_graphics as pg
-# 3) You need to provide a fully qualified pathname to the directory
+# 3) You will need to provide a fully qualified pathname to the directory
 #    above all of the output directories which contain the photometry
 #    JSON output files.
-# 4) In the Python session, invoke the harvester
-#    >>> generate_photometry_df(input_directory, output_csv_filename='svm_photometry_stats.csv')
-#        This will generate an output CSV file where a Pandas
-#        dataframe is stored.
-# 5) Once the CSV file is generated, invoke the graphics routine
-#    >>> pg.photometry_graphics_driver(CSV_filename)
-#        This will generate a Bokeh plot to the browsers, as
+# 4) Invoke the reader/graphics routine
+#    >>> pg.photometry_graphics_driver(storage_filename)
+#        This will generate a Bokeh plot to the browser, as
 #        well as generate an HTML file.
-#
-# SVM Photometry file has the following data values where
-# differences are (POINT - SEGMENT).
-# Delta_MagAp1-Mean Difference: -0.04963999999999993
-# Delta_MagAp1-Standard Deviation: 0.0869423778526139
-# Delta_MagAp1-Median Difference: -0.0259999999999998
-# Delta_MagAp2-Mean Difference: 0.009571428571428555
-# Delta_MagAp2-Standard Deviation: 0.02693804431083513
-# Delta_MagAp2-Median Difference: 0.006000000000000227
-# ISSUES:
-# Too many columns from header in JSON cluttering up dataframe.
-# Hierachical information in JSON not tightly coupled to values once in dataframe.
-# To use hover, MUST have all data columns coming from ColumnDataSource.
-# ColumnDataSource needs to use columns names, so use succinct names.
-# Think about information useful for hover.
-####  Fix the docs above.
 
-from drizzlepac.haputils.pandas_utils import PandasDFReader_CSV
+from drizzlepac.haputils.pandas_utils import PandasDFReader
 from stsci.tools import logutil
 
 from bokeh.layouts import row
@@ -48,29 +28,20 @@ import json
 import logging
 import os
 import sys
-PHOT_COLUMNS = ["AP1_Mean","AP1_StdDev","AP1_Median","AP2_Mean","AP2_StdDev","AP2_Median"]
-DPHOT_COLUMNS = {"C1": "AP1_Mean","C2": "AP1_StdDev","C3": "AP1_Median","C4": "AP2_Mean","C5": "AP2_StdDev","C6": "AP2_Median"}
 
+PHOT_COLUMNS = ['Statistics_MagAp1.Delta_MagAp1.Mean', 'Statistics_MagAp1.Delta_MagAp1.StdDev', 
+                'Statistics_MagAp1.Delta_MagAp1.Median', 'Statistics_MagAp2.Delta_MagAp2.Mean', 
+                'Statistics_MagAp2.Delta_MagAp2.StdDev', 'Statistics_MagAp2.Delta_MagAp2.Median']
+DPHOT_COLUMNS = {'Ap1MeanDiff': 'Statistics_MagAp1.Delta_MagAp1.Mean', 
+                 'Ap1StdDev': 'Statistics_MagAp1.Delta_MagAp1.StdDev',
+                 'Ap1MedianDiff': 'Statistics_MagAp1.Delta_MagAp1.Median',
+                 'Ap2MeanDiff': 'Statistics_MagAp2.Delta_MagAp2.Mean',
+                 'Ap2StdDev': 'Statistics_MagAp2.Delta_MagAp2.StdDev',
+                 'Ap2MedianDiff': 'Statistics_MagAp2.Delta_MagAp2.Median'}
 """
-PHOT_COLUMNS = ["Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Mean Difference",
-                "Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Standard Deviation",
-                "Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Median Difference",
-                "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Mean Difference",
-                "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Standard Deviation",
-                "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Median Difference"]
-DPHOT_COLUMNS = {"Ap1MeanDiff": "Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Mean Difference",
-                 "Ap1StdDev": "Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Standard Deviation",
-                 "Ap1MedianDiff": "Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Median Difference",
-                 "Ap2MeanDiff": "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Mean Difference",
-                 "Ap2StdDev": "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Standard Deviation",
-                 "Ap2MedianDiff": "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Median Difference"}
-"""
-
-# FIX MDD: Create an enumeration and use a map function
-# FIX MDD: Fix names again svm_quality_analysis.py in JSON generation
-# FIX MDD: Need to use the real harvester for data and metadata
 # FIX MDD: Fix hovertool 
 # FIX MDD: Where should this code live?  Join with svm_quality_analysis.py?
+"""
 
 
 MSG_DATEFMT = '%Y%j%H%M%S'
@@ -96,20 +67,20 @@ def compute_global_stats(value_array):
     return mean_value
 
 
-def get_data(csv_filename):
-    """Load the harvested data, stored in a CSV file, into local arrays.
+def get_data(storage_filename):
+    """Load the harvested data, stored in a storage file, into local arrays.
 
     Parameters
     ==========
-    csv_filename: str
-    Name of the CSV file created by the harvester.
+    storage_filename: str
+    Name of the storage file for the Pandas dataframe created by the harvester.
 
     Returns
     =======
     phot_data: Pandas dataframe
-    Dataframe which is a subset of the input Pandas dataframe written out as
-    a CSV file.  The subset dataframe consists of only the requested columns
-    and rows where all of the requested columns did not contain NaNs.
+    Dataframe which is a subset of the input Pandas dataframe which
+    consists of only the requested columns and rows where all of the requested 
+    columns do not contain NaNs.
 
     (mean_dMagAp1_mean, mean_dMagAp1_median): tuple
     Aperture 1 mean of means and mean of medians
@@ -119,8 +90,7 @@ def get_data(csv_filename):
     """
     
     # Instantiate a Pandas Dataframe Reader (lazy instantiation)
-    # df_handle = PandasDFReader_CSV("svm_qa_dataframe.csv")
-    df_handle = PandasDFReader_CSV(csv_filename, log_level=logutil.logging.NOTSET)
+    df_handle = PandasDFReader(storage_filename, log_level=logutil.logging.NOTSET)
 
     # In this particular case, the names of the desired columns do not
     # have to be further manipulated, for example, to add dataset specific
@@ -128,22 +98,18 @@ def get_data(csv_filename):
     # 
     # Get the relevant column data, eliminating all rows which have NaNs
     # in any of the relevant columns.
-    phot_data = df_handle.get_columns(PHOT_COLUMNS)
+    phot_data = df_handle.get_columns_HDF5(PHOT_COLUMNS)
 
     # Generate a general index array and add it to the dataframe
     x_index = list(range(0, len(phot_data.index)))
     phot_data['x_index'] = x_index
     x_index.clear()
 
-    # mean_dMagAp1mean = compute_global_stats(phot_data[PHOTC[0]])
-    # mean_dMagAp2mean = compute_global_stats(phot_data[PHOTC[3]])
+    mean_dMagAp1mean = compute_global_stats(phot_data[DPHOT_COLUMNS['Ap1MeanDiff']])
+    mean_dMagAp2mean = compute_global_stats(phot_data[DPHOT_COLUMNS['Ap2MeanDiff']])
 
-    # mean_dMagAp1median = compute_global_stats(phot_data[PHOT[2]])
-    # mean_dMagAp2median = compute_global_stats(phot_data[PHOT[5]])
-    mean_dMagAp1mean = 10.0
-    mean_dMagAp2mean = 11.0
-    mean_dMagAp1median = 12.0
-    mean_dMagAp2median = 13.0
+    mean_dMagAp1median = compute_global_stats(phot_data[DPHOT_COLUMNS['Ap1MedianDiff']])
+    mean_dMagAp2median = compute_global_stats(phot_data[DPHOT_COLUMNS['Ap2MedianDiff']])
 
     return phot_data, (mean_dMagAp1mean, mean_dMagAp1median), \
         (mean_dMagAp2mean, mean_dMagAp2median)
@@ -217,13 +183,13 @@ def generate_graphic(phot_data, stat_Ap1, stat_Ap2):
     show(row(p1, p2))
 
 
-def photometry_graphics_driver(csv_filename, log_level=logutil.logging.INFO):
-    """Driver to load the data from the CSV file and generate the graphics.
+def photometry_graphics_driver(storage_filename, log_level=logutil.logging.INFO):
+    """Driver to load the data from the storage file and generate the graphics.
 
     Parameters
     ==========
-    csv_filename: str
-    Name of the CSV file created by the harvester.
+    storage_filename: str
+    Name of the storage file for the Pandas dataframe created by the harvester.
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
@@ -232,8 +198,8 @@ def photometry_graphics_driver(csv_filename, log_level=logutil.logging.INFO):
 
     # Retrieve the relevant dataframe and statistics (mean of
     # means and mean of medians) for Aperture 1 and Aperture 2
-    log.info('Retrieve the dfjslf')
-    phot_data, stat_Ap1, stat_Ap2 = get_data(csv_filename)
+    log.info('Retrieve Pandas dataframe from file {}.\n'.format(storage_filename))
+    phot_data, stat_Ap1, stat_Ap2 = get_data(storage_filename)
 
     # Generate the photometric graphic
     generate_graphic(phot_data, stat_Ap1, stat_Ap2)
