@@ -140,13 +140,12 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
 
     # add statistics to out_dict
     out_dict = collections.OrderedDict()
-    out_dict["units"] = "pixels"
     out_dict["Number of GAIA sources"] = len(gaia_table)
     axis_list = ["X", "Y"]
     title_list = ["centroid", "offset", "standard deviation"]
     for item_value, item_title in zip([centroid, centroid_offset, std_dev], title_list):
         for axis_item in enumerate(axis_list):
-            log.info("{} {} ({}): {}".format(axis_item[1], item_title, out_dict["units"],
+            log.info("{} {} ({}): {}".format(axis_item[1], item_title, "pixels",
                                              item_value[axis_item[0]]))
             out_dict["{} {}".format(axis_item[1], item_title)] = item_value[axis_item[0]]
     min_sep_stats = [min_seps.min(), min_seps.max(), min_seps.mean(), min_seps.std()]
@@ -155,7 +154,7 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
                           "mean neighbor distance",
                           "standard deviation of neighbor distances"]
     for item_value, item_title in zip(min_sep_stats, min_sep_title_list):
-        log.info("{} ({}): {}".format(item_title, out_dict["units"], item_value))
+        log.info("{} ({}): {}".format(item_title, "pixels", item_value))
         out_dict[item_title] = item_value
 
     # write catalog to HapDiagnostic-formatted .json file.
@@ -428,7 +427,6 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
 
         # Compute and store statistics  on separations
         sep_stat_dict = collections.OrderedDict()
-        sep_stat_dict["units"] = "arcseconds"
         sep_stat_dict["Non-clipped min"] = np.min(sep)
         sep_stat_dict["Non-clipped max"] = np.max(sep)
         sep_stat_dict["Non-clipped mean"] = np.mean(sep)
@@ -484,9 +482,9 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
                                              "3x3 sigma-clipped median": "3x3 sigma-clipped median difference",
                                              "3x3 sigma-clipped standard deviation": "3x3 sigma-clipped standard deviation of differences"},
                                units={"Non-clipped min": "arcseconds", "Non-clipped max": "arcseconds",
-                                      "Non-clipped mean": "arcseonds", "Non-clipped median": "arcseconds",
+                                      "Non-clipped mean": "arcseconds", "Non-clipped median": "arcseconds",
                                       "Non-clipped standard deviation": "arcseconds",
-                                      "3x3 sigma-clipped mean": "arcseonds", "3x3 sigma-clipped median": "arcseconds",
+                                      "3x3 sigma-clipped mean": "arcseconds", "3x3 sigma-clipped median": "arcseconds",
                                       "3x3 sigma-clipped standard deviation": "arcseconds"})
 # write everything out to the json file
         json_filename = hap_obj.drizzle_filename[:-9]+"_svm_point_segment_crossmatch.json"
@@ -536,8 +534,8 @@ def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
                                       description="A table of GAIA sources in image footprint",
                                       timestamp=json_timestamp,
                                       time_since_epoch=json_time_since_epoch)
-    diag_obj.add_data_item(gaia_table, "GAIA sources", descriptions={"RA": "Right Ascension", "DEC": "Declination", "MAG": "AB Magnitude"}, units={"RA": "degrees", "DEC": "degrees", "MAG": "unitless"})  # write catalog of identified GAIA sources
-    diag_obj.add_data_item(len(gaia_table), "Number of GAIA sources", descriptions={"Number of GAIA sources": 'Number of GAIA sources in image footprint'}, units={"Number of GAIA sources": "unitless"})  # write the number of GAIA sources
+    diag_obj.add_data_item(gaia_table, "GAIA sources", descriptions={"RA": "Right Ascension", "DEC": "Declination", "mag": "AB Magnitude"}, units={"RA": "degrees", "DEC": "degrees", "mag": "unitless"})  # write catalog of identified GAIA sources
+    diag_obj.add_data_item({"Number of GAIA sources": len(gaia_table)}, "Number of GAIA sources", descriptions={"Number of GAIA sources": 'Number of GAIA sources in image footprint'}, units={"Number of GAIA sources": "unitless"})  # write the number of GAIA sources
     diag_obj.write_json_file(hap_obj.drizzle_filename[:-9]+"_svm_gaia_sources.json", clobber=True)
 
     # Clean up
@@ -770,11 +768,12 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
             # Write out the results
             diagnostic_obj.add_data_item(stat_dict,
                                          'High-level Photometry Statistics ' + phot_column_name,
-                                         descriptions={'Mean Difference': phot_column_name + '_Mean(Point-Segment)',
-                                                       'Standard Deviation': phot_column_name + '_STD of Mean Differences',
-                                                       'Median Difference': phot_column_name + '_Median(Point-Segment)'},
-                                         units={'Mean Difference': 'ABMag', 'Standard Deviation': 'ABMag',
-                                                'Median Difference': 'ABMag'})
+                                         descriptions={stat_key + '.Mean Difference': phot_column_name + '_Mean(Point-Segment)',
+                                                       stat_key + '.Standard Deviation': phot_column_name + '_STD of Mean Differences',
+                                                       stat_key + '.Median Difference': phot_column_name + '_Median(Point-Segment)'},
+                                         units={stat_key + '.Mean Difference': 'ABMag',
+                                                stat_key + '.Standard Deviation': 'ABMag',
+                                                stat_key + '.Median Difference': 'ABMag'})
 
         diagnostic_obj.write_json_file(json_filename)
         log.info("Generated photometry comparison for Point - Segment matches "
@@ -853,16 +852,22 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                                             'exposure': edp_object.exposure_name}}
 
             diagnostic_obj.add_data_item(active_wcs_dict, 'PrimaryWCS_' + edp_object.exposure_name,
-                                         descriptions={'primary_wcsname': 'Active WCS', 'wcs_info': 'WCS',
-                                                       'crpix1': 'X coord of reference pixel', 'crpix2': 'Y coord of reference pixel',
-                                                       'crval1': 'RA of reference pixel', 'crval2': 'Dec of reference pixel',
-                                                       'scale': 'Plate scale',
-                                                       'orientation': 'Position angle of Image Y axis (East of North)',
-                                                       'exposure': 'Exposure name'},
-                                         units={'primary_wcsname': 'unitless', 'wcs_info': 'unitless', 'crpix1': 'pixels',
-                                                'crpix2': 'pixels', 'crval1': 'degrees', 'crval2': 'degrees',
-                                                'scale': 'pixels/arcseconds', 'orientation': 'degrees',
-                                                'exposure': 'unitless'})
+                                         descriptions={'primary_wcsname': 'Active WCS',
+                                                       'wcs_info': {'crpix1': 'X coord of reference pixel',
+                                                                    'crpix2': 'Y coord of reference pixel',
+                                                                    'crval1': 'RA of reference pixel',
+                                                                    'crval2': 'Dec of reference pixel',
+                                                                    'scale': 'Plate scale',
+                                                                    'orientation': 'Position angle of Image Y axis (East of North)',
+                                                                    'exposure': 'Exposure name'}},
+                                         units={'primary_wcsname': 'unitless',
+                                                'wcs_info': {'crpix1': 'pixels',
+                                                             'crpix2': 'pixels',
+                                                             'crval1': 'degrees',
+                                                             'crval2': 'degrees',
+                                                             'scale': 'pixels/arcseconds',
+                                                             'orientation': 'degrees',
+                                                             'exposure': 'unitless'}})
 
             # Determine the possible alternate WCS solutions in the header
             dict_of_wcskeys_names = wcsutil.altwcs.wcsnames(edp_object.full_filename, ext=1)

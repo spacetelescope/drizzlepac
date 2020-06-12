@@ -3,9 +3,9 @@
 """This script compares sources common to two user-specified sourcelists and displays various measures of their
 differences. The differences can be calculated using one of three user-selectable methods:
 
-* Absolute: Just a simple difference e.g. Comparision - Reference.
-* Overall mean percent difference:  Percent difference based on the **overall mean** reference value e.g. ((Comparision-Reference)/mean_overall(Reference)) x 100.
-* Dynamic percent difference: Percent difference values are calculated discretely for each pair of comparision/reference values e.g. ((Comparision[n]-Reference[n])/Reference[n]) x 100.
+* Absolute: Just a simple difference e.g. Comparison - Reference.
+* Overall mean percent difference:  Percent difference based on the **overall mean** reference value e.g. ((Comparison-Reference)/mean_overall(Reference)) x 100.
+* Dynamic percent difference: Percent difference values are calculated discretely for each pair of comparison/reference values e.g. ((Comparison[n]-Reference[n])/Reference[n]) x 100.
 
 3x3-sigma clipped mean, median and standard deviation, and non-sigma clipped min and max values are
 computed for the following:
@@ -28,7 +28,7 @@ Absolute bit-wise comparisons are also performed for the following item:
 * Flag Value
 
 .. note::
-    Not all sourcelist types compatible with this comparision script contain all of the columns listed above.
+    Not all sourcelist types compatible with this comparison script contain all of the columns listed above.
     Statistics (and optionally plots) can only be generated for columns common to both user-specified sourcelists.
     Thus, it is to be expected that not all runs will yield comparisons for all columns listed above.
 
@@ -96,7 +96,7 @@ Inputs
         * A space-separated list of the fits images that were used to generate the input sourcelists. The first image corresponds to the first listed sourcelist, and so in. These will be used to improve the sourcelist alignment and matching.
 
     #. -m *diffMode*
-        * How should the comp-ref difference be calculated? "absolute" is simply the straight comp-ref difference. "peman" is the mean percent difference ((C-R)/avg(R)) x 100. "pdynamic" is the dynamic percent difference ((C-R)/R) x 100
+        * How should the comp-ref difference be calculated? "absolute" is simply the straight comp-ref difference. "pmean" is the mean percent difference ((C-R)/avg(R)) x 100. "pdynamic" is the dynamic percent difference ((C-R)/R) x 100
         * Input choices: "absolute", "pmean" or "pdynamic"
         * Default value: "pmean"
 
@@ -193,7 +193,7 @@ def computeFlagStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, 
     ----------
     matchedRA : numpy.ndarray
         A 2 x len(refLines) sized numpy array. Column 1: matched reference values.
-        Column 2: The corresponding matched comparision values
+        Column 2: The corresponding matched comparison values
 
     max_diff : float
         Maximum allowable percentage of all matched sources with differences in their flag values for comparison to be
@@ -209,7 +209,7 @@ def computeFlagStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, 
         text string that will prepend the plot files generated if plots are written to files
 
     catalog_names : list
-        list of the sourcelist filenames used as the comparision and the reference
+        list of the sourcelist filenames used as the comparison and the reference
 
     verbose : bool
         display verbose output?
@@ -220,7 +220,7 @@ def computeFlagStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, 
         overall test result and statistics
     """
     pdf_file_list = []
-    log.info(">>>>>> Comparision - reference sourcelist {} differences <<<<<<".format(plot_title))
+    log.info(">>>>>> Comparison - reference sourcelist {} differences <<<<<<".format(plot_title))
     # compute overall percentage of matched sources with flagging differences
     flag_diff_list = list(matchedRA[0] - matchedRA[1])
     n_total = len(matchedRA[0])
@@ -405,7 +405,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
     ----------  
     matchedRA : numpy.ndarray
         A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The corresponding matched
-    comparision values
+    comparison values
 
     max_diff : float
         Maximum allowable value for comparison test to be declared a success
@@ -423,7 +423,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
         text string that will prepend the plot files generated if plots are written to files
 
     catalog_names : list
-        list of the sourcelist filenames used as the comparision and the reference
+        list of the sourcelist filenames used as the comparison and the reference
 
     verbose : bool
         display verbose output?
@@ -433,7 +433,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
     regTestStatus : str
         overall test result and statistics
     """
-    log.info(">>>>>> Comparision - reference sourcelist {} absolute differences <<<<<<".format(plot_title))
+    log.info(">>>>>> Comparison - reference sourcelist {} absolute differences <<<<<<".format(plot_title))
     if plot_title != "On-Sky Separation":
         # remove any "inf" or "nan" values in matchedRA.
         nanIdx = np.where(np.isnan(matchedRA) == True)[1]
@@ -452,7 +452,7 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
     sigVal = 3
     intersVal = 3
     if plot_title == "On-Sky Separation":
-        diffRA = matchedRA[1].separation(matchedRA[0]).arcsec #convert seperations from degrees to arcseconds
+        diffRA = matchedRA[1].separation(matchedRA[0]).arcsec #convert separations from degrees to arcseconds
     else:
         diffRA = matchedRA[1, :] - matchedRA[0, :]
     clippedStats = sigma_clipped_stats(diffRA, sigma=sigVal, maxiters=intersVal)
@@ -510,9 +510,9 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
         fig = plt.figure(figsize=(11, 8.5))
         ax1 = fig.add_subplot(111)
         if plot_title == "On-Sky Separation":
-            fullPlotTitle = "Comparision - reference combined RA & Dec on-sky separation absolute differences"
+            fullPlotTitle = "Comparison - reference combined RA & Dec on-sky separation absolute differences"
         else:
-            fullPlotTitle = "Comparision - reference sourcelist %s absolute differences" % (plot_title)
+            fullPlotTitle = "Comparison - reference sourcelist %s absolute differences" % (plot_title)
         plt.title(fullPlotTitle)
         bins = "auto"
         ax1.hist(good_diffRA, bins=bins)
@@ -641,7 +641,7 @@ def make_flag_mask(matched_flag_values, good_flag_sum, missing_mask):
     ----------
     matched_flag_values : numpy.ndarray
         A 2 x len(refLines) sized numpy array. Column 1: matched reference values.
-        Column 2: The corresponding matched comparision values
+        Column 2: The corresponding matched comparison values
 
     good_flag_sum : int
         sum of flag bit values that should be considered "good" for masking purposes
@@ -747,7 +747,7 @@ def extractMatchedLines(col2get, refData, compData, refLines, compLines, bitmask
     -------
     return_ra : numpy ndarray
         A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The corresponding matched
-        comparision values
+        comparison values
     """
     if col2get in list(refData.keys()) and col2get in list(compData.keys()):
         matching_refData = refData[col2get][refLines].data
@@ -843,11 +843,11 @@ def makeVectorPlot(x, y, plate_scale, plotDest, plotfile_prefix, catalog_names, 
     ----------
     x : numpy.ndarray
         A 2 x n sized numpy array. Column 1: matched reference X values. Column 2: The corresponding matched
-        comparision X values
+        comparison X values
 
     y : numpy.ndarray
         A 2 x n sized numpy array. Column 1: matched reference Y values. Column 2: The corresponding matched
-        comparision Y values
+        comparison Y values
 
     plate_scale : float
         plate scale, in arcseconds/pixel
@@ -859,7 +859,7 @@ def makeVectorPlot(x, y, plate_scale, plotDest, plotfile_prefix, catalog_names, 
         text string that will prepend the plot files generated if plots are written to files
 
     catalog_names : list
-        list of the sourcelist filenames used as the comparision and the reference
+        list of the sourcelist filenames used as the comparison and the reference
 
     binThresh : int, optional
         Minimum size of list *x* and *y* that will trigger generation of a binned vector plot. Default value = 10000.
@@ -938,7 +938,7 @@ def makeVectorPlot(x, y, plate_scale, plotDest, plotfile_prefix, catalog_names, 
     else:
         Q = plt.quiver(p_x, p_y, p_dx, p_dy)
     plt.quiverkey(Q, 0.75, 0.05, plt_scaleValue, r'%5.3f pixels' % (plt_scaleValue), labelpos='S', coordinates='figure', color="k")
-    plot_title = "Comparision - reference $\Delta X$, $\Delta Y$ values vs. $(X_{ref}, Y_{ref})$ positions\n%s%s" % (binStatus, lowSampleWarning)
+    plot_title = "Comparison - reference $\Delta X$, $\Delta Y$ values vs. $(X_{ref}, Y_{ref})$ positions\n%s%s" % (binStatus, lowSampleWarning)
     plt.title(plot_title)
     plt.xlabel(r"$X_{ref}$ image position (pixels)")
     plt.ylabel(r"$Y_{ref}$ image position (pixels)")
@@ -1032,7 +1032,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
 
     debugMode : bool, optional
         executes subroutine check_match_quality(), which the writes the matched sources (x, y) coordinates of the
-        comparision and reference source lists to ds9 region files for follow-up human visual inspection, and
+        comparison and reference source lists to ds9 region files for follow-up human visual inspection, and
         write_matched_catalogs() which generates abbreviated versions of the input catalogs that only contain matched
         sources. Default value is False.
 
@@ -1098,14 +1098,14 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
                                                description="matched ref and comp values.",
                                                timestamp=json_timestamp,
                                                time_since_epoch=json_time_since_epoch)
-            # add reference and comparision catalog filenames as header elements
+            # add reference and comparison catalog filenames as header elements
             diag_obj.add_update_info_item("header", "reference catalog filename", slNames[0])
             diag_obj.add_update_info_item("header", "comparison catalog filename", slNames[1])
 
         # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each sourcelist can be easily accessed later in the code.
         refData, compData = slFiles2dataTables(slNames)
         log.info("Valid reference data columns:   {}".format(list(refData.keys())))
-        log.info("Valid comparision data columns: {}".format(list(compData.keys())))
+        log.info("Valid comparison data columns: {}".format(list(compData.keys())))
         log.info("\n")
         log.info("Data columns to be compared:")
         columns_to_compare = list(set(refData.keys()).intersection(set(compData.keys())))
@@ -1138,8 +1138,19 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
                 len(matching_lines_ref)) / float(slLengths[1])) * 100.0
             cross_match_details["reference catalog reference frame"] = fits.getval(imgNames[0], "radesys", ext=('sci', 1)).lower()
             cross_match_details["comparison catalog reference frame"] = fits.getval(imgNames[1], "radesys", ext=('sci', 1)).lower()
-
-            diag_obj.add_data_item(cross_match_details,"Cross-match details")
+            descriptions_dict = {"reference catalog filename": "reference catalog filename used for crossmatch",
+                                 "comparison catalog filename": "comparison catalog filename used for crossmatch",
+                                 "reference catalog length": "total reference catalog length (matched and unmatched sources)",
+                                 "comparison catalog length": "total comparison catalog length (matched and unmatched sources)",
+                                 "number of cross-matches": "total number of sources found common to both reference and comparison catalogs",
+                                 "reference catalog crossmatch percentage": "percentage of all reference sources found common to both reference and comparison catalogs",
+                                 "comparison catalog crossmatch percentage": "percentage of all comparison sources found common to both reference and comparison catalogs",
+                                 "reference catalog reference frame": "reference catalog reference astrometric frame",
+                                 "comparison catalog reference frame": "comparison catalog reference astrometric frame"}
+            units_dict = {}
+            for key_item in descriptions_dict.keys():
+                units_dict[key_item] = "unitless"
+            diag_obj.add_data_item(cross_match_details,"Cross-match details",descriptions=descriptions_dict, units=units_dict)
 
     # 3: Compute and display statistics on X position differences for matched sources
     if input_json_filename:
@@ -1150,7 +1161,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         plate_scale = wcsutil.HSTWCS(imgNames[0], ext=('sci', 1)).pscale
         matched_values = extractMatchedLines("X", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
-            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"X MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"X MATCHED VALUES",descriptions={'reference': "reference sourcelist crossmatched x values", 'comparison': "comparison sourcelist crossmatched x values"}, units={'reference': "pixels", 'comparison': "pixels"})
             diag_obj.add_update_info_item("header", "plate_scale", plate_scale)
     if matched_values.shape[1] > 0:
         formalTitle = "X Position"
@@ -1169,7 +1180,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         matched_values = extractMatchedLines("Y", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
     if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
-        diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"Y MATCHED VALUES")
+        diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"Y MATCHED VALUES", descriptions={'reference': "reference sourcelist crossmatched y values", 'comparison': "comparison sourcelist crossmatched y values"}, units={'reference': "pixels", 'comparison': "pixels"})
     if matched_values.shape[1] > 0:
         formalTitle = "Y Position"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
@@ -1195,10 +1206,10 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         matched_values_ra = extractMatchedLines("RA", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename and matched_values_ra.shape[1] > 0:  # Add matched values to diag_obj
-            diag_obj.add_data_item(Table([matched_values_ra[0], matched_values_ra[1]], names=('reference', 'comparison')), "RA MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values_ra[0], matched_values_ra[1]], names=('reference', 'comparison')), "RA MATCHED VALUES", descriptions={'reference': "reference sourcelist crossmatched right ascension values", 'comparison': "comparison sourcelist crossmatched right ascension values"}, units={'reference': "degrees", 'comparison': "degrees"})
         matched_values_dec = extractMatchedLines("DEC", refData, compData, matching_lines_ref, matching_lines_img,bitmask=bitmask)
         if output_json_filename and matched_values_dec.shape[1] > 0:  # Add matched values to diag_obj
-            diag_obj.add_data_item(Table([matched_values_dec[0], matched_values_dec[1]], names=('reference', 'comparison')),"DEC MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values_dec[0], matched_values_dec[1]], names=('reference', 'comparison')),"DEC MATCHED VALUES", descriptions={'reference': "reference sourcelist crossmatched declination values", 'comparison': "comparison sourcelist crossmatched declination values"}, units={'reference': "degrees", 'comparison': "degrees"})
     if matched_values_ra.shape[1] > 0 and matched_values_ra.shape[1] == matched_values_dec.shape[1]:
         # get coordinate system type from fits headers
         if input_json_filename:
@@ -1211,7 +1222,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
                 diag_obj.add_update_info_item("header", "ref_frame", ref_frame)
                 diag_obj.add_update_info_item("header", "comp_frame", comp_frame)
 
-        # convert reference and comparision RA/Dec values into SkyCoord objects
+        # convert reference and comparison RA/Dec values into SkyCoord objects
         matched_values_ref = SkyCoord(matched_values_ra[0,:],matched_values_dec[0,:], frame=comp_frame, unit="deg")
         matched_values_comp = SkyCoord(matched_values_ra[1,:],matched_values_dec[1,:], frame=ref_frame, unit="deg")
         # convert to ICRS coord system
@@ -1236,7 +1247,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         matched_values = extractMatchedLines("FLUX1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
-            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"FLUX1 MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"FLUX1 MATCHED VALUES", descriptions={'reference': "reference sourcelist crossmatched flux (inner aperture) values", 'comparison': "comparison sourcelist crossmatched flux (inner aperture) values"}, units={'reference': "electrons/sec", 'comparison': "electrons/sec"})
     if matched_values.shape[1] > 0:
         formalTitle = "Flux (Inner Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
@@ -1252,7 +1263,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         matched_values = extractMatchedLines("FLUX2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
-            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"FLUX2 MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"FLUX2 MATCHED VALUES", descriptions={'reference': "reference sourcelist crossmatched flux (outer aperture) values", 'comparison': "comparison sourcelist crossmatched flux (outer aperture) values"}, units={'reference': "electrons/sec", 'comparison': "electrons/sec"})
     if matched_values.shape[1] > 0:
         formalTitle = "Flux (Outer Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
@@ -1269,7 +1280,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         matched_values = extractMatchedLines("MAGNITUDE1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
-            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MAGNITUDE1 MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MAGNITUDE1 MATCHED VALUES", descriptions={'reference': "reference sourcelist crossmatched magnitude (inner aperture) values", 'comparison': "comparison sourcelist crossmatched magnitude (inner aperture) values"}, units={'reference': "ABMAG", 'comparison': "ABMAG"})
     if matched_values.shape[1] > 0:
         formalTitle = "Magnitude (Inner Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
@@ -1285,7 +1296,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         matched_values = extractMatchedLines("MERR1", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename and matched_values.shape[1] > 0: # Add matched values to diag_obj
-            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MERR1 MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MERR1 MATCHED VALUES", descriptions={'reference': "reference sourcelist crossmatched magnitude error (inner aperture) values", 'comparison': "comparison sourcelist crossmatched magnitude error (inner aperture) values"}, units={'reference': "ABMAG", 'comparison': "ABMAG"})
     if matched_values.shape[1] > 0:
         formalTitle = "Magnitude (Inner Aperture) Error"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
@@ -1301,7 +1312,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         matched_values = extractMatchedLines("MAGNITUDE2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
-            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MAGNITUDE2 MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MAGNITUDE2 MATCHED VALUES", descriptions={'reference': "reference sourcelist crossmatched magnitude (outer aperture) values", 'comparison': "comparison sourcelist crossmatched magnitude (outer aperture) values"}, units={'reference': "ABMAG", 'comparison': "ABMAG"})
     if matched_values.shape[1] > 0:
         formalTitle = "Magnitude (Outer Aperture)"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
@@ -1317,7 +1328,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         matched_values = extractMatchedLines("MERR2", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
-            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MERR2 MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MERR2 MATCHED VALUES", descriptions={'reference': "reference sourcelist crossmatched magnitude error (outer aperture) values", 'comparison': "comparison sourcelist crossmatched magnitude error (outer aperture) values"}, units={'reference': "ABMAG", 'comparison': "ABMAG"})
     if matched_values.shape[1] > 0:
         formalTitle = "Magnitude (Outer Aperture) Error"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
@@ -1334,7 +1345,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         matched_values = extractMatchedLines("MSKY", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
-            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MSKY MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"MSKY MATCHED VALUES", descriptions={'reference': "reference sourcelist crossmatched msky values", 'comparison': "comparison sourcelist crossmatched msky values"}, units={'reference': "ABMAG", 'comparison': "ABMAG"})
     if matched_values.shape[1] > 0:
         formalTitle = "MSKY value"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
@@ -1350,7 +1361,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         matched_values = extractMatchedLines("STDEV", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
-            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"STDEV MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"STDEV MATCHED VALUES", descriptions={'reference': "reference sourcelist crossmatched stdev values", 'comparison': "comparison sourcelist crossmatched stdev values"}, units={'reference': "ABMAG", 'comparison': "ABMAG"})
     if matched_values.shape[1] > 0:
         formalTitle = "STDEV value"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
@@ -1367,7 +1378,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         matched_values = extractMatchedLines("CI", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
-            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"CI MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"CI MATCHED VALUES", descriptions={'reference': "reference sourcelist crossmatched concentration index (mag2-mag1) values", 'comparison': "comparison sourcelist crossmatched concentration index (mag2-mag1) values"}, units={'reference': "ABMAG", 'comparison': "ABMAG"})
     if matched_values.shape[1] > 0:
         formalTitle = "CI"
         rt_status, pdf_files = computeLinearStats(matched_values, max_diff_dict[formalTitle],
@@ -1384,7 +1395,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     else:
         matched_values = extractMatchedLines("FLAGS", refData, compData, matching_lines_ref, matching_lines_img, bitmask=bitmask)
         if output_json_filename and matched_values.shape[1] > 0:  # Add matched values to diag_obj
-            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"FLAGS MATCHED VALUES")
+            diag_obj.add_data_item(Table([matched_values[0], matched_values[1]], names=('reference', 'comparison')),"FLAGS MATCHED VALUES", descriptions={'reference': "reference sourcelist crossmatched flag values", 'comparison': "comparison sourcelist crossmatched flag values"}, units={'reference': "unitless", 'comparison': "unitless"})
     if matched_values.shape[1] > 0:
         formalTitle = "Source Flagging"
         rt_status, flag_pdf_list = computeFlagStats(matched_values, max_diff_dict[formalTitle], plotGen,
@@ -1421,27 +1432,47 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
     for log_line in log_output_string_list:
         log.info(log_line)
 
-    # optionally write comparision statistics to json file
+    # optionally write comparison statistics to json file
     if output_json_filename:
         for catalog_colname in regressionTestResults.keys():
             data_table_dict = collections.OrderedDict()
             parse_result_line = regressionTestResults[catalog_colname].split()
             if catalog_colname is "Source Flagging":
                 key_list = ['Comparison Test Status', 'Percentage of all matched sources with flag value differences']
-                units = "unitless"
+
+
+                descriptions_dict = {'Comparison Test Status': "overall test result",
+                                     'Percentage of all matched sources with flag value differences': "Percentage of all cross-matched sources with flag value differences"}
+                units_dict = {}
+                for key_item in key_list:
+                    units_dict[key_item] = "unitless"
             else:
                 key_list = ['Comparison Test Status', '3x3 Sigma-Clipped Mean', '3x3 Sigma-Clipped Median',
                             '3x3 Sigma-Clipped Standard Deviation',
-                            'Percent of all matched valeus within 3 sigma of mean',
-                            'Percent of all matched valeus beyond 3 sigma of mean']
+                            'Percent of all matched values within 3 sigma of mean',
+                            'Percent of all matched values beyond 3 sigma of mean']
+                descrip_list = ['Overall test status',
+                                '3x3 sigma-clipped crossmatched comparison - reference mean difference value',
+                                '3x3 sigma-clipped crossmatched comparison - reference median difference value',
+                                '3x3 sigma-clipped crossmatched comparison - reference standard deviation value',
+                                'Percentage of all crossmatched comparison - reference difference values within 3 sigma of mean',
+                                'Percentage of all crossmatched comparison - reference difference values beyond 3 sigma of mean']
+                descriptions_dict = {}
+                for key_item, descrip_item in zip(key_list, descrip_list):
+                    descriptions_dict[key_item] = descrip_item
+
                 units = x_axis_units_dict[catalog_colname]
-            data_table_dict["Units"] = units
+                units_list = ["unitless", units, units, units, units, "unitless", "unitless"]
+                units_dict = {}
+                for key_item, units_item in zip(key_list, units_list):
+                    units_dict[key_item] = units_item
+
             for dtd_enum_item in enumerate(key_list):
                 results_idx = dtd_enum_item[0]
                 results_coltitle = dtd_enum_item[1]
                 data_table_dict[results_coltitle] = parse_result_line[results_idx]
             data_item_name = "{} RESULTS".format(catalog_colname.upper())
-            diag_obj.add_data_item(data_table_dict, data_item_name)
+            diag_obj.add_data_item(data_table_dict, data_item_name, descriptions=descriptions_dict, units=units_dict)
             log.debug("Added '{}' data section to json output dictionary".format(data_item_name))
 
     if plotGen == "file":
@@ -1466,7 +1497,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         plt.close()
         pdf_file_list.append(stat_summary_file_name)
         # combine all individual plot files into a single multiple-page pdf file
-        final_plot_filename = "comparision_plots.pdf"
+        final_plot_filename = "comparison_plots.pdf"
         if plotfile_prefix:
             final_plot_filename = "{}_{}".format(plotfile_prefix, final_plot_filename)
 
@@ -1509,7 +1540,7 @@ def slFiles2dataTables(slNames):
         data from the reference sourcelist
 
     compData : astropy.table object
-        data from the comparision sourcelist
+        data from the comparison sourcelist
     """
     if slNames[0].endswith(".ecsv"):
         refData_in = Table.read(slNames[0], format='ascii.ecsv')
@@ -1658,7 +1689,7 @@ def wrap_long_filenames_on_stats_page(stat_text_blob, slNames):
         text block that is updated with properly formatted catalog filenames.
 
     slNames : list
-        two-element list containing the comparision catalog filename, followed by the reference catalog
+        two-element list containing the comparison catalog filename, followed by the reference catalog
         filename
 
     Returns
@@ -1694,27 +1725,27 @@ def write_matched_catalogs(x,y,ra,dec,flags,slnames):
     ----------
     x : numpy.ndarray
         A 2 x len(refLines) sized numpy array. Column 1: matched x reference values.
-        Column 2: The corresponding matched comparision values
+        Column 2: The corresponding matched comparison values
 
     y : numpy.ndarray
         A 2 x len(refLines) sized numpy array. Column 1: matched y reference values.
-        Column 2: The corresponding matched comparision values
+        Column 2: The corresponding matched comparison values
 
     ra : numpy.ndarray
         A 2 x len(refLines) sized numpy array. Column 1: matched RA reference values.
-        Column 2: The corresponding matched comparision values
+        Column 2: The corresponding matched comparison values
 
     dec : numpy.ndarray
         A 2 x len(refLines) sized numpy array. Column 1: matched Dec reference values.
-        Column 2: The corresponding matched comparision values
+        Column 2: The corresponding matched comparison values
 
     flags : numpy.ndarray
         A 2 x len(refLines) sized numpy array. Column 1: matched flag reference values.
-        Column 2: The corresponding matched comparision values
+        Column 2: The corresponding matched comparison values
 
     slNames : list
         list of input sourcelist filenames. it is assumed here and throughout the code that the first file listed is
-        the reference, and the second is the comparision
+        the reference, and the second is the comparison
 
     Returns
     -------
@@ -1754,7 +1785,7 @@ if __name__ == "__main__":
     # optional input arguments
     PARSER.add_argument('-d', '--debugMode', required=False, choices=["True", "False"], default="False",
                         help="Turn on debug mode? Default value is False.")
-    PARSER.add_argument('-g', '--goodFlagSum', required=False, default=255, help = "a sum of individual bit values (i.e. 0 + 1 + 2 + 4 = 7) that will be considered 'good'. If any of the flag bits for a given set of matched sources contain bits not specified here, the pair will be ignored by the comparisions. See XXX for flag bit definitions. (NOTE: The default value of 255 will be interperated as all bits are good, so no sources will be excluded)")
+    PARSER.add_argument('-g', '--goodFlagSum', required=False, default=255, help = "a sum of individual bit values (i.e. 0 + 1 + 2 + 4 = 7) that will be considered 'good'. If any of the flag bits for a given set of matched sources contain bits not specified here, the pair will be ignored by the comparisons. See XXX for flag bit definitions. (NOTE: The default value of 255 will be interperated as all bits are good, so no sources will be excluded)")
     PARSER.add_argument('-i', '--imageNames', required=False, nargs=2,
                         help='A space-separated list of the fits images that were used to generate the input sourcelists. The first image corresponds to the first listed sourcelist, and so in. These will be used to improve the sourcelist alignment and matching.')
     PARSER.add_argument('-ji', '--input_json_filename', required=False,default=None,help="name of input diagnostic_utils json file to use for test duplication purposes. If not specified, it is assumed that the user intends to run the script with new inputs, and should specify sourcelist names and image names.")  # TODO: Reads sort of clunky. Rewrite to sound better.
