@@ -48,13 +48,23 @@ import json
 import logging
 import os
 import sys
+PHOT_COLUMNS = ["AP1_Mean","AP1_StdDev","AP1_Median","AP2_Mean","AP2_StdDev","AP2_Median"]
+DPHOT_COLUMNS = {"C1": "AP1_Mean","C2": "AP1_StdDev","C3": "AP1_Median","C4": "AP2_Mean","C5": "AP2_StdDev","C6": "AP2_Median"}
 
+"""
 PHOT_COLUMNS = ["Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Mean Difference",
                 "Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Standard Deviation",
                 "Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Median Difference",
                 "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Mean Difference",
                 "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Standard Deviation",
                 "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Median Difference"]
+DPHOT_COLUMNS = {"Ap1MeanDiff": "Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Mean Difference",
+                 "Ap1StdDev": "Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Standard Deviation",
+                 "Ap1MedianDiff": "Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Median Difference",
+                 "Ap2MeanDiff": "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Mean Difference",
+                 "Ap2StdDev": "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Standard Deviation",
+                 "Ap2MedianDiff": "Photometry_Statistics_MagAp2.Delta_MagAp2=Point_MagAp2_-_Segment_MagAp2.Median Difference"}
+"""
 
 # FIX MDD: Create an enumeration and use a map function
 # FIX MDD: Fix names again svm_quality_analysis.py in JSON generation
@@ -179,9 +189,11 @@ def generate_graphic(phot_data, stat_Ap1, stat_Ap2):
     p1.xaxis.axis_label = 'Index     ' + info_text
     p1.yaxis.axis_label = 'Difference (Magnitudes)'
 
-    hover_p1 = HoverTool()
-    hover_p1.tooltips=[('STD', '@Photometry_Statistics_MagAp1.Delta_MagAp1=Point_MagAp1_-_Segment_MagAp1.Standard Deviation')]
-    p1.add_tools(hover_p1)
+    # hover_p1 = HoverTool()
+    # col0 = DPHOT_COLUMNS['C1']
+    # print(col0)
+    # hover_p1.tooltips=[('Mean', @'DPHOT_COLUMNS["C1"]')]
+    # p1.add_tools(hover_p1)
 
     stat_text = ('Mean deltaMAp1_mean: {:6.2f}     Mean deltaMAp1_median: {:6.2f}'.format(stat_Ap1[0], stat_Ap1[1]))
     stat_label = Label(x=20, y=20, x_units='screen', y_units='screen', text=stat_text)
@@ -205,17 +217,22 @@ def generate_graphic(phot_data, stat_Ap1, stat_Ap2):
     show(row(p1, p2))
 
 
-def photometry_graphics_driver(csv_filename):
+def photometry_graphics_driver(csv_filename, log_level=logutil.logging.INFO):
     """Driver to load the data from the CSV file and generate the graphics.
 
     Parameters
     ==========
     csv_filename: str
     Name of the CSV file created by the harvester.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
     """
 
     # Retrieve the relevant dataframe and statistics (mean of
     # means and mean of medians) for Aperture 1 and Aperture 2
+    log.info('Retrieve the dfjslf')
     phot_data, stat_Ap1, stat_Ap2 = get_data(csv_filename)
 
     # Generate the photometric graphic
