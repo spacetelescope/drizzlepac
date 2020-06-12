@@ -104,7 +104,7 @@ setup(
         'pysynphot',
         'lxml',
         'PyPDF2',
-        'PyTables>=3.6.0',
+        'PyTables',
         'scikit-image>=0.14.2',
         'PyYAML',
     ],
