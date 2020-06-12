@@ -34,4 +34,4 @@ dependencies:
       - photutils
       - pysynphot
       - lxml
-      - "pytables>=3.6.1"
+      - "pytables>=3.6.0"
