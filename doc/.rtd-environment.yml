@@ -9,7 +9,6 @@ dependencies:
     - scipy
     - "astropy>=3.1"
     - graphviz
-    - "pytables>=3.6.1"
     - pip:
       - -e ..
       - "sphinx<=1.8.5"
@@ -35,3 +34,4 @@ dependencies:
       - photutils
       - pysynphot
       - lxml
+      - "pytables>=3.6.1"
