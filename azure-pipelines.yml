@@ -20,10 +20,10 @@ jobs:
     name: MacOS
     os: macos
 
-- template: azure-templates.yml
-  parameters:
-    name: Windows
-    os: windows
+#- template: azure-templates.yml
+#  parameters:
+#    name: Windows
+#    os: windows
 
 - job: 'PEP8'
   pool:
