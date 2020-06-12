@@ -145,8 +145,7 @@ def h5load(filename):
 # ------------------------------------------------------------------------------------------------------------
 
 def h5store(filename, df, **kwargs):
-    """Write a pandas Dataframe and metadata to a HDF5 file. If filename does not end with a '.h5' extension,
-    an exception will be raised.
+    """Write a pandas Dataframe and metadata to a HDF5 file.
     Code borrowed from https://stackoverflow.com/questions/29129095/save-additional-attributes-in-pandas-dataframe/29130146#29130146
 
     Parameters
@@ -161,13 +160,6 @@ def h5store(filename, df, **kwargs):
     -------
     Nothing.
     """
-    if not filename.endswith(".h5"):
-        errmsg = "Incorrect output file extension. The output filetype is HDF5, and should have the extension"
-        errmsg += " '.h5', not '{}'. To generate a .h5 file and a .csv file with the same basename, set the ".format(os.path.splitext(filename)[1])
-        errmsg += "log level to 'debug' (add '-l debug' to a command-line call or set 'log_level=10' when "
-        errmsg += "calling json_harvester()."
-        log.error(errmsg)
-        raise Exception(errmsg)
     store = pd.HDFStore(filename)
     store.put('mydata', df)
     store.get_storer('mydata').attrs.metadata = kwargs
@@ -177,7 +169,7 @@ def h5store(filename, df, **kwargs):
 # ------------------------------------------------------------------------------------------------------------
 
 def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
-                   output_filename="svm_qa_dataframe.h5"):
+                   output_filename_basename="svm_qa_dataframe"):
     """Main calling function
 
     Parameters
@@ -190,10 +182,11 @@ def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
         The desired level of verboseness in the log statements displayed on the screen and written to the
         .log file. Default value is 'INFO'.
 
-    output_filename : str, optional
-        Name of the output .h5 HDF5 file that the Pandas DataFrame will be written to. If not explicitly
-        specified, the DataFrame will be written to the file 'svm_qa_dataframe.h5' in the current working
-        directory.
+    output_filename_basename : str, optional
+        Name of the output file basename (filename without the extension) for the Hierarchical Data Format
+        version 5 (HDF5) .h5 file that the Pandas DataFrame will be written to. If not explicitly specified,
+        the default filename basename that will be used is "svm_qa_dataframe". The default location that the
+        output file will be written to is the current working directory
     """
     log.setLevel(log_level)
 
@@ -221,17 +214,18 @@ def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
 
     # Write master_dataframe out to a HDF5 .hdfile
     if master_dataframe is not None:
-        if os.path.exists(output_filename):
-            os.remove(output_filename)
-        h5store(output_filename, master_dataframe, **metadata)
-        log.info("Wrote dataframe to HDF5 file {}".format(output_filename))
-
-        output_csvfile = output_filename.replace(".h5", ".csv")
+        output_h5_filename = output_filename_basename + ".h5"
+        if os.path.exists(output_h5_filename):
+            os.remove(output_h5_filename)
+        h5store(output_h5_filename, master_dataframe, **metadata)
+        log.info("Wrote dataframe and metadata to HDF5 file {}".format(output_h5_filename))
+        #optionally also write dataframe out to .csv file for human inspection
+        output_csv_filename = output_filename_basename + ".csv"
         if log_level == logutil.logging.DEBUG:
-            if os.path.exists(output_csvfile):
-                os.remove(output_csvfile)
-            master_dataframe.to_csv(output_csvfile)
-            log.debug("Wrote dataframe to csv file {}".format(output_csvfile))
+            if os.path.exists(output_csv_filename):
+                os.remove(output_csv_filename)
+            master_dataframe.to_csv(output_csv_filename)
+            log.debug("Wrote dataframe to csv file {}".format(output_csv_filename))
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -354,11 +348,12 @@ if __name__ == "__main__":
                              'specifying "error" will record/display both "error" and "critical" log '
                              'statements, and so on. If the log_level is set to "debug", a human-readable'
                              '.csv will be generated along with the .h5 file.')
-    parser.add_argument('-o', '--output_filename', required=False, default="svm_qa_dataframe.h5",
-                        help='Name of the output Hierarchical Data Format version 5 (HDF5) .h5 file that the '
-                             'Pandas DataFrame will be written to. If not explicitly specified, the '
-                             'DataFrame will be written to the file "svm_qa_dataframe.h5" in the current '
-                             'working directory')
+    parser.add_argument('-o', '--output_filename_basename', required=False, default="svm_qa_dataframe.",
+                        help='Name of the output file basename (filename without the extension) for the  '
+                             'Hierarchical Data Format version 5 (HDF5) .h5 file that the Pandas DataFrame '
+                             'will be written to. If not explicitly specified, the default filename basename '
+                             'that will be used is "svm_qa_dataframe". The default location that the output '
+                             'file will be written to is the current working directory')
     user_args = parser.parse_args()
 
     # set up logging
@@ -372,4 +367,4 @@ if __name__ == "__main__":
 
     json_harvester(json_search_path=user_args.json_search_path,
                    log_level=log_level,
-                   output_filename=user_args.output_filename)
+                   output_filename_basename=user_args.output_filename_basename)
