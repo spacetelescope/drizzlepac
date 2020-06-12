@@ -116,7 +116,7 @@ def interpret_obset_input(results, log_level):
     log.setLevel(log_level)
 
     log.debug("Interpret the poller file for the observation set.")
-    obset_table = build_poller_table(results, log_level, poller_type='svm')
+    obset_table = build_poller_table(results, log_level)
     # Add INSTRUMENT column
     instr = INSTRUMENT_DICT[obset_table['filename'][0][0]]
     # convert input to an Astropy Table for parsing
@@ -254,7 +254,8 @@ def interpret_mvm_input(results, log_level, exp_limit=2.0):
     log.setLevel(log_level)
 
     log.debug("Interpret the poller file for the observation set.")
-    obset_table = build_poller_table(results, log_level, poller_type='mvm')
+    obset_table = build_poller_table(results, log_level, 
+                                     poller_type='mvm')
 
     # Add INSTRUMENT column
     instr = INSTRUMENT_DICT[obset_table['filename'][0][0]]
@@ -868,7 +869,7 @@ def build_poller_table(input, log_level, poller_type='svm'):
                             # append new row to table
                             new_poller_table.add_row(poller_row[0])
         poller_table = new_poller_table
-
+        
     return poller_table
 
 
