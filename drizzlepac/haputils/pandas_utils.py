@@ -22,7 +22,6 @@ from stsci.tools import logutil
 from astropy.io import fits
 import numpy as np
 
-__taskname__ = 'pandas_utils'
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
@@ -45,12 +44,11 @@ class PandasDFReader:
         if not path.is_file():
             log.error('Pandas dataframe file {} does not exist.'.format(harvester_filename))
             raise ValueError('Pandas dataframe file {} does not exist.')
-   
+
         self.harvester_filename = harvester_filename
 
-        # Lazy attribute creation 
+        # Lazy attribute creation
         self._dataframe = None
-
 
     def get_columns_CSV(self, column_names):
         """ Method to do the actual reading of dataframe and get the data in the
@@ -77,7 +75,6 @@ class PandasDFReader:
 
         return column_data
 
-
     def get_columns_HDF5(self, column_names):
         """ Method to do the actual reading of dataframe and get the data in the
             specified columns.
@@ -102,7 +99,7 @@ class PandasDFReader:
             key0 = hdf5.keys()[0]
             self._dataframe = hdf5.get(key0)
 
-            print(self._dataframe)
+            hdf5.close()
 
         # Get the requested columns and eliminate all rows which have
         # NaNs in any of the requested columns.
