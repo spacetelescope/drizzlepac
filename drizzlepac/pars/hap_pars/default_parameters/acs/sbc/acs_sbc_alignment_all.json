@@ -36,6 +36,7 @@
     },
   "match_relative_fit":
     {
+      "fitgeom": "rscale",
       "searchrad": 75,
       "separation": 4.0,
       "tolerance": 2.0,
@@ -43,6 +44,7 @@
     },
   "match_default_fit":
     {
+      "fitgeom": "rscale",
       "searchrad": 250,
       "separation": 0.1,
       "tolerance": 100,
@@ -50,6 +52,7 @@
     },
   "match_2dhist_fit":
     {
+      "fitgeom": "rscale",
       "searchrad": 75,
       "separation": 0.1,
       "tolerance": 2,
