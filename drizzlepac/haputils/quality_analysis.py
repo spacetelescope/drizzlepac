@@ -65,7 +65,7 @@ import tweakwcs
 from . import astrometric_utils as amutils
 from .. import tweakutils
 from . import diagnostic_utils as du
-from .pandas_utils import PandasDFReader_CSV
+from .pandas_utils import PandasDFReader
 
 
 
@@ -527,7 +527,7 @@ def get_pandas_data(csv_filename):
     
     # Instantiate a Pandas Dataframe Reader (lazy instantiation)
     # df_handle = PandasDFReader_CSV("svm_qa_dataframe.csv")
-    df_handle = PandasDFReader_CSV(csv_filename, log_level=logutil.logging.NOTSET)
+    df_handle = PandasDFReader(csv_filename, log_level=logutil.logging.NOTSET)
 
     # In this particular case, the names of the desired columns do not
     # have to be further manipulated, for example, to add dataset specific
@@ -535,8 +535,12 @@ def get_pandas_data(csv_filename):
     # 
     # Get the relevant column data, eliminating all rows which have NaNs
     # in any of the relevant columns.
-    fit_data = df_handle.get_columns(HOVER_COLUMNS + RESULTS_COLUMNS)
-    source_data = df_handle.get_columns(HOVER_COLUMNS + SOURCE_COLUMNS)
+    if csv_filename.endswith('.h5'):
+        fit_data = df_handle.get_columns_HDF5(HOVER_COLUMNS + RESULTS_COLUMNS)
+        source_data = df_handle.get_columns_HDF5(HOVER_COLUMNS + SOURCE_COLUMNS)
+    else:
+        fit_data = df_handle.get_columns_CSV(HOVER_COLUMNS + RESULTS_COLUMNS)
+        source_data = df_handle.get_columns_CSV(HOVER_COLUMNS + SOURCE_COLUMNS)
 
     return fit_data, source_data
     
