@@ -56,12 +56,12 @@ class PandasDFReader:
 
             Parameters
             ----------
-            column_names: list
+            column_names : list
             A list of the column names which specify the desired data.
 
             Returns
             -------
-            column_data: Pandas dataframe
+            column_data : Pandas dataframe
             A Pandas dataframe containing only the specified named columns where
             any rows containing NaNs have been eliminated.
         """
@@ -81,12 +81,12 @@ class PandasDFReader:
 
             Parameters
             ----------
-            column_names: list
+            column_names : list
             A list of the column names which specify the desired data.
 
             Returns
             -------
-            column_data: Pandas dataframe
+            column_data : Pandas dataframe
             A Pandas dataframe containing only the specified named columns where
             any rows containing NaNs have been eliminated.
         """
