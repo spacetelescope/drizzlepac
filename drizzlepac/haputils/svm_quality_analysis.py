@@ -1520,7 +1520,7 @@ def build_gaia_plots(gaia_data, data_cols, output_basename='gaia_comparison_svm_
     gaiaDF = ColumnDataSource(gaia_data)
     num_of_datasets = len(gaia_data.index)
     print('Number of datasets: {}'.format(num_of_datasets))
-    num_hover_cols = len(qa.HOVER_COLUMNS)
+    num_hover_cols = len(HOVER_COLUMNS)
     
     colormap = [qa.DETECTOR_LEGEND[x] for x in gaiaDF.data[data_cols[1]]]
     gaiaDF.data['colormap'] = colormap
@@ -1561,12 +1561,19 @@ def build_gaia_plots(gaia_data, data_cols, output_basename='gaia_comparison_svm_
     plot_list += p2
 
     # Generate histogram for mean neighbor distance
-    hist, edges = np.histogram(gaiaDF.data[data_cols[-3]], density=True, bins=50)
-    title = 'Mean distance between GAIA sources in Field'
-    p3 = [plot_histogram(title, hist, edges, y_start=0, 
+    hist3, edges3 = np.histogram(gaiaDF.data[data_cols[-3]], bins=50)
+    title3 = 'Mean distance between GAIA sources in Field'
+    p3 = [plot_histogram(title3, hist3, edges3, y_start=0, 
                     fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='separation (pixels)', ylabel='Number of GAIA sources')]
+                    xlabel='separation (pixels)', ylabel='Number of products')]
     plot_list += p3
+
+    hist4, edges4 = np.histogram(gaiaDF.data[data_cols[num_hover_cols]], bins=50)
+    title4 = 'Number of GAIA sources in Field'
+    p4 = [plot_histogram(title4, hist4, edges4, y_start=0, 
+                    fill_color='navy', background_fill_color='#fafafa', 
+                    xlabel='Number of GAIA sources', ylabel='Number of products')]
+    plot_list += p4
     
     # Display!
     save(column(plot_list))
