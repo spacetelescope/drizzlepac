@@ -463,6 +463,7 @@ HOVER_COLUMNS = ['gen_info.instrument',
 TOOLTIPS_LIST = ['INSTRUMENT', 'DET', 'FILTER', 
                   'EXPNAME', 'DATE', 'RA', 'DEC', 'GYRO', 'EXPTIME',
                   'ALIGNED_TO']
+INSTRUMENT_COLUMN = 'full_instrument'
 
 RESULTS_COLUMNS = ['fit_results.rms_x',
                    'fit_results.rms_y',
@@ -481,7 +482,9 @@ SOURCE_COLUMNS = ['residuals.x',
                   'residuals.ref_y']
 TOOLSEP_START = '{'
 TOOLSEP_END = '}'
-
+DETECTOR_LEGEND = {'UVIS': 'magenta', 'IR': 'red', 'WFC': 'blue', 
+                    'SBC': 'yellow', 'HRC': 'black'}
+    
 
 def build_tooltips(tips):
     """Return list of tuples for tooltips to use in hover tool.
@@ -558,14 +561,23 @@ def build_circle_plot(**plot_dict):
     color = plot_dict.get('color', 'blue')
     click_policy = plot_dict.get('click_policy', 'hide')
     markersize = plot_dict.get('markersize', 10)
+    colormap = plot_dict.get('colormap', False)
+    legend_group = plot_dict.get('legend_group')
     
     # Define a figure object
     p1 = figure()
 
-    # Add the glyphs
-    p1.circle(x=x, y=y, source=source, 
-              fill_alpha=0.5, line_alpha=0.5, 
-              size=markersize, color=color)
+    if colormap:
+        # Add the glyphs
+        p1.circle(x=x, y=y, source=source, 
+                  fill_alpha=0.5, line_alpha=0.5, 
+                  size=markersize, color='colormap',
+                  legend_group=legend_group)
+    else:
+        # Add the glyphs
+        p1.circle(x=x, y=y, source=source, 
+                  fill_alpha=0.5, line_alpha=0.5, 
+                  size=markersize)
 
     p1.legend.click_policy = click_policy
     
@@ -624,6 +636,13 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
     num_of_datasets = len(fit_data.index)
     print('Number of datasets: {}'.format(num_of_datasets))
 
+    
+    colormap = [DETECTOR_LEGEND[x] for x in fitDF.data[HOVER_COLUMNS[1]]]
+    fitDF.data['colormap'] = colormap
+    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(fitDF.data[HOVER_COLUMNS[0]], 
+                                         fitDF.data[HOVER_COLUMNS[1]])]
+    fitDF.data[INSTRUMENT_COLUMN] = inst_det
+    
     plot_list = []
 
     p1 = [build_circle_plot(x=RESULTS_COLUMNS[0], y=RESULTS_COLUMNS[1],
@@ -631,7 +650,8 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
                            title='RMS Values',
                            x_label="RMS_X (pixels)",
                            y_label='RMS_Y (pixels)',
-                           tips=[3, 0, 1, 2, 8])]
+                           tips=[3, 0, 1, 2, 8],
+                           colormap=True, legend_group=INSTRUMENT_COLUMN)]
     plot_list += p1
                            
     p2 = [build_circle_plot(x=RESULTS_COLUMNS[2], y=RESULTS_COLUMNS[3],
@@ -639,7 +659,8 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
                            title='Offsets',
                            x_label = "SHIFT X (pixels)",
                            y_label = 'SHIFT Y (pixels)',
-                           tips=[3, 0, 1, 2, 8])]
+                           tips=[3, 0, 1, 2, 8],
+                           colormap=True, legend_group=INSTRUMENT_COLUMN)]
     plot_list += p2
 
     p3 = [build_circle_plot(x=RESULTS_COLUMNS[8], y=RESULTS_COLUMNS[4],
@@ -647,7 +668,8 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
                            title='Rotation',
                            x_label = "Number of matched sources",
                            y_label = 'Rotation (degrees)',
-                           tips=[3, 0, 1, 2, 8])]
+                           tips=[3, 0, 1, 2, 8],
+                           colormap=True, legend_group=INSTRUMENT_COLUMN)]
     plot_list += p3
 
     p4 = [build_circle_plot(x=RESULTS_COLUMNS[8], y=RESULTS_COLUMNS[5],
@@ -655,7 +677,8 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
                            title='Scale',
                            x_label = "Number of matched sources",
                            y_label = 'Scale',
-                           tips=[3, 0, 1, 2, 8])]
+                           tips=[3, 0, 1, 2, 8],
+                           colormap=True, legend_group=INSTRUMENT_COLUMN)]
     plot_list += p4
     
     p5 = [build_circle_plot(x=RESULTS_COLUMNS[8], y=RESULTS_COLUMNS[9],
@@ -663,7 +686,8 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
                            title='Skew',
                            x_label = "Number of matched sources",
                            y_label = 'Skew (degrees)',
-                           tips=[3, 0, 1, 2, 8])]
+                           tips=[3, 0, 1, 2, 8],
+                           colormap=True, legend_group=INSTRUMENT_COLUMN)]
     plot_list += p5
 
 
@@ -671,11 +695,11 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
     show(column(plot_list))
                      
 
-def build_bokeh_plots(csv_file):
+def build_astrometry_plots(csv_file, output='cal_qa_results.html'):
 
     fit_data, source_data = get_pandas_data(csv_filename)
 
     # Generate the photometric graphic
-    generate_summary_plots(fit_data)
+    generate_summary_plots(fit_data, output=output)
     
-    
+
