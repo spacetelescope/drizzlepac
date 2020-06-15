@@ -48,7 +48,7 @@ from datetime import datetime
 import time
 
 from bokeh.layouts import row, column
-from bokeh.plotting import figure, output_file, show
+from bokeh.plotting import figure, output_file, save
 from bokeh.models import ColumnDataSource, Label
 from bokeh.models.tools import HoverTool
 
@@ -538,12 +538,6 @@ def get_pandas_data(csv_filename):
     fit_data = df_handle.get_columns(HOVER_COLUMNS + RESULTS_COLUMNS)
     source_data = df_handle.get_columns(HOVER_COLUMNS + SOURCE_COLUMNS)
 
-    # Generate a general index array and add it to the dataframe
-    x_index = list(range(0, len(fit_data.index)))
-    fit_data['x_index'] = x_index
-    source_data['x_index'] = x_index
-    x_index.clear()
-
     return fit_data, source_data
     
 def build_circle_plot(**plot_dict):
@@ -635,7 +629,6 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
     fitDF = ColumnDataSource(fit_data)
     num_of_datasets = len(fit_data.index)
     print('Number of datasets: {}'.format(num_of_datasets))
-
     
     colormap = [DETECTOR_LEGEND[x] for x in fitDF.data[HOVER_COLUMNS[1]]]
     fitDF.data['colormap'] = colormap
@@ -692,7 +685,7 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
 
 
     # Display!
-    show(column(plot_list))
+    save(column(plot_list))
                      
 
 def build_astrometry_plots(csv_file, output='cal_qa_results.html'):
