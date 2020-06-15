@@ -1553,9 +1553,9 @@ def build_gaia_plots(gaia_data, data_cols, output_basename='gaia_comparison_svm_
     p2 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 3], 
                             y=data_cols[num_hover_cols + 6],
                            source=gaiaDF,  
-                           title='Offset of Centroid of GAIA Sources in Field',
-                           x_label="X Offset (pixels)",
-                           y_label='Y Offset (pixels)',
+                           title='Standard Deviation of GAIA Source Positions in Field',
+                           x_label="STD(X) (pixels)",
+                           y_label='STD(Y) (pixels)',
                            tips=[3, 0, 1, 2, 8],
                            colormap=True, legend_group=qa.INSTRUMENT_COLUMN)]
     plot_list += p2
