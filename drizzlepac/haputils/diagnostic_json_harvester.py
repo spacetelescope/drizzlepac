@@ -348,7 +348,7 @@ if __name__ == "__main__":
                              'specifying "error" will record/display both "error" and "critical" log '
                              'statements, and so on. If the log_level is set to "debug", a human-readable'
                              '.csv will be generated along with the .h5 file.')
-    parser.add_argument('-o', '--output_filename_basename', required=False, default="svm_qa_dataframe.",
+    parser.add_argument('-o', '--output_filename_basename', required=False, default="svm_qa_dataframe",
                         help='Name of the output file basename (filename without the extension) for the  '
                              'Hierarchical Data Format version 5 (HDF5) .h5 file that the Pandas DataFrame '
                              'will be written to. If not explicitly specified, the default filename basename '

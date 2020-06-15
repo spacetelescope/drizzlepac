@@ -1,48 +1,60 @@
-# This routine is designed specifically to support plotting the
-# SVM data quality output.  As such, it expects the input Pandas
-# Dataframe to have a particular structure and the data to contain
-# specific measurements.
+# This routine is designed specifically to support plotting of the
+# SVM data quality output, compare_photometry().  As such, it expects
+# the input Pandas Dataframe to have a particular structure and the
+# data to contain specific measurements.
 #
-# This is NOT a general plotting utility and is a prototype.
 # To use:
 # 1) Start a Python session
 # 2) import photometry_graphics as pg
-# 3) You need to provide a fully qualified pathname to the directory
+# 3) You will need to provide a fully qualified pathname to the directory
 #    above all of the output directories which contain the photometry
 #    JSON output files.
-# 4) In the Python session, invoke the harvester
-#    >>> generate_photometry_df(input_directory, output_csv_filename='svm_photometry_stats.csv')
-#        This will generate an output CSV file where a Pandas
-#        dataframe is stored.
-# 5) Once the CSV file is generated, invoke the graphics routine
-#    >>> pg.photometry_graphics_driver(CSV_filename)
-#        This will generate a Bokeh plot to the browsers, as
+# 4) Invoke the reader/graphics routine
+#    >>> pg.photometry_graphics_driver(storage_filename)
+#        This will generate a Bokeh plot to the browser, as
 #        well as generate an HTML file.
-#
-# SVM Photometry file has the following data values where
-# differences are (POINT - SEGMENT).
-# Delta_MagAp1-Mean Difference: -0.04963999999999993
-# Delta_MagAp1-Standard Deviation: 0.0869423778526139
-# Delta_MagAp1-Median Difference: -0.0259999999999998
-# Delta_MagAp2-Mean Difference: 0.009571428571428555
-# Delta_MagAp2-Standard Deviation: 0.02693804431083513
-# Delta_MagAp2-Median Difference: 0.006000000000000227
-# ISSUES:
-# Too many columns from header in JSON cluttering up dataframe.
-# Hierachical information in JSON not tightly coupled to values once in dataframe.
-# To use hover, MUST have all data columns coming from ColumnDataSource.
-# ColumnDataSource needs to use columns names, so use succinct names.
-# Think about information useful for hover.
 
-import array
-from bokeh.layouts import row
-from bokeh.plotting import figure, output_file, show
-from bokeh.models import ColumnDataSource, Label
+# Standard library imports
+import argparse
 import csv
 import glob
 import json
+import logging
 import os
-import pandas as pd
+import sys
+
+from bokeh.layouts import row
+from bokeh.plotting import figure, output_file, show, save
+from bokeh.models import ColumnDataSource, Label
+from bokeh.models.tools import HoverTool
+
+# Local application imports
+from drizzlepac.haputils.pandas_utils import PandasDFReader
+from stsci.tools import logutil
+
+# Abbreviated dataframe column names
+NEW_PHOT_COLUMNS = ['Ap1 Mean Differences',
+                    'Ap1 Standard Deviation',
+                    'Ap1 Median Differences',
+                    'Ap2 Mean Differences',
+                    'Ap2 Standard Deviation',
+                    'Ap2 Median Differences']
+
+# Dictionary mapping the original dataframe column name to their new names
+PHOT_COLUMNS = {'Statistics_MagAp1.Delta_MagAp1.Mean': NEW_PHOT_COLUMNS[0],
+                'Statistics_MagAp1.Delta_MagAp1.StdDev':  NEW_PHOT_COLUMNS[1],
+                'Statistics_MagAp1.Delta_MagAp1.Median':  NEW_PHOT_COLUMNS[2],
+                'Statistics_MagAp2.Delta_MagAp2.Mean':  NEW_PHOT_COLUMNS[3],
+                'Statistics_MagAp2.Delta_MagAp2.StdDev': NEW_PHOT_COLUMNS[4],
+                'Statistics_MagAp2.Delta_MagAp2.Median': NEW_PHOT_COLUMNS[5]}
+
+__taskname__ = 'photometry_graphics'
+
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 def compute_global_stats(value_array):
@@ -50,12 +62,12 @@ def compute_global_stats(value_array):
 
     Parameters
     ==========
-    value_array: array
+    value_array : array
     Values for which a mean is to be computed
 
     Returns
     =======
-    mean_value: float
+    mean_value : float
     Computed mean of the input array
     """
 
@@ -63,201 +75,208 @@ def compute_global_stats(value_array):
     return mean_value
 
 
-def load_data_to_arrays(csv_filename):
-    """Load the harvested data, stored in a CSV file, into local arrays.
+def get_data(storage_filename):
+    """Load the harvested data, stored in a storage file, into local arrays.
 
     Parameters
     ==========
-    csv_filename: str
-    Name of the CSV file created by generate_photometry_df.
+    storage_filename : str
+    Name of the storage file for the Pandas dataframe created by the harvester.
 
     Returns
     =======
-    (d_MagAp1_mean, d_MagAp1_std, d_MagAp1_median): tuple
-    Aperture 1 statistics
+    phot_data : Pandas dataframe
+    Dataframe which is a subset of the input Pandas dataframe which
+    consists of only the requested columns and rows where all of the requested
+    columns do not contain NaNs.
 
-    (d_MagAp2_mean, d_MagAp2_std, d_MagAp2_median): tuple
-    Aperture 2 statistics
-
-    (mean_dMagAp1_mean, mean_dMagAp1_median): tuple
+    (mean_dMagAp1_mean, mean_dMagAp1_median) : tuple
     Aperture 1 mean of means and mean of medians
 
-    (mean_dMagAp2_mean, mean_dMagAp2_median): tuple
+    (mean_dMagAp2_mean, mean_dMagAp2_median) : tuple
     Aperture 2 mean of means and mean of medians
     """
 
-    df = pd.read_csv(csv_filename)
-    key_MagAp1_mean = 'Delta_MagAp1-Mean Difference'
-    key_MagAp2_mean = 'Delta_MagAp2-Mean Difference'
-    key_MagAp1_std = 'Delta_MagAp1-Standard Deviation'
-    key_MagAp2_std = 'Delta_MagAp2-Standard Deviation'
-    key_MagAp1_median = 'Delta_MagAp1-Median Difference'
-    key_MagAp2_median = 'Delta_MagAp2-Median Difference'
+    # Instantiate a Pandas Dataframe Reader (lazy instantiation)
+    df_handle = PandasDFReader(storage_filename, log_level=logutil.logging.NOTSET)
 
-    d_MagAp1_mean = df[key_MagAp1_mean]
-    d_MagAp2_mean = df[key_MagAp2_mean]
-    d_MagAp1_std = df[key_MagAp1_std]
-    d_MagAp2_std = df[key_MagAp2_std]
-    d_MagAp1_median = df[key_MagAp1_median]
-    d_MagAp2_median = df[key_MagAp2_median]
+    # Get the relevant column data, eliminating all rows which have NaNs
+    # in any of the relevant columns.
+    phot_data = df_handle.get_columns_HDF5(PHOT_COLUMNS.keys())
 
-    mean_dMagAp1_mean = compute_global_stats(d_MagAp1_mean)
-    mean_dMagAp2_mean = compute_global_stats(d_MagAp2_mean)
+    # Rename the columns to abbreviated text as the graph titles further
+    # document the information.
+    for old_col_name, new_col_name in PHOT_COLUMNS.items():
+        phot_data.rename(columns={old_col_name: new_col_name}, inplace=True)
 
-    mean_dMagAp1_median = compute_global_stats(d_MagAp1_median)
-    mean_dMagAp2_median = compute_global_stats(d_MagAp2_median)
+    # Generate a general index array and add it to the dataframe
+    x_index = list(range(0, len(phot_data.index)))
+    phot_data['x_index'] = x_index
+    x_index.clear()
 
-    return (d_MagAp1_mean, d_MagAp1_std, d_MagAp1_median), \
-        (d_MagAp2_mean, d_MagAp2_std, d_MagAp2_median), \
-        (mean_dMagAp1_mean, mean_dMagAp1_median), \
-        (mean_dMagAp2_mean, mean_dMagAp2_median)
+    mean_dMagAp1mean = compute_global_stats(phot_data['Ap1 Mean Differences'])
+    mean_dMagAp2mean = compute_global_stats(phot_data['Ap1 Median Differences'])
+
+    mean_dMagAp1median = compute_global_stats(phot_data['Ap2 Mean Differences'])
+    mean_dMagAp2median = compute_global_stats(phot_data['Ap2 Median Differences'])
+
+    return phot_data, (mean_dMagAp1mean, mean_dMagAp1median), \
+        (mean_dMagAp2mean, mean_dMagAp2median)
 
 
 # Generate the actual plot for the "svm_graphic_type" data.
-def generate_graphic(ap1, ap2, means_ap1, means_ap2):
+def generate_graphic(phot_data, stat_Ap1, stat_Ap2, output_base_filename, log_level):
     """Generate the graphics associated with this particular type of data.
 
     Parameters
     ==========
-    ap1: tuple
-    Tuple containing the mean, std, and median statistics for Aperture 1
+    phot_data : Pandas dataframe
+    Dataframe consisting of the Magnitude statistics of mean, std, and median for Aperture 1
+    and Aperture 2
 
-    ap2: tuple
-    Tuple containing the mean, std, and median statistics for Aperture 2
-
-    means_ap1: tuple
+    stat_Ap1 : tuple
     Tuple containing the average of the means and the average of the medians for Aperture 1
 
-    means_ap2: tuple
+    stat_Ap2 : tuple
     Tuple containing the average of the means and the average of the medians for Aperture 2
+
+    output_base_filename : str
+    Base name for the HMTL file generated by Bokeh.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
+
+    Returns
+    =======
+    Nothing
+
+    HTML file is generated and written to the current directory.
     """
 
     # Set the output file immediately as advised by Bokeh.
-    output_file('photometry_grahics.html')
+    output_file(output_base_filename + '.html')
 
-    # Generate a general index array
-    x_index = array.array('i', (i for i in range(0, len(ap1[0]))))
-    num_of_datasets = len(x_index)
+    # Setup the source of the data to be plotted so the axis variables can be
+    # referenced by column name in the Pandas dataframe
+    sourceDF = ColumnDataSource(phot_data)
+    num_of_datasets = len(phot_data.index)
     print('Number of datasets: {}'.format(num_of_datasets))
 
     # Define a figure object
     p1 = figure()
 
     # Add the glyphs
-    p1.circle(x_index, ap1[0], fill_alpha=0.5, line_alpha=0.5, size=10, color='green',
+    p1.circle(x='x_index', y=NEW_PHOT_COLUMNS[0], source=sourceDF, fill_alpha=0.5, line_alpha=0.5, size=10, color='green',
               legend_label='Mean Aperture 1 Magnitude Differences')
-    p1.cross(x_index, ap1[2], size=10, color='blue', legend_label='Median Aperture 1 Magnitude Differences')
+    p1.cross(x='x_index', y=NEW_PHOT_COLUMNS[2], source=sourceDF, size=10, color='blue', legend_label='Median Aperture 1 Magnitude Differences')
     info_text = 'Number of datasets: ' + str(num_of_datasets)
     p1.legend.click_policy = 'hide'
 
-    p1.title.text = 'Differences Point - Segment Ap1 Magnitude'
+    p1.title.text = 'Differences (Point - Segment) Aperture 1 Magnitude'
     p1.xaxis.axis_label = 'Index     ' + info_text
-    p1.yaxis.axis_label = 'Difference (Magnitudes)'
+    p1.yaxis.axis_label = 'Difference (ABMag)'
 
-    stat_text = ('Mean deltaMAp1_mean: {:6.2f}     Mean deltaMAp1_median: {:6.2f}'.format(means_ap1[0], means_ap1[1]))
+    hover_p1 = HoverTool()
+    hover_p1.tooltips = [("Mean", "@{Ap1 Mean Differences}"), ("StdDev", "@{Ap1 Standard Deviation}"),
+                         ("Median", "@{Ap1 Median Differences}")]
+    p1.add_tools(hover_p1)
+
+    stat_text = ('<DeltaMagAp1_Mean>: {:6.2f}     <DeltaMagAp1_Median>: {:6.2f}'.format(stat_Ap1[0], stat_Ap1[1]))
     stat_label = Label(x=20, y=20, x_units='screen', y_units='screen', text=stat_text)
     p1.add_layout(stat_label)
 
     p2 = figure()
-    p2.circle(x_index, ap2[0], fill_alpha=0.5, line_alpha=0.5, size=10, color='green',
+    p2.circle(x='x_index', y=NEW_PHOT_COLUMNS[3], source=sourceDF, fill_alpha=0.5, line_alpha=0.5, size=10, color='green',
               legend_label='Mean Aperture 2 Magnitude Differences')
-    p2.cross(x_index, ap2[2], size=10, color='blue', legend_label='Median Aperture 2 Magnitude Differences')
+    p2.cross(x='x_index', y=NEW_PHOT_COLUMNS[5], source=sourceDF, size=10, color='blue', legend_label='Median Aperture 2 Magnitude Differences')
     p2.legend.click_policy = 'hide'
 
-    p2.title.text = 'Differences Point - Segment Ap2 Magnitude'
+    p2.title.text = 'Differences (Point - Segment) Aperture 2 Magnitude'
     p2.xaxis.axis_label = 'Index     ' + info_text
-    p2.yaxis.axis_label = 'Difference (Magnitudes)'
+    p2.yaxis.axis_label = 'Difference (ABMag)'
 
-    stat_text = ('Mean deltaMAp2_mean: {:6.2f}     Mean deltaMAp2_median: {:6.2f}'.format(means_ap2[0], means_ap2[1]))
+    hover_p2 = HoverTool()
+    hover_p2.tooltips = [("Mean", "@{Ap2 Mean Differences}"), ("StdDev", "@{Ap2 Standard Deviation}"),
+                         ("Median", "@{Ap2 Median Differences}")]
+    p2.add_tools(hover_p2)
+
+    stat_text = ('<DeltaMagAp2_Mean>: {:6.2f}     <DeltaMagAp2_Median>: {:6.2f}'.format(stat_Ap2[0], stat_Ap2[1]))
     stat_label = Label(x=20, y=20, x_units='screen', y_units='screen', text=stat_text)
     p2.add_layout(stat_label)
 
-    # Display!
-    show(row(p1, p2))
+    # Create the the HTML output, but do not display at this time
+    save(row(p1, p2))
+    log.info("Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
 
 
-def photometry_graphics_driver(csv_filename):
-    """Driver to load the data from the CSV file and generate the graphics.
-
-    Parameters
-    ==========
-    csv_filename: str
-    Name of the CSV file created by generate_photometry_df.
-    """
-
-    # Get the data back as two tuples which contain mean, std, and median
-    ap1, ap2, means_ap1, means_ap2 = load_data_to_arrays(csv_filename)
-
-    generate_graphic(ap1, ap2, means_ap1, means_ap2)
-
-
-def generate_photometry_df(input_directory, output_csv_filename='svm_photometry_stats.csv'):
-    """Generate a CSV file containing the Pandas dataframe for statistics.
-
-    This routine searches the named directory for a specified JSON file
-    and extracts the statistics to generate a Pandas dataframe.  The dataframe
-    is written out to a CSV file for safe keeping.  In this way, if there were to
-    be an error generating the graphics, the summary file still exists and the
-    harvesting does not have to be redone.
+def photometry_graphics_driver(storage_filename, output_base_filename='photometry_graphics', log_level=logutil.logging.INFO):
+    """Driver to load the data from the storage file and generate the graphics.
 
     Parameters
     ==========
-    input_directory: str
-    Directory to search for *.json files
+    storage_filename : str
+    Name of the storage file for the Pandas dataframe created by the harvester.
 
-    output_csv_filename: str
-    Filename for the output CSV file
+    output_base_filename : str
+    Base name for the HMTL file generated by Bokeh.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
+
+    Returns
+    =======
+    Nothing
     """
 
-    df = make_master_df(input_directory, pattern='*photometry.json')
-    df.to_csv(output_csv_filename)
+    # Retrieve the relevant dataframe and statistics (mean of
+    # means and mean of medians) for Aperture 1 and Aperture 2
+    log.info('Retrieve Pandas dataframe from file {}.\n'.format(storage_filename))
+    phot_data, stat_Ap1, stat_Ap2 = get_data(storage_filename)
+
+    # Generate the photometric graphic
+    generate_graphic(phot_data, stat_Ap1, stat_Ap2, output_base_filename, log_level)
 
 
-def make_dataset_df(dirname, pattern='*.json'):
-    """Convert dir full of JSON files into a DataFrame"""
-
-    jpatt = os.path.join(dirname, pattern)
-    hdr = None
-
-    pdtabs = []
-    for jfilename in sorted(glob.glob(jpatt)):
-        with open(jfilename) as jfile:
-            resids = json.load(jfile)
-        pdindx = None
-        if hdr is None:
-            hdr = resids['header']
-        rootname = hdr['FILENAME'].replace('.fits', '')
-        k = resids['data'].keys()
-        for key in k:
-            dat = resids['data'][key]['data']
-
-            det = dat['detector']
-            filtname = dat['filter_name']
-            del dat['detector']
-            del dat['filter_name']
-            if pdindx is None:
-                pdindx = '-'.join([rootname, det, filtname])
-            for dk in dat.keys():
-                for di in dat[dk].keys():
-                    hdr.update(dict([('-'.join([dk.split(" ")[2], di]), dat[dk][di])]))
-
-        pdtabs.append(pd.DataFrame(hdr, index=[pdindx]))
-    if len(pdtabs) == 0:
-        allpd = None
-    else:
-        allpd = pd.concat(pdtabs)
-    return allpd
+# ======================================================================================================================
 
 
-def make_master_df(dirname, pattern='*.json', num=None):
-    dirs = sorted(glob.glob(os.path.join(dirname, '*')))
-    allpd = None
-    for d in dirs[:num]:
-        pdtab = make_dataset_df(d, pattern=pattern)
-        if pdtab is not None:
-            if allpd is None:
-                allpd = pdtab
-            else:
-                allpd = allpd.append(pdtab)
+if __name__ == "__main__":
+    # Process command-line inputs with argparse
+    parser = argparse.ArgumentParser(description='Read the harvested Pandas dataframe stored as and HDF5 file.')
 
-    return allpd
+    parser.add_argument('harvester_filename', help='File which holds the Pandas dataframe in an HDF5 file.')
+    parser.add_argument('-o', '--output_base_filename', required=False, default="photometry_graphics",
+                        help='Name of the output base filename (filename without the extension) for the  '
+                             'HTML file generated by Bokeh.')
+    parser.add_argument('-l', '--log_level', required=False, default='info',
+                        choices=['critical', 'error', 'warning', 'info', 'debug'],
+                        help='The desired level of verboseness in the log statements displayed on the screen '
+                             'and written to the .log file. The level of verboseness from left to right, and '
+                             'includes all log statements with a log_level left of the specified level. '
+                             'Specifying "critical" will only record/display "critical" log statements, and '
+                             'specifying "error" will record/display both "error" and "critical" log '
+                             'statements, and so on.')
+    user_args = parser.parse_args()
+
+    # Set up logging
+    log_dict = {"critical": logutil.logging.CRITICAL,
+                "error": logutil.logging.ERROR,
+                "warning": logutil.logging.WARNING,
+                "info": logutil.logging.INFO,
+                "debug": logutil.logging.DEBUG}
+    log_level = log_dict[user_args.log_level]
+    log.setLevel(log_level)
+
+    # Verify the input file exists
+    if not os.path.exists(user_args.harvester_filename):
+        err_msg = "Harvester HDF5 File {} does not exist.".format(user_args.harvester_filename)
+        log.critical(err_msg)
+        raise Exception(err_msg)
+ 
+    print(user_args.output_base_filename)
+
+    photometry_graphics_driver(user_args.harvester_filename,
+                               output_base_filename=user_args.output_base_filename,
+                               log_level=log_level)

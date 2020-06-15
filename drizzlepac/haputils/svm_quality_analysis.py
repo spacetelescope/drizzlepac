@@ -108,9 +108,16 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
     Nothing
     """
     log.setLevel(log_level)
+    log.info('\n\n*****     Begin Quality Analysis Test: characterize_gaia_distribution.     *****\n')
 
     # get table of GAIA sources in footprint
     gaia_table = generate_gaia_catalog(hap_obj, columns_to_remove=['mag', 'objID', 'GaiaID'])
+
+    # return without creating a .json if no GAIA sources were found
+    if not gaia_table:
+        log.error("*** No GAIA sources were found. Characterization of GAIA distribution cannot be computed. "
+                  "No json file will be produced.***")
+        return
 
     # if log_level is either 'DEBUG' or 'NOTSET', write out GAIA sources to DS9 region file
     if log_level <= logutil.logging.DEBUG:
@@ -224,6 +231,7 @@ def compare_num_sources(catalog_list, drizzle_list, json_timestamp=None, json_ti
     the names of the previously computed files as lists. The files must exist in the working directory.
     """
     log.setLevel(log_level)
+    log.info('\n\n*****     Begin Quality Analysis Test: compare_num_sources.     *****\n')
 
     pnt_suffix = '_point-cat.ecsv'
     seg_suffix = '_segment-cat.ecsv'
@@ -333,6 +341,8 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
     nothing.
     """
     log.setLevel(log_level)
+    log.info('\n\n*****     Begin Quality Analysis Test: compare_ra_dec_crossmatches.     *****\n')
+
     sl_names = [hap_obj.point_cat_filename, hap_obj.segment_cat_filename]
     img_names = [hap_obj.drizzle_filename, hap_obj.drizzle_filename]
     good_flag_sum = 255  # all bits good
@@ -526,7 +536,15 @@ def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
     Nothing.
     """
     log.setLevel(log_level)
+    log.info('\n\n*****     Begin Quality Analysis Test: find_gaia_sources.     *****\n')
+
     gaia_table = generate_gaia_catalog(hap_obj, columns_to_remove=['objID', 'GaiaID'])
+
+    if not gaia_table:
+        log.error("*** No GAIA sources were found. Finding of GAIA sources cannot be computed. "
+                  "No json file will be produced.***")
+        return
+
     # write catalog to HapDiagnostic-formatted .json file.
     diag_obj = du.HapDiagnostic(log_level=log_level)
     diag_obj.instantiate_from_hap_obj(hap_obj,
@@ -642,6 +660,7 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
     the names of the previously computed files as lists. The files must exist in the working directory.
     """
     log.setLevel(log_level)
+    log.info('\n\n*****     Begin Quality Analysis Test: compare_photometry.     *****\n')
 
     pnt_suffix = '_point-cat.ecsv'
     seg_suffix = '_segment-cat.ecsv'
@@ -712,11 +731,13 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
                                                                           drizzle_file],
                                                                          cat_lengths,
                                                                          log_level=log_level)
+
+        # Move on to the next comparison without creating a .json if no cross-matches are found
         if len(matches_point_to_seg) == 0 or len(matches_seg_to_point) == 0:
             log.warning("Catalog {} and Catalog {} had no matching sources.".format(cat_names[0],
                                                                                     cat_names[1]))
             log.warning("Program skipping comparison of catalog indices associated "
-                        "with {}.\n".format(drizzle_file))
+                        "with {}. No JSON file will be produced.\n".format(drizzle_file))
             continue
 
         # There are nan values present in the catalogs - create a mask which identifies these rows
@@ -760,20 +781,19 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
             result_error = np.sqrt(np.add(np.square(matching_error_rows[0]),
                                           np.square(matching_error_rows[1])))
 
-            stat_key = 'Delta_' + phot_column_name + '=Point_' + phot_column_name + \
-                       '_-_Segment_' + phot_column_name
-            stat_dict = {stat_key: {'Mean Difference': mean_delta_phot, 'Standard Deviation': std_delta_phot,
-                         'Median Difference': median_delta_phot}}
+            stat_key = 'Delta_' + phot_column_name
+            stat_dict = {stat_key: {'Mean': mean_delta_phot, 'StdDev': std_delta_phot,
+                         'Median': median_delta_phot}}
 
             # Write out the results
             diagnostic_obj.add_data_item(stat_dict,
-                                         'High-level Photometry Statistics ' + phot_column_name,
-                                         descriptions={stat_key + '.Mean Difference': phot_column_name + '_Mean(Point-Segment)',
-                                                       stat_key + '.Standard Deviation': phot_column_name + '_STD of Mean Differences',
-                                                       stat_key + '.Median Difference': phot_column_name + '_Median(Point-Segment)'},
-                                         units={stat_key + '.Mean Difference': 'ABMag',
-                                                stat_key + '.Standard Deviation': 'ABMag',
-                                                stat_key + '.Median Difference': 'ABMag'})
+                                         'Statistics_' + phot_column_name,
+                                         descriptions={stat_key + '.Mean': phot_column_name + '_Mean_Differences(Point-Segment)',
+                                                       stat_key + '.StdDev': phot_column_name + '_StdDev_of_Mean_Differences',
+                                                       stat_key + '.Median': phot_column_name + '_Median_Differences(Point-Segment)'},
+                                         units={stat_key + '.Mean': 'ABMag',
+                                                stat_key + '.StdDev': 'ABMag',
+                                                stat_key + '.Median': 'ABMag'})
 
         diagnostic_obj.write_json_file(json_filename)
         log.info("Generated photometry comparison for Point - Segment matches "
@@ -809,6 +829,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
         written to the .log file.  Default value is 'NOTSET'.
     """
     log.setLevel(log_level)
+    log.info('\n\n*****     Begin Quality Analysis Test: report_wcs.     *****\n')
 
     # Generate a separate JSON file for each total product (a total product
     # consists of a single detector.  Each total product consists of one or
@@ -1050,6 +1071,9 @@ def run_hla_sourcelist_comparison(total_list, diagnostic_mode=False, json_timest
     -------
     Nothing.
     """
+    log.setLevel(log_level)
+    log.info('\n\n*****     Begin Quality Analysis Test: run_hla_sourcelist_comparison.     *****\n')
+
     # get HLA classic path details from envroment variables
     hla_classic_basepath = os.getenv('HLA_CLASSIC_BASEPATH')
     hla_build_ver = os.getenv("HLA_BUILD_VER")
