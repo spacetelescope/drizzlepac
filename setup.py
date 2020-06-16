@@ -101,6 +101,7 @@ setup(
         # HAP-pipeline specific:
         'astroquery>=0.4',
         'bokeh',
+        'pandas',
         'photutils>=0.7',
         'pysynphot',
         'lxml',
