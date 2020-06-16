@@ -901,7 +901,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 _trlmsg += "   No correction to absolute astrometric frame applied!\n"
                 print(_trlmsg)
                 _updateTrlFile(trlfile, _trlmsg)
-                if 'aposteriori' not in err.args[0]:
+                if 'aposteriori' not in err:
                     traceback.print_exc()
                 else:
                     print("WARNING: {}".format(err.args[0]))
