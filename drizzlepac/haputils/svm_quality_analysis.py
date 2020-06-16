@@ -1656,21 +1656,21 @@ def build_crossmatch_plots(xmatchDF, data_cols, output_basename='svm_qa'):
     plot_list += p0
 
     hist1, edges1 = np.histogram(xmatchDF.data[data_cols[num_hover_cols + 11]], bins=50)
-    title1 = 'Mean Separation of Point-to-Segment Cross-matched sources'
+    title1 = 'Mean Separation (Sigma-clipped) of Point-to-Segment Cross-matched sources'
     p1 = [plot_histogram(title1, hist1, edges1, y_start=0, 
                     fill_color='navy', background_fill_color='#fafafa', 
                     xlabel='Mean Separation of Cross-matched sources (arcseconds)', ylabel='Number of products')]
     plot_list += p1
     
     hist2, edges2 = np.histogram(xmatchDF.data[data_cols[num_hover_cols + 12]], bins=50)
-    title2 = 'Median Separation of Point-to-Segment Cross-matched sources'
+    title2 = 'Median Separation (Sigma-clipped) of Point-to-Segment Cross-matched sources'
     p2 = [plot_histogram(title2, hist2, edges2, y_start=0, 
                     fill_color='navy', background_fill_color='#fafafa', 
                     xlabel='Median Separation of Cross-matched sources (arcseconds)', ylabel='Number of products')]
     plot_list += p2
     
     hist3, edges3 = np.histogram(xmatchDF.data[data_cols[num_hover_cols + 13]], bins=50)
-    title3 = 'Standard-deviation of Separation of Point-to-Segment Cross-matched sources'
+    title3 = 'Standard-deviation (sigma-clipped) of Separation of Point-to-Segment Cross-matched sources'
     p3 = [plot_histogram(title3, hist3, edges3, y_start=0, 
                     fill_color='navy', background_fill_color='#fafafa', 
                     xlabel='STD(Separation) of Cross-matched sources (arcseconds)', ylabel='Number of products')]
