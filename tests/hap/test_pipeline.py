@@ -18,7 +18,7 @@ class BasePipeline:
     prevdir = os.getcwd()
     use_ftp_crds = True
     timeout = 30  # seconds
-    tree = ''
+    tree = 'dev'
 
     # Numpy default for allclose comparison
     rtol = 1e-6
@@ -54,7 +54,6 @@ class BasePipeline:
         if self.prevref is None or self.prevref.startswith(('ftp', 'http')):
             os.environ[self.refstr] = p + os.sep
             self.use_ftp_crds = True
-        os.environ['TEST_BIGDATA'] = p
 
         # This controls astropy.io.fits timeout
         conf.remote_timeout = self.timeout
@@ -89,7 +88,8 @@ class BasePipeline:
         The associated CRDS reference files in ``refstr`` are also
         downloaded, if necessary.
         """
-        filename = self.get_data(*args, docopy=docopy)
+        # filename = self.get_data(*args, docopy=docopy)
+        filename = args[1]
         ref_files = ref_from_image(filename, ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE',
                                               'DGEOFILE', 'MDRIZTAB'])
         print("Looking for REF_FILES: {}".format(ref_files))
