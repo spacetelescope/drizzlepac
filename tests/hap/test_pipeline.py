@@ -88,7 +88,8 @@ class BasePipeline:
         The associated CRDS reference files in ``refstr`` are also
         downloaded, if necessary.
         """
-        filename = self.get_data(*args, docopy=docopy)
+        # filename = self.get_data(*args, docopy=docopy)
+        filename = args[1]
         ref_files = ref_from_image(filename, ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE',
                                               'DGEOFILE', 'MDRIZTAB'])
         print("Looking for REF_FILES: {}".format(ref_files))
