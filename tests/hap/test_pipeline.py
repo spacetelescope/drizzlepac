@@ -54,7 +54,6 @@ class BasePipeline:
         if self.prevref is None or self.prevref.startswith(('ftp', 'http')):
             os.environ[self.refstr] = p + os.sep
             self.use_ftp_crds = True
-        os.environ['TEST_BIGDATA'] = p
 
         # This controls astropy.io.fits timeout
         conf.remote_timeout = self.timeout
