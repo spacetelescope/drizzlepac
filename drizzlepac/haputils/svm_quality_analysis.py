@@ -1538,6 +1538,22 @@ def build_svm_plots(data_source, output_basename=''):
 # Functions for generating each data plot
 #    
 def build_gaia_plots(gaiaDF, data_cols, output_basename='svm_qa'):
+    """
+    Generate the plots for evaluating the distribution of GAIA catalog sources 
+    in the field-of-view of each product.
+    
+    Parameters
+    ----------
+    gaiaDF : Pandas ColumnDataSource 
+        This object contains all the columns relevant to the plots.
+    
+    data_cols : list
+        The list of column names for the columns read in to the `gaiaDF` object.
+        
+    output_basename : str
+        String to use as the start of the filename for the output plot pages.
+
+    """  
     
     output_basename = "{}_gaia_comparison".format(output_basename)
 
@@ -1609,25 +1625,20 @@ def build_gaia_plots(gaiaDF, data_cols, output_basename='svm_qa'):
 
 def build_crossmatch_plots(xmatchDF, data_cols, output_basename='svm_qa'):
     """
-    xmatch_col_names = HOVER_COLUMNS + ['Cross-match_details.number_of_cross-matches',
-                                        'Cross-match_details.point_catalog_filename',
-                                        'Cross-match_details.point_catalog_length',
-                                        'Cross-match_details.point_frame',
-                                        'Cross-match_details.segment_catalog_filename',
-                                        'Cross-match_details.segment_catalog_length',
-                                        'Cross-match_details.segment_frame',
-                                        'Cross-matched_point_catalog.Declination',
-                                        'Cross-matched_point_catalog.Right ascension',
-                                        'Cross-matched_segment_catalog.Declination',
-                                        'Cross-matched_segment_catalog.Right ascension',
-                                        'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_mean',
-                                        'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_median',
-                                        'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_standard_deviation',
-                                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_max',
-                                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_mean',
-                                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_median',
-                                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_min',
-                                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_standard_deviation']
+    Generate the cross-match statistics plots for the comparison between the
+    point catalog and the segment catalog.
+    
+    Parameters
+    ----------
+    xmatchDF : Pandas ColumnDataSource 
+        This object contains all the columns relevant to the cross-match plots.
+    
+    data_cols : list
+        The list of column names for the columns read in to the `xmatchDF` object.
+        
+    output_basename : str
+        String to use as the start of the filename for the output plot pages.
+
     """  
     output_basename = "{}_crossmatch_comparison".format(output_basename)
 
