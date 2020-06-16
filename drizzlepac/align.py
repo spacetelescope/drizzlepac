@@ -208,8 +208,12 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         Table which contains processing information and alignment results for every raw image evaluated
 
     """
-    log.info("*** HLAPIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__, __version_date__, util._ptime()[0]))
-
+    log.info("*** HAP PIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__, __version_date__, util._ptime()[0]))
+    if runfile is not None:
+        fh = logutil.logging.FileHandler(runfile)
+        fh.setLevel(logutil.logging.DEBUG)
+        log.addHandler(fh)
+        
     # 0: print git info
     if print_git_info:
         log.info("{} STEP 0: Display Git revision info  {}".format("-" * 20, "-" * 49))
