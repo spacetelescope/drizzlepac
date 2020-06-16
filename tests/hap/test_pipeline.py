@@ -18,7 +18,7 @@ class BasePipeline:
     prevdir = os.getcwd()
     use_ftp_crds = True
     timeout = 30  # seconds
-    tree = ''
+    tree = 'dev'
 
     # Numpy default for allclose comparison
     rtol = 1e-6
