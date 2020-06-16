@@ -434,6 +434,9 @@ class ExposureProduct(HAPProduct):
 
         log.info("Copying {} to SVM input: \n    {}".format(filename, edp_filename))
         shutil.copy(filename, edp_filename)
+        
+        # Add HAPLEVEL keyword as required by pipeline processing
+        fits.setval(edp_filename, 'HAPLEVEL', value=0, comment='Classificaion level of this product')
 
         return edp_filename
         
