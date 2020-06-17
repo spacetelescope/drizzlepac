@@ -503,31 +503,26 @@ def build_tooltips(tips):
     
     return tools
     
-def get_pandas_data(csv_filename):
+def get_pandas_data(pandas_filename):
     """Load the harvested data, stored in a CSV file, into local arrays.
 
     Parameters
     ==========
-    csv_filename: str
-    Name of the CSV file created by the harvester.
+    pandas_filename: str
+        Name of the CSV file created by the harvester.
 
     Returns
     =======
     phot_data: Pandas dataframe
-    Dataframe which is a subset of the input Pandas dataframe written out as
-    a CSV file.  The subset dataframe consists of only the requested columns
-    and rows where all of the requested columns did not contain NaNs.
+        Dataframe which is a subset of the input Pandas dataframe written out as
+        a CSV file.  The subset dataframe consists of only the requested columns
+        and rows where all of the requested columns did not contain NaNs.
 
-    (mean_dMagAp1_mean, mean_dMagAp1_median): tuple
-    Aperture 1 mean of means and mean of medians
-
-    (mean_dMagAp2_mean, mean_dMagAp2_median): tuple
-    Aperture 2 mean of means and mean of medians
     """
     
     # Instantiate a Pandas Dataframe Reader (lazy instantiation)
     # df_handle = PandasDFReader_CSV("svm_qa_dataframe.csv")
-    df_handle = PandasDFReader(csv_filename, log_level=logutil.logging.NOTSET)
+    df_handle = PandasDFReader(pandas_filename, log_level=logutil.logging.NOTSET)
 
     # In this particular case, the names of the desired columns do not
     # have to be further manipulated, for example, to add dataset specific
@@ -535,7 +530,7 @@ def get_pandas_data(csv_filename):
     # 
     # Get the relevant column data, eliminating all rows which have NaNs
     # in any of the relevant columns.
-    if csv_filename.endswith('.h5'):
+    if pandas_filename.endswith('.h5'):
         fit_data = df_handle.get_columns_HDF5(HOVER_COLUMNS + RESULTS_COLUMNS)
         source_data = df_handle.get_columns_HDF5(HOVER_COLUMNS + SOURCE_COLUMNS)
     else:
@@ -545,7 +540,44 @@ def get_pandas_data(csv_filename):
     return fit_data, source_data
     
 def build_circle_plot(**plot_dict):
-    """Create figure object for plotting desired columns as a scatter plot with circles"""
+    """Create figure object for plotting desired columns as a scatter plot with circles
+    
+    Parameters
+    ----------
+    source : Pandas ColumnDataSource 
+        Object with all the input data 
+    
+    x, y : str
+        Names of X and Y columns of data from data `source`
+    
+    x_label, y_label : str
+        Labels to use for the X and Y axes (respectively)
+        
+    title : str
+        Title of the plot
+    
+    tips : list of int
+        List of indices for the columns from `source` to use as hints 
+        in the HoverTool
+        
+    color : string, optional
+        Single color to use for data points in the plot if `colormap` is not used
+        
+    colormap : bool, optional
+        Specify whether or not to use a pre-defined set of colors for the points
+        derived from the `colormap` column in the input data `source`
+        
+    markersize : int, optional
+        Size of each marker in the plot
+        
+    legend_group : str, optional
+        If `colormap` is used, this is the name of the column from the input
+        data `source` to use for defining the legend for the colors used.  The
+        same colors should be assigned to all the same values of data from the 
+        column, for example, all 'ACS/WFC' data points from the `instrument`
+        column should have a `colormap` column value of `blue`.
+    
+    """
     # Interpret required elements
     x = plot_dict['x']
     y = plot_dict['y']
@@ -567,6 +599,9 @@ def build_circle_plot(**plot_dict):
 
     if colormap:
         # Add the glyphs
+        # This will use the 'colormap' column from 'source' for the colors of 
+        # each point.  This column should have been populated by the calling
+        # routine. 
         p1.circle(x=x, y=y, source=source, 
                   fill_alpha=0.5, line_alpha=0.5, 
                   size=markersize, color='colormap',
@@ -595,8 +630,17 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
 
     Parameters
     ==========
-    fit_data: Pandas dataframe
+    fit_data : Pandas dataframe
         Dataframe consisting of the relative alignment astrometric fit results
+    
+    output : str, optional
+        Filename for output file with generated plot
+         
+    Returns
+    -------
+    output : str
+        Name of HTML file where the plot was saved.
+
     
     NOTES
     -----
@@ -630,20 +674,20 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
 
     # Setup the source of the data to be plotted so the axis variables can be
     # referenced by column name in the Pandas dataframe
-    fitDF = ColumnDataSource(fit_data)
+    fitCDS = ColumnDataSource(fit_data)
     num_of_datasets = len(fit_data.index)
     print('Number of datasets: {}'.format(num_of_datasets))
     
-    colormap = [DETECTOR_LEGEND[x] for x in fitDF.data[HOVER_COLUMNS[1]]]
-    fitDF.data['colormap'] = colormap
-    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(fitDF.data[HOVER_COLUMNS[0]], 
-                                         fitDF.data[HOVER_COLUMNS[1]])]
-    fitDF.data[INSTRUMENT_COLUMN] = inst_det
+    colormap = [DETECTOR_LEGEND[x] for x in fitCDS.data[HOVER_COLUMNS[1]]]
+    fitCDS.data['colormap'] = colormap
+    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(fitCDS.data[HOVER_COLUMNS[0]], 
+                                         fitCDS.data[HOVER_COLUMNS[1]])]
+    fitCDS.data[INSTRUMENT_COLUMN] = inst_det
     
     plot_list = []
 
     p1 = [build_circle_plot(x=RESULTS_COLUMNS[0], y=RESULTS_COLUMNS[1],
-                           source=fitDF,  
+                           source=fitCDS,  
                            title='RMS Values',
                            x_label="RMS_X (pixels)",
                            y_label='RMS_Y (pixels)',
@@ -652,7 +696,7 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
     plot_list += p1
                            
     p2 = [build_circle_plot(x=RESULTS_COLUMNS[2], y=RESULTS_COLUMNS[3],
-                           source=fitDF,
+                           source=fitCDS,
                            title='Offsets',
                            x_label = "SHIFT X (pixels)",
                            y_label = 'SHIFT Y (pixels)',
@@ -661,7 +705,7 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
     plot_list += p2
 
     p3 = [build_circle_plot(x=RESULTS_COLUMNS[8], y=RESULTS_COLUMNS[4],
-                           source=fitDF,
+                           source=fitCDS,
                            title='Rotation',
                            x_label = "Number of matched sources",
                            y_label = 'Rotation (degrees)',
@@ -670,7 +714,7 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
     plot_list += p3
 
     p4 = [build_circle_plot(x=RESULTS_COLUMNS[8], y=RESULTS_COLUMNS[5],
-                           source=fitDF,
+                           source=fitCDS,
                            title='Scale',
                            x_label = "Number of matched sources",
                            y_label = 'Scale',
@@ -679,7 +723,7 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
     plot_list += p4
     
     p5 = [build_circle_plot(x=RESULTS_COLUMNS[8], y=RESULTS_COLUMNS[9],
-                           source=fitDF,
+                           source=fitCDS,
                            title='Skew',
                            x_label = "Number of matched sources",
                            y_label = 'Skew (degrees)',
@@ -688,15 +732,16 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
     plot_list += p5
 
 
-    # Display!
+    # Save the generated plots to an HTML file define using 'output_file()'
     save(column(plot_list))
                      
+    return output
 
-def build_astrometry_plots(csv_file, output='cal_qa_results.html'):
+def build_astrometry_plots(pandas_file, output='cal_qa_results.html'):
 
-    fit_data, source_data = get_pandas_data(csv_filename)
+    fit_data, source_data = get_pandas_data(pandas_file)
 
-    # Generate the photometric graphic
-    generate_summary_plots(fit_data, output=output)
+    # Generate the astrometric plots
+    astrometry_plot_name = generate_summary_plots(fit_data, output=output)
     
 

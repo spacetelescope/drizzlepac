@@ -1504,7 +1504,7 @@ def build_svm_plots(data_source, output_basename=''):
 
     gaia_cols = get_pandas_data(data_source, gaia_col_names)
 
-    gaia_plots = build_gaia_plots(gaia_cols, gaia_col_names, 
+    gaia_plots_name = build_gaia_plots(gaia_cols, gaia_col_names, 
                                   output_basename=output_basename)
     
     # Generate plots for point-segment catalog cross-match comparisons
@@ -1530,28 +1530,33 @@ def build_svm_plots(data_source, output_basename=''):
 
     xmatch_cols = get_pandas_data(data_source, xmatch_col_names)
 
-    xmatch_plots = build_crossmatch_plots(xmatch_cols, xmatch_col_names, 
+    xmatch_plots_name = build_crossmatch_plots(xmatch_cols, xmatch_col_names, 
                                   output_basename=output_basename)
     
 
 # -----------------------------------------------------------------------------
 # Functions for generating each data plot
 #    
-def build_gaia_plots(gaiaDF, data_cols, output_basename='svm_qa'):
+def build_gaia_plots(gaiaCDS, data_cols, output_basename='svm_qa'):
     """
     Generate the plots for evaluating the distribution of GAIA catalog sources 
     in the field-of-view of each product.
     
     Parameters
     ----------
-    gaiaDF : Pandas ColumnDataSource 
+    gaiaCDS : Pandas ColumnDataSource 
         This object contains all the columns relevant to the plots.
     
     data_cols : list
-        The list of column names for the columns read in to the `gaiaDF` object.
+        The list of column names for the columns read in to the `gaiaCDS` object.
         
     output_basename : str
         String to use as the start of the filename for the output plot pages.
+
+    Returns
+    -------
+    output : str
+        Name of HTML file where the plot was saved.
 
     """  
     
@@ -1566,15 +1571,15 @@ def build_gaia_plots(gaiaDF, data_cols, output_basename='svm_qa'):
 
     num_hover_cols = len(HOVER_COLUMNS)
     
-    colormap = [qa.DETECTOR_LEGEND[x] for x in gaiaDF.data[data_cols[1]]]
-    gaiaDF.data['colormap'] = colormap
-    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(gaiaDF.data[data_cols[0]], 
-                                         gaiaDF.data[data_cols[1]])]
-    gaiaDF.data[qa.INSTRUMENT_COLUMN] = inst_det
+    colormap = [qa.DETECTOR_LEGEND[x] for x in gaiaCDS.data[data_cols[1]]]
+    gaiaCDS.data['colormap'] = colormap
+    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(gaiaCDS.data[data_cols[0]], 
+                                         gaiaCDS.data[data_cols[1]])]
+    gaiaCDS.data[qa.INSTRUMENT_COLUMN] = inst_det
     
     plot_list = []
 
-    hist4, edges4 = np.histogram(gaiaDF.data[data_cols[num_hover_cols]], bins=50)
+    hist4, edges4 = np.histogram(gaiaCDS.data[data_cols[num_hover_cols]], bins=50)
     title4 = 'Number of GAIA sources in Field'
     p4 = [plot_histogram(title4, hist4, edges4, y_start=0, 
                     fill_color='navy', background_fill_color='#fafafa', 
@@ -1583,7 +1588,7 @@ def build_gaia_plots(gaiaDF, data_cols, output_basename='svm_qa'):
 
     p0 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 1], 
                             y=data_cols[num_hover_cols + 4],
-                           source=gaiaDF,  
+                           source=gaiaCDS,  
                            title='Centroid of GAIA Sources in Field',
                            x_label="X Centroid (pixels)",
                            y_label='Y Centroid (pixels)',
@@ -1593,7 +1598,7 @@ def build_gaia_plots(gaiaDF, data_cols, output_basename='svm_qa'):
 
     p1 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 2], 
                             y=data_cols[num_hover_cols + 5],
-                           source=gaiaDF,  
+                           source=gaiaCDS,  
                            title='Offset of Centroid of GAIA Sources in Field',
                            x_label="X Offset (pixels)",
                            y_label='Y Offset (pixels)',
@@ -1603,7 +1608,7 @@ def build_gaia_plots(gaiaDF, data_cols, output_basename='svm_qa'):
 
     p2 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 3], 
                             y=data_cols[num_hover_cols + 6],
-                           source=gaiaDF,  
+                           source=gaiaCDS,  
                            title='Standard Deviation of GAIA Source Positions in Field',
                            x_label="STD(X) (pixels)",
                            y_label='STD(Y) (pixels)',
@@ -1612,7 +1617,7 @@ def build_gaia_plots(gaiaDF, data_cols, output_basename='svm_qa'):
     plot_list += p2
 
     # Generate histogram for mean neighbor distance
-    hist3, edges3 = np.histogram(gaiaDF.data[data_cols[-3]], bins=50)
+    hist3, edges3 = np.histogram(gaiaCDS.data[data_cols[-3]], bins=50)
     title3 = 'Mean distance between GAIA sources in Field'
     p3 = [plot_histogram(title3, hist3, edges3, y_start=0, 
                     fill_color='navy', background_fill_color='#fafafa', 
@@ -1622,22 +1627,30 @@ def build_gaia_plots(gaiaDF, data_cols, output_basename='svm_qa'):
     
     # Display!
     save(column(plot_list))
+    
+    # Return the name of the plot file just created
+    return output
 
-def build_crossmatch_plots(xmatchDF, data_cols, output_basename='svm_qa'):
+def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
     """
     Generate the cross-match statistics plots for the comparison between the
     point catalog and the segment catalog.
     
     Parameters
     ----------
-    xmatchDF : Pandas ColumnDataSource 
+    xmatchCDS : Pandas ColumnDataSource 
         This object contains all the columns relevant to the cross-match plots.
     
     data_cols : list
-        The list of column names for the columns read in to the `xmatchDF` object.
+        The list of column names for the columns read in to the `xmatchCDS` object.
         
     output_basename : str
         String to use as the start of the filename for the output plot pages.
+
+    Returns
+    -------
+    output : str
+        Name of HTML file where the plot was saved.
 
     """  
     output_basename = "{}_crossmatch_comparison".format(output_basename)
@@ -1651,44 +1664,46 @@ def build_crossmatch_plots(xmatchDF, data_cols, output_basename='svm_qa'):
 
     num_hover_cols = len(HOVER_COLUMNS)
     
-    colormap = [qa.DETECTOR_LEGEND[x] for x in xmatchDF.data[data_cols[1]]]
-    xmatchDF.data['colormap'] = colormap
-    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(xmatchDF.data[data_cols[0]], 
-                                         xmatchDF.data[data_cols[1]])]
-    xmatchDF.data[qa.INSTRUMENT_COLUMN] = inst_det
+    colormap = [qa.DETECTOR_LEGEND[x] for x in xmatchCDS.data[data_cols[1]]]
+    xmatchCDS.data['colormap'] = colormap
+    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(xmatchCDS.data[data_cols[0]], 
+                                         xmatchCDS.data[data_cols[1]])]
+    xmatchCDS.data[qa.INSTRUMENT_COLUMN] = inst_det
     
     plot_list = []
 
-    hist0, edges0 = np.histogram(xmatchDF.data[data_cols[num_hover_cols]], bins=50)
+    hist0, edges0 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols]], bins=50)
     title0 = 'Number of Point-to-Segment Cross-matched sources'
     p0 = [plot_histogram(title0, hist0, edges0, y_start=0, 
                     fill_color='navy', background_fill_color='#fafafa', 
                     xlabel='Number of Cross-matched sources', ylabel='Number of products')]
     plot_list += p0
 
-    hist1, edges1 = np.histogram(xmatchDF.data[data_cols[num_hover_cols + 11]], bins=50)
+    hist1, edges1 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 11]], bins=50)
     title1 = 'Mean Separation (Sigma-clipped) of Point-to-Segment Cross-matched sources'
     p1 = [plot_histogram(title1, hist1, edges1, y_start=0, 
                     fill_color='navy', background_fill_color='#fafafa', 
                     xlabel='Mean Separation of Cross-matched sources (arcseconds)', ylabel='Number of products')]
     plot_list += p1
     
-    hist2, edges2 = np.histogram(xmatchDF.data[data_cols[num_hover_cols + 12]], bins=50)
+    hist2, edges2 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 12]], bins=50)
     title2 = 'Median Separation (Sigma-clipped) of Point-to-Segment Cross-matched sources'
     p2 = [plot_histogram(title2, hist2, edges2, y_start=0, 
                     fill_color='navy', background_fill_color='#fafafa', 
                     xlabel='Median Separation of Cross-matched sources (arcseconds)', ylabel='Number of products')]
     plot_list += p2
     
-    hist3, edges3 = np.histogram(xmatchDF.data[data_cols[num_hover_cols + 13]], bins=50)
+    hist3, edges3 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 13]], bins=50)
     title3 = 'Standard-deviation (sigma-clipped) of Separation of Point-to-Segment Cross-matched sources'
     p3 = [plot_histogram(title3, hist3, edges3, y_start=0, 
                     fill_color='navy', background_fill_color='#fafafa', 
                     xlabel='STD(Separation) of Cross-matched sources (arcseconds)', ylabel='Number of products')]
     plot_list += p3
     
-    # Display!
+    # Save the plot to an HTML file
     save(column(plot_list))
+    
+    return output
 
 # -----------------------------------------------------------------------------
 # Utility functions for plotting
