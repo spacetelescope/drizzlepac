@@ -24,12 +24,33 @@ from:
 https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 
 
+From w3schools.com to go with sample Bokeh code from bottom of 
+https://docs.bokeh.org/en/latest/docs/user_guide/bokehjs.html:
+
+<p>Click the button to open a new window called "MsgWindow" with some text.</p>
+
+<button onclick="myFunction()">Try it</button>
+
+<script>
+function myFunction() {
+  var myWindow = window.open("", "MsgWindow", "width=200,height=100");
+  myWindow.document.write("<p>This is 'MsgWindow'. I am 200px wide and 100px tall!</p>");myWindow.document.title="New Window for Plotting";
+}
+</script>
+
+
+
 """
 import json
 import os
 import sys
 from datetime import datetime
 import time
+
+from bokeh.layouts import row, column
+from bokeh.plotting import figure, output_file, save
+from bokeh.models import ColumnDataSource, Label
+from bokeh.models.tools import HoverTool
 
 from astropy.table import Table, vstack
 from astropy.io import fits
@@ -44,19 +65,16 @@ import tweakwcs
 from . import astrometric_utils as amutils
 from .. import tweakutils
 from . import diagnostic_utils as du
+from .pandas_utils import PandasDFReader
+
+
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
-__taskname__ = 'qa_astrometry'
-
-
-def determine_alignment_residuals(input, files, max_srcs=None,
-                                  json_timestamp=None, 
-                                  json_time_since_epoch=None,
-                                  log_level=logutil.logging.NOTSET):
+def determine_alignment_residuals(input, files, max_srcs=2000):
     """Determine the relative alignment between members of an association.
 
     Parameters
@@ -393,7 +411,10 @@ def run_all(input, files, log_level=logutil.logging.NOTSET):
 
 
 # -------------------------------------------------------------------------------
+#
 #  Code for generating relevant plots from these results
+#
+# -------------------------------------------------------------------------------
 def generate_plots(json_data):
     """Create plots from json file or json data"""
     
@@ -425,9 +446,302 @@ def generate_plots(json_data):
                      plotname=resids_name)
         fig_id += 1
 
+# -------------------------------------------------------------------------------
+# Generate the Bokeh plot for the pipeline astrometric data.
+#
+HOVER_COLUMNS = ['gen_info.instrument',
+                 'gen_info.detector',
+                 'gen_info.filter',
+                 'gen_info.imgname',
+                 'header.DATE-OBS',
+                 'header.RA_TARG',
+                 'header.DEC_TARG',
+                 'header.GYROMODE',
+                 'header.EXPTIME',
+                 'fit_results.aligned_to']
+                   
+TOOLTIPS_LIST = ['INSTRUMENT', 'DET', 'FILTER', 
+                  'EXPNAME', 'DATE', 'RA', 'DEC', 'GYRO', 'EXPTIME',
+                  'ALIGNED_TO']
+INSTRUMENT_COLUMN = 'full_instrument'
 
+RESULTS_COLUMNS = ['fit_results.rms_x',
+                   'fit_results.rms_y',
+                   'fit_results.xsh',
+                   'fit_results.ysh',
+                   'fit_results.rot',
+                   'fit_results.scale',
+                   'fit_results.rot_fit',
+                   'fit_results.scale_fit',
+                   'fit_results.nmatches',
+                   'fit_results.skew']
+
+SOURCE_COLUMNS = ['residuals.x',
+                  'residuals.y',
+                  'residuals.ref_x',
+                  'residuals.ref_y']
+TOOLSEP_START = '{'
+TOOLSEP_END = '}'
+DETECTOR_LEGEND = {'UVIS': 'magenta', 'IR': 'red', 'WFC': 'blue', 
+                    'SBC': 'yellow', 'HRC': 'black'}
+    
+
+def build_tooltips(tips):
+    """Return list of tuples for tooltips to use in hover tool.
+    
+    Parameters
+    ----------
+    tips : list
+        List of indices for the HOVER_COLUMNS entries to be used as tooltips 
+        to be included in the hover tool.
+
+    """
+    tools = [(TOOLTIPS_LIST[i], '@{}{}{}'.format(
+                                TOOLSEP_START, 
+                                HOVER_COLUMNS[i],
+                                TOOLSEP_END)) for i in tips]
+    
+    return tools
+    
+def get_pandas_data(pandas_filename):
+    """Load the harvested data, stored in a CSV file, into local arrays.
+
+    Parameters
+    ==========
+    pandas_filename: str
+        Name of the CSV file created by the harvester.
+
+    Returns
+    =======
+    phot_data: Pandas dataframe
+        Dataframe which is a subset of the input Pandas dataframe written out as
+        a CSV file.  The subset dataframe consists of only the requested columns
+        and rows where all of the requested columns did not contain NaNs.
+
+    """
+    
+    # Instantiate a Pandas Dataframe Reader (lazy instantiation)
+    # df_handle = PandasDFReader_CSV("svm_qa_dataframe.csv")
+    df_handle = PandasDFReader(pandas_filename, log_level=logutil.logging.NOTSET)
+
+    # In this particular case, the names of the desired columns do not
+    # have to be further manipulated, for example, to add dataset specific
+    # names.
+    # 
+    # Get the relevant column data, eliminating all rows which have NaNs
+    # in any of the relevant columns.
+    if pandas_filename.endswith('.h5'):
+        fit_data = df_handle.get_columns_HDF5(HOVER_COLUMNS + RESULTS_COLUMNS)
+        source_data = df_handle.get_columns_HDF5(HOVER_COLUMNS + SOURCE_COLUMNS)
+    else:
+        fit_data = df_handle.get_columns_CSV(HOVER_COLUMNS + RESULTS_COLUMNS)
+        source_data = df_handle.get_columns_CSV(HOVER_COLUMNS + SOURCE_COLUMNS)
+
+    return fit_data, source_data
+    
+def build_circle_plot(**plot_dict):
+    """Create figure object for plotting desired columns as a scatter plot with circles
+    
+    Parameters
+    ----------
+    source : Pandas ColumnDataSource 
+        Object with all the input data 
+    
+    x, y : str
+        Names of X and Y columns of data from data `source`
+    
+    x_label, y_label : str
+        Labels to use for the X and Y axes (respectively)
+        
+    title : str
+        Title of the plot
+    
+    tips : list of int
+        List of indices for the columns from `source` to use as hints 
+        in the HoverTool
+        
+    color : string, optional
+        Single color to use for data points in the plot if `colormap` is not used
+        
+    colormap : bool, optional
+        Specify whether or not to use a pre-defined set of colors for the points
+        derived from the `colormap` column in the input data `source`
+        
+    markersize : int, optional
+        Size of each marker in the plot
+        
+    legend_group : str, optional
+        If `colormap` is used, this is the name of the column from the input
+        data `source` to use for defining the legend for the colors used.  The
+        same colors should be assigned to all the same values of data from the 
+        column, for example, all 'ACS/WFC' data points from the `instrument`
+        column should have a `colormap` column value of `blue`.
+    
+    """
+    # Interpret required elements
+    x = plot_dict['x']
+    y = plot_dict['y']
+    title = plot_dict['title']
+    x_label = plot_dict['x_label']
+    y_label = plot_dict['y_label']
+    tips = plot_dict['tips']
+    source = plot_dict['source']
+    
+    # check for optional elements
+    color = plot_dict.get('color', 'blue')
+    click_policy = plot_dict.get('click_policy', 'hide')
+    markersize = plot_dict.get('markersize', 10)
+    colormap = plot_dict.get('colormap', False)
+    legend_group = plot_dict.get('legend_group')
+    
+    # Define a figure object
+    p1 = figure()
+
+    if colormap:
+        # Add the glyphs
+        # This will use the 'colormap' column from 'source' for the colors of 
+        # each point.  This column should have been populated by the calling
+        # routine. 
+        p1.circle(x=x, y=y, source=source, 
+                  fill_alpha=0.5, line_alpha=0.5, 
+                  size=markersize, color='colormap',
+                  legend_group=legend_group)
+    else:
+        # Add the glyphs
+        p1.circle(x=x, y=y, source=source, 
+                  fill_alpha=0.5, line_alpha=0.5, 
+                  size=markersize)
+
+    p1.legend.click_policy = click_policy
+    
+    p1.title.text = title
+    p1.xaxis.axis_label = x_label
+    p1.yaxis.axis_label = y_label
+
+    hover_p1 = HoverTool()
+    tools = build_tooltips(tips)
+    hover_p1.tooltips = tools
+    p1.add_tools(hover_p1)
+    
+    return p1
+    
+def generate_summary_plots(fit_data, output='cal_qa_results.html'):
+    """Generate the graphics associated with this particular type of data.
+
+    Parameters
+    ==========
+    fit_data : Pandas dataframe
+        Dataframe consisting of the relative alignment astrometric fit results
+    
+    output : str, optional
+        Filename for output file with generated plot
+         
+    Returns
+    -------
+    output : str
+        Name of HTML file where the plot was saved.
+
+    
+    NOTES
+    -----
+    Example from bokeh.org on how to create a tabbed set of plots:
+    
+    .. code:: python
+    
+        from bokeh.io import output_file, show
+        from bokeh.models import Panel, Tabs
+        from bokeh.plotting import figure
+
+        output_file("slider.html")
+
+        p1 = figure(plot_width=300, plot_height=300)
+        p1.circle([1, 2, 3, 4, 5], [6, 7, 2, 4, 5], size=20, color="navy", alpha=0.5)
+        tab1 = Panel(child=p1, title="circle")
+
+        p2 = figure(plot_width=300, plot_height=300)
+        p2.line([1, 2, 3, 4, 5], [6, 7, 2, 4, 5], line_width=3, color="navy", alpha=0.5)
+        tab2 = Panel(child=p2, title="line")
+
+        tabs = Tabs(tabs=[ tab1, tab2 ])
+
+        show(tabs)
+
+    
+    """
+    # TODO: include the date from the input data as part of the html filename
+    # Set the output file immediately as advised by Bokeh.
+    output_file(output)
+
+    # Setup the source of the data to be plotted so the axis variables can be
+    # referenced by column name in the Pandas dataframe
+    fitCDS = ColumnDataSource(fit_data)
+    num_of_datasets = len(fit_data.index)
+    print('Number of datasets: {}'.format(num_of_datasets))
+    
+    colormap = [DETECTOR_LEGEND[x] for x in fitCDS.data[HOVER_COLUMNS[1]]]
+    fitCDS.data['colormap'] = colormap
+    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(fitCDS.data[HOVER_COLUMNS[0]], 
+                                         fitCDS.data[HOVER_COLUMNS[1]])]
+    fitCDS.data[INSTRUMENT_COLUMN] = inst_det
+    
+    plot_list = []
+
+    p1 = [build_circle_plot(x=RESULTS_COLUMNS[0], y=RESULTS_COLUMNS[1],
+                           source=fitCDS,  
+                           title='RMS Values',
+                           x_label="RMS_X (pixels)",
+                           y_label='RMS_Y (pixels)',
+                           tips=[3, 0, 1, 2, 8],
+                           colormap=True, legend_group=INSTRUMENT_COLUMN)]
+    plot_list += p1
+                           
+    p2 = [build_circle_plot(x=RESULTS_COLUMNS[2], y=RESULTS_COLUMNS[3],
+                           source=fitCDS,
+                           title='Offsets',
+                           x_label = "SHIFT X (pixels)",
+                           y_label = 'SHIFT Y (pixels)',
+                           tips=[3, 0, 1, 2, 8],
+                           colormap=True, legend_group=INSTRUMENT_COLUMN)]
+    plot_list += p2
+
+    p3 = [build_circle_plot(x=RESULTS_COLUMNS[8], y=RESULTS_COLUMNS[4],
+                           source=fitCDS,
+                           title='Rotation',
+                           x_label = "Number of matched sources",
+                           y_label = 'Rotation (degrees)',
+                           tips=[3, 0, 1, 2, 8],
+                           colormap=True, legend_group=INSTRUMENT_COLUMN)]
+    plot_list += p3
+
+    p4 = [build_circle_plot(x=RESULTS_COLUMNS[8], y=RESULTS_COLUMNS[5],
+                           source=fitCDS,
+                           title='Scale',
+                           x_label = "Number of matched sources",
+                           y_label = 'Scale',
+                           tips=[3, 0, 1, 2, 8],
+                           colormap=True, legend_group=INSTRUMENT_COLUMN)]
+    plot_list += p4
+    
+    p5 = [build_circle_plot(x=RESULTS_COLUMNS[8], y=RESULTS_COLUMNS[9],
+                           source=fitCDS,
+                           title='Skew',
+                           x_label = "Number of matched sources",
+                           y_label = 'Skew (degrees)',
+                           tips=[3, 0, 1, 2, 8],
+                           colormap=True, legend_group=INSTRUMENT_COLUMN)]
+    plot_list += p5
+
+
+    # Save the generated plots to an HTML file define using 'output_file()'
+    save(column(plot_list))
                      
+    return output
 
+def build_astrometry_plots(pandas_file, output='cal_qa_results.html'):
+
+    fit_data, source_data = get_pandas_data(pandas_file)
+
+    # Generate the astrometric plots
+    astrometry_plot_name = generate_summary_plots(fit_data, output=output)
     
-    
-    
+
