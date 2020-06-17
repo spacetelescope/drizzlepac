@@ -830,7 +830,6 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
     """
     log.setLevel(log_level)
     log.info('\n\n*****     Begin Quality Analysis Test: report_wcs.     *****\n')
-    apriori_suffix_list = ['HSC30', 'GSC240']
     aposteriori_list = ['FIT', 'SVM', 'MVM']
 
     # Generate a separate JSON file for each ExposureProduct object
@@ -937,15 +936,19 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
 
                 icnt = 0
                 # Restore an alternate to be the primary WCS
+                # Examples of WCS name formats:
+                # Default WCS name: IDC_xxxxxxxxx
+                # A priori WCS name: IDC_xxxxxxxxx-HSC30
+                # A posteriori WCS name: IDC_xxxxxxxxx-FIT_REL_GAIADR1
                 for key, value in dict_of_wcskeys_names.items():
                     if key != ' ':
                         alt_key = key
                         alt_wcs_name = value.strip()
 
-                        if len(alt_wcs_name) == 13 and alt_wcs_name.startswith('IDC_'):
+                        if '-' not in alt_wcs_name and alt_wcs_name.startswith('IDC_'):
                             alt_name = 'AlternateWCS_default'
                             delta_name = 'DeltaWCS_default'
-                        elif list(filter(alt_wcs_name.endswith, apriori_suffix_list)) != []:
+                        elif '-' in alt_wcs_name and 'FIT' not in alt_wcs_name:
                             alt_name = 'AlternateWCS_apriori'
                             delta_name = 'DeltaWCS_apriori'
                         elif list(filter(alt_wcs_name.find, aposteriori_list)) != []:
@@ -1038,7 +1041,6 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                 log.info("This dataset only has the Primary and OPUS WCS values")
 
             diagnostic_obj.write_json_file(json_filename)
-            log.info("WCS JSON file written: {}.".format(json_filename))
 
         # Clean up
         del diagnostic_obj
