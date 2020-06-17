@@ -830,28 +830,25 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
     """
     log.setLevel(log_level)
     log.info('\n\n*****     Begin Quality Analysis Test: report_wcs.     *****\n')
+    apriori_suffix_list = ['HSC30', 'GSC240']
+    aposteriori_list = ['FIT', 'SVM', 'MVM']
 
-    # Generate a separate JSON file for each total product (a total product
-    # consists of a single detector.  Each total product consists of one or
-    # more ExposureProduct objects.
+    # Generate a separate JSON file for each ExposureProduct object
     for total_product in total_product_list:
         detector = total_product.detector
-        ipppss = total_product.edp_list[0].exposure_name[0:6]
-
-        # Set up the diagnostic object
-        diagnostic_obj = du.HapDiagnostic()
-        diagnostic_obj.instantiate_from_hap_obj(total_product,
-                                                data_source="{}.report_wcs".format(__taskname__),
-                                                description="WCS information",
-                                                timestamp=json_timestamp,
-                                                time_since_epoch=json_time_since_epoch)
-
-        # Construct the output JSON filename
-        json_filename = '_'.join([ipppss, detector, 'svm_wcs.json'])
 
         # Loop over all the individual exposures in the list which comprise the total product
         for edp_object in total_product.edp_list:
-            edp_filter = edp_object.filters
+            # Set up the diagnostic object
+            diagnostic_obj = du.HapDiagnostic()
+            diagnostic_obj.instantiate_from_hap_obj(edp_object,
+                                                    data_source="{}.report_wcs".format(__taskname__),
+                                                    description="WCS information",
+                                                    timestamp=json_timestamp,
+                                                    time_since_epoch=json_time_since_epoch)
+
+            # Construct the output JSON filename
+            json_filename = '_'.join([edp_object.product_basename, 'svm_wcs.json'])
 
             # For exposures with multiple science extensions (multiple chips),
             # generate a combined WCS
@@ -864,31 +861,31 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
 
             # Get information from the active WCS
             active_wcs_dict = {'primary_wcsname': metawcs.wcs.name,
-                               'wcs_info': {'crpix1': metawcs.wcs.crpix[0],
-                                            'crpix2': metawcs.wcs.crpix[1],
-                                            'crval1': metawcs.wcs.crval[0],
-                                            'crval2': metawcs.wcs.crval[1],
-                                            'scale': metawcs.pscale,
-                                            'orientation': metawcs.orientat,
-                                            'exposure': edp_object.exposure_name}}
+                               'crpix1': metawcs.wcs.crpix[0],
+                               'crpix2': metawcs.wcs.crpix[1],
+                               'crval1': metawcs.wcs.crval[0],
+                               'crval2': metawcs.wcs.crval[1],
+                               'scale': metawcs.pscale,
+                               'orientation': metawcs.orientat,
+                               'exposure': edp_object.exposure_name}
 
-            diagnostic_obj.add_data_item(active_wcs_dict, 'PrimaryWCS_' + edp_object.exposure_name,
+            diagnostic_obj.add_data_item(active_wcs_dict, 'PrimaryWCS',
                                          descriptions={'primary_wcsname': 'Active WCS',
-                                                       'wcs_info': {'crpix1': 'X coord of reference pixel',
-                                                                    'crpix2': 'Y coord of reference pixel',
-                                                                    'crval1': 'RA of reference pixel',
-                                                                    'crval2': 'Dec of reference pixel',
-                                                                    'scale': 'Plate scale',
-                                                                    'orientation': 'Position angle of Image Y axis (East of North)',
-                                                                    'exposure': 'Exposure name'}},
+                                                       'crpix1': 'X coord of reference pixel',
+                                                       'crpix2': 'Y coord of reference pixel',
+                                                       'crval1': 'RA of reference pixel',
+                                                       'crval2': 'Dec of reference pixel',
+                                                       'scale': 'Plate scale',
+                                                       'orientation': 'Position angle of Image Y axis (East of North)',
+                                                       'exposure': 'Exposure name'},
                                          units={'primary_wcsname': 'unitless',
-                                                'wcs_info': {'crpix1': 'pixels',
-                                                             'crpix2': 'pixels',
-                                                             'crval1': 'degrees',
-                                                             'crval2': 'degrees',
-                                                             'scale': 'pixels/arcseconds',
-                                                             'orientation': 'degrees',
-                                                             'exposure': 'unitless'}})
+                                                'crpix1': 'pixels',
+                                                'crpix2': 'pixels',
+                                                'crval1': 'degrees',
+                                                'crval2': 'degrees',
+                                                'scale': 'pixels/arcseconds',
+                                                'orientation': 'degrees',
+                                                'exposure': 'unitless'})
 
             # Determine the possible alternate WCS solutions in the header
             dict_of_wcskeys_names = wcsutil.altwcs.wcsnames(edp_object.full_filename, ext=1)
@@ -929,6 +926,8 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
             log.info("Remaining WCS keys and names based on same reference root {}".format(dict_of_wcskeys_names))
 
             # If there is anything left to compare, then do it.
+            # Want to gather the WCS for the default (IDC_rootname), apriori (any name without
+            # FIT, SVM, or MVM), and aposteriori (any name containing FIT, SVM, or MVM) solutions.
             if len(dict_of_wcskeys_names) > 1:
 
                 # Activate an alternate WCS in order to gather its information.
@@ -940,61 +939,81 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                 # Restore an alternate to be the primary WCS
                 for key, value in dict_of_wcskeys_names.items():
                     if key != ' ':
-                        wcsutil.altwcs.restoreWCS(edp_object.full_filename, ext=extname_list, wcskey=key)
                         alt_key = key
-                        alt_wcs_name = value
+                        alt_wcs_name = value.strip()
+
+                        if len(alt_wcs_name) == 13 and alt_wcs_name.startswith('IDC_'):
+                            alt_name = 'AlternateWCS_default'
+                            delta_name = 'DeltaWCS_default'
+                        elif list(filter(alt_wcs_name.endswith, apriori_suffix_list)) != []:
+                            alt_name = 'AlternateWCS_apriori'
+                            delta_name = 'DeltaWCS_apriori'
+                        elif list(filter(alt_wcs_name.find, aposteriori_list)) != []:
+                            alt_name = 'AlternateWCS_aposteriori'
+                            delta_name = 'DeltaWCS_aposteriori'
+                        else:
+                            log.info('WCS name {} is unknown.  Moving on to next WCS solution.\n'.format(alt_wcs_name))
+                            continue
+
+                        wcsutil.altwcs.restoreWCS(edp_object.full_filename, ext=extname_list, wcskey=key)
 
                         # Create a metawcs for this alternate WCS
                         alt_metawcs = wcs_functions.make_mosaic_wcs(edp_object.full_filename)
 
                         # Get information from the alternate/active WCS
-                        alt_wcs_dict = {'alternate_wcsname': alt_wcs_name,
-                                        'wcs_info': {'crpix1': alt_metawcs.wcs.crpix[0],
-                                                     'crpix2': alt_metawcs.wcs.crpix[1],
-                                                     'crval1': alt_metawcs.wcs.crval[0],
-                                                     'crval2': alt_metawcs.wcs.crval[1],
-                                                     'scale': alt_metawcs.pscale,
-                                                     'orientation': alt_metawcs.orientat,
-                                                     'exposure': edp_object.exposure_name}}
+                        alt_wcs_dict = {'alt_wcsname': alt_wcs_name,
+                                        'crpix1': alt_metawcs.wcs.crpix[0],
+                                        'crpix2': alt_metawcs.wcs.crpix[1],
+                                        'crval1': alt_metawcs.wcs.crval[0],
+                                        'crval2': alt_metawcs.wcs.crval[1],
+                                        'scale': alt_metawcs.pscale,
+                                        'orientation': alt_metawcs.orientat,
+                                        'exposure': edp_object.exposure_name}
 
-                        diagnostic_obj.add_data_item(alt_wcs_dict, 'AlternateWCS_' + edp_object.exposure_name + '_' + str(icnt),
-                                                     descriptions={'alternate_wcsname': 'Alternate WCS', 'wcs_info': 'WCS',
-                                                                   'crpix1': 'X coord of reference pixel', 'crpix2': 'Y coord of reference pixel',
-                                                                   'crval1': 'RA of reference pixel', 'crval2': 'Dec of reference pixel',
+                        diagnostic_obj.add_data_item(alt_wcs_dict, alt_name,
+                                                     descriptions={'alt_wcsname': 'Alternate WCS',
+                                                                   'crpix1': 'X coord of reference pixel',
+                                                                   'crpix2': 'Y coord of reference pixel',
+                                                                   'crval1': 'RA of reference pixel',
+                                                                   'crval2': 'Dec of reference pixel',
                                                                    'scale': 'Plate scale',
                                                                    'orientation': 'Position angle of Image Y axis (East of North)',
                                                                    'exposure': 'Exposure name'},
-                                                     units={'alternate_wcsname': 'unitless', 'wcs_info': 'unitless', 'crpix1': 'pixels',
-                                                            'crpix2': 'pixels', 'crval1': 'degrees', 'crval2': 'degrees',
-                                                            'scale': 'pixels/arcseconds', 'orientation': 'degrees',
+                                                     units={'alt_wcsname': 'unitless',
+                                                            'crpix1': 'pixels',
+                                                            'crpix2': 'pixels',
+                                                            'crval1': 'degrees',
+                                                            'crval2': 'degrees',
+                                                            'scale': 'pixels/arcseconds',
+                                                            'orientation': 'degrees',
                                                             'exposure': 'unitless'})
 
-                        delta_wcs = metawcs.wcs.name + '-' + alt_wcs_name
-                        diff_wcs_dict = {'delta_wcsname': delta_wcs, 'wcs_info': {}}
-                        # if or wcs_key in active_wcs_dict.keys():
-                        #    if wcs_key.find('wcsname') != -1:
-                        #        continue
-                        #    print("wcs_key: {}".format(wcs_key))
-                        #    diff_wcs_dict['wcs_info'][wcs_key] = active_wcs_dict['wcs_info'][wcs_key] - alt_wcs_dict['wcs_info'][wcs_key]
-                        diff_wcs_dict['wcs_info']['d_crpix1'] = active_wcs_dict['wcs_info']['crpix1'] - alt_wcs_dict['wcs_info']['crpix1']
-                        diff_wcs_dict['wcs_info']['d_crpix2'] = active_wcs_dict['wcs_info']['crpix2'] - alt_wcs_dict['wcs_info']['crpix2']
-                        diff_wcs_dict['wcs_info']['d_crval1'] = active_wcs_dict['wcs_info']['crval1'] - alt_wcs_dict['wcs_info']['crval1']
-                        diff_wcs_dict['wcs_info']['d_crval2'] = active_wcs_dict['wcs_info']['crval2'] - alt_wcs_dict['wcs_info']['crval2']
-                        diff_wcs_dict['wcs_info']['d_scale'] = active_wcs_dict['wcs_info']['scale'] - alt_wcs_dict['wcs_info']['scale']
-                        diff_wcs_dict['wcs_info']['d_orientation'] = active_wcs_dict['wcs_info']['orientation'] - alt_wcs_dict['wcs_info']['orientation']
-                        diff_wcs_dict['wcs_info']['exposure'] = edp_object.exposure_name
+                        delta_wcs_name = metawcs.wcs.name + '_minus_' + alt_wcs_name
+                        diff_wcs_dict = {'delta_wcsname': delta_wcs_name,
+                                         'd_crpix1': active_wcs_dict['crpix1'] - alt_wcs_dict['crpix1'],
+                                         'd_crpix2': active_wcs_dict['crpix2'] - alt_wcs_dict['crpix2'],
+                                         'd_crval1': active_wcs_dict['crval1'] - alt_wcs_dict['crval1'],
+                                         'd_crval2': active_wcs_dict['crval2'] - alt_wcs_dict['crval2'],
+                                         'd_scale': active_wcs_dict['scale'] - alt_wcs_dict['scale'],
+                                         'd_orientation': active_wcs_dict['orientation'] - alt_wcs_dict['orientation'],
+                                         'exposure': edp_object.exposure_name}
 
-                        diagnostic_obj.add_data_item(diff_wcs_dict, 'Delta(Primary-Alternate)WCS_' + edp_object.exposure_name + '_' + str(icnt),
-                                                     descriptions={'delta_wcsname': 'Active-Alternate WCS', 'wcs_info': 'WCS',
+                        diagnostic_obj.add_data_item(diff_wcs_dict, delta_name,
+                                                     descriptions={'delta_wcsname': 'Active-Alternate WCS',
                                                                    'd_crpix1': 'delta_X of reference pixel',
-                                                                   'd_crpix2': 'delta_Y of reference pixel', 'd_crval1': 'delta_RA of reference pixel',
+                                                                   'd_crpix2': 'delta_Y of reference pixel',
+                                                                   'd_crval1': 'delta_RA of reference pixel',
                                                                    'd_crval2': 'delta_Dec of reference pixel',
                                                                    'd_scale': 'delta_Plate scale',
                                                                    'd_orientation': 'delta_Position angle of Image Y axis (East of North)',
                                                                    'exposure': 'Exposure name'},
-                                                     units={'delta_wcsname': 'unitless', 'wcs_info': 'unitless', 'd_crpix1': 'pixels',
-                                                            'd_crpix2': 'pixels', 'd_crval1': 'degrees', 'd_crval2': 'degrees',
-                                                            'd_scale': 'pixels/arcseconds', 'd_orientation': 'degrees',
+                                                     units={'delta_wcsname': 'unitless',
+                                                            'd_crpix1': 'pixels',
+                                                            'd_crpix2': 'pixels',
+                                                            'd_crval1': 'degrees',
+                                                            'd_crval2': 'degrees',
+                                                            'd_scale': 'pixels/arcseconds',
+                                                            'd_orientation': 'degrees',
                                                             'exposure': 'unitless'})
 
                         # Delete the original alternate WCS...
@@ -1018,8 +1037,8 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
             else:
                 log.info("This dataset only has the Primary and OPUS WCS values")
 
-        diagnostic_obj.write_json_file(json_filename)
-        log.info("WCS information Primary WCS - Alternate WCS.".format(json_filename))
+            diagnostic_obj.write_json_file(json_filename)
+            log.info("WCS JSON file written: {}.".format(json_filename))
 
         # Clean up
         del diagnostic_obj
