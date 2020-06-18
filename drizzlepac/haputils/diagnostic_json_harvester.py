@@ -82,6 +82,11 @@ def get_json_files(search_path=os.getcwd(), log_level=logutil.logging.INFO):
     for search_pattern in search_patterns:
         search_string = os.path.join(search_path, search_pattern)
         search_results = glob.glob(search_string)
+        if len(search_results) == 0:
+            # Try another directory lower
+            search_string = os.path.join(search_path, '*', search_pattern)
+            search_results = glob.glob(search_string)
+            
         log.info("{} files found: {}".format(search_pattern, len(search_results)))
         if len(search_results) > 0:
             json_list += glob.glob(search_string)
