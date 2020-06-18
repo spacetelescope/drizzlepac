@@ -74,7 +74,10 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
-def determine_alignment_residuals(input, files, max_srcs=2000):
+def determine_alignment_residuals(input, files, max_srcs=2000, 
+                                  json_timestamp=None,
+                                  json_time_since_epoch=None,
+                                  log_level=logutil.logging.INFO):
     """Determine the relative alignment between members of an association.
 
     Parameters
@@ -162,19 +165,16 @@ def determine_alignment_residuals(input, files, max_srcs=2000):
         if img.meta['fit_info']['status'] == 'SUCCESS':
             align_success = True
             break
+    resids_files = []
     if align_success:
         # extract results in the style of 'tweakreg'
         resids = extract_residuals(imglist)
 
-        if resids is None:
-            resids_files = []
-        else:
+        if resids is not None:
             resids_files = generate_output_files(resids, 
-                                 json_timestamp=None, 
-                                 json_time_since_epoch=None, 
+                                 json_timestamp=json_timestamp, 
+                                 json_time_since_epoch=json_time_since_epoch, 
                                  exclude_fields=['group_id'])
-    else:
-        resids_file = []
 
     return resids_files
 
@@ -405,7 +405,8 @@ def run_all(input, files, log_level=logutil.logging.NOTSET):
 
     json_files = determine_alignment_residuals(input, files,
                                              json_timestamp=json_timestamp,
-                                             json_time_since_epoch=json_time_since_epoch)
+                                             json_time_since_epoch=json_time_since_epoch,
+                                             log_level=log_level)
     
     print("Generated quality statistics as {}".format(json_files))
 

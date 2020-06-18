@@ -510,10 +510,12 @@ class HAPImage:
             log.debug("")
             log.debug("{}".format("=" * 60))
 
-            self.bkg[chip] = bkg.background.copy()
-            self.bkg_dao_rms[chip] = bkg_dao_rms.copy()
-            self.bkg_rms_mean[chip] = bkg_rms_mean.copy()
-            self.threshold[chip] = threshold.copy()
+            # Make copies using deepcopy so it will work with ndarray backgrounds
+            # or scalar backgrounds depending on the situation.
+            self.bkg[chip] = copy.deepcopy(bkg.background)
+            self.bkg_dao_rms[chip] = copy.deepcopy(bkg_dao_rms)
+            self.bkg_rms_mean[chip] = copy.deepcopy(bkg_rms_mean)
+            self.threshold[chip] = copy.deepcopy(threshold)
 
             del bkg, default_threshold, threshold, bkg_dao_rms, bkg_rms_mean
 
