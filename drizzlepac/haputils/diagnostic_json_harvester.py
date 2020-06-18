@@ -89,7 +89,7 @@ def get_json_files(search_path=os.getcwd(), log_level=logutil.logging.INFO):
             
         log.info("{} files found: {}".format(search_pattern, len(search_results)))
         if len(search_results) > 0:
-            json_list += glob.glob(search_string)
+            json_list += search_results
 
     # store json filenames in a dictionary keyed by Pandas DataFrame index value
     if json_list:
