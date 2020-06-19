@@ -76,6 +76,8 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             
 __taskname__ = 'quality_analysis'
 
+__taskname__ = "quality_analysis"
+
 def determine_alignment_residuals(input, files, max_srcs=2000, 
                                   json_timestamp=None,
                                   json_time_since_epoch=None,
