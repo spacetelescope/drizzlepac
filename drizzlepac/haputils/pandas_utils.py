@@ -75,7 +75,7 @@ class PandasDFReader:
 
         return column_data
 
-    def get_columns_HDF5(self, column_names):
+    def get_columns_HDF5(self, column_names, do_drop=True):
         """ Method to do the actual reading of dataframe and get the data in the
             specified columns.
 
@@ -83,6 +83,10 @@ class PandasDFReader:
             ----------
             column_names : list
             A list of the column names which specify the desired data.
+
+            do_drop : bool, optional (default is True indicating to drop the rows)
+            Option to drop rows which contain NaNs in any of the requested columns.
+            Option is set to True for backwards compatibility.
 
             Returns
             -------
@@ -101,8 +105,12 @@ class PandasDFReader:
 
             hdf5.close()
 
-        # Get the requested columns and eliminate all rows which have
-        # NaNs in any of the requested columns.
-        column_data = self._dataframe.loc[:, column_names].dropna()
+        # Get the requested columns and eliminate, upon request, rows which have
+        # NaNs in *any* of the requested columns. Because of the way some of the
+        # data has been put into the dataframe (e.g., wcs), rows should not be eliminated.
+        if do_drop:
+            column_data = self._dataframe.loc[:, column_names].dropna()
+        else:
+            column_data = self._dataframe.loc[:, column_names]
 
         return column_data
