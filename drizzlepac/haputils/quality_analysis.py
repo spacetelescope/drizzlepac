@@ -486,6 +486,8 @@ TOOLSEP_END = '}'
 DETECTOR_LEGEND = {'UVIS': 'magenta', 'IR': 'red', 'WFC': 'blue', 
                     'SBC': 'yellow', 'HRC': 'black'}
     
+FIGURE_TOOLS = 'pan,wheel_zoom,box_zoom,zoom_in,zoom_out,box_select,reset,save'
+
 
 def build_tooltips(tips):
     """Return list of tuples for tooltips to use in hover tool.
@@ -596,7 +598,7 @@ def build_circle_plot(**plot_dict):
     legend_group = plot_dict.get('legend_group')
     
     # Define a figure object
-    p1 = figure()
+    p1 = figure(tools=FIGURE_TOOLS)
 
     if colormap:
         # Add the glyphs
