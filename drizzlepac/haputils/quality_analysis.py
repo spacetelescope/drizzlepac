@@ -736,18 +736,23 @@ def build_vector_plot(**plot_dict):
     # check for optional elements
     color = plot_dict.get('color', 'blue')
     click_policy = plot_dict.get('click_policy', 'hide')
-        
+    
     # Define a figure object
     p1 = figure(tools=FIGURE_TOOLS)
 
-    xr = np.array(source.data[x]) + np.array(source.data['dx'])
-    yr = np.array(source.data[y]) + np.array(source.data['dy'])
+    mean_dx = (np.abs(source.data['dx']).mean() + np.abs(source.data['dy']).mean())/2.0
+    mag = 10./mean_dx  # set average magnitude of vectors to be delta(x)=10.
+    
+    xr = np.array(source.data[x]) + np.array(source.data['dx'] * mag)
+    yr = np.array(source.data[y]) + np.array(source.data['dy'] * mag)
     # Add the glyphs
     # This will use the 'colormap' column from 'source' for the colors of 
     # each point.  This column should have been populated by the calling
     # routine. 
 
-    p1.segment(source.data[x], source.data[y], xr, yr,
+    import pdb;pdb.set_trace()
+    p1.segment(source.data[x], source.data[y], 
+               xr.tolist(), yr.tolist(),
               color=color, line_width=2)
     
     p1.title.text = title
