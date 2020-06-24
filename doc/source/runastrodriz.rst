@@ -104,8 +104,7 @@ sections providing additional detail on each step.
 
         a) perform cosmic-ray identification and generate drizzle products using astrodrizzle for all sets of inputs
         b) verify relative alignment with focus index after masking out CRs
-        c) copy all drizzle products to parent directory
-        d) if alignment fails, update trailer file with failure information
+        c) if alignment fails, update trailer file with failure information
 
     #. If alignment is verified,
 
@@ -114,7 +113,7 @@ sections providing additional detail on each step.
         
           * apply 'best' apriori (not aposteriori) solution
 
-        c) generate drizzle products for all sets of inputs (FLC and/or FLT) without CR identification
+        c) generate drizzle products for all sets of inputs (FLC and/or FLT)
         d) verify alignment using focus index on FLC or, if no FLC, FLT products
         e) if alignment fails, update trailer file with info on failure
         f) if product alignment verified:
@@ -197,7 +196,7 @@ Data to be Processed
 Once the code has performed all the initialization, it prepares the processing by defining what files need to be combined together from the input files it can find.  This includes looking for CTE-corrected versions of the calibrated exposures (FLC files) as well as all the non-CTE-corrected files (FLT files) and creating a separate list of each type.  Many types of data do not get CTE-corrected by the instruments calibration software, such as calacs.e or calwf3.e, and so no list of FLC files will be made.  This will tell the code that it only needs to process the FLT files by themselves.  If FLC files are found, all updates to the astrometry and WCS will be performed on those files and the results then get copied into the FLT file headers upon completion of the processing.  
 
 
-Updating the WCS
+Update the WCS
 ----------------
 The first operation on the calibrated input files focuses on applying the calibrations
 for the distortion model to the WCS.  This operation gets performed using the 
@@ -219,12 +218,268 @@ This default WCS serves as the basis for all subsequent processing as the code
 tries to determine the WCS which is aligned most closely to the GAIA astrometric
 coordinate system.  
 
- 
 
 
+Generate the initial default products
+--------------------------------------
+The instrument teams have calibrated the distortion models extremely well for nearly
+all imaging modes with the latest calibration model being applied to the WCS keywords
+when the observations were updated in the previous step.  The observations at this
+point represent what the best calibration of the pointings as observed by the 
+telescope.  The accuracy of the guiding allows for sub-pixel alignment of the 
+observations for most of the data and this step applies the distortion model to 
+generate the 'pipeline-default' drizzle products.  
+
+The default products get generated using the ``astrodrizzle`` task.  This initial
+run relies on a couple of default settings to generate the default drizzle products;
+namely,
+
+  * reads and applies default parameter settings from MDRIZTAB specified in observation header
+  * uses ``resetbits=4096``
+  * runs with ``crbit=4096`` to define cosmic-rays/bad-pixels with DQ flag of 4096
+
+Identify Cosmic-Rays
+^^^^^^^^^^^^^^^^^^^^
+Generating these drizzle products serves as the initial attempt to identify and to flag
+bad-pixels or cosmic-rays in each of the observations.  Assuming the relative 
+alignment of the initial pointing by the telescope is good (aligned to <0.1 pixels),
+most of the cosmic-rays will be successfully identified at this point by flagging those
+pixels with a value of 4096 in the DQ array for each chip.  This will 
+make it easier to find sources and confirm alignment without having to weed through
+so many false sources.  However, there are times when the default alignment by 
+the telescope was not maintained which can result in all sources (real and cosmic-rays
+alike) to be flagged, so subsequent steps can reset the DQ bits from 4096 to 0 
+while processing the data again with `astrodrizzle` using different WCS solutions.
+
+These initial products will only be generated for the CTE-corrected versions of
+the observations (``*_flc.fits`` or FLC files) if they are present, and the standard
+calibrated versions of the observations (``*flt.fits`` or FLT files) otherwise. 
+
+Verifying Alignment
+^^^^^^^^^^^^^^^^^^^
+The relative alignment of these pipeline-default products relies entirely on the
+guiding accuracy of the telescope.  Unfortunately, there are times when guiding
+problems impact the observations. These guiding errors can occur due to any of
+several reasons, including but not limited to:
+
+  * re-acquisition of a different guide star from one orbit to another, usually as a result of using a close binary that was not previously identified in the guide star catalog
+  * high slew rate due to only guiding on gyros due to problems with acquiring guide stars
+  * spurious guiding problems due to the aging telescope and guiding systems
+
+Verifying whether or not we can identify any problems with the relative alignment
+for these products starts by measuring the focus index for the drizzled products.
+The focus index was based on using the properties of the Laplacian of Gaussian (LoG)
+operator as an edge detector.  See http://alumni.media.mit.edu/~maov/classes/vision09/lect/09_Image_Filtering_Edge_Detection_09.pdf for background on the Laplacian of Gaussian 
+operator and its use in image filtering.  The index that has been implemented is based 
+on the maximum value of the LoG operation on each drizzled product.  
+
+The process for computing this index is:
+  
+  * use the drizzled product, with as many cosmic-rays as possible, as the input
+  * create a mask of all the saturated sources
+  * apply the LoG operator to the image
+  * pick out the pixel with the maximum value to serve as the value of the focus index
+  
+This measurement process gets applied to the total drizzle product for an association, 
+as well as the drizzle product for each input exposure as well, 
+known as 'single drizzled' products.  The single drizzled products represent the
+optimal focus since there is only a single exposure with only telescope focus 
+changes affecting the image focus value.  The range of values from the single drizzled
+products establishes the distribution of 'good' focus values that gets used to 
+evaluate whether the total drizzle product passes focus verification.  This range 
+of values comes as a result of the changing focus of 
+the telescope from one exposure to another and to a lesser extent the effect of noise 
+in low-S/N observations.
+
+A Z-score then gets computed for the focus index value of each single drizzle 
+product.  This Z-score is defined as the percent point function of the cumulative 
+distribution function of the total drizzle focus value relative to the
+mean and STD of the values from the single drizzle products.  The actual
+computation is:
+
+.. code:: python 
+
+    from scipy.stats as st
+    
+    p = st.norm.cdf(x=val, loc=mean, scale=sigma)
+    z_score = st.norm.ppf(p)
+
+A Z-score then gets computed for the focus index value derived from the total
+drizzle product.  If this score falls within the range of values defined by the
+single drizzle focus index Z-score values, this WCS solution is considered to 
+have passed the 'focus verification' check. 
+
+In addition to the focus index, a similarity index can also be computed between 
+the single drizzle products (again treated as 'truth') and the total drizzle 
+product.  The function used to compute this is the ``max_overlap_diff`` function
+in ``astrometric_utils``.  The similarity index gets computed only for the region of maximum 
+overlap of all the input exposures.  This region of overlap gets determined
+using the ``SkyFootprint`` class from the ``cell_utils`` module.  Should an input
+exposure not overlap the regions where most of the exposures overlap, then the region
+which overlaps at least 1 other exposure will be used for computing the index. 
+
+Point sources are detected in the selected region of overlap with a mask being
+generated for each source containing a value of 1 for the point source and 0 for
+the background.  The sources are identified in the single drizzle image overlap 
+region and the total drizzle product overlap region.  These single drizzle mask
+then gets subtracted from the total drizzle mask, then scaled by the number of 
+non-zero pixels in the single drizzle mask resulting in a Hamming-distance between
+the two images. This distance then gets scaled by the relative exposure time of the 
+single drizzle image to account for uncertainties introduced by readout noise, low
+S/N detection of sources and other variances due to exposure time.  
+
+We then compute a variant of the Mean Squared Error (MSE) algorithm used in the 
+AmphiIndex image comparison code used for comparing images taken of amphibians.  
+One description of how the MSE measures the similarity between images can be found at 
+https://www.pyimagesearch.com/2014/09/15/python-compare-two-images/. This similarity
+index is sensitive to small offsets between exposures, as well as differences in noise,
+overall S/N as well as cosmic-rays.  In contrast, the Hamming-distance is not as
+sensitive to noise.  Therefore, we compare the MSE similarity with the Hamming 
+distance and take the minimum of the two values as a more robust measure of the
+similarity of the images.  Both values share one key characteristic: values > 1.0 
+indicate more pixels are different than similar.  The code takes the maximum value
+of the similarity indices computed for the total drizzle product compared to 
+all the single drizzle products as the final measure of the similarity.  If this 
+value is less than 1.0, then this WCS is considered to have passed the similarity
+check. 
 
 
+Updating the Trailer File
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+Associations where there are problems with the alignment will cause this verification
+to fail since the sources will not be 'as sharp' based on the LoG operator.  As a 
+result, it can flag situations where even sub-pixel offsets down less than 0.5 pixels
+are identified. For the default pipeline alignment, failure at this point is only
+noted in the log with the hope that later alignment efforts will resolve the
+problem affecting the original input data as noted in this check. 
 
+
+Applying A Priori WCS Solutions
+-------------------------------
+A priori WCS solutions defined for use with HST data refer to improvements to the
+WCS solutions that were pre-computed.  As of 2020, there were 2 primary sources
+of `a priori` WCS solutions:
+
+    * GSC240:  correcting the previous guide star coordinates to the GAIA frame
+    * HSC30: corrections derived using the Hubble Source Catalog(HSC) coordinates cross-matched to the GAIA catalog 
+
+The updated ``a priori`` solutions are stored as ``headerlets`` in the database.
+The headerlet format allows them to be applied directly to the exposure using the
+STWCS package while requiring very little storage space (typically, < 120Kb per 
+headerlet). More details on the ``headerlet`` can be found at https://stwcs.readthedocs.io/en/latest/headerlet.html.
+
+
+GSC240: GAIA and the HST Guide Stars
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Observations taken prior to October 2017 used guide star coordinates which were 
+based on guide star coordinates derived primarily from ground-based observations.
+This resulted in an uncertainty of 1 arcsecond in the absolute pointing of the 
+telescope for any given observation.  The development and availability of the 
+space-based GAIA astrometric catalog finally allowed for the guide star coordinates
+to be known to better than 10 milli-arcseconds in 2015 with proper motion uncertainties
+increasing by 5 milli-arcseconds per year on average.  The GAIA astrometric catalog
+was then cross-matched to the HST guide star catalog used for pointing the telescope,
+and corrections were determined. These corrections were then applied to every HST
+observation taken before Oct 2017 as if the telescope used the GAIA coordinates originally to 
+generate updated WCS solutions to describe the GAIA-based pointing.  These updated
+WCS solutions were labelled with 'GSC240' in the WCSNAME and stored in an 
+astrometry database to be applied on-demand to all observations taken before Oct 2017.  
+
+These solutions will not result in perfect alignment to the GAIA catalog, due to 
+temporal uncertainties in the calibration of the instrument's field of view relative
+to the FGS's used to point and to guid the telescope during the observations.  This
+uncertainty can be up to 0.5 arcseconds, but it still represents a significant improvement
+in the absolute astrometry from the 1-sigma of 1 arcsecond for previous WCS solutions.
+
+All observations
+taken after Oct 2017 already used guide-star coordinates based on GAIA, so no new
+WCS was needed as it would simply be the same as the pipeline default WCS.
+
+HSC30: Hubble Source Catalog WCSs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The Hubble Source Catalog(HSC) (https://archive.stsci.edu/hst/hsc/) developed a comprehensive
+catalog of a majority of the sources observed in Hubble data.  This catalog was
+then cross-matched to the GAIA catalog to determine improved positions for those
+sources.  By using the updated positions from Version 3.0 of the HSC and comparing them to the original 
+positions based on the pipeline default WCS solutions, updates were derived for
+all observations with sources from the HSC.  The updates were then used to recompute
+the WCS solutions for those observations which were labelled as 'HSC30' in the WCSNAME and 
+stored in the astrometry database.   
+
+Separate Directories
+^^^^^^^^^^^^^^^^^^^^
+One mechanism used to enable comparisons of various WCS solutions is to keep 
+copies of the observations with different types of WCS solutions in separate 
+directories.  Up until this point in the processing, the data has been processed
+in the directory where the processing was started.  In order to keep the ``a priori`` 
+solutions separate, a sub-directory gets created with name based on the association
+table rootname or the rootname of the single exposure being processed using the 
+convention:  `<rootname>_apriori`.  All the FLC (or FLT, if no FLC files are present), 
+and ASN file (if processing an association) are copied from the main directory into
+the new sub-directory and the process moves to the sub-directory to continue its
+processing. 
+
+
+Applying the A Priori Solutions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Application of these `a priori` WCS solutions simply involves running the ``updatewcs``
+task with ``use_db=True`` (the default setting).  This queries the astrometry
+database and retrieves the headerlets for all the ``a priori`` solutions.  The
+database also reports what solution is flagged as the ``best`` solution, which will
+typically result in the closest alignment to GAIA.  All the headerlets get appended
+as new extensions to the observations FITS file, then the ``a priori`` solution flagged as ``best``
+gets applied to replace the active or primary WCS in the observation after saving 
+a copy of the original primary WCS.  Other solutions could be provided by the 
+database that were derived directly from the observation itself, perhaps in previous
+pipeline processing runs.  These solutions are retained, but not applied at this point 
+since it is not clear whether the distortion model has changed from those saved 
+in the database, or whether the pipeline software has been improved to provide a
+more accurate or more robust solution.  Finally, we are only interested in seeing
+whether there are any issues in applying the pre-defined ``a priori`` corrections.
+
+Generating A Priori Products
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The FLC images updated with the ``a priori`` WCS solutions now get combined using
+``astrodrizzle``.  If the pipeline default focus verification succeeded, then
+``resetbits`` will be set to 0 so that the previous DQ flags can be used.  If the 
+verification failed, though, ``resetbits`` gets set to 4096 so that the cosmic-rays
+can be identified and flagged fresh based on the alignment provided by the ``a priori``
+WCS solutions.  
+
+This processing will result in a total combined drizzle product based on the 
+``a priori`` solution.  
+
+Evaluating Alignment
+^^^^^^^^^^^^^^^^^^^^^
+Confirming that the relative alignment between the images in the association was
+maintained with the ``a priori`` WCS now can be done.  Although the ``a priori`` 
+WCS solutions are vetted for accuracy, HST has taken a few hundred thousand 
+different exposures in dozens of configurations and not all of those exposures were
+taken exactly as planned.  Therefore, considerable effort goes into trying to verify
+that the alignment between the images has been maintained.  
+
+This verification starts by computing the focus index and similarity values for the total 
+drizzle product and the single drizzle products using the same code used to verify
+the pipeline default WCS drizzle product.  It then extends to include computing
+the similarity index between the ``a priori`` drizzle products and the pipeline
+default drizzle products.  This will attempt to measure whether or not the ``a priori``
+alignment is significantly different than the presumably good pipeline default 
+alignment.  Once again, if the similarity index is less than 1, the ``a priori`` 
+alignment is considered to be successful.
+
+Keeping the A Priori Alignment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Should all the verification steps indicate a successful alignment, the ``a priori``
+WCS solution should be retained as an improved WCS solution over the pipeline 
+default WCS.  This gets done by simply copying the calibrated images which have been
+updated with the WCS solution (both the FLC and FLT images) from the ``<rootname>_apriori``
+sub-directory to the main processing directory.  This will replace the FLC and FLT
+files with the pipeline default solutions so that should no other WCS prove to be 
+better, the ``a priori`` WCS solution will end up being used to generate the final
+drizzle products which get archived and provided to the end-user.
+
+Performing A Posteriori Alignment
+---------------------------------
 
 
 
