@@ -623,12 +623,14 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
             off = (0., 0.)
             rot = 0.
             scale = -1.
+            nmatches = 0
         else:
             off = info['shift']
             rot = info['<rot>']
             scale = info['<scale>']
+            nmatches = info['nmatches']
         msg = "Image {} --".format(i.meta['name'])
-        msg += "\n    SHIFT:({:9.4f},{:9.4f})  ".format(off[0], off[1])
+        msg += "\n    SHIFT:({:9.4f},{:9.4f})  NMATCHES: {} ".format(off[0], off[1], nmatches)
         msg += " ROT:{:9.4f}  SCALE:{:9.4f}".format(rot, scale)
         log.info(msg)
 
@@ -641,7 +643,9 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         for image in imglist:
             image.meta["group_id"] = 1234567
         # 2: Perform absolute alignment
+
         matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, match=match, fitgeom=fitgeom)
+        import pickle; pickle.dump(imglist, open('final_match_to_gaia.pickle', 'wb'))
     else:
         # Insure the expanded reference catalog has all the information needed
         # to complete processing.
