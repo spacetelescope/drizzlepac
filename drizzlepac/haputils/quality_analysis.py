@@ -491,6 +491,67 @@ DETECTOR_LEGEND = {'UVIS': 'magenta', 'IR': 'red', 'WFC': 'blue',
                     'SBC': 'yellow', 'HRC': 'black'}
     
 FIGURE_TOOLS = 'pan,wheel_zoom,box_zoom,zoom_in,zoom_out,box_select,undo,reset,save'
+"""
+This code comes from:
+
+ https://github.com/holoviz/holoviews/blob/master/holoviews/plotting/bokeh/chart.py#L309
+
+This code shows how they define the arrow heads for the vector plots.  A
+'non-invasive' way to use the Bokeh Segment Glyph to create a vector plot would
+be to define the arrow heads as 2 additional segments starting at the endpoint
+of the vector. The new segments would then be added to the data points to be 
+plotted by Segment to appear as an arrow head on each segment. 
+
+        # Get x, y, angle, magnitude and color data
+        rads = element.dimension_values(2)
+        if self.invert_axes:
+            xidx, yidx = (1, 0)
+            rads = np.pi/2 - rads
+        else:
+            xidx, yidx = (0, 1)
+        lens = self._get_lengths(element, ranges)/input_scale
+        cdim = element.get_dimension(self.color_index)
+        cdata, cmapping = self._get_color_data(element, ranges, style,
+                                               name='line_color')
+
+        # Compute segments and arrowheads
+        xs = element.dimension_values(xidx)
+        ys = element.dimension_values(yidx)
+
+        # Compute offset depending on pivot option
+        xoffsets = np.cos(rads)*lens/2.
+        yoffsets = np.sin(rads)*lens/2.
+        if self.pivot == 'mid':
+            nxoff, pxoff = xoffsets, xoffsets
+            nyoff, pyoff = yoffsets, yoffsets
+        elif self.pivot == 'tip':
+            nxoff, pxoff = 0, xoffsets*2
+            nyoff, pyoff = 0, yoffsets*2
+        elif self.pivot == 'tail':
+            nxoff, pxoff = xoffsets*2, 0
+            nyoff, pyoff = yoffsets*2, 0
+        x0s, x1s = (xs + nxoff, xs - pxoff)
+        y0s, y1s = (ys + nyoff, ys - pyoff)
+
+        color = None
+        if self.arrow_heads:
+            arrow_len = (lens/4.)
+            xa1s = x0s - np.cos(rads+np.pi/4)*arrow_len
+            ya1s = y0s - np.sin(rads+np.pi/4)*arrow_len
+            xa2s = x0s - np.cos(rads-np.pi/4)*arrow_len
+            ya2s = y0s - np.sin(rads-np.pi/4)*arrow_len
+            x0s = np.tile(x0s, 3)
+            x1s = np.concatenate([x1s, xa1s, xa2s])
+            y0s = np.tile(y0s, 3)
+            y1s = np.concatenate([y1s, ya1s, ya2s])
+            if cdim and cdim.name in cdata:
+                color = np.tile(cdata[cdim.name], 3)
+        elif cdim:
+            color = cdata.get(cdim.name)
+
+        data = {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}
+        mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')
+"""
 
 
 def build_tooltips(tips):
