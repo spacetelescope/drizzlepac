@@ -752,8 +752,12 @@ def build_vector_plot(**plot_dict):
     # Set length of dx=0.1 to be 5% of the width of the plot
     mag = (xy_seg)/0.1 
     
-    xr = x_arr + (np.array(source.data['dx']) * mag)
-    yr = y_arr + (np.array(source.data['dy']) * mag)
+    delta_x = np.array(source.data['dx'])
+    delta_y = np.array(source.data['dy'])
+    xr = x_arr + (delta_x * mag)
+    yr = y_arr + (delta_y * mag)
+
+    rads = np.arctan2(delta_y, delta_x)
     
     leg_x = [xy_seg]
     leg_xr = [xy_seg * 2]
@@ -774,6 +778,9 @@ def build_vector_plot(**plot_dict):
     scale_text = ['0.1 pixels']
     p1.text([xy_seg], [xy_seg/2.], text=scale_text, 
             text_color='black', text_font_size='10px')
+
+    # add 'arrow heads' to the segments
+    p1.triangle(xr, yr, angle=rads + np.pi/5., size=[6]*len(xr), fill_color=color)
      
     p1.title.text = title
     p1.xaxis.axis_label = x_label
