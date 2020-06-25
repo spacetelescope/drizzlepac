@@ -11,19 +11,21 @@
 #    JSON output files.
 # 4) Invoke the reader/graphics routine
 #    >>> pg.photometry_graphics_driver(storage_filename)
-#        This will generate a Bokeh plot to the browser, as
-#        well as generate an HTML file.
+#    By default, the routine will save the graphic to an HTML file
+#    in the working directory.
+#
+# Alternative execution:
+# bash> python photometry_graphics.py harvested_dataframe.h5 -o name_of_my_graphic_output
+#    where HTML will be appended to the name_of_my_graphic_output by Bokeh.
+#
 
 # Standard library imports
 import argparse
-import csv
-import glob
-import json
 import logging
 import os
 import sys
 
-from bokeh.layouts import row
+from bokeh.layouts import gridplot, row
 from bokeh.plotting import figure, output_file, show, save
 from bokeh.models import ColumnDataSource, Label
 from bokeh.models.tools import HoverTool
@@ -38,7 +40,11 @@ NEW_PHOT_COLUMNS = ['Ap1 Mean Differences',
                     'Ap1 Median Differences',
                     'Ap2 Mean Differences',
                     'Ap2 Standard Deviation',
-                    'Ap2 Median Differences']
+                    'Ap2 Median Differences',
+                    'instrument',
+                    'detector',
+                    'filter',
+                    'dataset']
 
 # Dictionary mapping the original dataframe column name to their new names
 PHOT_COLUMNS = {'Statistics_MagAp1.Delta_MagAp1.Mean': NEW_PHOT_COLUMNS[0],
@@ -46,7 +52,11 @@ PHOT_COLUMNS = {'Statistics_MagAp1.Delta_MagAp1.Mean': NEW_PHOT_COLUMNS[0],
                 'Statistics_MagAp1.Delta_MagAp1.Median':  NEW_PHOT_COLUMNS[2],
                 'Statistics_MagAp2.Delta_MagAp2.Mean':  NEW_PHOT_COLUMNS[3],
                 'Statistics_MagAp2.Delta_MagAp2.StdDev': NEW_PHOT_COLUMNS[4],
-                'Statistics_MagAp2.Delta_MagAp2.Median': NEW_PHOT_COLUMNS[5]}
+                'Statistics_MagAp2.Delta_MagAp2.Median': NEW_PHOT_COLUMNS[5],
+                'gen_info.instrument': NEW_PHOT_COLUMNS[6],
+                'gen_info.detector': NEW_PHOT_COLUMNS[7],
+                'gen_info.filter': NEW_PHOT_COLUMNS[8],
+                'gen_info.dataset': NEW_PHOT_COLUMNS[9]}
 
 __taskname__ = 'photometry_graphics'
 
@@ -75,7 +85,7 @@ def compute_global_stats(value_array):
     return mean_value
 
 
-def get_data(storage_filename):
+def get_data(storage_filename, log_level):
     """Load the harvested data, stored in a storage file, into local arrays.
 
     Parameters
@@ -83,9 +93,12 @@ def get_data(storage_filename):
     storage_filename : str
     Name of the storage file for the Pandas dataframe created by the harvester.
 
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+
     Returns
     =======
-    phot_data : Pandas dataframe
+    phot_dataDF : Pandas dataframe
     Dataframe which is a subset of the input Pandas dataframe which
     consists of only the requested columns and rows where all of the requested
     columns do not contain NaNs.
@@ -102,35 +115,36 @@ def get_data(storage_filename):
 
     # Get the relevant column data, eliminating all rows which have NaNs
     # in any of the relevant columns.
-    phot_data = df_handle.get_columns_HDF5(PHOT_COLUMNS.keys())
+    phot_dataDF = df_handle.get_columns_HDF5(PHOT_COLUMNS.keys())
+    log.info("Photometry_graphics. Photometric data has been retrieved from the storage Pandas dataframe: {}.\n".format(storage_filename))
 
     # Rename the columns to abbreviated text as the graph titles further
     # document the information.
     for old_col_name, new_col_name in PHOT_COLUMNS.items():
-        phot_data.rename(columns={old_col_name: new_col_name}, inplace=True)
+        phot_dataDF.rename(columns={old_col_name: new_col_name}, inplace=True)
 
     # Generate a general index array and add it to the dataframe
-    x_index = list(range(0, len(phot_data.index)))
-    phot_data['x_index'] = x_index
+    x_index = list(range(0, len(phot_dataDF.index)))
+    phot_dataDF['x_index'] = x_index
     x_index.clear()
 
-    mean_dMagAp1mean = compute_global_stats(phot_data['Ap1 Mean Differences'])
-    mean_dMagAp2mean = compute_global_stats(phot_data['Ap1 Median Differences'])
+    mean_dMagAp1mean = compute_global_stats(phot_dataDF['Ap1 Mean Differences'])
+    mean_dMagAp2mean = compute_global_stats(phot_dataDF['Ap1 Median Differences'])
 
-    mean_dMagAp1median = compute_global_stats(phot_data['Ap2 Mean Differences'])
-    mean_dMagAp2median = compute_global_stats(phot_data['Ap2 Median Differences'])
+    mean_dMagAp1median = compute_global_stats(phot_dataDF['Ap2 Mean Differences'])
+    mean_dMagAp2median = compute_global_stats(phot_dataDF['Ap2 Median Differences'])
 
-    return phot_data, (mean_dMagAp1mean, mean_dMagAp1median), \
+    return phot_dataDF, (mean_dMagAp1mean, mean_dMagAp1median), \
         (mean_dMagAp2mean, mean_dMagAp2median)
 
 
 # Generate the actual plot for the "svm_graphic_type" data.
-def generate_graphic(phot_data, stat_Ap1, stat_Ap2, output_base_filename, log_level):
+def generate_graphic(phot_dataDF, stat_Ap1, stat_Ap2, output_base_filename, log_level):
     """Generate the graphics associated with this particular type of data.
 
     Parameters
     ==========
-    phot_data : Pandas dataframe
+    phot_dataDF : Pandas dataframe
     Dataframe consisting of the Magnitude statistics of mean, std, and median for Aperture 1
     and Aperture 2
 
@@ -143,9 +157,8 @@ def generate_graphic(phot_data, stat_Ap1, stat_Ap2, output_base_filename, log_le
     output_base_filename : str
     Base name for the HMTL file generated by Bokeh.
 
-    log_level : int, optional
+    log_level : int
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 20, or 'info'.
 
     Returns
     =======
@@ -159,17 +172,20 @@ def generate_graphic(phot_data, stat_Ap1, stat_Ap2, output_base_filename, log_le
 
     # Setup the source of the data to be plotted so the axis variables can be
     # referenced by column name in the Pandas dataframe
-    sourceDF = ColumnDataSource(phot_data)
-    num_of_datasets = len(phot_data.index)
-    print('Number of datasets: {}'.format(num_of_datasets))
+    sourceCDS = ColumnDataSource(phot_dataDF)
+    num_of_datasets = len(phot_dataDF.index)
+    log.info('Photometry_graphics. Number of datasets: {}.\n'.format(num_of_datasets))
+
+    TOOLS = "box_zoom, wheel_zoom, box_select, lasso_select, pan, reset, save, help"
 
     # Define a figure object
-    p1 = figure()
+    # Aperture 1
+    p1 = figure(tools=TOOLS, toolbar_location="right")
 
     # Add the glyphs
-    p1.circle(x='x_index', y=NEW_PHOT_COLUMNS[0], source=sourceDF, fill_alpha=0.5, line_alpha=0.5, size=10, color='green',
-              legend_label='Mean Aperture 1 Magnitude Differences')
-    p1.cross(x='x_index', y=NEW_PHOT_COLUMNS[2], source=sourceDF, size=10, color='blue', legend_label='Median Aperture 1 Magnitude Differences')
+    p1.circle(x='x_index', y=NEW_PHOT_COLUMNS[0], source=sourceCDS, fill_alpha=0.5, line_alpha=0.5, size=10, color='green',
+              legend_label='Mean Aperture 1 Magnitude Differences', name="bee")
+    p1.cross(x='x_index', y=NEW_PHOT_COLUMNS[2], source=sourceCDS, size=10, color='blue', legend_label='Median Aperture 1 Magnitude Differences')
     info_text = 'Number of datasets: ' + str(num_of_datasets)
     p1.legend.click_policy = 'hide'
 
@@ -178,7 +194,12 @@ def generate_graphic(phot_data, stat_Ap1, stat_Ap2, output_base_filename, log_le
     p1.yaxis.axis_label = 'Difference (ABMag)'
 
     hover_p1 = HoverTool()
-    hover_p1.tooltips = [("Mean", "@{Ap1 Mean Differences}"), ("StdDev", "@{Ap1 Standard Deviation}"),
+    hover_p1.tooltips = [("Instrument", "@instrument"),
+                         ("Detector", "@detector"),
+                         ("Filter", "@filter"),
+                         ("Dataset", "@dataset"),
+                         ("Mean", "@{Ap1 Mean Differences}"),
+                         ("StdDev", "@{Ap1 Standard Deviation}"),
                          ("Median", "@{Ap1 Median Differences}")]
     p1.add_tools(hover_p1)
 
@@ -186,10 +207,11 @@ def generate_graphic(phot_data, stat_Ap1, stat_Ap2, output_base_filename, log_le
     stat_label = Label(x=20, y=20, x_units='screen', y_units='screen', text=stat_text)
     p1.add_layout(stat_label)
 
-    p2 = figure()
-    p2.circle(x='x_index', y=NEW_PHOT_COLUMNS[3], source=sourceDF, fill_alpha=0.5, line_alpha=0.5, size=10, color='green',
+    # Aperture 2
+    p2 = figure(tools=TOOLS, toolbar_location="right", x_range=p1.x_range, y_range=p1.y_range,)
+    p2.circle(x='x_index', y=NEW_PHOT_COLUMNS[3], source=sourceCDS, fill_alpha=0.5, line_alpha=0.5, size=10, color='green',
               legend_label='Mean Aperture 2 Magnitude Differences')
-    p2.cross(x='x_index', y=NEW_PHOT_COLUMNS[5], source=sourceDF, size=10, color='blue', legend_label='Median Aperture 2 Magnitude Differences')
+    p2.cross(x='x_index', y=NEW_PHOT_COLUMNS[5], source=sourceCDS, size=10, color='blue', legend_label='Median Aperture 2 Magnitude Differences')
     p2.legend.click_policy = 'hide'
 
     p2.title.text = 'Differences (Point - Segment) Aperture 2 Magnitude'
@@ -197,20 +219,26 @@ def generate_graphic(phot_data, stat_Ap1, stat_Ap2, output_base_filename, log_le
     p2.yaxis.axis_label = 'Difference (ABMag)'
 
     hover_p2 = HoverTool()
-    hover_p2.tooltips = [("Mean", "@{Ap2 Mean Differences}"), ("StdDev", "@{Ap2 Standard Deviation}"),
+    hover_p2.tooltips = [("Instrument", "@instrument"),
+                         ("Detector", "@detector"),
+                         ("Filter", "@filter"),
+                         ("Dataset", "@dataset"),
+                         ("Mean", "@{Ap2 Mean Differences}"),
+                         ("StdDev", "@{Ap2 Standard Deviation}"),
                          ("Median", "@{Ap2 Median Differences}")]
     p2.add_tools(hover_p2)
 
     stat_text = ('<DeltaMagAp2_Mean>: {:6.2f}     <DeltaMagAp2_Median>: {:6.2f}'.format(stat_Ap2[0], stat_Ap2[1]))
     stat_label = Label(x=20, y=20, x_units='screen', y_units='screen', text=stat_text)
     p2.add_layout(stat_label)
+    p = gridplot([[p1, p2]])
 
     # Create the the HTML output, but do not display at this time
-    save(row(p1, p2))
-    log.info("Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
+    save(p)
+    log.info("Photometry_graphics. Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
 
 
-def photometry_graphics_driver(storage_filename, output_base_filename='photometry_graphics', log_level=logutil.logging.INFO):
+def photometry_graphics_driver(storage_filename, output_base_filename='photometry_graphics', log_level=logutil.logging.NOTSET):
     """Driver to load the data from the storage file and generate the graphics.
 
     Parameters
@@ -229,14 +257,15 @@ def photometry_graphics_driver(storage_filename, output_base_filename='photometr
     =======
     Nothing
     """
+    log.setLevel(log_level)
 
     # Retrieve the relevant dataframe and statistics (mean of
     # means and mean of medians) for Aperture 1 and Aperture 2
-    log.info('Retrieve Pandas dataframe from file {}.\n'.format(storage_filename))
-    phot_data, stat_Ap1, stat_Ap2 = get_data(storage_filename)
+    log.info('Photometry_graphics. Retrieve Pandas dataframe from file {}.\n'.format(storage_filename))
+    phot_dataDF, stat_Ap1, stat_Ap2 = get_data(storage_filename, log_level)
 
     # Generate the photometric graphic
-    generate_graphic(phot_data, stat_Ap1, stat_Ap2, output_base_filename, log_level)
+    generate_graphic(phot_dataDF, stat_Ap1, stat_Ap2, output_base_filename, log_level)
 
 
 # ======================================================================================================================
@@ -271,10 +300,10 @@ if __name__ == "__main__":
 
     # Verify the input file exists
     if not os.path.exists(user_args.harvester_filename):
-        err_msg = "Harvester HDF5 File {} does not exist.".format(user_args.harvester_filename)
+        err_msg = "Photometry_graphics. Harvester HDF5 File {} does not exist.".format(user_args.harvester_filename)
         log.critical(err_msg)
         raise Exception(err_msg)
- 
+
     print(user_args.output_base_filename)
 
     photometry_graphics_driver(user_args.harvester_filename,
