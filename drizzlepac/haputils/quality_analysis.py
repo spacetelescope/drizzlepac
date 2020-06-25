@@ -736,15 +736,29 @@ def build_vector_plot(**plot_dict):
     # check for optional elements
     color = plot_dict.get('color', 'blue')
     click_policy = plot_dict.get('click_policy', 'hide')
-    
-    # Define a figure object
-    p1 = figure(tools=FIGURE_TOOLS)
 
-    mean_dx = (np.abs(source.data['dx']).mean() + np.abs(source.data['dy']).mean())/2.0
-    mag = 10./mean_dx  # set average magnitude of vectors to be delta(x)=10.
+    # Determine 'optimal' range for axes
+    x_arr = np.array(source.data[x])
+    y_arr = np.array(source.data[y])
+    dx = x_arr.max() - min(0, x_arr.min())
+    dy = y_arr.max() - min(0, y_arr.min())
+    xy_max = int(max(dx,dy))
+    xyrange = [0, xy_max]
+    xy_seg = xy_max * 0.05
     
-    xr = np.array(source.data[x]) + np.array(source.data['dx'] * mag)
-    yr = np.array(source.data[y]) + np.array(source.data['dy'] * mag)
+    # Define a figure object with square aspect ratio
+    p1 = figure(tools=FIGURE_TOOLS, x_range=xyrange, y_range=xyrange)
+
+    # Set length of dx=0.1 to be 5% of the width of the plot
+    mag = (xy_seg)/0.1 
+    
+    xr = x_arr + (np.array(source.data['dx']) * mag)
+    yr = y_arr + (np.array(source.data['dy']) * mag)
+    
+    leg_x = [xy_seg]
+    leg_xr = [xy_seg * 2]
+    leg_y = [xy_seg]
+    
     # Add the glyphs
     # This will use the 'colormap' column from 'source' for the colors of 
     # each point.  This column should have been populated by the calling
@@ -754,7 +768,13 @@ def build_vector_plot(**plot_dict):
     p1.segment(source.data[x], source.data[y], 
                xr.tolist(), yr.tolist(),
               color=color, line_width=2)
-    
+
+    # Add scale for vector length
+    p1.segment(leg_x, leg_y, leg_xr, leg_y, color='black', line_width=2)
+    scale_text = ['0.1 pixels']
+    p1.text([xy_seg], [xy_seg/2.], text=scale_text, 
+            text_color='black', text_font_size='10px')
+     
     p1.title.text = title
     p1.xaxis.axis_label = x_label
     p1.yaxis.axis_label = y_label
