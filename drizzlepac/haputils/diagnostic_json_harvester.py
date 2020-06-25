@@ -58,11 +58,20 @@ def flatten_dict(dd, separator='.', prefix=''):
 
 def get_json_files(search_path=os.getcwd(), log_level=logutil.logging.INFO):
     """use glob to create a list of json files to harvest
+    
+    This function looks for all the json files containing qa test results generated
+    by `runastrodriz` and `runsinglehap`.  The search starts in the directory 
+    specified in the `search_path` parameter, but will look in immediate
+    sub-directories as well if no json files are located in the directory 
+    specified by `search_path`.
 
     Parameters
     ----------
     search_path : str, optional
         directory path to search for .json files. Default value is the current working directory.
+        This serves as the starting directory for finding the .json files, with the
+        search expanding to immediate sub-directories if no .json files are found
+        in this directory.
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
