@@ -48,7 +48,7 @@ class PandasDFReader:
         self.harvester_filename = harvester_filename
 
         # Lazy attribute creation
-        self._dataframe = None
+        self._dataframe = pd.DataFrame()
 
     def get_columns_CSV(self, column_names):
         """ Method to do the actual reading of dataframe and get the data in the
@@ -66,7 +66,7 @@ class PandasDFReader:
             any rows containing NaNs have been eliminated.
         """
         # Only read the input dataframe once
-        if self._dataframe is None:
+        if self._dataframe.empty:
             self._dataframe = pd.read_csv(self.harvester_filename)
 
         # Get the requested columns and eliminate all rows which have
@@ -95,7 +95,7 @@ class PandasDFReader:
             any rows containing NaNs have been eliminated.
         """
         # Only read the input dataframe once
-        if self._dataframe is None:
+        if self._dataframe.empty:
             hdf5 = pd.HDFStore(self.harvester_filename, mode="r")
 
             # Get the zeroth key from the file as there is really only one dataframe
@@ -108,9 +108,19 @@ class PandasDFReader:
         # Get the requested columns and eliminate, upon request, rows which have
         # NaNs in *any* of the requested columns. Because of the way some of the
         # data has been put into the dataframe (e.g., wcs), rows should not be eliminated.
-        if do_drop:
-            column_data = self._dataframe.loc[:, column_names].dropna()
-        else:
-            column_data = self._dataframe.loc[:, column_names]
+        column_data = pd.DataFrame()
+        try:
+            if do_drop:
+                column_data = self._dataframe.loc[:, column_names].dropna()
+            else:
+                column_data = self._dataframe.loc[:, column_names]
+        # Columns may not be present in the dataframe for legitimate reasons
+        except KeyError:
+            log.warning("Column data missing from the Pandas dataframe.  All expected WCS solutions"
+                        " ('a priori' or 'a posteriori') may not be available.")
+        # Some other possibly more serious problem
+        except Exception:
+            log.critical("Unable to extract column data from the Pandas dataframe, {}.\n".format(self.harvester_filename))
+            sys.exit(1)
 
         return column_data
