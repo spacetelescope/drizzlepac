@@ -908,10 +908,12 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
                      
     return output
     
-def generate_residual_plots(residsCDS, filename, output=''):
+def generate_residual_plots(residsCDS, filename, output_dir=None, output=''):
     
     rootname = '_'.join(filename.split("_")[:-1])
     output = '{}_vectors_{}'.format(rootname, output)
+    if output_dir is not None:
+        output = os.path.join(output_dir, output)
     output_file(output)
     
     delta_x = np.array(residsCDS.data['x']) - np.array(residsCDS.data['xr'])
@@ -963,12 +965,19 @@ def generate_residual_plots(residsCDS, filename, output=''):
 
     return output
 
-def build_astrometry_plots(pandas_file, output='cal_qa_results.html'):
+def build_astrometry_plots(pandas_file, 
+                           output_dir=None, 
+                           output='cal_qa_results.html'):
 
     fitCDS, residsCDS = get_pandas_data(pandas_file)
 
+    if output_dir is not None:
+        summary_filename = os.path.join(output_dir, output)
+    else:
+        summary_filename = output
+        
     # Generate the astrometric plots
-    astrometry_plot_name = generate_summary_plots(fitCDS, output=output)
+    astrometry_plot_name = generate_summary_plots(fitCDS, output=summary_filename)
     
     resids_plot_names = []
     for i,filename in enumerate(fitCDS.data[HOVER_COLUMNS[0]]):
@@ -978,8 +987,11 @@ def build_astrometry_plots(pandas_file, output='cal_qa_results.html'):
                        'yr': residsCDS.data[RESIDS_COLUMNS[3]][i]}
         cds = ColumnDataSource(resids_dict)
         
-        resids_plot_name = generate_residual_plots(cds, filename, output=output)
+        resids_plot_name = generate_residual_plots(cds, filename, 
+                                                   output_dir=output_dir,
+                                                   output=output)
         resids_plot_names.append(resids_plot_name)
 
     return resids_plot_names
+
     
