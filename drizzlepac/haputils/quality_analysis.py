@@ -778,7 +778,6 @@ def build_vector_plot(**plot_dict):
     # each point.  This column should have been populated by the calling
     # routine. 
 
-    import pdb;pdb.set_trace()
     p1.segment(source.data[x], source.data[y], 
                xr.tolist(), yr.tolist(),
               color=color, line_width=2)
