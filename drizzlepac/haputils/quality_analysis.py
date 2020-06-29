@@ -740,6 +740,7 @@ def build_vector_plot(**plot_dict):
     # Determine 'optimal' range for axes
     x_arr = np.array(source.data[x])
     y_arr = np.array(source.data[y])
+        
     dx = x_arr.max() - min(0, x_arr.min())
     dy = y_arr.max() - min(0, y_arr.min())
     xy_max = int(max(dx,dy))
@@ -910,6 +911,8 @@ def generate_residual_plots(residsCDS, filename, output_dir=None, output=''):
     residsCDS.data['dx'] = delta_x
     residsCDS.data['dy'] = delta_y
     npoints = len(delta_x)
+    if npoints < 2:
+        return None
     
     p1 = build_circle_plot(x='x', y='dx',
                            source=residsCDS,  
@@ -949,7 +952,7 @@ def generate_residual_plots(residsCDS, filename, output_dir=None, output=''):
                            x_label="X (pixels)",
                            y_label='Y (pixels)')
     
-    print('Saving: {}'.format(output))
+    print('Saving: {}'.format(output))        
     save(column(row1,row2,pv))
 
     return output
@@ -981,6 +984,7 @@ def build_astrometry_plots(pandas_file,
                                                    output=output)
         resids_plot_names.append(resids_plot_name)
 
+    resids_plot_names = list(filter(lambda a: a != None, resids_plot_names))
     return resids_plot_names
 
     
