@@ -25,6 +25,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 # ------------------------------------------------------------------------------------------------------------
 
+
 def does_file_exist(dataframe_filename, log_level=logutil.logging.INFO):
     """Checks that the specified file exists. If it does not, an exception is raised.
     
@@ -81,7 +82,7 @@ def generate_histogram(dataframe, output_base_filename, log_level=logutil.loggin
     hist, edges = np.histogram(dataframe['Number_of_GAIA_sources'].values)
 
     # initialize plot
-    p = figure(title = "Histogram of the number of GAIA sources",
+    p = figure(title="Histogram of the number of GAIA sources",
                x_axis_label="Number of GAIA sources",
                y_axis_label="Number of total-level exposures")
 
@@ -98,7 +99,7 @@ def generate_histogram(dataframe, output_base_filename, log_level=logutil.loggin
 # ------------------------------------------------------------------------------------------------------------
 
 def get_data(dataframe_filename, log_level=logutil.logging.INFO):
-    """Extract releavant information from dataframe stored in user-specified .h5 file and return it as a
+    """Extract relevant information from dataframe stored in user-specified .h5 file and return it as a
     Pandas DataFrame
     
     Parameters
@@ -173,7 +174,9 @@ def get_data(dataframe_filename, log_level=logutil.logging.INFO):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def n_gaia_sources_graphics_driver(dataframe_filename, output_base_filename='n_gaia_sources_graphics', log_level=logutil.logging.INFO):
+
+def n_gaia_sources_graphics_driver(dataframe_filename, output_base_filename='n_gaia_sources_graphics',
+                                   log_level=logutil.logging.INFO):
     """This is the primary driver subroutine for this script.
 
     Parameters
@@ -205,7 +208,8 @@ def n_gaia_sources_graphics_driver(dataframe_filename, output_base_filename='n_g
 
 if __name__ == "__main__":
     # Process command-line inputs with argparse
-    parser = argparse.ArgumentParser(description='Read the harvested Pandas dataframe stored as and HDF5 file.')
+    parser = argparse.ArgumentParser(description='Read the harvested Pandas dataframe stored as and HDF5 '
+                                                 'file.')
 
     parser.add_argument('dataframe_filename', help='File which holds the Pandas dataframe in an HDF5 file.')
     parser.add_argument('-o', '--output_base_filename', required=False, default="n_gaia_sources_graphics",
