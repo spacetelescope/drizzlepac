@@ -95,20 +95,15 @@ def get_data(dataframe_filename, log_level=logutil.logging.INFO):
     # Get the relevant column data, eliminating all rows which have NaNs
     # in any of the relevant columns.
     return_dataframe = df_handle.get_columns_HDF5(new_df_colnames.keys())
-    # log.info("Photometry_graphics. Photometric data has been retrieved from the storage Pandas dataframe: {}.\n".format(storage_filename))
 
     # Rename the columns to abbreviated text as the graph titles further
     # document the information.
     for old_col_name, new_col_name in new_df_colnames.items():
         return_dataframe.rename(columns={old_col_name: new_col_name}, inplace=True)
 
-    # Keep only lines for total-level products. Discard filter-level and exposure-level lines from the
-    # dataframe.
+    # Discard rows that contain entries for filter-level and exposure-level products from dataframe. Only
+    # rows containing entries for total-level products will remain.
     initial_nrows = len(return_dataframe.index)
-    if initial_nrows == 1:
-        initial_row_descriptor = "row"
-    else:
-        initial_row_descriptor = "rows"
     nrows_removed = 0
     for item in return_dataframe.index:
         if "total" not in item.split("_"):
@@ -116,6 +111,12 @@ def get_data(dataframe_filename, log_level=logutil.logging.INFO):
             return_dataframe = return_dataframe.drop([item])
             nrows_removed += 1
     final_nrows = len(return_dataframe.index)
+
+    # report initial number of rows in dataframe, number of rows removed, and the number of rows remaining.
+    if initial_nrows == 1:
+        initial_row_descriptor = "row"
+    else:
+        initial_row_descriptor = "rows"
     if final_nrows == 1:
         final_row_descriptor = "row"
     else:
