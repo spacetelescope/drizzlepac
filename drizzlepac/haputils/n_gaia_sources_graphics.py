@@ -91,7 +91,7 @@ def generate_histogram(dataframe, output_base_filename, log_level=logutil.loggin
 
     # write to out_filename
     output_file(out_filename)
-    log.info("Histogram successfully written to {}".format(out_filename))
+    log.info("Histogram written to {}".format(out_filename))
     if log_level == logutil.logging.DEBUG:
         show(p)
 
@@ -224,7 +224,8 @@ if __name__ == "__main__":
                              'includes all log statements with a log_level left of the specified level. '
                              'Specifying "critical" will only record/display "critical" log statements, and '
                              'specifying "error" will record/display both "error" and "critical" log '
-                             'statements, and so on.')
+                             'statements, and so on. If log_level is set to "debug", the histogram plot .html'
+                             'file will be displayed in the default web browser.')
     user_args = parser.parse_args()
 
     # Set up logging
@@ -239,8 +240,7 @@ if __name__ == "__main__":
     # Verify the input file exists
     does_file_exist(user_args.dataframe_filename, log_level=log_level)
 
-    print(user_args.output_base_filename)
-
+    # execute main driver subroutine
     n_gaia_sources_graphics_driver(user_args.dataframe_filename,
                                    output_base_filename=user_args.output_base_filename,
                                    log_level=log_level)
