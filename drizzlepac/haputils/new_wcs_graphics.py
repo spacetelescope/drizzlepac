@@ -25,8 +25,7 @@ import pandas as pd
 from bokeh.layouts import gridplot, row
 from bokeh.plotting import figure, output_file, show, save
 from bokeh.models import ColumnDataSource, Label
-#from bokeh.models.tools import HoverTool, WheelZoomTool, PanTool, ZoomInTool
-from bokeh.models.tools import HoverTool
+from bokeh.models.tools import HoverTool, WheelZoomTool, PanTool, ZoomInTool
 
 # Local application imports
 from drizzlepac.haputils.pandas_utils import PandasDFReader
@@ -38,16 +37,20 @@ from stsci.tools import logutil
 # guide stars by default.  In a sense, the default IDC_<rootname> WCS is
 # the apriori solution.
 # WCS columns
-
-# TO DO:  Need to keep gen_info and header until fix made in pandas_utils.py
+#WCS_COLUMNS = {'gen_info.instrument': 'Instrument',
+#               'gen_info.detector': 'Detector',
+#               'inst_det': 'Inst_Det',
+#               'gen_info.filter': 'Filter',
+#               'gen_info.dataset': 'Dataset',
+#               'gen_info.proposal_id': 'Proposal ID',
 WCS_COLUMNS = {'gen_info.instrument': 'gen_info.instrument',
                'gen_info.detector': 'gen_info.detector',
+               #'gen_info.imgname': 'gen_info.imgname',
+               #'header.ASN_ID': 'header.ASN_ID',
                'inst_det': 'inst_det',
                'gen_info.filter': 'gen_info.filter',
                'gen_info.dataset': 'gen_info.dataset',
                'gen_info.proposal_id': 'gen_info.proposal_id',
-               'gen_info.imgname': 'gen_info.imgname',
-               'header.ASN_ID': 'header.ASN_ID',
                'PrimaryWCS.primary_wcsname': 'prim_wcsname',
                'PrimaryWCS.crpix1': 'prim_crpix1',
                'PrimaryWCS.crpix2': 'prim_crpix2',
@@ -158,6 +161,7 @@ def get_data(storage_filename):
     wcs_dataDF = pd.DataFrame()
     while wcs_dataDF.empty:
         wcs_dataDF = df_handle.get_columns_HDF5(WCS_COLUMNS.keys())
+        print('My data wcs_dataDF: {}'.format(wcs_dataDF.columns))
 
         # If no dataframe were returned, there was a KeyError because columns were
         # not present in the original dataframe versus the columns contained NaNs.
@@ -226,27 +230,17 @@ def generate_graphic(wcs_dataDF, output_base_filename, display_plot, log_level):
     num_of_datasets = len(wcs_dataDF.index)
     print('Number of datasets: {}'.format(num_of_datasets))
 
-    # TO DO: Alternate no longer works.  $name is not interpreted. See original code.
-    wcs_tips = [("Primary WCS", "@prim_wcsname"),
-                ("Alternate WCS", "@$name")]
-
     # Instantiate the figure objects 
     text = 'WCS Component Differences (Active - Alternate)'
     figure1 = HAPFigure(title = text,
                         x_label = 'Delta CRPIX1 (pixels)',
-                        y_label = 'Delta CRPIX2 (pixels)',
-                        grid_line_color = 'gainsboro',
-                        hover_tips = wcs_tips)
+                        y_label = 'Delta CRPIX2 (pixels)')
     figure2 = HAPFigure(title = text,
                         x_label = 'Delta CRVAL1 (pixels)',
-                        y_label = 'Delta CRVAL2 (pixels)',
-                        grid_line_color = 'gainsboro',
-                        hover_tips = wcs_tips)
+                        y_label = 'Delta CRVAL2 (pixels)')
     figure3 = HAPFigure(title = text,
                         x_label = 'Delta Scale (pixels/arcseconds)',
-                        y_label = 'Delta Orientation (degrees)',
-                        grid_line_color = 'gainsboro',
-                        hover_tips = wcs_tips)
+                        y_label = 'Delta Orientation (degrees)')
 
     # Figure 1 delta_crpix1 vs delta_crpix2
     # Figure 2 delta_crval1 vs delta_crval2
@@ -258,21 +252,19 @@ def generate_graphic(wcs_dataDF, output_base_filename, display_plot, log_level):
         wcs_components.append('del_{}_wcsname'.format(wcs_type))
         alt_wcs_names.append('alt_{}_wcsname'.format(wcs_type))
 
-    # TO DO: Need way to specify any "shape" glyph
-    # There are three distinct figures in this graphic layout, each figure can have up to
+
+    # There are three distince figures in this graphic, each figure can have up to
     # three datasets plotted with the circular glyph
     wcs_type_colors = ['blue', 'green', 'purple']
     for i, wcs_component in enumerate(wcs_components):
         if wcs_component in wcs_dataDF.columns:
             slist = wcs_component.rsplit('_')
-            figure1.build_glyph('circle', x='del_{}_crpix1'.format(slist[1]),
+            figure1.build_circle_glyph(x='del_{}_crpix1'.format(slist[1]),
                                        y='del_{}_crpix2'.format(slist[1]),
                                        sourceCDS=sourceCDS,
                                        marker_color=wcs_type_colors[i],
                                        legend_label='Delta(Active-'+wcs_type_names[i].capitalize()+')',
                                        name=alt_wcs_names[i])
-
-            """
 
             figure2.build_circle_glyph(x='del_{}_crval1'.format(slist[1]),
                                        y='del_{}_crval2'.format(slist[1]),
@@ -287,16 +279,33 @@ def generate_graphic(wcs_dataDF, output_base_filename, display_plot, log_level):
                                        marker_color=wcs_type_colors[i],
                                        legend_label='Delta(Active-'+wcs_type_names[i].capitalize()+')',
                                        name=alt_wcs_names[i])
-            """
+
+    hover_fig1 = HoverTool()
+    # Make the name of the graphic the actual WCS
+    # This hover tool shows how to use a variable for one of the tooltips.  The glyph for the
+    # alternate WCS data could represent one of three different options.  The glyph has the "name"
+    # parameter set to the key of the appropriate option, and the key is interpreted as
+    hover_fig1.tooltips = [("Inst/Det", "@Inst_Det"),
+                         ("Filter", "@Filter"),
+                         ("Dataset", "@Dataset"),
+                         ("Primary WCS", "@prim_wcsname"),
+                         ("Alternate WCS", "@$name")]
+    #figure1.fig.add_tools(hover_fig1)
 
     """
+    p2.add_tools(hover_p1)
+
+    p3.title.text = 'WCS Component Differences (Active - Alternate)'
+    p3.xaxis.axis_label = 'Delta Scale (pixels/arcseconds)'
+    p3.yaxis.axis_label = 'Delta Orientation (degrees)'
+    p3.add_tools(hover_p1)
+    """
+
     # Create the the HTML output and optionally display the plot
     grid = gridplot([[figure1.fig, figure2.fig], [figure3.fig, None]], plot_width=500, plot_height=500)
     if display_plot:
         show(grid)
     log.info("WCS_graphics. Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
-    """
-    show(figure1.fig)
 
 
 def wcs_graphics_driver(storage_filename, output_base_filename='wcs_graphics', display_plot=False, log_level=logutil.logging.INFO):
