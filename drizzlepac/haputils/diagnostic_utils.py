@@ -150,7 +150,10 @@ class HapDiagnostic(object):
         for key in dict_keys:
             self.out_dict['general information'][dict_keys[key]] = self.header[key]
         # Now, add items which require more interpretation
-        self.out_dict['general information']['visit'] = self.header['linenum'].split(".")[0]
+        try:
+            self.out_dict['general information']['visit'] = self.header['linenum'].split(".")[0]
+        except:
+            self.out_dict['general information']['visit'] = self.header['filename'].split("_")[2]
         # determine filter...
         filter_names =  ';'.join([self.header[f] for f in self.header['filter*']])
         self.out_dict['general information']['filter'] = poller_utils.determine_filter_name(filter_names)
