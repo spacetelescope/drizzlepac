@@ -478,8 +478,115 @@ files with the pipeline default solutions so that should no other WCS prove to b
 better, the ``a priori`` WCS solution will end up being used to generate the final
 drizzle products which get archived and provided to the end-user.
 
-Performing A Posteriori Alignment
----------------------------------
+
+Performing An A Posteriori Alignment
+-------------------------------------
+The ultimate goal of this processing would be to have the input observations
+aligned as closely to an astrometric standard coordinate system as much as
+possible.  The highest quality, highest precision astrometric catalog available
+would be the GAIA astrometric catalog and this processing seeks to align HST 
+observations as closely to that catalog's coordinate system.  
+
+The ``a priori`` solutions provide an update to the astrometry based
+on either the guide stars used (the ``GSC240`` and related solutions) or manually
+verified alignment of sources from the observations field-of-view performed using
+the Hubble Source Catalog (the ``HSC30`` solution).  Unfortunately, both of 
+these types of solutions fail to account for sources of astrometric error which
+can still affect the observations and result in offsets from the GAIA system due to
+updates in the distortion calibration for the instruments or uncertainties in 
+the position of the detectors field-of-view relative to the Fine Guidance Sensors
+(FGS) and the guide stars used for taking the observaitons.
+
+The only way to correct for those effects remains to identify sources from the 
+observations and perform a fit to the GAIA catalog directly.  This is called an 
+``a posteriori`` solution when it can be done successfully.  However, this can 
+only be performed for observations which contain enough detectable sources, 
+specifically sources found in the GAIA catalog.  Not all observations meet this 
+criteria either due to exposure time (too long or too short), wavelength of 
+observation, filter bandpass (narrowband vs wide-band) and even number of sources
+in the field.  This processing code makes no assumptions about the possibility of
+success and tries to perform this ``a posteriori`` fit on all observations. 
+
+Copying the Observations
+^^^^^^^^^^^^^^^^^^^^^^^^^
+Copies of the observaions are made in a sub-directory named after the input
+file used to start the processing with the convention:
+
+   <rootname>_aposteriori
+
+For example, if the association **icw402010_asn.fits** was being processed, this
+directory would be named **icw402010_aposteriori**.  
+
+All the calibrated FLC and/or FLT images along with the ASN file are copied into
+this sub-directory.  These files, at this point, have the best available WCS at
+this time which is most likely an ``a priori`` solution.  This improves the 
+chance that the ``a posteriori`` fit will work by minimizing the offset from GAIA
+which needs to be searched to find a cross-match with the GAIA sources in the 
+field-of-view.  
+
+Aligning the Observations
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+The alignment process gets performed using the ``perform_align()`` function from
+the ``drizzlepac/align`` module. This function performs the following steps in 
+an attempt to perform an ``a posteriori`` fit to GAIA:
+
+    * Evaluates all the input observations to identify any which can not be
+      aligned, such as GRISM or SCAN mode observations.  For a full description
+      of all the type of observations that can be filtered out, see 
+      :ref:`analyze/analyze_data``.
+    * Compute a 2D background for all the observations using ``photutils``
+    * Determine a PSF kernel from the detectable sources in the image, if possible.
+    * Segments the image after applying the 2D background to identify as many
+      sources as possible above a threshold using ``photutils.segmentation``
+    * Performs source centering using ``photutils.DAOStarFinder``
+    * Keeps the position of the single brightest source nearest the center of 
+      the segment as the catalog position for each segment's object. 
+    * Checks whether there are enough sources to potentially get a viable linear
+      fit.  
+        * If not, the attempt at an ``a posteriori`` fit quits without updating
+      the WCS of the input files.
+    * Queries the GAIA DR2 catalog through the STScI web service to obtain a catalog
+      of GAIA sources that overlap the field-of-view of the combined set of 
+      observations. This catalog will serve as the **reference catalog** for the
+      fitting process.  
+        * If there are not enough GAIA sources overlapping these observations, 
+          then the fit attempt quits without updating the WCS of the input 
+          files. 
+    * Provide the source catalogs for each input image, each input images's WCS, 
+      and the GAIA reference catalog to function ``align_wcs()`` in the ``tweakwcs``
+      package.  
+        * This function cross-matches the source catalog from each image with 
+          the GAIA catalog and performs an **rscale** linear fit (as defined by
+          ``runastrodriz``), then updates the input WCS with the results of the 
+          fit upon success.  See the `tweakwcs readthedocs pages 
+          <https://tweakwcs.readthedocs.io/en/latest/imalign.html>`_ for more
+          details.
+        * The function ``align_wcs()`` is first called without using the GAIA 
+          reference catalog in order to perform a relative alignment between the observations.
+        * The function ``align_wcs()`` is then called with the GAIA catalog as
+          the reference in order to finally perform a single fit to the GAIA catalog
+          for all the observations at the same time.
+    * Evaluate the success/failure state of the fit and the quality of any 
+      successful fit.  
+    * Repeat the fit with ``tweakwcs.align_wcs()`` with other GAIA catalogs; 
+      including GAIA DR1 or any others specified for use in ``runastrodriz`` itself.
+    * Select the fit to the GAIA catalog which results in the lowest RMS.
+        * Some fields are dominated by external galaxies with no proper motion for
+          which GAIA DR1 without proper motions provides the best fit (lowest RMS).
+        * Other fields are dominated by local galactic stars with appreciable 
+          proper motions best accounted for (still with some error) by the
+          GAIA DR2 catalog with its proper motions.  
+          
+    * Keep the WCS's updated with the **best** solution and update the **WCSNAME**
+      keyword for those WCSs to reflect the type of fit that was successful and 
+      the catalog that was used.  
+        * The naming convention is more fully described on the 
+          `Drizzlepac Astrometry description 
+          <https://drizzlepac.readthedocs.io/en/latest/astrometry.html>`_.
+
+The result of this lengthy process is a set of WCS objects which have been 
+updated with a fit to a GAIA catalog representing an ``a posteriori`` solution. 
+
 
 
 
