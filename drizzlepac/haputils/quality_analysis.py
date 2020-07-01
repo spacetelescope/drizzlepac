@@ -166,6 +166,8 @@ def determine_alignment_residuals(input, files, max_srcs=2000,
     # Check to see whether there were any successful fits...
     align_success = False
     for img in imglist:
+        wcsname = fits.getval(img.meta['filename'], 'wcsname', ext=("sci",1))
+        img.meta['wcsname'] = wcsname
         if img.meta['fit_info']['status'] == 'SUCCESS':
             align_success = True
             break
@@ -219,7 +221,8 @@ def generate_output_files(resids_dict,
                                                    "rot_fit":"Rotation of each axis from fit",
                                                    "scale_fit":"Scale of each axis from fit",
                                                    "nmatches":"Number of matched sources used in fit",
-                                                   "skew":"Skew between axes from fit"},
+                                                   "skew":"Skew between axes from fit",
+                                                   "wcsname":"WCSNAME for image"},
                                      units={"aligned_to":"unitless",
                                             'rms_x':'pixels',
                                             'rms_y':'pixels',
@@ -230,7 +233,8 @@ def generate_output_files(resids_dict,
                                             'rot_fit':'degrees',
                                             'scale_fit':'unitless',
                                             'nmatches':'unitless',
-                                            'skew':'unitless'}
+                                            'skew':'unitless',
+                                            'wcsname':"unitless"}
                                      )
         diagnostic_obj.add_data_item(resids_dict[image]['sources'], 'residuals',
                                      item_description="Matched source positions from input exposures",
@@ -296,7 +300,8 @@ def extract_residuals(imglist):
                  'rot_fit': fitinfo['rot'], 'scale_fit': fitinfo['scale'],
                  'nmatches': fitinfo['nmatches'], 'skew': fitinfo['skew'],
                  'rms_x': sigma_clipped_stats((img_x - ref_x))[-1],
-                 'rms_y': sigma_clipped_stats((img_y - ref_y))[-1]})
+                 'rms_y': sigma_clipped_stats((img_y - ref_y))[-1],
+                 'wcsname': chip.meta['wcsname']})
 
             new_vals = Table(data=[img_x, img_y, ref_x, ref_y], 
                                     names=['x', 'y', 'ref_x', 'ref_y'])
@@ -308,7 +313,8 @@ def extract_residuals(imglist):
                      'rot': None, 'scale': None,
                      'rot_fit': None, 'scale_fit': None,
                      'nmatches': -1, 'skew': None,
-                     'rms_x': -1, 'rms_y': -1})
+                     'rms_x': -1, 'rms_y': -1,
+                     'wcsname':None})
 
 
     return group_dict
@@ -972,13 +978,15 @@ def build_astrometry_plots(pandas_file,
     astrometry_plot_name = generate_summary_plots(fitCDS, output=summary_filename)
     
     resids_plot_names = []
-    for i,filename in enumerate(fitCDS.data[HOVER_COLUMNS[0]]):
+    
+    for filename,rootname in zip(fitCDS.data[HOVER_COLUMNS[0]], fitCDS.data['index']):
+        i = residsCDS.data['index'].tolist().index(rootname)
         resids_dict = {'x': residsCDS.data[RESIDS_COLUMNS[0]][i],
                        'y': residsCDS.data[RESIDS_COLUMNS[1]][i],
                        'xr': residsCDS.data[RESIDS_COLUMNS[2]][i],
                        'yr': residsCDS.data[RESIDS_COLUMNS[3]][i]}
         cds = ColumnDataSource(resids_dict)
-        
+
         resids_plot_name = generate_residual_plots(cds, filename, 
                                                    output_dir=output_dir,
                                                    output=output)
