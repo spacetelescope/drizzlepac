@@ -12,7 +12,7 @@ from astropy.io import fits
 import numpy as np
 
 from bokeh.plotting import figure, output_file, show, save
-from bokeh.models import ColumnDataSource, Label
+from bokeh.models import ColumnDataSource, Label, Circle
 from bokeh.models.tools import HoverTool
 
 MSG_DATEFMT = '%Y%j%H%M%S'
@@ -25,9 +25,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 HOVER_BASIC_TIPS = [('Inst/Det', '@{inst_det}'),
                     ('Dataset', '@{gen_info.dataset}'),
                     ('Filter', '@{gen_info.filter}'),
-                    ('ImageName', '@{gen_info.imgname}'),
-                    ('Prop_ID', '@{gen_info.proposal_id}'),
-                    ('ASN_ID', '@{header.ASN_ID}')]
+                    ('ImageName', '@{gen_info.imgname}')]
 
 # Default for Bokeh is (‘pan,wheel_zoom,box_zoom,save,reset,help’)
 FIGURE_TOOLS_BASE = 'box_zoom, wheel_zoom, box_select, lasso_select, reset, save'
@@ -74,8 +72,6 @@ class HAPFigure:
         #log.setLevel(log_level)
         #self.log_level = log_level
  
-        # Declare the figure and set up some base defaults
-
         # Append any user requested tools to the base set 
         user_tools = figure_dict.get('tools', '')
         fig_tools = FIGURE_TOOLS_BASE + ', ' + user_tools
@@ -84,22 +80,33 @@ class HAPFigure:
         self.fig.legend.click_policy = figure_dict.get('click_policy', 'hide')
         self.fig.legend.location = figure_dict.get('legend_location', 'center-right')
 
-        # Fundamental figure attributes
-        self.fig.title.text = figure_dict.get('title', '')
-        self.fig.xaxis.axis_label = figure_dict.get('x_label', '')
-        self.fig.yaxis.axis_label = figure_dict.get('y_label', '')
-        #self.fig.background_fill_color = figure_dict.get('background_fill_color', 'gainsboro')
-        self.fig.background_fill_color = figure_dict.get('background_fill_color', None)
-
-        self.fig.x_range.start = figure_dict.get('xstart', None)
-        self.fig.y_range.start = figure_dict.get('ystart', None)
-        self.fig.grid.grid_line_color = figure_dict.get('grid_line_color', None) 
-
         # Append any user requested tooltips to the base set 
         user_tips = figure_dict.get('hover_tips', [])
         hover_fig = HoverTool()
         hover_fig.tooltips = HOVER_BASIC_TIPS + user_tips
         self.fig.add_tools(hover_fig)
+
+        # Basic figure attributes
+        self.fig.title.text = figure_dict.get('title', '')
+        self.fig.xaxis.axis_label = figure_dict.get('x_label', '')
+        self.fig.yaxis.axis_label = figure_dict.get('y_label', '')
+        self.fig.background_fill_color = figure_dict.get('background_fill_color', 'gainsboro')
+        #self.fig.background_fill_color = figure_dict.get('background_fill_color', None)
+
+        self.fig.x_range.start = figure_dict.get('xstart', None)
+        self.fig.y_range.start = figure_dict.get('ystart', None)
+        self.fig.grid.grid_line_color = figure_dict.get('grid_line_color', None) 
+
+        # These attributes are not really on the figure, but are styling attributes
+        # used for the "shape" glyphs.  They may be set to non-default values when 
+        # the build_glyph() routine is invoked.
+        self.marker_color = 'blue'
+        self.marker_size = 10
+        self.colormap = True
+        #self.legend_group = 
+        self.legend_label = None
+        self.fill_alpha = 0.5 
+        self.line_alpha = 0.5 
 
 
     def build_glyph(self, glyph_name, x, y, sourceCDS, **data_dict):
@@ -140,54 +147,79 @@ class HAPFigure:
                 When the actual column being used as the data changes dynamically and
                 the assciated value. XXX
         """
-        # Check for optional elements and use defaults as necessary
-        marker_color = data_dict.get('marker_color', 'blue')
-        marker_size = data_dict.get('marker_size', 10)
-        colormap = data_dict.get('colormap', False)
-        #legend_group = data_dict.get('legend_group')
-        legend_label = data_dict.get('legend_label', '')
-        #glyph_name = data_dict.get('glyph_name', '')
-        fill_alpha = data_dict.get('fill_transparency', 1.0)
-        line_alpha = data_dict.get('line_transparency', 1.0)
+
+        # Set the required attributes
+        self.glyph_name = glyph_name
+        self.x = x
+        self.y = y
+        self.sourceCDS = sourceCDS
     
         # This will use the 'colormap' column from 'source' for the colors of 
         # each point.  This column should have been populated by the calling
         # routine. 
-        if colormap:
-            marker_color = 'colormap'
+        #if colormap:
+        #    marker_color = 'colormap'
 
-        dispatch = {'circle': build_circle_glyph, 'triangle': build_triangle_glyph}
-        #glyph_types[glyph_name](x, y, sourceCDS, **data_dict)
-        send(dispatch['circle']())
+        # Check for optional attributes and use defaults as necessary.  The
+        # avaiable attributes are declared in the constructor.
+        self.marker_color = data_dict.get('marker_color', self.marker_color)
+        self.marker_size = data_dict.get('marker_size', self.marker_size) 
+        self.colormap = data_dict.get('colormap', self.colormap)
+        #self.legend_group = data_dict.get('legend_group', self.legend_group)
+        self.legend_label = data_dict.get('legend_label', self.legend_label)
+        self.fill_alpha = data_dict.get('fill_transparency', self.fill_alpha)
+        self.line_alpha = data_dict.get('line_transparency', self.line_alpha)
+
+        #renderer = self.fig.select(name=glyph_name)
+        #renderer.selection_glyph = Circle(fill_color = self.marker_color)
+
+        # Dictionary of supported "shape" glyphs.  These are really references to
+        # the associated method names.
+        glyph_types = {'circle': HAPFigure.build_circle_glyph, 
+                       'square': HAPFigure.build_square_glyph,
+                       'triangle': HAPFigure.build_triangle_glyph}
+
+        glyph_types[glyph_name](self)
 
 
-    #def build_circle_glyph(self, x, y, sourceCDS, **data_dict):
+    # "Shape" glyphs
     def build_circle_glyph(self):
-        print("Here i am")
 
-        self.fig.circle(x = x, 
-                        y = y, 
-                        source = sourceCDS, 
-                        size = marker_size, 
-                        color = marker_color,
-                        legend_label = legend_label,
-                        fill_alpha = fill_alpha,
-                        line_alpha = line_alpha,
-                        name = glyph_name)
+        self.fig.circle(x = self.x, 
+                        y = self.y, 
+                        source = self.sourceCDS, 
+                        size = self.marker_size, 
+                        color = self.marker_color,
+                        #legend_label = self.legend_label,
+                        fill_alpha = self.fill_alpha,
+                        line_alpha = self.line_alpha,
+                        name = self.glyph_name)
 
 
-    #def build_triangle_glyph(self, x, y, sourceCDS, **data_dict):
+    def build_square_glyph(self):
+
+        self.fig.square(x = self.x, 
+                        y = self.y, 
+                        source = self.sourceCDS, 
+                        size = self.marker_size, 
+                        color = self.marker_color,
+                        #legend_label = self.legend_label,
+                        fill_alpha = self.fill_alpha,
+                        line_alpha = self.line_alpha,
+                        name = self.glyph_name)
+
+
     def build_triangle_glyph(self):
 
-        self.fig.triangle(x = x, 
-                        y = y, 
-                        source = sourceCDS, 
-                        size = marker_size, 
-                        color = marker_color,
-                        legend_label = legend_label,
-                        fill_alpha = fill_alpha,
-                        line_alpha = line_alpha,
-                        name = glyph_name)
+        self.fig.triangle(x = self.x, 
+                        y = self.y, 
+                        source = self.sourceCDS, 
+                        size = self.marker_size, 
+                        color = self.marker_color,
+                        legend_label = self.legend_label,
+                        fill_alpha = self.fill_alpha,
+                        line_alpha = self.line_alpha,
+                        name = self.glyph_name)
 
 
     def build_histogram(self, left, right, top, bottom, **data_dict):

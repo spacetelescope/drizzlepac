@@ -40,15 +40,17 @@ from stsci.tools import logutil
 # WCS columns
 
 # TO DO:  Need to keep gen_info and header until fix made in pandas_utils.py
+""" 
 WCS_COLUMNS = {'gen_info.instrument': 'gen_info.instrument',
                'gen_info.detector': 'gen_info.detector',
-               'inst_det': 'inst_det',
+               'gen_info.inst_det': 'gen_info.inst_det',
                'gen_info.filter': 'gen_info.filter',
                'gen_info.dataset': 'gen_info.dataset',
                'gen_info.proposal_id': 'gen_info.proposal_id',
                'gen_info.imgname': 'gen_info.imgname',
                'header.ASN_ID': 'header.ASN_ID',
-               'PrimaryWCS.primary_wcsname': 'prim_wcsname',
+""" 
+WCS_COLUMNS = {'PrimaryWCS.primary_wcsname': 'prim_wcsname',
                'PrimaryWCS.crpix1': 'prim_crpix1',
                'PrimaryWCS.crpix2': 'prim_crpix2',
                'PrimaryWCS.crval1': 'prim_crval1',
@@ -175,9 +177,9 @@ def get_data(storage_filename):
             for key in entries_to_remove:
                 WCS_COLUMNS.pop(key, None)
 
-    if wcs_dataDF.empty:
-        log.critical("Critical columns not found in storage Pandas dataframe: {}.\n".format(storage_filename))
-        sys.exit(1)
+        elif wcs_dataDF.empty:
+            log.critical("Critical columns not found in storage Pandas dataframe: {}.\n".format(storage_filename))
+            sys.exit(1)
 
     log.info("wcs_graphics. WCS data has been retrieved from the storage Pandas dataframe: {}.\n".format(storage_filename))
 
@@ -262,10 +264,11 @@ def generate_graphic(wcs_dataDF, output_base_filename, display_plot, log_level):
     # There are three distinct figures in this graphic layout, each figure can have up to
     # three datasets plotted with the circular glyph
     wcs_type_colors = ['blue', 'green', 'purple']
+    wcs_type_colors = ['orange', 'orange', 'orange']
     for i, wcs_component in enumerate(wcs_components):
         if wcs_component in wcs_dataDF.columns:
             slist = wcs_component.rsplit('_')
-            figure1.build_glyph('circle', x='del_{}_crpix1'.format(slist[1]),
+            figure1.build_glyph('triangle', x='del_{}_crpix1'.format(slist[1]),
                                        y='del_{}_crpix2'.format(slist[1]),
                                        sourceCDS=sourceCDS,
                                        marker_color=wcs_type_colors[i],

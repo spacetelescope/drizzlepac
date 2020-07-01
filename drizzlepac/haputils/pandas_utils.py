@@ -53,7 +53,12 @@ class PandasDFReader:
         self.harvester_filename = harvester_filename
 
         # Lazy attribute creation
-        self._dataframe = pd.DataFrame()
+        self.dataframe = pd.DataFrame()
+
+        # Lists to contain all of the 'header' and 'general information' data, respectively
+        self.header_cols = []
+        self.gen_info_cols = []
+
 
     def get_columns_CSV(self, column_names):
         """ Method to do the actual reading of dataframe and get the data in the
@@ -61,43 +66,41 @@ class PandasDFReader:
 
             Parameters
             ----------
-            column_names : list
-            A list of the column names which specify the desired data.
+            column_names : list of str
+            A list of the column names which specify the desired data
 
             Returns
             -------
             column_data : Pandas dataframe
-            A Pandas dataframe containing only the specified named columns where
-            any rows containing NaNs have been eliminated.
+            A Pandas dataframe containing only the specified named columns
+
+            *** OUT OF DATE
         """
         # Only read the input dataframe once
-        if self._dataframe.empty:
-            self._dataframe = pd.read_csv(self.harvester_filename)
+        if self.dataframe.empty:
+            self.dataframe = pd.read_csv(self.harvester_filename)
 
         # Get the requested columns and eliminate all rows which have
         # Generate a new column in the HAP dataframe, 'inst_det'.  Also append
         # this column to the user requested columns.  
-        self._dataframe['inst_det'] = self._dataframe['gen_info.instrument'] + '/' + self._dataframe['gen_info.detector']
+        self.dataframe['inst_det'] = self.dataframe['gen_info.instrument'] + '/' + self.dataframe['gen_info.detector']
 
         # NaNs in any of the requested columns.
-        #column_data = self._dataframe.loc[:, column_names].dropna()
+        #column_data = self.dataframe.loc[:, column_names].dropna()
 
         column_data = self.extract_columns(column_names)
 
         return column_data
 
+
     def get_columns_HDF5(self, column_names, do_drop=True):
-        """ Method to do the actual reading of dataframe and get the data in the
-            specified columns.
+        """ Method to do the actual reading of dataframe and get and return the 
+            data in the specified columns.
 
             Parameters
             ----------
             column_names : list
-            A list of the column names which specify the desired data.
-
-            do_drop : bool, optional (default is True indicating to drop the rows)
-            Option to drop rows which contain NaNs in any of the requested columns.
-            Option is set to True for backwards compatibility.
+            A list of the column names which specify the desired data
 
             Returns
             -------
@@ -106,56 +109,58 @@ class PandasDFReader:
             any rows containing NaNs have been eliminated.
         """
         # Only read the input dataframe once
-        if self._dataframe.empty:
+        if self.dataframe.empty:
             hdf5 = pd.HDFStore(self.harvester_filename, mode="r")
 
             # Get the zeroth key from the file as there is really only one dataframe
             # stored in the file - just do not assume its key.
             key0 = hdf5.keys()[0]
-            self._dataframe = hdf5.get(key0)
+            self.dataframe = hdf5.get(key0)
 
             hdf5.close()
 
-        # Generate a new column in the HAP dataframe so the instrument and detector 
-        # can be reported in the same entry as a HoverTool tooltip
-        self._dataframe['gen_info.inst_det'] = self._dataframe['gen_info.instrument'] + '/' + self._dataframe['gen_info.detector']
+            # Generate a new column in the HAP dataframe so the instrument and detector 
+            # can be reported in the same entry as a HoverTool tooltip
+            self.dataframe['gen_info.inst_det'] = self.dataframe['gen_info.instrument'] + '/' + self.dataframe['gen_info.detector']
  
-        # Generate a new column in the HAP dataframe which contains a color associated
-        # with each instrument/detector combination.  These colors are then used for the
-        # graphics so the data is consistently represented by the same set of colors.
-        self._dataframe['gen_info.color'] = self._dataframe['gen_info.detector']
-        for key, value in DETECTOR_LEGEND.items():
-            self._dataframe.loc[self._dataframe['gen_info.detector'] == key, 'gen_info.color'] = value
+            # Generate a new column in the HAP dataframe which contains a color associated
+            # with each instrument/detector combination.  These colors are then used for the
+            # graphics so the data is consistently represented by the same set of colors.
+            self.dataframe['gen_info.colormap'] = self.dataframe['gen_info.detector']
+            for key, value in DETECTOR_LEGEND.items():
+                self.dataframe.loc[self.dataframe['gen_info.detector'] == key, 'gen_info.colormap'] = value
 
-        # TO DO - fix later
-        # Always get all the "header" and "general information" columns
-        header_cols = [hd_cols for hd_cols in self._dataframe if 'header' in hd_cols]
-        #gen_info_cols = [hd_cols for hd_cols in self._dataframe if 'gen_info' in hd_cols]
-        print('h: {}'.format(header_cols))
-        #print('g: {}'.format(gen_info_cols))
-        #print("col: {}".format(list(column_names)))
+            # Always get all the "header" and "general information" columns
+            self.header_cols = [hd_cols for hd_cols in self.dataframe if 'header' in hd_cols]
+            self.gen_info_cols = [hd_cols for hd_cols in self.dataframe if 'gen_info' in hd_cols]
 
-        # Return all the header, gen_info, 'inst_det', 'color', and user-requested columns!
-        #final_columns_to_get = list(column_names) + header_cols + gen_info_cols
-        #print("f: {} Type: {}".format(final_columns_to_get, type(list(final_columns_to_get))))
+        #print("col: {}\n".format(list(column_names)))
+        # Return all the header, gen_info, and user-requested columns!
+        final_columns_to_get = list(column_names) + self.header_cols + self.gen_info_cols
+        #print("f: {} Type: {}\n".format(final_columns_to_get, type(list(final_columns_to_get))))
 
-        column_data = self.extract_columns(column_names)
-        # column_data = self.extract_columns(final_columns_to_get)
-
+        #column_data = self.extract_columns(list(column_names))
+        column_data = self.extract_columns(final_columns_to_get)
 
         return column_data
 
 
-    def extract_columns(self, column_names, do_drop = True):
+    def extract_columns(self, column_names):
+        """ Helper method to get the requested columns
+         
+            Parameters
+            ----------
+            column_names : list of str
+            List of column names to extract from the Pandas dataframe
 
-        # Get the requested columns and eliminate, upon request, rows which have
-        # NaNs in *any* of the requested columns.
+            Returns
+            -------
+            column_data : Pandas dataframe
+            A Pandas dataframe containing the specified named columns
+        """
         column_data = pd.DataFrame()
         try:
-            if do_drop:
-                column_data = self._dataframe.loc[:, column_names].dropna()
-            else:
-                column_data = self._dataframe.loc[:, column_names]
+            column_data = self.dataframe.loc[:, column_names]
         # Columns may not be present in the dataframe for legitimate reasons
         except KeyError:
             log.warning("Column data missing from the Pandas dataframe.  All expected WCS solutions"
