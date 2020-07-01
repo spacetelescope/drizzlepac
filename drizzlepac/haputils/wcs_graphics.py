@@ -40,16 +40,6 @@ from stsci.tools import logutil
 # WCS columns
 
 # TO DO:  Need to keep gen_info and header until fix made in pandas_utils.py
-""" 
-WCS_COLUMNS = {'gen_info.instrument': 'gen_info.instrument',
-               'gen_info.detector': 'gen_info.detector',
-               'gen_info.inst_det': 'gen_info.inst_det',
-               'gen_info.filter': 'gen_info.filter',
-               'gen_info.dataset': 'gen_info.dataset',
-               'gen_info.proposal_id': 'gen_info.proposal_id',
-               'gen_info.imgname': 'gen_info.imgname',
-               'header.ASN_ID': 'header.ASN_ID',
-""" 
 WCS_COLUMNS = {'PrimaryWCS.primary_wcsname': 'prim_wcsname',
                'PrimaryWCS.crpix1': 'prim_crpix1',
                'PrimaryWCS.crpix2': 'prim_crpix2',
@@ -237,17 +227,17 @@ def generate_graphic(wcs_dataDF, output_base_filename, display_plot, log_level):
     figure1 = HAPFigure(title = text,
                         x_label = 'Delta CRPIX1 (pixels)',
                         y_label = 'Delta CRPIX2 (pixels)',
-                        grid_line_color = 'gainsboro',
+                        grid_line_color = 'white',
                         hover_tips = wcs_tips)
     figure2 = HAPFigure(title = text,
                         x_label = 'Delta CRVAL1 (pixels)',
                         y_label = 'Delta CRVAL2 (pixels)',
-                        grid_line_color = 'gainsboro',
+                        grid_line_color = 'white',
                         hover_tips = wcs_tips)
     figure3 = HAPFigure(title = text,
                         x_label = 'Delta Scale (pixels/arcseconds)',
                         y_label = 'Delta Orientation (degrees)',
-                        grid_line_color = 'gainsboro',
+                        grid_line_color = 'white',
                         hover_tips = wcs_tips)
 
     # Figure 1 delta_crpix1 vs delta_crpix2
@@ -264,42 +254,36 @@ def generate_graphic(wcs_dataDF, output_base_filename, display_plot, log_level):
     # There are three distinct figures in this graphic layout, each figure can have up to
     # three datasets plotted with the circular glyph
     wcs_type_colors = ['blue', 'green', 'purple']
-    wcs_type_colors = ['orange', 'orange', 'orange']
     for i, wcs_component in enumerate(wcs_components):
         if wcs_component in wcs_dataDF.columns:
             slist = wcs_component.rsplit('_')
-            figure1.build_glyph('triangle', x='del_{}_crpix1'.format(slist[1]),
-                                       y='del_{}_crpix2'.format(slist[1]),
-                                       sourceCDS=sourceCDS,
-                                       marker_color=wcs_type_colors[i],
-                                       legend_label='Delta(Active-'+wcs_type_names[i].capitalize()+')',
-                                       name=alt_wcs_names[i])
+            figure1.build_glyph('circle', x='del_{}_crpix1'.format(slist[1]),
+                                y='del_{}_crpix2'.format(slist[1]),
+                                sourceCDS=sourceCDS,
+                                glyph_color=wcs_type_colors[i],
+                                legend_label='Delta(Active-'+wcs_type_names[i].capitalize()+')',
+                                name=alt_wcs_names[i])
 
-            """
+            figure2.build_glyph('circle', x='del_{}_crval1'.format(slist[1]),
+                                y='del_{}_crval2'.format(slist[1]),
+                                sourceCDS=sourceCDS,
+                                glyph_color=wcs_type_colors[i],
+                                legend_label='Delta(Active-'+wcs_type_names[i].capitalize()+')',
+                                name=alt_wcs_names[i])
 
-            figure2.build_circle_glyph(x='del_{}_crval1'.format(slist[1]),
-                                       y='del_{}_crval2'.format(slist[1]),
-                                       sourceCDS=sourceCDS,
-                                       marker_color=wcs_type_colors[i],
-                                       legend_label='Delta(Active-'+wcs_type_names[i].capitalize()+')',
-                                       name=alt_wcs_names[i])
+            figure3.build_glyph('circle', x='del_{}_scale'.format(slist[1]),
+                                y='del_{}_orient'.format(slist[1]),
+                                sourceCDS=sourceCDS,
+                                glyph_color=wcs_type_colors[i],
+                                legend_label='Delta(Active-'+wcs_type_names[i].capitalize()+')',
+                                name=alt_wcs_names[i])
 
-            figure3.build_circle_glyph(x='del_{}_scale'.format(slist[1]),
-                                       y='del_{}_orient'.format(slist[1]),
-                                       sourceCDS=sourceCDS,
-                                       marker_color=wcs_type_colors[i],
-                                       legend_label='Delta(Active-'+wcs_type_names[i].capitalize()+')',
-                                       name=alt_wcs_names[i])
-            """
-
-    """
     # Create the the HTML output and optionally display the plot
     grid = gridplot([[figure1.fig, figure2.fig], [figure3.fig, None]], plot_width=500, plot_height=500)
     if display_plot:
         show(grid)
     log.info("WCS_graphics. Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
-    """
-    show(figure1.fig)
+    #show(figure1.fig)
 
 
 def wcs_graphics_driver(storage_filename, output_base_filename='wcs_graphics', display_plot=False, log_level=logutil.logging.INFO):

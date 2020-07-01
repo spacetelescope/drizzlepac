@@ -83,7 +83,7 @@ class PandasDFReader:
         # Get the requested columns and eliminate all rows which have
         # Generate a new column in the HAP dataframe, 'inst_det'.  Also append
         # this column to the user requested columns.  
-        self.dataframe['inst_det'] = self.dataframe['gen_info.instrument'] + '/' + self.dataframe['gen_info.detector']
+        self.dataframe['gen_info.inst_det'] = self.dataframe['gen_info.instrument'] + '/' + self.dataframe['gen_info.detector']
 
         # NaNs in any of the requested columns.
         #column_data = self.dataframe.loc[:, column_names].dropna()
