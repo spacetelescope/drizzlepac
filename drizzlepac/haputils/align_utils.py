@@ -82,8 +82,9 @@ class AlignmentTable:
         self.alignment_pars.update(alignment_pars['general'])
         self.alignment_pars.update(alignment_pars['generate_source_catalogs'])
         self.alignment_pars.update(alignment_pars['determine_fit_quality'])
-        self.fit_pars.update(alignment_pars['general'])
-        
+        for key in self.fit_pars:
+            self.fit_pars[key]['pars'] = alignment_pars['general']
+
         self.dqname = dqname
         self.haplist = []
         self.process_list = None
@@ -607,6 +608,9 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     else:
         fitgeom='rscale'
 
+    common_pars = fit_pars['pars']
+    del fit_pars['pars']
+    
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
@@ -617,7 +621,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     # 1: Perform relative alignment
     match_relcat = tweakwcs.align_wcs(imglist, None, 
                                       match=match,
-                                      minobj=fit_pars['MIN_FIT_MATCHES'],
+                                      minobj=common_pars['MIN_FIT_MATCHES'],
                                       expand_refcat=True, 
                                       fitgeom=fitgeom)
 
@@ -649,8 +653,10 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
             image.meta["group_id"] = 1234567
         # 2: Perform absolute alignment
 
-        matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, match=match, fitgeom=fitgeom)
-        import pickle; pickle.dump(imglist, open('final_match_to_gaia.pickle', 'wb'))
+        matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, 
+                                         match=match, 
+                                         minobj=common_pars['MIN_FIT_MATCHES'],
+                                         fitgeom=fitgeom)
     else:
         # Insure the expanded reference catalog has all the information needed
         # to complete processing.
@@ -693,14 +699,21 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
     else:
         fitgeom='rscale'
 
+    common_pars = fit_pars['pars']
+    del fit_pars['pars']
+
+
     log.info("{} (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
 
     # Align images and correct WCS
-    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, match=match, 
-                        expand_refcat=False, fitgeom=fitgeom)
+    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, 
+                                     match=match,
+                                     minobj=common_pars['MIN_FIT_MATCHES'],
+                                     expand_refcat=False, 
+                                     fitgeom=fitgeom)
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
@@ -736,14 +749,20 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     else:
         fitgeom='rscale'
 
+    common_pars = fit_pars['pars']
+    del fit_pars['pars']
+
 
     log.info("{} (match_2dhist_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 28))
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
     # Align images and correct WCS
-    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, match=match, 
-                        expand_refcat=False, fitgeom=fitgeom)
+    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, 
+                                     match=match,
+                                     minobj=common_pars['MIN_FIT_MATCHES'],
+                                     expand_refcat=False,
+                                     fitgeom=fitgeom)
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
