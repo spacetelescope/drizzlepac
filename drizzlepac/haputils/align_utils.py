@@ -82,7 +82,8 @@ class AlignmentTable:
         self.alignment_pars.update(alignment_pars['general'])
         self.alignment_pars.update(alignment_pars['generate_source_catalogs'])
         self.alignment_pars.update(alignment_pars['determine_fit_quality'])
-
+        self.fit_pars.update(alignment_pars['general'])
+        
         self.dqname = dqname
         self.haplist = []
         self.process_list = None
@@ -614,7 +615,11 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     # NOTE: this invocation does not use an astrometric catalog. This call allows all the input images to be aligned in
     # a relative way using the first input image as the reference.
     # 1: Perform relative alignment
-    match_relcat = tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True, fitgeom=fitgeom)
+    match_relcat = tweakwcs.align_wcs(imglist, None, 
+                                      match=match,
+                                      minobj=fit_pars['MIN_FIT_MATCHES'],
+                                      expand_refcat=True, 
+                                      fitgeom=fitgeom)
 
     log.info("Relative alignment found: ")
     for i in imglist:
