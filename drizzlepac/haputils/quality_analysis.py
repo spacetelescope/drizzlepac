@@ -306,8 +306,7 @@ def extract_residuals(imglist):
                  'rot_fit': fitinfo['rot'], 'scale_fit': fitinfo['scale'],
                  'nmatches': fitinfo['nmatches'], 'skew': fitinfo['skew'],
                  'rms_x': sigma_clipped_stats((img_x - ref_x))[-1],
-                 'rms_y': sigma_clipped_stats((img_y - ref_y))[-1],
-                 'wcsname': chip.meta['wcsname']})
+                 'rms_y': sigma_clipped_stats((img_y - ref_y))[-1]})
 
             new_vals = Table(data=[img_x, img_y, ref_x, ref_y], 
                                     names=['x', 'y', 'ref_x', 'ref_y'])
@@ -319,8 +318,7 @@ def extract_residuals(imglist):
                      'rot': None, 'scale': None,
                      'rot_fit': None, 'scale_fit': None,
                      'nmatches': -1, 'skew': None,
-                     'rms_x': -1, 'rms_y': -1,
-                     'wcsname':None})
+                     'rms_x': -1, 'rms_y': -1})
 
 
     return group_dict
