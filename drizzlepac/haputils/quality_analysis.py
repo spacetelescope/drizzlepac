@@ -475,8 +475,8 @@ HOVER_COLUMNS = ['gen_info.imgname',
                  'header.EXPTIME',
                  'fit_results.aligned_to']
                    
-TOOLTIPS_LIST = ['INSTRUMENT', 'DET', 'FILTER', 
-                  'EXPNAME', 'DATE', 'RA', 'DEC', 'GYRO', 'EXPTIME',
+TOOLTIPS_LIST = ['EXPNAME', 'INSTRUMENT', 'DET', 'FILTER', 
+                  'DATE', 'RA', 'DEC', 'GYRO', 'EXPTIME',
                   'ALIGNED_TO']
 INSTRUMENT_COLUMN = 'full_instrument'
 
