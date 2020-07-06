@@ -129,6 +129,8 @@ def determine_alignment_residuals(input, files, max_srcs=2000,
             chip += 1
             img_cats[chip] = amutils.extract_point_sources(hdu[("SCI", chip)].data, nbright=max_srcs)
             nums += len(img_cats[chip])
+
+        log.info("Identified {} point-sources from {}".format(nums, hdu.filename()))
         num_srcs.append(nums)
         src_cats.append(img_cats)
 
@@ -164,11 +166,16 @@ def determine_alignment_residuals(input, files, max_srcs=2000,
     # Check to see whether there were any successful fits...
     align_success = False
     for img in imglist:
-        if img.meta['fit_info']['status'] == 'SUCCESS':
+        wcsname = fits.getval(img.meta['filename'], 'wcsname', ext=("sci",1))
+        img.meta['wcsname'] = wcsname
+
+    for img in imglist:        
+        if img.meta['fit_info']['status'] == 'SUCCESS' and '-FIT' in wcsname:
             align_success = True
             break
     resids_files = []
     if align_success:
+
         # extract results in the style of 'tweakreg'
         resids = extract_residuals(imglist)
 
@@ -217,7 +224,8 @@ def generate_output_files(resids_dict,
                                                    "rot_fit":"Rotation of each axis from fit",
                                                    "scale_fit":"Scale of each axis from fit",
                                                    "nmatches":"Number of matched sources used in fit",
-                                                   "skew":"Skew between axes from fit"},
+                                                   "skew":"Skew between axes from fit",
+                                                   "wcsname":"WCSNAME for image"},
                                      units={"aligned_to":"unitless",
                                             'rms_x':'pixels',
                                             'rms_y':'pixels',
@@ -228,7 +236,8 @@ def generate_output_files(resids_dict,
                                             'rot_fit':'degrees',
                                             'scale_fit':'unitless',
                                             'nmatches':'unitless',
-                                            'skew':'unitless'}
+                                            'skew':'unitless',
+                                            'wcsname':"unitless"}
                                      )
         diagnostic_obj.add_data_item(resids_dict[image]['sources'], 'residuals',
                                      item_description="Matched source positions from input exposures",
@@ -243,7 +252,7 @@ def generate_output_files(resids_dict,
                                      )
 
         diagnostic_obj.write_json_file(json_filename)
-        log.info("Generated relative astrometri residuals results for {} as {}.".format(image, json_filename))
+        log.info("Generated relative astrometric residuals for {} as:\n    {}.".format(image, json_filename))
 
     return resids_files
 
@@ -256,6 +265,7 @@ def extract_residuals(imglist):
         group_id = chip.meta['group_id']
         group_name = chip.meta['filename']
         fitinfo = chip.meta['fit_info']
+        wcsname = chip.meta['wcsname']
 
         if fitinfo['status'] == 'REFERENCE':
             align_ref = group_name
@@ -269,7 +279,7 @@ def extract_residuals(imglist):
         if group_id not in group_dict:
             group_dict[group_name] = {}
             group_dict[group_name]['fit_results'] = {'group_id': group_id,
-                         'rms_x': None, 'rms_y': None}
+                         'rms_x': None, 'rms_y': None, 'wcsname': wcsname}
             group_dict[group_name]['sources'] = Table(names=['x', 'y', 
                                                              'ref_x', 'ref_y'])
             cum_indx = 0
