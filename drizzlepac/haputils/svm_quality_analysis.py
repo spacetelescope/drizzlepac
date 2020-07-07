@@ -557,7 +557,8 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                   "cross matched sources. No filter-level products were found. ")
         return
     else:
-        log.info("Found {} filter-level products for use in inter-filter cross match comparisons.".format(num_filter_prods))
+        log.info("Found {} filter-level products for use in analysis of inter-filter cross matched source"
+                 " positions.".format(num_filter_prods))
         ctr = 1
         for total_obj in total_obj_list:
             for filt_obj in total_obj.fdp_list:
