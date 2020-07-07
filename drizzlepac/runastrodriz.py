@@ -677,9 +677,13 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     qa_switch = _get_envvar_switch(envvar_qa_stats_name)
 
     if qa_switch:
+        alignment_table = None
+        if align_to_gaia and align_aposteriori:
+            # Get the copy of the source catalogs used for alignment
+            alignment_table = align_aposteriori['alignment_table'].copy()
         # Generate quality statistics for astrometry if specified
         calfiles = _calfiles_flc if _calfiles_flc else _calfiles
-        qa.run_all(inFile, calfiles)
+        qa.run_all(inFile, calfiles, catalogs=alignment_table)
 
 
 def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignment=True,
@@ -872,14 +876,17 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             alignlog_copy = alignlog.replace('_align', '_align_copy')
             try:
 
-                align_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
+                full_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
                                                   clobber=False, output=debug,
                                                   debug=debug, sat_flags=sat_flags)
+                align_table = full_table.filtered_table
+
                 if align_table is None:
                     raise Exception("No successful aposteriori fit determined.")
 
                 num_sources = align_table['matchSources'][0]
                 fraction_matched = num_sources / align_table['catalogSources'][0]
+
                 for row in align_table:
                     if row['status'] == 0:
                         if row['compromised'] == 0:
@@ -990,6 +997,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             prodname = align_focus['prodname']
         else:
             fd = amutils.FOCUS_DICT.copy()
+            fd['alignment_table'] = full_table
             fd['expnames'] = calfiles
             fd['prodname'] = drz_products[0]
             alignment_verified = True
