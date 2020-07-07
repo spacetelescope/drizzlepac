@@ -450,10 +450,11 @@ class OutputImage:
             # Add primary header to output file...
             fo.append(hdu)
 
-            # remove all alternate WCS solutions from headers of this product
-            logutil.logging.disable(logutil.logging.INFO)
-            wcs_functions.removeAllAltWCS(fo,wcs_ext)
-            logutil.logging.disable(logutil.logging.NOTSET)
+            if not self.blot:
+                # remove all alternate WCS solutions from headers of this product
+                logutil.logging.disable(logutil.logging.INFO)
+                wcs_functions.removeAllAltWCS(fo,wcs_ext)
+                logutil.logging.disable(logutil.logging.NOTSET)
 
             # add table of combined header keyword values to FITS file
             if newtab is not None:
