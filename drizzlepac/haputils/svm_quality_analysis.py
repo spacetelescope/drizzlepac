@@ -514,6 +514,58 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
         log.warning("Point vs. segment catalog cross match test could not be performed.")
 
 # ------------------------------------------------------------------------------------------------------------
+def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_time_since_epoch=None,
+                                     log_level=logutil.logging.NOTSET):
+    """Compare X, Y positions of cross matched sources from different filter-level products
+
+    Parameters
+    ----------
+    total_obj_list : list
+        list of drizzlepac.haputils.Product.TotalProduct objects to process
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'NOTSET'.
+
+    Returns
+    -------
+    Nothing
+    """
+    # Initiate logging!
+    log.setLevel(log_level)
+
+    # Check to make sure there's at last 2 filter-level products. If not, return.
+    num_filter_prods = 0
+    for total_obj in total_obj_list:
+        num_filter_prods += len(total_obj.fdp_list)
+    if num_filter_prods == 1:
+        log.error("At least 2 filter-level products are necessary to perform analysis of inter-filter "
+                  "cross matched sources. Only 1 filter-level product was found. ")
+        return
+    elif num_filter_prods == 0:
+        log.error("At least 2 filter-level products are necessary to perform analysis of inter-filter "
+                  "cross matched sources. No filter-level products were found. ")
+        return
+    else:
+        log.info("Found {} filter-level products for use in inter-filter cross match comparisons.".format(num_filter_prods))
+        ctr = 1
+        for total_obj in total_obj_list:
+            for filt_obj in total_obj.fdp_list:
+                log.info("{}: {} {} {}".format(ctr, filt_obj.instrument.upper(),
+                                               filt_obj.detector.upper(), filt_obj.filters.upper()))
+                ctr += 1
+
+# ------------------------------------------------------------------------------------------------------------
 
 
 def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
@@ -1269,7 +1321,8 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, hap_imgname, cattype, l
 def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_gaia_sources=True,
                          run_compare_hla_sourcelists=True, run_compare_ra_dec_crossmatches=True,
                          run_characterize_gaia_distribution=True, run_compare_photometry=True,
-                         run_report_wcs=True, log_level=logutil.logging.NOTSET):
+                         run_compare_interfilter_crossmatches=True, run_report_wcs=True,
+                         log_level=logutil.logging.NOTSET):
     """Run the quality analysis functions
 
     Parameters
@@ -1294,6 +1347,9 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
 
     run_compare_photometry : bool, optional
         Run 'compare_photometry' test? Default value is True.
+
+    run_compare_interfilter_crossmatches : bool, optional
+        Run 'compare_filter_cross_match' test? Default value is True.
 
     run_report_wcs : bool, optional
         Run 'report_wcs' test? Devault value is True.
@@ -1374,6 +1430,11 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
         compare_photometry(filter_drizzle_list, json_timestamp=json_timestamp,
                            json_time_since_epoch=json_time_since_epoch, log_level=log_level)
 
+    # Compare inter-filter cross matched HAP sources
+    if run_compare_interfilter_crossmatches:
+        compare_interfilter_crossmatches(total_obj_list, json_timestamp=json_timestamp,
+                                         json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+
     # Report WCS info
     if run_report_wcs:
         report_wcs(total_obj_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch,
@@ -1404,6 +1465,9 @@ if __name__ == "__main__":
     parser.add_argument('-fgs', '--run_find_gaia_sources', required=False, action='store_true',
                         help="Determine the number of GAIA sources in the footprint of a specified HAP final "
                              "product image")
+    parser.add_argument('-fxm', '--run_compare_interfilter_crossmatches', required=False, action='store_true',
+                        help="Compare positions of cross matched sources from different filter-level "
+                             "products")
     parser.add_argument('-hla', '--run_compare_hla_sourcelists', required=False, action='store_true',
                         help="Compare HAP sourcelists to their HLA classic counterparts")
     parser.add_argument('-wcs', '--run_report_wcs', required=False, action='store_true',
@@ -1451,6 +1515,7 @@ if __name__ == "__main__":
         user_args.run_compare_photometry = True
         user_args.run_compare_hla_sourcelists = True
         user_args.run_compare_ra_dec_crossmatches = True
+        user_args.run_compare_interfilter_crossmatches = True
         user_args.run_find_gaia_sources = True
         user_args.run_report_wcs = True
 
@@ -1476,6 +1541,7 @@ if __name__ == "__main__":
                          run_characterize_gaia_distribution=user_args.run_characterize_gaia_distribution,
                          run_compare_hla_sourcelists=user_args.run_compare_hla_sourcelists,
                          run_compare_photometry=user_args.run_compare_photometry,
+                         run_compare_interfilter_crossmatches=user_args.run_compare_interfilter_crossmatches,
                          run_report_wcs=user_args.run_report_wcs,
                          log_level=log_level)
                          
