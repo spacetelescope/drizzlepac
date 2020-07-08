@@ -68,7 +68,9 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             
 __taskname__ = 'quality_analysis'
 
-def determine_alignment_residuals(input, files, max_srcs=2000, 
+def determine_alignment_residuals(input, files, 
+                                  catalogs=None,
+                                  max_srcs=2000, 
                                   json_timestamp=None,
                                   json_time_since_epoch=None,
                                   log_level=logutil.logging.INFO):
@@ -85,6 +87,13 @@ def determine_alignment_residuals(input, files, max_srcs=2000,
         pipeline can work on both CTE-corrected and non-CTE-corrected files,
         but this comparison will only be performed on CTE-corrected
         products when available.
+        
+    catalogs : list, optional
+        List of dictionaries containing the source catalogs for each input chip.
+        The list NEEDS to be in the same order as the filenames given in `files`.
+        Each dictionary for each file will need to have numerical (integer) keys
+        for each 'sci' extension.  If left as `None`, this function will create
+        it's own set of catalogs using `astrometric_utils.extract_point_sources`.
 
     json_timestamp: str, optional
         Universal .json file generation date and time (local timezone) that will be used in the instantiation
@@ -108,29 +117,37 @@ def determine_alignment_residuals(input, files, max_srcs=2000,
     """
     log.setLevel(log_level)
     
-    # Open all files as HDUList objects
-    hdus = [fits.open(f) for f in files]
-    # Determine sources from each chip
-    src_cats = []
-    num_srcs = []
-    for hdu in hdus:
-        numsci = countExtn(hdu)
-        nums = 0
-        img_cats = {}
-        for chip in range(numsci):
-            chip += 1
-            img_cats[chip] = amutils.extract_point_sources(hdu[("SCI", chip)].data, nbright=max_srcs)
-            nums += len(img_cats[chip])
+    if catalogs is None:
+        # Open all files as HDUList objects
+        hdus = [fits.open(f) for f in files]
+        # Determine sources from each chip
+        src_cats = []
+        num_srcs = []
+        for hdu in hdus:
+            numsci = countExtn(hdu)
+            nums = 0
+            img_cats = {}
+            for chip in range(numsci):
+                chip += 1
+                img_cats[chip] = amutils.extract_point_sources(hdu[("SCI", chip)].data, nbright=max_srcs)
+                nums += len(img_cats[chip])
 
-        log.info("Identified {} point-sources from {}".format(nums, hdu.filename()))
-        num_srcs.append(nums)
-        src_cats.append(img_cats)
+            log.info("Identified {} point-sources from {}".format(nums, hdu.filename()))
+            num_srcs.append(nums)
+            src_cats.append(img_cats)
+    else:
+        src_cats = catalogs
+        num_srcs = []
+        for img in src_cats:
+            num_img = 0
+            for chip in img: num_img += len(img[chip])
+            num_srcs.append(num_img)
+
 
     if len(num_srcs) == 0 or (len(num_srcs) > 0 and  max(num_srcs) <= 3):
         log.warning("Not enough sources identified in input images for comparison")
         return None
 
-    # src_cats = [amutils.generate_source_catalog(hdu) for hdu in hdus]
     # Combine WCS from HDULists and source catalogs into tweakwcs-compatible input
     imglist = []
     for i, (f, cat) in enumerate(zip(files, src_cats)):
@@ -166,7 +183,9 @@ def determine_alignment_residuals(input, files, max_srcs=2000,
     for img in imglist:
         wcsname = fits.getval(img.meta['filename'], 'wcsname', ext=("sci",1))
         img.meta['wcsname'] = wcsname
-
+        img.meta['fit_info']['aligned_to'] = imglist[0].meta['filename']
+        img.meta['reference_catalog'] = None
+        
     for img in imglist:        
         if img.meta['fit_info']['status'] == 'SUCCESS' and '-FIT' in wcsname:
             align_success = True
@@ -276,7 +295,12 @@ def extract_residuals(imglist):
             ref_ra = np.concatenate([ref_ra, rra])
             ref_dec = np.concatenate([ref_dec, rdec])
             continue
-
+        else:
+            if len(ref_ra) == 0:
+                # Get the reference positions from the external reference catalog
+                ref_ra = chip.meta['reference_catalog']['RA']
+                ref_dec = chip.meta['reference_catalog']['DEC']
+        
         if group_id not in group_dict:
             group_dict[group_name] = {}
             group_dict[group_name]['fit_results'] = {'group_id': group_id,
@@ -416,10 +440,15 @@ def run_all(input, files, log_level=logutil.logging.NOTSET):
     json_timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
     json_time_since_epoch = time.time()
 
+    src_catalogs = None
+    if catalogs is not None:
+        src_catalogs = [catalogs.extracted_sources[f] for f in files]
+        
     json_files = determine_alignment_residuals(input, files,
-                                             json_timestamp=json_timestamp,
-                                             json_time_since_epoch=json_time_since_epoch,
-                                             log_level=log_level)
+                                              catalogs=src_catalogs,
+                                              json_timestamp=json_timestamp,
+                                              json_time_since_epoch=json_time_since_epoch,
+                                              log_level=log_level)
     if catalogs is not None:
         if 'GAIADR2' in catalogs.reference_catalogs:
             gaia_cat = catalogs.reference_catalogs['GAIADR2']

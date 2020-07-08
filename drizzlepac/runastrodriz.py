@@ -430,7 +430,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
         if align_with_apriori or force_alignment or align_to_gaia:
             # Generate initial default products and perform verification
-            align_dicts = verify_alignment(_inlist,
+            align_dicts, align_table = verify_alignment(_inlist,
                                              _calfiles, _calfiles_flc,
                                              _trlfile,
                                              tmpdir=None, debug=debug,
@@ -475,7 +475,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 tmpname = "_".join([_trlroot, 'apriori'])
                 sub_dirs.append(tmpname)
                 # Generate initial default products and perform verification
-                align_apriori = verify_alignment(_inlist,
+                align_apriori, apriori_table = verify_alignment(_inlist,
                                                  _calfiles, _calfiles_flc,
                                                  _trlfile,
                                                  tmpdir=tmpname, debug=debug,
@@ -530,7 +530,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 find_crs = False
             tmpname = "_".join([_trlroot, 'aposteriori'])
             sub_dirs.append(tmpname)
-            align_aposteriori = verify_alignment(_inlist,
+            align_aposteriori, aposteriori_table = verify_alignment(_inlist,
                                              _calfiles, _calfiles_flc,
                                              _trlfile,
                                              tmpdir=tmpname, debug=debug,
@@ -677,13 +677,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     qa_switch = _get_envvar_switch(envvar_qa_stats_name)
 
     if qa_switch:
-        alignment_table = None
-        if align_to_gaia and align_aposteriori:
-            # Get the copy of the source catalogs used for alignment
-            alignment_table = align_aposteriori['alignment_table'].copy()
+
         # Generate quality statistics for astrometry if specified
         calfiles = _calfiles_flc if _calfiles_flc else _calfiles
-        qa.run_all(inFile, calfiles, catalogs=alignment_table)
+        qa.run_all(inFile, calfiles, catalogs=aposteriori_table)
 
 
 def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignment=True,
@@ -828,6 +825,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         print("Invalid alignment mode {} requested.".format(tmpdir))
         raise ValueError
 
+    full_table = None
     fraction_matched = 1.0
     num_sources = -1
     try:
@@ -997,7 +995,6 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             prodname = align_focus['prodname']
         else:
             fd = amutils.FOCUS_DICT.copy()
-            fd['alignment_table'] = full_table
             fd['expnames'] = calfiles
             fd['prodname'] = drz_products[0]
             alignment_verified = True
@@ -1049,7 +1046,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             # Return to main processing dir
             os.chdir(parent_dir)
 
-    return focus_dicts
+    return focus_dicts, full_table
 
 def apply_headerlet(filename, headerlet_file, flcfile=None):
     
