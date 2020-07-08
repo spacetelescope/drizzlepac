@@ -42,20 +42,20 @@ from astropy.coordinates import SkyCoord
 from astropy.io import ascii, fits
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
-from itertools import chain
-import numpy as np
-from scipy.spatial import KDTree
-
 from bokeh.layouts import row, column
 from bokeh.plotting import figure, output_file, save
 from bokeh.models import ColumnDataSource, Label
 from bokeh.models.tools import HoverTool
-
+from itertools import chain
+import numpy as np
+from photutils import DAOStarFinder
+from scipy.spatial import KDTree
 
 
 # Local application imports
 from drizzlepac import util, wcs_functions
 from drizzlepac.haputils import hla_flag_filter
+from drizzlepac.haputils import align_utils
 from drizzlepac.haputils import astrometric_utils as au
 import drizzlepac.haputils.diagnostic_utils as du
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
@@ -562,9 +562,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
         ctr = 1
         for total_obj in total_obj_list:
             for filt_obj in total_obj.fdp_list:
-                log.info("{}: {} {} {}".format(ctr, filt_obj.drizzle_filename))
-
-
+                log.info("{}: {}".format(ctr, filt_obj.drizzle_filename))
                 sources = find_hap_point_sources(filt_obj)
 
                 ctr += 1
@@ -642,10 +640,14 @@ def find_hap_point_sources(filt_obj):
     -------
     # TODO: fill this out
     """
-    filt_hdulist = fits.open(filt_obj.drizzle_filename)
-    img_data = filt_hdulist["SCI"].data
+    pdb.set_trace()
+    img_obj = align_utils.HAPImage(filt_obj.drizzle_filename)
 
-    filt_hdulist.close()
+    log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'], self.image.bkg_rms_median))
+    daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
+    sources = daofind(image, mask=exclusion_mask)
+
+
     return 0
 
 # ----------------------------------------------------------------------------------------------------------------------
