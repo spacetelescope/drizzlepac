@@ -562,9 +562,13 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
         ctr = 1
         for total_obj in total_obj_list:
             for filt_obj in total_obj.fdp_list:
-                log.info("{}: {} {} {}".format(ctr, filt_obj.instrument.upper(),
-                                               filt_obj.detector.upper(), filt_obj.filters.upper()))
+                log.info("{}: {} {} {}".format(ctr, filt_obj.drizzle_filename))
+
+
+                sources = find_hap_point_sources(filt_obj)
+
                 ctr += 1
+
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -626,6 +630,25 @@ def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+
+def find_hap_point_sources(filt_obj):
+    """Identifies point sources in HAP imagery products
+
+    Parameters
+    ----------
+    # TODO: fill this out
+
+    Returns
+    -------
+    # TODO: fill this out
+    """
+    filt_hdulist = fits.open(filt_obj.drizzle_filename)
+    img_data = filt_hdulist["SCI"].data
+
+    filt_hdulist.close()
+    return 0
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 def generate_gaia_catalog(hap_obj, columns_to_remove=None):
     """Uses astrometric_utils.create_astrometric_catalog() to create a catalog of all GAIA sources in the
