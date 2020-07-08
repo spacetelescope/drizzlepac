@@ -588,10 +588,48 @@ The result of this lengthy process is a set of WCS objects which have been
 updated with a fit to a GAIA catalog representing an ``a posteriori`` solution. 
 
 
+Generate the Aligned Drizzle Products
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Successful alignment of the WCSs to a GAIA catalog means that these ``a posteriori``
+updated exposures can be combined to create a drizzled product using ``AstroDrizzle``.
 
 
+Verify A Posteriori Alignment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+These newly updated drizzle products still need to be evaluated to insure that the
+fit performed to GAIA maintained relative alignment between the images as well. 
+Mis-alignment of the images to each other can result from too few sources being
+used for the fit imprinting the errors in those source positions on the relative
+alignment.  The verification used is the same focus and similarity checks that were 
+performed on the ``a priori`` updated drizzle products and even the pipeline 
+default drizzle products.  
 
+A Posteriori Failure
+^^^^^^^^^^^^^^^^^^^^
+At any number of points throughout this computation and verification, it could 
+end up quitting and flagging this attempt as a failure. If this happens, no 
+updated WCS solutions get created or saved and processing returns to the parent 
+directory while deleting the entire ``<dataset>_aposteriori`` directory along 
+with all the mis-aligned or un-alignable files.  This allows the processing to 
+revert to using the previously verified WCS solutions as the ``best`` WCS solution 
+available for these observations. 
 
+A Posteriori Success
+^^^^^^^^^^^^^^^^^^^^
+Successfully fitting to GAIA can only be declared after the verification process
+returned values indicating good alignment in the drizzle product.  The processing
+would then copy these ``a posteriori``-updated input exposures from the sub-directory
+these computations were being performed in based up to the parent directory to 
+replace the previously updated versions of the input files.  This entire sub-directory
+then gets deleted, unless the processing was being run in debug mode.  
 
-
-
+Creation of Final Aligned Products
+----------------------------------
+The starting directory now contains updated input FLC/FLT files based on WCSs which
+have been verified to have maintained relative alignment and with alignment as close
+to the GAIA astrometric coordinate system as possible.  These exposures get 
+processed by ``AstroDrizzle`` to create the final, combined drizzle products for 
+the user and for archiving at STScI in the Mikulski Archive for Space Telescopes (MAST).
+These products include the calibrated drizzle(DRZ) products as well as any 
+CTE-corrected drizzle(DRC) products depending on what input exposures are
+available.   
