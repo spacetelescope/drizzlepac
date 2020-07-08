@@ -693,7 +693,7 @@ def getTemplates(fnames, blend=True, rules_file=None):
         newtab = None
     else:
         # apply rules to create final version of headers, plus table
-        # TODO:  NEED to add pointer to dataset-specific rules file as 
+        # TODO:  NEED to add pointer to dataset-specific rules file as
         #        'rules_file' parameter.
         newhdrs, newtab = blendheaders.get_blended_headers(inputs=fnames,
                                                             rules_file=rules_file)
@@ -737,19 +737,19 @@ def addWCSKeywords(wcs,hdr,blot=False,single=False,after=None):
     if not blot:
         blendheaders.remove_distortion_keywords(hdr)
 
+
 def deleteDistortionKeywords(hdr):
     """ Delete distortion related keywords from output drizzle science header
         since the drizzled image should have no remaining distortion.
     """
-    dist_kws = ['D2IMERR1','D2IMERR2','D2IMDIS1','D2IMDIS2','D2IM1.*','D2IM2.*','D2IMEXT']
+    dist_kws = ['D2IMERR1','D2IMERR2','D2IMDIS1','D2IMDIS2','D2IM1.*','D2IM2.*',
+                'D2IMEXT', 'DP1', 'DP2', 'CPDIS?', 'CPERR?']
     for kw in dist_kws:
-        try:
+        if kw in hdr:
             del hdr[kw]
-        except KeyError as e:
-            pass
 
 
-def writeSingleFITS(data,wcs,output,template,clobber=True,verbose=True, 
+def writeSingleFITS(data,wcs,output,template,clobber=True,verbose=True,
                     rules_file=None):
     """ Write out a simple FITS file given a numpy array and the name of another
     FITS file to use as a template for the output image header.
@@ -779,7 +779,7 @@ def writeSingleFITS(data,wcs,output,template,clobber=True,verbose=True,
         # Get default headers from multi-extension FITS file
         # If input data is not in MEF FITS format, it will return 'None'
         # NOTE: These are HEADER objects, not HDUs
-        (prihdr,scihdr,errhdr,dqhdr),newtab = getTemplates(template,EXTLIST, 
+        (prihdr,scihdr,errhdr,dqhdr),newtab = getTemplates(template,EXTLIST,
                                                            rules_file=rules_file)
 
         if scihdr is None:
