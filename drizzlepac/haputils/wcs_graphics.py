@@ -24,8 +24,7 @@ import pandas as pd
 
 from bokeh.layouts import gridplot, row
 from bokeh.plotting import figure, output_file, show, save
-from bokeh.models import ColumnDataSource, Label
-#from bokeh.models.tools import HoverTool, WheelZoomTool, PanTool, ZoomInTool
+from bokeh.models import ColumnDataSource, Label, CDSView
 from bokeh.models.tools import HoverTool
 
 # Local application imports
@@ -38,8 +37,6 @@ from stsci.tools import logutil
 # guide stars by default.  In a sense, the default IDC_<rootname> WCS is
 # the apriori solution.
 # WCS columns
-
-# TO DO:  Need to keep gen_info and header until fix made in pandas_utils.py
 WCS_COLUMNS = {'PrimaryWCS.primary_wcsname': 'prim_wcsname',
                'PrimaryWCS.crpix1': 'prim_crpix1',
                'PrimaryWCS.crpix2': 'prim_crpix2',
@@ -188,7 +185,7 @@ def generate_graphic(wcs_dataDF, output_base_filename, display_plot, log_level):
     Parameters
     ==========
     wcs_dataDF : Pandas dataframe
-        A subset of the input Dataframe consisting only of the WCS_COLUMNS
+        A subset of the input Dataframe consisting only of the wcs_columns 
         and Aperture 2
 
     output_base_filename : str
@@ -250,28 +247,35 @@ def generate_graphic(wcs_dataDF, output_base_filename, display_plot, log_level):
         wcs_components.append('del_{}_wcsname'.format(wcs_type))
         alt_wcs_names.append('alt_{}_wcsname'.format(wcs_type))
 
-    # TO DO: Need way to specify any "shape" glyph
     # There are three distinct figures in this graphic layout, each figure can have up to
     # three datasets plotted with the circular glyph
+    # TO DO: Common source and column does NOT link figures
     wcs_type_colors = ['blue', 'green', 'purple']
     for i, wcs_component in enumerate(wcs_components):
         if wcs_component in wcs_dataDF.columns:
             slist = wcs_component.rsplit('_')
-            figure1.build_glyph('circle', x='del_{}_crpix1'.format(slist[1]),
+            figure1.build_glyph('circle',
+                                x='del_{}_crpix1'.format(slist[1]),
                                 y='del_{}_crpix2'.format(slist[1]),
                                 sourceCDS=sourceCDS,
                                 glyph_color=wcs_type_colors[i],
                                 legend_label='Delta(Active-'+wcs_type_names[i].capitalize()+')',
                                 name=alt_wcs_names[i])
 
-            figure2.build_glyph('circle', x='del_{}_crval1'.format(slist[1]),
-                                y='del_{}_crval2'.format(slist[1]),
+            # FIX: experiment
+            #figure2.build_glyph('circle',
+                                #x='del_{}_crval1'.format(slist[1]),
+                                #y='del_{}_crval2'.format(slist[1]),
+            figure2.build_glyph('circle',
+                                x='del_{}_crpix1'.format(slist[1]),
+                                y='del_{}_crpix2'.format(slist[1]),
                                 sourceCDS=sourceCDS,
                                 glyph_color=wcs_type_colors[i],
                                 legend_label='Delta(Active-'+wcs_type_names[i].capitalize()+')',
                                 name=alt_wcs_names[i])
 
-            figure3.build_glyph('circle', x='del_{}_scale'.format(slist[1]),
+            figure3.build_glyph('circle',
+                                x='del_{}_scale'.format(slist[1]),
                                 y='del_{}_orient'.format(slist[1]),
                                 sourceCDS=sourceCDS,
                                 glyph_color=wcs_type_colors[i],
@@ -280,8 +284,13 @@ def generate_graphic(wcs_dataDF, output_base_filename, display_plot, log_level):
 
     # Create the the HTML output and optionally display the plot
     grid = gridplot([[figure1.fig, figure2.fig], [figure3.fig, None]], plot_width=500, plot_height=500)
+
+    # Display and save
     if display_plot:
         show(grid)
+    # Just save
+    else:
+        save(grid)
     log.info("WCS_graphics. Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
     #show(figure1.fig)
 

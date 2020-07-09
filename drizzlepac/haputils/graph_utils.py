@@ -22,14 +22,31 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 # Data columns from the Pandas dataframe which are to be used as common display value
 # for all hover tooltips.
-HOVER_BASIC_TIPS = [('Inst/Det', '@{gen_info.inst_det}'),
+# TO DO: Nice to have WCSNAME for all images.  This has to be added to the JSON writer
+# and then the harvester too.
+HOVER_BASIC_TIPS = [('Inst/Det', '@{inst_det}'),
                     ('Proposal ID', '@{gen_info.proposal_id}'),
-                    ('ASN ID', '@{header.ASN_ID}'),
-                    ('Filter', '@{gen_info.filter}'),
-                    ('ImageName', '@{gen_info.imgname}')]
+                    ('ASN ID', '@{header.ASN_ID}')]
 
 # Default figure tools.  Bokeh default is (‘pan,wheel_zoom,box_zoom,save,reset,help’)
-FIGURE_TOOLS_BASE = 'box_zoom, wheel_zoom, box_select, lasso_select, reset, save'
+FIGURE_TOOLS_BASE = 'box_zoom,wheel_zoom,box_select,lasso_select,reset,save'
+
+def build_tooltips(tips):
+    """Return list of tuples for tooltips to use in hover tool.
+    
+    Parameters
+    ----------
+    tips : list
+        List of indices for the HOVER_COLUMNS entries to be used as tooltips 
+        to be included in the hover tool.
+
+    """
+    tools = [(TOOLTIPS_LIST[i], '@{}{}{}'.format(
+                                TOOLSEP_START, 
+                                HOVER_COLUMNS[i],
+                                TOOLSEP_END)) for i in tips]
+    
+    return tools
 
 class HAPFigure:
     """ HAPFigure is a class whose attributes are common values applicable to all
@@ -71,14 +88,24 @@ class HAPFigure:
         grid_line_color : str, optional
             Color of grid lines
 
+        These are the characteristics which the developers have found useful thus far.  It
+        is expected more arguments may need to be added to support desired functionality.
+
     """
     def __init__(self, log_level=logutil.logging.NOTSET, **figure_dict):
         # set logging level to user-specified level
         log.setLevel(log_level)
  
-        # Append any user requested tools to the base set 
+        # Append any user requested tools to the base set - eliminate
+        # duplicate entries
         user_tools = figure_dict.get('tools', '')
-        fig_tools = FIGURE_TOOLS_BASE + ', ' + user_tools
+        all_tools = FIGURE_TOOLS_BASE + ',' + user_tools
+        tool_tokens = all_tools.split(',')
+        strip_tool_tokens = []
+        for t in tool_tokens:
+            strip_tool_tokens.append(t.strip())
+        fig_tools = list(set(strip_tool_tokens))
+
         fig_tool_loc = figure_dict.get('toolbar_location', 'right')
 
         # Generate the figure instance
@@ -98,21 +125,23 @@ class HAPFigure:
 
         self.fig.x_range.start = figure_dict.get('xstart', None)
         self.fig.y_range.start = figure_dict.get('ystart', None)
-        self.fig.grid.grid_line_color = figure_dict.get('grid_line_color', None) 
+        self.fig.grid.grid_line_color = figure_dict.get('grid_line_color', 'white') 
 
         # These attributes are not for the figure, but are styling attributes
         # used for the "shape" glyphs.  They may be set to non-default values when 
         # the build_glyph() routine is invoked.
         self.glyph_color = 'colormap'
-        self.color = 'gen_info.colormap'
+        self.color = 'colormap'
         self.size = 10
         self.legend_group = '' 
         self.legend_label = ''
         self.fill_alpha = 0.5 
         self.line_alpha = 0.5 
-        self.fig.legend.location = 'center-right'
+        self.fig.legend.location = 'center_right'
 
-        # This value is set so the functionality is always active
+        # This value is set so the functionality is always active - this allows
+        # the user click on an item in the legend and turn on/off the display of
+        # that particular dataset
         self.fig.legend.click_policy = 'hide'
 
 
@@ -148,6 +177,9 @@ class HAPFigure:
                 argument is not set to "colormap".  If the "glyph_color" is "colormap", 
                 the "legend_label" argument is ignored.
 
+            These are the characteristics which the developers have found useful thus far.  It
+            is expected more arguments may need to be added to support desired functionality.
+
         """
 
         # Set the required attributes
@@ -162,18 +194,19 @@ class HAPFigure:
         self.fill_alpha = data_dict.get('fill_transparency', self.fill_alpha)
         self.line_alpha = data_dict.get('line_transparency', self.line_alpha)
 
-        # If "glyph_color" is "colormap", then "legend_group" is the name of the column 
-        # from the "sourceCDS" to use for defining the legend for the colors used.
-        # The same colors should be assigned to all the same values of data from the
-        # column, for example, all 'ACS/WFC' data points from the "instrument" column.
-        # The "legend_label" is ignored when "glyph_color" is set to "colormap".
+        # If "glyph_color" is a color, then the specified color and legend label 
+        # are used.
+        # If "glyph_color" is "colormap", then "colormap" and "legend_group" columns 
+        # from "sourceCDS" are used for the corresponding glyph to set the color
+        # and legend text.
         self.glyph_color = data_dict.get('glyph_color', self.glyph_color)
         if self.glyph_color is 'colormap':
-            self.legend_group = 'gen_info.inst_det'
-            self.color = 'gen_info.colormap'
+            self.legend_group = 'inst_det'
+            self.color = 'colormap'
         else:
             self.color = self.glyph_color
              
+        # The "legend_label" is ignored when "glyph_color" is set to "colormap".
         self.legend_label = data_dict.get('legend_label', self.legend_label)
 
         # Dictionary of supported "shape" glyphs.  These are really references to
@@ -188,7 +221,7 @@ class HAPFigure:
     # "Shape" glyphs
     def build_circle_glyph(self):
 
-        # hacky
+        # hacky if/else
         if self.glyph_color is 'colormap':
             self.fig.circle(x = self.x, 
                             y = self.y, 
@@ -198,6 +231,7 @@ class HAPFigure:
                             legend_group = self.legend_group,
                             fill_alpha = self.fill_alpha,
                             line_alpha = self.line_alpha,
+                            hover_color = 'green',
                             name = self.glyph_name)
         else:
             self.fig.circle(x = self.x, 
@@ -208,37 +242,60 @@ class HAPFigure:
                             legend_label = self.legend_label,
                             fill_alpha = self.fill_alpha,
                             line_alpha = self.line_alpha,
+                            hover_color = 'green',
                             name = self.glyph_name)
 
 
     def build_square_glyph(self):
 
-        self.fig.square(x = self.x, 
-                        y = self.y, 
-                        source = self.sourceCDS, 
-                        size = self.size, 
-                        color = self.color,
-                        #legend_label = self.legend_label,
-                        fill_alpha = self.fill_alpha,
-                        line_alpha = self.line_alpha,
-                        name = self.glyph_name)
+        if self.glyph_color is 'colormap':
+            self.fig.square(x = self.x, 
+                            y = self.y, 
+                            source = self.sourceCDS, 
+                            size = self.size, 
+                            color = self.color,
+                            legend_group= self.legend_group,
+                            fill_alpha = self.fill_alpha,
+                            line_alpha = self.line_alpha,
+                            name = self.glyph_name)
+        else:
+            self.fig.square(x = self.x, 
+                            y = self.y, 
+                            source = self.sourceCDS, 
+                            size = self.size, 
+                            color = self.color,
+                            legend_label = self.legend_label,
+                            fill_alpha = self.fill_alpha,
+                            line_alpha = self.line_alpha,
+                            name = self.glyph_name)
 
 
     def build_triangle_glyph(self):
 
-        self.fig.triangle(x = self.x, 
-                        y = self.y, 
-                        source = self.sourceCDS, 
-                        size = self.size, 
-                        color = self.color,
-                        legend_label = self.legend_label,
-                        fill_alpha = self.fill_alpha,
-                        line_alpha = self.line_alpha,
-                        name = self.glyph_name)
+        if self.glyph_color is 'colormap':
+            self.fig.triangle(x = self.x, 
+                            y = self.y, 
+                            source = self.sourceCDS, 
+                            size = self.size, 
+                            color = self.color,
+                            legend_group = self.legend_group,
+                            fill_alpha = self.fill_alpha,
+                            line_alpha = self.line_alpha,
+                            name = self.glyph_name)
+        else:
+            self.fig.triangle(x = self.x, 
+                            y = self.y, 
+                            source = self.sourceCDS, 
+                            size = self.size, 
+                            color = self.color,
+                            legend_label = self.legend_label,
+                            fill_alpha = self.fill_alpha,
+                            line_alpha = self.line_alpha,
+                            name = self.glyph_name)
 
 
-    def build_histogram(self, left, right, top, bottom, **data_dict):
-        """Generate a glyph representation of X and Y data.
+    def build_histogram(self, top, bottom, left, right, **data_dict):
+        """Generate a histogram plot
 
         """
 
@@ -246,10 +303,10 @@ class HAPFigure:
         line_color = data_dict.get('line_color', 'black')
         alpha = data_dict.get('fill_transparency', 1.0)
 
-        self.fig.quad(left = left,
-                      right = right,
-                      top = top,
+        self.fig.quad(top = top,
                       bottom = bottom,
+                      left = left,
+                      right = right,
                       fill_color = fill_color,
                       line_color = line_color, 
                       alpha = alpha)
