@@ -24,12 +24,14 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # for all hover tooltips.
 # TO DO: Nice to have WCSNAME for all images.  This has to be added to the JSON writer
 # and then the harvester too.
-HOVER_BASIC_TIPS = [('Inst/Det', '@{inst_det}'),
+HOVER_BASIC_TIPS = [('ImageName', '@{gen_info.imgname}'),
                     ('Proposal ID', '@{gen_info.proposal_id}'),
-                    ('ASN ID', '@{header.ASN_ID}')]
+                    ('ASN ID', '@{header.ASN_ID}'),
+                    ('Filter', '@{gen_info.filter}'),
+                    ('Inst/Det', '@{inst_det}')]
 
 # Default figure tools.  Bokeh default is (‘pan,wheel_zoom,box_zoom,save,reset,help’)
-FIGURE_TOOLS_BASE = 'box_zoom,wheel_zoom,box_select,lasso_select,reset,save'
+FIGURE_TOOLS_BASE = 'box_zoom,wheel_zoom,pan,box_select,lasso_select,reset,save'
 
 def build_tooltips(tips):
     """Return list of tuples for tooltips to use in hover tool.
@@ -72,7 +74,7 @@ class HAPFigure:
         background_fill_color : str, optional
             Background color of figure area
 
-        tools : str, optional
+        tools : str, optional  DEPRECATED 09 July 2020
             List of figure tools/controls associated with the plot
 
         toolbar_location : str, optional

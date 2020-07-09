@@ -84,9 +84,6 @@ DATA_COLUMNS = ['gen_info.instrument',
                 'header.GYROMODE',
                 'header.EXPTIME']
 
-# TO DO: Determine the base set of tool which will only live in graph_utils.py
-GAIA_FIGURE_TOOLS = 'pan,wheel_zoom,box_zoom,zoom_in,zoom_out,xbox_select,reset,save'
-
 
 # ====================================================================================
 # GAIA plots: number of GAIA sources, mean distance to neighbors, centroid/offset/std
@@ -211,11 +208,10 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
     # Define the graphics
     #
 
-    # Data point figures
+    # Scatter figures
     p0 = HAPFigure(title='Centroid of GAIA Sources in Field',
                    x_label='X Centroid (pixels)',
-                   y_label='Y Centroid (pixels)',
-                   tools=GAIA_FIGURE_TOOLS)
+                   y_label='Y Centroid (pixels)')
                    #tips=[3, 0, 1, 2, 8])
     p0.build_glyph('circle', 
                    x='x_centroid', 
@@ -226,8 +222,7 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
 
     p1 = HAPFigure(title='Offset of Centroid of GAIA Sources in Field',
                    x_label='X Offset (pixels)',
-                   y_label='Y Offset (pixels)',
-                   tools=GAIA_FIGURE_TOOLS)
+                   y_label='Y Offset (pixels)')
                    #tips=[3, 0, 1, 2, 8])
     p1.build_glyph('circle',
                    x='x_offset', 
@@ -238,8 +233,7 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
 
     p2 = HAPFigure(title='Standard Deviation of GAIA Source Positions in Field',
                    x_label='STD(X) (pixels)',
-                   y_label='STD(Y) (pixels)',
-                   tools=GAIA_FIGURE_TOOLS)
+                   y_label='STD(Y) (pixels)')
                    #tips=[3, 0, 1, 2, 8])
     p2.build_glyph('circle',
                    x='x_std', 
@@ -249,15 +243,14 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
                    legend_group='inst_det')
 
     # Histogram figures
+    """
     p3 = HAPFigure(title='Mean distance between GAIA sources in Field',
                    xlabel='Separation (pixels)',
                    ylabel='Number of products',
                    background_fill_color='gainsboro',
-                   tools=GAIA_FIGURE_TOOLS,
                    toolbar_location='right',
                    ystart=0,
                    grid_line_color='white')
-    """
     mean_dist = gaiaDF.loc[:, 'mean_neighbor_dist'].dropna()
     hist3, edges3 = np.histogram(mean_dist, bins=50)
     p3.build_histogram(top=hist3,
@@ -273,7 +266,6 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
                    xlabel='Number of GAIA sources', 
                    ylabel='Number of products',
                    background_fill_color='gainsboro',
-                   tools=GAIA_FIGURE_TOOLS,
                    toolbar_location='right',
                    ystart=0,
                    grid_line_color='white')
