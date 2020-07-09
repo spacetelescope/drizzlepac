@@ -213,41 +213,25 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
 
     num_data_cols = len(DATA_COLUMNS)
     
-    plot_list = []
 
     # Data point figures
-    """
-    p4 = HAPFigure(title='Number of GAIA sources in Field',
-                   xlabel='Number of GAIA sources', 
-                   ylabel='Number of products',
-                   background_fill_color='#fafafa',
-                   tools=GAIA_FIGURE_TOOLS,
-                   toolbar_location='right',
-                   ystart=0,
-                   grid_line_color='white')
-    plot_list.append(p4)
-    """
-
     p0 = HAPFigure(title='Centroid of GAIA Sources in Field',
                    x_label='X Centroid (pixels)',
                    y_label='Y Centroid (pixels)',
                    tools=GAIA_FIGURE_TOOLS)
                    #tips=[3, 0, 1, 2, 8])
-    plot_list.append(p0)
 
     p1 = HAPFigure(title='Offset of Centroid of GAIA Sources in Field',
                    x_label='X Offset (pixels)',
                    y_label='Y Offset (pixels)',
                    tools=GAIA_FIGURE_TOOLS)
                    #tips=[3, 0, 1, 2, 8])
-    plot_list.append(p1)
                    
     p2 = HAPFigure(title='Standard Deviation of GAIA Source Positions in Field',
                    x_label='STD(X) (pixels)',
                    y_label='STD(Y) (pixels)',
                    tools=GAIA_FIGURE_TOOLS)
                    #tips=[3, 0, 1, 2, 8])
-    plot_list.append(p2)
 
     # Histogram figures
     p3 = HAPFigure(title='Mean distance between GAIA sources in Field',
@@ -258,7 +242,6 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
                    toolbar_location='right',
                    ystart=0,
                    grid_line_color='white')
-    plot_list.append(p3)
 
     p4 = HAPFigure(title='Number of GAIA sources in Field',
                    xlabel='Number of GAIA sources', 
@@ -268,21 +251,6 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
                    toolbar_location='right',
                    ystart=0,
                    grid_line_color='white')
-    plot_list.append(p4)
-
-
-    # Build the histograms
-    """ 
-    num_of_GAIA_sources = gaiaDF.loc[:, 'num_GAIA'].dropna()
-    hist4, edges4 = np.histogram(num_of_GAIA_sources, bins=50)
-    p4.build_histogram(top=hist4,
-                       bottom=0,
-                       left=edges4[:-1],
-                       right=edges4[1:],
-                       fill_color='navy',
-                       fill_transparency=0.5,
-                       line_color='white')
-    """ 
 
     # Build the glyphs
     p0.build_glyph('circle', 
@@ -307,6 +275,7 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
                    legend_group='inst_det')
 
     # Generate histogram for mean neighbor distance
+    """
     mean_dist = gaiaDF.loc[:, 'mean_neighbor_dist'].dropna()
     hist3, edges3 = np.histogram(mean_dist, bins=50)
     p3.build_histogram(top=hist3,
@@ -316,6 +285,7 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
                        fill_color='navy',
                        fill_transparency=0.5,
                        line_color='white')
+    """
 
     # Generate histogram for number of GAIA sources
     num_of_GAIA_sources = gaiaDF.loc[:, 'num_GAIA'].dropna()
@@ -330,10 +300,10 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
 
     # Display and save
     if display_plot:
-        show(column(p4.fig, p0.fig, p1.fig, p2.fig, p3.fig))
+        show(column(p4.fig, p0.fig, p1.fig, p2.fig))
     # Just save
     else:
-        save(column(p4.fig, p0.fig, p1.fig, p2.fig, p3.fig))
+        save(column(p4.fig, p0.fig, p1.fig, p2.fig))
     log.info("WCS_graphics. Output HTML graphic file {} has been written.\n".format(output))
 
     # Return the name of the plot layout file just created
