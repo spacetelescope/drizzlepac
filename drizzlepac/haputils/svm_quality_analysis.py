@@ -580,8 +580,6 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                     xmatch_ref_imgname = filt_obj.drizzle_filename
         log.info("")
         log.info("Crossmatch reference image {} contains {} sources.".format(xmatch_ref_imgname, max_sources))
-        print("\a\a\a")
-        pdb.set_trace()
 
 
 # ------------------------------------------------------------------------------------------------------------
