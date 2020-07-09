@@ -41,7 +41,7 @@ import time
 from astropy.coordinates import SkyCoord
 from astropy.io import ascii, fits
 from astropy.stats import sigma_clipped_stats
-from astropy.table import Table
+from astropy.table import Table, Column
 from bokeh.layouts import row, column
 from bokeh.plotting import figure, output_file, save
 from bokeh.models import ColumnDataSource, Label
@@ -687,6 +687,16 @@ def find_hap_point_sources(filt_obj, log_level=logutil.logging.NOTSET):
                                                               nsigma, img_obj.bkg_rms_median))
     daofind = DAOStarFinder(fwhm=img_obj.kernel_fwhm, threshold=nsigma * img_obj.bkg_rms_median)
     sources = daofind(image, mask=exclusion_mask)
+
+    # Compute RA and dec values from x centroid and y centroid and add them as new columns just to the right
+    # of y centroid.
+    ra, dec = transform_list_xy_to_ra_dec(sources['xcentroid'],
+                                          sources['ycentroid'],
+                                          filt_obj.drizzle_filename)
+    ra_col = Column(name="RA", data=ra, dtype=np.float64)
+    dec_col = Column(name="DEC", data=dec, dtype=np.float64)
+    sources.add_column(ra_col, index=3)
+    sources.add_column(dec_col, index=4)
 
     return {"filt_obj": filt_obj, "sources": sources}
 
@@ -1506,7 +1516,52 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
         report_wcs(total_obj_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch,
                    log_level=log_level)
 
+# ----------------------------------------------------------------------------------------------------------------------
 
+def transform_list_xy_to_ra_dec(list_of_x, list_of_y, drizzled_image):
+    """Transform lists of X and Y coordinates to lists of RA and Dec coordinates
+    This is a temporary solution until something like pix2sky or pix2world can be implemented in
+    measure_sources.
+
+    directly lifted from hla classic subroutine hla_sourcelist.Transform_list_xy_to_RA_Dec()
+
+    Tested.
+
+    Parameters
+    ----------
+    list_of_x : list
+        list of x coordinates to convert
+
+    list_of_y :
+        list of y coordinates to convert
+
+    drizzled_image : str
+        Name of the image that corresponds to the table from DAOPhot. This image is used to re-write x and y
+        coordinates in RA and Dec.
+
+    Returns
+    -------
+    ra: list
+        list of right ascension values
+
+    dec : list
+        list of declination values
+    """
+
+
+    wcs1_drz = HSTWCS(drizzled_image + "[1]")
+    origin = 0
+    # *origin* is the coordinate in the upper left corner of the
+    # image.  In FITS and Fortran standards, this is 1.  In Numpy and C
+    # standards this is 0.
+    try:
+        skyposish = wcs1_drz.all_pix2sky(list_of_x, list_of_y, origin)
+    except AttributeError:
+        skyposish = wcs1_drz.all_pix2world(list_of_x, list_of_y, origin)
+    ra = skyposish[0]
+    dec = skyposish[1]
+
+    return ra, dec
 # ============================================================================================================
 
 
