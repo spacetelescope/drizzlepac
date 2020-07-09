@@ -568,6 +568,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
         filtobj_dict = {}
         xmatch_ref_imgname = None
         max_sources = 0
+
         for total_obj in total_obj_list:
             for filt_obj in total_obj.fdp_list:
                 log.info("")
@@ -580,7 +581,45 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                     xmatch_ref_imgname = filt_obj.drizzle_filename
         log.info("")
         log.info("Crossmatch reference image {} contains {} sources.".format(xmatch_ref_imgname, max_sources))
+        xmatch_ref_catname = xmatch_ref_imgname[:-8] + "point-cat-fxm.ecsv"
 
+        # Perform cross-match based on X, Y coords
+        for imgname in filtobj_dict.keys():
+            if imgname != xmatch_ref_imgname:
+                xmatch_comp_imgname = imgname
+                xmatch_comp_catname = filtobj_dict[imgname]["cat_filename"]
+                sl_names = [xmatch_ref_catname, xmatch_comp_catname]
+                img_names = [xmatch_ref_imgname, xmatch_comp_imgname]
+                sl_lengths = [max_sources, len(filtobj_dict[xmatch_comp_imgname]["sources"])]
+                print(sl_names)
+                print(img_names)
+                print(sl_lengths)
+                matching_lines_ref, matching_lines_comp = csl.getMatchedLists(sl_names, img_names, sl_lengths,
+                                                                              log_level=log_level)
+                # Report number and percentage of the total number of detected ref and comp sources that were matched
+                log.info("Cross-matching results")
+                log.info(
+                    "Reference sourcelist:  {} of {} total sources cross-matched ({}%)".format(
+                        len(matching_lines_ref),
+                        sl_lengths[0],
+                        100.0 *
+                        (float(len(matching_lines_ref))
+                         / float(sl_lengths[0]))))
+                log.info(
+                    "Comp sourcelist: {} of {} total sources cross-matched ({}%)".format(
+                        len(matching_lines_comp),
+                        sl_lengths[1],
+                        100.0 *
+                        (float(
+                            len(matching_lines_comp))
+                         / float(sl_lengths[1]))))
+
+    # Housekeeping
+    for item in filtobj_dict.keys():
+        log.info("removing temp catalog file {}".format(filtobj_dict[item]['cat_filename']))
+        os.remove(filtobj_dict[item]['cat_filename'])
+    del filtobj_dict
+# TODO: map all x and y coords to a common frame with a common origin by converting from RA and DEC values using WCS info from reference image
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -698,7 +737,12 @@ def find_hap_point_sources(filt_obj, log_level=logutil.logging.NOTSET):
     sources.add_column(ra_col, index=3)
     sources.add_column(dec_col, index=4)
 
-    return {"filt_obj": filt_obj, "sources": sources}
+    # write source catalog to file for use by cross-match subroutine.
+    cat_filename = "{}_point-cat-fxm.ecsv".format(filt_obj.product_basename)
+    sources.write(cat_filename, format="ascii.ecsv")
+    log.info("Wrote source catalog {}".format(cat_filename))
+
+    return {"filt_obj": filt_obj, "sources": sources, "cat_filename": cat_filename}
 
 # ----------------------------------------------------------------------------------------------------------------------
 
