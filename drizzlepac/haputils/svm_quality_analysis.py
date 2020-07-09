@@ -49,13 +49,13 @@ from bokeh.models.tools import HoverTool
 from itertools import chain
 import numpy as np
 from photutils import DAOStarFinder
+from scipy import ndimage
 from scipy.spatial import KDTree
-
 
 # Local application imports
 from drizzlepac import util, wcs_functions
 from drizzlepac.haputils import hla_flag_filter
-from drizzlepac.haputils import align_utils
+from drizzlepac.haputils import catalog_utils
 from drizzlepac.haputils import astrometric_utils as au
 import drizzlepac.haputils.diagnostic_utils as du
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
@@ -558,14 +558,30 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
         return
     else:
         log.info("Found {} filter-level products for use in analysis of inter-filter cross matched source"
-                 " positions.".format(num_filter_prods))
+                 " positions:".format(num_filter_prods))
         ctr = 1
         for total_obj in total_obj_list:
             for filt_obj in total_obj.fdp_list:
                 log.info("{}: {}".format(ctr, filt_obj.drizzle_filename))
-                sources = find_hap_point_sources(filt_obj)
-
                 ctr += 1
+
+        filtobj_dict = {}
+        xmatch_ref_imgname = None
+        max_sources = 0
+        for total_obj in total_obj_list:
+            for filt_obj in total_obj.fdp_list:
+                log.info("")
+                log.info("{} {} {}".format(">"*20, filt_obj.drizzle_filename, "<"*20))
+                filtobj_dict[filt_obj.drizzle_filename] = find_hap_point_sources(filt_obj, log_level=log_level)
+                n_sources = len(filtobj_dict[filt_obj.drizzle_filename]['sources'])
+                log.info("Identified {} sources in {}".format(n_sources, filt_obj.drizzle_filename))
+                if n_sources > max_sources:
+                    max_sources = n_sources
+                    xmatch_ref_imgname = filt_obj.drizzle_filename
+        log.info("")
+        log.info("Crossmatch reference image {} contains {} sources.".format(xmatch_ref_imgname, max_sources))
+        print("\a\a\a")
+        pdb.set_trace()
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -629,26 +645,52 @@ def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def find_hap_point_sources(filt_obj):
-    """Identifies point sources in HAP imagery products
+def find_hap_point_sources(filt_obj, log_level=logutil.logging.NOTSET):
+    """Identifies point sources in HAP imagery products and returns a dictionary containg **filt_obj** and
+    a catalog of identified sources.
 
     Parameters
     ----------
-    # TODO: fill this out
+    filt_obj : drizzlepac.haputils.Product.FilterProduct
+        HAP filter product to process
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'NOTSET'.
 
     Returns
     -------
-    # TODO: fill this out
+    A two-element dictionary containing **filt_obj** and the source catalog keyed 'filt_obj' and 'sources',
+    respectively.
     """
-    pdb.set_trace()
-    img_obj = align_utils.HAPImage(filt_obj.drizzle_filename)
+    # Initiate logging!
+    log.setLevel(log_level)
 
-    log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'], self.image.bkg_rms_median))
-    daofind = DAOStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
+    # Initialize image object
+    img_obj = catalog_utils.CatalogImage(filt_obj.drizzle_filename, log_level)
+    img_obj.compute_background(filt_obj.configobj_pars.get_pars("catalog generation")['bkg_box_size'],
+                               filt_obj.configobj_pars.get_pars("catalog generation")['bkg_filter_size'])
+    img_obj.build_kernel(filt_obj.configobj_pars.get_pars("catalog generation")['bkg_box_size'],
+                         filt_obj.configobj_pars.get_pars("catalog generation")['bkg_filter_size'],
+                         filt_obj.configobj_pars.get_pars("catalog generation")['dao']['TWEAK_FWHMPSF'])
+
+    # Perform background subtraction
+    image = img_obj.data.copy()
+    image -= img_obj.bkg_background_ra
+
+    # create mask to reject any sources located less than 10 pixels from a image/chip edge
+    wht_image = img_obj.data.copy()
+    binary_inverted_wht = np.where(wht_image == 0, 1, 0)
+    exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
+
+    # Identify sources
+    nsigma = filt_obj.configobj_pars.get_pars("alignment")["generate_source_catalogs"]["nsigma"]
+    log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(img_obj.kernel_fwhm,
+                                                              nsigma, img_obj.bkg_rms_median))
+    daofind = DAOStarFinder(fwhm=img_obj.kernel_fwhm, threshold=nsigma * img_obj.bkg_rms_median)
     sources = daofind(image, mask=exclusion_mask)
 
-
-    return 0
+    return {"filt_obj": filt_obj, "sources": sources}
 
 # ----------------------------------------------------------------------------------------------------------------------
 
