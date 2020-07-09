@@ -116,6 +116,7 @@ The task 'runastrodriz' can be used to reproduce the same Drizzle processing tha
    :maxdepth: 2
 
    Running Astrodriz <runastrodriz.rst>
+   hla
 
 
 Astrometry and Advanced Pipeline Products

@@ -266,6 +266,9 @@ several reasons, including but not limited to:
   * high slew rate due to only guiding on gyros due to problems with acquiring guide stars
   * spurious guiding problems due to the aging telescope and guiding systems
 
+
+**Computing the Focus Index**
+
 Verifying whether or not we can identify any problems with the relative alignment
 for these products starts by measuring the focus index for the drizzled products.
 The focus index was based on using the properties of the Laplacian of Gaussian (LoG)
@@ -275,8 +278,8 @@ on the maximum value of the LoG operation on each drizzled product.
 
 The process for computing this index is:
   
-  * use the drizzled product, with as many cosmic-rays as possible, as the input
-  * create a mask of all the saturated sources
+  * use the drizzled product, with as many cosmic-rays removed as possible, as the input
+  * mask out all the saturated sources as well as possible 
   * apply the LoG operator to the image
   * pick out the pixel with the maximum value to serve as the value of the focus index
   
@@ -292,9 +295,8 @@ the telescope from one exposure to another and to a lesser extent the effect of 
 in low-S/N observations.
 
 A Z-score then gets computed for the focus index value of each single drizzle 
-product.  This Z-score is defined as the percent point function of the cumulative 
-distribution function of the total drizzle focus value relative to the
-mean and STD of the values from the single drizzle products.  The actual
+product.  In simplest terms, the Z-score is a measure of how many sigma above or
+below the population mean a measured valued is.  The actual
 computation is:
 
 .. code:: python 
@@ -308,6 +310,8 @@ A Z-score then gets computed for the focus index value derived from the total
 drizzle product.  If this score falls within the range of values defined by the
 single drizzle focus index Z-score values, this WCS solution is considered to 
 have passed the 'focus verification' check. 
+
+**Computing the Similarity Index**
 
 In addition to the focus index, a similarity index can also be computed between 
 the single drizzle products (again treated as 'truth') and the total drizzle 
@@ -323,18 +327,23 @@ generated for each source containing a value of 1 for the point source and 0 for
 the background.  The sources are identified in the single drizzle image overlap 
 region and the total drizzle product overlap region.  These single drizzle mask
 then gets subtracted from the total drizzle mask, then scaled by the number of 
-non-zero pixels in the single drizzle mask resulting in a Hamming-distance between
-the two images. This distance then gets scaled by the relative exposure time of the 
+non-zero pixels in the single drizzle mask resulting in a Hamming distance between
+the two images.  The Hamming distance, simply put, provides the percentage of 
+differences pixel-by-pixel between two arrays as described in the 
+`scipy package spatial.distance <https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.hamming.html>`_.  
+This distance then gets scaled by the relative exposure time of the 
 single drizzle image to account for uncertainties introduced by readout noise, low
 S/N detection of sources and other variances due to exposure time.  
 
 We then compute a variant of the Mean Squared Error (MSE) algorithm used in the 
 AmphiIndex image comparison code used for comparing images taken of amphibians.  
 One description of how the MSE measures the similarity between images can be found at 
-https://www.pyimagesearch.com/2014/09/15/python-compare-two-images/. This similarity
-index is sensitive to small offsets between exposures, as well as differences in noise,
-overall S/N as well as cosmic-rays.  In contrast, the Hamming-distance is not as
-sensitive to noise.  Therefore, we compare the MSE similarity with the Hamming 
+`https://www.pyimagesearch.com/2014/09/15/python-compare-two-images/ 
+<https://www.pyimagesearch.com/2014/09/15/python-compare-two-images/>`_. 
+This similarity index is sensitive to small offsets between exposures, as well 
+as differences in noise, overall S/N, and even presence of cosmic-rays.  
+In contrast, the Hamming-distance is not as sensitive to noise.  Therefore, we 
+compare the MSE similarity with the Hamming 
 distance and take the minimum of the two values as a more robust measure of the
 similarity of the images.  Both values share one key characteristic: values > 1.0 
 indicate more pixels are different than similar.  The code takes the maximum value
@@ -533,7 +542,7 @@ an attempt to perform an ``a posteriori`` fit to GAIA:
     * Evaluates all the input observations to identify any which can not be
       aligned, such as GRISM or SCAN mode observations.  For a full description
       of all the type of observations that can be filtered out, see 
-      :ref:`analyze/analyze_data``.
+      :ref:`analyze/analyze_data`.
     * Compute a 2D background for all the observations using ``photutils``
     * Determine a PSF kernel from the detectable sources in the image, if possible.
     * Segments the image after applying the 2D background to identify as many
@@ -543,34 +552,41 @@ an attempt to perform an ``a posteriori`` fit to GAIA:
       the segment as the catalog position for each segment's object. 
     * Checks whether there are enough sources to potentially get a viable linear
       fit.  
+      
         * If not, the attempt at an ``a posteriori`` fit quits without updating
-      the WCS of the input files.
+          the WCS of the input files.
+          
     * Queries the GAIA DR2 catalog through the STScI web service to obtain a catalog
       of GAIA sources that overlap the field-of-view of the combined set of 
       observations. This catalog will serve as the **reference catalog** for the
       fitting process.  
+      
         * If there are not enough GAIA sources overlapping these observations, 
           then the fit attempt quits without updating the WCS of the input 
           files. 
+          
     * Provide the source catalogs for each input image, each input images's WCS, 
       and the GAIA reference catalog to function ``align_wcs()`` in the ``tweakwcs``
       package.  
+      
         * This function cross-matches the source catalog from each image with 
           the GAIA catalog and performs an **rscale** linear fit (as defined by
           ``runastrodriz``), then updates the input WCS with the results of the 
           fit upon success.  See the `tweakwcs readthedocs pages 
           <https://tweakwcs.readthedocs.io/en/latest/imalign.html>`_ for more
           details.
-        * The function ``align_wcs()`` is first called without using the GAIA 
+        * The function ``align_wcs`` is first called without using the GAIA 
           reference catalog in order to perform a relative alignment between the observations.
-        * The function ``align_wcs()`` is then called with the GAIA catalog as
+        * The function ``align_wcs`` is then called with the GAIA catalog as
           the reference in order to finally perform a single fit to the GAIA catalog
           for all the observations at the same time.
+          
     * Evaluate the success/failure state of the fit and the quality of any 
-      successful fit.  
-    * Repeat the fit with ``tweakwcs.align_wcs()`` with other GAIA catalogs; 
+      successful fit.
+    * Repeat the fit with ``tweakwcs.align_wcs`` with other GAIA catalogs; 
       including GAIA DR1 or any others specified for use in ``runastrodriz`` itself.
     * Select the fit to the GAIA catalog which results in the lowest RMS.
+    
         * Some fields are dominated by external galaxies with no proper motion for
           which GAIA DR1 without proper motions provides the best fit (lowest RMS).
         * Other fields are dominated by local galactic stars with appreciable 
@@ -580,6 +596,7 @@ an attempt to perform an ``a posteriori`` fit to GAIA:
     * Keep the WCS's updated with the **best** solution and update the **WCSNAME**
       keyword for those WCSs to reflect the type of fit that was successful and 
       the catalog that was used.  
+      
         * The naming convention is more fully described on the 
           `Drizzlepac Astrometry description 
           <https://drizzlepac.readthedocs.io/en/latest/astrometry.html>`_.
