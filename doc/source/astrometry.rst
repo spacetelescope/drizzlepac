@@ -119,7 +119,7 @@ a posteriori solutions
 ^^^^^^^^^^^^^^^^^^^^^^^
 The *a posteriori* solutions, on the other hand, get determined from measuring sources in each image, finding overlapping sources from an astrometric catalog, identifying and cross-matching image sources with sources from the astrometric catalog and performing a fit to correct the WCS.  These type of solutions can not be determined for all datasets due to a number of reasons, such as lack of sources in the image and/or lack of overlapping sources from an astrometric catalog.  When these solutions can be determined for an observation, they are given a value for the `WCSNAME` keyword which follows the convention:
 
-  **<Starting WCS>-FIT_<REL|IMG>_<Astrometric Catalog>**
+  **<Starting WCS>-FIT_<REL|IMG|EVM|SVM>_<Astrometric Catalog>**
 
 For example,
 
@@ -134,12 +134,15 @@ The terms are defined as:
 
   * **`FIT`**
 
-    - This term refers to the fact that sources from the image were identified, cross-matched and fit to sources from an astrometric catalog.
+    - This term refers to the fact that sources from the image were identified, cross-matched and fit to sources from an astrometric catalog to create an *a posteriori* WCS solution.  
+        
+  * **`<REL|IMG|EVM|SVM>`**
 
-  * **`<REL|IMG>`**
+    - `REL` : This term denotes the fact that all images were aligned relative (REL) to each other and then aligned to an astrometric catalog.  This attempts to maintain the original relative alignment between the images in a given visit.
+    - `IMG` : This term denotes the fact the the images were fit individually to the astrometric catalog.  These solutions are applied only when relative alignment does not yield a viable fit to the astrometric catalog.
+    - `EVM` : The cross-match and fit to an astrometric catalog was performed on a single exposure by itself as part of processing the exposures of an entire visit. This will typically only apply to those rare visits which do not have enough valid exposures in the visit for alignment.
+    - `SVM` : This term refers to alignment of all the exposures in a single-visit to an astrometric catalog.  The exposures of a visit are aligned to each other (relative alignment), then, as a group, all the exposures are cross-matched and fit to the astrometric catalog specified in the next term in the WCSNAME.
 
-    - The term `REL` denotes the fact that all images were aligned relative (REL) to each other and then aligned to an astrometric catalog.  This attempts to maintain the original relative alignment between the images in a given visit.
-    - The term `IMG` denotes the fact the the images were fit individually to the astrometric catalog.  These solutions are applied only when relative alignment does not yield a viable fit to the astrometric catalog.
 
   * **<Astrometric Catalog>**
 
@@ -161,6 +164,36 @@ These separate terms provide as succinct a description of the solution determine
 
     A successfully determined *a posteriori* solution will **always** be used to replace the active WCS (after insuring the previous WCS has been saved as a headerlet extension already) regardless of the original solution.
 
+Pipeline Processing
+-------------------
+All HST observations get processed in an automated environment using standard
+parameters for the calibration code, including the alignment and combination of 
+individual exposures into undistorted products.  The standard pipeline processing
+to create the undistorted drizzled images (drc.fits or drz.fits) gets performed 
+using the 'runastrodriz' task in this package.  This same processing can be 
+run at any time using:
+
+.. code-block:: bash
+
+    runastrodriz j8cw03010_asn.fits
+    
+    runastrodriz j8cw03f6q_raw.fits
+    
+The files which need to be present are:
+
+    * RAW files (*raw.fits)
+    * FLT files (*flt.fits)
+    * FLC files (*flc.fits, if any were created by the pipeline)
+    * ASN file  (*asn.fits, if applicable)
+    
+This processing includes a lot of logic intended to not only apply pre-defined (apriori) 
+WCS solutions, but also to try and determine a new aposteriori solution then 
+verify which solution (default pipeline, apriori or aposteriori) actually provides
+the WCS which comes closest to the GAIA astrometric frame.  
+The :ref:`runastrodriz-description` of the runastrodriz task provides 
+the full discussion of the logic used to define the
+defined 'active' WCS that gets used to create the products which get archived.
+ 
 
 Choosing a WCS
 ---------------
