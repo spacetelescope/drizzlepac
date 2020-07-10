@@ -185,7 +185,7 @@ def generate_graphic(wcs_dataDF, output_base_filename, display_plot, log_level):
     Parameters
     ==========
     wcs_dataDF : Pandas dataframe
-        A subset of the input Dataframe consisting only of the wcs_columns 
+        A subset of the input Dataframe consisting only of the wcs_columns
         and Aperture 2
 
     output_base_filename : str
@@ -219,23 +219,23 @@ def generate_graphic(wcs_dataDF, output_base_filename, display_plot, log_level):
     wcs_tips = [("Primary WCS", "@prim_wcsname"),
                 ("Alternate WCS", "@$name")]
 
-    # Instantiate the figure objects 
+    # Instantiate the figure objects
     text = 'WCS Component Differences (Active - Alternate)'
-    figure1 = HAPFigure(title = text,
-                        x_label = 'Delta CRPIX1 (pixels)',
-                        y_label = 'Delta CRPIX2 (pixels)',
-                        grid_line_color = 'white',
-                        hover_tips = wcs_tips)
-    figure2 = HAPFigure(title = text,
-                        x_label = 'Delta CRVAL1 (pixels)',
-                        y_label = 'Delta CRVAL2 (pixels)',
-                        grid_line_color = 'white',
-                        hover_tips = wcs_tips)
-    figure3 = HAPFigure(title = text,
-                        x_label = 'Delta Scale (pixels/arcseconds)',
-                        y_label = 'Delta Orientation (degrees)',
-                        grid_line_color = 'white',
-                        hover_tips = wcs_tips)
+    figure1 = HAPFigure(title=text,
+                        x_label='Delta CRPIX1 (pixels)',
+                        y_label='Delta CRPIX2 (pixels)',
+                        grid_line_color='white',
+                        hover_tips=wcs_tips)
+    figure2 = HAPFigure(title=text,
+                        x_label='Delta CRVAL1 (pixels)',
+                        y_label='Delta CRVAL2 (pixels)',
+                        grid_line_color='white',
+                        hover_tips=wcs_tips)
+    figure3 = HAPFigure(title=text,
+                        x_label='Delta Scale (pixels/arcseconds)',
+                        y_label='Delta Orientation (degrees)',
+                        grid_line_color='white',
+                        hover_tips=wcs_tips)
 
     # Figure 1 delta_crpix1 vs delta_crpix2
     # Figure 2 delta_crval1 vs delta_crval2

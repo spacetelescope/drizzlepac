@@ -778,7 +778,25 @@ def build_vector_plot(**plot_dict):
     # This will use the 'colormap' column from 'source' for the colors of 
     # each point.  This column should have been populated by the calling
     # routine. 
-
+    p1 = HAPFigure(title=title, x_label=x_label, y_label=y_label)
+    p.build_vector_glyph(source.data[x],
+                         source.data[y],
+                         xr.tolist(),
+                         yr.tolist(),
+                         xr,
+                         yr,
+                         leg_x,
+                         leg_y,
+                         leg_xr,
+                         leg_yr,
+                         [xy_seg],
+                         [xy_seg/2.],
+                         color = color,
+                         line_width=2,
+                         angle=rads + np.pi/5.,
+                         marker_size=[6]*len(rx),
+                         text_size='10px')
+    """
     p1.segment(source.data[x], source.data[y], 
                xr.tolist(), yr.tolist(),
               color=color, line_width=2)
@@ -795,6 +813,7 @@ def build_vector_plot(**plot_dict):
     p1.title.text = title
     p1.xaxis.axis_label = x_label
     p1.yaxis.axis_label = y_label
+    """
     
     return p1
  
