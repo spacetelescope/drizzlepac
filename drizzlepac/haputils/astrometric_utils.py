@@ -1515,11 +1515,7 @@ def build_wcscat(image, group_id, source_catalog):
         if 'xcentroid' in imcat.colnames:
             imcat.rename_column('xcentroid', 'x')
             imcat.rename_column('ycentroid', 'y')
-            
-        # Convert numpy array coordinates into FITS image coordinates
-        # imcat['x'] += 2.99
-        # imcat['y'] += 2.99
-        
+                    
         wcscat = FITSWCS(
             w,
             meta={
