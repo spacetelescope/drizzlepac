@@ -592,7 +592,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
             log.info("Wrote source catalog {}".format(temp_cat_name))
 
             reg_table = filtobj_dict[imgname]["sources"].copy()
-            reg_table.keep_columns(['xcentroid_ref', 'ycentroid_ref'])
+            reg_table.keep_columns(['ra', 'dec'])
             reg_filename = imgname[:-8] + "fxm_all.reg"
             reg_table.write(reg_filename, format='ascii.csv')
             print("wrote region file {}".format(reg_filename))
