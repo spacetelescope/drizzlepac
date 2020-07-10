@@ -571,7 +571,6 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
 
         for total_obj in total_obj_list:
             for filt_obj in total_obj.fdp_list:
-                log.info("")
                 log.info("{} {} {}".format(">"*20, filt_obj.drizzle_filename, "<"*20))
                 filtobj_dict[filt_obj.drizzle_filename] = find_hap_point_sources(filt_obj, log_level=log_level)
                 n_sources = len(filtobj_dict[filt_obj.drizzle_filename]['sources'])
@@ -579,22 +578,31 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 if n_sources > max_sources:
                     max_sources = n_sources
                     xmatch_ref_imgname = filt_obj.drizzle_filename
-        log.info(" ")
         log.info("Crossmatch reference image {} contains {} sources.".format(xmatch_ref_imgname, max_sources))
         xmatch_ref_catname = xmatch_ref_imgname[:-8] + "point-cat-fxm.ecsv"
+
+        # Perform coord transform and write temp cat files for cross match
         temp_cat_file_list = []
-        # Perform cross-match based on X, Y coords
         for imgname in filtobj_dict.keys():
             filtobj_dict[imgname] = transform_coords(filtobj_dict[imgname], xmatch_ref_imgname)
             temp_cat_name = imgname[:-8] + "point-cat-fxm.ecsv"
             temp_cat_file_list.append(temp_cat_name)
             filtobj_dict[imgname]["sources"].write(temp_cat_name, format="ascii.ecsv")
+            print("Wrote source catalog {}".format(temp_cat_name))
             log.info("Wrote source catalog {}".format(temp_cat_name))
-            reg_cat = filtobj_dict[imgname]["sources"]
+
+            reg_table = filtobj_dict[imgname]["sources"].copy()
+            reg_table.keep_columns(['xcentroid_ref', 'ycentroid_ref'])
+            reg_filename = imgname[:-8] + "fxm_all.reg"
+            reg_table.write(reg_filename, format='ascii.csv')
+            print("wrote region file {}".format(reg_filename))
+
+        # Perform cross-match based on X, Y coords
+        for imgname in filtobj_dict.keys():
             if imgname != xmatch_ref_imgname:
                 log.info(" ")
                 xmatch_comp_imgname = imgname
-                xmatch_comp_catname = temp_cat_name
+                xmatch_comp_catname = imgname[:-8] + "point-cat-fxm.ecsv"
                 print("{} Crossmatching {} -> {} {}".format(">" * 20, xmatch_comp_catname,
                                                                xmatch_ref_catname, "<" * 20))
                 sl_names = [xmatch_ref_catname, xmatch_comp_catname]
@@ -616,14 +624,13 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                                                                               100.0 * (float(len(matching_lines_comp)) / float(sl_lengths[1]))))
 
 
-                print("\a\a\a")
-                pdb.set_trace()
+
     # Housekeeping
     # for temp_cat_filename in temp_cat_file_list:
     #     log.info("removing temp catalog file {}".format(temp_cat_filename))
     #     os.remove(temp_cat_filename)
     # del filtobj_dict
-
+    # TODO: Figure out why log statments stop being displayed just before point where crossmatch is performed in this subroutine.
 # ------------------------------------------------------------------------------------------------------------
 
 def transform_coords(filtobj_subdict, xmatch_ref_imgname, log_level=logutil.logging.NOTSET):
