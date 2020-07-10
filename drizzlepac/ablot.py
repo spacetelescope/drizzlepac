@@ -121,7 +121,7 @@ def run(configObj,wcsmap=None):
         blot_wcs = wcs_functions.build_hstwcs(
             user_wcs_pars['raref'], user_wcs_pars['decref'],
             user_wcs_pars['xrefpix'], user_wcs_pars['yrefpix'],
-            user_wcs_pars['outnx'], user_wcs_pars['outny'],
+            int(user_wcs_pars['outnx']), int(user_wcs_pars['outny']),
             user_wcs_pars['outscale'], user_wcs_pars['orient'] )
         configObj['coeffs'] = None
 
