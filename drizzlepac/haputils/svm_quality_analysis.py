@@ -579,15 +579,24 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 if n_sources > max_sources:
                     max_sources = n_sources
                     xmatch_ref_imgname = filt_obj.drizzle_filename
-        log.info("")
+        log.info(" ")
         log.info("Crossmatch reference image {} contains {} sources.".format(xmatch_ref_imgname, max_sources))
         xmatch_ref_catname = xmatch_ref_imgname[:-8] + "point-cat-fxm.ecsv"
-
+        temp_cat_file_list = []
         # Perform cross-match based on X, Y coords
         for imgname in filtobj_dict.keys():
+            filtobj_dict[imgname] = transform_coords(filtobj_dict[imgname], xmatch_ref_imgname)
+            temp_cat_name = imgname[:-8] + "point-cat-fxm.ecsv"
+            temp_cat_file_list.append(temp_cat_name)
+            filtobj_dict[imgname]["sources"].write(temp_cat_name, format="ascii.ecsv")
+            log.info("Wrote source catalog {}".format(temp_cat_name))
+            reg_cat = filtobj_dict[imgname]["sources"]
             if imgname != xmatch_ref_imgname:
+                log.info(" ")
                 xmatch_comp_imgname = imgname
-                xmatch_comp_catname = filtobj_dict[imgname]["cat_filename"]
+                xmatch_comp_catname = temp_cat_name
+                print("{} Crossmatching {} -> {} {}".format(">" * 20, xmatch_comp_catname,
+                                                               xmatch_ref_catname, "<" * 20))
                 sl_names = [xmatch_ref_catname, xmatch_comp_catname]
                 img_names = [xmatch_ref_imgname, xmatch_comp_imgname]
                 sl_lengths = [max_sources, len(filtobj_dict[xmatch_comp_imgname]["sources"])]
@@ -596,33 +605,83 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 print(sl_lengths)
                 matching_lines_ref, matching_lines_comp = csl.getMatchedLists(sl_names, img_names, sl_lengths,
                                                                               log_level=log_level)
-                # Report number and percentage of the total number of detected ref and comp sources that were matched
-                log.info("Cross-matching results")
-                log.info(
-                    "Reference sourcelist:  {} of {} total sources cross-matched ({}%)".format(
-                        len(matching_lines_ref),
-                        sl_lengths[0],
-                        100.0 *
-                        (float(len(matching_lines_ref))
-                         / float(sl_lengths[0]))))
-                log.info(
-                    "Comp sourcelist: {} of {} total sources cross-matched ({}%)".format(
-                        len(matching_lines_comp),
-                        sl_lengths[1],
-                        100.0 *
-                        (float(
-                            len(matching_lines_comp))
-                         / float(sl_lengths[1]))))
 
+                # Report number and percentage of the total number of detected ref and comp sources that were matched
+                print("Cross-matching results")
+                print("Reference sourcelist:  {} of {} total sources cross-matched ({}%)".format(len(matching_lines_ref),
+                                                                                                    sl_lengths[0],
+                                                                                                    100.0 *(float(len(matching_lines_ref))/ float(sl_lengths[0]))))
+                print("Comp sourcelist: {} of {} total sources cross-matched ({}%)".format(len(matching_lines_comp),
+                                                                                              sl_lengths[1],
+                                                                                              100.0 * (float(len(matching_lines_comp)) / float(sl_lengths[1]))))
+
+
+                print("\a\a\a")
+                pdb.set_trace()
     # Housekeeping
-    for item in filtobj_dict.keys():
-        log.info("removing temp catalog file {}".format(filtobj_dict[item]['cat_filename']))
-        os.remove(filtobj_dict[item]['cat_filename'])
-    del filtobj_dict
-# TODO: map all x and y coords to a common frame with a common origin by converting from RA and DEC values using WCS info from reference image
+    # for temp_cat_filename in temp_cat_file_list:
+    #     log.info("removing temp catalog file {}".format(temp_cat_filename))
+    #     os.remove(temp_cat_filename)
+    # del filtobj_dict
 
 # ------------------------------------------------------------------------------------------------------------
 
+def transform_coords(filtobj_subdict, xmatch_ref_imgname, log_level=logutil.logging.NOTSET):
+    """Transform comparision image frame of reference x, y coords to RA and dec, then back to x, y coords in
+    the cross-match reference image's frame of reference
+
+    Parameters
+    ----------
+    filtobj_subdict : dict
+        dictionary containing a drizzlepac.haputils.Product.FilterProduct and corresponding source catalog
+        generated earlier in the run by **find_hap_point_sources**.
+
+    xmatch_ref_imgname : str
+        name of the reference image whose WCS info will be used to convert RA and dec values into x, y coords
+        in a common frame
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'NOTSET'.
+
+    Returns
+    -------
+    filtobj_dict : dict
+        the input **filtobj_dict** dictionary with the 'sources' table updated to include freshly computed ra,
+        dec, x_centroid_ref, and y_centroid_ref columns
+    """
+    # Initiate logging!
+    log.setLevel(log_level)
+
+    # 1: stack up xcentroid and ycentorid columns from sources table
+    xy_centroid_values = np.stack((filtobj_subdict['sources']['xcentroid'],
+                             filtobj_subdict['sources']['ycentroid']), axis=1)
+
+    # 2: perform coordinate transforms.
+    origin = 0
+    fits_exten = "[1]"
+    imgname = filtobj_subdict['filt_obj'].drizzle_filename
+
+    # 2a: perform xcentroid, ycentroid -> ra, dec transform
+    ra_dec_values = hla_flag_filter.xytord(xy_centroid_values, imgname, fits_exten, origin=origin)
+
+    # 2b: perform ra, dec -> x_centroid_ref, y_centroid_ref transform
+    xy_centroid_ref_values = hla_flag_filter.rdtoxy(ra_dec_values, xmatch_ref_imgname, fits_exten,
+                                                    origin=origin)
+
+    # 3: add new columns to filtobj_subdict['sources'] table
+    title_data_dict = collections.OrderedDict()
+    title_data_dict["ra"] = ra_dec_values[:, 0]
+    title_data_dict["dec"] = ra_dec_values[:, 1]
+    title_data_dict["xcentroid_ref"] = xy_centroid_ref_values[:, 0]
+    title_data_dict["ycentroid_ref"] = xy_centroid_ref_values[:, 1]
+    col_ctr = 3
+    for col_name in title_data_dict.keys():
+        col_to_add = Column(name=col_name, data=title_data_dict[col_name], dtype=np.float64)
+        filtobj_subdict['sources'].add_column(col_to_add, index=col_ctr)
+        col_ctr += 1
+
+    return filtobj_subdict
 
 def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
                       log_level=logutil.logging.NOTSET):
@@ -727,22 +786,22 @@ def find_hap_point_sources(filt_obj, log_level=logutil.logging.NOTSET):
     daofind = DAOStarFinder(fwhm=img_obj.kernel_fwhm, threshold=nsigma * img_obj.bkg_rms_median)
     sources = daofind(image, mask=exclusion_mask)
 
-    # Compute RA and dec values from x centroid and y centroid and add them as new columns just to the right
-    # of y centroid.
-    ra, dec = transform_list_xy_to_ra_dec(sources['xcentroid'],
-                                          sources['ycentroid'],
-                                          filt_obj.drizzle_filename)
-    ra_col = Column(name="RA", data=ra, dtype=np.float64)
-    dec_col = Column(name="DEC", data=dec, dtype=np.float64)
-    sources.add_column(ra_col, index=3)
-    sources.add_column(dec_col, index=4)
+    # # Compute RA and dec values from x centroid and y centroid and add them as new columns just to the right
+    # # of y centroid.
+    # ra, dec = transform_list_xy_to_ra_dec(sources['xcentroid'],
+    #                                       sources['ycentroid'],
+    #                                       filt_obj.drizzle_filename)
+    # ra_col = Column(name="RA", data=ra, dtype=np.float64)
+    # dec_col = Column(name="DEC", data=dec, dtype=np.float64)
+    # sources.add_column(ra_col, index=3)
+    # sources.add_column(dec_col, index=4)
 
     # write source catalog to file for use by cross-match subroutine.
-    cat_filename = "{}_point-cat-fxm.ecsv".format(filt_obj.product_basename)
-    sources.write(cat_filename, format="ascii.ecsv")
-    log.info("Wrote source catalog {}".format(cat_filename))
+    # cat_filename = "{}_point-cat-fxm.ecsv".format(filt_obj.product_basename)
+    # sources.write(cat_filename, format="ascii.ecsv")
+    # log.info("Wrote source catalog {}".format(cat_filename))
 
-    return {"filt_obj": filt_obj, "sources": sources, "cat_filename": cat_filename}
+    return {"filt_obj": filt_obj, "sources": sources}
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -1560,52 +1619,6 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
         report_wcs(total_obj_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch,
                    log_level=log_level)
 
-# ----------------------------------------------------------------------------------------------------------------------
-
-def transform_list_xy_to_ra_dec(list_of_x, list_of_y, drizzled_image):
-    """Transform lists of X and Y coordinates to lists of RA and Dec coordinates
-    This is a temporary solution until something like pix2sky or pix2world can be implemented in
-    measure_sources.
-
-    directly lifted from hla classic subroutine hla_sourcelist.Transform_list_xy_to_RA_Dec()
-
-    Tested.
-
-    Parameters
-    ----------
-    list_of_x : list
-        list of x coordinates to convert
-
-    list_of_y :
-        list of y coordinates to convert
-
-    drizzled_image : str
-        Name of the image that corresponds to the table from DAOPhot. This image is used to re-write x and y
-        coordinates in RA and Dec.
-
-    Returns
-    -------
-    ra: list
-        list of right ascension values
-
-    dec : list
-        list of declination values
-    """
-
-
-    wcs1_drz = HSTWCS(drizzled_image + "[1]")
-    origin = 0
-    # *origin* is the coordinate in the upper left corner of the
-    # image.  In FITS and Fortran standards, this is 1.  In Numpy and C
-    # standards this is 0.
-    try:
-        skyposish = wcs1_drz.all_pix2sky(list_of_x, list_of_y, origin)
-    except AttributeError:
-        skyposish = wcs1_drz.all_pix2world(list_of_x, list_of_y, origin)
-    ra = skyposish[0]
-    dec = skyposish[1]
-
-    return ra, dec
 # ============================================================================================================
 
 

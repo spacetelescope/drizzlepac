@@ -1568,7 +1568,7 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
 # ======================================================================================================================
 
 
-def rdtoxy(rd_coord_array, image, image_ext):
+def rdtoxy(rd_coord_array, image, image_ext, origin=1):
     """converts RA and dec to x, y image coords.
 
     rd_coord_array : numpy.ndarray
@@ -1580,6 +1580,10 @@ def rdtoxy(rd_coord_array, image, image_ext):
     image_ext : string
         fits image extension to be used in the conversion.
 
+    origin : int, optional
+        the coordinate in the upper left corner of the image.  In FITS and Fortran standards, this is 1.  In
+        Numpy and C standards this is 0. Default value is 1.
+
     Returns
     xy_arr: array
         array of converted x, y coordinate value pairs
@@ -1588,15 +1592,15 @@ def rdtoxy(rd_coord_array, image, image_ext):
     scifile = image + image_ext
     wcs = wcsutil.HSTWCS(scifile)
     try:
-        xy_arr = wcs.wcs_sky2pix(rd_coord_array, 1)
+        xy_arr = wcs.wcs_sky2pix(rd_coord_array, origin)
     except AttributeError:
-        xy_arr = wcs.wcs_world2pix(rd_coord_array, 1)
+        xy_arr = wcs.wcs_world2pix(rd_coord_array, origin)
     return (xy_arr)
 
 # ======================================================================================================================
 
 
-def xytord(xy_coord_array, image, image_ext):
+def xytord(xy_coord_array, image, image_ext, origin=1):
     """converts x, y image coords to RA and dec.
 
     xy_coord_array : numpy.ndarray
@@ -1608,6 +1612,10 @@ def xytord(xy_coord_array, image, image_ext):
     image_ext : string
         fits image extension to be used in the conversion.
 
+    origin : int, optional
+        the coordinate in the upper left corner of the image.  In FITS and Fortran standards, this is 1.  In
+        Numpy and C standards this is 0. Default value is 1.
+
     Returns
     -------
     rd_arr : array
@@ -1617,9 +1625,9 @@ def xytord(xy_coord_array, image, image_ext):
     scifile = image + image_ext
     wcs = wcsutil.HSTWCS(scifile)
     try:
-        rd_arr = wcs.all_pix2sky(xy_coord_array, 1)
+        rd_arr = wcs.all_pix2sky(xy_coord_array, origin)
     except AttributeError:
-        rd_arr = wcs.all_pix2world(xy_coord_array, 1)
+        rd_arr = wcs.all_pix2world(xy_coord_array, origin)
     return (rd_arr)
 
 # ======================================================================================================================
