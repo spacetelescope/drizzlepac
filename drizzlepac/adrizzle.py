@@ -156,7 +156,7 @@ def run(configObj, wcsmap=None):
                 fimg = fits.open(refroot, memmap=False)
                 for i,extn in enumerate(fimg):
                     if 'CRVAL1' in extn.header: # Key on CRVAL1 for valid WCS
-                        refwcs = wcsutil.HSTWCS('{}[{}]'.format(refroot,i))
+                        refwcs = stwcs.wcsutil.HSTWCS('{}[{}]'.format(refroot,i))
                         if refwcs.wcs.has_cd():
                             extroot = i
                             break
