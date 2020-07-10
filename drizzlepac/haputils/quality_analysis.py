@@ -76,6 +76,8 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             
 __taskname__ = 'quality_analysis'
 
+__taskname__ = "quality_analysis"
+
 def determine_alignment_residuals(input, files, max_srcs=2000, 
                                   json_timestamp=None,
                                   json_time_since_epoch=None,
@@ -462,10 +464,10 @@ def generate_plots(json_data):
 # -------------------------------------------------------------------------------
 # Generate the Bokeh plot for the pipeline astrometric data.
 #
-HOVER_COLUMNS = ['gen_info.instrument',
+HOVER_COLUMNS = ['gen_info.imgname',
+                 'gen_info.instrument',
                  'gen_info.detector',
-                 'gen_info.filter',
-                 'gen_info.imgname',
+                 'gen_info.filter',                
                  'header.DATE-OBS',
                  'header.RA_TARG',
                  'header.DEC_TARG',
@@ -473,8 +475,8 @@ HOVER_COLUMNS = ['gen_info.instrument',
                  'header.EXPTIME',
                  'fit_results.aligned_to']
                    
-TOOLTIPS_LIST = ['INSTRUMENT', 'DET', 'FILTER', 
-                  'EXPNAME', 'DATE', 'RA', 'DEC', 'GYRO', 'EXPTIME',
+TOOLTIPS_LIST = ['EXPNAME', 'INSTRUMENT', 'DET', 'FILTER', 
+                  'DATE', 'RA', 'DEC', 'GYRO', 'EXPTIME',
                   'ALIGNED_TO']
 INSTRUMENT_COLUMN = 'full_instrument'
 
@@ -489,7 +491,7 @@ RESULTS_COLUMNS = ['fit_results.rms_x',
                    'fit_results.nmatches',
                    'fit_results.skew']
 
-SOURCE_COLUMNS = ['residuals.x',
+RESIDS_COLUMNS = ['residuals.x',
                   'residuals.y',
                   'residuals.ref_x',
                   'residuals.ref_y']
@@ -498,7 +500,68 @@ TOOLSEP_END = '}'
 DETECTOR_LEGEND = {'UVIS': 'magenta', 'IR': 'red', 'WFC': 'blue', 
                     'SBC': 'yellow', 'HRC': 'black'}
     
-FIGURE_TOOLS = 'pan,wheel_zoom,box_zoom,zoom_in,zoom_out,box_select,reset,save'
+FIGURE_TOOLS = 'pan,wheel_zoom,box_zoom,zoom_in,zoom_out,box_select,undo,reset,save'
+"""
+This code comes from:
+
+ https://github.com/holoviz/holoviews/blob/master/holoviews/plotting/bokeh/chart.py#L309
+
+This code shows how they define the arrow heads for the vector plots.  A
+'non-invasive' way to use the Bokeh Segment Glyph to create a vector plot would
+be to define the arrow heads as 2 additional segments starting at the endpoint
+of the vector. The new segments would then be added to the data points to be 
+plotted by Segment to appear as an arrow head on each segment. 
+
+        # Get x, y, angle, magnitude and color data
+        rads = element.dimension_values(2)
+        if self.invert_axes:
+            xidx, yidx = (1, 0)
+            rads = np.pi/2 - rads
+        else:
+            xidx, yidx = (0, 1)
+        lens = self._get_lengths(element, ranges)/input_scale
+        cdim = element.get_dimension(self.color_index)
+        cdata, cmapping = self._get_color_data(element, ranges, style,
+                                               name='line_color')
+
+        # Compute segments and arrowheads
+        xs = element.dimension_values(xidx)
+        ys = element.dimension_values(yidx)
+
+        # Compute offset depending on pivot option
+        xoffsets = np.cos(rads)*lens/2.
+        yoffsets = np.sin(rads)*lens/2.
+        if self.pivot == 'mid':
+            nxoff, pxoff = xoffsets, xoffsets
+            nyoff, pyoff = yoffsets, yoffsets
+        elif self.pivot == 'tip':
+            nxoff, pxoff = 0, xoffsets*2
+            nyoff, pyoff = 0, yoffsets*2
+        elif self.pivot == 'tail':
+            nxoff, pxoff = xoffsets*2, 0
+            nyoff, pyoff = yoffsets*2, 0
+        x0s, x1s = (xs + nxoff, xs - pxoff)
+        y0s, y1s = (ys + nyoff, ys - pyoff)
+
+        color = None
+        if self.arrow_heads:
+            arrow_len = (lens/4.)
+            xa1s = x0s - np.cos(rads+np.pi/4)*arrow_len
+            ya1s = y0s - np.sin(rads+np.pi/4)*arrow_len
+            xa2s = x0s - np.cos(rads-np.pi/4)*arrow_len
+            ya2s = y0s - np.sin(rads-np.pi/4)*arrow_len
+            x0s = np.tile(x0s, 3)
+            x1s = np.concatenate([x1s, xa1s, xa2s])
+            y0s = np.tile(y0s, 3)
+            y1s = np.concatenate([y1s, ya1s, ya2s])
+            if cdim and cdim.name in cdata:
+                color = np.tile(cdata[cdim.name], 3)
+        elif cdim:
+            color = cdata.get(cdim.name)
+
+        data = {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}
+        mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')
+"""
 
 
 def build_tooltips(tips):
@@ -547,12 +610,15 @@ def get_pandas_data(pandas_filename):
     # in any of the relevant columns.
     if pandas_filename.endswith('.h5'):
         fit_data = df_handle.get_columns_HDF5(HOVER_COLUMNS + RESULTS_COLUMNS)
-        source_data = df_handle.get_columns_HDF5(HOVER_COLUMNS + SOURCE_COLUMNS)
+        resids_data = df_handle.get_columns_HDF5(RESIDS_COLUMNS)
     else:
         fit_data = df_handle.get_columns_CSV(HOVER_COLUMNS + RESULTS_COLUMNS)
-        source_data = df_handle.get_columns_CSV(HOVER_COLUMNS + SOURCE_COLUMNS)
+        resids_data = df_handle.get_columns_CSV(RESIDS_COLUMNS)
 
-    return fit_data, source_data
+    fitCDS = ColumnDataSource(fit_data)
+    residsCDS = ColumnDataSource(resids_data)
+
+    return fitCDS, residsCDS
     
 def build_circle_plot(**plot_dict):
     """Create figure object for plotting desired columns as a scatter plot with circles
@@ -640,12 +706,105 @@ def build_circle_plot(**plot_dict):
     
     return p1
     
-def generate_summary_plots(fit_data, output='cal_qa_results.html'):
+def build_vector_plot(**plot_dict):
+    """Create figure object for plotting desired columns as a scatter plot with circles
+    
+    Parameters
+    ----------
+    source : Pandas ColumnDataSource 
+        Object with all the input data 
+    
+    x, y : str
+        Names of X and Y columns of data from data `source`
+        
+    xr, yr : str
+        Names of Reference X/Y columns of data from data `source`
+    
+    x_label, y_label : str
+        Labels to use for the X and Y axes (respectively)
+        
+    title : str
+        Title of the plot
+            
+    color : string, optional
+        Single color to use for data points in the plot if `colormap` is not used
+                
+    markersize : int, optional
+        Size of each marker in the plot
+            
+    """
+    # Interpret required elements
+    x = plot_dict['x']
+    y = plot_dict['y']
+    xr = plot_dict['xr']
+    yr = plot_dict['yr']
+    title = plot_dict['title']
+    x_label = plot_dict['x_label']
+    y_label = plot_dict['y_label']
+    source = plot_dict['source']
+    
+    # check for optional elements
+    color = plot_dict.get('color', 'blue')
+    click_policy = plot_dict.get('click_policy', 'hide')
+
+    # Determine 'optimal' range for axes
+    x_arr = np.array(source.data[x])
+    y_arr = np.array(source.data[y])
+        
+    dx = x_arr.max() - min(0, x_arr.min())
+    dy = y_arr.max() - min(0, y_arr.min())
+    xy_max = int(max(dx,dy))
+    xyrange = [0, xy_max]
+    xy_seg = xy_max * 0.05
+    
+    # Define a figure object with square aspect ratio
+    p1 = figure(tools=FIGURE_TOOLS, x_range=xyrange, y_range=xyrange)
+
+    # Set length of dx=0.1 to be 5% of the width of the plot
+    mag = (xy_seg)/0.1 
+    
+    delta_x = np.array(source.data['dx'])
+    delta_y = np.array(source.data['dy'])
+    xr = x_arr + (delta_x * mag)
+    yr = y_arr + (delta_y * mag)
+
+    rads = np.arctan2(delta_y, delta_x)
+    
+    leg_x = [xy_seg]
+    leg_xr = [xy_seg * 2]
+    leg_y = [xy_seg]
+    
+    # Add the glyphs
+    # This will use the 'colormap' column from 'source' for the colors of 
+    # each point.  This column should have been populated by the calling
+    # routine. 
+
+    p1.segment(source.data[x], source.data[y], 
+               xr.tolist(), yr.tolist(),
+              color=color, line_width=2)
+
+    # Add scale for vector length
+    p1.segment(leg_x, leg_y, leg_xr, leg_y, color='black', line_width=2)
+    scale_text = ['0.1 pixels']
+    p1.text([xy_seg], [xy_seg/2.], text=scale_text, 
+            text_color='black', text_font_size='10px')
+
+    # add 'arrow heads' to the segments
+    p1.triangle(xr, yr, angle=rads + np.pi/5., size=[6]*len(xr), fill_color=color)
+     
+    p1.title.text = title
+    p1.xaxis.axis_label = x_label
+    p1.yaxis.axis_label = y_label
+    
+    return p1
+ 
+   
+def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
     """Generate the graphics associated with this particular type of data.
 
     Parameters
     ==========
-    fit_data : Pandas dataframe
+    fitCDS : ColumnDataSource object
         Dataframe consisting of the relative alignment astrometric fit results
     
     output : str, optional
@@ -687,16 +846,13 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
     # Set the output file immediately as advised by Bokeh.
     output_file(output)
 
-    # Setup the source of the data to be plotted so the axis variables can be
-    # referenced by column name in the Pandas dataframe
-    fitCDS = ColumnDataSource(fit_data)
-    num_of_datasets = len(fit_data.index)
+    num_of_datasets = len(fitCDS.data['index'])
     print('Number of datasets: {}'.format(num_of_datasets))
     
-    colormap = [DETECTOR_LEGEND[x] for x in fitCDS.data[HOVER_COLUMNS[1]]]
+    colormap = [DETECTOR_LEGEND[x] for x in fitCDS.data[HOVER_COLUMNS[2]]]
     fitCDS.data['colormap'] = colormap
-    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(fitCDS.data[HOVER_COLUMNS[0]], 
-                                         fitCDS.data[HOVER_COLUMNS[1]])]
+    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(fitCDS.data[HOVER_COLUMNS[1]], 
+                                         fitCDS.data[HOVER_COLUMNS[2]])]
     fitCDS.data[INSTRUMENT_COLUMN] = inst_det
     
     plot_list = []
@@ -706,7 +862,7 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
                            title='RMS Values',
                            x_label="RMS_X (pixels)",
                            y_label='RMS_Y (pixels)',
-                           tips=[3, 0, 1, 2, 8],
+                           tips=[0, 1, 2, 3, 8],
                            colormap=True, legend_group=INSTRUMENT_COLUMN)]
     plot_list += p1
                            
@@ -715,7 +871,7 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
                            title='Offsets',
                            x_label = "SHIFT X (pixels)",
                            y_label = 'SHIFT Y (pixels)',
-                           tips=[3, 0, 1, 2, 8],
+                           tips=[0, 1, 2, 3, 8],
                            colormap=True, legend_group=INSTRUMENT_COLUMN)]
     plot_list += p2
 
@@ -724,7 +880,7 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
                            title='Rotation',
                            x_label = "Number of matched sources",
                            y_label = 'Rotation (degrees)',
-                           tips=[3, 0, 1, 2, 8],
+                           tips=[0, 1, 2, 3, 8],
                            colormap=True, legend_group=INSTRUMENT_COLUMN)]
     plot_list += p3
 
@@ -733,7 +889,7 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
                            title='Scale',
                            x_label = "Number of matched sources",
                            y_label = 'Scale',
-                           tips=[3, 0, 1, 2, 8],
+                           tips=[0, 1, 2, 3, 8],
                            colormap=True, legend_group=INSTRUMENT_COLUMN)]
     plot_list += p4
     
@@ -742,7 +898,7 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
                            title='Skew',
                            x_label = "Number of matched sources",
                            y_label = 'Skew (degrees)',
-                           tips=[3, 0, 1, 2, 8],
+                           tips=[0, 1, 2, 3, 8],
                            colormap=True, legend_group=INSTRUMENT_COLUMN)]
     plot_list += p5
 
@@ -751,12 +907,96 @@ def generate_summary_plots(fit_data, output='cal_qa_results.html'):
     save(column(plot_list))
                      
     return output
+    
+def generate_residual_plots(residsCDS, filename, output_dir=None, output=''):
+    
+    rootname = '_'.join(filename.split("_")[:-1])
+    output = '{}_vectors_{}'.format(rootname, output)
+    if output_dir is not None:
+        output = os.path.join(output_dir, output)
+    output_file(output)
+    
+    delta_x = np.array(residsCDS.data['x']) - np.array(residsCDS.data['xr'])
+    delta_y = np.array(residsCDS.data['y']) - np.array(residsCDS.data['yr'])
+    residsCDS.data['dx'] = delta_x
+    residsCDS.data['dy'] = delta_y
+    npoints = len(delta_x)
+    if npoints < 2:
+        return None
+    
+    p1 = build_circle_plot(x='x', y='dx',
+                           source=residsCDS,  
+                           title='Residuals for {} [{} sources]: X vs DX'.format(filename, npoints),
+                           x_label="X (pixels)",
+                           y_label='Delta[X] (pixels)',
+                           tips=[0, 1, 2, 3, 8])
 
-def build_astrometry_plots(pandas_file, output='cal_qa_results.html'):
+    p2 = build_circle_plot(x='x', y='dy',
+                           source=residsCDS,  
+                           title='Residuals for {} [{} sources]: X vs DY'.format(filename, npoints),
+                           x_label="X (pixels)",
+                           y_label='Delta[Y] (pixels)',
+                           tips=[0, 1, 2, 3, 8])
+    row1 = row(p1,p2)
 
-    fit_data, source_data = get_pandas_data(pandas_file)
-
-    # Generate the astrometric plots
-    astrometry_plot_name = generate_summary_plots(fit_data, output=output)
+    p3 = build_circle_plot(x='y', y='dx',
+                           source=residsCDS,  
+                           title='Residuals for {} [{} sources]: Y vs DX'.format(filename, npoints),
+                           x_label="Y (pixels)",
+                           y_label='Delta[X] (pixels)',
+                           tips=[0, 1, 2, 3, 8])
+ 
+    p4 = build_circle_plot(x='y', y='dy',
+                           source=residsCDS,  
+                           title='Residuals for {} [{} sources]: Y vs DY'.format(filename, npoints),
+                           x_label="Y (pixels)",
+                           y_label='Delta[Y] (pixels)',
+                           tips=[0, 1, 2, 3, 8])
+    row2 = row(p3,p4)
     
 
+    pv = build_vector_plot(x='x', y='y',
+                            xr='xr', yr='yr',
+                           source=residsCDS,  
+                           title='Vector plot of Image - Reference for {}'.format(filename),
+                           x_label="X (pixels)",
+                           y_label='Y (pixels)')
+    
+    print('Saving: {}'.format(output))        
+    save(column(row1,row2,pv))
+
+    return output
+
+def build_astrometry_plots(pandas_file, 
+                           output_dir=None, 
+                           output='cal_qa_results.html'):
+
+    fitCDS, residsCDS = get_pandas_data(pandas_file)
+
+    if output_dir is not None:
+        summary_filename = os.path.join(output_dir, output)
+    else:
+        summary_filename = output
+        
+    # Generate the astrometric plots
+    astrometry_plot_name = generate_summary_plots(fitCDS, output=summary_filename)
+    
+    resids_plot_names = []
+    
+    for filename,rootname in zip(fitCDS.data[HOVER_COLUMNS[0]], fitCDS.data['index']):
+        i = residsCDS.data['index'].tolist().index(rootname)
+        resids_dict = {'x': residsCDS.data[RESIDS_COLUMNS[0]][i],
+                       'y': residsCDS.data[RESIDS_COLUMNS[1]][i],
+                       'xr': residsCDS.data[RESIDS_COLUMNS[2]][i],
+                       'yr': residsCDS.data[RESIDS_COLUMNS[3]][i]}
+        cds = ColumnDataSource(resids_dict)
+
+        resids_plot_name = generate_residual_plots(cds, filename, 
+                                                   output_dir=output_dir,
+                                                   output=output)
+        resids_plot_names.append(resids_plot_name)
+
+    resids_plot_names = list(filter(lambda a: a != None, resids_plot_names))
+    return resids_plot_names
+
+    

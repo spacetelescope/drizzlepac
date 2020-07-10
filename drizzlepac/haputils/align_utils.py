@@ -603,7 +603,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     """
     log.info("{} (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
     if 'fitgeom' in fit_pars:
-        fitgeom=fit_pars['fitgeom']
+        fitgeom = fit_pars['fitgeom']
         del fit_pars['fitgeom']
     else:
         fitgeom='rscale'
@@ -615,9 +615,11 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     match = tweakwcs.TPMatch(**fit_pars)
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
     #                          tolerance=100, use2dhist=False)
+
     # Align images and correct WCS
-    # NOTE: this invocation does not use an astrometric catalog. This call allows all the input images to be aligned in
-    # a relative way using the first input image as the reference.
+    # NOTE: this invocation does not use an astrometric catalog. This call 
+    #       allows all the input images to be aligned in
+    #       a relative way using the first input image as the reference.
     # 1: Perform relative alignment
     match_relcat = tweakwcs.align_wcs(imglist, None, 
                                       match=match,
@@ -640,9 +642,10 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
             nmatches = info['nmatches']
         msg = "Image {} --".format(i.meta['name'])
         msg += "\n    SHIFT:({:9.4f},{:9.4f})  NMATCHES: {} ".format(off[0], off[1], nmatches)
-        msg += " ROT:{:9.4f}  SCALE:{:9.4f}".format(rot, scale)
+        msg += "\n    ROT:{:9.4f}  SCALE:{:9.4f}".format(rot, scale)
+        msg += "\n Using fitgeom = '{}'".format(fitgeom)
         log.info(msg)
-
+        
     # This logic enables performing only relative fitting and skipping fitting to GAIA
     if reference_catalog is not None:
         # Set all the group_id values to be the same so the various images/chips will be aligned to the astrometric
