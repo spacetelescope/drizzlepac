@@ -76,10 +76,12 @@ that the WCS be defined to come as close to the GAIA frame as possible.  The
 processing done by `runastrodriz` attempts to not only apply the most current 
 distortion model, but also the best available pre-computed GAIA-based WCS 
 solutions while proceeding to determine it's own solution to the available GAIA
-reference stars for the field-of-view.  It then performs numerous checks to see 
+reference stars for the field-of-view.  It also performs numerous checks to see 
 which of these solutions results in the most accurately aligned images to each 
-other, then to GAIA and selects that WCS solution.  This selected WCS solution 
-serves as the basis for creating the final, distorted-corrected, combined 
+other.  The processing continued to attempt an alignment to GAIA using sources 
+it identifies from the observations and checks to see if any fit was successful. 
+Finally, it selects the WCS solution most closely aligned to GAIA that as the 
+basis for creating the final, distorted-corrected, combined 
 drizzle products for the set of exposures being processed. 
 
 Overview
