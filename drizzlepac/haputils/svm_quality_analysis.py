@@ -591,17 +591,18 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
             print("Wrote source catalog {}".format(temp_cat_name))
             print("Wrote source catalog {}".format(temp_cat_name))
 
-            # write out ds9 region files
-            out_reg_stuff = {"xyorig": ['xcentroid', 'ycentroid'],
-                             "rd": ['ra', 'dec'],
-                             "xyref": ['xcentroid_ref', 'ycentroid_ref']}
-            for reg_type in out_reg_stuff.keys():
-                reg_table = filtobj_dict[imgname]["sources"].copy()
-                reg_table.keep_columns(out_reg_stuff[reg_type])
-                reg_table.rename_column(out_reg_stuff[reg_type][0],"#"+out_reg_stuff[reg_type][0])
-                reg_filename = "{}fxm_{}_all.reg".format(imgname[:-8], reg_type)
-                reg_table.write(reg_filename, format='ascii.csv')
-                print("wrote region file {}".format(reg_filename))
+            # write out ds9 region files if log level is 'debug'
+            if log_level == logutil.logging.DEBUG:
+                out_reg_stuff = {"xyorig": ['xcentroid', 'ycentroid'],
+                                 "rd": ['ra', 'dec'],
+                                 "xyref": ['xcentroid_ref', 'ycentroid_ref']}
+                for reg_type in out_reg_stuff.keys():
+                    reg_table = filtobj_dict[imgname]["sources"].copy()
+                    reg_table.keep_columns(out_reg_stuff[reg_type])
+                    reg_table.rename_column(out_reg_stuff[reg_type][0],"#"+out_reg_stuff[reg_type][0])
+                    reg_filename = "{}fxm_{}_all.reg".format(imgname[:-8], reg_type)
+                    reg_table.write(reg_filename, format='ascii.csv')
+                    print("wrote region file {}".format(reg_filename))
 
         # Perform cross-match based on X, Y coords
         for imgname in filtobj_dict.keys():
@@ -609,6 +610,8 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 log.info(" ")
                 xmatch_comp_imgname = imgname
                 xmatch_comp_catname = imgname[:-8] + "point-cat-fxm.ecsv"
+                filtername_ref = filtobj_dict[xmatch_ref_imgname]['filt_obj'].filters
+                filtername_comp = filtobj_dict[imgname]['filt_obj'].filters
                 print("{} Crossmatching {} -> {} {}".format(">" * 20, xmatch_comp_catname,
                                                                xmatch_ref_catname, "<" * 20))
                 sl_names = [xmatch_ref_catname, xmatch_comp_catname]
@@ -628,6 +631,27 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 print("Comp sourcelist: {} of {} total sources cross-matched ({}%)".format(len(matching_lines_comp),
                                                                                               sl_lengths[1],
                                                                                               100.0 * (float(len(matching_lines_comp)) / float(sl_lengths[1]))))
+                # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only the
+                # cross-matched reference sources
+                matched_ref_coords = filtobj_dict[xmatch_ref_imgname]["sources"].copy()
+                matched_ref_coords.keep_columns(['xcentroid_ref', 'ycentroid_ref'])
+                matched_ref_coords = matched_ref_coords[matching_lines_ref]
+
+                # write out ds9 region files if log level is 'debug'
+                if log_level == logutil.logging.DEBUG:
+                    reg_filename = "{}_{}_ref_matches.reg".format(filtername_comp,filtername_ref)
+                    matched_ref_coords.write(reg_filename, format='ascii.csv')
+
+                # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only the
+                # cross-matched comparision sources
+                matched_comp_coords = filtobj_dict[imgname]["sources"].copy()
+                matched_comp_coords.keep_columns(['xcentroid_ref', 'ycentroid_ref'])
+                matched_comp_coords = matched_comp_coords[matching_lines_comp]
+
+                # write out ds9 region file if log level is 'debug'
+                if log_level == logutil.logging.DEBUG:
+                    reg_filename = "{}_{}_comp_matches.reg".format(filtername_comp,filtername_ref)
+                    matched_comp_coords.write(reg_filename, format='ascii.csv')
 
 
     # Housekeeping
