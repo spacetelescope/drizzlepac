@@ -20,8 +20,8 @@ from stwcs.wcsutil import headerlet
 __taskname__ = 'buildwcs'
 
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '0.1.0'
-__version_date__ = '22-June-2011'
+__version__ = '0.1.1'
+__version_date__ = '13-July-2020'
 
 # These default parameter values have the same keys as the parameters from
 # the configObj interface
@@ -371,8 +371,7 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
         extname = ('sipwcs',extnum[1])
         hdrlet = headerlet.createHeaderlet(fname,wcsname)
         # update hdrlet with header values from outwcs
-        for kw in outwcs_hdr.items():
-            hdrlet[extname].header[kw[0]] = kw[1]
+        hdrlet[extname].header.update(outwcs_hdr)
         hdrlet[extname].header['WCSNAME'] = wcsname
     else:
         print('Creating headerlet from scratch...')

@@ -31,8 +31,8 @@ from . import util
 __taskname__ = 'tweakback' # unless someone comes up with anything better
 
 # This is specifically NOT intended to match the package-wide version information.
-__version__ = '0.4.0'
-__version_date__ = '14-Oct-2014'
+__version__ = '0.4.1'
+__version_date__ = '13-July-2020'
 
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
@@ -218,10 +218,6 @@ def tweakback(drzfile, input=None,  origwcs = None,
         extlist = get_ext_list(imhdulist, extname='SCI')
         if not extlist:
             extlist = [0]
-
-        # insure that input PRIMARY WCS has been archived before overwriting
-        # with new solution
-        wcsutil.altwcs.archiveWCS(imhdulist, extlist, reusekey=True)
 
         # Process MEF images...
         for ext in extlist:

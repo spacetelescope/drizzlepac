@@ -188,10 +188,10 @@ updatehdr : bool (Default = No)
     the shiftfile as well.
 
 wcsname : str (Default = 'TWEAK')
-    Name of updated WCS.
+    Name of updated primary WCS.
 
 reusename : bool (Default = False)
-    Allows overwriting of an existing WCS with the same name as
+    Allows overwriting of an existing primary WCS with the same name as
     specified by ``wcsname`` parameter.
 
 *HEADERLET CREATION*

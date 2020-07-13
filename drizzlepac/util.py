@@ -467,18 +467,15 @@ def count_sci_extensions(filename):
 
     return num_sci,extname
 
-def verifyUniqueWcsname(fname,wcsname):
+
+def verifyUniqueWcsname(fname, wcsname, include_primary=True):
     """
     Report whether or not the specified WCSNAME already exists in the file
     """
-    uniq = True
-    numsci,extname = count_sci_extensions(fname)
-    wnames = altwcs.wcsnames(fname,ext=(extname,1))
+    numsci, extname = count_sci_extensions(fname)
+    wnames = altwcs.wcsnames(fname, ext=(extname, 1), include_primary=include_primary)
+    return wcsname.upper() not in [v.upper() for v in wnames.values()]
 
-    if wcsname in wnames.values():
-        uniq = False
-
-    return uniq
 
 def verifyUpdatewcs(fname):
     """
