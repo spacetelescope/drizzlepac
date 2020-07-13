@@ -589,13 +589,19 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
             temp_cat_file_list.append(temp_cat_name)
             filtobj_dict[imgname]["sources"].write(temp_cat_name, format="ascii.ecsv")
             print("Wrote source catalog {}".format(temp_cat_name))
-            log.info("Wrote source catalog {}".format(temp_cat_name))
+            print("Wrote source catalog {}".format(temp_cat_name))
 
-            reg_table = filtobj_dict[imgname]["sources"].copy()
-            reg_table.keep_columns(['ra', 'dec'])
-            reg_filename = imgname[:-8] + "fxm_all.reg"
-            reg_table.write(reg_filename, format='ascii.csv')
-            print("wrote region file {}".format(reg_filename))
+            # write out ds9 region files
+            out_reg_stuff = {"xyorig": ['xcentroid', 'ycentroid'],
+                             "rd": ['ra', 'dec'],
+                             "xyref": ['xcentroid_ref', 'ycentroid_ref']}
+            for reg_type in out_reg_stuff.keys():
+                reg_table = filtobj_dict[imgname]["sources"].copy()
+                reg_table.keep_columns(out_reg_stuff[reg_type])
+                reg_table.rename_column(out_reg_stuff[reg_type][0],"#"+out_reg_stuff[reg_type][0])
+                reg_filename = "{}fxm_{}_all.reg".format(imgname[:-8], reg_type)
+                reg_table.write(reg_filename, format='ascii.csv')
+                print("wrote region file {}".format(reg_filename))
 
         # Perform cross-match based on X, Y coords
         for imgname in filtobj_dict.keys():
@@ -622,7 +628,6 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 print("Comp sourcelist: {} of {} total sources cross-matched ({}%)".format(len(matching_lines_comp),
                                                                                               sl_lengths[1],
                                                                                               100.0 * (float(len(matching_lines_comp)) / float(sl_lengths[1]))))
-
 
 
     # Housekeeping
@@ -668,7 +673,8 @@ def transform_coords(filtobj_subdict, xmatch_ref_imgname, log_level=logutil.logg
     origin = 0
     fits_exten = "[1]"
     imgname = filtobj_subdict['filt_obj'].drizzle_filename
-
+    print("TRANSFORM IMGNAME: "+imgname)
+    print("TRANSFORM REFIMG:  "+xmatch_ref_imgname)
     # 2a: perform xcentroid, ycentroid -> ra, dec transform
     ra_dec_values = hla_flag_filter.xytord(xy_centroid_values, imgname, fits_exten, origin=origin)
 
