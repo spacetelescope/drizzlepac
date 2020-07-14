@@ -630,19 +630,19 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
 
                 # Report number and percentage of the total number of detected ref and comp sources that were matched
                 log.info("Cross-matching results")
-                log.info("Reference sourcelist:  {} of {} total sources cross-matched ({}%)".format(len(matching_lines_ref),
-                                                                                                    sl_lengths[0],
-                                                                                                    100.0 *(float(len(matching_lines_ref))/ float(sl_lengths[0]))))
-                log.info("Comp sourcelist: {} of {} total sources cross-matched ({}%)".format(len(matching_lines_comp),
-                                                                                              sl_lengths[1],
-                                                                                              100.0 * (float(len(matching_lines_comp)) / float(sl_lengths[1]))))
+                log.info("Reference sourcelist:  {} of {} total reference sources ({}%) cross-matched.".format(len(matching_lines_ref),
+                                                                                                               sl_lengths[0],
+                                                                                                               100.0 *(float(len(matching_lines_ref))/ float(sl_lengths[0]))))
+                log.info("Comparison sourcelist: {} of {} total comparison sources ({}%) cross-matched.".format(len(matching_lines_comp),
+                                                                                                                sl_lengths[1],
+                                                                                                                100.0 * (float(len(matching_lines_comp)) / float(sl_lengths[1]))))
 
                 if matching_lines_ref.size > 0:
                     # instantiate diagnostic object to store test results for eventual .json file output
                     diag_obj = du.HapDiagnostic(log_level=log_level)
                     diag_obj.instantiate_from_hap_obj(filtobj_dict[xmatch_comp_imgname]['filt_obj'],
                                                       data_source="{}.compare_interfilter_crossmatches".format(__taskname__),
-                                                      description="cross-matched interfilter comparison and reference catalog X and Y values",
+                                                      description="Interfilter cross-matched comparison and reference catalog X and Y values",
                                                       timestamp=json_timestamp,
                                                       time_since_epoch=json_time_since_epoch)
                     json_results_dict = collections.OrderedDict()
@@ -700,7 +700,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
 
                     # write out ds9 region file if log level is 'debug'
                     if log_level == logutil.logging.DEBUG:
-                        reg_filename = "{}_{}_comp_matches.reg".format(filtername_comp,filtername_ref)
+                        reg_filename = "{}_{}_comp_matches.reg".format(filtername_comp, filtername_ref)
                         matched_comp_coords.write(reg_filename, format='ascii.csv')
 
                     # compute statistics
@@ -721,7 +721,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                         sep_stat_dict["{}x{} sigma-clipped standard deviation".format(maxiters, sigma)] = clipped_stats[2]
 
                         # Store statistics as new data section
-                        diag_obj.add_data_item(sep_stat_dict, "interfilter cross-matched {} separation statistics".format(colname),
+                        diag_obj.add_data_item(sep_stat_dict, "Interfilter cross-matched {} separation statistics".format(colname),
                                                descriptions={"Non-clipped min": "Non-clipped min difference",
                                                              "Non-clipped max": "Non-clipped max difference",
                                                              "Non-clipped mean": "Non-clipped mean difference",
