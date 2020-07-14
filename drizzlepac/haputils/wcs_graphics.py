@@ -140,8 +140,7 @@ def get_data(storage_filename):
     # Instantiate a Pandas Dataframe Reader (lazy instantiation)
     df_handle = PandasDFReader(storage_filename, log_level=logutil.logging.NOTSET)
 
-    # Get the relevant column data, eliminating all rows which have NaNs
-    # in any of the relevant columns.
+    # Get the relevant column data
     wcs_column_type = ['apriori', 'aposteriori']
     windex = -1
     wcs_dataDF = pd.DataFrame()
