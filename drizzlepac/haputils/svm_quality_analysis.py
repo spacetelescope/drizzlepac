@@ -602,7 +602,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 for reg_type in out_reg_stuff.keys():
                     reg_table = filtobj_dict[imgname]["sources"].copy()
                     reg_table.keep_columns(out_reg_stuff[reg_type])
-                    reg_table.rename_column(out_reg_stuff[reg_type][0],"#"+out_reg_stuff[reg_type][0])
+                    reg_table.rename_column(out_reg_stuff[reg_type][0], "#"+out_reg_stuff[reg_type][0])
                     reg_filename = "{}fxm_{}_all.reg".format(imgname[:-8], reg_type)
                     reg_table.write(reg_filename, format='ascii.csv')
                     log.info("wrote region file {}".format(reg_filename))
@@ -622,17 +622,15 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 sl_names = [xmatch_ref_catname, xmatch_comp_catname]
                 img_names = [xmatch_ref_imgname, xmatch_comp_imgname]
                 sl_lengths = [max_sources, len(filtobj_dict[xmatch_comp_imgname]["sources"])]
-
-
-
                 matching_lines_ref, matching_lines_comp = csl.getMatchedLists(sl_names, img_names, sl_lengths,
                                                                               log_level=log_level)
 
-                # Report number and percentage of the total number of detected ref and comp sources that were matched
+                # Report number and percentage of the total number of detected ref and comp sources that were
+                # matched
                 log.info("Cross-matching results")
                 log.info("Reference sourcelist:  {} of {} total reference sources ({}%) cross-matched.".format(len(matching_lines_ref),
                                                                                                                sl_lengths[0],
-                                                                                                               100.0 *(float(len(matching_lines_ref))/ float(sl_lengths[0]))))
+                                                                                                               100.0 * (float(len(matching_lines_ref)) / float(sl_lengths[0]))))
                 log.info("Comparison sourcelist: {} of {} total comparison sources ({}%) cross-matched.".format(len(matching_lines_comp),
                                                                                                                 sl_lengths[1],
                                                                                                                 100.0 * (float(len(matching_lines_comp)) / float(sl_lengths[1]))))
@@ -666,8 +664,8 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                                   "comparison catalog length": "unitless",
                                                   "number of cross-matches": "unitless"})
 
-                    # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only the
-                    # cross-matched reference sources
+                    # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
+                    # the cross-matched reference sources
                     matched_ref_coords = filtobj_dict[xmatch_ref_imgname]["sources"].copy()
                     matched_ref_coords.keep_columns(['xcentroid_ref', 'ycentroid_ref'])
 
@@ -681,12 +679,11 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
 
                     # write out ds9 region files if log level is 'debug'
                     if log_level == logutil.logging.DEBUG:
-                        reg_filename = "{}_{}_ref_matches.reg".format(filtername_comp,filtername_ref)
+                        reg_filename = "{}_{}_ref_matches.reg".format(filtername_comp, filtername_ref)
                         matched_ref_coords.write(reg_filename, format='ascii.csv')
 
-
-                    # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only the
-                    # cross-matched comparision sources
+                    # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
+                    # the cross-matched comparision sources
                     matched_comp_coords = filtobj_dict[imgname]["sources"].copy()
                     matched_comp_coords.keep_columns(['xcentroid_ref', 'ycentroid_ref'])
                     matched_comp_coords = matched_comp_coords[matching_lines_comp]
@@ -745,7 +742,8 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                     :-9] + "_svm_interfilter_crossmatch.json"
                     diag_obj.write_json_file(json_filename, clobber=True)
                 else:
-                    log.warning("{} - {} interfilter cross match test could not be performed.".format(filtername_comp, filtername_ref))
+                    filt_names = "{} - {}".format(filtername_comp, filtername_ref)
+                    log.warning("{} interfilter cross match test could not be performed.".format(filt_names))
 
     # Housekeeping. Delete the *_point-cat-fxm.ecsv files created for cross-matching, and the
     # filtobj_dict dictionary
@@ -753,7 +751,10 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
         log.info("removing temp catalog file {}".format(temp_cat_filename))
         os.remove(temp_cat_filename)
     del filtobj_dict
+
+
 # ------------------------------------------------------------------------------------------------------------
+
 
 def transform_coords(filtobj_subdict, xmatch_ref_imgname, log_level=logutil.logging.NOTSET):
     """Transform comparision image frame of reference x, y coords to RA and dec, then back to x, y coords in
@@ -784,7 +785,7 @@ def transform_coords(filtobj_subdict, xmatch_ref_imgname, log_level=logutil.logg
 
     # 1: stack up xcentroid and ycentorid columns from sources table
     xy_centroid_values = np.stack((filtobj_subdict['sources']['xcentroid'],
-                             filtobj_subdict['sources']['ycentroid']), axis=1)
+                                   filtobj_subdict['sources']['ycentroid']), axis=1)
 
     # 2: perform coordinate transforms.
     origin = 0
@@ -811,6 +812,7 @@ def transform_coords(filtobj_subdict, xmatch_ref_imgname, log_level=logutil.logg
         col_ctr += 1
 
     return filtobj_subdict
+
 
 def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
                       log_level=logutil.logging.NOTSET):
@@ -932,7 +934,9 @@ def find_hap_point_sources(filt_obj, log_level=logutil.logging.NOTSET):
 
     return {"filt_obj": filt_obj, "sources": sources}
 
+
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def generate_gaia_catalog(hap_obj, columns_to_remove=None):
     """Uses astrometric_utils.create_astrometric_catalog() to create a catalog of all GAIA sources in the
@@ -1870,6 +1874,7 @@ HOVER_COLUMNS = ['gen_info.instrument',
 
 FIGURE_TOOLS = 'pan,wheel_zoom,box_zoom,zoom_in,zoom_out,xbox_select,reset,save'
 
+
 def build_svm_plots(data_source, output_basename=''):
     """Create all the plots for the results generated by these comparisons
     
@@ -1887,21 +1892,20 @@ def build_svm_plots(data_source, output_basename=''):
         
     # Start with gaia_comparison
     gaia_col_names = HOVER_COLUMNS + ['distribution_characterization_statistics.Number_of_GAIA_sources',
-                                    'distribution_characterization_statistics.X_centroid',
-                                    'distribution_characterization_statistics.X_offset',
-                                    'distribution_characterization_statistics.X_standard_deviation',
-                                    'distribution_characterization_statistics.Y_centroid',
-                                    'distribution_characterization_statistics.Y_offset',
-                                    'distribution_characterization_statistics.Y_standard_deviation',
-                                    'distribution_characterization_statistics.maximum_neighbor_distance',
-                                    'distribution_characterization_statistics.mean_neighbor_distance',
-                                    'distribution_characterization_statistics.minimum_neighbor_distance',
-                                    'distribution_characterization_statistics.standard_deviation_of_neighbor_distances']
+                                      'distribution_characterization_statistics.X_centroid',
+                                      'distribution_characterization_statistics.X_offset',
+                                      'distribution_characterization_statistics.X_standard_deviation',
+                                      'distribution_characterization_statistics.Y_centroid',
+                                      'distribution_characterization_statistics.Y_offset',
+                                      'distribution_characterization_statistics.Y_standard_deviation',
+                                      'distribution_characterization_statistics.maximum_neighbor_distance',
+                                      'distribution_characterization_statistics.mean_neighbor_distance',
+                                      'distribution_characterization_statistics.minimum_neighbor_distance',
+                                      'distribution_characterization_statistics.standard_deviation_of_neighbor_distances']
 
     gaia_cols = get_pandas_data(data_source, gaia_col_names)
 
-    gaia_plots_name = build_gaia_plots(gaia_cols, gaia_col_names, 
-                                  output_basename=output_basename)
+    gaia_plots_name = build_gaia_plots(gaia_cols, gaia_col_names, output_basename=output_basename)
     
     # Generate plots for point-segment catalog cross-match comparisons
     xmatch_col_names = HOVER_COLUMNS + ['Cross-match_details.number_of_cross-matches',
@@ -1926,8 +1930,7 @@ def build_svm_plots(data_source, output_basename=''):
 
     xmatch_cols = get_pandas_data(data_source, xmatch_col_names)
 
-    xmatch_plots_name = build_crossmatch_plots(xmatch_cols, xmatch_col_names, 
-                                  output_basename=output_basename)
+    xmatch_plots_name = build_crossmatch_plots(xmatch_cols, xmatch_col_names, output_basename=output_basename)
     
 
 # -----------------------------------------------------------------------------
@@ -1969,63 +1972,64 @@ def build_gaia_plots(gaiaCDS, data_cols, output_basename='svm_qa'):
     
     colormap = [qa.DETECTOR_LEGEND[x] for x in gaiaCDS.data[data_cols[1]]]
     gaiaCDS.data['colormap'] = colormap
-    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(gaiaCDS.data[data_cols[0]], 
-                                         gaiaCDS.data[data_cols[1]])]
+    inst_det = ["{}/{}".format(i, d) for (i, d) in zip(gaiaCDS.data[data_cols[0]],
+                                                       gaiaCDS.data[data_cols[1]])]
     gaiaCDS.data[qa.INSTRUMENT_COLUMN] = inst_det
     
     plot_list = []
 
     hist4, edges4 = np.histogram(gaiaCDS.data[data_cols[num_hover_cols]], bins=50)
     title4 = 'Number of GAIA sources in Field'
-    p4 = [plot_histogram(title4, hist4, edges4, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='Number of GAIA sources', ylabel='Number of products')]
+    p4 = [plot_histogram(title4, hist4, edges4, y_start=0,
+                         fill_color='navy', background_fill_color='#fafafa',
+                         xlabel='Number of GAIA sources', ylabel='Number of products')]
     plot_list += p4
 
-    p0 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 1], 
-                            y=data_cols[num_hover_cols + 4],
-                           source=gaiaCDS,  
-                           title='Centroid of GAIA Sources in Field',
-                           x_label="X Centroid (pixels)",
-                           y_label='Y Centroid (pixels)',
-                           tips=[3, 0, 1, 2, 8],
-                           colormap=True, legend_group=qa.INSTRUMENT_COLUMN)]
+    p0 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 1],
+                               y=data_cols[num_hover_cols + 4],
+                               source=gaiaCDS,
+                               title='Centroid of GAIA Sources in Field',
+                               x_label="X Centroid (pixels)",
+                               y_label='Y Centroid (pixels)',
+                               tips=[3, 0, 1, 2, 8],
+                               colormap=True,
+                               legend_group=qa.INSTRUMENT_COLUMN)]
     plot_list += p0
 
-    p1 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 2], 
-                            y=data_cols[num_hover_cols + 5],
-                           source=gaiaCDS,  
-                           title='Offset of Centroid of GAIA Sources in Field',
-                           x_label="X Offset (pixels)",
-                           y_label='Y Offset (pixels)',
-                           tips=[3, 0, 1, 2, 8],
-                           colormap=True, legend_group=qa.INSTRUMENT_COLUMN)]
+    p1 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 2],
+                               y=data_cols[num_hover_cols + 5],
+                               source=gaiaCDS,
+                               title='Offset of Centroid of GAIA Sources in Field',
+                               x_label="X Offset (pixels)",
+                               y_label='Y Offset (pixels)',
+                               tips=[3, 0, 1, 2, 8],
+                               colormap=True, legend_group=qa.INSTRUMENT_COLUMN)]
     plot_list += p1
 
-    p2 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 3], 
-                            y=data_cols[num_hover_cols + 6],
-                           source=gaiaCDS,  
-                           title='Standard Deviation of GAIA Source Positions in Field',
-                           x_label="STD(X) (pixels)",
-                           y_label='STD(Y) (pixels)',
-                           tips=[3, 0, 1, 2, 8],
-                           colormap=True, legend_group=qa.INSTRUMENT_COLUMN)]
+    p2 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 3],
+                               y=data_cols[num_hover_cols + 6],
+                               source=gaiaCDS,
+                               title='Standard Deviation of GAIA Source Positions in Field',
+                               x_label="STD(X) (pixels)",
+                               y_label='STD(Y) (pixels)',
+                               tips=[3, 0, 1, 2, 8],
+                               colormap=True, legend_group=qa.INSTRUMENT_COLUMN)]
     plot_list += p2
 
     # Generate histogram for mean neighbor distance
     hist3, edges3 = np.histogram(gaiaCDS.data[data_cols[-3]], bins=50)
     title3 = 'Mean distance between GAIA sources in Field'
-    p3 = [plot_histogram(title3, hist3, edges3, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='separation (pixels)', ylabel='Number of products')]
+    p3 = [plot_histogram(title3, hist3, edges3, y_start=0,
+                         fill_color='navy', background_fill_color='#fafafa',
+                         xlabel='separation (pixels)', ylabel='Number of products')]
     plot_list += p3
 
-    
     # Display!
     save(column(plot_list))
     
     # Return the name of the plot file just created
     return output
+
 
 def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
     """
@@ -2062,38 +2066,41 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
     
     colormap = [qa.DETECTOR_LEGEND[x] for x in xmatchCDS.data[data_cols[1]]]
     xmatchCDS.data['colormap'] = colormap
-    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(xmatchCDS.data[data_cols[0]], 
-                                         xmatchCDS.data[data_cols[1]])]
+    inst_det = ["{}/{}".format(i, d) for (i, d) in zip(xmatchCDS.data[data_cols[0]],
+                                                       xmatchCDS.data[data_cols[1]])]
     xmatchCDS.data[qa.INSTRUMENT_COLUMN] = inst_det
     
     plot_list = []
 
     hist0, edges0 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols]], bins=50)
     title0 = 'Number of Point-to-Segment Cross-matched sources'
-    p0 = [plot_histogram(title0, hist0, edges0, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='Number of Cross-matched sources', ylabel='Number of products')]
+    p0 = [plot_histogram(title0, hist0, edges0, y_start=0, fill_color='navy',
+                         background_fill_color='#fafafa', xlabel='Number of Cross-matched sources',
+                         ylabel='Number of products')]
     plot_list += p0
 
     hist1, edges1 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 11]], bins=50)
     title1 = 'Mean Separation (Sigma-clipped) of Point-to-Segment Cross-matched sources'
-    p1 = [plot_histogram(title1, hist1, edges1, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='Mean Separation of Cross-matched sources (arcseconds)', ylabel='Number of products')]
+    p1 = [plot_histogram(title1, hist1, edges1, y_start=0,
+                         fill_color='navy', background_fill_color='#fafafa',
+                         xlabel='Mean Separation of Cross-matched sources (arcseconds)',
+                         ylabel='Number of products')]
     plot_list += p1
     
     hist2, edges2 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 12]], bins=50)
     title2 = 'Median Separation (Sigma-clipped) of Point-to-Segment Cross-matched sources'
-    p2 = [plot_histogram(title2, hist2, edges2, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='Median Separation of Cross-matched sources (arcseconds)', ylabel='Number of products')]
+    p2 = [plot_histogram(title2, hist2, edges2, y_start=0,
+                         fill_color='navy', background_fill_color='#fafafa',
+                         xlabel='Median Separation of Cross-matched sources (arcseconds)',
+                         ylabel='Number of products')]
     plot_list += p2
     
     hist3, edges3 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 13]], bins=50)
     title3 = 'Standard-deviation (sigma-clipped) of Separation of Point-to-Segment Cross-matched sources'
-    p3 = [plot_histogram(title3, hist3, edges3, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='STD(Separation) of Cross-matched sources (arcseconds)', ylabel='Number of products')]
+    p3 = [plot_histogram(title3, hist3, edges3, y_start=0,
+                         fill_color='navy', background_fill_color='#fafafa',
+                         xlabel='STD(Separation) of Cross-matched sources (arcseconds)',
+                         ylabel='Number of products')]
     plot_list += p3
     
     # Save the plot to an HTML file
@@ -2104,7 +2111,8 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
 # -----------------------------------------------------------------------------
 # Utility functions for plotting
 #    
-   
+
+
 def get_pandas_data(data_source, data_columns):
     """Load the harvested data, stored in a CSV file, into local arrays.
 
@@ -2141,7 +2149,6 @@ def get_pandas_data(data_source, data_columns):
     else:
         data_cols = df_handle.get_columns_CSV(data_columns)
 
-
     # Setup the source of the data to be plotted so the axis variables can be
     # referenced by column name in the Pandas dataframe
     dataDF = ColumnDataSource(data_cols)
@@ -2151,18 +2158,15 @@ def get_pandas_data(data_source, data_columns):
     return dataDF
     
     
-def plot_histogram(title, hist, edges, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='', ylabel=''):
-    p = figure(title=title, tools=FIGURE_TOOLS, 
-              background_fill_color=background_fill_color)
-    p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:],
-           fill_color=fill_color, line_color="white", alpha=0.5)
+def plot_histogram(title, hist, edges, y_start=0, fill_color='navy',
+                   background_fill_color='#fafafa', xlabel='', ylabel=''):
+    p = figure(title=title, tools=FIGURE_TOOLS, background_fill_color=background_fill_color)
+    p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], fill_color=fill_color,
+           line_color="white", alpha=0.5)
 
     p.y_range.start = y_start
     p.legend.location = "center_right"
     p.xaxis.axis_label = xlabel
     p.yaxis.axis_label = ylabel
-    p.grid.grid_line_color="white"
+    p.grid.grid_line_color = "white"
     return p
-
