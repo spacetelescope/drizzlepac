@@ -514,6 +514,8 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
         log.warning("Point vs. segment catalog cross match test could not be performed.")
 
 # ------------------------------------------------------------------------------------------------------------
+
+
 def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_time_since_epoch=None,
                                      log_level=logutil.logging.NOTSET):
     """Compare X, Y positions of cross matched sources from different filter-level products
@@ -584,12 +586,13 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
         # Perform coord transform and write temp cat files for cross match
         temp_cat_file_list = []
         for imgname in filtobj_dict.keys():
-            filtobj_dict[imgname] = transform_coords(filtobj_dict[imgname], xmatch_ref_imgname)
+            filtobj_dict[imgname] = transform_coords(filtobj_dict[imgname],
+                                                     xmatch_ref_imgname,
+                                                     log_level=log_level)
             temp_cat_name = imgname[:-8] + "point-cat-fxm.ecsv"
             temp_cat_file_list.append(temp_cat_name)
             filtobj_dict[imgname]["sources"].write(temp_cat_name, format="ascii.ecsv")
-            print("Wrote source catalog {}".format(temp_cat_name))
-            print("Wrote source catalog {}".format(temp_cat_name))
+            log.info("Wrote source catalog {}".format(temp_cat_name))
 
             # write out ds9 region files if log level is 'debug'
             if log_level == logutil.logging.DEBUG:
@@ -602,7 +605,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                     reg_table.rename_column(out_reg_stuff[reg_type][0],"#"+out_reg_stuff[reg_type][0])
                     reg_filename = "{}fxm_{}_all.reg".format(imgname[:-8], reg_type)
                     reg_table.write(reg_filename, format='ascii.csv')
-                    print("wrote region file {}".format(reg_filename))
+                    log.info("wrote region file {}".format(reg_filename))
 
         # Perform cross-match based on X, Y coords
         for imgname in filtobj_dict.keys():
@@ -614,7 +617,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 filtername_comp = filtobj_dict[imgname]['filt_obj'].filters
 
                 # Perform crossmatching; get lists of crossmatched sources in the reference and comparision
-                print("{} Crossmatching {} -> {} {}".format(">" * 20, xmatch_comp_catname,
+                log.info("{} Crossmatching {} -> {} {}".format(">" * 20, xmatch_comp_catname,
                                                                xmatch_ref_catname, "<" * 20))
                 sl_names = [xmatch_ref_catname, xmatch_comp_catname]
                 img_names = [xmatch_ref_imgname, xmatch_comp_imgname]
@@ -626,11 +629,11 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                                                               log_level=log_level)
 
                 # Report number and percentage of the total number of detected ref and comp sources that were matched
-                print("Cross-matching results")
-                print("Reference sourcelist:  {} of {} total sources cross-matched ({}%)".format(len(matching_lines_ref),
+                log.info("Cross-matching results")
+                log.info("Reference sourcelist:  {} of {} total sources cross-matched ({}%)".format(len(matching_lines_ref),
                                                                                                     sl_lengths[0],
                                                                                                     100.0 *(float(len(matching_lines_ref))/ float(sl_lengths[0]))))
-                print("Comp sourcelist: {} of {} total sources cross-matched ({}%)".format(len(matching_lines_comp),
+                log.info("Comp sourcelist: {} of {} total sources cross-matched ({}%)".format(len(matching_lines_comp),
                                                                                               sl_lengths[1],
                                                                                               100.0 * (float(len(matching_lines_comp)) / float(sl_lengths[1]))))
 
@@ -667,6 +670,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                     # cross-matched reference sources
                     matched_ref_coords = filtobj_dict[xmatch_ref_imgname]["sources"].copy()
                     matched_ref_coords.keep_columns(['xcentroid_ref', 'ycentroid_ref'])
+
                     matched_ref_coords = matched_ref_coords[matching_lines_ref]
 
                     # store reference matched sources catalog
@@ -743,12 +747,12 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 else:
                     log.warning("{} - {} interfilter cross match test could not be performed.".format(filtername_comp, filtername_ref))
 
-    # Housekeeping
-    # for temp_cat_filename in temp_cat_file_list:
-    #     log.info("removing temp catalog file {}".format(temp_cat_filename))
-    #     os.remove(temp_cat_filename)
-    # del filtobj_dict
-    # TODO: Figure out why log statments stop being displayed just before point where crossmatch is performed in this subroutine.
+    # Housekeeping. Delete the *_point-cat-fxm.ecsv files created for cross-matching, and the
+    # filtobj_dict dictionary
+    for temp_cat_filename in temp_cat_file_list:
+        log.info("removing temp catalog file {}".format(temp_cat_filename))
+        os.remove(temp_cat_filename)
+    del filtobj_dict
 # ------------------------------------------------------------------------------------------------------------
 
 def transform_coords(filtobj_subdict, xmatch_ref_imgname, log_level=logutil.logging.NOTSET):
@@ -786,8 +790,7 @@ def transform_coords(filtobj_subdict, xmatch_ref_imgname, log_level=logutil.logg
     origin = 0
     fits_exten = "[1]"
     imgname = filtobj_subdict['filt_obj'].drizzle_filename
-    print("TRANSFORM IMGNAME: "+imgname)
-    print("TRANSFORM REFIMG:  "+xmatch_ref_imgname)
+
     # 2a: perform xcentroid, ycentroid -> ra, dec transform
     ra_dec_values = hla_flag_filter.xytord(xy_centroid_values, imgname, fits_exten, origin=origin)
 
