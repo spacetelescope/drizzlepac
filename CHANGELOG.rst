@@ -20,6 +20,9 @@ of the list).
 In addition to a few dozen bug fixes, the following updates to the algorithms
 were also implemented.
 
+- Simplified the logic in ``tweakreg`` for deciding how to archive primary WCS
+  resulting in a reduction of duplicate WCSes in image headers. [#715]
+
 - Added polynomial look-up table distortion keywords to the list of distortion
   keywords used by ``outputimage.deleteDistortionKeywords`` so that
   distortions can be removed from ACS images that use ``NPOLFILE``.

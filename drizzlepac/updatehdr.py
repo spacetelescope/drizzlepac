@@ -15,14 +15,14 @@ from astropy import wcs as pywcs
 
 from stsci.tools import fileutil, logutil
 from stwcs import wcsutil
-from stwcs.wcsutil import wcscorr
+from stwcs.wcsutil import wcscorr, altwcs
 from stsci.skypac.utils import get_ext_list, ext2str
 
 from . import util
 from . import linearfit
 
-__version__ = '0.3.0'
-__version_date__ = '10-Sep-2019'
+__version__ = '0.4.0'
+__version_date__ = '13-July-2020'
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
@@ -86,7 +86,7 @@ def update_from_shiftfile(shiftfile, wcsname=None, force=False):
                              force=force, **pars)
 
 
-def updatewcs_with_shift(image, reference, wcsname=None, reusename=False,
+def updatewcs_with_shift(image, reference, wcsname='TWEAK', reusename=False,
                          fitgeom='rscale', rot=0.0, scale=1.0,
                          xsh=0.0, ysh=0.0, fit=None, xrms=None, yrms=None,
                          verbose=False, force=False, sciext='SCI'):
@@ -133,12 +133,10 @@ def updatewcs_with_shift(image, reference, wcsname=None, reusename=False,
         used to define the tangent plane in which all the fit parameters
         (shift, rot, scale) were measured.
 
-    wcsname : str
+    wcsname : str, None, optional
         Label to give to new WCS solution being created by this fit. If
         a value of None is given, it will automatically use 'TWEAK' as the
-        label. If a WCS has a name with this specific value, the code will
-        automatically append a version ID using the format '_n', such as
-        'TWEAK_1', 'TWEAK_2',or 'TWEAK_update_1'.
+        label.
         [Default =None]
 
     reusename : bool
@@ -236,12 +234,8 @@ def updatewcs_with_shift(image, reference, wcsname=None, reusename=False,
     # with new solution
     if open_image:
         fimg = fits.open(image, mode='update', memmap=False)
-        image_update = True
     else:
         fimg = image
-
-    if image_update:
-        wcsutil.altwcs.archiveWCS(fimg, extlist, reusekey=True)
 
     # Process MEF images...
     for ext in extlist:
@@ -438,73 +432,59 @@ def update_wcs(image, extnum, new_wcs, wcsname="", reusename=False, verbose=Fals
     # Start by insuring that the correct value of 'orientat' has been computed
     new_wcs.setOrient()
 
-    fimg_open = False
-    if not isinstance(image, fits.HDUList):
-        fimg = fits.open(image, mode='update', memmap=False)
-        fimg_open = True
-        fimg_update = True
+    if isinstance(image, fits.HDUList):
+        close_file = False
+        fname = image.filename()
     else:
-        fimg = image
-        if fimg.fileinfo(0)['filemode'] is 'update':
-            fimg_update = True
-        else:
-            fimg_update = False
+        fname = image
+        image = fits.open(image, mode='update', memmap=False)
+        close_file = True
 
-    # Determine final (unique) WCSNAME value, either based on the default or
-    # user-provided name
+    hdr = image[extnum].header
+
+    # Name of the updated primary WCS
     if util.is_blank(wcsname):
         wcsname = 'TWEAK'
-    if not reusename:
-        wcsname = create_unique_wcsname(fimg, extnum, wcsname)
 
-    idchdr = True
-    if new_wcs.idcscale is None:
-        idchdr = False
-    # Open the file for updating the WCS
+    # Auto-rename old primary WCS when archiving it if an alternate WCS with
+    # the same name already exists:
+    if 'WCSNAME' in hdr:
+        pri_wcsname = hdr['WCSNAME']
+        pri_wcsname_u = pri_wcsname.upper()
+    else:
+        pri_wcsname = None
+        pri_wcsname_u = None
+
+    if pri_wcsname_u == wcsname.upper():
+        if not reusename:
+            raise ValueError(
+                f"WCSNAME '{wcsname}' already present in '{fname}'. A unique "
+                "value for the 'wcsname' parameter needs to be specified."
+            )
+    else:
+        altwcs.archive_wcs(image, [extnum], wcsname=pri_wcsname, mode=altwcs.ArchiveMode.AUTO_RENAME)
+
+    # Update Primary WCS:
     try:
-        logstr = 'Updating header for %s[%s]' % (fimg.filename(), str(extnum))
+        logstr = f'Updating header for {image.filename()}[{extnum}]'
         if verbose:
             print(logstr)
-        else:
-            log.info(logstr)
-
-        hdr = fimg[extnum].header
-
-        if verbose:
             log.info('    with WCS of')
             new_wcs.printwcs()
             print("WCSNAME  : ", wcsname)
+        else:
+            log.info(logstr)
 
-        # Insure that if a copy of the WCS has not been created yet, it will be now
-        wcs_hdr = new_wcs.wcs2header(idc2hdr=idchdr, relax=True)
+        wcs_hdr = new_wcs.wcs2header(idc2hdr=new_wcs.idcscale is not None, relax=True)
+        wcs_hdr.set('WCSNAME', wcsname, before=0)
+        wcs_hdr.set('WCSTYPE', interpret_wcsname_type(wcsname), after=0)
+        wcs_hdr.set('ORIENTAT', new_wcs.orientat, after=len(wcs_hdr))
+        hdr.update(wcs_hdr)
+        util.updateNEXTENDKw(image)
 
-        for key in wcs_hdr:
-            hdr[key] = wcs_hdr[key]
-        hdr['ORIENTAT'] = new_wcs.orientat
-        hdr['WCSNAME'] = wcsname
-        wcstype = interpret_wcsname_type(wcsname)
-        hdr['WCSTYPE'] = wcstype
-        util.updateNEXTENDKw(fimg)
-
-        # Only if this image was opened in update mode should this
-        # newly updated WCS be archived, as it will never be written out
-        # to a file otherwise.
-        if fimg_update:
-            if not reusename:
-                # Save the newly updated WCS as an alternate WCS as well
-                wkey = wcsutil.altwcs.next_wcskey(fimg, ext=extnum)
-            else:
-                wkey = wcsutil.altwcs.getKeyFromName(hdr, wcsname)
-
-            # wcskey needs to be specified so that archiveWCS will create a
-            # duplicate WCS with the same WCSNAME as the Primary WCS
-            wcsutil.altwcs.archiveWCS(fimg, [extnum], wcsname=wcsname,
-                wcskey=wkey, reusekey=reusename)
-            fimg[extnum].header['WCSTYPE' + wkey] = wcstype
     finally:
-        if fimg_open:
-            # finish up by closing the file now
-            fimg.close()
+        if close_file:
+            image.close()
 
 def interpret_wcsname_type(wcsname):
     """Interpret WCSNAME as a standardized human-understandable description """
@@ -518,6 +498,9 @@ def interpret_wcsname_type(wcsname):
     base_terms = {'IDC': 'undistorted ',
                   'OPU': 'pipeline default '}
     no_fit = 'not aligned'
+
+    if wcsname is None:
+        return no_fit
 
     wcsname = wcsname.upper()  # make this comparison case-insensitive
     wcsname_list = wcsname.split('-')
@@ -566,7 +549,7 @@ def create_unique_wcsname(fimg, extnum, wcsname):
         Unique WCSNAME value
 
     """
-    wnames = list(wcsutil.altwcs.wcsnames(fimg, ext=extnum).values())
+    wnames = list(altwcs.wcsnames(fimg, ext=extnum).values())
     if wcsname not in wnames:
         uniqname = wcsname
     else:
