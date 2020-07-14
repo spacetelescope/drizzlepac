@@ -642,7 +642,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                     diag_obj = du.HapDiagnostic(log_level=log_level)
                     diag_obj.instantiate_from_hap_obj(filtobj_dict[xmatch_comp_imgname]['filt_obj'],
                                                       data_source="{}.compare_interfilter_crossmatches".format(__taskname__),
-                                                      description="matched point and segment catalog RA and Dec values",
+                                                      description="cross-matched interfilter comparison and reference catalog X and Y values",
                                                       timestamp=json_timestamp,
                                                       time_since_epoch=json_time_since_epoch)
                     json_results_dict = collections.OrderedDict()
