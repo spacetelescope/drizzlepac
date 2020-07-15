@@ -754,7 +754,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
     # filtobj_dict dictionary
     log.info("")
     for temp_cat_filename in temp_cat_file_list:
-        log.info("removing temp catalog file {}".format(temp_cat_filename))
+        log.info("removing temporary catalog file {}".format(temp_cat_filename))
         os.remove(temp_cat_filename)
     del filtobj_dict
 
