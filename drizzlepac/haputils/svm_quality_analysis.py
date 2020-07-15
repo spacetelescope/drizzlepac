@@ -657,6 +657,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                     json_results_dict['reference catalog length'] = sl_lengths[0]
                     json_results_dict['comparison catalog length'] = sl_lengths[1]
                     json_results_dict['number of cross-matches'] = len(matching_lines_ref)
+                    json_results_dict['reference image platescale'] = filtobj_dict[xmatch_ref_imgname]['filt_obj'].meta_wcs.pscale
 
                     # store cross-match details
                     diag_obj.add_data_item(json_results_dict, "Interfilter cross-match details",
@@ -665,12 +666,14 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                                "comparison catalog filename": "ECSV segment catalog filename",
                                                "reference catalog length": "Number of entries in point catalog",
                                                "comparison catalog length": "Number of entries in segment catalog",
-                                               "number of cross-matches": "Number of cross-matches between point and segment catalogs"},
+                                               "number of cross-matches": "Number of cross-matches between point and segment catalogs",
+                                               "reference image platescale": "Platescale of the crossmatch reference image"},
                                            units={"reference catalog filename": "unitless",
                                                   "comparison catalog filename": "unitless",
                                                   "reference catalog length": "unitless",
                                                   "comparison catalog length": "unitless",
-                                                  "number of cross-matches": "unitless"})
+                                                  "number of cross-matches": "unitless",
+                                                  "reference image platescale": "pixels/arcseconds"})
 
                     # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
                     # the cross-matched reference sources
@@ -728,9 +731,11 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                         sep_stat_dict["{}x{} sigma-clipped mean".format(maxiters, sigma)] = clipped_stats[0]
                         sep_stat_dict["{}x{} sigma-clipped median".format(maxiters, sigma)] = clipped_stats[1]
                         sep_stat_dict["{}x{} sigma-clipped standard deviation".format(maxiters, sigma)] = clipped_stats[2]
+                        sep_stat_dict["Reference image platescale"] = filtobj_dict[xmatch_ref_imgname][
+                            'filt_obj'].meta_wcs.pscale
 
                         # Store statistics as new data section
-                        diag_obj.add_data_item(sep_stat_dict, "Interfilter cross-matched {} separation statistics".format(colname),
+                        diag_obj.add_data_item(sep_stat_dict, "Interfilter cross-matched {} comparison - reference separation statistics".format(colname),
                                                descriptions={"Non-clipped min": "Non-clipped min difference",
                                                              "Non-clipped max": "Non-clipped max difference",
                                                              "Non-clipped mean": "Non-clipped mean difference",
@@ -738,7 +743,8 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                                              "Non-clipped standard deviation": "Non-clipped standard deviation of differences",
                                                              "3x3 sigma-clipped mean": "3x3 sigma-clipped mean difference",
                                                              "3x3 sigma-clipped median": "3x3 sigma-clipped median difference",
-                                                             "3x3 sigma-clipped standard deviation": "3x3 sigma-clipped standard deviation of differences"},
+                                                             "3x3 sigma-clipped standard deviation": "3x3 sigma-clipped standard deviation of differences",
+                                                             "Reference image platescale": "Platescale of the crossmatch reference image"},
                                                units={"Non-clipped min": "pixels",
                                                       "Non-clipped max": "pixels",
                                                       "Non-clipped mean": "pixels",
@@ -746,9 +752,21 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                                       "Non-clipped standard deviation": "pixels",
                                                       "3x3 sigma-clipped mean": "pixels",
                                                       "3x3 sigma-clipped median": "pixels",
-                                                      "3x3 sigma-clipped standard deviation": "pixels"})
-        # TODO: should stats be in instrument-specific pixels or instrument-generic arcseconds??
+                                                      "3x3 sigma-clipped standard deviation": "pixels",
+                                                      "Reference image platescale": "pixels/arcseconds"})
 
+                        # display stats
+                        padding = math.ceil((74 - 61) / 2)
+                        log.info("{}Interfilter cross-matched {} comparison - reference separation statistics".format(" "*padding, colname))
+                        max_str_length = 0
+                        for stat_key in sep_stat_dict.keys():
+                            if len(stat_key) > max_str_length:
+                                max_str_length = len(stat_key)
+                        for stat_key in sep_stat_dict.keys():
+                            padding = " " * (max_str_length - len(stat_key))
+                            log.info("{}{}: {} {}".format(padding, stat_key, sep_stat_dict[stat_key],
+                                                          diag_obj.out_dict['data']["Interfilter cross-matched {} comparison - reference separation statistics".format(colname)]['units'][stat_key]))
+                        log.info("")
                     # write everything out to the json file
                     json_filename = filtobj_dict[xmatch_comp_imgname]['filt_obj'].drizzle_filename[
                                     :-9] + "_svm_interfilter_crossmatch.json"
