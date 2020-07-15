@@ -48,6 +48,7 @@ from datetime import datetime
 import time
 
 from drizzlepac.haputils.graph_utils import HAPFigure
+import drizzlepac.haputils.graph_utils as gu
 
 from bokeh.layouts import row, column
 from bokeh.plotting import figure, output_file, save, show
@@ -707,21 +708,18 @@ def build_circle_plot(**plot_dict):
     return p1
 
 
-def build_vector_plot(**plot_dict):
+def build_vector_plot(sourceCDS, **plot_dict):
     """Create figure object for plotting desired columns as a scatter plot with circles
 
     Parameters
     ----------
-    source : Pandas ColumnDataSource
+    sourceCDS : Pandas ColumnDataSource
         Object with all the input data
 
-    x, y : str
-        Names of X and Y columns of data from data `source`
-
-    x_label, y_label : str
+    x_label, y_label : str, optional
         Labels to use for the X and Y axes (respectively)
 
-    title : str
+    title : str, optional
         Title of the plot
 
     color : string, optional
@@ -729,74 +727,38 @@ def build_vector_plot(**plot_dict):
 
     """
     # Interpret required elements
-    source = plot_dict['source']
-    x = plot_dict['x']
-    y = plot_dict['y']
-    x_label = plot_dict['x_label']
-    y_label = plot_dict['y_label']
-    title = plot_dict['title']
+    sourceCDS = sourceCDS
 
-    # check for optional elements
+    # Check for optional elements
+    x_label = plot_dict.get('x_label', '')
+    y_label = plot_dict.get('y_label', '')
+    title = plot_dict.get('title', '')
     color = plot_dict.get('color', 'blue')
-
-    # Determine 'optimal' range for axes
-    x_arr = np.array(source.data[x])
-    y_arr = np.array(source.data[y])
-
-    dx = x_arr.max() - min(0, x_arr.min())
-    dy = y_arr.max() - min(0, y_arr.min())
-    xy_max = int(max(dx, dy))
-    xyrange = Range1d(0, xy_max)
-    xy_seg = xy_max * 0.05
-
-    # Set length of dx=0.1 to be 5% of the width of the plot
-    mag = (xy_seg)/0.1
-
-    delta_x = np.array(source.data['dx'])
-    delta_y = np.array(source.data['dy'])
-    x_ref = x_arr + (delta_x * mag)
-    y_ref = y_arr + (delta_y * mag)
-
-    rads = np.arctan2(delta_y, delta_x)
-
-    x_legend = xy_seg
-    xr_legend = xy_seg * 2
-    y_legend = xy_seg
-    legend_text = '0.1 pixels'
-
-    # A "ray" consists of (x_beg, y_beg, x_end, y_end)
-    vector_ray = (source.data[x], source.data[y], x_ref, y_ref)  # These are arrays for many vectors
-    legend_ray = (x_legend, y_legend, xr_legend, y_legend)  # This a single segment used for a legend
 
     # Define a figure object with square aspect ratio
     p1 = HAPFigure(title=title,
-                   use_hover_tips=False,
                    x_label=x_label,
                    y_label=y_label,
-                   x_range=xyrange,
-                   y_range=xyrange,
-                   match_aspect=True)
+                   use_hover_tips=False)
 
     # Add the glyphs
-    p1.build_vector_glyph(vector_ray,
-                          legend_ray,
-                          legend_text,
-                          color=color,
-                          line_width=2,
-                          angle=rads + np.pi/5.,
-                          marker_size=[6]*len(x_ref),
-                          legend_text_size='10px')
+    p1.build_vector_glyph(sourceCDS,
+                          color=color)
 
     return p1
 
 
-def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
+def generate_summary_plots(fitCDS, display_plot, output='cal_qa_results.html'):
     """Generate the graphics associated with this particular type of data.
 
     Parameters
     ==========
     fitCDS : ColumnDataSource object
         Dataframe consisting of the relative alignment astrometric fit results
+
+    display_plot : bool, optional
+        Option to display the plot to the screen
+        Default: False
 
     output : str, optional
         Filename for output file with generated plot
@@ -893,13 +855,17 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
     plot_list += p5
 
     # Save the generated plots to an HTML file define using 'output_file()'
-    save(column(plot_list))
+    # Display and save
+    if display_plot:
+        show(column(plot_list))
+    else:
+        print('Saving: {}'.format(output))
+        save(column(plot_list))
 
     return output
 
 
-def generate_residual_plots(residsCDS, filename, output_dir=None, output=''):
-
+def generate_residual_plots(residsCDS, filename, display_plot, output_dir=None, output=''):
     rootname = '_'.join(filename.split("_")[:-1])
     output = '{}_vectors_{}'.format(rootname, output)
     if output_dir is not None:
@@ -914,52 +880,66 @@ def generate_residual_plots(residsCDS, filename, output_dir=None, output=''):
     if npoints < 2:
         return None
 
-    p1 = build_circle_plot(x='x', y='dx',
-                           source=residsCDS,
-                           title='Residuals for {} [{} sources]: X vs DX'.format(filename, npoints),
-                           x_label="X (pixels)",
-                           y_label='Delta[X] (pixels)',
-                           tips=[0, 1, 2, 3, 8])
+    p1 = HAPFigure(title='Residuals for {} [{} sources]: X vs DX'.format(filename, npoints),
+                   x_label="X (pixels)",
+                   y_label='Delta[X] (pixels)',
+                   use_hover_tips=False)
+    p1.build_glyph('circle',
+                   x='x',
+                   y='dx',
+                   sourceCDS=residsCDS)
 
-    p2 = build_circle_plot(x='x', y='dy',
-                           source=residsCDS,
-                           title='Residuals for {} [{} sources]: X vs DY'.format(filename, npoints),
-                           x_label="X (pixels)",
-                           y_label='Delta[Y] (pixels)',
-                           tips=[0, 1, 2, 3, 8])
-    row1 = row(p1,p2)
+    p2 = HAPFigure(title='Residuals for {} [{} sources]: X vs DY'.format(filename, npoints),
+                   x_label="X (pixels)",
+                   y_label='Delta[Y] (pixels)',
+                   use_hover_tips=False)
+    p2.build_glyph('circle',
+                   x='x',
+                   y='dy',
+                   sourceCDS=residsCDS)
 
-    p3 = build_circle_plot(x='y', y='dx',
-                           source=residsCDS,
-                           title='Residuals for {} [{} sources]: Y vs DX'.format(filename, npoints),
-                           x_label="Y (pixels)",
-                           y_label='Delta[X] (pixels)',
-                           tips=[0, 1, 2, 3, 8])
+    row1 = row(p1.fig, p2.fig)
 
-    p4 = build_circle_plot(x='y', y='dy',
-                           source=residsCDS,
-                           title='Residuals for {} [{} sources]: Y vs DY'.format(filename, npoints),
-                           x_label="Y (pixels)",
-                           y_label='Delta[Y] (pixels)',
-                           tips=[0, 1, 2, 3, 8])
-    row2 = row(p3,p4)
+    p3 = HAPFigure(title='Residuals for {} [{} sources]: Y vs DX'.format(filename, npoints),
+                   x_label="Y (pixels)",
+                   y_label='Delta[X] (pixels)',
+                   use_hover_tips=False)
+    p3.build_glyph('circle',
+                   x='y',
+                   y='dx',
+                   sourceCDS=residsCDS)
 
+    p4 = HAPFigure(title='Residuals for {} [{} sources]: Y vs DY'.format(filename, npoints),
+                   x_label="Y (pixels)",
+                   y_label='Delta[Y] (pixels)',
+                   use_hover_tips=False)
+    p4.build_glyph('circle',
+                   x='y',
+                   y='dy',
+                   sourceCDS=residsCDS)
 
-    pv = build_vector_plot(x='x', y='y',
-                           source=residsCDS,
+    row2 = row(p3.fig, p4.fig)
+
+    pv = build_vector_plot(residsCDS,
                            title='Vector plot of Image - Reference for {}'.format(filename),
-                           x_label="X (pixels)",
-                           y_label='Y (pixels)')
+                           x_label='X (pixels)',
+                           y_label='Y (pixels)',
+                           color='blue')
 
-    print('Saving: {}'.format(output))
-    save(column(row1,row2,pv.fig))
+    # Display and save
+    if display_plot:
+        show(column(row1, row2, pv.fig))
+    else:
+        print('Saving: {}'.format(output))
+        save(column(row1, row2, pv.fig))
 
     return output
 
 
 def build_astrometry_plots(pandas_file,
                            output_dir=None,
-                           output='cal_qa_results.html'):
+                           output='cal_qa_results.html',
+                           display_plot=False):
 
     fitCDS, residsCDS = get_pandas_data(pandas_file)
 
@@ -969,7 +949,7 @@ def build_astrometry_plots(pandas_file,
         summary_filename = output
 
     # Generate the astrometric plots
-    # astrometry_plot_name = generate_summary_plots(fitCDS, output=summary_filename)
+    # astrometry_plot_name = generate_summary_plots(fitCDS, display_plot, output=summary_filename)
 
     resids_plot_names = []
 
@@ -979,9 +959,11 @@ def build_astrometry_plots(pandas_file,
                        'y': residsCDS.data[RESIDS_COLUMNS[1]][i],
                        'xr': residsCDS.data[RESIDS_COLUMNS[2]][i],
                        'yr': residsCDS.data[RESIDS_COLUMNS[3]][i]}
+
         cds = ColumnDataSource(resids_dict)
 
         resids_plot_name = generate_residual_plots(cds, filename,
+                                                   display_plot,
                                                    output_dir=output_dir,
                                                    output=output)
         resids_plot_names.append(resids_plot_name)

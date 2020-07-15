@@ -12,7 +12,7 @@ from astropy.io import fits
 import numpy as np
 
 from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource, Label, Circle
+from bokeh.models import ColumnDataSource, Label, Circle, Range1d
 from bokeh.models.tools import HoverTool
 from bokeh.core.properties import value
 
@@ -97,9 +97,6 @@ class HAPFigure:
 
         toolbar_location : str, optional
             Location of toolbar
-
-        show_hover : bool, optional
-            Turns off hover tooltips
 
         use_hover_tips : bool, optional
             Defines whether or not any hover tooltips should be use for a figure
@@ -263,7 +260,6 @@ class HAPFigure:
             self.color = 'colormap'
         else:
             self.color = self.glyph_color
-            self.legend_group = ''
 
         # The "legend_label" is ignored when "glyph_color" is set to "colormap".
         if 'legend_label' in data_dict:
@@ -363,84 +359,106 @@ class HAPFigure:
                               hover_color='#2F4F4F',
                               name=self.glyph_name)
 
-    def build_vector_glyph(self, vector_tuple, legend_tuple, legend_text, **vector_dict):
+    def build_vector_glyph(self, sourceCDS, **vector_dict):
         """Generate a vector graphic.
 
             This method is specifically for generating a vector graphic.
 
             Parameters
             ----------
-            vector_tuple : float, tuple
-                Coordinates of the starting and ending points of the main vector rays
-                (x_beg, y_beg, x_end, y_end)
-
-            legend_tuple : float, tuple
-                Coordinates of the starting and ending points of the single legend segment
-                (x_beg, y_beg, x_end, y_end)
-
-            legend_text : str
-                Text for the legend/reference segment
+            sourceCDS : ColumnDataSource
+                The ColumnDataSource containing the 'x', 'y', 'dx', and 'dy' columns.
 
             color : str, optional
                 The color of the line segments and arrow head
                 Default is 'black'
 
-            line_width : float, optional
-                The width of the line segments
-                Default is 1.0 as set in HAPFigure instantiation
-
-            angle : float, optional
-                The color of the line segments and arrow head
-                Default is 0.0 as set in HAPFigure instantiation
-
-            marker_size : int, optional
-                Size of the triangle glyph used as the arrow head
-                Default is 10 as set in HAPFigure instantiation
-
-            legend_text_size : float, optional
-                Size of the text label for the legend/reference segment
-                Default is '10px' as set in HAPFigure instantiation
-
             Note: Hover tooltips are typically turned off for these figures.
-            TODO: Probably should at least report the number number of values
-            in the bin.
+            There is an assumption the 'x', 'y', 'dx', and 'dy' columns exist 
+            in the ColumnDataSource.
+         
 
         """
         # Get/set optional attributes
         color = vector_dict.get('color', self.color)
-        line_width = vector_dict.get('line_width', self.line_width)
-        angle = vector_dict.get('angle', self.angle)
-        size = vector_dict.get('marker_size', self.size)
-        legend_text_size = vector_dict.get('legend_text_size', self.text_size)
 
-        # vector_tuple for a segment (x_beg, y_beg, x_end, y_end)
-        self.fig.segment(x0=vector_tuple[0],
-                         y0=vector_tuple[1],
-                         x1=vector_tuple[2],
-                         y1=vector_tuple[3],
+        # Determine 'optimal' range for axes based upon the vector tuple
+        # The 'x' and 'y' coordinates are the beginning (tail) values of the
+        # vector.
+        x_array = np.array(sourceCDS.data['x'])
+        y_array = np.array(sourceCDS.data['y'])
+
+        # Compute the largest extent over x and y separately, but
+        # since the figure should have an equal aspect ratio, use the
+        # the largest extent from either x or y.
+        x_extent = x_array.max() - min(0, x_array.min())
+        y_extent = y_array.max() - min(0, y_array.min())
+        xy_max = int(max(x_extent, y_extent))
+
+        # Generate a fixed, closed range ...
+        xyrange = Range1d(0, xy_max)
+  
+        # ... and we want the figure to have a square aspect ratio
+        self.fig.x_range = xyrange
+        self.fig.y_range = xyrange
+
+        # Now the judgement call - compute 5% of the full range and ...
+        xy_segment = xy_max * 0.05
+
+        # ... set length of dx=0.1 to be 5% of the width/height of the plot
+        mag = xy_segment / 0.1
+        legend_text = '0.1 pixels'
+
+        # The 'delta_*' values are the length of the vector - the computed 
+        # difference between [x|y] and [x|y]-reference
+        delta_x = np.array(sourceCDS.data['dx'])
+        delta_y = np.array(sourceCDS.data['dy'])
+        x_reference = x_array + (delta_x * mag)
+        y_reference = y_array + (delta_y * mag)
+
+        # Angle to use for the triangle glyph which is the head of the vector
+        # TODO: What is the source for 5.0?
+        angle = np.arctan2(delta_y, delta_x) + np.pi/5.0
+
+        # Define coordinates for the legend of the vector plot which
+        # displays the scale
+        x_legend = xy_segment
+        xreference_legend = xy_segment * 2  # == xy_segment + xy_segment, because origin=(0,0) 
+        y_legend = xy_segment
+
+        # adhoc
+        legend_text_size = '10px'
+        size = [6] * len(x_reference)
+        line_width = 2
+
+        self.fig.segment(x0=x_array,
+                         y0=y_array,
+                         x1=x_reference,
+                         y1=y_reference,
                          color=color,
                          line_width=line_width)
-        self.fig.triangle(x=vector_tuple[2],
-                          y=vector_tuple[3],
+        self.fig.triangle(x=x_reference,
+                          y=y_reference,
                           size=size,
                           color=color,
                           angle=angle)
 
         # Create the reference legend
         # Some attributes are hard-coded as they are never intended to be altered
-        # legend_tuple for a segment (x_beg, y_beg, x_end, y_end)
-        self.fig.segment(x0=legend_tuple[0],
-                         y0=legend_tuple[1],
-                         x1=legend_tuple[2],
-                         y1=legend_tuple[3],
+        self.fig.segment(x0=x_legend,
+                         y0=y_legend,
+                         x1=xreference_legend,
+                         y1=y_legend,
                          color='black',
                          line_width=line_width)
-        self.fig.text(x=legend_tuple[0],
-                      y=legend_tuple[0]/2.0,
+        
+        self.fig.text(x=x_legend,
+                      y=y_legend/2.0,
                       # Use of 'value' here was unexpected.  text=[legend_text] will also work.
                       text=value(legend_text),
                       color='black',
                       text_font_size=legend_text_size)
+
 
     def build_histogram(self, top, bottom, left, right, **data_dict):
         """Generate a histogram.
