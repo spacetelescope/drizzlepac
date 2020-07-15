@@ -31,6 +31,7 @@ import collections
 from datetime import datetime
 import glob
 import json
+import math
 import os
 import pdb
 import pickle
@@ -546,6 +547,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
     # Initiate logging!
     log.setLevel(log_level)
 
+    log.info('\n\n*****     Begin Quality Analysis Test: compare_interfilter_crossmatches.     *****\n')
     # Check to make sure there's at last 2 filter-level products. If not, return.
     num_filter_prods = 0
     for total_obj in total_obj_list:
@@ -560,31 +562,29 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
         return
     else:
         log.info("Found {} filter-level products for use in analysis of inter-filter cross matched source"
-                 " positions:".format(num_filter_prods))
-        ctr = 1
-        for total_obj in total_obj_list:
-            for filt_obj in total_obj.fdp_list:
-                log.info("{}: {}".format(ctr, filt_obj.drizzle_filename))
-                ctr += 1
+                 " positions".format(num_filter_prods))
 
         filtobj_dict = {}
         xmatch_ref_imgname = None
         max_sources = 0
-
+        ctr = 1
         for total_obj in total_obj_list:
             for filt_obj in total_obj.fdp_list:
-                log.info("{} {} {}".format(">"*20, filt_obj.drizzle_filename, "<"*20))
+                log.info("{} {}: {} {}".format(">"*20, ctr, filt_obj.drizzle_filename, "<"*20))
                 filtobj_dict[filt_obj.drizzle_filename] = find_hap_point_sources(filt_obj, log_level=log_level)
                 n_sources = len(filtobj_dict[filt_obj.drizzle_filename]['sources'])
                 log.info("Identified {} sources in {}".format(n_sources, filt_obj.drizzle_filename))
                 if n_sources > max_sources:
                     max_sources = n_sources
                     xmatch_ref_imgname = filt_obj.drizzle_filename
+                ctr += 1
+                log.info("")
         log.info("Crossmatch reference image {} contains {} sources.".format(xmatch_ref_imgname, max_sources))
         xmatch_ref_catname = xmatch_ref_imgname[:-8] + "point-cat-fxm.ecsv"
 
         # Perform coord transform and write temp cat files for cross match
         temp_cat_file_list = []
+        log.info("")
         for imgname in filtobj_dict.keys():
             filtobj_dict[imgname] = transform_coords(filtobj_dict[imgname],
                                                      xmatch_ref_imgname,
@@ -592,7 +592,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
             temp_cat_name = imgname[:-8] + "point-cat-fxm.ecsv"
             temp_cat_file_list.append(temp_cat_name)
             filtobj_dict[imgname]["sources"].write(temp_cat_name, format="ascii.ecsv")
-            log.info("Wrote source catalog {}".format(temp_cat_name))
+            log.info("Wrote temporary source catalog {}".format(temp_cat_name))
 
             # write out ds9 region files if log level is 'debug'
             if log_level == logutil.logging.DEBUG:
@@ -605,7 +605,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                     reg_table.rename_column(out_reg_stuff[reg_type][0], "#"+out_reg_stuff[reg_type][0])
                     reg_filename = "{}fxm_{}_all.reg".format(imgname[:-8], reg_type)
                     reg_table.write(reg_filename, format='ascii.csv')
-                    log.info("wrote region file {}".format(reg_filename))
+                    log.debug("wrote region file {}".format(reg_filename))
 
         # Perform cross-match based on X, Y coords
         for imgname in filtobj_dict.keys():
@@ -627,14 +627,19 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
 
                 # Report number and percentage of the total number of detected ref and comp sources that were
                 # matched
-                log.info("Cross-matching results")
-                log.info("Reference sourcelist:  {} of {} total reference sources ({}%) cross-matched.".format(len(matching_lines_ref),
-                                                                                                               sl_lengths[0],
-                                                                                                               100.0 * (float(len(matching_lines_ref)) / float(sl_lengths[0]))))
-                log.info("Comparison sourcelist: {} of {} total comparison sources ({}%) cross-matched.".format(len(matching_lines_comp),
-                                                                                                                sl_lengths[1],
-                                                                                                                100.0 * (float(len(matching_lines_comp)) / float(sl_lengths[1]))))
 
+                xmresults = []
+                xmresults.append("Reference sourcelist:  {} of {} total reference sources ({}%) cross-matched.".format(len(matching_lines_ref),
+                                                                                                                       sl_lengths[0],
+                                                                                                                       100.0 * (float(len(matching_lines_ref)) / float(sl_lengths[0]))))
+                xmresults.append("Comparison sourcelist: {} of {} total comparison sources ({}%) cross-matched.".format(len(matching_lines_comp),
+                                                                                                                        sl_lengths[1],
+                                                                                                                        100.0 * (float(len(matching_lines_comp)) / float(sl_lengths[1]))))
+                padding = math.ceil((max([len(xmresults[0]), len(xmresults[1])]) - 18) / 2)
+                log.info("{}Crossmatch results".format(" "*padding))
+                for item in xmresults:
+                    log.info(item)
+                log.info("")
                 if matching_lines_ref.size > 0:
                     # instantiate diagnostic object to store test results for eventual .json file output
                     diag_obj = du.HapDiagnostic(log_level=log_level)
@@ -747,6 +752,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
 
     # Housekeeping. Delete the *_point-cat-fxm.ecsv files created for cross-matching, and the
     # filtobj_dict dictionary
+    log.info("")
     for temp_cat_filename in temp_cat_file_list:
         log.info("removing temp catalog file {}".format(temp_cat_filename))
         os.remove(temp_cat_filename)
@@ -1831,7 +1837,8 @@ if __name__ == "__main__":
         user_args.run_report_wcs = True
 
     # display status summary indicating which QA steps are turned on and which steps are turned off
-    log.info("{}QA step run status".format(" "*(int(max_step_str_length/2)-6)))
+    toplinestring = "-"*(int(max_step_str_length/2)-6)
+    log.info("{}QA step run status{}".format(toplinestring, toplinestring))
     for kv_pair in user_args._get_kwargs():
         if kv_pair[0] not in ['input_filename', 'run_all', 'log_level']:
             if kv_pair[1]:
