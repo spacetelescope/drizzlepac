@@ -266,7 +266,8 @@ class HAPFigure:
             self.legend_group = ''
 
         # The "legend_label" is ignored when "glyph_color" is set to "colormap".
-        self.legend_label = data_dict.get('legend_label', self.legend_label)
+        if 'legend_label' in data_dict:
+            self.legend_label = data_dict.get('legend_label')
 
         # Dictionary of supported "shape" glyphs.  These are really references to
         # the associated method names.
@@ -276,6 +277,11 @@ class HAPFigure:
                        'triangle': HAPFigure.__build_triangle_glyph}
 
         glyph_types[glyph_name](self)
+
+        # This needs to be done after all the glyphs have been rendered
+        # because adding a glyph with legend_*=something will turn the legend on.
+        if self.legend_label == '' and self.legend_group == '':
+            self.fig.legend.visible = False
 
     # "Shape" glyphs
     # Hacky if/else statements below.
