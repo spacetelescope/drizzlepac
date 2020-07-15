@@ -160,15 +160,18 @@ def run(configobj):
     if configobj['UPDATE HEADER']['updatehdr']:
         wname = configobj['UPDATE HEADER']['wcsname']
         # verify that a unique WCSNAME has been specified by the user
-        if not configobj['UPDATE HEADER']['reusename']:
-            for fname in filenames:
-                uniq = util.verifyUniqueWcsname(fname,wname)
-                if not uniq:
-                    errstr = 'WCSNAME "%s" already present in "%s".  '%(wname,fname)+\
-                    'A unique value for the "wcsname" parameter needs to be ' + \
-                    'specified. \n\nQuitting!'
-                    print(textutil.textbox(errstr,width=60))
-                    raise IOError
+        for fname in filenames:
+            unique_wcsname = util.verifyUniqueWcsname(
+                fname,
+                wname,
+                include_primary = not configobj['UPDATE HEADER']['reusename']
+            )
+            if not unique_wcsname:
+                errstr = (f"WCSNAME '{wname}' already present in '{fname}'. "
+                          "A unique value for the 'wcsname' parameter needs "
+                          "to be specified.")
+                print(textutil.textbox(errstr + "\n\nQuitting!", width=80))
+                raise ValueError(errstr)
 
     if configobj['updatewcs']:
         print('\nRestoring WCS solutions to original state using updatewcs...\n')

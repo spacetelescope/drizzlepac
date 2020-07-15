@@ -18,18 +18,26 @@ of the list).
 ==================
 
 In addition to a few dozen bug fixes, the following updates to the algorithms
-were also implemented.  
+were also implemented.
 
-- Added ``rules_file`` parameter to AstroDrizzle to enable use of custom 
+- Simplified the logic in ``tweakreg`` for deciding how to archive primary WCS
+  resulting in a reduction of duplicate WCSes in image headers. [#715]
+
+- Added polynomial look-up table distortion keywords to the list of distortion
+  keywords used by ``outputimage.deleteDistortionKeywords`` so that
+  distortions can be removed from ACS images that use ``NPOLFILE``.
+  This now allows removal of alternate WCS from blotted image headers. [#709]
+
+- Added ``rules_file`` parameter to AstroDrizzle to enable use of custom
   files in pipeline processing. [#674]
 
 - Only apply solutions from the astrometry database which were non-aposteriori
   WCS solutions as the PRIMARY WCS.  This allows the pipeline to compare the
-  true apriori WCS solutions (e.g., GSC or HSC WCSs) to aposteriori solutions 
-  computed using the latest distortion-models and alignment algorithms being 
+  true apriori WCS solutions (e.g., GSC or HSC WCSs) to aposteriori solutions
+  computed using the latest distortion-models and alignment algorithms being
   used at the time of processing. [#669]
 
-- Verification using a similarity index gets reported in the trailer file and 
+- Verification using a similarity index gets reported in the trailer file and
   does not get used as a Pass/Fail criteria for alignment.  [#619]
 
 - If verification fails for either pipeline-default or apriori solution, reset
@@ -44,7 +52,7 @@ were also implemented.
 - Fix a bug in ``tweakreg`` due to which the number of matched sources needed to be
   *strictly* greater than ``minobj``. Now the minimum number of matched sources
   maust be *at least* equal or greater than ``minobj``. [#604]
-  
+
 - Fix a crash in ``tweakreg`` when ``2dhist`` is enabled and ``numpy``
   version is ``1.18.1`` and later. [#583, #587]
 
@@ -67,10 +75,10 @@ were also implemented.
 - Updated to be compatible with tweakwcs v0.6.0 to correct chip-to-chip alignment issues
   in aposteriori WCS solutions. [#596]
 
-- Correctly define output drizzle product filename during pipeline processing 
+- Correctly define output drizzle product filename during pipeline processing
   for exposures with 'drz' in the rootname. [#523]
 
-- Implement multiple levels of verification for the drizzle products generated 
+- Implement multiple levels of verification for the drizzle products generated
   during pipeline processing (using runastrodriz); including overlapp difference
   computations [#520], and magnitude correlation [#512].
 
@@ -78,11 +86,11 @@ were also implemented.
 
 - Fix problem with NaNs when looking for sources to use for aligning images [#512]
 
-- Fixed code that selected the brightest sources to use for alignment allowing 
+- Fixed code that selected the brightest sources to use for alignment allowing
   alignment to work (more often) for images with saturated sources. [#512]
 
 - Use logic for defining the PSF extracted from the images to shrink it in each
-  axis by one-half for images of crowded fields to allow for more sources to be 
+  axis by one-half for images of crowded fields to allow for more sources to be
   extracted by daofind-like algorithm. This enables source finding and alignment
   to work more reliably on crowded field images. [#512]
 

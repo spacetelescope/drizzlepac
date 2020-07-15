@@ -9,6 +9,7 @@ import json
 import os
 import pdb
 import random
+import re
 import string
 import sys
 import time
@@ -127,6 +128,24 @@ class HapDiagnostic(object):
         if self.header['INSTRUME'] == 'WFC3':
             header_items_to_remove.append('FILTER')
 
+        header_patterns_to_remove = ["D\d+VER",
+                                     "D\d+GEOM",
+                                     "D\d+DATA",
+                                     "D\d+DEXP",
+                                     "D\d+OUDA",
+                                     "D\d+OUWE",
+                                     "D\d+OUCO",
+                                     "D\d+MASK",
+                                     "D\d+WTSC",
+                                     "D\d+KERN",
+                                     "D\d+PIXF",
+                                     "D\d+COEF",
+                                     "D\d+OUUN",
+                                     "D\d+FVAL",
+                                     "D\d+WKEY",
+                                     "D\d+SCAL",
+                                     "D\d+ISCL"]
+
         # summon nested orderedDict into existence
         self.out_dict = collections.OrderedDict()
         self.out_dict['header'] = collections.OrderedDict()
@@ -138,11 +157,17 @@ class HapDiagnostic(object):
         for header_item in self.header.keys():
             self.out_dict['header'][header_item] = self.header[header_item]
 
+        # use regex to find additional drizzle header keywords to remove
+        for pattern in header_patterns_to_remove:
+            r = re.compile(pattern)
+            more_header_items_to_remove = list(filter(r.match, self.out_dict['header'].keys()))
+            header_items_to_remove += more_header_items_to_remove
+
         for header_item_to_remove in header_items_to_remove:
             if header_item_to_remove in self.out_dict['header'].keys():
                 del(self.out_dict['header'][header_item_to_remove])
         
-        # Now populate the general informaiton section
+        # Now populate the general information section
         dict_keys = {"TELESCOP": "telescope", 
                      "PROPOSID": "proposal_id", 
                      "INSTRUME": "instrument", 
@@ -155,7 +180,7 @@ class HapDiagnostic(object):
         except:
             self.out_dict['general information']['visit'] = self.header['filename'].split("_")[2]
         # determine filter...
-        filter_names =  ';'.join([self.header[f] for f in self.header['filter*']])
+        filter_names = ';'.join([self.header[f] for f in self.header['filter*']])
         self.out_dict['general information']['filter'] = poller_utils.determine_filter_name(filter_names)
 
         rootname = self.header['rootname'].split('_')

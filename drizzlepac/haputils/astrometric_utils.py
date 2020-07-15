@@ -1515,7 +1515,7 @@ def build_wcscat(image, group_id, source_catalog):
         if 'xcentroid' in imcat.colnames:
             imcat.rename_column('xcentroid', 'x')
             imcat.rename_column('ycentroid', 'y')
-            
+                    
         wcscat = FITSWCS(
             w,
             meta={

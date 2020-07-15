@@ -82,6 +82,8 @@ class AlignmentTable:
         self.alignment_pars.update(alignment_pars['general'])
         self.alignment_pars.update(alignment_pars['generate_source_catalogs'])
         self.alignment_pars.update(alignment_pars['determine_fit_quality'])
+        for key in self.fit_pars:
+            self.fit_pars[key]['pars'] = alignment_pars['general']
 
         self.dqname = dqname
         self.haplist = []
@@ -601,20 +603,29 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     """
     log.info("{} (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
     if 'fitgeom' in fit_pars:
-        fitgeom=fit_pars['fitgeom']
+        fitgeom = fit_pars['fitgeom']
         del fit_pars['fitgeom']
     else:
         fitgeom='rscale'
 
+    common_pars = fit_pars['pars']
+    del fit_pars['pars']
+    
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
     #                          tolerance=100, use2dhist=False)
+
     # Align images and correct WCS
-    # NOTE: this invocation does not use an astrometric catalog. This call allows all the input images to be aligned in
-    # a relative way using the first input image as the reference.
+    # NOTE: this invocation does not use an astrometric catalog. This call 
+    #       allows all the input images to be aligned in
+    #       a relative way using the first input image as the reference.
     # 1: Perform relative alignment
-    match_relcat = tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=True, fitgeom=fitgeom)
+    match_relcat = tweakwcs.align_wcs(imglist, None, 
+                                      match=match,
+                                      minobj=common_pars['MIN_FIT_MATCHES'],
+                                      expand_refcat=True, 
+                                      fitgeom=fitgeom)
 
     log.info("Relative alignment found: ")
     for i in imglist:
@@ -631,9 +642,10 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
             nmatches = info['nmatches']
         msg = "Image {} --".format(i.meta['name'])
         msg += "\n    SHIFT:({:9.4f},{:9.4f})  NMATCHES: {} ".format(off[0], off[1], nmatches)
-        msg += " ROT:{:9.4f}  SCALE:{:9.4f}".format(rot, scale)
+        msg += "\n    ROT:{:9.4f}  SCALE:{:9.4f}".format(rot, scale)
+        msg += "\n Using fitgeom = '{}'".format(fitgeom)
         log.info(msg)
-
+        
     # This logic enables performing only relative fitting and skipping fitting to GAIA
     if reference_catalog is not None:
         # Set all the group_id values to be the same so the various images/chips will be aligned to the astrometric
@@ -644,8 +656,10 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
             image.meta["group_id"] = 1234567
         # 2: Perform absolute alignment
 
-        matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, match=match, fitgeom=fitgeom)
-        import pickle; pickle.dump(imglist, open('final_match_to_gaia.pickle', 'wb'))
+        matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, 
+                                         match=match, 
+                                         minobj=common_pars['MIN_FIT_MATCHES'],
+                                         fitgeom=fitgeom)
     else:
         # Insure the expanded reference catalog has all the information needed
         # to complete processing.
@@ -688,14 +702,21 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
     else:
         fitgeom='rscale'
 
+    common_pars = fit_pars['pars']
+    del fit_pars['pars']
+
+
     log.info("{} (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
 
     # Align images and correct WCS
-    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, match=match, 
-                        expand_refcat=False, fitgeom=fitgeom)
+    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, 
+                                     match=match,
+                                     minobj=common_pars['MIN_FIT_MATCHES'],
+                                     expand_refcat=False, 
+                                     fitgeom=fitgeom)
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
@@ -731,14 +752,20 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     else:
         fitgeom='rscale'
 
+    common_pars = fit_pars['pars']
+    del fit_pars['pars']
+
 
     log.info("{} (match_2dhist_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 28))
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
     # Align images and correct WCS
-    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, match=match, 
-                        expand_refcat=False, fitgeom=fitgeom)
+    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, 
+                                     match=match,
+                                     minobj=common_pars['MIN_FIT_MATCHES'],
+                                     expand_refcat=False,
+                                     fitgeom=fitgeom)
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)

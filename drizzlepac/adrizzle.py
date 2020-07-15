@@ -141,7 +141,7 @@ def run(configObj, wcsmap=None):
                 output_wcs = wcs_functions.build_hstwcs(
                     user_wcs_pars['raref'], user_wcs_pars['decref'],
                     user_wcs_pars['xrefpix'], user_wcs_pars['yrefpix'],
-                    user_wcs_pars['outnx'], user_wcs_pars['outny'],
+                    int(user_wcs_pars['outnx']), int(user_wcs_pars['outny']),
                     user_wcs_pars['outscale'], user_wcs_pars['orient'] )
             else:
                 # Define default WCS based on input image
@@ -156,7 +156,7 @@ def run(configObj, wcsmap=None):
                 fimg = fits.open(refroot, memmap=False)
                 for i,extn in enumerate(fimg):
                     if 'CRVAL1' in extn.header: # Key on CRVAL1 for valid WCS
-                        refwcs = wcsutil.HSTWCS('{}[{}]'.format(refroot,i))
+                        refwcs = stwcs.wcsutil.HSTWCS('{}[{}]'.format(refroot,i))
                         if refwcs.wcs.has_cd():
                             extroot = i
                             break
