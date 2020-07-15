@@ -577,10 +577,10 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 if n_sources > max_sources:
                     max_sources = n_sources
                     xmatch_ref_imgname = filt_obj.drizzle_filename
+                    xmatch_ref_catname = filtobj_dict[filt_obj.drizzle_filename]['cat_name']
                 ctr += 1
                 log.info("")
         log.info("Crossmatch reference image {} contains {} sources.".format(xmatch_ref_imgname, max_sources))
-        xmatch_ref_catname = xmatch_ref_imgname[:-8] + "point-cat-fxm.ecsv"
 
         # Perform coord transform and write temp cat files for cross match
         temp_cat_file_list = []
@@ -589,10 +589,9 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
             filtobj_dict[imgname] = transform_coords(filtobj_dict[imgname],
                                                      xmatch_ref_imgname,
                                                      log_level=log_level)
-            temp_cat_name = imgname[:-8] + "point-cat-fxm.ecsv"
-            temp_cat_file_list.append(temp_cat_name)
-            filtobj_dict[imgname]["sources"].write(temp_cat_name, format="ascii.ecsv")
-            log.info("Wrote temporary source catalog {}".format(temp_cat_name))
+
+            filtobj_dict[imgname]["sources"].write(filtobj_dict[imgname]['cat_name'], format="ascii.ecsv")
+            log.info("Wrote temporary source catalog {}".format(filtobj_dict[imgname]['cat_name']))
 
             # write out ds9 region files if log level is 'debug'
             if log_level == logutil.logging.DEBUG:
@@ -603,16 +602,18 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                     reg_table = filtobj_dict[imgname]["sources"].copy()
                     reg_table.keep_columns(out_reg_stuff[reg_type])
                     reg_table.rename_column(out_reg_stuff[reg_type][0], "#"+out_reg_stuff[reg_type][0])
-                    reg_filename = "{}fxm_{}_all.reg".format(imgname[:-8], reg_type)
+                    reg_filename = filtobj_dict[imgname]['cat_name'].replace(".ecsv",
+                                                                             "_{}_all.reg".format(reg_type))
                     reg_table.write(reg_filename, format='ascii.csv')
                     log.debug("wrote region file {}".format(reg_filename))
+                    del reg_filename
 
         # Perform cross-match based on X, Y coords
         for imgname in filtobj_dict.keys():
             if imgname != xmatch_ref_imgname:
                 log.info(" ")
                 xmatch_comp_imgname = imgname
-                xmatch_comp_catname = imgname[:-8] + "point-cat-fxm.ecsv"
+                xmatch_comp_catname = filtobj_dict[imgname]['cat_name']
                 filtername_ref = filtobj_dict[xmatch_ref_imgname]['filt_obj'].filters
                 filtername_comp = filtobj_dict[imgname]['filt_obj'].filters
 
@@ -635,11 +636,13 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 xmresults.append("Comparison sourcelist: {} of {} total comparison sources ({}%) cross-matched.".format(len(matching_lines_comp),
                                                                                                                         sl_lengths[1],
                                                                                                                         100.0 * (float(len(matching_lines_comp)) / float(sl_lengths[1]))))
+                # display crossmatch results
                 padding = math.ceil((max([len(xmresults[0]), len(xmresults[1])]) - 18) / 2)
                 log.info("{}Crossmatch results".format(" "*padding))
                 for item in xmresults:
                     log.info(item)
                 log.info("")
+
                 if matching_lines_ref.size > 0:
                     # instantiate diagnostic object to store test results for eventual .json file output
                     diag_obj = du.HapDiagnostic(log_level=log_level)
@@ -686,6 +689,8 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                     if log_level == logutil.logging.DEBUG:
                         reg_filename = "{}_{}_ref_matches.reg".format(filtername_comp, filtername_ref)
                         matched_ref_coords.write(reg_filename, format='ascii.csv')
+                        log.debug("wrote region file {}".format(reg_filename))
+                        del reg_filename
 
                     # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
                     # the cross-matched comparision sources
@@ -704,6 +709,8 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                     if log_level == logutil.logging.DEBUG:
                         reg_filename = "{}_{}_comp_matches.reg".format(filtername_comp, filtername_ref)
                         matched_comp_coords.write(reg_filename, format='ascii.csv')
+                        log.debug("wrote region file {}".format(reg_filename))
+                        del reg_filename
 
                     # compute statistics
                     for colname in ["xcentroid_ref", "ycentroid_ref"]:
@@ -753,9 +760,9 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
     # Housekeeping. Delete the *_point-cat-fxm.ecsv files created for cross-matching, and the
     # filtobj_dict dictionary
     log.info("")
-    for temp_cat_filename in temp_cat_file_list:
-        log.info("removing temporary catalog file {}".format(temp_cat_filename))
-        os.remove(temp_cat_filename)
+    for imgname in filtobj_dict.keys():
+        log.info("removing temporary catalog file {}".format(filtobj_dict[imgname]['cat_name']))
+        os.remove(filtobj_dict[imgname]['cat_name'])
     del filtobj_dict
 
 
@@ -893,8 +900,8 @@ def find_hap_point_sources(filt_obj, log_level=logutil.logging.NOTSET):
 
     Returns
     -------
-    A two-element dictionary containing **filt_obj** and the source catalog keyed 'filt_obj' and 'sources',
-    respectively.
+    A three-element dictionary containing **filt_obj**, the source catalog and the temporary catalog filename
+    keyed 'filt_obj', 'sources' and 'cat_name', respectively.
     """
     # Initiate logging!
     log.setLevel(log_level)
@@ -922,23 +929,9 @@ def find_hap_point_sources(filt_obj, log_level=logutil.logging.NOTSET):
                                                               nsigma, img_obj.bkg_rms_median))
     daofind = DAOStarFinder(fwhm=img_obj.kernel_fwhm, threshold=nsigma * img_obj.bkg_rms_median)
     sources = daofind(image, mask=exclusion_mask)
+    cat_name = filt_obj.product_basename+"_point-cat-fxm.ecsv"
 
-    # # Compute RA and dec values from x centroid and y centroid and add them as new columns just to the right
-    # # of y centroid.
-    # ra, dec = transform_list_xy_to_ra_dec(sources['xcentroid'],
-    #                                       sources['ycentroid'],
-    #                                       filt_obj.drizzle_filename)
-    # ra_col = Column(name="RA", data=ra, dtype=np.float64)
-    # dec_col = Column(name="DEC", data=dec, dtype=np.float64)
-    # sources.add_column(ra_col, index=3)
-    # sources.add_column(dec_col, index=4)
-
-    # write source catalog to file for use by cross-match subroutine.
-    # cat_filename = "{}_point-cat-fxm.ecsv".format(filt_obj.product_basename)
-    # sources.write(cat_filename, format="ascii.ecsv")
-    # log.info("Wrote source catalog {}".format(cat_filename))
-
-    return {"filt_obj": filt_obj, "sources": sources}
+    return {"filt_obj": filt_obj, "sources": sources, "cat_name": cat_name}
 
 
 # ----------------------------------------------------------------------------------------------------------------------
