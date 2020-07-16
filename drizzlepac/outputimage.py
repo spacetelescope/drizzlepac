@@ -804,9 +804,7 @@ def writeSingleFITS(data,wcs,output,template,clobber=True,verbose=True,
     if outextver == 0: outextver = 1
     scihdr['EXTNAME'] = outextname.upper()
     scihdr['EXTVER'] = outextver
-
-    for card in wcshdr.cards:
-        scihdr[card.keyword] = (card.value, card.comment)
+    scihdr.update(wcshdr)
 
     # Create PyFITS HDUList for all extensions
     outhdu = fits.HDUList()

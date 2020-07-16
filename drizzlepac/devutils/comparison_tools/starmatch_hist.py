@@ -97,7 +97,9 @@ def read_cat_file(catfile):
     elif catfile.endswith("segment-cat.ecsv"):
         ecsvData = Table.read(catfile, format='ascii.ecsv') #now will read in and process HAP catalog data
         data = numpy.stack((ecsvData["X-Centroid"].data, ecsvData["Y-Centroid"].data), axis=-1)
-
+    elif catfile.endswith("point-cat-fxm.ecsv"):
+        ecsvData = Table.read(catfile, format='ascii.ecsv') #now will read in and process HAP catalog data
+        data = numpy.stack((ecsvData["xcentroid_ref"].data, ecsvData["ycentroid_ref"].data), axis=-1)
     else:
         try:
             daoData = Table.read(catfile, format='ascii.daophot') #now will read in and process daophot data
