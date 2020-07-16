@@ -11,7 +11,6 @@ import numpy as np
 from stsci.tools import logutil
 
 from .pandas_utils import PandasDFReader
-from . import graph_utils
 from .graph_utils import HAPFigure
 
 
@@ -115,8 +114,6 @@ RESIDS_COLUMNS = ['residuals.x',
                   'residuals.ref_y']
 TOOLSEP_START = '{'
 TOOLSEP_END = '}'
-    
-FIGURE_TOOLS = graph_utils.FIGURE_TOOLS_BASE
 
 def build_vector_plot(sourceCDS, **plot_dict):
     """Create figure object for plotting desired columns as a scatter plot with circles
@@ -222,8 +219,7 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
     # Data point figures
     p1 = HAPFigure(title='RMS Values',
                    x_label="RMS_X (pixels)",
-                   y_label="RMS_Y (pixels)",
-                   tools=FIGURE_TOOLS)
+                   y_label="RMS_Y (pixels)")
 
     p1.build_glyph('circle', 
                    x=RESULTS_COLUMNS[0], 
@@ -236,8 +232,7 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
     # Data point figures
     p2 = HAPFigure(title='Offsets',
                    x_label="Shift X (pixels)",
-                   y_label="Shift Y (pixels)",
-                   tools=FIGURE_TOOLS)
+                   y_label="Shift Y (pixels)")
 
     p2.build_glyph('circle', 
                    x=RESULTS_COLUMNS[2], 
@@ -248,8 +243,7 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
 
     p3 = HAPFigure(title='Rotation',
                    x_label="Number of matched sources",
-                   y_label="Rotation (degrees)",
-                   tools=FIGURE_TOOLS)
+                   y_label="Rotation (degrees)")
 
     p3.build_glyph('circle', 
                    x=RESULTS_COLUMNS[8], 
@@ -260,8 +254,7 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
 
     p4 = HAPFigure(title='Scale',
                    x_label="Number of matched sources",
-                   y_label="Scale",
-                   tools=FIGURE_TOOLS)
+                   y_label="Scale")
 
     p4.build_glyph('circle', 
                    x=RESULTS_COLUMNS[8], 
@@ -272,8 +265,7 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
 
     p5 = HAPFigure(title='Skew',
                    x_label="Number of matched sources",
-                   y_label="Skew (degrees)",
-                   tools=FIGURE_TOOLS)
+                   y_label="Skew (degrees)")
 
     p5.build_glyph('circle', 
                    x=RESULTS_COLUMNS[8], 
