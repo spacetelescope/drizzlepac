@@ -89,7 +89,7 @@ class PandasDFReader:
 
         return column_data
 
-    def get_columns_HDF5(self, column_names, do_drop=True):
+    def get_columns_HDF5(self, column_names, do_drop=False):
         """ Method to do the actual reading of dataframe and get and return the
             data in the specified columns.
 
@@ -100,7 +100,6 @@ class PandasDFReader:
 
             do_drop : bool, optional
             Indicates whether or not rows with NaNs should be dropped.
-            TO DO: Deprecated or ???
 
             Returns
             -------

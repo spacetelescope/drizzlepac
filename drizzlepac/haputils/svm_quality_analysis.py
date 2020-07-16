@@ -1512,24 +1512,6 @@ def build_svm_plots(data_source, output_basename=''):
     else:    
         output_basename = "{}_svm_qa".format(output_basename)
         
-    # Start with gaia_comparison
-    gaia_col_names = HOVER_COLUMNS + ['distribution_characterization_statistics.Number_of_GAIA_sources',
-                                    'distribution_characterization_statistics.X_centroid',
-                                    'distribution_characterization_statistics.X_offset',
-                                    'distribution_characterization_statistics.X_standard_deviation',
-                                    'distribution_characterization_statistics.Y_centroid',
-                                    'distribution_characterization_statistics.Y_offset',
-                                    'distribution_characterization_statistics.Y_standard_deviation',
-                                    'distribution_characterization_statistics.maximum_neighbor_distance',
-                                    'distribution_characterization_statistics.mean_neighbor_distance',
-                                    'distribution_characterization_statistics.minimum_neighbor_distance',
-                                    'distribution_characterization_statistics.standard_deviation_of_neighbor_distances']
-
-    gaia_cols = get_pandas_data(data_source, gaia_col_names)
-
-    gaia_plots_name = build_gaia_plots(gaia_cols, gaia_col_names, 
-                                  output_basename=output_basename)
-    
     # Generate plots for point-segment catalog cross-match comparisons
     xmatch_col_names = HOVER_COLUMNS + ['Cross-match_details.number_of_cross-matches',
                                         'Cross-match_details.point_catalog_filename',
@@ -1560,99 +1542,6 @@ def build_svm_plots(data_source, output_basename=''):
 # -----------------------------------------------------------------------------
 # Functions for generating each data plot
 #    
-def build_gaia_plots(gaiaCDS, data_cols, output_basename='svm_qa'):
-    """
-    Generate the plots for evaluating the distribution of GAIA catalog sources 
-    in the field-of-view of each product.
-    
-    Parameters
-    ----------
-    gaiaCDS : Pandas ColumnDataSource 
-        This object contains all the columns relevant to the plots.
-    
-    data_cols : list
-        The list of column names for the columns read in to the `gaiaCDS` object.
-        
-    output_basename : str
-        String to use as the start of the filename for the output plot pages.
-
-    Returns
-    -------
-    output : str
-        Name of HTML file where the plot was saved.
-
-    """  
-    
-    output_basename = "{}_gaia_comparison".format(output_basename)
-
-    if not output_basename.endswith('.html'):
-        output = output_basename + '.html'
-    else:
-        output = output_basename    
-    # Set the output file immediately as advised by Bokeh.
-    output_file(output)
-
-    num_hover_cols = len(HOVER_COLUMNS)
-    
-    colormap = [qa.DETECTOR_LEGEND[x] for x in gaiaCDS.data[data_cols[1]]]
-    gaiaCDS.data['colormap'] = colormap
-    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(gaiaCDS.data[data_cols[0]], 
-                                         gaiaCDS.data[data_cols[1]])]
-    gaiaCDS.data[qa.INSTRUMENT_COLUMN] = inst_det
-    
-    plot_list = []
-
-    hist4, edges4 = np.histogram(gaiaCDS.data[data_cols[num_hover_cols]], bins=50)
-    title4 = 'Number of GAIA sources in Field'
-    p4 = [plot_histogram(title4, hist4, edges4, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='Number of GAIA sources', ylabel='Number of products')]
-    plot_list += p4
-
-    p0 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 1], 
-                            y=data_cols[num_hover_cols + 4],
-                           source=gaiaCDS,  
-                           title='Centroid of GAIA Sources in Field',
-                           x_label="X Centroid (pixels)",
-                           y_label='Y Centroid (pixels)',
-                           tips=[3, 0, 1, 2, 8],
-                           colormap=True, legend_group=qa.INSTRUMENT_COLUMN)]
-    plot_list += p0
-
-    p1 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 2], 
-                            y=data_cols[num_hover_cols + 5],
-                           source=gaiaCDS,  
-                           title='Offset of Centroid of GAIA Sources in Field',
-                           x_label="X Offset (pixels)",
-                           y_label='Y Offset (pixels)',
-                           tips=[3, 0, 1, 2, 8],
-                           colormap=True, legend_group=qa.INSTRUMENT_COLUMN)]
-    plot_list += p1
-
-    p2 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 3], 
-                            y=data_cols[num_hover_cols + 6],
-                           source=gaiaCDS,  
-                           title='Standard Deviation of GAIA Source Positions in Field',
-                           x_label="STD(X) (pixels)",
-                           y_label='STD(Y) (pixels)',
-                           tips=[3, 0, 1, 2, 8],
-                           colormap=True, legend_group=qa.INSTRUMENT_COLUMN)]
-    plot_list += p2
-
-    # Generate histogram for mean neighbor distance
-    hist3, edges3 = np.histogram(gaiaCDS.data[data_cols[-3]], bins=50)
-    title3 = 'Mean distance between GAIA sources in Field'
-    p3 = [plot_histogram(title3, hist3, edges3, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='separation (pixels)', ylabel='Number of products')]
-    plot_list += p3
-
-    
-    # Display!
-    save(column(plot_list))
-    
-    # Return the name of the plot file just created
-    return output
 
 def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
     """
@@ -1732,6 +1621,13 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
 # Utility functions for plotting
 #    
    
+# MDD Deprecated - only used by build_crossmatch_plots in this module which 
+# have not been migrated.  The get_pandas_data in svm_quality_graphics.py
+# should be used on migrated code.  NOTE: The returned value  from the
+# migrated version of get_pandas_data is a DataFrame
+# and not a ColumnDataSource.   I suggest you do not convert the DataFrame
+# into a ColumnDataSource until you are ready to plot as this is really
+# what the ColumnDataSource is there to support (IMHO).
 def get_pandas_data(data_source, data_columns):
     """Load the harvested data, stored in a CSV file, into local arrays.
 
@@ -1778,6 +1674,9 @@ def get_pandas_data(data_source, data_columns):
     return dataDF
     
     
+# MDD Deprecated - only used by build_crossmatch_plots which have not been migrated.
+# This is only still here if you want to run the graphics in this routine to see
+# what the code does.  This routine should NOT be migrated.
 def plot_histogram(title, hist, edges, y_start=0, 
                     fill_color='navy', background_fill_color='#fafafa', 
                     xlabel='', ylabel=''):

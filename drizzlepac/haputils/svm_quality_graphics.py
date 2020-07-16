@@ -119,6 +119,10 @@ def build_svm_plots(data_source, output_basename='', display_plot=False):
     # added by the pandas_utils
     gaia_cols_DF = get_pandas_data(data_source, gaia_col_names)
 
+    # Rename the columns to abbreviated text for ease of management
+    for old_col_name, new_col_name in gaia_col_names.items():
+        gaia_cols_DF.rename(columns={old_col_name: new_col_name}, inplace=True)
+
     gaia_plots_name = build_gaia_plots(gaia_cols_DF, list(gaia_col_names.values()), display_plot,
                                        output_basename=output_basename)
 
@@ -396,17 +400,9 @@ def get_pandas_data(data_source, data_columns):
     """
 
     # Instantiate a Pandas Dataframe Reader (lazy instantiation)
-    # df_handle = PandasDFReader_CSV("svm_qa_dataframe.csv")
     df_handle = PandasDFReader(data_source, log_level=logutil.logging.NOTSET)
 
     # Get the relevant column data
-    if data_source.endswith(".h5"):
-        data_colsDF = df_handle.get_columns_HDF5(data_columns)
-    else:
-        data_colsDF = df_handle.get_columns_CSV(data_columns)
-
-    # Rename the columns to abbreviated text for ease of management
-    for old_col_name, new_col_name in data_columns.items():
-        data_colsDF.rename(columns={old_col_name: new_col_name}, inplace=True)
+    data_colsDF = df_handle.get_columns_HDF5(data_columns)
 
     return data_colsDF

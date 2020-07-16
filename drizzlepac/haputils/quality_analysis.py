@@ -563,6 +563,10 @@ plotted by Segment to appear as an arrow head on each segment.
 """
 
 
+# MDD Deprecated
+# This is only still here if you want to run the graphics in this routine to see
+# what the code does.  This routine has already been migrated in a mildly changed
+# form to graph_utils.py.
 def build_tooltips(tips):
     """Return list of tuples for tooltips to use in hover tool.
 
@@ -581,6 +585,16 @@ def build_tooltips(tips):
     return tools
 
 
+# *** We should think about having a more general get_pandas_data for
+# both astrometry and svm graphics. ***
+# MDD Deprecated maybe - This routine returns two dataframes so this may
+# be desired for the "astrometry" routines which should continue to live in
+# this module. 
+# NOTE: The returned value from the
+# migrated version of get_pandas_data is a DataFrame
+# and not a ColumnDataSource.   I suggest you do not convert the DataFrame
+# into a ColumnDataSource until you are ready to plot as this is really
+# what the ColumnDataSource is there to support (IMHO).
 def get_pandas_data(pandas_filename):
     """Load the harvested data, stored in a CSV file, into local arrays.
 
@@ -615,12 +629,10 @@ def get_pandas_data(pandas_filename):
         fit_data = df_handle.get_columns_CSV(HOVER_COLUMNS + RESULTS_COLUMNS)
         resids_data = df_handle.get_columns_CSV(RESIDS_COLUMNS)
 
-    fitCDS = ColumnDataSource(fit_data)
-    residsCDS = ColumnDataSource(resids_data)
-
-    return fitCDS, residsCDS
+    return fit_data, resids_data
 
 
+# MDD Deprecated - When generate_summary_plots() is upgraded. This code can be deleted.
 def build_circle_plot(**plot_dict):
     """Create figure object for plotting desired columns as a scatter plot with circles
 
@@ -708,6 +720,7 @@ def build_circle_plot(**plot_dict):
     return p1
 
 
+# This routine has been fully upgraded..
 def build_vector_plot(sourceCDS, **plot_dict):
     """Create figure object for plotting desired columns as a scatter plot with circles
 
@@ -748,6 +761,7 @@ def build_vector_plot(sourceCDS, **plot_dict):
     return p1
 
 
+# This routine has not been touched and needs to be upgraded.
 def generate_summary_plots(fitCDS, display_plot, output='cal_qa_results.html'):
     """Generate the graphics associated with this particular type of data.
 
@@ -865,6 +879,7 @@ def generate_summary_plots(fitCDS, display_plot, output='cal_qa_results.html'):
     return output
 
 
+# This is a fully upgraded function. 
 def generate_residual_plots(residsCDS, filename, display_plot, output_dir=None, output=''):
     rootname = '_'.join(filename.split("_")[:-1])
     output = '{}_vectors_{}'.format(rootname, output)
@@ -936,12 +951,15 @@ def generate_residual_plots(residsCDS, filename, display_plot, output_dir=None, 
     return output
 
 
+# MDD I only changed this routine so DataFrames are returned from get_pandas_data in this module.
 def build_astrometry_plots(pandas_file,
                            output_dir=None,
                            output='cal_qa_results.html',
                            display_plot=False):
 
-    fitCDS, residsCDS = get_pandas_data(pandas_file)
+    fit_DF, resids_DF = get_pandas_data(pandas_file)
+    fitCDS = ColumnDataSource(fit_DF)
+    residsCDS = ColumnDataSource(resids_DF)
 
     if output_dir is not None:
         summary_filename = os.path.join(output_dir, output)
