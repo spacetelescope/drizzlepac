@@ -9,6 +9,7 @@ import collections
 import glob
 import os
 import pdb
+import re
 import sys
 
 # Related third party imports
@@ -284,6 +285,31 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
         if not header_ingested:
             for header_item in json_data['header'].keys():
                 ingest_dict["data"]["header."+header_item] = json_data['header'][header_item]
+
+            # use regex to find additional drizzle header keywords to remove
+            header_patterns_to_remove = ["D\d+VER",
+                                         "D\d+GEOM",
+                                         "D\d+DATA",
+                                         "D\d+DEXP",
+                                         "D\d+OUDA",
+                                         "D\d+OUWE",
+                                         "D\d+OUCO",
+                                         "D\d+MASK",
+                                         "D\d+WTSC",
+                                         "D\d+KERN",
+                                         "D\d+PIXF",
+                                         "D\d+COEF",
+                                         "D\d+OUUN",
+                                         "D\d+FVAL",
+                                         "D\d+WKEY",
+                                         "D\d+SCAL",
+                                         "D\d+ISCL"]
+            header_items_to_remove = []
+            for pattern in header_patterns_to_remove:
+                r = re.compile(pattern)
+                header_items_to_remove += list(filter(r.match, json_data['header'].keys()))
+            for header_item_to_remove in header_items_to_remove:
+                del(ingest_dict["data"]["header."+header_item_to_remove])
             header_ingested = True
 
         # add information from "general information" section to ingest_dict just once
