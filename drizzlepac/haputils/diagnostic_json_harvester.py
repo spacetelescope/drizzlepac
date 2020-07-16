@@ -282,8 +282,24 @@ def make_dataframe_line(json_filename_list, log_level=logutil.logging.INFO):
         json_data = du.read_json_file(json_filename)
         # add information from "header" section to ingest_dict just once
         if not header_ingested:
+            # filter out ALL header keywords not included in 'header_keywords_to_keep'
+            header_keywords_to_keep = ['APERTURE',
+                                       'CHINJECT',
+                                       'DATE-OBS',
+                                       'DEC_TARG',
+                                       'EXPTIME',
+                                       'FGSLOCK',
+                                       'GYROMODE',
+                                       'MTFLAG',
+                                       'OBSKEY',
+                                       'OBSTYPE',
+                                       'RA_TARG',
+                                       'SCAN_TYP',
+                                       'SUBARRAY',
+                                       'TIME-OBS']
             for header_item in json_data['header'].keys():
-                ingest_dict["data"]["header."+header_item] = json_data['header'][header_item]
+                if header_item in header_keywords_to_keep:
+                    ingest_dict["data"]["header."+header_item] = json_data['header'][header_item]
             header_ingested = True
 
         # add information from "general information" section to ingest_dict just once
