@@ -31,6 +31,7 @@ import collections
 from datetime import datetime
 import glob
 import json
+import math
 import os
 import pdb
 import pickle
@@ -41,21 +42,21 @@ import time
 from astropy.coordinates import SkyCoord
 from astropy.io import ascii, fits
 from astropy.stats import sigma_clipped_stats
-from astropy.table import Table
-from itertools import chain
-import numpy as np
-from scipy.spatial import KDTree
-
+from astropy.table import Table, Column
 from bokeh.layouts import row, column
 from bokeh.plotting import figure, output_file, save
 from bokeh.models import ColumnDataSource, Label
 from bokeh.models.tools import HoverTool
-
-
+from itertools import chain
+import numpy as np
+from photutils import DAOStarFinder
+from scipy import ndimage
+from scipy.spatial import KDTree
 
 # Local application imports
 from drizzlepac import util, wcs_functions
 from drizzlepac.haputils import hla_flag_filter
+from drizzlepac.haputils import catalog_utils
 from drizzlepac.haputils import astrometric_utils as au
 import drizzlepac.haputils.diagnostic_utils as du
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
@@ -516,6 +517,334 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
 # ------------------------------------------------------------------------------------------------------------
 
 
+def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_time_since_epoch=None,
+                                     log_level=logutil.logging.NOTSET):
+    """Compare X, Y positions of cross matched sources from different filter-level products
+
+    Parameters
+    ----------
+    total_obj_list : list
+        list of drizzlepac.haputils.Product.TotalProduct objects to process
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'NOTSET'.
+
+    Returns
+    -------
+    Nothing
+    """
+    # Initiate logging!
+    log.setLevel(log_level)
+
+    log.info('\n\n*****     Begin Quality Analysis Test: compare_interfilter_crossmatches.     *****\n')
+    # Check to make sure there's at last 2 filter-level products. If not, return.
+    num_filter_prods = 0
+    for total_obj in total_obj_list:
+        num_filter_prods += len(total_obj.fdp_list)
+    if num_filter_prods == 1:
+        log.error("At least 2 filter-level products are necessary to perform analysis of inter-filter "
+                  "cross matched sources. Only 1 filter-level product was found. ")
+        return
+    elif num_filter_prods == 0:
+        log.error("At least 2 filter-level products are necessary to perform analysis of inter-filter "
+                  "cross matched sources. No filter-level products were found. ")
+        return
+    else:
+        log.info("Found {} filter-level products for use in analysis of inter-filter cross matched source"
+                 " positions".format(num_filter_prods))
+
+        filtobj_dict = {}
+        xmatch_ref_imgname = None
+        max_sources = 0
+        ctr = 1
+        for total_obj in total_obj_list:
+            for filt_obj in total_obj.fdp_list:
+                log.info("{} {}: {} {}".format(">"*20, ctr, filt_obj.drizzle_filename, "<"*20))
+                filtobj_dict[filt_obj.drizzle_filename] = find_hap_point_sources(filt_obj, log_level=log_level)
+                n_sources = len(filtobj_dict[filt_obj.drizzle_filename]['sources'])
+                log.info("Identified {} sources in {}".format(n_sources, filt_obj.drizzle_filename))
+                if n_sources > max_sources:
+                    max_sources = n_sources
+                    xmatch_ref_imgname = filt_obj.drizzle_filename
+                    xmatch_ref_catname = filtobj_dict[filt_obj.drizzle_filename]['cat_name']
+                ctr += 1
+                log.info("")
+        log.info("Crossmatch reference image {} contains {} sources.".format(xmatch_ref_imgname, max_sources))
+
+        # Perform coord transform and write temp cat files for cross match
+        temp_cat_file_list = []
+        log.info("")
+        for imgname in filtobj_dict.keys():
+            filtobj_dict[imgname] = transform_coords(filtobj_dict[imgname],
+                                                     xmatch_ref_imgname,
+                                                     log_level=log_level)
+
+            filtobj_dict[imgname]["sources"].write(filtobj_dict[imgname]['cat_name'], format="ascii.ecsv")
+            log.info("Wrote temporary source catalog {}".format(filtobj_dict[imgname]['cat_name']))
+
+            # write out ds9 region files if log level is 'debug'
+            if log_level == logutil.logging.DEBUG:
+                out_reg_stuff = {"xyorig": ['xcentroid', 'ycentroid'],
+                                 "rd": ['ra', 'dec'],
+                                 "xyref": ['xcentroid_ref', 'ycentroid_ref']}
+                for reg_type in out_reg_stuff.keys():
+                    reg_table = filtobj_dict[imgname]["sources"].copy()
+                    reg_table.keep_columns(out_reg_stuff[reg_type])
+                    reg_table.rename_column(out_reg_stuff[reg_type][0], "#"+out_reg_stuff[reg_type][0])
+                    reg_filename = filtobj_dict[imgname]['cat_name'].replace(".ecsv",
+                                                                             "_{}_all.reg".format(reg_type))
+                    reg_table.write(reg_filename, format='ascii.csv')
+                    log.debug("wrote region file {}".format(reg_filename))
+                    del reg_filename
+
+        # Perform cross-match based on X, Y coords
+        for imgname in filtobj_dict.keys():
+            if imgname != xmatch_ref_imgname:
+                log.info(" ")
+                xmatch_comp_imgname = imgname
+                xmatch_comp_catname = filtobj_dict[imgname]['cat_name']
+                filtername_ref = filtobj_dict[xmatch_ref_imgname]['filt_obj'].filters
+                filtername_comp = filtobj_dict[imgname]['filt_obj'].filters
+
+                # Perform crossmatching; get lists of crossmatched sources in the reference and comparision
+                log.info("{} Crossmatching {} -> {} {}".format(">" * 20, xmatch_comp_catname,
+                                                               xmatch_ref_catname, "<" * 20))
+                sl_names = [xmatch_ref_catname, xmatch_comp_catname]
+                img_names = [xmatch_ref_imgname, xmatch_comp_imgname]
+                sl_lengths = [max_sources, len(filtobj_dict[xmatch_comp_imgname]["sources"])]
+                matching_lines_ref, matching_lines_comp = csl.getMatchedLists(sl_names, img_names, sl_lengths,
+                                                                              log_level=log_level)
+
+                # Report number and percentage of the total number of detected ref and comp sources that were
+                # matched
+
+                xmresults = []
+                xmresults.append("Reference sourcelist:  {} of {} total reference sources ({}%) cross-matched.".format(len(matching_lines_ref),
+                                                                                                                       sl_lengths[0],
+                                                                                                                       100.0 * (float(len(matching_lines_ref)) / float(sl_lengths[0]))))
+                xmresults.append("Comparison sourcelist: {} of {} total comparison sources ({}%) cross-matched.".format(len(matching_lines_comp),
+                                                                                                                        sl_lengths[1],
+                                                                                                                        100.0 * (float(len(matching_lines_comp)) / float(sl_lengths[1]))))
+                # display crossmatch results
+                padding = math.ceil((max([len(xmresults[0]), len(xmresults[1])]) - 18) / 2)
+                log.info("{}Crossmatch results".format(" "*padding))
+                for item in xmresults:
+                    log.info(item)
+                log.info("")
+
+                if matching_lines_ref.size > 0:
+                    # instantiate diagnostic object to store test results for eventual .json file output
+                    diag_obj = du.HapDiagnostic(log_level=log_level)
+                    diag_obj.instantiate_from_hap_obj(filtobj_dict[xmatch_comp_imgname]['filt_obj'],
+                                                      data_source="{}.compare_interfilter_crossmatches".format(__taskname__),
+                                                      description="Interfilter cross-matched comparison and reference catalog X and Y values",
+                                                      timestamp=json_timestamp,
+                                                      time_since_epoch=json_time_since_epoch)
+                    json_results_dict = collections.OrderedDict()
+                    json_results_dict["reference catalog filename"] = sl_names[0]
+                    json_results_dict["comparison catalog filename"] = sl_names[1]
+                    json_results_dict['reference catalog length'] = sl_lengths[0]
+                    json_results_dict['comparison catalog length'] = sl_lengths[1]
+                    json_results_dict['number of cross-matches'] = len(matching_lines_ref)
+                    json_results_dict['reference image platescale'] = filtobj_dict[xmatch_ref_imgname]['filt_obj'].meta_wcs.pscale
+
+                    # store cross-match details
+                    diag_obj.add_data_item(json_results_dict, "Interfilter cross-match details",
+                                           descriptions={
+                                               "reference catalog filename": "ECSV point catalog filename",
+                                               "comparison catalog filename": "ECSV segment catalog filename",
+                                               "reference catalog length": "Number of entries in point catalog",
+                                               "comparison catalog length": "Number of entries in segment catalog",
+                                               "number of cross-matches": "Number of cross-matches between point and segment catalogs",
+                                               "reference image platescale": "Platescale of the crossmatch reference image"},
+                                           units={"reference catalog filename": "unitless",
+                                                  "comparison catalog filename": "unitless",
+                                                  "reference catalog length": "unitless",
+                                                  "comparison catalog length": "unitless",
+                                                  "number of cross-matches": "unitless",
+                                                  "reference image platescale": "pixels/arcseconds"})
+
+                    # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
+                    # the cross-matched reference sources
+                    matched_ref_coords = filtobj_dict[xmatch_ref_imgname]["sources"].copy()
+                    matched_ref_coords.keep_columns(['xcentroid_ref', 'ycentroid_ref'])
+
+                    matched_ref_coords = matched_ref_coords[matching_lines_ref]
+
+                    # store reference matched sources catalog
+                    diag_obj.add_data_item(matched_ref_coords, "Interfilter cross-matched reference catalog",
+                                           descriptions={"xcentroid_ref": "xcentroid_ref",
+                                                         "ycentroid_ref": "ycentroid_ref"},
+                                           units={"xcentroid_ref": "pixels", "ycentroid_ref": "pixels"})
+
+                    # write out ds9 region files if log level is 'debug'
+                    if log_level == logutil.logging.DEBUG:
+                        reg_filename = "{}_{}_ref_matches.reg".format(filtername_comp, filtername_ref)
+                        matched_ref_coords.write(reg_filename, format='ascii.csv')
+                        log.debug("wrote region file {}".format(reg_filename))
+                        del reg_filename
+
+                    # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
+                    # the cross-matched comparision sources
+                    matched_comp_coords = filtobj_dict[imgname]["sources"].copy()
+                    matched_comp_coords.keep_columns(['xcentroid_ref', 'ycentroid_ref'])
+                    matched_comp_coords = matched_comp_coords[matching_lines_comp]
+
+                    # store comparison matched sources catalog
+                    diag_obj.add_data_item(matched_comp_coords,
+                                           "Interfilter cross-matched comparison catalog",
+                                           descriptions={"xcentroid_ref": "xcentroid_ref",
+                                                         "ycentroid_ref": "ycentroid_ref"},
+                                           units={"xcentroid_ref": "pixels", "ycentroid_ref": "pixels"})
+
+                    # write out ds9 region file if log level is 'debug'
+                    if log_level == logutil.logging.DEBUG:
+                        reg_filename = "{}_{}_comp_matches.reg".format(filtername_comp, filtername_ref)
+                        matched_comp_coords.write(reg_filename, format='ascii.csv')
+                        log.debug("wrote region file {}".format(reg_filename))
+                        del reg_filename
+
+                    # compute statistics
+                    for colname in ["xcentroid_ref", "ycentroid_ref"]:
+                        sep = matched_comp_coords[colname] - matched_ref_coords[colname]
+                        # Compute and store statistics on separations
+                        sep_stat_dict = collections.OrderedDict()
+                        sep_stat_dict["Non-clipped min"] = np.min(sep)
+                        sep_stat_dict["Non-clipped max"] = np.max(sep)
+                        sep_stat_dict["Non-clipped mean"] = np.mean(sep)
+                        sep_stat_dict["Non-clipped median"] = np.median(sep)
+                        sep_stat_dict["Non-clipped standard deviation"] = np.std(sep)
+                        sigma = 3
+                        maxiters = 3
+                        clipped_stats = sigma_clipped_stats(sep, sigma=sigma, maxiters=maxiters)
+                        sep_stat_dict["{}x{} sigma-clipped mean".format(maxiters, sigma)] = clipped_stats[0]
+                        sep_stat_dict["{}x{} sigma-clipped median".format(maxiters, sigma)] = clipped_stats[1]
+                        sep_stat_dict["{}x{} sigma-clipped standard deviation".format(maxiters, sigma)] = clipped_stats[2]
+                        sep_stat_dict["Reference image platescale"] = filtobj_dict[xmatch_ref_imgname][
+                            'filt_obj'].meta_wcs.pscale
+
+                        # Store statistics as new data section
+                        diag_obj.add_data_item(sep_stat_dict, "Interfilter cross-matched {} comparison - reference separation statistics".format(colname),
+                                               descriptions={"Non-clipped min": "Non-clipped min difference",
+                                                             "Non-clipped max": "Non-clipped max difference",
+                                                             "Non-clipped mean": "Non-clipped mean difference",
+                                                             "Non-clipped median": "Non-clipped median difference",
+                                                             "Non-clipped standard deviation": "Non-clipped standard deviation of differences",
+                                                             "3x3 sigma-clipped mean": "3x3 sigma-clipped mean difference",
+                                                             "3x3 sigma-clipped median": "3x3 sigma-clipped median difference",
+                                                             "3x3 sigma-clipped standard deviation": "3x3 sigma-clipped standard deviation of differences",
+                                                             "Reference image platescale": "Platescale of the crossmatch reference image"},
+                                               units={"Non-clipped min": "pixels",
+                                                      "Non-clipped max": "pixels",
+                                                      "Non-clipped mean": "pixels",
+                                                      "Non-clipped median": "pixels",
+                                                      "Non-clipped standard deviation": "pixels",
+                                                      "3x3 sigma-clipped mean": "pixels",
+                                                      "3x3 sigma-clipped median": "pixels",
+                                                      "3x3 sigma-clipped standard deviation": "pixels",
+                                                      "Reference image platescale": "pixels/arcseconds"})
+
+                        # display stats
+                        padding = math.ceil((74 - 61) / 2)
+                        log.info("{}Interfilter cross-matched {} comparison - reference separation statistics".format(" "*padding, colname))
+                        max_str_length = 0
+                        for stat_key in sep_stat_dict.keys():
+                            if len(stat_key) > max_str_length:
+                                max_str_length = len(stat_key)
+                        for stat_key in sep_stat_dict.keys():
+                            padding = " " * (max_str_length - len(stat_key))
+                            log.info("{}{}: {} {}".format(padding, stat_key, sep_stat_dict[stat_key],
+                                                          diag_obj.out_dict['data']["Interfilter cross-matched {} comparison - reference separation statistics".format(colname)]['units'][stat_key]))
+                        log.info("")
+                    # write everything out to the json file
+                    json_filename = filtobj_dict[xmatch_comp_imgname]['filt_obj'].drizzle_filename[
+                                    :-9] + "_svm_interfilter_crossmatch.json"
+                    diag_obj.write_json_file(json_filename, clobber=True)
+                else:
+                    filt_names = "{} - {}".format(filtername_comp, filtername_ref)
+                    log.warning("{} interfilter cross match test could not be performed.".format(filt_names))
+
+    # Housekeeping. Delete the *_point-cat-fxm.ecsv files created for cross-matching, and the
+    # filtobj_dict dictionary
+    log.info("")
+    for imgname in filtobj_dict.keys():
+        log.info("removing temporary catalog file {}".format(filtobj_dict[imgname]['cat_name']))
+        os.remove(filtobj_dict[imgname]['cat_name'])
+    del filtobj_dict
+
+
+# ------------------------------------------------------------------------------------------------------------
+
+
+def transform_coords(filtobj_subdict, xmatch_ref_imgname, log_level=logutil.logging.NOTSET):
+    """Transform comparision image frame of reference x, y coords to RA and dec, then back to x, y coords in
+    the cross-match reference image's frame of reference
+
+    Parameters
+    ----------
+    filtobj_subdict : dict
+        dictionary containing a drizzlepac.haputils.Product.FilterProduct and corresponding source catalog
+        generated earlier in the run by **find_hap_point_sources**.
+
+    xmatch_ref_imgname : str
+        name of the reference image whose WCS info will be used to convert RA and dec values into x, y coords
+        in a common frame
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'NOTSET'.
+
+    Returns
+    -------
+    filtobj_dict : dict
+        the input **filtobj_dict** dictionary with the 'sources' table updated to include freshly computed ra,
+        dec, x_centroid_ref, and y_centroid_ref columns
+    """
+    # Initiate logging!
+    log.setLevel(log_level)
+
+    # 1: stack up xcentroid and ycentorid columns from sources table
+    xy_centroid_values = np.stack((filtobj_subdict['sources']['xcentroid'],
+                                   filtobj_subdict['sources']['ycentroid']), axis=1)
+
+    # 2: perform coordinate transforms.
+    origin = 0
+    fits_exten = "[1]"
+    imgname = filtobj_subdict['filt_obj'].drizzle_filename
+
+    # 2a: perform xcentroid, ycentroid -> ra, dec transform
+    ra_dec_values = hla_flag_filter.xytord(xy_centroid_values, imgname, fits_exten, origin=origin)
+
+    # 2b: perform ra, dec -> x_centroid_ref, y_centroid_ref transform
+    xy_centroid_ref_values = hla_flag_filter.rdtoxy(ra_dec_values, xmatch_ref_imgname, fits_exten,
+                                                    origin=origin)
+
+    # 3: add new columns to filtobj_subdict['sources'] table
+    title_data_dict = collections.OrderedDict()
+    title_data_dict["ra"] = ra_dec_values[:, 0]
+    title_data_dict["dec"] = ra_dec_values[:, 1]
+    title_data_dict["xcentroid_ref"] = xy_centroid_ref_values[:, 0]
+    title_data_dict["ycentroid_ref"] = xy_centroid_ref_values[:, 1]
+    col_ctr = 3
+    for col_name in title_data_dict.keys():
+        col_to_add = Column(name=col_name, data=title_data_dict[col_name], dtype=np.float64)
+        filtobj_subdict['sources'].add_column(col_to_add, index=col_ctr)
+        col_ctr += 1
+
+    return filtobj_subdict
+
+
 def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
                       log_level=logutil.logging.NOTSET):
     """Creates a catalog of all GAIA sources in the footprint of a specified HAP final product image, and
@@ -570,6 +899,58 @@ def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
     # Clean up
     del diag_obj
     del gaia_table
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def find_hap_point_sources(filt_obj, log_level=logutil.logging.NOTSET):
+    """Identifies point sources in HAP imagery products and returns a dictionary containg **filt_obj** and
+    a catalog of identified sources.
+
+    Parameters
+    ----------
+    filt_obj : drizzlepac.haputils.Product.FilterProduct
+        HAP filter product to process
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'NOTSET'.
+
+    Returns
+    -------
+    A three-element dictionary containing **filt_obj**, the source catalog and the temporary catalog filename
+    keyed 'filt_obj', 'sources' and 'cat_name', respectively.
+    """
+    # Initiate logging!
+    log.setLevel(log_level)
+
+    # Initialize image object
+    img_obj = catalog_utils.CatalogImage(filt_obj.drizzle_filename, log_level)
+    img_obj.compute_background(filt_obj.configobj_pars.get_pars("catalog generation")['bkg_box_size'],
+                               filt_obj.configobj_pars.get_pars("catalog generation")['bkg_filter_size'])
+    img_obj.build_kernel(filt_obj.configobj_pars.get_pars("catalog generation")['bkg_box_size'],
+                         filt_obj.configobj_pars.get_pars("catalog generation")['bkg_filter_size'],
+                         filt_obj.configobj_pars.get_pars("catalog generation")['dao']['TWEAK_FWHMPSF'])
+
+    # Perform background subtraction
+    image = img_obj.data.copy()
+    image -= img_obj.bkg_background_ra
+
+    # create mask to reject any sources located less than 10 pixels from a image/chip edge
+    wht_image = img_obj.data.copy()
+    binary_inverted_wht = np.where(wht_image == 0, 1, 0)
+    exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
+
+    # Identify sources
+    nsigma = filt_obj.configobj_pars.get_pars("alignment")["generate_source_catalogs"]["nsigma"]
+    log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(img_obj.kernel_fwhm,
+                                                              nsigma, img_obj.bkg_rms_median))
+    daofind = DAOStarFinder(fwhm=img_obj.kernel_fwhm, threshold=nsigma * img_obj.bkg_rms_median)
+    sources = daofind(image, mask=exclusion_mask)
+    cat_name = filt_obj.product_basename+"_point-cat-fxm.ecsv"
+
+    return {"filt_obj": filt_obj, "sources": sources, "cat_name": cat_name}
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -1269,7 +1650,8 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, hap_imgname, cattype, l
 def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_gaia_sources=True,
                          run_compare_hla_sourcelists=True, run_compare_ra_dec_crossmatches=True,
                          run_characterize_gaia_distribution=True, run_compare_photometry=True,
-                         run_report_wcs=True, log_level=logutil.logging.NOTSET):
+                         run_compare_interfilter_crossmatches=True, run_report_wcs=True,
+                         log_level=logutil.logging.NOTSET):
     """Run the quality analysis functions
 
     Parameters
@@ -1294,6 +1676,9 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
 
     run_compare_photometry : bool, optional
         Run 'compare_photometry' test? Default value is True.
+
+    run_compare_interfilter_crossmatches : bool, optional
+        Run 'compare_filter_cross_match' test? Default value is True.
 
     run_report_wcs : bool, optional
         Run 'report_wcs' test? Devault value is True.
@@ -1374,11 +1759,15 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
         compare_photometry(filter_drizzle_list, json_timestamp=json_timestamp,
                            json_time_since_epoch=json_time_since_epoch, log_level=log_level)
 
+    # Compare inter-filter cross matched HAP sources
+    if run_compare_interfilter_crossmatches:
+        compare_interfilter_crossmatches(total_obj_list, json_timestamp=json_timestamp,
+                                         json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+
     # Report WCS info
     if run_report_wcs:
         report_wcs(total_obj_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch,
                    log_level=log_level)
-
 
 # ============================================================================================================
 
@@ -1404,6 +1793,9 @@ if __name__ == "__main__":
     parser.add_argument('-fgs', '--run_find_gaia_sources', required=False, action='store_true',
                         help="Determine the number of GAIA sources in the footprint of a specified HAP final "
                              "product image")
+    parser.add_argument('-fxm', '--run_compare_interfilter_crossmatches', required=False, action='store_true',
+                        help="Compare positions of cross matched sources from different filter-level "
+                             "products")
     parser.add_argument('-hla', '--run_compare_hla_sourcelists', required=False, action='store_true',
                         help="Compare HAP sourcelists to their HLA classic counterparts")
     parser.add_argument('-wcs', '--run_report_wcs', required=False, action='store_true',
@@ -1451,11 +1843,13 @@ if __name__ == "__main__":
         user_args.run_compare_photometry = True
         user_args.run_compare_hla_sourcelists = True
         user_args.run_compare_ra_dec_crossmatches = True
+        user_args.run_compare_interfilter_crossmatches = True
         user_args.run_find_gaia_sources = True
         user_args.run_report_wcs = True
 
     # display status summary indicating which QA steps are turned on and which steps are turned off
-    log.info("{}QA step run status".format(" "*(int(max_step_str_length/2)-6)))
+    toplinestring = "-"*(int(max_step_str_length/2)-6)
+    log.info("{}QA step run status{}".format(toplinestring, toplinestring))
     for kv_pair in user_args._get_kwargs():
         if kv_pair[0] not in ['input_filename', 'run_all', 'log_level']:
             if kv_pair[1]:
@@ -1476,6 +1870,7 @@ if __name__ == "__main__":
                          run_characterize_gaia_distribution=user_args.run_characterize_gaia_distribution,
                          run_compare_hla_sourcelists=user_args.run_compare_hla_sourcelists,
                          run_compare_photometry=user_args.run_compare_photometry,
+                         run_compare_interfilter_crossmatches=user_args.run_compare_interfilter_crossmatches,
                          run_report_wcs=user_args.run_report_wcs,
                          log_level=log_level)
                          
@@ -1497,6 +1892,7 @@ HOVER_COLUMNS = ['gen_info.instrument',
 
 FIGURE_TOOLS = 'pan,wheel_zoom,box_zoom,zoom_in,zoom_out,xbox_select,reset,save'
 
+
 def build_svm_plots(data_source, output_basename=''):
     """Create all the plots for the results generated by these comparisons
     
@@ -1514,21 +1910,20 @@ def build_svm_plots(data_source, output_basename=''):
         
     # Start with gaia_comparison
     gaia_col_names = HOVER_COLUMNS + ['distribution_characterization_statistics.Number_of_GAIA_sources',
-                                    'distribution_characterization_statistics.X_centroid',
-                                    'distribution_characterization_statistics.X_offset',
-                                    'distribution_characterization_statistics.X_standard_deviation',
-                                    'distribution_characterization_statistics.Y_centroid',
-                                    'distribution_characterization_statistics.Y_offset',
-                                    'distribution_characterization_statistics.Y_standard_deviation',
-                                    'distribution_characterization_statistics.maximum_neighbor_distance',
-                                    'distribution_characterization_statistics.mean_neighbor_distance',
-                                    'distribution_characterization_statistics.minimum_neighbor_distance',
-                                    'distribution_characterization_statistics.standard_deviation_of_neighbor_distances']
+                                      'distribution_characterization_statistics.X_centroid',
+                                      'distribution_characterization_statistics.X_offset',
+                                      'distribution_characterization_statistics.X_standard_deviation',
+                                      'distribution_characterization_statistics.Y_centroid',
+                                      'distribution_characterization_statistics.Y_offset',
+                                      'distribution_characterization_statistics.Y_standard_deviation',
+                                      'distribution_characterization_statistics.maximum_neighbor_distance',
+                                      'distribution_characterization_statistics.mean_neighbor_distance',
+                                      'distribution_characterization_statistics.minimum_neighbor_distance',
+                                      'distribution_characterization_statistics.standard_deviation_of_neighbor_distances']
 
     gaia_cols = get_pandas_data(data_source, gaia_col_names)
 
-    gaia_plots_name = build_gaia_plots(gaia_cols, gaia_col_names, 
-                                  output_basename=output_basename)
+    gaia_plots_name = build_gaia_plots(gaia_cols, gaia_col_names, output_basename=output_basename)
     
     # Generate plots for point-segment catalog cross-match comparisons
     xmatch_col_names = HOVER_COLUMNS + ['Cross-match_details.number_of_cross-matches',
@@ -1553,8 +1948,7 @@ def build_svm_plots(data_source, output_basename=''):
 
     xmatch_cols = get_pandas_data(data_source, xmatch_col_names)
 
-    xmatch_plots_name = build_crossmatch_plots(xmatch_cols, xmatch_col_names, 
-                                  output_basename=output_basename)
+    xmatch_plots_name = build_crossmatch_plots(xmatch_cols, xmatch_col_names, output_basename=output_basename)
     
 
 # -----------------------------------------------------------------------------
@@ -1596,63 +1990,64 @@ def build_gaia_plots(gaiaCDS, data_cols, output_basename='svm_qa'):
     
     colormap = [qa.DETECTOR_LEGEND[x] for x in gaiaCDS.data[data_cols[1]]]
     gaiaCDS.data['colormap'] = colormap
-    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(gaiaCDS.data[data_cols[0]], 
-                                         gaiaCDS.data[data_cols[1]])]
+    inst_det = ["{}/{}".format(i, d) for (i, d) in zip(gaiaCDS.data[data_cols[0]],
+                                                       gaiaCDS.data[data_cols[1]])]
     gaiaCDS.data[qa.INSTRUMENT_COLUMN] = inst_det
     
     plot_list = []
 
     hist4, edges4 = np.histogram(gaiaCDS.data[data_cols[num_hover_cols]], bins=50)
     title4 = 'Number of GAIA sources in Field'
-    p4 = [plot_histogram(title4, hist4, edges4, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='Number of GAIA sources', ylabel='Number of products')]
+    p4 = [plot_histogram(title4, hist4, edges4, y_start=0,
+                         fill_color='navy', background_fill_color='#fafafa',
+                         xlabel='Number of GAIA sources', ylabel='Number of products')]
     plot_list += p4
 
-    p0 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 1], 
-                            y=data_cols[num_hover_cols + 4],
-                           source=gaiaCDS,  
-                           title='Centroid of GAIA Sources in Field',
-                           x_label="X Centroid (pixels)",
-                           y_label='Y Centroid (pixels)',
-                           tips=[3, 0, 1, 2, 8],
-                           colormap=True, legend_group=qa.INSTRUMENT_COLUMN)]
+    p0 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 1],
+                               y=data_cols[num_hover_cols + 4],
+                               source=gaiaCDS,
+                               title='Centroid of GAIA Sources in Field',
+                               x_label="X Centroid (pixels)",
+                               y_label='Y Centroid (pixels)',
+                               tips=[3, 0, 1, 2, 8],
+                               colormap=True,
+                               legend_group=qa.INSTRUMENT_COLUMN)]
     plot_list += p0
 
-    p1 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 2], 
-                            y=data_cols[num_hover_cols + 5],
-                           source=gaiaCDS,  
-                           title='Offset of Centroid of GAIA Sources in Field',
-                           x_label="X Offset (pixels)",
-                           y_label='Y Offset (pixels)',
-                           tips=[3, 0, 1, 2, 8],
-                           colormap=True, legend_group=qa.INSTRUMENT_COLUMN)]
+    p1 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 2],
+                               y=data_cols[num_hover_cols + 5],
+                               source=gaiaCDS,
+                               title='Offset of Centroid of GAIA Sources in Field',
+                               x_label="X Offset (pixels)",
+                               y_label='Y Offset (pixels)',
+                               tips=[3, 0, 1, 2, 8],
+                               colormap=True, legend_group=qa.INSTRUMENT_COLUMN)]
     plot_list += p1
 
-    p2 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 3], 
-                            y=data_cols[num_hover_cols + 6],
-                           source=gaiaCDS,  
-                           title='Standard Deviation of GAIA Source Positions in Field',
-                           x_label="STD(X) (pixels)",
-                           y_label='STD(Y) (pixels)',
-                           tips=[3, 0, 1, 2, 8],
-                           colormap=True, legend_group=qa.INSTRUMENT_COLUMN)]
+    p2 = [qa.build_circle_plot(x=data_cols[num_hover_cols + 3],
+                               y=data_cols[num_hover_cols + 6],
+                               source=gaiaCDS,
+                               title='Standard Deviation of GAIA Source Positions in Field',
+                               x_label="STD(X) (pixels)",
+                               y_label='STD(Y) (pixels)',
+                               tips=[3, 0, 1, 2, 8],
+                               colormap=True, legend_group=qa.INSTRUMENT_COLUMN)]
     plot_list += p2
 
     # Generate histogram for mean neighbor distance
     hist3, edges3 = np.histogram(gaiaCDS.data[data_cols[-3]], bins=50)
     title3 = 'Mean distance between GAIA sources in Field'
-    p3 = [plot_histogram(title3, hist3, edges3, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='separation (pixels)', ylabel='Number of products')]
+    p3 = [plot_histogram(title3, hist3, edges3, y_start=0,
+                         fill_color='navy', background_fill_color='#fafafa',
+                         xlabel='separation (pixels)', ylabel='Number of products')]
     plot_list += p3
 
-    
     # Display!
     save(column(plot_list))
     
     # Return the name of the plot file just created
     return output
+
 
 def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
     """
@@ -1689,38 +2084,41 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
     
     colormap = [qa.DETECTOR_LEGEND[x] for x in xmatchCDS.data[data_cols[1]]]
     xmatchCDS.data['colormap'] = colormap
-    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(xmatchCDS.data[data_cols[0]], 
-                                         xmatchCDS.data[data_cols[1]])]
+    inst_det = ["{}/{}".format(i, d) for (i, d) in zip(xmatchCDS.data[data_cols[0]],
+                                                       xmatchCDS.data[data_cols[1]])]
     xmatchCDS.data[qa.INSTRUMENT_COLUMN] = inst_det
     
     plot_list = []
 
     hist0, edges0 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols]], bins=50)
     title0 = 'Number of Point-to-Segment Cross-matched sources'
-    p0 = [plot_histogram(title0, hist0, edges0, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='Number of Cross-matched sources', ylabel='Number of products')]
+    p0 = [plot_histogram(title0, hist0, edges0, y_start=0, fill_color='navy',
+                         background_fill_color='#fafafa', xlabel='Number of Cross-matched sources',
+                         ylabel='Number of products')]
     plot_list += p0
 
     hist1, edges1 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 11]], bins=50)
     title1 = 'Mean Separation (Sigma-clipped) of Point-to-Segment Cross-matched sources'
-    p1 = [plot_histogram(title1, hist1, edges1, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='Mean Separation of Cross-matched sources (arcseconds)', ylabel='Number of products')]
+    p1 = [plot_histogram(title1, hist1, edges1, y_start=0,
+                         fill_color='navy', background_fill_color='#fafafa',
+                         xlabel='Mean Separation of Cross-matched sources (arcseconds)',
+                         ylabel='Number of products')]
     plot_list += p1
     
     hist2, edges2 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 12]], bins=50)
     title2 = 'Median Separation (Sigma-clipped) of Point-to-Segment Cross-matched sources'
-    p2 = [plot_histogram(title2, hist2, edges2, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='Median Separation of Cross-matched sources (arcseconds)', ylabel='Number of products')]
+    p2 = [plot_histogram(title2, hist2, edges2, y_start=0,
+                         fill_color='navy', background_fill_color='#fafafa',
+                         xlabel='Median Separation of Cross-matched sources (arcseconds)',
+                         ylabel='Number of products')]
     plot_list += p2
     
     hist3, edges3 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 13]], bins=50)
     title3 = 'Standard-deviation (sigma-clipped) of Separation of Point-to-Segment Cross-matched sources'
-    p3 = [plot_histogram(title3, hist3, edges3, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='STD(Separation) of Cross-matched sources (arcseconds)', ylabel='Number of products')]
+    p3 = [plot_histogram(title3, hist3, edges3, y_start=0,
+                         fill_color='navy', background_fill_color='#fafafa',
+                         xlabel='STD(Separation) of Cross-matched sources (arcseconds)',
+                         ylabel='Number of products')]
     plot_list += p3
     
     # Save the plot to an HTML file
@@ -1731,7 +2129,8 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
 # -----------------------------------------------------------------------------
 # Utility functions for plotting
 #    
-   
+
+
 def get_pandas_data(data_source, data_columns):
     """Load the harvested data, stored in a CSV file, into local arrays.
 
@@ -1768,7 +2167,6 @@ def get_pandas_data(data_source, data_columns):
     else:
         data_cols = df_handle.get_columns_CSV(data_columns)
 
-
     # Setup the source of the data to be plotted so the axis variables can be
     # referenced by column name in the Pandas dataframe
     dataDF = ColumnDataSource(data_cols)
@@ -1778,18 +2176,15 @@ def get_pandas_data(data_source, data_columns):
     return dataDF
     
     
-def plot_histogram(title, hist, edges, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='', ylabel=''):
-    p = figure(title=title, tools=FIGURE_TOOLS, 
-              background_fill_color=background_fill_color)
-    p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:],
-           fill_color=fill_color, line_color="white", alpha=0.5)
+def plot_histogram(title, hist, edges, y_start=0, fill_color='navy',
+                   background_fill_color='#fafafa', xlabel='', ylabel=''):
+    p = figure(title=title, tools=FIGURE_TOOLS, background_fill_color=background_fill_color)
+    p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], fill_color=fill_color,
+           line_color="white", alpha=0.5)
 
     p.y_range.start = y_start
     p.legend.location = "center_right"
     p.xaxis.axis_label = xlabel
     p.yaxis.axis_label = ylabel
-    p.grid.grid_line_color="white"
+    p.grid.grid_line_color = "white"
     return p
-
