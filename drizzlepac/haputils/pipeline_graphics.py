@@ -4,7 +4,7 @@ import sys
 
 from bokeh.layouts import row, column
 from bokeh.plotting import figure, output_file, save
-from bokeh.models import ColumnDataSource, Label, Range1d
+from bokeh.models import ColumnDataSource, Label, Range1d, Paragraph
 
 import numpy as np
 
@@ -287,7 +287,8 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
                      
     return output
     
-def generate_residual_plots(residsCDS, filename, display_plot=False, output_dir=None, output=''):
+def generate_residual_plots(residsCDS, filename, rms=(0.,0.),
+                            display_plot=False, output_dir=None, output=''):
     rootname = '_'.join(filename.split("_")[:-1])
     output = '{}_vectors_{}'.format(rootname, output)
     if output_dir is not None:
@@ -298,12 +299,13 @@ def generate_residual_plots(residsCDS, filename, display_plot=False, output_dir=
     delta_y = np.array(residsCDS.data['y']) - np.array(residsCDS.data['yr'])
     residsCDS.data['dx'] = delta_x
     residsCDS.data['dy'] = delta_y
-    residsCDS.data['x'] = np.array(residsCDS.data['x']) - min(residsCDS.data['x'])
-    residsCDS.data['y'] = np.array(residsCDS.data['y']) - min(residsCDS.data['y'])
     
     npoints = len(delta_x)
     if npoints < 2:
         return None
+
+    residsCDS.data['x'] = np.array(residsCDS.data['x']) - min(residsCDS.data['x'])
+    residsCDS.data['y'] = np.array(residsCDS.data['y']) - min(residsCDS.data['y'])
 
     # Define Y scale for plots that will be used for all residual plots
     
@@ -312,8 +314,12 @@ def generate_residual_plots(residsCDS, filename, display_plot=False, output_dir=
     max_range = round(max(xmax, ymax, 0.4), 1) + 0.1
     plot_range = Range1d(-max_range, max_range)
 
+    rms_x,rms_y = rms
+    title_start = 'Residuals for {} '.format(filename)
+    title_rms = 'RMS(X)={:.3f}, RMS(Y)={:.3f}'.format(rms_x, rms_y)
+    title_base = '{}[{} sources, {}]'.format(title_start, npoints, title_rms)
 
-    p1 = HAPFigure(title='Residuals for {} [{} sources]: X vs DX'.format(filename, npoints),
+    p1 = HAPFigure(title='X vs DX',
                    x_label="X (pixels)",
                    y_label='Delta[X] (pixels)',
                    y_range=plot_range,
@@ -323,7 +329,7 @@ def generate_residual_plots(residsCDS, filename, display_plot=False, output_dir=
                    y='dx',
                    sourceCDS=residsCDS)
 
-    p2 = HAPFigure(title='Residuals for {} [{} sources]: X vs DY'.format(filename, npoints),
+    p2 = HAPFigure(title='X vs DY',
                    x_label="X (pixels)",
                    y_label='Delta[Y] (pixels)',
                    y_range=plot_range,
@@ -333,7 +339,7 @@ def generate_residual_plots(residsCDS, filename, display_plot=False, output_dir=
                    y='dy',
                    sourceCDS=residsCDS)
 
-    p3 = HAPFigure(title='Residuals for {} [{} sources]: Y vs DX'.format(filename, npoints),
+    p3 = HAPFigure(title='Y vs DX',
                    x_label="Y (pixels)",
                    y_label='Delta[X] (pixels)',
                    y_range=plot_range,
@@ -343,7 +349,7 @@ def generate_residual_plots(residsCDS, filename, display_plot=False, output_dir=
                    y='dx',
                    sourceCDS=residsCDS)
 
-    p4 = HAPFigure(title='Residuals for {} [{} sources]: Y vs DY'.format(filename, npoints),
+    p4 = HAPFigure(title='Y vs DY',
                    x_label="Y (pixels)",
                    y_label='Delta[Y] (pixels)',
                    y_range=plot_range,
@@ -354,6 +360,8 @@ def generate_residual_plots(residsCDS, filename, display_plot=False, output_dir=
                    sourceCDS=residsCDS)
 
     row1 = row(p1.fig, p3.fig)
+    
+    title_text = Paragraph(text=title_base, width=600, height=40)
 
     row2 = row(p2.fig, p4.fig)
 
@@ -365,10 +373,10 @@ def generate_residual_plots(residsCDS, filename, display_plot=False, output_dir=
 
     # Display and save
     if display_plot:
-        show(column(row1, row2, pv.fig))
+        show(column(row1, title_text, row2, pv.fig))
     else:
         print('Saving: {}'.format(output))
-        save(column(row1, row2, pv.fig))
+        save(column(row1, title_text, row2, pv.fig))
 
     return output
 
@@ -400,7 +408,11 @@ def build_astrometry_plots(pandas_file,
                        'yr': residsCDS.data[RESIDS_COLUMNS[3]][i]}
         cds = ColumnDataSource(resids_dict)
 
+        rms_x = float(fitCDS.data[RESULTS_COLUMNS[0]][i])
+        rms_y = float(fitCDS.data[RESULTS_COLUMNS[1]][i])
+        
         resids_plot_name = generate_residual_plots(cds, filename, 
+                                                   rms=(rms_x,rms_y),
                                                    output_dir=output_dir,
                                                    output=output)
         resids_plot_names.append(resids_plot_name)
