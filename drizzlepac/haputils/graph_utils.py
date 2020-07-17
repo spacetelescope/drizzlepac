@@ -123,20 +123,12 @@ class HAPFigure:
         # set logging level to user-specified level
         log.setLevel(log_level)
 
-        # Append any user requested tools to the base set and eliminate
-        # duplicate entries ***DEPRECATED 09 July 2020 - use only default tools
-        user_tools = figure_dict.get('tools', '')
-        all_tools = FIGURE_TOOLS_BASE + ',' + user_tools
-        tool_tokens = all_tools.split(',')
-        strip_tool_tokens = []
-        for t in tool_tokens:
-            strip_tool_tokens.append(t.strip())
-        fig_tools = list(set(strip_tool_tokens))
-
+        # Set the location for the figure tools
         fig_tool_loc = figure_dict.get('toolbar_location', 'right')
 
-        # Generate the figure instance
-        self.fig = figure(tools=fig_tools, toolbar_location=fig_tool_loc)
+        # Set up the actual figure tools for use
+        # If hover tooltips are to be used, they are appended below
+        self.fig = figure(tools=FIGURE_TOOLS_BASE, toolbar_location=fig_tool_loc)
 
         # Basic figure attributes
         self.fig.xaxis.axis_label = figure_dict.get('x_label', '')
@@ -148,6 +140,8 @@ class HAPFigure:
         # Determine if the hover tooltips should be turned off
         use_hover_tips = figure_dict.get('use_hover_tips', True)
 
+        # If hover tooltips are desired, set up the tips and add the hover tool
+        # to the figure tools
         if use_hover_tips:
             # Append any user requested tooltips to the base set
             user_tips = figure_dict.get('hover_tips', [])
