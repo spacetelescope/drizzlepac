@@ -657,6 +657,10 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                     json_results_dict['reference catalog length'] = sl_lengths[0]
                     json_results_dict['comparison catalog length'] = sl_lengths[1]
                     json_results_dict['number of cross-matches'] = len(matching_lines_ref)
+                    json_results_dict['percent of all identified reference sources crossmatched'] = 100.0 * (
+                            float(len(matching_lines_ref)) / float(sl_lengths[0]))
+                    json_results_dict['percent of all identified comparison sources crossmatched'] = 100.0 * (
+                                float(len(matching_lines_comp)) / float(sl_lengths[1]))
                     json_results_dict['reference image platescale'] = filtobj_dict[xmatch_ref_imgname]['filt_obj'].meta_wcs.pscale
 
                     # store cross-match details
@@ -667,12 +671,16 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                                "reference catalog length": "Number of entries in point catalog",
                                                "comparison catalog length": "Number of entries in segment catalog",
                                                "number of cross-matches": "Number of cross-matches between point and segment catalogs",
+                                               "percent of all identified reference sources crossmatched": "percent of all identified reference sources crossmatched",
+                                               "percent of all identified comparision sources crossmatched": "percent of all identified comparison sources crossmatched",
                                                "reference image platescale": "Platescale of the crossmatch reference image"},
                                            units={"reference catalog filename": "unitless",
                                                   "comparison catalog filename": "unitless",
                                                   "reference catalog length": "unitless",
                                                   "comparison catalog length": "unitless",
                                                   "number of cross-matches": "unitless",
+                                                  "percent of all identified reference sources crossmatched": "unitless",
+                                                  "percent of all identified comparision sources crossmatched": "unitless",
                                                   "reference image platescale": "pixels/arcseconds"})
 
                     # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
