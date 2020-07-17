@@ -716,8 +716,13 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                         del reg_filename
 
                     # compute statistics
+                    xy_separations_table = Table()
                     for colname in ["xcentroid_ref", "ycentroid_ref"]:
                         sep = matched_comp_coords[colname] - matched_ref_coords[colname]
+
+                        # Add column of comp-ref differences to table
+                        xy_separations_table['delta_{}'.format(colname)] = sep
+
                         # Compute and store statistics on separations
                         sep_stat_dict = collections.OrderedDict()
                         sep_stat_dict["Non-clipped min"] = np.min(sep)
@@ -767,6 +772,14 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                             log.info("{}{}: {} {}".format(padding, stat_key, sep_stat_dict[stat_key],
                                                           diag_obj.out_dict['data']["Interfilter cross-matched {} comparison - reference separation statistics".format(colname)]['units'][stat_key]))
                         log.info("")
+
+                    # store separations table
+                    diag_obj.add_data_item(xy_separations_table,
+                                           "Interfilter cross-matched comparison - reference separations",
+                                           descriptions={"delta_x": "delta_x",
+                                                         "delta_y": "delta_y"},
+                                           units={"delta_x": "pixels", "delta_y": "pixels"})
+
                     # write everything out to the json file
                     json_filename = filtobj_dict[xmatch_comp_imgname]['filt_obj'].drizzle_filename[
                                     :-9] + "_svm_interfilter_crossmatch.json"
