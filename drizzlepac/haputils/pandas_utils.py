@@ -35,7 +35,7 @@ __version_date__ = '08-Jun-2020'
 DETECTOR_LEGEND = {'UVIS': 'magenta', 'IR': 'red', 'WFC': 'blue',
                    'SBC': 'yellow', 'HRC': 'black'}
 
-def get_pandas_data(pandas_filename, colnames):
+def get_pandas_data(pandas_filename, data_columns, log_level=logutil.logging.NOTSET):
     """Load the harvested data, stored in a CSV file, into local arrays.
 
     Parameters
@@ -43,12 +43,12 @@ def get_pandas_data(pandas_filename, colnames):
     pandas_filename : str
         Name of the CSV file created by the harvester.
         
-    colnames : list
+    data_columns : list
         List of column names to be extracted from the input dataframe.
 
     Returns
     =======
-    panda_data : Pandas dataframe
+    data_colsDF : Pandas dataframe
         Dataframe which is a subset of the input Pandas dataframe written out as
         a CSV file.  The subset dataframe consists of only the requested columns
         and rows where all of the requested columns did not contain NaNs.
@@ -57,7 +57,7 @@ def get_pandas_data(pandas_filename, colnames):
     
     # Instantiate a Pandas Dataframe Reader (lazy instantiation)
     # df_handle = PandasDFReader_CSV("svm_qa_dataframe.csv")
-    df_handle = PandasDFReader(pandas_filename, log_level=logutil.logging.NOTSET)
+    df_handle = PandasDFReader(pandas_filename, log_level=log_level)
 
     # In this particular case, the names of the desired columns do not
     # have to be further manipulated, for example, to add dataset specific
@@ -66,11 +66,11 @@ def get_pandas_data(pandas_filename, colnames):
     # Get the relevant column data, eliminating all rows which have NaNs
     # in any of the relevant columns.
     if pandas_filename.endswith('.h5'):
-        panda_data = df_handle.get_columns_HDF5(colnames)
+        data_colsDF = df_handle.get_columns_HDF5(data_columns)
     else:
-        panda_data = df_handle.get_columns_CSV(colnames)
+        data_colsDF = df_handle.get_columns_CSV(data_columns)
 
-    return panda_data
+    return data_colsDF
 
 
 
