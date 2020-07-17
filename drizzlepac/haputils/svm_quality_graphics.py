@@ -126,6 +126,47 @@ def build_svm_plots(data_source, output_basename='', display_plot=False):
     gaia_plots_name = build_gaia_plots(gaia_cols_DF, list(gaia_col_names.values()), display_plot,
                                        output_basename=output_basename)
 
+    #     -      -     -      -     -      -     -      -     -      -     -      -     -      -     -      -
+    # Generate plots for interfilter cross-match comparisons
+    # Column names as defined in the harvester dataframe mapped to simple names for ease of use
+    intfilt_xm_col_names = {'Interfilter_cross-match_details.reference_catalog_filename': 'ref_catalog_filename',
+                            'Interfilter_cross-match_details.comparison_catalog_filename': 'comp_catalog_filename',
+                            'Interfilter_cross-match_details.reference_catalog_length': 'ref_catalog_length',
+                            'Interfilter_cross-match_details.comparison_catalog_length': 'comp_catalog_length',
+                            'Interfilter_cross-match_details.number_of_cross-matches': 'number_of_cross-matches',
+                            'Interfilter_cross-match_details.reference_image_platescale': 'ref_image_platescale',
+                            'Interfilter_cross-matched_reference_catalog.xcentroid_ref': 'ref_catalog.xcentroid_ref',
+                            'Interfilter_cross-matched_reference_catalog.ycentroid_ref': 'ref_catalog.ycentroid_ref',
+                            'Interfilter_cross-matched_comparison_catalog.xcentroid_ref': 'comp_catalog.xcentroid_ref',
+                            'Interfilter_cross-matched_comparison_catalog.ycentroid_ref': 'comp_catalog.ycentroid_ref',
+                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_min': 'x_non-clipped_min',
+                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_max': 'x_non-clipped_max',
+                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_mean': 'x_non-clipped_mean',
+                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_median': 'x_non-clipped_median',
+                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_standard_deviation': 'x_non-clipped_rms',
+                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_mean': 'x_3x3_sigma-clipped_mean',
+                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_median': 'x_3x3_sigma-clipped_median',
+                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_standard_deviation': 'x_3x3_sigma-clipped_rms',
+                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_min': 'y_non-clipped_min',
+                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_max': 'y_non-clipped_max',
+                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_mean': 'y_non-clipped_mean',
+                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_median': 'y_non-clipped_median',
+                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_standard_deviation': 'y_non-clipped_rms',
+                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_mean': 'y_3x3_sigma-clipped_mean',
+                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_median': 'y_3x3_sigma-clipped_median',
+                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_standard_deviation': 'y_3x3_sigma-clipped_rms',
+                            'Interfilter_cross-matched_comparison_-_reference_separations.delta_xcentroid_ref': 'comp-ref_x_seperation',
+                            'Interfilter_cross-matched_comparison_-_reference_separations.delta_ycentroid_ref': 'comp-ref_y_seperation'}
+
+    # Get the requested columns from the dataframe in addition columns
+    # added by the pandas_utils
+    if_xm_DF = get_pandas_data(data_source, intfilt_xm_col_names)
+
+    # Rename the columns to abbreviated text for ease of management
+    for old_col_name, new_col_name in intfilt_xm_col_names.items():
+        if_xm_DF.rename(columns={old_col_name: new_col_name}, inplace=True)
+    pdb.set_trace()
+    #     -      -     -      -     -      -     -      -     -      -     -      -     -      -     -      -
     # Generate plots for point-segment catalog cross-match comparisons
     """
     xmatch_col_names = {'Cross-match_details.number_of_cross-matches',
@@ -373,7 +414,43 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
     save(column(plot_list))
 
     return output
+"""
+
+def build_interfilter_crossmatch_plots():
+    """"Generate plots to statiscially quantify the quality of the alignment of filter-level HAP imagery
+    products
+
+    Parameters
+    ----------
+    xmDF : Pandas dataframe
+        This dataframe contains all the columns relevant to the plots.
+
+    data_cols : list
+        A subset of the column names in gaiaDF
+
+    output_basename : str
+        String to use as the start of the filename for the output plot pages.
+
+    display_plot : bool
+        Option to display the plot in addition to writing out the file.
+
+    Returns
+    -------
+    output : str
+        Name of HTML file where the plot was saved.
     """
+    # 1: number of crossmatched sources histogram(?)
+    # 2: delta_X vs delta_Y vector plot for each cross-matched filter
+    # 2.5: x vs delta_x, x vs. delta_y, y vs. delta_x, y vs. delta_y quad plot
+    # 3: Non-clipped min: plot x vs y values for all filters
+    # 4: Non-clipped max: plot x vs y values for all filters
+    # 5: Non-clipped mean: plot x vs y values for all filters
+    # 6: Non-clipped median: plot x vs y values for all filters
+    # 7: Non-clipped standard deviation: plot x vs y values for all filters
+    # 8: 3x3 sigma-clipped mean: plot x vs y values for all filters
+    # 9: 3x3 sigma-clipped median: plot x vs y values for all filters
+    # 10: 3x3 sigma-clipped standard deviation: plot x vs y values for all filters
+
 
 # -----------------------------------------------------------------------------
 # Utility functions for plotting
@@ -406,3 +483,7 @@ def get_pandas_data(data_source, data_columns):
     data_colsDF = df_handle.get_columns_HDF5(data_columns)
 
     return data_colsDF
+
+
+if __name__ == "__main__":
+    build_svm_plots(sys.argv[1], output_basename='', display_plot=True)
