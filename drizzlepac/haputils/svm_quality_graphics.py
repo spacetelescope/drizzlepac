@@ -134,6 +134,8 @@ def build_svm_plots(data_source, output_basename='', display_plot=False):
                             'Interfilter_cross-match_details.reference_catalog_length': 'ref_catalog_length',
                             'Interfilter_cross-match_details.comparison_catalog_length': 'comp_catalog_length',
                             'Interfilter_cross-match_details.number_of_cross-matches': 'number_of_cross-matches',
+                            'Interfilter_cross-match_details.percent_of_all_identified_reference_sources_crossmatched': 'ref_crossmatch_percentage',
+                            'Interfilter_cross-match_details.percent_of_all_identified_comparison_sources_crossmatched': 'comp_crossmatch_percentage',
                             'Interfilter_cross-match_details.reference_image_platescale': 'ref_image_platescale',
                             'Interfilter_cross-matched_reference_catalog.xcentroid_ref': 'ref_catalog.xcentroid_ref',
                             'Interfilter_cross-matched_reference_catalog.ycentroid_ref': 'ref_catalog.ycentroid_ref',
@@ -165,7 +167,14 @@ def build_svm_plots(data_source, output_basename='', display_plot=False):
     # Rename the columns to abbreviated text for ease of management
     for old_col_name, new_col_name in intfilt_xm_col_names.items():
         if_xm_DF.rename(columns={old_col_name: new_col_name}, inplace=True)
-    pdb.set_trace()
+
+    # remove rows that aren't relevant
+    if_xm_DF = if_xm_DF[np.isnan(if_xm_DF.ref_image_platescale) == False]
+
+    # make the interfilter cross match plots
+    if_xm_plots_name = build_interfilter_crossmatch_plots(if_xm_DF, list(intfilt_xm_col_names.values()),
+                                                          display_plot, output_basename=output_basename)
+
     #     -      -     -      -     -      -     -      -     -      -     -      -     -      -     -      -
     # Generate plots for point-segment catalog cross-match comparisons
     """
@@ -416,13 +425,13 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
     return output
 """
 
-def build_interfilter_crossmatch_plots():
+def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_basename='svm_qa'):
     """"Generate plots to statiscially quantify the quality of the alignment of filter-level HAP imagery
     products
 
     Parameters
     ----------
-    xmDF : Pandas dataframe
+    xm_df : Pandas dataframe
         This dataframe contains all the columns relevant to the plots.
 
     data_cols : list
@@ -439,10 +448,35 @@ def build_interfilter_crossmatch_plots():
     output : str
         Name of HTML file where the plot was saved.
     """
-    # 1: number of crossmatched sources histogram(?)
-    # 2: delta_X vs delta_Y vector plot for each cross-matched filter
-    # 2.5: x vs delta_x, x vs. delta_y, y vs. delta_x, y vs. delta_y quad plot
+    # Setup the source of the data to be plotted so the axis variables can be
+    # referenced by column name in the Pandas dataframe
+    xm_cds = ColumnDataSource(xm_df)
+    num_of_datasets = len(xm_cds.data['index'])
+    print('Number of datasets: {}'.format(num_of_datasets))
+
+    output_basename = "{}_interfilter_crossmatch_comparison".format(output_basename)
+
+    if not output_basename.endswith('.html'):
+        output = output_basename + '.html'
+    else:
+        output = output_basename
+    # Set the output file immediately as advised by Bokeh.
+    output_file(output)
+
+
+    plots = []
+    # plot #1: comp vs ref percent of all identified sources that were crossmatched
+    plot = make_scatter_plot(xm_cds,
+                             'Percentage of all identified sources matched',
+                             '% of all reference sources crossmatched',
+                             '% of all comparison sources crossmatched',
+                             'ref_crossmatch_percentage',
+                             'comp_crossmatch_percentage')
+    plots.append(plot.fig)
+
+    # 2: delta_X vs delta_Y vector plot for each cross-matched filter and/or x vs delta_x, x vs. delta_y, y vs. delta_x, y vs. delta_y quad plot each cross-matched filter
     # 3: Non-clipped min: plot x vs y values for all filters
+
     # 4: Non-clipped max: plot x vs y values for all filters
     # 5: Non-clipped mean: plot x vs y values for all filters
     # 6: Non-clipped median: plot x vs y values for all filters
@@ -450,6 +484,13 @@ def build_interfilter_crossmatch_plots():
     # 8: 3x3 sigma-clipped mean: plot x vs y values for all filters
     # 9: 3x3 sigma-clipped median: plot x vs y values for all filters
     # 10: 3x3 sigma-clipped standard deviation: plot x vs y values for all filters
+
+    if display_plot:
+        show(column(plots))
+    # Just save
+    else:
+        save(column(plots))
+    log.info("Output HTML graphic file {} has been written.\n".format(output))
 
 
 # -----------------------------------------------------------------------------
@@ -484,6 +525,43 @@ def get_pandas_data(data_source, data_columns):
 
     return data_colsDF
 
+
+def make_scatter_plot(xm_cds, title, x_label, y_label, x_data_colname, y_data_colname):
+    """create a basic scatter plot
+
+        Parameters
+    ----------
+    cds : Pandas dataframe
+        This dataframe contains all the columns relevant to the plots.
+
+    title : str
+        plot title
+
+    x_label : str
+        X-axis label
+
+    y_label : str
+        Y-axis label
+
+    x_data_colname : str
+        **cds** data element to plot on the X axis
+
+     y_data_colname : str
+        **cds** data element to plot on the y axis
+
+    Returns
+    -------
+    scatter_plot :
+
+    """
+    scatterplot = HAPFigure(title=title, x_label=x_label, y_label=y_label)#, hover_tips=gaia_tips)
+    scatterplot.build_glyph('circle',
+                            x=x_data_colname,
+                            y=y_data_colname,
+                            sourceCDS=xm_cds,
+                            glyph_color='colormap',
+                            legend_group='inst_det')
+    return scatterplot
 
 if __name__ == "__main__":
     build_svm_plots(sys.argv[1], output_basename='', display_plot=True)
