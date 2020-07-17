@@ -10,8 +10,8 @@ import numpy as np
 
 from stsci.tools import logutil
 
-from .pandas_utils import PandasDFReader
-from .graph_utils import HAPFigure
+from .pandas_utils import PandasDFReader, get_pandas_data
+from .graph_utils import HAPFigure, build_tooltips
 
 
 
@@ -81,20 +81,7 @@ Example from bokeh.org on how to create a tabbed set of plots:
 # -------------------------------------------------------------------------------
 # Generate the Bokeh plot for the pipeline astrometric data.
 #
-HOVER_COLUMNS = ['gen_info.imgname',
-                 'gen_info.instrument',
-                 'gen_info.detector',
-                 'gen_info.filter',                
-                 'header.DATE-OBS',
-                 'header.RA_TARG',
-                 'header.DEC_TARG',
-                 'header.GYROMODE',
-                 'header.EXPTIME',
-                 'fit_results.aligned_to']
-                   
-TOOLTIPS_LIST = ['EXPNAME', 'INSTRUMENT', 'DET', 'FILTER', 
-                  'DATE', 'RA', 'DEC', 'GYRO', 'EXPTIME',
-                  'ALIGNED_TO']
+
 INSTRUMENT_COLUMN = 'full_instrument'
 
 RESULTS_COLUMNS = ['fit_results.rms_x',
@@ -112,8 +99,6 @@ RESIDS_COLUMNS = ['residuals.x',
                   'residuals.y',
                   'residuals.ref_x',
                   'residuals.ref_y']
-TOOLSEP_START = '{'
-TOOLSEP_END = '}'
 
 def build_vector_plot(sourceCDS, **plot_dict):
     """Create figure object for plotting desired columns as a scatter plot with circles
@@ -152,44 +137,6 @@ def build_vector_plot(sourceCDS, **plot_dict):
     return p1
 
 
-def get_pandas_data(pandas_filename):
-    """Load the harvested data, stored in a CSV file, into local arrays.
-
-    Parameters
-    ==========
-    pandas_filename: str
-        Name of the CSV file created by the harvester.
-
-    Returns
-    =======
-    phot_data: Pandas dataframe
-        Dataframe which is a subset of the input Pandas dataframe written out as
-        a CSV file.  The subset dataframe consists of only the requested columns
-        and rows where all of the requested columns did not contain NaNs.
-
-    """
-    
-    # Instantiate a Pandas Dataframe Reader (lazy instantiation)
-    # df_handle = PandasDFReader_CSV("svm_qa_dataframe.csv")
-    df_handle = PandasDFReader(pandas_filename, log_level=logutil.logging.NOTSET)
-
-    # In this particular case, the names of the desired columns do not
-    # have to be further manipulated, for example, to add dataset specific
-    # names.
-    # 
-    # Get the relevant column data, eliminating all rows which have NaNs
-    # in any of the relevant columns.
-    if pandas_filename.endswith('.h5'):
-        fit_data = df_handle.get_columns_HDF5(HOVER_COLUMNS + RESULTS_COLUMNS)
-        resids_data = df_handle.get_columns_HDF5(RESIDS_COLUMNS)
-    else:
-        fit_data = df_handle.get_columns_CSV(HOVER_COLUMNS + RESULTS_COLUMNS)
-        resids_data = df_handle.get_columns_CSV(RESIDS_COLUMNS)
-
-    return fit_data, resids_data
-
-
-
 def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
     """Generate the graphics associated with this particular type of data.
 
@@ -207,6 +154,13 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
         Name of HTML file where the plot was saved.
 
     """
+    hover_columns = ['header.DATE-OBS',
+                     'header.GYROMODE',
+                     'header.EXPTIME',
+                     'fit_results.aligned_to']
+                       
+    tooltips_list = ['DATE', 'GYRO', 'EXPTIME', 'ALIGNED_TO']
+
     # TODO: include the date from the input data as part of the html filename
     # Set the output file immediately as advised by Bokeh.
     output_file(output)
@@ -214,12 +168,15 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
     num_of_datasets = len(fitCDS.data['index'])
     print('Number of datasets: {}'.format(num_of_datasets))
         
+    pipeline_tips = build_tooltips(tooltips_list, hover_columns, list(range(0, len(hover_columns))))
+        
     plot_list = []
 
     # Data point figures
     p1 = HAPFigure(title='RMS Values',
                    x_label="RMS_X (pixels)",
-                   y_label="RMS_Y (pixels)")
+                   y_label="RMS_Y (pixels)",
+                   hover_tips=pipeline_tips)
 
     p1.build_glyph('circle', 
                    x=RESULTS_COLUMNS[0], 
@@ -232,7 +189,8 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
     # Data point figures
     p2 = HAPFigure(title='Offsets',
                    x_label="Shift X (pixels)",
-                   y_label="Shift Y (pixels)")
+                   y_label="Shift Y (pixels)",
+                   hover_tips=pipeline_tips)
 
     p2.build_glyph('circle', 
                    x=RESULTS_COLUMNS[2], 
@@ -243,7 +201,8 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
 
     p3 = HAPFigure(title='Rotation',
                    x_label="Number of matched sources",
-                   y_label="Rotation (degrees)")
+                   y_label="Rotation (degrees)",
+                   hover_tips=pipeline_tips)
 
     p3.build_glyph('circle', 
                    x=RESULTS_COLUMNS[8], 
@@ -254,7 +213,8 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
 
     p4 = HAPFigure(title='Scale',
                    x_label="Number of matched sources",
-                   y_label="Scale")
+                   y_label="Scale",
+                   hover_tips=pipeline_tips)
 
     p4.build_glyph('circle', 
                    x=RESULTS_COLUMNS[8], 
@@ -265,7 +225,8 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
 
     p5 = HAPFigure(title='Skew',
                    x_label="Number of matched sources",
-                   y_label="Skew (degrees)")
+                   y_label="Skew (degrees)",
+                   hover_tips=pipeline_tips)
 
     p5.build_glyph('circle', 
                    x=RESULTS_COLUMNS[8], 
@@ -377,7 +338,10 @@ def build_astrometry_plots(pandas_file,
                            output_dir=None, 
                            output='cal_qa_results.html'):
 
-    fit_data, resids_data = get_pandas_data(pandas_file)
+
+    fit_data = get_pandas_data(pandas_file, RESULTS_COLUMNS)
+    resids_data = get_pandas_data(pandas_file, RESIDS_COLUMNS)
+    
     fitCDS = ColumnDataSource(fit_data)
     residsCDS = ColumnDataSource(resids_data)
     
@@ -391,8 +355,8 @@ def build_astrometry_plots(pandas_file,
     astrometry_plot_name = generate_summary_plots(fitCDS, output=summary_filename)
     
     resids_plot_names = [astrometry_plot_name]
-    
-    for filename,rootname in zip(fitCDS.data[HOVER_COLUMNS[0]], fitCDS.data['index']):
+
+    for filename,rootname in zip(fitCDS.data['header.FILENAME'], fitCDS.data['index']):
         i = residsCDS.data['index'].tolist().index(rootname)
         resids_dict = {'x': residsCDS.data[RESIDS_COLUMNS[0]][i],
                        'y': residsCDS.data[RESIDS_COLUMNS[1]][i],
