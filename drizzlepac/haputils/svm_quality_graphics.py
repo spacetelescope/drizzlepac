@@ -466,12 +466,16 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
 
     plots = []
     # plot #1: comp vs ref percent of all identified sources that were crossmatched
+    tooltips_list = ['REF IMAGE', 'COMP IMAGE']
+    hover_columns = ['ref_catalog_filename', 'comp_catalog_filename']
     plot = make_scatter_plot(xm_cds,
                              'Percentage of all identified sources matched',
                              '% of all reference sources crossmatched',
                              '% of all comparison sources crossmatched',
                              'ref_crossmatch_percentage',
-                             'comp_crossmatch_percentage')
+                             'comp_crossmatch_percentage',
+                             tooltips_list,
+                             hover_columns)
     plots.append(plot.fig)
 
     # 2: delta_X vs delta_Y vector plot for each cross-matched filter and/or x vs delta_x, x vs. delta_y, y vs. delta_x, y vs. delta_y quad plot each cross-matched filter
@@ -526,10 +530,10 @@ def get_pandas_data(data_source, data_columns):
     return data_colsDF
 
 
-def make_scatter_plot(xm_cds, title, x_label, y_label, x_data_colname, y_data_colname):
-    """create a basic scatter plot
+def make_scatter_plot(xm_cds, title, x_label, y_label, x_data_colname, y_data_colname, tooltips_list, hover_columns):
+    """create a bokeh scatter plot with hovertools
 
-        Parameters
+    Parameters
     ----------
     cds : Pandas dataframe
         This dataframe contains all the columns relevant to the plots.
@@ -549,12 +553,19 @@ def make_scatter_plot(xm_cds, title, x_label, y_label, x_data_colname, y_data_co
      y_data_colname : str
         **cds** data element to plot on the y axis
 
+    tooltips_list : list
+        list of hovertool element titles
+
+    hover_columns : list
+        list of the data column names that will be queried to populate the hovertool information
+
     Returns
     -------
     scatter_plot :
 
     """
-    scatterplot = HAPFigure(title=title, x_label=x_label, y_label=y_label)#, hover_tips=gaia_tips)
+    hover_tips = build_tooltips(tooltips_list, hover_columns, list(range(0, len(hover_columns))))
+    scatterplot = HAPFigure(title=title, x_label=x_label, y_label=y_label, hover_tips=hover_tips)
     scatterplot.build_glyph('circle',
                             x=x_data_colname,
                             y=y_data_colname,
