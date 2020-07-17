@@ -140,14 +140,20 @@ def determine_alignment_residuals(input, files, max_srcs=2000,
                              tolerance=1.0, use2dhist=True)
     try:
         # perform relative fitting
-        matchlist = tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=False)
+        matchlist = tweakwcs.align_wcs(imglist, None,
+                                       minobj=6, 
+                                       match=match,
+                                       expand_refcat=False)
         del matchlist
     except Exception:
         try:
             # Try without 2dHist use to see whether we can get any matches at all
             match = tweakwcs.TPMatch(searchrad=5, separation=4.0,
                                      tolerance=1.0, use2dhist=False)
-            matchlist = tweakwcs.align_wcs(imglist, None, match=match, expand_refcat=False)
+            matchlist = tweakwcs.align_wcs(imglist, None, 
+                                           minobj=6,
+                                           match=match,
+                                           expand_refcat=False)
             del matchlist
 
         except Exception:
