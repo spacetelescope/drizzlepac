@@ -129,8 +129,8 @@ def build_svm_plots(data_source, output_basename='', display_plot=False):
     #     -      -     -      -     -      -     -      -     -      -     -      -     -      -     -      -
     # Generate plots for interfilter cross-match comparisons
     # Column names as defined in the harvester dataframe mapped to simple names for ease of use
-    intfilt_xm_col_names = {'Interfilter_cross-match_details.reference_catalog_filename': 'ref_catalog_filename',
-                            'Interfilter_cross-match_details.comparison_catalog_filename': 'comp_catalog_filename',
+    intfilt_xm_col_names = {'Interfilter_cross-match_details.reference_image_name': 'ref_imgname',
+                            'Interfilter_cross-match_details.comparison_image_name': 'comp_imgname',
                             'Interfilter_cross-match_details.reference_catalog_length': 'ref_catalog_length',
                             'Interfilter_cross-match_details.comparison_catalog_length': 'comp_catalog_length',
                             'Interfilter_cross-match_details.number_of_cross-matches': 'number_of_cross-matches',
@@ -466,8 +466,9 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
 
     plots = []
     # plot #1: comp vs ref percent of all identified sources that were crossmatched
-    tooltips_list = ['REF IMAGE', 'COMP IMAGE']
-    hover_columns = ['ref_catalog_filename', 'comp_catalog_filename']
+    tooltips_list = ['REF IMAGE', 'COMP IMAGE', 'TOTAL REF SOURCES', 'TOTAL COMP SOURCES', '# CROSSMATCHED']
+    hover_columns = ['ref_imgname', 'comp_imgname', 'ref_catalog_length',
+                     'comp_catalog_length', 'number_of_cross-matches']
     plot = make_scatter_plot(xm_cds,
                              'Percentage of all identified sources matched',
                              '% of all reference sources crossmatched',
@@ -480,17 +481,96 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
 
     # 2: delta_X vs delta_Y vector plot for each cross-matched filter and/or x vs delta_x, x vs. delta_y, y vs. delta_x, y vs. delta_y quad plot each cross-matched filter
     # 3: Non-clipped min: plot x vs y values for all filters
+    plot = make_scatter_plot(xm_cds,
+                             'Comparision - reference non-clipped minimum separation',
+                             'Minimum X seperation (pixels)',
+                             'Minimum Y separation (pixels)',
+                             'x_non-clipped_min',
+                             'y_non-clipped_min',
+                             tooltips_list,
+                             hover_columns)
+    plots.append(plot.fig)
 
     # 4: Non-clipped max: plot x vs y values for all filters
-    # 5: Non-clipped mean: plot x vs y values for all filters
-    # 6: Non-clipped median: plot x vs y values for all filters
-    # 7: Non-clipped standard deviation: plot x vs y values for all filters
-    # 8: 3x3 sigma-clipped mean: plot x vs y values for all filters
-    # 9: 3x3 sigma-clipped median: plot x vs y values for all filters
-    # 10: 3x3 sigma-clipped standard deviation: plot x vs y values for all filters
+    plot = make_scatter_plot(xm_cds,
+                             'Comparision - reference non-clipped maximum separation',
+                             'Maximum X separation (pixels)',
+                             'Maximum Y separation (pixels)',
+                             'x_non-clipped_max',
+                             'y_non-clipped_max',
+                             tooltips_list,
+                             hover_columns)
+    plots.append(plot.fig)
 
+    # 5: Non-clipped mean: plot x vs y values for all filters
+    plot = make_scatter_plot(xm_cds,
+                             'Comparision - reference non-clipped mean separation',
+                             'Mean X separation (pixels)',
+                             'Mean Y separation (pixels)',
+                             'x_non-clipped_mean',
+                             'y_non-clipped_mean',
+                             tooltips_list,
+                             hover_columns)
+    plots.append(plot.fig)
+
+    # 6: Non-clipped median: plot x vs y values for all filters
+    plot = make_scatter_plot(xm_cds,
+                             'Comparision - reference non-clipped median separation',
+                             'Median X separation (pixels)',
+                             'Median Y separation (pixels)',
+                             'x_non-clipped_median',
+                             'y_non-clipped_median',
+                             tooltips_list,
+                             hover_columns)
+    plots.append(plot.fig)
+
+    # 7: Non-clipped standard deviation: plot x vs y values for all filters
+    plot = make_scatter_plot(xm_cds,
+                             'Comparision - reference separation non-clipped standard deviation',
+                             'X separation SD (pixels)',
+                             'Y separation SD (pixels)',
+                             'x_non-clipped_rms',
+                             'y_non-clipped_rms',
+                             tooltips_list,
+                             hover_columns)
+    plots.append(plot.fig)
+
+    # 8: 3x3 sigma-clipped mean: plot x vs y values for all filters
+    plot = make_scatter_plot(xm_cds,
+                             'Comparision - reference 3 x 3'+u'\u03c3'+'-clipped mean separation',
+                             '3 x 3'+u'\u03c3'+'-clipped mean X separation (pixels)',
+                             '3 x 3'+u'\u03c3'+'-clipped mean Y separation (pixels)',
+                             'x_3x3_sigma-clipped_mean',
+                             'y_3x3_sigma-clipped_mean',
+                             tooltips_list,
+                             hover_columns)
+    plots.append(plot.fig)
+
+    # 9: 3x3 sigma-clipped median: plot x vs y values for all filters
+    plot = make_scatter_plot(xm_cds,
+                             'Comparision - reference 3 x 3' + u'\u03c3' + '-clipped median separation',
+                             '3 x 3' + u'\u03c3' + '-clipped median X separation (pixels)',
+                             '3 x 3' + u'\u03c3' + '-clipped median Y separation (pixels)',
+                             'x_3x3_sigma-clipped_median',
+                             'y_3x3_sigma-clipped_median',
+                             tooltips_list,
+                             hover_columns)
+    plots.append(plot.fig)
+
+    # 10: 3x3 sigma-clipped standard deviation: plot x vs y values for all filters
+    plot = make_scatter_plot(xm_cds,
+                             'Comparision - reference separation 3 x 3' + u'\u03c3' + '-clipped standard deviation',
+                             '3 x 3' + u'\u03c3' + '-clipped X SD (pixels)',
+                             '3 x 3' + u'\u03c3' + '-clipped Y SD (pixels)',
+                             'x_3x3_sigma-clipped_rms',
+                             'y_3x3_sigma-clipped_rms',
+                             tooltips_list,
+                             hover_columns)
+    plots.append(plot.fig)
+    for item in xm_cds.data.keys(): print(item)
     if display_plot:
         show(column(plots))
+
     # Just save
     else:
         save(column(plots))
