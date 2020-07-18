@@ -652,8 +652,8 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                                       timestamp=json_timestamp,
                                                       time_since_epoch=json_time_since_epoch)
                     json_results_dict = collections.OrderedDict()
-                    json_results_dict["reference catalog filename"] = sl_names[0]
-                    json_results_dict["comparison catalog filename"] = sl_names[1]
+                    json_results_dict["reference image name"] = xmatch_ref_imgname
+                    json_results_dict["comparison image name"] = xmatch_comp_imgname
                     json_results_dict['reference catalog length'] = sl_lengths[0]
                     json_results_dict['comparison catalog length'] = sl_lengths[1]
                     json_results_dict['number of cross-matches'] = len(matching_lines_ref)
@@ -666,16 +666,16 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                     # store cross-match details
                     diag_obj.add_data_item(json_results_dict, "Interfilter cross-match details",
                                            descriptions={
-                                               "reference catalog filename": "ECSV point catalog filename",
-                                               "comparison catalog filename": "ECSV segment catalog filename",
+                                               "reference image name": "Crossmatch reference image name",
+                                               "comparison image name": "Crossmatch comparison image name",
                                                "reference catalog length": "Number of entries in point catalog",
                                                "comparison catalog length": "Number of entries in segment catalog",
                                                "number of cross-matches": "Number of cross-matches between point and segment catalogs",
                                                "percent of all identified reference sources crossmatched": "percent of all identified reference sources crossmatched",
                                                "percent of all identified comparision sources crossmatched": "percent of all identified comparison sources crossmatched",
                                                "reference image platescale": "Platescale of the crossmatch reference image"},
-                                           units={"reference catalog filename": "unitless",
-                                                  "comparison catalog filename": "unitless",
+                                           units={"reference image name": "unitless",
+                                                  "comparison image name": "unitless",
                                                   "reference catalog length": "unitless",
                                                   "comparison catalog length": "unitless",
                                                   "number of cross-matches": "unitless",
