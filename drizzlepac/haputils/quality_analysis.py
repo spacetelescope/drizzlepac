@@ -41,7 +41,6 @@ function myFunction() {
 
 
 """
-import json
 import sys
 from datetime import datetime
 import time
