@@ -95,10 +95,6 @@ RESULTS_COLUMNS = ['fit_results.rms_x',
                    'fit_results.nmatches',
                    'fit_results.skew']
 
-RESIDS_COLUMNS = ['residuals.x',
-                  'residuals.y',
-                  'residuals.ref_x',
-                  'residuals.ref_y']
 
 def build_vector_plot(sourceCDS, **plot_dict):
     """Create figure object for plotting desired columns as a scatter plot with circles
@@ -240,7 +236,7 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
                      
     return output
     
-def generate_residual_plots(residsCDS, filename, rms=(0.,0.),
+def generate_relative_residual_plots(residsCDS, filename, rms=(0.,0.),
                             display_plot=False, output_dir=None, output=''):
     rootname = '_'.join(filename.split("_")[:-1])
     output = '{}_vectors_{}'.format(rootname, output)
@@ -338,9 +334,13 @@ def build_astrometry_plots(pandas_file,
                            output_dir=None, 
                            output='cal_qa_results.html'):
 
+    resids_columns = ['residuals.x',
+                      'residuals.y',
+                      'residuals.ref_x',
+                      'residuals.ref_y']
 
     fit_data = get_pandas_data(pandas_file, RESULTS_COLUMNS)
-    resids_data = get_pandas_data(pandas_file, RESIDS_COLUMNS)
+    resids_data = get_pandas_data(pandas_file, resids_columns)
     
     fitCDS = ColumnDataSource(fit_data)
     residsCDS = ColumnDataSource(resids_data)
@@ -358,16 +358,16 @@ def build_astrometry_plots(pandas_file,
 
     for filename,rootname in zip(fitCDS.data['header.FILENAME'], fitCDS.data['index']):
         i = residsCDS.data['index'].tolist().index(rootname)
-        resids_dict = {'x': residsCDS.data[RESIDS_COLUMNS[0]][i],
-                       'y': residsCDS.data[RESIDS_COLUMNS[1]][i],
-                       'xr': residsCDS.data[RESIDS_COLUMNS[2]][i],
-                       'yr': residsCDS.data[RESIDS_COLUMNS[3]][i]}
+        resids_dict = {'x': residsCDS.data[resids_columns[0]][i],
+                       'y': residsCDS.data[resids_columns[1]][i],
+                       'xr': residsCDS.data[resids_columns[2]][i],
+                       'yr': residsCDS.data[resids_columns[3]][i]}
         cds = ColumnDataSource(resids_dict)
 
         rms_x = float(fitCDS.data[RESULTS_COLUMNS[0]][i])
         rms_y = float(fitCDS.data[RESULTS_COLUMNS[1]][i])
         
-        resids_plot_name = generate_residual_plots(cds, filename, 
+        resids_plot_name = generate_relative_residual_plots(cds, filename, 
                                                    rms=(rms_x,rms_y),
                                                    output_dir=output_dir,
                                                    output=output)
