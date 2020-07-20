@@ -51,7 +51,7 @@ from scipy.spatial import KDTree
 
 from bokeh.layouts import row, column, gridplot
 from bokeh.plotting import figure, output_file, save, show
-from bokeh.models import ColumnDataSource, Label, CDSView
+from bokeh.models import ColumnDataSource, Label, CDSView, Div
 from bokeh.models.tools import HoverTool
 
 # Local application imports
@@ -567,6 +567,18 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
                              tooltips_list,
                              hover_columns)
     plots.append(plot.fig)
+    for line_index in xm_df.index:
+        # TODO: repalce placeholder quad plot title with actual information
+        # TODO: add vector plot
+        div = Div(text="""
+        <h1>stuff!</h1>
+        <p>more stuff!
+        </p>
+        """)
+        plots.append(div)
+        xm_df2 = xm_df[xm_df['gen_info.dataframe_index'] == line_index]
+        quad_plot = make_quad_scatter_plot(xm_df2, tooltips_list, hover_columns)
+        plots += quad_plot
     for item in xm_cds.data.keys(): print(item)
     if display_plot:
         show(column(plots))
@@ -577,6 +589,7 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
     log.info("Output HTML graphic file {} has been written.\n".format(output))
 
 
+#
 
 # -----------------------------------------------------------------------------
 # Functions for generating the photonetry plots
@@ -794,6 +807,68 @@ def get_pandas_data(data_source, data_columns):
 
     return data_colsDF
 
+
+def make_quad_scatter_plot(xm_df, tooltips_list, hover_columns):
+    # TODO: Add make_quad_scatter_plot docstring
+    # TODO: update individual plot titles
+    xm_cds = ColumnDataSource(xm_df)
+    cds2_dict = {"x": xm_cds.data["ref_catalog.xcentroid_ref"][0],
+                 "y": xm_cds.data["ref_catalog.ycentroid_ref"][0],
+                 "dx": xm_cds.data["comp-ref_x_seperation"][0],
+                 "dy": xm_cds.data["comp-ref_y_seperation"][0]}
+    residsCDS = ColumnDataSource(cds2_dict)
+    npoints = len(cds2_dict['x'])
+    filename = xm_cds.data['comp_imgname'][0]
+    if npoints < 2:
+        return None
+
+    p1 = HAPFigure(title='Residuals for {} [{} sources]: X vs DX'.format(filename, npoints),
+                   x_label="X (pixels)",
+                   y_label='Delta[X] (pixels)',
+                   use_hover_tips=False)
+    p1.build_glyph('circle',
+                   x='x',
+                   y='dx',
+                   sourceCDS=residsCDS)
+
+    p2 = HAPFigure(title='Residuals for {} [{} sources]: X vs DY'.format(filename, npoints),
+                   x_label="X (pixels)",
+                   y_label='Delta[Y] (pixels)',
+                   use_hover_tips=False)
+    p2.build_glyph('circle',
+                   x='x',
+                   y='dy',
+                   sourceCDS=residsCDS)
+
+    row1 = row(p1.fig, p2.fig)
+
+    p3 = HAPFigure(title='Residuals for {} [{} sources]: Y vs DX'.format(filename, npoints),
+                   x_label="Y (pixels)",
+                   y_label='Delta[X] (pixels)',
+                   use_hover_tips=False)
+    p3.build_glyph('circle',
+                   x='y',
+                   y='dx',
+                   sourceCDS=residsCDS)
+
+    p4 = HAPFigure(title='Residuals for {} [{} sources]: Y vs DY'.format(filename, npoints),
+                   x_label="Y (pixels)",
+                   y_label='Delta[Y] (pixels)',
+                   use_hover_tips=False)
+    p4.build_glyph('circle',
+                   x='y',
+                   y='dy',
+                   sourceCDS=residsCDS)
+
+    row2 = row(p3.fig, p4.fig)
+
+    # pv = build_vector_plot(residsCDS,
+    #                        title='Vector plot of Image - Reference for {}'.format(filename),
+    #                        x_label='X (pixels)',
+    #                        y_label='Y (pixels)',
+    #                        color='blue')
+
+    return [row1, row2]
 
 def make_scatter_plot(xm_cds, title, x_label, y_label, x_data_colname, y_data_colname, tooltips_list, hover_columns):
     """create a bokeh scatter plot with hovertools
