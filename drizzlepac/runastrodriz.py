@@ -430,7 +430,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
         if align_with_apriori or force_alignment or align_to_gaia:
             # Generate initial default products and perform verification
-            align_dicts = verify_alignment(_inlist,
+            align_dicts, align_table = verify_alignment(_inlist,
                                              _calfiles, _calfiles_flc,
                                              _trlfile,
                                              tmpdir=None, debug=debug,
@@ -475,7 +475,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 tmpname = "_".join([_trlroot, 'apriori'])
                 sub_dirs.append(tmpname)
                 # Generate initial default products and perform verification
-                align_apriori = verify_alignment(_inlist,
+                align_apriori, apriori_table = verify_alignment(_inlist,
                                                  _calfiles, _calfiles_flc,
                                                  _trlfile,
                                                  tmpdir=tmpname, debug=debug,
@@ -530,7 +530,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 find_crs = False
             tmpname = "_".join([_trlroot, 'aposteriori'])
             sub_dirs.append(tmpname)
-            align_aposteriori = verify_alignment(_inlist,
+            align_aposteriori, aposteriori_table = verify_alignment(_inlist,
                                              _calfiles, _calfiles_flc,
                                              _trlfile,
                                              tmpdir=tmpname, debug=debug,
@@ -677,9 +677,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     qa_switch = _get_envvar_switch(envvar_qa_stats_name)
 
     if qa_switch:
+
         # Generate quality statistics for astrometry if specified
         calfiles = _calfiles_flc if _calfiles_flc else _calfiles
-        qa.run_all(inFile, calfiles)
+        qa.run_all(inFile, calfiles, catalogs=aposteriori_table)
 
 
 def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignment=True,
@@ -811,7 +812,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         del ivmlist
         # If there are no products to be generated, there is nothing to align...
         if asndict is None:
-            return None
+            return None, None
 
     # if tmpdir is turned off (== None), tmpname set to 'default-pipeline'
     tmpname = tmpdir if tmpdir else 'default-pipeline'
@@ -824,6 +825,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         print("Invalid alignment mode {} requested.".format(tmpdir))
         raise ValueError
 
+    full_table = None
     fraction_matched = 1.0
     num_sources = -1
     try:
@@ -872,14 +874,17 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             alignlog_copy = alignlog.replace('_align', '_align_copy')
             try:
 
-                align_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
+                full_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
                                                   clobber=False, output=debug,
                                                   debug=debug, sat_flags=sat_flags)
+                align_table = full_table.filtered_table
+
                 if align_table is None:
                     raise Exception("No successful aposteriori fit determined.")
 
                 num_sources = align_table['matchSources'][0]
                 fraction_matched = num_sources / align_table['catalogSources'][0]
+
                 for row in align_table:
                     if row['status'] == 0:
                         if row['compromised'] == 0:
@@ -893,7 +898,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                         trlmsg += trlstr.format(row['imageName'])
                         print(trlmsg)
                         _updateTrlFile(trlfile, trlmsg)
-                        return None
+                        return None, None
             except Exception as err:
                 # Something went wrong with alignment to GAIA, so report this in
                 # trailer file
@@ -905,7 +910,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                     traceback.print_exc()
                 else:
                     print("WARNING: {}".format(err))
-                return None
+                return None, None
 
             _updateTrlFile(trlfile, trlmsg)
             # Write the perform_align log to the trailer file...(this will delete the _alignlog)
@@ -1041,7 +1046,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             # Return to main processing dir
             os.chdir(parent_dir)
 
-    return focus_dicts
+    return focus_dicts, full_table
 
 def apply_headerlet(filename, headerlet_file, flcfile=None):
     
