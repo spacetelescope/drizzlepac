@@ -166,8 +166,6 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
         
     pipeline_tips = build_tooltips(tooltips_list, hover_columns, list(range(0, len(hover_columns))))
         
-    plot_list = []
-
     # Data point figures
     p1 = HAPFigure(title='RMS Values',
                    x_label="RMS_X (pixels)",

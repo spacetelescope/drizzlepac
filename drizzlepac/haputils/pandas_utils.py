@@ -36,12 +36,12 @@ DETECTOR_LEGEND = {'UVIS': 'magenta', 'IR': 'red', 'WFC': 'blue',
                    'SBC': 'yellow', 'HRC': 'black'}
 
 def get_pandas_data(pandas_filename, data_columns, log_level=logutil.logging.NOTSET):
-    """Load the harvested data, stored in a CSV file, into local arrays.
+    """Load the harvested data from the storage file into local arrays.
 
     Parameters
     ==========
     pandas_filename : str
-        Name of the CSV file created by the harvester.
+        Name of the file created by the harvester.
         
     data_columns : list
         List of column names to be extracted from the input dataframe.
@@ -49,14 +49,13 @@ def get_pandas_data(pandas_filename, data_columns, log_level=logutil.logging.NOT
     Returns
     =======
     data_colsDF : Pandas dataframe
-        Dataframe which is a subset of the input Pandas dataframe written out as
-        a CSV file.  The subset dataframe consists of only the requested columns
+        Dataframe which is a subset of the input Pandas dataframe.  
+        The subset dataframe consists of only the requested columns
         and rows where all of the requested columns did not contain NaNs.
 
     """
     
     # Instantiate a Pandas Dataframe Reader (lazy instantiation)
-    # df_handle = PandasDFReader_CSV("svm_qa_dataframe.csv")
     df_handle = PandasDFReader(pandas_filename, log_level=log_level)
 
     # In this particular case, the names of the desired columns do not
@@ -71,7 +70,6 @@ def get_pandas_data(pandas_filename, data_columns, log_level=logutil.logging.NOT
         data_colsDF = df_handle.get_columns_CSV(data_columns)
 
     return data_colsDF
-
 
 
 
