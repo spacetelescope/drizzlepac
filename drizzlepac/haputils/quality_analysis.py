@@ -181,7 +181,7 @@ def determine_alignment_residuals(input, files,
     # Check to see whether there were any successful fits...
     align_success = False
     for img in imglist:
-        wcsname = fits.getval(img.meta['filename'], 'wcsname', ext=("sci",1))
+        wcsname = fits.getval(img.meta['filename'], 'wcsname', ext=("sci", 1))
         img.meta['wcsname'] = wcsname
         img.meta['fit_info']['aligned_to'] = imglist[0].meta['filename']
         img.meta['reference_catalog'] = None
@@ -197,10 +197,10 @@ def determine_alignment_residuals(input, files,
         resids = extract_residuals(imglist)
 
         if resids is not None:
-            resids_files = generate_output_files(resids, 
-                                 json_timestamp=json_timestamp, 
-                                 json_time_since_epoch=json_time_since_epoch, 
-                                 exclude_fields=['group_id'])
+            resids_files = generate_output_files(resids,
+                                                 json_timestamp=json_timestamp,
+                                                 json_time_since_epoch=json_time_since_epoch,
+                                                 exclude_fields=['group_id'])
 
     return resids_files
 
@@ -220,15 +220,15 @@ def generate_output_files(resids_dict,
             del resids_dict[image]['fit_results'][field]
         # Define name for output JSON file...
         rootname = image.split("_")[0]
-        json_filename = "{}_cal_qa_astrometry_resids.json".format(rootname)
+        json_filename = "{}_cal_qa_{}.json".format(rootname, json_rootname)
         resids_files.append(json_filename)
-        
+
         # Define output diagnostic object
         diagnostic_obj = du.HapDiagnostic()
-        src_str = "{}.{}".format(__taskname__, calling_name) 
+        src_str = "{}.{}".format(__taskname__, calling_name)
         diagnostic_obj.instantiate_from_fitsfile(image,
-                                               data_source=src_str,
-                                               description="X and Y residuals from \
+                                                 data_source=src_str,
+                                                 description="X and Y residuals from \
                                                             relative alignment ",
                                                timestamp=json_timestamp,
                                                time_since_epoch=json_time_since_epoch)
@@ -261,20 +261,21 @@ def generate_output_files(resids_dict,
                                      )
         diagnostic_obj.add_data_item(resids_dict[image]['sources'], 'residuals',
                                      item_description="Matched source positions from input exposures",
-                                     descriptions={"x":"X position from source image on tangent plane",
-                                                   "y":"Y position from source image on tangent plane",
-                                                   "ref_x":"X position from ref image on tangent plane",
-                                                   "ref_y":"Y position from ref image on tangent plane"},
-                                     units={'x':'pixels',
-                                            'y':'pixels',
-                                            'ref_x':'pixels',
-                                            'ref_y':'pixels'}
+                                     descriptions={"x": "X position from source image on tangent plane",
+                                                   "y": "Y position from source image on tangent plane",
+                                                   "ref_x": "X position from ref image on tangent plane",
+                                                   "ref_y": "Y position from ref image on tangent plane"},
+                                     units={'x': 'pixels',
+                                            'y': 'pixels',
+                                            'ref_x': 'pixels',
+                                            'ref_y': 'pixels'}
                                      )
 
         diagnostic_obj.write_json_file(json_filename)
         log.info("Generated relative astrometric residuals for {} as:\n    {}.".format(image, json_filename))
 
     return resids_files
+
 
 def extract_residuals(imglist):
     """Convert fit results and catalogs from tweakwcs into list of residuals"""
@@ -304,8 +305,8 @@ def extract_residuals(imglist):
         if group_id not in group_dict:
             group_dict[group_name] = {}
             group_dict[group_name]['fit_results'] = {'group_id': group_id,
-                         'rms_x': None, 'rms_y': None, 'wcsname': wcsname}
-            group_dict[group_name]['sources'] = Table(names=['x', 'y', 
+                                                     'rms_x': None, 'rms_y': None, 'wcsname': wcsname}
+            group_dict[group_name]['sources'] = Table(names=['x', 'y',
                                                              'ref_x', 'ref_y'])
             cum_indx = 0
 
@@ -318,33 +319,33 @@ def extract_residuals(imglist):
             img_indx = fitinfo['matched_input_idx'][img_mask]
             # Extract X, Y for sources image being updated
             img_x, img_y, max_indx, chip_mask = get_tangent_positions(chip, img_indx,
-                                                           start_indx=cum_indx)
+                                                                      start_indx=cum_indx)
             cum_indx += max_indx
             
             # Extract X, Y for sources from reference image
             ref_x, ref_y = chip.world_to_tanp(ref_ra[ref_indx][chip_mask], ref_dec[ref_indx][chip_mask])
             group_dict[group_name]['fit_results'].update(
                  {'xsh': fitinfo['shift'][0], 'ysh': fitinfo['shift'][1],
-                 'rot': fitinfo['<rot>'], 'scale': fitinfo['<scale>'],
-                 'rot_fit': fitinfo['rot'], 'scale_fit': fitinfo['scale'],
-                 'nmatches': fitinfo['nmatches'], 'skew': fitinfo['skew'],
-                 'rms_x': sigma_clipped_stats((img_x - ref_x))[-1],
-                 'rms_y': sigma_clipped_stats((img_y - ref_y))[-1]})
+                  'rot': fitinfo['<rot>'], 'scale': fitinfo['<scale>'],
+                  'rot_fit': fitinfo['rot'], 'scale_fit': fitinfo['scale'],
+                  'nmatches': fitinfo['nmatches'], 'skew': fitinfo['skew'],
+                  'rms_x': sigma_clipped_stats((img_x - ref_x))[-1],
+                  'rms_y': sigma_clipped_stats((img_y - ref_y))[-1]})
 
-            new_vals = Table(data=[img_x, img_y, ref_x, ref_y], 
-                                    names=['x', 'y', 'ref_x', 'ref_y'])
+            new_vals = Table(data=[img_x, img_y, ref_x, ref_y],
+                             names=['x', 'y', 'ref_x', 'ref_y'])
             group_dict[group_name]['sources'] = vstack([group_dict[group_name]['sources'], new_vals])
-            
-        else: 
+
+        else:
             group_dict[group_name]['fit_results'].update(
                      {'xsh': None, 'ysh': None,
-                     'rot': None, 'scale': None,
-                     'rot_fit': None, 'scale_fit': None,
-                     'nmatches': -1, 'skew': None,
-                     'rms_x': -1, 'rms_y': -1})
-
+                      'rot': None, 'scale': None,
+                      'rot_fit': None, 'scale_fit': None,
+                      'nmatches': -1, 'skew': None,
+                      'rms_x': -1, 'rms_y': -1})
 
     return group_dict
+
 
 def get_tangent_positions(chip, indices, start_indx=0):
     img_x = []
@@ -369,21 +370,21 @@ def get_tangent_positions(chip, indices, start_indx=0):
 # Compare source list with GAIA ref catalog
 def match_to_gaia(imcat, refcat, product, output, searchrad=5.0):
     """Create a catalog with sources matched to GAIA sources
-    
+
     Parameters
     ----------
     imcat : str or obj
         Filename or astropy.Table of source catalog written out as ECSV file
-        
+
     refcat : str
         Filename of GAIA catalog files written out as ECSV file
-        
+
     product : str
         Filename of drizzled product used to derive the source catalog
-        
+
     output : str
-        Rootname for matched catalog file to be written as an ECSV file 
-    
+        Rootname for matched catalog file to be written as an ECSV file
+
     """
     if isinstance(imcat, str):
         imtab = Table.read(imcat, format='ascii.ecsv')
@@ -394,20 +395,19 @@ def match_to_gaia(imcat, refcat, product, output, searchrad=5.0):
         if 'X-Center' in imtab.colnames:
             imtab.rename_column('X-Center', 'x')
             imtab.rename_column('Y-Center', 'y')
-            
-    
+
     reftab = Table.read(refcat, format='ascii.ecsv')
-    
+
     # define WCS for matching
     tpwcs = tweakwcs.FITSWCS(HSTWCS(product, ext=1))
-    
+
     # define matching parameters
     tpmatch = tweakwcs.TPMatch(searchrad=searchrad)
-    
+
     # perform match
     ref_indx, im_indx = tpmatch(reftab, imtab, tpwcs)
     print('Found {} matches'.format(len(ref_indx)))
-    
+
     # Obtain tangent plane positions for both image sources and reference sources
     im_x, im_y = tpwcs.det_to_tanp(imtab['x'][im_indx], imtab['y'][im_indx])
     ref_x, ref_y = tpwcs.world_to_tanp(reftab['RA'][ref_indx], reftab['DEC'][ref_indx])
@@ -416,24 +416,83 @@ def match_to_gaia(imcat, refcat, product, output, searchrad=5.0):
     else:
         im_ra = imtab['RA'][im_indx]
         im_dec = imtab['DEC'][im_indx]
-        
 
     # Compile match table
-    match_tab = Table(data=[im_x, im_y, im_ra, im_dec, 
-                            ref_x, ref_y, 
+    match_tab = Table(data=[im_x, im_y, im_ra, im_dec,
+                            ref_x, ref_y,
                             reftab['RA'][ref_indx], reftab['DEC'][ref_indx]],
-                      names=['img_x','img_y', 'img_RA', 'img_DEC', 
+                      names=['img_x', 'img_y', 'img_RA', 'img_DEC',
                              'ref_x', 'ref_y', 'ref_RA', 'ref_DEC'])
     if not output.endswith('.ecsv'):
-        output = '{}.ecsv'.format(output)                             
+        output = '{}.ecsv'.format(output)
     match_tab.write(output, format='ascii.ecsv')
+
+
+def determine_gaia_residuals(fit_catalogs,
+                             json_timestamp=None, 
+                             json_time_since_epoch=None,
+                             log_level=logutil.logging.NOTSET):
+    # Report on the results of the actual alignment fit used for defining the
+    # final WCS
+    catname = fit_catalogs.selected_fit[0].meta['fit_info']['catalog']
+    gaia_cat = fit_catalogs.reference_catalogs[catname]
+
+    selected_fit = fit_catalogs.selected_fit
+    resids = {}
     
-                       
+    for img in selected_fit:
+        # The same fits is reported for each chip in a multi-chip image
+        if img in resids:
+            continue
+        # Get the resids
+        fitinfo = img.meta['fit_info']
+        ref_indx = fitinfo['matched_ref_idx']
+        imgname = img.meta['filename']
+        resids[imgname] = {}
+                # store results in dict
+        resids[imgname]['fit_results'] = {'aligned_to': catname,
+                                         'wcsname': "",
+                                         'group_id': img.meta['group_id']}
+
+        # Obtain tangent plane positions for both image sources and reference sources
+        img_x, img_y = img.world_to_tanp(fitinfo['fit_RA'], fitinfo['fit_DEC'])
+        ref_x, ref_y = img.world_to_tanp(gaia_cat['RA'][ref_indx], 
+                                             gaia_cat['DEC'][ref_indx])
+
+        # Compile match table
+        match_tab = Table(data=[img_x, img_y,
+                                fitinfo['fit_RA'], fitinfo['fit_DEC'],
+                                ref_x, ref_y,
+                                gaia_cat['RA'][ref_indx], gaia_cat['DEC'][ref_indx]],
+                          names=['img_x', 'img_y', 'img_RA', 'img_DEC',
+                                 'ref_x', 'ref_y', 'ref_RA', 'ref_DEC'])
+
+        resids[imgname]['fit_results'].update(
+             {'xsh': fitinfo['shift'][0], 'ysh': fitinfo['shift'][1],
+              'rot': fitinfo['<rot>'], 'scale': fitinfo['<scale>'],
+              'rot_fit': fitinfo['rot'], 'scale_fit': fitinfo['scale'],
+              'nmatches': fitinfo['nmatches'], 'skew': fitinfo['skew'],
+              'rms_x': sigma_clipped_stats((img_x - ref_x))[-1],
+              'rms_y': sigma_clipped_stats((img_y - ref_y))[-1]})
+
+        resids[imgname]['sources'] = match_tab
+
+    if resids:
+        descrip = 'Fit results for absolute alignment of input exposures to {}'.format(catname)
+        resids_files = generate_output_files(resids,
+                                           json_timestamp=json_timestamp,
+                                           json_time_since_epoch=json_time_since_epoch,
+                                           exclude_fields=['group_id'],
+                                           calling_name='determine_gaia_residuals',
+                                           json_rootname='gaia_fit_resids',
+                                           section_name='gaia_fit_results',
+                                           section_description=descrip)
+    return resids_files
 
 
 # -------------------------------------------------------------------------------
 # Simple interface for running all the analysis functions defined for this package
-def run_all(input, files, log_level=logutil.logging.NOTSET):
+def run_all(input, files, catalogs=None, log_level=logutil.logging.NOTSET):
 
     # generate a timestamp values that will be used to make creation time, creation date and epoch values
     # common to each json file
@@ -450,12 +509,7 @@ def run_all(input, files, log_level=logutil.logging.NOTSET):
                                               json_time_since_epoch=json_time_since_epoch,
                                               log_level=log_level)
     if catalogs is not None:
-        if 'GAIADR2' in catalogs.reference_catalogs:
-            gaia_cat = catalogs.reference_catalogs['GAIADR2']
-        else:            
-            gaia_cat = catalogs.reference_catalogs['GAIADR1']
-            
-        gaia_files = determine_gaia_residuals(input, files, gaia_cat,
+        gaia_files = determine_gaia_residuals(catalogs,
                                              json_timestamp=json_timestamp,
                                              json_time_since_epoch=json_time_since_epoch,
                                              log_level=log_level)
