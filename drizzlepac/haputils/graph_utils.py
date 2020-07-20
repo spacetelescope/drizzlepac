@@ -27,7 +27,6 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # and then the harvester too.
 HOVER_BASIC_TIPS = [('ImageName', '@{gen_info.imgname}'),
                     ('Proposal ID', '@{gen_info.proposal_id}'),
-                    ('ASN ID', '@{header.ASN_ID}'),
                     ('Filter', '@{gen_info.filter}'),
                     ('Inst/Det', '@{inst_det}')]
 
