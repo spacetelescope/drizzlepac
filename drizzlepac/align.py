@@ -566,7 +566,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                 result.add_column(filtered_table[col], name=col)
         if filtered_table is not None:
             filtered_table.pprint(max_width=-1)
-    return filtered_table
+    return alignment_table
 
 
 

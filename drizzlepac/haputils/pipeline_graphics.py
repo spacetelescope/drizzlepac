@@ -133,7 +133,9 @@ def build_vector_plot(sourceCDS, **plot_dict):
     return p1
 
 
-def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
+def generate_summary_plots(fitCDS, results_columns, 
+                           base_title='Relative Alignment',
+                           output='cal_qa_results.html'):
     """Generate the graphics associated with this particular type of data.
 
     Parameters
@@ -167,64 +169,64 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
     pipeline_tips = build_tooltips(tooltips_list, hover_columns, list(range(0, len(hover_columns))))
         
     # Data point figures
-    p1 = HAPFigure(title='RMS Values',
+    p1 = HAPFigure(title='{}: RMS Values'.format(base_title),
                    x_label="RMS_X (pixels)",
                    y_label="RMS_Y (pixels)",
                    hover_tips=pipeline_tips)
 
     p1.build_glyph('circle', 
-                   x=RESULTS_COLUMNS[0], 
-                   y=RESULTS_COLUMNS[1],
+                   x=results_columns[0], 
+                   y=results_columns[1],
                    sourceCDS=fitCDS,  
                    glyph_color='colormap',
                    legend_group='inst_det')
 
 
     # Data point figures
-    p2 = HAPFigure(title='Offsets',
+    p2 = HAPFigure(title='{}: Offsets'.format(base_title),
                    x_label="Shift X (pixels)",
                    y_label="Shift Y (pixels)",
                    hover_tips=pipeline_tips)
 
     p2.build_glyph('circle', 
-                   x=RESULTS_COLUMNS[2], 
-                   y=RESULTS_COLUMNS[3],
+                   x=results_columns[2], 
+                   y=results_columns[3],
                    sourceCDS=fitCDS,  
                    glyph_color='colormap',
                    legend_group='inst_det')
 
-    p3 = HAPFigure(title='Rotation',
+    p3 = HAPFigure(title='{}: Rotation'.format(base_title),
                    x_label="Number of matched sources",
                    y_label="Rotation (degrees)",
                    hover_tips=pipeline_tips)
 
     p3.build_glyph('circle', 
-                   x=RESULTS_COLUMNS[8], 
-                   y=RESULTS_COLUMNS[4],
+                   x=results_columns[8], 
+                   y=results_columns[4],
                    sourceCDS=fitCDS,  
                    glyph_color='colormap',
                    legend_group='inst_det')
 
-    p4 = HAPFigure(title='Scale',
+    p4 = HAPFigure(title='{}: Scale'.format(base_title),
                    x_label="Number of matched sources",
                    y_label="Scale",
                    hover_tips=pipeline_tips)
 
     p4.build_glyph('circle', 
-                   x=RESULTS_COLUMNS[8], 
-                   y=RESULTS_COLUMNS[5],
+                   x=results_columns[8], 
+                   y=results_columns[5],
                    sourceCDS=fitCDS,  
                    glyph_color='colormap',
                    legend_group='inst_det')
 
-    p5 = HAPFigure(title='Skew',
+    p5 = HAPFigure(title='{}: Skew'.format(base_title),
                    x_label="Number of matched sources",
                    y_label="Skew (degrees)",
                    hover_tips=pipeline_tips)
 
     p5.build_glyph('circle', 
-                   x=RESULTS_COLUMNS[8], 
-                   y=RESULTS_COLUMNS[9],
+                   x=results_columns[8], 
+                   y=results_columns[9],
                    sourceCDS=fitCDS,  
                    glyph_color='colormap',
                    legend_group='inst_det')
@@ -233,9 +235,11 @@ def generate_summary_plots(fitCDS, output='cal_qa_results.html'):
     save(column(p1.fig, p2.fig, p3.fig, p4.fig, p5.fig))
                      
     return output
-    
+
+
 def generate_relative_residual_plots(residsCDS, filename, rms=(0.,0.),
-                            display_plot=False, output_dir=None, output=''):
+                            display_plot=False, output_dir=None, output='',
+                            title_prefix='Residuals'):
     rootname = '_'.join(filename.split("_")[:-1])
     output = '{}_vectors_{}'.format(rootname, output)
     if output_dir is not None:
@@ -262,7 +266,7 @@ def generate_relative_residual_plots(residsCDS, filename, rms=(0.,0.),
     plot_range = Range1d(-max_range, max_range)
 
     rms_x,rms_y = rms
-    title_start = 'Residuals for {} '.format(filename)
+    title_start = '{} for {} '.format(title_prefix, filename)
     title_rms = 'RMS(X)={:.3f}, RMS(Y)={:.3f}'.format(rms_x, rms_y)
     title_base = '{}[{} sources, {}]'.format(title_start, npoints, title_rms)
 
@@ -337,12 +341,45 @@ def build_astrometry_plots(pandas_file,
                       'residuals.ref_x',
                       'residuals.ref_y']
 
-    fit_data = get_pandas_data(pandas_file, RESULTS_COLUMNS)
+    results_columns = ['fit_results.rms_x',
+                       'fit_results.rms_y',
+                       'fit_results.xsh',
+                       'fit_results.ysh',
+                       'fit_results.rot',
+                       'fit_results.scale',
+                       'fit_results.rot_fit',
+                       'fit_results.scale_fit',
+                       'fit_results.nmatches',
+                       'fit_results.skew']
+
+    gaia_fit_columns = ['gaia_fit_results.rms_x',
+                       'gaia_fit_results.rms_y',
+                       'gaia_fit_results.xsh',
+                       'gaia_fit_results.ysh',
+                       'gaia_fit_results.rot',
+                       'gaia_fit_results.scale',
+                       'gaia_fit_results.rot_fit',
+                       'gaia_fit_results.scale_fit',
+                       'gaia_fit_results.nmatches',
+                       'gaia_fit_results.skew',
+                       'gaia_fit_results.aligned_to']
+
+    gaia_resids_columns = ['gaia_fit_residuals.img_x',
+                           'gaia_fit_residuals.img_y',
+                           'gaia_fit_residuals.ref_x',
+                           'gaia_fit_residuals.ref_y']
+
+    fit_data = get_pandas_data(pandas_file, results_columns)
     resids_data = get_pandas_data(pandas_file, resids_columns)
+    gaia_fit_data = get_pandas_data(pandas_file, gaia_fit_columns)
+    gaia_resids_data = get_pandas_data(pandas_file, gaia_resids_columns)
     
     fitCDS = ColumnDataSource(fit_data)
     residsCDS = ColumnDataSource(resids_data)
+    gaiafitCDS = ColumnDataSource(gaia_fit_data)
+    gaiaresidsCDS = ColumnDataSource(gaia_resids_data)
     
+    gaia_output = 'gaiafit_{}'.format(output)
 
     if output_dir is not None:
         summary_filename = os.path.join(output_dir, output)
@@ -350,11 +387,20 @@ def build_astrometry_plots(pandas_file,
         summary_filename = output
         
     # Generate the astrometric plots
-    astrometry_plot_name = generate_summary_plots(fitCDS, output=summary_filename)
+    relative_plot_name = generate_summary_plots(fitCDS, results_columns,
+                                                output=summary_filename)
     
-    resids_plot_names = [astrometry_plot_name]
+    resids_plot_names = [relative_plot_name]
 
-    for filename,rootname in zip(fitCDS.data['header.FILENAME'], fitCDS.data['index']):
+    # Generate plots for absolute alignment
+    catalog_name = gaiafitCDS.data[gaia_fit_columns[-1]][0].upper()
+    gaia_title = 'Alignment to {}'.format(catalog_name)
+    absolute_plot_name = generate_summary_plots(gaiafitCDS, gaia_fit_columns,
+                                                base_title=gaia_title,
+                                                  output=summary_filename)
+
+    # Generate residual plots for relative alignment
+    for filename,rootname in zip(fitCDS.data['gen_info.imgname'], fitCDS.data['index']):
         i = residsCDS.data['index'].tolist().index(rootname)
         resids_dict = {'x': residsCDS.data[resids_columns[0]][i],
                        'y': residsCDS.data[resids_columns[1]][i],
@@ -370,6 +416,27 @@ def build_astrometry_plots(pandas_file,
                                                    output_dir=output_dir,
                                                    output=output)
         resids_plot_names.append(resids_plot_name)
+
+    # Generate residual plots for alignment to GAIA
+    for filename,rootname in zip(gaiafitCDS.data['gen_info.imgname'], gaiafitCDS.data['index']):        
+        # Now add plots for fits to GAIA
+        j = gaiaresidsCDS.data['index'].tolist().index(rootname)
+        gaia_resids_dict = {'x': gaiaresidsCDS.data[gaia_resids_columns[0]][i],
+                            'y': gaiaresidsCDS.data[gaia_resids_columns[1]][i],
+                            'xr': gaiaresidsCDS.data[gaia_resids_columns[2]][i],
+                            'yr': gaiaresidsCDS.data[gaia_resids_columns[3]][i]}
+        gaia_cds = ColumnDataSource(gaia_resids_dict)
+
+        gaia_rms_x = float(gaiafitCDS.data[gaia_fit_columns[0]][i])
+        gaia_rms_y = float(gaiafitCDS.data[gaia_fit_columns[1]][i])
+        
+        resids_plot_name = generate_relative_residual_plots(gaia_cds, filename, 
+                                                   rms=(gaia_rms_x,gaia_rms_y),
+                                                   output_dir=output_dir,
+                                                   output=gaia_output,
+                                                   title_prefix='Residuals from {}'.format(catalog_name))
+        resids_plot_names.append(resids_plot_name)
+        
 
     resids_plot_names = list(filter(lambda a: a != None, resids_plot_names))
     
