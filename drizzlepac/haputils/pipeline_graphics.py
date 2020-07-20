@@ -345,6 +345,7 @@ def build_astrometry_plots(pandas_file,
     gaiafitCDS = ColumnDataSource(gaia_fit_data)
     gaiaresidsCDS = ColumnDataSource(gaia_resids_data)
     
+    gaia_output = 'gaiafit_{}'.format(output)
 
     if output_dir is not None:
         summary_filename = os.path.join(output_dir, output)
