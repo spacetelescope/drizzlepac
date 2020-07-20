@@ -812,7 +812,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         del ivmlist
         # If there are no products to be generated, there is nothing to align...
         if asndict is None:
-            return None
+            return None, None
 
     # if tmpdir is turned off (== None), tmpname set to 'default-pipeline'
     tmpname = tmpdir if tmpdir else 'default-pipeline'
@@ -898,7 +898,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                         trlmsg += trlstr.format(row['imageName'])
                         print(trlmsg)
                         _updateTrlFile(trlfile, trlmsg)
-                        return None
+                        return None, None
             except Exception as err:
                 # Something went wrong with alignment to GAIA, so report this in
                 # trailer file
@@ -910,7 +910,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                     traceback.print_exc()
                 else:
                     print("WARNING: {}".format(err))
-                return None
+                return None, None
 
             _updateTrlFile(trlfile, trlmsg)
             # Write the perform_align log to the trailer file...(this will delete the _alignlog)
