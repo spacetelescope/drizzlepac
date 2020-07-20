@@ -211,7 +211,8 @@ def generate_output_files(resids_dict,
                          calling_name='determine_alignment_residuals',
                          json_rootname='astrometry_resids',
                          section_name='fit_results',
-                         section_description='Fit results for relative alignment of input exposures'):
+                         section_description='Fit results for relative alignment of input exposures',
+                         resids_name='residuals'):
     """Write out results to JSON files, one per image"""
     resids_files = []
     for image in resids_dict:
@@ -259,7 +260,7 @@ def generate_output_files(resids_dict,
                                             'skew':'unitless',
                                             'wcsname':"unitless"}
                                      )
-        diagnostic_obj.add_data_item(resids_dict[image]['sources'], 'residuals',
+        diagnostic_obj.add_data_item(resids_dict[image]['sources'], resids_name,
                                      item_description="Matched source positions from input exposures",
                                      descriptions={"x": "X position from source image on tangent plane",
                                                    "y": "Y position from source image on tangent plane",
@@ -486,7 +487,8 @@ def determine_gaia_residuals(fit_catalogs,
                                            calling_name='determine_gaia_residuals',
                                            json_rootname='gaia_fit_resids',
                                            section_name='gaia_fit_results',
-                                           section_description=descrip)
+                                           section_description=descrip,
+                                           resids_name='gaia_fit_residuals')
     return resids_files
 
 
