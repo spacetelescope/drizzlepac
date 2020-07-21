@@ -642,8 +642,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 for item in xmresults:
                     log.info(item)
                 log.info("")
-
-                if matching_lines_ref.size > 0:
+                if len(matching_lines_ref) > 0:
                     # instantiate diagnostic object to store test results for eventual .json file output
                     diag_obj = du.HapDiagnostic(log_level=log_level)
                     diag_obj.instantiate_from_hap_obj(filtobj_dict[xmatch_comp_imgname]['filt_obj'],
