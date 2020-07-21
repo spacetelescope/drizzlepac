@@ -985,43 +985,6 @@ def wcs_graphics_driver(storage_filename, output_base_filename='', display_plot=
 #
 
 
-def get_pandas_data(storage_filename, requested_columns, log_level=logutil.logging.NOTSET):
-    """Load the harvested data, stored in an HDF5 storage file, into local arrays.
-
-    Parameters
-    ==========
-    storage_filename : str
-        Name of the storage file for the Pandas dataframe created by the harvester.
-
-    requested_columns : list of str
-        Column names to get from the Pandas dataframe
-
-    log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default: 20 or 'info'.
-
-    Returns
-    =======
-    dataDF : Pandas dataframe
-        Dataframe which is a subset of the input Pandas dataframe containing
-        only the requested columns PLUS the columns added by the pandas_utils.
-    """
-    log.setLevel(log_level)
-
-    # Instantiate a Pandas Dataframe Reader (lazy instantiation)
-    df_handle = PandasDFReader(storage_filename, log_level=logutil.logging.NOTSET)
-
-    try:
-        dataDF = df_handle.get_columns_HDF5(requested_columns, do_drop=False)
-    except Exception:
-        log.critical("Critical columns not found in storage Pandas dataframe: {}.\n".format(storage_filename))
-        sys.exit(1)
-
-    log.info("Dataframe has been retrieved from the storage Pandas HDF5 file: {}.\n".format(storage_filename))
-
-    return dataDF
-
-
 def get_wcs_data(storage_filename, wcs_columns, log_level=logutil.logging.NOTSET):
     """Load the harvested data, stored in a storage file, into local arrays.
 
