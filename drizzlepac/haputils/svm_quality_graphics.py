@@ -481,7 +481,7 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_pl
     if output_base_filename == '':
         output_base_filename = '"svm_qa_photometry'
     else:
-        output_base_filename = '{}_svm_qa_photometry'.format(output_basename)
+        output_base_filename = '{}_svm_qa_photometry'.format(output_base_filename)
     output_file(output_base_filename + '.html')
 
     # Compute some statistics to report on plot
@@ -673,7 +673,7 @@ def generate_nsources_graphic(dataDF, output_base_filename='', display_plot=Fals
     if output_base_filename == '':
         output_base_filename = '"svm_qa_cat_nsources'
     else:
-        output_base_filename = '{}_svm_qa_cat_nsources'.format(output_basename)
+        output_base_filename = '{}_svm_qa_cat_nsources'.format(output_base_filename)
     output_file(output_base_filename + '.html')
 
     # Set the output file immediately as advised by Bokeh.
@@ -800,7 +800,7 @@ def generate_wcs_graphic(wcs_dataDF, wcs_columns, output_base_filename='', displ
     if output_base_filename == '':
         output_base_filename = 'svm_qa_wcs'
     else:
-        output_base_filename = '{}_svm_qa_wcs'.format(output_basename)
+        output_base_filename = '{}_svm_qa_wcs'.format(output_base_filename)
     output_file(output_base_filename + '.html')
 
     # Setup the source of the data to be plotted so the axis variables can be
