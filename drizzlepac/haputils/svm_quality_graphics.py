@@ -158,18 +158,18 @@ def build_svm_plots(data_source, output_basename='', display_plot=False):
     """
 
     # Generate the WCS comparison graphics - compares the Primary WCS to the alternate WCS
-    wcs_graphics_driver(data_source, output_base_filename='wcs_graphics', display_plot, log_level=logutil.logging.INFO):
+    wcs_graphics_driver(data_source, output_basename, display_plot, log_level=logutil.logging.INFO)
 
     #
     # Catalog comparisons
     #
 
     # Comparison of number of sources detected in the Point and Segment catalogs
-    nsources_graphics_driver(data_source, output_base_filename='svm_catalog_numsources', display_plot, log_level=logutil.logging.INFO)
+    nsources_graphics_driver(data_source, output_basename, display_plot, log_level=logutil.logging.INFO)
 
     # Comparison of photometry measurements for Aperture 1 and Apeture 2 between
-    # Point and Segment catalogs 
-    photometry_graphics_driver(data_source, output_base_filename='photometry_graphics', display_plot, log_level=logutil.logging.INFO):
+    # Point and Segment catalogs
+    photometry_graphics_driver(data_source, output_basename, display_plot, log_level=logutil.logging.INFO)
 
 
 # -----------------------------------------------------------------------------
@@ -398,7 +398,7 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
 #
 
 
-def generate_photometry_graphic(phot_dataDF, output_base_filename, display_plot, log_level):
+def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_plot=False, log_level=logutil.logging.INFO):
     """Generate the graphics associated with this particular type of data.
 
     Parameters
@@ -423,15 +423,20 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename, display_plot,
 
     HTML file is generated and written to the current directory.
     """
+    log.setLevel(log_level)
 
     # Set the output file immediately as advised by Bokeh.
+    if output_base_filename == '':
+        output_base_filename = '"svm_qa_photometry'
+    else:
+        output_base_filename = '{}_svm_qa_photometry'.format(output_basename)
     output_file(output_base_filename + '.html')
 
     # Compute some statistics to report on plot
     mean_dMagAp1mean = phot_dataDF['Ap1 Mean Differences'].mean()
     mean_dMagAp1median = phot_dataDF['Ap1 Median Differences'].mean()
 
-    mean_dMagAp2mean= phot_dataDF['Ap2 Mean Differences'].mean()
+    mean_dMagAp2mean = phot_dataDF['Ap2 Mean Differences'].mean()
     mean_dMagAp2median = phot_dataDF['Ap2 Median Differences'].mean()
 
     # Setup the source of the data to be plotted so the axis variables can be
@@ -455,7 +460,7 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename, display_plot,
     p0.build_glyph('circle',
                    x='x_index',
                    y='Ap1 Mean Differences',
-                   sourceCDS=sourceCDS, 
+                   sourceCDS=sourceCDS,
                    glyph_color='colormap',
                    legend_group='inst_det',
                    name="ap1mean")
@@ -528,7 +533,7 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename, display_plot,
     log.info("Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
 
 
-def photometry_graphics_driver(storage_filename, output_base_filename='photometry_graphics', display_plot=False, log_level=logutil.logging.NOTSET):
+def photometry_graphics_driver(storage_filename, output_base_filename='', display_plot=False, log_level=logutil.logging.NOTSET):
     """Driver to load the data from the storage file and generate the graphics.
 
     Parameters
@@ -554,13 +559,12 @@ def photometry_graphics_driver(storage_filename, output_base_filename='photometr
     log.setLevel(log_level)
 
     # Dictionary mapping the original dataframe column name to their new simple names
-    phot_columns={'Statistics_MagAp1.Delta_MagAp1.Mean': 'Ap1 Mean Differences',
-                  'Statistics_MagAp1.Delta_MagAp1.StdDev': 'Ap1 Standard Deviation',
-                  'Statistics_MagAp1.Delta_MagAp1.Median': 'Ap1 Median Differences',
-                  'Statistics_MagAp2.Delta_MagAp2.Mean': 'Ap2 Mean Differences',
-                  'Statistics_MagAp2.Delta_MagAp2.StdDev': 'Ap2 Standard Deviation',
-                  'Statistics_MagAp2.Delta_MagAp2.Median': 'Ap2 Median Differences'}
-
+    phot_columns = {'Statistics_MagAp1.Delta_MagAp1.Mean': 'Ap1 Mean Differences',
+                    'Statistics_MagAp1.Delta_MagAp1.StdDev': 'Ap1 Standard Deviation',
+                    'Statistics_MagAp1.Delta_MagAp1.Median': 'Ap1 Median Differences',
+                    'Statistics_MagAp2.Delta_MagAp2.Mean': 'Ap2 Mean Differences',
+                    'Statistics_MagAp2.Delta_MagAp2.StdDev': 'Ap2 Standard Deviation',
+                    'Statistics_MagAp2.Delta_MagAp2.Median': 'Ap2 Median Differences'}
 
     # Retrieve the dataframe
     log.info('Photometry_graphics. Retrieve Pandas dataframe from file {}.\n'.format(storage_filename))
@@ -577,14 +581,14 @@ def photometry_graphics_driver(storage_filename, output_base_filename='photometr
     x_index.clear()
 
     # Generate the photometric graphic
-    generate_phot_graphic(phot_dataDF, output_base_filename, display_plot, log_level)
+    generate_photometry_graphic(phot_dataDF, output_base_filename, display_plot, log_level)
 
 # -----------------------------------------------------------------------------
 # Number of detected sources in Point in Segment catalogs
 #
 
 
-def generate_nsources_graphic(dataDF, output_base_filename, display_plot, log_level):
+def generate_nsources_graphic(dataDF, output_base_filename='', display_plot=False, log_level=logutil.logging.INFO):
     """Generate plot displaying the difference in the number of sources detected in the Point and Segment catalogs.
 
     Parameters
@@ -611,6 +615,14 @@ def generate_nsources_graphic(dataDF, output_base_filename, display_plot, log_le
 
     HTML file is generated and written to the current directory.
     """
+    log.setLevel(log_level)
+
+    # Set the output file immediately as advised by Bokeh.
+    if output_base_filename == '':
+        output_base_filename = '"svm_qa_cat_nsources'
+    else:
+        output_base_filename = '{}_svm_qa_cat_nsources'.format(output_basename)
+    output_file(output_base_filename + '.html')
 
     # Set the output file immediately as advised by Bokeh.
     output_file(output_base_filename + '.html')
@@ -648,7 +660,7 @@ def generate_nsources_graphic(dataDF, output_base_filename, display_plot, log_le
     log.info("Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
 
 
-def nsources_graphics_driver(storage_filename, output_base_filename='svm_catalog_numsources', display_plot=False, log_level=logutil.logging.INFO):
+def nsources_graphics_driver(storage_filename, output_base_filename='', display_plot=False, log_level=logutil.logging.INFO):
     """Driver to load the data from the storage file and generate the graphics.
 
     This particular is to display the differences in the number of detected sources documented
@@ -700,7 +712,7 @@ def nsources_graphics_driver(storage_filename, output_base_filename='svm_catalog
 #
 
 
-def generate_wcs_graphic(wcs_dataDF, wcs_columns, output_base_filename, display_plot=False, log_level=logutil.logging.NOTSET):
+def generate_wcs_graphic(wcs_dataDF, wcs_columns, output_base_filename='', display_plot=False, log_level=logutil.logging.NOTSET):
     """Generate the graphics associated with this particular type of data.
 
     Parameters
@@ -733,6 +745,10 @@ def generate_wcs_graphic(wcs_dataDF, wcs_columns, output_base_filename, display_
     log.setLevel(log_level)
 
     # Set the output file immediately as advised by Bokeh.
+    if output_base_filename == '':
+        output_base_filename = 'svm_qa_wcs'
+    else:
+        output_base_filename = '{}_svm_qa_wcs'.format(output_basename)
     output_file(output_base_filename + '.html')
 
     # Setup the source of the data to be plotted so the axis variables can be
@@ -751,65 +767,59 @@ def generate_wcs_graphic(wcs_dataDF, wcs_columns, output_base_filename, display_
         wcs_components.append('del_{}_wcsname'.format(wcs_type))
         alt_wcs_names.append('alt_{}_wcsname'.format(wcs_type))
 
-    # There are three distinct figures in each row and one row 
+    # There are three distinct figures in each row and one row
     # for each wcs_type_names
-    f = [HAPFigure,
-         HAPFigure,
-         HAPFigure,
-         HAPFigure,
-         HAPFigure,
-         HAPFigure,
-         HAPFigure,
-         HAPFigure,
-         HAPFigure]
+    fig_list = []
     for i, wcs_component in enumerate(wcs_components):
         if wcs_component in wcs_dataDF.columns:
             slist = wcs_component.rsplit('_')
-            text ='WCS Difference: Primary - '+slist[1].capitalize()
+            text = 'WCS Difference: Primary - '+slist[1].capitalize()
 
             # Build the hover tooltips on-the-fly as the altername WCS is a variable
             alt_value = '"@{}"'.format(alt_wcs_names[i])
             wcs_tips = [("Primary", "@prim_wcsname"),
                         ("Alternate", alt_value)]
 
-            j = i * 3
-            f[j] = HAPFigure(title=text,
-                             x_label='Delta CRPIX1 (pixels)',
-                             y_label='Delta CRPIX2 (pixels)',
-                             hover_tips=wcs_tips)
-            f[j].build_glyph('circle',
-                             x='del_{}_crpix1'.format(slist[1]),
-                             y='del_{}_crpix2'.format(slist[1]),
-                             sourceCDS=sourceCDS,
-                             glyph_color='colormap',
-                             legend_group='inst_det')
+            fig = HAPFigure(title=text,
+                            x_label='Delta CRPIX1 (pixels)',
+                            y_label='Delta CRPIX2 (pixels)',
+                            hover_tips=wcs_tips)
+            fig.build_glyph('circle',
+                            x='del_{}_crpix1'.format(slist[1]),
+                            y='del_{}_crpix2'.format(slist[1]),
+                            sourceCDS=sourceCDS,
+                            glyph_color='colormap',
+                            legend_group='inst_det')
+            fig_list.append(fig)
 
-            f[j+1] = HAPFigure(title=text,
-                               x_label='Delta CRVAL1 (degrees)',
-                               y_label='Delta CRVAL2 (degrees)',
-                               hover_tips=wcs_tips)
-            f[j+1].build_glyph('circle',
-                               x='del_{}_crval1'.format(slist[1]),
-                               y='del_{}_crval2'.format(slist[1]),
-                               sourceCDS=sourceCDS,
-                               glyph_color='colormap',
-                               legend_group='inst_det')
+            fig = HAPFigure(title=text,
+                            x_label='Delta CRVAL1 (degrees)',
+                            y_label='Delta CRVAL2 (degrees)',
+                            hover_tips=wcs_tips)
+            fig.build_glyph('circle',
+                            x='del_{}_crval1'.format(slist[1]),
+                            y='del_{}_crval2'.format(slist[1]),
+                            sourceCDS=sourceCDS,
+                            glyph_color='colormap',
+                            legend_group='inst_det')
+            fig_list.append(fig)
 
-            f[j+2] = HAPFigure(title=text,
-                               x_label='Delta Scale (pixels/arcseconds)',
-                               y_label='Delta Orientation (degrees)',
-                               hover_tips=wcs_tips)
-            f[j+2].build_glyph('circle',
-                               x='del_{}_scale'.format(slist[1]),
-                               y='del_{}_orient'.format(slist[1]),
-                               sourceCDS=sourceCDS,
-                               glyph_color='colormap',
-                               legend_group='inst_det')
+            fig = HAPFigure(title=text,
+                            x_label='Delta Scale (pixels/arcseconds)',
+                            y_label='Delta Orientation (degrees)',
+                            hover_tips=wcs_tips)
+            fig.build_glyph('circle',
+                            x='del_{}_scale'.format(slist[1]),
+                            y='del_{}_orient'.format(slist[1]),
+                            sourceCDS=sourceCDS,
+                            glyph_color='colormap',
+                            legend_group='inst_det')
+            fig_list.append(fig)
 
     # Create the the HTML output and optionally display the plot
-    grid = gridplot([[f[0].fig, f[1].fig, f[2].fig], 
-                    [f[3].fig, f[4].fig, f[5].fig], 
-                    [f[6].fig, f[7].fig, f[8].fig]], 
+    grid = gridplot([[fig_list[0].fig, fig_list[1].fig, fig_list[2].fig],
+                    [fig_list[3].fig, fig_list[4].fig, fig_list[5].fig],
+                    [fig_list[6].fig, fig_list[7].fig, fig_list[8].fig]],
                     plot_width=500, plot_height=500)
 
     # Display and save
@@ -821,7 +831,7 @@ def generate_wcs_graphic(wcs_dataDF, wcs_columns, output_base_filename, display_
     log.info("Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
 
 
-def wcs_graphics_driver(storage_filename, output_base_filename='wcs_graphics', display_plot=False, log_level=logutil.logging.INFO):
+def wcs_graphics_driver(storage_filename, output_base_filename='', display_plot=False, log_level=logutil.logging.INFO):
     """Driver to load the data from the storage file and generate the graphics.
 
     Parameters
@@ -843,6 +853,7 @@ def wcs_graphics_driver(storage_filename, output_base_filename='wcs_graphics', d
     =======
     Nothing
     """
+    log.setLevel(log_level)
 
     # Observations taken after Oct 2017 will most likely NOT have any apriori
     # solutions since they were observed using GAIA-based coordinates for the
@@ -974,7 +985,7 @@ def get_wcs_data(storage_filename, wcs_columns, log_level=logutil.logging.NOTSET
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
         Default: 20 or 'info'.
-        
+
     Returns
     =======
     wcs_dataDF : Pandas dataframe
@@ -982,7 +993,7 @@ def get_wcs_data(storage_filename, wcs_columns, log_level=logutil.logging.NOTSET
         consists of only the requested columns and rows, as well as any columns provided
         by pandas_utils for free.
 
-    Note: This routine is different from the nominal get_pandas_data() in that it tries to 
+    Note: This routine is different from the nominal get_pandas_data() in that it tries to
     compensate in case on the of requested columns (apriori or aposteriori) is missing.
     """
     log.setLevel(log_level)
