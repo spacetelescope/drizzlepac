@@ -35,12 +35,12 @@ __version_date__ = '08-Jun-2020'
 DETECTOR_LEGEND = {'UVIS': 'magenta', 'IR': 'red', 'WFC': 'blue',
                    'SBC': 'yellow', 'HRC': 'black'}
 
-def get_pandas_data(pandas_filename, data_columns, log_level=logutil.logging.NOTSET):
+def get_pandas_data(storage_filename, data_columns, log_level=logutil.logging.NOTSET):
     """Load the harvested data from the storage file into local arrays.
 
     Parameters
     ==========
-    pandas_filename : str
+    storage_filename : str
         Name of the file created by the harvester.
         
     data_columns : list
@@ -56,7 +56,7 @@ def get_pandas_data(pandas_filename, data_columns, log_level=logutil.logging.NOT
     """
     
     # Instantiate a Pandas Dataframe Reader (lazy instantiation)
-    df_handle = PandasDFReader(pandas_filename, log_level=log_level)
+    df_handle = PandasDFReader(storage_filename, log_level=log_level)
 
     # In this particular case, the names of the desired columns do not
     # have to be further manipulated, for example, to add dataset specific
@@ -64,10 +64,17 @@ def get_pandas_data(pandas_filename, data_columns, log_level=logutil.logging.NOT
     # 
     # Get the relevant column data, eliminating all rows which have NaNs
     # in any of the relevant columns.
-    if pandas_filename.endswith('.h5'):
-        data_colsDF = df_handle.get_columns_HDF5(data_columns)
-    else:
-        data_colsDF = df_handle.get_columns_CSV(data_columns)
+    try:
+
+        if storage_filename.endswith('.h5'):
+            data_colsDF = df_handle.get_columns_HDF5(data_columns, do_drop=False)
+        else:
+            data_colsDF = df_handle.get_columns_CSV(data_columns)
+
+    except Exception:
+        log.critical("Critical columns not found in storage Pandas dataframe: {}.\n".format(storage_filename))
+        sys.exit(1)
+
 
     return data_colsDF
 
