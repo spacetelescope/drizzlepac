@@ -59,6 +59,7 @@ from drizzlepac import util, wcs_functions
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
 from drizzlepac.haputils.graph_utils import HAPFigure, build_tooltips
 from drizzlepac.haputils.pandas_utils import PandasDFReader
+from drizzlepac.haputils.quality_analysis import build_vector_plot
 from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
 from stsci.tools import logutil
 from stwcs import wcsutil
@@ -482,10 +483,9 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
                              tooltips_list,
                              hover_columns)
     plots.append(plot.fig)
-
-    # 2: delta_X vs delta_Y vector plot for each cross-matched filter and/or x vs delta_x, x vs. delta_y, y vs. delta_x, y vs. delta_y quad plot each cross-matched filter
-    # 3: Non-clipped min: plot x vs y values for all filters
-    div = Div(text="""<h2>Comparison - reference residual statistics</h2>""")
+    # 2: Non-clipped min: plot x vs y values for all filters
+    div = Div(text="""<h2>Comparison - reference residual statistics</h2>
+    <p>Reference image platescale: {} arcseconds per pixel</p>""".format(xm_df.ref_image_platescale[0]))
     plots.append(div)
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference non-clipped minimum separation',
@@ -497,7 +497,7 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
                              hover_columns)
     plots.append(plot.fig)
 
-    # 4: Non-clipped max: plot x vs y values for all filters
+    # 3: Non-clipped max: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference non-clipped maximum separation',
                              'Maximum X separation (pixels)',
@@ -508,7 +508,7 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
                              hover_columns)
     plots.append(plot.fig)
 
-    # 5: Non-clipped mean: plot x vs y values for all filters
+    # 4: Non-clipped mean: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference non-clipped mean separation',
                              'Mean X separation (pixels)',
@@ -519,7 +519,7 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
                              hover_columns)
     plots.append(plot.fig)
 
-    # 6: Non-clipped median: plot x vs y values for all filters
+    # 5: Non-clipped median: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference non-clipped median separation',
                              'Median X separation (pixels)',
@@ -530,7 +530,7 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
                              hover_columns)
     plots.append(plot.fig)
 
-    # 7: Non-clipped standard deviation: plot x vs y values for all filters
+    # 6: Non-clipped standard deviation: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference separation non-clipped standard deviation',
                              'X separation SD (pixels)',
@@ -541,7 +541,7 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
                              hover_columns)
     plots.append(plot.fig)
 
-    # 8: 3x3 sigma-clipped mean: plot x vs y values for all filters
+    # 7: 3x3 sigma-clipped mean: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference 3 x 3'+u'\u03c3'+'-clipped mean separation',
                              '3 x 3'+u'\u03c3'+'-clipped mean X separation (pixels)',
@@ -552,7 +552,7 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
                              hover_columns)
     plots.append(plot.fig)
 
-    # 9: 3x3 sigma-clipped median: plot x vs y values for all filters
+    # 8: 3x3 sigma-clipped median: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference 3 x 3' + u'\u03c3' + '-clipped median separation',
                              '3 x 3' + u'\u03c3' + '-clipped median X separation (pixels)',
@@ -563,7 +563,7 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
                              hover_columns)
     plots.append(plot.fig)
 
-    # 10: 3x3 sigma-clipped standard deviation: plot x vs y values for all filters
+    # 9: 3x3 sigma-clipped standard deviation: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference separation 3 x 3' + u'\u03c3' + '-clipped standard deviation',
                              '3 x 3' + u'\u03c3' + '-clipped X SD (pixels)',
@@ -573,18 +573,30 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
                              tooltips_list,
                              hover_columns)
     plots.append(plot.fig)
+
+    # 10: delta_X vs delta_Y vector plot for each cross-matched filter and/or x vs delta_x, x vs. delta_y, y
+    # vs. delta_x, y vs. delta_y quad plot each cross-matched filter
     for line_index in xm_df.index:
         xm_df2 = xm_df[xm_df['gen_info.dataframe_index'] == line_index]
-        # TODO: add vector plot
         div = Div(text="""
         <h2>Position vs. Crossmatched interfilter comparison - reference residual values</h2>
-        <p>Comparison image: {}<br/>Reference image: {}</p>""".format(xm_df2['comp_imgname'][line_index],
-                                                                      xm_df2['ref_imgname'][line_index]))
+        <p>Comparison image: {}<br/>Reference image: {}<br/>
+        Reference image platescale: {} arcseconds per pixel</p>""".format(xm_df2['comp_imgname'][line_index],
+                                                                          xm_df2['ref_imgname'][line_index],
+                                                                          xm_df.ref_image_platescale[0]))
         plots.append(div)
-
-        quad_plot = make_quad_scatter_plot(xm_df2, tooltips_list, hover_columns)
+        xm_cds = ColumnDataSource(xm_df2)
+        cds2_dict = {"x": xm_cds.data["ref_catalog.xcentroid_ref"][0],
+                     "y": xm_cds.data["ref_catalog.ycentroid_ref"][0],
+                     "dx": xm_cds.data["comp-ref_x_seperation"][0],
+                     "dy": xm_cds.data["comp-ref_y_seperation"][0]}
+        residsCDS = ColumnDataSource(cds2_dict)
+        quad_plot = make_quad_scatter_plot(residsCDS)
         plots += quad_plot
-    for item in xm_cds.data.keys(): print(item)
+
+        plot = build_vector_plot(residsCDS, title='Vector plot of Comparison - Reference residuals',
+                                 x_label='X (pixels)', y_label='Y (pixels)', color='blue')
+        plots.append(plot.fig)
     if display_plot:
         show(column(plots))
 
@@ -593,11 +605,8 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
         save(column(plots))
     log.info("Output HTML graphic file {} has been written.\n".format(output))
 
-
-#
-
 # -----------------------------------------------------------------------------
-# Functions for generating the photonetry plots
+# Functions for generating the photometry plots
 #
 def generate_phot_graphic(phot_dataDF, output_base_filename, display_plot, log_level):
     """Generate the graphics associated with this particular type of data.
@@ -813,26 +822,19 @@ def get_pandas_data(data_source, data_columns):
     return data_colsDF
 
 
-def make_quad_scatter_plot(xm_df):
+def make_quad_scatter_plot(residsCDS):
     """Create x vs dx, x vs dy, y vs. dx and y vs. dy scatter plots in a 2x2 grid
 
     Parameters
     ----------
-    xm_df : pandas DataFrame
-        dataframe to plot
+    residsCDS : bokeh.models.sources.ColumnDataSource object
+        bokeh ColumnDataSoruce contianing x, y, dx and dy values to plot
 
     Returns
     -------
-    Two-element list of bokeh row plot objects
+    Two-element list of bokeh.models.layouts.Row objects
     """
-    xm_cds = ColumnDataSource(xm_df)
-    cds2_dict = {"x": xm_cds.data["ref_catalog.xcentroid_ref"][0],
-                 "y": xm_cds.data["ref_catalog.ycentroid_ref"][0],
-                 "dx": xm_cds.data["comp-ref_x_seperation"][0],
-                 "dy": xm_cds.data["comp-ref_y_seperation"][0]}
-    residsCDS = ColumnDataSource(cds2_dict)
-    npoints = len(cds2_dict['x'])
-    if npoints < 2:
+    if len(residsCDS.data['x']) < 2:
         return None
 
     p1 = HAPFigure(title='X vs DX',
@@ -874,12 +876,6 @@ def make_quad_scatter_plot(xm_df):
                    sourceCDS=residsCDS)
 
     row2 = row(p3.fig, p4.fig)
-
-    # pv = build_vector_plot(residsCDS,
-    #                        title='Vector plot of Image - Reference for {}'.format(filename),
-    #                        x_label='X (pixels)',
-    #                        y_label='Y (pixels)',
-    #                        color='blue')
 
     return [row1, row2]
 
