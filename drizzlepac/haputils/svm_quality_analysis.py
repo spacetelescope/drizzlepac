@@ -680,7 +680,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                                   "number of cross-matches": "unitless",
                                                   "percent of all identified reference sources crossmatched": "unitless",
                                                   "percent of all identified comparision sources crossmatched": "unitless",
-                                                  "reference image platescale": "pixels/arcseconds"})
+                                                  "reference image platescale": "arcseconds/pixel"})
 
                     # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
                     # the cross-matched reference sources
@@ -765,7 +765,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                                       "3x3 sigma-clipped mean": "pixels",
                                                       "3x3 sigma-clipped median": "pixels",
                                                       "3x3 sigma-clipped standard deviation": "pixels",
-                                                      "Reference image platescale": "pixels/arcseconds"})
+                                                      "Reference image platescale": "arcseconds/pixel"})
 
                         # display stats
                         padding = math.ceil((74 - 61) / 2)
@@ -1294,7 +1294,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                                                 'crpix2': 'pixels',
                                                 'crval1': 'degrees',
                                                 'crval2': 'degrees',
-                                                'scale': 'pixels/arcseconds',
+                                                'scale': 'arcseconds/pixel',
                                                 'orientation': 'degrees',
                                                 'exposure': 'unitless'})
 
@@ -1399,7 +1399,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                                                             'crpix2': 'pixels',
                                                             'crval1': 'degrees',
                                                             'crval2': 'degrees',
-                                                            'scale': 'pixels/arcseconds',
+                                                            'scale': 'arcseconds/pixel',
                                                             'orientation': 'degrees',
                                                             'exposure': 'unitless'})
 
@@ -1427,7 +1427,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                                                             'd_crpix2': 'pixels',
                                                             'd_crval1': 'degrees',
                                                             'd_crval2': 'degrees',
-                                                            'd_scale': 'pixels/arcseconds',
+                                                            'd_scale': 'arcseconds/pixel',
                                                             'd_orientation': 'degrees',
                                                             'exposure': 'unitless'})
 
