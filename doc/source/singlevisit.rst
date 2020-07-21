@@ -18,4 +18,10 @@ processing attempts to correct these relative
 alignment errors and to align the data to an absolute astrometric frame so that
 all the data across all the filters used can be drizzled onto the same pixel grid.
 
- 
+Understanding the quality of the SVM products requires knowing what processing
+took place to generate that product, and more importantly, what limitations that
+processing may have had.  The following sections provide the description of the
+single-visit processing.  Definitions of a number of processing-specific terms used 
+in this description can be found in the :ref:`hap-glossary`.
+
+

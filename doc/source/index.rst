@@ -131,9 +131,11 @@ The code being used in the automated HST calibration pipeline to generate the pr
   Astrometry and Headerlets <astrometry.rst>
   astrometry_api.rst
 
+  singlevisit.rst
 
 Indices and tables
 ==================
+* :ref:`hap-glossary`
 
 * :ref:`genindex`
 * :ref:`modindex`
