@@ -61,7 +61,7 @@ from bokeh.models.tools import HoverTool
 from drizzlepac import util, wcs_functions
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
 from drizzlepac.haputils.graph_utils import HAPFigure, build_tooltips
-from drizzlepac.haputils.pandas_utils import PandasDFReader
+from drizzlepac.haputils.pandas_utils import PandasDFReader, get_pandas_data
 from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
 from stsci.tools import logutil
 from stwcs import wcsutil
@@ -130,7 +130,6 @@ def build_svm_plots(data_source, output_basename='', display_plot=False):
                                        output_basename=output_basename)
 
     # Generate plots for point-segment catalog cross-match comparisons
-    """
     xmatch_col_names = ['Cross-match_details.number_of_cross-matches',
                                        'Cross-match_details.point_catalog_filename',
                                        'Cross-match_details.point_catalog_length',
@@ -151,11 +150,10 @@ def build_svm_plots(data_source, output_basename='', display_plot=False):
                                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_min',
                                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_standard_deviation']
 
-    #xmatch_cols = get_pandas_data(data_source, xmatch_col_names)
+    xmatch_cols = get_pandas_data(data_source, xmatch_col_names)
 
-    #xmatch_plots_name = build_crossmatch_plots(xmatch_cols, xmatch_col_names,
-    #                              output_basename=output_basename)
-    """
+    xmatch_plots_name = build_crossmatch_plots(xmatch_cols, xmatch_col_names,
+                                               output_basename=output_basename)
 
     # Generate the WCS comparison graphics - compares the Primary WCS to the alternate WCS
     wcs_graphics_driver(data_source, output_basename, display_plot, log_level=logutil.logging.INFO)
@@ -319,9 +317,9 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
     return output
 
 
-"""
+
 def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
-    Generate the cross-match statistics plots for the comparison between the
+    """Generate the cross-match statistics plots for the comparison between the
     point catalog and the segment catalog.
 
     Parameters
@@ -339,7 +337,8 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
     -------
     output : str
         Name of HTML file where the plot was saved.
-
+        
+    """
     output_basename = "{}_crossmatch_comparison".format(output_basename)
 
     if not output_basename.endswith('.html'):
@@ -349,14 +348,35 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
     # Set the output file immediately as advised by Bokeh.
     output_file(output)
 
-    num_hover_cols = len(HOVER_COLUMNS)
+    # num_hover_cols = len(HOVER_COLUMNS)
 
     colormap = [qa.DETECTOR_LEGEND[x] for x in xmatchCDS.data[data_cols[1]]]
     xmatchCDS.data['colormap'] = colormap
     inst_det = ["{}/{}".format(i,d) for (i,d) in zip(xmatchCDS.data[data_cols[0]],
                                          xmatchCDS.data[data_cols[1]])]
     xmatchCDS.data[qa.INSTRUMENT_COLUMN] = inst_det
+    import pdb;pdb.set_trace()
+    # Convert the data into histograms now...
+    p0 = HAPFigure(title='Number of Point-to-Segment Cross-matched sources',
+                   xlabel='Number of Cross-matched sources',
+                   ylabel='Number of products',
+                   use_hover_tips=False,
+                   background_fill_color='gainsboro',
+                   toolbar_location='right',
+                   ystart=0,
+                   grid_line_color='white')
+    hist0, edges0 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols]], bins=50)
+    p0.build_histogram(top=hist0,
+                       bottom=0,
+                       left=edges0[:-1],
+                       right=edges0[1:],
+                       fill_color='navy',
+                       fill_transparency=0.5,
+                       line_color='white')
 
+
+
+    """
     plot_list = []
 
     hist0, edges0 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols]], bins=50)
@@ -385,12 +405,13 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
                     fill_color='navy', background_fill_color='#fafafa',
                     xlabel='STD(Separation) of Cross-matched sources (arcseconds)', ylabel='Number of products')]
     plot_list += p3
-
+    """
+    
     # Save the plot to an HTML file
-    save(column(plot_list))
+    save(column([p0]))
 
     return output
-    """
+
 
 
 # -----------------------------------------------------------------------------
