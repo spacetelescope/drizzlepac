@@ -153,7 +153,8 @@ def build_svm_plots(data_source, output_basename='', display_plot=False):
     xmatch_cols = get_pandas_data(data_source, xmatch_col_names)
 
     xmatch_plots_name = build_crossmatch_plots(xmatch_cols, xmatch_col_names,
-                                               output_basename=output_basename)
+                                               output_basename=output_basename,
+                                               display_plot=display_plot)
 
     # Generate the WCS comparison graphics - compares the Primary WCS to the alternate WCS
     wcs_graphics_driver(data_source, output_basename, display_plot, log_level=logutil.logging.INFO)
@@ -318,13 +319,15 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
 
 
 
-def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
+def build_crossmatch_plots(xmatchDF, data_cols,
+                           output_basename='svm_qa',
+                           display_plot=False):
     """Generate the cross-match statistics plots for the comparison between the
     point catalog and the segment catalog.
 
     Parameters
     ----------
-    xmatchCDS : Pandas ColumnDataSource
+    xmatchDF : Pandas DataFrame
         This object contains all the columns relevant to the cross-match plots.
 
     data_cols : list
@@ -339,7 +342,9 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
         Name of HTML file where the plot was saved.
         
     """
-    output_basename = "{}_crossmatch_comparison".format(output_basename)
+    xmatchCDS = ColumnDataSource(xmatchDF)
+    
+    output_basename = "{}_point-segment_comparison".format(output_basename)
 
     if not output_basename.endswith('.html'):
         output = output_basename + '.html'
@@ -347,15 +352,7 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
         output = output_basename
     # Set the output file immediately as advised by Bokeh.
     output_file(output)
-
-    # num_hover_cols = len(HOVER_COLUMNS)
-
-    colormap = [qa.DETECTOR_LEGEND[x] for x in xmatchCDS.data[data_cols[1]]]
-    xmatchCDS.data['colormap'] = colormap
-    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(xmatchCDS.data[data_cols[0]],
-                                         xmatchCDS.data[data_cols[1]])]
-    xmatchCDS.data[qa.INSTRUMENT_COLUMN] = inst_det
-    import pdb;pdb.set_trace()
+        
     # Convert the data into histograms now...
     p0 = HAPFigure(title='Number of Point-to-Segment Cross-matched sources',
                    xlabel='Number of Cross-matched sources',
@@ -365,7 +362,9 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
                    toolbar_location='right',
                    ystart=0,
                    grid_line_color='white')
-    hist0, edges0 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols]], bins=50)
+    data0 = xmatchCDS.data[data_cols[0]]
+    data0 = data0[~np.isnan(data0)]
+    hist0, edges0 = np.histogram(data0, bins=50)
     p0.build_histogram(top=hist0,
                        bottom=0,
                        left=edges0[:-1],
@@ -374,41 +373,73 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
                        fill_transparency=0.5,
                        line_color='white')
 
-
-
-    """
-    plot_list = []
-
-    hist0, edges0 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols]], bins=50)
-    title0 = 'Number of Point-to-Segment Cross-matched sources'
-    p0 = [plot_histogram(title0, hist0, edges0, y_start=0, '#fafafa',
-                    xlabel='Number of Cross-matched sources', ylabel='Number of products')]
-    plot_list += p0
-
-    hist1, edges1 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 11]], bins=50)
     title1 = 'Mean Separation (Sigma-clipped) of Point-to-Segment Cross-matched sources'
-    p1 = [plot_histogram(title1, hist1, edges1, y_start=0,
-                    fill_color='navy', background_fill_color='#fafafa',
-                    xlabel='Mean Separation of Cross-matched sources (arcseconds)', ylabel='Number of products')]
-    plot_list += p1
-
-    hist2, edges2 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 12]], bins=50)
+    p1 = HAPFigure(title=title1,
+                   xlabel='Mean Separation of Cross-matched sources (arcseconds)',
+                   ylabel='Number of products',
+                   use_hover_tips=False,
+                   background_fill_color='gainsboro',
+                   toolbar_location='right',
+                   ystart=0,
+                   grid_line_color='white')
+    data1 = xmatchCDS.data[data_cols[11]]
+    data1 = data1[~np.isnan(data1)]
+    hist1, edges1 = np.histogram(data1, bins=50)
+    p1.build_histogram(top=hist1,
+                       bottom=0,
+                       left=edges1[:-1],
+                       right=edges1[1:],
+                       fill_color='navy',
+                       fill_transparency=0.5,
+                       line_color='white')
+                       
     title2 = 'Median Separation (Sigma-clipped) of Point-to-Segment Cross-matched sources'
-    p2 = [plot_histogram(title2, hist2, edges2, y_start=0,
-                    fill_color='navy', background_fill_color='#fafafa',
-                    xlabel='Median Separation of Cross-matched sources (arcseconds)', ylabel='Number of products')]
-    plot_list += p2
-
-    hist3, edges3 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 13]], bins=50)
+    p2 = HAPFigure(title=title2,
+                   xlabel='Median Separation of Cross-matched sources (arcseconds)',
+                   ylabel='Number of products',
+                   use_hover_tips=False,
+                   background_fill_color='gainsboro',
+                   toolbar_location='right',
+                   ystart=0,
+                   grid_line_color='white')
+    data2 = xmatchCDS.data[data_cols[12]]
+    data2 = data2[~np.isnan(data2)]
+    hist2, edges2 = np.histogram(data2, bins=50)
+    p2.build_histogram(top=hist2,
+                       bottom=0,
+                       left=edges2[:-1],
+                       right=edges2[1:],
+                       fill_color='navy',
+                       fill_transparency=0.5,
+                       line_color='white')
+                       
     title3 = 'Standard-deviation (sigma-clipped) of Separation of Point-to-Segment Cross-matched sources'
-    p3 = [plot_histogram(title3, hist3, edges3, y_start=0,
-                    fill_color='navy', background_fill_color='#fafafa',
-                    xlabel='STD(Separation) of Cross-matched sources (arcseconds)', ylabel='Number of products')]
-    plot_list += p3
-    """
-    
-    # Save the plot to an HTML file
-    save(column([p0]))
+    p3 = HAPFigure(title='Number of Point-to-Segment Cross-matched sources',
+                   xlabel='STD(Separation) of Cross-matched sources (arcseconds)',
+                   ylabel='Number of products',
+                   use_hover_tips=False,
+                   background_fill_color='gainsboro',
+                   toolbar_location='right',
+                   ystart=0,
+                   grid_line_color='white')
+    data3 = xmatchCDS.data[data_cols[13]]
+    data3 = data3[~np.isnan(data3)]
+    hist3, edges3 = np.histogram(data3, bins=50)
+    p3.build_histogram(top=hist3,
+                       bottom=0,
+                       left=edges3[:-1],
+                       right=edges3[1:],
+                       fill_color='navy',
+                       fill_transparency=0.5,
+                       line_color='white')
+
+    # Display and save
+    if display_plot:
+        show(column(p4.fig, p0.fig, p1.fig, p2.fig))
+    # Just save
+    else:
+        save(column(p0.fig, p1.fig, p2.fig, p3.fig))
+    log.info("Output HTML graphic file {} has been written.\n".format(output))
 
     return output
 
