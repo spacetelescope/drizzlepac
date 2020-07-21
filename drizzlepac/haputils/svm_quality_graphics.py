@@ -465,6 +465,10 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
 
 
     plots = []
+    div = Div(text="""
+    <h1>Crossmatched interfilter comparison - reference residuals</h1>
+    <h2>Crossmatch details</h2>""")
+    plots.append(div)
     # plot #1: comp vs ref percent of all identified sources that were crossmatched
     tooltips_list = ['REF IMAGE', 'COMP IMAGE', 'TOTAL REF SOURCES', 'TOTAL COMP SOURCES', '# CROSSMATCHED']
     hover_columns = ['ref_imgname', 'comp_imgname', 'ref_catalog_length',
@@ -481,6 +485,8 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
 
     # 2: delta_X vs delta_Y vector plot for each cross-matched filter and/or x vs delta_x, x vs. delta_y, y vs. delta_x, y vs. delta_y quad plot each cross-matched filter
     # 3: Non-clipped min: plot x vs y values for all filters
+    div = Div(text="""<h2>Comparison - reference residual statistics</h2>""")
+    plots.append(div)
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference non-clipped minimum separation',
                              'Minimum X seperation (pixels)',
@@ -568,15 +574,14 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
                              hover_columns)
     plots.append(plot.fig)
     for line_index in xm_df.index:
-        # TODO: repalce placeholder quad plot title with actual information
+        xm_df2 = xm_df[xm_df['gen_info.dataframe_index'] == line_index]
         # TODO: add vector plot
         div = Div(text="""
-        <h1>stuff!</h1>
-        <p>more stuff!
-        </p>
-        """)
+        <h2>Position vs. Crossmatched interfilter comparison - reference residual values</h2>
+        <p>Comparison image: {}<br/>Reference image: {}</p>""".format(xm_df2['comp_imgname'][line_index],
+                                                                      xm_df2['ref_imgname'][line_index]))
         plots.append(div)
-        xm_df2 = xm_df[xm_df['gen_info.dataframe_index'] == line_index]
+
         quad_plot = make_quad_scatter_plot(xm_df2, tooltips_list, hover_columns)
         plots += quad_plot
     for item in xm_cds.data.keys(): print(item)
@@ -808,9 +813,18 @@ def get_pandas_data(data_source, data_columns):
     return data_colsDF
 
 
-def make_quad_scatter_plot(xm_df, tooltips_list, hover_columns):
-    # TODO: Add make_quad_scatter_plot docstring
-    # TODO: update individual plot titles
+def make_quad_scatter_plot(xm_df):
+    """Create x vs dx, x vs dy, y vs. dx and y vs. dy scatter plots in a 2x2 grid
+
+    Parameters
+    ----------
+    xm_df : pandas DataFrame
+        dataframe to plot
+
+    Returns
+    -------
+    Two-element list of bokeh row plot objects
+    """
     xm_cds = ColumnDataSource(xm_df)
     cds2_dict = {"x": xm_cds.data["ref_catalog.xcentroid_ref"][0],
                  "y": xm_cds.data["ref_catalog.ycentroid_ref"][0],
@@ -818,11 +832,10 @@ def make_quad_scatter_plot(xm_df, tooltips_list, hover_columns):
                  "dy": xm_cds.data["comp-ref_y_seperation"][0]}
     residsCDS = ColumnDataSource(cds2_dict)
     npoints = len(cds2_dict['x'])
-    filename = xm_cds.data['comp_imgname'][0]
     if npoints < 2:
         return None
 
-    p1 = HAPFigure(title='Residuals for {} [{} sources]: X vs DX'.format(filename, npoints),
+    p1 = HAPFigure(title='X vs DX',
                    x_label="X (pixels)",
                    y_label='Delta[X] (pixels)',
                    use_hover_tips=False)
@@ -831,7 +844,7 @@ def make_quad_scatter_plot(xm_df, tooltips_list, hover_columns):
                    y='dx',
                    sourceCDS=residsCDS)
 
-    p2 = HAPFigure(title='Residuals for {} [{} sources]: X vs DY'.format(filename, npoints),
+    p2 = HAPFigure(title='X vs DY',
                    x_label="X (pixels)",
                    y_label='Delta[Y] (pixels)',
                    use_hover_tips=False)
@@ -842,7 +855,7 @@ def make_quad_scatter_plot(xm_df, tooltips_list, hover_columns):
 
     row1 = row(p1.fig, p2.fig)
 
-    p3 = HAPFigure(title='Residuals for {} [{} sources]: Y vs DX'.format(filename, npoints),
+    p3 = HAPFigure(title='Y vs DX',
                    x_label="Y (pixels)",
                    y_label='Delta[X] (pixels)',
                    use_hover_tips=False)
@@ -851,7 +864,7 @@ def make_quad_scatter_plot(xm_df, tooltips_list, hover_columns):
                    y='dx',
                    sourceCDS=residsCDS)
 
-    p4 = HAPFigure(title='Residuals for {} [{} sources]: Y vs DY'.format(filename, npoints),
+    p4 = HAPFigure(title='Y vs DY',
                    x_label="Y (pixels)",
                    y_label='Delta[Y] (pixels)',
                    use_hover_tips=False)
