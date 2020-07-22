@@ -115,6 +115,7 @@ class AlignmentTable:
         try:
 
             for img in self.process_list:
+                log.info("Adding {} to HAPImage list".format(img))
                 catimg = HAPImage(img)
                 # Build image properties needed for alignment
                 catimg.compute_background(box_size=self.alignment_pars['box_size'],
@@ -153,28 +154,30 @@ class AlignmentTable:
         """Find observable sources in each input exposure."""
         self.extracted_sources = {}
         for img in self.haplist:
-            img.find_alignment_sources(output=output, dqname=self.dqname, **self.alignment_pars)
-            self.extracted_sources[img.imgname] = img.catalog_table
+            self.extracted_sources[img.imgname] = {}
+            if img.imghdu is not None:
+                img.find_alignment_sources(output=output, dqname=self.dqname, **self.alignment_pars)
+                self.extracted_sources[img.imgname] = img.catalog_table
 
-            # Allow user to decide when and how to write out catalogs to files
-            if output:
-                # write out coord lists to files for diagnostic purposes. 
-                # Protip: To display the sources in these files in DS9,
-                #         set the "Coordinate System" option to "Physical" 
-                #         when loading the region file.
-                imgroot = "_".join(os.path.basename(img.imgname).split('_')[:-1])
-                for chip in range(1, img.num_sci + 1):
-                    chip_cat = img.catalog_table[chip]
-                    if chip_cat and len(chip_cat) > 0:
-                        regfilename = "{}_sci{}_src.reg".format(imgroot, chip)
-                        out_table = Table(chip_cat)
-                        # To align with positions of sources in DS9/IRAF
-                        out_table['xcentroid'] += 1
-                        out_table['ycentroid'] += 1
-                        out_table.write(regfilename,
-                                        include_names=["xcentroid", "ycentroid", "mag"],
-                                        format="ascii.fast_commented_header")
-                        log.info("Wrote region file {}\n".format(regfilename))
+                # Allow user to decide when and how to write out catalogs to files
+                if output:
+                    # write out coord lists to files for diagnostic purposes. 
+                    # Protip: To display the sources in these files in DS9,
+                    #         set the "Coordinate System" option to "Physical" 
+                    #         when loading the region file.
+                    imgroot = "_".join(os.path.basename(img.imgname).split('_')[:-1])
+                    for chip in range(1, img.num_sci + 1):
+                        chip_cat = img.catalog_table[chip]
+                        if chip_cat and len(chip_cat) > 0:
+                            regfilename = "{}_sci{}_src.reg".format(imgroot, chip)
+                            out_table = Table(chip_cat)
+                            # To align with positions of sources in DS9/IRAF
+                            out_table['xcentroid'] += 1
+                            out_table['ycentroid'] += 1
+                            out_table.write(regfilename,
+                                            include_names=["xcentroid", "ycentroid", "mag"],
+                                            format="ascii.fast_commented_header")
+                            log.info("Wrote region file {}\n".format(regfilename))
 
         self.close()
 

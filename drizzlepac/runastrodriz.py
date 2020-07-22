@@ -877,10 +877,10 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 full_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
                                                   clobber=False, output=debug,
                                                   debug=debug, sat_flags=sat_flags)
-                align_table = full_table.filtered_table
-
-                if align_table is None:
+                if full_table is None:
                     raise Exception("No successful aposteriori fit determined.")
+
+                align_table = full_table.filtered_table
 
                 num_sources = align_table['matchSources'][0]
                 fraction_matched = num_sources / align_table['catalogSources'][0]

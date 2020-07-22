@@ -538,9 +538,10 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
             kernel_wht = whtarr[kernel_pos[0] - wht_box:kernel_pos[0] + wht_box + 1,
                             kernel_pos[1] - wht_box:kernel_pos[1] + wht_box + 1].copy()
 
+            minsize = min(kernel.shape)
             # search square cut-out (of size 2 x wht_box + 1 pixels on a side) of weight image centered on peak coords for
             # zero-value pixels. Reject peak if any are found.
-            if len(np.where(kernel_wht == 0.)[0]) == 0:
+            if len(np.where(kernel_wht == 0.)[0]) == 0 and minsize > 11:
                 log.debug("Kernel source PSF located at [{},{}]".format(kernel_pos[1], kernel_pos[0]))
             else:
                 kernel = None
@@ -1508,8 +1509,10 @@ def build_wcscat(image, group_id, source_catalog):
     numsci = countExtn(hdulist)
     for chip in range(1, numsci + 1):
         w = wcsutil.HSTWCS(hdulist, ('SCI', chip))
+        imcat = None
+        if source_catalog:
+            imcat = source_catalog[chip]
 
-        imcat = source_catalog[chip]
         # rename xcentroid/ycentroid columns, if necessary, to be consistent with tweakwcs
         if imcat is None:
             imcat = Table(names=['xcentroid','ycentroid','mag'])
