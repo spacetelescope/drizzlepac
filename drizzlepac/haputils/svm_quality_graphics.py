@@ -265,6 +265,10 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
     #
     # Define the graphics
     #
+    #
+    # Create title text at the top of the html file
+    html_title_text = Div(text="""
+    <h1>Distribution characteristics of GAIA catalog sources identified in the observation footprint</h1>""")
 
     # Scatter figures
     p0 = HAPFigure(title='Centroid of GAIA Sources in Field',
@@ -341,11 +345,11 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
 
     # Display and save
     if display_plot:
-        show(column(p4.fig, p0.fig, p1.fig, p2.fig))
+        show(column(html_title_text, p4.fig, p0.fig, p1.fig, p2.fig))
         # show(column(p4.fig, p0.fig, p1.fig, p2.fig, p3.fig))
     # Just save
     else:
-        save(column(p4.fig, p0.fig, p1.fig, p2.fig))
+        save(column(html_title_text, p4.fig, p0.fig, p1.fig, p2.fig))
         # save(column(p4.fig, p0.fig, p1.fig, p2.fig, p3.fig))
     log.info("Output HTML graphic file {} has been written.\n".format(output))
 
