@@ -181,7 +181,7 @@ def build_svm_plots(data_source, output_basename='', display_plot=False, log_lev
         if_xm_DF.rename(columns={old_col_name: new_col_name}, inplace=True)
 
     # remove rows that aren't relevant
-    if_xm_DF = if_xm_DF[np.isnan(if_xm_DF.ref_image_platescale) == False]
+    if_xm_DF = if_xm_DF[np.isnan(if_xm_DF.ref_image_platescale) is False]
 
     # Create interfilter plots, or bail out if no rows remain
     if if_xm_DF.shape[0] > 0:
@@ -196,24 +196,24 @@ def build_svm_plots(data_source, output_basename='', display_plot=False, log_lev
     #     -      -     -      -     -      -     -      -     -      -     -      -     -      -     -      -
     # Generate plots for point-segment catalog cross-match comparisons
     xmatch_col_names = ['Cross-match_details.number_of_cross-matches',
-                                       'Cross-match_details.point_catalog_filename',
-                                       'Cross-match_details.point_catalog_length',
-                                       'Cross-match_details.point_frame',
-                                       'Cross-match_details.segment_catalog_filename',
-                                       'Cross-match_details.segment_catalog_length',
-                                       'Cross-match_details.segment_frame',
-                                       'Cross-matched_point_catalog.Declination',
-                                       'Cross-matched_point_catalog.Right ascension',
-                                       'Cross-matched_segment_catalog.Declination',
-                                       'Cross-matched_segment_catalog.Right ascension',
-                                       'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_mean',
-                                       'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_median',
-                                       'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_standard_deviation',
-                                       'Segment_-_point_on-sky_separation_statistics.Non-clipped_max',
-                                       'Segment_-_point_on-sky_separation_statistics.Non-clipped_mean',
-                                       'Segment_-_point_on-sky_separation_statistics.Non-clipped_median',
-                                       'Segment_-_point_on-sky_separation_statistics.Non-clipped_min',
-                                       'Segment_-_point_on-sky_separation_statistics.Non-clipped_standard_deviation']
+                        'Cross-match_details.point_catalog_filename',
+                        'Cross-match_details.point_catalog_length',
+                        'Cross-match_details.point_frame',
+                        'Cross-match_details.segment_catalog_filename',
+                        'Cross-match_details.segment_catalog_length',
+                        'Cross-match_details.segment_frame',
+                        'Cross-matched_point_catalog.Declination',
+                        'Cross-matched_point_catalog.Right ascension',
+                        'Cross-matched_segment_catalog.Declination',
+                        'Cross-matched_segment_catalog.Right ascension',
+                        'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_mean',
+                        'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_median',
+                        'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_standard_deviation',
+                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_max',
+                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_mean',
+                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_median',
+                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_min',
+                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_standard_deviation']
 
     xmatch_cols = get_pandas_data(data_source, xmatch_col_names)
 
@@ -296,7 +296,8 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa', 
                           'header.EXPTIME',
                           'fit_results.aligned_to']
 
-    gaia_tips = build_tooltips(gaia_tooltips_list, gaia_hover_columns, list(range(0, len(gaia_hover_columns))))
+    gaia_tips = build_tooltips(gaia_tooltips_list, gaia_hover_columns,
+                               list(range(0, len(gaia_hover_columns))))
 
     # Define the graphics
     # Create title text at the top of the html file
@@ -388,6 +389,7 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa', 
 
     # Return the name of the plot layout file just created
     return output
+
 
 def build_crossmatch_plots(xmatchDF, data_cols,
                            output_basename='svm_qa',
@@ -587,7 +589,7 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     plots.append(div)
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference non-clipped minimum separation',
-                             'Minimum X seperation (pixels)',
+                             'Minimum X separation (pixels)',
                              'Minimum Y separation (pixels)',
                              'x_non-clipped_min',
                              'y_non-clipped_min',
@@ -686,8 +688,8 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
         xm_cds = ColumnDataSource(xm_df2)
         cds2_dict = {"x": xm_cds.data["ref_catalog.xcentroid_ref"][0],
                      "y": xm_cds.data["ref_catalog.ycentroid_ref"][0],
-                     "dx": xm_cds.data["comp-ref_x_seperation"][0],
-                     "dy": xm_cds.data["comp-ref_y_seperation"][0]}
+                     "dx": xm_cds.data["comp-ref_x_separation"][0],
+                     "dy": xm_cds.data["comp-ref_y_separation"][0]}
         residsCDS = ColumnDataSource(cds2_dict)
         quad_plot = make_quad_scatter_plot(residsCDS)
         plots += quad_plot
@@ -706,7 +708,8 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
 #
 
 
-def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_plot=False, log_level=logutil.logging.INFO):
+def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_plot=False,
+                                log_level=logutil.logging.INFO):
     """Generate the graphics associated with this particular type of data.
 
     Parameters
@@ -723,7 +726,8 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_pl
         Default: False
 
     log_level : int
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
 
     Returns
     =======
@@ -841,7 +845,8 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_pl
     log.info("Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
 
 
-def photometry_graphics_driver(storage_filename, output_base_filename='', display_plot=False, log_level=logutil.logging.NOTSET):
+def photometry_graphics_driver(storage_filename, output_base_filename='', display_plot=False,
+                               log_level=logutil.logging.NOTSET):
     """Driver to load the data from the storage file and generate the graphics.
 
     Parameters
@@ -857,8 +862,8 @@ def photometry_graphics_driver(storage_filename, output_base_filename='', displa
         Default is False.
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 20, or 'info'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
 
     Returns
     =======
@@ -896,8 +901,10 @@ def photometry_graphics_driver(storage_filename, output_base_filename='', displa
 #
 
 
-def generate_nsources_graphic(dataDF, output_base_filename='', display_plot=False, log_level=logutil.logging.INFO):
-    """Generate plot displaying the difference in the number of sources detected in the Point and Segment catalogs.
+def generate_nsources_graphic(dataDF, output_base_filename='', display_plot=False,
+                              log_level=logutil.logging.INFO):
+    """Generate plot displaying the difference in the number of sources detected in the Point and Segment
+    catalogs.
 
     Parameters
     ==========
@@ -914,8 +921,8 @@ def generate_nsources_graphic(dataDF, output_base_filename='', display_plot=Fals
         Default: False
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default: 20 or 'info'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default: 20 or 'info'.
 
     Returns
     =======
@@ -968,7 +975,8 @@ def generate_nsources_graphic(dataDF, output_base_filename='', display_plot=Fals
     log.info("Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
 
 
-def nsources_graphics_driver(storage_filename, output_base_filename='', display_plot=False, log_level=logutil.logging.INFO):
+def nsources_graphics_driver(storage_filename, output_base_filename='', display_plot=False,
+                             log_level=logutil.logging.INFO):
     """Driver to load the data from the storage file and generate the graphics.
 
     This particular is to display the differences in the number of detected sources documented
@@ -986,8 +994,8 @@ def nsources_graphics_driver(storage_filename, output_base_filename='', display_
         Option to display the plot in addition to writing out the file.
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 20, or 'info'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
 
     Returns
     =======
@@ -1020,7 +1028,8 @@ def nsources_graphics_driver(storage_filename, output_base_filename='', display_
 #
 
 
-def generate_wcs_graphic(wcs_dataDF, wcs_columns, output_base_filename='', display_plot=False, log_level=logutil.logging.NOTSET):
+def generate_wcs_graphic(wcs_dataDF, wcs_columns, output_base_filename='', display_plot=False,
+                         log_level=logutil.logging.NOTSET):
     """Generate the graphics associated with this particular type of data.
 
     Parameters
@@ -1041,8 +1050,8 @@ def generate_wcs_graphic(wcs_dataDF, wcs_columns, output_base_filename='', displ
         Default: False
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default: 20 or 'info'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default: 20 or 'info'.
 
     Returns
     =======
@@ -1139,7 +1148,8 @@ def generate_wcs_graphic(wcs_dataDF, wcs_columns, output_base_filename='', displ
     log.info("Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
 
 
-def wcs_graphics_driver(storage_filename, output_base_filename='', display_plot=False, log_level=logutil.logging.INFO):
+def wcs_graphics_driver(storage_filename, output_base_filename='', display_plot=False,
+                        log_level=logutil.logging.INFO):
     """Driver to load the data from the storage file and generate the graphics.
 
     Parameters
@@ -1154,8 +1164,8 @@ def wcs_graphics_driver(storage_filename, output_base_filename='', display_plot=
         Option to display the plot in addition to writing out the file.
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 20, or 'info'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
 
     Returns
     =======
@@ -1254,8 +1264,8 @@ def get_wcs_data(storage_filename, wcs_columns, log_level=logutil.logging.NOTSET
         and the corresponding simple name (values) which is often more practical for use.
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default: 20 or 'info'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default: 20 or 'info'.
 
     Returns
     =======
@@ -1296,12 +1306,14 @@ def get_wcs_data(storage_filename, wcs_columns, log_level=logutil.logging.NOTSET
                 wcs_columns.pop(key, None)
 
         elif wcs_dataDF.empty:
-            log.critical("Critical columns not found in storage Pandas dataframe: {}.\n".format(storage_filename))
+            log.critical("Critical columns not found in storage Pandas dataframe: {}.\n".format(
+                storage_filename))
             sys.exit(1)
 
     log.info("WCS data has been retrieved from the storage Pandas dataframe: {}.\n".format(storage_filename))
 
     return wcs_dataDF
+
 
 def make_quad_scatter_plot(residsCDS):
     """Create x vs dx, x vs dy, y vs. dx and y vs. dy scatter plots in a 2x2 grid
@@ -1309,7 +1321,7 @@ def make_quad_scatter_plot(residsCDS):
     Parameters
     ----------
     residsCDS : bokeh.models.sources.ColumnDataSource object
-        bokeh ColumnDataSoruce contianing x, y, dx and dy values to plot
+        bokeh ColumnDataSoruce containing x, y, dx and dy values to plot
 
     Returns
     -------
@@ -1360,7 +1372,9 @@ def make_quad_scatter_plot(residsCDS):
 
     return [row1, row2]
 
-def make_scatter_plot(xm_cds, title, x_label, y_label, x_data_colname, y_data_colname, tooltips_list, hover_columns):
+
+def make_scatter_plot(xm_cds, title, x_label, y_label, x_data_colname, y_data_colname, tooltips_list,
+                      hover_columns):
     """create a bokeh scatter plot with hovertools
 
     Parameters
@@ -1403,6 +1417,7 @@ def make_scatter_plot(xm_cds, title, x_label, y_label, x_data_colname, y_data_co
                             glyph_color='colormap',
                             legend_group='inst_det')
     return scatterplot
+
 
 if __name__ == "__main__":
     build_svm_plots(sys.argv[1], output_basename='', display_plot=True, log_level=logging.DEBUG)
