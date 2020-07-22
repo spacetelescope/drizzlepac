@@ -506,58 +506,65 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     kern_img[:, :edge] = 0.0
     kern_img[:, -edge:] = 0.0
     kernel_psf = False
-
+    
     peaks = photutils.detection.find_peaks(kern_img, threshold=threshold * 5,
                                           box_size=isolation_size)
     if peaks is None or (peaks is not None and len(peaks) == 0):
+        if (isinstance(threshold, np.ndarray) and threshold.mean() > kern_img.mean()) or \
+            threshold > kern_img.mean():
+            kern_stats = sigma_clipped_stats(kern_img)
+            threshold = kern_stats[2]
         peaks = photutils.detection.find_peaks(kern_img, threshold=threshold,
                                               box_size=isolation_size)
 
-    # Sort based on peak_value to identify brightest sources for use as a kernel
-    peaks.sort('peak_value', reverse=True)
+    if peaks is not None:
+        # Sort based on peak_value to identify brightest sources for use as a kernel
+        peaks.sort('peak_value', reverse=True)
 
-    if saturation_limit:
-        sat_peaks = np.where(peaks['peak_value'] > saturation_limit)[0]
-        sat_index = sat_peaks[-1] + 1 if len(sat_peaks) > 0 else 0
-        peaks['peak_value'][:sat_index] = 0.
+        if saturation_limit:
+            sat_peaks = np.where(peaks['peak_value'] > saturation_limit)[0]
+            sat_index = sat_peaks[-1] + 1 if len(sat_peaks) > 0 else 0
+            peaks['peak_value'][:sat_index] = 0.
 
-    wht_box = 2  # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
-    fwhm_attempts = 0
-    # Identify position of brightest, non-saturated peak (in numpy index order)
-    for peak_ctr in range(len(peaks)):
-        kernel_pos = [peaks['y_peak'][peak_ctr], peaks['x_peak'][peak_ctr]]
+        wht_box = 2  # Weight image cutout box size is 2 x wht_box + 1 pixels on a side
+        fwhm_attempts = 0
+        # Identify position of brightest, non-saturated peak (in numpy index order)
+        for peak_ctr in range(len(peaks)):
+            kernel_pos = [peaks['y_peak'][peak_ctr], peaks['x_peak'][peak_ctr]]
 
-        kernel = imgarr[kernel_pos[0] - source_box:kernel_pos[0] + source_box + 1,
-                        kernel_pos[1] - source_box:kernel_pos[1] + source_box + 1].copy()
+            kernel = imgarr[kernel_pos[0] - source_box:kernel_pos[0] + source_box + 1,
+                            kernel_pos[1] - source_box:kernel_pos[1] + source_box + 1].copy()
 
-        kernel_wht = whtarr[kernel_pos[0] - wht_box:kernel_pos[0] + wht_box + 1,
-                        kernel_pos[1] - wht_box:kernel_pos[1] + wht_box + 1].copy()
+            kernel_wht = whtarr[kernel_pos[0] - wht_box:kernel_pos[0] + wht_box + 1,
+                            kernel_pos[1] - wht_box:kernel_pos[1] + wht_box + 1].copy()
 
-        # search square cut-out (of size 2 x wht_box + 1 pixels on a side) of weight image centered on peak coords for
-        # zero-value pixels. Reject peak if any are found.
-        if len(np.where(kernel_wht == 0.)[0]) == 0:
-            log.debug("Kernel source PSF located at [{},{}]".format(kernel_pos[1], kernel_pos[0]))
-        else:
-            kernel = None
+            # search square cut-out (of size 2 x wht_box + 1 pixels on a side) of weight image centered on peak coords for
+            # zero-value pixels. Reject peak if any are found.
+            if len(np.where(kernel_wht == 0.)[0]) == 0:
+                log.debug("Kernel source PSF located at [{},{}]".format(kernel_pos[1], kernel_pos[0]))
+            else:
+                kernel = None
 
-        if kernel is not None:
-            kernel = np.clip(kernel, 0, None)  # insure background subtracted kernel has no negative pixels
-            if kernel.sum() > 0.0:
-                kernel /= kernel.sum()  # Normalize the new kernel to a total flux of 1.0
-                kernel_fwhm = find_fwhm(kernel, fwhm)
-                fwhm_attempts += 1
-                if kernel_fwhm is None:
-                    kernel = None
-                else:
-                    log.debug("Determined FWHM from sample PSF of {:.2f}".format(kernel_fwhm))
-                    if good_fwhm[1] > kernel_fwhm > good_fwhm[0]:  # This makes it hard to work with sub-sampled data (WFPC2?)
-                        fwhm = kernel_fwhm
-                        kernel_psf = True
-                        break
-                    else:
+            if kernel is not None:
+                kernel = np.clip(kernel, 0, None)  # insure background subtracted kernel has no negative pixels
+                if kernel.sum() > 0.0:
+                    kernel /= kernel.sum()  # Normalize the new kernel to a total flux of 1.0
+                    kernel_fwhm = find_fwhm(kernel, fwhm)
+                    fwhm_attempts += 1
+                    if kernel_fwhm is None:
                         kernel = None
-            if fwhm_attempts == num_fwhm:
-                break
+                    else:
+                        log.debug("Determined FWHM from sample PSF of {:.2f}".format(kernel_fwhm))
+                        if good_fwhm[1] > kernel_fwhm > good_fwhm[0]:  # This makes it hard to work with sub-sampled data (WFPC2?)
+                            fwhm = kernel_fwhm
+                            kernel_psf = True
+                            break
+                        else:
+                            kernel = None
+                if fwhm_attempts == num_fwhm:
+                    break
+    else:
+        kernel = None
 
     if kernel is None:
         log.warning("Did not find a suitable PSF out of {} possible sources...".format(len(peaks)))
