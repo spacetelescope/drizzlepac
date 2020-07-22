@@ -64,8 +64,8 @@ running AstroDrizzle.
 
 .. _runastrodriz-description:
 
-Description
-===========
+Pipeline Astrometric Calibration Description
+=============================================
 A lot of effort goes into trying to determine the WCS solution which provides
 closest agreement with the GAIA astrometry frame.  Combining the 
 images successfully requires the most accurate alignment possible between all 
