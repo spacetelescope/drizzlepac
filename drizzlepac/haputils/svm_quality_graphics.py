@@ -455,7 +455,7 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
     num_of_datasets = len(xm_cds.data['index'])
     print('Number of datasets: {}'.format(num_of_datasets))
 
-    output_basename = "{}_interfilter_crossmatch_comparison".format(output_basename)
+    output_basename = "{}_interfilter_comparison".format(output_basename)
 
     if not output_basename.endswith('.html'):
         output = output_basename + '.html'
