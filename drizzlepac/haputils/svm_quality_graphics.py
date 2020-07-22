@@ -181,7 +181,7 @@ def build_svm_plots(data_source, output_basename='', display_plot=False, log_lev
         if_xm_DF.rename(columns={old_col_name: new_col_name}, inplace=True)
 
     # remove rows that aren't relevant
-    if_xm_DF = if_xm_DF[np.isnan(if_xm_DF.ref_image_platescale) is False]
+    if_xm_DF = if_xm_DF[np.isnan(if_xm_DF.ref_image_platescale) == False]
 
     # Create interfilter plots, or bail out if no rows remain
     if if_xm_DF.shape[0] > 0:
@@ -688,8 +688,8 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
         xm_cds = ColumnDataSource(xm_df2)
         cds2_dict = {"x": xm_cds.data["ref_catalog.xcentroid_ref"][0],
                      "y": xm_cds.data["ref_catalog.ycentroid_ref"][0],
-                     "dx": xm_cds.data["comp-ref_x_separation"][0],
-                     "dy": xm_cds.data["comp-ref_y_separation"][0]}
+                     "dx": xm_cds.data["comp-ref_x_seperation"][0],
+                     "dy": xm_cds.data["comp-ref_y_seperation"][0]}
         residsCDS = ColumnDataSource(cds2_dict)
         quad_plot = make_quad_scatter_plot(residsCDS)
         plots += quad_plot
