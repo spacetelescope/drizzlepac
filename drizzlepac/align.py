@@ -209,11 +209,20 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
 
     """
     log.info("*** HAP PIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__, __version_date__, util._ptime()[0]))
+
+    if debug:
+        loglevel = logutil.logging.DEBUG
+    else:
+        loglevel = logutil.logging.INFO
+
     if runfile is not None:
+        loglevel = logutil.logging.DEBUG
         fh = logutil.logging.FileHandler(runfile)
-        fh.setLevel(logutil.logging.DEBUG)
+        fh.setLevel(loglevel)
         log.addHandler(fh)
         
+    log.setLevel(loglevel)
+    
     # 0: print git info
     if print_git_info:
         log.info("{} STEP 0: Display Git revision info  {}".format("-" * 20, "-" * 49))
@@ -252,7 +261,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
     
     try:
         # Instantiate AlignmentTable class with these input files
-        alignment_table = align_utils.AlignmentTable(imglist, **alignment_pars)
+        alignment_table = align_utils.AlignmentTable(imglist, log_level=loglevel,
+                                                     **alignment_pars)
         if alignment_table.process_list is None:
             log.warning("NO viable images to align.") 
             alignment_table.close()
