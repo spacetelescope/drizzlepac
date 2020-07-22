@@ -172,9 +172,14 @@ def build_svm_plots(data_source, output_basename='', display_plot=False):
     # remove rows that aren't relevant
     if_xm_DF = if_xm_DF[np.isnan(if_xm_DF.ref_image_platescale) == False]
 
-    # make the interfilter cross match plots
-    if_xm_plots_name = build_interfilter_crossmatch_plots(if_xm_DF, list(intfilt_xm_col_names.values()),
-                                                          display_plot, output_basename=output_basename)
+    # Create interfilter plots, or bail out if no rows remain
+    if if_xm_DF.shape[0] > 0:
+        if_xm_plots_name = build_interfilter_crossmatch_plots(if_xm_DF,
+                                                              display_plot,
+                                                              output_basename=output_basename)
+    else:
+        print("Warning: No interfilter residual data to plot!")
+        return
 
     #     -      -     -      -     -      -     -      -     -      -     -      -     -      -     -      -
     # Generate plots for point-segment catalog cross-match comparisons
@@ -430,7 +435,7 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
     return output
 """
 
-def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_basename='svm_qa'):
+def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm_qa'):
     """"Generate plots to statiscially quantify the quality of the alignment of filter-level HAP imagery
     products
 
@@ -438,9 +443,6 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
     ----------
     xm_df : Pandas dataframe
         This dataframe contains all the columns relevant to the plots.
-
-    data_cols : list
-        A subset of the column names in gaiaDF
 
     output_basename : str
         String to use as the start of the filename for the output plot pages.
@@ -602,13 +604,11 @@ def build_interfilter_crossmatch_plots(xm_df, data_cols, display_plot, output_ba
                                  x_label='X (pixels)', y_label='Y (pixels)', color='blue')
         plots.append(plot.fig)
     if display_plot:
-        show(column(plots))
-
-    # Just save
+        show(column(plots))  # display plot and save to html file
     else:
-        save(column(plots))
-    log.info("Output HTML graphic file {} has been written.\n".format(output))
-
+        save(column(plots))  # Just save
+    print("Output HTML graphic file {} has been written.\n".format(output))
+    return output
 # -----------------------------------------------------------------------------
 # Functions for generating the photometry plots
 #
