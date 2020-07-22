@@ -56,7 +56,9 @@ def flatten_dict(dd, separator='.', prefix=''):
 # ------------------------------------------------------------------------------------------------------------
 
 
-def get_json_files(search_path=os.getcwd(), log_level=logutil.logging.INFO):
+def get_json_files(search_path=os.getcwd(), 
+                   search_patterns = ["*_svm_*.json", "*_mvm_*.json", "*_cal_qa_*.json"],
+                   log_level=logutil.logging.INFO):
     """use glob to create a list of json files to harvest
     
     This function looks for all the json files containing qa test results generated
@@ -86,7 +88,6 @@ def get_json_files(search_path=os.getcwd(), log_level=logutil.logging.INFO):
     log.setLevel(log_level)
 
     # set up search string and use glob to get list of files
-    search_patterns = ["*_svm_*.json", "*_mvm_*.json", "*_cal_qa_*.json"]
     json_list = []
     for search_pattern in search_patterns:
         search_string = os.path.join(search_path, search_pattern)
@@ -182,7 +183,9 @@ def h5store(filename, df, **kwargs):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
+def json_harvester(json_search_path=os.getcwd(), 
+                   json_patterns = ["*_svm_*.json", "*_mvm_*.json", "*_cal_qa_*.json"],
+                   log_level=logutil.logging.INFO,
                    output_filename_basename="svm_qa_dataframe"):
     """Main calling function
 
@@ -205,11 +208,17 @@ def json_harvester(json_search_path=os.getcwd(), log_level=logutil.logging.INFO,
     log.setLevel(log_level)
 
     # Get sorted list of json files
-    json_dict = get_json_files(search_path=json_search_path, log_level=log_level)
+    json_dict = get_json_files(search_path=json_search_path,
+                               search_patterns=json_patterns,
+                               log_level=log_level)
     master_dataframe = None
     # extract all information from all json files related to a specific Pandas DataFrame index value into a
     # single line in the master dataframe
-    for idx in json_dict.keys():
+    num_json = len(json_dict)
+    for n,idx in enumerate(json_dict.keys()):
+        if ((n/num_json) % 0.1) == 0:
+            log.info("Harvested {}% of the JSON files".format((n/num_json)*100))
+
         ingest_dict = make_dataframe_line(json_dict[idx], log_level=log_level)
         if ingest_dict:
             if master_dataframe is not None:

@@ -23,6 +23,9 @@ from:
 
 https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 
+PUBLIC INTERFACE FOR THIS MODULE
+ - build_svm_plots(HDF5_FILE, output_basename='', display_plot=False):
+
 """
 
 # Standard library imports
@@ -58,8 +61,8 @@ from bokeh.models.tools import HoverTool
 from drizzlepac import util, wcs_functions
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
 from drizzlepac.haputils.graph_utils import HAPFigure, build_tooltips
-from drizzlepac.haputils.pandas_utils import PandasDFReader
-from drizzlepac.haputils.quality_analysis import build_vector_plot
+from drizzlepac.haputils.pandas_utils import PandasDFReader, get_pandas_data
+from drizzlepac.haputils.pipeline_graphics import build_vector_plot
 from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
 from stsci.tools import logutil
 from stwcs import wcsutil
@@ -118,7 +121,7 @@ def build_svm_plots(data_source, output_basename='', display_plot=False):
 
     # Get the requested columns from the dataframe in addition columns
     # added by the pandas_utils
-    gaia_cols_DF = get_pandas_data(data_source, gaia_col_names)
+    gaia_cols_DF = get_pandas_data(data_source, gaia_col_names.keys())
 
     # Rename the columns to abbreviated text for ease of management
     for old_col_name, new_col_name in gaia_col_names.items():
@@ -163,7 +166,7 @@ def build_svm_plots(data_source, output_basename='', display_plot=False):
 
     # Get the requested columns from the dataframe in addition columns
     # added by the pandas_utils
-    if_xm_DF = get_pandas_data(data_source, intfilt_xm_col_names)
+    if_xm_DF = get_pandas_data(data_source, intfilt_xm_col_names.keys())
 
     # Rename the columns to abbreviated text for ease of management
     for old_col_name, new_col_name in intfilt_xm_col_names.items():
@@ -183,8 +186,7 @@ def build_svm_plots(data_source, output_basename='', display_plot=False):
 
     #     -      -     -      -     -      -     -      -     -      -     -      -     -      -     -      -
     # Generate plots for point-segment catalog cross-match comparisons
-    """
-    xmatch_col_names = {'Cross-match_details.number_of_cross-matches',
+    xmatch_col_names = ['Cross-match_details.number_of_cross-matches',
                                        'Cross-match_details.point_catalog_filename',
                                        'Cross-match_details.point_catalog_length',
                                        'Cross-match_details.point_frame',
@@ -204,11 +206,25 @@ def build_svm_plots(data_source, output_basename='', display_plot=False):
                                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_min',
                                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_standard_deviation']
 
-    #xmatch_cols = get_pandas_data(data_source, xmatch_col_names)
+    xmatch_cols = get_pandas_data(data_source, xmatch_col_names)
 
-    #xmatch_plots_name = build_crossmatch_plots(xmatch_cols, xmatch_col_names,
-    #                              output_basename=output_basename)
-    """
+    xmatch_plots_name = build_crossmatch_plots(xmatch_cols, xmatch_col_names,
+                                               output_basename=output_basename,
+                                               display_plot=display_plot)
+
+    # Generate the WCS comparison graphics - compares the Primary WCS to the alternate WCS
+    wcs_graphics_driver(data_source, output_basename, display_plot, log_level=logutil.logging.INFO)
+
+    #
+    # Catalog comparisons
+    #
+
+    # Comparison of number of sources detected in the Point and Segment catalogs
+    nsources_graphics_driver(data_source, output_basename, display_plot, log_level=logutil.logging.INFO)
+
+    # Comparison of photometry measurements for Aperture 1 and Apeture 2 between
+    # Point and Segment catalogs
+    photometry_graphics_driver(data_source, output_basename, display_plot, log_level=logutil.logging.INFO)
 
 
 # -----------------------------------------------------------------------------
@@ -362,14 +378,16 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa'):
     return output
 
 
-"""
-def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
-    Generate the cross-match statistics plots for the comparison between the
+
+def build_crossmatch_plots(xmatchDF, data_cols,
+                           output_basename='svm_qa',
+                           display_plot=False):
+    """Generate the cross-match statistics plots for the comparison between the
     point catalog and the segment catalog.
 
     Parameters
     ----------
-    xmatchCDS : Pandas ColumnDataSource
+    xmatchDF : Pandas DataFrame
         This object contains all the columns relevant to the cross-match plots.
 
     data_cols : list
@@ -382,8 +400,11 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
     -------
     output : str
         Name of HTML file where the plot was saved.
-
-    output_basename = "{}_crossmatch_comparison".format(output_basename)
+        
+    """
+    xmatchCDS = ColumnDataSource(xmatchDF)
+    
+    output_basename = "{}_point-segment_comparison".format(output_basename)
 
     if not output_basename.endswith('.html'):
         output = output_basename + '.html'
@@ -391,49 +412,97 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
         output = output_basename
     # Set the output file immediately as advised by Bokeh.
     output_file(output)
+        
+    # Convert the data into histograms now...
+    p0 = HAPFigure(title='Number of Point-to-Segment Cross-matched sources',
+                   xlabel='Number of Cross-matched sources',
+                   ylabel='Number of products',
+                   use_hover_tips=False,
+                   background_fill_color='gainsboro',
+                   toolbar_location='right',
+                   ystart=0,
+                   grid_line_color='white')
+    data0 = xmatchCDS.data[data_cols[0]]
+    data0 = data0[~np.isnan(data0)]
+    hist0, edges0 = np.histogram(data0, bins=50)
+    p0.build_histogram(top=hist0,
+                       bottom=0,
+                       left=edges0[:-1],
+                       right=edges0[1:],
+                       fill_color='navy',
+                       fill_transparency=0.5,
+                       line_color='white')
 
-    num_hover_cols = len(HOVER_COLUMNS)
-
-    colormap = [qa.DETECTOR_LEGEND[x] for x in xmatchCDS.data[data_cols[1]]]
-    xmatchCDS.data['colormap'] = colormap
-    inst_det = ["{}/{}".format(i,d) for (i,d) in zip(xmatchCDS.data[data_cols[0]],
-                                         xmatchCDS.data[data_cols[1]])]
-    xmatchCDS.data[qa.INSTRUMENT_COLUMN] = inst_det
-
-    plot_list = []
-
-    hist0, edges0 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols]], bins=50)
-    title0 = 'Number of Point-to-Segment Cross-matched sources'
-    p0 = [plot_histogram(title0, hist0, edges0, y_start=0, '#fafafa',
-                    xlabel='Number of Cross-matched sources', ylabel='Number of products')]
-    plot_list += p0
-
-    hist1, edges1 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 11]], bins=50)
     title1 = 'Mean Separation (Sigma-clipped) of Point-to-Segment Cross-matched sources'
-    p1 = [plot_histogram(title1, hist1, edges1, y_start=0,
-                    fill_color='navy', background_fill_color='#fafafa',
-                    xlabel='Mean Separation of Cross-matched sources (arcseconds)', ylabel='Number of products')]
-    plot_list += p1
-
-    hist2, edges2 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 12]], bins=50)
+    p1 = HAPFigure(title=title1,
+                   xlabel='Mean Separation of Cross-matched sources (arcseconds)',
+                   ylabel='Number of products',
+                   use_hover_tips=False,
+                   background_fill_color='gainsboro',
+                   toolbar_location='right',
+                   ystart=0,
+                   grid_line_color='white')
+    data1 = xmatchCDS.data[data_cols[11]]
+    data1 = data1[~np.isnan(data1)]
+    hist1, edges1 = np.histogram(data1, bins=50)
+    p1.build_histogram(top=hist1,
+                       bottom=0,
+                       left=edges1[:-1],
+                       right=edges1[1:],
+                       fill_color='navy',
+                       fill_transparency=0.5,
+                       line_color='white')
+                       
     title2 = 'Median Separation (Sigma-clipped) of Point-to-Segment Cross-matched sources'
-    p2 = [plot_histogram(title2, hist2, edges2, y_start=0,
-                    fill_color='navy', background_fill_color='#fafafa',
-                    xlabel='Median Separation of Cross-matched sources (arcseconds)', ylabel='Number of products')]
-    plot_list += p2
-
-    hist3, edges3 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 13]], bins=50)
+    p2 = HAPFigure(title=title2,
+                   xlabel='Median Separation of Cross-matched sources (arcseconds)',
+                   ylabel='Number of products',
+                   use_hover_tips=False,
+                   background_fill_color='gainsboro',
+                   toolbar_location='right',
+                   ystart=0,
+                   grid_line_color='white')
+    data2 = xmatchCDS.data[data_cols[12]]
+    data2 = data2[~np.isnan(data2)]
+    hist2, edges2 = np.histogram(data2, bins=50)
+    p2.build_histogram(top=hist2,
+                       bottom=0,
+                       left=edges2[:-1],
+                       right=edges2[1:],
+                       fill_color='navy',
+                       fill_transparency=0.5,
+                       line_color='white')
+                       
     title3 = 'Standard-deviation (sigma-clipped) of Separation of Point-to-Segment Cross-matched sources'
-    p3 = [plot_histogram(title3, hist3, edges3, y_start=0,
-                    fill_color='navy', background_fill_color='#fafafa',
-                    xlabel='STD(Separation) of Cross-matched sources (arcseconds)', ylabel='Number of products')]
-    plot_list += p3
+    p3 = HAPFigure(title='Number of Point-to-Segment Cross-matched sources',
+                   xlabel='STD(Separation) of Cross-matched sources (arcseconds)',
+                   ylabel='Number of products',
+                   use_hover_tips=False,
+                   background_fill_color='gainsboro',
+                   toolbar_location='right',
+                   ystart=0,
+                   grid_line_color='white')
+    data3 = xmatchCDS.data[data_cols[13]]
+    data3 = data3[~np.isnan(data3)]
+    hist3, edges3 = np.histogram(data3, bins=50)
+    p3.build_histogram(top=hist3,
+                       bottom=0,
+                       left=edges3[:-1],
+                       right=edges3[1:],
+                       fill_color='navy',
+                       fill_transparency=0.5,
+                       line_color='white')
 
-    # Save the plot to an HTML file
-    save(column(plot_list))
+    # Display and save
+    if display_plot:
+        show(column(p0.fig, p1.fig, p2.fig, p3.fig))
+    # Just save
+    else:
+        save(column(p0.fig, p1.fig, p2.fig, p3.fig))
+    log.info("Output HTML graphic file {} has been written.\n".format(output))
 
     return output
-"""
+
 
 def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm_qa'):
     """"Generate plots to statiscially quantify the quality of the alignment of filter-level HAP imagery
@@ -612,7 +681,9 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
 # -----------------------------------------------------------------------------
 # Functions for generating the photometry plots
 #
-def generate_phot_graphic(phot_dataDF, output_base_filename, display_plot, log_level):
+
+
+def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_plot=False, log_level=logutil.logging.INFO):
     """Generate the graphics associated with this particular type of data.
 
     Parameters
@@ -637,15 +708,20 @@ def generate_phot_graphic(phot_dataDF, output_base_filename, display_plot, log_l
 
     HTML file is generated and written to the current directory.
     """
+    log.setLevel(log_level)
 
     # Set the output file immediately as advised by Bokeh.
+    if output_base_filename == '':
+        output_base_filename = '"svm_qa_photometry'
+    else:
+        output_base_filename = '{}_svm_qa_photometry'.format(output_base_filename)
     output_file(output_base_filename + '.html')
 
     # Compute some statistics to report on plot
     mean_dMagAp1mean = phot_dataDF['Ap1 Mean Differences'].mean()
     mean_dMagAp1median = phot_dataDF['Ap1 Median Differences'].mean()
 
-    mean_dMagAp2mean= phot_dataDF['Ap2 Mean Differences'].mean()
+    mean_dMagAp2mean = phot_dataDF['Ap2 Mean Differences'].mean()
     mean_dMagAp2median = phot_dataDF['Ap2 Median Differences'].mean()
 
     # Setup the source of the data to be plotted so the axis variables can be
@@ -669,7 +745,7 @@ def generate_phot_graphic(phot_dataDF, output_base_filename, display_plot, log_l
     p0.build_glyph('circle',
                    x='x_index',
                    y='Ap1 Mean Differences',
-                   sourceCDS=sourceCDS, 
+                   sourceCDS=sourceCDS,
                    glyph_color='colormap',
                    legend_group='inst_det',
                    name="ap1mean")
@@ -742,7 +818,7 @@ def generate_phot_graphic(phot_dataDF, output_base_filename, display_plot, log_l
     log.info("Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
 
 
-def photometry_graphics_driver(storage_filename, output_base_filename='photometry_graphics', display_plot=False, log_level=logutil.logging.NOTSET):
+def photometry_graphics_driver(storage_filename, output_base_filename='', display_plot=False, log_level=logutil.logging.NOTSET):
     """Driver to load the data from the storage file and generate the graphics.
 
     Parameters
@@ -768,13 +844,12 @@ def photometry_graphics_driver(storage_filename, output_base_filename='photometr
     log.setLevel(log_level)
 
     # Dictionary mapping the original dataframe column name to their new simple names
-    phot_columns={'Statistics_MagAp1.Delta_MagAp1.Mean': 'Ap1 Mean Differences',
-                  'Statistics_MagAp1.Delta_MagAp1.StdDev': 'Ap1 Standard Deviation',
-                  'Statistics_MagAp1.Delta_MagAp1.Median': 'Ap1 Median Differences',
-                  'Statistics_MagAp2.Delta_MagAp2.Mean': 'Ap2 Mean Differences',
-                  'Statistics_MagAp2.Delta_MagAp2.StdDev': 'Ap2 Standard Deviation',
-                  'Statistics_MagAp2.Delta_MagAp2.Median': 'Ap2 Median Differences'}
-
+    phot_columns = {'Statistics_MagAp1.Delta_MagAp1.Mean': 'Ap1 Mean Differences',
+                    'Statistics_MagAp1.Delta_MagAp1.StdDev': 'Ap1 Standard Deviation',
+                    'Statistics_MagAp1.Delta_MagAp1.Median': 'Ap1 Median Differences',
+                    'Statistics_MagAp2.Delta_MagAp2.Mean': 'Ap2 Mean Differences',
+                    'Statistics_MagAp2.Delta_MagAp2.StdDev': 'Ap2 Standard Deviation',
+                    'Statistics_MagAp2.Delta_MagAp2.Median': 'Ap2 Median Differences'}
 
     # Retrieve the dataframe
     log.info('Photometry_graphics. Retrieve Pandas dataframe from file {}.\n'.format(storage_filename))
@@ -791,40 +866,419 @@ def photometry_graphics_driver(storage_filename, output_base_filename='photometr
     x_index.clear()
 
     # Generate the photometric graphic
-    generate_phot_graphic(phot_dataDF, output_base_filename, display_plot, log_level)
+    generate_photometry_graphic(phot_dataDF, output_base_filename, display_plot, log_level)
 
 # -----------------------------------------------------------------------------
-# Utility functions for plotting
+# Number of detected sources in Point in Segment catalogs
 #
 
 
-def get_pandas_data(data_source, data_columns):
-    """Load the harvested data, stored in a CSV file, into local arrays.
+def generate_nsources_graphic(dataDF, output_base_filename='', display_plot=False, log_level=logutil.logging.INFO):
+    """Generate plot displaying the difference in the number of sources detected in the Point and Segment catalogs.
 
     Parameters
     ==========
-    data_source : str
-        Name of the file containing the Pandas Dataframe created by the harvester.
+    dataDF : Pandas dataframe
+        A subset of the input Dataframe consisting of the number of sources detected
+        in the output catalogs (point and segment), as well as the default information
+        added by the pandas_utils.py module.
 
-    data_columns : dict of str
-        Column names from the Pandas dataframe mapped to simple names
+    output_base_filename : str
+        Base name for the HMTL file generated by Bokeh.
+
+    display_plot : bool
+        Option to display the plot to the screen
+        Default: False
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default: 20 or 'info'.
 
     Returns
     =======
-    data_colsDF : Pandas dataframe
-    Dataframe which is a subset of the input harvester Pandas dataframe.
-    The subset dataframe consists of only the requested columns.
+    Nothing
 
+    HTML file is generated and written to the current directory.
     """
+    log.setLevel(log_level)
+
+    # Set the output file immediately as advised by Bokeh.
+    if output_base_filename == '':
+        output_base_filename = '"svm_qa_cat_nsources'
+    else:
+        output_base_filename = '{}_svm_qa_cat_nsources'.format(output_base_filename)
+    output_file(output_base_filename + '.html')
+
+    # Set the output file immediately as advised by Bokeh.
+    output_file(output_base_filename + '.html')
+
+    num_of_input_files = len(dataDF.index)
+    print('Number of individual catalog files: {}'.format(num_of_input_files))
+
+    # Generate a general index array and add it to the dataframe
+    x_index = list(range(0, len(dataDF.index)))
+    dataDF['x_index'] = x_index
+    x_index.clear()
+
+    # Setup the source of the data to be plotted so the axis variables can be
+    # referenced by column name in the Pandas dataframe
+    cds = ColumnDataSource(dataDF)
+
+    # Instantiate the figure objects
+    text = 'Difference in Number of Detected Sources between Catalogs (Point - Segment)'
+    p1 = HAPFigure(title=text,
+                   x_label='Index',
+                   y_label='Difference (counts)')
+    p1.build_glyph('circle',
+                   x='x_index',
+                   y='nsrcs_difference',
+                   sourceCDS=cds,
+                   glyph_color='colormap',
+                   legend_group='inst_det')
+
+    # Display and save
+    if display_plot:
+        show(p1.fig)
+    # Just save
+    else:
+        save(p1.fig)
+    log.info("Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
+
+
+def nsources_graphics_driver(storage_filename, output_base_filename='', display_plot=False, log_level=logutil.logging.INFO):
+    """Driver to load the data from the storage file and generate the graphics.
+
+    This particular is to display the differences in the number of detected sources documented
+    in the Point and Segment catalogs (*.ecsv).
+
+    Parameters
+    ==========
+    storage_filename : str
+        Name of the storage file for the Pandas dataframe created by the harvester.
+
+    output_base_filename : str
+        Base name for the HMTL file generated by Bokeh.
+
+    display_plot : bool, optional
+        Option to display the plot in addition to writing out the file.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
+
+    Returns
+    =======
+    Nothing
+    """
+    log.setLevel(log_level)
+
+    # Dictionary of Pandas dataframe column names mapped to simple names
+    nsources_columns = {'number_of_sources.point': 'nsrcs_point',
+                        'number_of_sources.segment': 'nsrcs_segment'}
+
+    # Retrieve the relevant dataframe columns
+    log.info('Retrieve Pandas dataframe from file {}.\n'.format(storage_filename))
+    dataDF = get_pandas_data(storage_filename, nsources_columns.keys())
+
+    # Rename the columns to abbreviated text as the graph titles further
+    # document the information.
+    for old_col_name, new_col_name in nsources_columns.items():
+        dataDF.rename(columns={old_col_name: new_col_name}, inplace=True)
+
+    # Compute the differences between the number of sources and add the computed
+    # column to the dataframe
+    dataDF['nsrcs_difference'] = dataDF['nsrcs_point'] - dataDF['nsrcs_segment']
+
+    # Generate the graphic
+    generate_nsources_graphic(dataDF, output_base_filename, display_plot, log_level)
+
+# -----------------------------------------------------------------------------
+# WCS graphic - comparison of crpix, crval, scale, and orientation
+#
+
+
+def generate_wcs_graphic(wcs_dataDF, wcs_columns, output_base_filename='', display_plot=False, log_level=logutil.logging.NOTSET):
+    """Generate the graphics associated with this particular type of data.
+
+    Parameters
+    ==========
+    wcs_dataDF : Pandas dataframe
+        A subset of the input Dataframe consisting only of the wcs_columns
+        and Aperture 2
+
+    wcs_columns : dict
+        Dictionary of original column names (keys) as stored in the Pandas dataframe
+        and the corresponding simple name (values) which is often more practical for use.
+
+    output_base_filename : str
+        Base name for the HMTL file generated by Bokeh.
+
+    display_plot : bool, optional
+        Option to display the plot to the screen
+        Default: False
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default: 20 or 'info'.
+
+    Returns
+    =======
+    Nothing
+
+    HTML file is generated and written to the current directory.
+    """
+    log.setLevel(log_level)
+
+    # Set the output file immediately as advised by Bokeh.
+    if output_base_filename == '':
+        output_base_filename = 'svm_qa_wcs'
+    else:
+        output_base_filename = '{}_svm_qa_wcs'.format(output_base_filename)
+    output_file(output_base_filename + '.html')
+
+    # Setup the source of the data to be plotted so the axis variables can be
+    # referenced by column name in the Pandas dataframe
+    sourceCDS = ColumnDataSource(wcs_dataDF)
+    num_of_datasets = len(wcs_dataDF.index)
+    print('Number of datasets: {}'.format(num_of_datasets))
+
+    # Figure 1 delta_crpix1 vs delta_crpix2
+    # Figure 2 delta_crval1 vs delta_crval2
+    # Figure 3 delta_scale vs delta_orientation
+    wcs_type_names = ['default', 'apriori', 'aposteriori']
+    wcs_components = []
+    alt_wcs_names = []
+    for wcs_type in wcs_type_names:
+        wcs_components.append('del_{}_wcsname'.format(wcs_type))
+        alt_wcs_names.append('alt_{}_wcsname'.format(wcs_type))
+
+    # There are three distinct figures in each row and one row
+    # for each wcs_type_names
+    fig_list = []
+    for i, wcs_component in enumerate(wcs_components):
+        if wcs_component in wcs_dataDF.columns:
+            slist = wcs_component.rsplit('_')
+            text = 'WCS Difference: Primary - '+slist[1].capitalize()
+
+            # Build the hover tooltips on-the-fly as the altername WCS is a variable
+            alt_value = '"@{}"'.format(alt_wcs_names[i])
+            wcs_tips = [("Primary", "@prim_wcsname"),
+                        ("Alternate", alt_value)]
+
+            fig = HAPFigure(title=text,
+                            x_label='Delta CRPIX1 (pixels)',
+                            y_label='Delta CRPIX2 (pixels)',
+                            hover_tips=wcs_tips)
+            fig.build_glyph('circle',
+                            x='del_{}_crpix1'.format(slist[1]),
+                            y='del_{}_crpix2'.format(slist[1]),
+                            sourceCDS=sourceCDS,
+                            glyph_color='colormap',
+                            legend_group='inst_det')
+            fig_list.append(fig)
+
+            fig = HAPFigure(title=text,
+                            x_label='Delta CRVAL1 (degrees)',
+                            y_label='Delta CRVAL2 (degrees)',
+                            hover_tips=wcs_tips)
+            fig.build_glyph('circle',
+                            x='del_{}_crval1'.format(slist[1]),
+                            y='del_{}_crval2'.format(slist[1]),
+                            sourceCDS=sourceCDS,
+                            glyph_color='colormap',
+                            legend_group='inst_det')
+            fig_list.append(fig)
+
+            fig = HAPFigure(title=text,
+                            x_label='Delta Scale (pixels/arcseconds)',
+                            y_label='Delta Orientation (degrees)',
+                            hover_tips=wcs_tips)
+            fig.build_glyph('circle',
+                            x='del_{}_scale'.format(slist[1]),
+                            y='del_{}_orient'.format(slist[1]),
+                            sourceCDS=sourceCDS,
+                            glyph_color='colormap',
+                            legend_group='inst_det')
+            fig_list.append(fig)
+
+    # Create the the HTML output and optionally display the plot
+    grid = gridplot([[fig_list[0].fig, fig_list[1].fig, fig_list[2].fig],
+                    [fig_list[3].fig, fig_list[4].fig, fig_list[5].fig],
+                    [fig_list[6].fig, fig_list[7].fig, fig_list[8].fig]],
+                    plot_width=500, plot_height=500)
+
+    # Display and save
+    if display_plot:
+        show(grid)
+    # Just save
+    else:
+        save(grid)
+    log.info("Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
+
+
+def wcs_graphics_driver(storage_filename, output_base_filename='', display_plot=False, log_level=logutil.logging.INFO):
+    """Driver to load the data from the storage file and generate the graphics.
+
+    Parameters
+    ==========
+    storage_filename : str
+        Name of the storage file for the Pandas dataframe created by the harvester.
+
+    output_base_filename : str, optional
+        Base name for the HMTL file generated by Bokeh.
+
+    display_plot : bool, optional
+        Option to display the plot in addition to writing out the file.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
+
+    Returns
+    =======
+    Nothing
+    """
+    log.setLevel(log_level)
+
+    # Observations taken after Oct 2017 will most likely NOT have any apriori
+    # solutions since they were observed using GAIA-based coordinates for the
+    # guide stars by default.  In a sense, the default IDC_<rootname> WCS is
+    # the apriori solution.
+    wcs_columns = {'PrimaryWCS.primary_wcsname': 'prim_wcsname',
+                   'PrimaryWCS.crpix1': 'prim_crpix1',
+                   'PrimaryWCS.crpix2': 'prim_crpix2',
+                   'PrimaryWCS.crval1': 'prim_crval1',
+                   'PrimaryWCS.crval2': 'prim_crval2',
+                   'PrimaryWCS.scale': 'prim_scale',
+                   'PrimaryWCS.orientation': 'prim_orient',
+                   'PrimaryWCS.exposure': 'prim_exponame',
+                   'AlternateWCS_default.alt_wcsname': 'alt_default_wcsname',
+                   'AlternateWCS_default.crpix1': 'alt_default_crpix1',
+                   'AlternateWCS_default.crpix2': 'alt_default_crpix2',
+                   'AlternateWCS_default.crval1': 'alt_default_crval1',
+                   'AlternateWCS_default.crval2': 'alt_default_crval2',
+                   'AlternateWCS_default.scale': 'alt_default_scale',
+                   'AlternateWCS_default.orientation': 'alt_default_orient',
+                   'AlternateWCS_default.exposure': 'alt_default_exponame',
+                   'DeltaWCS_default.delta_wcsname': 'del_default_wcsname',
+                   'DeltaWCS_default.d_crpix1': 'del_default_crpix1',
+                   'DeltaWCS_default.d_crpix2': 'del_default_crpix2',
+                   'DeltaWCS_default.d_crval1': 'del_default_crval1',
+                   'DeltaWCS_default.d_crval2': 'del_default_crval2',
+                   'DeltaWCS_default.d_scale': 'del_default_scale',
+                   'DeltaWCS_default.d_orientation': 'del_default_orient',
+                   'DeltaWCS_default.exposure': 'del_default_exponame',
+                   'AlternateWCS_apriori.alt_wcsname': 'alt_apriori_wcsname',
+                   'AlternateWCS_apriori.crpix1': 'alt_apriori_crpix1',
+                   'AlternateWCS_apriori.crpix2': 'alt_apriori_crpix2',
+                   'AlternateWCS_apriori.crval1': 'alt_apriori_crval1',
+                   'AlternateWCS_apriori.crval2': 'alt_apriori_crval2',
+                   'AlternateWCS_apriori.scale': 'alt_apriori_scale',
+                   'AlternateWCS_apriori.orientation': 'alt_apriori_orient',
+                   'AlternateWCS_apriori.exposure': 'alt_apriori_exponame',
+                   'DeltaWCS_apriori.delta_wcsname': 'del_apriori_wcsname',
+                   'DeltaWCS_apriori.d_crpix1': 'del_apriori_crpix1',
+                   'DeltaWCS_apriori.d_crpix2': 'del_apriori_crpix2',
+                   'DeltaWCS_apriori.d_crval1': 'del_apriori_crval1',
+                   'DeltaWCS_apriori.d_crval2': 'del_apriori_crval2',
+                   'DeltaWCS_apriori.d_scale': 'del_apriori_scale',
+                   'DeltaWCS_apriori.d_orientation': 'del_apriori_orient',
+                   'DeltaWCS_apriori.exposure': 'del_apriori_exponame',
+                   'AlternateWCS_aposteriori.alt_wcsname': 'alt_aposteriori_wcsname',
+                   'AlternateWCS_aposteriori.crpix1': 'alt_aposteriori_crpix1',
+                   'AlternateWCS_aposteriori.crpix2': 'alt_aposteriori_crpix2',
+                   'AlternateWCS_aposteriori.crval1': 'alt_aposteriori_crval1',
+                   'AlternateWCS_aposteriori.crval2': 'alt_aposteriori_crval2',
+                   'AlternateWCS_aposteriori.scale': 'alt_aposteriori_scale',
+                   'AlternateWCS_aposteriori.orientation': 'alt_aposteriori_orient',
+                   'AlternateWCS_aposteriori.exposure': 'alt_aposteriori_exponame',
+                   'DeltaWCS_aposteriori.delta_wcsname': 'del_aposteriori_wcsname',
+                   'DeltaWCS_aposteriori.d_crpix1': 'del_aposteriori_crpix1',
+                   'DeltaWCS_aposteriori.d_crpix2': 'del_aposteriori_crpix2',
+                   'DeltaWCS_aposteriori.d_crval1': 'del_aposteriori_crval1',
+                   'DeltaWCS_aposteriori.d_crval2': 'del_aposteriori_crval2',
+                   'DeltaWCS_aposteriori.d_scale': 'del_aposteriori_scale',
+                   'DeltaWCS_aposteriori.d_orientation': 'del_aposteriori_orient',
+                   'DeltaWCS_aposteriori.exposure': 'del_aposteriori_exponame'}
+
+    # Retrieve the relevant dataframe columns
+    log.info('Retrieve Pandas dataframe from file {}.\n'.format(storage_filename))
+    wcs_dataDF = get_wcs_data(storage_filename, wcs_columns, log_level)
+
+    # Rename the columns to abbreviated text as the graph titles further
+    # document the information.
+    for old_col_name, new_col_name in wcs_columns.items():
+        wcs_dataDF.rename(columns={old_col_name: new_col_name}, inplace=True)
+
+    # Generate the WCS graphic
+    generate_wcs_graphic(wcs_dataDF, wcs_columns, output_base_filename, display_plot, log_level)
+
+# -----------------------------------------------------------------------------
+# General Utility functions for plotting
+#
+
+
+def get_wcs_data(storage_filename, wcs_columns, log_level=logutil.logging.NOTSET):
+    """Load the harvested data, stored in a storage file, into local arrays.
+
+    Parameters
+    ==========
+    storage_filename : str
+        Name of the storage file for the Pandas dataframe created by the harvester.
+
+    wcs_columns : dict
+        Dictionary of original column names (keys) as stored in the Pandas dataframe
+        and the corresponding simple name (values) which is often more practical for use.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default: 20 or 'info'.
+
+    Returns
+    =======
+    wcs_dataDF : Pandas dataframe
+        Dataframe which is a subset of the input Pandas dataframe which
+        consists of only the requested columns and rows, as well as any columns provided
+        by pandas_utils for free.
+
+    Note: This routine is different from the nominal get_pandas_data() in that it tries to
+    compensate in case on the of requested columns (apriori or aposteriori) is missing.
+    """
+    log.setLevel(log_level)
 
     # Instantiate a Pandas Dataframe Reader (lazy instantiation)
-    df_handle = PandasDFReader(data_source, log_level=logutil.logging.NOTSET)
+    df_handle = PandasDFReader(storage_filename, log_level=log_level)
 
     # Get the relevant column data
-    data_colsDF = df_handle.get_columns_HDF5(data_columns)
+    wcs_column_type = ['apriori', 'aposteriori']
+    windex = -1
+    wcs_dataDF = pd.DataFrame()
+    while wcs_dataDF.empty:
+        wcs_dataDF = df_handle.get_columns_HDF5(wcs_columns.keys())
 
-    return data_colsDF
+        # If no dataframe were returned, there was a KeyError because columns were
+        # not present in the original dataframe versus the columns contained NaNs.
+        entries_to_remove = []
+        if wcs_dataDF.empty and windex < len(wcs_column_type) - 1:
+            log.info("Columns are missing from the data file {}. Remove some requested column names\n"
+                     "from the list and try again.\n".format(storage_filename))
 
+            # Identify missing columns and remove them from a copy of the original dictionary
+            windex += 1
+            for key in wcs_columns:
+                if re.match(r'.+{}.+'.format(wcs_column_type[windex]), key):
+                    entries_to_remove.append(key)
+
+            for key in entries_to_remove:
+                wcs_columns.pop(key, None)
+
+        elif wcs_dataDF.empty:
+            log.critical("Critical columns not found in storage Pandas dataframe: {}.\n".format(storage_filename))
+            sys.exit(1)
+
+    log.info("WCS data has been retrieved from the storage Pandas dataframe: {}.\n".format(storage_filename))
+
+    return wcs_dataDF
 
 def make_quad_scatter_plot(residsCDS):
     """Create x vs dx, x vs dy, y vs. dx and y vs. dy scatter plots in a 2x2 grid
