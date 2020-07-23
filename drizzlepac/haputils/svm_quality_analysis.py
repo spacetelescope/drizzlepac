@@ -642,8 +642,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 for item in xmresults:
                     log.info(item)
                 log.info("")
-
-                if matching_lines_ref.size > 0:
+                if len(matching_lines_ref) > 0:
                     # instantiate diagnostic object to store test results for eventual .json file output
                     diag_obj = du.HapDiagnostic(log_level=log_level)
                     diag_obj.instantiate_from_hap_obj(filtobj_dict[xmatch_comp_imgname]['filt_obj'],
@@ -652,28 +651,36 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                                       timestamp=json_timestamp,
                                                       time_since_epoch=json_time_since_epoch)
                     json_results_dict = collections.OrderedDict()
-                    json_results_dict["reference catalog filename"] = sl_names[0]
-                    json_results_dict["comparison catalog filename"] = sl_names[1]
+                    json_results_dict["reference image name"] = xmatch_ref_imgname
+                    json_results_dict["comparison image name"] = xmatch_comp_imgname
                     json_results_dict['reference catalog length'] = sl_lengths[0]
                     json_results_dict['comparison catalog length'] = sl_lengths[1]
                     json_results_dict['number of cross-matches'] = len(matching_lines_ref)
+                    json_results_dict['percent of all identified reference sources crossmatched'] = 100.0 * (
+                            float(len(matching_lines_ref)) / float(sl_lengths[0]))
+                    json_results_dict['percent of all identified comparison sources crossmatched'] = 100.0 * (
+                                float(len(matching_lines_comp)) / float(sl_lengths[1]))
                     json_results_dict['reference image platescale'] = filtobj_dict[xmatch_ref_imgname]['filt_obj'].meta_wcs.pscale
 
                     # store cross-match details
                     diag_obj.add_data_item(json_results_dict, "Interfilter cross-match details",
                                            descriptions={
-                                               "reference catalog filename": "ECSV point catalog filename",
-                                               "comparison catalog filename": "ECSV segment catalog filename",
+                                               "reference image name": "Crossmatch reference image name",
+                                               "comparison image name": "Crossmatch comparison image name",
                                                "reference catalog length": "Number of entries in point catalog",
                                                "comparison catalog length": "Number of entries in segment catalog",
                                                "number of cross-matches": "Number of cross-matches between point and segment catalogs",
+                                               "percent of all identified reference sources crossmatched": "percent of all identified reference sources crossmatched",
+                                               "percent of all identified comparision sources crossmatched": "percent of all identified comparison sources crossmatched",
                                                "reference image platescale": "Platescale of the crossmatch reference image"},
-                                           units={"reference catalog filename": "unitless",
-                                                  "comparison catalog filename": "unitless",
+                                           units={"reference image name": "unitless",
+                                                  "comparison image name": "unitless",
                                                   "reference catalog length": "unitless",
                                                   "comparison catalog length": "unitless",
                                                   "number of cross-matches": "unitless",
-                                                  "reference image platescale": "pixels/arcseconds"})
+                                                  "percent of all identified reference sources crossmatched": "unitless",
+                                                  "percent of all identified comparision sources crossmatched": "unitless",
+                                                  "reference image platescale": "arcseconds/pixel"})
 
                     # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
                     # the cross-matched reference sources
@@ -716,8 +723,13 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                         del reg_filename
 
                     # compute statistics
+                    xy_separations_table = Table()
                     for colname in ["xcentroid_ref", "ycentroid_ref"]:
                         sep = matched_comp_coords[colname] - matched_ref_coords[colname]
+
+                        # Add column of comp-ref differences to table
+                        xy_separations_table['delta_{}'.format(colname)] = sep
+
                         # Compute and store statistics on separations
                         sep_stat_dict = collections.OrderedDict()
                         sep_stat_dict["Non-clipped min"] = np.min(sep)
@@ -753,7 +765,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                                       "3x3 sigma-clipped mean": "pixels",
                                                       "3x3 sigma-clipped median": "pixels",
                                                       "3x3 sigma-clipped standard deviation": "pixels",
-                                                      "Reference image platescale": "pixels/arcseconds"})
+                                                      "Reference image platescale": "arcseconds/pixel"})
 
                         # display stats
                         padding = math.ceil((74 - 61) / 2)
@@ -767,6 +779,14 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                             log.info("{}{}: {} {}".format(padding, stat_key, sep_stat_dict[stat_key],
                                                           diag_obj.out_dict['data']["Interfilter cross-matched {} comparison - reference separation statistics".format(colname)]['units'][stat_key]))
                         log.info("")
+
+                    # store separations table
+                    diag_obj.add_data_item(xy_separations_table,
+                                           "Interfilter cross-matched comparison - reference separations",
+                                           descriptions={"delta_x": "delta_x",
+                                                         "delta_y": "delta_y"},
+                                           units={"delta_x": "pixels", "delta_y": "pixels"})
+
                     # write everything out to the json file
                     json_filename = filtobj_dict[xmatch_comp_imgname]['filt_obj'].drizzle_filename[
                                     :-9] + "_svm_interfilter_crossmatch.json"
@@ -1274,7 +1294,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                                                 'crpix2': 'pixels',
                                                 'crval1': 'degrees',
                                                 'crval2': 'degrees',
-                                                'scale': 'pixels/arcseconds',
+                                                'scale': 'arcseconds/pixel',
                                                 'orientation': 'degrees',
                                                 'exposure': 'unitless'})
 
@@ -1379,7 +1399,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                                                             'crpix2': 'pixels',
                                                             'crval1': 'degrees',
                                                             'crval2': 'degrees',
-                                                            'scale': 'pixels/arcseconds',
+                                                            'scale': 'arcseconds/pixel',
                                                             'orientation': 'degrees',
                                                             'exposure': 'unitless'})
 
@@ -1407,7 +1427,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                                                             'd_crpix2': 'pixels',
                                                             'd_crval1': 'degrees',
                                                             'd_crval2': 'degrees',
-                                                            'd_scale': 'pixels/arcseconds',
+                                                            'd_scale': 'arcseconds/pixel',
                                                             'd_orientation': 'degrees',
                                                             'exposure': 'unitless'})
 
