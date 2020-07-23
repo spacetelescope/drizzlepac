@@ -16,7 +16,6 @@ reference catalog. ::
 import os
 import pdb
 from io import BytesIO
-import csv
 import requests
 import inspect
 import sys
@@ -43,6 +42,7 @@ from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 from astropy.modeling.fitting import LevMarLSQFitter
+from astropy.time import Time
 
 import photutils  # needed to check version
 from photutils import detect_sources, source_properties, deblend_sources
@@ -108,7 +108,8 @@ Primary function for creating an astrometric reference catalog.
 
 def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
                                gaia_only=False, table_format="ascii.ecsv",
-                               existing_wcs=None, num_sources=None, use_footprint=False):
+                               existing_wcs=None, num_sources=None, 
+                               use_footprint=False, full_catalog=False):
     """Create an astrometric catalog that covers the inputs' field-of-view.
 
     Parameters
@@ -139,6 +140,9 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
     use_footprint : bool, optional
         Use the image footprint as the source identification bounds insted of using a circle centered on a
         given RA and Dec? By default, use_footprint = False.
+
+    full_catalog : bool, optional
+        Return the full set of columns provided by the web service.
 
     Notes
     -----
@@ -172,39 +176,43 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
         radius = compute_radius(outwcs)
         ra, dec = outwcs.wcs.crval
 
+    use_pm = int(catalog[-1]) > 1 and catalog.upper().startswith('GAIA')
+    if use_pm:
+        # Get the observation date 
+        epoch = Time(fits.getval(inputs[0], 'date-obs')).decimalyear
+    else:
+        epoch = None
+
     # perform query for this field-of-view
     if use_footprint:
-        ref_dict = get_catalog_from_footprint(footprint, catalog=catalog)
+        ref_table = get_catalog_from_footprint(footprint,
+                                              epoch=epoch,
+                                              catalog=catalog)
     else:
-        ref_dict = get_catalog(ra, dec, sr=radius, catalog=catalog)
+        ref_table = get_catalog(ra, dec,
+                               sr=radius,
+                               epoch=epoch,
+                               catalog=catalog)
 
-    colnames = ('ra', 'dec', 'mag', 'objID', 'GaiaID')
-    col_types = ('f8', 'f8', 'f4', 'U25', 'U25')
-    ref_table = Table(names=colnames, dtype=col_types)
-
+    # weed out sources which are not accurate (no proper motions in catalog)
+    if epoch and hasattr(ref_table, 'mask'):
+        ref_table = ref_table[~ref_table['pmra'].mask]
+        
+    colnames = ('ra', 'dec', 'mag', 'objID')
+    if not full_catalog:
+        ref_table = ref_table[colnames]
+        
     # Add catalog name as meta data
     ref_table.meta['catalog'] = catalog
     ref_table.meta['gaia_only'] = gaia_only
+    ref_table.meta['epoch'] = epoch
 
     # rename coordinate columns to be consistent with tweakwcs
     ref_table.rename_column('ra', 'RA')
     ref_table.rename_column('dec', 'DEC')
+    
+    sources = len(ref_table)
 
-    # extract just the columns we want...
-    sources = 0
-    for source in ref_dict:
-        if 'GAIAsourceID' in source:
-            g = source['GAIAsourceID']
-            if gaia_only and g.strip() == '':
-                continue
-        else:
-            g = "-1"  # indicator for no source ID extracted
-        r = float(source['ra'])
-        d = float(source['dec'])
-        m = float(source['mag']) if float(source['mag']) > 0 else -999.9
-        o = source['objID']
-        sources += 1
-        ref_table.add_row((r, d, m, o, g))
     # sort table by magnitude, fainter to brightest
     ref_table.sort('mag', reverse=True)
 
@@ -250,7 +258,7 @@ def build_reference_wcs(inputs, sciname='sci'):
     return outwcs
 
 
-def get_catalog(ra, dec, sr=0.1, catalog='GSC241'):
+def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
     """ Extract catalog from VO web service.
 
     Parameters
@@ -265,6 +273,11 @@ def get_catalog(ra, dec, sr=0.1, catalog='GSC241'):
         Search radius (in decimal degrees) from field-of-view center to use
         for sources from catalog.  Default: 0.1 degrees
 
+    epoch : float, optional
+        Catalog positions returned for this field-of-view will have their 
+        proper motions applied to represent their positions at this date, if 
+        a value is specified at all, for catalogs with proper motions.
+        
     catalog : str, optional
         Name of catalog to query, as defined by web-service.  Default: 'GSC241'
 
@@ -278,8 +291,12 @@ def get_catalog(ra, dec, sr=0.1, catalog='GSC241'):
     spec_str = 'RA={}&DEC={}&SR={}&FORMAT={}&CAT={}&MINDET=5'
     headers = {'Content-Type': 'text/csv'}
     fmt = 'CSV'
+    epoch_str = '&EPOCH={:.3f}'
 
     spec = spec_str.format(ra, dec, sr, fmt, catalog)
+    if epoch:
+        spec += epoch_str.format(epoch)
+        
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
@@ -287,12 +304,12 @@ def get_catalog(ra, dec, sr=0.1, catalog='GSC241'):
     # remove initial line describing the number of sources returned
     # CRITICAL to proper interpretation of CSV data
     del rstr[0]
-    r_csv = csv.DictReader(rstr)
 
+    r_csv = Table.read(rstr, format='ascii.csv')
     return r_csv
 
 
-def get_catalog_from_footprint(footprint, catalog='GSC241'):
+def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
     """ Extract catalog from VO web service based on the specified footprint
 
     Parameters
@@ -300,6 +317,11 @@ def get_catalog_from_footprint(footprint, catalog='GSC241'):
     footprint : numpy.ndarray
         Array of RA, Dec points that describe the footprint polygon
 
+    epoch : float, optional
+        Catalog positions returned for this field-of-view will have their 
+        proper motions applied to represent their positions at this date, if 
+        a value is specified at all, for catalogs with proper motions.
+        
     catalog : str, optional
         Name of catalog to query, as defined by web-service.  Default: 'GSC241'
 
@@ -313,11 +335,15 @@ def get_catalog_from_footprint(footprint, catalog='GSC241'):
     spec_str = 'STCS=polygon{}&FORMAT={}&CAT={}&MINDET=5'
     headers = {'Content-Type': 'text/csv'}
     fmt = 'CSV'
+    epoch_str = '&EPOCH={:.3f}'
 
     footprint_string = ""
     for item in footprint:
         footprint_string += "%20{}%20{}".format(item[0],item[1])
     spec = spec_str.format(footprint_string, fmt, catalog)
+    if epoch:
+        spec += epoch_str.format(epoch)
+
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
@@ -325,8 +351,8 @@ def get_catalog_from_footprint(footprint, catalog='GSC241'):
     # remove initial line describing the number of sources returned
     # CRITICAL to proper interpretation of CSV data
     del rstr[0]
-    r_csv = csv.DictReader(rstr)
 
+    r_csv = Table.read(rstr, format='ascii.csv')
     return r_csv
 
 
