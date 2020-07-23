@@ -116,7 +116,9 @@ The task 'runastrodriz' can be used to reproduce the same Drizzle processing tha
    :maxdepth: 2
 
    Running Astrodriz <runastrodriz.rst>
-   hla
+   astrometry_api.rst
+
+   singlevisit.rst
 
 
 Astrometry and Advanced Pipeline Products
@@ -129,9 +131,7 @@ The code being used in the automated HST calibration pipeline to generate the pr
   :maxdepth: 2
 
   Astrometry and Headerlets <astrometry.rst>
-  astrometry_api.rst
 
-  singlevisit.rst
 
 Indices and tables
 ==================

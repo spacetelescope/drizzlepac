@@ -55,8 +55,95 @@ for alignment. This processing then follows these steps to create the final prod
 
 Single Visit Naming Convention
 ==============================
+All files processed as part of a single visit get renamed from the standard
+pipeline filenames into something which describes the data more clearly.  The 
+convention used for the names of these input and output files uses these 
+components:
 
+  * ``<propid>`` : the proposal ID for this visit
+  * ``<obsetid>`` : the 2-digit visit ID from this proposal 
+  * ``<instr>`` : 3 letter designation of the instrument used for the observations
+  * ``<detector>`` : name of the detector used for the observations
+  * ``<filter>`` : hyphen-separated list of filter names used for the observations
+  * ``<ipppssoo>`` : standard 8 character rootname for a single exposure defined by the pipeline
+  * ``<ipppss>`` : standard 6 character designation of the ``<instr>``/``<propid>``/``<obsetid>`` for this visit
+  * ``dr[cz].fits`` : suffix for drizzled products
+  * ``fl[ct].fits`` : suffix for pipeline-calibrated files
+  * ``asn.fits`` : suffix for the association table
+  * ``hlet.fits`` : suffix for headerlet files containing the WCS solution used to create the final drizzle products/mosaics
+  
+These components get combined to create filenames specific to each type of file being
+processed.  The following table provides a complete list of all the products 
+created as a result of single-visit processing.
 
+.. list-table:: Single-visit product filenames
+  :widths: 8 25 83
+  :header-rows: 1
+  
+  * - Product
+    - File Type
+    - Filename for Files Produced
+  * - Exposure
+    - drizzle product
+    - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_dr[cz].fits
+  * -
+    - flat-field product
+    - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_fl[ct].fits
+  * - 
+    - headerlet file
+    - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_hlet.fits
+  * -
+    - trailer file
+    - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_trl.txt
+  * -
+    - preview (full size)
+    - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_dr[cz].jpg
+  * - 
+    - preview (thumbnail)
+    - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_dr[cz]_thumb.jpg
+  * - Filter
+    - drizzle product
+    - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppss>_dr[cz].fits
+  * -
+    - point-source catalog
+    - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppss>_point-cat.ecsv
+  * -
+    - segment-source catalog
+    - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppss>_segment-cat.ecsv
+  * - 
+    - trailer file
+    - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppss>_trl.txt
+  * -
+    - preview (full size)
+    - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppss>_dr[cz].jpg
+  * -
+    - preview (thumbnail)
+    - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppss>_dr[cz]_thumb.jpg
+  * - Total
+    - drizzle product
+    - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_dr[cz].fits
+  * -
+    - point-source catalog
+    - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_point-cat.ecsv
+  * -
+    - segment-source catalog
+    - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_segment-cat.ecsv
+  * - 
+    - trailer file
+    - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_trl.txt
+  * -
+    - preview (full size)
+    - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_dr[cz].jpg
+  * - 
+    - preview (thumbnail)
+    - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_dr[cz]_thumb.jpg
+  * - 
+    - color preview (full size)
+    - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_<filters>_dr[cz].jpg
+  * - 
+    - color preview (thumbnail)
+    - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_<filters>_dr[cz]_thumb.jpg
+    
 
 Input Data
 ===========
