@@ -145,7 +145,7 @@ def determine_alignment_residuals(input, files,
 
     if len(num_srcs) == 0 or (len(num_srcs) > 0 and  max(num_srcs) <= 3):
         log.warning("Not enough sources identified in input images for comparison")
-        return None
+        return []
 
     # Combine WCS from HDULists and source catalogs into tweakwcs-compatible input
     imglist = []
@@ -175,7 +175,7 @@ def determine_alignment_residuals(input, files,
 
         except Exception:    
             log.warning("Problem encountered during matching of sources")
-            return None
+            return []
             
     # Check to see whether there were any successful fits...
     align_success = False
@@ -508,10 +508,11 @@ def run_all(input, files, catalogs=None, log_level=logutil.logging.NOTSET):
                                               catalogs=src_catalogs,
                                               json_timestamp=json_timestamp,
                                               json_time_since_epoch=json_time_since_epoch,
-                                              log_level=log_level)
+                                               log_level=log_level)
+        
     if catalogs is not None:
         gaia_files = determine_gaia_residuals(catalogs,
-                                             json_timestamp=json_timestamp,
+                                            json_timestamp=json_timestamp,
                                              json_time_since_epoch=json_time_since_epoch,
                                              log_level=log_level)
         json_files += gaia_files
