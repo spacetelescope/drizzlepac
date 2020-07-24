@@ -32,11 +32,24 @@ processing may have had.  The following sections provide the description of the
 single-visit processing.  Definitions of a number of processing-specific terms used 
 in this description can be found in the :ref:`hap-glossary`.
 
+
+Primary User-Interface
+=======================
+One task has been written to perform the single-visit processing: ``runsinglehap``. 
+It gets used by STScI to generate the single-visit products which
+can be found in the Mikulsik Archive for Space Telescopes (MAST) archive. This task 
+can also be run from the operating system command-line or from within a
+Python session to reproduce those results, or with modification of the input 
+parameters, perhaps improve on the standard archived results.  Full details on 
+how to run this task can be found in the description of the task at :ref:`runsinglehap_api`.
+
+
 Processing Steps
 ================
-Single-visit processing relies on the results of the standard astrometric 
+Single-visit processing performed by ``runsinglehap`` 
+relies on the results of the standard astrometric 
 processing of the individual exposures and associations as the starting point
-for alignment. This processing then follows these steps to create the final products::
+for alignment. This processing then follows these steps to create the final products:
 
   * interpret the list of filenames for all exposures taken as part of a single visit
   * copy the pipeline-calibrated (FLT/FLC) files to the current directory for processing
@@ -145,13 +158,23 @@ created as a result of single-visit processing.
     - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_<filters>_dr[cz]_thumb.jpg
     
 
-Input Data
-===========
+Processing the Input Data
+=========================
 
 
+Defining the Output Products
+=============================
 
-Output Products
-===============
+
+Aligning the Input Data
+=======================
+
+
+Creating the Output Products
+============================
+
 
 Unique SVM Keywords
---------------------
+-------------------
+
+
