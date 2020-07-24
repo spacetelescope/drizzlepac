@@ -192,7 +192,8 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                                                               diagnostic_mode)
 
             # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
-            if diagnostic_mode:
+            #if diagnostic_mode:
+            if diagnostic_mode and phot_mode in ['aperture', 'both']:
                 if "fwhm" in total_product_catalogs.catalogs['aperture'].sources.colnames:
                     diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
                     diag_obj.instantiate_from_hap_obj(filter_product_obj,
@@ -350,7 +351,8 @@ def create_drizzle_products(total_obj_list):
 # ----------------------------------------------------------------------------------------------------------------------
 
 def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_configs=True,
-                       input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
+                       #input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
+                       input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="segment",
                        log_level=logutil.logging.INFO):
     """
     Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or

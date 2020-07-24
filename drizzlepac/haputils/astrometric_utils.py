@@ -598,6 +598,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
 
     if kernel is None:
         log.warning("Did not find a suitable PSF out of {} possible sources...".format(len(peaks)))
+        log.warning("Using a Gaussian 2D Kernel for source detection.")
         # Generate a default kernel using a simple 2D Gaussian
         kernel_fwhm = fwhm
         sigma = fwhm * gaussian_fwhm_to_sigma
