@@ -7,6 +7,8 @@ These modules provide the basic functionality used to automatically process
 data using this package to apply the distortion models to the WCS of HST 
 observations and to verify the alignment of the observations. 
 
+.. _amutils_api:
+
 haputils.astrometric_utils
 --------------------------
 
@@ -30,10 +32,15 @@ haputils.astrometric_utils
 .. autofunction:: drizzlepac.haputils.astrometric_utils.detect_point_sources
 
 
+.. _analyze_api:
+
 haputils.analyze
 -----------------
 .. automodule:: drizzlepac.haputils.analyze
 .. autofunction:: drizzlepac.haputils.analyze.analyze_data
+
+
+.. _align_utils_api:
 
 haputils.align_utils
 ---------------------

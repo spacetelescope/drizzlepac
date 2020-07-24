@@ -119,6 +119,7 @@ The task 'runastrodriz' can be used to reproduce the same Drizzle processing tha
    astrometry_api.rst
 
    singlevisit.rst
+   runsinglehap.rst
 
 
 Astrometry and Advanced Pipeline Products

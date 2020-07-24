@@ -66,6 +66,8 @@ for alignment. This processing then follows these steps to create the final prod
   * Create each of the output products using the updated WCS solutions
  
 
+.. _svm_naming_convention:
+
 Single Visit Naming Convention
 ==============================
 All files processed as part of a single visit get renamed from the standard
@@ -160,11 +162,108 @@ created as a result of single-visit processing.
 
 Processing the Input Data
 =========================
+SVM processing starts with a list of all the single exposures 
+which were taken as part of a visit.  Any associations which were defined by the
+proposal are ignored, since the visit itself gets treated, in essence, as a new 
+association.  The input files can be specified either using the ``poller`` file format
+used by the STScI automated processing or a file with a simple list of filenames.
+
+Automated poller input file format
+----------------------------------
+The automated processing performed to populate the MAST archive at 
+STScI provides a file with the following format::
+
+    ic0s17h4q_flt.fits,12861,C0S,17,602.937317,F160W,IR,ic0s/ic0s17h4q/ic0s17h4q_flt.fits
+    ic0s17h5q_flt.fits,12861,C0S,17,602.937317,F160W,IR,ic0s/ic0s17h5q/ic0s17h5q_flt.fits
+    ic0s17h7q_flt.fits,12861,C0S,17,602.937317,F160W,IR,ic0s/ic0s17h7q/ic0s17h7q_flt.fits
+    ic0s17hhq_flt.fits,12861,C0S,17,602.937317,F160W,IR,ic0s/ic0s17hhq/ic0s17hhq_flt.fits
+
+This example comes from the 'ic0s1' visit where the columns are:
+
+  #. exposure filename
+  #. proposal ID (numeric value)
+  #. program ID - ppp value from exposure filename
+  #. obset_id - visit number from proposal 
+  #. exposure time of the exposure
+  #. filters used for the exposure
+  #. detector used to take the exposure
+  #. location of the exposure in a local cache
+
+
+Filtering the input data
+--------------------------
+Not all HST imaging observations can be aligned using SVM processing.  Observations
+taken with the GRISM or in SPATIAL SCAN mode result in sources which can not be 
+aligned, for example.  The :ref:`analyze_api` module evaluates all
+input exposures using these header keywords for the stated rejection criteria.
+
+.. list-table:: Single-visit product filenames
+  :widths: 26 27 60
+  :header-rows: 1
+  
+  * - Header Keyword
+    - Values Which Trigger Rejection
+    - Explanation
+  * - OBSTYPE
+    - (not IMAGING)
+    - Only Imaging mode data processed
+  * - MTFLAG
+    - T 
+    - No moving targets, WCS and background sources vary
+  * - SCAN_TYP
+    - C or D (or not N)
+    - Can not align streaked sources
+  * - FILTER or FILTER1, FILTER2
+    - C*, PR*
+    - G=Grism and PR=Prism, Can not align streaked sources
+  * - EXPTIME
+    - 0 
+    - no exposure time, no data to align
+  * - TARGNAME
+    - DARK, TUNGSTEN, BIAS, FLAT, 
+    - No alignable external sources in these calibration modes 
+  * - 
+    - EARTH-CALIB, DEUTERIUM
+    - No alignable external sources in these calibration modes 
+  * - CHINJECT
+    - not NONE
+    - No alignable external sources in these calibration modes 
+
+
+Any observation which meets any of these criteria are flagged to be ignored (not
+processed).  All observations which are alignable based on these criteria are then
+passed along as a table to create the SVM products.  Those inputs which can be
+processed are then copied and renamed using the :ref:`svm_naming_convention`.  This 
+insures that no SVM processing will affect or otherwise modify the original 
+pipeline-processed input files.  Only the SVM named input files will be updated
+with new SVM-aligned WCS solutions and then used to produce the drizzle products.  
 
 
 Defining the Output Products
 =============================
+The table with the set of observations which can be processed now gets interpreted 
+in order to identify what exposures can be combined to create unique products.  
+This interpretation gets performed using the code in :ref:`poller_utils_api` by
+grouping similar observations.    The rules used for grouping the inputs into output
+products result in outputs which have:
 
+  * same detector
+  * same filter
+
+For example, a relatively simple visit with 
+6 F555W exposures (two 15-second and four 30-second exposures) and 
+6 F814W exposures (two 30-second and four 10-second exposures)
+would result in the definition of 2 output products: one F555W product and one F814W
+product.  
+
+The function ``interpret_obset_input`` serves as the sole interface 
+for this interpretation. A basic tree gets defined (as a dictionary of dictionaries) 
+by this function where the
+output exposures are identified along with all the names of the input exposures.
+This tree then serves as the basis for organizing the rest of the SVM processing.
+
+In addition to defining what output products need to be generated, all the SVM
+products names are defined as well using the :ref:`svm_naming_convention`.  
 
 Aligning the Input Data
 =======================

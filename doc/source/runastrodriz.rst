@@ -544,7 +544,7 @@ an attempt to perform an ``a posteriori`` fit to GAIA:
     * Evaluates all the input observations to identify any which can not be
       aligned, such as GRISM or SCAN mode observations.  For a full description
       of all the type of observations that can be filtered out, see 
-      :ref:`analyze/analyze_data`.
+      :ref:`analyze_api`.
     * Compute a 2D background for all the observations using ``photutils``
     * Determine a PSF kernel from the detectable sources in the image, if possible.
     * Segments the image after applying the 2D background to identify as many
