@@ -444,10 +444,12 @@ def determine_gaia_residuals(fit_catalogs,
         # The same fits is reported for each chip in a multi-chip image
         if img in resids:
             continue
+
         # Get the resids
         fitinfo = img.meta['fit_info']
         ref_indx = fitinfo['matched_ref_idx']
         imgname = img.meta['filename']
+        fitmask = fitinfo['fitmask']
         resids[imgname] = {}
                 # store results in dict
         resids[imgname]['fit_results'] = {'aligned_to': catname,
@@ -455,15 +457,16 @@ def determine_gaia_residuals(fit_catalogs,
                                          'group_id': img.meta['group_id']}
 
         # Obtain tangent plane positions for both image sources and reference sources
+        gaia_cat_ra = gaia_cat['RA'][ref_indx][fitmask]
+        gaia_cat_dec = gaia_cat['DEC'][ref_indx][fitmask]
         img_x, img_y = img.world_to_tanp(fitinfo['fit_RA'], fitinfo['fit_DEC'])
-        ref_x, ref_y = img.world_to_tanp(gaia_cat['RA'][ref_indx], 
-                                             gaia_cat['DEC'][ref_indx])
+        ref_x, ref_y = img.world_to_tanp(gaia_cat_ra, gaia_cat_dec)
 
         # Compile match table
         match_tab = Table(data=[img_x, img_y,
                                 fitinfo['fit_RA'], fitinfo['fit_DEC'],
                                 ref_x, ref_y,
-                                gaia_cat['RA'][ref_indx], gaia_cat['DEC'][ref_indx]],
+                                gaia_cat_ra, gaia_cat_dec],
                           names=['img_x', 'img_y', 'img_RA', 'img_DEC',
                                  'ref_x', 'ref_y', 'ref_RA', 'ref_DEC'])
 
