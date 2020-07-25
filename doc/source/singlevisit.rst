@@ -75,17 +75,17 @@ pipeline filenames into something which describes the data more clearly.  The
 convention used for the names of these input and output files uses these 
 components:
 
-  * ``<propid>`` : the proposal ID for this visit
-  * ``<obsetid>`` : the 2-digit visit ID from this proposal 
-  * ``<instr>`` : 3 letter designation of the instrument used for the observations
-  * ``<detector>`` : name of the detector used for the observations
-  * ``<filter>`` : hyphen-separated list of filter names used for the observations
-  * ``<ipppssoo>`` : standard 8 character rootname for a single exposure defined by the pipeline
-  * ``<ipppss>`` : standard 6 character designation of the ``<instr>``/``<propid>``/``<obsetid>`` for this visit
-  * ``dr[cz].fits`` : suffix for drizzled products
-  * ``fl[ct].fits`` : suffix for pipeline-calibrated files
-  * ``asn.fits`` : suffix for the association table
-  * ``hlet.fits`` : suffix for headerlet files containing the WCS solution used to create the final drizzle products/mosaics
+  * **<propid>** : the proposal ID for this visit
+  * **<obsetid>** : the 2-digit visit ID from this proposal 
+  * **<instr>** : 3 letter designation of the instrument used for the observations
+  * **<detector>** : name of the detector used for the observations
+  * **<filter>** : hyphen-separated list of filter names used for the observations
+  * **<ipppssoo>** : standard 8 character rootname for a single exposure defined by the pipeline
+  * **<ipppss>** : standard 6 character designation of the **<instr>**/**<propid>**/**<obsetid>** for this visit
+  * **dr[cz].fits** : suffix for drizzled products
+  * **fl[ct].fits** : suffix for pipeline-calibrated files
+  * **asn.fits** : suffix for the association table
+  * **hlet.fits** : suffix for headerlet files containing the WCS solution used to create the final drizzle products/mosaics
   
 These components get combined to create filenames specific to each type of file being
 processed.  The following table provides a complete list of all the products 
@@ -165,7 +165,7 @@ Processing the Input Data
 SVM processing starts with a list of all the single exposures 
 which were taken as part of a visit.  Any associations which were defined by the
 proposal are ignored, since the visit itself gets treated, in essence, as a new 
-association.  The input files can be specified either using the ``poller`` file format
+association.  The input files can be specified either using the **poller** file format
 used by the STScI automated processing or a file with a simple list of filenames.
 
 Automated poller input file format
@@ -246,27 +246,53 @@ in order to identify what exposures can be combined to create unique products.
 This interpretation gets performed using the code in :ref:`poller_utils_api` by
 grouping similar observations.    The rules used for grouping the inputs into output
 products result in outputs which have the same detector and filter.  These products
-are referred to as ``filter`` products.  
+are referred to as **filter** products.  
 
-For example, a relatively simple visit with 
-6 F555W exposures (two 15-second and four 30-second exposures) and 
-6 F814W exposures (two 30-second and four 10-second exposures)
-would result in the definition of 2 output products: one F555W product and one F814W
-product.  
-
-In addition, all exposures for a single detector are identified and grouped to 
-define a ``total`` product.  This ``total`` product provides the deepest available 
+All exposures for a single detector are also identified and grouped to 
+define a **total** product.  This **total** product provides the deepest available 
 view of the field-of-view from this visit which will be used to produce the master
-catalog of sources for this visit.  
+catalog of sources for this visit.  The master catalog of source positions will
+be used to perform photometry on each exposure, whether the source can be identified
+in the exposure at that position or not.  This **forced photometry** results in
+limits for the photometry in cases where the sources are not bright enough to be
+identified in a given filter.
 
-The function ``interpret_obset_input`` serves as the sole interface 
+Two separate source catalogs for each filter are also pre-defined; namely, 
+
+  * a point-source catalog derived using ``photutils`` ``DAOStarFinder`` 
+  * a segmentation-based catalog derived using ``photutils`` segmentation code
+
+These two catalogs provide complimentary views of each field-of-view to try to
+highlight all types of compact sources found in the exposures. 
+
+
+Example Visit
+--------------
+For example, a relatively simple visit of a fairly bright and crowded field with 
+6 F555W exposures (two 15-second and four 30-second exposures) and 
+6 F814W exposures (two 5-second and four 15-second exposures)
+would result in the definition of these output products: 
+
+  * a drizzled image for each separate exposure
+  * a single F555W product
+  * a single F814W product, and
+  * a single **total** product
+  * a point-source catalog for the F555W product
+  * a segmentation-based source catalog for the F555W product
+  * a point-source catalog for the F814W product
+  * a segmentation-based source catalog for the F814W product
+  
+The function ``haputils.poller_utils.interpret_obset_input`` serves as the sole interface 
 for this interpretation. A basic tree gets defined (as a dictionary of dictionaries) 
 by this function where the
 output exposures are identified along with all the names of the input exposures.
 This tree then serves as the basis for organizing the rest of the SVM processing.
 
 In addition to defining what output products need to be generated, all the SVM
-products names are defined as well using the :ref:`svm_naming_convention`.  
+products names are defined using the :ref:`svm_naming_convention`.  This insures
+that all the output products have filenames which are not only unique but also 
+understandable (if a bit long) that are easily grouped on disk.  
+
 
 Aligning the Input Data
 =======================
@@ -276,10 +302,10 @@ processing.  However, each exposure or association (of exposures) can be aligned
 to slightly different fits or catalogs due to differences in the source objects 
 which can be identified in each separate exposure.  The primary goal of SVM 
 processing is to refine this alignment so that all exposures in the visit for 
-the same detector (those exposures which contribute to each ``total`` product)
+the same detector (those exposures which contribute to each **total** product)
 share the same WCS (pixels on the sky).  
 
-Alignment of all the exposures for a ``total`` product uses the same alignment
+Alignment of all the exposures for a **total** product uses the same alignment
 code as the standard calibration pipeline.  The basic steps it follows is:
 
   * generate a source catalog for each exposure (using :ref:`amutils_api`)
@@ -290,13 +316,14 @@ code as the standard calibration pipeline.  The basic steps it follows is:
   * update each WCS with the final corrected WCS generated by ``tweakwcs``
   
 The limits for performing the relative alignment and absolute fit to the astrometric
-catalog (defaults to ``GAIADR2``) are lower under the expectation that large 
+catalog (defaults to **GAIADR2**) are lower under the expectation that large 
 offsets (> 0.5 arcseconds) have already been removed in the pipeline.  This makes
 the SVM alignment more robust across a wider range of types of fields-of-view.
 The final updated WCS will be provided with a name that reflects this cross-filter
-alignment using ``-FIT-SVM-<catalog name>`` as the final half of the ``WCSNAME`` 
+alignment using **-FIT-SVM-<catalog name>** as the final half of the **WCSNAME** 
 keyword.  More details on the WCS naming conventions can be found in the
-:ref:`wcsname_conventions` section.
+:ref:`wcsname-conventions` section.
+
 
 
 Creating the Output Products
