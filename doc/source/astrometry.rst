@@ -62,6 +62,8 @@ In this example, extensions 16 through 21 contain headerlets each of which speci
     'OPUS-HSC30',
     'IDC_0461802ej-HSC30']
 
+.. _wcsname_conventions::
+
 Interpreting WCS names
 -----------------------
 The first WCS solution listed, OPUS, corresponds to the default WCS defined by the HST calibration pipeline based on original telemetry and only a first-order distortion model. Solutions which contain **IDC_** are based on the distortion model based on the reference data associated with the **IDCTAB** reference file whose rootname is specified in the WCSNAME.  For example, **IDC_0461802ej** refers to a WCS solution based on the **IDCTAB** reference file 0461802ej_idc.fits along with all the associated secondary distortion reference files given by **DGEOFILE**, **NPOLFILE** and, for WFPC2, **OFFTAB** and **DXYFILE**.
