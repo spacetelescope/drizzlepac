@@ -190,6 +190,62 @@ This example comes from the 'ic0s1' visit where the columns are:
   #. location of the exposure in a local cache
 
 
+Status of Input Data
+----------------------
+The list of filenames which should be processed as a single-visit provides the
+raw science data for creating the new combined output products.  However, these
+files need to be properly calibrated prior to SVM processing.  Specifically, the
+exposures need to be:
+
+  * fully calibrated using the instruments calibration software, such as 
+    ``calacs.e`` for ACS and ``calwf3.e`` for WFC3 data.  This should also
+    include CTE-correction for the images whenever possible.
+  * processed using ``runastrodriz`` in order to apply the latest distortion
+    model calibrations to the astrometry and to align the exposures as closely
+    as possible to an external astrometric reference when possible.
+
+These steps insure that the latest calibrations get applied to the data making it
+easier for the SVM processing to cross-match the data with minimal interference 
+from artifacts in the data.  In addition, the CTE-corrected versions of the data 
+get used during pipeline processing in order to allow for better alignment of the 
+exposures and to improve the photometry of the data as much as possible.  
+
+These processing steps can be verified in the input data using header keywords from 
+the exposures
+
+.. list-table:: Processing keywords 
+  :widths: 10 15 40
+  :header-rows: 1
+  
+  * - Header Keyword
+    - Valid Values
+    - Notes
+  * - FLATCORR
+    - COMPLETED
+    - Completion of basic calibration
+  * - DRIZCORR
+    - COMPLETED
+    - Completion of distortion calibration
+  * - WCSNAME
+    - \-FIT
+    - Successful **a posteriori** alignment
+  * -
+    - \-HSC30
+    - Successful **a priori** alignment
+  * -
+    - \-GSC240
+    - Successful **a priori** alignment
+
+The full set of possibilities for updated WCSs as reported using the **WCSNAME**
+keyword can be found in the description of the :ref:`wcsname_conventions`.
+
+As long as the input data meets these requirements, then SVM processing will have
+the best chance of success.  Data which has not been able to be aligned successfully
+with an **a priori** or **a posteriori** solution can still be processed as part
+of a single-visit, however, the alignment may be more difficult to determine due 
+to the larger uncertainties for HST pointing prior to October 2017.  
+
+
 Filtering the input data
 --------------------------
 Not all HST imaging observations can be aligned using SVM processing.  Observations
@@ -242,14 +298,41 @@ with new SVM-aligned WCS solutions and then used to produce the drizzle products
 Defining the Output Products
 =============================
 The table with the set of observations which can be processed now gets interpreted 
-in order to identify what exposures can be combined to create unique products.  
-This interpretation gets performed using the code in :ref:`poller_utils_api` by
+in order to identify what exposures can be combined to create unique products to
+create the **product list**.  The **product list** is a Python list of 
+``drizzlepac/haputils/product/HAPProduct``(:ref:`product_api`) objects which 
+represent each and every output product to be created for the visit.  
+Each **Product** instance contains:
+
+  * list of filenames for all input exposures that will contribute to the output
+drizzlep product
+  * WCS for output drizzle product
+  * pre-defined names for all output files associated with this **Product** including:
+
+    * drizzle-combined image
+    * point-source catalog determined from the drizzle-combined image
+    * segmentation-based catalog determiend from the drizzle-combined image
+    * astrometric catalog used to align the input exposures
+      
+  * methods for:
+    
+    * determining average number of images per pixel
+    * defining the final WCS
+    * aligning the exposures to an astrometric reference (GAIA)
+    * applying the selected parameters to ``AstroDrizzle``
+    * drizzling the inputs to create the output drizzle product
+    * determining the source catalogs fron the drizzle product 
+
+This interpretation of the list of input filenames gets performed using the 
+code in :ref:`poller_utils_api` by
 grouping similar observations.    The rules used for grouping the inputs into output
-products result in outputs which have the same detector and filter.  These products
-are referred to as **filter** products.  
+products result in outputs which have the same detector and filter.  These output 
+products are referred to as **filter products** defined as a ``product/FilterProduct``
+instance.  
 
 All exposures for a single detector are also identified and grouped to 
-define a **total** product.  This **total** product provides the deepest available 
+define a **total product** using the ``product/TotalProduct`` class.  
+This **total product** drizzle image provides the deepest available 
 view of the field-of-view from this visit which will be used to produce the master
 catalog of sources for this visit.  The master catalog of source positions will
 be used to perform photometry on each exposure, whether the source can be identified
@@ -276,7 +359,7 @@ would result in the definition of these output products:
   * a drizzled image for each separate exposure
   * a single F555W product
   * a single F814W product, and
-  * a single **total** product
+  * a single **total product**
   * a point-source catalog for the F555W product
   * a segmentation-based source catalog for the F555W product
   * a point-source catalog for the F814W product
@@ -302,10 +385,10 @@ processing.  However, each exposure or association (of exposures) can be aligned
 to slightly different fits or catalogs due to differences in the source objects 
 which can be identified in each separate exposure.  The primary goal of SVM 
 processing is to refine this alignment so that all exposures in the visit for 
-the same detector (those exposures which contribute to each **total** product)
+the same detector (those exposures which contribute to each **total product**)
 share the same WCS (pixels on the sky).  
 
-Alignment of all the exposures for a **total** product uses the same alignment
+Alignment of all the exposures for a **total product** uses the same alignment
 code as the standard calibration pipeline.  The basic steps it follows is:
 
   * generate a source catalog for each exposure (using :ref:`amutils_api`)
@@ -325,14 +408,108 @@ keyword.  More details on the WCS naming conventions can be found in the
 :ref:`wcsname-conventions` section.
 
 
-
 Creating the Output Products
 ============================
+Successful alignment of the exposures allows them to be combined into the
+pre-defined output products; primarily, the **filter products**  and the **total product**.
+These products get created using ``drizzlepac.astrodrizzle.AstroDrizzle``. 
+
+Selecting Drizzle Parameters
+-----------------------------
+Optimal parameters for creating every possible type of output product or mosaic
+would require knowledge of not only the input exposures, but also expert
+knowledge of the science.  Parameters optimized for one science goal may not be
+optimal for another science goal.  Therefore, automated pipeline processing has
+defined a basic set of parameters which will result in a reasonably consistent 
+set of products as opposed to trying to optimize for any specific science case.  
+
+The default parameters have been included as part of the ``drizzlepac`` package 
+in the ``drizzlepac/pars/hap_pars`` directory.  Index JSON files provide the options
+that have been developed for selecting the best available default parameter set
+for processing.  The INDEX JSON files point to different parameter files (also in
+JSON format) that are also stored in sub-directories the code organized by instrument
+and detector.  
+
+Selection criteria are also listed in these Index JSON files for each
+step in the SVM processing pipeline; namely, 
+
+  * alignment
+  * astrodrizzle
+  * catalog generation
+  * quality control
+  
+Initially, only the **astrodrizzle** step defines any selection criteria for use
+in processing.  The criteria is based on the number of images being combined for 
+the specific instrument and detector of the exposures.  
+
+The SVM processing interprets the input data and verifies what input data can be 
+processed.  At that point, the code determines what selection criteria apply to
+the data and uses that to obtain the appropriate parameter settings for the processing
+steps.  Applying the selection to select the appropriate parameter file simply requires
+matching up the key in the JSON file with the selection information. For example,
+a **filter product** would end up using the **filter_basic** criteria, while an
+8 exposure ACS/WFC association would end up selecting the **acs_wfc_any_n6** entry.
 
 
+User-customization of Parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The parameter configuration file now included in th e``drizzlepac`` package are
+designed to be easily customized for manual processing with both ``runastrodriz`` 
+(pipeline astrometry processing) and ``runsinglehap`` (SVM processing).  These 
+ASCII JSON files can be edited prior to manual reprocessing to include whatever
+custom settings would best suit the science needs of the research being performed
+with the data.  
+
+
+Defining the Output WCS
+-------------------------
+The SVM processing steps through the **product list** to generate each of the 
+pre-defined products one at a time after the input exposures have all been 
+aligned.  One of the primary goals of SVM processing is to produce combined
+images which share the same WCS for all the data from the same detector.  This 
+simply requires defining a common WCS which can be used to define the output for
+all the **filter products** from the visit.  
+
+The common WCS, or **metawcs**, gets defined by reading in all the WCS definitions
+as ``stwcs.wcsutil.HSTWCS`` objects
+for all the input exposures taken with the same **instrument** in the visit.  This
+list of **HSTWCS** objects then gets fed to ``stwcs.distortion.utils.output_wcs``,
+the same function used by ``AstroDrizzle`` to define the default output WCS when
+the user does not specify one before-hand.  This results in the definition of a
+WCS which spans the entire field-of-view for all the input exposures with the same
+plate scale and orientation as the first **HSTWCS** in the input list.  This **metawcs**
+then gets used to define the shape, size and WCS pointing for all drizzle products
+taken with the same detector in the visit.  
+
+
+Drizzling
+-----------
+Each output product gets created using ``AstroDrizzle``.  This step:
+
+  * combines all the input exposures associated with the product 
+  * uses the parameters read in from the configuration files 
+  * defines the output image using the **metawcs** WCS definition
+  * writes out a multi-extension FITS (MEF) file for the drizzled image using
+    the pre-defined name 
+
+This drizzled output image has the same structure as the standard pipeline drizzle
+products; namely,
+
+  * PRIMARY extension:  all information common to the product such as 
+    instrument and detector.
+  * SCI extension: the drizzled science image along with header keywords
+    describing the combined array such as total exposure time.
+  * WHT extension: an array reporting the drizzled weight for each pixel
+  * CON extension: an array reporting what input exposures contributed to each output pixel
+  
+The headers of each extension gets defined as using the ``fitsblender`` software with 
+much the same rules used to create the standard pipeline drizzle product headers.  
+In short, it uses simple rules files to determine what keywords should be kept in
+the output headers from all the input exposures, and how to select or compute the
+value from all the input headers for each keyword.  
 
 Unique SVM Keywords
--------------------
+^^^^^^^^^^^^^^^^^^^^^^
 A small set of keywords have been added to the standard drizzle headers to reflect
 the unique characteristics of the SVM products.  These keywords are:
 
@@ -352,7 +529,15 @@ the unique characteristics of the SVM products.  These keywords are:
   
   MEDNEXP
     Median number of exposures per pixel with data
-    
+
+
+
+Catalog Generation
+-------------------
+SVM processing does not stop with the creation of the output drizzled images like
+the standard calibration pipeline.  Instead, it derives 2 separate source catalogs
+from each drizzled **filter product** to provide a standardized measure of each
+visit.     
 
 
 
