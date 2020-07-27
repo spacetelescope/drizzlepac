@@ -404,7 +404,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                         delta_dt = (current_dt - starting_dt).total_seconds()
                         log.info('Processing time of [STEP 5]: {} sec'.format(delta_dt))
                         alignment_table.close()
-                        return (alignment_table.filtered_table)
+                        return alignment_table
                 else:
                     log.info("{} Cross matching and "
                          "fitting {}".format("-" * 20, "-" * 47))
