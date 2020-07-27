@@ -513,6 +513,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     _trlmsg += 'A priori alignment FAILED! No a priori astrometry correction applied.\n'
             _updateTrlFile(_trlfile, _trlmsg)
 
+        aposteriori_table=None
         if align_to_gaia:
             _trlmsg = _timestamp('Starting a posteriori alignment')
             _trlmsg += __trlmarker__
@@ -676,7 +677,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # interpret envvar variable, if specified
     qa_switch = _get_envvar_switch(envvar_qa_stats_name)
 
-    if qa_switch:
+    if qa_switch and dcorr == 'PERFORM':
 
         # Generate quality statistics for astrometry if specified
         calfiles = _calfiles_flc if _calfiles_flc else _calfiles
