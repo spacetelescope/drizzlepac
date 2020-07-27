@@ -237,7 +237,7 @@ the exposures
     - Successful **a priori** alignment
 
 The full set of possibilities for updated WCSs as reported using the **WCSNAME**
-keyword can be found in the description of the :ref:`wcsname_conventions`.
+keyword can be found in the description of the :ref:`wcsname-conventions`.
 
 As long as the input data meets these requirements, then SVM processing will have
 the best chance of success.  Data which has not been able to be aligned successfully
@@ -296,16 +296,17 @@ with new SVM-aligned WCS solutions and then used to produce the drizzle products
 
 
 Defining the Output Products
-=============================
-The table with the set of observations which can be processed now gets interpreted 
-in order to identify what exposures can be combined to create unique products to
-create the **product list**.  The **product list** is a Python list of 
-``drizzlepac/haputils/product/HAPProduct``(:ref:`product_api`) objects which 
+============================
+
+The table with the set of observations which can be processed now gets interpreted.
+The goal is to identify what exposures can be combined to create unique products.  
+This grouping will be used to create the **product list**.  
+The **product list** is a Python list of 
+`drizzlepac/haputils/product/HAPProduct`(:ref:`product_api`) objects which 
 represent each and every output product to be created for the visit.  
 Each **Product** instance contains:
 
-  * list of filenames for all input exposures that will contribute to the output
-drizzlep product
+  * list of filenames for all input exposures that will contribute to the output drizzlep product
   * WCS for output drizzle product
   * pre-defined names for all output files associated with this **Product** including:
 
