@@ -22,6 +22,8 @@ from photutils.utils import calc_total_error
 from stsci.tools import logutil
 from stwcs.wcsutil import HSTWCS
 
+import matplotlib.pyplot as plt
+
 from . import astrometric_utils
 from . import photometry_tools
 
@@ -878,7 +880,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Defined in measure_sources
         self.subset_filter_source_cat = None
 
-        # FIX
+        # Default kernel which may be the custom kernel based upon the actual image
+        # data or a Gaussian 2D kernel. This may be over-ridden in identify_sources(). 
         self.kernel = self.image.kernel
 
     def identify_sources(self, **pars):
@@ -949,45 +952,79 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 fits.PrimaryHDU(data=imgarr_bkgsub).writeto(outname)
 
             # Generate the segmentation map by detecting and deblending "sources"
-            self.segm_img = self.detect_and_deblend_sources(imgarr_bkgsub,
-                                                        threshold,
-                                                        filter_kernel=self.image.kernel,
-                                                        mask=mask)
+            ncount_dandd = 0
+            threshold = 1.0 * self.image.bkg_rms_ra
+            custom_segm_img = self.detect_and_deblend_sources(imgarr_bkgsub,
+                                                              threshold,
+                                                              ncount_dandd,
+                                                              filter_kernel=self.image.kernel,
+                                                              mask=mask)
 
             # Determine if the input image is actually a crowded field based upon characteristics of the 
             # segmentation image.  If it is a crowded field, it would be better to use the RickerWavelet2DKernel
             # to identify sources.  The deblended segmentation image and the background subtracted total
             # detection image are used for the evaluation.
             is_crowded = False
-            is_crowded = self._evaluate_segmentation_image(self.segm_img, imgarr_bkgsub)
+            is_crowded = self._evaluate_segmentation_image(custom_segm_img,
+                                                           imgarr_bkgsub,
+                                                           big_island_only = False,
+                                                           max_biggest_source = 0.015)
 
             # If the science field via the segmentation map is deemed crowded, increase the detection 
             # threshold and use RickerWavelet2DKernel.
             # Generate the segmentation map by detecting and deblending "sources"
+            # self._fwhm=0.14, self.image.kernel_fwhm=1.7070, self.image.kernel_fwhm*fgts=0.7249
             if is_crowded:
                 log.info("")
                 log.info("Using RickerWavelet2DKernel to generate an alternate segmentation map.")
-                fwhm = (self._fwhm / self.image.imgwcs.pscale) * gaussian_fwhm_to_sigma
+                #fwhm = (self._fwhm / self.image.imgwcs.pscale) * gaussian_fwhm_to_sigma
+                # Already scaled
+                fwhm = self.image.kernel_fwhm * gaussian_fwhm_to_sigma
+                log.info("fwhm: {} computedFWHM: {} scale: {}".format(fwhm, self.image.kernel_fwhm, self.image.imgwcs.pscale))
                 rw2d_kernel = RickerWavelet2DKernel(fwhm,
                                                     x_size=self._size_source_box,
-                                                    y_size=self._size_source_box)
+                                                    y_size=self._size_source_box).normalize()
+                #plt.imshow(rw2d_kernel, interpolation='none', origin='lower')
+                #plt.show()
 
                 outname = self.imgname.replace(".fits", "_rw2d.fits")
                 fits.PrimaryHDU(data=rw2d_kernel).writeto(outname)
-                log.info("width: {} scale: {}".format(fwhm, self.image.imgwcs.pscale))
 
-                """
-                segm_img2 = self.detect_and_deblend_sources(imgarr_bkgsub,
-                                                            threshold,
-                                                            filter_kernel=rw2d_kernel,
-                                                            mask=mask)
-                """
+                ncount_dandd += 1 
+                threshold = 3.0 * self.image.bkg_rms_ra
+                rw2d_segm_img = self.detect_and_deblend_sources(imgarr_bkgsub,
+                                                                threshold,
+                                                                ncount_dandd,
+                                                                filter_kernel=rw2d_kernel,
+                                                                mask=mask)
 
+                # Re-evaluate the new segmention image
+                is_crowded = False
+                is_crowded = self._evaluate_segmentation_image(rw2d_segm_img,
+                                                               imgarr_bkgsub,
+                                                               big_island_only = True,
+                                                               max_biggest_source = 0.05)
+
+                # Keep this segmentation image one of poor quality is better than none at all
+                log.warning("Both Custom/Guassian and RickerWavelet kernels produced poor quality segmentation images.\n"\
+                            "Retaining the RickerWavelet segmentation image for further processing.")
+
+                self.segm_img = copy.deepcopy(rw2d_segm_img)
+                self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
+                                                    filter_kernel=rw2d_kernel, wcs=self.image.imgwcs)
+
+            else:
+                self.segm_img = copy.deepcopy(custom_segm_img)
+                self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
+                                                    filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
+
+            # Keep for now FIX MDD Klunky
             # The total product catalog consists of at least the X/Y and RA/Dec coordinates for the detected
             # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
             # images using the coordinates determined from the total drizzled image.
-            self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
-                                                filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
+            #self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
+            #                                    #filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
+            #                                    filter_kernel=rw2d_kernel, wcs=self.image.imgwcs)
 
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
             # form to filter out bad rows and correspondingly bad segments before the filter images are processed.
@@ -1050,54 +1087,80 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def detect_and_deblend_sources(self, imgarr_bkgsub, threshold, filter_kernel=None, mask=None):
+    def detect_and_deblend_sources(self, imgarr_bkgsub, threshold, ncount, filter_kernel=None, mask=None):
+        """Detect and deblend sources found in the input total detection (aka white light) image.
+      
+           Image regions are identified as sources in the background subtracted 'total detection image' 
+           if the region has n-connected pixels with values greater than the 'threshold'. The resultant
+           segmentation image is then deblended in an effort to identify overlapping sources.
 
-            filter_kernel = self.filter_kernel if filter_kernel is None else filter_kernel
+           Parameters
+           ----------
+           imgarr_bkgsub : 
+               Background subtracted total detection image
 
-            log.info("Detecting sources in total image product.")
-            # Note: SExtractor has "connectivity=8" which is the default for detect_sources().
-            segm_img = None
-            segm_img = detect_sources(imgarr_bkgsub,
-                                      threshold,
-                                      npixels=self._size_source_box,
-                                      filter_kernel=filter_kernel,
-                                      mask=mask)
+           threshold : 
+               Image which defines, on a pixel-by-pixel basis, the minimum limit for 
+               source detection
+               
+            ncount : int
+               Invocation index for this method.  The index is used to create unique names
+               for diagnostic output files.
 
-            # If no segments were found, there are no detectable sources in the total detection image.
-            # Return as there is nothing more to do.
-            if segm_img is None:
-                log.warning("No segments were found in Total Detection Product, {}.".format(self.imgname))
-                log.warning("Processing for segmentation source catalogs for this product is ending.")
-                return segm_img
+            filter_kernel : astropy.convolution.Kernel2D object
+               Filter used to smooth the total detection image to enhance peak or 
+               multi-scale detection 
 
-            if self.diagnostic_mode:
-                outname = self.imgname.replace(".fits", "_segment.fits")
-                fits.PrimaryHDU(data=segm_img.data).writeto(outname)
+            mask : 
+               Image used to define the portion of the total detection images which is
+               appropriate for analysis
 
-            try:
-                # Deblending is a combination of multi-thresholding and watershed
-                # segmentation. Sextractor uses a multi-thresholding technique.
-                # npixels = number of connected pixels in source
-                # npixels and filter_kernel should match those used by detect_sources()
-                segm_deblended_img = deblend_sources(imgarr_bkgsub, segm_img, npixels=self._size_source_box,
-                                                     filter_kernel=filter_kernel, nlevels=self._nlevels,
-                                                     contrast=self._contrast)
-                if self.diagnostic_mode:
-                    outname = self.imgname.replace(".fits", "_segment_deblended.fits")
-                    fits.PrimaryHDU(data=segm_deblended_img.data).writeto(outname)
+        """
 
-                # The deblending was successful, so just copy the deblended sources back to the sources attribute.
-                segm_img = copy.deepcopy(segm_deblended_img)
-            except Exception as x_cept:
-                log.warning("Deblending the sources in image {} was not successful: {}.".format(self.imgname,
-                            x_cept))
-                log.warning("Processing can continue with the non-deblended sources, but the user should\n"
-                            "check the output catalog for issues.")
+        log.info("Detecting sources in total image product.")
+        # Note: SExtractor has "connectivity=8" which is the default for detect_sources().
+        segm_img = None
+        segm_img = detect_sources(imgarr_bkgsub,
+                                  threshold,
+                                  npixels=self._size_source_box,
+                                  filter_kernel=filter_kernel,
+                                  mask=mask)
 
-            # Regardless of whether or not deblending worked, this variable can be reset to None
-            segm_deblended_img = None
-
+        # If no segments were found, there are no detectable sources in the total detection image.
+        # Return as there is nothing more to do.
+        if segm_img is None:
+            log.warning("No segments were found in Total Detection Product, {}.".format(self.imgname))
+            log.warning("Processing for segmentation source catalogs for this product is ending.")
             return segm_img
+
+        if self.diagnostic_mode:
+            outname = self.imgname.replace(".fits", "_segment" + str(ncount) + ".fits")
+            fits.PrimaryHDU(data=segm_img.data).writeto(outname)
+
+        try:
+            # Deblending is a combination of multi-thresholding and watershed
+            # segmentation. Sextractor uses a multi-thresholding technique.
+            # npixels = number of connected pixels in source
+            # npixels and filter_kernel should match those used by detect_sources()
+            segm_deblended_img = deblend_sources(imgarr_bkgsub, segm_img, npixels=self._size_source_box,
+                                                 filter_kernel=filter_kernel, nlevels=self._nlevels,
+                                                 contrast=self._contrast)
+            if self.diagnostic_mode:
+                outname = self.imgname.replace(".fits", "_segment_deblended" + str(ncount) + ".fits")
+                fits.PrimaryHDU(data=segm_deblended_img.data).writeto(outname)
+
+            # The deblending was successful, so just copy the deblended sources back to the sources attribute.
+            segm_img = copy.deepcopy(segm_deblended_img)
+        except Exception as x_cept:
+            log.warning("Deblending the sources in image {} was not successful: {}.".format(self.imgname,
+                        x_cept))
+            log.warning("Processing can continue with the non-deblended sources, but the user should\n"
+                        "check the output catalog for issues.")
+
+        # Regardless of whether or not deblending worked, this variable can be reset to None
+        segm_deblended_img = None
+
+        return segm_img
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1539,7 +1602,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _evaluate_segmentation_image(self, segm_img, detection_image):
+    def _evaluate_segmentation_image(self, segm_img, detection_image, big_island_only=False, max_biggest_source = 0.015):
         """Determine if the segmentation image is bad.
 
         Determine if the segmentation image indicates the total detection image was of a crowded field.
@@ -1563,8 +1626,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         is_crowded = False
         is_crowded = self._seg_rejection(segm_img,
                                          detection_image,
-                                         big_island_only=False,
-                                         max_biggest_source=0.015,
+                                         big_island_only=big_island_only,
+                                         max_biggest_source=max_biggest_source,
                                          max_source_fraction=0.075)
         
         return is_crowded 
