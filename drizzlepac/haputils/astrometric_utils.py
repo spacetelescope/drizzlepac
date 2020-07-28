@@ -195,7 +195,7 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
                                catalog=catalog)
 
     # weed out sources which are not accurate (no proper motions in catalog)
-    if epoch and hasattr(ref_table, 'mask'):
+    if epoch and hasattr(ref_table, 'mask'):  # and 'pmra' in ref_table.colnames:
         ref_table = ref_table[~ref_table['pmra'].mask]
         
     colnames = ('ra', 'dec', 'mag', 'objID')
