@@ -1,13 +1,14 @@
 """This script contains code to support creation of photometric sourcelists using two techniques: aperture photometry
 segmentation-map based photometry.
 
-###############################################
 Point (Aperture) Photometric Catalog Generation
-###############################################
+================================================
+
 1: Source Detection
-*******************
+-------------------
+
 1.1: Important Clarifications
-=============================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 As described in the previous step, AstroDrizzle creates a single multi-filter detector-level drizzle-combined
 image for source identification and one or more detector/filter-level drizzle-combined images (depending on
 which filters were used in the dataset) for photometry. The same set of sources identified in the
@@ -20,9 +21,10 @@ identify source catalogs independently of each other and DO NOT use a shared com
 photometry.
 
 1.2: Preliminaries
-==================
+^^^^^^^^^^^^^^^^^^^^
+
 1.2.1: Generation of the Bad Pixel Mask
-***************************************
+""""""""""""""""""""""""""""""""""""""""""""""""
 Before any source identification takes place, we created a bad pixel mask to identify regions of the
 detection image where signal quality is known to be degraded. These are areas near the edge of the image,
 areas with little to no input image contribution, and areas that contain saturated pixels. To minimize the
@@ -33,7 +35,7 @@ be fully certain that these pixels are or are not impacted, or to the degree of 
 flagged.
 
 1.2.2: Detection Image Background Subtraction
-*********************************************
+""""""""""""""""""""""""""""""""""""""""""""""""
 To ensure optimal source detection, the multi-filter detection image is background-subtracted. We computed a
 2-dimensional background image using the `photutils.background.Background2d <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_ Astropy tool. This algorithm uses
 sigma-clipped statistics to determine background and RMS values across the image. An initial low-resolution
@@ -41,10 +43,29 @@ estimate of the background is performed by computing sigma-clipped median values
 the image. This low-resolution background image is then median-filtered using a 3x3 pixel sample window to
 correct for local small-scale overestimates and/or underestimates.
 
+1.3: Source Identification with DAOStarFinder
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_ Astropy tool to identify sources in the background-subtracted
+multi-filter detection image. Regions flagged in the previously created bad pixel mask are ignored by
+DAOStarFinder. This algorithm works by identifying local brightness maxima with a roughly gaussian
+distributions whose peak values are above a predefined minimum threshold. Full details of the process are
+described in `Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP...99..191S>`_.
+The exact set of input parameters fed into DAOStarFinder is detector-dependent. The parameters can be found in
+the instrument>_<detector>_catalog_generation_all.json files in the following path:
+/drizzlepac/pars/hap_pars/default_parameters/<instrument>/<detector>/.
 
-######################################
+
+2: Aperture Photometry Measurement
+------------------------------------
+
+2.1: Flux determination
+^^^^^^^^^^^^^^^^^^^^^^^^
+Aperture photometry is then preformed on the previously identified sources using a pair of concentric
+photometric apertures. The sizes of these apertures depend on the specific detector being used, and are
+listed below in table 1:
+
 Segment Photometric Catalog Generation
-######################################
+=======================================
 Michele's documentation goes here!
 """
 import sys
