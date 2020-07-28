@@ -96,10 +96,37 @@ background-subtracted inner and outer aperture flux values found in the output .
 
     f_{bgs}= f_{raw} - f_{bg} \cdot a,
 
-where *f*\ :sub:`bgs`\  is the background-subtracted flux, *f*\ :sub:`raw`\  is the raw, unbackground-subtracted flux,
-and *a* is the area of the photometric aperture. The overall standard deviation and mode values of pixels in the
-background annulus are also reported for each identified source in the output .ecsv catalog file in the “STDEV” and
-“MSKY” columns respectively (see Section 3 for more details).
+where
+     * *f*\ :sub:`bgs`\  is the background-subtracted flux
+     * *f*\ :sub:`raw`\  is the raw, non-background-subtracted flux
+     * *a* is the area of the photometric aperture.
+
+The overall standard deviation and mode values of pixels in the background annulus are also reported for each
+identified source in the output .ecsv catalog file in the “STDEV” and “MSKY” columns respectively (see Section 3 for
+more details).
+
+2.2: Calculation of photometric errors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2.2.1: Calculation of flux uncertainties
+"""""""""""""""""""""""""""""""""""""""""
+For every identified source, the `photutils.aperture_photometry() <https://photutils.readthedocs.io/en/stable/api/photutils.aperture.aperture_photometry.html>`_
+tool calculates standard deviation values for each aperture based on a 2-dimensional RMS array computed using the
+`photutils.background.Background2d()  <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_
+tool that we previously utilized to compute the 2-dimensional background array in order to background-subtract the
+detection image for source identification. We then compute the final flux errors as seen in the output .ecsv catalog
+file using the following formula:
+
+.. math::
+
+    \Delta f = \sqrt{\frac{\sigma^2 }{g}+(a\cdot\sigma_{bg}^{2})\cdot (1+\frac{a}{b_{phot}})},
+
+where
+    * :math:`{\Delta} f`  is the flux uncertanty TODO: UNITS!
+    * :math:`{\sigma}`  is the standard deviation of ?????
+    * *g* is the gain TODO: UNITS!
+    * *a* is the photometric aperture area, in TODO: UNITS!
+    * :math:`{\sigma_{bg}}`  is standard deviation of the background
+    * :math:`{b_{phot}}`  is ????? TODO: VERIFY
 
 Segment Photometric Catalog Generation
 =======================================
