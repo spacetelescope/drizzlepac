@@ -1019,9 +1019,12 @@ def generate_gaia_catalog(hap_obj, columns_to_remove=None):
     # generate catalog of GAIA sources
     gaia_table = au.create_astrometric_catalog(img_list, gaia_only=True, use_footprint=True)
 
-    # trim off specified columns
+    # trim off specified columns, but 
+    #    only if the specified columns already exist in the table
+    #
     if columns_to_remove:
-        gaia_table.remove_columns(columns_to_remove)
+        existing_cols = [col for col in columns_to_remove if col in gaia_table.colnames]
+        gaia_table.remove_columns(existing_cols)
 
     # remove sources outside image footprint
     outwcs = wcsutil.HSTWCS(hap_obj.drizzle_filename, ext=1)
