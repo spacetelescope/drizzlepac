@@ -1,8 +1,8 @@
 .. _catalog_utils:
 
-*************************************
+=====================================
 Catalog Generation with catalog_utils
-*************************************
+=====================================
 
 .. moduleauthor:: Michele De La Pena, Michael Dulude, Warren Hack
 
