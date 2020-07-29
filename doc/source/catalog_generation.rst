@@ -54,7 +54,7 @@ DAOStarFinder. This algorithm works by identifying local brightness maxima with 
 distributions whose peak values are above a predefined minimum threshold. Full details of the process are
 described in `Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP...99..191S>`_.
 The exact set of input parameters fed into DAOStarFinder is detector-dependent. The parameters can be found in
-the instrument>_<detector>_catalog_generation_all.json files in the following path:
+the <instrument>_<detector>_catalog_generation_all.json files in the following path:
 /drizzlepac/pars/hap_pars/default_parameters/<instrument>/<detector>/.
 
 
@@ -147,7 +147,7 @@ The Concentration index is a measure of the "sharpness" of a given source’s PS
 formula:
 
 .. math::
-CI = mag_inner - mag_outer
+    CI = m_{inner} - m_{outer}
 
 where
     * :math:`{CI}` is the concentration index, in AB magnitude
@@ -240,6 +240,120 @@ frame of reference of the filter-combined image. We then identify impacted sourc
 saturated pixel coordinates against the positions of sources in the newly created source catalog and assign flag values
 where necessary.
 
+2.3.2.3: Assignment of flag value 8 (faint detection limit)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+A flag value of 8 is assigned to sources whose signal to noise ratio is below a predefined value. We define sources as
+being above the faint object limit if the following is true:
+
+.. math::
+    \Delta ABmag_{outer} \leq  \frac{2.5}{snr \cdot log(10))}
+
+Where
+    * :math:`{\Delta ABmag_{outer}}` is the outer aperture AB magnitude uncertainty
+    * :math:`{snr}` is the signal to noise ratio, which is 1.5 for ACS/WFC and 5.0 for all other detectors.
+
+2.3.2.4: Assignment of flag value 32 (false detection: swarm around saturated source)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+The source identification routine has been shown to falsely identify sources in regions near bright or saturated
+sources, and in image artifacts associated with bright or saturated sources, such as diffraction spikes, and in the
+pixels surrounding saturated PSF where the brightness level “plateaus” at saturation. We identify impacted sources by
+locating all sources within a predefined radius of a given source and checking if the brightness of each of these
+surrounding sources is less than a radially-dependent minimum brightness value defined by a pre-defined stepped
+encircled energy curve. The parameters used to determine assignment of this flag are instrument-dependent, can be found
+in the “swarm filter” section of the \*_quality_control_all.json files in the path described above in section 1.3.
+
+
+2.3.2.5: Assignment of flag value 64 (False detection due proximity of source to image edge or other region with a low number of input images)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Sources flagged with a value of 64 are flagged as “bad” because they are inside of or in close proximity to regions
+characterized by low or null input image contribution. These are areas where for some reason or another, very few or no
+input images contributed to the pixel value(s) in the drizzle-combined image.
+We identify sources impacted with this effect by creating a two-dimensional weight image that maps the number of
+contributing exposures for every pixel. We then check each source against this map to ensure that all sources and flag
+appropriately.
+
+3: The output catalog file
+---------------------------
+3.1: Filename format
+^^^^^^^^^^^^^^^^^^^^^^
+Source positions and photometric information are written to a .ecsv (Enhanced Character Separated Values) file. The
+naming of this file is fully automatic and follows the following format:
+<TELESCOPE>_<PROPOSAL ID>_<VISIT NUMBER>_<INSTRUEMENT>_<DETECTOR>_
+<FILTER>_<DATASET NAME>_<CATALOG TYPE>.ecsv
+
+So, for example if we have the following information:
+    * Telescope = HST
+    * Proposal ID = 98765
+    * Visit Number = 43
+    * Instrument = acs
+    * Detector = wfc
+    * Filter name = f606w
+    * Dataset name = j65c43
+    * Catalog type = point_cat
+
+The resulting auto-generated catalog filename will be:
+    * hst_98765_43_acs_wfc_f606w_j65c43_point-cat.ecsv
+
+3.2: File format
+^^^^^^^^^^^^^^^^^
+The .ecsv file format is quite flexible and allows for the storage of not only character-separated datasets, but also
+metadata. The first section (lines 4-17) contains a mapping that defines the datatype, units, and formatting
+information for each data table column. The second section (lines 19-27) contains information explaining STScI’s use
+policy for HAP data in refereed publications. The third section (lines 28-48) contains relevant image metadata. This
+includes the following items:
+
+    * WCS (world coordinate system) name
+    * WCS (world coordinate system) type
+    * Proposal ID
+    * Image filename:
+    * Target name
+    * Observation date
+    * Observation time
+    * Instrument
+    * Detector
+    * Target right ascension
+    * Target declination
+    * Orientation
+    * Aperture right ascension
+    * Aperture declination
+    * Aperture position angle
+    * Exposure start (MJD)
+    * Total exposure duration in seconds
+    * CCD Gain
+    * Filter name
+    * Total Number of sources in catalog
+
+The next section (lines 50-66) contains important notes regarding the coordinate systems used, magnitude system used,
+apertures used, concentration index definition and flag value definitions:
+
+    * X, Y coordinates listed below use are zero-indexed (origin = 0,0)
+    * RA and Dec values in this table are in sky coordinates (i.e. coordinates at the epoch of observation and fit to GAIADR1 (2015.0) or GAIADR2 (2015.5)).
+    * Magnitude values in this table are in the ABMAG system.
+    * Inner aperture radius in pixels and arcseconds (based on detector platescale)
+    * Outer aperture radius in pixels and arcseconds (based on detector platescale)
+    * Concentration index (CI) formulaic definition
+    * Flag value definitions
+
+Finally, the last section contains the catalog of source locations and photometry values. It should be noted that the
+specific columns and their ordering were deliberately chosen to facilitate a 1:1 exact mapping to the_daophot.txt
+catalogs produced by Hubble Legacy Archive. As this code was designed to be the HLA's replacement, we sought to
+minimize any issues caused by the transition. The column names are as follows (Note that this is the same left-to-right
+ordering in the .ecsv file as well):
+
+    * X-Center: 0-indexed X-coordinate position
+    * Y-Center: 0-indexed Y-coordinate position
+    * RA: Right ascension (sky coordinates), in degrees
+    * DEC: Declination (sky coordinates), in degrees
+    * ID: Object catalog index number
+    * MagAp1: Inner aperture brightness, in AB magnitude
+    * MagErrAp1: Inner aperture brightness uncertainty, in AB magnitude
+    * MagAp2: Outer aperture brightness, in AB magnitude
+    * MagErrAp2: Outer aperture brightness uncertainty, in AB magnitude
+    * MSkyAp2: Outer aperture background brightness, in AB magnitude
+    * StdevAp2: Standard deviation of the outer aperture background brightness, in AB magnitude
+    * FluxAp2: Outer aperture flux, in electrons/sec
+    * CI: Concentration index (MagAp1 – MagAp2), in AB magnitude
+    * Flags: See Section 2.3.2 for flag value definitions
 
 Segment Photometric Catalog Generation
 =======================================
