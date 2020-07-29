@@ -85,7 +85,8 @@ listed below in table 1:
 
 Raw (non-background-subtracted) flux values are computed by summing up the enclosed flux within the two specified
 apertures using the `photutils.aperture.aperture_photometry <https://photutils.readthedocs.io/en/stable/api/photutils.aperture.aperture_photometry.html>`_
-tool. Input values are detector-dependent, and can be found in the \*_catalog_generation_all.json files described above in section 1.3.
+tool. Input values are detector-dependent, and can be found in the \*_catalog_generation_all.json files described above
+in section 1.3.
 
 Local background values are computed based on the 3-sigma-clipped mode of pixel values present in a circular annulus
 with an inner radius of 0.25 arcseconds and an outer radius of 0.50 arcseconds surrounding each identified source. This
@@ -93,8 +94,7 @@ local background value is then subtracted from the raw inner and outer aperture 
 background-subtracted inner and outer aperture flux values found in the output .ecsv catalog file by the formula
 
 .. math::
-
-    f_{bgs}= f_{raw} - f_{bg} \cdot a,
+    f_{bgs}= f_{raw} - f_{bg} \cdot a
 
 where
      * *f*\ :sub:`bgs`\  is the background-subtracted flux
@@ -117,8 +117,7 @@ detection image for source identification. We then compute the final flux errors
 file using the following formula:
 
 .. math::
-
-    \Delta f = \sqrt{\frac{\sigma^2 }{g}+(a\cdot\sigma_{bg}^{2})\cdot (1+\frac{a}{b_{phot}})},
+    \Delta f = \sqrt{\frac{\sigma^2 }{g}+(a\cdot\sigma_{bg}^{2})\cdot (1+\frac{a}{b_{phot}})}
 
 where
     * :math:`{\Delta} f`  is the flux uncertanty TODO: UNITS!
@@ -127,6 +126,120 @@ where
     * *a* is the photometric aperture area, in TODO: UNITS!
     * :math:`{\sigma_{bg}}`  is standard deviation of the background
     * :math:`{b_{phot}}`  is ????? TODO: VERIFY
+
+2.2.2: Calculation of ABmag uncertainties
+"""""""""""""""""""""""""""""""""""""""""""
+Magnitude error calculation comes from computing :math:`{\frac{d(ABMAG)}{d(flux)}}`. We use the following formula:
+
+.. math::
+    \Delta mag_{AB} = 1.0857 \cdot  \frac{\Delta f}{f}
+
+where
+    * :math:`{\Delta mag_{AB}}` is the uncertenty in AB magnitude
+    * :math:`{\Delta f}` is the flux uncertainty TODO: UNITS!
+    * :math:`{f}` is the flux TODO: UNITS!
+
+2.3: Calculation of concentration index (CI) values and flag values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2.3.1: Calculation of concentration index (CI) values
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+The Concentration index is a measure of the "sharpness" of a given source’s PSF, and computed with the following
+formula:
+
+.. math::
+CI = mag_inner - mag_outer
+
+where
+    * :math:`{CI}` is the concentration index, in AB magnitude
+    * :math:`{m_{inner}}` is the inner aperture AB magnitude
+    * :math:`{m_{outer}}` is the outer aperture AB magnitude
+
+We use the CI to distinguish if a particular source is “anomalous” (hot pixels or cosmic ray hits) or a legitimate, and
+if legitimate, if it’s a stellar source and from extended source.
+
+2.3.2: Determination of flag values
+"""""""""""""""""""""""""""""""""""""
+The flag value associated with each source provides users with a means to distinguish between legitimate point sources,
+legitimate extended sources, and scientifically dubious sources (those likely impacted by low signal to noise, detector
+artifacts, saturation, cosmic rays, etc.) The values in the “flags” column of the catalog are a sum of a one or more of
+these values. Specific flag values are defined below in table 2:
+
+.. table:: Table 2: Flag definitions TODO: figure out how to insert line break into text for 64.
+
+    +------------+-----------------------------------------------------------+
+    | Flag value | Meaning                                                   |
+    +============+===========================================================+
+    | 0          | Point source :math:`{(CI_{lower} < CI < CI_{upper})}`     |
+    +------------+-----------------------------------------------------------+
+    | 1          | Extended source :math:`{(CI > CI_{upper})}`               |
+    +------------+-----------------------------------------------------------+
+    | 2          | Bit value 2 not used in ACS or WFC3 sourcelists           |
+    +------------+-----------------------------------------------------------+
+    | 4          | Saturated Source                                          |
+    +------------+-----------------------------------------------------------+
+    | 8          | Faint Detection Limit                                     |
+    +------------+-----------------------------------------------------------+
+    | 16         | Hot pixels :math:`{(CI < CI_{lower})}`                    |
+    +------------+-----------------------------------------------------------+
+    | 32         | False Detection: Swarm Around Saturated Source            |
+    +------------+-----------------------------------------------------------+
+    | 64         | False detection due proximity of source to image edge     |
+    |            | or other region with a low number of input images         |
+    +------------+-----------------------------------------------------------+
+
+2.3.2.1: Assignment of flag values 0 (point source), 1 (extended source), and 16 (hot pixels)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Assignment of flag values 0 (point source), 1 (extended source), and 16 (hot pixels) are determined purely based on the
+concentration index (CI) value. The majority of commonly used filters for all ACS and WFC3 detectors have
+filter-specific CI threshold values that are automatically set at run-time. However, if filter-specific CI threshold
+values cannot be found, default instrument/detector-specific CI limits are used instead.  Instrument/detector/filter
+combinations that do not have filter-specific CI threshold values are listed below in table 3 and  the default CI
+values are listed below in table 4.
+
+.. table:: Table 3: Instrument/detector/filter combinations that **do not** have filter-specific CI threshold values
+
+    +------------------------+---------------------------------------------------+
+    | Instrument/Detector    | Filters without specifically defined CI limits    |
+    +========================+===================================================+
+    | ACS/HRC                | F344N                                             |
+    +------------------------+---------------------------------------------------+
+    | ACS/SBC                | All ACS/SBC filters                               |
+    +------------------------+---------------------------------------------------+
+    | ACS/WFC                | F892N                                             |
+    +------------------------+---------------------------------------------------+
+    | WFC3/IR                | None                                              |
+    +------------------------+---------------------------------------------------+
+    | WFC3/UVIS              | None                                              |
+    +------------------------+---------------------------------------------------+
+
+.. note:: As photometry is not performed on observations that utilized grisms, prisms, polarizers, ramp filters, or quad filters, these elements were omitted from the above list.
+
+.. table:: Table 4: Default concentration index threshold values
+
+    +---------------------+----------------------+----------------------+
+    | Instrument/Detector | :math:`{CI_{lower}}` | :math:`{CI_{upper}}` |
+    +=====================+======================+======================+
+    | ACS/HRC             | 0.9                  | 1.6                  |
+    +---------------------+----------------------+----------------------+
+    | ACS/SBC             | 0.15                 | 0.45                 |
+    +---------------------+----------------------+----------------------+
+    | ACS/WFC             | 0.9                  | 1.23                 |
+    +---------------------+----------------------+----------------------+
+    | WFC3/IR             | 0.25                 | 0.55                 |
+    +---------------------+----------------------+----------------------+
+    | WFC3/UVIS           | 0.75                 | 1.0                  |
+    +---------------------+----------------------+----------------------+
+
+2.3.2.2: Assignment of flag value 4 (Saturated Source)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+A flag value of 4 is assigned to sources that are saturated. The process of identifying saturated sources starts by
+first transforming the input image XY coordinates of all pixels flagged as saturated in the data quality arrays of each
+input flc/flt.fits images (the images drizzled together to produce the drizzle-combined filter image being used to
+measure photometry) from non-rectified, non-distortion-corrected coordinates to the rectified, distortion-corrected
+frame of reference of the filter-combined image. We then identify impacted sources by cross-matching this list of
+saturated pixel coordinates against the positions of sources in the newly created source catalog and assign flag values
+where necessary.
+
 
 Segment Photometric Catalog Generation
 =======================================
