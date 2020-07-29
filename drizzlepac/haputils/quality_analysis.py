@@ -503,9 +503,10 @@ def run_all(input, files, catalogs=None, log_level=logutil.logging.NOTSET):
     json_timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
     json_time_since_epoch = time.time()
 
-    good_files = [f for f in files if f in catalogs.extracted_sources]
+    good_files = files
     src_catalogs = None
     if catalogs is not None:
+        good_files = [f for f in files if f in catalogs.extracted_sources]
         src_catalogs = [catalogs.extracted_sources[f] for f in good_files]
         
     json_files = determine_alignment_residuals(input, good_files,
