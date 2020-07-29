@@ -951,13 +951,15 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 outname = self.imgname.replace(".fits", "_bkgsub.fits")
                 fits.PrimaryHDU(data=imgarr_bkgsub).writeto(outname)
 
-            # Generate the segmentation map by detecting and deblending "sources"
+            # Generate the segmentation map by detecting and deblending "sources".
+            # Use all the parameters here developed for the "custom kernel".  Note: if the
+            # "custom kernel" did not work out, build_auto_kernel() drops back to a Gaussian.
             ncount_dandd = 0
-            threshold = 1.0 * self.image.bkg_rms_ra
             custom_segm_img = self.detect_and_deblend_sources(imgarr_bkgsub,
                                                               threshold,
                                                               ncount_dandd,
                                                               filter_kernel=self.image.kernel,
+                                                              source_box=self._size_source_box,
                                                               mask=mask)
 
             # Determine if the input image is actually a crowded field based upon characteristics of the 
@@ -970,49 +972,56 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                            big_island_only = False,
                                                            max_biggest_source = 0.015)
 
-            # If the science field via the segmentation map is deemed crowded, increase the detection 
-            # threshold and use RickerWavelet2DKernel.
-            # Generate the segmentation map by detecting and deblending "sources"
-            # self._fwhm=0.14, self.image.kernel_fwhm=1.7070, self.image.kernel_fwhm*fgts=0.7249
+            # If the science field via the segmentation map is deemed crowded, compute the 
+            # RickerWavelet2DKernel and increase the detection threshold (based upon the HLA experience).  
+            # Still use the custom fwhm as it should be better than a generic fwhm.  Note: the fwhm might
+            # be a default if the custom algorithm had to fall back to a Gaussian.
+            # When there are negative coefficients in the kernel (as is the case for RickerWavelet),
+            # do not normalize the kernel.
             if is_crowded:
                 log.info("")
                 log.info("Using RickerWavelet2DKernel to generate an alternate segmentation map.")
-                #fwhm = (self._fwhm / self.image.imgwcs.pscale) * gaussian_fwhm_to_sigma
-                # Already scaled
                 fwhm = self.image.kernel_fwhm * gaussian_fwhm_to_sigma
-                log.info("fwhm: {} computedFWHM: {} scale: {}".format(fwhm, self.image.kernel_fwhm, self.image.imgwcs.pscale))
-                rw2d_kernel = RickerWavelet2DKernel(fwhm,
-                                                    x_size=self._size_source_box,
-                                                    y_size=self._size_source_box).normalize()
-                #plt.imshow(rw2d_kernel, interpolation='none', origin='lower')
-                #plt.show()
+                log.info("fwhm: {} computedFWHM: {} scale: {}".format(fwhm, self.image.kernel_fwhm, gaussian_fwhm_to_sigma))
+                #fwhm = self._fwhm * gaussian_fwhm_to_sigma
+                #log.info("fwhm: {}".format(fwhm))
+                rw2d_kernel = RickerWavelet2DKernel(self.image.kernel_fwhm)
+                log.info("rw2d_shape: {} rw2d_kernel: {}".format(rw2d_kernel.shape, rw2d_kernel.array))
 
                 outname = self.imgname.replace(".fits", "_rw2d.fits")
                 fits.PrimaryHDU(data=rw2d_kernel).writeto(outname)
 
+            # Generate the segmentation map by detecting and deblending "sources"
+            # The threshold is scaled up from (self._nigma * self.image.bkg_rms_ra)
+            # self._fwhm=0.14, self.image.kernel_fwhm=1.7070, self.image.kernel_fwhm*fgts=0.7249
                 ncount_dandd += 1 
-                threshold = 3.0 * self.image.bkg_rms_ra
+                # FIX Put threshold_factor into a configuration file
+                threshold_factor = 1.5
+                threshold = threshold_factor * self.image.bkg_rms_ra
                 rw2d_segm_img = self.detect_and_deblend_sources(imgarr_bkgsub,
                                                                 threshold,
                                                                 ncount_dandd,
                                                                 filter_kernel=rw2d_kernel,
+                                                                source_box=self._size_source_box,
                                                                 mask=mask)
 
-                # Re-evaluate the new segmention image
-                is_crowded = False
-                is_crowded = self._evaluate_segmentation_image(rw2d_segm_img,
+                # Evaluate the new segmention image for completeness
+                is_big_island = False
+                is_big_island = self._evaluate_segmentation_image(rw2d_segm_img,
                                                                imgarr_bkgsub,
                                                                big_island_only = True,
                                                                max_biggest_source = 0.05)
 
-                # Keep this segmentation image one of poor quality is better than none at all
-                log.warning("Both Custom/Guassian and RickerWavelet kernels produced poor quality segmentation images.\n"\
-                            "Retaining the RickerWavelet segmentation image for further processing.")
+                # Regardless of the assessment, Keep this segmentation image for use
+                if is_big_island:
+                    log.warning("Both Custom/Gaussian and RickerWavelet kernels produced poor quality\nsegmentation images. "\
+                                "Retaining the RickerWavelet segmentation image for further processing.")
 
                 self.segm_img = copy.deepcopy(rw2d_segm_img)
                 self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
                                                     filter_kernel=rw2d_kernel, wcs=self.image.imgwcs)
 
+            # Situation where the image was not deemed to be crowded
             else:
                 self.segm_img = copy.deepcopy(custom_segm_img)
                 self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
@@ -1087,7 +1096,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def detect_and_deblend_sources(self, imgarr_bkgsub, threshold, ncount, filter_kernel=None, mask=None):
+    def detect_and_deblend_sources(self, imgarr_bkgsub, threshold, ncount, filter_kernel=None, source_box=7, mask=None):
         """Detect and deblend sources found in the input total detection (aka white light) image.
       
            Image regions are identified as sources in the background subtracted 'total detection image' 
@@ -1111,6 +1120,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
                Filter used to smooth the total detection image to enhance peak or 
                multi-scale detection 
 
+            source_box : int
+               Maximum size of source
+
             mask : 
                Image used to define the portion of the total detection images which is
                appropriate for analysis
@@ -1122,7 +1134,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         segm_img = None
         segm_img = detect_sources(imgarr_bkgsub,
                                   threshold,
-                                  npixels=self._size_source_box,
+                                  npixels=source_box,
                                   filter_kernel=filter_kernel,
                                   mask=mask)
 
@@ -1142,7 +1154,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # segmentation. Sextractor uses a multi-thresholding technique.
             # npixels = number of connected pixels in source
             # npixels and filter_kernel should match those used by detect_sources()
-            segm_deblended_img = deblend_sources(imgarr_bkgsub, segm_img, npixels=self._size_source_box,
+            segm_deblended_img = deblend_sources(imgarr_bkgsub, segm_img, npixels=source_box,
                                                  filter_kernel=filter_kernel, nlevels=self._nlevels,
                                                  contrast=self._contrast)
             if self.diagnostic_mode:
