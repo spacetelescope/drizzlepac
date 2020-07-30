@@ -302,8 +302,8 @@ The table with the set of observations which can be processed now gets interpret
 The goal is to identify what exposures can be combined to create unique products.  
 This grouping will be used to create the **product list**.  
 The **product list** is a Python list of 
-`drizzlepac/haputils/product/HAPProduct`(:ref:`product_api`) objects which 
-represent each and every output product to be created for the visit.  
+`drizzlepac/haputils/product/HAPProduct` objects, described in :ref:`product_api` API docs,
+which represent each and every output product to be created for the visit.  
 Each **Product** instance contains:
 
   * list of filenames for all input exposures that will contribute to the output drizzlep product
