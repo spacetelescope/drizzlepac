@@ -21,6 +21,10 @@
         "source_box": 7,
         "nlevels": 32,
         "contrast": 0.005,
-        "border": 10
+        "border": 10,
+        "rw2d_size": 15,
+        "rw2d_nsigma": 1.5,
+        "max_biggest_source": 0.015,
+        "max_source_fraction": 0.075
     }
 }
