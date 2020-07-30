@@ -84,10 +84,10 @@ class CatalogImage:
         self.bkg_background_ra = None
         self.bkg_rms_ra = None
         self.bkg_rms_median = None
-        
 
     # def build_kernel(self, box_size, win_size, fwhmpsf):
     def build_kernel(self, box_size, win_size, fwhmpsf):
+
         if self.bkg_background_ra is None:
             self.compute_background(box_size, win_size)
 
@@ -100,7 +100,6 @@ class CatalogImage:
         # Finished with wht_image, clean up memory immediately...
         del self.wht_image
         self.wht_image = None
-        
 
     def compute_background(self, box_size, win_size,
                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS):
@@ -199,7 +198,7 @@ class CatalogImage:
         self.bkg_rms_ra = bkg_rms_ra.copy()
         self.bkg_rms_median = bkg_rms_median.copy()
         self.bkg_median = bkg_median.copy()
-        
+
         del bkg, bkg_background_ra, bkg_rms_ra, bkg_rms_median, bkg_median
 
     def _get_header_data(self):
@@ -527,6 +526,9 @@ class HAPCatalogBase:
         data_table.meta["h17.5"] = ["   32 - False Detection Swarm Around Saturated Source"]
         data_table.meta["h17.6"] = ["   64 - False Detections Near Image Edge"]
         data_table.meta["h18"] = ["#================================================================================================="]
+
+        if proc_type is "segment" and self.is_big_island:
+            data_table.meta["h19"] = ["WARNING: Segmentation catalog is considered to be of poor quality due to a crowded field or large segments."]
 
         return (data_table)
 
@@ -866,6 +868,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._contrast = self.param_dict["sourcex"]["contrast"]
         self._border = self.param_dict["sourcex"]["border"]
         self._nsigma = self.param_dict["nsigma"]
+        self._rw2d_size = self.param_dict["sourcex"]["rw2d_size"]
+        self._rw2d_nsigma = self.param_dict["sourcex"]["rw2d_nsigma"]
+        self._max_biggest_source = self.param_dict["sourcex"]["max_biggest_source"]
+        self._max_source_fraction = self.param_dict["sourcex"]["max_source_fraction"]
 
         # Columns to include from the computation of source properties to save
         # computation time from computing values which are not used
@@ -881,8 +887,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self.subset_filter_source_cat = None
 
         # Default kernel which may be the custom kernel based upon the actual image
-        # data or a Gaussian 2D kernel. This may be over-ridden in identify_sources(). 
+        # data or a Gaussian 2D kernel. This may be over-ridden in identify_sources().
         self.kernel = self.image.kernel
+
+        # Attribute computed when generating the segmentation image.  If the segmentation image
+        # is deemed to be of poor quality, make sure to add documentation to the output catalog.
+        self.is_big_island = False
 
     def identify_sources(self, **pars):
         """Use photutils to find sources in image based on segmentation.
@@ -929,7 +939,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("nsigma (sigma * background_rms): {}".format(self._nsigma))
             log.info("nlevels (no. of multi-thresholding levels for deblending): {}".format(self._nlevels))
             log.info("contrast (frac. flux for peak to be separate object, 0=max. deblend, 1=no deblend): {}".format(self._contrast))
-            log.info("border (image border width where sources not detected): {}".format(self._border))
+            log.info("RickerWavelet nsigma (sigma * background_rms): {}".format(self._rw2d_nsigma))
+            log.info("RickerWavelet kernel X- and Y-dimension: {}".format(self._rw2d_size))
+            log.info("Percentage limit on the biggest source: {}".format(100.0*self._max_biggest_source))
+            log.info("Percentage limit on the source fraction over the image: {}".format(100.0*self._max_source_fraction))
             log.info("")
             log.info("{}".format("=" * 80))
 
@@ -951,8 +964,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 outname = self.imgname.replace(".fits", "_bkgsub.fits")
                 fits.PrimaryHDU(data=imgarr_bkgsub).writeto(outname)
 
-            # Generate the segmentation map by detecting and deblending "sources".
-            # Use all the parameters here developed for the "custom kernel".  Note: if the
+            # Generate the segmentation map by detecting and deblending "sources" using the nominal
+            # settings. Use all the parameters here developed for the "custom kernel".  Note: if the
             # "custom kernel" did not work out, build_auto_kernel() drops back to a Gaussian.
             ncount_dandd = 0
             custom_segm_img = self.detect_and_deblend_sources(imgarr_bkgsub,
@@ -962,42 +975,37 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                               source_box=self._size_source_box,
                                                               mask=mask)
 
-            # Determine if the input image is actually a crowded field based upon characteristics of the 
-            # segmentation image.  If it is a crowded field, it would be better to use the RickerWavelet2DKernel
-            # to identify sources.  The deblended segmentation image and the background subtracted total
-            # detection image are used for the evaluation.
-            is_crowded = False
-            is_crowded = self._evaluate_segmentation_image(custom_segm_img,
-                                                           imgarr_bkgsub,
-                                                           big_island_only = False,
-                                                           max_biggest_source = 0.015)
+            # Determine if the input image is actually a crowded field or contains large islands based upon
+            # characteristics of the segmentation image.  If either of these are true, it would be better
+            # to use the RickerWavelet2DKernel to identify sources.  The deblended segmentation image and
+            # the background subtracted total detection image are used for the evaluation.
+            is_big_crowded = False
+            is_big_crowded = self._evaluate_segmentation_image(custom_segm_img,
+                                                               imgarr_bkgsub,
+                                                               big_island_only=False,
+                                                               max_biggest_source=self._max_biggest_source,
+                                                               max_source_fraction=self._max_source_fraction)
 
-            # If the science field via the segmentation map is deemed crowded, compute the 
-            # RickerWavelet2DKernel and increase the detection threshold (based upon the HLA experience).  
-            # Still use the custom fwhm as it should be better than a generic fwhm.  Note: the fwhm might
-            # be a default if the custom algorithm had to fall back to a Gaussian.
+            # If the science field via the segmentation map is deemed crowded or has big islands, compute the
+            # RickerWavelet2DKernel.  Still use the custom fwhm as it should be better than a generic fwhm.
+            # Note: the fwhm might be a default if the custom algorithm had to fall back to a Gaussian.
             # When there are negative coefficients in the kernel (as is the case for RickerWavelet),
             # do not normalize the kernel.
-            if is_crowded:
+            if is_big_crowded:
                 log.info("")
                 log.info("Using RickerWavelet2DKernel to generate an alternate segmentation map.")
-                fwhm = self.image.kernel_fwhm * gaussian_fwhm_to_sigma
-                log.info("fwhm: {} computedFWHM: {} scale: {}".format(fwhm, self.image.kernel_fwhm, gaussian_fwhm_to_sigma))
-                #fwhm = self._fwhm * gaussian_fwhm_to_sigma
-                #log.info("fwhm: {}".format(fwhm))
-                rw2d_kernel = RickerWavelet2DKernel(self.image.kernel_fwhm)
-                log.info("rw2d_shape: {} rw2d_kernel: {}".format(rw2d_kernel.shape, rw2d_kernel.array))
+                log.info("RickerWavelet image kernel FWHM, {}, and kernel array size, {}.".format(self.image.kernel_fwhm, self._rw2d_size))
+                rw2d_kernel = RickerWavelet2DKernel(self.image.kernel_fwhm,
+                                                    x_size=self._rw2d_size,
+                                                    y_size=self._rw2d_size)
 
-                outname = self.imgname.replace(".fits", "_rw2d.fits")
-                fits.PrimaryHDU(data=rw2d_kernel).writeto(outname)
+                if self.diagnostic_mode:
+                    outname = self.imgname.replace(".fits", "_rw2d.fits")
+                    fits.PrimaryHDU(data=rw2d_kernel).writeto(outname)
 
-            # Generate the segmentation map by detecting and deblending "sources"
-            # The threshold is scaled up from (self._nigma * self.image.bkg_rms_ra)
-            # self._fwhm=0.14, self.image.kernel_fwhm=1.7070, self.image.kernel_fwhm*fgts=0.7249
-                ncount_dandd += 1 
-                # FIX Put threshold_factor into a configuration file
-                threshold_factor = 1.5
-                threshold = threshold_factor * self.image.bkg_rms_ra
+                # Generate the new segmentation map with the new kernel
+                ncount_dandd += 1
+                threshold = self._rw2d_nsigma * self.image.bkg_rms_ra
                 rw2d_segm_img = self.detect_and_deblend_sources(imgarr_bkgsub,
                                                                 threshold,
                                                                 ncount_dandd,
@@ -1006,34 +1014,33 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                 mask=mask)
 
                 # Evaluate the new segmention image for completeness
-                is_big_island = False
-                is_big_island = self._evaluate_segmentation_image(rw2d_segm_img,
-                                                               imgarr_bkgsub,
-                                                               big_island_only = True,
-                                                               max_biggest_source = 0.05)
+                self.is_big_island = False
+                self.is_big_island = self._evaluate_segmentation_image(rw2d_segm_img,
+                                                                       imgarr_bkgsub,
+                                                                       big_island_only=True,
+                                                                       max_biggest_source=0.05,
+                                                                       max_source_fraction=self._max_source_fraction)
 
                 # Regardless of the assessment, Keep this segmentation image for use
-                if is_big_island:
+                if self.is_big_island:
                     log.warning("Both Custom/Gaussian and RickerWavelet kernels produced poor quality\nsegmentation images. "\
                                 "Retaining the RickerWavelet segmentation image for further processing.")
 
+                # The total product catalog consists of at least the X/Y and RA/Dec coordinates for the detected
+                # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
+                # images using the coordinates determined from the total drizzled image.
                 self.segm_img = copy.deepcopy(rw2d_segm_img)
                 self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
                                                     filter_kernel=rw2d_kernel, wcs=self.image.imgwcs)
 
             # Situation where the image was not deemed to be crowded
             else:
+                # The total product catalog consists of at least the X/Y and RA/Dec coordinates for the detected
+                # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
+                # images using the coordinates determined from the total drizzled image.
                 self.segm_img = copy.deepcopy(custom_segm_img)
                 self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
                                                     filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
-
-            # Keep for now FIX MDD Klunky
-            # The total product catalog consists of at least the X/Y and RA/Dec coordinates for the detected
-            # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
-            # images using the coordinates determined from the total drizzled image.
-            #self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
-            #                                    #filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
-            #                                    filter_kernel=rw2d_kernel, wcs=self.image.imgwcs)
 
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
             # form to filter out bad rows and correspondingly bad segments before the filter images are processed.
@@ -1098,34 +1105,33 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
     def detect_and_deblend_sources(self, imgarr_bkgsub, threshold, ncount, filter_kernel=None, source_box=7, mask=None):
         """Detect and deblend sources found in the input total detection (aka white light) image.
-      
-           Image regions are identified as sources in the background subtracted 'total detection image' 
+
+           Image regions are identified as sources in the background subtracted 'total detection image'
            if the region has n-connected pixels with values greater than the 'threshold'. The resultant
            segmentation image is then deblended in an effort to identify overlapping sources.
 
            Parameters
            ----------
-           imgarr_bkgsub : 
+           imgarr_bkgsub :
                Background subtracted total detection image
 
-           threshold : 
-               Image which defines, on a pixel-by-pixel basis, the minimum limit for 
-               source detection
-               
+           threshold :
+               Image which defines, on a pixel-by-pixel basis, the low limit above which 
+               sources are detected.
+
             ncount : int
                Invocation index for this method.  The index is used to create unique names
                for diagnostic output files.
 
-            filter_kernel : astropy.convolution.Kernel2D object
-               Filter used to smooth the total detection image to enhance peak or 
-               multi-scale detection 
+            filter_kernel : astropy.convolution.Kernel2D object, optional
+               Filter used to smooth the total detection image to enhance peak or
+               multi-scale detection.
 
-            source_box : int
-               Maximum size of source
+            source_box : int, optional
+               Number of connected pixels needed to define a source
 
-            mask : 
-               Image used to define the portion of the total detection images which is
-               appropriate for analysis
+            mask : bool image, optional
+               Boolean image used to define the illuminated and non-illuminated pixels.
 
         """
 
@@ -1154,8 +1160,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # segmentation. Sextractor uses a multi-thresholding technique.
             # npixels = number of connected pixels in source
             # npixels and filter_kernel should match those used by detect_sources()
-            segm_deblended_img = deblend_sources(imgarr_bkgsub, segm_img, npixels=source_box,
-                                                 filter_kernel=filter_kernel, nlevels=self._nlevels,
+            segm_deblended_img = deblend_sources(imgarr_bkgsub,
+                                                 segm_img,
+                                                 npixels=source_box,
+                                                 filter_kernel=filter_kernel,
+                                                 nlevels=self._nlevels,
                                                  contrast=self._contrast)
             if self.diagnostic_mode:
                 outname = self.imgname.replace(".fits", "_segment_deblended" + str(ncount) + ".fits")
@@ -1614,10 +1623,16 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def _evaluate_segmentation_image(self, segm_img, detection_image, big_island_only=False, max_biggest_source = 0.015):
+    def _evaluate_segmentation_image(self, segm_img, detection_image, big_island_only=False,
+                                     max_biggest_source=0.015, max_source_fraction=0.075):
         """Determine if the segmentation image is bad.
 
-        Determine if the segmentation image indicates the total detection image was of a crowded field.
+        Determine if the segmentation image reflects a crowded field or big islands.
+
+        If the segmentation image built from the total detection (e.g., white light image) indicates the
+        field is crowded or individual segments look like big "islands", indicate the resultant catalog
+        may be of poor quality.
+
         If so, try using the RickerWavelet2DKernel for source detection.
 
         Parameters
@@ -1628,22 +1643,35 @@ class HAPSegmentCatalog(HAPCatalogBase):
         detection_image :  FITS data
             The total drizzled detection image (aka white light data).
 
+        big_island_only : bool, optional
+            Test for 'big island' situations only? (True/False)
+            Default value is False.
+
+        max_biggest_source : float, optional
+            Maximum limit on the single largest detected "source".
+            Default value is 0.015.
+
+        max_source_fraction : float, optional
+            Maximum limit on the fraction of pixels identified as part of a "source".
+            Default value is 0.075.
+
+
         Returns
         -------
-        is_crowded : bool
-            Determination as to whether or not the science field is crowded
+        is_poor_quality: bool
+            Determination as to whether or not the science field is crowded or contains big islands.
 
         """
-    
-        is_crowded = False
-        is_crowded = self._seg_rejection(segm_img,
-                                         detection_image,
-                                         big_island_only=big_island_only,
-                                         max_biggest_source=max_biggest_source,
-                                         max_source_fraction=0.075)
-        
-        return is_crowded 
-        
+
+        is_poor_quality = False
+        is_poor_quality = self._seg_rejection(segm_img,
+                                              detection_image,
+                                              big_island_only=big_island_only,
+                                              max_biggest_source=max_biggest_source,
+                                              max_source_fraction=max_source_fraction)
+
+        return is_poor_quality
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1651,23 +1679,24 @@ class HAPSegmentCatalog(HAPCatalogBase):
         """
         Determine if the largest "source" or if the total fraction of "sources" exceeds a threshold.
 
-        Identify situations where the largest source exceeds a user-specified fraction of all image 
+        Identify situations where the largest source exceeds a user-specified fraction of all image
         pixels and / or situations where the total source fraction exceeds a user-specified fraction
         of the image (aka 'big islands')
 
-        Algorithm is essentially the standalone function written by R.L.White (STScI) for the Hubble Legacy Archive (HLA).
+        Algorithm is essentially the standalone function written by R.L.White (STScI) for the 
+        Hubble Legacy Archive (HLA).
 
         Parameters
         ----------
         segm_img : Segmentation image
-            Segmentation image created by the Photutils package by detect_sources ()
+            Segmentation image created by the Photutils package by detect_sources ().
 
         image_data :  FITS data
             The total drizzled detection image (aka white light data).
 
         big_island_only : bool, optional
-            Test for 'big island' situations only? (True/False) 
-            Default value is False.  
+            Test for 'big island' situations only? (True/False)
+            Default value is False.
 
         max_biggest_source : float, optional
             Maximum limit on the single largest detected "source".
@@ -1679,8 +1708,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         Returns
         -------
-        return_value : boolean 
-            True/False value indicating if the largest source or the total combination of 
+        return_value : boolean
+            True/False value indicating if the largest source or the total combination of
             all detected sources took up an abnormally high portion of the image (aka 'big islands').
         """
         # segm_img is a SegmentationImage
@@ -1688,28 +1717,28 @@ class HAPSegmentCatalog(HAPCatalogBase):
         log.info("")
         log.info("Analyzing segmentation image.")
         log.info("Number of sources from segmentation map: %d", nbins)
- 
+
         if nbins == 0:
             return False
- 
-        #narray = np.bincount(segm_img)
-        #n = narray[1:]
+
+        # narray = np.bincount(segm_img)
+        # n = narray[1:]
         n, binedges = np.histogram(segm_img.data, range=(1, nbins))
         real_pixels = (image_data != 0).sum()
- 
+
         return_value = False
         biggest_source = n.max()/float(real_pixels)
         log.info("Biggest_source: %f", biggest_source)
         if biggest_source > max_biggest_source:
-            log.info("Biggest source %.4f percent exceeds %f percent of the image", (100.0*biggest_source),(100.0*max_biggest_source))
+            log.info("Biggest source %.4f percent exceeds %f percent of the image", (100.0*biggest_source), (100.0*max_biggest_source))
             return_value = True
         if not big_island_only:
             source_fraction = n.sum()/float(real_pixels)
             log.info("Source_fraction: %f", source_fraction)
             if source_fraction > max_source_fraction:
-                log.info("Total source fraction %.4f percent exceeds %f percent of the image.", (100.0*source_fraction),(100.0*max_source_fraction))
+                log.info("Total source fraction %.4f percent exceeds %f percent of the image.", (100.0*source_fraction), (100.0*max_source_fraction))
                 return_value = True
-        return return_value   
+        return return_value
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
