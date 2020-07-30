@@ -1645,15 +1645,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         big_island_only : bool, optional
             Test for 'big island' situations only? (True/False)
-            Default value is False.
 
         max_biggest_source : float, optional
             Maximum limit on the single largest detected "source".
-            Default value is 0.015.
 
         max_source_fraction : float, optional
             Maximum limit on the fraction of pixels identified as part of a "source".
-            Default value is 0.075.
 
 
         Returns
@@ -1696,15 +1693,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         big_island_only : bool, optional
             Test for 'big island' situations only? (True/False)
-            Default value is False.
 
         max_biggest_source : float, optional
             Maximum limit on the single largest detected "source".
-            Default value is 0.015.
 
         max_source_fraction : float, optional
             Maximum limit on the fraction of pixels identified as part of a "source".
-            Default value is 0.075.
 
         Returns
         -------
