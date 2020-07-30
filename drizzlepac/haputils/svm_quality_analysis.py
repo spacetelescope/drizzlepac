@@ -1019,21 +1019,22 @@ def generate_gaia_catalog(hap_obj, columns_to_remove=None):
     # generate catalog of GAIA sources
     gaia_table = au.create_astrometric_catalog(img_list, gaia_only=True, use_footprint=True)
 
-    # trim off specified columns, but 
-    #    only if the specified columns already exist in the table
-    #
-    if columns_to_remove:
-        existing_cols = [col for col in columns_to_remove if col in gaia_table.colnames]
-        gaia_table.remove_columns(existing_cols)
+    if len(gaia_table) > 0:
+        # trim off specified columns, but 
+        #    only if the specified columns already exist in the table
+        #
+        if columns_to_remove:
+            existing_cols = [col for col in columns_to_remove if col in gaia_table.colnames]
+            gaia_table.remove_columns(existing_cols)
 
-    # remove sources outside image footprint
-    outwcs = wcsutil.HSTWCS(hap_obj.drizzle_filename, ext=1)
-    x, y = outwcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 1)
-    imghdu = fits.open(hap_obj.drizzle_filename)
-    in_img_data = imghdu['WHT'].data.copy()
-    in_img_data = np.where(in_img_data == 0, np.nan, in_img_data)
-    mask = au.within_footprint(in_img_data, outwcs, x, y)
-    gaia_table = gaia_table[mask]
+        # remove sources outside image footprint
+        outwcs = wcsutil.HSTWCS(hap_obj.drizzle_filename, ext=1)
+        x, y = outwcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 1)
+        imghdu = fits.open(hap_obj.drizzle_filename)
+        in_img_data = imghdu['WHT'].data.copy()
+        in_img_data = np.where(in_img_data == 0, np.nan, in_img_data)
+        mask = au.within_footprint(in_img_data, outwcs, x, y)
+        gaia_table = gaia_table[mask]
 
     # Report results to log
     if len(gaia_table) == 0:
