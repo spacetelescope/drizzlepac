@@ -62,6 +62,9 @@ In this example, extensions 16 through 21 contain headerlets each of which speci
     'OPUS-HSC30',
     'IDC_0461802ej-HSC30']
 
+
+.. _wcsname-conventions:
+
 Interpreting WCS names
 -----------------------
 The first WCS solution listed, OPUS, corresponds to the default WCS defined by the HST calibration pipeline based on original telemetry and only a first-order distortion model. Solutions which contain **IDC_** are based on the distortion model based on the reference data associated with the **IDCTAB** reference file whose rootname is specified in the WCSNAME.  For example, **IDC_0461802ej** refers to a WCS solution based on the **IDCTAB** reference file 0461802ej_idc.fits along with all the associated secondary distortion reference files given by **DGEOFILE**, **NPOLFILE** and, for WFPC2, **OFFTAB** and **DXYFILE**.
@@ -146,11 +149,7 @@ The terms are defined as:
 
   * **<Astrometric Catalog>**
 
-    - This term describes the astrometric catalog, as listed for use with the *a priori* solutions, which was used for the cross-matching and fitting sources identified in the image(s).  If a value of `NONE` is
-    specified here, it indicates that although the image appears (according to the code) to have been
-    successfully relatively aligned one exposure to another, there were indications that the alignment to an
-    astrometric catalog like `GAIADR2` failed.  The user will need to carefully review the state of alignment
-    of this data when `NONE` is listed in the output WCS.
+    - This term describes the astrometric catalog, as listed for use with the *a priori* solutions, which was used for the cross-matching and fitting sources identified in the image(s).  If a value of **NONE** is specified here, it indicates that although the image appears (according to the code) to have been successfully relatively aligned one exposure to another, there were indications that the alignment to an astrometric catalog like **GAIADR2** failed.  The user will need to carefully review the state of alignment of this data when **NONE** is listed in the output WCS.
 
 
 These separate terms provide as succinct a description of the solution determined for and applied to the exposure as possible. Additional keywords have been written out to the headerlet extension for the *a posteriori* fit which further describe the solution, including:
@@ -181,10 +180,10 @@ run at any time using:
     
 The files which need to be present are:
 
-    * RAW files (*raw.fits)
-    * FLT files (*flt.fits)
-    * FLC files (*flc.fits, if any were created by the pipeline)
-    * ASN file  (*asn.fits, if applicable)
+    * RAW files (\*raw.fits)
+    * FLT files (\*flt.fits)
+    * FLC files (\*flc.fits, if any were created by the pipeline)
+    * ASN file  (\*asn.fits, if applicable)
     
 This processing includes a lot of logic intended to not only apply pre-defined (apriori) 
 WCS solutions, but also to try and determine a new aposteriori solution then 
