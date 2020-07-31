@@ -25,6 +25,12 @@ Hubble Advanced Products Glossary
       from each exposure, then cross-matching those sources with GAIA catalog 
       sources and applying the fit to the WCS. 
        
+    single visit
+      This term refers to the set of observations taken by a single instrument
+      using the same guide stars potentially spanning multiple orbits.  All 
+      observations taken by all detectors of that instrument which were requested
+      by the PI in the original proposal are included as this 'single visit' set.    
+    
     single-visit mosaic (SVM)
        A set of drizzled products for all the observations taken in a single visit.
        All observations in this set of products should be aligned to each other 

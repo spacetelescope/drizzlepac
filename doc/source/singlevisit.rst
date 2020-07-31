@@ -8,7 +8,7 @@ associations or as single exposures as closely to a standard astrometric coordin
 frame as possible (see :ref:`runastrodriz-description` for full details).  
 This involves alignment of very few images all taken under
 as identical conditions as possible; namely, detector, filter, guide stars, 
-guiding mode, and so on.  These observations were intended to by the user to 
+guiding mode, and so on.  These observations were intended by the user to 
 represent a single view of the object of interest in a way that allows for 
 removal of as many calibration effects as possible. 
 
@@ -21,7 +21,7 @@ always possible due to increasing limitations of the aging telescope systems.
 The result is that an increasing number of visits are taken where observations 
 drift and/or roll during the course of the visit or re-acquire at slightly 
 different pointings from one orbit to the next.  Whatever the reasons, data across
-each visit can not automatically be assumed to align.  Single-visit mosaic (SVM) 
+each visit cannot automatically be assumed to align.  Single-visit mosaic (SVM) 
 processing attempts to correct these relative
 alignment errors and to align the data to an absolute astrometric frame so that
 all the data across all the filters used can be drizzled onto the same pixel grid.
@@ -166,7 +166,8 @@ SVM processing starts with a list of all the single exposures
 which were taken as part of a visit.  Any associations which were defined by the
 proposal are ignored, since the visit itself gets treated, in essence, as a new 
 association.  The input files can be specified either using the **poller** file format
-used by the STScI automated processing or a file with a simple list of filenames.
+used by the STScI automated processing or a file with a simple list of filenames
+(one filename per line).
 
 Automated poller input file format
 ----------------------------------
@@ -270,7 +271,7 @@ input exposures using these header keywords for the stated rejection criteria.
     - C or D (or not N)
     - Can not align streaked sources
   * - FILTER or FILTER1, FILTER2
-    - C*, PR*
+    - G*, PR*, BLOCK
     - G=Grism and PR=Prism, Can not align streaked sources
   * - EXPTIME
     - 0 
@@ -287,7 +288,10 @@ input exposures using these header keywords for the stated rejection criteria.
 
 
 Any observation which meets any of these criteria are flagged to be ignored (not
-processed).  All observations which are alignable based on these criteria are then
+processed).  In addition, any data taken where the FGSLOCK keyword contains 'COARSE' or 'GY' will be flagged as potentially compromised in the comments generated during
+processing.
+
+All observations which are alignable based on these criteria are then
 passed along as a table to create the SVM products.  Those inputs which can be
 processed are then copied and renamed using the :ref:`svm_naming_convention`.  This 
 insures that no SVM processing will affect or otherwise modify the original 
@@ -312,7 +316,7 @@ Each **Product** instance contains:
 
     * drizzle-combined image
     * point-source catalog determined from the drizzle-combined image
-    * segmentation-based catalog determiend from the drizzle-combined image
+    * segmentation-based catalog determined from the drizzle-combined image
     * astrometric catalog used to align the input exposures
       
   * methods for:
@@ -365,6 +369,8 @@ would result in the definition of these output products:
   * a segmentation-based source catalog for the F555W product
   * a point-source catalog for the F814W product
   * a segmentation-based source catalog for the F814W product
+  * a point-source catalog for the total product
+  * a segmentation-based catalog for the total product
   
 The function ``haputils.poller_utils.interpret_obset_input`` serves as the sole interface 
 for this interpretation. A basic tree gets defined (as a dictionary of dictionaries) 
@@ -401,8 +407,8 @@ code as the standard calibration pipeline.  The basic steps it follows is:
   
 The limits for performing the relative alignment and absolute fit to the astrometric
 catalog (defaults to **GAIADR2**) are lower under the expectation that large 
-offsets (> 0.5 arcseconds) have already been removed in the pipeline.  This makes
-the SVM alignment more robust across a wider range of types of fields-of-view.
+offsets (> 0.5 arcseconds) have already been removed in the pipeline processing.  
+This makes the SVM alignment more robust across a wider range of types of fields-of-view.
 The final updated WCS will be provided with a name that reflects this cross-filter
 alignment using **-FIT-SVM-<catalog name>** as the final half of the **WCSNAME** 
 keyword.  More details on the WCS naming conventions can be found in the
@@ -454,7 +460,7 @@ a **filter product** would end up using the **filter_basic** criteria, while an
 
 User-customization of Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The parameter configuration file now included in th e``drizzlepac`` package are
+The parameter configuration file now included in the ``drizzlepac`` package are
 designed to be easily customized for manual processing with both ``runastrodriz`` 
 (pipeline astrometry processing) and ``runsinglehap`` (SVM processing).  These 
 ASCII JSON files can be edited prior to manual reprocessing to include whatever

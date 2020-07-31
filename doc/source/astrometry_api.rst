@@ -3,7 +3,7 @@
 *******************************
 Hubble Advanced Products API
 *******************************
-These modules provide the basic functionality used to automatically process
+These modules provide the basic functionality used to process automatically
 data using this package to apply the distortion models to the WCS of HST 
 observations and to verify the alignment of the observations. 
 
