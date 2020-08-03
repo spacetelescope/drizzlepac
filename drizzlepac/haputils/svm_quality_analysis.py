@@ -326,8 +326,12 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
         - cross-match details (input catalog lengths, number of cross-matched sources, coordinate system)
         - catalog containing RA and dec values of cross-matched point catalog sources
         - catalog containing RA and dec values of cross-matched segment catalog sources
+        - catalog containing MagAp1 and MagAp2 values of cross-matched point catalog sources
+        - catalog containing MagAp1 and MagAp2 values of cross-matched segment catalog sources
         - Statistics describing the on-sky separation of the cross-matched point and segment catalogs
         (non-clipped and sigma-clipped mean, median and standard deviation values)
+        - Statistics describing the mean, std, and median for the differences of magnitudes of the
+          cross-matched point and segment catalogs
 
     Parameters
     ----------
@@ -417,12 +421,17 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
     # 2b: create mask based on flag values
     matched_values = csl.extractMatchedLines("FLAGS", point_data, seg_data, matching_lines_ref,
                                              matching_lines_img)
+
     bitmask = csl.make_flag_mask(matched_values, good_flag_sum, missing_mask)
 
     matched_values_ra = csl.extractMatchedLines("RA", point_data, seg_data, matching_lines_ref,
                                                 matching_lines_img, bitmask=bitmask)
     matched_values_dec = csl.extractMatchedLines("DEC", point_data, seg_data, matching_lines_ref,
                                                  matching_lines_img, bitmask=bitmask)
+    matched_values_magap1 = csl.extractMatchedLines("MAGNITUDE1", point_data, seg_data, matching_lines_ref,
+                                                    matching_lines_img, bitmask=bitmask)
+    matched_values_magap2 = csl.extractMatchedLines("MAGNITUDE2", point_data, seg_data, matching_lines_ref,
+                                                    matching_lines_img, bitmask=bitmask)
 
     if matched_values_ra.shape[1] > 0 and matched_values_ra.shape[1] == matched_values_dec.shape[1]:
         # get coordinate system type from fits headers
@@ -433,7 +442,7 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
         json_results_dict["point frame"] = point_frame
         json_results_dict["segment frame"] = seg_frame
 
-        # convert reference and comparision RA/Dec values into SkyCoord objects
+        # convert reference and comparison RA/Dec values into SkyCoord objects
         matched_values_point = SkyCoord(matched_values_ra[0, :], matched_values_dec[0, :], frame=point_frame,
                                         unit="deg")
         matched_values_seg = SkyCoord(matched_values_ra[1, :], matched_values_dec[1, :], frame=seg_frame,
@@ -447,7 +456,7 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
         # compute on-sky separations in arcseconds
         sep = matched_values_seg.separation(matched_values_point).arcsec
 
-        # Compute and store statistics  on separations
+        # Compute and store statistics on separations
         sep_stat_dict = collections.OrderedDict()
         sep_stat_dict["Non-clipped min"] = np.min(sep)
         sep_stat_dict["Non-clipped max"] = np.max(sep)
@@ -461,14 +470,37 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
         sep_stat_dict["{}x{} sigma-clipped median".format(maxiters, sigma)] = clipped_stats[1]
         sep_stat_dict["{}x{} sigma-clipped standard deviation".format(maxiters, sigma)] = clipped_stats[2]
 
+        #
+        # Compute statistics on the photometry differences
+        #
+
+        # Compute the differences (Point - Segment)
+        delta_phot_magap1 = np.subtract(matched_values_magap1[0], matched_values_magap1[1])
+        delta_phot_magap2 = np.subtract(matched_values_magap2[0], matched_values_magap2[1])
+
+        # Compute some basic statistics: mean difference and standard deviation, and median difference
+        phot_stat_dict = collections.OrderedDict()
+        phot_stat_dict["mean_dmagap1"] = np.mean(delta_phot_magap1)
+        phot_stat_dict["std_dmagap1"] = np.std(delta_phot_magap1)
+        phot_stat_dict["median_dmagap1"] = np.median(delta_phot_magap1)
+        phot_stat_dict["mean_dmagap2"] = np.mean(delta_phot_magap2)
+        phot_stat_dict["std_dmagap2"] = np.std(delta_phot_magap2)
+        phot_stat_dict["median_dmagap2"] = np.median(delta_phot_magap2)
+
         # Create output catalogs for json file
-        out_cat_point = Table([matched_values_ra[0], matched_values_dec[0]],
-                              names=("Right ascension", "Declination"))
-        out_cat_seg = Table([matched_values_ra[1], matched_values_dec[1]],
-                            names=("Right ascension", "Declination"))
+        out_cat_point = Table([matched_values_ra[0], matched_values_dec[0], matched_values_magap1[0],
+                              matched_values_magap2[0]], names=("Right ascension", "Declination",
+                              "MagAp1", "MagAp2"))
+        out_cat_seg = Table([matched_values_ra[1], matched_values_dec[1], sep, matched_values_magap1[1],
+                            matched_values_magap2[1]], names=("Right ascension", "Declination",
+                            "Separation",
+                            "MagAp1", "MagAp2"))
         for table_item in [out_cat_point, out_cat_seg]:
             for col_name in ["Right ascension", "Declination"]:
                 table_item[col_name].unit = "degrees"  # Add correct units
+            for col_name in ["MagAp1", "MagAp2"]:
+                table_item[col_name].unit = "ABMag"  # Add correct units
+        out_cat_seg['Separation'].unit = "arcseconds"
 
         # add various data items to diag_obj
         diag_obj.add_data_item(json_results_dict, "Cross-match details",
@@ -488,12 +520,20 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
                                       "segment frame": "unitless"})
         diag_obj.add_data_item(out_cat_point, "Cross-matched point catalog",
                                descriptions={"Right ascension": "ICRS Right ascension",
-                                             "Declination": "ICRS Declination"},
-                               units={"Right ascension": "degrees", "Declination": "degrees"})
+                                             "Declination": "ICRS Declination",
+                                             "MagAp1": "Magnitude Aperture 1",
+                                             "MagAp2": "Magnitude Aperture 2"},
+                               units={"Right ascension": "degrees", "Declination": "degrees",
+                                      "MagAp1": "ABMag", "MagAp2": "ABMag"})
         diag_obj.add_data_item(out_cat_seg, "Cross-matched segment catalog",
                                descriptions={"Right ascension": "ICRS Right ascension",
-                                             "Declination": "ICRS Declination"},
-                               units={"Right ascension": "degrees", "Declination": "degrees"})
+                                             "Declination": "ICRS Declination",
+                                             "Separation": "Segment minus Point on-sky coordinate separation",
+                                             "MagAp1": "Magnitude Aperture 1",
+                                             "MagAp2": "Magnitude Aperture 2"},
+                               units={"Right ascension": "degrees", "Declination": "degrees",
+                                      "Separation": "arcseconds",
+                                      "MagAp1": "ABMag", "MagAp2": "ABMag"})
         diag_obj.add_data_item(sep_stat_dict, "Segment - point on-sky separation statistics",
                                descriptions={"Non-clipped min": "Non-clipped min difference",
                                              "Non-clipped max": "Non-clipped max difference",
@@ -508,7 +548,21 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
                                       "Non-clipped standard deviation": "arcseconds",
                                       "3x3 sigma-clipped mean": "arcseconds", "3x3 sigma-clipped median": "arcseconds",
                                       "3x3 sigma-clipped standard deviation": "arcseconds"})
-# write everything out to the json file
+        diag_obj.add_data_item(phot_stat_dict, "Delta_Photometry",
+                               descriptions={'mean_dmagap1': 'dMagAp1_Mean_Differences(Point-Segment)',
+                                             'std_dmagap1': 'dMagAp1_StdDev_of_Mean_Differences',
+                                             'median_dmagap1': 'dMagAp1_Median_Differences(Point-Segment)',
+                                             'mean_dmagap2': 'dMagAp2_Mean_Differences(Point-Segment)',
+                                             'std_dmagap2': 'dMagAp2_StdDev_of_Mean_Differences',
+                                             'median_dmagap2': 'dMagAp2_Median_Differences(Point-Segment)'},
+                               units={'mean_dmagap1': 'ABMag',
+                                      'std_dmagap1': 'ABMag',
+                                      'median_dmagap1': 'ABMag',
+                                      'mean_dmagap2': 'ABMag',
+                                      'std_dmagap2': 'ABMag',
+                                      'median_dmagap2': 'ABMag'})
+
+        # write everything out to the json file
         json_filename = hap_obj.drizzle_filename[:-9]+"_svm_point_segment_crossmatch.json"
         diag_obj.write_json_file(json_filename, clobber=True)
     else:
@@ -1020,7 +1074,7 @@ def generate_gaia_catalog(hap_obj, columns_to_remove=None):
     gaia_table = au.create_astrometric_catalog(img_list, gaia_only=True, use_footprint=True)
 
     if len(gaia_table) > 0:
-        # trim off specified columns, but 
+        # trim off specified columns, but
         #    only if the specified columns already exist in the table
         #
         if columns_to_remove:
@@ -1051,6 +1105,11 @@ def generate_gaia_catalog(hap_obj, columns_to_remove=None):
 def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=None,
                        log_level=logutil.logging.NOTSET):
     """Compare photometry measurements for sources cross matched between the Point and Segment catalogs.
+ 
+    DEPRECATED
+
+    Report the magnitudes, as well as the mean difference, standard deviation of the mean, and median
+    differences between the Point and Segment catalogs.
 
     Parameters
     ----------
@@ -1317,7 +1376,8 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
             if keys_with_dups:
                 list_keys = list(keys_with_dups)
                 # ...ignore the primary key as it is important, and...
-                list_keys.remove(' ')
+                #MDD
+                #list_keys.remove(' ')
                 # ...remove the duplicates.
                 for popkey in list_keys:
                     dict_of_wcskeys_names.pop(popkey)
@@ -1897,8 +1957,8 @@ if __name__ == "__main__":
                          run_compare_interfilter_crossmatches=user_args.run_compare_interfilter_crossmatches,
                          run_report_wcs=user_args.run_report_wcs,
                          log_level=log_level)
-                         
-                         
+
+
 # -----------------------------------------------------------------------------
 #
 # Generate plots for these results
@@ -1919,19 +1979,19 @@ FIGURE_TOOLS = 'pan,wheel_zoom,box_zoom,zoom_in,zoom_out,xbox_select,reset,save'
 
 def build_svm_plots(data_source, output_basename=''):
     """Create all the plots for the results generated by these comparisons
-    
+
     Parameters
     ----------
     data_source : str
         Filename for master data file which contains all the results.  This will
         typically be an HSF5 file generated by the JSON harvester.
-        
+
     """
     if output_basename == '':
         output_basename = "svm_qa"
-    else:    
+    else:
         output_basename = "{}_svm_qa".format(output_basename)
-        
+
     # Generate plots for point-segment catalog cross-match comparisons
     xmatch_col_names = HOVER_COLUMNS + ['Cross-match_details.number_of_cross-matches',
                                         'Cross-match_details.point_catalog_filename',
@@ -1956,25 +2016,25 @@ def build_svm_plots(data_source, output_basename=''):
     xmatch_cols = get_pandas_data(data_source, xmatch_col_names)
 
     xmatch_plots_name = build_crossmatch_plots(xmatch_cols, xmatch_col_names, output_basename=output_basename)
-    
+
 
 # -----------------------------------------------------------------------------
 # Functions for generating each data plot
-#    
+#
 
 def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
     """
     Generate the cross-match statistics plots for the comparison between the
     point catalog and the segment catalog.
-    
+
     Parameters
     ----------
-    xmatchCDS : Pandas ColumnDataSource 
+    xmatchCDS : Pandas ColumnDataSource
         This object contains all the columns relevant to the cross-match plots.
-    
+
     data_cols : list
         The list of column names for the columns read in to the `xmatchCDS` object.
-        
+
     output_basename : str
         String to use as the start of the filename for the output plot pages.
 
@@ -1983,24 +2043,24 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
     output : str
         Name of HTML file where the plot was saved.
 
-    """  
+    """
     output_basename = "{}_crossmatch_comparison".format(output_basename)
 
     if not output_basename.endswith('.html'):
         output = output_basename + '.html'
     else:
-        output = output_basename    
+        output = output_basename
     # Set the output file immediately as advised by Bokeh.
     output_file(output)
 
     num_hover_cols = len(HOVER_COLUMNS)
-    
+
     colormap = [qa.DETECTOR_LEGEND[x] for x in xmatchCDS.data[data_cols[1]]]
     xmatchCDS.data['colormap'] = colormap
     inst_det = ["{}/{}".format(i, d) for (i, d) in zip(xmatchCDS.data[data_cols[0]],
                                                        xmatchCDS.data[data_cols[1]])]
     xmatchCDS.data[qa.INSTRUMENT_COLUMN] = inst_det
-    
+
     plot_list = []
 
     hist0, edges0 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols]], bins=50)
@@ -2017,7 +2077,7 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
                          xlabel='Mean Separation of Cross-matched sources (arcseconds)',
                          ylabel='Number of products')]
     plot_list += p1
-    
+
     hist2, edges2 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 12]], bins=50)
     title2 = 'Median Separation (Sigma-clipped) of Point-to-Segment Cross-matched sources'
     p2 = [plot_histogram(title2, hist2, edges2, y_start=0,
@@ -2025,7 +2085,7 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
                          xlabel='Median Separation of Cross-matched sources (arcseconds)',
                          ylabel='Number of products')]
     plot_list += p2
-    
+
     hist3, edges3 = np.histogram(xmatchCDS.data[data_cols[num_hover_cols + 13]], bins=50)
     title3 = 'Standard-deviation (sigma-clipped) of Separation of Point-to-Segment Cross-matched sources'
     p3 = [plot_histogram(title3, hist3, edges3, y_start=0,
@@ -2033,24 +2093,27 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
                          xlabel='STD(Separation) of Cross-matched sources (arcseconds)',
                          ylabel='Number of products')]
     plot_list += p3
-    
+
     # Save the plot to an HTML file
     save(column(plot_list))
-    
+
     return output
 
 # -----------------------------------------------------------------------------
 # Utility functions for plotting
-#    
+#
 
-# MDD Deprecated - only used by build_crossmatch_plots in this module which 
+# MDD Deprecated - only used by build_crossmatch_plots in this module which
 # have not been migrated.  The get_pandas_data in svm_quality_graphics.py
 # should be used on migrated code.  NOTE: The returned value  from the
 # migrated version of get_pandas_data is a DataFrame
 # and not a ColumnDataSource.   I suggest you do not convert the DataFrame
 # into a ColumnDataSource until you are ready to plot as this is really
 # what the ColumnDataSource is there to support (IMHO).
+
+
 def get_pandas_data(data_source, data_columns):
+
     """Load the harvested data, stored in a CSV file, into local arrays.
 
     Parameters
@@ -2070,7 +2133,7 @@ def get_pandas_data(data_source, data_columns):
     and rows where all of the requested columns did not contain NaNs.
 
     """
-    
+
     # Instantiate a Pandas Dataframe Reader (lazy instantiation)
     # df_handle = PandasDFReader_CSV("svm_qa_dataframe.csv")
     df_handle = PandasDFReader(data_source, log_level=logutil.logging.NOTSET)
@@ -2078,7 +2141,7 @@ def get_pandas_data(data_source, data_columns):
     # In this particular case, the names of the desired columns do not
     # have to be further manipulated, for example, to add dataset specific
     # names.
-    # 
+    #
     # Get the relevant column data, eliminating all rows which have NaNs
     # in any of the relevant columns.
     if data_source.endswith(".h5"):
@@ -2093,16 +2156,16 @@ def get_pandas_data(data_source, data_columns):
     print('Number of datasets: {}'.format(num_of_datasets))
 
     return dataDF
-    
-    
+
+
 # MDD Deprecated - only used by build_crossmatch_plots which have not been migrated.
 # This is only still here if you want to run the graphics in this routine to see
 # what the code does.  This routine should NOT be migrated.
-def plot_histogram(title, hist, edges, y_start=0, 
-                    fill_color='navy', background_fill_color='#fafafa', 
-                    xlabel='', ylabel=''):
-    p = figure(title=title, tools=FIGURE_TOOLS, 
-              background_fill_color=background_fill_color)
+def plot_histogram(title, hist, edges, y_start=0,
+                   fill_color='navy', background_fill_color='#fafafa',
+                   xlabel='', ylabel=''):
+    p = figure(title=title, tools=FIGURE_TOOLS,
+               background_fill_color=background_fill_color)
     p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:],
            fill_color=fill_color, line_color="white", alpha=0.5)
 
