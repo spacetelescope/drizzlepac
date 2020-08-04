@@ -48,7 +48,7 @@ correct for local small-scale overestimates and/or underestimates.
 
 1.3: Source Identification with DAOStarFinder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_ Astropy tool to identify sources in the background-subtracted
+We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html>`_ Astropy tool to identify sources in the background-subtracted
 multi-filter detection image. Regions flagged in the previously created bad pixel mask are ignored by
 DAOStarFinder. This algorithm works by identifying local brightness maxima with a roughly gaussian
 distributions whose peak values are above a predefined minimum threshold. Full details of the process are
@@ -94,12 +94,13 @@ local background value is then subtracted from the raw inner and outer aperture 
 background-subtracted inner and outer aperture flux values found in the output .ecsv catalog file by the formula
 
 .. math::
-    f_{bgs}= f_{raw} - f_{bg} \cdot a
+    f_{bgs} = f_{raw} - f_{bg} \cdot a
 
 where
-     * *f*\ :sub:`bgs`\  is the background-subtracted flux
-     * *f*\ :sub:`raw`\  is the raw, non-background-subtracted flux
-     * *a* is the area of the photometric aperture.
+    * :math:`f_{bgs}` is the background-subtracted flux, in electrons per second
+    * :math:`f_{raw}` is the raw, non-background-subtracted flux, in electrons per second
+    * :math:`f_{bg}` is the per-pixel background flux, in electrons per second per pixel
+    * :math:`a` is the area of the photometric aperture, in pixels
 
 The overall standard deviation and mode values of pixels in the background annulus are also reported for each
 identified source in the output .ecsv catalog file in the “STDEV” and “MSKY” columns respectively (see Section 3 for
@@ -117,15 +118,15 @@ detection image for source identification. We then compute the final flux errors
 file using the following formula:
 
 .. math::
-    \Delta f = \sqrt{\frac{\sigma^2 }{g}+(a\cdot\sigma_{bg}^{2})\cdot (1+\frac{a}{b_{phot}})}
+    \Delta f = \sqrt{\frac{\sigma^2 }{g}+(a\cdot\sigma_{bg}^{2})\cdot (1+\frac{a}{n_{sky}})}
 
 where
-    * :math:`{\Delta} f`  is the flux uncertanty TODO: UNITS!
-    * :math:`{\sigma}`  is the standard deviation of ?????
-    * *g* is the gain TODO: UNITS!
-    * *a* is the photometric aperture area, in TODO: UNITS!
-    * :math:`{\sigma_{bg}}`  is standard deviation of the background
-    * :math:`{b_{phot}}`  is ????? TODO: VERIFY
+    * :math:`{\Delta} f`  is the flux uncertainty, in electrons per second
+    * :math:`{\sigma}` is the standard deviation of photometric aperture signal, in counts per second
+    * :math:`{g}` is effective gain in electrons per count
+    * :math:`{a}` is the photometric aperture area, in pixels
+    * :math:`{\sigma_{bg}}` is standard deviation of the background
+    * :math:`{n_{sky}}` is the sky annulus area, in pixels
 
 2.2.2: Calculation of ABmag uncertainties
 """""""""""""""""""""""""""""""""""""""""""
@@ -136,8 +137,8 @@ Magnitude error calculation comes from computing :math:`{\frac{d(ABMAG)}{d(flux)
 
 where
     * :math:`{\Delta mag_{AB}}` is the uncertenty in AB magnitude
-    * :math:`{\Delta f}` is the flux uncertainty TODO: UNITS!
-    * :math:`{f}` is the flux TODO: UNITS!
+    * :math:`{\Delta f}` is the flux uncertainty, in electrons per second
+    * :math:`{f}` is the flux, in electrons per second
 
 2.3: Calculation of concentration index (CI) values and flag values
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -164,7 +165,7 @@ legitimate extended sources, and scientifically dubious sources (those likely im
 artifacts, saturation, cosmic rays, etc.) The values in the “flags” column of the catalog are a sum of a one or more of
 these values. Specific flag values are defined below in table 2:
 
-.. table:: Table 2: Flag definitions TODO: figure out how to insert line break into text for 64.
+.. table:: Table 2: Flag definitions
 
     +------------+-----------------------------------------------------------+
     | Flag value | Meaning                                                   |
