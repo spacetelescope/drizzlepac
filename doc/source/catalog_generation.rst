@@ -28,7 +28,7 @@ photometry.
 
 1.2.1: Generation of the Bad Pixel Mask
 """"""""""""""""""""""""""""""""""""""""""""""""
-Before any source identification takes place, we created a bad pixel mask to identify regions of the
+Before any source identification takes place, a bad pixel mask is created to identify regions of the
 detection image where signal quality is known to be degraded. These are areas near the edge of the image,
 areas with little to no input image contribution, and areas that contain saturated pixels. To minimize the
 impact of these regions on source identification and subsequent photometric measurements, the regions flagged
@@ -46,19 +46,19 @@ estimate of the background is performed by computing sigma-clipped median values
 the image. This low-resolution background image is then median-filtered using a 3x3 pixel sample window to
 correct for local small-scale overestimates and/or underestimates. It should be noted these are configurable values.
 Our catalogs use these values deeming them to be the best for the general situation, but users can tune these values to
-optimize for their own data.
+optimize for their own data. To this end, users can adjust parameter values "bkg_box_size" and/or
+"bkg_filter_size" in the <instrument>_<detector>_catalog_generation_all.json files in the following path:
+/drizzlepac/pars/hap_pars/default_parameters/<instrument>/<detector>/.
 
 1.3: Source Identification with DAOStarFinder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html>`_ Astropy tool to identify sources in the background-subtracted
 multi-filter detection image. Regions flagged in the previously created bad pixel mask are ignored by
-DAOStarFinder. This algorithm works by identifying local brightness maxima with a roughly gaussian
+DAOStarFinder. This algorithm works by identifying local brightness maxima with roughly gaussian
 distributions whose peak values are above a predefined minimum threshold. Full details of the process are
 described in `Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP...99..191S>`_.
 The exact set of input parameters fed into DAOStarFinder is detector-dependent. The parameters can be found in
-the <instrument>_<detector>_catalog_generation_all.json files in the following path:
-/drizzlepac/pars/hap_pars/default_parameters/<instrument>/<detector>/.
-
+the <instrument>_<detector>_catalog_generation_all.json files mentioned in the previous section.
 
 2: Aperture Photometry Measurement
 ------------------------------------
@@ -157,14 +157,15 @@ where
     * :math:`{m_{inner}}` is the inner aperture AB magnitude
     * :math:`{m_{outer}}` is the outer aperture AB magnitude
 
-We use the CI to distinguish if a particular source is “anomalous” (hot pixels or cosmic ray hits) or a legitimate, and
-if legitimate, if it’s a stellar source and from extended source.
+We use the concentration index to automatically classify each identified photometric source as either a point source
+(i.e. stars), an extended source (i.e. galaxies, nebulosity, etc.), or as an “anomalous” source (i.e. saturation,
+hot pixels, cosmic ray hits, etc.). This designation is described by the value in the "flags" column
 
 2.3.2: Determination of flag values
 """""""""""""""""""""""""""""""""""""
 The flag value associated with each source provides users with a means to distinguish between legitimate point sources,
 legitimate extended sources, and scientifically dubious sources (those likely impacted by low signal to noise, detector
-artifacts, saturation, cosmic rays, etc.) The values in the “flags” column of the catalog are a sum of a one or more of
+artifacts, saturation, cosmic rays, etc.). The values in the “flags” column of the catalog are a sum of a one or more of
 these values. Specific flag values are defined below in table 2:
 
 .. table:: Table 2: Flag definitions
@@ -257,7 +258,7 @@ Where
 
 2.3.2.4: Assignment of flag value 32 (false detection: swarm around saturated source)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-The source identification routine has been shown to identify falsely sources in regions near bright or saturated
+The source identification routine has been shown to identify false sources in regions near bright or saturated
 sources, and in image artifacts associated with bright or saturated sources, such as diffraction spikes, and in the
 pixels surrounding saturated PSF where the brightness level “plateaus” at saturation. We identify impacted sources by
 locating all sources within a predefined radius of a given source and checking if the brightness of each of these
