@@ -308,7 +308,7 @@ includes the following items:
     * WCS (world coordinate system) name
     * WCS (world coordinate system) type
     * Proposal ID
-    * Image filename:
+    * Image filename
     * Target name
     * Observation date
     * Observation time
