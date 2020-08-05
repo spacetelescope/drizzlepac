@@ -12,7 +12,7 @@ Point (Aperture) Photometric Catalog Generation
 
 1.1: Important Clarifications
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-As described in the previous step, AstroDrizzle creates a single multi-filter detector-level drizzle-combined
+As previously discussed in :ref:`singlevisit`, AstroDrizzle creates a single multi-filter detector-level drizzle-combined
 image for source identification and one or more detector/filter-level drizzle-combined images (depending on
 which filters were used in the dataset) for photometry. The same set of sources identified in the
 multi-filter detection image is used to measure photometry for each filter. We use this method to maximize the
