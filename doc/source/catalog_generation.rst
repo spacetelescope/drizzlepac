@@ -15,7 +15,7 @@ Point (Aperture) Photometric Catalog Generation
 As described in the previous step, AstroDrizzle creates a single multi-filter detector-level drizzle-combined
 image for source identification and one or more detector/filter-level drizzle-combined images (depending on
 which filters were used in the dataset) for photometry. The same set of sources identified in the
-multi-filter detection image is used to measure photometry for each filter. We use method to maximize the
+multi-filter detection image is used to measure photometry for each filter. We use this method to maximize the
 signal across all available wavelengths at the source detection stage, thus providing photometry with the
 best quality source list across all available input filters.
 
@@ -44,7 +44,9 @@ To ensure optimal source detection, the multi-filter detection image is backgrou
 sigma-clipped statistics to determine background and RMS values across the image. An initial low-resolution
 estimate of the background is performed by computing sigma-clipped median values in 27x27 pixel boxes across
 the image. This low-resolution background image is then median-filtered using a 3x3 pixel sample window to
-correct for local small-scale overestimates and/or underestimates.
+correct for local small-scale overestimates and/or underestimates. It should be noted these are configurable values.
+Our catalogs use these values deeming them to be the best for the general situation, but users can tune these values to
+optimize for their own data.
 
 1.3: Source Identification with DAOStarFinder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -255,7 +257,7 @@ Where
 
 2.3.2.4: Assignment of flag value 32 (false detection: swarm around saturated source)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-The source identification routine has been shown to falsely identify sources in regions near bright or saturated
+The source identification routine has been shown to identify falsely sources in regions near bright or saturated
 sources, and in image artifacts associated with bright or saturated sources, such as diffraction spikes, and in the
 pixels surrounding saturated PSF where the brightness level “plateaus” at saturation. We identify impacted sources by
 locating all sources within a predefined radius of a given source and checking if the brightness of each of these
