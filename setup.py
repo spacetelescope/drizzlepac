@@ -103,7 +103,6 @@ setup(
         'bokeh',
         'pandas',
         'photutils>=0.7',
-        'pysynphot',
         'lxml',
         'PyPDF2',
         'tables',

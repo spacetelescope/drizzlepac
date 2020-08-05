@@ -194,10 +194,13 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
                                epoch=epoch,
                                catalog=catalog)
 
+    if not ref_table:
+        return ref_table
+
     # weed out sources which are not accurate (no proper motions in catalog)
-    if epoch and hasattr(ref_table, 'mask'):
-        ref_table = ref_table[~ref_table['pmra'].mask]
-        
+    if epoch and hasattr(ref_table, 'mask') and 'pmra' in ref_table.colnames:
+        ref_table = ref_table[~ref_table.mask['pmra']]
+    
     colnames = ('ra', 'dec', 'mag', 'objID')
     if not full_catalog:
         ref_table = ref_table[colnames]
@@ -595,6 +598,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
 
     if kernel is None:
         log.warning("Did not find a suitable PSF out of {} possible sources...".format(len(peaks)))
+        log.warning("Using a Gaussian 2D Kernel for source detection.")
         # Generate a default kernel using a simple 2D Gaussian
         kernel_fwhm = fwhm
         sigma = fwhm * gaussian_fwhm_to_sigma

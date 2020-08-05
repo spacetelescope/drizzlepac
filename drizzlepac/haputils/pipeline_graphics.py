@@ -406,6 +406,9 @@ def build_astrometry_plots(pandas_file,
                        'y': residsCDS.data[resids_columns[1]][i],
                        'xr': residsCDS.data[resids_columns[2]][i],
                        'yr': residsCDS.data[resids_columns[3]][i]}
+        
+        if np.isnan(resids_dict['x']).all():
+            continue
         cds = ColumnDataSource(resids_dict)
 
         rms_x = float(fitCDS.data[RESULTS_COLUMNS[0]][i])
@@ -425,6 +428,8 @@ def build_astrometry_plots(pandas_file,
                             'y': gaiaresidsCDS.data[gaia_resids_columns[1]][i],
                             'xr': gaiaresidsCDS.data[gaia_resids_columns[2]][i],
                             'yr': gaiaresidsCDS.data[gaia_resids_columns[3]][i]}
+        if np.isnan(gaia_resids_dict['x']).all():
+            continue
         gaia_cds = ColumnDataSource(gaia_resids_dict)
 
         gaia_rms_x = float(gaiafitCDS.data[gaia_fit_columns[0]][i])

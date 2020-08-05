@@ -2,7 +2,6 @@ import os
 import shutil
 
 from matplotlib import pyplot as plt
-from scipy import ndimage
 from scipy.ndimage import morphology
 import numpy as np
 import astropy
@@ -29,8 +28,6 @@ PCELL_STRLEN = 4
 SKYCELL_NAME_FMT = f"skycell-p{{:{str(PCELL_STRLEN).zfill(2)}d}}x{{:02d}}y{{:02d}}"
 SKYCELL_NXY = 50
 SKYCELL_OVERLAP = 256
-
-NDIMAGE_STRUCT2 = ndimage.generate_binary_structure(2, 2)
 
 
 def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
