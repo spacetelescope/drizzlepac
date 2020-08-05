@@ -138,7 +138,7 @@ Magnitude error calculation comes from computing :math:`{\frac{d(ABMAG)}{d(flux)
     \Delta mag_{AB} = 1.0857 \cdot  \frac{\Delta f}{f}
 
 where
-    * :math:`{\Delta mag_{AB}}` is the uncertenty in AB magnitude
+    * :math:`{\Delta mag_{AB}}` is the uncertainty in AB magnitude
     * :math:`{\Delta f}` is the flux uncertainty, in electrons per second
     * :math:`{f}` is the flux, in electrons per second
 
@@ -281,7 +281,7 @@ appropriately.
 ^^^^^^^^^^^^^^^^^^^^^^
 Source positions and photometric information are written to a .ecsv (Enhanced Character Separated Values) file. The
 naming of this file is fully automatic and follows the following format:
-<TELESCOPE>_<PROPOSAL ID>_<VISIT NUMBER>_<INSTRUEMENT>_<DETECTOR>_
+<TELESCOPE>_<PROPOSAL ID>_<VISIT NUMBER>_<INSTRUMENT>_<DETECTOR>_
 <FILTER>_<DATASET NAME>_<CATALOG TYPE>.ecsv
 
 So, for example if we have the following information:
