@@ -281,13 +281,13 @@ appropriately.
 ^^^^^^^^^^^^^^^^^^^^^^
 Source positions and photometric information are written to a .ecsv (Enhanced Character Separated Values) file. The
 naming of this file is fully automatic and follows the following format:
-<TELESCOPE>_<PROPOSAL ID>_<VISIT NUMBER>_<INSTRUMENT>_<DETECTOR>_
+<TELESCOPE>_<PROPOSAL ID>_<OBSERVATION SET ID>_<INSTRUMENT>_<DETECTOR>_
 <FILTER>_<DATASET NAME>_<CATALOG TYPE>.ecsv
 
 So, for example if we have the following information:
     * Telescope = HST
     * Proposal ID = 98765
-    * Visit Number = 43
+    * Observation set ID = 43
     * Instrument = acs
     * Detector = wfc
     * Filter name = f606w
