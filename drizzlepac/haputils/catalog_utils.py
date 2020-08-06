@@ -1,6 +1,5 @@
-"""This script contains code to support creation of photometric sourcelists using two techniques: aperture photometry
-segmentation-map based photometry.
-"""
+"""This script contains code to support creation of photometric sourcelists using two techniques:
+aperture photometry and segmentation-map based photometry."""
 import sys
 import pickle  # FIX Remove
 import copy

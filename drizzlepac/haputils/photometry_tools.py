@@ -165,7 +165,8 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam
 
 
 def compute_phot_error(flux_variance, bg_phot, bg_method, ap_area, epadu=1.0):
-    """Computes the flux errors using the DAOPHOT style computation
+    """Computes the flux errors using the DAOPHOT style computation. Originally taken from
+    https://github.com/spacetelescope/wfc3_photometry/blob/527815bf580d0361754281b608008e539ed84368/photometry_tools/photometry_with_errors.py#L137
 
     Parameters
     ----------

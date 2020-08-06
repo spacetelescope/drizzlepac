@@ -544,7 +544,8 @@ Catalog Generation
 SVM processing does not stop with the creation of the output drizzled images like
 the standard calibration pipeline.  Instead, it derives 2 separate source catalogs
 from each drizzled **filter product** to provide a standardized measure of each
-visit.     
+visit. For more details on how the catalogs are produced, please refer to the :ref:`catalog_generation` documentation
+page.
 
 
 

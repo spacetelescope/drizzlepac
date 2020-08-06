@@ -78,6 +78,7 @@ are available.
    imagefindpars
    image
    catalogs
+   catalog_generation
    wcscorr
    tweakutils
    updatehdr
