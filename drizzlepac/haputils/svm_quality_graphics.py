@@ -180,7 +180,6 @@ def build_svm_plots(data_source, output_basename='', display_plot=False, log_lev
     for old_col_name, new_col_name in intfilt_xm_col_names.items():
         if_xm_DF.rename(columns={old_col_name: new_col_name}, inplace=True)
 
-    """
     # remove rows that aren't relevant
     if_xm_DF = if_xm_DF[np.isnan(if_xm_DF.ref_image_platescale) == False]
 
@@ -193,7 +192,6 @@ def build_svm_plots(data_source, output_basename='', display_plot=False, log_lev
     else:
         log.warning("No interfilter residual data to plot!")
         return
-    """
 
     #     -      -     -      -     -      -     -      -     -      -     -      -     -      -     -      -
     # Generate plots for point-segment catalog cross-match comparisons
