@@ -67,7 +67,7 @@ def get_pandas_data(storage_filename, data_columns, log_level=logutil.logging.NO
     try:
 
         if storage_filename.endswith('.h5'):
-            data_colsDF = df_handle.get_columns_HDF5(data_columns, do_drop=False)
+            data_colsDF = df_handle.get_columns_HDF5(data_columns)
         else:
             data_colsDF = df_handle.get_columns_CSV(data_columns)
 
@@ -133,7 +133,7 @@ class PandasDFReader:
 
         return column_data
 
-    def get_columns_HDF5(self, column_names, do_drop=False):
+    def get_columns_HDF5(self, column_names):
         """ Method to do the actual reading of dataframe and get and return the
             data in the specified columns.
 
@@ -142,14 +142,12 @@ class PandasDFReader:
             column_names : list
             A list of the column names which specify the desired data
 
-            do_drop : bool, optional
-            Indicates whether or not rows with NaNs should be dropped.
-
             Returns
             -------
             column_dataDF : Pandas dataframe
-            A Pandas dataframe containing only the specified named columns where
-            any rows containing NaNs have been eliminated.
+            A Pandas dataframe containing only the specified named columns, as well
+            as all of the 'header', 'gen_info' columns, and the newly created
+            'colormap' and 'inst_det' columns.
         """
         # Only read the input dataframe once
         if self.dataframe.empty:
