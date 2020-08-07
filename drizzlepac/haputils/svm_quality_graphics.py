@@ -180,6 +180,7 @@ def build_svm_plots(data_source, output_basename='', display_plot=False, log_lev
     for old_col_name, new_col_name in intfilt_xm_col_names.items():
         if_xm_DF.rename(columns={old_col_name: new_col_name}, inplace=True)
 
+    """
     # remove rows that aren't relevant
     if_xm_DF = if_xm_DF[np.isnan(if_xm_DF.ref_image_platescale) == False]
 
@@ -192,6 +193,7 @@ def build_svm_plots(data_source, output_basename='', display_plot=False, log_lev
     else:
         log.warning("No interfilter residual data to plot!")
         return
+    """
 
     #     -      -     -      -     -      -     -      -     -      -     -      -     -      -     -      -
     # Generate plots for point-segment catalog cross-match comparisons
@@ -776,9 +778,6 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_pl
         output_base_filename = '{}_photometry'.format(output_base_filename)
     output_file(output_base_filename + '_' + phot_dataDF['Dataset'][0] + '.html')
 
-    html_title_text = Div(text="""
-    <h1>Global statistics comparing Point and Segment Catalog Measurements</h1>""")
-
     # Define some tooltips in addition to the tips which come for free
     # from the graph_utils module
     photometry_tooltips = [("Mean", "@{Ap1 Mean Differences}"),
@@ -855,7 +854,7 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_pl
     stat_label = Label(x=20, y=20, x_units='screen', y_units='screen', text=stat_text)
     p3.fig.add_layout(stat_label)
 
-    grid = gridplot(html_title_text, [[p0.fig, p1.fig], [p2.fig, p3.fig]], plot_width=500, plot_height=500)
+    grid = gridplot([[p0.fig, p1.fig], [p2.fig, p3.fig]], plot_width=500, plot_height=500)
 
     # Display and save
     if display_plot:
@@ -1257,11 +1256,21 @@ def generate_wcs_graphic(wcs_dataDF, wcs_columns, output_base_filename='', displ
             fig_list.append(fig)
 
     # Create the the HTML output and optionally display the plot
-    grid = gridplot([[fig_list[0].fig, fig_list[1].fig, fig_list[2].fig],
-                    [fig_list[3].fig, fig_list[4].fig, fig_list[5].fig],
-                    [fig_list[6].fig, fig_list[7].fig, fig_list[8].fig]],
-                    plot_width=500, plot_height=500)
-
+    # Only plot what has been generated and find a better way to do this
+    flen = len(fig_list)
+    if flen < 4:
+        grid = gridplot([[fig_list[0].fig, fig_list[1].fig, fig_list[2].fig]],
+                        plot_width=500, plot_height=500)
+    elif flen < 7:
+        grid = gridplot([[fig_list[0].fig, fig_list[1].fig, fig_list[2].fig],
+                        [fig_list[3].fig, fig_list[4].fig, fig_list[5].fig]],
+                        plot_width=500, plot_height=500)
+    else:
+        grid = gridplot([[fig_list[0].fig, fig_list[1].fig, fig_list[2].fig],
+                        [fig_list[3].fig, fig_list[4].fig, fig_list[5].fig],
+                        [fig_list[6].fig, fig_list[7].fig, fig_list[8].fig]],
+                        plot_width=500, plot_height=500)
+    
     # Display and save
     if display_plot:
         show(grid)
