@@ -114,128 +114,155 @@ def build_svm_plots(data_source, output_basename='', display_plot=False, log_lev
     else:
         output_basename = "{}_svm_qa".format(output_basename)
 
-    # Column names as defined in the harvester dataframe mapped to simple names for ease of use
-    gaia_col_names = {'distribution_characterization_statistics.Number_of_GAIA_sources': 'num_GAIA',
-                      'distribution_characterization_statistics.X_centroid': 'x_centroid',
-                      'distribution_characterization_statistics.X_offset': 'x_offset',
-                      'distribution_characterization_statistics.X_standard_deviation': 'x_std',
-                      'distribution_characterization_statistics.Y_centroid': 'y_centroid',
-                      'distribution_characterization_statistics.Y_offset': 'y_offset',
-                      'distribution_characterization_statistics.Y_standard_deviation': 'y_std',
-                      'distribution_characterization_statistics.maximum_neighbor_distance': 'max_neighbor_dist',
-                      'distribution_characterization_statistics.mean_neighbor_distance': 'mean_neighbor_dist',
-                      'distribution_characterization_statistics.minimum_neighbor_distance': 'min_neighbor_dist',
-                      'distribution_characterization_statistics.standard_deviation_of_neighbor_distances': 'std_neighbor_dist'}
+    try:
+        # Column names as defined in the harvester dataframe mapped to simple names for ease of use
+        gaia_col_names = {'distribution_characterization_statistics.Number_of_GAIA_sources': 'num_GAIA',
+                          'distribution_characterization_statistics.X_centroid': 'x_centroid',
+                          'distribution_characterization_statistics.X_offset': 'x_offset',
+                          'distribution_characterization_statistics.X_standard_deviation': 'x_std',
+                          'distribution_characterization_statistics.Y_centroid': 'y_centroid',
+                          'distribution_characterization_statistics.Y_offset': 'y_offset',
+                          'distribution_characterization_statistics.Y_standard_deviation': 'y_std',
+                          'distribution_characterization_statistics.maximum_neighbor_distance': 'max_neighbor_dist',
+                          'distribution_characterization_statistics.mean_neighbor_distance': 'mean_neighbor_dist',
+                          'distribution_characterization_statistics.minimum_neighbor_distance': 'min_neighbor_dist',
+                          'distribution_characterization_statistics.standard_deviation_of_neighbor_distances': 'std_neighbor_dist'}
 
-    # Get the requested columns from the dataframe in addition columns
-    # added by the pandas_utils
-    gaia_cols_DF = get_pandas_data(data_source, gaia_col_names.keys())
+        # Get the requested columns from the dataframe in addition columns
+        # added by the pandas_utils
+        gaia_cols_DF = get_pandas_data(data_source, gaia_col_names.keys())
 
-    # Rename the columns to abbreviated text for ease of management
-    for old_col_name, new_col_name in gaia_col_names.items():
-        gaia_cols_DF.rename(columns={old_col_name: new_col_name}, inplace=True)
+        # Rename the columns to abbreviated text for ease of management
+        for old_col_name, new_col_name in gaia_col_names.items():
+            gaia_cols_DF.rename(columns={old_col_name: new_col_name}, inplace=True)
 
-    gaia_plots_name = build_gaia_plots(gaia_cols_DF, list(gaia_col_names.values()), display_plot,
-                                       output_basename=output_basename, log_level=log_level)
-
+        gaia_plots_name = build_gaia_plots(gaia_cols_DF, list(gaia_col_names.values()), display_plot,
+                                           output_basename=output_basename, log_level=log_level)
+    except Exception:
+        log.warning("GAIA source distribution charicterization plot generation encountered a problem.")
+        log.exception("message")
+        log.warning("Continuing to next plot...")
     #     -      -     -      -     -      -     -      -     -      -     -      -     -      -     -      -
     # Generate plots for interfilter cross-match comparisons
-    # Column names as defined in the harvester dataframe mapped to simple names for ease of use
-    intfilt_xm_col_names = {'Interfilter_cross-match_details.reference_image_name': 'ref_imgname',
-                            'Interfilter_cross-match_details.comparison_image_name': 'comp_imgname',
-                            'Interfilter_cross-match_details.reference_catalog_length': 'ref_catalog_length',
-                            'Interfilter_cross-match_details.comparison_catalog_length': 'comp_catalog_length',
-                            'Interfilter_cross-match_details.number_of_cross-matches': 'number_of_cross-matches',
-                            'Interfilter_cross-match_details.percent_of_all_identified_reference_sources_crossmatched': 'ref_crossmatch_percentage',
-                            'Interfilter_cross-match_details.percent_of_all_identified_comparison_sources_crossmatched': 'comp_crossmatch_percentage',
-                            'Interfilter_cross-match_details.reference_image_platescale': 'ref_image_platescale',
-                            'Interfilter_cross-matched_reference_catalog.xcentroid_ref': 'ref_catalog.xcentroid_ref',
-                            'Interfilter_cross-matched_reference_catalog.ycentroid_ref': 'ref_catalog.ycentroid_ref',
-                            'Interfilter_cross-matched_comparison_catalog.xcentroid_ref': 'comp_catalog.xcentroid_ref',
-                            'Interfilter_cross-matched_comparison_catalog.ycentroid_ref': 'comp_catalog.ycentroid_ref',
-                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_min': 'x_non-clipped_min',
-                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_max': 'x_non-clipped_max',
-                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_mean': 'x_non-clipped_mean',
-                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_median': 'x_non-clipped_median',
-                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_standard_deviation': 'x_non-clipped_rms',
-                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_mean': 'x_3x3_sigma-clipped_mean',
-                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_median': 'x_3x3_sigma-clipped_median',
-                            'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_standard_deviation': 'x_3x3_sigma-clipped_rms',
-                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_min': 'y_non-clipped_min',
-                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_max': 'y_non-clipped_max',
-                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_mean': 'y_non-clipped_mean',
-                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_median': 'y_non-clipped_median',
-                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_standard_deviation': 'y_non-clipped_rms',
-                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_mean': 'y_3x3_sigma-clipped_mean',
-                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_median': 'y_3x3_sigma-clipped_median',
-                            'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_standard_deviation': 'y_3x3_sigma-clipped_rms',
-                            'Interfilter_cross-matched_comparison_-_reference_separations.delta_xcentroid_ref': 'comp-ref_x_seperation',
-                            'Interfilter_cross-matched_comparison_-_reference_separations.delta_ycentroid_ref': 'comp-ref_y_seperation'}
+    try:
+        # Column names as defined in the harvester dataframe mapped to simple names for ease of use
+        intfilt_xm_col_names = {'Interfilter_cross-match_details.reference_image_name': 'ref_imgname',
+                                'Interfilter_cross-match_details.comparison_image_name': 'comp_imgname',
+                                'Interfilter_cross-match_details.reference_catalog_length': 'ref_catalog_length',
+                                'Interfilter_cross-match_details.comparison_catalog_length': 'comp_catalog_length',
+                                'Interfilter_cross-match_details.number_of_cross-matches': 'number_of_cross-matches',
+                                'Interfilter_cross-match_details.percent_of_all_identified_reference_sources_crossmatched': 'ref_crossmatch_percentage',
+                                'Interfilter_cross-match_details.percent_of_all_identified_comparison_sources_crossmatched': 'comp_crossmatch_percentage',
+                                'Interfilter_cross-match_details.reference_image_platescale': 'ref_image_platescale',
+                                'Interfilter_cross-matched_reference_catalog.xcentroid_ref': 'ref_catalog.xcentroid_ref',
+                                'Interfilter_cross-matched_reference_catalog.ycentroid_ref': 'ref_catalog.ycentroid_ref',
+                                'Interfilter_cross-matched_comparison_catalog.xcentroid_ref': 'comp_catalog.xcentroid_ref',
+                                'Interfilter_cross-matched_comparison_catalog.ycentroid_ref': 'comp_catalog.ycentroid_ref',
+                                'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_min': 'x_non-clipped_min',
+                                'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_max': 'x_non-clipped_max',
+                                'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_mean': 'x_non-clipped_mean',
+                                'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_median': 'x_non-clipped_median',
+                                'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_standard_deviation': 'x_non-clipped_rms',
+                                'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_mean': 'x_3x3_sigma-clipped_mean',
+                                'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_median': 'x_3x3_sigma-clipped_median',
+                                'Interfilter_cross-matched_xcentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_standard_deviation': 'x_3x3_sigma-clipped_rms',
+                                'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_min': 'y_non-clipped_min',
+                                'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_max': 'y_non-clipped_max',
+                                'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_mean': 'y_non-clipped_mean',
+                                'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_median': 'y_non-clipped_median',
+                                'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.Non-clipped_standard_deviation': 'y_non-clipped_rms',
+                                'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_mean': 'y_3x3_sigma-clipped_mean',
+                                'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_median': 'y_3x3_sigma-clipped_median',
+                                'Interfilter_cross-matched_ycentroid_ref_comparison_-_reference_separation_statistics.3x3_sigma-clipped_standard_deviation': 'y_3x3_sigma-clipped_rms',
+                                'Interfilter_cross-matched_comparison_-_reference_separations.delta_xcentroid_ref': 'comp-ref_x_seperation',
+                                'Interfilter_cross-matched_comparison_-_reference_separations.delta_ycentroid_ref': 'comp-ref_y_seperation'}
 
-    # Get the requested columns from the dataframe in addition columns
-    # added by the pandas_utils
-    if_xm_DF = get_pandas_data(data_source, intfilt_xm_col_names.keys())
+        # Get the requested columns from the dataframe in addition columns
+        # added by the pandas_utils
+        if_xm_DF = get_pandas_data(data_source, intfilt_xm_col_names.keys())
 
-    # Rename the columns to abbreviated text for ease of management
-    for old_col_name, new_col_name in intfilt_xm_col_names.items():
-        if_xm_DF.rename(columns={old_col_name: new_col_name}, inplace=True)
+        # Rename the columns to abbreviated text for ease of management
+        for old_col_name, new_col_name in intfilt_xm_col_names.items():
+            if_xm_DF.rename(columns={old_col_name: new_col_name}, inplace=True)
 
-    # remove rows that aren't relevant
-    if_xm_DF = if_xm_DF[np.isnan(if_xm_DF.ref_image_platescale) == False]
+        # remove rows that aren't relevant
+        if_xm_DF = if_xm_DF[np.isnan(if_xm_DF.ref_image_platescale) == False]
 
-    # Create interfilter plots, or bail out if no rows remain
-    if if_xm_DF.shape[0] > 0:
-        if_xm_plots_name = build_interfilter_crossmatch_plots(if_xm_DF,
-                                                              display_plot,
-                                                              output_basename=output_basename,
-                                                              log_level=log_level)
-    else:
-        log.warning("No interfilter residual data to plot!")
-        return
-
+        # Create interfilter plots, or bail out if no rows remain
+        if if_xm_DF.shape[0] > 0:
+            if_xm_plots_name = build_interfilter_crossmatch_plots(if_xm_DF,
+                                                                  display_plot,
+                                                                  output_basename=output_basename,
+                                                                  log_level=log_level)
+        else:
+            log.warning("No interfilter residual data to plot!")
+            return
+    except Exception:
+        log.warning("Interfilter cross-match comparison plot generation encountered a problem.")
+        log.exception("message")
+        log.warning("Continuing to next plot...")
     #     -      -     -      -     -      -     -      -     -      -     -      -     -      -     -      -
     # Generate plots for point-segment catalog cross-match comparisons
-    xmatch_col_names = ['Cross-match_details.number_of_cross-matches',
-                        'Cross-match_details.point_catalog_filename',
-                        'Cross-match_details.point_catalog_length',
-                        'Cross-match_details.point_frame',
-                        'Cross-match_details.segment_catalog_filename',
-                        'Cross-match_details.segment_catalog_length',
-                        'Cross-match_details.segment_frame',
-                        'Cross-matched_point_catalog.Declination',
-                        'Cross-matched_point_catalog.Right ascension',
-                        'Cross-matched_segment_catalog.Declination',
-                        'Cross-matched_segment_catalog.Right ascension',
-                        'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_mean',
-                        'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_median',
-                        'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_standard_deviation',
-                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_max',
-                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_mean',
-                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_median',
-                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_min',
-                        'Segment_-_point_on-sky_separation_statistics.Non-clipped_standard_deviation']
+    try:
+        xmatch_col_names = ['Cross-match_details.number_of_cross-matches',
+                            'Cross-match_details.point_catalog_filename',
+                            'Cross-match_details.point_catalog_length',
+                            'Cross-match_details.point_frame',
+                            'Cross-match_details.segment_catalog_filename',
+                            'Cross-match_details.segment_catalog_length',
+                            'Cross-match_details.segment_frame',
+                            'Cross-matched_point_catalog.Declination',
+                            'Cross-matched_point_catalog.Right ascension',
+                            'Cross-matched_segment_catalog.Declination',
+                            'Cross-matched_segment_catalog.Right ascension',
+                            'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_mean',
+                            'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_median',
+                            'Segment_-_point_on-sky_separation_statistics.3x3_sigma-clipped_standard_deviation',
+                            'Segment_-_point_on-sky_separation_statistics.Non-clipped_max',
+                            'Segment_-_point_on-sky_separation_statistics.Non-clipped_mean',
+                            'Segment_-_point_on-sky_separation_statistics.Non-clipped_median',
+                            'Segment_-_point_on-sky_separation_statistics.Non-clipped_min',
+                            'Segment_-_point_on-sky_separation_statistics.Non-clipped_standard_deviation']
 
-    xmatch_cols = get_pandas_data(data_source, xmatch_col_names)
+        xmatch_cols = get_pandas_data(data_source, xmatch_col_names)
 
-    xmatch_plots_name = build_crossmatch_plots(xmatch_cols, xmatch_col_names,
-                                               output_basename=output_basename,
-                                               display_plot=display_plot,
-                                               log_level=log_level)
+        xmatch_plots_name = build_crossmatch_plots(xmatch_cols, xmatch_col_names,
+                                                   output_basename=output_basename,
+                                                   display_plot=display_plot,
+                                                   log_level=log_level)
+    except Exception:
+        log.warning("Point vs. segment cross-match comparison plot generation encountered a problem.")
+        log.exception("message")
+        log.warning("Continuing to next plot...")
 
     # Generate the WCS comparison graphics - compares the Primary WCS to the alternate WCS
-    wcs_graphics_driver(data_source, output_basename, display_plot, log_level=log_level)
+    try:
+        wcs_graphics_driver(data_source, output_basename, display_plot, log_level=log_level)
+    except Exception:
+        log.warning("WCS comparison plot generation encountered a problem.")
+        log.exception("message")
+        log.warning("Continuing to next plot...")
 
     #
     # Catalog comparisons
     #
 
     # Comparison of number of sources detected in the Point and Segment catalogs
-    nsources_graphics_driver(data_source, output_basename, display_plot, log_level=log_level)
+    try:
+        nsources_graphics_driver(data_source, output_basename, display_plot, log_level=log_level)
+    except Exception:
+        log.warning("Point vs. segment catalog length comparison plot generation encountered a problem.")
+        log.exception("message")
+        log.warning("Continuing to next plot...")
 
     # Comparison of photometry measurements for Aperture 1 and Apeture 2 between
     # Point and Segment catalogs
-    photometry_graphics_driver(data_source, output_basename, display_plot, log_level=log_level)
-
+    try:
+        photometry_graphics_driver(data_source, output_basename, display_plot, log_level=log_level)
+    except Exception:
+        log.warning("Point vs. segment photometry comparison plot generation encountered a problem.")
+        log.exception("message")
+        log.warning("Continuing to next plot...")
 
 # -----------------------------------------------------------------------------
 # Functions for generating each data plot
