@@ -508,20 +508,32 @@ def run_all(input, files, catalogs=None, log_level=logutil.logging.NOTSET):
     if catalogs is not None:
         good_files = [f for f in files if f in catalogs.extracted_sources]
         src_catalogs = [catalogs.extracted_sources[f] for f in good_files]
-        
-    json_files = determine_alignment_residuals(input, good_files,
-                                              catalogs=src_catalogs,
-                                              json_timestamp=json_timestamp,
-                                              json_time_since_epoch=json_time_since_epoch,
-                                               log_level=log_level)
+    try:
+        json_files = determine_alignment_residuals(input, good_files,
+                                                   catalogs=src_catalogs,
+                                                   json_timestamp=json_timestamp,
+                                                   json_time_since_epoch=json_time_since_epoch,
+                                                   log_level=log_level)
+    except Exception:
+        log.warning("Alignment residuals determination encountered a problem.")
+        log.exception("message")
+        log.warning("Continuing to next test...")
         
     if catalogs is not None:
-        gaia_files = determine_gaia_residuals(catalogs,
-                                            json_timestamp=json_timestamp,
-                                             json_time_since_epoch=json_time_since_epoch,
-                                             log_level=log_level)
-        json_files += gaia_files
-    print("Generated quality statistics as {}".format(json_files))
+        try:
+            if not 'json_files' in locals(): # create empty list if there's an exception thrown by determine_alignment_residuals
+                json_files = []
+            gaia_files = determine_gaia_residuals(catalogs,
+                                                  json_timestamp=json_timestamp,
+                                                  json_time_since_epoch=json_time_since_epoch,
+                                                  log_level=log_level)
+            json_files += gaia_files
+        except Exception:
+            log.warning("GAIA residuals determination encountered a problem.")
+            log.exception("message")
+            log.warning("Continuing to next test...")
 
-
-
+    if 'json_files' in locals() and len(json_files) > 0:
+        print("Generated quality statistics as {}".format(json_files))
+    else:
+        print("No quality statistics were generated")

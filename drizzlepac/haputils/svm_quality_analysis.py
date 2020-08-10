@@ -370,7 +370,7 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
                                       timestamp=json_timestamp,
                                       time_since_epoch=json_time_since_epoch)
     json_results_dict = collections.OrderedDict()
-    # add reference and comparision catalog filenames as header elements
+    # add reference and comparison catalog filenames as header elements
     json_results_dict["point catalog filename"] = sl_names[0]
     json_results_dict["segment catalog filename"] = sl_names[1]
 
@@ -671,7 +671,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 filtername_ref = filtobj_dict[xmatch_ref_imgname]['filt_obj'].filters
                 filtername_comp = filtobj_dict[imgname]['filt_obj'].filters
 
-                # Perform crossmatching; get lists of crossmatched sources in the reference and comparision
+                # Perform crossmatching; get lists of crossmatched sources in the reference and comparison
                 log.info("{} Crossmatching {} -> {} {}".format(">" * 20, xmatch_comp_catname,
                                                                xmatch_ref_catname, "<" * 20))
                 sl_names = [xmatch_ref_catname, xmatch_comp_catname]
@@ -725,7 +725,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                                "comparison catalog length": "Number of entries in segment catalog",
                                                "number of cross-matches": "Number of cross-matches between point and segment catalogs",
                                                "percent of all identified reference sources crossmatched": "percent of all identified reference sources crossmatched",
-                                               "percent of all identified comparision sources crossmatched": "percent of all identified comparison sources crossmatched",
+                                               "percent of all identified comparison sources crossmatched": "percent of all identified comparison sources crossmatched",
                                                "reference image platescale": "Platescale of the crossmatch reference image"},
                                            units={"reference image name": "unitless",
                                                   "comparison image name": "unitless",
@@ -733,7 +733,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                                                   "comparison catalog length": "unitless",
                                                   "number of cross-matches": "unitless",
                                                   "percent of all identified reference sources crossmatched": "unitless",
-                                                  "percent of all identified comparision sources crossmatched": "unitless",
+                                                  "percent of all identified comparison sources crossmatched": "unitless",
                                                   "reference image platescale": "arcseconds/pixel"})
 
                     # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
@@ -757,7 +757,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                         del reg_filename
 
                     # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
-                    # the cross-matched comparision sources
+                    # the cross-matched comparison sources
                     matched_comp_coords = filtobj_dict[imgname]["sources"].copy()
                     matched_comp_coords.keep_columns(['xcentroid_ref', 'ycentroid_ref'])
                     matched_comp_coords = matched_comp_coords[matching_lines_comp]
@@ -862,7 +862,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
 
 
 def transform_coords(filtobj_subdict, xmatch_ref_imgname, log_level=logutil.logging.NOTSET):
-    """Transform comparision image frame of reference x, y coords to RA and dec, then back to x, y coords in
+    """Transform comparison image frame of reference x, y coords to RA and dec, then back to x, y coords in
     the cross-match reference image's frame of reference
 
     Parameters
@@ -1570,7 +1570,6 @@ def run_hla_sourcelist_comparison(total_list, diagnostic_mode=False, json_timest
     """
     log.setLevel(log_level)
     log.info('\n\n*****     Begin Quality Analysis Test: run_hla_sourcelist_comparison.     *****\n')
-
     # get HLA classic path details from envroment variables
     hla_classic_basepath = os.getenv('HLA_CLASSIC_BASEPATH')
     hla_build_ver = os.getenv("HLA_BUILD_VER")
@@ -1620,8 +1619,7 @@ def run_hla_sourcelist_comparison(total_list, diagnostic_mode=False, json_timest
                 log.info("HLA Classic image:           {}".format(os.path.basename(hla_imgname)))
                 log.info("HAP catalog:                 {}".format(os.path.basename(hap_sourcelist_name)))
                 log.info("HLA Classic catalog:         {}".format(os.path.basename(updated_hla_sourcelist_name)))
-
-                # once all file exist checks are passed, execute sourcelist comparision
+                # once all file exist checks are passed, execute sourcelist comparison
                 return_status = csl.comparesourcelists(slNames=[updated_hla_sourcelist_name,
                                                                 hap_sourcelist_name],
                                                        imgNames=[hla_imgname, hap_imgname],
@@ -1635,11 +1633,11 @@ def run_hla_sourcelist_comparison(total_list, diagnostic_mode=False, json_timest
                                                        json_timestamp=json_timestamp,
                                                        json_time_since_epoch=json_time_since_epoch,
                                                        debugMode=diagnostic_mode)
-                combo_comp_pdf_filename = "{}_comparision_plots.pdf".format(plotfile_prefix)
+                combo_comp_pdf_filename = "{}_comparison_plots.pdf".format(plotfile_prefix)
                 if os.path.exists(combo_comp_pdf_filename):
                     combo_comp_pdf_list.append(combo_comp_pdf_filename)
         if len(combo_comp_pdf_list) > 0:  # combine all plots generated by compare_sourcelists.py for this total object into a single pdf file
-            total_combo_comp_pdf_filename = "{}_svm_comparision_plots.pdf".format(tot_obj.drizzle_filename[:-9].replace("_total", ""))
+            total_combo_comp_pdf_filename = "{}_svm_comparison_plots.pdf".format(tot_obj.drizzle_filename[:-9].replace("_total", ""))
             csl.pdf_merger(total_combo_comp_pdf_filename, combo_comp_pdf_list)
             log.info("Sourcelist comparison plots saved to file {}.".format(total_combo_comp_pdf_filename))
 
@@ -1784,74 +1782,115 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
 
     # Determine number of sources in Point and Segment catalogs
     if run_compare_num_sources:
-        total_catalog_list = []
-        total_drizzle_list = []
-        for total_obj in total_obj_list:
-            total_drizzle_list.append(total_obj.drizzle_filename)
-            total_catalog_list.append(total_obj.point_cat_filename)
-            total_catalog_list.append(total_obj.segment_cat_filename)
-        compare_num_sources(total_catalog_list, total_drizzle_list, json_timestamp=json_timestamp,
-                            json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+        try:
+            total_catalog_list = []
+            total_drizzle_list = []
+            for total_obj in total_obj_list:
+                total_drizzle_list.append(total_obj.drizzle_filename)
+                total_catalog_list.append(total_obj.point_cat_filename)
+                total_catalog_list.append(total_obj.segment_cat_filename)
+            compare_num_sources(total_catalog_list, total_drizzle_list, json_timestamp=json_timestamp,
+                                json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+        except Exception:
+            log.warning("HAP Point vs. HAP Segment sourcelist length comparison (compare_num_sources) encountered a problem.")
+            log.exception("message")
+            log.warning("Continuing to next test...")
 
     # Identify the number of GAIA sources in final product footprints
     if run_find_gaia_sources:
-        for total_obj in total_obj_list:
-            find_gaia_sources(total_obj, json_timestamp=json_timestamp,
-                              json_time_since_epoch=json_time_since_epoch, log_level=log_level)
-            for filter_obj in total_obj.fdp_list:
-                find_gaia_sources(filter_obj, json_timestamp=json_timestamp,
+        try:
+            for total_obj in total_obj_list:
+                find_gaia_sources(total_obj, json_timestamp=json_timestamp,
                                   json_time_since_epoch=json_time_since_epoch, log_level=log_level)
-                for exp_obj in filter_obj.edp_list:
-                    find_gaia_sources(exp_obj, json_timestamp=json_timestamp,
+                for filter_obj in total_obj.fdp_list:
+                    find_gaia_sources(filter_obj, json_timestamp=json_timestamp,
                                       json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+                    for exp_obj in filter_obj.edp_list:
+                        find_gaia_sources(exp_obj, json_timestamp=json_timestamp,
+                                          json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+        except Exception:
+            log.warning("GAIA sources count (find_gaia_sources) encountered a problem.")
+            log.exception("message")
+            log.warning("Continuing to next test...")
 
     # Compare HAP sourcelists to their HLA Classic counterparts
     if run_compare_hla_sourcelists:
-        if log_level == logutil.logging.DEBUG:
-            diag_mode = True
-        else:
-            diag_mode = False
-        run_hla_sourcelist_comparison(total_obj_list,
-                                      diagnostic_mode=diag_mode,
-                                      json_timestamp=json_timestamp,
-                                      json_time_since_epoch=json_time_since_epoch,
-                                      log_level=log_level)
+        try:
+            if log_level == logutil.logging.DEBUG:
+                diag_mode = True
+            else:
+                diag_mode = False
+            run_hla_sourcelist_comparison(total_obj_list,
+                                          diagnostic_mode=diag_mode,
+                                          json_timestamp=json_timestamp,
+                                          json_time_since_epoch=json_time_since_epoch,
+                                          log_level=log_level)
+        except Exception:
+            log.warning("HAP vs. HLA sourcelist comparison (compare_sourcelists) encountered a problem.")
+            log.exception("message")
+            log.warning("Continuing to next test...")
 
     # Get point/segment cross-match RA/Dec statistics
     if run_compare_ra_dec_crossmatches:
-        for total_obj in total_obj_list:
-            for filter_obj in total_obj.fdp_list:
-                compare_ra_dec_crossmatches(filter_obj, json_timestamp=json_timestamp,
-                                            json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+        try:
+            for total_obj in total_obj_list:
+                for filter_obj in total_obj.fdp_list:
+                    compare_ra_dec_crossmatches(filter_obj, json_timestamp=json_timestamp,
+                                                json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+        except Exception:
+            log.warning("HAP Point vs. HAP Segment sourcelist RA/Dec comparison (compare_ra_dec_crossmatches) encountered a problem.")
+            log.exception("message")
+            log.warning("Continuing to next test...")
 
     # Statistically characterize GAIA distribution
     if run_characterize_gaia_distribution:
-        for total_obj in total_obj_list:
-            for filter_obj in total_obj.fdp_list:
-                characterize_gaia_distribution(filter_obj, json_timestamp=json_timestamp,
-                                               json_time_since_epoch=json_time_since_epoch,
-                                               log_level=log_level)
+        try:
+            for total_obj in total_obj_list:
+                for filter_obj in total_obj.fdp_list:
+                    characterize_gaia_distribution(filter_obj, json_timestamp=json_timestamp,
+                                                   json_time_since_epoch=json_time_since_epoch,
+                                                   log_level=log_level)
+        except Exception:
+            log.warning("GAIA source distribution characterization (characterize_gaia_distribution) encountered a problem.")
+            log.exception("message")
+            log.warning("Continuing to next test...")
 
     # Photometry of cross-matched sources in Point and Segment catalogs for Filter products
     if run_compare_photometry:
-        tot_len = len(total_obj_list)
-        filter_drizzle_list = []
-        temp_list = []
-        for tot in total_obj_list:
-            temp_list = [x.drizzle_filename for x in tot.fdp_list]
-            filter_drizzle_list.extend(temp_list)
-        compare_photometry(filter_drizzle_list, json_timestamp=json_timestamp,
-                           json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+        try:
+            tot_len = len(total_obj_list)
+            filter_drizzle_list = []
+            temp_list = []
+            for tot in total_obj_list:
+                temp_list = [x.drizzle_filename for x in tot.fdp_list]
+                filter_drizzle_list.extend(temp_list)
+            compare_photometry(filter_drizzle_list, json_timestamp=json_timestamp,
+                               json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+        except Exception:
+            log.warning("HAP Point vs. HAP Segment sourcelist photometry comparison (compare_photometry) encountered a problem.")
+            log.exception("message")
+            log.warning("Continuing to next test...")
 
     # Compare inter-filter cross matched HAP sources
     if run_compare_interfilter_crossmatches:
-        compare_interfilter_crossmatches(total_obj_list, json_timestamp=json_timestamp,
-                                         json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+        try:
+            compare_interfilter_crossmatches(total_obj_list, json_timestamp=json_timestamp,
+                                             json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+        except Exception:
+            log.warning("HAP Point sourcelist interfilter comparison (compare_interfilter_crossmatches) encountered a problem.")
+            log.exception("message")
+            log.warning("Continuing to next test...")
 
     # Report WCS info
     if run_report_wcs:
-        report_wcs(total_obj_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch,
-                   log_level=log_level)
+        try:
+            report_wcs(total_obj_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch,
+                       log_level=log_level)
+        except Exception:
+            log.warning("WCS reporting (report_wcs) encountered a problem.")
+            log.exception("message")
+            log.warning("Continuing to next test...")
+
 
 # ============================================================================================================
 
