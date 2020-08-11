@@ -387,61 +387,85 @@ def build_astrometry_plots(pandas_file,
         summary_filename = output
         
     # Generate the astrometric plots
-    relative_plot_name = generate_summary_plots(fitCDS, results_columns,
-                                                output=summary_filename)
-    
-    resids_plot_names = [relative_plot_name]
+    try:
+        relative_plot_name = generate_summary_plots(fitCDS, results_columns,
+                                                    output=summary_filename)
+
+        resids_plot_names = [relative_plot_name]
+
+    except Exception:
+        resids_plot_names = []
+        log.warning("Summary plot generation encountered a problem.")
+        log.exception("message")
+        log.warning("Continuing to next plot...")
+
 
     # Generate plots for absolute alignment
-    catalog_name = gaiafitCDS.data[gaia_fit_columns[-1]][0].upper()
-    gaia_title = 'Alignment to {}'.format(catalog_name)
-    absolute_plot_name = generate_summary_plots(gaiafitCDS, gaia_fit_columns,
-                                                base_title=gaia_title,
-                                                  output=summary_filename)
+    try:
+        catalog_name = gaiafitCDS.data[gaia_fit_columns[-1]][0].upper()
+        gaia_title = 'Alignment to {}'.format(catalog_name)
+        absolute_plot_name = generate_summary_plots(gaiafitCDS, gaia_fit_columns,
+                                                    base_title=gaia_title,
+                                                    output=summary_filename)
+    except Exception:
+        absolute_plot_name = ""
+        log.warning("Absolute alignment plot generation encountered a problem.")
+        log.exception("message")
+        log.warning("Continuing to next plot...")
 
     # Generate residual plots for relative alignment
-    for filename,rootname in zip(fitCDS.data['gen_info.imgname'], fitCDS.data['index']):
-        i = residsCDS.data['index'].tolist().index(rootname)
-        resids_dict = {'x': residsCDS.data[resids_columns[0]][i],
-                       'y': residsCDS.data[resids_columns[1]][i],
-                       'xr': residsCDS.data[resids_columns[2]][i],
-                       'yr': residsCDS.data[resids_columns[3]][i]}
-        
-        if np.isnan(resids_dict['x']).all():
-            continue
-        cds = ColumnDataSource(resids_dict)
+    try:
+        for filename,rootname in zip(fitCDS.data['gen_info.imgname'], fitCDS.data['index']):
+            i = residsCDS.data['index'].tolist().index(rootname)
+            resids_dict = {'x': residsCDS.data[resids_columns[0]][i],
+                           'y': residsCDS.data[resids_columns[1]][i],
+                           'xr': residsCDS.data[resids_columns[2]][i],
+                           'yr': residsCDS.data[resids_columns[3]][i]}
 
-        rms_x = float(fitCDS.data[RESULTS_COLUMNS[0]][i])
-        rms_y = float(fitCDS.data[RESULTS_COLUMNS[1]][i])
-        
-        resids_plot_name = generate_relative_residual_plots(cds, filename, 
-                                                   rms=(rms_x,rms_y),
-                                                   output_dir=output_dir,
-                                                   output=output)
-        resids_plot_names.append(resids_plot_name)
+            if np.isnan(resids_dict['x']).all():
+                continue
+            cds = ColumnDataSource(resids_dict)
+
+            rms_x = float(fitCDS.data[RESULTS_COLUMNS[0]][i])
+            rms_y = float(fitCDS.data[RESULTS_COLUMNS[1]][i])
+
+            resids_plot_name = generate_relative_residual_plots(cds, filename,
+                                                       rms=(rms_x,rms_y),
+                                                       output_dir=output_dir,
+                                                       output=output)
+            resids_plot_names.append(resids_plot_name)
+    except Exception:
+        log.warning("Relative alignment plot generation encountered a problem.")
+        log.exception("message")
+        log.warning("Continuing to next plot...")
 
     # Generate residual plots for alignment to GAIA
-    for filename,rootname in zip(gaiafitCDS.data['gen_info.imgname'], gaiafitCDS.data['index']):        
-        # Now add plots for fits to GAIA
-        j = gaiaresidsCDS.data['index'].tolist().index(rootname)
-        gaia_resids_dict = {'x': gaiaresidsCDS.data[gaia_resids_columns[0]][i],
-                            'y': gaiaresidsCDS.data[gaia_resids_columns[1]][i],
-                            'xr': gaiaresidsCDS.data[gaia_resids_columns[2]][i],
-                            'yr': gaiaresidsCDS.data[gaia_resids_columns[3]][i]}
-        if np.isnan(gaia_resids_dict['x']).all():
-            continue
-        gaia_cds = ColumnDataSource(gaia_resids_dict)
+    try:
+        for filename,rootname in zip(gaiafitCDS.data['gen_info.imgname'], gaiafitCDS.data['index']):
+            # Now add plots for fits to GAIA
+            j = gaiaresidsCDS.data['index'].tolist().index(rootname)
+            gaia_resids_dict = {'x': gaiaresidsCDS.data[gaia_resids_columns[0]][i],
+                                'y': gaiaresidsCDS.data[gaia_resids_columns[1]][i],
+                                'xr': gaiaresidsCDS.data[gaia_resids_columns[2]][i],
+                                'yr': gaiaresidsCDS.data[gaia_resids_columns[3]][i]}
+            if np.isnan(gaia_resids_dict['x']).all():
+                continue
+            gaia_cds = ColumnDataSource(gaia_resids_dict)
 
-        gaia_rms_x = float(gaiafitCDS.data[gaia_fit_columns[0]][i])
-        gaia_rms_y = float(gaiafitCDS.data[gaia_fit_columns[1]][i])
-        
-        resids_plot_name = generate_relative_residual_plots(gaia_cds, filename, 
-                                                   rms=(gaia_rms_x,gaia_rms_y),
-                                                   output_dir=output_dir,
-                                                   output=gaia_output,
-                                                   title_prefix='Residuals from {}'.format(catalog_name))
-        resids_plot_names.append(resids_plot_name)
-        
+            gaia_rms_x = float(gaiafitCDS.data[gaia_fit_columns[0]][i])
+            gaia_rms_y = float(gaiafitCDS.data[gaia_fit_columns[1]][i])
+
+            resids_plot_name = generate_relative_residual_plots(gaia_cds, filename,
+                                                       rms=(gaia_rms_x,gaia_rms_y),
+                                                       output_dir=output_dir,
+                                                       output=gaia_output,
+                                                       title_prefix='Residuals from {}'.format(catalog_name))
+            resids_plot_names.append(resids_plot_name)
+
+    except Exception:
+        log.warning("GAIA alignment residual plot generation encountered a problem.")
+        log.exception("message")
+        log.warning("Continuing to next plot...")
 
     resids_plot_names = list(filter(lambda a: a != None, resids_plot_names))
     
