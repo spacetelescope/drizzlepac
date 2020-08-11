@@ -13,8 +13,6 @@ from stsci.tools import logutil
 from .pandas_utils import PandasDFReader, get_pandas_data
 from .graph_utils import HAPFigure, build_tooltips
 
-
-
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
@@ -181,7 +179,6 @@ def generate_summary_plots(fitCDS, results_columns,
                    glyph_color='colormap',
                    legend_group='inst_det')
 
-
     # Data point figures
     p2 = HAPFigure(title='{}: Offsets'.format(base_title),
                    x_label="Shift X (pixels)",
@@ -237,9 +234,9 @@ def generate_summary_plots(fitCDS, results_columns,
     return output
 
 
-def generate_relative_residual_plots(residsCDS, filename, rms=(0.,0.),
-                            display_plot=False, output_dir=None, output='',
-                            title_prefix='Residuals'):
+def generate_relative_residual_plots(residsCDS, filename, rms=(0., 0.),
+                                     display_plot=False, output_dir=None, output='',
+                                     title_prefix='Residuals'):
     rootname = '_'.join(filename.split("_")[:-1])
     output = '{}_vectors_{}'.format(rootname, output)
     if output_dir is not None:
@@ -265,7 +262,7 @@ def generate_relative_residual_plots(residsCDS, filename, rms=(0.,0.),
     max_range = round(max(xmax, ymax, 0.4), 1) + 0.1
     plot_range = Range1d(-max_range, max_range)
 
-    rms_x,rms_y = rms
+    rms_x, rms_y = rms
     title_start = '{} for {} '.format(title_prefix, filename)
     title_rms = 'RMS(X)={:.3f}, RMS(Y)={:.3f}'.format(rms_x, rms_y)
     title_base = '{}[{} sources, {}]'.format(title_start, npoints, title_rms)
@@ -353,16 +350,16 @@ def build_astrometry_plots(pandas_file,
                        'fit_results.skew']
 
     gaia_fit_columns = ['gaia_fit_results.rms_x',
-                       'gaia_fit_results.rms_y',
-                       'gaia_fit_results.xsh',
-                       'gaia_fit_results.ysh',
-                       'gaia_fit_results.rot',
-                       'gaia_fit_results.scale',
-                       'gaia_fit_results.rot_fit',
-                       'gaia_fit_results.scale_fit',
-                       'gaia_fit_results.nmatches',
-                       'gaia_fit_results.skew',
-                       'gaia_fit_results.aligned_to']
+                        'gaia_fit_results.rms_y',
+                        'gaia_fit_results.xsh',
+                        'gaia_fit_results.ysh',
+                        'gaia_fit_results.rot',
+                        'gaia_fit_results.scale',
+                        'gaia_fit_results.rot_fit',
+                        'gaia_fit_results.scale_fit',
+                        'gaia_fit_results.nmatches',
+                        'gaia_fit_results.skew',
+                        'gaia_fit_results.aligned_to']
 
     gaia_resids_columns = ['gaia_fit_residuals.img_x',
                            'gaia_fit_residuals.img_y',
@@ -399,7 +396,6 @@ def build_astrometry_plots(pandas_file,
         log.exception("message")
         log.warning("Continuing to next plot...")
 
-
     # Generate plots for absolute alignment
     try:
         catalog_name = gaiafitCDS.data[gaia_fit_columns[-1]][0].upper()
@@ -415,7 +411,7 @@ def build_astrometry_plots(pandas_file,
 
     # Generate residual plots for relative alignment
     try:
-        for filename,rootname in zip(fitCDS.data['gen_info.imgname'], fitCDS.data['index']):
+        for filename, rootname in zip(fitCDS.data['gen_info.imgname'], fitCDS.data['index']):
             i = residsCDS.data['index'].tolist().index(rootname)
             resids_dict = {'x': residsCDS.data[resids_columns[0]][i],
                            'y': residsCDS.data[resids_columns[1]][i],
@@ -430,9 +426,9 @@ def build_astrometry_plots(pandas_file,
             rms_y = float(fitCDS.data[RESULTS_COLUMNS[1]][i])
 
             resids_plot_name = generate_relative_residual_plots(cds, filename,
-                                                       rms=(rms_x,rms_y),
-                                                       output_dir=output_dir,
-                                                       output=output)
+                                                                rms=(rms_x, rms_y),
+                                                                output_dir=output_dir,
+                                                                output=output)
             resids_plot_names.append(resids_plot_name)
     except Exception:
         log.warning("Relative alignment plot generation encountered a problem.")
@@ -441,7 +437,7 @@ def build_astrometry_plots(pandas_file,
 
     # Generate residual plots for alignment to GAIA
     try:
-        for filename,rootname in zip(gaiafitCDS.data['gen_info.imgname'], gaiafitCDS.data['index']):
+        for filename, rootname in zip(gaiafitCDS.data['gen_info.imgname'], gaiafitCDS.data['index']):
             # Now add plots for fits to GAIA
             j = gaiaresidsCDS.data['index'].tolist().index(rootname)
             gaia_resids_dict = {'x': gaiaresidsCDS.data[gaia_resids_columns[0]][i],
@@ -456,10 +452,10 @@ def build_astrometry_plots(pandas_file,
             gaia_rms_y = float(gaiafitCDS.data[gaia_fit_columns[1]][i])
 
             resids_plot_name = generate_relative_residual_plots(gaia_cds, filename,
-                                                       rms=(gaia_rms_x,gaia_rms_y),
-                                                       output_dir=output_dir,
-                                                       output=gaia_output,
-                                                       title_prefix='Residuals from {}'.format(catalog_name))
+                                                                rms=(gaia_rms_x, gaia_rms_y),
+                                                                output_dir=output_dir,
+                                                                output=gaia_output,
+                                                                title_prefix='Residuals from {}'.format(catalog_name))
             resids_plot_names.append(resids_plot_name)
 
     except Exception:
