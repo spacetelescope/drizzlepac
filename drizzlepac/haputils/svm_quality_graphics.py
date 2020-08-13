@@ -592,7 +592,7 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     """
     log.setLevel(log_level)
 
-    # Convert columns used in the interfitler_comparision plot from pixels to arcseconds
+    # Convert columns used in the interfitler_comparison plot from pixels to arcseconds
     columns2convert = ['x_non-clipped_min',
                        'y_non-clipped_min',
                        'x_non-clipped_max',
@@ -745,13 +745,15 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     # 10: delta_X vs delta_Y vector plot for each cross-matched filter and/or x vs delta_x, x vs. delta_y, y
     # vs. delta_x, y vs. delta_y quad plot each cross-matched filter
     # Set the output file immediately as advised by Bokeh.
-
+    num_lines = len(xm_df.index)
+    line_ctr = 1
     for line_index in xm_df.index:
         xm_df2 = xm_df[xm_df['gen_info.dataframe_index'] == line_index]
-
-        resid_output = output.replace(".html", "_{}_{}_{}_residuals.html".format(xm_df2['gen_info.instrument'][0].lower(),
-                                                                                 xm_df2['gen_info.detector'][0].lower(),
-                                                                                 xm_df2['gen_info.filter'][0].lower()))
+        resid_output = "{}{}_{}_{}_{}_residuals.html".format(output[:-11],
+                                                              xm_df2['gen_info.dataset'][0].lower(),
+                                                              xm_df2['gen_info.instrument'][0].lower(),
+                                                              xm_df2['gen_info.detector'][0].lower(),
+                                                              xm_df2['gen_info.filter'][0].lower())
         output_file(resid_output)
         plots = []
         div = Div(text="""
@@ -777,7 +779,10 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
             show(column(plots))  # display plot and save to html file
         else:
             save(column(plots))  # Just save
-        log.info("Output HTML graphic file {} has been written.\n".format(resid_output))
+        log.info("({}/{}) Output HTML graphic file {} has been written.\n".format(line_ctr,
+                                                                                  num_lines,
+                                                                                  resid_output))
+        line_ctr += 1
 
     return output
 # -----------------------------------------------------------------------------
