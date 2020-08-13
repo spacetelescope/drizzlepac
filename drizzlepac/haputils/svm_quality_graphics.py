@@ -292,6 +292,26 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa', 
 
     """
     log.setLevel(log_level)
+    # Plot values units of arcseconds instead of pixels
+    # trimmed_gaiaDF = gaiaDF.loc[gaiaDF['gen_info.data_source'] == 'svm_quality_analysis.characterize_gaia_distribution']
+    #
+    # # transform values in pixels to arcseconds
+    # platescale_dict = {'hrc': 0.026,
+    #                    'sbc': 0.032,
+    #                    'wfc': 0.05,
+    #                    'ir': 0.13,
+    #                    'uvis': 0.04}
+    # column_list = ['x_centroid',
+    #                'y_centroid',
+    #                'x_offset',
+    #                'y_offset',
+    #                'x_std',
+    #                'y_std']
+    # for col_name in column_list:
+    #     for idx in trimmed_gaiaDF[col_name].keys():
+    #         trimmed_gaiaDF[col_name][idx] *= platescale_dict[trimmed_gaiaDF['gen_info.detector'][idx].lower()]
+    # gaiaCDS = ColumnDataSource(trimmed_gaiaDF)
+
     # Setup the source of the data to be plotted so the axis variables can be
     # referenced by column name in the Pandas dataframe
     gaiaCDS = ColumnDataSource(gaiaDF)
@@ -571,6 +591,27 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
         Name of HTML file where the plot was saved.
     """
     log.setLevel(log_level)
+
+    # Convert columns used in the interfitler_comparision plot from pixels to arcseconds
+    columns2convert = ['x_non-clipped_min',
+                       'y_non-clipped_min',
+                       'x_non-clipped_max',
+                       'y_non-clipped_max',
+                       'x_non-clipped_mean',
+                       'y_non-clipped_mean',
+                       'x_non-clipped_median',
+                       'y_non-clipped_median',
+                       'x_non-clipped_rms',
+                       'y_non-clipped_rms',
+                       'x_3x3_sigma-clipped_mean',
+                       'y_3x3_sigma-clipped_mean',
+                       'x_3x3_sigma-clipped_median',
+                       'y_3x3_sigma-clipped_median',
+                       'x_3x3_sigma-clipped_rms',
+                       'y_3x3_sigma-clipped_rms']
+    for colname in columns2convert:
+        xm_df[colname] *= xm_df['ref_image_platescale'] #  Multiply values in pixels by platescale (arcsec/pixel) to convert to values to arcseconds
+
     # Setup the source of the data to be plotted so the axis variables can be
     # referenced by column name in the Pandas dataframe
     xm_cds = ColumnDataSource(xm_df)
@@ -611,8 +652,8 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     plots.append(div)
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference non-clipped minimum separation',
-                             'Minimum X separation (pixels)',
-                             'Minimum Y separation (pixels)',
+                             'Minimum X separation (arcseconds)',
+                             'Minimum Y separation (arcseconds)',
                              'x_non-clipped_min',
                              'y_non-clipped_min',
                              tooltips_list,
@@ -622,8 +663,8 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     # 3: Non-clipped max: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference non-clipped maximum separation',
-                             'Maximum X separation (pixels)',
-                             'Maximum Y separation (pixels)',
+                             'Maximum X separation (arcseconds)',
+                             'Maximum Y separation (arcseconds)',
                              'x_non-clipped_max',
                              'y_non-clipped_max',
                              tooltips_list,
@@ -633,8 +674,8 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     # 4: Non-clipped mean: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference non-clipped mean separation',
-                             'Mean X separation (pixels)',
-                             'Mean Y separation (pixels)',
+                             'Mean X separation (arcseconds)',
+                             'Mean Y separation (arcseconds)',
                              'x_non-clipped_mean',
                              'y_non-clipped_mean',
                              tooltips_list,
@@ -644,8 +685,8 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     # 5: Non-clipped median: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference non-clipped median separation',
-                             'Median X separation (pixels)',
-                             'Median Y separation (pixels)',
+                             'Median X separation (arcseconds)',
+                             'Median Y separation (arcseconds)',
                              'x_non-clipped_median',
                              'y_non-clipped_median',
                              tooltips_list,
@@ -655,8 +696,8 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     # 6: Non-clipped standard deviation: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference separation non-clipped standard deviation',
-                             'X separation SD (pixels)',
-                             'Y separation SD (pixels)',
+                             'X separation SD (arcseconds)',
+                             'Y separation SD (arcseconds)',
                              'x_non-clipped_rms',
                              'y_non-clipped_rms',
                              tooltips_list,
@@ -666,8 +707,8 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     # 7: 3x3 sigma-clipped mean: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference 3 x 3'+u'\u03c3'+'-clipped mean separation',
-                             '3 x 3'+u'\u03c3'+'-clipped mean X separation (pixels)',
-                             '3 x 3'+u'\u03c3'+'-clipped mean Y separation (pixels)',
+                             '3 x 3'+u'\u03c3'+'-clipped mean X separation (arcseconds)',
+                             '3 x 3'+u'\u03c3'+'-clipped mean Y separation (arcseconds)',
                              'x_3x3_sigma-clipped_mean',
                              'y_3x3_sigma-clipped_mean',
                              tooltips_list,
@@ -677,8 +718,8 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     # 8: 3x3 sigma-clipped median: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference 3 x 3' + u'\u03c3' + '-clipped median separation',
-                             '3 x 3' + u'\u03c3' + '-clipped median X separation (pixels)',
-                             '3 x 3' + u'\u03c3' + '-clipped median Y separation (pixels)',
+                             '3 x 3' + u'\u03c3' + '-clipped median X separation (arcseconds)',
+                             '3 x 3' + u'\u03c3' + '-clipped median Y separation (arcseconds)',
                              'x_3x3_sigma-clipped_median',
                              'y_3x3_sigma-clipped_median',
                              tooltips_list,
@@ -688,8 +729,8 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     # 9: 3x3 sigma-clipped standard deviation: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
                              'Comparision - reference separation 3 x 3' + u'\u03c3' + '-clipped standard deviation',
-                             '3 x 3' + u'\u03c3' + '-clipped X SD (pixels)',
-                             '3 x 3' + u'\u03c3' + '-clipped Y SD (pixels)',
+                             '3 x 3' + u'\u03c3' + '-clipped X SD (arcseconds)',
+                             '3 x 3' + u'\u03c3' + '-clipped Y SD (arcseconds)',
                              'x_3x3_sigma-clipped_rms',
                              'y_3x3_sigma-clipped_rms',
                              tooltips_list,
