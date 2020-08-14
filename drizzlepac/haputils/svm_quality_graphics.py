@@ -139,7 +139,7 @@ def build_svm_plots(data_source, output_basename='', display_plot=False, log_lev
         gaia_plots_name = build_gaia_plots(gaia_cols_DF, list(gaia_col_names.values()), display_plot,
                                            output_basename=output_basename, log_level=log_level)
     except Exception:
-        log.warning("GAIA source distribution charicterization plot generation encountered a problem.")
+        log.warning("GAIA source distribution characterization plot generation encountered a problem.")
         log.exception("message")
         log.warning("Continuing to next plot...")
     #     -      -     -      -     -      -     -      -     -      -     -      -     -      -     -      -
@@ -262,7 +262,8 @@ def build_svm_plots(data_source, output_basename='', display_plot=False, log_lev
 
 # -----------------------------------------------------------------------------
 # Functions for generating each data plot
-#
+
+
 def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa', log_level=logging.INFO):
     """
     Generate the plots for evaluating the distribution of GAIA catalog sources
@@ -292,25 +293,6 @@ def build_gaia_plots(gaiaDF, data_cols, display_plot, output_basename='svm_qa', 
 
     """
     log.setLevel(log_level)
-    # Plot values units of arcseconds instead of pixels
-    # trimmed_gaiaDF = gaiaDF.loc[gaiaDF['gen_info.data_source'] == 'svm_quality_analysis.characterize_gaia_distribution']
-    #
-    # # transform values in pixels to arcseconds
-    # platescale_dict = {'hrc': 0.026,
-    #                    'sbc': 0.032,
-    #                    'wfc': 0.05,
-    #                    'ir': 0.13,
-    #                    'uvis': 0.04}
-    # column_list = ['x_centroid',
-    #                'y_centroid',
-    #                'x_offset',
-    #                'y_offset',
-    #                'x_std',
-    #                'y_std']
-    # for col_name in column_list:
-    #     for idx in trimmed_gaiaDF[col_name].keys():
-    #         trimmed_gaiaDF[col_name][idx] *= platescale_dict[trimmed_gaiaDF['gen_info.detector'][idx].lower()]
-    # gaiaCDS = ColumnDataSource(trimmed_gaiaDF)
 
     # Setup the source of the data to be plotted so the axis variables can be
     # referenced by column name in the Pandas dataframe
@@ -592,7 +574,7 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     """
     log.setLevel(log_level)
 
-    # Convert columns used in the interfitler_comparison plot from pixels to arcseconds
+    # Convert columns used in the interfilter_comparison plot from pixels to arcseconds
     columns2convert = ['x_non-clipped_min',
                        'y_non-clipped_min',
                        'x_non-clipped_max',
@@ -610,7 +592,7 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
                        'x_3x3_sigma-clipped_rms',
                        'y_3x3_sigma-clipped_rms']
     for colname in columns2convert:
-        xm_df[colname] *= xm_df['ref_image_platescale'] #  Multiply values in pixels by platescale (arcsec/pixel) to convert to values to arcseconds
+        xm_df[colname] *= xm_df['ref_image_platescale']  # Multiply values in pixels by platescale (arcsec/pixel) to convert to values to arcseconds
 
     # Setup the source of the data to be plotted so the axis variables can be
     # referenced by column name in the Pandas dataframe
@@ -651,7 +633,7 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     <p>Reference image platescale: {} arcseconds per pixel</p>""".format(xm_df.ref_image_platescale[0]))
     plots.append(div)
     plot = make_scatter_plot(xm_cds,
-                             'Comparision - reference non-clipped minimum separation',
+                             'Comparison - reference non-clipped minimum separation',
                              'Minimum X separation (arcseconds)',
                              'Minimum Y separation (arcseconds)',
                              'x_non-clipped_min',
@@ -662,7 +644,7 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
 
     # 3: Non-clipped max: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
-                             'Comparision - reference non-clipped maximum separation',
+                             'Comparison - reference non-clipped maximum separation',
                              'Maximum X separation (arcseconds)',
                              'Maximum Y separation (arcseconds)',
                              'x_non-clipped_max',
@@ -673,7 +655,7 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
 
     # 4: Non-clipped mean: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
-                             'Comparision - reference non-clipped mean separation',
+                             'Comparison - reference non-clipped mean separation',
                              'Mean X separation (arcseconds)',
                              'Mean Y separation (arcseconds)',
                              'x_non-clipped_mean',
@@ -684,7 +666,7 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
 
     # 5: Non-clipped median: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
-                             'Comparision - reference non-clipped median separation',
+                             'Comparison - reference non-clipped median separation',
                              'Median X separation (arcseconds)',
                              'Median Y separation (arcseconds)',
                              'x_non-clipped_median',
@@ -695,7 +677,7 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
 
     # 6: Non-clipped standard deviation: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
-                             'Comparision - reference separation non-clipped standard deviation',
+                             'Comparison - reference separation non-clipped standard deviation',
                              'X separation SD (arcseconds)',
                              'Y separation SD (arcseconds)',
                              'x_non-clipped_rms',
@@ -706,7 +688,7 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
 
     # 7: 3x3 sigma-clipped mean: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
-                             'Comparision - reference 3 x 3'+u'\u03c3'+'-clipped mean separation',
+                             'Comparison - reference 3 x 3'+u'\u03c3'+'-clipped mean separation',
                              '3 x 3'+u'\u03c3'+'-clipped mean X separation (arcseconds)',
                              '3 x 3'+u'\u03c3'+'-clipped mean Y separation (arcseconds)',
                              'x_3x3_sigma-clipped_mean',
@@ -717,7 +699,7 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
 
     # 8: 3x3 sigma-clipped median: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
-                             'Comparision - reference 3 x 3' + u'\u03c3' + '-clipped median separation',
+                             'Comparison - reference 3 x 3' + u'\u03c3' + '-clipped median separation',
                              '3 x 3' + u'\u03c3' + '-clipped median X separation (arcseconds)',
                              '3 x 3' + u'\u03c3' + '-clipped median Y separation (arcseconds)',
                              'x_3x3_sigma-clipped_median',
@@ -728,7 +710,7 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
 
     # 9: 3x3 sigma-clipped standard deviation: plot x vs y values for all filters
     plot = make_scatter_plot(xm_cds,
-                             'Comparision - reference separation 3 x 3' + u'\u03c3' + '-clipped standard deviation',
+                             'Comparison - reference separation 3 x 3' + u'\u03c3' + '-clipped standard deviation',
                              '3 x 3' + u'\u03c3' + '-clipped X SD (arcseconds)',
                              '3 x 3' + u'\u03c3' + '-clipped Y SD (arcseconds)',
                              'x_3x3_sigma-clipped_rms',
@@ -1524,7 +1506,7 @@ def make_quad_scatter_plot(residsCDS):
     Parameters
     ----------
     residsCDS : bokeh.models.sources.ColumnDataSource object
-        bokeh ColumnDataSoruce containing x, y, dx and dy values to plot
+        bokeh ColumnDataSource containing x, y, dx and dy values to plot
 
     Returns
     -------
@@ -1629,7 +1611,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate SVM quality assessment plots based on information'
                                                  ' stored in the user-specified .h5 file.')
     parser.add_argument('input_filename',
-                        help='Input .h5 file producted by diagnostic_json_harvester.py that holds the '
+                        help='Input .h5 file produced by diagnostic_json_harvester.py that holds the '
                              'information to plot.')
     parser.add_argument('-d', '--display_plot', required=False, action='store_true',
                         help='If specified, plots will be automatically opened in the default web browser as '
