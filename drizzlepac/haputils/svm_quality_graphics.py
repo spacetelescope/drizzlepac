@@ -599,7 +599,7 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     xm_cds = ColumnDataSource(xm_df)
     num_of_datasets = len(xm_cds.data['index'])
     log.info('Number of datasets: {}'.format(num_of_datasets))
-    output_basename = "{}_interfilter_comparison_{}".format(output_basename, xm_df['gen_info.dataset'][0])
+    output_basename = "{}_interfilter_comparison".format(output_basename)
 
     if not output_basename.endswith('.html'):
         output = output_basename + '.html'
@@ -731,11 +731,10 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     line_ctr = 1
     for line_index in xm_df.index:
         xm_df2 = xm_df[xm_df['gen_info.dataframe_index'] == line_index]
-        resid_output = "{}{}_{}_{}_{}_residuals.html".format(output[:-11],
-                                                              xm_df2['gen_info.dataset'][0].lower(),
-                                                              xm_df2['gen_info.instrument'][0].lower(),
-                                                              xm_df2['gen_info.detector'][0].lower(),
-                                                              xm_df2['gen_info.filter'][0].lower())
+        resid_output = output.replace(".html", "_residuals_{}_{}_{}_{}.html".format(xm_df2['gen_info.dataset'][0].lower(),
+                                                                                    xm_df2['gen_info.instrument'][0].lower(),
+                                                                                    xm_df2['gen_info.detector'][0].lower(),
+                                                                                    xm_df2['gen_info.filter'][0].lower()))
         output_file(resid_output)
         plots = []
         div = Div(text="""
