@@ -60,7 +60,7 @@ def cfg2json(cfgfilename, outpath=None):
 
 def batch_run_cfg2json():
     """run cfg2json() on a predefined list of .cfg files"""
-    cfg_path = "/user/mack/hla_cfgs/"
+    cfg_path = os.environ.get("CFG_FILE_PATH")
     cfg_list = ['any_n1.cfg',
                 'ir_grism_n2.cfg',
                 'ir_grism_n4.cfg',
@@ -86,8 +86,8 @@ def batch_run_cfg2json():
         cfgfile = os.path.join(cfg_path, cfgfile)
         cfg2json(cfgfile)
 
-    cfg_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/"
-    out_path = "/Users/dulude/Documents/Code/HLAtransition/drizzlepac/drizzlepac/pars/hap_pars/any/"
+    cfg_path = os.path.realpath(__file__).replace("devutils/pars_utils.py", "pars/")
+    out_path = os.path.realpath(__file__).replace("devutils/pars_utils.py", "pars/hap_pars/any/")
     cfg_list = ["astrodrizzle_filter_hap.cfg", "astrodrizzle_single_hap.cfg", "astrodrizzle_total_hap.cfg"]
     for cfgfile in cfg_list:
         cfgfile = os.path.join(cfg_path, cfgfile)
@@ -133,3 +133,6 @@ def reformat_json_file(infilename, outfilename, clobber=False):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+if __name__ == '__main__':
+    import os, pdb
+    pdb.set_trace()
