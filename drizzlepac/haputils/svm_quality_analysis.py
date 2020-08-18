@@ -58,6 +58,7 @@ from drizzlepac import util, wcs_functions
 from drizzlepac.haputils import hla_flag_filter
 from drizzlepac.haputils import catalog_utils
 from drizzlepac.haputils import astrometric_utils as au
+import drizzlepac.haputils.comparison_utils as cu
 import drizzlepac.haputils.diagnostic_utils as du
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
 from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
@@ -376,7 +377,7 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
 
     # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each
     # sourcelist can be easily accessed later in the code.
-    point_data, seg_data = csl.slFiles2dataTables(sl_names)
+    point_data, seg_data = cu.slFiles2dataTables(sl_names)
     log.info("Valid point data columns:   {}".format(list(point_data.keys())))
     log.info("Valid segment data columns: {}".format(list(seg_data.keys())))
     log.info("\n")
