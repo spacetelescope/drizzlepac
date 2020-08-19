@@ -731,6 +731,11 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
                           filter_kernel=kernel, connectivity=4)
 
+    # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
+    if segm is None or segm.nlabels == 0:
+        log.info("No detected sources!")
+        return None, None
+
     log.debug("Creating segmentation map for {} ".format(outroot))
     if kernel is not None:
         kernel_area = ((kernel.shape[0] // 2) ** 2) * np.pi
@@ -756,11 +761,6 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         log.info("Looking for crowded sources using smaller kernel with shape: {}".format(kernel.shape))
         segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
                             filter_kernel=kernel)
-
-    # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
-    if segm is None or segm.nlabels == 0:
-        log.info("No detected sources!")
-        return None, None
 
     if deblend:
         segm = deblend_sources(imgarr, segm, npixels=5,

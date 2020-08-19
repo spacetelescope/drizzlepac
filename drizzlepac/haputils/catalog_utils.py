@@ -1705,10 +1705,16 @@ class HAPSegmentCatalog(HAPCatalogBase):
             True/False value indicating if the largest source or the total combination of
             all detected sources took up an abnormally high portion of the image (aka 'big islands').
         """
-        # segm_img is a SegmentationImage
-        nbins = segm_img.max_label
+
         log.info("")
         log.info("Analyzing segmentation image.")
+
+        if segm_img is None:
+            log.info("Segmentation image is blank.")
+            return False
+
+        # segm_img is a SegmentationImage
+        nbins = segm_img.max_label
         log.info("Number of sources from segmentation map: %d", nbins)
 
         if nbins == 0:
