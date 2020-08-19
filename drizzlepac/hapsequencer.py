@@ -102,6 +102,9 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
     phot_mode = phot_mode.lower()
     input_phot_mode = phot_mode
     for total_product_obj in total_obj_list:
+        # Make sure this is re-initialized for the new total product
+        phot_mode = input_phot_mode
+
         # Instantiate filter catalog product object
         total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename,
                                              total_product_obj.configobj_pars.get_pars('catalog generation'),

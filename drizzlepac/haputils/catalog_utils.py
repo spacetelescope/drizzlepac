@@ -974,6 +974,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                               source_box=self._size_source_box,
                                                               mask=mask)
 
+            # Check if custom_segm_image is None indicating there are no detectable sources in the 
+            # total detection image.  If value is None, a warning has already been issued.  Issue
+            # a final message and return.
+            if custom_segm_img is None:
+                log.warning("End processing for the Segmentation Catalog due to no sources detected with Custom or Gaussian kernel.")
+                return None
+
             # Determine if the input image is actually a crowded field or contains large islands based upon
             # characteristics of the segmentation image.  If either of these are true, it would be better
             # to use the RickerWavelet2DKernel to identify sources.  The deblended segmentation image and
@@ -1011,6 +1018,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                 filter_kernel=rw2d_kernel,
                                                                 source_box=self._size_source_box,
                                                                 mask=mask)
+
+                # Check if rw2d_segm_image is None indicating there are no detectable sources in the 
+                # total detection image.  If value is None, a warning has already been issued.  Issue
+                # a final message and return.
+                if rw2d_segm_img is None:
+                    log.warning("End processing for the Segmentation Catalog due to no sources detected with RickerWavelet Kernel.")
+                    return None
 
                 # Evaluate the new segmention image for completeness
                 self.is_big_island = False
