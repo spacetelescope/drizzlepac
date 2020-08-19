@@ -390,7 +390,7 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
     sl_lengths = [len(point_data['RA']), len(seg_data['RA'])]
     json_results_dict['point catalog length'] = sl_lengths[0]
     json_results_dict['segment catalog length'] = sl_lengths[1]
-    matching_lines_ref, matching_lines_img = csl.getMatchedLists(sl_names, img_names, sl_lengths,
+    matching_lines_ref, matching_lines_img = cu.getMatchedLists(sl_names, img_names, sl_lengths,
                                                                  log_level=log_level)
     json_results_dict['number of cross-matches'] = len(matching_lines_ref)
 
@@ -417,21 +417,21 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
     # 2: Create masks to remove missing values or values not considered "good" according to user-specified
     # good bit values
     # 2a: create mask that identifies lines any value from any column is missing
-    missing_mask = csl.mask_missing_values(point_data, seg_data, matching_lines_ref, matching_lines_img,
+    missing_mask = cu.mask_missing_values(point_data, seg_data, matching_lines_ref, matching_lines_img,
                                            columns_to_compare)
     # 2b: create mask based on flag values
-    matched_values = csl.extractMatchedLines("FLAGS", point_data, seg_data, matching_lines_ref,
+    matched_values = cu.extractMatchedLines("FLAGS", point_data, seg_data, matching_lines_ref,
                                              matching_lines_img)
 
-    bitmask = csl.make_flag_mask(matched_values, good_flag_sum, missing_mask)
+    bitmask = cu.make_flag_mask(matched_values, good_flag_sum, missing_mask)
 
-    matched_values_ra = csl.extractMatchedLines("RA", point_data, seg_data, matching_lines_ref,
+    matched_values_ra = cu.extractMatchedLines("RA", point_data, seg_data, matching_lines_ref,
                                                 matching_lines_img, bitmask=bitmask)
-    matched_values_dec = csl.extractMatchedLines("DEC", point_data, seg_data, matching_lines_ref,
+    matched_values_dec = cu.extractMatchedLines("DEC", point_data, seg_data, matching_lines_ref,
                                                  matching_lines_img, bitmask=bitmask)
-    matched_values_magap1 = csl.extractMatchedLines("MAGNITUDE1", point_data, seg_data, matching_lines_ref,
+    matched_values_magap1 = cu.extractMatchedLines("MAGNITUDE1", point_data, seg_data, matching_lines_ref,
                                                     matching_lines_img, bitmask=bitmask)
-    matched_values_magap2 = csl.extractMatchedLines("MAGNITUDE2", point_data, seg_data, matching_lines_ref,
+    matched_values_magap2 = cu.extractMatchedLines("MAGNITUDE2", point_data, seg_data, matching_lines_ref,
                                                     matching_lines_img, bitmask=bitmask)
 
     if matched_values_ra.shape[1] > 0 and matched_values_ra.shape[1] == matched_values_dec.shape[1]:
@@ -678,7 +678,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 sl_names = [xmatch_ref_catname, xmatch_comp_catname]
                 img_names = [xmatch_ref_imgname, xmatch_comp_imgname]
                 sl_lengths = [max_sources, len(filtobj_dict[xmatch_comp_imgname]["sources"])]
-                matching_lines_ref, matching_lines_comp = csl.getMatchedLists(sl_names, img_names, sl_lengths,
+                matching_lines_ref, matching_lines_comp = cu.getMatchedLists(sl_names, img_names, sl_lengths,
                                                                               log_level=log_level)
 
                 # Report number and percentage of the total number of detected ref and comp sources that were
@@ -1202,7 +1202,7 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
 
         # Use the utilities in devutils to match the sources in the two lists - get
         # the indices of the matches.
-        matches_point_to_seg, matches_seg_to_point = csl.getMatchedLists(cat_names,
+        matches_point_to_seg, matches_seg_to_point = cu.getMatchedLists(cat_names,
                                                                          [drizzle_file,
                                                                           drizzle_file],
                                                                          cat_lengths,
@@ -1218,23 +1218,23 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
 
         # There are nan values present in the catalogs - create a mask which identifies these rows
         # which are missing valid data
-        missing_values_mask = csl.mask_missing_values(tab_point_measurements, tab_seg_measurements,
+        missing_values_mask = cu.mask_missing_values(tab_point_measurements, tab_seg_measurements,
                                                       matches_point_to_seg, matches_seg_to_point,
                                                       common_columns)
 
         # Extract the Flag column from the two catalogs and get an ndarray (2, length)
-        flag_matching = csl.extractMatchedLines('Flags', tab_point_measurements, tab_seg_measurements,
+        flag_matching = cu.extractMatchedLines('Flags', tab_point_measurements, tab_seg_measurements,
                                                 matches_point_to_seg, matches_seg_to_point)
 
         # Generate a mask to accommodate the missing, as well as the "flagged" entries
-        flag_values_mask = csl.make_flag_mask(flag_matching, good_flag_sum, missing_values_mask)
+        flag_values_mask = cu.make_flag_mask(flag_matching, good_flag_sum, missing_values_mask)
 
         # Extract the columns of interest from the two catalogs for each desired measurement
         # and get an ndarray (2, length)
         # array([[21.512, ..., 2.944], [21.6 , ..., 22.98]],
         #       [[21.872, ..., 2.844], [21.2 , ..., 22.8]])
         for index, phot_column_name in enumerate(phot_column_names):
-            matching_phot_rows = csl.extractMatchedLines(phot_column_name, tab_point_measurements,
+            matching_phot_rows = cu.extractMatchedLines(phot_column_name, tab_point_measurements,
                                                          tab_seg_measurements, matches_point_to_seg,
                                                          matches_seg_to_point, bitmask=flag_values_mask)
 
@@ -1248,7 +1248,7 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
 
             # NEED A BETTER WAY TO ASSOCIATE THE ERRORS WITH THE MEASUREMENTS
             # Compute the corresponding error of the differences
-            matching_error_rows = csl.extractMatchedLines(error_column_names[index],
+            matching_error_rows = cu.extractMatchedLines(error_column_names[index],
                                                           tab_point_measurements, tab_seg_measurements,
                                                           matches_point_to_seg, matches_seg_to_point,
                                                           bitmask=flag_values_mask)
@@ -1621,7 +1621,7 @@ def run_hla_sourcelist_comparison(total_list, diagnostic_mode=False, json_timest
                 log.info("HAP catalog:                 {}".format(os.path.basename(hap_sourcelist_name)))
                 log.info("HLA Classic catalog:         {}".format(os.path.basename(updated_hla_sourcelist_name)))
                 # once all file exist checks are passed, execute sourcelist comparison
-                return_status = csl.comparesourcelists(slNames=[updated_hla_sourcelist_name,
+                return_status = cu.comparesourcelists(slNames=[updated_hla_sourcelist_name,
                                                                 hap_sourcelist_name],
                                                        imgNames=[hla_imgname, hap_imgname],
                                                        good_flag_sum=255,
@@ -1639,7 +1639,7 @@ def run_hla_sourcelist_comparison(total_list, diagnostic_mode=False, json_timest
                     combo_comp_pdf_list.append(combo_comp_pdf_filename)
         if len(combo_comp_pdf_list) > 0:  # combine all plots generated by compare_sourcelists.py for this total object into a single pdf file
             total_combo_comp_pdf_filename = "{}_svm_comparison_plots.pdf".format(tot_obj.drizzle_filename[:-9].replace("_total", ""))
-            csl.pdf_merger(total_combo_comp_pdf_filename, combo_comp_pdf_list)
+            cu.pdf_merger(total_combo_comp_pdf_filename, combo_comp_pdf_list)
             log.info("Sourcelist comparison plots saved to file {}.".format(total_combo_comp_pdf_filename))
 
 
@@ -1796,6 +1796,7 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("HAP Point vs. HAP Segment sourcelist length comparison (compare_num_sources) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
+            sys.exit() #TODO: REMOVE
 
     # Identify the number of GAIA sources in final product footprints
     if run_find_gaia_sources:
@@ -1813,6 +1814,7 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("GAIA sources count (find_gaia_sources) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
+            sys.exit()  # TODO: REMOVE
 
     # Compare HAP sourcelists to their HLA Classic counterparts
     if run_compare_hla_sourcelists:
@@ -1830,6 +1832,7 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("HAP vs. HLA sourcelist comparison (compare_sourcelists) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
+            sys.exit()  # TODO: REMOVE
 
     # Get point/segment cross-match RA/Dec statistics
     if run_compare_ra_dec_crossmatches:
@@ -1842,6 +1845,7 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("HAP Point vs. HAP Segment sourcelist RA/Dec comparison (compare_ra_dec_crossmatches) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
+            sys.exit()  # TODO: REMOVE
 
     # Statistically characterize GAIA distribution
     if run_characterize_gaia_distribution:
@@ -1855,6 +1859,7 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("GAIA source distribution characterization (characterize_gaia_distribution) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
+            sys.exit()  # TODO: REMOVE
 
     # Photometry of cross-matched sources in Point and Segment catalogs for Filter products
     if run_compare_photometry:
@@ -1871,6 +1876,7 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("HAP Point vs. HAP Segment sourcelist photometry comparison (compare_photometry) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
+            sys.exit()  # TODO: REMOVE
 
     # Compare inter-filter cross matched HAP sources
     if run_compare_interfilter_crossmatches:
@@ -1881,6 +1887,7 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("HAP Point sourcelist interfilter comparison (compare_interfilter_crossmatches) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
+            sys.exit()  # TODO: REMOVE
 
     # Report WCS info
     if run_report_wcs:
@@ -1891,6 +1898,7 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("WCS reporting (report_wcs) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
+            sys.exit()  # TODO: REMOVE
 
 
 # ============================================================================================================
