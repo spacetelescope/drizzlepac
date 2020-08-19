@@ -979,7 +979,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # a final message and return.
             if custom_segm_img is None:
                 log.warning("End processing for the Segmentation Catalog due to no sources detected with Custom or Gaussian kernel.")
-                return None
+                return
 
             # Determine if the input image is actually a crowded field or contains large islands based upon
             # characteristics of the segmentation image.  If either of these are true, it would be better
@@ -1024,7 +1024,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # a final message and return.
                 if rw2d_segm_img is None:
                     log.warning("End processing for the Segmentation Catalog due to no sources detected with RickerWavelet Kernel.")
-                    return None
+                    return
 
                 # Evaluate the new segmention image for completeness
                 self.is_big_island = False
