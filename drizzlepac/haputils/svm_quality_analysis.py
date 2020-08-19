@@ -61,7 +61,7 @@ from drizzlepac.haputils import astrometric_utils as au
 import drizzlepac.haputils.comparison_utils as cu
 import drizzlepac.haputils.diagnostic_utils as du
 import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
-from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
+from drizzlepac.haputils import read_hla_catalog
 from stsci.tools import logutil
 from stwcs import wcsutil
 from stwcs.wcsutil import HSTWCS
