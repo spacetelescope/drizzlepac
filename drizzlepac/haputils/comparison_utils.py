@@ -35,8 +35,8 @@ def deconstruct_flag(flagval):
     Returns
     -------
     out_idx_list : list
-        a 9-element numpy array of 0s and 1s. Each element of the array represents the presence of a particular
-        bit value (element 0 = bit 0, element 1 = bit 1, ..., element 3 = bit 4 and so on...)
+        a 9-element numpy array of 0s and 1s. Each element of the array represents the presence of a
+        particular bit value (element 0 = bit 0, element 1 = bit 1, ..., element 3 = bit 4 and so on...)
     """
     bit_list = [1, 2, 4, 8, 16, 32, 64, 128]
     flagval = int(flagval)
@@ -60,8 +60,8 @@ def deconstruct_flag(flagval):
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
 def extractMatchedLines(col2get, refData, compData, refLines, compLines, bitmask=[]):
-    """Extracts only matching lines of data for a specific column of refData and compData. Returns empty list if the
-    specified column is not found in both tables.
+    """Extracts only matching lines of data for a specific column of refData and compData. Returns empty list
+    if the specified column is not found in both tables.
 
     Parameters
     ----------
@@ -81,13 +81,14 @@ def extractMatchedLines(col2get, refData, compData, refLines, compLines, bitmask
         List of matching compData line numbers
 
     bitmask : numpy.ndarray, optional
-        list of True/False values where False corresponds to values to keep, and True corresponds to values to remove
+        list of True/False values where False corresponds to values to keep, and True corresponds to values
+        to remove
 
     Returns
     -------
     return_ra : numpy ndarray
-        A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The corresponding matched
-        comparison values
+        A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The
+        corresponding matched comparison values
     """
     if col2get in list(refData.keys()) and col2get in list(compData.keys()):
         matching_refData = refData[col2get][refLines].data
@@ -100,7 +101,7 @@ def extractMatchedLines(col2get, refData, compData, refLines, compLines, bitmask
             matching_compData = matching_compData.compressed()
         return_ra = np.stack((matching_refData, matching_compData))
     else:
-        return_ra = np.empty((2,0))
+        return_ra = np.empty((2, 0))
     return return_ra
 
 
@@ -121,7 +122,8 @@ def getMatchedLists(slNames, imgNames, slLengths, log_level):
         list of integer sourcelist lengths
 
     log_level : int
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log
+        file.
 
     Returns
     -------
@@ -129,7 +131,8 @@ def getMatchedLists(slNames, imgNames, slLengths, log_level):
         A list of the indices of reference sourcelist sources that match comparison sourcelist sources
 
     matching_lines_img : list
-        A corresponding list of the indices of comparison sourcelist sources that match reference sourcelist sources
+        A corresponding list of the indices of comparison sourcelist sources that match reference sourcelist
+        sources
     """
     source_list_dict = {}
     equal_flag = False
@@ -146,8 +149,8 @@ def getMatchedLists(slNames, imgNames, slLengths, log_level):
         yref = fh[0].header['crpix2']
         fh.close()
     except Exception:
-        log.info(
-            "WARNING: Unable to fetch values for xref and yref from fits file headers. Using xref = 0.0 and yref = 0.0.")
+        log.info("WARNING: Unable to fetch values for xref and yref from fits file headers. Using xref = 0.0 "
+                 "and yref = 0.0.")
         xref = 0.0
         yref = 0.0
     log.info("Summary of input catalog lengths")
@@ -162,15 +165,17 @@ def getMatchedLists(slNames, imgNames, slLengths, log_level):
     # Report number and percentage of the total number of detected ref and comp sources that were matched
     log.info("Sourcelist Matching Results")
     log.info(
-        "Reference sourcelist:  {} of {} total sources matched ({} %)".format(len(matching_lines_ref), slLengths[0],
+        "Reference sourcelist:  {} of {} total sources matched ({} %)".format(len(matching_lines_ref),
+                                                                              slLengths[0],
                                                                               100.0 * (float(
-                                                                                  len(matching_lines_ref)) / float(
-                                                                                  slLengths[0]))))
+                                                                                  len(matching_lines_ref)) /
+                                                                                       float(slLengths[0]))))
     log.info(
-        "Comparison sourcelist: {} of {} total sources matched ({} %)".format(len(matching_lines_img), slLengths[1],
+        "Comparison sourcelist: {} of {} total sources matched ({} %)".format(len(matching_lines_img),
+                                                                              slLengths[1],
                                                                               100.0 * (float(
-                                                                                  len(matching_lines_img)) / float(
-                                                                                  slLengths[1]))))
+                                                                                  len(matching_lines_img)) /
+                                                                                       float(slLengths[1]))))
 
     return (matching_lines_ref, matching_lines_img)
 
@@ -178,7 +183,9 @@ def getMatchedLists(slNames, imgNames, slLengths, log_level):
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
 def make_flag_mask(matched_flag_values, good_flag_sum, missing_mask):
-    """Returns a list of the array index values to mask based on user-specified good flag value, and missing mask
+    """Returns a list of the array index values to mask based on user-specified good flag value, and missing
+    mask
+
     Parameters
     ----------
     matched_flag_values : numpy.ndarray
@@ -188,6 +195,10 @@ def make_flag_mask(matched_flag_values, good_flag_sum, missing_mask):
     good_flag_sum : int
         sum of flag bit values that should be considered "good" for masking purposes
 
+    missing_mask : numpy.ndarray
+        Updated list of True/False values where False corresponds to values to keep, and True corresponds to
+        values to remove
+
     Returns
     -------
     masked_index_list : numpy list
@@ -195,25 +206,25 @@ def make_flag_mask(matched_flag_values, good_flag_sum, missing_mask):
     """
     full_refFlag_list = []
     full_compFlag_list = []
-    bitmask = missing_mask#np.full(len(matched_flag_values[0]),0,dtype=bool)
+    bitmask = missing_mask  # np.full(len(matched_flag_values[0]),0,dtype=bool)
     if good_flag_sum != 255:
-        good_bit_list = deconstruct_flag(good_flag_sum) # break good bit sum into list of component bits
+        good_bit_list = deconstruct_flag(good_flag_sum)  # break good bit sum into list of component bits
         good_bit_list[0] = 1
-        bad_bit_list = np.invert(good_bit_list.astype(bool)) # invert good bit list to make bad bit list
+        bad_bit_list = np.invert(good_bit_list.astype(bool))  # invert good bit list to make bad bit list
     ctr = 0
     for refFlagVal, compFlagVal in zip(matched_flag_values[0], matched_flag_values[1]):
-        refFlag_list = deconstruct_flag(refFlagVal) # break ref flag bit sum into list of componant bits
+        refFlag_list = deconstruct_flag(refFlagVal)  # break ref flag bit sum into list of component bits
         full_refFlag_list.append(refFlag_list)
-        compFlag_list = deconstruct_flag(compFlagVal) # break comp flag bit sum into list of componant bits
+        compFlag_list = deconstruct_flag(compFlagVal)  # break comp flag bit sum into list of component bits
         full_compFlag_list.append(compFlag_list)
         if good_flag_sum != 255:
-            merged_flag_val = np.logical_or(refFlag_list, compFlag_list) # merge comp and ref flag lists
-            bitmask[ctr]= np.any(np.logical_and(merged_flag_val,bad_bit_list)) # generate mask value by checking to see if any of the bad bits are found in the merged comp+ref bit list
+            merged_flag_val = np.logical_or(refFlag_list, compFlag_list)  # merge comp and ref flag lists
+            bitmask[ctr] = np.any(np.logical_and(merged_flag_val, bad_bit_list))  # generate mask value by checking to see if any of the bad bits are found in the merged comp+ref bit list
 
-        ctr+=1
+        ctr += 1
 
     masked_index_list = np.where(bitmask == True)
-    log.info("{} of {} ({} %) values masked.".format(np.shape(masked_index_list)[1],ctr,
+    log.info("{} of {} ({} %) values masked.".format(np.shape(masked_index_list)[1], ctr,
                                                      100.0*(float(np.shape(masked_index_list)[1])/float(ctr))))
     log.info("{} remain.".format(ctr-np.shape(masked_index_list)[1]))
     return bitmask
@@ -222,7 +233,8 @@ def make_flag_mask(matched_flag_values, good_flag_sum, missing_mask):
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
 def mask_missing_values(refData, compData, refLines, compLines, columns_to_compare):
-    """Update the bitmask to include lines where any values are missing, nan, or inf from any column in either the comp or ref matched catalogs
+    """Update the bitmask to include lines where any values are missing, nan, or inf from any column in
+    either the comp or ref matched catalogs
 
     Parameters
     ----------
@@ -239,22 +251,24 @@ def mask_missing_values(refData, compData, refLines, compLines, columns_to_compa
         List of matching compData line numbers
 
     columns_to_compare : list
-        list of columns that are common to both comparison and reference catalogs and will be used in the comparisons
+        list of columns that are common to both comparison and reference catalogs and will be used in the
+        comparisons
 
     Returns
     -------
     out_mask : numpy.ndarray, optional
-        Updated list of True/False values where False corresponds to values to keep, and True corresponds to values to remove
+        Updated list of True/False values where False corresponds to values to keep, and True corresponds to
+        values to remove
     """
-    out_mask = np.full(np.shape(refLines),0,dtype=bool)
+    out_mask = np.full(np.shape(refLines), 0, dtype=bool)
 
     for col_title in columns_to_compare:
         matching_refData = refData[col_title][refLines].data
         matching_compData = compData[col_title][compLines].data
-        for data_set in [matching_refData, matching_compData]: # merge together all input mask arrays
+        for data_set in [matching_refData, matching_compData]:  # merge together all input mask arrays
             if hasattr(data_set, "mask"):
                 out_mask = np.logical_or(out_mask, data_set.mask)
-            inf_nan_idx = np.where((np.isnan(data_set) == True) | (np.isinf(data_set) == True)) # identify any 'nan' or 'inf' values and flag them out as well
+            inf_nan_idx = np.where((np.isnan(data_set) == True) | (np.isinf(data_set) == True))  # identify any 'nan' or 'inf' values and flag them out as well
             for mask_idx in inf_nan_idx:
                 out_mask[mask_idx] = True
     return out_mask
@@ -306,13 +320,14 @@ def slFiles2dataTables(slNames):
     * Flag Value
 
     .. note::
-        'X position' and 'Y position' data columns will always be returned. However, not every sourcelist or catalog
-        file is guaranteed to have any of the seven remaining data columns in the above list.
+        'X position' and 'Y position' data columns will always be returned. However, not every sourcelist or
+        catalog file is guaranteed to have any of the seven remaining data columns in the above list.
 
     Parameters
     ----------
     slNames : list
-        A list containing the reference sourcelist filename and the comparison sourcelist filename, in that order.
+        A list containing the reference sourcelist filename and the comparison sourcelist filename, in that
+        order.
 
     Returns
     -------
@@ -349,30 +364,35 @@ def slFiles2dataTables(slNames):
                           "MERR1": "MagErr(0.03)", "MERR2": "MagErr(0.125)", "MSKY": "MSky(0.125)",
                           "STDEV": "Stdev(0.125)", "FLAGS": "Flags", "ID": "ID", "CI": "CI"}
     titleSwapDict_point = {"X": "X-Center", "Y": "Y-Center", "RA": "RA", "DEC": "DEC", "FLUX1": "n/a",
-                           "FLUX2": "FluxAp2", "MAGNITUDE1": "MagAp1", "MAGNITUDE2": "MagAp2", "MERR1": "MagErrAp1",
-                           "MERR2": "MagErrAp2", "MSKY": "MSkyAp2", "STDEV": "StdevAp2", "FLAGS": "Flags", "ID": "ID",
+                           "FLUX2": "FluxAp2", "MAGNITUDE1": "MagAp1", "MAGNITUDE2": "MagAp2",
+                           "MERR1": "MagErrAp1", "MERR2": "MagErrAp2", "MSKY": "MSkyAp2",
+                           "STDEV": "StdevAp2", "FLAGS": "Flags", "ID": "ID",
                            "CI": "CI"}
     titleSwapDict_segment = {"X": "X-Centroid", "Y": "Y-Centroid", "RA": "RA", "DEC": "DEC", "FLUX1": "n/a",
-                             "FLUX2": "FluxAp2", "MAGNITUDE1": "MagAp1", "MAGNITUDE2": "MagAp2", "MERR1": "MagErrAp1",
-                             "MERR2": "MagErrAp2", "MSKY": "n/a", "STDEV": "n/a", "FLAGS": "Flags", "ID": "ID",
-                             "CI": "CI"}
+                             "FLUX2": "FluxAp2", "MAGNITUDE1": "MagAp1", "MAGNITUDE2": "MagAp2",
+                             "MERR1": "MagErrAp1", "MERR2": "MagErrAp2", "MSKY": "n/a", "STDEV": "n/a",
+                             "FLAGS": "Flags", "ID": "ID", "CI": "CI"}
     titleSwapDict_daoTemp = {"X": "XCENTER", "Y": "YCENTER", "RA": "n/a", "DEC": "n/a", "FLUX1": "FLUX1",
-                             "FLUX2": "FLUX2", "MAGNITUDE1": "MAG1", "MAGNITUDE2": "MAG2", "FLAGS": "n/a", "ID": "ID",
-                             "MERR1": "MERR1", "MERR2": "MERR2", "MSKY": "MSKY", "STDEV": "STDEV"}
+                             "FLUX2": "FLUX2", "MAGNITUDE1": "MAG1", "MAGNITUDE2": "MAG2", "FLAGS": "n/a",
+                             "ID": "ID", "MERR1": "MERR1", "MERR2": "MERR2", "MSKY": "MSKY", "STDEV": "STDEV"}
     titleSwapDict_sourceX = {"X": "X_IMAGE", "Y": "Y_IMAGE", "RA": "RA", "DEC": "DEC", "FLUX1": "FLUX_APER1",
                              "FLUX2": "FLUX_APER2", "MAGNITUDE1": "MAG_APER1", "MAGNITUDE2": "MAG_APER2",
                              "FLAGS": "FLAGS", "ID": "NUMBER"}
-    titleSwapDict_cooNew = {"X": "col1", "Y": "col2", "RA": "n/a", "DEC": "n/a", "FLUX1": "n/a", "FLUX2": "n/a",
-                            "MAGNITUDE1": "n/a", "MAGNITUDE2": "n/a", "FLAGS": "n/a", "ID": "col7"}
-    # titleSwapDict_cooOld = {"X": "XCENTER", "Y": "YCENTER", "RA": "n/a", "DEC": "n/a", "FLUX1": "n/a", "FLUX2": "n/a",
-    #                         "MAGNITUDE1": "n/a", "MAGNITUDE2": "n/a", "FLAGS": "n/a", "ID": "ID"}
+    titleSwapDict_cooNew = {"X": "col1", "Y": "col2", "RA": "n/a", "DEC": "n/a", "FLUX1": "n/a",
+                            "FLUX2": "n/a", "MAGNITUDE1": "n/a", "MAGNITUDE2": "n/a", "FLAGS": "n/a",
+                            "ID": "col7"}
+    # titleSwapDict_cooOld = {"X": "XCENTER", "Y": "YCENTER", "RA": "n/a", "DEC": "n/a", "FLUX1": "n/a",
+    #                         "FLUX2": "n/a", "MAGNITUDE1": "n/a", "MAGNITUDE2": "n/a", "FLAGS": "n/a",
+    #                         "ID": "ID"}
 
     titleSwapDict_cooOld2 = {"X": "XCENTER", "Y": "YCENTER", "RA": "RA", "DEC": "DEC", "FLUX1": "FLUX_0.05",
-                             "FLUX2": "FLUX_0.15", "MAGNITUDE1": "MAG_0.05", "MAGNITUDE2": "MAG_0.15", "FLAGS": "n/a",
-                             "ID": "ID", "MERR1": "MERR_0.05", "MERR2": "MERR_0.15", "MSKY": "MSKY", "STDEV": "STDEV"}
+                             "FLUX2": "FLUX_0.15", "MAGNITUDE1": "MAG_0.05", "MAGNITUDE2": "MAG_0.15",
+                             "FLAGS": "n/a", "ID": "ID", "MERR1": "MERR_0.05", "MERR2": "MERR_0.15",
+                             "MSKY": "MSKY", "STDEV": "STDEV"}
 
-    titleSwapDict_daorep = {"X": "X", "Y": "Y", "RA": "n/a", "DEC": "n/a", "FLUX1": "flux_0", "FLUX2": "flux_1",
-                            "MAGNITUDE1": "mag_0", "MAGNITUDE2": "mag_1", "FLAGS": "n/a", "ID": "n/a"}
+    titleSwapDict_daorep = {"X": "X", "Y": "Y", "RA": "n/a", "DEC": "n/a", "FLUX1": "flux_0",
+                            "FLUX2": "flux_1", "MAGNITUDE1": "mag_0", "MAGNITUDE2": "mag_1", "FLAGS": "n/a",
+                            "ID": "n/a"}
     ctr = 1
     for dataTable in [refData_in, compData_in]:
         if "X-Center" in list(dataTable.keys()):
