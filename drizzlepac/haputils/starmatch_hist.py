@@ -27,7 +27,7 @@ import astropy.io.fits as pyfits
 from astropy.table import Table
 
 from drizzlepac import util
-from drizzlepac.devutils.comparison_tools import infrot
+from drizzlepac.haputils import infrot
 from stsci.tools import logutil
 
 __taskname__ = 'starmatch_hist'
