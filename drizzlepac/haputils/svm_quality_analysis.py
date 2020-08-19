@@ -60,7 +60,10 @@ from drizzlepac.haputils import catalog_utils
 from drizzlepac.haputils import astrometric_utils as au
 import drizzlepac.haputils.comparison_utils as cu
 import drizzlepac.haputils.diagnostic_utils as du
-import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
+try:
+    import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
+except ImportError:
+    print("Unable to import compare_sourcelists! HAP vs. HLA sourcelist comparisons will be skipped.")
 from drizzlepac.haputils import read_hla_catalog
 from stsci.tools import logutil
 from stwcs import wcsutil
