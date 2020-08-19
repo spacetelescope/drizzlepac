@@ -1796,7 +1796,6 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("HAP Point vs. HAP Segment sourcelist length comparison (compare_num_sources) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
-            sys.exit() #TODO: REMOVE
 
     # Identify the number of GAIA sources in final product footprints
     if run_find_gaia_sources:
@@ -1814,7 +1813,6 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("GAIA sources count (find_gaia_sources) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
-            sys.exit()  # TODO: REMOVE
 
     # Compare HAP sourcelists to their HLA Classic counterparts
     if run_compare_hla_sourcelists:
@@ -1832,7 +1830,6 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("HAP vs. HLA sourcelist comparison (compare_sourcelists) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
-            sys.exit()  # TODO: REMOVE
 
     # Get point/segment cross-match RA/Dec statistics
     if run_compare_ra_dec_crossmatches:
@@ -1845,7 +1842,6 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("HAP Point vs. HAP Segment sourcelist RA/Dec comparison (compare_ra_dec_crossmatches) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
-            sys.exit()  # TODO: REMOVE
 
     # Statistically characterize GAIA distribution
     if run_characterize_gaia_distribution:
@@ -1859,7 +1855,6 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("GAIA source distribution characterization (characterize_gaia_distribution) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
-            sys.exit()  # TODO: REMOVE
 
     # Photometry of cross-matched sources in Point and Segment catalogs for Filter products
     if run_compare_photometry:
@@ -1876,7 +1871,6 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("HAP Point vs. HAP Segment sourcelist photometry comparison (compare_photometry) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
-            sys.exit()  # TODO: REMOVE
 
     # Compare inter-filter cross matched HAP sources
     if run_compare_interfilter_crossmatches:
@@ -1887,7 +1881,6 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("HAP Point sourcelist interfilter comparison (compare_interfilter_crossmatches) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
-            sys.exit()  # TODO: REMOVE
 
     # Report WCS info
     if run_report_wcs:
@@ -1898,7 +1891,6 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
             log.warning("WCS reporting (report_wcs) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
-            sys.exit()  # TODO: REMOVE
 
 
 # ============================================================================================================
