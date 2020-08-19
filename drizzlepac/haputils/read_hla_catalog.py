@@ -3,7 +3,7 @@
 R. White, 2019 June 12
 """
 import sys
-from drizzlepac.devutils.comparison_tools.read_hla import omegaxyz
+from drizzlepac.haputils import omegaxyz
 from astropy.table import Table
 from stsci.tools import logutil
 
