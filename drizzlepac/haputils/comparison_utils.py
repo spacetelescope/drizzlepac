@@ -8,6 +8,7 @@ import sys
 # Related third party imports
 from astropy.table import Table
 import numpy as np
+from PyPDF2 import PdfFileMerger
 
 # Local application imports
 from drizzlepac.haputils import starmatch_hist
@@ -175,6 +176,7 @@ def getMatchedLists(slNames, imgNames, slLengths, log_level):
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+
 def make_flag_mask(matched_flag_values, good_flag_sum, missing_mask):
     """Returns a list of the array index values to mask based on user-specified good flag value, and missing mask
     Parameters
@@ -256,6 +258,35 @@ def mask_missing_values(refData, compData, refLines, compLines, columns_to_compa
             for mask_idx in inf_nan_idx:
                 out_mask[mask_idx] = True
     return out_mask
+
+
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+
+def pdf_merger(output_path, input_paths):
+    """Merges multiple pdf files into a single multi-page pdf file
+
+    Parameters
+    ----------
+    output_path : str
+        name of output multipage pdf file
+
+    input_paths : list
+        list of pdf files to combine
+
+    Returns
+    -------
+    nothing.
+    """
+    pdf_merger = PdfFileMerger()
+
+    for path in input_paths:
+        pdf_merger.append(path)
+
+    with open(output_path, 'wb') as fileobj:
+        pdf_merger.write(fileobj)
+
+    for path in input_paths:
+        os.remove(path)
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
