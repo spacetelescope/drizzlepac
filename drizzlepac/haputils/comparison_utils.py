@@ -2,12 +2,15 @@
 """A collection of functions that assist with sourcelist comparison"""
 
 # Standard library imports
+import os
 import sys
 
 # Related third party imports
 from astropy.table import Table
+import numpy as np
 
 # Local application imports
+from drizzlepac.haputils import starmatch_hist
 from stsci.tools import logutil
 
 __taskname__ = 'comparison_utils'
@@ -16,6 +19,89 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+
+
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+
+def deconstruct_flag(flagval):
+    """Breaks down an integer flag value into individual component bit values.
+
+    Parameters
+    ----------
+    flagval : int
+        Flag value to deconstruct
+
+    Returns
+    -------
+    out_idx_list : list
+        a 9-element numpy array of 0s and 1s. Each element of the array represents the presence of a particular
+        bit value (element 0 = bit 0, element 1 = bit 1, ..., element 3 = bit 4 and so on...)
+    """
+    bit_list = [1, 2, 4, 8, 16, 32, 64, 128]
+    flagval = int(flagval)
+    # out_bit_list = []
+    out_idx_list = np.zeros(9, dtype=int)
+    if flagval == 0:
+        # out_bit_list = [0]
+        out_idx_list[0] = 1
+    if flagval > 0:
+        idx = 1
+        for bit in bit_list:
+            if flagval & bit > 0:
+                # out_bit_list.append(bit)
+                out_idx_list[idx] = 1
+            if bit > flagval:
+                break
+            idx += 1
+    return (out_idx_list)
+
+
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+
+def extractMatchedLines(col2get, refData, compData, refLines, compLines, bitmask=[]):
+    """Extracts only matching lines of data for a specific column of refData and compData. Returns empty list if the
+    specified column is not found in both tables.
+
+    Parameters
+    ----------
+    col2get : str
+        Title of the column to return
+
+    refData : astropy Table object
+        reference data table
+
+    compData : astropy Table object
+        comparison data table
+
+    refLines : numpy.ndarray
+        List of matching refData line numbers
+
+    compLines : numpy.ndarray
+        List of matching compData line numbers
+
+    bitmask : numpy.ndarray, optional
+        list of True/False values where False corresponds to values to keep, and True corresponds to values to remove
+
+    Returns
+    -------
+    return_ra : numpy ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched reference values. Column 2: The corresponding matched
+        comparison values
+    """
+    if col2get in list(refData.keys()) and col2get in list(compData.keys()):
+        matching_refData = refData[col2get][refLines].data
+        matching_compData = compData[col2get][compLines].data
+        if bitmask != []:
+            bitmask = bitmask.astype(int)
+            matching_refData = np.ma.array(matching_refData, mask=bitmask)
+            matching_compData = np.ma.array(matching_compData, mask=bitmask)
+            matching_refData = matching_refData.compressed()
+            matching_compData = matching_compData.compressed()
+        return_ra = np.stack((matching_refData, matching_compData))
+    else:
+        return_ra = np.empty((2,0))
+    return return_ra
+
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 
@@ -88,8 +174,92 @@ def getMatchedLists(slNames, imgNames, slLengths, log_level):
     return (matching_lines_ref, matching_lines_img)
 
 
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+def make_flag_mask(matched_flag_values, good_flag_sum, missing_mask):
+    """Returns a list of the array index values to mask based on user-specified good flag value, and missing mask
+    Parameters
+    ----------
+    matched_flag_values : numpy.ndarray
+        A 2 x len(refLines) sized numpy array. Column 1: matched reference values.
+        Column 2: The corresponding matched comparison values
+
+    good_flag_sum : int
+        sum of flag bit values that should be considered "good" for masking purposes
+
+    Returns
+    -------
+    masked_index_list : numpy list
+        list of the array index values to mask
+    """
+    full_refFlag_list = []
+    full_compFlag_list = []
+    bitmask = missing_mask#np.full(len(matched_flag_values[0]),0,dtype=bool)
+    if good_flag_sum != 255:
+        good_bit_list = deconstruct_flag(good_flag_sum) # break good bit sum into list of component bits
+        good_bit_list[0] = 1
+        bad_bit_list = np.invert(good_bit_list.astype(bool)) # invert good bit list to make bad bit list
+    ctr = 0
+    for refFlagVal, compFlagVal in zip(matched_flag_values[0], matched_flag_values[1]):
+        refFlag_list = deconstruct_flag(refFlagVal) # break ref flag bit sum into list of componant bits
+        full_refFlag_list.append(refFlag_list)
+        compFlag_list = deconstruct_flag(compFlagVal) # break comp flag bit sum into list of componant bits
+        full_compFlag_list.append(compFlag_list)
+        if good_flag_sum != 255:
+            merged_flag_val = np.logical_or(refFlag_list, compFlag_list) # merge comp and ref flag lists
+            bitmask[ctr]= np.any(np.logical_and(merged_flag_val,bad_bit_list)) # generate mask value by checking to see if any of the bad bits are found in the merged comp+ref bit list
+
+        ctr+=1
+
+    masked_index_list = np.where(bitmask == True)
+    log.info("{} of {} ({} %) values masked.".format(np.shape(masked_index_list)[1],ctr,
+                                                     100.0*(float(np.shape(masked_index_list)[1])/float(ctr))))
+    log.info("{} remain.".format(ctr-np.shape(masked_index_list)[1]))
+    return bitmask
+
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+
+def mask_missing_values(refData, compData, refLines, compLines, columns_to_compare):
+    """Update the bitmask to include lines where any values are missing, nan, or inf from any column in either the comp or ref matched catalogs
+
+    Parameters
+    ----------
+    refData : astropy Table object
+        reference data table
+
+    compData : astropy Table object
+        comparison data table
+
+    refLines : numpy.ndarray
+        List of matching refData line numbers
+
+    compLines : numpy.ndarray
+        List of matching compData line numbers
+
+    columns_to_compare : list
+        list of columns that are common to both comparison and reference catalogs and will be used in the comparisons
+
+    Returns
+    -------
+    out_mask : numpy.ndarray, optional
+        Updated list of True/False values where False corresponds to values to keep, and True corresponds to values to remove
+    """
+    out_mask = np.full(np.shape(refLines),0,dtype=bool)
+
+    for col_title in columns_to_compare:
+        matching_refData = refData[col_title][refLines].data
+        matching_compData = compData[col_title][compLines].data
+        for data_set in [matching_refData, matching_compData]: # merge together all input mask arrays
+            if hasattr(data_set, "mask"):
+                out_mask = np.logical_or(out_mask, data_set.mask)
+            inf_nan_idx = np.where((np.isnan(data_set) == True) | (np.isinf(data_set) == True)) # identify any 'nan' or 'inf' values and flag them out as well
+            for mask_idx in inf_nan_idx:
+                out_mask[mask_idx] = True
+    return out_mask
+
+
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+
 def slFiles2dataTables(slNames):
     """Reads in data from sourcelists, returns some or all of the following data columns in a pair of properly
     formatted astropy.table objects:
