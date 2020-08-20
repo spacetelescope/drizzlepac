@@ -57,7 +57,7 @@ TESTS_REQUIRE = [
     'crds',
     'pytest',
     'pytest-remotedata',
-    'tables',
+    'tables'
 ]
 
 setup(
