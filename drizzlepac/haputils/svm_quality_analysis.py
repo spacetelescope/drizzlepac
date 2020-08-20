@@ -210,17 +210,12 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def compare_num_sources(catalog_list, drizzle_list, json_timestamp=None, json_time_since_epoch=None,
+def compare_num_sources(drizzle_list, json_timestamp=None, json_time_since_epoch=None,
                         log_level=logutil.logging.NOTSET):
     """Determine the number of viable sources actually listed in SVM output catalogs.
 
     Parameters
     ----------
-    catalog_list: list of strings
-        Set of files on which to actually perform comparison.  Catalogs, Point and
-        Segment, are generated for all of the Total data products in a single visit.
-        The catalogs are detector-dependent.
-
     drizzle_list: list of strings
         Drizzle files for the Total products which were mined to generate the output catalogs.
 
@@ -248,18 +243,25 @@ def compare_num_sources(catalog_list, drizzle_list, json_timestamp=None, json_ti
     pnt_suffix = '_point-cat.ecsv'
     seg_suffix = '_segment-cat.ecsv'
 
+    # Get a list of the catalog files (*.ecsv) in the current working directory
+    catalog_files = []
+    basepath = os.getcwd()
+    for entry in os.listdir(basepath):
+        if os.path.isfile(os.path.join(basepath, entry)):
+            if entry.endswith("ecsv"):
+                catalog_files.append(entry)
+
     # Generate a separate JSON file for each detector
     # Drizzle filename example: hst_11665_06_wfc3_ir_total_ib4606_drz.fits
     # The filename is all lower-case by design.
     for drizzle_file in drizzle_list:
         tokens = drizzle_file.split('_')
         detector = tokens[4]
-        ipppss = tokens[6]
 
         sources_dict = {'detector': detector, 'point': 0, 'segment': 0}
 
         # Construct the output JSON filename
-        json_filename = ipppss + '_' + detector + '_svm_num_sources.json'
+        json_filename = drizzle_file[:-9] + '_svm_num_sources.json'
 
         # Construct catalog names for catalogs that should have been produced
         prefix = '_'.join(tokens[0:-1])
@@ -270,12 +272,11 @@ def compare_num_sources(catalog_list, drizzle_list, json_timestamp=None, json_ti
         # was an error.  However, for the purposes of this program, it is OK
         # that no catalog was produced.
         for catalog in cat_names:
-            does_exist = any(catalog in x for x in catalog_list)
+            if catalog in catalog_files:
 
-            # if the catalog exists, open it and find the number of sources string
-            num_sources = -1
-            cat_type = ""
-            if does_exist:
+                # if the catalog exists, open it and find the number of sources string
+                num_sources = -1
+                cat_type = ""
                 file = open(catalog, 'r')
                 for line in file:
                     sline = line.strip()
@@ -1783,13 +1784,10 @@ def run_quality_analysis(total_obj_list, run_compare_num_sources=True, run_find_
     # Determine number of sources in Point and Segment catalogs
     if run_compare_num_sources:
         try:
-            total_catalog_list = []
             total_drizzle_list = []
             for total_obj in total_obj_list:
                 total_drizzle_list.append(total_obj.drizzle_filename)
-                total_catalog_list.append(total_obj.point_cat_filename)
-                total_catalog_list.append(total_obj.segment_cat_filename)
-            compare_num_sources(total_catalog_list, total_drizzle_list, json_timestamp=json_timestamp,
+            compare_num_sources(total_drizzle_list, json_timestamp=json_timestamp,
                                 json_time_since_epoch=json_time_since_epoch, log_level=log_level)
         except Exception:
             log.warning("HAP Point vs. HAP Segment sourcelist length comparison (compare_num_sources) encountered a problem.")
