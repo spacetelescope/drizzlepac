@@ -539,8 +539,8 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     peaks = photutils.detection.find_peaks(kern_img, threshold=threshold * 5,
                                           box_size=isolation_size)
     if peaks is None or (peaks is not None and len(peaks) == 0):
-        if (isinstance(threshold, np.ndarray) and threshold.mean() > kern_img.mean()) or \
-            threshold > kern_img.mean():
+        tmean = threshold.mean() if isinstance(threshold, np.ndarray) else threshold
+        if tmean > kern_img.mean():
             kern_stats = sigma_clipped_stats(kern_img)
             threshold = kern_stats[2]
         peaks = photutils.detection.find_peaks(kern_img, threshold=threshold,
@@ -597,7 +597,8 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
         kernel = None
 
     if kernel is None:
-        log.warning("Did not find a suitable PSF out of {} possible sources...".format(len(peaks)))
+        num_peaks = len(peaks) if peaks else 0
+        log.warning("Did not find a suitable PSF out of {} possible sources...".format(num_peaks))
         log.warning("Using a Gaussian 2D Kernel for source detection.")
         # Generate a default kernel using a simple 2D Gaussian
         kernel_fwhm = fwhm
@@ -1950,6 +1951,9 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsig
     return diff_dict
 
 def sigma_clipped_bkg(arr, sigma=3.0, nsigma=4, maxiters=None):
+    # Account for input being blank
+    if arr.max() == 0:
+        return 0.0, [0.0,0.0,0.0]
     if maxiters is None:
         maxiters = int(np.log10(arr.max() / 2) + 0.5)
 

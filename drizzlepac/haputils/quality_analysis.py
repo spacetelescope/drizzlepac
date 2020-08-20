@@ -126,6 +126,10 @@ def determine_alignment_residuals(input, files,
             numsci = countExtn(hdu)
             nums = 0
             img_cats = {}
+            if hdu[("SCI", chip)].data.max() == 0.0:
+                log.info("SKIPPING point-source finding for blank image: {}".format(hdu.filename()))
+                continue
+            log.info("Determining point-sources for {}".format(hdu.filename()))
             for chip in range(numsci):
                 chip += 1
                 img_cats[chip] = amutils.extract_point_sources(hdu[("SCI", chip)].data, nbright=max_srcs)
