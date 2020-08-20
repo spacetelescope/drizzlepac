@@ -82,7 +82,6 @@ setup(
         'astropy>=4.0.0',
         'fitsblender',
         'nictools',
-        'nose',
         'numpy>=1.18',
         'scipy',
         'matplotlib',
@@ -105,8 +104,6 @@ setup(
         'photutils>=0.7',
         'lxml',
         'PyPDF2',
-        'tables',
-        'scikit-image>=0.14.2',
         'PyYAML',
     ],
     extras_require={
