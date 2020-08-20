@@ -56,7 +56,8 @@ TESTS_REQUIRE = [
     'ci_watson',
     'crds',
     'pytest',
-    'pytest-remotedata'
+    'pytest-remotedata',
+    'tables',
 ]
 
 setup(
@@ -105,7 +106,6 @@ setup(
         'photutils>=0.7',
         'lxml',
         'PyPDF2',
-        'tables',
         'scikit-image>=0.14.2',
         'PyYAML',
     ],
