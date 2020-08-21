@@ -194,13 +194,14 @@ class AlignmentTable:
 
         self.imglist = []
         for group_id, image in enumerate(self.process_list):
-            img = amutils.build_wcscat(image, group_id,
-                                       self.extracted_sources[image])
-            # add the name of the image to the imglist object
-            for im in img:
-            #    im.meta['name'] = image
-                log.debug('im.meta[name] = {}'.format(im.meta['name']))
-            self.imglist.extend(img)
+            if image in self.extracted_sources:
+                img = amutils.build_wcscat(image, group_id,
+                                           self.extracted_sources[image])
+                # add the name of the image to the imglist object
+                for im in img:
+                #    im.meta['name'] = image
+                    log.debug('im.meta[name] = {}'.format(im.meta['name']))
+                self.imglist.extend(img)
 
         self.group_id_dict = {}
         for image in self.imglist:
