@@ -55,6 +55,7 @@ if sys.platform == 'win32':
 TESTS_REQUIRE = [
     'ci_watson',
     'crds',
+    'scikit-image>=0.14.2',
     'pytest',
     'pytest-remotedata'
 ]
