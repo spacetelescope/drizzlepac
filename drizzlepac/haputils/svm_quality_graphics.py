@@ -59,11 +59,9 @@ from bokeh.models.tools import HoverTool
 
 # Local application imports
 from drizzlepac import util, wcs_functions
-import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
 from drizzlepac.haputils.graph_utils import HAPFigure, build_tooltips
 from drizzlepac.haputils.pandas_utils import PandasDFReader, get_pandas_data
 from drizzlepac.haputils.pipeline_graphics import build_vector_plot
-from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
 from stsci.tools import logutil
 from stwcs import wcsutil
 from stwcs.wcsutil import HSTWCS

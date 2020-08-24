@@ -58,9 +58,13 @@ from drizzlepac import util, wcs_functions
 from drizzlepac.haputils import hla_flag_filter
 from drizzlepac.haputils import catalog_utils
 from drizzlepac.haputils import astrometric_utils as au
+import drizzlepac.haputils.comparison_utils as cu
 import drizzlepac.haputils.diagnostic_utils as du
-import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
-from drizzlepac.devutils.comparison_tools.read_hla import read_hla_catalog
+try:
+    import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
+except ImportError:
+    print("Unable to import compare_sourcelists! HAP vs. HLA sourcelist comparisons will be skipped.")
+from drizzlepac.haputils import read_hla_catalog
 from stsci.tools import logutil
 from stwcs import wcsutil
 from stwcs.wcsutil import HSTWCS
@@ -377,7 +381,7 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
 
     # 1: Read in sourcelists files into astropy table or 2-d array so that individual columns from each
     # sourcelist can be easily accessed later in the code.
-    point_data, seg_data = csl.slFiles2dataTables(sl_names)
+    point_data, seg_data = cu.slFiles2dataTables(sl_names)
     log.info("Valid point data columns:   {}".format(list(point_data.keys())))
     log.info("Valid segment data columns: {}".format(list(seg_data.keys())))
     log.info("\n")
@@ -390,8 +394,8 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
     sl_lengths = [len(point_data['RA']), len(seg_data['RA'])]
     json_results_dict['point catalog length'] = sl_lengths[0]
     json_results_dict['segment catalog length'] = sl_lengths[1]
-    matching_lines_ref, matching_lines_img = csl.getMatchedLists(sl_names, img_names, sl_lengths,
-                                                                 log_level=log_level)
+    matching_lines_ref, matching_lines_img = cu.getMatchedLists(sl_names, img_names, sl_lengths,
+                                                                log_level=log_level)
     json_results_dict['number of cross-matches'] = len(matching_lines_ref)
 
     # Report number and percentage of the total number of detected ref and comp sources that were matched
@@ -417,22 +421,22 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
     # 2: Create masks to remove missing values or values not considered "good" according to user-specified
     # good bit values
     # 2a: create mask that identifies lines any value from any column is missing
-    missing_mask = csl.mask_missing_values(point_data, seg_data, matching_lines_ref, matching_lines_img,
-                                           columns_to_compare)
+    missing_mask = cu.mask_missing_values(point_data, seg_data, matching_lines_ref, matching_lines_img,
+                                          columns_to_compare)
     # 2b: create mask based on flag values
-    matched_values = csl.extractMatchedLines("FLAGS", point_data, seg_data, matching_lines_ref,
-                                             matching_lines_img)
+    matched_values = cu.extractMatchedLines("FLAGS", point_data, seg_data, matching_lines_ref,
+                                            matching_lines_img)
 
-    bitmask = csl.make_flag_mask(matched_values, good_flag_sum, missing_mask)
+    bitmask = cu.make_flag_mask(matched_values, good_flag_sum, missing_mask)
 
-    matched_values_ra = csl.extractMatchedLines("RA", point_data, seg_data, matching_lines_ref,
+    matched_values_ra = cu.extractMatchedLines("RA", point_data, seg_data, matching_lines_ref,
+                                               matching_lines_img, bitmask=bitmask)
+    matched_values_dec = cu.extractMatchedLines("DEC", point_data, seg_data, matching_lines_ref,
                                                 matching_lines_img, bitmask=bitmask)
-    matched_values_dec = csl.extractMatchedLines("DEC", point_data, seg_data, matching_lines_ref,
-                                                 matching_lines_img, bitmask=bitmask)
-    matched_values_magap1 = csl.extractMatchedLines("MAGNITUDE1", point_data, seg_data, matching_lines_ref,
-                                                    matching_lines_img, bitmask=bitmask)
-    matched_values_magap2 = csl.extractMatchedLines("MAGNITUDE2", point_data, seg_data, matching_lines_ref,
-                                                    matching_lines_img, bitmask=bitmask)
+    matched_values_magap1 = cu.extractMatchedLines("MAGNITUDE1", point_data, seg_data, matching_lines_ref,
+                                                   matching_lines_img, bitmask=bitmask)
+    matched_values_magap2 = cu.extractMatchedLines("MAGNITUDE2", point_data, seg_data, matching_lines_ref,
+                                                   matching_lines_img, bitmask=bitmask)
 
     if matched_values_ra.shape[1] > 0 and matched_values_ra.shape[1] == matched_values_dec.shape[1]:
         # get coordinate system type from fits headers
@@ -678,8 +682,8 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 sl_names = [xmatch_ref_catname, xmatch_comp_catname]
                 img_names = [xmatch_ref_imgname, xmatch_comp_imgname]
                 sl_lengths = [max_sources, len(filtobj_dict[xmatch_comp_imgname]["sources"])]
-                matching_lines_ref, matching_lines_comp = csl.getMatchedLists(sl_names, img_names, sl_lengths,
-                                                                              log_level=log_level)
+                matching_lines_ref, matching_lines_comp = cu.getMatchedLists(sl_names, img_names, sl_lengths,
+                                                                             log_level=log_level)
 
                 # Report number and percentage of the total number of detected ref and comp sources that were
                 # matched
@@ -1202,11 +1206,11 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
 
         # Use the utilities in devutils to match the sources in the two lists - get
         # the indices of the matches.
-        matches_point_to_seg, matches_seg_to_point = csl.getMatchedLists(cat_names,
-                                                                         [drizzle_file,
-                                                                          drizzle_file],
-                                                                         cat_lengths,
-                                                                         log_level=log_level)
+        matches_point_to_seg, matches_seg_to_point = cu.getMatchedLists(cat_names,
+                                                                        [drizzle_file,
+                                                                         drizzle_file],
+                                                                        cat_lengths,
+                                                                        log_level=log_level)
 
         # Move on to the next comparison without creating a .json if no cross-matches are found
         if len(matches_point_to_seg) == 0 or len(matches_seg_to_point) == 0:
@@ -1218,25 +1222,25 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
 
         # There are nan values present in the catalogs - create a mask which identifies these rows
         # which are missing valid data
-        missing_values_mask = csl.mask_missing_values(tab_point_measurements, tab_seg_measurements,
-                                                      matches_point_to_seg, matches_seg_to_point,
-                                                      common_columns)
+        missing_values_mask = cu.mask_missing_values(tab_point_measurements, tab_seg_measurements,
+                                                     matches_point_to_seg, matches_seg_to_point,
+                                                     common_columns)
 
         # Extract the Flag column from the two catalogs and get an ndarray (2, length)
-        flag_matching = csl.extractMatchedLines('Flags', tab_point_measurements, tab_seg_measurements,
-                                                matches_point_to_seg, matches_seg_to_point)
+        flag_matching = cu.extractMatchedLines('Flags', tab_point_measurements, tab_seg_measurements,
+                                               matches_point_to_seg, matches_seg_to_point)
 
         # Generate a mask to accommodate the missing, as well as the "flagged" entries
-        flag_values_mask = csl.make_flag_mask(flag_matching, good_flag_sum, missing_values_mask)
+        flag_values_mask = cu.make_flag_mask(flag_matching, good_flag_sum, missing_values_mask)
 
         # Extract the columns of interest from the two catalogs for each desired measurement
         # and get an ndarray (2, length)
         # array([[21.512, ..., 2.944], [21.6 , ..., 22.98]],
         #       [[21.872, ..., 2.844], [21.2 , ..., 22.8]])
         for index, phot_column_name in enumerate(phot_column_names):
-            matching_phot_rows = csl.extractMatchedLines(phot_column_name, tab_point_measurements,
-                                                         tab_seg_measurements, matches_point_to_seg,
-                                                         matches_seg_to_point, bitmask=flag_values_mask)
+            matching_phot_rows = cu.extractMatchedLines(phot_column_name, tab_point_measurements,
+                                                        tab_seg_measurements, matches_point_to_seg,
+                                                        matches_seg_to_point, bitmask=flag_values_mask)
 
             # Compute the differences (Point - Segment)
             delta_phot = np.subtract(matching_phot_rows[0], matching_phot_rows[1])
@@ -1248,10 +1252,10 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
 
             # NEED A BETTER WAY TO ASSOCIATE THE ERRORS WITH THE MEASUREMENTS
             # Compute the corresponding error of the differences
-            matching_error_rows = csl.extractMatchedLines(error_column_names[index],
-                                                          tab_point_measurements, tab_seg_measurements,
-                                                          matches_point_to_seg, matches_seg_to_point,
-                                                          bitmask=flag_values_mask)
+            matching_error_rows = cu.extractMatchedLines(error_column_names[index],
+                                                         tab_point_measurements, tab_seg_measurements,
+                                                         matches_point_to_seg, matches_seg_to_point,
+                                                         bitmask=flag_values_mask)
 
             # Compute the error of the delta value (square root of the sum of the squares)
             result_error = np.sqrt(np.add(np.square(matching_error_rows[0]),
@@ -1639,7 +1643,7 @@ def run_hla_sourcelist_comparison(total_list, diagnostic_mode=False, json_timest
                     combo_comp_pdf_list.append(combo_comp_pdf_filename)
         if len(combo_comp_pdf_list) > 0:  # combine all plots generated by compare_sourcelists.py for this total object into a single pdf file
             total_combo_comp_pdf_filename = "{}_svm_comparison_plots.pdf".format(tot_obj.drizzle_filename[:-9].replace("_total", ""))
-            csl.pdf_merger(total_combo_comp_pdf_filename, combo_comp_pdf_list)
+            cu.pdf_merger(total_combo_comp_pdf_filename, combo_comp_pdf_list)
             log.info("Sourcelist comparison plots saved to file {}.".format(total_combo_comp_pdf_filename))
 
 
