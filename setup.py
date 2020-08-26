@@ -55,6 +55,7 @@ if sys.platform == 'win32':
 TESTS_REQUIRE = [
     'ci_watson',
     'crds',
+    'scikit-image>=0.14.2',
     'pytest',
     'pytest-remotedata'
 ]
@@ -82,7 +83,6 @@ setup(
         'astropy>=4.0.0',
         'fitsblender',
         'nictools',
-        'nose',
         'numpy>=1.18',
         'scipy',
         'matplotlib',
@@ -106,7 +106,6 @@ setup(
         'lxml',
         'PyPDF2',
         'tables',
-        'scikit-image>=0.14.2',
         'PyYAML',
     ],
     extras_require={
