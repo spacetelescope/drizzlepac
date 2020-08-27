@@ -83,6 +83,9 @@ class CatalogImage:
         self.bkg_background_ra = None
         self.bkg_rms_ra = None
         self.bkg_rms_median = None
+        # Finished with wht_image, clean up memory immediately...
+        del self.wht_image
+        self.wht_image = None
 
     # def build_kernel(self, box_size, win_size, fwhmpsf):
     def build_kernel(self, box_size, win_size, fwhmpsf):
@@ -95,10 +98,6 @@ class CatalogImage:
                                                                   threshold=self.bkg_rms_ra,
                                                                   fwhm=fwhmpsf / self.imgwcs.pscale)
         (self.kernel, self.kernel_psf) = k
-
-        # Finished with wht_image, clean up memory immediately...
-        del self.wht_image
-        self.wht_image = None
 
     def compute_background(self, box_size, win_size,
                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS):
@@ -589,24 +588,43 @@ class HAPPointCatalog(HAPCatalogBase):
             binary_inverted_wht = np.where(wht_image == 0, 1, 0)
             exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
 
-            # find ALL the sources!!!
-            if self.param_dict["starfinder_algorithm"] == "dao":
-                log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
-                                                                          self.image.bkg_rms_median))
-                daofind = DAOStarFinder(fwhm=source_fwhm,
-                                        threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
-                sources = daofind(image, mask=exclusion_mask)
-            elif self.param_dict["starfinder_algorithm"] == "iraf":
-                log.info("IRAFStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
-                                                                           self.image.bkg_rms_median))
-                isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * self.image.bkg_rms_median)
-                sources = isf(image, mask=exclusion_mask)
-            else:
-                err_msg = "'{}' is not a valid 'starfinder_algorithm' parameter input in the catalog_generation parameters json file. Valid options are 'dao' for photutils.detection.DAOStarFinder() or 'iraf' for photutils.detection.IRAFStarFinder().".format(self.param_dict["starfinder_algorithm"])
-                log.error(err_msg)
-                raise ValueError(err_msg)
-            log.info("{}".format("=" * 80))
+            # Determine what regions we have for source identification
+            # Regions are defined as sections of the image which has the same
+            # max WHT within a factor of 2.0 (or so).
+            tp_masks = make_wht_masks(self.image.wht_image, exclusion_mask)
+            
+            sources = None
+            for mask in tp_masks:
+                # apply mask for each separate range of WHT values
+                region = image * mask['mask']
+                # Compute separate threshold for each 'region'
+                reg_rms = self.image.bkg_rms_ra * mask['mask'] / mask['rel_weight']
+                reg_rms_median = np.nanmedian(reg_rms[reg_rms > 0])
 
+                # find ALL the sources!!!
+                if self.param_dict["starfinder_algorithm"] == "dao":
+                    log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
+                                                                              reg_rms_median))
+                    daofind = DAOStarFinder(fwhm=source_fwhm,
+                                            threshold=self.param_dict['nsigma'] * reg_rms_median)
+                    reg_sources = daofind(region, mask=exclusion_mask)
+                elif self.param_dict["starfinder_algorithm"] == "iraf":
+                    log.info("IRAFStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
+                                                                               self.image.bkg_rms_median))
+                    isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * reg_rms_median)
+                    reg_sources = isf(region, mask=exclusion_mask)
+                else:
+                    err_msg = "'{}' is not a valid 'starfinder_algorithm' parameter input in the catalog_generation parameters json file. Valid options are 'dao' for photutils.detection.DAOStarFinder() or 'iraf' for photutils.detection.IRAFStarFinder().".format(self.param_dict["starfinder_algorithm"])
+                    log.error(err_msg)
+                    raise ValueError(err_msg)
+                log.info("{}".format("=" * 80))
+                # Concatenate sources found in each region.
+                if reg_sources is not None:
+                    if sources is None:
+                        sources = reg_sources
+                    else:
+                        sources = vstack( [sources, reg_sources])
+                    
             # If there are no detectable sources in the total detection image, return as there is nothing more to do.
             if not sources:
                 log.warning("No point sources were found in Total Detection Product, {}.".format(self.imgname))
@@ -1779,3 +1797,43 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Keep all the rows in the original total detection table and add columns from the filter
         # table where a matching "id" key is present
         self.source_cat = join(self.source_cat, subset_table, keys="ID", join_type="left")
+        
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Utility functions supporting segmentation of total image based on WHT array
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+def make_inv_mask(mask):
+
+    invmask = ~(mask.astype(np.bool))
+    invmask = invmask.astype(np.uint8)
+    
+    return invmask
+    
+def make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11,11)):
+
+    invmask = make_inv_mask(maskarr)
+    
+    maxwht = ndimage.filters.maximum_filter(whtarr, size=kernel)
+    rel_wht = maxwht / maxwht.max()
+    
+    delta = 0.0
+    master_mask = np.zeros(invmask.shape,dtype=np.uint16)
+    limit = 1 / scale
+    masks = []
+    while delta < sensitivity:
+               
+        mask = rel_wht > limit
+        mask = (mask.astype(np.uint16) * invmask) - master_mask
+        
+        new_delta = master_mask.sum() / mask.sum()
+        if new_delta < sensitivity:
+            masks.append(dict(scale=limit, 
+                              wht_limit=limit*maxwht.max(),
+                              mask=mask,
+                              rel_weight=rel_wht * mask))
+
+        delta = new_delta
+        master_mask = master_mask + mask 
+        limit /= scale
+
+    return masks
