@@ -89,7 +89,7 @@ from astropy.io import fits
 import stwcs
 from stwcs.wcsutil import HSTWCS
 from stwcs import updatewcs
-from stwcs.wcsutil import headerlet
+from stwcs.wcsutil import headerlet, altwcs
 
 from stsci.tools import fileutil, asnutil
 import tweakwcs
@@ -110,8 +110,8 @@ from drizzlepac.haputils import quality_analysis as qa
 __taskname__ = "runastrodriz"
 
 # Local variables
-__version__ = "2.3.0"
-__version_date__ = "(29-May-2020)"
+__version__ = "2.3.1"
+__version_date__ = "(29-Aug-2020)"
 
 # Define parameters which need to be set specifically for
 #    pipeline use of astrodrizzle
@@ -336,7 +336,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
             _cal_prodname = _infile
             _calfiles = [_infile]
-            _inlist = [_infile, _infile_flc]
+                
+            _inlist = [_infile]
+                
             print("_calfiles initialized as: {}".format(_calfiles))
             if len(_calfiles) == 1 and "_raw" in _calfiles[0]:
                 _verify = False
@@ -344,6 +346,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             # Add CTE corrected filename as additional input if present
             if os.path.exists(_infile_flc) and _infile_flc != _infile:
                 _calfiles_flc = [_infile_flc]
+                _inlist = [_infile, _infile_flc]
 
         else:
             # Working with an ASN table...
@@ -598,6 +601,18 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     if _new_asn is not None:
         for _name in _new_asn: fileutil.removeFile(_name)
 
+    # Insure all input FLC/FLT files have updated WCSTYPE* keywords
+    for fname in _calfiles+_calfiles_flc:
+        with fits.open(fname, mode='update') as fhdu:
+            numsci = fileutil.countExtn(fhdu)
+            for extn in range(1, numsci+1):
+                scihdr = fhdu[('sci',extn)].header
+                keys = altwcs.wcskeys(fhdu, ('sci',extn))
+                for key in keys:
+                    wname = 'wcsname'+key.strip()
+                    wtype = 'wcstype'+key.strip()
+                    scihdr[wtype] = updatehdr.interpret_wcsname_type(scihdr[wname])
+                    
     # If headerlets have already been written out by alignment code,
     # do NOT write out this version of the headerlets
     if headerlets:
