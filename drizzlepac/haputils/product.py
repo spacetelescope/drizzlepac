@@ -62,6 +62,9 @@ class HAPProduct:
         # this attribute is updated in the hapsequncer.py module (run_hla_processing()).
         self.configobj_pars = None
 
+        # Define HAPLEVEL value for this product
+        self.haplevel = 1
+
         # Initialize attributes for use in generating the output products
         self.meta_wcs = None
         self.mask = None
@@ -139,6 +142,9 @@ class TotalProduct(HAPProduct):
         # the detector in use.
         # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
         self.manifest_name = '_'.join([instrument, filename[1:4], obset_id, "manifest.txt"])
+       
+        # Define HAPLEVEL value for this product
+        self.haplevel = 2
 
         # These attributes will be populated during processing
         self.edp_list = []
@@ -147,6 +153,15 @@ class TotalProduct(HAPProduct):
 
         log.debug("Total detection object {}/{} created.".format(self.instrument, self.detector))
 
+    def find_member(self, name):
+        """ Return member instance with filename 'name' """
+        desired_member = None
+        for member in [self] + self.edp_list + self.fdp_list:
+            if name == member.drizzle_filename: 
+                desired_member = member
+                break
+        return desired_member
+            
     def add_member(self, edp):
         """ Add an ExposureProduct object to the list - composition.
         """
@@ -219,11 +234,24 @@ class FilterProduct(HAPProduct):
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
         self.refname = self.product_basename + "_ref_cat.ecsv"
 
+        # Define HAPLEVEL value for this product
+        self.haplevel = 2
+
         # These attributes will be populated during processing
         self.edp_list = []
         self.regions_dict = {}
 
         log.debug("Filter object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
+
+    def find_member(self, name):
+        """ Return member instance with filename 'name' """
+        desired_member = None
+        for member in [self] + self.edp_list:
+            if name == member.drizzle_filename: 
+                desired_member = member
+                break
+        return desired_member
+
 
     def add_member(self, edp):
         """ Add an ExposureProduct object to the list - composition.
@@ -364,6 +392,9 @@ class ExposureProduct(HAPProduct):
 
         self.regions_dict = {}
 
+        # Define HAPLEVEL value for this product
+        self.haplevel = 1
+
         # This attribute is set in poller_utils.py
         self.is_singleton = False
 
@@ -371,6 +402,13 @@ class ExposureProduct(HAPProduct):
         self.new_process = True
 
         log.info("Exposure object {} created.".format(self.full_filename[0:9]))
+
+    def find_member(self, name):
+        """ Return member instance with filename 'name' """
+        if name == self.drizzle_filename:
+            return self
+        else:
+            return None
 
     def __getattribute__(self, name):
         if name in ["generate_footprint_mask", "generate_metawcs", "meta_wcs", "mask_kws", "mask"]:
@@ -473,6 +511,8 @@ class SkyCellProduct(HAPProduct):
         # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
         self.manifest_name = '_'.join(['hst', self.product_basename, "manifest.txt"])
 
+        # Define HAPLEVEL value for this product
+        self.haplevel = 3
 
         # These attributes will be populated during processing
         self.edp_list = []
@@ -482,6 +522,15 @@ class SkyCellProduct(HAPProduct):
         self.configobj_pars = None
 
         log.debug("SkyCell object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
+
+    def find_member(self, name):
+        """ Return member instance with filename 'name' """
+        desired_member = None
+        for member in [self] + self.edp_list:
+            if name == member.drizzle_filename: 
+                desired_member = member
+                break
+        return desired_member
 
     def add_member(self, edp):
         """ Add an ExposureProduct object to the list - composition.

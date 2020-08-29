@@ -66,7 +66,14 @@ def refine_product_headers(product, total_obj_list):
     phdu['filename'] = product
 
     # Determine level of the product
-    level = 1 if len(phdu['rootname'].split('_')[-1]) > 6 else 2
+    # Get the level directly from the product instance
+    level = None
+    for tdp in total_obj_list:
+        level = tdp.find_member(product).haplevel
+        if level:
+            break
+    if level is None:
+        level = 1
 
     # Update PINAME keyword
     phdu['piname'] = phdu['pr_inv_l']
