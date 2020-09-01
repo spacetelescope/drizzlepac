@@ -591,7 +591,12 @@ class HAPPointCatalog(HAPCatalogBase):
             # Determine what regions we have for source identification
             # Regions are defined as sections of the image which has the same
             # max WHT within a factor of 2.0 (or so).
-            tp_masks = make_wht_masks(self.image.wht_image, exclusion_mask)
+            # make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11,11))
+            tp_masks = make_wht_masks(self.image.wht_image, exclusion_mask,
+                                    scale=self.param_dict['scale'], 
+                                    sensitivity=self.param_dict['sensitivity'], 
+                                    kernel=(self.param_dict['region_size'],
+                                            self.param_dict['region_size']))
             
             sources = None
             for mask in tp_masks:
