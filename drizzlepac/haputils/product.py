@@ -2,6 +2,14 @@
 
     Classes which define the total ("white light" image), filter, and exposure
     drizzle products.
+
+    These products represent different levels of processing with the levels noted in the
+    'HAPLEVEL' keyword.  The 'HAPLEVEL' values are:
+
+      * 1 : calibrated (FLT/FLC) input images and exposure level drizzle products with improved astrometry
+      * 2 : filter and total products combined using the improved astrometry,
+            consistent pixel scale, and oriented to North.
+      * 3 : (future) multi-visit mosaics aligned to common tangent plane
 """
 import logging
 import sys
@@ -142,7 +150,7 @@ class TotalProduct(HAPProduct):
         # the detector in use.
         # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
         self.manifest_name = '_'.join([instrument, filename[1:4], obset_id, "manifest.txt"])
-       
+
         # Define HAPLEVEL value for this product
         self.haplevel = 2
 
@@ -157,11 +165,11 @@ class TotalProduct(HAPProduct):
         """ Return member instance with filename 'name' """
         desired_member = None
         for member in [self] + self.edp_list + self.fdp_list:
-            if name == member.drizzle_filename: 
+            if name == member.drizzle_filename:
                 desired_member = member
                 break
         return desired_member
-            
+
     def add_member(self, edp):
         """ Add an ExposureProduct object to the list - composition.
         """
@@ -186,7 +194,7 @@ class TotalProduct(HAPProduct):
         # of this directory is now obsolete.
         drizzle_pars["preserve"] = False
         drizzle_pars['rules_file'] = self.rules_file
-        
+
         log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
                   "have been updated for the drizzle step of the total drizzle product."
                   .format(meta_wcs, self.trl_logname))
@@ -247,7 +255,7 @@ class FilterProduct(HAPProduct):
         """ Return member instance with filename 'name' """
         desired_member = None
         for member in [self] + self.edp_list:
-            if name == member.drizzle_filename: 
+            if name == member.drizzle_filename:
                 desired_member = member
                 break
         return desired_member
@@ -472,13 +480,13 @@ class ExposureProduct(HAPProduct):
 
         log.info("Copying {} to SVM input: \n    {}".format(filename, edp_filename))
         shutil.copy(filename, edp_filename)
-        
+
         # Add HAPLEVEL keyword as required by pipeline processing
         fits.setval(edp_filename, 'HAPLEVEL', value=0, comment='Classificaion level of this product')
 
         return edp_filename
-        
-        
+
+
 class SkyCellProduct(HAPProduct):
     """ A SkyCell Product is a mosaic comprised of images acquired
         during a multiple visits with one instrument, one detector, a single filter,
@@ -527,7 +535,7 @@ class SkyCellProduct(HAPProduct):
         """ Return member instance with filename 'name' """
         desired_member = None
         for member in [self] + self.edp_list:
-            if name == member.drizzle_filename: 
+            if name == member.drizzle_filename:
                 desired_member = member
                 break
         return desired_member
@@ -539,7 +547,7 @@ class SkyCellProduct(HAPProduct):
         self.new_to_layer += edp.new_process
 
     def generate_metawcs(self):
-        self.meta_wcs = self.skycell.wcs 
+        self.meta_wcs = self.skycell.wcs
         return self.meta_wcs
 
     def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
@@ -645,4 +653,3 @@ class SkyCellProduct(HAPProduct):
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Sky-cell layer image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         shutil.move(self.trl_logname, self.trl_filename)
-
