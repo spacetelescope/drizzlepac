@@ -112,7 +112,7 @@ def create_drizzle_products(total_obj_list):
         fits_files = fnmatch.filter(product_list, "*dr?.fits")
         for filename in fits_files:
             log.info("    {}".format(filename))
-            proc_utils.refine_product_headers(filename, total_obj_list)
+            # proc_utils.refine_product_headers(filename, total_obj_list)
     except Exception:
         log.critical("Trouble updating drizzle products for CAOM.")
         exc_type, exc_value, exc_tb = sys.exc_info()
