@@ -80,7 +80,7 @@ def perform(input_filename, **kwargs):
         kwargs['log_level'] = logutil.logging.INFO
 
     # execute hapsequencer.run_hap_processing()
-    return_value = hapsequencer.run_hap_processing(input_filename, **kwargs)
+    return_value = hapmultisequencer.run_mvm_processing(input_filename, **kwargs)
 
     return return_value
 
