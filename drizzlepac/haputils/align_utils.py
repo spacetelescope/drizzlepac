@@ -11,7 +11,7 @@ import numpy as np
 from scipy import ndimage
 
 from astropy.io import fits
-from astropy.table import Table, vstack
+from astropy.table import Table
 from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
@@ -43,13 +43,13 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
-                            
+
 NoDetectionsWarning = photutils.findstars.NoDetectionsWarning if \
                         hasattr(photutils.findstars, 'NoDetectionsWarning') else \
-                        photutils.utils.NoDetectionsWarning 
+                        photutils.utils.NoDetectionsWarning
 
 class AlignmentTable:
-    
+
     def __init__(self, input_list, clobber=False, dqname='DQ',
                  log_level=logutil.logging.NOTSET, **alignment_pars):
         """
@@ -149,7 +149,7 @@ class AlignmentTable:
         for img in self.haplist:
             img.close()
 
-    
+
     def find_alignment_sources(self, output=True):
         """Find observable sources in each input exposure."""
         self.extracted_sources = {}
@@ -161,9 +161,9 @@ class AlignmentTable:
 
                 # Allow user to decide when and how to write out catalogs to files
                 if output:
-                    # write out coord lists to files for diagnostic purposes. 
+                    # write out coord lists to files for diagnostic purposes.
                     # Protip: To display the sources in these files in DS9,
-                    #         set the "Coordinate System" option to "Physical" 
+                    #         set the "Coordinate System" option to "Physical"
                     #         when loading the region file.
                     imgroot = "_".join(os.path.basename(img.imgname).split('_')[:-1])
                     for chip in range(1, img.num_sci + 1):
@@ -186,11 +186,11 @@ class AlignmentTable:
             image.meta["group_id"] = self.group_id_dict["{}_{}".format(image.meta["rootname"], image.meta["chip"])]
             image.meta['num_ref_catalog'] = num_ref
 
-    
+
     def configure_fit(self):
         # Convert input images to tweakwcs-compatible FITSWCS objects and
         # attach source catalogs to them.
-        
+
 
         self.imglist = []
         for group_id, image in enumerate(self.process_list):
@@ -213,13 +213,13 @@ class AlignmentTable:
         """
         return list(self.fit_methods.keys())
 
-    def perform_fit(self, method_name, catalog_name, reference_catalog, 
+    def perform_fit(self, method_name, catalog_name, reference_catalog,
                     fitgeom='rscale'):
         """Perform fit using specified method, then determine fit quality"""
-        # Updated fits_pars with value for fitgeom        
+        # Updated fits_pars with value for fitgeom
         self.fit_pars[method_name]['fitgeom'] = fitgeom
         log.info("Setting 'fitgeom' parameter to {} for {} fit".format(fitgeom, method_name))
-        
+
         imglist = self.fit_methods[method_name](self.imglist, reference_catalog,
                                                 **self.fit_pars[method_name])
 
@@ -233,7 +233,7 @@ class AlignmentTable:
 
         return imglist
 
-    
+
     def select_fit(self, catalog_name, method_name):
         """Select the fit that has been identified as 'best'"""
         if catalog_name is None:
@@ -276,7 +276,7 @@ class AlignmentTable:
             else:
                 self.filtered_table = None
 
-    
+
     def apply_fit(self, headerlet_filenames=None, fit_label=None):
         """Apply solution from identified fit to image WCS's
 
@@ -304,7 +304,7 @@ class AlignmentTable:
             fname = self.filtered_table[table_index]['imageName']
             row = self.filtered_table[table_index]
             row['headerletFile'] = headerlet_dict[fname] if fname in headerlet_dict else "None"
-                
+
 
 class HAPImage:
     """Core class defining interface for each input exposure/product
@@ -314,7 +314,7 @@ class HAPImage:
     catalog generation.
 
     """
-    
+
     def __init__(self, filename):
         if isinstance(filename, str):
             self.imghdu = fits.open(filename)
@@ -378,7 +378,7 @@ class HAPImage:
         self.bkg_rms_mean = {}
         self.bkg = {}
         self.bkg_dao_rms = {}
-        
+
 
     def build_kernel(self, fwhmpsf):
         """
@@ -419,7 +419,7 @@ class HAPImage:
 
         self.fwhmpsf = self.kernel_fwhm * self.pscale
 
-    
+
     def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
                            bkg_estimator="SExtractorBackground", rms_estimator="StdBackgroundRMS",
                            nsigma=5., threshold_flag=None):
@@ -504,7 +504,7 @@ class HAPImage:
             if bkg is None:
                 bkg_rms_mean = max(0.01, self.data.min())
                 bkg_dao_rms = bkg_rms_mean
-                threshold = (nsigma+1) * bkg_rms_mean
+                threshold = (nsigma + 1) * bkg_rms_mean
 
             # *** FIX: Need to do something for bkg if bkg is None ***
 
@@ -539,10 +539,10 @@ class HAPImage:
         # from one image to a single source in the
         # other or vice-versa.
         # Create temp DQ mask containing all pixels flagged with any value EXCEPT 256
-        non_sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=256+2048)
+        non_sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=256 + 2048)
 
         # Create temp DQ mask containing saturated pixels ONLY
-        sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=~(256+2048))
+        sat_mask = bitfield_to_boolean_mask(dqarr, ignore_flags=~(256 + 2048))
 
         # Ignore sources where only a couple of pixels are flagged as saturated
         sat_mask = ndimage.binary_erosion(sat_mask, iterations=1)
@@ -554,7 +554,7 @@ class HAPImage:
         dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
         return dqmask
 
-    
+
     def find_alignment_sources(self, output=True, dqname='DQ', **alignment_pars):
         """Find sources in all chips for this exposure."""
 
@@ -610,25 +610,25 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         fitgeom = fit_pars['fitgeom']
         del fit_pars['fitgeom']
     else:
-        fitgeom='rscale'
+        fitgeom = 'rscale'
 
     common_pars = fit_pars['pars']
     del fit_pars['pars']
-    
+
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
     #                          tolerance=100, use2dhist=False)
 
     # Align images and correct WCS
-    # NOTE: this invocation does not use an astrometric catalog. This call 
+    # NOTE: this invocation does not use an astrometric catalog. This call
     #       allows all the input images to be aligned in
     #       a relative way using the first input image as the reference.
     # 1: Perform relative alignment
-    match_relcat = tweakwcs.align_wcs(imglist, None, 
+    match_relcat = tweakwcs.align_wcs(imglist, None,
                                       match=match,
                                       minobj=common_pars['MIN_FIT_MATCHES'],
-                                      expand_refcat=True, 
+                                      expand_refcat=True,
                                       fitgeom=fitgeom)
 
     log.info("Relative alignment found: ")
@@ -649,7 +649,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         msg += "\n    ROT:{:9.4f}  SCALE:{:9.4f}".format(rot, scale)
         msg += "\n Using fitgeom = '{}'".format(fitgeom)
         log.info(msg)
-        
+
     # This logic enables performing only relative fitting and skipping fitting to GAIA
     if reference_catalog is not None:
         # Set all the group_id values to be the same so the various images/chips will be aligned to the astrometric
@@ -660,8 +660,8 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
             image.meta["group_id"] = 1234567
         # 2: Perform absolute alignment
 
-        matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, 
-                                         match=match, 
+        matched_cat = tweakwcs.align_wcs(imglist, reference_catalog,
+                                         match=match,
                                          minobj=common_pars['MIN_FIT_MATCHES'],
                                          fitgeom=fitgeom)
     else:
@@ -670,10 +670,10 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         # TODO: Work out how to get the 'mag' column from input source catalog
         #       into this extended reference catalog...
         reference_catalog = match_relcat
-        reference_catalog['mag'] = np.array([-999.9]*len(reference_catalog), 
+        reference_catalog['mag'] = np.array([-999.9] * len(reference_catalog),
                                             np.float32)
         reference_catalog.meta['catalog'] = 'relative'
-        
+
     # 3: Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
 
@@ -701,10 +701,10 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
 
     """
     if 'fitgeom' in fit_pars:
-        fitgeom=fit_pars['fitgeom']
+        fitgeom = fit_pars['fitgeom']
         del fit_pars['fitgeom']
     else:
-        fitgeom='rscale'
+        fitgeom = 'rscale'
 
     common_pars = fit_pars['pars']
     del fit_pars['pars']
@@ -716,15 +716,15 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
     match = tweakwcs.TPMatch(**fit_pars)
 
     # Align images and correct WCS
-    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, 
+    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog,
                                      match=match,
                                      minobj=common_pars['MIN_FIT_MATCHES'],
-                                     expand_refcat=False, 
+                                     expand_refcat=False,
                                      fitgeom=fitgeom)
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
-    
+
     del matched_cat
 
     return imglist
@@ -751,10 +751,10 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
 
     """
     if 'fitgeom' in fit_pars:
-        fitgeom=fit_pars['fitgeom']
+        fitgeom = fit_pars['fitgeom']
         del fit_pars['fitgeom']
     else:
-        fitgeom='rscale'
+        fitgeom = 'rscale'
 
     common_pars = fit_pars['pars']
     del fit_pars['pars']
@@ -765,7 +765,7 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     # Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
     # Align images and correct WCS
-    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog, 
+    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog,
                                      match=match,
                                      minobj=common_pars['MIN_FIT_MATCHES'],
                                      expand_refcat=False,
@@ -773,7 +773,7 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
-    
+
     del matched_cat
 
     return imglist
@@ -825,11 +825,11 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
                                         'input_mag': None, 'ref_mag': None, 'input_idx': None}
 
                 # Perform checks to insure that fit was successful
-                # Namely, rot < 0.1 degree and scale < 1%.  
+                # Namely, rot < 0.1 degree and scale < 1%.
                 if abs(tinfo['<scale>'] - 1) > 0.01 or abs(tinfo['<rot>']) > 0.1 or \
-                   tinfo['skew'] > 0.01:
-                   # fit is bad
-                   tinfo['status'] = 'FAILED: singularity in fit'
+                    tinfo['skew'] > 0.01:
+                    # fit is bad
+                    tinfo['status'] = 'FAILED: singularity in fit'
 
                 log.debug("fit_info: {}".format(item.meta['fit_info']))
 
@@ -848,7 +848,7 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
                 ra_rms = np.std(dra.to(u.mas))
                 dec_rms = np.std(ddec.to(u.mas))
                 fit_rms = np.std(Angle(img_coords.separation(ref_coords), unit=u.mas)).value
-            
+
                 # Get mag from reference catalog, or input image catalog as needed
                 group_dict[group_id]['ref_mag'] = reference_catalog[ref_idx]['mag'][fitmask]
 
