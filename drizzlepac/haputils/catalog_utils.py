@@ -519,10 +519,11 @@ class HAPCatalogBase:
         data_table.meta["h17.2"] = ["    1 - Extended Source (CI > {})".format(ci_upper)]
         data_table.meta["h17.3"] = ["    2 - Questionable Photometry (Single-Pixel Saturation)"]
         data_table.meta["h17.4"] = ["    4 - Questionable Photometry (Multi-Pixel Saturation)"]
-        data_table.meta["h17.3"] = ["    8 - Faint Detection Limit"]
-        data_table.meta["h17.4"] = ["   16 - Hot Pixels (CI < {})".format(ci_lower)]
-        data_table.meta["h17.5"] = ["   32 - False Detection Swarm Around Saturated Source"]
-        data_table.meta["h17.6"] = ["   64 - False Detections Near Image Edge"]
+        data_table.meta["h17.5"] = ["    8 - Faint Detection Limit"]
+        data_table.meta["h17.6"] = ["   16 - Hot Pixels (CI < {})".format(ci_lower)]
+        data_table.meta["h17.7"] = ["   32 - False Detection Swarm Around Saturated Source"]
+        data_table.meta["h17.8"] = ["   64 - False Detections Near Image Edge"]
+        data_table.meta["h17.9"] = ["  128 - Bleeding and Cosmic Rays"]
         data_table.meta["h18"] = ["#================================================================================================="]
 
         if proc_type is "segment" and self.is_big_island:
