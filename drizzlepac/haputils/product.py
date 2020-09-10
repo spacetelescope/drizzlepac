@@ -211,8 +211,10 @@ class TotalProduct(HAPProduct):
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Total combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
-        shutil.move(self.trl_logname, self.trl_filename)
-
+        try:
+            shutil.move(self.trl_logname, self.trl_filename)
+        except PermissionError:
+            pass
 
 class FilterProduct(HAPProduct):
     """ A Filter Detection Product is a mosaic comprised of images acquired
@@ -371,8 +373,11 @@ class FilterProduct(HAPProduct):
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Filter combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
-        shutil.move(self.trl_logname, self.trl_filename)
-
+        try:
+            shutil.move(self.trl_logname, self.trl_filename)
+        except PermissionError:
+            # TODO:  trailer filename should be saved for moving later...
+            pass
 
 class ExposureProduct(HAPProduct):
     """ An Exposure Product is an individual exposure/image (flt/flc).
@@ -454,7 +459,10 @@ class ExposureProduct(HAPProduct):
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Exposure image {}".format(self.drizzle_filename))
-        shutil.move(self.trl_logname, self.trl_filename)
+        try:
+            shutil.move(self.trl_logname, self.trl_filename)
+        except PermissionError:
+            pass
 
     def copy_exposure(self, filename):
         """
@@ -479,7 +487,10 @@ class ExposureProduct(HAPProduct):
                        "_".join(map(str, [self.filters, filename[:8], suffix]))
 
         log.info("Copying {} to SVM input: \n    {}".format(filename, edp_filename))
-        shutil.copy(filename, edp_filename)
+        try:
+            shutil.copy(filename, edp_filename)
+        except PermissionError:
+            pass
 
         # Add HAPLEVEL keyword as required by pipeline processing
         fits.setval(edp_filename, 'HAPLEVEL', value=0, comment='Classificaion level of this product')
@@ -652,4 +663,7 @@ class SkyCellProduct(HAPProduct):
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Sky-cell layer image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
-        shutil.move(self.trl_logname, self.trl_filename)
+        try:
+            shutil.move(self.trl_logname, self.trl_filename)
+        except PermissionError:
+            pass

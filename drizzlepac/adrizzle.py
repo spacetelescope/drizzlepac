@@ -568,7 +568,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
     # Will we be running in parallel?
     pool_size = util.get_pool_size(paramDict.get('num_cores'), len(imageObjectList))
-    will_parallel = single and pool_size > 1
+    will_parallel = single and pool_size > 1 and not os.environ['os'].startswith("Windows")
     if will_parallel:
         log.info('Executing %d parallel workers' % pool_size)
     else:

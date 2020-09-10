@@ -1071,7 +1071,6 @@ def apply_headerlet(filename, headerlet_file, flcfile=None):
     headerlet.apply_headerlet_as_primary(filename, headerlet_file,
                                         attach=True, archive=True)
     # Verify that all keywords from headerlet got applied
-    # hlet = headerlet.Headerlet.fromfile(headerlet_file)
     if flcfile is not None:
         with fits.open(filename, mode='update') as fhdu:
             num_sci = fileutil.countExtn(fhdu)

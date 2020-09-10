@@ -61,8 +61,10 @@ for each input image.
 The '-n' option allows the user to specify the number of cores to be used in
 running AstroDrizzle.
 
-.. note:: It may be necessary to set this value to '1' (one) on Windows systems due to
-  exceptions caused by threaded logging under Windows.
+.. note:: This value will be forced to a value of '1' (one) on Windows systems due to
+  exceptions caused by threaded logging under Windows.  Future versions will
+  lift this enforced restriction on Windows systems once issues with logging are
+  resolved.
 
 .. _runastrodriz-description:
 
