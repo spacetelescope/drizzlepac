@@ -423,6 +423,21 @@ class HAPCatalogBase:
         self.source_cat = None  # catalog of sources and their properties
         self.tp_sources = tp_sources
 
+        # create mask to reject any sources located less than 10 pixels from a image/chip edge
+        wht_image = self.image.data.copy()
+        binary_inverted_wht = np.where(wht_image == 0, 1, 0)
+        self.exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
+
+        # Determine what regions we have for source identification
+        # Regions are defined as sections of the image which has the same
+        # max WHT within a factor of 2.0 (or so).
+        # make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11,11))
+        self.tp_masks = make_wht_masks(self.image.wht_image, self.exclusion_mask,
+                                       scale=self.param_dict['scale'],
+                                       sensitivity=self.param_dict['sensitivity'],
+                                       kernel=(self.param_dict['region_size'],
+                                               self.param_dict['region_size']))
+
     def identify_sources(self, **pars):
         pass
 
@@ -583,23 +598,8 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("")
             log.info("{}".format("=" * 80))
 
-            # create mask to reject any sources located less than 10 pixels from a image/chip edge
-            wht_image = self.image.data.copy()
-            binary_inverted_wht = np.where(wht_image == 0, 1, 0)
-            exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
-
-            # Determine what regions we have for source identification
-            # Regions are defined as sections of the image which has the same
-            # max WHT within a factor of 2.0 (or so).
-            # make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11,11))
-            tp_masks = make_wht_masks(self.image.wht_image, exclusion_mask,
-                                    scale=self.param_dict['scale'], 
-                                    sensitivity=self.param_dict['sensitivity'], 
-                                    kernel=(self.param_dict['region_size'],
-                                            self.param_dict['region_size']))
-            
             sources = None
-            for mask in tp_masks:
+            for mask in self.tp_masks:
                 # apply mask for each separate range of WHT values
                 region = image * mask['mask']
                 # Compute separate threshold for each 'region'
@@ -612,12 +612,12 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                               reg_rms_median))
                     daofind = DAOStarFinder(fwhm=source_fwhm,
                                             threshold=self.param_dict['nsigma'] * reg_rms_median)
-                    reg_sources = daofind(region, mask=exclusion_mask)
+                    reg_sources = daofind(region, mask=self.exclusion_mask)
                 elif self.param_dict["starfinder_algorithm"] == "iraf":
                     log.info("IRAFStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
                                                                                self.image.bkg_rms_median))
                     isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * reg_rms_median)
-                    reg_sources = isf(region, mask=exclusion_mask)
+                    reg_sources = isf(region, mask=self.exclusion_mask)
                 else:
                     err_msg = "'{}' is not a valid 'starfinder_algorithm' parameter input in the catalog_generation parameters json file. Valid options are 'dao' for photutils.detection.DAOStarFinder() or 'iraf' for photutils.detection.IRAFStarFinder().".format(self.param_dict["starfinder_algorithm"])
                     log.error(err_msg)
