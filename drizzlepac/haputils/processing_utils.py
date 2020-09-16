@@ -35,7 +35,7 @@ def get_rules_file(product):
     new_rules_name = "{}_header_hap.rules".format(rootname)
     rules_filename = os.path.join(base_dir, 'pars', def_rules_name)
     new_rules_filename = os.path.join(os.getcwd(), new_rules_name)
-    
+
     if new_rules_name not in os.listdir('.'):
         shutil.copy(rules_filename, new_rules_filename)
         #shutil.copy(rules_filename, os.getcwd())
@@ -69,7 +69,10 @@ def refine_product_headers(product, total_obj_list):
     # Get the level directly from the product instance
     level = None
     for tdp in total_obj_list:
-        level = tdp.find_member(product).haplevel
+        member = tdp.find_member(product)
+        if member is None:
+            continue
+        level = member.haplevel
         if level:
             break
     if level is None:

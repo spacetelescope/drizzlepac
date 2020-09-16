@@ -40,10 +40,10 @@ import pickle
 import sys
 import traceback
 
+import numpy as np
 from astropy.table import Table
+
 import drizzlepac
-
-
 from drizzlepac.haputils import config_utils
 from drizzlepac.haputils import diagnostic_utils
 from drizzlepac.haputils import hla_flag_filter
@@ -162,6 +162,8 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
         # Build dictionary of total_product_catalogs.catalogs[*].sources to use for
         # filter photometric catalog generation
         sources_dict = {}
+        filter_catalogs = {}
+        source_mask = {}
         for cat_type in total_product_catalogs.catalogs.keys():
             sources_dict[cat_type] = {}
             sources_dict[cat_type]['sources'] = total_product_catalogs.catalogs[cat_type].sources
@@ -214,7 +216,35 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat[
                    'Flags_{}'.format(filter_product_obj.filters)] = \
                    filter_product_catalogs.catalogs[cat_type].source_cat['Flags']
+                source_mask[cat_type] = None
 
+            filter_catalogs[filter_product_obj.drizzle_filename] = filter_product_catalogs
+
+        # Determine which rows should be removed from each type of catalog based on Flag values
+        # Any source with Flag > 5 in any filter product catalog will be marked for removal from
+        # all catalogs.
+        # This requires collating results for each type of catalog from all filter products.
+        flag_trim_value = filter_product_catalogs.param_dict['flag_trim_value']
+        for filter_product_obj in total_product_obj.fdp_list:
+            filter_product_catalogs = filter_catalogs[filter_product_obj.drizzle_filename]
+            for cat_type in filter_product_catalogs.catalogs.keys():
+                catalog_mask = filter_product_catalogs.catalogs[cat_type].source_cat['Flags'] > flag_trim_value
+                if source_mask[cat_type] is None:
+                    source_mask[cat_type] = catalog_mask
+                else:
+                    # Combine masks for all filters for this catalog type
+                    source_mask[cat_type] = np.bitwise_or(source_mask[cat_type], catalog_mask)
+
+        # Write out trimmed filter product catalogs now...
+        for filter_product_obj in total_product_obj.fdp_list:
+            filter_product_catalogs = filter_catalogs[filter_product_obj.drizzle_filename]
+            # Start by trimming the catalogs
+            for cat_type in filter_product_catalogs.catalogs.keys():
+                trimmed_rows = np.where(source_mask[cat_type])[0].tolist()
+                filter_product_catalogs.catalogs[cat_type].source_cat.remove_rows(trimmed_rows)
+                filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat.remove_rows(trimmed_rows)
+
+            # Now write the catalogs out for this filter product
             log.info("Writing out filter product catalog")
             # Write out photometric (filter) catalog(s)
             filter_product_catalogs.write()
@@ -268,18 +298,18 @@ def create_drizzle_products(total_obj_list):
     log.info("Processing with astrodrizzle version {}".format(drizzlepac.astrodrizzle.__version__))
     # Get rules files
     rules_files = {}
-    
+
     # Generate list of all input exposure filenames that are to be processed
     edp_names = []
     for t in total_obj_list:
         edp_names += [e.full_filename for e in t.edp_list]
 
-    # Define dataset-specific rules filenames for each input exposure        
+    # Define dataset-specific rules filenames for each input exposure
     for imgname in edp_names:
         rules_files[imgname] = proc_utils.get_rules_file(imgname)
-        
+
     print('Generated RULES_FILE names of: \n{}\n'.format(rules_files))
-    
+
     # Keep track of all the products created for the output manifest
     product_list = []
 
@@ -295,7 +325,7 @@ def create_drizzle_products(total_obj_list):
         # Create drizzle-combined filter image as well as the single exposure drizzled image
         for filt_obj in total_obj.fdp_list:
             log.info("~" * 118)
-            filt_obj.rules_file = rules_files[filt_obj.edp_list[0].full_filename]                
+            filt_obj.rules_file = rules_files[filt_obj.edp_list[0].full_filename]
 
             log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
             filt_obj.wcs_drizzle_product(meta_wcs)
@@ -306,7 +336,7 @@ def create_drizzle_products(total_obj_list):
             for exposure_obj in filt_obj.edp_list:
                 log.info("~" * 118)
                 exposure_obj.rules_file = rules_files[exposure_obj.full_filename]
-                
+
                 log.info("CREATE SINGLE DRIZZLED IMAGE: {}".format(exposure_obj.drizzle_filename))
                 exposure_obj.wcs_drizzle_product(meta_wcs)
                 product_list.append(exposure_obj.drizzle_filename)
@@ -539,7 +569,7 @@ def run_align_to_gaia(tot_obj, log_level=logutil.logging.INFO, diagnostic_mode=F
     log.info("\n{}: Align the all filters to GAIA with the same fit".format(str(datetime.datetime.now())))
     gaia_obj = None
     headerlet_filenames = []
-    
+
     # Start by creating a FilterProduct instance which includes ALL input exposures
     for exp_obj in tot_obj.edp_list:
         if gaia_obj is None:
@@ -575,8 +605,8 @@ def run_align_to_gaia(tot_obj, log_level=logutil.logging.INFO, diagnostic_mode=F
     else:
         # Get names of all headerlet files written out to file
         headerlet_filenames = [f for f in align_table.filtered_table['headerletFile'] if f != "None"]
-        
-    return [gaia_obj.refname]+headerlet_filenames
+
+    return [gaia_obj.refname] + headerlet_filenames
 
 # ----------------------------------------------------------------------------------------------------------------------
 
