@@ -359,7 +359,7 @@ class HAPCatalogs:
 
         Parameters
         ----------
-        subset_dict: dictionary
+        subset_dict : dictionary
            Dictionary where the keys are the types of catalogs, and the values are
            the catalog objects.
 
@@ -853,7 +853,7 @@ class HAPPointCatalog(HAPCatalogBase):
                 self.sources.remove_column(col2del)
         if 'RA' in self.sources.colnames and 'DEC' in self.sources.colnames:
             subset_table.remove_columns(['RA', 'DEC'])
-        self.sources = join(self.sources, subset_table, keys="ID", join_type="left")
+        self.sources = join(self.sources, subset_table, keys="ID", join_type="inner")
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -1799,7 +1799,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Keep all the rows in the original total detection table and add columns from the filter
         # table where a matching "id" key is present
-        self.source_cat = join(self.source_cat, subset_table, keys="ID", join_type="left")
+        self.source_cat = join(self.source_cat, subset_table, keys="ID", join_type="inner")
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Utility functions supporting segmentation of total image based on WHT array

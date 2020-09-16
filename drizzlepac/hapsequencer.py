@@ -162,7 +162,8 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
         # Build dictionary of total_product_catalogs.catalogs[*].sources to use for
         # filter photometric catalog generation
         sources_dict = {}
-        catalog_mask_dict = {}
+        filter_catalogs = {}
+        source_mask = {}
         for cat_type in total_product_catalogs.catalogs.keys():
             sources_dict[cat_type] = {}
             sources_dict[cat_type]['sources'] = total_product_catalogs.catalogs[cat_type].sources
@@ -215,26 +216,32 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat[
                    'Flags_{}'.format(filter_product_obj.filters)] = \
                    filter_product_catalogs.catalogs[cat_type].source_cat['Flags']
-                catalog_mask_dict[cat_type] = None
+                source_mask[cat_type] = None
+
+            filter_catalogs[filter_product_obj.drizzle_filename] = filter_product_catalogs
 
         # Determine which rows should be removed from each type of catalog based on Flag values
         # Any source with Flag > 5 in any filter product catalog will be marked for removal from
         # all catalogs.
         # This requires collating results for each type of catalog from all filter products.
         for filter_product_obj in total_product_obj.fdp_list:
+            filter_product_catalogs = filter_catalogs[filter_product_obj.drizzle_filename]
             for cat_type in filter_product_catalogs.catalogs.keys():
                 catalog_mask = filter_product_catalogs.catalogs[cat_type].source_cat['Flags'] > 5
-                if catalog_mask_dict[cat_type] is None:
-                    catalog_mask_dict[cat_type] = catalog_mask
+                if source_mask[cat_type] is None:
+                    source_mask[cat_type] = catalog_mask
                 else:
                     # Combine masks for all filters for this catalog type
-                    catalog_mask_dict[cat_type] = np.bitwise_or(catalog_mask_dict[cat_type], catalog_mask)
+                    source_mask[cat_type] = np.bitwise_or(source_mask[cat_type], catalog_mask)
 
         # Write out trimmed filter product catalogs now...
         for filter_product_obj in total_product_obj.fdp_list:
+            filter_product_catalogs = filter_catalogs[filter_product_obj.drizzle_filename]
             # Start by trimming the catalogs
             for cat_type in filter_product_catalogs.catalogs.keys():
-                filter_product_catalogs.catalogs[cat_type].source_cat.remove_rows(catalog_mask_dict[cat_type])
+                trimmed_rows = np.where(source_mask[cat_type])[0].tolist()
+                filter_product_catalogs.catalogs[cat_type].source_cat.remove_rows(trimmed_rows)
+                filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat.remove_rows(trimmed_rows)
 
             # Now write the catalogs out for this filter product
             log.info("Writing out filter product catalog")
