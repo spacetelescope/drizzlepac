@@ -224,10 +224,11 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
         # Any source with Flag > 5 in any filter product catalog will be marked for removal from
         # all catalogs.
         # This requires collating results for each type of catalog from all filter products.
+        flag_trim_value = filter_product_catalogs.param_dict['flag_trim_value']
         for filter_product_obj in total_product_obj.fdp_list:
             filter_product_catalogs = filter_catalogs[filter_product_obj.drizzle_filename]
             for cat_type in filter_product_catalogs.catalogs.keys():
-                catalog_mask = filter_product_catalogs.catalogs[cat_type].source_cat['Flags'] > 5
+                catalog_mask = filter_product_catalogs.catalogs[cat_type].source_cat['Flags'] > flag_trim_value
                 if source_mask[cat_type] is None:
                     source_mask[cat_type] = catalog_mask
                 else:
@@ -605,7 +606,7 @@ def run_align_to_gaia(tot_obj, log_level=logutil.logging.INFO, diagnostic_mode=F
         # Get names of all headerlet files written out to file
         headerlet_filenames = [f for f in align_table.filtered_table['headerletFile'] if f != "None"]
 
-    return [gaia_obj.refname]+headerlet_filenames
+    return [gaia_obj.refname] + headerlet_filenames
 
 # ----------------------------------------------------------------------------------------------------------------------
 
