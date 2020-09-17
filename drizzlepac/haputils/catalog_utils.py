@@ -626,7 +626,7 @@ class HAPPointCatalog(HAPCatalogBase):
                     if sources is None:
                         sources = reg_sources
                     else:
-                        sources = vstack( [sources, reg_sources])
+                        sources = vstack([sources, reg_sources])
 
             # If there are no detectable sources in the total detection image, return as there is nothing more to do.
             if not sources:
