@@ -6,12 +6,15 @@ Interfaces to main drizzle functions.
 :License: :doc:`LICENSE`
 
 """
-import sys,os,copy,time
+import os
+import copy
+import time
+import platform
 from . import util
 import numpy as np
 from astropy.io import fits
 from stsci.tools import fileutil, logutil, mputil, teal
-from . import outputimage, wcs_functions, processInput, util
+from . import outputimage, wcs_functions
 import stwcs
 from stwcs import distortion
 
@@ -46,7 +49,7 @@ time_post_all = []
 time_write_all = []
 
 #
-#### Interactive interface for running drizzle tasks separately
+# ### Interactive interface for running drizzle tasks separately
 #
 
 def drizzle(input, outdata, wcsmap=None, editpars=False, configObj=None, **input_dict):
@@ -568,7 +571,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
     # Will we be running in parallel?
     pool_size = util.get_pool_size(paramDict.get('num_cores'), len(imageObjectList))
-    will_parallel = single and pool_size > 1 and not os.environ['os'].startswith("Windows")
+    will_parallel = single and pool_size > 1 and platform.system() != "Windows"
     if will_parallel:
         log.info('Executing %d parallel workers' % pool_size)
     else:
