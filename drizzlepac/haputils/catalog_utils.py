@@ -665,7 +665,7 @@ class HAPPointCatalog(HAPCatalogBase):
         bg_apers = CircularAnnulus(pos_xy,
                                    r_in=self.param_dict['skyannulus_arcsec']/self.image.imgwcs.pscale,
                                    r_out=(self.param_dict['skyannulus_arcsec'] +
-                                   self.param_dict['dskyannulus_arcsec'])/self.image.imgwcs.pscale)
+                                          self.param_dict['dskyannulus_arcsec'])/self.image.imgwcs.pscale)
 
         # Create the list of photometric apertures to measure
         phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
@@ -883,7 +883,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
     # the image background by the sigma_clipped alternate algorithm
     using_sigma_clipped_bkg = False
 
-    # Mask indicating the non-illuminated portion of the image as True and the illuminated 
+    # Mask indicating the non-illuminated portion of the image as True and the illuminated
     # portion as False.
     mask = None
 
@@ -1001,7 +1001,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             self.final_segment_background = copy.deepcopy(self.image.bkg_background_ra)
             imgarr_bkgsub = imgarr - self.final_segment_background
 
-            # Determine how much of the illuminated portion of the background subtracted image is negative 
+            # Determine how much of the illuminated portion of the background subtracted image is negative
             illum_mask = HAPSegmentCatalog.mask < 1
             total_illum_mask = illum_mask.sum()
             illum_data = imgarr_bkgsub * illum_mask
@@ -1027,7 +1027,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # a two-dimensional image) to use instead of a two-dimensional image whose values vary by position
             if negative_ratio * 100.0 > self._negative_percent:
                 log.info("Percentage of negative values {0:.2f} in the background subtracted image exceeds the threshold of {1:.2f}. Change to determine the background estimate (median) using a sigma-clipped algorithm.".format(100.0 * negative_ratio, self._negative_percent))
-         
+
                 # Compute a sigma-clipped background which returns only single values for mean, median, and standard deviations
                 segm_bkg_mean, segm_bkg_median, segm_bkg_std = sigma_clipped_stats(imgarr,
                                                                                    HAPSegmentCatalog.mask,
@@ -1042,7 +1042,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
                 # Over-write the stale values for the background and background rms
                 self.final_segment_background_rms = np.full_like(self.image.data, segm_bkg_std)
-                HAPSegmentCatalog.using_sigma_clipped_bkg = True 
+                HAPSegmentCatalog.using_sigma_clipped_bkg = True
 
                 # Now recompute the background subtracted image
                 imgarr_bkgsub = imgarr - self.final_segment_background
@@ -1128,7 +1128,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
                 # Regardless of the assessment, Keep this segmentation image for use
                 if self.is_big_island:
-                    log.warning("Both Custom/Gaussian and RickerWavelet kernels produced poor quality\nsegmentation images. "\
+                    log.warning("Both Custom/Gaussian and RickerWavelet kernels produced poor quality\nsegmentation images. "
                                 "Retaining the RickerWavelet segmentation image for further processing.")
 
                 # The total product catalog consists of at least the X/Y and RA/Dec coordinates for the detected
@@ -1906,7 +1906,8 @@ def make_inv_mask(mask):
 
     return invmask
 
-def make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11,11)):
+
+def make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11, 11)):
 
     invmask = make_inv_mask(maskarr)
 
@@ -1914,7 +1915,7 @@ def make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11,11))
     rel_wht = maxwht / maxwht.max()
 
     delta = 0.0
-    master_mask = np.zeros(invmask.shape,dtype=np.uint16)
+    master_mask = np.zeros(invmask.shape, dtype=np.uint16)
     limit = 1 / scale
     masks = []
     while delta < sensitivity:
