@@ -14,13 +14,23 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-3.1.8 (Aug-2020)
+3.1.9 (unreleased)
+==================
+
+- Update ``runastrodriz`` to work under Windows while adding documentation
+  to tell the user to run with ``num_cores`` set to 1.  [#794]
+
+- Fixed a bug in ``TweakReg`` due to which ``TweakReg`` would crash when
+  ``updatehdr`` was set to `False`. [#801]
+
+
+3.1.8 (11-Aug-2020)
 ==================
 
 A number of changes have been implemented to either correct problems or 
 improve the processed results.  The most significant of the changes are:
 
-  - rscale only used for alignment. 
+  - rscale only used for alignment.
   - a minimum of 6 sources now gets used for alignment
   - no proper motions used in astrometric (GAIA) catalog when attempting a posteriori fitting
   - chip-to-chip alignment errors were corrected

@@ -1,7 +1,7 @@
 {
     "bkg_box_size": 27,
     "bkg_filter_size": 3,
-    "nsigma": 5,
+    "nsigma": 7.5,
     "skyannulus_arcsec": 0.25,
     "dskyannulus_arcsec": 0.25,
     "aperture_1": 0.03,
@@ -11,6 +11,7 @@
     "scale": 1.5,
     "sensitivity": 0.95,
     "region_size": 11,
+    "flag_trim_value": 5,
     "dao": {
         "bkgsig_sf": 4.0,
         "kernel_sd_aspect_ratio": 0.8,

@@ -22,8 +22,6 @@ from photutils.utils import calc_total_error
 from stsci.tools import logutil
 from stwcs.wcsutil import HSTWCS
 
-import matplotlib.pyplot as plt
-
 from . import astrometric_utils
 from . import photometry_tools
 
@@ -197,7 +195,6 @@ class CatalogImage:
         self.bkg_rms_ra = bkg_rms_ra.copy()
         self.bkg_rms_median = bkg_rms_median.copy()
         self.bkg_median = bkg_median.copy()
-
         del bkg, bkg_background_ra, bkg_rms_ra, bkg_rms_median, bkg_median
 
     def _get_header_data(self):
@@ -363,7 +360,7 @@ class HAPCatalogs:
 
         Parameters
         ----------
-        subset_dict: dictionary
+        subset_dict : dictionary
            Dictionary where the keys are the types of catalogs, and the values are
            the catalog objects.
 
@@ -535,10 +532,11 @@ class HAPCatalogBase:
         data_table.meta["h17.2"] = ["    1 - Extended Source (CI > {})".format(ci_upper)]
         data_table.meta["h17.3"] = ["    2 - Questionable Photometry (Single-Pixel Saturation)"]
         data_table.meta["h17.4"] = ["    4 - Questionable Photometry (Multi-Pixel Saturation)"]
-        data_table.meta["h17.3"] = ["    8 - Faint Detection Limit"]
-        data_table.meta["h17.4"] = ["   16 - Hot Pixels (CI < {})".format(ci_lower)]
-        data_table.meta["h17.5"] = ["   32 - False Detection Swarm Around Saturated Source"]
-        data_table.meta["h17.6"] = ["   64 - False Detections Near Image Edge"]
+        data_table.meta["h17.5"] = ["    8 - Faint Detection Limit"]
+        data_table.meta["h17.6"] = ["   16 - Hot Pixels (CI < {})".format(ci_lower)]
+        data_table.meta["h17.7"] = ["   32 - False Detection Swarm Around Saturated Source"]
+        data_table.meta["h17.8"] = ["   64 - False Detections Near Image Edge"]
+        data_table.meta["h17.9"] = ["  128 - Bleeding and Cosmic Rays"]
         data_table.meta["h18"] = ["#================================================================================================="]
 
         if proc_type is "segment" and self.is_big_island:
@@ -629,8 +627,8 @@ class HAPPointCatalog(HAPCatalogBase):
                     if sources is None:
                         sources = reg_sources
                     else:
-                        sources = vstack( [sources, reg_sources])
-                    
+                        sources = vstack([sources, reg_sources])
+
             # If there are no detectable sources in the total detection image, return as there is nothing more to do.
             if not sources:
                 log.warning("No point sources were found in Total Detection Product, {}.".format(self.imgname))
@@ -856,7 +854,7 @@ class HAPPointCatalog(HAPCatalogBase):
                 self.sources.remove_column(col2del)
         if 'RA' in self.sources.colnames and 'DEC' in self.sources.colnames:
             subset_table.remove_columns(['RA', 'DEC'])
-        self.sources = join(self.sources, subset_table, keys="ID", join_type="left")
+        self.sources = join(self.sources, subset_table, keys="ID", join_type="inner")
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -964,8 +962,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("contrast (frac. flux for peak to be separate object, 0=max. deblend, 1=no deblend): {}".format(self._contrast))
             log.info("RickerWavelet nsigma (sigma * background_rms): {}".format(self._rw2d_nsigma))
             log.info("RickerWavelet kernel X- and Y-dimension: {}".format(self._rw2d_size))
-            log.info("Percentage limit on the biggest source: {}".format(100.0*self._max_biggest_source))
-            log.info("Percentage limit on the source fraction over the image: {}".format(100.0*self._max_source_fraction))
+            log.info("Percentage limit on the biggest source: {}".format(100.0 * self._max_biggest_source))
+            log.info("Percentage limit on the source fraction over the image: {}".format(100.0 * self._max_source_fraction))
             log.info("")
             log.info("{}".format("=" * 80))
 
@@ -1003,7 +1001,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                               source_box=self._size_source_box,
                                                               mask=mask)
 
-            # Check if custom_segm_image is None indicating there are no detectable sources in the 
+            # Check if custom_segm_image is None indicating there are no detectable sources in the
             # total detection image.  If value is None, a warning has already been issued.  Issue
             # a final message and return.
             if custom_segm_img is None:
@@ -1048,7 +1046,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                 source_box=self._size_source_box,
                                                                 mask=mask)
 
-                # Check if rw2d_segm_image is None indicating there are no detectable sources in the 
+                # Check if rw2d_segm_image is None indicating there are no detectable sources in the
                 # total detection image.  If value is None, a warning has already been issued.  Issue
                 # a final message and return.
                 if rw2d_segm_img is None:
@@ -1158,7 +1156,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                Background subtracted total detection image
 
            threshold :
-               Image which defines, on a pixel-by-pixel basis, the low limit above which 
+               Image which defines, on a pixel-by-pixel basis, the low limit above which
                sources are detected.
 
             ncount : int
@@ -1722,7 +1720,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         pixels and / or situations where the total source fraction exceeds a user-specified fraction
         of the image (aka 'big islands')
 
-        Algorithm is essentially the standalone function written by R.L.White (STScI) for the 
+        Algorithm is essentially the standalone function written by R.L.White (STScI) for the
         Hubble Legacy Archive (HLA).
 
         Parameters
@@ -1807,8 +1805,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Keep all the rows in the original total detection table and add columns from the filter
         # table where a matching "id" key is present
-        self.source_cat = join(self.source_cat, subset_table, keys="ID", join_type="left")
-        
+        self.source_cat = join(self.source_cat, subset_table, keys="ID", join_type="inner")
+
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Utility functions supporting segmentation of total image based on WHT array
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1817,34 +1816,34 @@ def make_inv_mask(mask):
 
     invmask = ~(mask.astype(np.bool))
     invmask = invmask.astype(np.uint8)
-    
+
     return invmask
-    
+
 def make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11,11)):
 
     invmask = make_inv_mask(maskarr)
-    
+
     maxwht = ndimage.filters.maximum_filter(whtarr, size=kernel)
     rel_wht = maxwht / maxwht.max()
-    
+
     delta = 0.0
     master_mask = np.zeros(invmask.shape,dtype=np.uint16)
     limit = 1 / scale
     masks = []
     while delta < sensitivity:
-               
+
         mask = rel_wht > limit
         mask = (mask.astype(np.uint16) * invmask) - master_mask
-        
+
         new_delta = master_mask.sum() / mask.sum()
         if new_delta < sensitivity:
-            masks.append(dict(scale=limit, 
+            masks.append(dict(scale=limit,
                               wht_limit=limit*maxwht.max(),
                               mask=mask,
                               rel_weight=rel_wht * mask))
 
         delta = new_delta
-        master_mask = master_mask + mask 
+        master_mask = master_mask + mask
         limit /= scale
 
     return masks

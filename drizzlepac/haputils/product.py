@@ -2,6 +2,14 @@
 
     Classes which define the total ("white light" image), filter, and exposure
     drizzle products.
+
+    These products represent different levels of processing with the levels noted in the
+    'HAPLEVEL' keyword.  The 'HAPLEVEL' values are:
+
+      * 1 : calibrated (FLT/FLC) input images and exposure level drizzle products with improved astrometry
+      * 2 : filter and total products combined using the improved astrometry,
+            consistent pixel scale, and oriented to North.
+      * 3 : (future) multi-visit mosaics aligned to common tangent plane
 """
 import logging
 import sys
@@ -61,6 +69,9 @@ class HAPProduct:
         # HAPConfig objects are created after these Product objects have been instantiated so
         # this attribute is updated in the hapsequncer.py module (run_hla_processing()).
         self.configobj_pars = None
+
+        # Define HAPLEVEL value for this product
+        self.haplevel = 1
 
         # Initialize attributes for use in generating the output products
         self.meta_wcs = None
@@ -140,12 +151,24 @@ class TotalProduct(HAPProduct):
         # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
         self.manifest_name = '_'.join([instrument, filename[1:4], obset_id, "manifest.txt"])
 
+        # Define HAPLEVEL value for this product
+        self.haplevel = 2
+
         # These attributes will be populated during processing
         self.edp_list = []
         self.fdp_list = []
         self.regions_dict = {}
 
         log.debug("Total detection object {}/{} created.".format(self.instrument, self.detector))
+
+    def find_member(self, name):
+        """ Return member instance with filename 'name' """
+        desired_member = None
+        for member in [self] + self.edp_list + self.fdp_list:
+            if name == member.drizzle_filename:
+                desired_member = member
+                break
+        return desired_member
 
     def add_member(self, edp):
         """ Add an ExposureProduct object to the list - composition.
@@ -171,7 +194,7 @@ class TotalProduct(HAPProduct):
         # of this directory is now obsolete.
         drizzle_pars["preserve"] = False
         drizzle_pars['rules_file'] = self.rules_file
-        
+
         log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
                   "have been updated for the drizzle step of the total drizzle product."
                   .format(meta_wcs, self.trl_logname))
@@ -188,8 +211,10 @@ class TotalProduct(HAPProduct):
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Total combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
-        shutil.move(self.trl_logname, self.trl_filename)
-
+        try:
+            shutil.move(self.trl_logname, self.trl_filename)
+        except PermissionError:
+            pass
 
 class FilterProduct(HAPProduct):
     """ A Filter Detection Product is a mosaic comprised of images acquired
@@ -219,11 +244,24 @@ class FilterProduct(HAPProduct):
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
         self.refname = self.product_basename + "_ref_cat.ecsv"
 
+        # Define HAPLEVEL value for this product
+        self.haplevel = 2
+
         # These attributes will be populated during processing
         self.edp_list = []
         self.regions_dict = {}
 
         log.debug("Filter object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
+
+    def find_member(self, name):
+        """ Return member instance with filename 'name' """
+        desired_member = None
+        for member in [self] + self.edp_list:
+            if name == member.drizzle_filename:
+                desired_member = member
+                break
+        return desired_member
+
 
     def add_member(self, edp):
         """ Add an ExposureProduct object to the list - composition.
@@ -335,8 +373,11 @@ class FilterProduct(HAPProduct):
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Filter combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
-        shutil.move(self.trl_logname, self.trl_filename)
-
+        try:
+            shutil.move(self.trl_logname, self.trl_filename)
+        except PermissionError:
+            # TODO:  trailer filename should be saved for moving later...
+            pass
 
 class ExposureProduct(HAPProduct):
     """ An Exposure Product is an individual exposure/image (flt/flc).
@@ -364,6 +405,9 @@ class ExposureProduct(HAPProduct):
 
         self.regions_dict = {}
 
+        # Define HAPLEVEL value for this product
+        self.haplevel = 1
+
         # This attribute is set in poller_utils.py
         self.is_singleton = False
 
@@ -371,6 +415,13 @@ class ExposureProduct(HAPProduct):
         self.new_process = True
 
         log.info("Exposure object {} created.".format(self.full_filename[0:9]))
+
+    def find_member(self, name):
+        """ Return member instance with filename 'name' """
+        if name == self.drizzle_filename:
+            return self
+        else:
+            return None
 
     def __getattribute__(self, name):
         if name in ["generate_footprint_mask", "generate_metawcs", "meta_wcs", "mask_kws", "mask"]:
@@ -408,7 +459,10 @@ class ExposureProduct(HAPProduct):
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Exposure image {}".format(self.drizzle_filename))
-        shutil.move(self.trl_logname, self.trl_filename)
+        try:
+            shutil.move(self.trl_logname, self.trl_filename)
+        except PermissionError:
+            pass
 
     def copy_exposure(self, filename):
         """
@@ -433,14 +487,17 @@ class ExposureProduct(HAPProduct):
                        "_".join(map(str, [self.filters, filename[:8], suffix]))
 
         log.info("Copying {} to SVM input: \n    {}".format(filename, edp_filename))
-        shutil.copy(filename, edp_filename)
-        
+        try:
+            shutil.copy(filename, edp_filename)
+        except PermissionError:
+            pass
+
         # Add HAPLEVEL keyword as required by pipeline processing
         fits.setval(edp_filename, 'HAPLEVEL', value=0, comment='Classificaion level of this product')
 
         return edp_filename
-        
-        
+
+
 class SkyCellProduct(HAPProduct):
     """ A SkyCell Product is a mosaic comprised of images acquired
         during a multiple visits with one instrument, one detector, a single filter,
@@ -473,6 +530,8 @@ class SkyCellProduct(HAPProduct):
         # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
         self.manifest_name = '_'.join(['hst', self.product_basename, "manifest.txt"])
 
+        # Define HAPLEVEL value for this product
+        self.haplevel = 3
 
         # These attributes will be populated during processing
         self.edp_list = []
@@ -483,6 +542,15 @@ class SkyCellProduct(HAPProduct):
 
         log.debug("SkyCell object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
 
+    def find_member(self, name):
+        """ Return member instance with filename 'name' """
+        desired_member = None
+        for member in [self] + self.edp_list:
+            if name == member.drizzle_filename:
+                desired_member = member
+                break
+        return desired_member
+
     def add_member(self, edp):
         """ Add an ExposureProduct object to the list - composition.
         """
@@ -490,7 +558,7 @@ class SkyCellProduct(HAPProduct):
         self.new_to_layer += edp.new_process
 
     def generate_metawcs(self):
-        self.meta_wcs = self.skycell.wcs 
+        self.meta_wcs = self.skycell.wcs
         return self.meta_wcs
 
     def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
@@ -595,5 +663,7 @@ class SkyCellProduct(HAPProduct):
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Sky-cell layer image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
-        shutil.move(self.trl_logname, self.trl_filename)
-
+        try:
+            shutil.move(self.trl_logname, self.trl_filename)
+        except PermissionError:
+            pass

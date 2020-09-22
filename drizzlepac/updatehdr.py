@@ -461,7 +461,7 @@ def update_wcs(image, extnum, new_wcs, wcsname="", reusename=False, verbose=Fals
                 f"WCSNAME '{wcsname}' already present in '{fname}'. A unique "
                 "value for the 'wcsname' parameter needs to be specified."
             )
-    else:
+    elif close_file or image.fileinfo(0) is None or image.fileinfo(0)['filemode'] == 'update':
         altwcs.archive_wcs(image, [extnum], wcsname=pri_wcsname, mode=altwcs.ArchiveMode.AUTO_RENAME)
 
     # Update Primary WCS:
