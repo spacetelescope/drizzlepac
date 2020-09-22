@@ -1,8 +1,9 @@
 """This script contains code to support creation of photometric sourcelists using two techniques:
 aperture photometry and segmentation-map based photometry."""
-import sys
-import pickle  # FIX Remove
+
 import copy
+import pickle  # FIX Remove
+import sys
 
 import astropy.units as u
 from astropy.io import fits as fits
@@ -974,7 +975,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # The bkg is an object comprised of background and background_rms images, as well as
             # background_median and background_rms_median scalars.  Set a threshold above which
             # sources can be detected.
-            threshold = self._nsigma * self.image.bkg_rms_ra
+            threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
+            for wht_mask in self.tp_masks:
+                threshold_item = self._nsigma * self.image.bkg_rms_ra * wht_mask['mask'] / wht_mask['rel_weight']
+                threshold_item[np.isnan(threshold_item)] = 0.0
+                threshold += threshold_item
+            del(threshold_item)
 
             # The imgarr should be background subtracted to match the threshold which has no background
             imgarr_bkgsub = imgarr - self.image.bkg_background_ra
