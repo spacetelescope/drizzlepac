@@ -4,7 +4,7 @@
 
 :License: :doc:`LICENSE`
 
-USAGE: runsinglehap [-d] inputFilename
+USAGE: runmultihap [-d] inputFilename
 
 The '-d' option will run this task in DEBUG mode producing additional outputs.
 
@@ -38,6 +38,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def perform(input_filename, **kwargs):
     """
     Main calling subroutine.
@@ -52,7 +53,8 @@ def perform(input_filename, **kwargs):
         display all tracebacks, and debug information?
 
     log_level : string
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.
 
     Updates
     -------
@@ -60,13 +62,12 @@ def perform(input_filename, **kwargs):
         a simple status value. '0' for a successful run and '1' for a failed
         run
     """
-    # set up log_level as an input to hapsequencer.run_hap_processing().
+    # set up log_level as an input to hapmultisequencer.run_mvm_processing().
     log_level_dict = {"critical": logutil.logging.CRITICAL,
                       "error": logutil.logging.ERROR,
                       "warning": logutil.logging.WARNING,
                       "info": logutil.logging.INFO,
                       "debug": logutil.logging.DEBUG}
-
 
     if 'log_level' in kwargs:
         kwargs['log_level'] = kwargs['log_level'].lower()
@@ -89,24 +90,29 @@ def perform(input_filename, **kwargs):
 
 def main():
     parser = argparse.ArgumentParser(description='Process images, produce mosaics and sourcelists')
-    parser.add_argument('input_filename', help='Name of the input csv file containing information about the files to '
-                        'be processed')
-    parser.add_argument('-d', '--diagnostic_mode', required=False, action='store_true', help='If this option is turned '
-                        'on, additional log messages will be displayed and additional files will be created during the '
-                        'course of the run.')
+    parser.add_argument('input_filename',
+                        help='Name of the input csv file containing information about the files to be '
+                             'processed')
+    parser.add_argument('-d', '--diagnostic_mode', required=False, action='store_true',
+                        help='If this option is turned on, additional log messages will be displayed and '
+                             'additional files will be created during the course of the run.')
     parser.add_argument('-l', '--log_level', required=False, default='info',
-                        choices=['critical', 'error', 'warning', 'info', 'debug'], help='The desired level of '
-                        'verboseness in the log statements displayed on the screen and written to the .log file. The '
-                        'level of verboseness from left to right, and includes all log statements with a log_level '
-                        'left of the specified level. Specifying "critical" will only record/display "critical" log '
-                        'statements, and specifying "error" will record/display both "error" and "critical" log '
-                        'statements, and so on.')
+                        choices=['critical', 'error', 'warning', 'info', 'debug'],
+                        help='The desired level of verboseness in the log statements displayed on the screen '
+                             'and written to the .log file. The level of verboseness from left to right, and '
+                             'includes all log statements with a log_level left of the specified level. '
+                             'Specifying "critical" will only record/display "critical" log statements, and '
+                             'specifying "error" will record/display both "error" and "critical" log '
+                             'statements, and so on.')
     user_args = parser.parse_args()
 
     print("Multi-visit processing started for: {}".format(user_args.input_filename))
-    rv = perform(user_args.input_filename, diagnostic_mode=user_args.diagnostic_mode, log_level=user_args.log_level)
+    rv = perform(user_args.input_filename,
+                 diagnostic_mode=user_args.diagnostic_mode,
+                 log_level=user_args.log_level)
     print("Return Value: ", rv)
     return rv
+
 
 if __name__ == '__main__':
     main()
