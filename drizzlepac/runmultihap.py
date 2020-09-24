@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" runsinglehap.py - Module to control processing of single-visit mosaics
+""" runmultihap.py - Module to control processing of multi-visit mosaics
 
 :License: :doc:`LICENSE`
 
@@ -10,8 +10,8 @@ The '-d' option will run this task in DEBUG mode producing additional outputs.
 
 Python USAGE:
     python
-    from drizzlepac import runsinglehap
-    runsinglehap.perform(inputFilename,debug=True)
+    from drizzlepac import runmultihap
+    runmultihap.perform(inputFilename,debug=True)
 
 """
 # Import standard Python modules
@@ -21,9 +21,9 @@ import sys
 # THIRD-PARTY
 from stsci.tools import logutil
 
-from drizzlepac import hapsequencer
+from drizzlepac import hapmultisequencer
 
-__taskname__ = "runsinglehap"
+__taskname__ = "runmultihap"
 
 # Local variables
 __version__ = "0.1.1"
@@ -79,7 +79,7 @@ def perform(input_filename, **kwargs):
         print("Log level set to default level 'log.info'.")
         kwargs['log_level'] = logutil.logging.INFO
 
-    # execute hapsequencer.run_hap_processing()
+    # execute hapmultisequencer.run_mvm_processing()
     return_value = hapmultisequencer.run_mvm_processing(input_filename, **kwargs)
 
     return return_value
@@ -88,7 +88,7 @@ def perform(input_filename, **kwargs):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Process images, produce drizzled images and sourcelists')
+    parser = argparse.ArgumentParser(description='Process images, produce mosaics and sourcelists')
     parser.add_argument('input_filename', help='Name of the input csv file containing information about the files to '
                         'be processed')
     parser.add_argument('-d', '--diagnostic_mode', required=False, action='store_true', help='If this option is turned '
@@ -103,8 +103,8 @@ def main():
                         'statements, and so on.')
     user_args = parser.parse_args()
 
-    print("Single-visit processing started for: {}".format(user_args.input_filename))
-    rv = perform(user_args.input_filename, diagnostic_mode=user_args.diagnostic_mode, log_level = user_args.log_level)
+    print("Multi-visit processing started for: {}".format(user_args.input_filename))
+    rv = perform(user_args.input_filename, diagnostic_mode=user_args.diagnostic_mode, log_level=user_args.log_level)
     print("Return Value: ", rv)
     return rv
 
