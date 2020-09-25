@@ -99,6 +99,9 @@ EXP_RATIO = 0.2
 # in either case, going to a smaller kernel will help with source identification.
 MAX_AREA_LIMIT = 1964
 
+# CRBIT definitions
+CRBIT = 4096
+
 """
 
 Primary function for creating an astrometric reference catalog.
@@ -108,7 +111,7 @@ Primary function for creating an astrometric reference catalog.
 
 def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
                                gaia_only=False, table_format="ascii.ecsv",
-                               existing_wcs=None, num_sources=None, 
+                               existing_wcs=None, num_sources=None,
                                use_footprint=False, full_catalog=False):
     """Create an astrometric catalog that covers the inputs' field-of-view.
 
@@ -178,7 +181,7 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
 
     use_pm = int(catalog[-1]) > 1 and catalog.upper().startswith('GAIA')
     if use_pm:
-        # Get the observation date 
+        # Get the observation date
         epoch = Time(fits.getval(inputs[0], 'date-obs')).decimalyear
     else:
         epoch = None
@@ -200,11 +203,11 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
     # weed out sources which are not accurate (no proper motions in catalog)
     if epoch and hasattr(ref_table, 'mask') and 'pmra' in ref_table.colnames:
         ref_table = ref_table[~ref_table.mask['pmra']]
-    
+
     colnames = ('ra', 'dec', 'mag', 'objID')
     if not full_catalog:
         ref_table = ref_table[colnames]
-        
+
     # Add catalog name as meta data
     ref_table.meta['catalog'] = catalog
     ref_table.meta['gaia_only'] = gaia_only
@@ -213,7 +216,7 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
     # rename coordinate columns to be consistent with tweakwcs
     ref_table.rename_column('ra', 'RA')
     ref_table.rename_column('dec', 'DEC')
-    
+
     sources = len(ref_table)
 
     # sort table by magnitude, fainter to brightest
@@ -277,10 +280,10 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
         for sources from catalog.  Default: 0.1 degrees
 
     epoch : float, optional
-        Catalog positions returned for this field-of-view will have their 
-        proper motions applied to represent their positions at this date, if 
+        Catalog positions returned for this field-of-view will have their
+        proper motions applied to represent their positions at this date, if
         a value is specified at all, for catalogs with proper motions.
-        
+
     catalog : str, optional
         Name of catalog to query, as defined by web-service.  Default: 'GSC241'
 
@@ -299,7 +302,7 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
     spec = spec_str.format(ra, dec, sr, fmt, catalog)
     if epoch:
         spec += epoch_str.format(epoch)
-        
+
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
@@ -321,10 +324,10 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
         Array of RA, Dec points that describe the footprint polygon
 
     epoch : float, optional
-        Catalog positions returned for this field-of-view will have their 
-        proper motions applied to represent their positions at this date, if 
+        Catalog positions returned for this field-of-view will have their
+        proper motions applied to represent their positions at this date, if
         a value is specified at all, for catalogs with proper motions.
-        
+
     catalog : str, optional
         Name of catalog to query, as defined by web-service.  Default: 'GSC241'
 
@@ -535,7 +538,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     kern_img[:, :edge] = 0.0
     kern_img[:, -edge:] = 0.0
     kernel_psf = False
-    
+
     peaks = photutils.detection.find_peaks(kern_img, threshold=threshold * 5,
                                           box_size=isolation_size)
     if peaks is None or (peaks is not None and len(peaks) == 0):
@@ -649,14 +652,14 @@ def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
     bkg_thresh, bkg = sigma_clipped_bkg(img, sigma=sigma, nsigma=nsigma)
 
     sigma = np.sqrt(2.0 * np.abs(bkg[1]))
-    x, y, flux, src_id, sharp, round1, round2 = ndfind(img, 
-                                                     sigma*threshold, 
+    x, y, flux, src_id, sharp, round1, round2 = ndfind(img,
+                                                     sigma*threshold,
                                                      fwhm, bkg[1],
                                                      nbright=nbright,
                                                      use_sharp_round=True)
     srcs = Table([x,y,flux,src_id], names=['xcentroid', 'ycentroid', 'flux', 'id'])
-    
-    """   
+
+    """
     # Now, use IRAFStarFinder to identify sources across chip
     starfind = IRAFStarFinder(threshold=bkg[2]*nsigma, fwhm=fwhm)
     srcs = starfind.find_stars(img, mask=dqmask)
@@ -672,7 +675,8 @@ def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
 
 
 def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
-                    segment_threshold=None, dao_threshold=None, source_box=7,
+                    segment_threshold=None, dao_threshold=None,
+                    dao_nsigma=3.0, source_box=7,
                     classify=True, centering_mode="starfind", nlargest=None,
                     outroot=None, plot=False, vmax=None, deblend=False):
     """Use photutils to find sources in image based on segmentation.
@@ -724,11 +728,11 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         imgarr[dqmask] = 0
     else:
         imgarr = img
-        
+
     if segment_threshold is None:
-        dao_threshold, bkg = sigma_clipped_bkg(imgarr, sigma=4.0, nsigma=3)
-        segment_threshold = np.ones(imgarr.shape, imgarr.dtype)*dao_threshold
-    
+        dao_threshold, bkg = sigma_clipped_bkg(imgarr, sigma=4.0, nsigma=dao_nsigma)
+        segment_threshold = np.ones(imgarr.shape, imgarr.dtype) * dao_threshold
+
     segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
                           filter_kernel=kernel, connectivity=4)
 
@@ -769,10 +773,15 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                                contrast=0.01)
 
     # If classify is turned on, it should modify the segmentation map
+    dqmap = None
     if classify:
         cat = source_properties(imgarr, segm)
         # Remove likely cosmic-rays based on central_moments classification
         bad_srcs = np.where(classify_sources(cat) == 0)[0] + 1
+        # Convert this bad_srcs into a segmap that can be used to update a DQ array
+        dqmap = np.zeros_like(segm.data)
+        for src in bad_srcs:
+            dqmap[segm.data == src] += CRBIT
 
         if LooseVersion(photutils.__version__) >= '0.7':
             segm.remove_labels(bad_srcs)
@@ -785,6 +794,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                 idx[segm.labels] = segm.labels
                 idx[bad_srcs] = 0
                 segm.data = idx[segm.data]
+
 
     # convert segm to mask for daofind
     if centering_mode == 'starfind':
@@ -893,11 +903,11 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     # Include magnitudes for each source for use in verification of alignment through
     # comparison with GAIA magnitudes
     tbl = compute_photometry(tbl, photmode)
-    
+
     # Insure all IDs are sequential and unique (at least in this catalog)
     tbl['cat_id'] = np.arange(1, len(tbl) + 1)
     del tbl['id']
-    
+
     if outroot:
         tbl['xcentroid'].info.format = '.10f'  # optional format
         tbl['ycentroid'].info.format = '.10f'
@@ -917,7 +927,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         ax[0][1].set_title('Segmentation Map')
         if not isinstance(segment_threshold, float):
             ax[1][1].imshow(segment_threshold, origin='lower')
-    return tbl, segm
+    return tbl, segm, dqmap
 
 
 def classify_sources(catalog, sources=None):
@@ -944,6 +954,8 @@ def classify_sources(catalog, sources=None):
         source, and a value of 0 indicates a likely cosmic-ray.
     """
     moments = catalog.moments_central
+    semiminor_axis = catalog.semiminor_axis_sigma
+    elon = catalog.elongation
     if sources is None:
         sources = (0, len(moments))
     num_sources = sources[1] - sources[0]
@@ -954,8 +966,14 @@ def classify_sources(catalog, sources=None):
         src_y = catalog[src].ycentroid
         if np.isnan(src_x) or np.isnan(src_y):
             continue
+        # This identifies moment of maximum value
         x, y = np.where(moments[src] == moments[src].max())
-        if (x[0] > 1) and (y[0] > 1):
+        valid_src = (x[0] > 1) and (y[0] > 1)
+        # These look for CR streaks (not delta CRs)
+        valid_width = semiminor_axis[src].value > 0.75
+        valid_elon = elon[src].value < 2
+        # If either a delta CR or a CR streak are identified, remove it
+        if valid_src and (valid_width and valid_elon):
             srctype[src] = 1
 
     return srctype
@@ -1084,12 +1102,13 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
                                                 saturation_limit=saturation_limit)
         log.debug("Built kernel with FWHM = {}".format(kernel_fwhm))
 
-        seg_tab, segmap = extract_sources(imgarr - bkg_ra, dqmask=dqmask,
-                                          outroot=outroot, kernel=kernel,
-                                          photmode=photmode,
-                                          segment_threshold=threshold, dao_threshold=dao_threshold,
-                                          fwhm=kernel_fwhm, **detector_pars)
-
+        seg_tab, segmap, crmap = extract_sources(imgarr - bkg_ra, dqmask=dqmask,
+                                                 outroot=outroot, kernel=kernel,
+                                                 photmode=photmode,
+                                                 segment_threshold=threshold,
+                                                 dao_threshold=dao_threshold,
+                                                 fwhm=kernel_fwhm, **detector_pars)
+        del crmap
         source_cats[chip] = seg_tab
 
     return source_cats
@@ -1333,9 +1352,9 @@ def within_footprint(img, wcsobj, x, y):
         arrays of x, y positions for sources to be checked.
 
     Returns
-    -------    
+    -------
     mask : ndarray
-        Boolean array of same length as x,y arrays where sources that fall 
+        Boolean array of same length as x,y arrays where sources that fall
         within the footprint are True.
 
     """
@@ -1345,17 +1364,17 @@ def within_footprint(img, wcsobj, x, y):
     wcsmask = wcsobj.footprint_contains(sky)
     xint = x[wcsmask].astype(np.int32)
     yint = y[wcsmask].astype(np.int32)
-    
+
     fprint = ~np.isnan(img)
     xymask = np.zeros(img.shape, dtype=np.bool)
     xymask[yint, xint] = True
-    
+
     skymask = np.bitwise_and(fprint, xymask)
-    
+
     mask = [True if skymask[yx]==True else False for yx in zip(yint, xint)]
     mask = np.array(mask).astype(np.bool)
-    
-    # NOTE: There is probably a way to use list comprehension to do this, 
+
+    # NOTE: There is probably a way to use list comprehension to do this,
     # but for now, this works as intended.
     onimg = wcsmask.copy()
     indx=0
@@ -1364,7 +1383,7 @@ def within_footprint(img, wcsobj, x, y):
             if mask[indx] == False:
                 onimg[i] = False
             indx += 1
-            
+
     return onimg
 
 
@@ -1530,8 +1549,10 @@ def build_wcscat(image, group_id, source_catalog):
     if isinstance(image, str):
         hdulist = fits.open(image)
         open_file = True
+        fname = image
     elif isinstance(image, fits.HDUList):
         hdulist = image
+        fname = image.filename()
     else:
         log.info("Wrong type of input, {}, for build_wcscat...".format(type(image)))
         raise ValueError
@@ -1546,26 +1567,26 @@ def build_wcscat(image, group_id, source_catalog):
 
         # rename xcentroid/ycentroid columns, if necessary, to be consistent with tweakwcs
         if imcat is None:
-            imcat = Table(names=['xcentroid','ycentroid','mag'])
+            imcat = Table(names=['xcentroid', 'ycentroid', 'mag'])
         if isinstance(imcat, str):
-            imcat = Table.read(imcat, format='ascii.fast_commented_header', 
-                                names=['x','y'])
+            imcat = Table.read(imcat, format='ascii.fast_commented_header',
+                                names=['x', 'y'])
             if 'mag' not in imcat.colnames:
-                imcat['mag'] = [-999.9]*len(imcat['x'])
+                imcat['mag'] = [-999.9] * len(imcat['x'])
 
         if 'xcentroid' in imcat.colnames:
             imcat.rename_column('xcentroid', 'x')
             imcat.rename_column('ycentroid', 'y')
-                    
+
         wcscat = FITSWCS(
             w,
             meta={
                 'chip': chip,
                 'group_id': group_id,
-                'filename': image,
-                'rootname': "_".join(image.split("_")[:-1]),
+                'filename': fname,
+                'rootname': "_".join(fname.split("_")[:-1]),
                 'catalog': imcat,
-                'name': image
+                'name': fname
             }
         )
 

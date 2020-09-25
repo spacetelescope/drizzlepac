@@ -113,7 +113,6 @@ class AlignmentTable:
         default_fwhm_set = False
 
         try:
-
             for img in self.process_list:
                 log.info("Adding {} to HAPImage list".format(img))
                 catimg = HAPImage(img)
@@ -150,13 +149,18 @@ class AlignmentTable:
             img.close()
 
 
-    def find_alignment_sources(self, output=True):
+    def find_alignment_sources(self, output=True, crclean=None):
         """Find observable sources in each input exposure."""
+        if crclean is None:
+            crclean = [False] * len(self.haplist)
+
         self.extracted_sources = {}
-        for img in self.haplist:
+        for img, clean in zip(self.haplist, crclean):
             self.extracted_sources[img.imgname] = {}
             if img.imghdu is not None:
-                img.find_alignment_sources(output=output, dqname=self.dqname, **self.alignment_pars)
+                img.find_alignment_sources(output=output, dqname=self.dqname,
+                                           crclean=clean,
+                                           **self.alignment_pars)
                 self.extracted_sources[img.imgname] = img.catalog_table
 
                 # Allow user to decide when and how to write out catalogs to files
@@ -190,8 +194,6 @@ class AlignmentTable:
     def configure_fit(self):
         # Convert input images to tweakwcs-compatible FITSWCS objects and
         # attach source catalogs to them.
-
-
         self.imglist = []
         for group_id, image in enumerate(self.process_list):
             if image in self.extracted_sources:
@@ -354,6 +356,9 @@ class HAPImage:
         self.fwhmpsf = None
 
         self.catalog_table = {}
+
+        # Switch to turn on/off use of single-image CR detection/removal
+        self.crclean = crclean
 
     def build_wht_image(self):
         if not self.num_wht:
@@ -555,8 +560,11 @@ class HAPImage:
         return dqmask
 
 
-    def find_alignment_sources(self, output=True, dqname='DQ', **alignment_pars):
+    def find_alignment_sources(self, output=True, dqname='DQ', crclean=False,
+                               **alignment_pars):
         """Find sources in all chips for this exposure."""
+        if crclean:
+            self.imghdu = fits.open(self.imgname, mode='update')
 
         for chip in range(self.num_sci):
             chip += 1
@@ -576,15 +584,32 @@ class HAPImage:
 
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore', NoDetectionsWarning)
-                seg_tab, segmap = amutils.extract_sources(sciarr, dqmask=dqmask,
-                                                          outroot=outroot,
-                                                          kernel=self.kernel,
-                                                          segment_threshold=self.threshold[chip],
-                                                          dao_threshold=self.bkg_rms_mean[chip],
-                                                          fwhm=self.kernel_fwhm,
-                                                          **extract_pars)
+                seg_tab, segmap, crmap = amutils.extract_sources(sciarr, dqmask=dqmask,
+                                                                 outroot=outroot,
+                                                                 kernel=self.kernel,
+                                                                 segment_threshold=self.threshold[chip],
+                                                                 dao_threshold=self.bkg_rms_mean[chip],
+                                                                 fwhm=self.kernel_fwhm,
+                                                                 **extract_pars)
+            if crclean:
+                i = self.imgname.replace('.fits', '')
+                if log.level < logutil.logging.INFO:
+                    # apply crmap to input image
+                    crfile = "{}_crmap_dq{}.fits".format(i, chip)
+                    fits.PrimaryHDU(data=crmap).writeto(crfile, overwrite=True)
+                log.debug("Updating DQ array for {} using single-image CR identification algorithm".format(i))
+                self.imghdu[(dqname, chip)].data = np.bitwise_or(self.imghdu[(dqname, chip)].data, crmap)
+                del crmap
 
             self.catalog_table[chip] = seg_tab
+
+        if crclean and log.level < logutil.logging.INFO:
+            self.imghdu.writeto(self.imgname.replace('.fits', '_crmap.fits'))
+
+        if self.imghdu is not None:
+            self.imghdu.close()
+            self.imghdu = None
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 

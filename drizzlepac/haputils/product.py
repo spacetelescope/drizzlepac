@@ -183,6 +183,8 @@ class TotalProduct(HAPProduct):
     def wcs_drizzle_product(self, meta_wcs):
         """
             Create the drizzle-combined total image using the meta_wcs as the reference output
+
+            .. note:: Cosmic-ray identification is NOT performed when creating the total detection image.
         """
         # Retrieve the configuration parameters for astrodrizzle
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
@@ -194,6 +196,7 @@ class TotalProduct(HAPProduct):
         # of this directory is now obsolete.
         drizzle_pars["preserve"] = False
         drizzle_pars['rules_file'] = self.rules_file
+        drizzle_pars['resetbits'] = "0"
 
         log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
                   "have been updated for the drizzle step of the total drizzle product."
@@ -283,18 +286,21 @@ class FilterProduct(HAPProduct):
         exposure_filenames = []
         headerlet_filenames = {}
         align_table = None
+        crclean = []
 
         try:
             if self.edp_list:
                 for edp in self.edp_list:
                     exposure_filenames.append(edp.full_filename)
                     headerlet_filenames[edp.full_filename] = edp.headerlet_filename
+                    crclean.append(edp.crclean)
 
                 if align_table is None:
                     align_table = align_utils.AlignmentTable(exposure_filenames,
                                                              log_level=self.log_level,
                                                              **alignment_pars)
-                    align_table.find_alignment_sources(output=output)
+
+                    align_table.find_alignment_sources(output=output, crclean=crclean)
                     align_table.configure_fit()
                 log.debug('Creating reference catalog {}'.format(self.refname))
                 ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
@@ -362,6 +368,11 @@ class FilterProduct(HAPProduct):
                   .format(meta_wcs, self.trl_logname))
 
         edp_filenames = [element.full_filename for element in self.edp_list]
+
+        if len(edp_filenames) == 1:
+            drizzle_pars['resetbits'] = "0"  # Use any pixels already flagged as CRs
+            drizzle_pars['final_fillval'] = 0
+
         astrodrizzle.AstroDrizzle(input=edp_filenames,
                                   output=self.drizzle_filename,
                                   **drizzle_pars)
@@ -414,6 +425,9 @@ class ExposureProduct(HAPProduct):
         # Flag whether this exposure is being processed for the 'first' time or not
         self.new_process = True
 
+        # Flag whether to use single-image CR identification with this exposure
+        self.crclean = False
+
         log.info("Exposure object {} created.".format(self.full_filename[0:9]))
 
     def find_member(self, name):
@@ -438,7 +452,6 @@ class ExposureProduct(HAPProduct):
         """
             Create the drizzle-combined exposure image using the meta_wcs as the reference output
         """
-
         # Retrieve the configuration parameters for astrodrizzle
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
         # ...and set parameters which are computed on-the-fly
@@ -448,6 +461,7 @@ class ExposureProduct(HAPProduct):
         # of this directory is now obsolete.
         drizzle_pars["preserve"] = False
         drizzle_pars['rules_file'] = self.rules_file
+        drizzle_pars['resetbits'] = "0"
 
         log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
                   "have been updated for the drizzle step of the exposure drizzle product."

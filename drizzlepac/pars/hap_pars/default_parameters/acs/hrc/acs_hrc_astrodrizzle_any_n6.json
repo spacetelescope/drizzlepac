@@ -102,7 +102,7 @@
     },
     "STATE OF INPUT FILES": {
         "restore": false,
-        "preserve": true,
+        "preserve": false,
         "overwrite": false,
         "clean": true
     },
