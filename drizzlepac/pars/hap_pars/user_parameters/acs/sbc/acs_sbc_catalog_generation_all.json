@@ -30,7 +30,7 @@
         "rw2d_nsigma": 1.5,
         "max_biggest_source": 0.015,
         "max_source_fraction": 0.075,
-        "negative_threshold": -1.0,
+        "negative_threshold": 0.0,
         "negative_percent": 15.0,
         "nsigma_clip": 3.0,
         "maxiters":2

@@ -627,7 +627,7 @@ class HAPPointCatalog(HAPCatalogBase):
                     if sources is None:
                         sources = reg_sources
                     else:
-                        sources = vstack( [sources, reg_sources])
+                        sources = vstack([sources, reg_sources])
 
             # If there are no detectable sources in the total detection image, return as there is nothing more to do.
             if not sources:
@@ -883,10 +883,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
     # the image background by the sigma_clipped alternate algorithm
     using_sigma_clipped_bkg = False
 
-    # Mask indicating the non-illuminated portion of the image as True and the illuminated
-    # portion as False.
-    mask = None
-
     def __init__(self, image, param_dict, param_dict_qc, diagnostic_mode, tp_sources):
         super().__init__(image, param_dict, param_dict_qc, diagnostic_mode, tp_sources)
 
@@ -948,22 +944,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
             unique, non-zero positive integers.
         """
 
-        # Check the pars to see if the "n" exposure mask has been passed.  If it has, it must be
-        # converted into a boolean mask where False = actual image footprint, and True = the
-        # non-illuminated portion of the images.  The True indicates to detect_sources()
-        # which pixels to IGNORE.
-        HAPSegmentCatalog.mask = pars.get('mask', None)
-        if hasattr(HAPSegmentCatalog.mask, 'shape'):
-            # At this point this general mask has zeros in the non-illuminated portion, and non-zeros in
-            # the illuminated portion.  We are decreasing the footprint of the illuminated portion.
-            HAPSegmentCatalog.mask = ndimage.binary_erosion(HAPSegmentCatalog.mask, iterations=10)
-            # Now convert the mask for the purposes needed here: the non-illuminated portion is True,
-            # and the illuminated portion is False.
-            HAPSegmentCatalog.mask = HAPSegmentCatalog.mask < 1
-            if self.diagnostic_mode:
-                outname = self.imgname.replace(".fits", "_mask.fits")
-                fits.PrimaryHDU(data=HAPSegmentCatalog.mask.astype(np.uint16)).writeto(outname)
-
         # If the total product sources have not been identified, then this needs to be done!
         if not self.tp_sources:
 
@@ -1002,23 +982,29 @@ class HAPSegmentCatalog(HAPCatalogBase):
             imgarr_bkgsub = imgarr - self.final_segment_background
 
             # Determine how much of the illuminated portion of the background subtracted image is negative
-            illum_mask = HAPSegmentCatalog.mask < 1
+            illum_mask = self.exclusion_mask < 1
             total_illum_mask = illum_mask.sum()
             illum_data = imgarr_bkgsub * illum_mask
             negative_mask = illum_data < self._negative_threshold
             total_negative_mask = negative_mask.sum()
             negative_ratio = total_negative_mask / total_illum_mask
-            log.info("Num illum: {}  Num neg: {}".format(total_illum_mask, total_negative_mask))
             log.info("Percent ratio of negative pixels in background subtracted image to total illuminated pixels: {0:.2f}".format(100.0 * negative_ratio))
 
             # Write out diagnostic data
             if self.diagnostic_mode:
+                # Exclusion mask
+                outname = self.imgname.replace(".fits", "_mask.fits")
+                fits.PrimaryHDU(data=self.exclusion_mask.astype(np.uint16)).writeto(outname)
+
+                # Background image
                 outname = self.imgname.replace(".fits", "_bkg.fits")
                 fits.PrimaryHDU(data=self.image.bkg_background_ra).writeto(outname)
 
+                # Background-subtracted image
                 outname = self.imgname.replace(".fits", "_bkgsub.fits")
                 fits.PrimaryHDU(data=imgarr_bkgsub).writeto(outname)
 
+                # Background-subtracted image as mask of the negative values
                 outname = self.imgname.replace(".fits", "_bkgsub_neg.fits")
                 fits.PrimaryHDU(data=negative_mask.astype(np.uint16)).writeto(outname)
 
@@ -1026,11 +1012,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # of large negative regions, compute a single sigma-clipped background median value (constituted as
             # a two-dimensional image) to use instead of a two-dimensional image whose values vary by position
             if negative_ratio * 100.0 > self._negative_percent:
-                log.info("Percentage of negative values {0:.2f} in the background subtracted image exceeds the threshold of {1:.2f}. Change to determine the background estimate (median) using a sigma-clipped algorithm.".format(100.0 * negative_ratio, self._negative_percent))
+                log.info("Percentage of negative values {0:.2f} in the background subtracted image exceeds the threshold of {1:.2f}.".format(100.0 * negative_ratio, self._negative_percent))
+                log.info("Using the alternate sigma-clippling algorithm to determine the background estimate (median).")
 
                 # Compute a sigma-clipped background which returns only single values for mean, median, and standard deviations
                 segm_bkg_mean, segm_bkg_median, segm_bkg_std = sigma_clipped_stats(imgarr,
-                                                                                   HAPSegmentCatalog.mask,
+                                                                                   self.exclusion_mask,
                                                                                    sigma=self._nsigma_clip,
                                                                                    cenfunc='median',
                                                                                    maxiters=self._maxiters)
@@ -1050,6 +1037,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Finally, compute the threshold to use for source detection
             threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
             for wht_mask in self.tp_masks:
+                log.info("Using WHT masks as a scale on the RMS to compute threshold detection limit.")
                 threshold_item = self._nsigma * self.final_segment_background_rms * wht_mask['mask'] / wht_mask['rel_weight']
                 threshold_item[np.isnan(threshold_item)] = 0.0
                 threshold += threshold_item
@@ -1064,7 +1052,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                               ncount_dandd,
                                                               filter_kernel=self.image.kernel,
                                                               source_box=self._size_source_box,
-                                                              mask=HAPSegmentCatalog.mask)
+                                                              mask=self.exclusion_mask)
 
             # Check if custom_segm_image is None indicating there are no detectable sources in the
             # total detection image.  If value is None, a warning has already been issued.  Issue
@@ -1105,7 +1093,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                 ncount_dandd,
                                                                 filter_kernel=rw2d_kernel,
                                                                 source_box=self._size_source_box,
-                                                                mask=HAPSegmentCatalog.mask)
+                                                                mask=self.exclusion_mask)
 
                 # Check if rw2d_segm_image is None indicating there are no detectable sources in the
                 # total detection image.  If value is None, a warning has already been issued.  Issue
@@ -1150,6 +1138,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
             # form to filter out bad rows and correspondingly bad segments before the filter images are processed.
             total_measurements_table = Table(self.source_cat.to_table(columns=['id', 'xcentroid', 'ycentroid', 'sky_centroid_icrs']))
+
+            if self.diagnostic_mode:
+                outname = self.imgname.replace(".fits", "_threshold.fits")
+                fits.PrimaryHDU(data=threshold).writeto(outname)
 
             # Filter the table to eliminate nans or inf based on the coordinates, then remove these segments from
             # the segmentation image
@@ -1327,7 +1319,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         if HAPSegmentCatalog.using_sigma_clipped_bkg:
             # Compute a sigma-clipped background which returns only single values for mean, median, and standard deviations
             segm_bkg_mean, segm_bkg_median, segm_bkg_std = sigma_clipped_stats(imgarr,
-                                                                               HAPSegmentCatalog.mask,
+                                                                               self.exclusion_mask,
                                                                                sigma=self._nsigma_clip,
                                                                                cenfunc='median',
                                                                                maxiters=self._maxiters)
