@@ -579,7 +579,8 @@ def parse_obset_tree(det_tree, log_level):
                                                                                                                    tdp_obj.instrument,
                                                                                                                    tdp_obj.detector))
             # Identify what exposures should use single-image CR identification algorithm
-            if len(filt_obj.edp_list) == 1:
+            is_ccd = not (filt_obj.instrument.lower() == 'wfc3' and filt_obj.detector.lower() == 'ir')
+            if is_ccd and len(filt_obj.edp_list) == 1:
                 for e in filt_obj.edp_list:
                     e.crclean = True
 

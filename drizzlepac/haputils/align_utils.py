@@ -358,7 +358,7 @@ class HAPImage:
         self.catalog_table = {}
 
         # Switch to turn on/off use of single-image CR detection/removal
-        self.crclean = crclean
+        self.crclean = False
 
     def build_wht_image(self):
         if not self.num_wht:
