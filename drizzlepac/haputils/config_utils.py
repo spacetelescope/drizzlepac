@@ -6,7 +6,6 @@ given the specified observation conditions and instrument/detector used in the o
 import collections
 import json
 import os
-import pdb
 import sys
 
 from astropy.time import Time
@@ -110,6 +109,12 @@ class HapConfig(object):
         Nothing.
 
         """
+        # Determine number of exposures
+        if hasattr(prod_obj, "edp_list"):
+            if hasattr(prod_obj, "skycell"):
+                n_exp = int(round(prod_obj.mask_kws['MEANNEXP'][0]))  # Use mean number of exposures in skycell instead of just simple number of input images for MVM
+            else:
+                n_exp = len(prod_obj.edp_list) # use simple number of input images for SVM
 
         # determine product type, initialize and build conditions list
         if hasattr(prod_obj, "edp_list") and hasattr(prod_obj, "fdp_list"):  # For total products
@@ -125,11 +130,10 @@ class HapConfig(object):
                     self.conditions = ['total_basic_pre']
             else:
                 self.conditions = ["total_basic"]
-            if len(prod_obj.edp_list) == 1:
+            if n_exp == 1:
                 self.conditions.append("any_n1")
         elif hasattr(prod_obj, "edp_list") and not hasattr(prod_obj, "fdp_list"):  # For filter products
             self.conditions = ["filter_basic"]
-            n_exp = len(prod_obj.edp_list)
             if n_exp == 1:
                 self.conditions.append("any_n1")
             else:
