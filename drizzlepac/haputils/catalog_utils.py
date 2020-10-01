@@ -58,13 +58,6 @@ class CatalogImage:
         else:
             self.ghd_product = "fdp"
 
-        # Get various configuration variables needed for the background computation
-        # MDD FIX
-        self._negative_percent = self.param_dict["sourcex"]["negative_percent"]
-        self._negative_threshold = self.param_dict["sourcex"]["negative_threshold"]
-        self._nsigma_clip = self.param_dict["sourcex"]["nsigma_clip"]
-        self._maxiters = self.param_dict["sourcex"]["maxiters"]
-
         # Fits file read
         self.data = self.imghdu[('SCI', 1)].data
         self.wht_image = self.imghdu['WHT'].data.copy()
@@ -93,11 +86,22 @@ class CatalogImage:
         del self.wht_image
         self.wht_image = None
 
-    # def build_kernel(self, box_size, win_size, fwhmpsf):
-    def build_kernel(self, box_size, win_size, fwhmpsf):
+    def build_kernel(self, box_size, win_size, fwhmpsf,
+                     simple_bkg=True,
+                     bkg_skew_threshold=0.5,
+                     negative_percent=15.0,
+                     negative_threshold=0.0,
+                     nsigma_clip=3.0,
+                     maxiters=2):
 
         if self.bkg_background_ra is None:
-            self.compute_background(box_size, win_size)
+            self.compute_background(box_size, win_size,
+                                    simple_bkg=simple_bkg,
+                                    bkg_skew_threshold=bkg_skew_threshold,
+                                    negative_percent=negative_percent,
+                                    negative_threshold=negative_threshold,
+                                    nsigma_clip=nsigma_clip, 
+                                    maxiters=maxiters)
 
         k, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
                                                                   self.wht_image,
@@ -106,7 +110,13 @@ class CatalogImage:
         (self.kernel, self.kernel_psf) = k
 
     def compute_background(self, box_size, win_size,
-                           bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS):
+                           bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS,
+                           simple_bkg=True,
+                           bkg_skew_threshold=0.5,
+                           negative_percent=15.0,
+                           negative_threshold=0.0,
+                           nsigma_clip=3.0,
+                           maxiters=2):
         """Use Background2D to determine the background of the input image.
 
         Parameters
@@ -143,10 +153,10 @@ class CatalogImage:
         log.info("Background Computation")
         log.info("File: {}".format(self.imgname))
         log.info("Sigma-clipped Background Configuration variables")
-        log.info("  Negative threshold: {}".format(self._negative_threshold))
-        log.info("  Negative percent: {}".format(self._negative_percent))
-        log.info("  Nsigma: {}".format(self._nsigma_clip))
-        log.info("  Number of iterations: {}".format(self._maxiters))
+        log.info("  Negative threshold: {}".format(negative_threshold))
+        log.info("  Negative percent: {}".format(negative_percent))
+        log.info("  Nsigma: {}".format(nsigma_clip))
+        log.info("  Number of iterations: {}".format(maxiters))
         log.info("Background2D Configuration Variables")
         log.info("  Box size: {}".format(box_size))
         log.info("  Window size: {}".format(win_size))
@@ -164,16 +174,13 @@ class CatalogImage:
         binary_inverted_wht = np.where(imgdata == 0, 1, 0)
         self.exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
 
-        # MDD FIX - put in config file
-        self._nsigma_clip = 3.0
-        self._maxiters = 3.0
         # Compute a sigma-clipped background which returns only single values for mean,
         # median, and standard deviations
         bkg_mean, bkg_median, bkg_std = sigma_clipped_stats(imgdata,
                                                             self.exclusion_mask,
-                                                            sigma=self._nsigma_clip,
+                                                            sigma=nsigma_clip,
                                                             cenfunc='median',
-                                                            maxiters=self._maxiters)
+                                                            maxiters=maxiters)
 
         log.info("Sigma-clipped Statistics. Background mean: {}  median: {}  std: {}".format(bkg_mean, bkg_median, bkg_std))
 
@@ -185,14 +192,16 @@ class CatalogImage:
         # the input data, but the content based on the sigma-clipped statistics. 
         # bkg_median ==> background and bkg_std ==> background rms
         self.bkg_background_ra = np.full_like(imgdata, bkg_median)
-        self.bkg_rma_ra = np.full_like(imgdata, bkg_std)
+        self.bkg_rms_ra = np.full_like(imgdata, bkg_std)
         self.bkg_median = bkg_median.copy()
         self.bkg_rms_median = bkg_std.copy()
 
+        # MDD FIX put in config file
+        self.bkg_skew_threshold = 0.5
         # If the configuration variable "simple_bkg" is False, OR the background image
         # skew is less than the threshold, compute a two-dimensional background fit.
         # MDD Fix - update config file
-        if not self.param_dict["dao"]["simple_bkg"] or bkg_skew < self._bkg_skew_threshold:
+        if not simple_bkg or bkg_skew < self.bkg_skew_threshold:
 
             # Create the mask to ignore pixels with the value of 0
             mask = (imgdata == 0)
@@ -235,15 +244,15 @@ class CatalogImage:
                 illum_mask = self.exclusion_mask < 1
                 total_illum_mask = illum_mask.sum()
                 illum_data = imgdata_bkgsub * illum_mask
-                negative_mask = illum_data < self._negative_threshold
+                negative_mask = illum_data < negative_threshold
                 total_negative_mask = negative_mask.sum()
                 negative_ratio = total_negative_mask / total_illum_mask
 
                 # If the background subtracted image has too many negative values which may be
                 # indicative of large negative regions, the two-dimensional computed background
                 # fit image should NOT be used.  Use the sigma-clipped data instead.
-                if negative_ratio * 100.0 > self._negative_percent:
-                    log.info("Percentage of negative values {0:.2f} in the background subtracted image exceeds the threshold of {1:.2f}.".format(100.0 * negative_ratio, self._negative_percent))
+                if negative_ratio * 100.0 > negative_percent:
+                    log.info("Percentage of negative values {0:.2f} in the background subtracted image exceeds the threshold of {1:.2f}.".format(100.0 * negative_ratio, negative_percent))
                     log.info("Use the background image determined from the sigma-clipped statistics.")
 
                 # Update the class variables with the background fit data
@@ -350,19 +359,33 @@ class HAPCatalogs:
         self.types = types
 
         # Get various configuration variables needed for the background computation
-        # MDD FIX
-        # need to rework interface to compute_background and build_kernel
+        # MDD FIX not [sourcex] anymore
         #self._negative_percent = self.param_dict["sourcex"]["negative_percent"]
         #self._negative_threshold = self.param_dict["sourcex"]["negative_threshold"]
-        #self._nsigma_clip = self.param_dict["sourcex"]["nsigma_clip"]
-        #self._maxiters = self.param_dict["sourcex"]["maxiters"]
+        #nsigma_clip = self.param_dict["sourcex"]["nsigma_clip"]
+        #maxiters = self.param_dict["sourcex"]["maxiters"]
+        #self.param_dict["dao"]["simple_bkg"]
+        #bkg_skew_threshold new for config
 
         # Compute the background for this image
         self.image = CatalogImage(fitsfile, log_level)
-        self.image.compute_background(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'])
+        self.image.compute_background(self.param_dict['bkg_box_size'],
+                                      self.param_dict['bkg_filter_size'],
+                                      simple_bkg=self.param_dict['dao']['simple_bkg'],
+                                      bkg_skew_threshold=0.5,
+                                      negative_percent=self.param_dict['sourcex']['negative_percent'],
+                                      negative_threshold=self.param_dict['sourcex']['negative_threshold'],
+                                      nsigma_clip=self.param_dict['sourcex']['nsigma_clip'],
+                                      maxiters=self.param_dict['sourcex']['maxiters'])
 
         self.image.build_kernel(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'],
-                                self.param_dict['dao']['TWEAK_FWHMPSF'])
+                                self.param_dict['dao']['TWEAK_FWHMPSF'],
+                                self.param_dict['dao']['simple_bkg'],
+                                0.5,
+                                self.param_dict['sourcex']['negative_percent'],
+                                self.param_dict['sourcex']['negative_threshold'],
+                                self.param_dict['sourcex']['nsigma_clip'],
+                                self.param_dict['sourcex']['maxiters'])
 
         # Initialize all catalog types here...
         # This does NOT identify or measure sources to create the catalogs at this point...
@@ -627,8 +650,6 @@ class HAPPointCatalog(HAPCatalogBase):
     def __init__(self, image, param_dict, param_dict_qc, diagnostic_mode, tp_sources):
         super().__init__(image, param_dict, param_dict_qc, diagnostic_mode, tp_sources)
 
-        self.bkg_used = None  # actual background used for source identification/measurement
-
         # Defined in measure_sources
         self.subset_filter_source_cat = None
 
@@ -639,15 +660,8 @@ class HAPPointCatalog(HAPCatalogBase):
         # read in sci, wht extensions of drizzled product
         image = self.image.data.copy()
 
-        # Input image will be background subtracted using pre-computed background, unless
-        # specified explicitly by the user
-        if self.param_dict["dao"]["simple_bkg"]:
-            self.bkg_used = np.nanmedian(image)
-            image -= self.bkg_used
-        else:
-            # Estimate background
-            self.bkg_used = self.image.bkg_background_ra
-            image -= self.bkg_used
+        # Create the background-subtracted image
+        image -= self.image.bkg_background_ra
 
         if not self.tp_sources:
             # Report configuration values to log
@@ -1056,7 +1070,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
             for wht_mask in self.tp_masks:
                 log.info("Using WHT masks as a scale on the RMS to compute threshold detection limit.")
-                threshold_item = self._nsigma * self.mage.bkg_rms_ra * wht_mask['mask'] / wht_mask['rel_weight']
+                threshold_item = self._nsigma * self.image.bkg_rms_ra * wht_mask['mask'] / wht_mask['rel_weight']
                 threshold_item[np.isnan(threshold_item)] = 0.0
                 threshold += threshold_item
             del(threshold_item)
@@ -1141,7 +1155,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
                 # images using the coordinates determined from the total drizzled image.
                 self.segm_img = copy.deepcopy(rw2d_segm_img)
-                self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.bkg_background_ra,
+                self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
                                                     filter_kernel=rw2d_kernel, wcs=self.image.imgwcs)
 
             # Situation where the image was not deemed to be crowded
@@ -1150,7 +1164,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
                 # images using the coordinates determined from the total drizzled image.
                 self.segm_img = copy.deepcopy(custom_segm_img)
-                self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.bkg_background_ra,
+                self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
                                                     filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
 
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
@@ -1327,36 +1341,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
         log.info("")
         log.info("{}".format("=" * 80))
 
-        # Populate the Filter background and background rms with the values computed
-        # using Background2D
-        self.final_segment_background = copy.deepcopy(self.image.bkg_background_ra)
-        self.final_segment_background_rms = copy.deepcopy(self.image.bkg_rms_ra)
-
-        # If it were determined during the processing of the total image that the sigma-clipped
-        # alternate background algorithm should be used, it needs to be used for the Filter object too.
-        if HAPSegmentCatalog.using_sigma_clipped_bkg:
-            # Compute a sigma-clipped background which returns only single values for mean, median, and standard deviations
-            segm_bkg_mean, segm_bkg_median, segm_bkg_std = sigma_clipped_stats(imgarr,
-                                                                               self.exclusion_mask,
-                                                                               sigma=self._nsigma_clip,
-                                                                               cenfunc='median',
-                                                                               maxiters=self._maxiters)
-            log.info("Background mean: {}  median: {}  std: {}".format(segm_bkg_mean, segm_bkg_median, segm_bkg_std))
-
-            # Generate a two-dimensional image with the attributes of the input data, but
-            # a value of segm_bkg_median for all pixels
-            # These are the Filter object specific variables for the background and background rms
-            self.final_segment_background = np.full_like(imgarr, segm_bkg_median)
-            self.final_segment_background_rms = np.full_like(imgarr, segm_bkg_std)
-
         # This is the filter science data and its computed background
-        imgarr_bkgsub = imgarr - self.final_segment_background
+        imgarr_bkgsub = imgarr - self.image.bkg_background_ra
 
         # Compute the Poisson error of the sources...
-        total_error = calc_total_error(imgarr_bkgsub, self.final_segment_background_rms, 1.0)
+        total_error = calc_total_error(imgarr_bkgsub, self.image.bkg_rms_ra, 1.0)
 
         # Compute source properties...
-        self.source_cat = source_properties(imgarr_bkgsub, self.sources, background=self.final_segment_background,
+        self.source_cat = source_properties(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
                                             error=total_error, filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
 
         # Convert source_cat which is a SourceCatalog to an Astropy Table
@@ -1454,7 +1446,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                     data=input_image,
                                                                     photflam=self.image.keyword_dict['photflam'],
                                                                     photplam=self.image.keyword_dict['photplam'],
-                                                                    error_array=self.final_segment_background_rms,
+                                                                    error_array=self.image.bkg_rms_ra,
                                                                     bg_method=self.param_dict['salgorithm'],
                                                                     epadu=self.gain)
 
