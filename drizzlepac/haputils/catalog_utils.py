@@ -231,6 +231,8 @@ class CatalogImage:
                     bkg_median = bkg.background_median
                     break
 
+            del mask
+
             # If computation of a two-dimensional background image was successful, compute the
             # background-subtracted image and evaluate it for the number of negative values.
             #
@@ -248,7 +250,8 @@ class CatalogImage:
                 negative_mask = illum_data < negative_threshold
                 total_negative_mask = negative_mask.sum()
                 negative_ratio = total_negative_mask / total_illum_mask
-                del illum_data, illum_mask, negative_mask, imgdata_bkgsub, imgdata
+                del illum_data, illum_mask, negative_mask, imgdata_bkgsub
+                log.info("Percentage of negative values in the background subtracted image {0:.2f}.".format(100.0 * negative_ratio))
 
                 # If the background subtracted image has too many negative values which may be
                 # indicative of large negative regions, the two-dimensional computed background
@@ -264,6 +267,7 @@ class CatalogImage:
                     self.bkg_rms_ra = bkg_rms_ra.copy()
                     self.bkg_rms_median = bkg_rms_median.copy()
                     self.bkg_median = bkg_median.copy()
+                    del bkg_background_ra, bkg_rms_ra, bkg_rms_median, bkg_median
                     log.info("")
                     log.info("*** Use the background image determined from the Background2D. ***")
 
@@ -274,7 +278,7 @@ class CatalogImage:
         log.info("    Median RMS background: {}".format(self.bkg_rms_median))
         log.info("")
 
-        del bkg, bkg_background_ra, bkg_rms_ra, bkg_rms_median, bkg_median
+        del bkg, imgdata
 
     def _get_header_data(self):
         """Read FITS keywords from the primary or extension header and store the
@@ -1130,10 +1134,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 if rw2d_segm_img is None:
                     log.warning("End processing for the Segmentation Catalog due to no sources detected with RickerWavelet Kernel.")
                     return
-
-                if self.diagnostic_mode:
-                    outname = self.imgname.replace(".fits", "_rw2d_segment.fits")
-                    fits.PrimaryHDU(data=rw2d_segm_img).writeto(outname)
 
                 # Evaluate the new segmention image for completeness
                 self.is_big_island = False
