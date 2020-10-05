@@ -199,77 +199,86 @@ class CatalogImage:
         self.bkg_median = bkg_median.copy()
         self.bkg_rms_median = bkg_std.copy()
 
-        # If the configuration variable "simple_bkg" is False, OR the background image
-        # skew is less than the threshold, compute a two-dimensional background fit.
-        if not simple_bkg or bkg_skew < bkg_skew_threshold:
-            log.info("Computing the background using the Background2D algorithm.")
+        # The simple_bkg = True is the way to force the background to be computed with the
+        # sigma-clipped algorithm, regardless of any other criterion. If simple_bkg == True,
+        # this routine is done, otherwise try to use Background2D to compute the background.
+        if not simple_bkg:
 
-            # Create the mask to ignore pixels with the value of 0
-            mask = (imgdata == 0)
+            # If the sigma-clipped background image skew is less than the threshold,
+            # compute a two-dimensional background fit.
+            if bkg_skew < bkg_skew_threshold:
+                log.info("Computing the background using the Background2D algorithm.")
 
-            exclude_percentiles = [10, 25, 50, 75]
-            for percentile in exclude_percentiles:
-                log.info("Percentile in use: {}".format(percentile))
-                try:
-                    bkg = Background2D(imgdata, (box_size, box_size), filter_size=(win_size, win_size),
-                                       bkg_estimator=bkg_estimator(),
-                                       bkgrms_estimator=rms_estimator(),
-                                       exclude_percentile=percentile, edge_method="pad",
-                                       mask=mask)
+                # Create the mask to ignore pixels with the value of 0
+                mask = (imgdata == 0)
 
-                    # Apply the coverage mask to the returned background image
-                    bkg.background *= ~mask
+                exclude_percentiles = [10, 25, 50, 75]
+                for percentile in exclude_percentiles:
+                    log.info("Percentile in use: {}".format(percentile))
+                    try:
+                        bkg = Background2D(imgdata, (box_size, box_size), filter_size=(win_size, win_size),
+                                           bkg_estimator=bkg_estimator(),
+                                           bkgrms_estimator=rms_estimator(),
+                                           exclude_percentile=percentile, edge_method="pad",
+                                           mask=mask)
 
-                except Exception:
-                    bkg = None
-                    continue
+                        # Apply the coverage mask to the returned background image
+                        bkg.background *= ~mask
 
+                    except Exception:
+                        bkg = None
+                        continue
+
+                    if bkg is not None:
+                        bkg_background_ra = bkg.background
+                        bkg_rms_ra = bkg.background_rms
+                        bkg_rms_median = bkg.background_rms_median
+                        bkg_median = bkg.background_median
+                        break
+
+                del mask
+
+                # If computation of a two-dimensional background image were successful, compute the
+                # background-subtracted image and evaluate it for the number of negative values.
+                #
+                # If bkg is None, use the sigma-clipped statistics for the background.
+                # If bkd is not None, but the background-subtracted image is too negative, use the
+                # sigma-clipped computation for the background.
                 if bkg is not None:
-                    bkg_background_ra = bkg.background
-                    bkg_rms_ra = bkg.background_rms
-                    bkg_rms_median = bkg.background_rms_median
-                    bkg_median = bkg.background_median
-                    break
+                    imgdata_bkgsub = imgdata - bkg_background_ra
 
-            del mask
+                    # Determine how much of the illuminated portion of the background subtracted
+                    # image is negative
+                    illum_mask = self.exclusion_mask < 1
+                    total_illum_mask = illum_mask.sum()
+                    illum_data = imgdata_bkgsub * illum_mask
+                    negative_mask = illum_data < negative_threshold
+                    total_negative_mask = negative_mask.sum()
+                    negative_ratio = total_negative_mask / total_illum_mask
+                    del illum_data, illum_mask, negative_mask, imgdata_bkgsub
 
-            # If computation of a two-dimensional background image was successful, compute the
-            # background-subtracted image and evaluate it for the number of negative values.
-            #
-            # If bkg is None, use the sigma-clipped statistics for the background.
-            # If bkd is not None, but the background-subtracted image is too negative, use the
-            # sigma-clipped computation for the background.
-            if bkg is not None:
-                imgdata_bkgsub = imgdata - bkg_background_ra
+                    # Report this information so the relative percentage and the threshold are known
+                    log.info("Percentage of negative values in the background subtracted image {0:.2f} vs low threshold of {1:.2f}.".format(100.0 * negative_ratio, negative_percent))
 
-                # Determine how much of the illuminated portion of the background subtracted
-                # image is negative
-                illum_mask = self.exclusion_mask < 1
-                total_illum_mask = illum_mask.sum()
-                illum_data = imgdata_bkgsub * illum_mask
-                negative_mask = illum_data < negative_threshold
-                total_negative_mask = negative_mask.sum()
-                negative_ratio = total_negative_mask / total_illum_mask
-                del illum_data, illum_mask, negative_mask, imgdata_bkgsub
-                log.info("Percentage of negative values in the background subtracted image {0:.2f}.".format(100.0 * negative_ratio))
+                    # If the background subtracted image has too many negative values which may be
+                    # indicative of large negative regions, the two-dimensional computed background
+                    # fit image should NOT be used.  Use the sigma-clipped data instead.
+                    if negative_ratio * 100.0 > negative_percent:
+                        log.info("Percentage of negative values {0:.2f} in the background subtracted image exceeds the threshold of {1:.2f}.".format(100.0 * negative_ratio, negative_percent))
+                        log.info("")
+                        log.info("*** Use the background image determined from the sigma_clip algorithm. ***")
 
-                # If the background subtracted image has too many negative values which may be
-                # indicative of large negative regions, the two-dimensional computed background
-                # fit image should NOT be used.  Use the sigma-clipped data instead.
-                if negative_ratio * 100.0 > negative_percent:
-                    log.info("Percentage of negative values {0:.2f} in the background subtracted image exceeds the threshold of {1:.2f}.".format(100.0 * negative_ratio, negative_percent))
-                    log.info("")
-                    log.info("*** Use the background image determined from the sigma_clip algorithm. ***")
-
-                # Update the class variables with the background fit data
-                else:
-                    self.bkg_background_ra = bkg_background_ra.copy()
-                    self.bkg_rms_ra = bkg_rms_ra.copy()
-                    self.bkg_rms_median = bkg_rms_median.copy()
-                    self.bkg_median = bkg_median.copy()
-                    del bkg_background_ra, bkg_rms_ra, bkg_rms_median, bkg_median
-                    log.info("")
-                    log.info("*** Use the background image determined from the Background2D. ***")
+                    # Update the class variables with the background fit data
+                    else:
+                        self.bkg_background_ra = bkg_background_ra.copy()
+                        self.bkg_rms_ra = bkg_rms_ra.copy()
+                        self.bkg_rms_median = bkg_rms_median.copy()
+                        self.bkg_median = bkg_median.copy()
+                        del bkg_background_ra, bkg_rms_ra, bkg_rms_median, bkg_median
+                        log.info("")
+                        log.info("*** Use the background image determined from the Background2D. ***")
+        else:
+            log.info("*** User requested the sigma_clip algorithm to determine the background image. ***")
 
         log.info("")
         log.info("Computation of image background complete")
@@ -1134,6 +1143,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 if rw2d_segm_img is None:
                     log.warning("End processing for the Segmentation Catalog due to no sources detected with RickerWavelet Kernel.")
                     return
+
+                if self.diagnostic_mode:
+                    outname = self.imgname.replace(".fits", "_rw2d_segment.fits")
+                    fits.PrimaryHDU(data=rw2d_segm_img).writeto(outname)
 
                 # Evaluate the new segmention image for completeness
                 self.is_big_island = False

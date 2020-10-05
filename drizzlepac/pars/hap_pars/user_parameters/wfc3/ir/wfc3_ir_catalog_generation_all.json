@@ -13,7 +13,7 @@
     "region_size": 11,
     "flag_trim_value": 5,
     "simple_bkg": false,
-    "negative_threshold": -0.5,
+    "negative_threshold": 0.0,
     "negative_percent": 15.0,
     "nsigma_clip": 3.0,
     "maxiters":3,
