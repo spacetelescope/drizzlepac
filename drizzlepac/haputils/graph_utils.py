@@ -164,7 +164,7 @@ class HAPFigure:
         # the build_glyph() routine is invoked.
         self.glyph_color = 'blue'
         self.color = 'blue'
-        self.size = 10
+        self.size = 6
         self.legend_group = ''
         self.legend_label = ''
         self.fill_alpha = 0.5
@@ -367,9 +367,9 @@ class HAPFigure:
                 Default is 'black'
 
             Note: Hover tooltips are typically turned off for these figures.
-            There is an assumption the 'x', 'y', 'dx', and 'dy' columns exist 
+            There is an assumption the 'x', 'y', 'dx', and 'dy' columns exist
             in the ColumnDataSource.
-         
+
 
         """
         # Get/set optional attributes
@@ -390,7 +390,7 @@ class HAPFigure:
 
         # Generate a fixed, closed range ...
         xyrange = Range1d(0, xy_max)
-  
+
         # ... and we want the figure to have a square aspect ratio
         self.fig.x_range = xyrange
         self.fig.y_range = xyrange
@@ -402,7 +402,7 @@ class HAPFigure:
         mag = xy_segment / 0.1
         legend_text = '0.1 pixels'
 
-        # The 'delta_*' values are the length of the vector - the computed 
+        # The 'delta_*' values are the length of the vector - the computed
         # difference between [x|y] and [x|y]-reference
         delta_x = np.array(sourceCDS.data['dx'])
         delta_y = np.array(sourceCDS.data['dy'])
@@ -416,7 +416,7 @@ class HAPFigure:
         # Define coordinates for the legend of the vector plot which
         # displays the scale
         x_legend = xy_segment
-        xreference_legend = xy_segment * 2  # == xy_segment + xy_segment, because origin=(0,0) 
+        xreference_legend = xy_segment * 2  # == xy_segment + xy_segment, because origin=(0,0)
         y_legend = xy_segment
 
         # adhoc
@@ -444,7 +444,7 @@ class HAPFigure:
                          y1=y_legend,
                          color='black',
                          line_width=line_width)
-        
+
         self.fig.text(x=x_legend,
                       y=y_legend/2.0,
                       # Use of 'value' here was unexpected.  text=[legend_text] will also work.

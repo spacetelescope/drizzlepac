@@ -117,18 +117,18 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
 
 def interpret_scells(sky_cells):
     """Return dict of filenames each with the skycell name they overlap
-    
+
     Parameters
     ----------
     sky_cells : dict
         Dictionary of sky-cell objects from `get_sky_cells`
-        
+
     Returns
     -------
     sky_cell_files : dict
-        Dictionary of ALL sky-cell IDs as a ';'-delimited string for each 
-        exposure(sky cell member), with exposure filenames as keys.  
-    
+        Dictionary of ALL sky-cell IDs as a ';'-delimited string for each
+        exposure(sky cell member), with exposure filenames as keys.
+
     """
     scell_files = {}
     for scell in sky_cells.values():
@@ -136,7 +136,7 @@ def interpret_scells(sky_cells):
             if member not in scell_files:
                 scell_files[member] = {}
             scell_files[member][scell.sky_cell_id] = scell
-    
+
     # convert each entry into a ';'-delimited string instead of a list of IDs
     for member in scell_files:
         scell_files[member]['id'] = ';'.join([id for id in scell_files[member]])
@@ -150,7 +150,7 @@ class SkyFootprint(object):
     def __init__(self, meta_wcs):
 
         self.meta_wcs = meta_wcs
-        
+
         # the exp_masks dict records the individual footprints of each exposure
         self.exp_masks = {}
         self.members = []
@@ -191,6 +191,8 @@ class SkyFootprint(object):
                 self.members.append(exposure)
             self.exp_masks[exposure] = np.zeros(self.meta_wcs.array_shape, dtype=np.int16)
             exp = fits.open(exposure)
+            if scale:
+                scale_val = fits.getval(exposure, scale_kw)
 
             sci_extns = wcs_functions.get_extns(exp)
             for sci in sci_extns:
@@ -202,7 +204,7 @@ class SkyFootprint(object):
                 meta_x, meta_y = self.meta_wcs.world_to_pixel_values(sky_edges[0], sky_edges[1])
                 meta_x = meta_x.astype(np.int32)
                 meta_y = meta_y.astype(np.int32)
-                
+
                 # Account for rounding problems with creating meta_wcs
                 meta_y = np.clip(meta_y, 0, self.meta_wcs.array_shape[0] - 1)
                 meta_x = np.clip(meta_x, 0, self.meta_wcs.array_shape[1] - 1)
@@ -218,14 +220,12 @@ class SkyFootprint(object):
                 ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
                 blank = np.array(img).astype(np.int16)
 
+                if scale:
+                    scaled_blank = blank * scale_val
+                    self.scaled_mask += scaled_blank
                 self.exp_masks[exposure] += blank
 
             self.total_mask += self.exp_masks[exposure]
-
-            # Compute scaled mask if specified...
-            if scale:
-                scale_val = fits.getval(exposure, scale_kw)
-                self.scaled_mask += self.exp_masks[exposure] * scale_val
 
 
     # Methods with 'find' compute values
@@ -309,7 +309,7 @@ class GridDefs(object):
     def find_ring_by_id(self, id):
         return self.rings[np.searchsorted(self.rings['projcell'], id) - 1]
 
-    def get_projection_cells(self, skyfootprint=None, member='total', 
+    def get_projection_cells(self, skyfootprint=None, member='total',
                              ra=None, dec=None, id=None):
         # Interpret footprint to get range of declination in mask
         if id is None:
@@ -337,8 +337,8 @@ class GridDefs(object):
         # Find sky cells from identified projection cell(s) that overlap footprint
         sky_cells = {}
         for pcell in self.projection_cells:
-            sky_cells.update(pcell.find_sky_cells(skyfootprint, 
-                                                 nxy=self.sc_nxy, 
+            sky_cells.update(pcell.find_sky_cells(skyfootprint,
+                                                 nxy=self.sc_nxy,
                                                  overlap=self.sc_overlap))
 
         return sky_cells
@@ -473,14 +473,14 @@ class ProjectionCell(object):
 
         skycell00 = SkyCell(x=0, y=0, projection_cell=self)
         skycells = {}
-        
+
         member = 'total'
 
         # Get the edges of the mosaic on the sky
         mosaic_ra, mosaic_dec = mosaic.get_edges_sky(member=member)
         # Convert edges to positions in projection cell
         mosaic_edges_x, mosaic_edges_y = self.wcs.world_to_pixel_values(mosaic_ra, mosaic_dec)
-        
+
         # Determine roughly what sky cells overlap this mosaic
         mosaic_edges_x = (mosaic_edges_x / skycell00.wcs.pixel_shape[0] + 0.5).astype(np.int32)
         mosaic_edges_y = (mosaic_edges_y / skycell00.wcs.pixel_shape[1] + 0.5).astype(np.int32)
@@ -496,10 +496,10 @@ class ProjectionCell(object):
                 skycell.build_mask()
 
                 sc_overlap = self.compute_overlap(skycell, mosaic_ra, mosaic_dec)
-                
+
                 print("    Checking SkyCell {},{} for overlap: {}".format(xi, yi, sc_overlap))
                 if sc_overlap:
-                    # Within this SkyCell, determine which members of the 
+                    # Within this SkyCell, determine which members of the
                     # mosaic overlap with this SkyCell.
                     for filename in mosaic.members:
                         member_ra, member_dec = mosaic.get_edges_sky(member=filename)
@@ -529,7 +529,7 @@ class ProjectionCell(object):
 
         # With all out of bounds pixels masked out, see if any are left
         sc_overlap = np.any(~mosaic_offcell)
-        
+
         return sc_overlap
 
     def plot(self, output=None, color='b'):

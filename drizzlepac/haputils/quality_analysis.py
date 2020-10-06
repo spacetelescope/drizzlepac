@@ -14,7 +14,7 @@ These DataFrames can then be concatenated using:
 >>> allpd = pdtab.concat([pdtab2, pdtab3])
 
 where 'pdtab2' and 'pdtab3' are DataFrames generated from other datasets.  For
-more information on how to merge DataFrames, see 
+more information on how to merge DataFrames, see
 
 https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html
 
@@ -24,7 +24,7 @@ from:
 https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 
 
-From w3schools.com to go with sample Bokeh code from bottom of 
+From w3schools.com to go with sample Bokeh code from bottom of
 https://docs.bokeh.org/en/latest/docs/user_guide/bokehjs.html:
 
 <p>Click the button to open a new window called "MsgWindow" with some text.</p>
@@ -64,12 +64,12 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
-                            
+
 __taskname__ = 'quality_analysis'
 
-def determine_alignment_residuals(input, files, 
+def determine_alignment_residuals(input, files,
                                   catalogs=None,
-                                  max_srcs=2000, 
+                                  max_srcs=1000,
                                   json_timestamp=None,
                                   json_time_since_epoch=None,
                                   log_level=logutil.logging.INFO):
@@ -86,7 +86,7 @@ def determine_alignment_residuals(input, files,
         pipeline can work on both CTE-corrected and non-CTE-corrected files,
         but this comparison will only be performed on CTE-corrected
         products when available.
-        
+
     catalogs : list, optional
         List of dictionaries containing the source catalogs for each input chip.
         The list NEEDS to be in the same order as the filenames given in `files`.
@@ -115,7 +115,7 @@ def determine_alignment_residuals(input, files,
         being performed.
     """
     log.setLevel(log_level)
-    
+
     if catalogs is None:
         # Open all files as HDUList objects
         hdus = [fits.open(f) for f in files]
@@ -126,7 +126,7 @@ def determine_alignment_residuals(input, files,
             numsci = countExtn(hdu)
             nums = 0
             img_cats = {}
-            if hdu[("SCI", chip)].data.max() == 0.0:
+            if hdu[("SCI", 1)].data.max() == 0.0:
                 log.info("SKIPPING point-source finding for blank image: {}".format(hdu.filename()))
                 continue
             log.info("Determining point-sources for {}".format(hdu.filename()))
@@ -147,7 +147,7 @@ def determine_alignment_residuals(input, files,
             num_srcs.append(num_img)
 
 
-    if len(num_srcs) == 0 or (len(num_srcs) > 0 and  max(num_srcs) <= 3):
+    if len(num_srcs) == 0 or (len(num_srcs) > 0 and max(num_srcs) <= 3):
         log.warning("Not enough sources identified in input images for comparison")
         return []
 
@@ -162,7 +162,7 @@ def determine_alignment_residuals(input, files,
     try:
         # perform relative fitting
         matchlist = tweakwcs.align_wcs(imglist, None,
-                                       minobj=6, 
+                                       minobj=6,
                                        match=match,
                                        expand_refcat=False)
         del matchlist
@@ -171,16 +171,16 @@ def determine_alignment_residuals(input, files,
             # Try without 2dHist use to see whether we can get any matches at all
             match = tweakwcs.TPMatch(searchrad=5, separation=4.0,
                                      tolerance=1.0, use2dhist=False)
-            matchlist = tweakwcs.align_wcs(imglist, None, 
+            matchlist = tweakwcs.align_wcs(imglist, None,
                                            minobj=6,
                                            match=match,
                                            expand_refcat=False)
             del matchlist
 
-        except Exception:    
+        except Exception:
             log.warning("Problem encountered during matching of sources")
             return []
-            
+
     # Check to see whether there were any successful fits...
     align_success = False
     for img in imglist:
@@ -188,8 +188,8 @@ def determine_alignment_residuals(input, files,
         img.meta['wcsname'] = wcsname
         img.meta['fit_info']['aligned_to'] = imglist[0].meta['filename']
         img.meta['reference_catalog'] = None
-        
-    for img in imglist:        
+
+    for img in imglist:
         if img.meta['fit_info']['status'] == 'SUCCESS' and '-FIT' in wcsname:
             align_success = True
             break
@@ -207,9 +207,9 @@ def determine_alignment_residuals(input, files,
 
     return resids_files
 
-def generate_output_files(resids_dict, 
-                         json_timestamp=None, 
-                         json_time_since_epoch=None, 
+def generate_output_files(resids_dict,
+                         json_timestamp=None,
+                         json_time_since_epoch=None,
                          exclude_fields=['group_id'],
                          calling_name='determine_alignment_residuals',
                          json_rootname='astrometry_resids',
@@ -219,7 +219,7 @@ def generate_output_files(resids_dict,
     """Write out results to JSON files, one per image"""
     resids_files = []
     for image in resids_dict:
-        # Remove any extraneous information from output 
+        # Remove any extraneous information from output
         for field in exclude_fields:
             del resids_dict[image]['fit_results'][field]
         # Define name for output JSON file...
@@ -305,7 +305,7 @@ def extract_residuals(imglist):
                 # Get the reference positions from the external reference catalog
                 ref_ra = chip.meta['reference_catalog']['RA']
                 ref_dec = chip.meta['reference_catalog']['DEC']
-        
+
         if group_id not in group_dict:
             group_dict[group_name] = {}
             group_dict[group_name]['fit_results'] = {'group_id': group_id,
@@ -325,7 +325,7 @@ def extract_residuals(imglist):
             img_x, img_y, max_indx, chip_mask = get_tangent_positions(chip, img_indx,
                                                                       start_indx=cum_indx)
             cum_indx += max_indx
-            
+
             # Extract X, Y for sources from reference image
             ref_x, ref_y = chip.world_to_tanp(ref_ra[ref_indx][chip_mask], ref_dec[ref_indx][chip_mask])
             group_dict[group_name]['fit_results'].update(
@@ -433,7 +433,7 @@ def match_to_gaia(imcat, refcat, product, output, searchrad=5.0):
 
 
 def determine_gaia_residuals(fit_catalogs,
-                             json_timestamp=None, 
+                             json_timestamp=None,
                              json_time_since_epoch=None,
                              log_level=logutil.logging.NOTSET):
     # Report on the results of the actual alignment fit used for defining the
@@ -443,7 +443,7 @@ def determine_gaia_residuals(fit_catalogs,
 
     selected_fit = fit_catalogs.selected_fit
     resids = {}
-    
+
     for img in selected_fit:
         # The same fits is reported for each chip in a multi-chip image
         if img in resids:
@@ -522,7 +522,7 @@ def run_all(input, files, catalogs=None, log_level=logutil.logging.NOTSET):
         log.warning("Alignment residuals determination encountered a problem.")
         log.exception("message")
         log.warning("Continuing to next test...")
-        
+
     if catalogs is not None:
         try:
             if not 'json_files' in locals(): # create empty list if there's an exception thrown by determine_alignment_residuals

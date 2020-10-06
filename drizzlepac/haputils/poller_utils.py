@@ -37,14 +37,14 @@ POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
 POLLER_DTYPE = ('str', 'int', 'str', 'str', 'float', 'object', 'str', 'str')
 
 MVM_POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
-                       'exptime', 'filters', 'detector', 'pathname', 
+                       'exptime', 'filters', 'detector', 'pathname',
                        'skycell_id', 'skycell_new']
-MVM_POLLER_DTYPE = ('str', 'int', 'str', 'str', 
+MVM_POLLER_DTYPE = ('str', 'int', 'str', 'str',
                     'float', 'object', 'str', 'str',
                     'str', 'int')
-                    
+
 BOOL_STR_DICT = {'TRUE':True, 'FALSE':False, 'T':True, 'F':False, '1':True, '0':False}
-                  
+
 EXP_LABELS = {2: 'long', 1: 'med', 0: 'short', None: 'all'}
 EXP_LIMITS = [0, 15, 120]
 SUPPORTED_EXP_METHODS = {'kmeans', 'hard'}
@@ -134,7 +134,7 @@ def interpret_obset_input(results, log_level):
     log.debug("Parse the observation set tree and create the exposure, filter, and total detection objects.")
     obset_dict, tdp_list = parse_obset_tree(obset_tree, log_level)
 
-    # This little bit of code adds an attribute to single exposure objects that is True 
+    # This little bit of code adds an attribute to single exposure objects that is True
     # if a given filter only contains one input (e.g. n_exp = 1)
     for tot_obj in tdp_list:
         for filt_obj in tot_obj.fdp_list:
@@ -223,8 +223,8 @@ def interpret_mvm_input(results, log_level, exp_limit=2.0):
 
         which are
         filename, proposal_id, program_id, obset_id, exptime, filters, detector, pathname, skycell_ids, skycell_processed
-    
-    The SkyCell ID will be included in this input information to allow for 
+
+    The SkyCell ID will be included in this input information to allow for
     grouping of exposures into the same SkyCell layer based on filter, exptime and year.
 
     Output dict will have only have definitions for each defined sky cell layer to
@@ -254,7 +254,7 @@ def interpret_mvm_input(results, log_level, exp_limit=2.0):
     log.setLevel(log_level)
 
     log.debug("Interpret the poller file for the observation set.")
-    obset_table = build_poller_table(results, log_level, 
+    obset_table = build_poller_table(results, log_level,
                                      poller_type='mvm')
 
     # Add INSTRUMENT column
@@ -262,11 +262,11 @@ def interpret_mvm_input(results, log_level, exp_limit=2.0):
     # convert input to an Astropy Table for parsing
     obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
 
-    # Add Date column    
+    # Add Date column
     years = [int(fits.getval(f, 'date-obs').split('-')[0]) for f in obset_table['filename']]
     obset_table.add_column(Column(years), name='year_layer')
 
-    # Sort the rows of the table in an effort to optimize the number of quality 
+    # Sort the rows of the table in an effort to optimize the number of quality
     # sources found in the initial images
     obset_table = sort_poller_table(obset_table)
 
@@ -279,15 +279,15 @@ def interpret_mvm_input(results, log_level, exp_limit=2.0):
     # Now create the output product objects
     log.debug("Parse the observation set tree and create the exposure, filter, and total detection objects.")
     obset_dict, tdp_list = parse_mvm_tree(obset_tree, log_level)
-    
+
     # Now we need to merge any pre-existing layer products with the new products
     # This will add the exposure products from the pre-existing definitions of
-    # the overlapping sky cell layers with those defined for the new exposures 
-    # 
+    # the overlapping sky cell layers with those defined for the new exposures
+    #
     # obset_dict, tdp_list = merge_mvm_trees(obset_tree, layer_tree, log_level)
-    
 
-    # This little bit of code adds an attribute to single exposure objects that is True 
+
+    # This little bit of code adds an attribute to single exposure objects that is True
     # if a given filter only contains one input (e.g. n_exp = 1)
     for filt_obj in tdp_list:
         if len(filt_obj.edp_list) == 1:
@@ -332,7 +332,7 @@ def build_mvm_tree(obset_table):
         if det not in obset_tree:
             obset_tree[det] = {}
             obset_tree[det][layer] = [(row_info, filename)]
-            obset_tree[det][layer_all] = [(row_info_all, filename)]           
+            obset_tree[det][layer_all] = [(row_info_all, filename)]
         else:
             det_node = obset_tree[det]
             if layer not in det_node:
@@ -351,7 +351,7 @@ def build_mvm_tree(obset_table):
 def create_mvm_info(row):
     """Build info string for a row from the obset table"""
     info_list = [str(row['skycell_id']), row['instrument'],
-                 row['detector'], row['filters'], 
+                 row['detector'], row['filters'],
                  str(row['exp_layer']), str(row['year_layer']),
                  str(row['skycell_new'])]
     # info_list = [str(row['proposal_id']), "{}".format(row['obset_id']), row['instrument'],
@@ -391,14 +391,14 @@ def parse_mvm_tree(det_tree, log_level):
     filetype = ''
     # Setup products for each detector used
     #
-    # det_tree = {'UVIS': {'f200lp': [('skycell_p1234_x01y01 WFC3 UVIS IACS01T9Q F200LP 1', 'iacs01t9q_flt.fits'), 
-    #                     ('skycell_p1234_x01y01 WFC3 UVIS IACS01TBQ F200LP 1', 'iacs01tbq_flt.fits')]}, 
+    # det_tree = {'UVIS': {'f200lp': [('skycell_p1234_x01y01 WFC3 UVIS IACS01T9Q F200LP 1', 'iacs01t9q_flt.fits'),
+    #                     ('skycell_p1234_x01y01 WFC3 UVIS IACS01TBQ F200LP 1', 'iacs01tbq_flt.fits')]},
     #             'IR': {'f160w': [('skycell_p1234_x01y01 WFC3 IR IACS01T4Q F160W 1', 'iacs01t4q_flt.fits')]}}
-    
+
     for filt_tree in det_tree.values():
         det_indx += 1
         # Find all filters used...
-        # filt_tree = {'f200lp': [('skycell_p1234_x01y01 WFC3 UVIS IACS01T9Q F200LP 1', 'iacs01t9q_flt.fits'), 
+        # filt_tree = {'f200lp': [('skycell_p1234_x01y01 WFC3 UVIS IACS01T9Q F200LP 1', 'iacs01t9q_flt.fits'),
         #            ('skycell_p1234_x01y01 WFC3 UVIS IACS01TBQ F200LP 1', 'iacs01tbq_flt.fits')]}
 
         for filter_files in filt_tree.values():
@@ -429,7 +429,7 @@ def parse_mvm_tree(det_tree, log_level):
                 prod_list = prod_info.split(" ")
                 layer = (prod_list[3], prod_list[4], prod_list[5])
                 ftype = prod_list[-1]
-                
+
                 # Create a single exposure product object
                 sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
                                           filename[1], prod_list[3], ftype, log_level)
@@ -447,7 +447,7 @@ def parse_mvm_tree(det_tree, log_level):
                     obset_products[fprod]['info'] = prod_info
 
                     # Create a filter product object for this instrument/detector
-                    # FilterProduct(prop_id, obset_id, instrument, detector, 
+                    # FilterProduct(prop_id, obset_id, instrument, detector,
                     #               filename, filters, filetype, log_level)
                     filt_obj = SkyCellProduct(str(0), str(0), prod_list[1], prod_list[2],
                                              prod_list[0], layer, ftype, log_level)
@@ -461,7 +461,7 @@ def parse_mvm_tree(det_tree, log_level):
 
             # Add this filter object to the list for creating that layer BUT
             # ONLY if there are new exposures being processed for this layer,
-            # 
+            #
             if filt_obj.new_to_layer > 0:
                 # Append filter object to the list of filter objects for this specific total product object
                 log1 = "Attach the sky cell layer object {}"
@@ -578,10 +578,17 @@ def parse_obset_tree(det_tree, log_level):
             log.debug("Attach the filter object {} to its associated total detection product object {}/{}.".format(filt_obj.filters,
                                                                                                                    tdp_obj.instrument,
                                                                                                                    tdp_obj.detector))
+            # Identify what exposures should use single-image CR identification algorithm
+            is_ccd = not (filt_obj.instrument.lower() == 'wfc3' and filt_obj.detector.lower() == 'ir')
+            if is_ccd and len(filt_obj.edp_list) == 1:
+                for e in filt_obj.edp_list:
+                    e.crclean = True
+
             tdp_obj.add_product(filt_obj)
 
         # Add the total product object to the list of TotalProducts
         tdp_list.append(tdp_obj)
+
 
     # Done... return dict and object product list
     return obset_products, tdp_list
@@ -593,10 +600,10 @@ def define_exp_layers(obset_table, method='hard', exp_limit=None):
     # Add 'exp_layer' column to table
     if method not in SUPPORTED_EXP_METHODS:
         raise ValueError("Please use a supported method: {}".format(SUPPORTED_EXP_METHODS))
-    
+
     if method == 'kmeans':
         # Use pre-defined limits on exposure times for clusters
-    
+
         exptime_range = obset_table['exptime'].max() / obset_table['exptime'].min()
 
         if exp_limit is not None and exptime_range > exp_limit:
@@ -610,10 +617,10 @@ def define_exp_layers(obset_table, method='hard', exp_limit=None):
         # Use pre-defined limits for selecting layer members
         # Subtraction by 1 puts the range from 0-2 to be consistent with KMeans
         exp_layer = np.digitize(obset_table['exptime'], EXP_LIMITS) - 1
-        
+
     # Add column to the table as labelled values ('short', 'med', 'long', 'all')
     obset_table['exp_layer'] = [EXP_LABELS[e] for e in exp_layer]
-            
+
     return obset_table
 
 # ------------------------------------------------------------------------------
@@ -721,9 +728,9 @@ def build_poller_table(input, log_level, poller_type='svm'):
             # Convert string column into a Bool column
             # The input poller file reports True if it has been reprocessed.
             # This code interprets that as False since it is NOT new, so the code
-            # inverts the meaning from the pipeline poller file.  
+            # inverts the meaning from the pipeline poller file.
             if poller_type == 'mvm':
-                input_table['skycell_new'] = [int(not BOOL_STR_DICT[str(val).upper()]) for val in input_table['skycell_new']] 
+                input_table['skycell_new'] = [int(not BOOL_STR_DICT[str(val).upper()]) for val in input_table['skycell_new']]
             is_poller_file = True
 
         elif len(input_table.columns) == 1:
@@ -762,7 +769,7 @@ def build_poller_table(input, log_level, poller_type='svm'):
             datasets += files
     else:
         datasets = filenames
-        
+
     # Each image, whether from a poller file or from an input list needs to be
     # analyzed to ensure it is viable for drizzle processing.  If the image is not
     # viable, it should not be included in the output "poller" table.
@@ -780,7 +787,7 @@ def build_poller_table(input, log_level, poller_type='svm'):
     if poller_type == 'mvm':
         # determine sky-cell ID for input exposures now...
         scells = cell_utils.get_sky_cells(usable_datasets)
-        scell_files = cell_utils.interpret_scells(scells) 
+        scell_files = cell_utils.interpret_scells(scells)
 
     # If processing a list of files, evaluate each input dataset for the information needed
     # for the poller file
@@ -802,14 +809,14 @@ def build_poller_table(input, log_level, poller_type='svm'):
                 cols['filters'].append(filters)
         if poller_type == 'mvm':
             # interpret_scells returns:
-            #  {'filename1':{'<sky cell id1>': SkyCell1, 
+            #  {'filename1':{'<sky cell id1>': SkyCell1,
             #               '<sky cell id2>':SkyCell2,
             #               'id': "<sky cell id1>;<sky cell id2>"},
             #   'filename2': ...}
-            # This preserves 1 entry per filename, while providing info on 
+            # This preserves 1 entry per filename, while providing info on
             # multiple SkyCell's for each filename as appropriate.
             #
-            cols['skycell_id'] = [scell_files[fname]['id'] for fname in cols['filename']]                 
+            cols['skycell_id'] = [scell_files[fname]['id'] for fname in cols['filename']]
             cols['skycell_new'] = [1]*len(cols['filename'])
 
         #
@@ -836,7 +843,7 @@ def build_poller_table(input, log_level, poller_type='svm'):
     # If 'mvm' poller file, expand any multiple skycell entries into separate rows
     #
     if poller_type == 'mvm':
-        # A new row will need to be added for each additional SkyCell that the 
+        # A new row will need to be added for each additional SkyCell that the
         # file overlaps...
         #
         poller_table['skycell_obj'] = [None]*len(poller_table)
@@ -859,7 +866,7 @@ def build_poller_table(input, log_level, poller_type='svm'):
                             poller_rows = poller_table[poller_table['filename'] == name]
                             sobj0 = poller_rows['skycell_obj'][0]
                             # Select only 1 row regardless of how many we have already
-                            # added for this filename (in case file overlapped more than 
+                            # added for this filename (in case file overlapped more than
                             # 2 sky cells at once).
                             poller_row = poller_rows[poller_rows['skycell_obj'] == sobj0]
                             # make copy of row for this filename
@@ -869,7 +876,7 @@ def build_poller_table(input, log_level, poller_type='svm'):
                             # append new row to table
                             new_poller_table.add_row(poller_row[0])
         poller_table = new_poller_table
-        
+
     return poller_table
 
 
@@ -933,12 +940,12 @@ def sort_poller_table(obset_table):
         row['flam'] = photflam
 
     # Determine the rank order the data with a primary key of photflam and a secondary key
-    # of exposure time (in seconds).  The primary and secondary keys both need 
+    # of exposure time (in seconds).  The primary and secondary keys both need
     # to be sorted in descending order.  Use the rank to sort
     # the original input table for output.
-    # Unfortunately, there are cases where the default works better; namely, 
+    # Unfortunately, there are cases where the default works better; namely,
     # fields with few point sources which are bright that are saturated in the
-    # longer exposure time images (like j8cw03 and j8cw53).  
+    # longer exposure time images (like j8cw03 and j8cw53).
     # rank = np.lexsort((-expanded_obset_table['flam'], -expanded_obset_table['exptime']))
     # Original implementation:
     # rank = np.lexsort((expanded_obset_table['exptime'], -expanded_obset_table['flam']))
