@@ -371,7 +371,6 @@ class FilterProduct(HAPProduct):
 
         if len(edp_filenames) == 1:
             drizzle_pars['resetbits'] = "0"  # Use any pixels already flagged as CRs
-            drizzle_pars['final_fillval'] = 0
 
         astrodrizzle.AstroDrizzle(input=edp_filenames,
                                   output=self.drizzle_filename,
