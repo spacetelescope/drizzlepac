@@ -138,6 +138,8 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
     # if log_level is either 'DEBUG' or 'NOTSET', write out GAIA sources to DS9 region file
     if log_level <= logutil.logging.DEBUG:
         reg_file = "{}_gaia_sources.reg".format(hap_obj.drizzle_filename[:-9])
+        cname = gaia_table.colnames[0]
+        gaia_table.rename_column(cname, "#{}".format(cname))  # Make reg file DS9-compatible
         gaia_table.write(reg_file, format='ascii.csv')
         log.debug("Wrote GAIA source RA and Dec positions to DS9 region file '{}'".format(reg_file))
 
@@ -1110,7 +1112,7 @@ def generate_gaia_catalog(hap_obj, columns_to_remove=None):
 def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=None,
                        log_level=logutil.logging.NOTSET):
     """Compare photometry measurements for sources cross matched between the Point and Segment catalogs.
- 
+
     DEPRECATED
 
     Report the magnitudes, as well as the mean difference, standard deviation of the mean, and median
