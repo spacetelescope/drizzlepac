@@ -1059,13 +1059,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 outname = self.imgname.replace(".fits", "_bkgsub.fits")
                 fits.PrimaryHDU(data=imgarr_bkgsub).writeto(outname)
 
-            #threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
-            #for wht_mask in self.tp_masks:
+            # threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
+            # for wht_mask in self.tp_masks:
             #    log.info("Using WHT masks as a scale on the RMS to compute threshold detection limit.")
             #    threshold_item = self._nsigma * self.image.bkg_rms_ra * wht_mask['mask'] / wht_mask['rel_weight']
             #    threshold_item[np.isnan(threshold_item)] = 0.0
             #    threshold += threshold_item
-            #del(threshold_item)
+            # del(threshold_item)
             # Compute the threshold to use for source detection
             threshold = self.compute_threshold(self._nsigma, self.image.bkg_rms_ra)
 
@@ -1252,7 +1252,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
         for wht_mask in self.tp_masks:
             log.info("Using WHT masks as a scale on the RMS to compute threshold detection limit.")
-            threshold_item = nsigma * bkg_rms * wht_mask['mask'] / wht_mask['rel_weight']
+            threshold_item = nsigma * bkg_rms * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'])
             threshold_item[np.isnan(threshold_item)] = 0.0
             threshold += threshold_item
         del(threshold_item)
