@@ -311,8 +311,23 @@ class FilterProduct(HAPProduct):
                 log.debug("Abbreviated reference catalog displayed below\n{}".format(ref_catalog))
                 align_table.reference_catalogs[self.refname] = ref_catalog
                 if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
-                    align_table.perform_fit(method_name, catalog_name, ref_catalog,
-                                           fitgeom=fitgeom)
+                    fit_again = False
+                    try:
+                        align_table.perform_fit(method_name, catalog_name, ref_catalog,
+                                                fitgeom=fitgeom)
+                    except Exception:
+                        log.info('Problem with initial fit...')
+                        fit_again = True
+
+                    # If there was a problem with the first fit...
+                    if fit_again:
+                        log.info("Trying 'DEFAULT' fit to {} instead.".format(catalog_name))
+                        # Try one more time with slightly different cross-matching algorithm
+                        method_name = 'default'
+                        align_table.configure_fit()
+                        align_table.perform_fit(method_name, catalog_name, ref_catalog,
+                                                fitgeom=fitgeom)
+
                     align_table.select_fit(catalog_name, method_name)
                     align_table.apply_fit(headerlet_filenames=headerlet_filenames,
                                          fit_label=fit_label)
