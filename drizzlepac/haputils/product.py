@@ -535,6 +535,8 @@ class SkyCellProduct(HAPProduct):
     """
     def __init__(self, prop_id, obset_id, instrument, detector, skycell_name, layer, filetype, log_level):
         super().__init__(prop_id, obset_id, instrument, detector, skycell_name, filetype, log_level)
+        # May need to exclude 'filter' component from layer_str
+        # layer_str = '-'.join(layer[1:])
         layer_str = '-'.join(layer)
 
         self.info = '_'.join([skycell_name, instrument, detector, layer_str])

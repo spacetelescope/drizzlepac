@@ -817,7 +817,7 @@ def build_poller_table(input, log_level, poller_type='svm'):
             # multiple SkyCell's for each filename as appropriate.
             #
             cols['skycell_id'] = [scell_files[fname]['id'] for fname in cols['filename']]
-            cols['skycell_new'] = [1]*len(cols['filename'])
+            cols['skycell_new'] = [1] * len(cols['filename'])
 
         #
         # Build output table
