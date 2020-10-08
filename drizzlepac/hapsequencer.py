@@ -122,6 +122,17 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
         # images and some of the measurements can be appended to the total catalog
         total_product_catalogs.identify(mask=total_product_obj.mask)
 
+        if not (total_product_obj.instrument == 'WFC3' and total_product_obj.detector == 'IR') and \
+           not (total_product_obj.instrument == 'ACS' and total_product_obj.detector == 'SBC'):
+            # Apply cosmic-ray threshold criteria used by HLA to determine whether or not to reject
+            # the catalogs.
+            n1_exposure_time = 0
+            for edp in total_product_obj.edp_list:
+                if edp.crclean:
+                    n1_exposure_time += edp.exptime
+
+            total_product_catalogs.verify_crthresh(n1_exposure_time)
+
         # Determine how to continue if "aperture" or "segment" fails to find sources for this total
         # detection product - take into account the initial setting of phot_mode.
         # If no sources were found by either the point or segmentation algorithms, go on to

@@ -353,6 +353,7 @@ class CatalogImage:
 class HAPCatalogs:
     """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
+    crfactor = {'aperture': 300, 'segment': 150}  # CRs / hr / 4kx4k pixels
 
     def __init__(self, fitsfile, param_dict, param_dict_qc, log_level, diagnostic_mode=False, types=None,
                  tp_sources=None):
@@ -428,6 +429,33 @@ class HAPCatalogs:
             log.info("")
             log.info("Identifying {} sources".format(catalog))
             self.catalogs[catalog].identify_sources(**pars)
+
+    def verify_crthresh(self, n1_exposure_time):
+        """Verify whether catalogs meet cosmic-ray threshold limits.
+
+        ... note : If either catalog fails the following test, then both are rejected.
+                        n_cat < thresh
+                   where
+                        thresh = crfactor * n1_exposure_time**2 / texptime
+        """
+        reject_catalogs = False
+
+        log.info("Determining whether point and/or segment catalogs meet cosmic-ray threshold")
+        log.info("  based on {} exposure time of n=1 filters".format(n1_exposure_time))
+        for catalog in self.catalogs:
+            if catalog.sources:
+                thresh = self.crfactor[catalog] * n1_exposure_time**2 / self.image.keyword_dict['texpo_time']
+                n_sources = len(self.catalogs[catalog].sources)
+                log.info("{} catalog with {} sources:  CR threshold = {}".format(catalog, n_sources, thresh))
+                if n_sources < thresh:
+                    reject_catalogs = True
+                    log.info("{} catalog FAILED CR threshold.  Rejecting both catalogs...".format(catalog))
+                    break
+
+        if reject_catalogs:
+            for catalog in self.catalogs.values():
+                catalog.sources = None
+
 
     def measure(self, filter_name, **pars):
         """Perform photometry and other measurements on sources for this image.

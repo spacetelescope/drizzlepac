@@ -590,7 +590,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
                         log.debug("Determined FWHM from sample PSF of {:.2f}".format(kernel_fwhm))
                         log.debug("  based on good range of FWHM:  {:.1f} to {:.1f}".format(good_fwhm[0], good_fwhm[1]))
                         if good_fwhm[1] > kernel_fwhm > good_fwhm[0]:  # This makes it hard to work with sub-sampled data (WFPC2?)
-                            fwhm = kernel_fwhm
+                            fwhm = kernel_fwhm * 1.25  # DEBUG:  Try scaling FWHM 
                             kernel_psf = True
                             break
                         else:
