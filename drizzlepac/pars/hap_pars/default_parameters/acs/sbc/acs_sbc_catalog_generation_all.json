@@ -1,6 +1,7 @@
 {
     "bkg_box_size": 27,
     "bkg_filter_size": 3,
+    "good_fwhm": [1.5, 3.5],
     "nsigma": 3.0,
     "skyannulus_arcsec": 0.25,
     "dskyannulus_arcsec": 0.25,

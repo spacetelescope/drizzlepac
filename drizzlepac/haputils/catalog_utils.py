@@ -92,7 +92,8 @@ class CatalogImage:
                      negative_percent=15.0,
                      negative_threshold=-0.5,
                      nsigma_clip=3.0,
-                     maxiters=3):
+                     maxiters=3,
+                     good_fwhm=[1.5, 3.5]):
 
         if self.bkg_background_ra is None:
             self.compute_background(box_size, win_size,
@@ -105,6 +106,7 @@ class CatalogImage:
 
         k, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
                                                                   self.wht_image,
+                                                                  good_fwhm=good_fwhm,
                                                                   threshold=self.bkg_rms_ra,
                                                                   fwhm=fwhmpsf / self.imgwcs.pscale)
         (self.kernel, self.kernel_psf) = k

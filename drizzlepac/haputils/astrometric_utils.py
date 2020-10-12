@@ -498,7 +498,7 @@ def compute_2d_background(imgarr, box_size, win_size,
     return bkg_background, bkg_median, bkg_rms, bkg_rms_median
 
 def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
-                      good_fwhm=[1.0, 4.0], num_fwhm=3,
+                      good_fwhm=[1.0, 4.0], num_fwhm=30,
                       isolation_size=11, saturation_limit=70000.):
     """Build kernel for use in source detection based on image PSF
     This algorithm looks for an isolated point-source that is non-saturated to use as a template
