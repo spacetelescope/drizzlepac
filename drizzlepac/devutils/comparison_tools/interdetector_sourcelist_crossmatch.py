@@ -25,7 +25,31 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 # =======================================================================================================================
-def run(sl_names, img_names, log_level=logutil.logging.INFO):
+def run(sl_names, img_names, diagnostic_mode=False, log_level=logutil.logging.INFO):
+    """main running subroutine
+
+    Parameters
+    ----------
+    sl_Names : list
+        A list containing the reference sourcelist filename and the comparison sourcelist filename, in that
+        order.
+
+    img_Names : list
+        A list containing the reference image filename and the comparison image filename, in that order.
+
+    diagnostic_mode : Bool, optional
+        If this option is set to Boolean 'True', region files will be created to test the quality of the
+        coordinate transformation. Default value is Boolean 'False'.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'INFO'.
+
+    Returns
+    -------
+    Nothing.
+
+    """
 
     log.setLevel(log_level)
     # 0: correct ra, dec, x, y in HLA sourcelists
@@ -44,24 +68,48 @@ def run(sl_names, img_names, log_level=logutil.logging.INFO):
     # 3: transform comp frame RA, DEC into Ref frame X, Y values
     comp_xy_in_ref_frame = hla_flag_filter.rdtoxy(comp_ra_dec_values, img_names[0], "[1]", origin=0)
 
-    for data_table, reg_filename in zip([ref_data, comp_data, comp_xy_in_ref_frame], ["ref_orig.reg", "comp_orig.reg", "comp_xform.reg"]):
-        f = open(reg_filename, "w")
-        for line in data_table:
-            f.write("{} {}\n".format(line[0], line[1]))
-        f.close()
-        log.info("Wrote ds9 region file {}".format(reg_filename))
+    # 4: (diagnostic only) write out region files to check coordinate transformation
+    if diagnostic_mode:
+        for data_table, reg_filename in zip([ref_data, comp_data, comp_xy_in_ref_frame], ["ref_orig.reg", "comp_orig.reg", "comp_xform.reg"]):
+            f = open(reg_filename, "w")
+            for line in data_table:
+                f.write("{} {}\n".format(line[0], line[1]))
+            f.close()
+            log.info("Wrote ds9 region file {}".format(reg_filename))
+    pdb.set_trace()
 # =======================================================================================================================
 if __name__ == "__main__":
     # process command-line inputs with argparse
-    parser = argparse.ArgumentParser(description='convert the X, Y coords in the comparision sourcelist into '
+    parser = argparse.ArgumentParser(description='convert the X, Y coords in the comparison sourcelist into '
                                                  'the frame of reference of the reference sourcelist and run '
                                                  'compare_sourcelists.py')
-    parser.add_argument('sourcelistNames', nargs=2,
+    parser.add_argument('sl_list', nargs=2,
                         help='A space-separated pair of sourcelists to compare. The first sourcelist is '
                              'assumed to be the reference sourcelist that the second is being compared to.')
-    parser.add_argument('-i', '--imageName', nargs=2, required=True,
+    parser.add_argument('-i', '--img_list', nargs=2, required=True,
                         help='A space-seperated list of containing the reference and comparison images '
                              'that correspond to reference and comparison sourcelists')
+    parser.add_argument('-d', '--diagnostic_mode', required=False, action='store_true',
+                        help='If this option is turned on, region files will be created to test the quality '
+                             'of the coordinate transformation')
+    parser.add_argument('-l', '--log_level', required=False, default='info',
+                        choices=['critical', 'error', 'warning', 'info', 'debug'],
+                        help='The desired level of verboseness in the log statements displayed on the screen '
+                             'and written to the .log file. The level of verboseness from left to right, and '
+                             'includes all log statements with a log_level left of the specified level. '
+                             'Specifying "critical" will only record/display "critical" log statements, and '
+                             'specifying "error" will record/display both "error" and "critical" log '
+                             'statements, and so on.')
     user_args = parser.parse_args()
 
-    run(user_args.sourcelistNames, user_args.imageNames, log_level=logutil.logging.INFO)
+    # set up logging
+    log_dict = {"critical": logutil.logging.CRITICAL,
+                "error": logutil.logging.ERROR,
+                "warning": logutil.logging.WARNING,
+                "info": logutil.logging.INFO,
+                "debug": logutil.logging.DEBUG}
+    log_level = log_dict[user_args.log_level]
+    log.setLevel(log_level)
+
+
+    run(user_args.sl_list, user_args.img_list, user_args.diagnostic_mode, log_level=log_level)
