@@ -104,6 +104,10 @@ class CatalogImage:
                                     nsigma_clip=nsigma_clip,
                                     maxiters=maxiters)
 
+        if self.keyword_dict['detector'].upper() == 'IR':
+            good_fwhm = [1.0, 2.0]
+        else:
+            good_fwhm = [2.0, 3.5]
         k, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
                                                                   self.wht_image,
                                                                   good_fwhm=good_fwhm,
@@ -445,7 +449,8 @@ class HAPCatalogs:
         for catalog in self.catalogs:
             if catalog.sources:
                 thresh = self.crfactor[catalog] * n1_exposure_time**2 / self.image.keyword_dict['texpo_time']
-                n_sources = len(self.catalogs[catalog].sources)
+                source_cat = self.catalogs[catalog].sources if catalog == 'aperture' else self.catalogs[catalog].source_cat
+                n_sources = len(source_cat)
                 log.info("{} catalog with {} sources:  CR threshold = {}".format(catalog, n_sources, thresh))
                 if n_sources < thresh:
                     reject_catalogs = True
@@ -703,12 +708,16 @@ class HAPPointCatalog(HAPCatalogBase):
     def identify_sources(self, **pars):
         """Create a master coordinate list of sources identified in the specified total detection product image
         """
+        if pars and 'mask' in pars:
+            fits.PrimaryHDU(data=pars['mask'].astype(np.uint16)).writeto(self.imgname.replace('drz.fits', 'footprint_mask.fits'))
+            
         source_fwhm = self.image.kernel_fwhm
         # read in sci, wht extensions of drizzled product
         image = self.image.data.copy()
 
         # Create the background-subtracted image
         image -= self.image.bkg_background_ra
+        image = np.clip(image, 0, image.max())  # Insure there are no neg pixels to trip up StarFinder
 
         if not self.tp_sources:
             # Report configuration values to log
@@ -730,13 +739,18 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("")
             log.info("{}".format("=" * 80))
 
+            fits.PrimaryHDU(data=self.exclusion_mask.astype(np.int16)).writeto(self.image.imgname.replace('drz.fits', 'exclusion_mask.fits'))
+
             sources = None
             for mask in self.tp_masks:
                 # apply mask for each separate range of WHT values
                 region = image * mask['mask']
+                fits.PrimaryHDU(data=region).writeto(self.image.imgname.replace('drz.fits', 'region1.fits'))
                 # Compute separate threshold for each 'region'
                 reg_rms = self.image.bkg_rms_ra * np.sqrt(mask['mask'] / mask['rel_weight'].max())
                 reg_rms_median = np.nanmedian(reg_rms[reg_rms > 0])
+                wht_scale = np.nanmedian(np.sqrt(mask['mask'] / mask['rel_weight'].max()))
+                log.info("Mask {}: rel = {},  wht_scale = {}".format(mask['wht_limit'], mask['rel_weight'].max(), wht_scale))
 
                 # find ALL the sources!!!
                 if self.param_dict["starfinder_algorithm"] == "dao":
@@ -747,7 +761,7 @@ class HAPPointCatalog(HAPCatalogBase):
                     reg_sources = daofind(region, mask=self.exclusion_mask)
                 elif self.param_dict["starfinder_algorithm"] == "iraf":
                     log.info("IRAFStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
-                                                                               self.image.bkg_rms_median))
+                                                                               reg_rms_median))
                     isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * reg_rms_median)
                     reg_sources = isf(region, mask=self.exclusion_mask)
                 else:
@@ -757,6 +771,7 @@ class HAPPointCatalog(HAPCatalogBase):
                 log.info("{}".format("=" * 80))
                 # Concatenate sources found in each region.
                 if reg_sources is not None:
+                    reg_sources.write(self.image.imgname.replace('drz.fits', 'raw_sources.ecsv'), format='ascii.ecsv')
                     if sources is None:
                         sources = reg_sources
                     else:

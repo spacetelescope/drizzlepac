@@ -498,7 +498,7 @@ def compute_2d_background(imgarr, box_size, win_size,
     return bkg_background, bkg_median, bkg_rms, bkg_rms_median
 
 def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
-                      good_fwhm=[1.0, 4.0], num_fwhm=3,
+                      good_fwhm=[1.0, 4.0], num_fwhm=30,
                       isolation_size=11, saturation_limit=70000.):
     """Build kernel for use in source detection based on image PSF
     This algorithm looks for an isolated point-source that is non-saturated to use as a template
@@ -577,7 +577,6 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
                 log.debug("Kernel source PSF located at [{},{}]".format(kernel_pos[1], kernel_pos[0]))
             else:
                 kernel = None
-
             if kernel is not None:
                 kernel = np.clip(kernel, 0, None)  # insure background subtracted kernel has no negative pixels
                 if kernel.sum() > 0.0:
@@ -590,7 +589,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
                         log.debug("Determined FWHM from sample PSF of {:.2f}".format(kernel_fwhm))
                         log.debug("  based on good range of FWHM:  {:.1f} to {:.1f}".format(good_fwhm[0], good_fwhm[1]))
                         if good_fwhm[1] > kernel_fwhm > good_fwhm[0]:  # This makes it hard to work with sub-sampled data (WFPC2?)
-                            fwhm = kernel_fwhm * 1.25  # DEBUG:  Try scaling FWHM 
+                            fwhm = kernel_fwhm
                             kernel_psf = True
                             break
                         else:
@@ -977,7 +976,6 @@ def classify_sources(catalog, fwhm, sources=None):
         # If either a delta CR or a CR streak are identified, remove it
         if valid_src and not valid_streak:
             srctype[src] = 1
-
     return srctype
 
 
