@@ -107,6 +107,7 @@ class CatalogImage:
         k, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
                                                                   self.wht_image,
                                                                   good_fwhm=good_fwhm,
+                                                                  num_fwhm=30,
                                                                   threshold=self.bkg_rms_ra,
                                                                   fwhm=fwhmpsf / self.imgwcs.pscale)
         (self.kernel, self.kernel_psf) = k
@@ -398,7 +399,8 @@ class HAPCatalogs:
                                 self.param_dict['negative_percent'],
                                 self.param_dict['negative_threshold'],
                                 self.param_dict['nsigma_clip'],
-                                self.param_dict['maxiters'])
+                                self.param_dict['maxiters'],
+                                self.param_dict['good_fwhm'])
 
         # Initialize all catalog types here...
         # This does NOT identify or measure sources to create the catalogs at this point...
