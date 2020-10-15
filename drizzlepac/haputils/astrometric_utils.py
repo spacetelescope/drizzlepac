@@ -588,6 +588,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
                         kernel = None
                     else:
                         log.debug("Determined FWHM from sample PSF of {:.2f}".format(kernel_fwhm))
+                        log.debug("  based on good range of FWHM:  {:.1f} to {:.1f}".format(good_fwhm[0], good_fwhm[1]))
                         if good_fwhm[1] > kernel_fwhm > good_fwhm[0]:  # This makes it hard to work with sub-sampled data (WFPC2?)
                             fwhm = kernel_fwhm
                             kernel_psf = True
@@ -1712,6 +1713,12 @@ def determine_focus_index(img, sigma=1.5):
        This returns a single value that serves as an indication of the
        sharpness of the image based on the max pixel value from the image
        after applying a Laplacian-of-Gaussian filter with sigma.
+
+       Implementation based on discussion from:
+       https://stackoverflow.com/questions/7765810/is-there-a-way-to-detect-if-an-image-is-blurry
+
+       as supported by:
+       Pertuz, S., et.al., 2013, Pattern Recognition, 46:1415–1432
 
        This index needs to be based on 'max' value in order to avoid
        field-dependent biases, since the 'max' value will correspond
