@@ -707,7 +707,7 @@ class HAPPointCatalog(HAPCatalogBase):
                 # apply mask for each separate range of WHT values
                 region = image * mask['mask']
                 # Compute separate threshold for each 'region'
-                reg_rms = self.image.bkg_rms_ra * mask['mask'] / mask['rel_weight']
+                reg_rms = self.image.bkg_rms_ra * np.sqrt(mask['mask'] / mask['rel_weight'].max())
                 reg_rms_median = np.nanmedian(reg_rms[reg_rms > 0])
 
                 # find ALL the sources!!!
