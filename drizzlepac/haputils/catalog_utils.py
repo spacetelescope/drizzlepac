@@ -737,7 +737,7 @@ class HAPPointCatalog(HAPCatalogBase):
                 return
 
             for col in sources.colnames:
-                sources[col].info.format = '%.8g'  # for consistent table output
+                sources[col].info.format = '.8g'  # for consistent table output
 
             self.sources = sources
 
@@ -1232,7 +1232,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
             # Construct the diagnostic_mode output filename and write the regions file
             indx = self.sourcelist_filename.find("ecsv")
-            outname = self.sourcelist_filename[0:indx] + "reg"
+            outname = self.sourcelist_filename[0:indx-1] + "_all.reg"
 
             tbl["X-Centroid"].info.format = ".10f"
             tbl["Y-Centroid"].info.format = ".10f"
@@ -1427,7 +1427,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
             # Construct the diagnostic_mode output filename and write the catalog
             indx = self.sourcelist_filename.find("ecsv")
-            outname = self.sourcelist_filename[0:indx] + "reg"
+            outname = self.sourcelist_filename[0:indx-1] + "_all.reg"
 
             tbl["X-Centroid"].info.format = ".10f"  # optional format
             tbl["Y-Centroid"].info.format = ".10f"
@@ -1925,7 +1925,30 @@ class HAPSegmentCatalog(HAPCatalogBase):
         """
         self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, product=self.image.ghd_product)
         self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
-        log.info("Wrote filter source catalog: {}".format(self.sourcelist_filename))
+        log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
+
+        # For debugging purposes only, create a "regions" files to use for ds9 overlay of the segm_img.
+        # Create the image regions file here in case there is a failure.  This diagnostic portion of the
+        # code should only be invoked when working on the total object catalog (self.segm_img is defined).
+        if self.diagnostic_mode:
+            # Copy out only the X and Y coordinates to a "diagnostic_mode table" and cast as an Astropy Table
+            # so a scalar can be added to the centroid coordinates
+            tbl = self.source_cat["X-Centroid", "Y-Centroid"]
+
+            # Construct the diagnostic_mode output filename and write the regions file
+            indx = self.sourcelist_filename.find("ecsv")
+            outname = self.sourcelist_filename[0:indx] + "reg"
+
+            tbl["X-Centroid"].info.format = ".10f"
+            tbl["Y-Centroid"].info.format = ".10f"
+
+            # Add one to the X and Y table values to put the data onto a one-based system,
+            # particularly for display with ds9
+            tbl["X-Centroid"] = tbl["X-Centroid"] + 1
+            tbl["Y-Centroid"] = tbl["Y-Centroid"] + 1
+            tbl.write(outname, format="ascii.commented_header")
+
+            log.info("Wrote region file '{}' containing {} sources".format(outname, len(tbl)))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
