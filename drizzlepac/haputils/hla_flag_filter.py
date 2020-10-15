@@ -689,6 +689,17 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
         log.error("Unknown catalog type '{}', must be 'aperture' or 'segment'".format(proc_type))
         raise ValueError("Unknown catalog type '%s'" % proc_type)
 
+    # ----------------------------------------------------------
+    # Determine plate scale relative to default HLA plate scale
+    # This is required since all swarm parameters were derived
+    # using HLA products and are tuned to the characteristics of
+    # the HLA images (plate scale, gain, ...).  This scale factor
+    # will be used to scale the pixel-based parameters to the
+    # specific plate scale of the HAP products.
+    # ----------------------------------------------------------
+    hla_plate_scale = float(param_dict["quality control"]["swarm filter"]["HLA_plate_scale"])
+    scale_to_hla = hla_plate_scale / plate_scale
+
     # ----------------------------------
     # Convert aperture radius to pixels
     # ----------------------------------
@@ -733,11 +744,14 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     # WRITE SUBSET SOURCE LIST TO AN OUTPUT FILE FOR VERIFICATION
     # ------------------------------------------------------------
     if diagnostic_mode:
-        final_complete_source_file = open(phot_table_root+'_SWFILT_COMPLETE_SOURCE_FILE.txt', 'w')
-        final_complete_source_file.write("# {}\n".format("-"*96))
+        final_complete_source_file = open(phot_table_root + '_SWFILT_COMPLETE_SOURCE_FILE.txt', 'w')
+        final_complete_source_file.write("# {}\n".format("-" * 96))
+        final_complete_source_file.write("# HAP Plate scale: {}\n".format(plate_scale))
+        final_complete_source_file.write("# HAP Plate scale relative to HLA: {}\n".format(scale_to_hla))
+        final_complete_source_file.write("# {}\n".format("-" * 96))
         swfilt_table_header = "# X-Center   Y-Center     Flux        ElectronPP          Sky         EPPSKY_Ratio \n"
         final_complete_source_file.write(swfilt_table_header)
-        final_complete_source_file.write("# {}\n".format("-"*96))
+        final_complete_source_file.write("# {}\n".format("-" * 96))
         for i, complete_src_value in enumerate(complete_src_list):
             final_complete_source_file.write(str(complete_src_value[0]) + '     ' +
                                              str(complete_src_value[1]) + '     ' +
@@ -768,6 +782,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     lower_epp_limit = float(param_dict["quality control"]["swarm filter"]["lower_epp_limit"])
     eppsky_limit_cfg = float(param_dict["quality control"]["swarm filter"]["eppsky_limit"])
     selfradius = float(param_dict["quality control"]["swarm filter"]["selfradius"])  # TODO: optimize selfradius values for ACS/HRC, ACS/SBC in quality control param files
+    selfradius *= scale_to_hla
 
     eppsky_limit = eppsky_limit_cfg * median_sky
 
@@ -805,6 +820,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
             selfradii = param_dict["quality control"]["swarm filter"]["selfradii_list"]
             selfradii = list(map(float, selfradii))
+            selfradii = numpy.array(selfradii) * scale_to_hla
 
             p1 = []
             p2 = []
@@ -818,7 +834,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
                 else:
                     cut_value_positions = numpy.where(numpy.logical_and(initial_central_pixel_list[:, 3:4] >= cut,
                                                                         initial_central_pixel_list[:, 3:4] <=
-                                                                        cuts[cut_cnt-1]))[0]
+                                                                        cuts[cut_cnt - 1]))[0]
 
                 # -----------------------------------------------
                 # If no detections exist for the specified EPP
@@ -942,9 +958,11 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     # --------------------------------------------------------------------------
     # ==========================================================================
 
+
     swarm_thresh = float(param_dict["quality control"]["swarm filter"]["swarm_thresh"])
     clip_radius_list = param_dict["quality control"]["swarm filter"]["clip_radius_list"]
-    clip_radius_list = list(map(float, clip_radius_list))
+    clip_radius_list = numpy.array(list(map(float, clip_radius_list))) * scale_to_hla
+
     scale_factor_list = param_dict["quality control"]["swarm filter"]["scale_factor_list"]
     scale_factor_list = list(map(float, scale_factor_list))
     log.info('SWARM FILTER CLIP_RADIUS_LIST: {}'.format(clip_radius_list))
@@ -1108,6 +1126,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
         if len(final_flag_src_central_pixel_list) > 0:
             ctr_list_radius_list = param_dict["quality control"]["swarm filter"]["ctrList_radiusList"]  # TODO: optimize ctr_list_radius_list for ACS wfc, hrc, sbc in quality control config files
             ctr_list_radius_list = list(map(int, ctr_list_radius_list))
+            ctr_list_radius_list = numpy.array(ctr_list_radius_list) * scale_to_hla
 
             ctr_list_threshold_list = param_dict["quality control"]["swarm filter"]["ctrList_thresholdList"]  # TODO: optimize ctr_list_threshold_list for ACS wfc, hrc, sbc in quality control config files
             ctr_list_threshold_list = list(map(int, ctr_list_threshold_list))
@@ -1119,7 +1138,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
                 else:
                     ctr_list_cut = numpy.logical_and(final_flag_src_central_pixel_list[:, 3] > threshold,
                                                      final_flag_src_central_pixel_list[:, 3] <=
-                                                     ctr_list_threshold_list[ctr_list_cnt-1])
+                                                     ctr_list_threshold_list[ctr_list_cnt - 1])
 
                 ctr_list_cut1 = final_flag_src_central_pixel_list[ctr_list_cut, :]
                 pcentral, pfull = xymatch(ctr_list_cut1[:, 0:2], swarm_list_b[:, 0:2],
