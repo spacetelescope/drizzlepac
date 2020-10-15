@@ -496,6 +496,10 @@ class HAPCatalogBase:
         gain_values = [g for g in gain_keys if g > 0.0]
         self.gain = self.image.keyword_dict['exptime'] * np.mean(gain_values)
 
+        # Set the gain for ACS/SBC and WFC3/IR to 1.0
+        if self.image.keyword_dict["detector"] in ["IR", "SBC"]:
+            self.gain = 1.0
+
         # Convert photometric aperture radii from arcsec to pixels
         self.aper_radius_arcsec = [self.param_dict['aperture_1'], self.param_dict['aperture_2']]
         self.aper_radius_list_pixels = []
@@ -766,7 +770,8 @@ class HAPPointCatalog(HAPCatalogBase):
 
         # Create the list of photometric apertures to measure
         phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
-        # Perform aperture photometry
+
+        # Perform aperture photometry - the input data should NOT be background subtracted
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers,
                                                                 bg_apers,
                                                                 data=image,
