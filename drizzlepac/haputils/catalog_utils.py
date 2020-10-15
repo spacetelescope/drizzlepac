@@ -496,6 +496,10 @@ class HAPCatalogBase:
         gain_values = [g for g in gain_keys if g > 0.0]
         self.gain = self.image.keyword_dict['exptime'] * np.mean(gain_values)
 
+        # Set the gain for ACS/SBC and WFC3/IR to 1.0
+        if self.image.keyword_dict["detector"] in ["IR", "SBC"]:
+            self.gain = 1.0
+
         # Convert photometric aperture radii from arcsec to pixels
         self.aper_radius_arcsec = [self.param_dict['aperture_1'], self.param_dict['aperture_2']]
         self.aper_radius_list_pixels = []
@@ -768,12 +772,6 @@ class HAPPointCatalog(HAPCatalogBase):
         phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
 
         # Perform aperture photometry - the input data should NOT be background subtracted
-        # Make sure to account for the fact that SBC does not have a "gain" value
-        gain = self.gain
-        if self.image.keyword_dict["detector"] == "SBC":
-            gain = 1.0
-
-        # Perform aperture photometry
         photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers,
                                                                 bg_apers,
                                                                 data=image,
@@ -781,7 +779,7 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                 photplam=self.image.keyword_dict['photplam'],
                                                                 error_array=self.image.bkg_rms_ra,
                                                                 bg_method=self.param_dict['salgorithm'],
-                                                                epadu=gain)
+                                                                epadu=self.gain)
 
         # calculate and add RA and DEC columns to table
         ra, dec = self.transform_list_xy_to_ra_dec(photometry_tbl["X-Center"], photometry_tbl["Y-Center"], self.imgname)  # TODO: replace with all_pix2sky or somthing at a later date
@@ -1491,12 +1489,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
             phot_apers = [CircularAperture(pos_xy, r=r) for r in self.aper_radius_list_pixels]
 
             # Perform aperture photometry - the input data should NOT be background subtracted
-            # Make sure to account for the fact that SBC does not have a "gain" value
-            gain = self.gain
-            if self.image.keyword_dict["detector"] == "SBC":
-                gain = 1.0
-
-            # Perform aperture photometry - the input data should NOT be background subtracted
             photometry_tbl = photometry_tools.iraf_style_photometry(phot_apers,
                                                                     bg_apers,
                                                                     data=input_image,
@@ -1504,7 +1496,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                     photplam=self.image.keyword_dict['photplam'],
                                                                     error_array=self.image.bkg_rms_ra,
                                                                     bg_method=self.param_dict['salgorithm'],
-                                                                    epadu=gain)
+                                                                    epadu=self.gain)
 
             # Capture data computed by the photometry tools and append to the output table
             filter_measurements_table['FluxAp1'][good_rows_index] = photometry_tbl['FluxAp1']
