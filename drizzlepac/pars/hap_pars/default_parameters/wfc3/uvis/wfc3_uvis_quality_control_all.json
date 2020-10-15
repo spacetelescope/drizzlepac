@@ -14,6 +14,7 @@
       }
     },
     "swarm filter": {
+      "HLA_plate_scale": 0.03962,
       "upper_epp_limit": 70000.0,
       "lower_epp_limit": 2000.0,
       "eppsky_limit": 1000.0,
