@@ -9,12 +9,14 @@ import os
 import pdb
 import sys
 
+from astropy.table import Table
 import numpy as np
 
 from drizzlepac.devutils.comparison_tools import compare_sourcelists
 from drizzlepac.haputils import hla_flag_filter
 import drizzlepac.haputils.comparison_utils as cu
 import drizzlepac.haputils.svm_quality_analysis as svmqa
+from stsci.stimage import xyxymatch
 from stsci.tools import logutil
 
 __taskname__ = 'interdetector_sourcelist_crossmatch'
@@ -30,11 +32,11 @@ def run(sl_names, img_names, diagnostic_mode=False, log_level=logutil.logging.IN
 
     Parameters
     ----------
-    sl_Names : list
+    sl_names : list
         A list containing the reference sourcelist filename and the comparison sourcelist filename, in that
         order.
 
-    img_Names : list
+    img_names : list
         A list containing the reference image filename and the comparison image filename, in that order.
 
     diagnostic_mode : Bool, optional
@@ -76,6 +78,28 @@ def run(sl_names, img_names, diagnostic_mode=False, log_level=logutil.logging.IN
                 f.write("{} {}\n".format(line[0], line[1]))
             f.close()
             log.info("Wrote ds9 region file {}".format(reg_filename))
+
+
+
+    new_comp_xy = np.stack((comp_xy_in_ref_frame[:, 0], comp_xy_in_ref_frame[:, 1]), axis=1)
+    ref_xy = np.stack((ref_data['X'], ref_data['Y']), axis=1)
+
+    matches = xyxymatch(new_comp_xy, ref_xy, tolerance=5.0, separation=1.0)
+    # Report number and percentage of the total number of detected ref and comp sources that were matched
+    log.info("Sourcelist Matching Results")
+    log.info(
+        "Reference sourcelist:  {} of {} total sources matched ({} %)".format(len(matches),
+                                                                              len(ref_xy),
+                                                                              100.0 * (float(len(matches)) / float(len(ref_xy)))))
+    log.info(
+        "Comparison sourcelist: {} of {} total sources matched ({} %)".format(len(matches),
+                                                                              len(new_comp_xy),
+                                                                              100.0 * (float(len(matches)) / float(len(new_comp_xy)))))
+    matched_lines_comp = []
+    matched_lines_ref = []
+    for item in matches:
+        matched_lines_comp.append(item[2])
+        matched_lines_ref.append(item[5])
     pdb.set_trace()
 # =======================================================================================================================
 if __name__ == "__main__":
