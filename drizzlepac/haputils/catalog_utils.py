@@ -1333,7 +1333,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
         log.info("Using WHT masks as a scale on the RMS to compute threshold detection limit.")
         for wht_mask in self.tp_masks:
-            threshold_item = nsigma * bkg_rms * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'])
+            threshold_item = nsigma * bkg_rms * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'].max())
             threshold_item[np.isnan(threshold_item)] = 0.0
             threshold += threshold_item
         del(threshold_item)
@@ -1389,6 +1389,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.warning("No segments were found in Total Detection Product, {}.".format(self.imgname))
             log.warning("Processing for segmentation source catalogs for this product is ending.")
             return segm_img
+
+        # Evaluate the segmentation image as this has an impact on the deblending time
+        # This computation is just informational at this time
+        _ = self._evaluate_segmentation_image(segm_img,
+                                              imgarr_bkgsub,
+                                              big_island_only=False,
+                                              max_biggest_source=self._max_biggest_source,
+                                              max_source_fraction=self._max_source_fraction)
 
         if self.diagnostic_mode:
             outname = self.imgname.replace(".fits", "_segment" + str(ncount) + ".fits")
