@@ -159,8 +159,8 @@ class CatalogImage:
         maxiters : float, optional
             Parameter for the sigma_clipped_stats algorithm - number of sigma-clipping iterations to perform
 
-        Returns
-        -------
+        Attributes
+        ----------
         self.bkg_background_ra : 2D ndarray
             Background array
 
@@ -199,14 +199,14 @@ class CatalogImage:
         # Create mask to reject any sources located less than 10 pixels from a image/chip edge
         # to be used for the sigma-clipping
         binary_inverted_wht = np.where(imgdata == 0, 1, 0)
-        self.exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
+        self.exclude_zones_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
 
         # Compute a sigma-clipped background which returns only single values for mean,
         # median, and standard deviations
         log.info("")
         log.info("Computing the background using sigma-clipped statistics algorithm.")
         bkg_mean, bkg_median, bkg_rms = sigma_clipped_stats(imgdata,
-                                                            self.exclusion_mask,
+                                                            self.exclude_zones_mask,
                                                             sigma=nsigma_clip,
                                                             cenfunc='median',
                                                             maxiters=maxiters)
@@ -290,7 +290,7 @@ class CatalogImage:
 
                     # Determine how much of the illuminated portion of the background subtracted
                     # image is negative
-                    illum_mask = self.exclusion_mask < 1
+                    illum_mask = self.exclude_zones_mask < 1
                     total_illum_mask = illum_mask.sum()
                     illum_data = imgdata_bkgsub * illum_mask
                     negative_mask = illum_data < negative_threshold
