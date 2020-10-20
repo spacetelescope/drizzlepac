@@ -419,6 +419,8 @@ class HAPCatalogs:
             self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict, self.param_dict_qc,
                                                          self.diagnostic_mode, tp_sources=tp_sources)
 
+        self.filters = {}
+
     def identify(self, **pars):
         """Build catalogs for this image.
 
@@ -442,24 +444,41 @@ class HAPCatalogs:
                    where
                         thresh = crfactor * n1_exposure_time**2 / texptime
         """
+        for cat_type in self.catalogs:
+                crthresh_mask = None
+                source_cat = self.catalogs[cat_type].sources if cat_type == 'aperture' else self.catalogs[cat_type].source_cat
+
+                flag_cols = [colname for colname in source_cat.colnames if colname.startswith('Flag')]
+                for colname in flag_cols:
+                    catalog_crmask = source_cat[colname] < 2
+                    if crthresh_mask is None:
+                        crthresh_mask = catalog_crmask
+                    else:
+                        # Combine masks for all filters for this catalog type
+                        crthresh_mask = np.bitwise_or(crthresh_mask, catalog_crmask)
+                source_cat.sources_num_good = len(np.where(crthresh_mask)[0])
+
         reject_catalogs = False
 
         log.info("Determining whether point and/or segment catalogs meet cosmic-ray threshold")
-        log.info("  based on {} exposure time of n=1 filters".format(n1_exposure_time))
-        for catalog in self.catalogs:
-            if catalog.sources:
-                thresh = self.crfactor[catalog] * n1_exposure_time**2 / self.image.keyword_dict['texpo_time']
-                source_cat = self.catalogs[catalog].sources if catalog == 'aperture' else self.catalogs[catalog].source_cat
-                n_sources = len(source_cat)
-                log.info("{} catalog with {} sources:  CR threshold = {}".format(catalog, n_sources, thresh))
+        log.info("  based on EXPTIME = {}sec for the n=1 filters".format(n1_exposure_time))
+
+        for cat_type in self.catalogs:
+            source_cat = self.catalogs[cat_type]
+            if source_cat.sources:
+                thresh = self.crfactor[cat_type] * n1_exposure_time**2 / self.image.keyword_dict['texpo_time']
+                source_cat = source_cat.sources if catalog == 'aperture' else source_cat.source_cat
+                n_sources = source_cat.sources_num_good  # len(source_cat)
+                all_sources = len(source_cat)
+                log.info("{} catalog with {} good sources out of {} total sources :  CR threshold = {}".format(catalog, n_sources, all_sources, thresh))
                 if n_sources < thresh:
                     reject_catalogs = True
                     log.info("{} catalog FAILED CR threshold.  Rejecting both catalogs...".format(catalog))
                     break
 
-        if reject_catalogs:
-            for catalog in self.catalogs.values():
-                catalog.sources = None
+        # if reject_catalogs:
+        #    for catalog in self.catalogs.values():
+        #        catalog.sources = None
 
 
     def measure(self, filter_name, **pars):
@@ -709,8 +728,9 @@ class HAPPointCatalog(HAPCatalogBase):
         """Create a master coordinate list of sources identified in the specified total detection product image
         """
         if pars and 'mask' in pars:
-            fits.PrimaryHDU(data=pars['mask'].astype(np.uint16)).writeto(self.imgname.replace('drz.fits', 'footprint_mask.fits'))
-            
+            drc = 'drc.fits' if 'drc.fits' in self.imgname else 'drz.fits'
+            fits.PrimaryHDU(data=pars['mask'].astype(np.uint16)).writeto(self.imgname.replace(drc, 'footprint_mask.fits'))
+
         source_fwhm = self.image.kernel_fwhm
         # read in sci, wht extensions of drizzled product
         image = self.image.data.copy()
@@ -739,13 +759,14 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("")
             log.info("{}".format("=" * 80))
 
-            fits.PrimaryHDU(data=self.exclusion_mask.astype(np.int16)).writeto(self.image.imgname.replace('drz.fits', 'exclusion_mask.fits'))
+            drc = 'drc.fits' if 'drc.fits' in self.image.imgname else 'drz.fits'
+            fits.PrimaryHDU(data=self.exclusion_mask.astype(np.int16)).writeto(self.image.imgname.replace(drc, 'exclusion_mask.fits'))
 
             sources = None
             for mask in self.tp_masks:
                 # apply mask for each separate range of WHT values
                 region = image * mask['mask']
-                fits.PrimaryHDU(data=region).writeto(self.image.imgname.replace('drz.fits', 'region1.fits'))
+                fits.PrimaryHDU(data=region).writeto(self.image.imgname.replace(drc, 'region1.fits'))
                 # Compute separate threshold for each 'region'
                 reg_rms = self.image.bkg_rms_ra * np.sqrt(mask['mask'] / mask['rel_weight'].max())
                 reg_rms_median = np.nanmedian(reg_rms[reg_rms > 0])
@@ -771,11 +792,12 @@ class HAPPointCatalog(HAPCatalogBase):
                 log.info("{}".format("=" * 80))
                 # Concatenate sources found in each region.
                 if reg_sources is not None:
-                    reg_sources.write(self.image.imgname.replace('drz.fits', 'raw_sources.ecsv'), format='ascii.ecsv')
                     if sources is None:
                         sources = reg_sources
                     else:
                         sources = vstack([sources, reg_sources])
+
+            sources.write(self.image.imgname.replace(drc, 'raw_sources.ecsv'), overwrite=True, format='ascii.ecsv')
 
             # If there are no detectable sources in the total detection image, return as there is nothing more to do.
             if not sources:
