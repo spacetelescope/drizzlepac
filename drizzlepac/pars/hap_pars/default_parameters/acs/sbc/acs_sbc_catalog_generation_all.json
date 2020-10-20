@@ -11,6 +11,7 @@
     "starfinder_algorithm": "dao",
     "scale": 100.0,
     "sensitivity": 0.95,
+    "cr_residual": 0.0,
     "region_size": 11,
     "flag_trim_value": 5,
     "simple_bkg": false,

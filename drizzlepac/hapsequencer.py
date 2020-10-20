@@ -174,6 +174,9 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
                 sources_dict['segment']['source_cat'] = total_product_catalogs.catalogs['segment'].source_cat
 
+        # Get parameter from config files for CR rejection of catalogs
+        cr_residual = total_product_obj.configobj_pars.get_pars('catalog generation')['cr_residual']
+
         log.info("Generating filter product source catalogs")
         for filter_product_obj in total_product_obj.fdp_list:
 
@@ -213,7 +216,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                     tot_exposure_time += edp.exptime
                     if edp.crclean:
                         n1_exposure_time += edp.exptime
-                        n1_factor += 0.05
+                        n1_factor += cr_residual
 
                 # Account for the influence of the single-image cosmic-ray identification
                 # This fraction represents the residual number of cosmic-rays after single-image identification
