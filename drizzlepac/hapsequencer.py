@@ -207,9 +207,18 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 # Apply cosmic-ray threshold criteria used by HLA to determine whether or not to reject
                 # the catalogs.
                 n1_exposure_time = 0
+                tot_exposure_time = 0
+                n1_factor = 0.0
                 for edp in total_product_obj.edp_list:
+                    tot_exposure_time += edp.exptime
                     if edp.crclean:
                         n1_exposure_time += edp.exptime
+                        n1_factor += 0.05
+
+                # Account for the influence of the single-image cosmic-ray identification
+                # This fraction represents the residual number of cosmic-rays after single-image identification
+                if n1_exposure_time < tot_exposure_time:
+                    n1_exposure_time *= n1_factor
 
             # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
             if diagnostic_mode and phot_mode in ['aperture', 'both']:
@@ -261,31 +270,32 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
 
         # Determine whether any catalogs should be written out at all based on comparison to expected
         # rate of cosmic-ray contamination for the total detection product
-        total_product_catalogs.verify_crthresh(n1_exposure_time)
+        reject_catalogs = total_product_catalogs.verify_crthresh(n1_exposure_time)
 
-        for filter_product_obj in total_product_obj.fdp_list:
-            filter_product_catalogs = filter_catalogs[filter_product_obj.drizzle_filename]
+        if not reject_catalogs:
+            for filter_product_obj in total_product_obj.fdp_list:
+                filter_product_catalogs = filter_catalogs[filter_product_obj.drizzle_filename]
 
-            # Now write the catalogs out for this filter product
-            log.info("Writing out filter product catalog")
-            # Write out photometric (filter) catalog(s)
-            filter_product_catalogs.write()
+                # Now write the catalogs out for this filter product
+                log.info("Writing out filter product catalog")
+                # Write out photometric (filter) catalog(s)
+                filter_product_catalogs.write()
 
-            # append filter product catalogs to list
+                # append filter product catalogs to list
+                if phot_mode in ['aperture', 'both']:
+                    product_list.append(filter_product_obj.point_cat_filename)
+                if phot_mode in ['segment', 'both']:
+                    product_list.append(filter_product_obj.segment_cat_filename)
+
+            log.info("Writing out total product catalog")
+            # write out list(s) of identified sources
+            total_product_catalogs.write()
+
+            # append total product catalogs to manifest list
             if phot_mode in ['aperture', 'both']:
-                product_list.append(filter_product_obj.point_cat_filename)
+                product_list.append(total_product_obj.point_cat_filename)
             if phot_mode in ['segment', 'both']:
-                product_list.append(filter_product_obj.segment_cat_filename)
-
-        log.info("Writing out total product catalog")
-        # write out list(s) of identified sources
-        total_product_catalogs.write()
-
-        # append total product catalogs to manifest list
-        if phot_mode in ['aperture', 'both']:
-            product_list.append(total_product_obj.point_cat_filename)
-        if phot_mode in ['segment', 'both']:
-            product_list.append(total_product_obj.segment_cat_filename)
+                product_list.append(total_product_obj.segment_cat_filename)
     return product_list
 
 

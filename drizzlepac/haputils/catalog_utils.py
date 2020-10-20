@@ -476,9 +476,7 @@ class HAPCatalogs:
                     log.info("{} catalog FAILED CR threshold.  Rejecting both catalogs...".format(cat_type))
                     break
 
-        # if reject_catalogs:
-        #    for catalog in self.catalogs.values():
-        #        catalog.sources = None
+        return reject_catalogs
 
 
     def measure(self, filter_name, **pars):
