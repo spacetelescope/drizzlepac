@@ -467,13 +467,13 @@ class HAPCatalogs:
             source_cat = self.catalogs[cat_type]
             if source_cat.sources:
                 thresh = self.crfactor[cat_type] * n1_exposure_time**2 / self.image.keyword_dict['texpo_time']
-                source_cat = source_cat.sources if catalog == 'aperture' else source_cat.source_cat
+                source_cat = source_cat.sources if cat_type == 'aperture' else source_cat.source_cat
                 n_sources = source_cat.sources_num_good  # len(source_cat)
                 all_sources = len(source_cat)
-                log.info("{} catalog with {} good sources out of {} total sources :  CR threshold = {}".format(catalog, n_sources, all_sources, thresh))
+                log.info("{} catalog with {} good sources out of {} total sources :  CR threshold = {}".format(cat_type, n_sources, all_sources, thresh))
                 if n_sources < thresh:
                     reject_catalogs = True
-                    log.info("{} catalog FAILED CR threshold.  Rejecting both catalogs...".format(catalog))
+                    log.info("{} catalog FAILED CR threshold.  Rejecting both catalogs...".format(cat_type))
                     break
 
         # if reject_catalogs:
