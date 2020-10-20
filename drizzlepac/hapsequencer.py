@@ -211,8 +211,6 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                     if edp.crclean:
                         n1_exposure_time += edp.exptime
 
-                # total_product_catalogs.verify_crthresh(n1_exposure_time)
-
             # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
             if diagnostic_mode and phot_mode in ['aperture', 'both']:
                 if "fwhm" in total_product_catalogs.catalogs['aperture'].sources.colnames:
