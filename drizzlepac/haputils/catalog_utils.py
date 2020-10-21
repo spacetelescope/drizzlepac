@@ -104,6 +104,10 @@ class CatalogImage:
                                     nsigma_clip=nsigma_clip,
                                     maxiters=maxiters)
 
+        if self.keyword_dict['detector'].upper() == 'IR':
+            good_fwhm = [1.0, 2.0]
+        else:
+            good_fwhm = [2.0, 3.5]
         k, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
                                                                   self.wht_image,
                                                                   good_fwhm=good_fwhm,
@@ -424,6 +428,7 @@ class CatalogImage:
 class HAPCatalogs:
     """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
+    crfactor = {'aperture': 300, 'segment': 150}  # CRs / hr / 4kx4k pixels
 
     def __init__(self, fitsfile, param_dict, param_dict_qc, log_level, diagnostic_mode=False, types=None,
                  tp_sources=None):
@@ -485,6 +490,8 @@ class HAPCatalogs:
             self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict, self.param_dict_qc,
                                                          self.diagnostic_mode, tp_sources=tp_sources)
 
+        self.filters = {}
+
     def identify(self, **pars):
         """Build catalogs for this image.
 
@@ -499,6 +506,49 @@ class HAPCatalogs:
             log.info("")
             log.info("Identifying {} sources".format(catalog))
             self.catalogs[catalog].identify_sources(**pars)
+
+    def verify_crthresh(self, n1_exposure_time):
+        """Verify whether catalogs meet cosmic-ray threshold limits.
+
+        ... note : If either catalog fails the following test, then both are rejected.
+                        n_cat < thresh
+                   where
+                        thresh = crfactor * n1_exposure_time**2 / texptime
+        """
+        for cat_type in self.catalogs:
+                crthresh_mask = None
+                source_cat = self.catalogs[cat_type].sources if cat_type == 'aperture' else self.catalogs[cat_type].source_cat
+
+                flag_cols = [colname for colname in source_cat.colnames if colname.startswith('Flag')]
+                for colname in flag_cols:
+                    catalog_crmask = source_cat[colname] < 2
+                    if crthresh_mask is None:
+                        crthresh_mask = catalog_crmask
+                    else:
+                        # Combine masks for all filters for this catalog type
+                        crthresh_mask = np.bitwise_or(crthresh_mask, catalog_crmask)
+                source_cat.sources_num_good = len(np.where(crthresh_mask)[0])
+
+        reject_catalogs = False
+
+        log.info("Determining whether point and/or segment catalogs meet cosmic-ray threshold")
+        log.info("  based on EXPTIME = {}sec for the n=1 filters".format(n1_exposure_time))
+
+        for cat_type in self.catalogs:
+            source_cat = self.catalogs[cat_type]
+            if source_cat.sources:
+                thresh = self.crfactor[cat_type] * n1_exposure_time**2 / self.image.keyword_dict['texpo_time']
+                source_cat = source_cat.sources if cat_type == 'aperture' else source_cat.source_cat
+                n_sources = source_cat.sources_num_good  # len(source_cat)
+                all_sources = len(source_cat)
+                log.info("{} catalog with {} good sources out of {} total sources :  CR threshold = {}".format(cat_type, n_sources, all_sources, thresh))
+                if n_sources < thresh:
+                    reject_catalogs = True
+                    log.info("{} catalog FAILED CR threshold.  Rejecting both catalogs...".format(cat_type))
+                    break
+
+        return reject_catalogs
+
 
     def measure(self, filter_name, **pars):
         """Perform photometry and other measurements on sources for this image.
@@ -746,12 +796,17 @@ class HAPPointCatalog(HAPCatalogBase):
     def identify_sources(self, **pars):
         """Create a master coordinate list of sources identified in the specified total detection product image
         """
+        if pars and 'mask' in pars:
+            drc = 'drc.fits' if 'drc.fits' in self.imgname else 'drz.fits'
+            fits.PrimaryHDU(data=pars['mask'].astype(np.uint16)).writeto(self.imgname.replace(drc, 'footprint_mask.fits'))
+
         source_fwhm = self.image.kernel_fwhm
         # read in sci, wht extensions of drizzled product
         image = self.image.data.copy()
 
         # Create the background-subtracted image
         image -= self.image.bkg_background_ra
+        image = np.clip(image, 0, image.max())  # Insure there are no neg pixels to trip up StarFinder
 
         if not self.tp_sources:
             # Report configuration values to log
@@ -773,13 +828,19 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("")
             log.info("{}".format("=" * 80))
 
+            drc = 'drc.fits' if 'drc.fits' in self.image.imgname else 'drz.fits'
+            fits.PrimaryHDU(data=self.exclusion_mask.astype(np.int16)).writeto(self.image.imgname.replace(drc, 'exclusion_mask.fits'))
+
             sources = None
             for mask in self.tp_masks:
                 # apply mask for each separate range of WHT values
                 region = image * mask['mask']
+                fits.PrimaryHDU(data=region).writeto(self.image.imgname.replace(drc, 'region1.fits'))
                 # Compute separate threshold for each 'region'
                 reg_rms = self.image.bkg_rms_ra * np.sqrt(mask['mask'] / mask['rel_weight'].max())
                 reg_rms_median = np.nanmedian(reg_rms[reg_rms > 0])
+                wht_scale = np.nanmedian(np.sqrt(mask['mask'] / mask['rel_weight'].max()))
+                log.info("Mask {}: rel = {},  wht_scale = {}".format(mask['wht_limit'], mask['rel_weight'].max(), wht_scale))
 
                 # find ALL the sources!!!
                 if self.param_dict["starfinder_algorithm"] == "dao":
@@ -790,7 +851,7 @@ class HAPPointCatalog(HAPCatalogBase):
                     reg_sources = daofind(region, mask=self.exclusion_mask)
                 elif self.param_dict["starfinder_algorithm"] == "iraf":
                     log.info("IRAFStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
-                                                                               self.image.bkg_rms_median))
+                                                                               reg_rms_median))
                     isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * reg_rms_median)
                     reg_sources = isf(region, mask=self.exclusion_mask)
                 else:
@@ -804,6 +865,8 @@ class HAPPointCatalog(HAPCatalogBase):
                         sources = reg_sources
                     else:
                         sources = vstack([sources, reg_sources])
+
+            sources.write(self.image.imgname.replace(drc, 'raw_sources.ecsv'), overwrite=True, format='ascii.ecsv')
 
             # If there are no detectable sources in the total detection image, return as there is nothing more to do.
             if not sources:
