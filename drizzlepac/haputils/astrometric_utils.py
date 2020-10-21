@@ -588,6 +588,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
                         kernel = None
                     else:
                         log.debug("Determined FWHM from sample PSF of {:.2f}".format(kernel_fwhm))
+                        log.debug("  based on good range of FWHM:  {:.1f} to {:.1f}".format(good_fwhm[0], good_fwhm[1]))
                         if good_fwhm[1] > kernel_fwhm > good_fwhm[0]:  # This makes it hard to work with sub-sampled data (WFPC2?)
                             fwhm = kernel_fwhm
                             kernel_psf = True
@@ -777,7 +778,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     if classify:
         cat = source_properties(imgarr, segm)
         # Remove likely cosmic-rays based on central_moments classification
-        bad_srcs = np.where(classify_sources(cat) == 0)[0] + 1
+        bad_srcs = np.where(classify_sources(cat, fwhm) == 0)[0] + 1
         # Convert this bad_srcs into a segmap that can be used to update a DQ array
         dqmap = np.zeros_like(segm.data)
         for src in bad_srcs:
@@ -930,7 +931,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     return tbl, segm, dqmap
 
 
-def classify_sources(catalog, sources=None):
+def classify_sources(catalog, fwhm, sources=None):
     """ Convert moments_central attribute for source catalog into star/cr flag.
 
     This algorithm interprets the central_moments from the source_properties
@@ -970,10 +971,11 @@ def classify_sources(catalog, sources=None):
         x, y = np.where(moments[src] == moments[src].max())
         valid_src = (x[0] > 1) and (y[0] > 1)
         # These look for CR streaks (not delta CRs)
-        valid_width = semiminor_axis[src].value > 0.75
-        valid_elon = elon[src].value < 2
+        valid_width = semiminor_axis[src].value < (0.75 * fwhm)  # skinny source
+        valid_elon = elon[src].value > 2  # long source
+        valid_streak = valid_width and valid_elon  # long and skinny...
         # If either a delta CR or a CR streak are identified, remove it
-        if valid_src and (valid_width and valid_elon):
+        if valid_src and not valid_streak:
             srctype[src] = 1
 
     return srctype
@@ -1712,6 +1714,12 @@ def determine_focus_index(img, sigma=1.5):
        This returns a single value that serves as an indication of the
        sharpness of the image based on the max pixel value from the image
        after applying a Laplacian-of-Gaussian filter with sigma.
+
+       Implementation based on discussion from:
+       https://stackoverflow.com/questions/7765810/is-there-a-way-to-detect-if-an-image-is-blurry
+
+       as supported by:
+       Pertuz, S., et.al., 2013, Pattern Recognition, 46:1415–1432
 
        This index needs to be based on 'max' value in order to avoid
        field-dependent biases, since the 'max' value will correspond
