@@ -176,6 +176,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
 
         # Get parameter from config files for CR rejection of catalogs
         cr_residual = total_product_obj.configobj_pars.get_pars('catalog generation')['cr_residual']
+        n1_exposure_time = 0
 
         log.info("Generating filter product source catalogs")
         for filter_product_obj in total_product_obj.fdp_list:
@@ -209,7 +210,6 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             if total_product_obj.detector.upper() not in ['IR', 'SBC']:
                 # Apply cosmic-ray threshold criteria used by HLA to determine whether or not to reject
                 # the catalogs.
-                n1_exposure_time = 0
                 tot_exposure_time = 0
                 n1_factor = 0.0
                 for edp in total_product_obj.edp_list:
