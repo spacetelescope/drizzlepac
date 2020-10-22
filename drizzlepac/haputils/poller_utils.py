@@ -19,7 +19,7 @@ from astropy.io import ascii
 from astropy.io.fits import getheader
 from astropy.table import Table, Column
 from drizzlepac.haputils.product import ExposureProduct, FilterProduct, TotalProduct
-from drizzlepac.haputils.product import SkyCellProduct
+from drizzlepac.haputils.product import SkyCellProduct, SkyCellExposure
 from . import analyze
 from . import astroquery_utils as aqutils
 from . import processing_utils
@@ -43,7 +43,7 @@ MVM_POLLER_DTYPE = ('str', 'int', 'str', 'str',
                     'float', 'object', 'str', 'str',
                     'str', 'int')
 
-BOOL_STR_DICT = {'TRUE':True, 'FALSE':False, 'T':True, 'F':False, '1':True, '0':False}
+BOOL_STR_DICT = {'TRUE': True, 'FALSE': False, 'T': True, 'F': False, '1': True, '0': False}
 
 EXP_LABELS = {2: 'long', 1: 'med', 0: 'short', None: 'all'}
 EXP_LIMITS = [0, 15, 120]
@@ -429,9 +429,13 @@ def parse_mvm_tree(det_tree, log_level):
                 prod_list = prod_info.split(" ")
                 layer = (prod_list[3], prod_list[4], prod_list[5])
                 ftype = prod_list[-1]
-
+                cellid = prod_list[0].split('-')[1]
+                xindx = cellid.index('x')
+                prop_id = cellid[1:xindx]
+                obset_id = cellid[xindx:]
                 # Create a single exposure product object
-                sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
+                # __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype, log_level)
+                sep_obj = SkyCellExposure(prop_id, obset_id, prod_list[1], prod_list[2],
                                           filename[1], prod_list[3], ftype, log_level)
 
                 # set flag to record whether this is a 'new' exposure or one that
@@ -466,7 +470,7 @@ def parse_mvm_tree(det_tree, log_level):
                 # Append filter object to the list of filter objects for this specific total product object
                 log1 = "Attach the sky cell layer object {}"
                 log2 = "to its associated total product object {}/{}."
-                log.debug(log1+log2.format(filt_obj.filters,
+                log.debug(log1 + log2.format(filt_obj.filters,
                                            filt_obj.instrument,
                                            filt_obj.detector))
             # Add the total product object to the list of TotalProducts
@@ -612,7 +616,7 @@ def define_exp_layers(obset_table, method='hard', exp_limit=None):
             centers = kmeans.cluster_centers_.reshape(1, -1)[0].argsort()
             exp_layer = [centers[l] for l in kmeans.labels_]
         else:
-            exp_layer = [None]*len(obset_table)
+            exp_layer = [None] * len(obset_table)
     else:
         # Use pre-defined limits for selecting layer members
         # Subtraction by 1 puts the range from 0-2 to be consistent with KMeans
@@ -846,7 +850,7 @@ def build_poller_table(input, log_level, poller_type='svm'):
         # A new row will need to be added for each additional SkyCell that the
         # file overlaps...
         #
-        poller_table['skycell_obj'] = [None]*len(poller_table)
+        poller_table['skycell_obj'] = [None] * len(poller_table)
 
         #
         # Make a copy of the original poller_table
@@ -856,7 +860,7 @@ def build_poller_table(input, log_level, poller_type='svm'):
             for scell_id in scell_files[name]:
                 if scell_id != 'id':
                     scell_obj = scell_files[name][scell_id]
-                    for indx,row in enumerate(poller_table):
+                    for indx, row in enumerate(poller_table):
                         if row['filename'] != name:
                             continue
                         if new_poller_table[indx]['skycell_obj'] is None:
@@ -981,6 +985,6 @@ def add_primary_fits_header_as_attr(hap_obj, log_level=logutil.logging.NOTSET):
         file_name = hap_obj.full_filename
 
     hap_obj.primary_header = fits.getheader(file_name)
-    log.info("added primary header info from file {} to {}".format(file_name,hap_obj))
+    log.info("added primary header info from file {} to {}".format(file_name, hap_obj))
 
     return hap_obj
