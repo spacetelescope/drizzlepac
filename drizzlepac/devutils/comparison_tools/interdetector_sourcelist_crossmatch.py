@@ -66,10 +66,12 @@ def run(sl_names, img_names, diagnostic_mode=False, log_level=logutil.logging.IN
     # 1: get sourcelist data from files
     ref_data, comp_data = cu.slFiles2dataTables(sl_names)
 
-    # 2: stack up RA and DEC columns from comp SL
+    # 2: stack up RA and DEC columns
+    ref_ra_dec_values = np.stack((ref_data['RA'], ref_data['DEC']), axis=1)
     comp_ra_dec_values = np.stack((comp_data['RA'], comp_data['DEC']), axis=1)
 
-    # 3: transform comp frame RA, DEC into Ref frame X, Y values
+    # 3: transform comp frame RA, DEC into Ref frame X, Y values and ref RA, DEC into comp X, Y values
+    ref_xy_in_comp_frame = hla_flag_filter.rdtoxy(ref_ra_dec_values, img_names[1], "[1]", origin=0)
     comp_xy_in_ref_frame = hla_flag_filter.rdtoxy(comp_ra_dec_values, img_names[0], "[1]", origin=0)
 
     # 4: (diagnostic only) write out region files to check coordinate transformation
@@ -79,6 +81,7 @@ def run(sl_names, img_names, diagnostic_mode=False, log_level=logutil.logging.IN
 
     new_comp_xy = np.stack((comp_xy_in_ref_frame[:, 0], comp_xy_in_ref_frame[:, 1]), axis=1)
     ref_xy = np.stack((ref_data['X'], ref_data['Y']), axis=1)
+    comp_xy = np.stack((comp_data['X'], comp_data['Y']), axis=1)
 
     matches = xyxymatch(new_comp_xy, ref_xy, tolerance=5.0, separation=1.0)
     # Report number and percentage of the total number of detected ref and comp sources that were matched
@@ -135,16 +138,19 @@ def run(sl_names, img_names, diagnostic_mode=False, log_level=logutil.logging.IN
     # compute differences
     diff_x = matching_values_comp_x - matching_values_ref_x
     diff_y = matching_values_comp_y - matching_values_ref_y
+    diff_xy = np.sqrt(diff_x**2 + diff_y**2)
     diff_rd = matching_values_comp_rd.separation(matching_values_ref_rd).arcsec
 
-    diff_list = [diff_x, diff_y, diff_rd]
-    title_list = ["X-axis differences", "Y-axis differences", "On-sky separation"]
-    units_list = ["HAP WFC3/UVIS pixels", "HAP WFC3/UVIS pixels", "Arcseconds"]
+
+    diff_list = [diff_x, diff_y, diff_xy, diff_rd]
+    title_list = ["X-axis differences", "Y-axis differences", "Seperation", "On-sky separation"]
+    units_list = ["HAP WFC3/UVIS pixels", "HAP WFC3/UVIS pixels", "HAP WFC3/UVIS pixels", "Arcseconds"]
     for diff_ra, title, units in zip(diff_list, title_list, units_list):
         log.info("Comparison - reference {} statistics ({})".format(title, units))
 
         compute_stats(diff_ra, title)
 
+    generate_sorted_region_file(diff_xy, ref_xy_in_comp_frame[matched_lines_ref], comp_xy[matched_lines_comp], ref_data['FLAGS'][matched_lines_ref], comp_data['FLAGS'][matched_lines_comp])
 # =======================================================================================================================
 def compute_stats(diff_ra, title):
     """Compute linear statistics on specified differences
@@ -188,7 +194,39 @@ def compute_stats(diff_ra, title):
     log.info("\n\n")
     
 # =======================================================================================================================
+def generate_sorted_region_file(diff_ra, ref_xy, comp_xy, ref_flags, comp_flags):
+    # #subtact off 3x3 sigma-clipped mean to eliminate any large-scale systemic offsets
+    # sigma = 3
+    # n_iters = 3
+    # clipped_stats = sigma_clipped_stats(diff_ra, sigma=sigma, maxiters=n_iters)
+    # diff_ra_meansub = diff_ra - clipped_stats[0]
+    #
+    # # get indicies of above array sorted by absolute value
+    # # actual array still maintains sign (i.e. positive or negitve value)
+    # sorted_idx = np.argsort(abs(diff_ra_meansub))[::-1]
+    sorted_idx = np.argsort(abs(diff_ra))[::-1]
+    region_filename = "testout.reg"
+    f = open(region_filename, "w")
+    ctr = 1
+    cutoff = 50
+    for idx in sorted_idx:
+        print("{} {}      {} {}     {} {}      {} {}".format(ctr,diff_ra[idx], ref_xy[idx][0], ref_xy[idx][1], comp_xy[idx][0], comp_xy[idx][1], ref_flags[idx], comp_flags[idx]))
+        f.write("line {} {} {} {} #line=0 1  text={{{} {}}}\n".format(ref_xy[idx][0], ref_xy[idx][1], comp_xy[idx][0], comp_xy[idx][1], ctr, diff_ra[idx]))
 
+        if ctr == cutoff:
+            break
+        ctr +=1
+    # ctr = 1
+    # for diff_value, ref_line, comp_line in zip(diff_ra[sorted_idx], ref_xy[sorted_idx], comp_xy[sorted_idx]):
+    #     print("{} {}      {} {}     {} {}".format(ctr,diff_value, ref_line[0], ref_line[1], comp_line[0], comp_line[1]))
+    #     f.write("line {} {} {} {} #line=0 1\n".format(ref_line[0], ref_line[1], comp_line[0], comp_line[1]))
+    #     if ctr == cutoff:
+    #         break
+    #     ctr +=1
+    f.close()
+    log.info("Wrote ds9 region file {}".format(region_filename))
+
+# =======================================================================================================================
 
 def write_region_file(coords, region_filename):
     """Writes specified x, y coordinates to specified region file.
