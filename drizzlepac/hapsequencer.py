@@ -15,6 +15,19 @@
     level chosen. The logger is acting as a gate on the messages which are allowed to be
     passed to the handlers.
 
+    Creation of source catalogs can be controlled through the use of environment variables:
+
+      - SVM_CATALOG_HRC
+      - SVM_CATALOG_SBC
+      - SVM_CATALOG_WFC
+      - SVM_CATALOG_UVIS
+      - SVM_CATALOG_IR
+
+    These variables can be defined using values of:
+
+      - 'on', 'true', 'yes' : Create catalogs
+      - 'off', 'false', 'no' : Turn off generation of catalogs
+
     The output products can be evaluated to determine the quality of the alignment and
     output data through the use of the environment variable:
 
@@ -101,7 +114,10 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
         'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
 
     catalog_switches : dict, optional
-        Specify which, if any, catalogs should be generated at all, based on detector.
+        Specify which, if any, catalogs should be generated at all, based on detector.  This dictionary
+        needs to contain values for all instruments; namely:
+        SVM_CATALOG_HRC, SVM_CATALOG_SBC, SVM_CATALOG_WFC, SVM_CATALOG_UVIS, SVM_CATALOG_IR
+        These variables can be defined with values of 'on'/'off'/'yes'/'no'/'true'/'false'.
 
     Returns
     -------
