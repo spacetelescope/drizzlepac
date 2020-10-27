@@ -15,6 +15,19 @@
     level chosen. The logger is acting as a gate on the messages which are allowed to be
     passed to the handlers.
 
+    Creation of source catalogs can be controlled through the use of environment variables:
+
+      - SVM_CATALOG_HRC
+      - SVM_CATALOG_SBC
+      - SVM_CATALOG_WFC
+      - SVM_CATALOG_UVIS
+      - SVM_CATALOG_IR
+
+    These variables can be defined using values of:
+
+      - 'on', 'true', 'yes' : Create catalogs
+      - 'off', 'false', 'no' : Turn off generation of catalogs
+
     The output products can be evaluated to determine the quality of the alignment and
     output data through the use of the environment variable:
 
@@ -70,9 +83,17 @@ __version_date__ = '07-Nov-2019'
 envvar_bool_dict = {'off': False, 'on': True, 'no': False, 'yes': True, 'false': False, 'true': True}
 envvar_qa_svm = "SVM_QUALITY_TESTING"
 
+envvar_cat_svm = {"SVM_CATALOG_SBC": 'on',
+                  "SVM_CATALOG_HRC": 'on',
+                  "SVM_CATALOG_WFC": 'on',
+                  "SVM_CATALOG_UVIS": 'on',
+                  "SVM_CATALOG_IR": 'on'}
+envvar_cat_str = "SVM_CATALOG_{}"
+
 # --------------------------------------------------------------------------------------------------------------
 
-def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, phot_mode='both'):
+def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, phot_mode='both',
+                            catalog_switches=None):
     """This subroutine utilizes haputils/catalog_utils module to produce photometric sourcelists for the specified
     total drizzle product and it's associated child filter products.
 
@@ -92,6 +113,12 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
         Which algorithm should be used to generate the sourcelists? 'aperture' for aperture photometry;
         'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
 
+    catalog_switches : dict, optional
+        Specify which, if any, catalogs should be generated at all, based on detector.  This dictionary
+        needs to contain values for all instruments; namely:
+        SVM_CATALOG_HRC, SVM_CATALOG_SBC, SVM_CATALOG_WFC, SVM_CATALOG_UVIS, SVM_CATALOG_IR
+        These variables can be defined with values of 'on'/'off'/'yes'/'no'/'true'/'false'.
+
     Returns
     -------
     product_list : list
@@ -103,6 +130,11 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
     input_phot_mode = phot_mode
 
     for total_product_obj in total_obj_list:
+        cat_sw_name = envvar_cat_str.format(total_product_obj.detector.upper())
+        if catalog_switches[cat_sw_name] is False:
+            log.info("Catalog generation turned OFF for {}".format(total_product_obj.detector.upper()))
+            continue
+
         # Make sure this is re-initialized for the new total product
         phot_mode = input_phot_mode
 
@@ -467,6 +499,10 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
     # start processing
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
+
+    # Start by reading in any environment variable related to catalog generation that has been set
+    cat_switches = {sw: _get_envvar_switch(sw, default=envvar_cat_svm[sw]) for sw in envvar_cat_svm}
+
     total_obj_list = []
     product_list = []
     try:
@@ -530,7 +566,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         if "total detection product 00" in obs_info_dict.keys():
             catalog_list = create_catalog_products(total_obj_list, log_level,
                                                    diagnostic_mode=diagnostic_mode,
-                                                   phot_mode=phot_mode)
+                                                   phot_mode=phot_mode,
+                                                   catalog_switches=cat_switches)
             product_list += catalog_list
         else:
             log.warning("No total detection product has been produced. The sourcelist generation step has been skipped")
@@ -730,7 +767,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
     return filter_product_catalogs
 
 
-def _get_envvar_switch(envvar_name):
+def _get_envvar_switch(envvar_name, default=None):
     """
     This private routine interprets the environment variable, SVM_QUALITY_TESTING,
     if specified.  NOTE: This is a copy of the routine in runastrodriz.py.  This
@@ -744,6 +781,6 @@ def _get_envvar_switch(envvar_name):
             raise ValueError(msg)
         switch_val = envvar_bool_dict[val]
     else:
-        switch_val = None
+        switch_val = envvar_bool_dict[default] if default else None
 
     return switch_val
