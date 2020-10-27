@@ -835,7 +835,7 @@ class HAPPointCatalog(HAPCatalogBase):
             for mask in self.tp_masks:
                 # apply mask for each separate range of WHT values
                 region = image * mask['mask']
-                fits.PrimaryHDU(data=region).writeto(self.image.imgname.replace(drc, 'region1.fits'))
+
                 # Compute separate threshold for each 'region'
                 reg_rms = self.image.bkg_rms_ra * np.sqrt(mask['mask'] / mask['rel_weight'].max())
                 reg_rms_median = np.nanmedian(reg_rms[reg_rms > 0])
@@ -865,8 +865,6 @@ class HAPPointCatalog(HAPCatalogBase):
                         sources = reg_sources
                     else:
                         sources = vstack([sources, reg_sources])
-
-            sources.write(self.image.imgname.replace(drc, 'raw_sources.ecsv'), overwrite=True, format='ascii.ecsv')
 
             # If there are no detectable sources in the total detection image, return as there is nothing more to do.
             if not sources:
@@ -1081,6 +1079,9 @@ class HAPPointCatalog(HAPCatalogBase):
             A table containing a subset of columns from a filter catalog.
 
         """
+        if len(subset_table) == 0:
+            return
+
         # Keep all the rows in the original total detection table and add columns from the filter
         # table where a matching "id" key is present.  The key must match in case.
         if 'xcentroid' in self.sources.colnames:
@@ -2100,6 +2101,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         subset_table : Astropy table
             A table containing a subset of columns from a filter catalog.
         """
+        if len(subset_table) == 0:
+            return
 
         # Keep all the rows in the original total detection table and add columns from the filter
         # table where a matching "id" key is present
