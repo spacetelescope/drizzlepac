@@ -16,7 +16,7 @@ jobs:
         python.version: '3.7'
       Python38:
         python.version: '3.8'
-    maxParallel: 4
+    maxParallel: 6
 
   steps:
     - task: UsePythonVersion@0
