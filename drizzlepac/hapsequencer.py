@@ -124,6 +124,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
     product_list : list
         list of all catalogs generated.
     """
+    diagnostic_mode = True
     product_list = []
     log.info("Generating total product source catalogs")
     phot_mode = phot_mode.lower()
@@ -138,17 +139,18 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
         # Make sure this is re-initialized for the new total product
         phot_mode = input_phot_mode
 
+        # Generate an "n" exposure mask which has the image footprint set to the number
+        # of exposures which constitute each pixel.
+        total_product_obj.generate_footprint_mask()
+
         # Instantiate filter catalog product object
         total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename,
                                              total_product_obj.configobj_pars.get_pars('catalog generation'),
                                              total_product_obj.configobj_pars.get_pars('quality control'),
+                                             total_product_obj.mask,
                                              log_level,
                                              types=input_phot_mode,
                                              diagnostic_mode=diagnostic_mode)
-
-        # Generate an "n" exposure mask which has the image footprint set to the number
-        # of exposures which constitute each pixel.
-        total_product_obj.generate_footprint_mask()
 
         # Identify sources in the input image and delay writing the total detection
         # catalog until the photometric measurements have been done on the filter
@@ -220,6 +222,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             filter_product_catalogs = HAPCatalogs(filter_product_obj.drizzle_filename,
                                                   total_product_obj.configobj_pars.get_pars('catalog generation'),
                                                   total_product_obj.configobj_pars.get_pars('quality control'),
+                                                  total_product_obj.mask,
                                                   log_level,
                                                   types=phot_mode,
                                                   diagnostic_mode=diagnostic_mode,

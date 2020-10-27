@@ -12,7 +12,7 @@ from astropy.table import Column, MaskedColumn, Table, join, vstack
 from astropy.convolution import RickerWavelet2DKernel
 from astropy.coordinates import SkyCoord
 import numpy as np
-from scipy import ndimage
+from scipy import ndimage, stats
 
 from photutils import CircularAperture, CircularAnnulus, DAOStarFinder, IRAFStarFinder
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
@@ -41,7 +41,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 
 class CatalogImage:
-    def __init__(self, filename, log_level):
+    def __init__(self, filename, num_images_mask, log_level):
         # set logging level to user-specified level
         log.setLevel(log_level)
 
@@ -51,6 +51,10 @@ class CatalogImage:
         else:
             self.imghdu = filename
             self.imgname = filename.filename()
+
+        # This is the "footprint_mask" of the total product object which indicates
+        # the number of images which comprise each individual pixel
+        self.num_images_mask = num_images_mask
 
         # Get header information to annotate the output catalogs
         if "total" in self.imgname:
@@ -71,6 +75,8 @@ class CatalogImage:
         self.bkg_background_ra = None
         self.bkg_rms_ra = None
         self.bkg_rms_median = None
+        self.footprint_mask = None
+        self.inv_footprint_mask = None
 
         # Populated by self.build_kernel()
         self.kernel = None
@@ -180,6 +186,13 @@ class CatalogImage:
         self.bkg_rms_median : float
             background rms value over entire 2D array
 
+        self.footprint_mask :  bool 2Dndarry
+            Footprint of input image set to True for the illuminated portion and False for
+            the non-illuminated portion
+
+        self.inv_footprint_mask :  bool 2Dndarry
+            Inverse of the footprint_mask
+
         """
         # Report configuration values to log
         log.info("")
@@ -197,68 +210,98 @@ class CatalogImage:
 
         # SExtractorBackground ans StdBackgroundRMS are the defaults
         bkg = None
+        is_zero_background_defined = False
 
         # Make a local copy of the data(image) being processed in order to reset any
         # data values which equal nan (e.g., subarrays) to zero.
         imgdata = self.data.copy()
-        imgdata[np.isnan(imgdata)] = 0
+        fits.PrimaryHDU(data=imgdata).writeto(self.imgname.replace(".fits", '_imgdata.fits'))
 
-        # Create mask to reject any sources located less than 10 pixels from a image/chip edge
-        # to be used for the sigma-clipping
-        binary_inverted_wht = np.where(imgdata == 0, 1, 0)
-        self.exclude_zones_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
+        # In order to compute the proper statistics on the input data, need to use the footprint
+        # mask to get the actual data - illuminated portion (True), non-illuminated (False).
+        self.footprint_mask = self.num_images_mask > 0
+        self.inv_footprint_mask = np.invert(self.footprint_mask)
 
-        # Compute a sigma-clipped background which returns only single values for mean,
+        # If the image contains a lot of values identically equal to zero (as in some SBC images),
+        # set the two-dimensional background image to a constant of zero and the background rms to
+        # the real rms of the non-zero values in the image.
+        no_of_illuminated_pixels = self.footprint_mask.sum()
+        no_of_zeros = np.count_nonzero(imgdata[self.footprint_mask] == 0)
+        non_zero_pixels = imgdata[self.footprint_mask] 
+
+        # BACKGROUND COMPUTATION 1 (unusual case)
+        # If there are too many background zeros in the image (> 25%), set the
+        # background median and background rms values
+        if no_of_zeros / float(no_of_illuminated_pixels) > 0.25: 
+                self.bkg_median = 0.0
+                self.bkg_rms_median = stats.tstd(non_zero_pixels, limits=[0, None], inclusive=[False, True])
+                self.bkg_background_ra = np.full_like(imgdata, 0.0)
+                self.bkg_rms_ra = np.full_like(imgdata, self.bkg_rms_median)
+
+                is_zero_background_defined = True
+                log.info("Input image contains excessive zero values in the background. Median: {} RMS: {}".format(self.bkg_median, self.bkg_rms_median))
+
+        # BACKGROUND COMPUTATION 2 (sigma_clipped_stats)
+        # If the input data is not the unusual case of an "excessive zero background", compute
+        # a sigma-clipped background which returns only single values for mean,
         # median, and standard deviations
-        log.info("")
-        log.info("Computing the background using sigma-clipped statistics algorithm.")
-        bkg_mean, bkg_median, bkg_rms = sigma_clipped_stats(imgdata,
-                                                            self.exclude_zones_mask,
-                                                            sigma=nsigma_clip,
-                                                            cenfunc='median',
-                                                            maxiters=maxiters)
+        if not is_zero_background_defined:
+            log.info("")
+            log.info("Computing the background using sigma-clipped statistics algorithm.")
+            bkg_mean, bkg_median, bkg_rms = sigma_clipped_stats(imgdata,
+                                                                self.inv_footprint_mask,
+                                                                sigma=nsigma_clip,
+                                                                cenfunc='median',
+                                                                maxiters=maxiters)
 
-        log.info("Sigma-clipped Statistics - Background mean: {}  median: {}  rms: {}".format(bkg_mean, bkg_median, bkg_rms))
-        log.info("")
+            log.info("Sigma-clipped Statistics - Background mean: {}  median: {}  rms: {}".format(bkg_mean, bkg_median, bkg_rms))
+            log.info("")
 
-        # Compute Pearson’s second coefficient of skewness - this is a criterion
-        # for possibly computing a two-dimensional background fit
-        bkg_skew = 3.0 * (bkg_mean - bkg_median) / bkg_rms
-        log.info("Sigma-clipped computed skewness: {0:.2f}".format(bkg_skew))
+            # Compute Pearson’s second coefficient of skewness - this is a criterion
+            # for possibly computing a two-dimensional background fit
+            # Use the "raw" values generated by sigma_clipped_stats()
+            bkg_skew = 3.0 * (bkg_mean - bkg_median) / bkg_rms
+            log.info("Sigma-clipped computed skewness: {0:.2f}".format(bkg_skew))
 
-        # Compute a minimum rms value based upon information directly from the data
-        if self.keyword_dict["detector"] != "SBC":
-            minimum_rms = self.keyword_dict['atodgn'] * self.keyword_dict['readnse'] \
-                          * self.keyword_dict['ndrizim'] / self.keyword_dict['texpo_time']
-
-            # Compare a minimum rms based upon input characteristics versus the one computed and use
-            # the larger of the two values.
-            if (bkg_rms < minimum_rms):
-                bkg_rms = minimum_rms
-                log.info("Mimimum RMS of input based upon the readnoise, gain, number of exposures, and total exposure time: {}".format(minimum_rms))
-                log.info("Sigma-clipped RMS has been updated - Background mean: {}  median: {}  rms: {}".format(bkg_mean, bkg_median, bkg_rms))
+            # Ensure the computed values are not negative
+            if bkg_mean < 0.0 or bkg_median < 0.0 or bkg_rms < 0.0:
+                bkg_mean = max(0, bkg_mean)
+                bkg_median = max(0, bkg_median)
+                bkg_rms = max(0, bkg_rms)
+                log.info("UPDATED Sigma-clipped Statistics - Background mean: {}  median: {}  rms: {}".format(bkg_mean, bkg_median, bkg_rms))
                 log.info("")
 
-        # Generate two-dimensional background and rms images with the attributes of
-        # the input data, but the content based on the sigma-clipped statistics.
-        # bkg_median ==> background and bkg_rms ==> background rms
-        self.bkg_background_ra = np.full_like(imgdata, bkg_median)
-        self.bkg_rms_ra = np.full_like(imgdata, bkg_rms)
-        self.bkg_median = bkg_median
-        self.bkg_rms_median = bkg_rms
+            # Compute a minimum rms value based upon information directly from the data
+            if self.keyword_dict["detector"].upper() != "SBC":
+                minimum_rms = self.keyword_dict['atodgn'] * self.keyword_dict['readnse'] \
+                              * self.keyword_dict['ndrizim'] / self.keyword_dict['texpo_time']
 
+                # Compare a minimum rms based upon input characteristics versus the one computed and use
+                # the larger of the two values.
+                if (bkg_rms < minimum_rms):
+                    bkg_rms = minimum_rms
+                    log.info("Mimimum RMS of input based upon the readnoise, gain, number of exposures, and total exposure time: {}".format(minimum_rms))
+                    log.info("Sigma-clipped RMS has been updated - Background mean: {}  median: {}  rms: {}".format(bkg_mean, bkg_median, bkg_rms))
+                    log.info("")
+
+            # Generate two-dimensional background and rms images with the attributes of
+            # the input data, but the content based on the sigma-clipped statistics.
+            # bkg_median ==> background and bkg_rms ==> background rms
+            self.bkg_background_ra = np.full_like(imgdata, bkg_median)
+            self.bkg_rms_ra = np.full_like(imgdata, bkg_rms)
+            self.bkg_median = bkg_median
+            self.bkg_rms_median = bkg_rms
+
+        # BACKGROUND COMPUTATION 3 (Background2D)
         # The simple_bkg = True is the way to force the background to be computed with the
         # sigma-clipped algorithm, regardless of any other criterion. If simple_bkg == True,
-        # this routine is done, otherwise try to use Background2D to compute the background.
-        if not simple_bkg:
+        # the compute_background() is done, otherwise try to use Background2D to compute the background.
+        if not simple_bkg and not is_zero_background_defined:
 
             # If the sigma-clipped background image skew is less than the threshold,
             # compute a two-dimensional background fit.
             if bkg_skew < bkg_skew_threshold:
                 log.info("Computing the background using the Background2D algorithm.")
-
-                # Create the mask to ignore pixels with the value of 0
-                mask = (imgdata == 0)
 
                 exclude_percentiles = [10, 25, 50, 75]
                 for percentile in exclude_percentiles:
@@ -268,10 +311,12 @@ class CatalogImage:
                                            bkg_estimator=bkg_estimator(),
                                            bkgrms_estimator=rms_estimator(),
                                            exclude_percentile=percentile, edge_method="pad",
-                                           mask=mask)
+                                           mask=self.inv_footprint_mask)
 
                         # Apply the coverage mask to the returned background image
-                        bkg.background *= ~mask
+                        fits.PrimaryHDU(data=bkg.background.astype(np.uint16)).writeto(self.imgname.replace(".fits", '_B_bkg2d.fits'))
+                        bkg.background *= self.footprint_mask
+                        fits.PrimaryHDU(data=bkg.background.astype(np.uint16)).writeto(self.imgname.replace(".fits", '_A_bkg2d.fits'))
 
                     except Exception:
                         bkg = None
@@ -284,26 +329,20 @@ class CatalogImage:
                         bkg_median = bkg.background_median
                         break
 
-                del mask
-
                 # If computation of a two-dimensional background image were successful, compute the
                 # background-subtracted image and evaluate it for the number of negative values.
                 #
                 # If bkg is None, use the sigma-clipped statistics for the background.
-                # If bkd is not None, but the background-subtracted image is too negative, use the
+                # If bkg is not None, but the background-subtracted image is too negative, use the
                 # sigma-clipped computation for the background.
                 if bkg is not None:
                     imgdata_bkgsub = imgdata - bkg_background_ra
 
                     # Determine how much of the illuminated portion of the background subtracted
                     # image is negative
-                    illum_mask = self.exclude_zones_mask < 1
-                    total_illum_mask = illum_mask.sum()
-                    illum_data = imgdata_bkgsub * illum_mask
-                    negative_mask = illum_data < negative_threshold
-                    total_negative_mask = negative_mask.sum()
-                    negative_ratio = total_negative_mask / total_illum_mask
-                    del illum_data, illum_mask, negative_mask, imgdata_bkgsub
+                    no_negative = np.count_nonzero(imgdata_bkgsub[self.footprint_mask] < 0)
+                    negative_ratio = no_negative / no_of_illuminated_pixels
+                    del imgdata_bkgsub
 
                     # Report this information so the relative percentage and the threshold are known
                     log.info("Percentage of negative values in the background subtracted image {0:.2f} vs low threshold of {1:.2f}.".format(100.0 * negative_ratio, negative_percent))
@@ -322,9 +361,10 @@ class CatalogImage:
                         self.bkg_rms_ra = bkg_rms_ra.copy()
                         self.bkg_rms_median = bkg_rms_median
                         self.bkg_median = bkg_median
-                        del bkg_background_ra, bkg_rms_ra, bkg_rms_median, bkg_median
                         log.info("")
                         log.info("*** Use the background image determined from the Background2D. ***")
+
+                    del bkg_background_ra, bkg_rms_ra
 
             # Skewness of sigma_clipped background exceeds threshold
             else:
@@ -368,7 +408,7 @@ class CatalogImage:
         keyword_dict["texpo_time"] = self.imghdu[0].header["TEXPTIME"]
         keyword_dict["exptime"] = self.imghdu[0].header["EXPTIME"]
         keyword_dict["ndrizim"] = self.imghdu[0].header["NDRIZIM"]
-        if keyword_dict["detector"] != "SBC":
+        if keyword_dict["detector"].upper() != "SBC":
             keyword_dict["ccd_gain"] = self.imghdu[0].header["CCDGAIN"]
             keyword_dict["readnse"] = self._get_max_key_value(self.imghdu[0].header, 'READNSE')
             keyword_dict["atodgn"] = self._get_max_key_value(self.imghdu[0].header, 'ATODGN')
@@ -430,7 +470,7 @@ class HAPCatalogs:
     """
     crfactor = {'aperture': 300, 'segment': 150}  # CRs / hr / 4kx4k pixels
 
-    def __init__(self, fitsfile, param_dict, param_dict_qc, log_level, diagnostic_mode=False, types=None,
+    def __init__(self, fitsfile, param_dict, param_dict_qc, num_images_mask, log_level, diagnostic_mode=False, types=None,
                  tp_sources=None):
         # set logging level to user-specified level
         log.setLevel(log_level)
@@ -458,7 +498,7 @@ class HAPCatalogs:
 
         # Get various configuration variables needed for the background computation
         # Compute the background for this image
-        self.image = CatalogImage(fitsfile, log_level)
+        self.image = CatalogImage(fitsfile, num_images_mask, log_level)
         self.image.compute_background(self.param_dict['bkg_box_size'],
                                       self.param_dict['bkg_filter_size'],
                                       simple_bkg=self.param_dict['simple_bkg'],
@@ -622,7 +662,7 @@ class HAPCatalogBase:
         self.gain = self.image.keyword_dict['exptime'] * np.mean(gain_values)
 
         # Set the gain for ACS/SBC and WFC3/IR to 1.0
-        if self.image.keyword_dict["detector"] in ["IR", "SBC"]:
+        if self.image.keyword_dict["detector"].upper() in ["IR", "SBC"]:
             self.gain = 1.0
 
         # Convert photometric aperture radii from arcsec to pixels
@@ -731,7 +771,7 @@ class HAPCatalogBase:
         data_table.meta["Aperture PA"] = self.image.keyword_dict["aperture_pa"]
         data_table.meta["Exposure Start"] = self.image.keyword_dict["expo_start"]
         data_table.meta["Total Exposure Time"] = self.image.keyword_dict["texpo_time"]
-        if self.image.keyword_dict["detector"] != "SBC":
+        if self.image.keyword_dict["detector"].upper() != "SBC":
             data_table.meta["CCD Gain"] = self.image.keyword_dict["ccd_gain"]
         if product.lower() == "tdp" or self.image.keyword_dict["instrument"].upper() == "WFC3":
             data_table.meta["Filter 1"] = self.image.keyword_dict["filter1"]
@@ -1195,6 +1235,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("")
             log.info("{}".format("=" * 80))
 
+
             # Get the SCI image data
             imgarr = copy.deepcopy(self.image.data)
 
@@ -1205,7 +1246,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             if self.diagnostic_mode:
                 # Exclusion mask
                 outname = self.imgname.replace(".fits", "_mask.fits")
-                fits.PrimaryHDU(data=self.exclusion_mask.astype(np.uint16)).writeto(outname)
+                fits.PrimaryHDU(data=self.image.inv_footprint_mask.astype(np.uint16)).writeto(outname)
 
                 # Background image
                 outname = self.imgname.replace(".fits", "_bkg.fits")
@@ -1231,7 +1272,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                               ncount,
                                                               filter_kernel=self.image.kernel,
                                                               source_box=self._size_source_box,
-                                                              mask=self.exclusion_mask)
+                                                              mask=self.image.inv_footprint_mask)
 
             # Check if custom_segm_image is None indicating there are no detectable sources in the
             # total detection image.  If value is None, a warning has already been issued.  Issue
@@ -1278,7 +1319,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                 ncount,
                                                                 filter_kernel=rw2d_kernel,
                                                                 source_box=self._size_source_box,
-                                                                mask=self.exclusion_mask)
+                                                                mask=self.image.inv_footprint_mask)
 
                 # Check if rw2d_segm_image is None indicating there are no detectable sources in the
                 # total detection image.  If value is None, a warning has already been issued.  Issue
@@ -1397,13 +1438,16 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         log.info("Computing the threshold value used for source detection.")
 
-        threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
-        log.info("Using WHT masks as a scale on the RMS to compute threshold detection limit.")
-        for wht_mask in self.tp_masks:
-            threshold_item = nsigma * bkg_rms * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'].max())
-            threshold_item[np.isnan(threshold_item)] = 0.0
-            threshold += threshold_item
-        del(threshold_item)
+        if not self.tp_masks:
+            threshold = nsigma * bkg_rms
+        else:
+            threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
+            log.info("Using WHT masks as a scale on the RMS to compute threshold detection limit.")
+            for wht_mask in self.tp_masks:
+                threshold_item = nsigma * bkg_rms * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'].max())
+                threshold_item[np.isnan(threshold_item)] = 0.0
+                threshold += threshold_item
+            del(threshold_item)
 
         return threshold
 
