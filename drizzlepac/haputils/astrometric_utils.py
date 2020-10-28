@@ -488,10 +488,10 @@ def compute_2d_background(imgarr, box_size, win_size,
         log.info("Background2D failure detected. Using alternative background calculation instead....")
         mask = make_source_mask(imgarr, nsigma=2, npixels=5, dilate_size=11)
         sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(imgarr, sigma=3.0, mask=mask, maxiters=9)
-        bkg_median = sigcl_median
+        bkg_median = max(0.0, sigcl_median)
         bkg_rms_median = sigcl_std
         # create background frame shaped like imgarr populated with sigma-clipped median value
-        bkg_background = np.full_like(imgarr, sigcl_median)
+        bkg_background = np.full_like(imgarr, bkg_median)
         # create background frame shaped like imgarr populated with sigma-clipped standard deviation value
         bkg_rms = np.full_like(imgarr, sigcl_std)
 
@@ -723,11 +723,9 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         evaluating each of the identified segments (sources) from the chip.
     """
     # apply any provided dqmask for segmentation only
+    imgarr = img.copy()
     if dqmask is not None:
-        imgarr = img.copy()
         imgarr[dqmask] = 0
-    else:
-        imgarr = img
 
     if segment_threshold is None:
         dao_threshold, bkg = sigma_clipped_bkg(imgarr, sigma=4.0, nsigma=dao_nsigma)

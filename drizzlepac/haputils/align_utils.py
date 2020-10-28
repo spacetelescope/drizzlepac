@@ -575,7 +575,7 @@ class HAPImage:
                 outroot = None
 
             dqmask = self.build_dqmask(chip=chip)
-            sciarr = self.imghdu[("SCI", chip)].data
+            sciarr = self.imghdu[("SCI", chip)].data.copy()
             #  TODO: replace detector_pars with dict from OO Config class
             extract_pars = {'classify': alignment_pars['classify'],
                             'centering_mode': alignment_pars['centering_mode'],
