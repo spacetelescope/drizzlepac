@@ -15,10 +15,11 @@
     "region_size": 11,
     "flag_trim_value": 65368,
     "simple_bkg": false,
+    "zero_percent": 25.0,
     "negative_threshold": 0.0,
     "negative_percent": 15.0,
     "nsigma_clip": 3.0,
-    "maxiters":3,
+    "maxiters": 3,
     "bkg_skew_threshold": 0.5,
     "dao": {
         "bkgsig_sf": 4.0,

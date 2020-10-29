@@ -124,7 +124,6 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
     product_list : list
         list of all catalogs generated.
     """
-    diagnostic_mode = True
     product_list = []
     log.info("Generating total product source catalogs")
     phot_mode = phot_mode.lower()

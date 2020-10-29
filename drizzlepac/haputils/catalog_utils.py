@@ -95,6 +95,7 @@ class CatalogImage:
     def build_kernel(self, box_size, win_size, fwhmpsf,
                      simple_bkg=False,
                      bkg_skew_threshold=0.5,
+                     zero_percent=25.0,
                      negative_percent=15.0,
                      negative_threshold=-0.5,
                      nsigma_clip=3.0,
@@ -105,6 +106,7 @@ class CatalogImage:
             self.compute_background(box_size, win_size,
                                     simple_bkg=simple_bkg,
                                     bkg_skew_threshold=bkg_skew_threshold,
+                                    zero_percent=zero_percent,
                                     negative_percent=negative_percent,
                                     negative_threshold=negative_threshold,
                                     nsigma_clip=nsigma_clip,
@@ -126,6 +128,7 @@ class CatalogImage:
                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS,
                            simple_bkg=False,
                            bkg_skew_threshold=0.5,
+                           zero_percent=25.0,
                            negative_percent=15.0,
                            negative_threshold=0.0,
                            nsigma_clip=3.0,
@@ -156,6 +159,12 @@ class CatalogImage:
             Discriminator on the skewness computation - below this limit the Background2D algorithm
             will be computed for potential use for the background determination, otherwise
             the sigma_clipped_stats algorithm is used.
+
+        zero_percent : float, optional
+            Discriminator on the input image.  The percentage of zero values in the illuminated portion
+            of the input image is determined - if there are more zero values than this lower limit, then
+            the background is set to an image of constant value zero and the background rms is computed
+            based on the pixels which are non-zero in the illuminated portion of the input image.
 
         negative_percent : float, optional
             Discriminator on the background-subtracted image.  The percentage of negative values in the
@@ -198,6 +207,7 @@ class CatalogImage:
         log.info("")
         log.info("Background Computation")
         log.info("File: {}".format(self.imgname))
+        log.info("Zero threshold: {}".format(zero_percent))
         log.info("Sigma-clipped Background Configuration Variables")
         log.info("  Negative threshold: {}".format(negative_threshold))
         log.info("  Negative percent: {}".format(negative_percent))
@@ -215,7 +225,6 @@ class CatalogImage:
         # Make a local copy of the data(image) being processed in order to reset any
         # data values which equal nan (e.g., subarrays) to zero.
         imgdata = self.data.copy()
-        fits.PrimaryHDU(data=imgdata).writeto(self.imgname.replace(".fits", '_imgdata.fits'))
 
         # In order to compute the proper statistics on the input data, need to use the footprint
         # mask to get the actual data - illuminated portion (True), non-illuminated (False).
@@ -225,21 +234,21 @@ class CatalogImage:
         # If the image contains a lot of values identically equal to zero (as in some SBC images),
         # set the two-dimensional background image to a constant of zero and the background rms to
         # the real rms of the non-zero values in the image.
-        no_of_illuminated_pixels = self.footprint_mask.sum()
-        no_of_zeros = np.count_nonzero(imgdata[self.footprint_mask] == 0)
-        non_zero_pixels = imgdata[self.footprint_mask] 
+        num_of_illuminated_pixels = self.footprint_mask.sum()
+        num_of_zeros = np.count_nonzero(imgdata[self.footprint_mask] == 0)
+        non_zero_pixels = imgdata[self.footprint_mask]
 
         # BACKGROUND COMPUTATION 1 (unusual case)
-        # If there are too many background zeros in the image (> 25%), set the
+        # If there are too many background zeros in the image (> number_of_zeros_in_background_threshold), set the
         # background median and background rms values
-        if no_of_zeros / float(no_of_illuminated_pixels) > 0.25: 
-                self.bkg_median = 0.0
-                self.bkg_rms_median = stats.tstd(non_zero_pixels, limits=[0, None], inclusive=[False, True])
-                self.bkg_background_ra = np.full_like(imgdata, 0.0)
-                self.bkg_rms_ra = np.full_like(imgdata, self.bkg_rms_median)
+        if num_of_zeros / float(num_of_illuminated_pixels) * 100.0 > zero_percent:
+            self.bkg_median = 0.0
+            self.bkg_rms_median = stats.tstd(non_zero_pixels, limits=[0, None], inclusive=[False, True])
+            self.bkg_background_ra = np.full_like(imgdata, 0.0)
+            self.bkg_rms_ra = np.full_like(imgdata, self.bkg_rms_median)
 
-                is_zero_background_defined = True
-                log.info("Input image contains excessive zero values in the background. Median: {} RMS: {}".format(self.bkg_median, self.bkg_rms_median))
+            is_zero_background_defined = True
+            log.info("Input image contains excessive zero values in the background. Median: {} RMS: {}".format(self.bkg_median, self.bkg_rms_median))
 
         # BACKGROUND COMPUTATION 2 (sigma_clipped_stats)
         # If the input data is not the unusual case of an "excessive zero background", compute
@@ -313,10 +322,9 @@ class CatalogImage:
                                            exclude_percentile=percentile, edge_method="pad",
                                            mask=self.inv_footprint_mask)
 
-                        # Apply the coverage mask to the returned background image
-                        fits.PrimaryHDU(data=bkg.background.astype(np.uint16)).writeto(self.imgname.replace(".fits", '_B_bkg2d.fits'))
+                        # Apply the coverage mask to the returned background image to clear out
+                        # any information in the non-illuminated portion of the image
                         bkg.background *= self.footprint_mask
-                        fits.PrimaryHDU(data=bkg.background.astype(np.uint16)).writeto(self.imgname.replace(".fits", '_A_bkg2d.fits'))
 
                     except Exception:
                         bkg = None
@@ -340,8 +348,8 @@ class CatalogImage:
 
                     # Determine how much of the illuminated portion of the background subtracted
                     # image is negative
-                    no_negative = np.count_nonzero(imgdata_bkgsub[self.footprint_mask] < 0)
-                    negative_ratio = no_negative / no_of_illuminated_pixels
+                    num_negative = np.count_nonzero(imgdata_bkgsub[self.footprint_mask] < 0)
+                    negative_ratio = num_negative / num_of_illuminated_pixels
                     del imgdata_bkgsub
 
                     # Report this information so the relative percentage and the threshold are known
@@ -556,18 +564,18 @@ class HAPCatalogs:
                         thresh = crfactor * n1_exposure_time**2 / texptime
         """
         for cat_type in self.catalogs:
-                crthresh_mask = None
-                source_cat = self.catalogs[cat_type].sources if cat_type == 'aperture' else self.catalogs[cat_type].source_cat
+            crthresh_mask = None
+            source_cat = self.catalogs[cat_type].sources if cat_type == 'aperture' else self.catalogs[cat_type].source_cat
 
-                flag_cols = [colname for colname in source_cat.colnames if colname.startswith('Flag')]
-                for colname in flag_cols:
-                    catalog_crmask = source_cat[colname] < 2
-                    if crthresh_mask is None:
-                        crthresh_mask = catalog_crmask
-                    else:
-                        # Combine masks for all filters for this catalog type
-                        crthresh_mask = np.bitwise_or(crthresh_mask, catalog_crmask)
-                source_cat.sources_num_good = len(np.where(crthresh_mask)[0])
+            flag_cols = [colname for colname in source_cat.colnames if colname.startswith('Flag')]
+            for colname in flag_cols:
+                catalog_crmask = source_cat[colname] < 2
+                if crthresh_mask is None:
+                    crthresh_mask = catalog_crmask
+                else:
+                    # Combine masks for all filters for this catalog type
+                    crthresh_mask = np.bitwise_or(crthresh_mask, catalog_crmask)
+            source_cat.sources_num_good = len(np.where(crthresh_mask)[0])
 
         reject_catalogs = False
 
@@ -588,7 +596,6 @@ class HAPCatalogs:
                     break
 
         return reject_catalogs
-
 
     def measure(self, filter_name, **pars):
         """Perform photometry and other measurements on sources for this image.
@@ -698,14 +705,12 @@ class HAPCatalogBase:
 
         # create mask to reject any sources located less than 10 pixels from a image/chip edge
         wht_image = np.nan_to_num(self.image.data, 0.0)
-        binary_inverted_wht = np.where(wht_image == 0, 1, 0)
-        self.exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
 
         # Determine what regions we have for source identification
         # Regions are defined as sections of the image which has the same
         # max WHT within a factor of 2.0 (or so).
         # make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11,11))
-        self.tp_masks = make_wht_masks(self.image.wht_image, self.exclusion_mask,
+        self.tp_masks = make_wht_masks(wht_image, self.image.inv_footprint_mask,
                                        scale=self.param_dict['scale'],
                                        sensitivity=self.param_dict['sensitivity'],
                                        kernel=(self.param_dict['region_size'],
@@ -836,10 +841,6 @@ class HAPPointCatalog(HAPCatalogBase):
     def identify_sources(self, **pars):
         """Create a master coordinate list of sources identified in the specified total detection product image
         """
-        if pars and 'mask' in pars:
-            drc = 'drc.fits' if 'drc.fits' in self.imgname else 'drz.fits'
-            fits.PrimaryHDU(data=pars['mask'].astype(np.uint16)).writeto(self.imgname.replace(drc, 'footprint_mask.fits'))
-
         source_fwhm = self.image.kernel_fwhm
         # read in sci, wht extensions of drizzled product
         image = self.image.data.copy()
@@ -868,9 +869,6 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("")
             log.info("{}".format("=" * 80))
 
-            drc = 'drc.fits' if 'drc.fits' in self.image.imgname else 'drz.fits'
-            fits.PrimaryHDU(data=self.exclusion_mask.astype(np.int16)).writeto(self.image.imgname.replace(drc, 'exclusion_mask.fits'))
-
             sources = None
             for mask in self.tp_masks:
                 # apply mask for each separate range of WHT values
@@ -887,12 +885,12 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                               reg_rms_median))
                     daofind = DAOStarFinder(fwhm=source_fwhm,
                                             threshold=self.param_dict['nsigma'] * reg_rms_median)
-                    reg_sources = daofind(region, mask=self.exclusion_mask)
+                    reg_sources = daofind(region, mask=self.image.inv_footprint_mask)
                 elif self.param_dict["starfinder_algorithm"] == "iraf":
                     log.info("IRAFStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
                                                                                reg_rms_median))
                     isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * reg_rms_median)
-                    reg_sources = isf(region, mask=self.exclusion_mask)
+                    reg_sources = isf(region, mask=self.image.inv_footprint_mask)
                 else:
                     err_msg = "'{}' is not a valid 'starfinder_algorithm' parameter input in the catalog_generation parameters json file. Valid options are 'dao' for photutils.detection.DAOStarFinder() or 'iraf' for photutils.detection.IRAFStarFinder().".format(self.param_dict["starfinder_algorithm"])
                     log.error(err_msg)
@@ -1234,7 +1232,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("Percentage limit on the source fraction over the image: {}".format(100.0 * self._max_source_fraction))
             log.info("")
             log.info("{}".format("=" * 80))
-
 
             # Get the SCI image data
             imgarr = copy.deepcopy(self.image.data)
