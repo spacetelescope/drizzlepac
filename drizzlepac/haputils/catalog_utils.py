@@ -521,6 +521,7 @@ class HAPCatalogs:
                                 self.param_dict['dao']['TWEAK_FWHMPSF'],
                                 self.param_dict['simple_bkg'],
                                 self.param_dict['bkg_skew_threshold'],
+                                self.param_dict['zero_percent'],
                                 self.param_dict['negative_percent'],
                                 self.param_dict['negative_threshold'],
                                 self.param_dict['nsigma_clip'],
