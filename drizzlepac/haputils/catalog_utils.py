@@ -511,6 +511,7 @@ class HAPCatalogs:
                                       self.param_dict['bkg_filter_size'],
                                       simple_bkg=self.param_dict['simple_bkg'],
                                       bkg_skew_threshold=self.param_dict['bkg_skew_threshold'],
+                                      zero_percent=self.param_dict['zero_percent'],
                                       negative_percent=self.param_dict['negative_percent'],
                                       negative_threshold=self.param_dict['negative_threshold'],
                                       nsigma_clip=self.param_dict['nsigma_clip'],
