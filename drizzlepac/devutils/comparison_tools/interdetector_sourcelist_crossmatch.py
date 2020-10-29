@@ -135,9 +135,11 @@ def run(sl_names, img_names, diagnostic_mode=False, log_level=logutil.logging.IN
     if comp_frame != "icrs":
         matching_values_comp_rd = matching_values_comp_rd.icrs
 
-    # compute differences
-    diff_x = matching_values_comp_x - matching_values_ref_x
-    diff_y = matching_values_comp_y - matching_values_ref_y
+    # compute mean-subtracted differences
+    diff_x = (matching_values_comp_x - matching_values_ref_x)
+    diff_x -= sigma_clipped_stats(diff_x, sigma=3, maxiters=3)[0]
+    diff_y = (matching_values_comp_y - matching_values_ref_y)
+    diff_y -= sigma_clipped_stats(diff_y, sigma=3, maxiters=3)[0]
     diff_xy = np.sqrt(diff_x**2 + diff_y**2)
     diff_rd = matching_values_comp_rd.separation(matching_values_ref_rd).arcsec
 
@@ -286,7 +288,3 @@ if __name__ == "__main__":
 
 
     run(user_args.sl_list, user_args.img_list, user_args.diagnostic_mode, log_level=log_level)
-
-    # TODO : subtract sigma-clipped mean off of differences, write out region files containing top 10
-    #  (25? 100? 500?) cross-matched sources, sorted by largest (absolute) mean-subtracted difference. Generate seperate
-    #  region files for X and Y, and maybe combined vector ((sqrt(x^+y^2))
