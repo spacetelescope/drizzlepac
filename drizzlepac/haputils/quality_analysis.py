@@ -525,7 +525,7 @@ def run_all(input, files, catalogs=None, log_level=logutil.logging.NOTSET):
 
     if catalogs is not None:
         try:
-            if not 'json_files' in locals(): # create empty list if there's an exception thrown by determine_alignment_residuals
+            if not 'json_files' in locals():  # create empty list if there's an exception thrown by determine_alignment_residuals
                 json_files = []
             gaia_files = determine_gaia_residuals(catalogs,
                                                   json_timestamp=json_timestamp,

@@ -657,7 +657,7 @@ class HAPCatalogBase:
         self.tp_sources = tp_sources
 
         # create mask to reject any sources located less than 10 pixels from a image/chip edge
-        wht_image = self.image.data.copy()
+        wht_image = np.nan_to_num(self.image.data, 0.0)
         binary_inverted_wht = np.where(wht_image == 0, 1, 0)
         self.exclusion_mask = ndimage.binary_dilation(binary_inverted_wht, iterations=10)
 
@@ -839,7 +839,7 @@ class HAPPointCatalog(HAPCatalogBase):
                 # Compute separate threshold for each 'region'
                 reg_rms = self.image.bkg_rms_ra * np.sqrt(mask['mask'] / mask['rel_weight'].max())
                 reg_rms_median = np.nanmedian(reg_rms[reg_rms > 0])
-                wht_scale = np.nanmedian(np.sqrt(mask['mask'] / mask['rel_weight'].max()))
+                wht_scale = np.nanmedian(np.sqrt((mask['mask'] / mask['rel_weight'].max())[mask['mask'] > 0]))
                 log.info("Mask {}: rel = {},  wht_scale = {}".format(mask['wht_limit'], mask['rel_weight'].max(), wht_scale))
 
                 # find ALL the sources!!!
