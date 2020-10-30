@@ -705,14 +705,11 @@ class HAPCatalogBase:
         self.source_cat = None  # catalog of sources and their properties
         self.tp_sources = tp_sources
 
-        # create mask to reject any sources located less than 10 pixels from a image/chip edge
-        wht_image = np.nan_to_num(self.image.data, 0.0)
-
         # Determine what regions we have for source identification
         # Regions are defined as sections of the image which has the same
         # max WHT within a factor of 2.0 (or so).
         # make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11,11))
-        self.tp_masks = make_wht_masks(wht_image, self.image.inv_footprint_mask,
+        self.tp_masks = make_wht_masks(self.image.wht_image, self.image.inv_footprint_mask,
                                        scale=self.param_dict['scale'],
                                        sensitivity=self.param_dict['sensitivity'],
                                        kernel=(self.param_dict['region_size'],
