@@ -842,7 +842,7 @@ class HAPPointCatalog(HAPCatalogBase):
         """
         source_fwhm = self.image.kernel_fwhm
         # read in sci, wht extensions of drizzled product
-        image = self.image.data.copy()
+        image = np.nan_to_num(self.image.data, 0.0)
 
         # Create the background-subtracted image
         image -= self.image.bkg_background_ra
