@@ -527,9 +527,9 @@ class ExposureProduct(HAPProduct):
 
 
 class SkyCellExposure(HAPProduct):
-    """ An Exposure Product is an individual exposure/image (flt/flc).
+    """ An SkyCell Exposure Product is an individual exposure/image (flt/flc).
 
-        The "edp" is short hand for ExposureProduct.
+        The "sce" is short hand for ExposureProduct.
     """
     def __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype, log_level):
         super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
@@ -619,10 +619,10 @@ class SkyCellExposure(HAPProduct):
 
     def copy_exposure(self, filename):
         """
-            Create a copy of the original input to be renamed and used for single-visit processing.
+            Create a copy of the original input to be renamed and used for multi-visit processing.
 
             New exposure filename needs to follow the convention:
-            hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_fl[ct].fits
+            hst_skycell-p<PPPP>x<XX>y<YY>_<instr>_<detector>_<filter>-<layer>-<ipppssoo>_fl[ct].fits
 
             Parameters
             ----------
@@ -631,24 +631,24 @@ class SkyCellExposure(HAPProduct):
 
             Returns
             -------
-            edp_filename : str
-                New SVM-compatible HAP filename for input exposure
+            sce_filename : str
+                New MVM-compatible HAP filename for input exposure
 
         """
         suffix = filename.split("_")[1]
-        edp_filename = self.basename + \
+        sce_filename = self.basename + \
                        "_".join(map(str, [self.filters, filename[:8], suffix]))
 
-        log.info("Copying {} to SVM input: \n    {}".format(filename, edp_filename))
+        log.info("Copying {} to MVM input: \n    {}".format(filename, sce_filename))
         try:
-            shutil.copy(filename, edp_filename)
+            shutil.copy(filename, sce_filename)
         except PermissionError:
             pass
 
         # Add HAPLEVEL keyword as required by pipeline processing
-        fits.setval(edp_filename, 'HAPLEVEL', value=0, comment='Classificaion level of this product')
+        fits.setval(sce_filename, 'HAPLEVEL', value=0, comment='Classificaion level of this product')
 
-        return edp_filename
+        return sce_filename
 
 
 class SkyCellProduct(HAPProduct):
