@@ -228,7 +228,8 @@ class CatalogImage:
 
         # In order to compute the proper statistics on the input data, need to use the footprint
         # mask to get the actual data - illuminated portion (True), non-illuminated (False).
-        self.footprint_mask = self.num_images_mask > 0
+        footprint_mask = self.num_images_mask > 0
+        self.footprint_mask = ndimage.binary_erosion(footprint_mask, iterations=10)
         self.inv_footprint_mask = np.invert(self.footprint_mask)
 
         # If the image contains a lot of values identically equal to zero (as in some SBC images),
