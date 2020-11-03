@@ -538,7 +538,7 @@ class SkyCellExposure(HAPProduct):
         layer_str = '-'.join(layer[1:])
 
         cell_id = "p{}{}".format(prop_id, obset_id)
-        self.basename = "hst_skycell_" + "_".join(map(str, [cell_id, instrument, detector])) + "_"
+        self.basename = "hst_skycell-" + "_".join(map(str, [cell_id, instrument, detector])) + "_"
 
         self.info = self.basename + '_'.join([filter_str, layer_str, filename, filetype])
         self.filters = filter_str
