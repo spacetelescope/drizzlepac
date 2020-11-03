@@ -47,7 +47,7 @@ BOOL_STR_DICT = {'TRUE': True, 'FALSE': False, 'T': True, 'F': False, '1': True,
 
 EXP_LABELS = {2: 'long', 1: 'med', 0: 'short', None: 'all'}
 EXP_LIMITS = [0, 15, 120]
-SUPPORTED_EXP_METHODS = {'kmeans', 'hard'}
+SUPPORTED_EXP_METHODS = {'kmeans', 'hard', 'all'}
 
 __taskname__ = 'poller_utils'
 
@@ -191,7 +191,7 @@ def create_row_info(row):
 # -----------------------------------------------------------------------------
 # Multi-Visit Processing Functions
 #
-def interpret_mvm_input(results, log_level, exp_limit=2.0):
+def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0):
     """
 
     Parameters
@@ -210,6 +210,14 @@ def interpret_mvm_input(results, log_level, exp_limit=2.0):
         be used to define each exposure time bin (short, med, long).  If None,
         all exposure times will be combined into a single bin (all). Splitting
         of the bins gets computed using Kmeans clustering for 3 output bins.
+
+    layer_method : str
+        Specify what type of interpretation should be done for the definition of each layer.
+        Options include:  'all', 'hard', 'kmeans'.  The value 'all' simply puts all exposures
+        regardless of exposure time.  The value of 'hard' relies on
+        pre-defined limits for 'short', 'med', and 'long' exposure times.
+        The value of 'kmeans' relies on using 'kmeans' analysis for defining sub-layers
+        based on exposure time.
 
 
     Notes
@@ -263,6 +271,13 @@ def interpret_mvm_input(results, log_level, exp_limit=2.0):
     obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
 
     # Add Date column
+    """
+    # Uncomment this if we want to control the observation date in the same way as the exposure times.
+    if layer_method == 'all':
+        years = [''] * len(obset_table)
+    else:
+        years = [int(fits.getval(f, 'date-obs').split('-')[0]) for f in obset_table['filename']]
+    """
     years = [int(fits.getval(f, 'date-obs').split('-')[0]) for f in obset_table['filename']]
     obset_table.add_column(Column(years), name='year_layer')
 
@@ -270,7 +285,7 @@ def interpret_mvm_input(results, log_level, exp_limit=2.0):
     # sources found in the initial images
     obset_table = sort_poller_table(obset_table)
 
-    exp_obset_table = define_exp_layers(obset_table, exp_limit=exp_limit)
+    define_exp_layers(obset_table, method=layer_method, exp_limit=exp_limit)
 
     # parse Table into a tree-like dict
     log.debug("Build the multi-visit layers tree.")
@@ -323,22 +338,26 @@ def build_mvm_tree(obset_table):
         filt = determine_filter_name(orig_filt)
         row['filters'] = filt
         layer = (skycell, filt, exp_layer, year_layer)
+        if exp_layer in ["ALL", 'all', 'None', '', ' ', None]:
+            layer = None
         row_info, filename = create_mvm_info(row)
         row_info_all = row_info.split(" ")
         row_info_all[4] = 'ALL'
         row_info_all = ' '.join(row_info_all)
-        layer_all = (skycell, filt, 'ALL', year_layer)
+        layer_all = (skycell, filt, 'all', year_layer)
         # Initial population of the obset tree for this detector
         if det not in obset_tree:
             obset_tree[det] = {}
-            obset_tree[det][layer] = [(row_info, filename)]
+            if layer:
+                obset_tree[det][layer] = [(row_info, filename)]
             obset_tree[det][layer_all] = [(row_info_all, filename)]
         else:
             det_node = obset_tree[det]
-            if layer not in det_node:
-                det_node[layer] = [(row_info, filename)]
-            else:
-                det_node[layer].append((row_info, filename))
+            if layer:
+                if layer not in det_node:
+                    det_node[layer] = [(row_info, filename)]
+                else:
+                    det_node[layer].append((row_info, filename))
 
             if layer_all not in det_node:
                 det_node[layer_all] = [(row_info_all, filename)]
@@ -426,8 +445,14 @@ def parse_mvm_tree(det_tree, log_level):
                 #
                 # svm prod_info = 'skycell_p1234_x01y01 wfc3 uvis f200lp all 2009 1 drz'
                 #
+
                 prod_list = prod_info.split(" ")
-                layer = (prod_list[3], prod_list[4], prod_list[5])
+                pscale = 'fine' if prod_list[2] != 'IR' else 'coarse'
+                if prod_list[5].strip() != '':
+                    layer = (prod_list[3], pscale, prod_list[4], prod_list[5])
+                else:
+                    layer = (prod_list[3], pscale, prod_list[4])
+
                 ftype = prod_list[-1]
                 cellid = prod_list[0].split('-')[1]
                 xindx = cellid.index('x')
@@ -470,7 +495,7 @@ def parse_mvm_tree(det_tree, log_level):
                 # Append filter object to the list of filter objects for this specific total product object
                 log1 = "Attach the sky cell layer object {}"
                 log2 = "to its associated total product object {}/{}."
-                log.debug(log1 + log2.format(filt_obj.filters,
+                log.debug(' '.join([log1, log2]).format(filt_obj.filters,
                                            filt_obj.instrument,
                                            filt_obj.detector))
             # Add the total product object to the list of TotalProducts
@@ -617,15 +642,17 @@ def define_exp_layers(obset_table, method='hard', exp_limit=None):
             exp_layer = [centers[l] for l in kmeans.labels_]
         else:
             exp_layer = [None] * len(obset_table)
+
+    if method == 'all':
+        exp_layer = [None] * len(obset_table)
+
     else:
         # Use pre-defined limits for selecting layer members
         # Subtraction by 1 puts the range from 0-2 to be consistent with KMeans
         exp_layer = np.digitize(obset_table['exptime'], EXP_LIMITS) - 1
 
     # Add column to the table as labelled values ('short', 'med', 'long', 'all')
-    obset_table['exp_layer'] = [EXP_LABELS[e] for e in exp_layer]
-
-    return obset_table
+    obset_table['exp_layer'] = [EXP_LABELS[e].upper() for e in exp_layer]
 
 # ------------------------------------------------------------------------------
 

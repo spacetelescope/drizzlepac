@@ -567,7 +567,7 @@ class SkyCellExposure(HAPProduct):
         # Flag whether to use single-image CR identification with this exposure
         self.crclean = False
 
-        log.info("Exposure object {} created.".format(self.full_filename[0:9]))
+        log.info("Create SkyCellExposure object: {}".format(self.full_filename))
 
     def find_member(self, name):
         """ Return member instance with filename 'name' """
@@ -663,9 +663,8 @@ class SkyCellProduct(HAPProduct):
         # May need to exclude 'filter' component from layer_str
         filter_str = layer[0]
         layer_str = '-'.join(layer[1:])
-        # layer_str = '-'.join(layer)
 
-        self.info = '_'.join([skycell_name, instrument, detector, filter_str, layer_str])
+        self.info = '_'.join(['hst', skycell_name, instrument, detector, filter_str, layer_str])
 
         self.exposure_name = skycell_name
         self.product_basename = self.info
@@ -675,15 +674,18 @@ class SkyCellProduct(HAPProduct):
         # Trailer names .txt or .log
         self.trl_logname = self.product_basename + "_trl.log"
         self.trl_filename = self.product_basename + "_trl.txt"
+        # Initialize the output catalog name attributes (for the time when they are created)
         self.point_cat_filename = None
         self.segment_cat_filename = None
-        self.drizzle_filename = '_'.join(['hst', self.product_basename, self.filetype]) + ".fits"
+
+        self.drizzle_filename = '_'.join([self.product_basename, self.filetype]) + ".fits"
         self.refname = self.product_basename + "_ref_cat.ecsv"
+
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to create it as an attribute of a TotalProduct as it is independent of
         # the detector in use.
         # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
-        self.manifest_name = '_'.join(['hst', self.product_basename, "manifest.txt"])
+        self.manifest_name = '_'.join([self.product_basename, "manifest.txt"])
 
         # Define HAPLEVEL value for this product
         self.haplevel = 3
