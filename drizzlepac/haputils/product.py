@@ -526,6 +526,133 @@ class ExposureProduct(HAPProduct):
         return edp_filename
 
 
+class SkyCellExposure(HAPProduct):
+    """ An SkyCell Exposure Product is an individual exposure/image (flt/flc).
+
+        The "sce" is short hand for ExposureProduct.
+    """
+    def __init__(self, prop_id, obset_id, instrument, detector, filename, layer, filetype, log_level):
+        super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
+
+        filter_str = layer[0]
+        layer_str = '-'.join(layer[1:])
+
+        cell_id = "p{}{}".format(prop_id, obset_id)
+        self.basename = "hst_skycell-" + "_".join(map(str, [cell_id, instrument, detector])) + "_"
+
+        self.info = self.basename + '_'.join([filter_str, layer_str, filename, filetype])
+        self.filters = filter_str
+
+        # Open the input FITS file to mine some header information.
+        hdu_list = fits.open(filename)
+        self.mjdutc = hdu_list[0].header['EXPSTART']
+        self.exptime = hdu_list[0].header['EXPTIME']
+        hdu_list.close()
+
+        self.product_basename = self.basename + "_".join(map(str, [filter_str, layer_str, self.exposure_name]))
+        self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
+        self.headerlet_filename = self.product_basename + "_hlet.fits"
+        self.trl_logname = self.product_basename + "_trl.log"
+        self.trl_filename = self.product_basename + "_trl.txt"
+
+        self.full_filename = self.copy_exposure(filename)
+
+        self.regions_dict = {}
+
+        # Define HAPLEVEL value for this product
+        self.haplevel = 1
+
+        # This attribute is set in poller_utils.py
+        self.is_singleton = False
+
+        # Flag whether this exposure is being processed for the 'first' time or not
+        self.new_process = True
+
+        # Flag whether to use single-image CR identification with this exposure
+        self.crclean = False
+
+        log.info("Create SkyCellExposure object:\n    {}".format(self.full_filename))
+
+    def find_member(self, name):
+        """ Return member instance with filename 'name' """
+        if name == self.drizzle_filename:
+            return self
+        else:
+            return None
+
+    def __getattribute__(self, name):
+        if name in ["generate_footprint_mask", "generate_metawcs", "meta_wcs", "mask_kws", "mask"]:
+            raise AttributeError(name)
+        else:
+            return super(SkyCellExposure, self).__getattribute__(name)
+
+    def __dir__(self):
+        class_set = (set(dir(self.__class__)) | set(self.__dict__.keys()))
+        unwanted_set = set(["generate_footprint_mask", "generate_metawcs", "meta_wcs", "mask_kws", "mask"])
+        return sorted(class_set - unwanted_set)
+
+    def wcs_drizzle_product(self, meta_wcs):
+        """
+            Create the drizzle-combined exposure image using the meta_wcs as the reference output
+        """
+        # Retrieve the configuration parameters for astrodrizzle
+        drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
+        # ...and set parameters which are computed on-the-fly
+        drizzle_pars["final_refimage"] = meta_wcs
+        drizzle_pars["runfile"] = self.trl_logname
+        # Setting "preserve" to false so the OrIg_files directory is deleted as the purpose
+        # of this directory is now obsolete.
+        drizzle_pars["preserve"] = False
+        drizzle_pars['rules_file'] = self.rules_file
+        drizzle_pars['resetbits'] = "0"
+
+        log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
+                  "have been updated for the drizzle step of the exposure drizzle product."
+                  .format(meta_wcs, self.trl_logname))
+
+        astrodrizzle.AstroDrizzle(input=self.full_filename,
+                                  output=self.drizzle_filename,
+                                  **drizzle_pars)
+
+        # Rename Astrodrizzle log file as a trailer file
+        log.debug("Exposure image {}".format(self.drizzle_filename))
+        try:
+            shutil.move(self.trl_logname, self.trl_filename)
+        except PermissionError:
+            pass
+
+    def copy_exposure(self, filename):
+        """
+            Create a copy of the original input to be renamed and used for multi-visit processing.
+
+            New exposure filename needs to follow the MVM naming convention:
+            hst_skycell-p<PPPP>x<XX>y<YY>_<instr>_<detector>_<filter>-<layer>_<ipppssoo>_fl[ct].fits
+
+            Parameters
+            ----------
+            filename : str
+                Original pipeline filename for input exposure
+
+            Returns
+            -------
+            sce_filename : str
+                New MVM-compatible HAP filename for input exposure
+
+        """
+        suffix = filename.split("_")[1]
+        sce_filename = '_'.join([self.product_basename, suffix])
+        log.info("Copying {} to MVM input: \n    {}".format(filename, sce_filename))
+        try:
+            shutil.copy(filename, sce_filename)
+        except PermissionError:
+            pass
+
+        # Add HAPLEVEL keyword as required by pipeline processing
+        fits.setval(sce_filename, 'HAPLEVEL', value=0, comment='Classificaion level of this product')
+
+        return sce_filename
+
+
 class SkyCellProduct(HAPProduct):
     """ A SkyCell Product is a mosaic comprised of images acquired
         during a multiple visits with one instrument, one detector, a single filter,
@@ -535,28 +662,31 @@ class SkyCellProduct(HAPProduct):
     """
     def __init__(self, prop_id, obset_id, instrument, detector, skycell_name, layer, filetype, log_level):
         super().__init__(prop_id, obset_id, instrument, detector, skycell_name, filetype, log_level)
-        layer_str = '-'.join(layer)
+        # May need to exclude 'filter' component from layer_str
+        filter_str = layer[0]
+        self.filters = filter_str
+        layer_str = '-'.join(layer[1:])
 
-        self.info = '_'.join([skycell_name, instrument, detector, layer_str])
+        self.info = '_'.join(['hst', skycell_name, instrument, detector, filter_str, layer_str])
 
         self.exposure_name = skycell_name
-        filters = layer[0]
         self.product_basename = self.info
-
-        self.filters = filters
 
         # Trailer names .txt or .log
         self.trl_logname = self.product_basename + "_trl.log"
         self.trl_filename = self.product_basename + "_trl.txt"
+        # Initialize the output catalog name attributes (for the time when they are created)
         self.point_cat_filename = None
         self.segment_cat_filename = None
-        self.drizzle_filename = '_'.join(['hst', self.product_basename, self.filetype]) + ".fits"
+
+        self.drizzle_filename = '_'.join([self.product_basename, self.filetype]) + ".fits"
         self.refname = self.product_basename + "_ref_cat.ecsv"
+
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to create it as an attribute of a TotalProduct as it is independent of
         # the detector in use.
         # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
-        self.manifest_name = '_'.join(['hst', self.product_basename, "manifest.txt"])
+        self.manifest_name = '_'.join([self.product_basename, "manifest.txt"])
 
         # Define HAPLEVEL value for this product
         self.haplevel = 3

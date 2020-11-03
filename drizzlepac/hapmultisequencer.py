@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" This script defines the HST Advanced Products (HAP) Multi-visit (MVM) generation 
+""" This script defines the HST Advanced Products (HAP) Multi-visit (MVM) generation
     portion of the calibration pipeline.  This portion of the pipeline produces mosaic
     products. This script provides similar functionality as compared to the Hubble
     Legacy Archive (HLA) pipeline in that it provides the overall sequence of
@@ -81,7 +81,7 @@ def create_drizzle_products(total_obj_list):
     """
     # Get rules files
     rules_files = {}
-    
+
     log.info("Processing with astrodrizzle version {}".format(drizzlepac.astrodrizzle.__version__))
     # Get rules files
     for imgname in glob.glob("*skycell*fl?.fits"):
@@ -105,7 +105,7 @@ def create_drizzle_products(total_obj_list):
         filt_obj.wcs_drizzle_product(meta_wcs)
         product_list.append(filt_obj.drizzle_filename)
         product_list.append(filt_obj.trl_filename)
-        
+
     # Ensure that all drizzled products have headers that are to specification
     try:
         log.info("Updating these drizzle products for CAOM compatibility:")
@@ -204,7 +204,8 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # where its FilterProduct is distinguished by the filter in use, and the ExposureProduct
         # is the atomic exposure data.
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
-        obs_info_dict, total_obj_list = poller_utils.interpret_mvm_input(input_filename, log_level)
+        obs_info_dict, total_obj_list = poller_utils.interpret_mvm_input(input_filename, log_level,
+                                                                         layer_method='all')
 
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to use only one of the Total Products to generate the manifest name as the name is not
@@ -281,8 +282,8 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             svm_qa.compare_photometry(filter_drizzle_list, log_level=log_level)
 
         # 9: Compare results to HLA classic counterparts (if possible)
-        if diagnostic_mode:
-            run_sourcelist_comparision(total_obj_list, diagnostic_mode=diagnostic_mode, log_level=log_level)
+        # if diagnostic_mode:
+            # run_sourcelist_comparison(total_obj_list, diagnostic_mode=diagnostic_mode, log_level=log_level)
         # Write out manifest file listing all products generated during processing
         log.info("Creating manifest file {}.".format(manifest_name))
         log.info("  The manifest contains the names of products generated during processing.")
