@@ -461,7 +461,7 @@ def parse_mvm_tree(det_tree, log_level):
                 # Create a single exposure product object
                 # __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype, log_level)
                 sep_obj = SkyCellExposure(prop_id, obset_id, prod_list[1], prod_list[2],
-                                          filename[1], prod_list[3], ftype, log_level)
+                                          filename[1], layer, ftype, log_level)
 
                 # set flag to record whether this is a 'new' exposure or one that
                 # has already been aligned to a layer already:

@@ -531,15 +531,17 @@ class SkyCellExposure(HAPProduct):
 
         The "sce" is short hand for ExposureProduct.
     """
-    def __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype, log_level):
+    def __init__(self, prop_id, obset_id, instrument, detector, filename, layer, filetype, log_level):
         super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
+
+        filter_str = layer[0]
+        layer_str = '-'.join(layer[1:])
 
         cell_id = "p{}{}".format(prop_id, obset_id)
         self.basename = "hst_skycell_" + "_".join(map(str, [cell_id, instrument, detector])) + "_"
 
-        self.info = '_'.join([prop_id, obset_id, instrument, detector, filename, filters, filetype])
-        self.filters = filters
-        self.full_filename = self.copy_exposure(filename)
+        self.info = self.basename + '_'.join([filter_str, layer_str, filename, filetype])
+        self.filters = filter_str
 
         # Open the input FITS file to mine some header information.
         hdu_list = fits.open(filename)
@@ -547,11 +549,13 @@ class SkyCellExposure(HAPProduct):
         self.exptime = hdu_list[0].header['EXPTIME']
         hdu_list.close()
 
-        self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
+        self.product_basename = self.basename + "_".join(map(str, [filter_str, layer_str, self.exposure_name]))
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
         self.headerlet_filename = self.product_basename + "_hlet.fits"
         self.trl_logname = self.product_basename + "_trl.log"
         self.trl_filename = self.product_basename + "_trl.txt"
+
+        self.full_filename = self.copy_exposure(filename)
 
         self.regions_dict = {}
 
@@ -567,7 +571,7 @@ class SkyCellExposure(HAPProduct):
         # Flag whether to use single-image CR identification with this exposure
         self.crclean = False
 
-        log.info("Create SkyCellExposure object: {}".format(self.full_filename))
+        log.info("Create SkyCellExposure object:\n    {}".format(self.full_filename))
 
     def find_member(self, name):
         """ Return member instance with filename 'name' """
@@ -636,9 +640,7 @@ class SkyCellExposure(HAPProduct):
 
         """
         suffix = filename.split("_")[1]
-        sce_filename = self.basename + \
-                       "_".join(map(str, [self.filters, filename[:8], suffix]))
-
+        sce_filename = '_'.join([self.product_basename, suffix])
         log.info("Copying {} to MVM input: \n    {}".format(filename, sce_filename))
         try:
             shutil.copy(filename, sce_filename)
@@ -662,14 +664,13 @@ class SkyCellProduct(HAPProduct):
         super().__init__(prop_id, obset_id, instrument, detector, skycell_name, filetype, log_level)
         # May need to exclude 'filter' component from layer_str
         filter_str = layer[0]
+        self.filters = filter_str
         layer_str = '-'.join(layer[1:])
 
         self.info = '_'.join(['hst', skycell_name, instrument, detector, filter_str, layer_str])
 
         self.exposure_name = skycell_name
         self.product_basename = self.info
-
-        self.filters = filter_str
 
         # Trailer names .txt or .log
         self.trl_logname = self.product_basename + "_trl.log"
