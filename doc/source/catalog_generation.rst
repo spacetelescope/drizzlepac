@@ -12,8 +12,9 @@ Point (Aperture) Photometric Catalog Generation
 
 1.1: Important Clarifications
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-As previously discussed in :ref:`singlevisit`, AstroDrizzle creates a single multi-filter detector-level drizzle-combined
-image for source identification and one or more detector/filter-level drizzle-combined images (depending on
+As previously discussed in :ref:`singlevisit`, AstroDrizzle creates a single multi-filter, detector-level 
+drizzle-combined image for source identification and one or more detector/filter-level drizzle-combined images 
+(depending on
 which filters were used in the dataset) for photometry. The same set of sources identified in the
 multi-filter detection image is used to measure photometry for each filter. We use this method to maximize the
 signal across all available wavelengths at the source detection stage, thus providing photometry with the
@@ -26,25 +27,87 @@ photometry.
 1.2: Preliminaries
 ^^^^^^^^^^^^^^^^^^^^
 
-1.2.1: Generation of the Bad Pixel Mask
-""""""""""""""""""""""""""""""""""""""""""""""""
-Before any source identification takes place, a bad pixel mask is created to identify regions of the
-detection image where signal quality is known to be degraded. These are areas near the edge of the image,
-areas with little to no input image contribution, and areas that contain saturated pixels. To minimize the
-impact of these regions on source identification and subsequent photometric measurements, the regions flagged
-in this bad pixel mask are iteratively “grown” for 10 steps using the `ndimage.binary_dilation <https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.binary_dilation.html>`_ scipy tool.
-Pixels in the immediate vicinity of a given masked region may also be impacted to some degree. As we cannot
-be fully certain that these pixels are or are not impacted, or to the degree of the impact, they are all
-flagged.
+1.2.1: Generation of Pixel Masks
+""""""""""""""""""""""""""""""""""
+Every multi-filter, detector-level drizzle-combined image is associated with a boolean footprint mask which 
+defines the illuminated (True) and non-illuminated (False) portions of the image based upon its constituent 
+exposures and the corresponding WCS solution.  The boundary of the illuminated portion
+is iteratively eroded or contracted to minimize the impact of regions where signal
+quality is known to be degraded, and thereby, could affect source identification and subsequent 
+photometric measurements.  The erosion depth is approximately ten pixels and is done by using the 
+`ndimage.binary_erosion <https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.binary_erosion.html>`_ scipy tool.
+For computational convenience, an inverse footprint mask is also available for functions
+which utilize masks to indicate pixels which should be ignored during processing of the 
+input data.
 
-1.2.2: Detection Image Background Subtraction
+
+1.2.2: Detection Image Background Determination
 """"""""""""""""""""""""""""""""""""""""""""""""
-To ensure optimal source detection, the multi-filter detection image is background-subtracted. We computed a
-2-dimensional background image using the `photutils.background.Background2d <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_ Astropy tool. This algorithm uses
+For consistency, the same background and background RMS images are used by both the point and
+segment algorithms.
+To ensure optimal source detection, the multi-filter detection image must be background-subtracted. 
+In order to accommodate the different types of detectors, disparate signal levels, and highly varying 
+astronomical image content, three background computations are used as applicable.  The first category 
+of background definition is a special case situation, and if it is found to be applicable to the detection 
+image, the background and background RMS images are defined and no further background evaluation is done. 
+It has been observed that some background regions of ACS SBC drizzle-combined 
+detection images, *though the evaluation is done for all instrument detection images*,
+are measured to have values identically
+equal to zero.  If the number of identically zero pixels in the footprint portion of the detection image
+exceeds a configurable percentage threshold value (default is 25%), then a two-dimensional background image 
+is constructed and set to the constant of zero. Its companion constructed RMS image set to the RMS
+value computed for the non-zero pixels which reside within the footprint portion of the image.
+
+If the special background determination category above is not applicable, then sigma-clipped statistics are
+computed for the detection image using the `astropy.stats.sigma_clipped_stats <https://docs.astropy.org/en/stable/api/astropy.stats.sigma_clipped_stats.html>`_ 
+Astropy tool. This algorithm uses the detection image and its inverse footprint mask, as well
+as the specification for the number of standard deviations and the maximum number of iterations
+to compute the mean, median, and rms of the
+sigma-clipped data.  The specification for the number of standard deviations and the maximum number
+of iterations are configurable values which are set to 3.0 and 3 by default, respectively.
+
+At this point the Pearson's second coefficient of skewness is computed.
+
+.. math::
+    skewness = 3.0 * (mean - median) / rms 
+
+The skewness compares a sample distribution with a normal distribution where the
+larger the absolute value of the skewess, the more the sample distribution differs from
+a normal distribution. The skewness is computed in this context to aid in determining 
+whether it is worth computing the background by other means.
+
+In order to ensure the sigma-clipped statistics are reasonable, a negative mean or median value is
+reset to zero, and a minimum RMS value is computed for comparison based upon FITS keyword values in 
+the detection image header.  For the CCD detectors only, a-to-d gain (ATODGN), read noise
+(READNSE), number of drizzled images (NDRIZIM), and total exposure time (TEXPTIME) are employed
+to compute a minimum RMS.  Once viable background and background RMS values are determined, 
+two-dimensional images matching the dimensions of the detection image are constructed.
+Through configuration settings, a user can specify the sigma-clipped statistics algorithm be
+used to compute the background and RMS images, though the special case of identically zero 
+background data will be evaluated and will supersede the user request when applicable.
+
+The final background determination algorithm which is the
+`photutils.background.Background2d <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_ Astropy tool
+is only invoked if the special case identically zero algorithm has not been applied,
+the user has not requested that only the sigma-clipped statistics algorithm be computed, and if the 
+skewness value derived using the sigma-clipped statistics is less than a pre-defined and configurable
+threshold (default value of 0.5).
+
+The `photutils.background.Background2d <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_ 
+algorithm uses
 sigma-clipped statistics to determine background and RMS values across the image. An initial low-resolution
 estimate of the background is performed by computing sigma-clipped median values in 27x27 pixel boxes across
 the image. This low-resolution background image is then median-filtered using a 3x3 pixel sample window to
-correct for local small-scale overestimates and/or underestimates. It should be noted these are configurable values.
+correct for local small-scale overestimates and/or underestimates. 
+
+Once a background and RMS image are determined using this final technique, a preliminary 
+background-subtracted image is computed so it can be evaluated for the percentage of negative
+values in the illuminated portion of the image. If the percentage of negative values exceeds a
+configurable and defined threshold, the computation of the background and RMS image from this
+algorithm are discarded.  The background and RMS images computed using the sigma-clipped statistics in
+technique two, with its associated updates, are ultimately chosen as the images to use.
+
+It should be noted these are configurable values.
 Our catalogs use these values deeming them to be the best for the general situation, but users can tune these values to
 optimize for their own data. To this end, users can adjust parameter values "bkg_box_size" and/or
 "bkg_filter_size" in the <instrument>_<detector>_catalog_generation_all.json files in the following path:
