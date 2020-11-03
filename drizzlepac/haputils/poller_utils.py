@@ -271,14 +271,12 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0):
     obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
 
     # Add Date column
-    """
     # Uncomment this if we want to control the observation date in the same way as the exposure times.
     if layer_method == 'all':
-        years = [''] * len(obset_table)
+        years = ['all'] * len(obset_table)
     else:
         years = [int(fits.getval(f, 'date-obs').split('-')[0]) for f in obset_table['filename']]
-    """
-    years = [int(fits.getval(f, 'date-obs').split('-')[0]) for f in obset_table['filename']]
+
     obset_table.add_column(Column(years), name='year_layer')
 
     # Sort the rows of the table in an effort to optimize the number of quality
@@ -337,14 +335,24 @@ def build_mvm_tree(obset_table):
         # with two filter wheels
         filt = determine_filter_name(orig_filt)
         row['filters'] = filt
+
+        # Define the key for the sky cell layer based on skycell, filter,
+        # then optionally exposure times and/or observation date.
         layer = (skycell, filt, exp_layer, year_layer)
+
+        # Insure that no matter how 'exp_layer' gets turned off, it gets recognized.
         if exp_layer in ["ALL", 'all', 'None', '', ' ', None]:
+            # Turn off use of 'exp_layer' as an output layer for the sky cell.
             layer = None
+
         row_info, filename = create_mvm_info(row)
+
+        # Define key for combined sky cell layer (all exposure times in one layer)
         row_info_all = row_info.split(" ")
         row_info_all[4] = 'ALL'
         row_info_all = ' '.join(row_info_all)
         layer_all = (skycell, filt, 'all', year_layer)
+
         # Initial population of the obset tree for this detector
         if det not in obset_tree:
             obset_tree[det] = {}
@@ -443,11 +451,11 @@ def parse_mvm_tree(det_tree, log_level):
                 #
                 prod_info = (filename[0] + " " + filetype).lower()
                 #
-                # svm prod_info = 'skycell_p1234_x01y01 wfc3 uvis f200lp all 2009 1 drz'
+                # mvm prod_info = 'skycell_p1234_x01y01 wfc3 uvis f200lp all 2009 1 drz'
                 #
 
                 prod_list = prod_info.split(" ")
-                pscale = 'fine' if prod_list[2] != 'IR' else 'coarse'
+                pscale = 'fine' if prod_list[2].upper() != 'IR' else 'coarse'
                 if prod_list[5].strip() != '':
                     layer = (prod_list[3], pscale, prod_list[4], prod_list[5])
                 else:

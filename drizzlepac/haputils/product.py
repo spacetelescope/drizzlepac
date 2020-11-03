@@ -625,7 +625,7 @@ class SkyCellExposure(HAPProduct):
         """
             Create a copy of the original input to be renamed and used for multi-visit processing.
 
-            New exposure filename needs to follow the convention (based on the SVM naming convention):
+            New exposure filename needs to follow the MVM naming convention:
             hst_skycell-p<PPPP>x<XX>y<YY>_<instr>_<detector>_<filter>-<layer>_<ipppssoo>_fl[ct].fits
 
             Parameters
