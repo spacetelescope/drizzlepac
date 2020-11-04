@@ -411,6 +411,9 @@ Also note that we reject both the point and segment catalogs if either one fails
 behind that is that since the catalogs are based on the same image, it is unlikely that one catalog will be
 good and the other contaminated.
 
+Should the catalogs fail this test, neither type of catalogs will be written out to disk for this visit.
+
+
 3.3.2 Single-image CR Rejection
 """"""""""""""""""""""""""""""""
 An algorithm has been implemented to identify and ignore cosmic-rays in single exposures.  This algorithm has
