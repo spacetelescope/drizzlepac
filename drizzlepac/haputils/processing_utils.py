@@ -38,7 +38,7 @@ def get_rules_file(product):
 
     if new_rules_name not in os.listdir('.'):
         shutil.copy(rules_filename, new_rules_filename)
-        #shutil.copy(rules_filename, os.getcwd())
+
     return new_rules_name
 
 def refine_product_headers(product, total_obj_list):
@@ -158,12 +158,10 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
                     name_col.append(expname)
                 else:
                     # Convert input exposure names into HAP names
-                    foundit = False
                     for tot_obj in total_obj_list:
                         for exposure in tot_obj.edp_list:
                             if rootname in exposure.full_filename:
                                 name_col.append(exposure.drizzle_filename)
-                                foundit = True
                                 break
 
     # define new column with HAP expname

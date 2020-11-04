@@ -359,6 +359,81 @@ ordering in the .ecsv file as well):
     * CI: Concentration index (MagAp1 – MagAp2), in AB magnitude
     * Flags: See Section 2.3.2 for flag value definitions
 
+3.3 Rejection of Cosmic-Ray Dominated Catalogs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Not all sets of observations contain multiple overlapping exposures in the same filter. This makes it impossible
+to ignore all cosmic-rays that have impacted those single exposures.  The contributions of cosmic-rays often
+overwhelm any catalog generated from those single exposures making recognizing astronomical sources almost
+impossible amongst the noise of all the cosmic-rays.  As a result, those catalogs can not be trusted.  In an
+effort to only publish catalogs which provide the highest science value, criteria developed by the Hubble Legacy
+Archive (HLA) has been implemented to recognize those catalogs dominated by cosmic-rays and not provided as an
+output product.
+
+.. note ::
+  This rejection criteria is NOT applied to WFC3/IR or ACS/SBC data since they are not affected by cosmic-rays
+  in the same way as the other detectors.
+
+3.3.1 Rejection Criteria
+"""""""""""""""""""""""""
+The rejection criteria has been defined so that if either the point source catalog or the segment catalog fails,
+then both catalogs are rejected and deleted.
+
+In its simplest form the criteria for rejection is:
+        n_cat < thresh
+where:
+        thresh = crfactor * (n1_residual * n1_exposure_time)**2 / texptime
+and:
+        n_cat    : Number of good point and extended sources in the catalog (flag < 2)
+        crfactor : Number of expected cosmic-rays per second across the entire detector
+        n1_exposure_time : amount of exposure time for all single filter exposures
+        texptime : Total exposure time of the combined drizzle product
+        n1_residual : Remaining fraction of cosmic-rays after applying single-image CR removal
+
+The value of `crfactor` should be adjusted for sub-arrays to account for the smaller area being read out, but
+that logic has not yet been implemented.  The values used in the processing of single-visit mosaics are:
+
+    segment-catalog crfactor : 300
+    point-catalog crfactor   : 150
+
+These numbers are deliberately set high to be conservative about which catalogs to keep.  The CR rate varies
+with position in the orbit, and these are set high enough that it is rare for approved catalogs to be dominated
+by CRs (even though they can obviously have some CRs included.)
+
+Finally, the `n1_residual` term gets set as a configuration parameter with a default value of 5% (0.05).  This
+indicates that the single-image cosmic-ray identification process was expected to leave 5% of the cosmic-rays
+unflagged. This process can be affected by numerous factors, and having this as a user settable parameter allows
+the user to account for these effects when reprocessing the data manually.  Pipeline processing, though, may
+still be subject to situations where this process does not do as well which can result in a catalog with a
+higher than expected contribution of cosmic-rays.  Should this number of sources trigger the rejection criteria,
+these catalogs will be rejected and not written out.
+
+Also note that we reject both the point and segment catalogs if either one fails this test.  The reasoning
+behind that is that since the catalogs are based on the same image, it is unlikely that one catalog will be
+good and the other contaminated.
+
+3.3.2 Single-image CR Rejection
+""""""""""""""""""""""""""""""""
+An algorithm has been implemented to identify and ignore cosmic-rays in single exposures.  This algorithm has
+been used for ignoring cosmic-rays during the image alignment code used to determine the *a posteriori*
+alignment to GAIA.
+
+This algorithm starts by evaluating the central moments of all sources from the segment catalog.
+Any source where the maximum central moment (as determined by
+`photutils.segmentation.SourceProperties <https://photutils.readthedocs.io/en/stable/api/photutils.segmentation.SourceProperties.html#photutils.segmentation.SourceProperties>`_
+is 0 for both X and Y moments gets identified as cosmic-rays.  This indicates that the source has a
+concentration of flux greater than a point-source and most probably represents a 'head-on cosmic-ray'.
+
+In addition to these 'head-on cosmic-rays', 'glancing cosmic-rays' produce streaks across the detector.
+Those are identified by identifying sources with a minimum width (semiminor_axis) less than the FWHM of a point source
+and an elongation > 2.  The width and elongation are also properties defined by
+`photutils.segmentation.SourceProperties <https://photutils.readthedocs.io/en/stable/api/photutils.segmentation.SourceProperties.html#photutils.segmentation.SourceProperties>`_.
+The combination of these criteria allows for the identification of a vast majority of cosmic-rays.  The DQ array
+of the single exposure then gets updated to flag those pixels identified as cosmic-rays based on these criteria.
+These DQ flags are then ONLY applied when creating the TotalProduct to limit the contribution of cosmic-rays
+from the total detection image.  These flags are NOT used to generate any other product in order to avoid
+affecting the photometry or astrometry of any source from the total detection image any more than necessary.
+
+
 Segment Photometric Catalog Generation
 =======================================
 Michele's documentation goes here!

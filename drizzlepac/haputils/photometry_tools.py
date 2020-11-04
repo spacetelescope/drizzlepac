@@ -112,9 +112,9 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam
     final_stacked = np.stack([x, y, phot["id"].data], axis=1)
     # n_aper = 0
     name_list = 'Flux', 'FluxErr', 'Mag', 'MagErr'
-    for aper_string  in ['Ap1', 'Ap2']:
+    for aper_string in ['Ap1', 'Ap2']:
         for col_name in name_list:
-            names.append("{}{}".format(col_name,aper_string))
+            names.append("{}{}".format(col_name, aper_string))
 
     # for item in list(phot.keys()):
     #     if item.startswith("aperture_sum_") and not item.startswith("aperture_sum_err_"):
@@ -191,7 +191,7 @@ def compute_phot_error(flux_variance, bg_phot, bg_method, ap_area, epadu=1.0):
         an array of flux errors
     """
 
-    bg_variance_terms = (ap_area * bg_phot['aperture_std'] ** 2.) * (1. + ap_area/bg_phot['aperture_area'])
+    bg_variance_terms = (ap_area * bg_phot['aperture_std'] ** 2.) * (1. + ap_area / bg_phot['aperture_area'])
     variance = flux_variance / epadu + bg_variance_terms
     flux_error = variance ** .5
     return flux_error
@@ -224,6 +224,6 @@ def convert_flux_to_abmag(in_flux, photflam, photplam):
     stmag = -2.5 * np.log10(f_lambda) - 21.10
 
     # Convert STMAG to ABMAG
-    abmag =  stmag - 5.0 * np.log10(photplam) + 18.6921
+    abmag = stmag - 5.0 * np.log10(photplam) + 18.6921
 
     return abmag
