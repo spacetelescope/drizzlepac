@@ -4,14 +4,14 @@
 Catalog Generation
 ==================
 
-Point (Aperture) Photometric Catalog Generation
-================================================
+Preliminaries
+=============
 
-1: Source Detection
--------------------
+1: Support Infrastructure for Catalog Generation
+------------------------------------------------
 
 1.1: Important Clarifications
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 As previously discussed in :ref:`singlevisit`, AstroDrizzle creates a single multi-filter, detector-level 
 drizzle-combined image for source identification and one or more detector/filter-level drizzle-combined images 
 (depending on
@@ -24,11 +24,8 @@ It should also be stressed here that the point and segment photometry source lis
 identify source catalogs independently of each other and DO NOT use a shared common source catalog for
 photometry.
 
-1.2: Preliminaries
-^^^^^^^^^^^^^^^^^^^^
-
-1.2.1: Generation of Pixel Masks
-""""""""""""""""""""""""""""""""""
+1.2: Generation of Pixel Masks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Every multi-filter, detector-level drizzle-combined image is associated with a boolean footprint mask which 
 defines the illuminated (True) and non-illuminated (False) portions of the image based upon its constituent 
 exposures and the corresponding WCS solution.  The boundary of the illuminated portion
@@ -40,9 +37,8 @@ For computational convenience, an inverse footprint mask is also available for f
 which utilize masks to indicate pixels which should be ignored during processing of the 
 input data.
 
-
-1.2.2: Detection Image Background Determination
-""""""""""""""""""""""""""""""""""""""""""""""""
+1.3: Detection Image Background Determination
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 For consistency, the same background and background RMS images are used by both the point and
 segment algorithms.
 To ensure optimal source detection, the multi-filter detection image must be background-subtracted. 
@@ -116,8 +112,8 @@ users can adjust parameter values
 in the <instrument>_<detector>_catalog_generation_all.json files in the following path:
 /drizzlepac/pars/hap_pars/default_parameters/<instrument>/<detector>/.
 
-1.2.3: Image Kernel
-""""""""""""""""""""
+1.4: Image Kernel
+^^^^^^^^^^^^^^^^^
 In an attempt to optimize the source detection for the specific image being processed,
 the software analyzes the detection image looking for an isolated, non-saturated  
 point source to use as a template for a source detection kernel.  If no suitable 
@@ -125,8 +121,12 @@ source is found, the algorithm falls back to the use of a two-dimensional Gaussi
 kernel based upon the supplied FWHM, and the 
 `astropy.convolution.Gaussian2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.Gaussian2DKernel.html>`_ Astropy tool.
 
-2: Point Catalog -  Source Identification with DAOStarFinder
--------------------------------------------------------------
+
+2: Point (Aperture) Photometric Catalog Generation
+--------------------------------------------------
+
+2.1: Point Catalog -  Source Identification with DAOStarFinder
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html>`_ Astropy tool to identify sources in the background-subtracted
 multi-filter detection image. Regions flagged in the previously created bad pixel mask are ignored by
 DAOStarFinder. This algorithm works by identifying local brightness maxima with roughly gaussian
@@ -135,7 +135,7 @@ described in `Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP
 The exact set of input parameters fed into DAOStarFinder is detector-dependent. The parameters can be found in
 the <instrument>_<detector>_catalog_generation_all.json files mentioned in the previous section.
 
-2.1: Aperture Photometry Measurement - Flux determination
+2.2: Aperture Photometry Measurement - Flux determination
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Aperture photometry is then preformed on the previously identified sources using a pair of concentric
 photometric apertures. The sizes of these apertures depend on the specific detector being used, and are
@@ -180,9 +180,9 @@ The overall standard deviation and mode values of pixels in the background annul
 identified source in the output .ecsv catalog file in the “STDEV” and “MSKY” columns respectively (see Section 3 for
 more details).
 
-2.2: Calculation of photometric errors
+2.3: Calculation of photometric errors
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-2.2.1: Calculation of flux uncertainties
+2.3.1: Calculation of flux uncertainties
 """""""""""""""""""""""""""""""""""""""""
 For every identified source, the `photutils.aperture_photometry() <https://photutils.readthedocs.io/en/stable/api/photutils.aperture.aperture_photometry.html>`_
 tool calculates standard deviation values for each aperture based on a 2-dimensional RMS array computed using the
@@ -202,7 +202,7 @@ where
     * :math:`{\sigma_{bg}}` is standard deviation of the background
     * :math:`{n_{sky}}` is the sky annulus area, in pixels
 
-2.2.2: Calculation of ABmag uncertainties
+2.3.2: Calculation of ABmag uncertainties
 """""""""""""""""""""""""""""""""""""""""""
 Magnitude error calculation comes from computing :math:`{\frac{d(ABMAG)}{d(flux)}}`. We use the following formula:
 
@@ -214,9 +214,9 @@ where
     * :math:`{\Delta f}` is the flux uncertainty, in electrons per second
     * :math:`{f}` is the flux, in electrons per second
 
-2.3: Calculation of concentration index (CI) values and flag values
+2.4: Calculation of concentration index (CI) values and flag values
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-2.3.1: Calculation of concentration index (CI) values
+2.4.1: Calculation of concentration index (CI) values
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""
 The Concentration index is a measure of the "sharpness" of a given source’s PSF, and computed with the following
 formula:
@@ -233,7 +233,7 @@ We use the concentration index to automatically classify each identified photome
 (i.e. stars), an extended source (i.e. galaxies, nebulosity, etc.), or as an “anomalous” source (i.e. saturation,
 hot pixels, cosmic ray hits, etc.). This designation is described by the value in the "flags" column
 
-2.3.2: Determination of flag values
+2.4.2: Determination of flag values
 """""""""""""""""""""""""""""""""""""
 The flag value associated with each source provides users with a means to distinguish between legitimate point sources,
 legitimate extended sources, and scientifically dubious sources (those likely impacted by low signal to noise, detector
@@ -263,7 +263,7 @@ these values. Specific flag values are defined below in table 2:
     |            | or other region with a low number of input images         |
     +------------+-----------------------------------------------------------+
 
-2.3.2.1: Assignment of flag values 0 (point source), 1 (extended source), and 16 (hot pixels)
+2.4.2.1: Assignment of flag values 0 (point source), 1 (extended source), and 16 (hot pixels)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Assignment of flag values 0 (point source), 1 (extended source), and 16 (hot pixels) are determined purely based on the
 concentration index (CI) value. The majority of commonly used filters for all ACS and WFC3 detectors have
@@ -306,7 +306,7 @@ values are listed below in table 4.
     | WFC3/UVIS           | 0.75                 | 1.0                  |
     +---------------------+----------------------+----------------------+
 
-2.3.2.2: Assignment of flag value 4 (Saturated Source)
+2.4.2.2: Assignment of flag value 4 (Saturated Source)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""
 A flag value of 4 is assigned to sources that are saturated. The process of identifying saturated sources starts by
 first transforming the input image XY coordinates of all pixels flagged as saturated in the data quality arrays of each
@@ -316,7 +316,7 @@ frame of reference of the filter-combined image. We then identify impacted sourc
 saturated pixel coordinates against the positions of sources in the newly created source catalog and assign flag values
 where necessary.
 
-2.3.2.3: Assignment of flag value 8 (faint detection limit)
+2.4.2.3: Assignment of flag value 8 (faint detection limit)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 A flag value of 8 is assigned to sources whose signal to noise ratio is below a predefined value. We define sources as
 being above the faint object limit if the following is true:
@@ -328,7 +328,7 @@ Where
     * :math:`{\Delta ABmag_{outer}}` is the outer aperture AB magnitude uncertainty
     * :math:`{snr}` is the signal to noise ratio, which is 1.5 for ACS/WFC and 5.0 for all other detectors.
 
-2.3.2.4: Assignment of flag value 32 (false detection: swarm around saturated source)
+2.4.2.4: Assignment of flag value 32 (false detection: swarm around saturated source)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 The source identification routine has been shown to identify false sources in regions near bright or saturated
 sources, and in image artifacts associated with bright or saturated sources, such as diffraction spikes, and in the
@@ -339,7 +339,7 @@ encircled energy curve. The parameters used to determine assignment of this flag
 in the “swarm filter” section of the \*_quality_control_all.json files in the path described above in section 1.3.
 
 
-2.3.2.5: Assignment of flag value 64 (False detection due proximity of source to image edge or other region with a low number of input images)
+2.4.2.5: Assignment of flag value 64 (False detection due proximity of source to image edge or other region with a low number of input images)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Sources flagged with a value of 64 are flagged as “bad” because they are inside of or in close proximity to regions
 characterized by low or null input image contribution. These are areas where for some reason or another, very few or no
@@ -508,13 +508,12 @@ good and the other contaminated.
 Should the catalogs fail this test, neither type of catalogs will be written out to disk for this visit.
 
 
-Segment Photometric Catalog Generation
-=======================================
-Michele's documentation goes here!
-=======
-3: Segmentation Catalog -  Source Identification with PhotUtils
------------------------------------------------------------------
-For the segmenation algorithm the
+4: Segmentation Catalog Generation
+----------------------------------
+
+4.1: Segmentation Catalog -  Source Identification with PhotUtils
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+For the segmentation algorithm the
 `photutils.segmentation <https://photutils.readthedocs.io/en/stable/segmentation.html>`_ Astropy 
 tool is used to identify sources in the background-subtracted multi-filter detection image. 
 To identify a signal as a source, the signal must have a minimum number
@@ -524,30 +523,107 @@ corners, and the threshold image is the background RMS image (discussed in Secti
 1.2.2) multiplied by a configurable n-sigma value and modulated by a weighting scheme based
 upon the WHT extension of the detection image. Before applying the threshold, the detection 
 image is filtered by the image kernel (Section 1.2.3) to smooth the data and enhance the ability 
-to identify signal which has a similar shape as the kernel. This process generates a two-dimensional
-segmentation image where a segment is defined to be a number of connected pixels identified to
-be part of the same source. 
+to identify signal which is similar in shape to the kernel. This process generates a two-dimensional
+segmentation image or map where a segment is defined to be a number of connected pixels identified 
+by a numeric label to be part of the same source. 
 
-Because sources in close proximity can be mis-identified as a single source, it is necessary to
-apply a deblending procedure to the segmentation image.  The deblending is a combination of 
+Because different sources in close proximity can be mis-identified as a single source, it is necessary
+to apply a deblending procedure to the segmentation map.  The deblending is a combination of 
 multi-thresholding, as is done by `Source Extractor <https://sextractor.readthedocs.io/en/latest/Introduction.html>`_
 and the `watershed technique <https://en.wikipedia.org/wiki/Watershed_(image_processing)>`_.
-The deblending can be problematic if the background determination has not been well determined,
-resulting in segments which are a large percentage of the image footprint.  In this case, the
-deblending can take unreasonble amounts of time (e.g., days) to conclude. At this time, we are
-investigating mitigation of this situation.
+The deblending can be problematic if the background determination has not been well-determined,
+resulting in segments which are a large percentage of the map footprint.  In this case, the
+deblending can take unreasonable amounts of time (e.g., days) to conclude.  Mitigation of this
+situation is being investigated.
 
-After deblending has concluded, the resultant segmentation image is further analyzed 
+After deblending has concluded, the resultant segmentation map is further analyzed 
 based on an algorithm developed for the `Hubble Legacy Archive
 <https://innerspace.stsci.edu/display/HLA/Strategy+for+switching+SExtractor+kernels+for+crowded+fields>`_
 to determine if
-big segments/blended regions still persist or if a large percentage of the image is covered by segments.  
+big segments/blended regions persist or if a large percentage of the map is covered by segments.  
 If either of these items are true, this is a stong indication the detection image is a crowded astronomical 
-field.  To addess this an alternative kernel is derived using the 
+field.  To address this situation an alternative kernel is derived using the 
 `astropy.convolution.RickerWavelet2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.RickerWavelet2DKernel.html>`_
-Astropy tool.  This new kernel is then used for the detection of sources in the multi-filter
-detection image.
+Astropy tool.  This new kernel is then used for the generation of an improved segmentation
+map from the multi-filter detection image. 
+
+The segmentation map derived from *and when used in conjunction with* the multi-filter detection image for
+measuring source properties is **only** used to determine the
+centroids of sources.  It should be noted that questionable centroids (e.g., values of nan or infinity) 
+and their corresponding segments are eliminated from further consideration.     
+
+4.1: Isophotal Photometry Measurements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The actual isophotal photometry measurements are made on the single-filter drizzled images using the 
+cleaned segmentation map derived from the multi-filter detection image.  As was the case for the
+multi-filter detection image, the single-filter drizzled image is used in the determination of 
+appropriate background and RMS images (Section 1.2.2). In preparation for the photometry measurements,
+the background-subtracted image, as well as the RMS image, are used to compute a total error array by 
+combining a background-only error array with the Poisson noise of sources. 
+
+The isophotal photometry and morphological measurements are then performed on the background-subtracted
+single-filter drizzled image using the previously derived segmentation map, the background and total
+error images, the image kernel, and the known WCS with the
+`photutils.segmentation.source_properties <https://photutils.readthedocs.io/en/stable/api/photutils.segmentation.source_properties.html#photutils.segmentation.source_properties>`_ tool. The measurements made using this tool are denoted
+in Table x.
+
+.. table:: Table X: Isophotal Measurements - Segment Catalog Measurement Names and Descriptions
+
+    +--------------+----------------------------------------------------------------+
+    | Measurement  | Description                                                    |
+    +==============+================================================================+
+    | ID           | Numeric label of the segment                                   |
+    +--------------+----------------------------------------------------------------+
+    | X-Centroid   | X-coordinate of the centroid in the source segment             |
+    +--------------+----------------------------------------------------------------+
+    | Y-Centroid   | Y-coordinate of the centroid in the source segment             |
+    +--------------+----------------------------------------------------------------+
+    | Bck          | Background measured as the centroid position                   |
+    +--------------+----------------------------------------------------------------+
+    | FluxIso      | Sum of the unmasked data within the source segment             |
+    +--------------+----------------------------------------------------------------+
+    | FluxIsoErr   | Uncertainty of FluxIso, propagated from the input              |
+    |              | error array                                                    |
+    +--------------+----------------------------------------------------------------+
+    | Xmin         | Minimum X pixel within the minimal bounding box                |
+    |              | containing the source segment                                  |
+    +--------------+----------------------------------------------------------------+
+    | Ymin         | Minimum Y pixel within the minimal bounding box                |
+    |              | containing the source segment                                  |
+    +--------------+----------------------------------------------------------------+
+    | Xmax         | Maximum X pixel within the minimal bounding box                |
+    |              | containing the source segment                                  |
+    +--------------+----------------------------------------------------------------+
+    | Xmax         | Maximum Y pixel within the minimal bounding box                |
+    |              | containing the source segment                                  |
+    +--------------+----------------------------------------------------------------+
+    | CXX          | SExtractor's CXX ellipse parameter (pixel^-2)                  |
+    +--------------+----------------------------------------------------------------+
+    | CYY          | SExtractor's CYY ellipse parameter (pixel^-2)                  |
+    +--------------+----------------------------------------------------------------+
+    | CXY          | SExtractor's CXY ellipse parameter (pixel^-2)                  |
+    +--------------+----------------------------------------------------------------+
+    | X2           | Variance of position along X (pixels^2)                        |
+    +--------------+----------------------------------------------------------------+
+    | Y2           | Variance of positio  along X (pixels^2)                        |
+    +--------------+----------------------------------------------------------------+
+    | XY           | Covariance of position between X and Y (pixels^2)              |
+    +--------------+----------------------------------------------------------------+
+    | Theta        | Angle between the X-axis and the major axis of the 2D Gaussian |
+    |              | function with same second-order moments a the source.          |
+    +--------------+----------------------------------------------------------------+
+    | Elongation   | Ratio of the lengths of the semi-major and semi-minor axes     |
+    +--------------+----------------------------------------------------------------+
+    | Ellipticity  | 1 minus the Elongation                                         |
+    +--------------+----------------------------------------------------------------+
+    | Area         | Total unmasked area of source segment (pixels^2)               |
+    +--------------+----------------------------------------------------------------+
+
+4.2: Aperture Photometry Measurements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The aperture photometry measurements included with the segmentation algorithm use the same configuration
+variable values and follow the same steps as what is done for the point algorithm (Section 2.1). 
 
 
-3.1: Aperture Photometry Measurement - Flux determination
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
