@@ -72,7 +72,7 @@ At this point the Pearson's second coefficient of skewness is computed.
     skewness = 3.0 * (mean - median) / rms 
 
 The skewness compares a sample distribution with a normal distribution where the
-larger the absolute value of the skewess, the more the sample distribution differs from
+larger the absolute value of the skewness, the more the sample distribution differs from
 a normal distribution. The skewness is computed in this context to aid in determining 
 whether it is worth computing the background by other means.
 
@@ -106,6 +106,8 @@ values in the illuminated portion of the image. If the percentage of negative va
 configurable and defined threshold, the computation of the background and RMS image from this
 algorithm are discarded.  The background and RMS images computed using the sigma-clipped statistics in
 technique two, with its associated updates, are ultimately chosen as the images to use.
+It cannot be emphasized enough that a well-determined background measurement, leading to a good
+threshold definition, is very crucial for proper source identification.
 
 Through-out this section variables have been mentioned which can be configured by the user.  The
 values used for these variables for generating the default catalogs are deemed to be the best for 
@@ -512,20 +514,40 @@ Michele's documentation goes here!
 =======
 3: Segmentation Catalog -  Source Identification with PhotUtils
 -----------------------------------------------------------------
-The `photutils.segmentation <https://photutils.readthedocs.io/en/stable/segmentation.html>`_ Astropy 
+For the segmenation algorithm the
+`photutils.segmentation <https://photutils.readthedocs.io/en/stable/segmentation.html>`_ Astropy 
 tool is used to identify sources in the background-subtracted multi-filter detection image. 
-The first criterion to establish is the threshold above which signal should be interpreted as a
-source.
+To identify a signal as a source, the signal must have a minimum number
+of connected pixels, each of which is greater than its two-dimensional threshold image
+counterpart.  Connectivity refers to how pixels are literally touching along their edges and 
+corners, and the threshold image is the background RMS image (discussed in Section 
+1.2.2) multiplied by a configurable n-sigma value and modulated by a weighting scheme based
+upon the WHT extension of the detection image. Before applying the threshold, the detection 
+image is filtered by the image kernel (Section 1.2.3) to smooth the data and enhance the ability 
+to identify signal which has a similar shape as the kernel. This process generates a two-dimensional
+segmentation image where a segment is defined to be a number of connected pixels identified to
+be part of the same source. 
 
-For the segmenation algorithm to identify a signal as a source, the signal must have a minimum number
-of connected pixels, each of which is greated than a two-dimensional threshold value.
+Because sources in close proximity can be mis-identified as a single source, it is necessary to
+apply a deblending procedure to the segmentation image.  The deblending is a combination of 
+multi-thresholding, as is done by `Source Extractor <https://sextractor.readthedocs.io/en/latest/Introduction.html>`_
+and the `watershed technique <https://en.wikipedia.org/wiki/Watershed_(image_processing)>`_.
+The deblending can be problematic if the background determination has not been well determined,
+resulting in segments which are a large percentage of the image footprint.  In this case, the
+deblending can take unreasonble amounts of time (e.g., days) to conclude. At this time, we are
+investigating mitigation of this situation.
 
-Regions flagged in the previously created bad pixel mask are ignored by
-DAOStarFinder. This algorithm works by identifying local brightness maxima with roughly gaussian
-distributions whose peak values are above a predefined minimum threshold. Full details of the process are
-described in `Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP...99..191S>`_.
-The exact set of input parameters fed into DAOStarFinder is detector-dependent. The parameters can be found in
-the <instrument>_<detector>_catalog_generation_all.json files mentioned in the previous section.
+After deblending has concluded, the resultant segmentation image is further analyzed 
+based on an algorithm developed for the `Hubble Legacy Archive
+<https://innerspace.stsci.edu/display/HLA/Strategy+for+switching+SExtractor+kernels+for+crowded+fields>`_
+to determine if
+big segments/blended regions still persist or if a large percentage of the image is covered by segments.  
+If either of these items are true, this is a stong indication the detection image is a crowded astronomical 
+field.  To addess this an alternative kernel is derived using the 
+`astropy.convolution.RickerWavelet2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.RickerWavelet2DKernel.html>`_
+Astropy tool.  This new kernel is then used for the detection of sources in the multi-filter
+detection image.
+
 
 3.1: Aperture Photometry Measurement - Flux determination
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
