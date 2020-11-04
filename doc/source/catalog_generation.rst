@@ -107,14 +107,24 @@ configurable and defined threshold, the computation of the background and RMS im
 algorithm are discarded.  The background and RMS images computed using the sigma-clipped statistics in
 technique two, with its associated updates, are ultimately chosen as the images to use.
 
-It should be noted these are configurable values.
-Our catalogs use these values deeming them to be the best for the general situation, but users can tune these values to
-optimize for their own data. To this end, users can adjust parameter values "bkg_box_size" and/or
-"bkg_filter_size" in the <instrument>_<detector>_catalog_generation_all.json files in the following path:
+Through-out this section variables have been mentioned which can be configured by the user.  The
+values used for these variables for generating the default catalogs are deemed to be the best for 
+the general situation, but users can tune these values to optimize for their own data. To this end, 
+users can adjust parameter values
+in the <instrument>_<detector>_catalog_generation_all.json files in the following path:
 /drizzlepac/pars/hap_pars/default_parameters/<instrument>/<detector>/.
 
-1.3: Source Identification with DAOStarFinder
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1.2.3: Image Kernel
+""""""""""""""""""""
+In an attempt to optimize the source detection for the specific image being processed,
+the software analyzes the detection image looking for an isolated, non-saturated  
+point source to use as a template for a source detection kernel.  If no suitable 
+source is found, the algorithm falls back to the use of a two-dimensional Gaussian
+kernel based upon the supplied FWHM, and the 
+`astropy.convolution.Gaussian2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.Gaussian2DKernel.html>`_ Astropy tool.
+
+2: Point Catalog -  Source Identification with DAOStarFinder
+-------------------------------------------------------------
 We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html>`_ Astropy tool to identify sources in the background-subtracted
 multi-filter detection image. Regions flagged in the previously created bad pixel mask are ignored by
 DAOStarFinder. This algorithm works by identifying local brightness maxima with roughly gaussian
@@ -123,11 +133,8 @@ described in `Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP
 The exact set of input parameters fed into DAOStarFinder is detector-dependent. The parameters can be found in
 the <instrument>_<detector>_catalog_generation_all.json files mentioned in the previous section.
 
-2: Aperture Photometry Measurement
-------------------------------------
-
-2.1: Flux determination
-^^^^^^^^^^^^^^^^^^^^^^^^
+2.1: Aperture Photometry Measurement - Flux determination
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Aperture photometry is then preformed on the previously identified sources using a pair of concentric
 photometric apertures. The sizes of these apertures depend on the specific detector being used, and are
 listed below in table 1:
@@ -502,3 +509,23 @@ Should the catalogs fail this test, neither type of catalogs will be written out
 Segment Photometric Catalog Generation
 =======================================
 Michele's documentation goes here!
+=======
+3: Segmentation Catalog -  Source Identification with PhotUtils
+-----------------------------------------------------------------
+The `photutils.segmentation <https://photutils.readthedocs.io/en/stable/segmentation.html>`_ Astropy 
+tool is used to identify sources in the background-subtracted multi-filter detection image. 
+The first criterion to establish is the threshold above which signal should be interpreted as a
+source.
+
+For the segmenation algorithm to identify a signal as a source, the signal must have a minimum number
+of connected pixels, each of which is greated than a two-dimensional threshold value.
+
+Regions flagged in the previously created bad pixel mask are ignored by
+DAOStarFinder. This algorithm works by identifying local brightness maxima with roughly gaussian
+distributions whose peak values are above a predefined minimum threshold. Full details of the process are
+described in `Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP...99..191S>`_.
+The exact set of input parameters fed into DAOStarFinder is detector-dependent. The parameters can be found in
+the <instrument>_<detector>_catalog_generation_all.json files mentioned in the previous section.
+
+3.1: Aperture Photometry Measurement - Flux determination
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
