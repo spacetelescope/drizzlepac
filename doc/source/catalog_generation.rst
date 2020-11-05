@@ -4,6 +4,13 @@
 Catalog Generation
 ==================
 
+The Hubble Advanced Products (HAP) project generates two source list catalogs, colloquially 
+referred to as the Point and Segment catalogs.  Both catalogs are generated using 
+utilities from `photutils <https://photutils.readthedocs.io/en/stable/>`_
+with the Point catalog created based upon functionality similar to DAOPhot-style photometry,
+and the Segment catalog created with Source Extractor segmentation capabilities and output
+in mind.
+
 Preliminaries
 =============
 
@@ -46,18 +53,22 @@ In order to accommodate the different types of detectors, disparate signal level
 astronomical image content, three background computations are used as applicable.  The first category 
 of background definition is a special case situation, and if it is found to be applicable to the detection 
 image, the background and background RMS images are defined and no further background evaluation is done. 
+
 It has been observed that some background regions of ACS SBC drizzle-combined 
 detection images, *though the evaluation is done for all instrument detection images*,
 are measured to have values identically
 equal to zero.  If the number of identically zero pixels in the footprint portion of the detection image
 exceeds a configurable percentage threshold value (default is 25%), then a two-dimensional background image 
-is constructed and set to the constant of zero. Its companion constructed RMS image set to the RMS
+is constructed, ** Background Algorithm 1**, and set to the value of zero. Its companion 
+constructed RMS image set to the RMS
 value computed for the non-zero pixels which reside within the footprint portion of the image.
 
-If the special background determination category above is not applicable, then sigma-clipped statistics are
-computed for the detection image using the `astropy.stats.sigma_clipped_stats <https://docs.astropy.org/en/stable/api/astropy.stats.sigma_clipped_stats.html>`_ 
+If **Background Algorithm 1** is not applicable, then sigma-clipped statistics are
+computed, **Background Algorithm 2**,
+for the detection image using the 
+`astropy.stats.sigma_clipped_stats <https://docs.astropy.org/en/stable/api/astropy.stats.sigma_clipped_stats.html>`_ 
 Astropy tool. This algorithm uses the detection image and its inverse footprint mask, as well
-as the specification for the number of standard deviations and the maximum number of iterations
+as a specification for the number of standard deviations and the maximum number of iterations
 to compute the mean, median, and rms of the
 sigma-clipped data.  The specification for the number of standard deviations and the maximum number
 of iterations are configurable values which are set to 3.0 and 3 by default, respectively.
@@ -67,43 +78,52 @@ At this point the Pearson's second coefficient of skewness is computed.
 .. math::
     skewness = 3.0 * (mean - median) / rms 
 
-The skewness compares a sample distribution with a normal distribution where the
+The skewness compares our sample distribution with a normal distribution where the
 larger the absolute value of the skewness, the more the sample distribution differs from
 a normal distribution. The skewness is computed in this context to aid in determining 
-whether it is worth computing the background by other means.
+whether it is worth computing the background by other means (i.e., our third option of
+a two-dimensional background).  For example, a high positive skew 
+value can be indicative of there being a significant number of sources in the image 
+which need to be taken into account with a more complex background.
 
-In order to ensure the sigma-clipped statistics are reasonable, a negative mean or median value is
-reset to zero, and a minimum RMS value is computed for comparison based upon FITS keyword values in 
+Since the median and rms values will be used to generate the two-dimensional background and
+RMS images, respectively, the values need to be deemed reasonable.  A negative mean or median value
+is reset to zero, and a minimum rms value is computed for comparison to the sigma-clipped statistic
+based upon FITS keyword values in 
 the detection image header.  For the CCD detectors only, a-to-d gain (ATODGN), read noise
 (READNSE), number of drizzled images (NDRIZIM), and total exposure time (TEXPTIME) are employed
-to compute a minimum RMS.  Once viable background and background RMS values are determined, 
+to compute a minimum rms, with the larger of the two rms values (sigma-clipped rms or minimum rms)
+adopted for further use.  Once viable background and background RMS values are determined, 
 two-dimensional images matching the dimensions of the detection image are constructed.
-Through configuration settings, a user can specify the sigma-clipped statistics algorithm be
-used to compute the background and RMS images, though the special case of identically zero 
-background data will be evaluated and will supersede the user request when applicable.
+Through a configuration setting, a user can specify the sigma-clipped statistics algorithm be
+the chosen method used to compute the background and RMS images, though the special case of 
+identically zero background data will always be evaluated and will supersede the user request when 
+applicable.
 
-The final background determination algorithm which is the
-`photutils.background.Background2d <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_ Astropy tool
-is only invoked if the special case identically zero algorithm has not been applied,
-the user has not requested that only the sigma-clipped statistics algorithm be computed, and if the 
+The final background determination algorithm, **Background Algorithm 3**, is the
+`photutils.background.Background2d <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_ 
+Astropy tool is *only* invoked if the special case identically zero algorithm has not been applied,
+the user has not requested that only the sigma-clipped statistics algorithm be computed, and the 
 skewness value derived using the sigma-clipped statistics is less than a pre-defined and configurable
-threshold (default value of 0.5).
+threshold (default value 0.5).
 
-The `photutils.background.Background2d <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_ 
-algorithm uses
-sigma-clipped statistics to determine background and RMS values across the image. An initial low-resolution
+The **Background Algorithm 3** uses
+sigma-clipped statistics to determine background and RMS values across the image, but in
+a localized fashion in constrast to **Background Algorithm 2**. An initial low-resolution
 estimate of the background is performed by computing sigma-clipped median values in 27x27 pixel boxes across
 the image. This low-resolution background image is then median-filtered using a 3x3 pixel sample window to
-correct for local small-scale overestimates and/or underestimates. 
+correct for local small-scale overestimates and/or underestimates.  Both the 27 and 3 pixel
+settings are configurable variables for the user. 
 
 Once a background and RMS image are determined using this final technique, a preliminary 
 background-subtracted image is computed so it can be evaluated for the percentage of negative
 values in the illuminated portion of the image. If the percentage of negative values exceeds a
-configurable and defined threshold, the computation of the background and RMS image from this
-algorithm are discarded.  The background and RMS images computed using the sigma-clipped statistics in
-technique two, with its associated updates, are ultimately chosen as the images to use.
+configurable and defined threshold (default value 15%), the computation of the background and RMS image 
+from this
+algorithm are discarded.  Instead the background and RMS images computed using **Background Algorithm 2**,
+with the associated updates, are ultimately chosen as the images to use.
 It cannot be emphasized enough that a well-determined background measurement, leading to a good
-threshold definition, is very crucial for proper source identification.
+threshold definition, is very crucial for proper and successful source identification.
 
 Through-out this section variables have been mentioned which can be configured by the user.  The
 values used for these variables for generating the default catalogs are deemed to be the best for 
@@ -115,21 +135,23 @@ in the <instrument>_<detector>_catalog_generation_all.json files in the followin
 1.4: Image Kernel
 ^^^^^^^^^^^^^^^^^
 In an attempt to optimize the source detection for the specific image being processed,
-the software analyzes the detection image looking for an isolated, non-saturated  
-point source to use as a template for a source detection kernel.  If no suitable 
-source is found, the algorithm falls back to the use of a two-dimensional Gaussian
-kernel based upon the supplied FWHM, and the 
-`astropy.convolution.Gaussian2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.Gaussian2DKernel.html>`_ Astropy tool.
+the software attempts to derive a custom image kernel based upon the data.
+The multi-filter detection image is analyzed to find an isolated, non-saturated  
+point source away from the edge of the image to use as a template for a source detection kernel.  
+If no suitable source is found, the algorithm falls back to the use of a two-dimensional Gaussian
+kernel based upon the supplied FWHM and the 
+`astropy.convolution.Gaussian2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.Gaussian2DKernel.html>`_ 
+Astropy tool.
 
 
 2: Point (Aperture) Photometric Catalog Generation
 --------------------------------------------------
 
-2.1: Point Catalog -  Source Identification with DAOStarFinder
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2.1: Source Identification with DAOStarFinder
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html>`_ Astropy tool to identify sources in the background-subtracted
-multi-filter detection image. Regions flagged in the previously created bad pixel mask are ignored by
-DAOStarFinder. This algorithm works by identifying local brightness maxima with roughly gaussian
+multi-filter detection image. 
+This algorithm works by identifying local brightness maxima with roughly gaussian
 distributions whose peak values are above a predefined minimum threshold. Full details of the process are
 described in `Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP...99..191S>`_.
 The exact set of input parameters fed into DAOStarFinder is detector-dependent. The parameters can be found in
@@ -348,8 +370,8 @@ We identify sources impacted with this effect by creating a two-dimensional weig
 contributing exposures for every pixel. We then check each source against this map to ensure that all sources and flag
 appropriately.
 
-3: The output catalog file
----------------------------
+3: The Output Point Catalog File
+--------------------------------
 3.1: Filename format
 ^^^^^^^^^^^^^^^^^^^^^^
 Source positions and photometric information are written to a .ecsv (Enhanced Character Separated Values) file. The
@@ -511,21 +533,21 @@ Should the catalogs fail this test, neither type of catalogs will be written out
 4: Segmentation Catalog Generation
 ----------------------------------
 
-4.1: Segmentation Catalog -  Source Identification with PhotUtils
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+4.1: Source Identification with PhotUtils
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 For the segmentation algorithm the
 `photutils.segmentation <https://photutils.readthedocs.io/en/stable/segmentation.html>`_ Astropy 
 tool is used to identify sources in the background-subtracted multi-filter detection image. 
 To identify a signal as a source, the signal must have a minimum number
 of connected pixels, each of which is greater than its two-dimensional threshold image
 counterpart.  Connectivity refers to how pixels are literally touching along their edges and 
-corners, and the threshold image is the background RMS image (discussed in Section 
-1.2.2) multiplied by a configurable n-sigma value and modulated by a weighting scheme based
+corners, and the threshold image is the background RMS image (Section 1.3) 
+multiplied by a configurable n-sigma value and modulated by a weighting scheme based
 upon the WHT extension of the detection image. Before applying the threshold, the detection 
-image is filtered by the image kernel (Section 1.2.3) to smooth the data and enhance the ability 
+image is filtered by the image kernel (Section 1.4) to smooth the data and enhance the ability 
 to identify signal which is similar in shape to the kernel. This process generates a two-dimensional
-segmentation image or map where a segment is defined to be a number of connected pixels identified 
-by a numeric label to be part of the same source. 
+segmentation image or map where a segment is defined to be a number of connected pixels which are
+all identified by a numeric label and are part of the same source. 
 
 Because different sources in close proximity can be mis-identified as a single source, it is necessary
 to apply a deblending procedure to the segmentation map.  The deblending is a combination of 
@@ -533,10 +555,11 @@ multi-thresholding, as is done by `Source Extractor <https://sextractor.readthed
 and the `watershed technique <https://en.wikipedia.org/wiki/Watershed_(image_processing)>`_.
 The deblending can be problematic if the background determination has not been well-determined,
 resulting in segments which are a large percentage of the map footprint.  In this case, the
-deblending can take unreasonable amounts of time (e.g., days) to conclude.  Mitigation of this
-situation is being investigated.
+deblending can take unreasonable amounts of time (e.g., days) to conclude.  Various mitigation 
+schemes to handle this situation are being investigated (e.g., use of the evaluation strategy 
+discussed in the following paragraphs with different tolerances).
 
-After deblending has concluded, the resultant segmentation map is further analyzed 
+After deblending has succdessfully concluded, the resultant segmentation map is further analyzed 
 based on an algorithm developed for the `Hubble Legacy Archive
 <https://innerspace.stsci.edu/display/HLA/Strategy+for+switching+SExtractor+kernels+for+crowded+fields>`_
 to determine if
@@ -553,74 +576,74 @@ centroids of sources.  It should be noted that questionable centroids (e.g., val
 and their corresponding segments are eliminated from further consideration.     
 
 4.1: Isophotal Photometry Measurements
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The actual isophotal photometry measurements are made on the single-filter drizzled images using the 
 cleaned segmentation map derived from the multi-filter detection image.  As was the case for the
 multi-filter detection image, the single-filter drizzled image is used in the determination of 
-appropriate background and RMS images (Section 1.2.2). In preparation for the photometry measurements,
+appropriate background and RMS images (Section 1.3). In preparation for the photometry measurements,
 the background-subtracted image, as well as the RMS image, are used to compute a total error array by 
 combining a background-only error array with the Poisson noise of sources. 
 
 The isophotal photometry and morphological measurements are then performed on the background-subtracted
-single-filter drizzled image using the previously derived segmentation map, the background and total
-error images, the image kernel, and the known WCS with the
+single-filter drizzled image using the segmentation map derived from the multi-filter detection image, 
+the background and total error images, the image kernel, and the known WCS with the
 `photutils.segmentation.source_properties <https://photutils.readthedocs.io/en/stable/api/photutils.segmentation.source_properties.html#photutils.segmentation.source_properties>`_ tool. The measurements made using this tool are denoted
-in Table x.
+in Table 5.
 
-.. table:: Table X: Isophotal Measurements - Segment Catalog Measurement Names and Descriptions
+.. table:: Table 5: Isophotal Measurements - Segment Catalog Measurement Names and Descriptions
 
-    +--------------+----------------------------------------------------------------+
-    | Measurement  | Description                                                    |
-    +==============+================================================================+
-    | ID           | Numeric label of the segment                                   |
-    +--------------+----------------------------------------------------------------+
-    | X-Centroid   | X-coordinate of the centroid in the source segment             |
-    +--------------+----------------------------------------------------------------+
-    | Y-Centroid   | Y-coordinate of the centroid in the source segment             |
-    +--------------+----------------------------------------------------------------+
-    | Bck          | Background measured as the centroid position                   |
-    +--------------+----------------------------------------------------------------+
-    | FluxIso      | Sum of the unmasked data within the source segment             |
-    +--------------+----------------------------------------------------------------+
-    | FluxIsoErr   | Uncertainty of FluxIso, propagated from the input              |
-    |              | error array                                                    |
-    +--------------+----------------------------------------------------------------+
-    | Xmin         | Minimum X pixel within the minimal bounding box                |
-    |              | containing the source segment                                  |
-    +--------------+----------------------------------------------------------------+
-    | Ymin         | Minimum Y pixel within the minimal bounding box                |
-    |              | containing the source segment                                  |
-    +--------------+----------------------------------------------------------------+
-    | Xmax         | Maximum X pixel within the minimal bounding box                |
-    |              | containing the source segment                                  |
-    +--------------+----------------------------------------------------------------+
-    | Xmax         | Maximum Y pixel within the minimal bounding box                |
-    |              | containing the source segment                                  |
-    +--------------+----------------------------------------------------------------+
-    | CXX          | SExtractor's CXX ellipse parameter (pixel^-2)                  |
-    +--------------+----------------------------------------------------------------+
-    | CYY          | SExtractor's CYY ellipse parameter (pixel^-2)                  |
-    +--------------+----------------------------------------------------------------+
-    | CXY          | SExtractor's CXY ellipse parameter (pixel^-2)                  |
-    +--------------+----------------------------------------------------------------+
-    | X2           | Variance of position along X (pixels^2)                        |
-    +--------------+----------------------------------------------------------------+
-    | Y2           | Variance of positio  along X (pixels^2)                        |
-    +--------------+----------------------------------------------------------------+
-    | XY           | Covariance of position between X and Y (pixels^2)              |
-    +--------------+----------------------------------------------------------------+
-    | Theta        | Angle between the X-axis and the major axis of the 2D Gaussian |
-    |              | function with same second-order moments a the source.          |
-    +--------------+----------------------------------------------------------------+
-    | Elongation   | Ratio of the lengths of the semi-major and semi-minor axes     |
-    +--------------+----------------------------------------------------------------+
-    | Ellipticity  | 1 minus the Elongation                                         |
-    +--------------+----------------------------------------------------------------+
-    | Area         | Total unmasked area of source segment (pixels^2)               |
-    +--------------+----------------------------------------------------------------+
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | PhotUtils Variable | Segment Catalog Column | Description                                                    |
+    +====================+========================+================================================================+
+    | id                 | ID                     | Numeric label of the segment                                   |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | xcentroid          | X-Centroid             | X-coordinate of the centroid in the source segment             |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | ycentroid          | Y-Centroid             | Y-coordinate of the centroid in the source segment             |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | background_at_centroid | Bck                | Background measured as the centroid position                   |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | source_sum         | FluxIso                | Sum of the unmasked data within the source segment             |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | source_sum_err     | FluxIsoErr             | Uncertainty of FluxIso, propagated from the input              |
+    |                    |                        | error array                                                    |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | bbox_xmin          | Xmin                   | Minimum X pixel within the minimal bounding box                |
+    |                    |                        | containing the source segment                                  |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | bbox_ymin          | Ymin                   | Minimum Y pixel within the minimal bounding box                |
+    |                    |                        | containing the source segment                                  |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | bbox_xmax          | Xmax                   | Maximum X pixel within the minimal bounding box                |
+    |                    |                        | containing the source segment                                  |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | bbox_ymax          | Ymax                   | Maximum Y pixel within the minimal bounding box                |
+    |                    |                        | containing the source segment                                  |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | cxx                | CXX                    | SExtractor's CXX ellipse parameter (pixel^-2)                  |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | cyy                | CYY                    | SExtractor's CYY ellipse parameter (pixel^-2)                  |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | cxy                | CXY                    | SExtractor's CXY ellipse parameter (pixel^-2)                  |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | covar_sigx2        | X2                     | Variance of position along X (pixels^2)                        |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | covar_sigy2        | Y2                     | Variance of positio  along X (pixels^2)                        |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | covar_sigxy        | XY                     | Covariance of position between X and Y (pixels^2)              |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | orientation        | Theta                  | Angle between the X-axis and the major axis of the 2D Gaussian |
+    |                    |                        | function with same second-order moments a the source.          |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | elongation         | Elongation             | Ratio of the lengths of the semi-major and semi-minor axes     |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | ellipticity        | Ellipticity            | 1 minus the Elongation                                         |
+    +--------------------+------------------------+----------------------------------------------------------------+
+    | area               | Area                   | Total unmasked area of source segment (pixels^2)               |
+    +--------------------+------------------------+----------------------------------------------------------------+
 
 4.2: Aperture Photometry Measurements
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The aperture photometry measurements included with the segmentation algorithm use the same configuration
 variable values and follow the same steps as what is done for the point algorithm (Section 2.1). 
 
