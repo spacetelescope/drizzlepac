@@ -6,7 +6,7 @@ Catalog Generation
 
 The Hubble Advanced Products (HAP) project generates two source list catalogs, colloquially 
 referred to as the Point and Segment catalogs.  Both catalogs are generated using 
-utilities from `photutils <https://photutils.readthedocs.io/en/stable/>`_
+utilities from `Photutils <https://photutils.readthedocs.io/en/stable/>`_
 with the Point catalog created based upon functionality similar to DAOPhot-style photometry,
 and the Segment catalog created with Source Extractor segmentation capabilities and output
 in mind.
@@ -59,7 +59,7 @@ detection images, *though the evaluation is done for all instrument detection im
 are measured to have values identically
 equal to zero.  If the number of identically zero pixels in the footprint portion of the detection image
 exceeds a configurable percentage threshold value (default is 25%), then a two-dimensional background image 
-is constructed, ** Background Algorithm 1**, and set to the value of zero. Its companion 
+is constructed, **Background Algorithm 1**, and set to the value of zero. Its companion 
 constructed RMS image set to the RMS
 value computed for the non-zero pixels which reside within the footprint portion of the image.
 
@@ -100,7 +100,7 @@ the chosen method used to compute the background and RMS images, though the spec
 identically zero background data will always be evaluated and will supersede the user request when 
 applicable.
 
-The final background determination algorithm, **Background Algorithm 3**, is the
+The final background determination algorithm, **Background Algorithm 3**, the
 `photutils.background.Background2d <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_ 
 Astropy tool is *only* invoked if the special case identically zero algorithm has not been applied,
 the user has not requested that only the sigma-clipped statistics algorithm be computed, and the 
@@ -109,7 +109,7 @@ threshold (default value 0.5).
 
 The **Background Algorithm 3** uses
 sigma-clipped statistics to determine background and RMS values across the image, but in
-a localized fashion in constrast to **Background Algorithm 2**. An initial low-resolution
+a localized fashion in contrast to **Background Algorithm 2**. An initial low-resolution
 estimate of the background is performed by computing sigma-clipped median values in 27x27 pixel boxes across
 the image. This low-resolution background image is then median-filtered using a 3x3 pixel sample window to
 correct for local small-scale overestimates and/or underestimates.  Both the 27 and 3 pixel
@@ -165,19 +165,19 @@ listed below in table 1:
 
 .. table:: Table 1: Aperture photometry aperture sizes
 
-    +-------------------+----------------------------+----------------------------+
-    |Instrument/Detector|Inner aperture size (arcsec)|Outer aperture size (arcsec)|
-    +===================+============================+============================+
-    |ACS/HRC            |0.03                        |0.125                       |
-    +-------------------+----------------------------+----------------------------+
-    |ACS/SBC            |0.07                        |0.125                       |
-    +-------------------+----------------------------+----------------------------+
-    |ACS/WFC	        |0.05                        |0.15                        |
-    +-------------------+----------------------------+----------------------------+
-    |WFC3/IR	        |0.15                        |0.45                        |
-    +-------------------+----------------------------+----------------------------+
-    |WFC3/UVIS          |0.05                        |0.15                        |
-    +-------------------+----------------------------+----------------------------+
+    +---------------------+------------------------------+------------------------------+
+    | Instrument/Detector | Inner aperture size (arcsec) | Outer aperture size (arcsec) |
+    +=====================+==============================+==============================+
+    | ACS/HRC             | 0.03                         | 0.125                        |
+    +---------------------+------------------------------+------------------------------+
+    | ACS/SBC             | 0.07                         | 0.125                        |
+    +---------------------+------------------------------+------------------------------+
+    | ACS/WFC	          | 0.05                         | 0.15                         |
+    +---------------------+------------------------------+------------------------------+
+    | WFC3/IR	          | 0.15                         | 0.45                         |
+    +---------------------+------------------------------+------------------------------+
+    | WFC3/UVIS           | 0.05                         | 0.15                         |
+    +---------------------+------------------------------+------------------------------+
 
 Raw (non-background-subtracted) flux values are computed by summing up the enclosed flux within the two specified
 apertures using the `photutils.aperture.aperture_photometry <https://photutils.readthedocs.io/en/stable/api/photutils.aperture.aperture_photometry.html>`_
@@ -251,14 +251,14 @@ where
     * :math:`{m_{inner}}` is the inner aperture AB magnitude
     * :math:`{m_{outer}}` is the outer aperture AB magnitude
 
-We use the concentration index to automatically classify each identified photometric source as either a point source
+We use the concentration index to classify automatically each identified photometric source as either a point source
 (i.e. stars), an extended source (i.e. galaxies, nebulosity, etc.), or as an “anomalous” source (i.e. saturation,
 hot pixels, cosmic ray hits, etc.). This designation is described by the value in the "flags" column
 
 2.4.2: Determination of flag values
 """""""""""""""""""""""""""""""""""""
 The flag value associated with each source provides users with a means to distinguish between legitimate point sources,
-legitimate extended sources, and scientifically dubious sources (those likely impacted by low signal to noise, detector
+legitimate extended sources, and scientifically dubious sources (those likely impacted by low signal-to-noise ratio, detector
 artifacts, saturation, cosmic rays, etc.). The values in the “flags” column of the catalog are a sum of a one or more of
 these values. Specific flag values are defined below in table 2:
 
@@ -340,7 +340,7 @@ where necessary.
 
 2.4.2.3: Assignment of flag value 8 (faint detection limit)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-A flag value of 8 is assigned to sources whose signal to noise ratio is below a predefined value. We define sources as
+A flag value of 8 is assigned to sources whose signal-to-noise ratio is below a predefined value. We define sources as
 being above the faint object limit if the following is true:
 
 .. math::
@@ -348,7 +348,7 @@ being above the faint object limit if the following is true:
 
 Where
     * :math:`{\Delta ABmag_{outer}}` is the outer aperture AB magnitude uncertainty
-    * :math:`{snr}` is the signal to noise ratio, which is 1.5 for ACS/WFC and 5.0 for all other detectors.
+    * :math:`{snr}` is the signal-to-noise ratio, which is 1.5 for ACS/WFC and 5.0 for all other detectors.
 
 2.4.2.4: Assignment of flag value 32 (false detection: swarm around saturated source)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -387,7 +387,7 @@ So, for example if we have the following information:
     * Detector = wfc
     * Filter name = f606w
     * Dataset name = j65c43
-    * Catalog type = point_cat
+    * Catalog type = point-cat
 
 The resulting auto-generated catalog filename will be:
     * hst_98765_43_acs_wfc_f606w_j65c43_point-cat.ecsv
@@ -534,7 +534,7 @@ Should the catalogs fail this test, neither type of catalogs will be written out
 ----------------------------------
 
 4.1: Source Identification with PhotUtils
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 For the segmentation algorithm the
 `photutils.segmentation <https://photutils.readthedocs.io/en/stable/segmentation.html>`_ Astropy 
 tool is used to identify sources in the background-subtracted multi-filter detection image. 
@@ -547,7 +547,7 @@ upon the WHT extension of the detection image. Before applying the threshold, th
 image is filtered by the image kernel (Section 1.4) to smooth the data and enhance the ability 
 to identify signal which is similar in shape to the kernel. This process generates a two-dimensional
 segmentation image or map where a segment is defined to be a number of connected pixels which are
-all identified by a numeric label and are part of the same source. 
+all identified by a numeric label and are considered part of the same source. 
 
 Because different sources in close proximity can be mis-identified as a single source, it is necessary
 to apply a deblending procedure to the segmentation map.  The deblending is a combination of 
@@ -559,12 +559,11 @@ deblending can take unreasonable amounts of time (e.g., days) to conclude.  Vari
 schemes to handle this situation are being investigated (e.g., use of the evaluation strategy 
 discussed in the following paragraphs with different tolerances).
 
-After deblending has succdessfully concluded, the resultant segmentation map is further analyzed 
+After deblending has successfully concluded, the resultant segmentation map is further analyzed 
 based on an algorithm developed for the `Hubble Legacy Archive
-<https://innerspace.stsci.edu/display/HLA/Strategy+for+switching+SExtractor+kernels+for+crowded+fields>`_
-to determine if
+<https://hla.stsci.edu>`_ to determine if
 big segments/blended regions persist or if a large percentage of the map is covered by segments.  
-If either of these items are true, this is a stong indication the detection image is a crowded astronomical 
+If either of these items are true, this is a strong indication the detection image is a crowded astronomical 
 field.  To address this situation an alternative kernel is derived using the 
 `astropy.convolution.RickerWavelet2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.RickerWavelet2DKernel.html>`_
 Astropy tool.  This new kernel is then used for the generation of an improved segmentation
@@ -574,6 +573,7 @@ The segmentation map derived from *and when used in conjunction with* the multi-
 measuring source properties is **only** used to determine the
 centroids of sources.  It should be noted that questionable centroids (e.g., values of nan or infinity) 
 and their corresponding segments are eliminated from further consideration.     
+
 
 4.1: Isophotal Photometry Measurements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -587,66 +587,176 @@ combining a background-only error array with the Poisson noise of sources.
 The isophotal photometry and morphological measurements are then performed on the background-subtracted
 single-filter drizzled image using the segmentation map derived from the multi-filter detection image, 
 the background and total error images, the image kernel, and the known WCS with the
-`photutils.segmentation.source_properties <https://photutils.readthedocs.io/en/stable/api/photutils.segmentation.source_properties.html#photutils.segmentation.source_properties>`_ tool. The measurements made using this tool are denoted
-in Table 5.
+`photutils.segmentation.source_properties <https://photutils.readthedocs.io/en/stable/api/photutils.segmentation.source_properties.html#photutils.segmentation.source_properties>`_ tool. The measurements made using this tool and retained
+for the output segment catalog are denoted in Table 5.
 
-.. table:: Table 5: Isophotal Measurements - Segment Catalog Measurement Names and Descriptions
+.. table:: Table 5: Isophotal Measurements - Subset of Segment Catalog Measurements and Descriptions
 
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | PhotUtils Variable | Segment Catalog Column | Description                                                    |
-    +====================+========================+================================================================+
-    | id                 | ID                     | Numeric label of the segment                                   |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | xcentroid          | X-Centroid             | X-coordinate of the centroid in the source segment             |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | ycentroid          | Y-Centroid             | Y-coordinate of the centroid in the source segment             |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | background_at_centroid | Bck                | Background measured as the centroid position                   |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | source_sum         | FluxIso                | Sum of the unmasked data within the source segment             |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | source_sum_err     | FluxIsoErr             | Uncertainty of FluxIso, propagated from the input              |
-    |                    |                        | error array                                                    |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | bbox_xmin          | Xmin                   | Minimum X pixel within the minimal bounding box                |
-    |                    |                        | containing the source segment                                  |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | bbox_ymin          | Ymin                   | Minimum Y pixel within the minimal bounding box                |
-    |                    |                        | containing the source segment                                  |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | bbox_xmax          | Xmax                   | Maximum X pixel within the minimal bounding box                |
-    |                    |                        | containing the source segment                                  |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | bbox_ymax          | Ymax                   | Maximum Y pixel within the minimal bounding box                |
-    |                    |                        | containing the source segment                                  |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | cxx                | CXX                    | SExtractor's CXX ellipse parameter (pixel^-2)                  |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | cyy                | CYY                    | SExtractor's CYY ellipse parameter (pixel^-2)                  |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | cxy                | CXY                    | SExtractor's CXY ellipse parameter (pixel^-2)                  |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | covar_sigx2        | X2                     | Variance of position along X (pixels^2)                        |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | covar_sigy2        | Y2                     | Variance of positio  along X (pixels^2)                        |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | covar_sigxy        | XY                     | Covariance of position between X and Y (pixels^2)              |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | orientation        | Theta                  | Angle between the X-axis and the major axis of the 2D Gaussian |
-    |                    |                        | function with same second-order moments a the source.          |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | elongation         | Elongation             | Ratio of the lengths of the semi-major and semi-minor axes     |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | ellipticity        | Ellipticity            | 1 minus the Elongation                                         |
-    +--------------------+------------------------+----------------------------------------------------------------+
-    | area               | Area                   | Total unmasked area of source segment (pixels^2)               |
-    +--------------------+------------------------+----------------------------------------------------------------+
+    +------------------------+----------------+------------------------------------------------------+
+    | PhotUtils Variable     | Catalog Column | Description                                          |
+    +========================+================+======================================================+
+    | area                   | Area           | Total unmasked area of the source segment (pixels^2) |
+    +------------------------+----------------+------------------------------------------------------+
+    | background_at_centroid | Bck            | Background measured at the centroid position         |
+    +------------------------+----------------+------------------------------------------------------+
+    | bbox_xmin              | Xmin           | Min X pixel in the minimal bounding box segment      |
+    +------------------------+----------------+------------------------------------------------------+
+    | bbox_ymin              | Ymin           | Min Y pixel in the minimal bounding box segment      |
+    +------------------------+----------------+------------------------------------------------------+
+    | bbox_xmax              | Xmax           | Max X pixel in the minimal bounding box segment      |
+    +------------------------+----------------+------------------------------------------------------+
+    | bbox_ymax              | Ymax           | Max Y pixel in the minimal bounding box segment      |
+    +------------------------+----------------+------------------------------------------------------+
+    | covar_sigx2            | X2             | Variance of position along X (pixels^2)              |
+    +------------------------+----------------+------------------------------------------------------+
+    | covar_sigxy            | XY             | Covariance of position between X and Y (pixels^2)    |
+    +------------------------+----------------+------------------------------------------------------+
+    | covar_sigy2            | Y2             | Variance of position along Y (pixels^2)              |
+    +------------------------+----------------+------------------------------------------------------+
+    | cxx                    | CXX            | SExtractor's CXX ellipse parameter (pixel^-2)        |
+    +------------------------+----------------+------------------------------------------------------+
+    | cxy                    | CXY            | SExtractor's CXY ellipse parameter (pixel^-2)        |
+    +------------------------+----------------+------------------------------------------------------+
+    | cyy                    | CYY            | SExtractor's CYY ellipse parameter (pixel^-2)        |
+    +------------------------+----------------+------------------------------------------------------+
+    | elongation             | Elongation     | Ratio of the semi-major to the semi-minor length     |
+    +------------------------+----------------+------------------------------------------------------+
+    | ellipticity            | Ellipticity    | 1 minus the Elongation                               |
+    +------------------------+----------------+------------------------------------------------------+
+    | id                     | ID             | Numeric label of the segment/Catalog ID number       |
+    +------------------------+----------------+------------------------------------------------------+
+    | orientation            | Theta          | Angle between the semi-major and NAXIS1 axes         |
+    +------------------------+----------------+------------------------------------------------------+
+    | sky_centroid_icrs      | RA and DEC     | Equatorial coordinates in degrees                    |
+    +------------------------+----------------+------------------------------------------------------+
+    | source_sum             | FluxIso        | Sum of the unmasked data within the source segment   |
+    +------------------------+----------------+------------------------------------------------------+
+    | source_sum_err         | FluxIsoErr     | Uncertainty of FluxIso, propagated from input array  |
+    +------------------------+----------------+------------------------------------------------------+
+    | xcentroid              | X-Centroid     | X-coordinate of the centroid in the source segment   |
+    +------------------------+----------------+------------------------------------------------------+
+    | ycentroid              | Y-Centroid     | Y-coordinate of the centroid in the source segment   |
+    +------------------------+----------------+------------------------------------------------------+
+
 
 4.2: Aperture Photometry Measurements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The aperture photometry measurements included with the segmentation algorithm use the same configuration
-variable values and follow the same steps as what is done for the point algorithm (Section 2.1). 
+variable values and literally follow the same steps as what is done for the point algorithm as
+documented in Sections 2.2 - 2.4.  The fundamental difference between the point and segment computations is 
+the source position list used for the measurements.
 
+5: The Output Segment Catalogs
+------------------------------
+The metadata for the catalogs, both total detection and filter, as discussed in Sections 3.1 and 3.2, 
+is pre-dominantly the same.  The differences arise with respect to the specific columns present in the
+catalog.  The naming convention for the catalogs is also the same except the filter name is replaced 
+by the literal *total* for the total detection catalog:
+<TELESCOPE>_<PROPOSAL ID>_<OBSERVATION SET ID>_<INSTRUMENT>_<DETECTOR>_total_<DATASET NAME>_<CATALOG TYPE>.ecsv
+where CATALOG TYPE is either *point-cat* or *segment-cat*.
+Using the same example from Section 3.1, the resulting auto-generated segment total detection catalog 
+filename will be:
 
+* hst_98765_43_acs_wfc_total_j65c43_segment-cat.ecsv
 
+and the filter catalog filename will be:
+
+* hst_98765_43_acs_wfc_f606w_j65c43_segment-cat.ecsv
+
+5.1: Total Detection Segment Catalog 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The multi-filter detection level (aka total) catalog contains the fundamental position measurements of 
+the detected source: ID, X-Centroid, Y-Centroid, RA, and DEC, supplemented by some of the 
+aperture photometry measurements from *each* of the filter catalogs (ABMAG of the outer aperture, Concentration 
+Index, and Flags).  Effectively, the output Total Detection Segment Catalog is a distilled version of all of 
+the Filter Segment Catalogs.  
+
+5.2: Filter Segment Catalog 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Section 3.2 discusses the file format for the output filter catalogs, where the latter portion of this
+section is specific to the point catalogs.  The general commentary is still relevant for the segment catalogs,
+except for the specific columns.  In the case of the segment filter catalogs, the specific columns and the 
+order of the columns were designed to be similar to the Source Extractor catalogs produced by the 
+`Hubble Legacy Archive (HLA) <https://hla.stsci.edu>`_ project.
+
+Having said this, the `PhotUtils <https://photutils.readthedocs.io/en/stable/segmentation.html>`_
+tool is not as mature as Source Extractor, and it was not clear that all of the output columns in the HLA 
+product were relevant for most users.  As a result, some measurements in the HLA Source Extractor 
+catalog may be missing from the output segment catalog at this time.
+The current Segment column measurements are as follows in Table 6 with the same left-to-right ordering as found
+in the .ecsv:
+
+.. table:: Table 6: Segment Filter Catalog Measurements and Descriptions
+
+    +----------------+------------------+---------------------------------------------+---------------+
+    | Segment Column | SExtactor Column | Description                                 | Units         |
+    +================+==================+=============================================+===============+
+    | X-Centroid     | X_IMAGE          | 0-indexed Coordinate position               | pixel         |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | Y-Centroid     | Y_IMAGE          | 0-indexed Coordinate position               | pixel         |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | RA             | RA               | Sky coordinate at epoch of observation      | degrees       |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | DEC            | DEC              | Sky coordinate at epoch of observation      | degrees       |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | ID             |                  | Catalog Object Identification Number        |               |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | CI             | CI               | Concentration Index                         |               |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | Flags          | FLAGS            |                                             |               |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | MagAp1         | MAG_APER1        | ABMAG of source, inner (smaller) aperture   | ABMAG         |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | MagErrAp1      | MAGERR_APER1     | Error of MagAp1                             | ABMAG         |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | FluxAp1        | FLUX_APER1       | Flux of source, inner (smaller) aperture    | electrons/s   |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | FluxErrAp1     | FLUXERR_APER1    | Error of FluxAp1                            | electrons/s   |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | MagAp2         | MAG_APER2        | ABMAG of source, outer (larger) aperture    | ABMAG         |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | MagErrAp2      | MAGERR_APER2     | Error of MagAp2                             | ABMAG         |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | FluxAp2        | FLUX_APER2       | Flux of source, outer (larger) aperture     | electrons/s   |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | FluxErrAp2     | FLUXERR_APER2    | Error of FluxAp2                            | electrons/s   |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | MSkyAp2        |                  | ABMAG of sky, outer (larger) aperture       | ABMAG         |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | Bck            | BACKGROUND       | Background, position of source centroid     | electrons/s   |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | Area           |                  | Total unmasked area of the source segment   | pixels^2      |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | MagIso         | MAG_ISO          | Magnitude corresponding to FluxIso          | ABMAG         |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | FluxIso        | FLUX_ISO         | Sum of unmasked data in source segment      | electrons/s   |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | FluxIsoErr     | FLUXERR_ISO      | Uncertainty, propagated from input error    | electrons/s   |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | Xmin           | XMIN_IMAGE       | Min X pixel in minimal bounding box segment | pixels        |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | Ymin           | YMIN_IMAGE       | Min Y pixel in minimal bounding box segment | pixels        |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | Xmax           | XMAX_IMAGE       | Max X pixel in minimal bounding box segment | pixels        |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | Ymax           | YMAX_IMAGE       | Max Y pixel in minimal bounding box segment | pixels        |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | X2             | X2_IMAGE         | Variance along X                            | pixel^2       |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | Y2             | Y2_IMAGE         | Variance along Y                            | pixel^2       |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | XY             | XY_IMAGE         | Covariance of position between X and Y      | pixel^2       |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | CXX            | CXX_IMAGE        | SExtractor's ellipse parameter              | pixel^2       |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | CYY            | CYY_IMAGE        | SExtractor's ellipse parameter              | pixel^2       |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | CXY            | CXY_IMAGE        | SExtractor's ellipse parameter              | pixel^2       |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | Elongation     | ELONGATION       | Ratio of semi-major to semi-minor length    |               |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | Ellipticity    | ELLIPTICITY      | The value of 1 minus the elongation         |               |
+    +----------------+------------------+---------------------------------------------+---------------+
+    | Theta          | THETA_IMAGE      | Aangle between semi-major and NAXIS1 axes   | radians       |
+    +----------------+------------------+---------------------------------------------+---------------+
 
