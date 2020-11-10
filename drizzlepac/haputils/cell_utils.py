@@ -29,6 +29,8 @@ SKYCELL_NAME_FMT = f"skycell-p{{:{str(PCELL_STRLEN).zfill(2)}d}}x{{:02d}}y{{:02d
 SKYCELL_NXY = 50
 SKYCELL_OVERLAP = 256
 
+SUPPORTED_SCALES = {'fine': 0.04, 'coarse': 0.12}  # arcseconds/pixel
+
 
 def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     """Return all sky cells that overlap the exposures in the input.
@@ -393,11 +395,11 @@ class ProjectionCell(object):
         obtain the band definition for the cell with the specified `index`.
 
         """
+        self.scale = scale
         if band:
             self.band_index = index
             self.band = band
             self.cell_id = band['PROJCELL'] + index
-            self.scale = scale
         else:
             self._from_index(index)
 
@@ -415,7 +417,7 @@ class ProjectionCell(object):
         self.band = grid_defs.find_ring_by_id(id)
         self.band_index = id - self.band['projcell']
         self.cell_id = id
-        self.scale = grid_defs.scale
+        self.scale = grid_defs.scale if self.scale is None else self.scale
         self.sc_overlap = grid_defs.sc_overlap
         self.sc_nxy = grid_defs.sc_nxy
 
@@ -544,10 +546,34 @@ class ProjectionCell(object):
 
 class SkyCell(object):
 
-    def __init__(self, name=None, projection_cell=None, x=None, y=None):
+    def __init__(self, name=None, projection_cell=None, x=None, y=None, scale=None):
         """Define sky cell at position x,y within projection cell.
-        X,Y positions need to be 1-based.
+
+        Parameters
+        ===========
+        name : str, optional
+            Name of the sky cell in the format 'skycell_p1234_x01y01'
+
+        projection_cell : object, optional
+            ProjectionCell instance which this SkyCell will be based upon.
+
+        x : int, optional
+            X position (1-based) of this SkyCell within the ProjectionCell
+
+        y : int, optional
+            Y position (1-based) of this SkyCell within the ProjectionCell
+
+        scale : str or float, optional
+            Plate scale to be used to define the SkyCell WCS.  The strings
+            'fine' or 'coarse' can be used to refer to default plate scales.
+            Default values are specified in the dict `cell_utils.SUPPORTED_SCALES`.
+            Alternatively, floating-point values can be provided to specify
+            the exact pixel size in arcseconds/pixel should be used.
+
         """
+        # Interpret scale term, if provided
+        self.scale = SUPPORTED_SCALES.get(scale, None) if isinstance(scale, str) else scale
+
         if name:
             self._from_name(name)
         else:
@@ -562,7 +588,7 @@ class SkyCell(object):
 
         self._build_wcs()
 
-    def _from_name(self, name):
+    def _from_name(self, name, scale=None):
         # parse name into projection cell and sky cell designations
         sc_names = name.split('-')
         scell_id = sc_names[1]
@@ -570,7 +596,7 @@ class SkyCell(object):
 
         self.x_index = int(scell_id[6:8])
         self.y_index = int(scell_id[9:11])
-        self.projection_cell = ProjectionCell(index=pcell_id)
+        self.projection_cell = ProjectionCell(index=pcell_id, scale=self.scale)
         self.sky_cell_id = name
 
     def __repr__(self):

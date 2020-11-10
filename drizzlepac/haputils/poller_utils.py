@@ -455,6 +455,8 @@ def parse_mvm_tree(det_tree, log_level):
 
                 prod_list = prod_info.split(" ")
                 pscale = 'fine' if prod_list[2].upper() != 'IR' else 'coarse'
+                prod_info += " {:s}".format(pscale)
+
                 if prod_list[5].strip() != '':
                     layer = (prod_list[3], pscale, prod_list[4], prod_list[5])
                 else:
@@ -489,6 +491,27 @@ def parse_mvm_tree(det_tree, log_level):
                                              prod_list[0], layer, ftype, log_level)
                 # Append exposure object to the list of exposure objects for this specific filter product object
                 filt_obj.add_member(sep_obj)
+
+                # Check to see whether an additional layer with a different plate scale should be generated
+                # Primarily for WFC3/IR fine vs coarse layers
+                if pscale == 'coarse':
+                    fprod = FP_STR.format(filt_indx)
+                    obset_products[fprod] = {'info': "", 'files': []}
+                    filt_indx += 1
+                    # Generate 'fine' layer as well
+                    prod_info_fine = prod_info.replace('coarse', 'fine')
+                    layer_fine = layer.replace('coarse', 'fine')
+                    if not obset_products[fprod]['info']:
+
+                        obset_products[fprod]['info'] = prod_info_fine
+
+                        # Create a filter product object for this instrument/detector
+                        # FilterProduct(prop_id, obset_id, instrument, detector,
+                        #               filename, filters, filetype, log_level)
+                        filt_obj_fine = SkyCellProduct(str(0), str(0), prod_list[1], prod_list[2],
+                                                 prod_list[0], layer_fine, ftype, log_level)
+                    filt_obj_fine.add_member(sep_obj)
+
                 # Populate filter product dictionary with input filename
                 obset_products[fprod]['files'].append(filename[1])
 
@@ -507,6 +530,8 @@ def parse_mvm_tree(det_tree, log_level):
                                            filt_obj.detector))
             # Add the total product object to the list of TotalProducts
             tdp_list.append(filt_obj)
+            if pscale == 'coarse':
+                tdp_list.append(filt_obj_fine)
 
     # Done... return dict and object product list
     return obset_products, tdp_list
