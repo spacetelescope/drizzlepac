@@ -757,6 +757,6 @@ in the .ecsv:
     +----------------+------------------+---------------------------------------------+---------------+
     | Ellipticity    | ELLIPTICITY      | The value of 1 minus the elongation         |               |
     +----------------+------------------+---------------------------------------------+---------------+
-    | Theta          | THETA_IMAGE      | Aangle between semi-major and NAXIS1 axes   | radians       |
+    | Theta          | THETA_IMAGE      | Angle between semi-major and NAXIS1 axes   | radians       |
     +----------------+------------------+---------------------------------------------+---------------+
 
