@@ -80,7 +80,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.NOTSET):
 
     # Extract only the filenames of viable images for processing (i.e., doProcess == 1)
     if filtered_table['doProcess'].sum() == 0:
-        log.error("No viable images in single/multiple visit table - no processing done.\n")
+        log.warning("No viable images in single/multiple visit table - no processing done.\n")
     else:
         # Get the list of all "good" files to use for the alignment
         process_list = filtered_table['imageName'][np.where(filtered_table['doProcess'])]
