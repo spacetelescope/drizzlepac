@@ -557,16 +557,24 @@ The deblending can be problematic if the background determination has not been w
 resulting in segments which are a large percentage of the map footprint.  In this case, the
 deblending can take unreasonable amounts of time (e.g., days) to conclude.  Various mitigation 
 schemes to handle this situation are being investigated (e.g., use of the evaluation strategy 
-discussed in the following paragraphs with different tolerances).
+discussed in the following paragraph with different tolerances).
 
-After deblending has successfully concluded, the resultant segmentation map is further analyzed 
+After deblending has successfully concluded, the resultant segmentation map is further evaluated
 based on an algorithm developed for the `Hubble Legacy Archive
 <https://hla.stsci.edu>`_ to determine if
 big segments/blended regions persist or if a large percentage of the map is covered by segments.  
-If either of these items are true, this is a strong indication the detection image is a crowded astronomical 
-field.  To address this situation an alternative kernel is derived using the 
+If either of these two scenarios is true, this is a strong indication the detection image is a 
+crowded astronomical field. 
+In a crowded field either the custom kernel or the Gaussian kernel (discussed in Section 1.4) 
+can blend objects in close proximity together, making it difficult to differentiate between
+the independent objects.  In extreme cases, a large number of astronomical objects are blended
+together and are mistakenly identified as a single segment covering a large percent of the
+image. 
+To address this situation an alternative kernel is derived using the 
 `astropy.convolution.RickerWavelet2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.RickerWavelet2DKernel.html>`_
-Astropy tool.  This new kernel is then used for the generation of an improved segmentation
+Astropy tool. The RickerWavelet2DKernel is approximately a Gaussian surrounded by a negative 
+halo, and it is useful for peak or multi-scale detection.
+This new kernel is then used for the generation of an improved segmentation
 map from the multi-filter detection image. 
 
 The segmentation map derived from *and when used in conjunction with* the multi-filter detection image for
