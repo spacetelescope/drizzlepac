@@ -56,12 +56,12 @@ detection images, *though the evaluation is done for all instrument detection im
 are measured to have values identically
 equal to zero.  If the number of identically zero pixels in the footprint portion of the detection image
 exceeds a configurable percentage threshold value (default is 25%), then a two-dimensional background image 
-is constructed, **Background Algorithm 1**, and set to the value of zero. Its companion 
+is constructed and set to the value of zero, hence the **Zero Background Algorithm**. Its companion 
 constructed RMS image set to the RMS
 value computed for the non-zero pixels which reside within the footprint portion of the image.
 
-If **Background Algorithm 1** is not applicable, then sigma-clipped statistics are
-computed, **Background Algorithm 2**,
+If the **Zero Background Algorithm** is not applicable, then sigma-clipped statistics are
+computed, known as the **Constant Background Algorithm**,
 for the detection image using the 
 `astropy.stats.sigma_clipped_stats <https://docs.astropy.org/en/stable/api/astropy.stats.sigma_clipped_stats.html>`_ 
 Astropy tool. This algorithm uses the detection image and its inverse footprint mask, as well
@@ -97,16 +97,16 @@ the chosen method used to compute the background and RMS images, though the spec
 identically zero background data will always be evaluated and will supersede the user request when 
 applicable.
 
-The final background determination algorithm, **Background Algorithm 3**, the
+For the final background determination algorithm, **Conformal Background Algorithm**, the
 `photutils.background.Background2d <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_ 
-Astropy tool is *only* invoked if the special case identically zero algorithm has not been applied,
-the user has not requested that only the sigma-clipped statistics algorithm be computed, and the 
+Astropy tool is *only* invoked if the **Zero Background Algorithm** has not been applied,
+the user has not requested that only the **Constant Background Algorithm** computed, and the 
 skewness value derived using the sigma-clipped statistics is less than a pre-defined and configurable
 threshold (default value 0.5).
 
-The **Background Algorithm 3** uses
+The **Conformal Background Algorithm** uses
 sigma-clipped statistics to determine background and RMS values across the image, but in
-a localized fashion in contrast to **Background Algorithm 2**. An initial low-resolution
+a localized fashion in contrast to **Constant Background Algorithm**. An initial low-resolution
 estimate of the background is performed by computing sigma-clipped median values in 27x27 pixel boxes across
 the image. This low-resolution background image is then median-filtered using a 3x3 pixel sample window to
 correct for local small-scale overestimates and/or underestimates.  Both the 27 and 3 pixel
@@ -117,7 +117,7 @@ background-subtracted image is computed so it can be evaluated for the percentag
 values in the illuminated portion of the image. If the percentage of negative values exceeds a
 configurable and defined threshold (default value 15%), the computation of the background and RMS image 
 from this
-algorithm are discarded.  Instead the background and RMS images computed using **Background Algorithm 2**,
+algorithm are discarded.  Instead the background and RMS images computed using **Constant Background Algorithm**,
 with the associated updates, are ultimately chosen as the images to use.
 It cannot be emphasized enough that a well-determined background measurement, leading to a good
 threshold definition, is very crucial for proper and successful source identification.
