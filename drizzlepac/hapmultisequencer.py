@@ -139,13 +139,13 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                        log_level=logutil.logging.INFO):
     """
     Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
-    controller which invokes the high-level functionality to process the single visit data.
+    controller which invokes the high-level functionality to process the multi-visit data.
 
     Parameters
     ----------
     input_filename: string
-        The 'poller file' where each line contains information regarding an exposures taken
-        during a single visit.
+        The 'poller file' where each line contains information regarding an exposures considered
+        part of the multi-visit.
 
     diagnostic_mode : bool, optional
         Allows printing of additional diagnostic information to the log.  Also, can turn on
@@ -167,8 +167,8 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         available during the processing session.  The default is None.
 
     phot_mode : str, optional
-        Which algorithm should be used to generate the sourcelists? 'aperture' for aperture photometry;
-        'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
+        Which algorithm should be used to generate the sourcelists? 'aperture' for aperture (point) photometry;
+        'segment' for isophotal photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
@@ -197,7 +197,7 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
     total_obj_list = []
     product_list = []
     try:
-        # Parse the poller file and generate the the obs_info_dict, as well as the total detection
+        # Parse the MVM poller file and generate the the obs_info_dict, as well as the total detection
         # product lists which contain the ExposureProduct, FilterProduct, and TotalProduct objects
         # A poller file contains visit data for a single instrument.  The TotalProduct discriminant
         # is the detector.  A TotalProduct object is comprised of FilterProducts and ExposureProducts
@@ -207,12 +207,12 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         obs_info_dict, total_obj_list = poller_utils.interpret_mvm_input(input_filename, log_level,
                                                                          layer_method='all')
 
-        # Generate the name for the manifest file which is for the entire visit.  It is fine
+        # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
         # to use only one of the Total Products to generate the manifest name as the name is not
         # dependent on the detector.
         # Example: instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
         manifest_name = total_obj_list[0].manifest_name
-        log.info("\nGenerate the manifest name for this visit.")
+        log.info("\nGenerate the manifest name for this multi-visit.")
         log.info("The manifest will contain the names of all the output products.")
 
         # The product_list is a list of all the output products which will be put into the manifest file

@@ -197,7 +197,7 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0):
     Parameters
     -----------
     results : str or list
-        Input poller file name or Python list of dataset names to be processed as a single visit.
+        Input poller file name or Python list of dataset names to be processed for a multi-visit.
         Dataset names have to be either the filename of a singleton (non-associated exposure) or the
         name of an ASN file (e.g., jabc01010_asn.fits).
 
@@ -222,18 +222,17 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0):
 
     Notes
     -------
-    Interpret the database query for a given obset to prepare the returned
-    values for use in generating the names of all the expected output products.
+    Interpret the contents of the MVM poller file for the values to use in generating
+    the names of all the expected output products.
 
     Input will have format of:
-
-        ib4606c5q_flc.fits,11665,B46,06,1.0,F555W,UVIS,/ifs/archive/ops/hst/public/ib46/ib4606c5q/ib4606c5q_flc.fits
+        ib4606c5q_flc.fits,11665,B46,06,1.0,F555W,UVIS,skycell-p2381x05y09,NEW,/ifs/archive/ops/hst/public/ib46/ib4606c5q/ib4606c5q_flc.fits
 
         which are
-        filename, proposal_id, program_id, obset_id, exptime, filters, detector, pathname, skycell_ids, skycell_processed
+        filename, proposal_id, program_id, obset_id, exptime, filters, detector, skycell-p<PPPP>x<XX>y<YY>, [OLD|NEW], pathname
 
     The SkyCell ID will be included in this input information to allow for
-    grouping of exposures into the same SkyCell layer based on filter, exptime and year.
+    grouping of exposures into the same SkyCell layer based on filter, exptime, and year.
 
     Output dict will have only have definitions for each defined sky cell layer to
     be either created or updated based on the input exposures being processed.
@@ -251,7 +250,7 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0):
         .
         .
         .
-        obs_info_dict["layer 01": {"info": '11665 06 wfc3 uvis f555w long 2011 drc',
+        obs_info_dict["layer 02": {"info": '11665 06 wfc3 uvis f555w long 2011 drc',
                                    "files": ['ib4606c9q_flc.fits', 'ib4606ceq_flc.fits']}
         .
         .
