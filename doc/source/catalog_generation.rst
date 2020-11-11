@@ -119,8 +119,10 @@ configurable and defined threshold (default value 15%), the computation of the b
 from this
 algorithm are discarded.  Instead the background and RMS images computed using **Constant Background Algorithm**,
 with the associated updates, are ultimately chosen as the images to use.
-It cannot be emphasized enough that a well-determined background measurement, leading to a good
-threshold definition, is very crucial for proper and successful source identification.
+
+.. attention::
+
+    It cannot be emphasized enough that a well-determined background measurement, leading to a good threshold definition, is very crucial for proper and successful source identification.
 
 Through-out this section variables have been mentioned which can be configured by the user.  The
 values used for these variables for generating the default catalogs are deemed to be the best for 
@@ -549,11 +551,14 @@ Because different sources in close proximity can be mis-identified as a single s
 to apply a deblending procedure to the segmentation map.  The deblending is a combination of 
 multi-thresholding, as is done by `Source Extractor <https://sextractor.readthedocs.io/en/latest/Introduction.html>`_
 and the `watershed technique <https://en.wikipedia.org/wiki/Watershed_(image_processing)>`_.
-The deblending can be problematic if the background determination has not been well-determined,
-resulting in segments which are a large percentage of the map footprint.  In this case, the
-deblending can take unreasonable amounts of time (e.g., days) to conclude.  Various mitigation 
-schemes to handle this situation are being investigated (e.g., use of the evaluation strategy 
-discussed in the following paragraph with different tolerances).
+
+.. caution::
+
+    The deblending can be problematic if the background determination has not been well-determined, resulting in 
+    segments which are a large percentage of the map footprint.  In this case, the
+    deblending can take unreasonable amounts of time (e.g., days) to conclude.  Various mitigation 
+    schemes to handle this situation are being investigated (e.g., use of the evaluation strategy 
+    discussed in the following paragraph with different tolerances).
 
 After deblending has successfully concluded, the resultant segmentation map is further evaluated
 based on an algorithm developed for the `Hubble Legacy Archive
@@ -575,8 +580,12 @@ map from the multi-filter detection image.
 
 The segmentation map derived from *and when used in conjunction with* the multi-filter detection image for
 measuring source properties is **only** used to determine the
-centroids of sources.  It should be noted that questionable centroids (e.g., values of nan or infinity) 
-and their corresponding segments are eliminated from further consideration.     
+centroids of sources.  
+
+.. note::
+
+    Questionable centroids (e.g., values of nan or infinity) and their corresponding segments are 
+    removed from the catalog entirely.
 
 
 4.2: Isophotal Photometry Measurements
