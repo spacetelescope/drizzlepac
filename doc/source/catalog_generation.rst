@@ -150,7 +150,8 @@ Astropy tool.
 2.1: Source Identification with DAOStarFinder
 ---------------------------------------------
 We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html>`_ Astropy tool to identify sources in the background-subtracted
-multi-filter detection image. 
+multi-filter detection image. This would be where the background computed using one of the algorithms
+discussed in Section 1.3 is applied to the science data to initialize point-source detection processing.
 This algorithm works by identifying local brightness maxima with roughly gaussian
 distributions whose peak values are above a predefined minimum threshold. Full details of the process are
 described in `Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP...99..191S>`_.
@@ -392,8 +393,8 @@ So, for example if we have the following information:
 The resulting auto-generated catalog filename will be:
     * hst_98765_43_acs_wfc_f606w_j65c43_point-cat.ecsv
 
-3.2: File Format
-----------------
+3.2: File Format and Comparison to the HLA Catalog
+--------------------------------------------------
 The .ecsv file format is quite flexible and allows for the storage of not only character-separated datasets, but also
 metadata. The first section (lines 4-17) contains a mapping that defines the datatype, units, and formatting
 information for each data table column. The second section (lines 19-27) contains information explaining STScI’s use
@@ -538,6 +539,9 @@ Should the catalogs fail this test, neither type of catalogs will be written out
 For the segmentation algorithm the
 `photutils.segmentation <https://photutils.readthedocs.io/en/stable/segmentation.html>`_ Astropy 
 tool is used to identify sources in the background-subtracted multi-filter detection image. 
+As is the case for the point-source detection algorithm, this is the juncture where the  
+common background computed in Section 1.3, relevant for both the point and segment
+algorithms, is applied to the science data to begin the source detection process.
 To identify a signal as a source, the signal must have a minimum number
 of connected pixels, each of which is greater than its two-dimensional threshold image
 counterpart.  Connectivity refers to how pixels are literally touching along their edges and 
@@ -686,8 +690,8 @@ aperture photometry measurements from *each* of the filter catalogs (ABMAG of th
 Index, and Flags).  Effectively, the output Total Detection Segment Catalog is a distilled version of all of 
 the Filter Segment Catalogs.  
 
-5.2: Filter Segment Catalog 
-------------------------------------
+5.2: Filter Segment Catalog and Comparison to the HLA Catalog
+-------------------------------------------------------------
 Section 3.2 discusses the file format for the output filter catalogs, where the latter portion of this
 section is specific to the point catalogs.  The general commentary is still relevant for the segment catalogs,
 except for the specific columns.  In the case of the segment filter catalogs, the specific columns and the 
