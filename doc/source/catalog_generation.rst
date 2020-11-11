@@ -124,6 +124,8 @@ with the associated updates, are ultimately chosen as the images to use.
 
     It cannot be emphasized enough that a well-determined background measurement, leading to a good threshold definition, is very crucial for proper and successful source identification.
 
+1.3.1: Configurable Variables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Through-out this section variables have been mentioned which can be configured by the user.  The
 values used for these variables for generating the default catalogs are deemed to be the best for 
 the general situation, but users can tune these values to optimize for their own data. To this end, 
