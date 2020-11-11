@@ -11,14 +11,11 @@ with the Point catalog created based upon functionality similar to DAOPhot-style
 and the Segment catalog created with Source Extractor segmentation capabilities and output
 in mind.
 
-Preliminaries
-=============
-
 1: Support Infrastructure for Catalog Generation
-------------------------------------------------
+================================================
 
 1.1: Important Clarifications
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------
 As previously discussed in :ref:`singlevisit`, AstroDrizzle creates a single multi-filter, detector-level 
 drizzle-combined image for source identification and one or more detector/filter-level drizzle-combined images 
 (depending on
@@ -32,7 +29,7 @@ identify source catalogs independently of each other and DO NOT use a shared com
 photometry.
 
 1.2: Generation of Pixel Masks
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------
 Every multi-filter, detector-level drizzle-combined image is associated with a boolean footprint mask which 
 defines the illuminated (True) and non-illuminated (False) portions of the image based upon its constituent 
 exposures and the corresponding WCS solution.  The boundary of the illuminated portion
@@ -45,7 +42,7 @@ which utilize masks to indicate pixels which should be ignored during processing
 input data.
 
 1.3: Detection Image Background Determination
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------------------
 For consistency, the same background and background RMS images are used by both the point and
 segment algorithms.
 To ensure optimal source detection, the multi-filter detection image must be background-subtracted. 
@@ -133,7 +130,7 @@ in the <instrument>_<detector>_catalog_generation_all.json files in the followin
 /drizzlepac/pars/hap_pars/default_parameters/<instrument>/<detector>/.
 
 1.4: Image Kernel
-^^^^^^^^^^^^^^^^^
+-----------------
 In an attempt to optimize the source detection for the specific image being processed,
 the software attempts to derive a custom image kernel based upon the data.
 The multi-filter detection image is analyzed to find an isolated, non-saturated  
@@ -143,12 +140,11 @@ kernel based upon the supplied FWHM and the
 `astropy.convolution.Gaussian2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.Gaussian2DKernel.html>`_ 
 Astropy tool.
 
-
 2: Point (Aperture) Photometric Catalog Generation
---------------------------------------------------
+==================================================
 
 2.1: Source Identification with DAOStarFinder
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------------------
 We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html>`_ Astropy tool to identify sources in the background-subtracted
 multi-filter detection image. 
 This algorithm works by identifying local brightness maxima with roughly gaussian
@@ -157,8 +153,8 @@ described in `Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP
 The exact set of input parameters fed into DAOStarFinder is detector-dependent. The parameters can be found in
 the <instrument>_<detector>_catalog_generation_all.json files mentioned in the previous section.
 
-2.2: Aperture Photometry Measurement - Flux determination
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2.2: Aperture Photometry Measurement - Flux Determination
+---------------------------------------------------------
 Aperture photometry is then preformed on the previously identified sources using a pair of concentric
 photometric apertures. The sizes of these apertures depend on the specific detector being used, and are
 listed below in table 1:
@@ -202,10 +198,10 @@ The overall standard deviation and mode values of pixels in the background annul
 identified source in the output .ecsv catalog file in the “STDEV” and “MSKY” columns respectively (see Section 3 for
 more details).
 
-2.3: Calculation of photometric errors
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-2.3.1: Calculation of flux uncertainties
-"""""""""""""""""""""""""""""""""""""""""
+2.3: Calculation of Photometric Errors
+--------------------------------------
+2.3.1: Calculation of Flux Uncertainties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 For every identified source, the `photutils.aperture_photometry() <https://photutils.readthedocs.io/en/stable/api/photutils.aperture.aperture_photometry.html>`_
 tool calculates standard deviation values for each aperture based on a 2-dimensional RMS array computed using the
 `photutils.background.Background2d()  <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_
@@ -224,8 +220,8 @@ where
     * :math:`{\sigma_{bg}}` is standard deviation of the background
     * :math:`{n_{sky}}` is the sky annulus area, in pixels
 
-2.3.2: Calculation of ABmag uncertainties
-"""""""""""""""""""""""""""""""""""""""""""
+2.3.2: Calculation of ABmag Uncertainties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Magnitude error calculation comes from computing :math:`{\frac{d(ABMAG)}{d(flux)}}`. We use the following formula:
 
 .. math::
@@ -236,10 +232,10 @@ where
     * :math:`{\Delta f}` is the flux uncertainty, in electrons per second
     * :math:`{f}` is the flux, in electrons per second
 
-2.4: Calculation of concentration index (CI) values and flag values
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-2.4.1: Calculation of concentration index (CI) values
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+2.4: Calculation of Concentration Index (CI) Values and Flag Values
+-------------------------------------------------------------------
+2.4.1: Calculation of Concentration Index (CI) Values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The Concentration index is a measure of the "sharpness" of a given source’s PSF, and computed with the following
 formula:
 
@@ -255,8 +251,8 @@ We use the concentration index to classify automatically each identified photome
 (i.e. stars), an extended source (i.e. galaxies, nebulosity, etc.), or as an “anomalous” source (i.e. saturation,
 hot pixels, cosmic ray hits, etc.). This designation is described by the value in the "flags" column
 
-2.4.2: Determination of flag values
-"""""""""""""""""""""""""""""""""""""
+2.4.2: Determination of Flag Values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The flag value associated with each source provides users with a means to distinguish between legitimate point sources,
 legitimate extended sources, and scientifically dubious sources (those likely impacted by low signal-to-noise ratio, detector
 artifacts, saturation, cosmic rays, etc.). The values in the “flags” column of the catalog are a sum of a one or more of
@@ -285,8 +281,8 @@ these values. Specific flag values are defined below in table 2:
     |            | or other region with a low number of input images         |
     +------------+-----------------------------------------------------------+
 
-2.4.2.1: Assignment of flag values 0 (point source), 1 (extended source), and 16 (hot pixels)
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+2.4.2.1: Assignment of Flag Values 0 (Point Source), 1 (Extended Source), and 16 (Hot Pixels)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Assignment of flag values 0 (point source), 1 (extended source), and 16 (hot pixels) are determined purely based on the
 concentration index (CI) value. The majority of commonly used filters for all ACS and WFC3 detectors have
 filter-specific CI threshold values that are automatically set at run-time. However, if filter-specific CI threshold
@@ -328,8 +324,8 @@ values are listed below in table 4.
     | WFC3/UVIS           | 0.75                 | 1.0                  |
     +---------------------+----------------------+----------------------+
 
-2.4.2.2: Assignment of flag value 4 (Saturated Source)
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+2.4.2.2: Assignment of Flag Value 4 (Saturated Source)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 A flag value of 4 is assigned to sources that are saturated. The process of identifying saturated sources starts by
 first transforming the input image XY coordinates of all pixels flagged as saturated in the data quality arrays of each
 input flc/flt.fits images (the images drizzled together to produce the drizzle-combined filter image being used to
@@ -338,7 +334,7 @@ frame of reference of the filter-combined image. We then identify impacted sourc
 saturated pixel coordinates against the positions of sources in the newly created source catalog and assign flag values
 where necessary.
 
-2.4.2.3: Assignment of flag value 8 (faint detection limit)
+2.4.2.3: Assignment of Flag Value 8 (Faint Detection Limit)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 A flag value of 8 is assigned to sources whose signal-to-noise ratio is below a predefined value. We define sources as
 being above the faint object limit if the following is true:
@@ -350,8 +346,8 @@ Where
     * :math:`{\Delta ABmag_{outer}}` is the outer aperture AB magnitude uncertainty
     * :math:`{snr}` is the signal-to-noise ratio, which is 1.5 for ACS/WFC and 5.0 for all other detectors.
 
-2.4.2.4: Assignment of flag value 32 (false detection: swarm around saturated source)
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+2.4.2.4: Assignment of Flag Value 32 (False Detection: Swarm Around Saturated Source)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 The source identification routine has been shown to identify false sources in regions near bright or saturated
 sources, and in image artifacts associated with bright or saturated sources, such as diffraction spikes, and in the
 pixels surrounding saturated PSF where the brightness level “plateaus” at saturation. We identify impacted sources by
@@ -361,8 +357,8 @@ encircled energy curve. The parameters used to determine assignment of this flag
 in the “swarm filter” section of the \*_quality_control_all.json files in the path described above in section 1.3.
 
 
-2.4.2.5: Assignment of flag value 64 (False detection due proximity of source to image edge or other region with a low number of input images)
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+2.4.2.5: Assignment of Flag Value 64 (False Detection Due Proximity of Source to Image Edge or Other Region with a Low Number of Input Images)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Sources flagged with a value of 64 are flagged as “bad” because they are inside of or in close proximity to regions
 characterized by low or null input image contribution. These are areas where for some reason or another, very few or no
 input images contributed to the pixel value(s) in the drizzle-combined image.
@@ -371,9 +367,9 @@ contributing exposures for every pixel. We then check each source against this m
 appropriately.
 
 3: The Output Point Catalog File
---------------------------------
-3.1: Filename format
-^^^^^^^^^^^^^^^^^^^^^^
+================================
+3.1: Filename Format
+--------------------
 Source positions and photometric information are written to a .ecsv (Enhanced Character Separated Values) file. The
 naming of this file is fully automatic and follows the following format:
 <TELESCOPE>_<PROPOSAL ID>_<OBSERVATION SET ID>_<INSTRUMENT>_<DETECTOR>_
@@ -392,8 +388,8 @@ So, for example if we have the following information:
 The resulting auto-generated catalog filename will be:
     * hst_98765_43_acs_wfc_f606w_j65c43_point-cat.ecsv
 
-3.2: File format
-^^^^^^^^^^^^^^^^^
+3.2: File Format
+----------------
 The .ecsv file format is quite flexible and allows for the storage of not only character-separated datasets, but also
 metadata. The first section (lines 4-17) contains a mapping that defines the datatype, units, and formatting
 information for each data table column. The second section (lines 19-27) contains information explaining STScI’s use
@@ -451,10 +447,10 @@ ordering in the .ecsv file as well):
     * StdevAp2: Standard deviation of the outer aperture background brightness, in AB magnitude
     * FluxAp2: Outer aperture flux, in electrons/sec
     * CI: Concentration index (MagAp1 – MagAp2), in AB magnitude
-    * Flags: See Section 2.3.2 for flag value definitions
+    * Flags: See Section 2.4.2 for flag value definitions
 
 3.3 Rejection of Cosmic-Ray Dominated Catalogs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------------------------
 Not all sets of observations contain multiple overlapping exposures in the same filter. This makes it impossible
 to ignore all cosmic-rays that have impacted those single exposures.  The contributions of cosmic-rays often
 overwhelm any catalog generated from those single exposures making recognizing astronomical sources almost
@@ -468,7 +464,7 @@ output product.
   in the same way as the other detectors.
 
 3.3.1 Single-image CR Rejection Algorithm
-"""""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 An algorithm has been implemented to identify and ignore cosmic-rays in single exposures.  This algorithm has
 been used for ignoring cosmic-rays during the image alignment code used to determine the *a posteriori*
 alignment to GAIA.
@@ -490,7 +486,7 @@ from the total detection image.  These flags are NOT used to generate any other 
 affecting the photometry or astrometry of any source from the total detection image any more than necessary.
 
 3.3.2 Rejection Criteria
-"""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^
 The rejection criteria has been defined so that if either the point source catalog or the segment catalog fails,
 then both catalogs are rejected and deleted.
 
@@ -531,10 +527,10 @@ Should the catalogs fail this test, neither type of catalogs will be written out
 
 
 4: Segmentation Catalog Generation
-----------------------------------
+==================================
 
 4.1: Source Identification with PhotUtils
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------------
 For the segmentation algorithm the
 `photutils.segmentation <https://photutils.readthedocs.io/en/stable/segmentation.html>`_ Astropy 
 tool is used to identify sources in the background-subtracted multi-filter detection image. 
@@ -583,8 +579,8 @@ centroids of sources.  It should be noted that questionable centroids (e.g., val
 and their corresponding segments are eliminated from further consideration.     
 
 
-4.1: Isophotal Photometry Measurements
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+4.2: Isophotal Photometry Measurements
+--------------------------------------
 The actual isophotal photometry measurements are made on the single-filter drizzled images using the 
 cleaned segmentation map derived from the multi-filter detection image.  As was the case for the
 multi-filter detection image, the single-filter drizzled image is used in the determination of 
@@ -647,15 +643,15 @@ for the output segment catalog are denoted in Table 5.
     +------------------------+----------------+------------------------------------------------------+
 
 
-4.2: Aperture Photometry Measurements
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+4.3: Aperture Photometry Measurements
+-------------------------------------
 The aperture photometry measurements included with the segmentation algorithm use the same configuration
 variable values and literally follow the same steps as what is done for the point algorithm as
 documented in Sections 2.2 - 2.4.  The fundamental difference between the point and segment computations is 
 the source position list used for the measurements.
 
-5: The Output Segment Catalogs
-------------------------------
+5: The Output Segment Catalog Files
+===================================
 The metadata for the catalogs, both total detection and filter, as discussed in Sections 3.1 and 3.2, 
 is pre-dominantly the same.  The differences arise with respect to the specific columns present in the
 catalog.  The naming convention for the catalogs is also the same except the filter name is replaced 
@@ -672,7 +668,7 @@ and the filter catalog filename will be:
 * hst_98765_43_acs_wfc_f606w_j65c43_segment-cat.ecsv
 
 5.1: Total Detection Segment Catalog 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------
 The multi-filter detection level (aka total) catalog contains the fundamental position measurements of 
 the detected source: ID, X-Centroid, Y-Centroid, RA, and DEC, supplemented by some of the 
 aperture photometry measurements from *each* of the filter catalogs (ABMAG of the outer aperture, Concentration 
@@ -680,7 +676,7 @@ Index, and Flags).  Effectively, the output Total Detection Segment Catalog is a
 the Filter Segment Catalogs.  
 
 5.2: Filter Segment Catalog 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------
 Section 3.2 discusses the file format for the output filter catalogs, where the latter portion of this
 section is specific to the point catalogs.  The general commentary is still relevant for the segment catalogs,
 except for the specific columns.  In the case of the segment filter catalogs, the specific columns and the 
