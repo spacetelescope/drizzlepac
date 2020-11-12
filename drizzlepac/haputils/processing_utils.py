@@ -87,7 +87,7 @@ def refine_product_headers(product, total_obj_list):
     # Compute numexp as number of exposures NOT chips
     input_exposures = list(set([kw[1].split('[')[0] for kw in phdu['d*data'].items()]))
     if level == 1:
-        ipppssoots = [fname.split('_')[0] for fname in input_exposures]
+        ipppssoots = [fits.getval(fname, 'rootname') for fname in input_exposures]
         phdu['ipppssoo'] = ';'.join(ipppssoots)
     phdu['numexp'] = len(input_exposures)
 
