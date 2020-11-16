@@ -197,7 +197,7 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0):
     Parameters
     -----------
     results : str or list
-        Input poller file name or Python list of dataset names to be processed as a single visit.
+        Input poller file name or Python list of dataset names to be processed for a multi-visit.
         Dataset names have to be either the filename of a singleton (non-associated exposure) or the
         name of an ASN file (e.g., jabc01010_asn.fits).
 
@@ -222,18 +222,17 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0):
 
     Notes
     -------
-    Interpret the database query for a given obset to prepare the returned
-    values for use in generating the names of all the expected output products.
+    Interpret the contents of the MVM poller file for the values to use in generating
+    the names of all the expected output products.
 
     Input will have format of:
-
-        ib4606c5q_flc.fits,11665,B46,06,1.0,F555W,UVIS,/ifs/archive/ops/hst/public/ib46/ib4606c5q/ib4606c5q_flc.fits
+        ib4606c5q_flc.fits,11665,B46,06,1.0,F555W,UVIS,skycell-p2381x05y09,NEW,/ifs/archive/ops/hst/public/ib46/ib4606c5q/ib4606c5q_flc.fits
 
         which are
-        filename, proposal_id, program_id, obset_id, exptime, filters, detector, pathname, skycell_ids, skycell_processed
+        filename, proposal_id, program_id, obset_id, exptime, filters, detector, skycell-p<PPPP>x<XX>y<YY>, [OLD|NEW], pathname
 
     The SkyCell ID will be included in this input information to allow for
-    grouping of exposures into the same SkyCell layer based on filter, exptime and year.
+    grouping of exposures into the same SkyCell layer based on filter, exptime, and year.
 
     Output dict will have only have definitions for each defined sky cell layer to
     be either created or updated based on the input exposures being processed.
@@ -251,7 +250,7 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0):
         .
         .
         .
-        obs_info_dict["layer 01": {"info": '11665 06 wfc3 uvis f555w long 2011 drc',
+        obs_info_dict["layer 02": {"info": '11665 06 wfc3 uvis f555w long 2011 drc',
                                    "files": ['ib4606c9q_flc.fits', 'ib4606ceq_flc.fits']}
         .
         .
@@ -822,7 +821,6 @@ def build_poller_table(input, log_level, poller_type='svm'):
         cols[cname] = []
     cols['filename'] = usable_datasets
 
-
     if poller_type == 'mvm':
         # determine sky-cell ID for input exposures now...
         scells = cell_utils.get_sky_cells(usable_datasets)
@@ -875,6 +873,8 @@ def build_poller_table(input, log_level, poller_type='svm'):
                 if d == input_table['filename'][i]:
                     good_rows.append(old_row)
 
+        # This table contains the pipeline specified skycell_id for each row
+        # which should be the same value in every row
         poller_table = Table(rows=good_rows, names=input_table.colnames,
                              dtype=poller_dtype)
 
@@ -914,6 +914,20 @@ def build_poller_table(input, log_level, poller_type='svm'):
                             poller_row['skycell_obj'] = scell_obj
                             # append new row to table
                             new_poller_table.add_row(poller_row[0])
+
+        # All the work has been done to setup the poller table which accommodates
+        # both a pipeline supplied poller file, as well as a list of filenames.  The
+        # table contains all sky cells that overlap with the input files.  However, the
+        # pipeline supplied poller file originally specified the single skycell to be
+        # processed under "pipeline" conditions. If this invocation is by a poller file,
+        # then trim the table to contain only the rows which match the sky cell specified
+        # in the poller file.
+        pipeline_skycell_id = poller_table[0]['skycell_id']
+        new_poller_table = new_poller_table[new_poller_table['skycell_id'] == pipeline_skycell_id]
+        if not new_poller_table:
+            log.error("No sky cell found which matches the sky cell specified in the poller file {}.".format(pipeline_skycell_id))
+            sys.exit(0)
+
         poller_table = new_poller_table
 
     return poller_table
