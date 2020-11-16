@@ -522,7 +522,7 @@ class ExposureProduct(HAPProduct):
 
         # Add HAP keywords as required by pipeline processing
         with fits.open(edp_filename, mode='update') as edp_hdu:
-            edp_hdu[0].header['HAPLEVEL'] = (0, 'Classificaion level of this product')
+            edp_hdu[0].header['HAPLEVEL'] = (0, 'Classification level of this product')
             edp_hdu[0].header['IPPPSSOO'] = edp_hdu[0].header['ROOTNAME']
             edp_hdu[0].header['FILENAME'] = edp_filename
 
