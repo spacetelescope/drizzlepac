@@ -496,13 +496,13 @@ def parse_mvm_tree(det_tree, log_level):
                 # Primarily for WFC3/IR fine vs coarse layers
                 if pscale == 'coarse':
                     fprod = FP_STR.format(filt_indx)
-                    obset_products[fprod] = {'info': "", 'files': []}
                     filt_indx += 1
                     # Generate 'fine' layer as well
                     prod_info_fine = prod_info.replace('coarse', 'fine')
-                    layer_fine = layer.replace('coarse', 'fine')
-                    if not obset_products[fprod]['info']:
+                    layer_fine = (layer[0], 'fine') + layer[2:]
 
+                    if not obset_products[fprod]['info']:
+                        obset_products[fprod] = {'info': "", 'files': []}
                         obset_products[fprod]['info'] = prod_info_fine
 
                         # Create a filter product object for this instrument/detector
