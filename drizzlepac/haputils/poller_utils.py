@@ -821,7 +821,6 @@ def build_poller_table(input, log_level, poller_type='svm'):
         cols[cname] = []
     cols['filename'] = usable_datasets
 
-
     if poller_type == 'mvm':
         # determine sky-cell ID for input exposures now...
         scells = cell_utils.get_sky_cells(usable_datasets)
@@ -874,6 +873,8 @@ def build_poller_table(input, log_level, poller_type='svm'):
                 if d == input_table['filename'][i]:
                     good_rows.append(old_row)
 
+        # This table contains the pipeline specified skycell_id for each row
+        # which should be the same value in every row
         poller_table = Table(rows=good_rows, names=input_table.colnames,
                              dtype=poller_dtype)
 
@@ -913,6 +914,20 @@ def build_poller_table(input, log_level, poller_type='svm'):
                             poller_row['skycell_obj'] = scell_obj
                             # append new row to table
                             new_poller_table.add_row(poller_row[0])
+
+        # All the work has been done to setup the poller table which accommodates
+        # both a pipeline supplied poller file, as well as a list of filenames.  The
+        # table contains all sky cells that overlap with the input files.  However, the
+        # pipeline supplied poller file originally specified the single skycell to be
+        # processed under "pipeline" conditions. If this invocation is by a poller file,
+        # then trim the table to contain only the rows which match the sky cell specified
+        # in the poller file.
+        pipeline_skycell_id = poller_table[0]['skycell_id']
+        new_poller_table = new_poller_table[new_poller_table['skycell_id'] == pipeline_skycell_id]
+        if not new_poller_table:
+            log.error("No sky cell found which matches the sky cell specified in the poller file {}.".format(pipeline_skycell_id))
+            sys.exit(0)
+
         poller_table = new_poller_table
 
     return poller_table
