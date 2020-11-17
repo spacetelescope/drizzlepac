@@ -162,8 +162,7 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
                     for tot_obj in total_obj_list:
                         for exposure in tot_obj.edp_list:
                             if rootname in exposure.full_filename:
-                                name_col.append(exposure.drizzle_filename)
-                                foundit = True
+                                name_col.append(exposure.product_basename)
                                 break
 
     # define new column with HAP expname

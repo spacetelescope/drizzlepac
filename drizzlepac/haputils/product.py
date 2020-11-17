@@ -520,8 +520,11 @@ class ExposureProduct(HAPProduct):
         except PermissionError:
             pass
 
-        # Add HAPLEVEL keyword as required by pipeline processing
-        fits.setval(edp_filename, 'HAPLEVEL', value=0, comment='Classificaion level of this product')
+        # Add HAP keywords as required by pipeline processing
+        with fits.open(edp_filename, mode='update') as edp_hdu:
+            edp_hdu[0].header['HAPLEVEL'] = (0, 'Classification level of this product')
+            edp_hdu[0].header['IPPPSSOO'] = edp_hdu[0].header['ROOTNAME']
+            edp_hdu[0].header['FILENAME'] = edp_filename
 
         return edp_filename
 
