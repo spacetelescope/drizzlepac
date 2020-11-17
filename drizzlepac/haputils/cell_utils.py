@@ -106,7 +106,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     sky_grid = GridDefs(scale=scale, cell_size=cell_size)
 
     # build reference wcs for combined footprint of all input exposures
-    meta_wcs = wcs_functions.make_mosaic_wcs(expnames, scale=sky_grid.scale)
+    meta_wcs = wcs_functions.make_mosaic_wcs(expnames, rot=0.0, scale=sky_grid.scale)
 
     # create footprint on the sky (as a tangent plane array) for all input exposures using meta_wcs
     footprint = SkyFootprint(meta_wcs)
@@ -552,7 +552,7 @@ class SkyCell(object):
         Parameters
         ===========
         name : str, optional
-            Name of the sky cell in the format 'skycell_p1234_x01y01'
+            Name of the sky cell in the format 'skycell-p1234x01y01'
 
         projection_cell : object, optional
             ProjectionCell instance which this SkyCell will be based upon.
