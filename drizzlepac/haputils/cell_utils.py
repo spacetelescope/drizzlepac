@@ -29,6 +29,8 @@ SKYCELL_NAME_FMT = f"skycell-p{{:{str(PCELL_STRLEN).zfill(2)}d}}x{{:02d}}y{{:02d
 SKYCELL_NXY = 50
 SKYCELL_OVERLAP = 256
 
+SUPPORTED_SCALES = {'fine': 0.04, 'coarse': 0.12}  # arcseconds/pixel
+
 
 def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     """Return all sky cells that overlap the exposures in the input.
@@ -104,7 +106,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     sky_grid = GridDefs(scale=scale, cell_size=cell_size)
 
     # build reference wcs for combined footprint of all input exposures
-    meta_wcs = wcs_functions.make_mosaic_wcs(expnames, scale=sky_grid.scale)
+    meta_wcs = wcs_functions.make_mosaic_wcs(expnames, rot=0.0, scale=sky_grid.scale)
 
     # create footprint on the sky (as a tangent plane array) for all input exposures using meta_wcs
     footprint = SkyFootprint(meta_wcs)
@@ -393,11 +395,11 @@ class ProjectionCell(object):
         obtain the band definition for the cell with the specified `index`.
 
         """
+        self.scale = scale
         if band:
             self.band_index = index
             self.band = band
             self.cell_id = band['PROJCELL'] + index
-            self.scale = scale
         else:
             self._from_index(index)
 
@@ -415,7 +417,7 @@ class ProjectionCell(object):
         self.band = grid_defs.find_ring_by_id(id)
         self.band_index = id - self.band['projcell']
         self.cell_id = id
-        self.scale = grid_defs.scale
+        self.scale = grid_defs.scale if self.scale is None else self.scale
         self.sc_overlap = grid_defs.sc_overlap
         self.sc_nxy = grid_defs.sc_nxy
 
@@ -544,10 +546,34 @@ class ProjectionCell(object):
 
 class SkyCell(object):
 
-    def __init__(self, name=None, projection_cell=None, x=None, y=None):
+    def __init__(self, name=None, projection_cell=None, x=None, y=None, scale="fine"):
         """Define sky cell at position x,y within projection cell.
-        X,Y positions need to be 1-based.
+
+        Parameters
+        ===========
+        name : str, optional
+            Name of the sky cell in the format 'skycell-p1234x01y01'
+
+        projection_cell : object, optional
+            ProjectionCell instance which this SkyCell will be based upon.
+
+        x : int, optional
+            X position (1-based) of this SkyCell within the ProjectionCell
+
+        y : int, optional
+            Y position (1-based) of this SkyCell within the ProjectionCell
+
+        scale : str or float, optional
+            Plate scale to be used to define the SkyCell WCS.  The strings
+            'fine' or 'coarse' can be used to refer to default plate scales.
+            Default values are specified in the dict `cell_utils.SUPPORTED_SCALES`.
+            Alternatively, floating-point values can be provided to specify
+            the exact pixel size in arcseconds/pixel should be used.
+
         """
+        # Interpret scale term, if provided
+        self.scale = SUPPORTED_SCALES.get(scale, None) if isinstance(scale, str) else scale
+
         if name:
             self._from_name(name)
         else:
@@ -581,24 +607,28 @@ class SkyCell(object):
         pass
 
     def _build_wcs(self):
-        pc_nx = self.projection_cell.wcs.pixel_shape[0]
-        pc_ny = self.projection_cell.wcs.pixel_shape[1]
-        naxis1 = int((pc_nx - 2 * self.overlap) / self.nxy + 0.5)
-        naxis2 = int((pc_ny - 2 * self.overlap) / self.nxy + 0.5)
-        crpix1 = self.projection_cell.wcs.wcs.crpix[0] - (((self.x_index) * naxis1) - self.overlap)
-        crpix2 = self.projection_cell.wcs.wcs.crpix[1] - (((self.y_index) * naxis2) - self.overlap)
+        # Determine plate scale ratio between sky cell layer and projection cell
+        ratio = self.projection_cell.wcs.pscale / self.scale
+        # Define attributes based on projection cell
+        pc_nx = self.projection_cell.wcs.pixel_shape[0] * ratio
+        pc_ny = self.projection_cell.wcs.pixel_shape[1] * ratio
+
+        naxis1 = int((pc_nx - (2 * self.overlap)) / self.nxy + 0.5)
+        naxis2 = int((pc_ny - (2 * self.overlap)) / self.nxy + 0.5)
+        crpix1 = (self.projection_cell.wcs.wcs.crpix[0] * ratio) - ((self.x_index * naxis1) - self.overlap)
+        crpix2 = (self.projection_cell.wcs.wcs.crpix[1] * ratio) - ((self.y_index * naxis2) - self.overlap)
 
         # apply definitions
         self.wcs = astropy.wcs.WCS(naxis=2)
         self.wcs.wcs.crpix = [crpix1, crpix2]
         self.wcs.wcs.crval = self.projection_cell.wcs.wcs.crval
-        self.wcs.wcs.cd = self.projection_cell.wcs.wcs.cd
+        self.wcs.wcs.cd = self.projection_cell.wcs.wcs.cd / ratio
         self.wcs.wcs.ctype = ['RA---TAN', 'DEC--TAN']
         self.wcs.pixel_shape = (naxis1, naxis2)
-        self.wcs.ltv1 = self.projection_cell.wcs.wcs.crpix[0] - crpix1
-        self.wcs.ltv2 = self.projection_cell.wcs.wcs.crpix[1] - crpix2
+        self.wcs.ltv1 = (self.projection_cell.wcs.wcs.crpix[0] * ratio) - crpix1
+        self.wcs.ltv2 = (self.projection_cell.wcs.wcs.crpix[1] * ratio) - crpix2
         self.wcs.orientat = self.projection_cell.wcs.orientat
-        self.wcs.pscale = self.projection_cell.wcs.pscale
+        self.wcs.pscale = self.projection_cell.wcs.pscale / ratio
 
         self.corners = self.wcs.calc_footprint()
         # close the polygon
@@ -612,8 +642,8 @@ class SkyCell(object):
                                                    inner_pix)
     def build_mask(self):
         naxis1, naxis2 = self.wcs.pixel_shape
-        edges_x = [0]*naxis2 + [naxis1-1]*naxis2 + list(range(naxis1)) * 2
-        edges_y = list(range(naxis2)) * 2 + [0]*naxis1 + [naxis2-1]*naxis1
+        edges_x = [0] * naxis2 + [naxis1 - 1] * naxis2 + list(range(naxis1)) * 2
+        edges_y = list(range(naxis2)) * 2 + [0] * naxis1 + [naxis2 - 1] * naxis1
 
         polygon = list(zip(edges_x, edges_y))
         img = Image.new("L", (naxis1, naxis2), 0)

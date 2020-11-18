@@ -9,6 +9,7 @@ import os
 import sys
 from collections import OrderedDict
 import numpy as np
+import copy
 
 from sklearn.cluster import KMeans
 
@@ -191,7 +192,7 @@ def create_row_info(row):
 # -----------------------------------------------------------------------------
 # Multi-Visit Processing Functions
 #
-def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0):
+def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0, user_table=None):
     """
 
     Parameters
@@ -260,9 +261,12 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0):
     # set logging level to user-specified level
     log.setLevel(log_level)
 
-    log.debug("Interpret the poller file for the observation set.")
-    obset_table = build_poller_table(results, log_level,
-                                     poller_type='mvm')
+    if not user_table:
+        log.debug("Interpret the poller file for the observation set.")
+        obset_table = build_poller_table(results, log_level,
+                                         poller_type='mvm')
+    else:
+        obset_table = copy.deepcopy(user_table)
 
     # Add INSTRUMENT column
     instr = INSTRUMENT_DICT[obset_table['filename'][0][0]]
@@ -408,7 +412,7 @@ def parse_mvm_tree(det_tree, log_level):
     prev_det_indx = 0
     det_indx = 0
     filt_indx = 0
-    sep_indx = 0
+    filt_indx_inc = 1
 
     tdp_list = []
 
@@ -428,10 +432,11 @@ def parse_mvm_tree(det_tree, log_level):
         #            ('skycell_p1234_x01y01 WFC3 UVIS IACS01TBQ F200LP 1', 'iacs01tbq_flt.fits')]}
 
         for filter_files in filt_tree.values():
+
             # Use this to create and populate filter product dictionary entry
             fprod = FP_STR.format(filt_indx)
             obset_products[fprod] = {'info': "", 'files': []}
-            filt_indx += 1
+
             # Populate single exposure dictionary entry now as well
             # filename = ('skycell_p1234_x01y01 WFC3 UVIS IACS01T9Q F200LP 1', 'iacs01t9q_flt.fits')
             #
@@ -455,6 +460,8 @@ def parse_mvm_tree(det_tree, log_level):
 
                 prod_list = prod_info.split(" ")
                 pscale = 'fine' if prod_list[2].upper() != 'IR' else 'coarse'
+                prod_info += " {:s}".format(pscale)
+
                 if prod_list[5].strip() != '':
                     layer = (prod_list[3], pscale, prod_list[4], prod_list[5])
                 else:
@@ -492,8 +499,29 @@ def parse_mvm_tree(det_tree, log_level):
                 # Populate filter product dictionary with input filename
                 obset_products[fprod]['files'].append(filename[1])
 
-                # Increment single exposure index
-                sep_indx += 1
+                # Check to see whether an additional layer with a different plate scale should be generated
+                # Primarily for WFC3/IR fine vs coarse layers
+                if pscale == 'coarse':
+                    fprod_fine = FP_STR.format(filt_indx + 1)
+                    filt_indx_inc = 2
+                    # Generate 'fine' layer as well
+                    prod_info_fine = prod_info.replace('coarse', 'fine')
+                    layer_fine = (layer[0], 'fine') + layer[2:]
+
+                    if fprod_fine not in obset_products:
+                        obset_products[fprod_fine] = {'info': prod_info_fine, 'files': []}
+
+                        # Create a filter product object for this instrument/detector
+                        # FilterProduct(prop_id, obset_id, instrument, detector,
+                        #               filename, filters, filetype, log_level)
+                        filt_obj_fine = SkyCellProduct(str(0), str(0), prod_list[1], prod_list[2],
+                                                 prod_list[0], layer_fine, ftype, log_level)
+
+                    obset_products[fprod_fine]['files'].append(filename[1])
+                    filt_obj_fine.add_member(sep_obj)
+
+
+            filt_indx += filt_indx_inc
 
             # Add this filter object to the list for creating that layer BUT
             # ONLY if there are new exposures being processed for this layer,
@@ -507,6 +535,8 @@ def parse_mvm_tree(det_tree, log_level):
                                            filt_obj.detector))
             # Add the total product object to the list of TotalProducts
             tdp_list.append(filt_obj)
+            if pscale == 'coarse':
+                tdp_list.append(filt_obj_fine)
 
     # Done... return dict and object product list
     return obset_products, tdp_list

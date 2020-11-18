@@ -189,6 +189,7 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         logname = input_filename.replace('.out', '.log')
     else:
         logname = 'mvm_process.log'
+
     # Initialize total trailer filename as temp logname
     logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
     # start processing

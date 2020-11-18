@@ -669,6 +669,7 @@ class SkyCellProduct(HAPProduct):
         filter_str = layer[0]
         self.filters = filter_str
         layer_str = '-'.join(layer[1:])
+        layer_scale = layer[1]
 
         self.info = '_'.join(['hst', skycell_name, instrument, detector, filter_str, layer_str])
 
@@ -698,7 +699,7 @@ class SkyCellProduct(HAPProduct):
         self.edp_list = []
         self.new_to_layer = 0
         self.regions_dict = {}
-        self.skycell = cell_utils.SkyCell(name=skycell_name)
+        self.skycell = cell_utils.SkyCell(name=skycell_name, scale=layer_scale)
         self.configobj_pars = None
 
         log.debug("SkyCell object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
