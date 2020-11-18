@@ -861,9 +861,9 @@ def build_poller_table(input, log_level, poller_type='svm'):
         skycell_obj = cell_utils.SkyCell(name=pipeline_skycell_id)
         skycell_obj.members = filenames
         scells[pipeline_skycell_id] = skycell_obj
-        print("type: {} scells: {}".format(type(scells), scells))
+        log.debug("MVM and poller file. scells: {}".format(scells))
         scell_files = cell_utils.interpret_scells(scells)
-        print("type: {} scell_files: {}".format(type(scell_files), scell_files))
+        log.debug("MVM and poller file. scell_files: {}".format(scell_files))
 
     # If processing a list of files, evaluate each input dataset for the information needed
     # for the poller file
