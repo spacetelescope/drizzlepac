@@ -546,7 +546,7 @@ class ProjectionCell(object):
 
 class SkyCell(object):
 
-    def __init__(self, name=None, projection_cell=None, x=None, y=None, scale=None):
+    def __init__(self, name=None, projection_cell=None, x=None, y=None, scale="fine"):
         """Define sky cell at position x,y within projection cell.
 
         Parameters
@@ -596,7 +596,7 @@ class SkyCell(object):
 
         self.x_index = int(scell_id[6:8])
         self.y_index = int(scell_id[9:11])
-        self.projection_cell = ProjectionCell(index=pcell_id, scale=self.scale)
+        self.projection_cell = ProjectionCell(index=pcell_id)
         self.sky_cell_id = name
 
     def __repr__(self):
@@ -607,24 +607,28 @@ class SkyCell(object):
         pass
 
     def _build_wcs(self):
-        pc_nx = self.projection_cell.wcs.pixel_shape[0]
-        pc_ny = self.projection_cell.wcs.pixel_shape[1]
-        naxis1 = int((pc_nx - 2 * self.overlap) / self.nxy + 0.5)
-        naxis2 = int((pc_ny - 2 * self.overlap) / self.nxy + 0.5)
-        crpix1 = self.projection_cell.wcs.wcs.crpix[0] - (((self.x_index) * naxis1) - self.overlap)
-        crpix2 = self.projection_cell.wcs.wcs.crpix[1] - (((self.y_index) * naxis2) - self.overlap)
+        # Determine plate scale ratio between sky cell layer and projection cell
+        ratio = self.projection_cell.wcs.pscale / self.scale
+        # Define attributes based on projection cell
+        pc_nx = self.projection_cell.wcs.pixel_shape[0] * ratio
+        pc_ny = self.projection_cell.wcs.pixel_shape[1] * ratio
+
+        naxis1 = int((pc_nx - (2 * self.overlap)) / self.nxy + 0.5)
+        naxis2 = int((pc_ny - (2 * self.overlap)) / self.nxy + 0.5)
+        crpix1 = (self.projection_cell.wcs.wcs.crpix[0] * ratio) - ((self.x_index * naxis1) - self.overlap)
+        crpix2 = (self.projection_cell.wcs.wcs.crpix[1] * ratio) - ((self.y_index * naxis2) - self.overlap)
 
         # apply definitions
         self.wcs = astropy.wcs.WCS(naxis=2)
         self.wcs.wcs.crpix = [crpix1, crpix2]
         self.wcs.wcs.crval = self.projection_cell.wcs.wcs.crval
-        self.wcs.wcs.cd = self.projection_cell.wcs.wcs.cd
+        self.wcs.wcs.cd = self.projection_cell.wcs.wcs.cd / ratio
         self.wcs.wcs.ctype = ['RA---TAN', 'DEC--TAN']
         self.wcs.pixel_shape = (naxis1, naxis2)
-        self.wcs.ltv1 = self.projection_cell.wcs.wcs.crpix[0] - crpix1
-        self.wcs.ltv2 = self.projection_cell.wcs.wcs.crpix[1] - crpix2
+        self.wcs.ltv1 = (self.projection_cell.wcs.wcs.crpix[0] * ratio) - crpix1
+        self.wcs.ltv2 = (self.projection_cell.wcs.wcs.crpix[1] * ratio) - crpix2
         self.wcs.orientat = self.projection_cell.wcs.orientat
-        self.wcs.pscale = self.projection_cell.wcs.pscale
+        self.wcs.pscale = self.projection_cell.wcs.pscale / ratio
 
         self.corners = self.wcs.calc_footprint()
         # close the polygon
@@ -638,8 +642,8 @@ class SkyCell(object):
                                                    inner_pix)
     def build_mask(self):
         naxis1, naxis2 = self.wcs.pixel_shape
-        edges_x = [0]*naxis2 + [naxis1-1]*naxis2 + list(range(naxis1)) * 2
-        edges_y = list(range(naxis2)) * 2 + [0]*naxis1 + [naxis2-1]*naxis1
+        edges_x = [0] * naxis2 + [naxis1 - 1] * naxis2 + list(range(naxis1)) * 2
+        edges_y = list(range(naxis2)) * 2 + [0] * naxis1 + [naxis2 - 1] * naxis1
 
         polygon = list(zip(edges_x, edges_y))
         img = Image.new("L", (naxis1, naxis2), 0)
