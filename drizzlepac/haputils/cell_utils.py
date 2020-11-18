@@ -588,7 +588,7 @@ class SkyCell(object):
 
         self._build_wcs()
 
-    def _from_name(self, name, scale=None):
+    def _from_name(self, name):
         # parse name into projection cell and sky cell designations
         sc_names = name.split('-')
         scell_id = sc_names[1]
