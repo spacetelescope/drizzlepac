@@ -851,10 +851,18 @@ def build_poller_table(input, log_level, poller_type='svm'):
         cols[cname] = []
     cols['filename'] = usable_datasets
 
-    if poller_type == 'mvm':
-        # determine sky-cell ID for input exposures now...
-        scells = cell_utils.get_sky_cells(usable_datasets)
+    # If MVM processing and a poller file is the input, this implies there is
+    # only one skycell of interest for all the listed filenames in the poller
+    # file. Establish the WCS, but no need for discovery of overlapping skycells
+    # as would be the case for an input list of filenames.
+    if poller_type == 'mvm' and is_poller_file:
+        pipeline_skycell_id = input_table[0]['skycell_id']
+        scells = {}
+        skycell_obj = cell_utils.SkyCell(name=pipeline_skycell_id)
+        skycell_obj.members = filenames
+        scells[pipeline_skycell_id] = skycell_obj
         scell_files = cell_utils.interpret_scells(scells)
+        log.debug("MVM and poller file. scell_files: {}".format(scell_files))
 
     # If processing a list of files, evaluate each input dataset for the information needed
     # for the poller file
