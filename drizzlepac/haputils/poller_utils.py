@@ -861,7 +861,6 @@ def build_poller_table(input, log_level, poller_type='svm'):
         skycell_obj = cell_utils.SkyCell(name=pipeline_skycell_id)
         skycell_obj.members = filenames
         scells[pipeline_skycell_id] = skycell_obj
-        log.debug("MVM and poller file. scells: {}".format(scells))
         scell_files = cell_utils.interpret_scells(scells)
         log.debug("MVM and poller file. scell_files: {}".format(scell_files))
 
