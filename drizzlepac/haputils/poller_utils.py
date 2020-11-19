@@ -6,6 +6,7 @@ parse_obset_tree, converts the tree into product catagories.
 
 """
 import os
+import pdb
 import sys
 from collections import OrderedDict
 import numpy as np
@@ -788,6 +789,7 @@ def build_poller_table(input, log_level, poller_type='svm'):
         log.error("{}: Input {} not supported as input for processing.".format(id, input))
         raise ValueError
 
+    # TODO: Need to add logic here or somewhere nearby to do the following: 1: check if file in the poller file exists locally. If they don't, try to copy them in from the path specified in the poller file. Failing that, download it using aqutils.retrieve_observation()
     # At this point, we have a poller file or a list of filenames.  If the latter, then any individual
     # filename can be a singleton or an association name.  We need to get the full list of actual
     # filenames from the association name.
