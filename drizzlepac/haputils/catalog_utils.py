@@ -112,10 +112,8 @@ class CatalogImage:
                                     nsigma_clip=nsigma_clip,
                                     maxiters=maxiters)
 
-        if self.keyword_dict['detector'].upper() == 'IR':
-            good_fwhm = [1.0, 2.0]
-        else:
-            good_fwhm = [2.0, 3.5]
+        log.info("Attempt to determine FWHM based upon input data within a good FWHM range of {:.1f} to {:.1f}.".format(good_fwhm[0], good_fwhm[1]))
+        log.info("If no good FWHM candidate is identified, a value of {:.1f} will be used instead.".format(fwhmpsf/self.imgwcs.pscale))
         k, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
                                                                   self.wht_image,
                                                                   good_fwhm=good_fwhm,
