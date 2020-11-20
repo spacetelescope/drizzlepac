@@ -5,10 +5,12 @@ poller, and produces a tree listing of the output products.  The function,
 parse_obset_tree, converts the tree into product catagories.
 
 """
+from collections import OrderedDict
 import os
 import pdb
+import shutil
 import sys
-from collections import OrderedDict
+
 import numpy as np
 
 from sklearn.cluster import KMeans
@@ -772,6 +774,22 @@ def build_poller_table(input, log_level, poller_type='svm'):
                 input_table['skycell_new'] = [int(not BOOL_STR_DICT[str(val).upper()]) for val in input_table['skycell_new']]
             is_poller_file = True
 
+            # Check that each file listed in the poller file exists in the current working directory. If a
+            # file is missing, copy it over from the path specified in the poller file. Failing that, raise
+            # an exception and exit.
+            for table_line in input_table:
+                if os.path.exists(table_line['filename']):
+                    log.info("Input image {} found in current working directory.".format(table_line['filename']))
+                elif os.path.exists(table_line['pathname']):
+                    log.info("Input image {} not found in current working directory. However, it was found in the path specified in the poller file.".format(table_line['filename']))
+                    shutil.copy(table_line['pathname'], os.getcwd())
+                    log.info("Input image {} copied to current working directory.".format(table_line['pathname']))
+                else:
+                    log.error("Input image {} not found in current working directory.".format(table_line['filename']))
+                    log.error("Input image {} not found.".format(table_line['pathname']))
+                    err_msg = "Input image {} missing from current working directory and from the path specified in the poller file. Exiting... ".format(table_line['filename'])
+                    log.error(err_msg)
+                    raise Exception(err_msg)
         elif len(input_table.columns) == 1:
             input_table.columns[0].name = 'filename'
             is_poller_file = False
@@ -789,7 +807,6 @@ def build_poller_table(input, log_level, poller_type='svm'):
         log.error("{}: Input {} not supported as input for processing.".format(id, input))
         raise ValueError
 
-    # TODO: Need to add logic here or somewhere nearby to do the following: 1: check if file in the poller file exists locally. If they don't, try to copy them in from the path specified in the poller file. Failing that, download it using aqutils.retrieve_observation()
     # At this point, we have a poller file or a list of filenames.  If the latter, then any individual
     # filename can be a singleton or an association name.  We need to get the full list of actual
     # filenames from the association name.
