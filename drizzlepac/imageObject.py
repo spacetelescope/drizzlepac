@@ -981,7 +981,8 @@ class imageObject(baseImageObject):
         self._rootname=fileutil.buildNewRootname(filename)
         self.outputNames=self._setOutputNames(self._rootname)
         self.outroot = output.split('_')[0] if output else filename.split('_')[0]
-
+        self.outroot = self.outroot.lower()
+        
         # flag to indicate whether or not to write out intermediate products
         # to disk (default) or keep everything in memory
         self.inmemory = inmemory
