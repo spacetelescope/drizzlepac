@@ -16,8 +16,8 @@ class STISInputImage (imageObject):
 
     SEPARATOR = '_'
 
-    def __init__(self,filename=None, group=None):
-        super().__init__(filename, group=group)
+    def __init__(self,filename=None, output=None, group=None):
+        super().__init__(filename, output=output, group=group)
 
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 8192
@@ -107,15 +107,14 @@ class STISInputImage (imageObject):
         ny=sci_chip._naxis1
         nx=sci_chip._naxis2
         detnum = sci_chip.detnum
-        instr=self._instrument
 
-        sig=(instr+self._detector,(nx,ny),int(detnum)) #signature is a tuple
+        sig=(self.outroot,(nx,ny),int(detnum)) #signature is a tuple
         sci_chip.signature=sig #signature is a tuple
 
 
 class CCDInputImage(STISInputImage):
-    def __init__(self, filename=None, group=None):
-        super().__init__(filename, group=group)
+    def __init__(self, filename=None, output=None, group=None):
+        super().__init__(filename, output=output, group=group)
 
         self.full_shape = (1024, 1024)
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
@@ -187,10 +186,10 @@ class CCDInputImage(STISInputImage):
 
 
 class NUVInputImage(STISInputImage):
-    def __init__(self, filename, group=None):
+    def __init__(self, filename, output=None, group=None):
         self.effGain = 1.0
 
-        super().__init__(filename, group=None)
+        super().__init__(filename, output=output, group=group)
 
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
 
@@ -302,9 +301,9 @@ class NUVInputImage(STISInputImage):
 
 
 class FUVInputImage(STISInputImage):
-    def __init__(self,filename=None,group=None):
+    def __init__(self, filename=None, output=None, group=None):
         self.effGain=1.0
-        super().__init__(filename, group=group)
+        super().__init__(filename, output=output, group=group)
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
 
         # no cte correction for STIS/FUV-MAMA so set cte_dir=0.

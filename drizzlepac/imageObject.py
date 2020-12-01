@@ -966,7 +966,7 @@ class imageObject(baseImageObject):
         only to the specific chip.
     """
 
-    def __init__(self,filename,group=None,inmemory=False):
+    def __init__(self,filename, output=None, group=None,inmemory=False):
         super().__init__(filename)
 
         #filutil open returns a fits object
@@ -980,6 +980,7 @@ class imageObject(baseImageObject):
         #self._rootname=self._image['PRIMARY'].header["ROOTNAME"]
         self._rootname=fileutil.buildNewRootname(filename)
         self.outputNames=self._setOutputNames(self._rootname)
+        self.outroot = output.split('_')[0] if output else filename.split('_')[0]
 
         # flag to indicate whether or not to write out intermediate products
         # to disk (default) or keep everything in memory

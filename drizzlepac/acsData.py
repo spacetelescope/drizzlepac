@@ -15,8 +15,8 @@ class ACSInputImage(imageObject):
 
     SEPARATOR = '_'
 
-    def __init__(self,filename=None,group=None):
-        super().__init__(filename, group=group)
+    def __init__(self,filename=None, output=None, group=None):
+        super().__init__(filename, output=output, group=group)
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]
@@ -50,9 +50,8 @@ class ACSInputImage(imageObject):
         ny=sci_chip._naxis1
         nx=sci_chip._naxis2
         detnum = sci_chip.detnum
-        instr=self._instrument
 
-        sig = (instr + self._detector, (nx, ny), int(chip))  # signature is a tuple
+        sig = (self.outroot, (nx, ny), int(chip))  # signature is a tuple
         sci_chip.signature=sig  # signature is a tuple
 
     def getdarkcurrent(self,extver):
@@ -89,8 +88,8 @@ class ACSInputImage(imageObject):
 
 
 class WFCInputImage(ACSInputImage):
-    def __init__(self, filename=None, group=None):
-        super().__init__(filename, group=group)
+    def __init__(self, filename=None,  output=None, group=None):
+        super().__init__(filename, output=output, group=group)
         self.full_shape = (4096, 2048)
         self._detector=self._image["PRIMARY"].header["DETECTOR"]
 
@@ -147,8 +146,8 @@ class WFCInputImage(ACSInputImage):
 
 
 class HRCInputImage (ACSInputImage):
-    def __init__(self, filename=None, group=None):
-        super().__init__(filename, group=group)
+    def __init__(self, filename=None,  output=None, group=None):
+        super().__init__(filename, output=output, group=group)
         self._detector = self._image['PRIMARY'].header["DETECTOR"]
         self.full_shape = (1024, 1024)
         amp = self._image['PRIMARY'].header["CCDAMP"]
@@ -208,8 +207,8 @@ class HRCInputImage (ACSInputImage):
 
 
 class SBCInputImage (ACSInputImage):
-    def __init__(self, filename=None, group=None):
-        super().__init__(filename, group=group)
+    def __init__(self, filename=None,  output=None, group=None):
+        super().__init__(filename, output=output, group=group)
         self.full_shape = (1024, 1024)
         self._detector = self._image['PRIMARY'].header["DETECTOR"]
 
