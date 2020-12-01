@@ -732,6 +732,14 @@ def build_poller_table(input, log_level, poller_type='svm'):
     input : str, list
         Filename with list of dataset names, or just a Python list of dataset names, provided by the user.
 
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .
+        log file.
+
+    poller_type : str, optional
+        The type of poller file being processed. Either 'svm' for single visit mosaic, or 'mvm' for
+        multi-visit mosaic. Unless explicitly specified, the default value is 'svm'.
+
     Returns
     --------
     poller_table : Table
