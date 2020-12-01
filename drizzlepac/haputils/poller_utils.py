@@ -40,11 +40,11 @@ POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
 POLLER_DTYPE = ('str', 'int', 'str', 'str', 'float', 'object', 'str', 'str')
 
 MVM_POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
-                       'exptime', 'filters', 'detector', 'pathname',
-                       'skycell_id', 'skycell_new']
+                       'exptime', 'filters', 'detector',
+                       'skycell_id', 'skycell_new', 'pathname']
 MVM_POLLER_DTYPE = ('str', 'int', 'str', 'str',
                     'float', 'object', 'str', 'str',
-                    'str', 'int')
+                    'str', 'str')
 
 BOOL_STR_DICT = {'TRUE': True, 'FALSE': False, 'T': True, 'F': False, '1': True, '0': False}
 
@@ -771,6 +771,11 @@ def build_poller_table(input, log_level, poller_type='svm'):
             # This code interprets that as False since it is NOT new, so the code
             # inverts the meaning from the pipeline poller file.
             if poller_type == 'mvm':
+                # Translate new format back to old format ("NEW" -> 0 and "OLD" -> 1)
+                poller_table_mapping = {"NEW": 0, "OLD": 1}
+                for tbl_ctr in range(0, len(input_table)):
+                    if input_table[tbl_ctr]['skycell_new'] in ["OLD", "NEW"]:
+                        input_table[tbl_ctr]['skycell_new'] = poller_table_mapping[input_table[tbl_ctr]['skycell_new']]
                 input_table['skycell_new'] = [int(not BOOL_STR_DICT[str(val).upper()]) for val in input_table['skycell_new']]
             is_poller_file = True
 
