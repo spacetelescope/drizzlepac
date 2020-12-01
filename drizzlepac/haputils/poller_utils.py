@@ -810,7 +810,7 @@ def build_poller_table(input, log_level, poller_type='svm'):
                     log.info("Input image {} copied to current working directory.".format(table_line['pathname']))
                 else:
                     log.error("Input image {} not found in current working directory.".format(table_line['filename']))
-                    log.error("Input image {} not found.".format(table_line['pathname']))
+                    log.error("Archived input image {} not found.".format(table_line['pathname']))
                     err_msg = "Input image {} missing from current working directory and from the path specified in the poller file. Exiting... ".format(table_line['filename'])
                     log.error(err_msg)
                     raise Exception(err_msg)
