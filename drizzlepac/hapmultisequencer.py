@@ -106,6 +106,10 @@ def create_drizzle_products(total_obj_list):
         product_list.append(filt_obj.drizzle_filename)
         product_list.append(filt_obj.trl_filename)
 
+        # Add individual single input images with updated WCS headers to manifest
+        for exposure_obj in filt_obj.edp_list:
+            product_list.append(exposure_obj.full_filename)
+
     # Ensure that all drizzled products have headers that are to specification
     try:
         log.info("Updating these drizzle products for CAOM compatibility:")
