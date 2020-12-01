@@ -7,7 +7,6 @@ parse_obset_tree, converts the tree into product catagories.
 """
 from collections import OrderedDict
 import os
-import pdb
 import shutil
 import sys
 
@@ -770,12 +769,19 @@ def build_poller_table(input, log_level, poller_type='svm'):
             # The input poller file reports True if it has been reprocessed.
             # This code interprets that as False since it is NOT new, so the code
             # inverts the meaning from the pipeline poller file.
+
             if poller_type == 'mvm':
                 # Translate new format back to old format ("NEW" -> 0 and "OLD" -> 1)
                 poller_table_mapping = {"NEW": 0, "OLD": 1}
                 for tbl_ctr in range(0, len(input_table)):
-                    if input_table[tbl_ctr]['skycell_new'] in ["OLD", "NEW"]:
-                        input_table[tbl_ctr]['skycell_new'] = poller_table_mapping[input_table[tbl_ctr]['skycell_new']]
+                    if input_table[tbl_ctr]['skycell_new'].upper() in ["OLD", "NEW"]:
+                        input_table[tbl_ctr]['skycell_new'] = poller_table_mapping[input_table[tbl_ctr]['skycell_new'].upper()]
+                    elif input_table[tbl_ctr]['skycell_new'] in ['0', '1']:
+                        continue
+                    else:
+                        err_msg = "'{}' is an invalid skycell_new poller file value. (Legal values: '0', or 'NEW', or '1' or 'OLD'). Exiting... ".format(input_table[tbl_ctr]['skycell_new'])
+                        log.error(err_msg)
+                        raise Exception(err_msg)
                 input_table['skycell_new'] = [int(not BOOL_STR_DICT[str(val).upper()]) for val in input_table['skycell_new']]
             is_poller_file = True
 
