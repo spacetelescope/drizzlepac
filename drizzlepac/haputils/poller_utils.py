@@ -5,9 +5,11 @@ poller, and produces a tree listing of the output products.  The function,
 parse_obset_tree, converts the tree into product catagories.
 
 """
-import os
-import sys
 from collections import OrderedDict
+import os
+import shutil
+import sys
+
 import numpy as np
 import copy
 
@@ -38,11 +40,11 @@ POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
 POLLER_DTYPE = ('str', 'int', 'str', 'str', 'float', 'object', 'str', 'str')
 
 MVM_POLLER_COLNAMES = ['filename', 'proposal_id', 'program_id', 'obset_id',
-                       'exptime', 'filters', 'detector', 'pathname',
-                       'skycell_id', 'skycell_new']
+                       'exptime', 'filters', 'detector',
+                       'skycell_id', 'skycell_new', 'pathname']
 MVM_POLLER_DTYPE = ('str', 'int', 'str', 'str',
                     'float', 'object', 'str', 'str',
-                    'str', 'int')
+                    'str', 'str')
 
 BOOL_STR_DICT = {'TRUE': True, 'FALSE': False, 'T': True, 'F': False, '1': True, '0': False}
 
@@ -760,6 +762,14 @@ def build_poller_table(input, log_level, poller_type='svm'):
     input : str, list
         Filename with list of dataset names, or just a Python list of dataset names, provided by the user.
 
+    log_level : int
+        The desired level of verboseness in the log statements displayed on the screen and written to the .
+        log file.
+
+    poller_type : str, optional
+        The type of poller file being processed. Either 'svm' for single visit mosaic, or 'mvm' for
+        multi-visit mosaic. Unless explicitly specified, the default value is 'svm'.
+
     Returns
     --------
     poller_table : Table
@@ -797,10 +807,43 @@ def build_poller_table(input, log_level, poller_type='svm'):
             # The input poller file reports True if it has been reprocessed.
             # This code interprets that as False since it is NOT new, so the code
             # inverts the meaning from the pipeline poller file.
+
             if poller_type == 'mvm':
+                # Translate new format back to old format ("NEW" -> 0 and "OLD" -> 1)
+                poller_table_mapping = {"NEW": 0, "OLD": 1}
+                reverse_table_mapping = {"0": "NEW", "1": "OLD"}
+                for tbl_ctr in range(0, len(input_table)):
+                    if input_table[tbl_ctr]['skycell_new'].upper() in ["OLD", "NEW"]:
+                        input_table[tbl_ctr]['skycell_new'] = poller_table_mapping[input_table[tbl_ctr]['skycell_new'].upper()]
+                    elif input_table[tbl_ctr]['skycell_new'] in ['0', '1']:
+                        err_msg = "'{}' is an invalid skycell_new poller file value. (Legal values: 'NEW' or 'OLD'). Please use '{}' instead of '{}'. Exiting... ".format(input_table[tbl_ctr]['skycell_new'],
+                                                                                                                                                                          reverse_table_mapping[input_table[tbl_ctr]['skycell_new']],
+                                                                                                                                                                          input_table[tbl_ctr]['skycell_new'])
+                        log.error(err_msg)
+                        raise Exception(err_msg)
+                    else:
+                        err_msg = "'{}' is an invalid skycell_new poller file value. (Legal values: 'NEW' or 'OLD').  Exiting... ".format(input_table[tbl_ctr]['skycell_new'])
+                        log.error(err_msg)
+                        raise Exception(err_msg)
                 input_table['skycell_new'] = [int(not BOOL_STR_DICT[str(val).upper()]) for val in input_table['skycell_new']]
             is_poller_file = True
 
+            # Check that each file listed in the poller file exists in the current working directory. If a
+            # file is missing, copy it over from the path specified in the poller file. Failing that, raise
+            # an exception and exit.
+            for table_line in input_table:
+                if os.path.exists(table_line['filename']):
+                    log.info("Input image {} found in current working directory.".format(table_line['filename']))
+                elif os.path.exists(table_line['pathname']):
+                    log.info("Input image {} not found in current working directory. However, it was found in the path specified in the poller file.".format(table_line['filename']))
+                    shutil.copy(table_line['pathname'], os.getcwd())
+                    log.info("Input image {} copied to current working directory.".format(table_line['pathname']))
+                else:
+                    log.error("Input image {} not found in current working directory.".format(table_line['filename']))
+                    log.error("Archived input image {} not found.".format(table_line['pathname']))
+                    err_msg = "Input image {} missing from current working directory and from the path specified in the poller file. Exiting... ".format(table_line['filename'])
+                    log.error(err_msg)
+                    raise Exception(err_msg)
         elif len(input_table.columns) == 1:
             input_table.columns[0].name = 'filename'
             is_poller_file = False
