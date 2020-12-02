@@ -197,6 +197,7 @@ def setCommonInput(configObj, createOutwcs=True):
         virtual = False
 
     imageObjectList = createImageObjectList(files, instrpars,
+                                            output=asndict['output'],
                                             group=configObj['group'],
                                             undistort=undistort,
                                             inmemory=virtual)
@@ -328,7 +329,7 @@ def checkMultipleFiles(input):
     f,i,o,a=buildFileList(input)
     return len(f) > 1
 
-def createImageObjectList(files,instrpars,group=None,
+def createImageObjectList(files, instrpars, output=None, group=None,
                             undistort=True, inmemory=False):
     """ Returns a list of imageObject instances, 1 for each input image in the list of input filenames.
     """
@@ -336,7 +337,7 @@ def createImageObjectList(files,instrpars,group=None,
     mtflag = False
     mt_refimg = None
     for img in files:
-        image = _getInputImage(img,group=group)
+        image = _getInputImage(img, output=output, group=group)
         image.setInstrumentParameters(instrpars)
         image.compute_wcslin(undistort=undistort)
         if 'MTFLAG' in image._image['PRIMARY'].header:
@@ -371,7 +372,7 @@ def applyContextPar(imageObjectList,contextpar):
     for img in imageObjectList:
         img.updateContextImage(contextpar)
 
-def _getInputImage (input,group=None):
+def _getInputImage (input, output=None, group=None):
     """ Factory function to return appropriate imageObject class instance"""
     # extract primary header and SCI,1 header from input image
     sci_ext = 'SCI'
@@ -414,19 +415,19 @@ def _getInputImage (input,group=None):
     try:
         if _instrument == 'ACS':
             from . import acsData
-            if _detector == 'HRC': return acsData.HRCInputImage(input,group=group)
-            if _detector == 'WFC': return acsData.WFCInputImage(input,group=group)
-            if _detector == 'SBC': return acsData.SBCInputImage(input,group=group)
+            if _detector == 'HRC': return acsData.HRCInputImage(input, output=output, group=group)
+            if _detector == 'WFC': return acsData.WFCInputImage(input, output=output, group=group)
+            if _detector == 'SBC': return acsData.SBCInputImage(input, output=output, group=group)
         if _instrument == 'NICMOS':
             from . import nicmosData
-            if _detector == 1: return nicmosData.NIC1InputImage(input)
-            if _detector == 2: return nicmosData.NIC2InputImage(input)
-            if _detector == 3: return nicmosData.NIC3InputImage(input)
+            if _detector == 1: return nicmosData.NIC1InputImage(input, output=output)
+            if _detector == 2: return nicmosData.NIC2InputImage(input, output=output)
+            if _detector == 3: return nicmosData.NIC3InputImage(input, output=output)
 
 
         if _instrument == 'WFPC2':
             from . import wfpc2Data
-            return wfpc2Data.WFPC2InputImage(input,group=group)
+            return wfpc2Data.WFPC2InputImage(input, output=output, group=group)
         """
             if _detector == 1: return wfpc2Data.PCInputImage(input)
             if _detector == 2: return wfpc2Data.WF2InputImage(input)
@@ -435,13 +436,13 @@ def _getInputImage (input,group=None):
         """
         if _instrument == 'STIS':
             from . import stisData
-            if _detector == 'CCD': return stisData.CCDInputImage(input,group=group)
-            if _detector == 'FUV-MAMA': return stisData.FUVInputImage(input,group=group)
-            if _detector == 'NUV-MAMA': return stisData.NUVInputImage(input,group=group)
+            if _detector == 'CCD': return stisData.CCDInputImage(input, output=output, group=group)
+            if _detector == 'FUV-MAMA': return stisData.FUVInputImage(input, output=output, group=group)
+            if _detector == 'NUV-MAMA': return stisData.NUVInputImage(input, output=output, group=group)
         if _instrument == 'WFC3':
             from . import wfc3Data
-            if _detector == 'UVIS': return wfc3Data.WFC3UVISInputImage(input,group=group)
-            if _detector == 'IR': return wfc3Data.WFC3IRInputImage(input,group=group)
+            if _detector == 'UVIS': return wfc3Data.WFC3UVISInputImage(input, output=output, group=group)
+            if _detector == 'IR': return wfc3Data.WFC3IRInputImage(input, output=output, group=group)
 
     except ImportError:
         msg = 'No module implemented for '+str(_instrument)+'!'

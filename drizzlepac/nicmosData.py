@@ -15,8 +15,8 @@ class NICMOSInputImage(imageObject):
 
     SEPARATOR = '_'
 
-    def __init__(self, filename=None):
-        super().__init__(filename)
+    def __init__(self, filename=None, output=None):
+        super().__init__(filename, output=output)
         self.timeExt = 'TIME'
 
         # define the cosmic ray bits value to use in the dq array
@@ -47,9 +47,8 @@ class NICMOSInputImage(imageObject):
         ny=sci_chip._naxis1
         nx=sci_chip._naxis2
         detnum = sci_chip.detnum
-        instr=self._instrument
 
-        sig=(instr+str(self._detector),(nx,ny),int(detnum)) #signature is a tuple
+        sig=(self.outroot,(nx,ny),int(detnum)) #signature is a tuple
         sci_chip.signature=sig #signature is a tuple
 
 
@@ -211,8 +210,8 @@ class NICMOSInputImage(imageObject):
 
 
 class NIC1InputImage(NICMOSInputImage):
-    def __init__(self, filename=None):
-        super().__init__(filename)
+    def __init__(self, filename=None, output=None):
+        super().__init__(filename, output=output)
         self._effGain = 1. #get the gain from the detector subclass
         self._detector = self._image["PRIMARY"].header["CAMERA"]
         self.proc_unit = "native"
@@ -276,8 +275,8 @@ class NIC1InputImage(NICMOSInputImage):
 
 
 class NIC2InputImage(NICMOSInputImage):
-    def __init__(self,filename=None):
-        super().__init__(filename)
+    def __init__(self,filename=None, output=None):
+        super().__init__(filename, output=output)
         self._effGain=1. #measured
         self._detector=self._image["PRIMARY"].header["CAMERA"]
         self.proc_unit = "native"
@@ -348,8 +347,8 @@ class NIC2InputImage(NICMOSInputImage):
 
 
 class NIC3InputImage(NICMOSInputImage):
-    def __init__(self, filename=None):
-        super().__init__(filename)
+    def __init__(self, filename=None, output=None):
+        super().__init__(filename, output=output)
         self._detector=self._image["PRIMARY"].header["CAMERA"] #returns 1,2,3
         self._effGain = 1.
         self.proc_unit = "native"
