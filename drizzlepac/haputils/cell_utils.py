@@ -571,6 +571,7 @@ class SkyCell(object):
             the exact pixel size in arcseconds/pixel should be used.
 
         """
+<<<<<<< Updated upstream
         # Interpret scale term, if provided
         self.scale = SUPPORTED_SCALES.get(scale, None) if isinstance(scale, str) else scale
 
@@ -581,6 +582,12 @@ class SkyCell(object):
             self.y_index = y
             self.sky_cell_id = SKYCELL_NAME_FMT.format(projection_cell.cell_id, x, y)
             self.projection_cell = projection_cell
+=======
+        self.x_index = x
+        self.y_index = y
+        self.sky_cell_id = SKYCELL_NAME_FMT.format(projection_cell.cell_id, x, y)
+        self.projection_cell = projection_cell
+>>>>>>> Stashed changes
 
         self.members = []
         self.overlap = self.projection_cell.sc_overlap  # overlap between sky cells
@@ -588,16 +595,16 @@ class SkyCell(object):
 
         self._build_wcs()
 
-    def _from_name(self, name):
+    @classmethod
+    def from_name(cls, name) -> SkyCell:
         # parse name into projection cell and sky cell designations
         sc_names = name.split('-')
         scell_id = sc_names[1]
         pcell_id = int(scell_id[1:5])
+        x = int(scell_id[6:8])
+        y = int(scell_id[9:11])
 
-        self.x_index = int(scell_id[6:8])
-        self.y_index = int(scell_id[9:11])
-        self.projection_cell = ProjectionCell(index=pcell_id)
-        self.sky_cell_id = name
+        return cls(projection_cell=pcell_id, x=x, y=y)
 
     def __repr__(self):
         return "SkyCell object: {}".format(self.sky_cell_id)
