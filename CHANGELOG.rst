@@ -17,6 +17,9 @@ of the list).
 3.1.9 (unreleased)
 ==================
 
+- revise naming convention for the StaticMask file so that it has a
+  dataset-specific name instead of a generic common name. [#876]
+
 - Update ``runastrodriz`` to work under Windows while adding documentation
   to tell the user to run with ``num_cores`` set to 1.  [#794]
 
@@ -27,7 +30,7 @@ of the list).
 3.1.8 (11-Aug-2020)
 ==================
 
-A number of changes have been implemented to either correct problems or 
+A number of changes have been implemented to either correct problems or
 improve the processed results.  The most significant of the changes are:
 
   - rscale only used for alignment.

@@ -15,8 +15,8 @@ class WFC3InputImage(imageObject):
 
     SEPARATOR = '_'
 
-    def __init__(self, filename=None, group=None):
-        super().__init__(filename, group=group)
+    def __init__(self, filename=None, output=None, group=None):
+        super().__init__(filename, output=output, group=group)
 
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
@@ -36,14 +36,13 @@ class WFC3InputImage(imageObject):
         ny = sci_chip._naxis1
         nx = sci_chip._naxis2
         detnum = sci_chip.detnum
-        instr = self._instrument
-        sig = (instr + self._detector, (nx, ny), int(chip)) #signature is a tuple
+        sig = (self.outroot, (nx, ny), int(chip)) #signature is a tuple
         sci_chip.signature=sig #signature is a tuple
 
 
 class WFC3UVISInputImage(WFC3InputImage):
-    def __init__(self,filename=None,group=None):
-        super().__init__(filename, group=group)
+    def __init__(self,filename=None, output=None, group=None):
+        super().__init__(filename, output=output, group=group)
 
         # define the cosmic ray bits value to use in the dq array
         self.full_shape = (4096,2051)
@@ -143,8 +142,8 @@ class WFC3UVISInputImage(WFC3InputImage):
 
 class WFC3IRInputImage(WFC3InputImage):
 
-    def __init__(self, filename=None, group=None):
-        super().__init__(filename, group=group)
+    def __init__(self, filename=None,  output=None, group=None):
+        super().__init__(filename, output=output, group=group)
         self.timeExt = 'TIME'
 
         # define the cosmic ray bits value to use in the dq array
