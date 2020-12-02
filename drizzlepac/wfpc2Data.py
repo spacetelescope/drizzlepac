@@ -33,8 +33,8 @@ class WFPC2InputImage (imageObject):
 
     SEPARATOR = '_'
 
-    def __init__(self, filename, group=None):
-        super().__init__(filename, group=group)
+    def __init__(self, filename, output=None, group=None):
+        super().__init__(filename, output=output, group=group)
         # define the cosmic ray bits value to use in the dq array
         self.cr_bits_value = 4096
         self._instrument=self._image["PRIMARY"].header["INSTRUME"]
@@ -305,8 +305,7 @@ class WFPC2InputImage (imageObject):
         ny = sci_chip._naxis1
         nx = sci_chip._naxis2
         detnum = sci_chip.detnum
-        instr = self._instrument
-        sig = (instr + WFPC2_DETECTOR_NAMES[detnum], (nx, ny), chip) #signature is a tuple
+        sig = (self.outroot, (nx, ny), chip) #signature is a tuple
         sci_chip.signature=sig #signature is a tuple
 
     def _setchippars(self):
