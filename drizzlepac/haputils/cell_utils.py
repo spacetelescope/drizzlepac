@@ -546,7 +546,7 @@ class ProjectionCell(object):
 
 class SkyCell(object):
 
-    def __init__(self, name=None, projection_cell=None, x=None, y=None, scale="fine"):
+    def __init__(self, projection_cell=None, x=None, y=None, scale="fine"):
         """Define sky cell at position x,y within projection cell.
 
         Parameters
@@ -571,23 +571,13 @@ class SkyCell(object):
             the exact pixel size in arcseconds/pixel should be used.
 
         """
-<<<<<<< Updated upstream
         # Interpret scale term, if provided
         self.scale = SUPPORTED_SCALES.get(scale, None) if isinstance(scale, str) else scale
 
-        if name:
-            self._from_name(name)
-        else:
-            self.x_index = x
-            self.y_index = y
-            self.sky_cell_id = SKYCELL_NAME_FMT.format(projection_cell.cell_id, x, y)
-            self.projection_cell = projection_cell
-=======
         self.x_index = x
         self.y_index = y
         self.sky_cell_id = SKYCELL_NAME_FMT.format(projection_cell.cell_id, x, y)
         self.projection_cell = projection_cell
->>>>>>> Stashed changes
 
         self.members = []
         self.overlap = self.projection_cell.sc_overlap  # overlap between sky cells
