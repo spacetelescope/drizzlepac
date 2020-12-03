@@ -106,6 +106,10 @@ def create_drizzle_products(total_obj_list):
         product_list.append(filt_obj.drizzle_filename)
         product_list.append(filt_obj.trl_filename)
 
+        # Add individual single input images with updated WCS headers to manifest
+        for exposure_obj in filt_obj.edp_list:
+            product_list.append(exposure_obj.full_filename)
+
     # Ensure that all drizzled products have headers that are to specification
     try:
         log.info("Updating these drizzle products for CAOM compatibility:")
@@ -285,6 +289,10 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # 9: Compare results to HLA classic counterparts (if possible)
         # if diagnostic_mode:
             # run_sourcelist_comparison(total_obj_list, diagnostic_mode=diagnostic_mode, log_level=log_level)
+
+        # Insure manifest file does not contain duplicate entries
+        # Use of numpy.unique preserves the order of the entries in the product list
+        product_list = np.unique(product_list).tolist()
         # Write out manifest file listing all products generated during processing
         log.info("Creating manifest file {}.".format(manifest_name))
         log.info("  The manifest contains the names of products generated during processing.")
