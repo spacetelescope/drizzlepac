@@ -901,7 +901,7 @@ def build_poller_table(input, log_level, poller_type='svm'):
     if poller_type == 'mvm' and is_poller_file:
         pipeline_skycell_id = input_table[0]['skycell_id']
         scells = {}
-        skycell_obj = cell_utils.SkyCell(name=pipeline_skycell_id)
+        skycell_obj = cell_utils.SkyCell.from_name(pipeline_skycell_id)
         skycell_obj.members = filenames
         scells[pipeline_skycell_id] = skycell_obj
         scell_files = cell_utils.interpret_scells(scells)
