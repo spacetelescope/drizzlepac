@@ -254,7 +254,7 @@ def convert_library_psf(calimg, drzimg, psf, scaling, smoothing=1.0):
     drizzle_pars["driz_cr"] = False
     drizzle_pars["driz_combine"] = True
     drizzle_pars['final_wcs'] = True
-    drizzle_pars['final_pixfrace'] = smoothing
+    drizzle_pars['final_pixfrac'] = smoothing
     drizzle_pars["final_refimage"] = "{}[1]".format(drzimg)
 
     # Drizzle PSF FLT file to match orientation and plate scale of drizzled science (total detection) image

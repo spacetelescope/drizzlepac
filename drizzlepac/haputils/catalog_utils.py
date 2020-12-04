@@ -891,6 +891,12 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                                reg_rms_median))
                     isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * reg_rms_median)
                     reg_sources = isf(region, mask=self.image.inv_footprint_mask)
+                elif self.param_dict["starfinder_algorithm"] == "tpsf":
+                    log.info("UserStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
+                                                                              reg_rms_median))
+                    daofind = UserStarFinder(fwhm=source_fwhm,
+                                            threshold=self.param_dict['nsigma'] * reg_rms_median)
+                    reg_sources = daofind(region, mask=self.image.inv_footprint_mask)
                 else:
                     err_msg = "'{}' is not a valid 'starfinder_algorithm' parameter input in the catalog_generation parameters json file. Valid options are 'dao' for photutils.detection.DAOStarFinder() or 'iraf' for photutils.detection.IRAFStarFinder().".format(self.param_dict["starfinder_algorithm"])
                     log.error(err_msg)
