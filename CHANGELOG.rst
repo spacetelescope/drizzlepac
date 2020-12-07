@@ -14,8 +14,11 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-3.1.9 (unreleased)
+3.2.0 (7-Dec-2020)
 ==================
+
+This version provides the first operational implementation of the single-visit
+mosaic processing used to create the single-visit mosaics products.
 
 - revise naming convention for the StaticMask file so that it has a
   dataset-specific name instead of a generic common name. [#876]
