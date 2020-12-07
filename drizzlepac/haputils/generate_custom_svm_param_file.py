@@ -2,29 +2,16 @@
 
 import argparse
 import datetime
-import fnmatch
+import json
 import logging
-import os
-import pickle
 import sys
 import traceback
 
-import numpy as np
-from astropy.table import Table
-
-import drizzlepac
 from drizzlepac.haputils import config_utils
-from drizzlepac.haputils import diagnostic_utils
-from drizzlepac.haputils import hla_flag_filter
+from drizzlepac.haputils import ci_table
 from drizzlepac.haputils import poller_utils
-from drizzlepac.haputils import product
-from drizzlepac.haputils import processing_utils as proc_utils
-from drizzlepac.haputils import svm_quality_analysis as svm_qa
-from drizzlepac.haputils.catalog_utils import HAPCatalogs
 
 from stsci.tools import logutil
-from stwcs import wcsutil
-
 
 __taskname__ = 'generate_custom_svm_param_file'
 MSG_DATEFMT = '%Y%j%H%M%S'
@@ -34,6 +21,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 __version__ = 0.1
 __version_date__ = '04-Dec-2020'
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def make_svm_input_file(input_filename, diagnostic_mode=False, use_defaults_configs=True,
                        input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
@@ -137,6 +125,11 @@ def make_svm_input_file(input_filename, diagnostic_mode=False, use_defaults_conf
                                                                     use_defaults=use_defaults_configs,
                                                                     input_custom_pars_file=input_custom_pars_file,
                                                                     output_custom_pars_file=output_custom_pars_file)
+                update_ci_values(filter_item, output_custom_pars_file, log_level)
+
+
+
+
             for expo_item in total_item.edp_list:
                 log.info("Preparing configuration parameter values for exposure product {}".format(expo_item.drizzle_filename))
                 expo_item.configobj_pars = config_utils.HapConfig(expo_item,
@@ -145,8 +138,66 @@ def make_svm_input_file(input_filename, diagnostic_mode=False, use_defaults_conf
                                                                   input_custom_pars_file=input_custom_pars_file,
                                                                   output_custom_pars_file=output_custom_pars_file)
     except:
-        print("something went wrong.")
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+        err_msg = "Something went wrong!"
+        log.error(err_msg)
+        raise Exception(err_msg)
 
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def update_ci_values(filter_item, config_filename, log_level=logutil.logging.INFO):
+    """
+    if the 'lookup_ci_limits_from_table' parameter is set to Boolean 'True', update the custom parameter
+    file with concentration index (CI) upper and lower limit values from ci_table.get_ci_from_file() for the
+    specified filter object.
+
+    Parameters
+    ----------
+    filter_item : drizzlepac.haputils.product.FilterProduct object
+        object containing all the relevant info for the drizzled filter product
+
+    config_filename : str
+        Name of the output custom SVM parameter file
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
+
+    Returns
+    -------
+    Nothing!
+    """
+    log.setLevel(log_level)
+    # Check to see if the CI values need to be updated. If not, simply skip over all of this.
+    update_ci_vals = False
+    for phot_mode in ['aperture', 'segment']:
+        if filter_item.configobj_pars.pars['quality control'].outpars['ci filter'][phot_mode]['lookup_ci_limits_from_table']:
+            update_ci_vals = True
+    if update_ci_vals:
+        # read in the custom SVM param file data
+        with open(config_filename) as f:
+            json_data = json.load(f)
+        for phot_mode in ['aperture', 'segment']:
+            if filter_item.configobj_pars.pars['quality control'].outpars['ci filter'][phot_mode]['lookup_ci_limits_from_table']:
+                # set up inputs to ci_table.get_ci_from_file() and execute to get new CI values
+                drizzled_image = filter_item.drizzle_filename
+                ci_lookup_file_path = "default_parameters/any"
+                diagnostic_mode = False
+                ci_lower_limit = filter_item.configobj_pars.pars['quality control'].outpars['ci filter'][phot_mode]['ci_lower_limit']
+                ci_upper_limit = filter_item.configobj_pars.pars['quality control'].outpars['ci filter'][phot_mode]['ci_upper_limit']
+                ci_dict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path, log_level,
+                                                    diagnostic_mode=diagnostic_mode, ci_lower=ci_lower_limit,
+                                                    ci_upper=ci_upper_limit)
+                # update CI values
+                json_data[drizzled_image[:-9]]["default_values"]["quality control"]["ci filter"][phot_mode]["ci_lower_limit"] = ci_dict["ci_lower_limit"]
+                json_data[drizzled_image[:-9]]["default_values"]["quality control"]["ci filter"][phot_mode]["ci_upper_limit"] = ci_dict["ci_upper_limit"]
+
+        # Write out the updated custom SVM param file data back to file.
+        with open(config_filename, 'w') as f:
+            json.dump(json_data, f, indent=4)
 
 # ----------------------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
@@ -175,4 +226,3 @@ if __name__ == '__main__':
     make_svm_input_file(user_args.poller_filename,
                         output_custom_pars_file=user_args.output_custom_pars_file,
                         log_level=log_level_dict[user_args.log_level])
-
