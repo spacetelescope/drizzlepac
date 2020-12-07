@@ -18,10 +18,14 @@ of the list).
 ==================
 
 - Fix a bug in ``tweakback`` that may cause incorrect "updated" WCS to be
-  picked up from the drizzled image. [#913]
+  picked up from the drizzled image. [#913]3.1.9 (unreleased)
 
-3.1.9 (unreleased)
+
+3.2.0 (7-Dec-2020)
 ==================
+
+This version provides the first operational implementation of the single-visit
+mosaic processing used to create the single-visit mosaics products.
 
 - revise naming convention for the StaticMask file so that it has a
   dataset-specific name instead of a generic common name. [#876]
