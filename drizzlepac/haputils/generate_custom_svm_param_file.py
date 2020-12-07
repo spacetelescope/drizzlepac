@@ -24,8 +24,8 @@ __version_date__ = '04-Dec-2020'
 
 
 def make_svm_input_file(input_filename, diagnostic_mode=False, use_defaults_configs=True,
-                       input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
-                       log_level=logutil.logging.INFO):
+                        input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
+                        log_level=logutil.logging.INFO):
     """
     Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
     controller which invokes the high-level functionality to process the single visit data.
@@ -57,11 +57,12 @@ def make_svm_input_file(input_filename, diagnostic_mode=False, use_defaults_conf
 
     phot_mode : str, optional
         Which algorithm should be used to generate the sourcelists? 'aperture' for aperture photometry;
-        'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
+        'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'.
+        Default value is 'both'.
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 20, or 'info'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
 
 
     RETURNS
@@ -127,9 +128,6 @@ def make_svm_input_file(input_filename, diagnostic_mode=False, use_defaults_conf
                                                                     output_custom_pars_file=output_custom_pars_file)
                 update_ci_values(filter_item, output_custom_pars_file, log_level)
 
-
-
-
             for expo_item in total_item.edp_list:
                 log.info("Preparing configuration parameter values for exposure product {}".format(expo_item.drizzle_filename))
                 expo_item.configobj_pars = config_utils.HapConfig(expo_item,
@@ -137,7 +135,7 @@ def make_svm_input_file(input_filename, diagnostic_mode=False, use_defaults_conf
                                                                   use_defaults=use_defaults_configs,
                                                                   input_custom_pars_file=input_custom_pars_file,
                                                                   output_custom_pars_file=output_custom_pars_file)
-    except:
+    except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         err_msg = "Something went wrong!"
@@ -200,21 +198,23 @@ def update_ci_values(filter_item, config_filename, log_level=logutil.logging.INF
             json.dump(json_data, f, indent=4)
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process images, produce drizzled images and sourcelists')
-    parser.add_argument('poller_filename', help='Name of the input csv file containing information about the files to '
-                        'be processed')
+    parser.add_argument('poller_filename', help='Name of the input csv file containing information about the '
+                                                'files to be processed')
     parser.add_argument('-c', '--output_custom_pars_file', required=False, default="custom_svm_params.json",
                         help='Filename of a configuration JSON file which will been customized for '
                              'specialized processing.  This file will contain ALL the input parameters '
                              'necessary for processing.')
     parser.add_argument('-l', '--log_level', required=False, default='info',
-                        choices=['critical', 'error', 'warning', 'info', 'debug'], help='The desired level of '
-                        'verboseness in the log statements displayed on the screen and written to the .log file. The '
-                        'level of verboseness from left to right, and includes all log statements with a log_level '
-                        'left of the specified level. Specifying "critical" will only record/display "critical" log '
-                        'statements, and specifying "error" will record/display both "error" and "critical" log '
-                        'statements, and so on.')
+                        choices=['critical', 'error', 'warning', 'info', 'debug'], help='The desired level '
+                        'of verboseness in the log statements displayed on the screen and written to the '
+                        '.log file. The level of verboseness from left to right, and includes all log '
+                        'statements with a log_level left of the specified level. Specifying "critical" will '
+                        'only record/display "critical" log statements, and specifying "error" will '
+                        'record/display both "error" and "critical" log statements, and so on.')
     user_args = parser.parse_args()
 
     log_level_dict = {"critical": logutil.logging.CRITICAL,
