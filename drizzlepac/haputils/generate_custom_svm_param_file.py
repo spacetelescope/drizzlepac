@@ -4,6 +4,7 @@ import argparse
 import datetime
 import json
 import logging
+import os
 import sys
 import traceback
 
@@ -25,7 +26,7 @@ __version_date__ = '04-Dec-2020'
 
 def make_svm_input_file(input_filename, diagnostic_mode=False, use_defaults_configs=True,
                         input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
-                        log_level=logutil.logging.INFO):
+                        clobber=False, log_level=logutil.logging.INFO):
     """
     Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
     controller which invokes the high-level functionality to process the single visit data.
@@ -74,6 +75,11 @@ def make_svm_input_file(input_filename, diagnostic_mode=False, use_defaults_conf
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
     log.setLevel(log_level)
+    if not clobber:
+        if os.path.exists(output_custom_pars_file):
+            msg = "A file named '{}' already exists. Please choose a unique name for the custom SVM parameter file.".format(output_custom_pars_file)
+            log.critical(msg)
+            sys.exit()
     # Define trailer file (log file) that will contain the log entries for all processing
     if isinstance(input_filename, str):  # input file is a poller file -- easy case
         logname = input_filename.replace('.out', '.log')
@@ -180,6 +186,7 @@ def update_ci_values(filter_item, config_filename, log_level=logutil.logging.INF
             json_data = json.load(f)
         for phot_mode in ['aperture', 'segment']:
             if filter_item.configobj_pars.pars['quality control'].outpars['ci filter'][phot_mode]['lookup_ci_limits_from_table']:
+                log.info("NOTE: The 'lookup_ci_limits_from_table' setting in the 'quality control'>'{}' section of the parameters for filter image {} is set to 'True'. This means that any custom user-tuned values for 'ci_upper_limit' and 'ci_lower_limit' will be overwritten. To prevent this, please set 'lookup_ci_limits_from_table' to 'False' in the custom parameter file {}".format(phot_mode, filter_item.drizzle_filename, config_filename))
                 # set up inputs to ci_table.get_ci_from_file() and execute to get new CI values
                 drizzled_image = filter_item.drizzle_filename
                 ci_lookup_file_path = "default_parameters/any"
@@ -189,6 +196,14 @@ def update_ci_values(filter_item, config_filename, log_level=logutil.logging.INF
                 ci_dict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path, log_level,
                                                     diagnostic_mode=diagnostic_mode, ci_lower=ci_lower_limit,
                                                     ci_upper=ci_upper_limit)
+                log.debug("{} {} CI upper limit updated from {} to {}".format(filter_item.drizzle_filename,
+                                                                              phot_mode,
+                                                                              ci_upper_limit,
+                                                                              ci_dict["ci_upper_limit"]))
+                log.debug("{} {} CI lower limit updated from {} to {}\n".format(filter_item.drizzle_filename,
+                                                                                phot_mode,
+                                                                                ci_lower_limit,
+                                                                                ci_dict["ci_lower_limit"]))
                 # update CI values
                 json_data[drizzled_image[:-9]]["default_values"]["quality control"]["ci filter"][phot_mode]["ci_lower_limit"] = ci_dict["ci_lower_limit"]
                 json_data[drizzled_image[:-9]]["default_values"]["quality control"]["ci filter"][phot_mode]["ci_upper_limit"] = ci_dict["ci_upper_limit"]
@@ -196,6 +211,9 @@ def update_ci_values(filter_item, config_filename, log_level=logutil.logging.INF
         # Write out the updated custom SVM param file data back to file.
         with open(config_filename, 'w') as f:
             json.dump(json_data, f, indent=4)
+    else:
+        log.debug("Using existing concentration index limits from parameter file")
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -204,10 +222,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process images, produce drizzled images and sourcelists')
     parser.add_argument('poller_filename', help='Name of the input csv file containing information about the '
                                                 'files to be processed')
-    parser.add_argument('-c', '--output_custom_pars_file', required=False, default="custom_svm_params.json",
-                        help='Filename of a configuration JSON file which will been customized for '
-                             'specialized processing.  This file will contain ALL the input parameters '
-                             'necessary for processing.')
+    parser.add_argument('-c', '--clobber', required=False, action='store_true',
+                        help='If turned on, existing files with the same name as the output custom SVM '
+                             'parameter file created by this script will be overwritten.')
     parser.add_argument('-l', '--log_level', required=False, default='info',
                         choices=['critical', 'error', 'warning', 'info', 'debug'], help='The desired level '
                         'of verboseness in the log statements displayed on the screen and written to the '
@@ -215,6 +232,10 @@ if __name__ == '__main__':
                         'statements with a log_level left of the specified level. Specifying "critical" will '
                         'only record/display "critical" log statements, and specifying "error" will '
                         'record/display both "error" and "critical" log statements, and so on.')
+    parser.add_argument('-o', '--output_custom_pars_file', required=False, default="custom_svm_params.json",
+                        help='Filename of a configuration JSON file which will been customized for '
+                             'specialized processing.  This file will contain ALL the input parameters '
+                             'necessary for processing.')
     user_args = parser.parse_args()
 
     log_level_dict = {"critical": logutil.logging.CRITICAL,
@@ -225,4 +246,5 @@ if __name__ == '__main__':
 
     make_svm_input_file(user_args.poller_filename,
                         output_custom_pars_file=user_args.output_custom_pars_file,
+                        clobber=user_args.clobber,
                         log_level=log_level_dict[user_args.log_level])
