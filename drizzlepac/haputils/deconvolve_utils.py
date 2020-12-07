@@ -96,7 +96,9 @@ def fft_deconv_img(img, psf, freq_limit=0.95):
     alpha = P2[index]
     del P2
 
-    psf_y, psf_x = np.where(psf == psf.max())[0]
+    psf_y, psf_x = np.where(psf == psf.max())
+    psf_y = psf_y[0]
+    psf_x = psf_x[0]
     psf_center = [psf.shape[0] // 2, psf.shape[1] // 2]
     if int(psf_y) != psf_center[0] or int(psf_x) != psf_center[1]:
         # We need to recenter the PSF
@@ -106,8 +108,8 @@ def fft_deconv_img(img, psf, freq_limit=0.95):
         psf_size = [(psf_yr[1] - psf_yr[0]) // 2, (psf_xr[1] - psf_xr[0]) // 2]
         # If psf_size is not at least 2 * psf_max//2, increase to that value
         # This will insure that the final position of the PSF in the output is at the exact center
-        psf_max = np.where(psf[psf_yr[0]:psf_yr[1], psf_xr[0]:psf_yr[1]] == psf.max())[0]
-        psf_len = max(max(psf_max[0] // 2, psf_size[0]), max(psf_max[1] // 2, psf_size[1]))
+        psf_max = np.where(psf[psf_yr[0]:psf_yr[1], psf_xr[0]:psf_xr[1]] == psf.max())
+        psf_len = max(max(psf_max[0][0] // 2, psf_size[0]), max(psf_max[1][0] // 2, psf_size[1]))
 
         centered_psf = psf * 0.0
         centered_psf[psf_center[0] - psf_len: psf_center[0] + psf_len,
@@ -202,20 +204,20 @@ def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None,
     return psf_name
 
 
-def convert_library_psf(calimg, drzimg, psf, scaling, smoothing=1.0):
+def convert_library_psf(calimg, drzimg, psf, total_flux, smoothing=1.0):
     """Drizzle library PSF to match science image. """
 
     # Create copy of input science image based on input psf filename
     psf_root = os.path.basename(psf)
     lib_psf_arr = fits.getdata(psf)
-    lib_psf_arr *= scaling
+    lib_psf_arr *= total_flux
 
     lib_size = [lib_psf_arr.shape[0] // 2, lib_psf_arr.shape[1] // 2]
 
     # This will be the name of the new file containing the library PSF that will be drizzled to
     # match the input iamge `drzimg`
     psf_flt_name = psf_root.replace('psf.fits', 'psf_flt.fits')
-    psf_drz_name = psf_flt_name.replace('flt.fits', '')  # astrodrizzle will add suffix
+    psf_drz_name = psf_flt_name.replace('_flt.fits', '')  # astrodrizzle will add suffix
 
     # create version of PSF that will be drizzled
     psf_base = fits.getdata(calimg, ext=1) * 0.0
