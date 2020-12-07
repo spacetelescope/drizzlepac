@@ -699,7 +699,7 @@ class SkyCellProduct(HAPProduct):
         self.edp_list = []
         self.new_to_layer = 0
         self.regions_dict = {}
-        self.skycell = cell_utils.SkyCell(name=skycell_name, scale=layer_scale)
+        self.skycell = cell_utils.SkyCell.from_name(skycell_name, scale=layer_scale)
         self.configobj_pars = None
 
         log.debug("SkyCell object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))

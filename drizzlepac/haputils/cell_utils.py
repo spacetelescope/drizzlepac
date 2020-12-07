@@ -546,7 +546,7 @@ class ProjectionCell(object):
 
 class SkyCell(object):
 
-    def __init__(self, name=None, projection_cell=None, x=None, y=None, scale="fine"):
+    def __init__(self, projection_cell=None, x=None, y=None, scale="fine"):
         """Define sky cell at position x,y within projection cell.
 
         Parameters
@@ -574,13 +574,10 @@ class SkyCell(object):
         # Interpret scale term, if provided
         self.scale = SUPPORTED_SCALES.get(scale, None) if isinstance(scale, str) else scale
 
-        if name:
-            self._from_name(name)
-        else:
-            self.x_index = x
-            self.y_index = y
-            self.sky_cell_id = SKYCELL_NAME_FMT.format(projection_cell.cell_id, x, y)
-            self.projection_cell = projection_cell
+        self.x_index = x
+        self.y_index = y
+        self.sky_cell_id = SKYCELL_NAME_FMT.format(projection_cell.cell_id, x, y)
+        self.projection_cell = projection_cell
 
         self.members = []
         self.overlap = self.projection_cell.sc_overlap  # overlap between sky cells
@@ -588,16 +585,16 @@ class SkyCell(object):
 
         self._build_wcs()
 
-    def _from_name(self, name):
+    @classmethod
+    def from_name(cls, name, scale="fine"):
         # parse name into projection cell and sky cell designations
         sc_names = name.split('-')
         scell_id = sc_names[1]
         pcell_id = int(scell_id[1:5])
+        x = int(scell_id[6:8])
+        y = int(scell_id[9:11])
 
-        self.x_index = int(scell_id[6:8])
-        self.y_index = int(scell_id[9:11])
-        self.projection_cell = ProjectionCell(index=pcell_id)
-        self.sky_cell_id = name
+        return cls(projection_cell=pcell_id, x=x, y=y, scale=scale)
 
     def __repr__(self):
         return "SkyCell object: {}".format(self.sky_cell_id)
