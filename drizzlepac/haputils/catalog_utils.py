@@ -256,11 +256,13 @@ class CatalogImage:
                                                                 sigma=nsigma_clip,
                                                                 cenfunc='median',
                                                                 maxiters=maxiters)
+
+            log.info("FULL Sigma-clipped Statistics - Background mean: {}  median: {}  rms: {}".format(bkg_mean_full, bkg_median_full, bkg_rms_full))
             # Refine background to better compute the median value
             imgnz = imgdata.copy()
             imgnz[self.inv_footprint_mask] = 0.0  # apply mask ahead of time
             imgnz = imgnz[imgnz > 0.0]  # only want non-negative values
-            imgvals = imgnz[imgnz < (bkg_median_full + (bkg_rms_full*0.1))]
+            imgvals = imgnz[imgnz < (bkg_median_full + (bkg_rms_full*0.5))]
             bkg_mean, bkg_median, bkg_rms = sigma_clipped_stats(imgvals,
                                                                 None,
                                                                 sigma=nsigma_clip,
@@ -1270,7 +1272,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 fits.PrimaryHDU(data=imgarr_bkgsub).writeto(outname)
 
             # Compute the threshold to use for source detection
-            threshold = self.compute_threshold(self._nsigma, self.image.bkg_rms_ra)
+            threshold = self.compute_threshold(self._nsigma, self.image.bkg_background_ra + self.image.bkg_rms_ra)
 
             ncount = 0
             if self.diagnostic_mode:
@@ -1280,12 +1282,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Generate the segmentation map by detecting and deblending "sources" using the nominal
             # settings. Use all the parameters here developed for the "custom kernel".  Note: if the
             # "custom kernel" did not work out, build_auto_kernel() drops back to a Gaussian.
+            log.info('Kernel shape: {}    source_box: {}'.format(self.image.kernel.shape, self._size_source_box))
+            inv_footprint_mask = ndimage.binary_erosion(self.image.inv_footprint_mask, iterations=10)
             custom_segm_img = self.detect_and_deblend_sources(imgarr_bkgsub,
                                                               threshold,
                                                               ncount,
                                                               filter_kernel=self.image.kernel,
                                                               source_box=self._size_source_box,
-                                                              mask=self.image.inv_footprint_mask)
+                                                              mask=inv_footprint_mask)
 
             # Check if custom_segm_image is None indicating there are no detectable sources in the
             # total detection image.  If value is None, a warning has already been issued.  Issue
@@ -1313,13 +1317,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
             if is_big_crowded:
                 log.info("")
                 log.info("Using RickerWavelet2DKernel to generate an alternate segmentation map.")
-                log.info("RickerWavelet image kernel FWHM, {}, and kernel array size, {}.".format(self.image.kernel_fwhm, self._rw2d_size))
                 rw2d_kernel = RickerWavelet2DKernel(self.image.kernel_fwhm,
                                                     x_size=self._rw2d_size,
                                                     y_size=self._rw2d_size)
+                rw2d_kernel.normalize()
 
                 # Re-compute the threshold to use for source detection
-                threshold = self.compute_threshold(self._rw2d_nsigma, self.image.bkg_rms_ra)
+                threshold = self.compute_threshold(self._rw2d_nsigma, self.image.bkg_background_ra + self.image.bkg_rms_ra)
 
                 ncount += 1
                 if self.diagnostic_mode:
