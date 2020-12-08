@@ -77,6 +77,7 @@ class CatalogImage:
         self.bkg_rms_median = None
         self.footprint_mask = None
         self.inv_footprint_mask = None
+        self.negative_threshold = 0.0
 
         # Populated by self.build_kernel()
         self.kernel = None
@@ -97,7 +98,6 @@ class CatalogImage:
                      bkg_skew_threshold=0.5,
                      zero_percent=25.0,
                      negative_percent=15.0,
-                     negative_threshold=-0.5,
                      nsigma_clip=3.0,
                      maxiters=3,
                      good_fwhm=[1.5, 3.5]):
@@ -108,7 +108,6 @@ class CatalogImage:
                                     bkg_skew_threshold=bkg_skew_threshold,
                                     zero_percent=zero_percent,
                                     negative_percent=negative_percent,
-                                    negative_threshold=negative_threshold,
                                     nsigma_clip=nsigma_clip,
                                     maxiters=maxiters)
 
@@ -128,7 +127,6 @@ class CatalogImage:
                            bkg_skew_threshold=0.5,
                            zero_percent=25.0,
                            negative_percent=15.0,
-                           negative_threshold=0.0,
                            nsigma_clip=3.0,
                            maxiters=3):
         """Use a sigma-clipped algorithm or Background2D to determine the background of the input image.
@@ -169,9 +167,6 @@ class CatalogImage:
             background-subtracted image is determined - below this limit the Background2D algorithm stays in play,
             otherwise the sigma_clipped_stats algorithm is used.
 
-        negative_threshold : float, optional
-            Value below which negative values are counted in the computation of the negative_percent
-
         nsigma_clip : float, optional
             Parameter for the sigma_clipped_stats algorithm - number of standard deviations to use for both
             the lower and upper clipping limit.
@@ -207,7 +202,7 @@ class CatalogImage:
         log.info("File: {}".format(self.imgname))
         log.info("Zero threshold: {}".format(zero_percent))
         log.info("Sigma-clipped Background Configuration Variables")
-        log.info("  Negative threshold: {}".format(negative_threshold))
+        log.info("  Negative threshold: {}".format(self.negative_threshold))
         log.info("  Negative percent: {}".format(negative_percent))
         log.info("  Nsigma: {}".format(nsigma_clip))
         log.info("  Number of iterations: {}".format(maxiters))
@@ -309,6 +304,7 @@ class CatalogImage:
             self.bkg_rms_ra = np.full_like(imgdata, bkg_rms)
             self.bkg_median = bkg_median
             self.bkg_rms_median = bkg_rms
+            self.negative_threshold = -1.0 * bkg_rms
 
         # BACKGROUND COMPUTATION 3 (Background2D)
         # The simple_bkg = True is the way to force the background to be computed with the
@@ -345,6 +341,7 @@ class CatalogImage:
                         bkg_rms_ra = bkg.background_rms
                         bkg_rms_median = bkg.background_rms_median
                         bkg_median = bkg.background_median
+                        self.negative_threshold = -1.0 * bkg.background_rms_median
                         break
 
 
@@ -359,13 +356,12 @@ class CatalogImage:
 
                     # Determine how much of the illuminated portion of the background subtracted
                     # image is negative
-                    negative_threshold = -1.0 * bkg_rms_median
-                    num_negative = np.count_nonzero(imgdata_bkgsub[self.footprint_mask] < negative_threshold)
+                    num_negative = np.count_nonzero(imgdata_bkgsub[self.footprint_mask] < self.negative_threshold)
                     negative_ratio = num_negative / num_of_illuminated_pixels
                     del imgdata_bkgsub
 
                     # Report this information so the relative percentage and the threshold are known
-                    log.info("Threshold value for negative values in the background subtracted image {0:.3f}.".format(negative_threshold))
+                    log.info("Threshold value for negative values in the background subtracted image {0:.3f}.".format(self.negative_threshold))
                     log.info("Percentage of negative values in the background subtracted image {0:.2f} vs low threshold of {1:.2f}.".format(100.0 * negative_ratio, negative_percent))
 
                     # If the background subtracted image has too many negative values which may be
@@ -382,6 +378,7 @@ class CatalogImage:
                         self.bkg_rms_ra = bkg_rms_ra.copy()
                         self.bkg_rms_median = bkg_rms_median
                         self.bkg_median = bkg_median
+                        self.negative_threshold = -1.0 * bkg_rms_median
                         log.info("")
                         log.info("*** Use the background image determined from the Background2D. ***")
 
@@ -526,7 +523,6 @@ class HAPCatalogs:
                                       bkg_skew_threshold=self.param_dict['bkg_skew_threshold'],
                                       zero_percent=self.param_dict['zero_percent'],
                                       negative_percent=self.param_dict['negative_percent'],
-                                      negative_threshold=self.param_dict['negative_threshold'],
                                       nsigma_clip=self.param_dict['nsigma_clip'],
                                       maxiters=self.param_dict['maxiters'])
 
@@ -536,7 +532,6 @@ class HAPCatalogs:
                                 self.param_dict['bkg_skew_threshold'],
                                 self.param_dict['zero_percent'],
                                 self.param_dict['negative_percent'],
-                                self.param_dict['negative_threshold'],
                                 self.param_dict['nsigma_clip'],
                                 self.param_dict['maxiters'],
                                 self.param_dict['good_fwhm'])
