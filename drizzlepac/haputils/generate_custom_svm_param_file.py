@@ -24,8 +24,8 @@ __version_date__ = '04-Dec-2020'
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def make_svm_input_file(input_filename, diagnostic_mode=False, use_defaults_configs=True,
-                        input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
+def make_svm_input_file(input_filename, diagnostic_mode=False, input_custom_pars_file=None,
+                        output_custom_pars_file=None, phot_mode="both",
                         clobber=False, log_level=logutil.logging.INFO):
     """
     Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
@@ -40,11 +40,6 @@ def make_svm_input_file(input_filename, diagnostic_mode=False, use_defaults_conf
     diagnostic_mode : bool, optional
         Allows printing of additional diagnostic information to the log.  Also, can turn on
         creation and use of pickled information.
-
-    use_defaults_configs: bool, optional
-        If True, use the configuration parameters in the 'default' portion of the configuration
-        JSON files.  If False, use the configuration parameters in the "parameters" portion of
-        the file.  The default is True.
 
     input_custom_pars_file: string, optional
         Represents a fully specified input filename of a configuration JSON file which has been
