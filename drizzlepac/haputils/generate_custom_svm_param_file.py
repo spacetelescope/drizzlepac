@@ -122,14 +122,12 @@ def make_svm_input_file(input_filename, diagnostic_mode=False, use_defaults_conf
             log.info("Preparing configuration parameter values for total product {}".format(total_item.drizzle_filename))
             total_item.configobj_pars = config_utils.HapConfig(total_item,
                                                                log_level=log_level,
-                                                               use_defaults=use_defaults_configs,
                                                                input_custom_pars_file=input_custom_pars_file,
                                                                output_custom_pars_file=output_custom_pars_file)
             for filter_item in total_item.fdp_list:
                 log.info("Preparing configuration parameter values for filter product {}".format(filter_item.drizzle_filename))
                 filter_item.configobj_pars = config_utils.HapConfig(filter_item,
                                                                     log_level=log_level,
-                                                                    use_defaults=use_defaults_configs,
                                                                     input_custom_pars_file=input_custom_pars_file,
                                                                     output_custom_pars_file=output_custom_pars_file)
                 update_ci_values(filter_item, output_custom_pars_file, log_level)
@@ -138,7 +136,6 @@ def make_svm_input_file(input_filename, diagnostic_mode=False, use_defaults_conf
                 log.info("Preparing configuration parameter values for exposure product {}".format(expo_item.drizzle_filename))
                 expo_item.configobj_pars = config_utils.HapConfig(expo_item,
                                                                   log_level=log_level,
-                                                                  use_defaults=use_defaults_configs,
                                                                   input_custom_pars_file=input_custom_pars_file,
                                                                   output_custom_pars_file=output_custom_pars_file)
     except Exception:
