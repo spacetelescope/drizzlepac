@@ -16,7 +16,6 @@
     "flag_trim_value": 5,
     "simple_bkg": false,
     "zero_percent": 25.0,
-    "negative_threshold": 0.0,
     "negative_percent": 15.0,
     "nsigma_clip": 3.0,
     "maxiters": 3,
@@ -30,7 +29,7 @@
     },
     "sourcex": {
         "fwhm": 0.073,
-        "source_box": 7,
+        "source_box": 5,
         "nlevels": 32,
         "contrast": 0.005,
         "border": 10,

@@ -256,12 +256,22 @@ class CatalogImage:
         if not is_zero_background_defined:
             log.info("")
             log.info("Computing the background using sigma-clipped statistics algorithm.")
-            bkg_mean, bkg_median, bkg_rms = sigma_clipped_stats(imgdata,
+            bkg_mean_full, bkg_median_full, bkg_rms_full = sigma_clipped_stats(imgdata,
                                                                 self.inv_footprint_mask,
                                                                 sigma=nsigma_clip,
                                                                 cenfunc='median',
                                                                 maxiters=maxiters)
-
+            # Refine background to better compute the median value
+            imgnz = imgdata.copy()
+            imgnz[self.inv_footprint_mask] = 0.0  # apply mask ahead of time
+            imgnz = imgnz[imgnz > 0.0]  # only want non-negative values
+            imgvals = imgnz[imgnz < (bkg_median_full + (bkg_rms_full*0.1))]
+            bkg_mean, bkg_median, bkg_rms = sigma_clipped_stats(imgvals,
+                                                                None,
+                                                                sigma=nsigma_clip,
+                                                                cenfunc='median',
+                                                                maxiters=maxiters)
+            del imgnz, imgvals
             log.info("Sigma-clipped Statistics - Background mean: {}  median: {}  rms: {}".format(bkg_mean, bkg_median, bkg_rms))
             log.info("")
 
@@ -306,8 +316,9 @@ class CatalogImage:
         # the compute_background() is done, otherwise try to use Background2D to compute the background.
         if not simple_bkg and not is_zero_background_defined:
 
-            # If the sigma-clipped background image skew is less than the threshold,
-            # compute a two-dimensional background fit.
+            # If the sigma-clipped background image skew is greater than the threshold,
+            # compute a two-dimensional background fit.  A larger skew implies
+            # more sources in the field, which requires a more complex background.
             if bkg_skew < bkg_skew_threshold:
                 log.info("Computing the background using the Background2D algorithm.")
 
@@ -336,6 +347,7 @@ class CatalogImage:
                         bkg_median = bkg.background_median
                         break
 
+
                 # If computation of a two-dimensional background image were successful, compute the
                 # background-subtracted image and evaluate it for the number of negative values.
                 #
@@ -347,11 +359,13 @@ class CatalogImage:
 
                     # Determine how much of the illuminated portion of the background subtracted
                     # image is negative
-                    num_negative = np.count_nonzero(imgdata_bkgsub[self.footprint_mask] < 0)
+                    negative_threshold = -1.0 * bkg_rms_median
+                    num_negative = np.count_nonzero(imgdata_bkgsub[self.footprint_mask] < negative_threshold)
                     negative_ratio = num_negative / num_of_illuminated_pixels
                     del imgdata_bkgsub
 
                     # Report this information so the relative percentage and the threshold are known
+                    log.info("Threshold value for negative values in the background subtracted image {0:.3f}.".format(negative_threshold))
                     log.info("Percentage of negative values in the background subtracted image {0:.2f} vs low threshold of {1:.2f}.".format(100.0 * negative_ratio, negative_percent))
 
                     # If the background subtracted image has too many negative values which may be

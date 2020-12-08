@@ -1,5 +1,5 @@
 {
-    "bkg_box_size": 27,
+    "bkg_box_size": 13,
     "bkg_filter_size": 3,
     "good_fwhm": [0.9, 2.0],
     "nsigma": 1.0,
@@ -16,7 +16,6 @@
     "flag_trim_value": 65368,
     "simple_bkg": false,
     "zero_percent": 25.0,
-    "negative_threshold": 0.0,
     "negative_percent": 15.0,
     "nsigma_clip": 3.0,
     "maxiters": 3,
@@ -30,7 +29,7 @@
     },
     "sourcex": {
         "fwhm": 0.14,
-        "source_box": 7,
+        "source_box": 3,
         "nlevels": 32,
         "contrast": 0.005,
         "border": 10,
