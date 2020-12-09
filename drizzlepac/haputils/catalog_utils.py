@@ -1254,9 +1254,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Get the SCI image data
             imgarr = copy.deepcopy(self.image.data)
 
-            # The imgarr should be background subtracted to match the threshold which has no background
-            imgarr_bkgsub = imgarr  # - self.image.bkg_background_ra
-
             # Write out diagnostic data
             if self.diagnostic_mode:
                 # Exclusion mask
@@ -1266,10 +1263,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # Background image
                 outname = self.imgname.replace(".fits", "_bkg.fits")
                 fits.PrimaryHDU(data=self.image.bkg_background_ra).writeto(outname)
-
-                # Background-subtracted image
-                outname = self.imgname.replace(".fits", "_bkgsub.fits")
-                fits.PrimaryHDU(data=imgarr_bkgsub).writeto(outname)
 
             # Compute the threshold to use for source detection
             threshold = self.compute_threshold(self._nsigma, self.image.bkg_background_ra + self.image.bkg_rms_ra)
@@ -1284,7 +1277,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # "custom kernel" did not work out, build_auto_kernel() drops back to a Gaussian.
             log.info('Kernel shape: {}    source_box: {}'.format(self.image.kernel.shape, self._size_source_box))
             inv_footprint_mask = ndimage.binary_erosion(self.image.inv_footprint_mask, iterations=10)
-            custom_segm_img = self.detect_and_deblend_sources(imgarr_bkgsub,
+            custom_segm_img = self.detect_and_deblend_sources(imgarr,
                                                               threshold,
                                                               ncount,
                                                               filter_kernel=self.image.kernel,
@@ -1304,7 +1297,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # the background subtracted total detection image are used for the evaluation.
             is_big_crowded = False
             is_big_crowded = self._evaluate_segmentation_image(custom_segm_img,
-                                                               imgarr_bkgsub,
+                                                               imgarr,
                                                                big_island_only=False,
                                                                max_biggest_source=self._max_biggest_source,
                                                                max_source_fraction=self._max_source_fraction)
@@ -1331,7 +1324,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     fits.PrimaryHDU(data=threshold).writeto(outname)
 
                 # Generate the new segmentation map with the new kernel
-                rw2d_segm_img = self.detect_and_deblend_sources(imgarr_bkgsub,
+                rw2d_segm_img = self.detect_and_deblend_sources(imgarr,
                                                                 threshold,
                                                                 ncount,
                                                                 filter_kernel=rw2d_kernel,
@@ -1348,7 +1341,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # Evaluate the new segmentation image for completeness
                 self.is_big_island = False
                 self.is_big_island = self._evaluate_segmentation_image(rw2d_segm_img,
-                                                                       imgarr_bkgsub,
+                                                                       imgarr,
                                                                        big_island_only=True,
                                                                        max_biggest_source=self._max_biggest_source,
                                                                        max_source_fraction=self._max_source_fraction)
@@ -1362,7 +1355,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
                 # images using the coordinates determined from the total drizzled image.
                 self.segm_img = copy.deepcopy(rw2d_segm_img)
-                self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
+                self.source_cat = source_properties(imgarr, self.segm_img, background=self.image.bkg_background_ra,
                                                     filter_kernel=rw2d_kernel, wcs=self.image.imgwcs)
 
             # Situation where the image was not deemed to be crowded
@@ -1371,7 +1364,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
                 # images using the coordinates determined from the total drizzled image.
                 self.segm_img = copy.deepcopy(custom_segm_img)
-                self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
+                self.source_cat = source_properties(imgarr, self.segm_img, background=self.image.bkg_background_ra,
                                                     filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
 
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
