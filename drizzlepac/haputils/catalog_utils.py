@@ -785,7 +785,7 @@ class HAPCatalogBase:
         num_sources = len(data_table)
         data_table.meta["Number of sources"] = num_sources
 
-        if "X-Center" in data_table.colnames:
+        if any(item in ["X-Center", "xcentroid"] for item in data_table.colnames):
             proc_type = "aperture"
         else:
             proc_type = "segment"
@@ -1122,6 +1122,7 @@ class HAPPointCatalog(HAPCatalogBase):
             A table containing a subset of columns from a filter catalog.
 
         """
+        return
         # Evaluate self.sources (the total product list) even though len(self.sources) should not be possible
         if len(subset_table) == 0 or len(self.sources) == 0:
             log.error("No sources found in the current filter table nor in the total source table.")
