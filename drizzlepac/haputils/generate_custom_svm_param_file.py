@@ -24,8 +24,8 @@ __version_date__ = '04-Dec-2020'
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def make_svm_input_file(input_filename, input_custom_pars_file=None, output_custom_pars_file=None,
-                        clobber=False, log_level=logutil.logging.INFO):
+def make_svm_input_file(input_filename, output_custom_pars_file=None, clobber=False,
+                        log_level=logutil.logging.INFO):
     """
     create a custom SVM processing pipeline parameter file based on the observations present in the current
     working directory using config_utils.HapConfig() and optionally update_ci_values() to adjust CI upper and
@@ -36,12 +36,6 @@ def make_svm_input_file(input_filename, input_custom_pars_file=None, output_cust
     input_filename: string
         The 'poller file' where each line contains information regarding an exposures taken
         during a single visit.
-
-    input_custom_pars_file: string, optional
-        Represents a fully specified input filename of a configuration JSON file which has been
-        customized for specialized processing.  This file should contain ALL the input parameters
-        necessary for processing.  If there is a filename present for this parameter, the
-        'use_defaults_configs' parameter is ignored. The default is None.
 
     output_custom_pars_file: string, optional
         Fully specified output filename which contains all the configuration parameters
@@ -105,13 +99,11 @@ def make_svm_input_file(input_filename, input_custom_pars_file=None, output_cust
             log.info("Preparing configuration parameter values for total product {}".format(total_item.drizzle_filename))
             total_item.configobj_pars = config_utils.HapConfig(total_item,
                                                                log_level=log_level,
-                                                               input_custom_pars_file=input_custom_pars_file,
                                                                output_custom_pars_file=output_custom_pars_file)
             for filter_item in total_item.fdp_list:
                 log.info("Preparing configuration parameter values for filter product {}".format(filter_item.drizzle_filename))
                 filter_item.configobj_pars = config_utils.HapConfig(filter_item,
                                                                     log_level=log_level,
-                                                                    input_custom_pars_file=input_custom_pars_file,
                                                                     output_custom_pars_file=output_custom_pars_file)
                 update_ci_values(filter_item, output_custom_pars_file, log_level)
 
@@ -119,7 +111,6 @@ def make_svm_input_file(input_filename, input_custom_pars_file=None, output_cust
                 log.info("Preparing configuration parameter values for exposure product {}".format(expo_item.drizzle_filename))
                 expo_item.configobj_pars = config_utils.HapConfig(expo_item,
                                                                   log_level=log_level,
-                                                                  input_custom_pars_file=input_custom_pars_file,
                                                                   output_custom_pars_file=output_custom_pars_file)
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -224,7 +215,5 @@ if __name__ == '__main__':
                       "info": logutil.logging.INFO,
                       "debug": logutil.logging.DEBUG}
 
-    make_svm_input_file(user_args.poller_filename,
-                        output_custom_pars_file=user_args.output_custom_pars_file,
-                        clobber=user_args.clobber,
-                        log_level=log_level_dict[user_args.log_level])
+    make_svm_input_file(user_args.poller_filename, output_custom_pars_file=user_args.output_custom_pars_file,
+                        clobber=user_args.clobber, log_level=log_level_dict[user_args.log_level])
