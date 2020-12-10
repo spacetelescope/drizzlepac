@@ -785,7 +785,7 @@ class HAPCatalogBase:
         num_sources = len(data_table)
         data_table.meta["Number of sources"] = num_sources
 
-        if "X-Center" in data_table.colnames:
+        if any(item in ["X-Center", "xcentroid"] for item in data_table.colnames):
             proc_type = "aperture"
         else:
             proc_type = "segment"
@@ -817,8 +817,9 @@ class HAPCatalogBase:
         data_table.meta["h17.9"] = ["  128 - Bleeding and Cosmic Rays"]
         data_table.meta["h18"] = ["#================================================================================================="]
 
-        if proc_type is "segment" and self.is_big_island:
-            data_table.meta["h19"] = ["WARNING: Segmentation catalog is considered to be of poor quality due to a crowded field or large segments."]
+        if proc_type is "segment":
+            if self.is_big_island:
+                data_table.meta["h19"] = ["WARNING: Segmentation catalog is considered to be of poor quality due to a crowded field or large segments."]
 
         return (data_table)
 
@@ -906,6 +907,13 @@ class HAPPointCatalog(HAPCatalogBase):
                 log.warning("No point sources were found in Total Detection Product, {}.".format(self.imgname))
                 log.warning("Processing for point source catalogs for this product is ending.")
                 return
+
+            # calculate and add RA and DEC columns to table
+            ra, dec = self.transform_list_xy_to_ra_dec(sources["xcentroid"], sources["ycentroid"], self.imgname)
+            ra_col = Column(name="RA", data=ra, dtype=np.float64)
+            dec_col = Column(name="DEC", data=dec, dtype=np.float64)
+            sources.add_column(ra_col, index=3)
+            sources.add_column(dec_col, index=4)
 
             for col in sources.colnames:
                 sources[col].info.format = '.8g'  # for consistent table output
@@ -999,7 +1007,7 @@ class HAPPointCatalog(HAPCatalogBase):
             output_photometry_table[col_title].unit = final_col_units[col_title]
 
         # Capture specified columns in order to append to the total detection table
-        self.subset_filter_source_cat = output_photometry_table["ID", "RA", "DEC", "MagAp2", "CI", "Flags"]
+        self.subset_filter_source_cat = output_photometry_table["ID", "MagAp2", "CI", "Flags"]
         self.subset_filter_source_cat.rename_column("MagAp2", "MagAP2_" + filter_name)
         self.subset_filter_source_cat.rename_column("CI", "CI_" + filter_name)
         self.subset_filter_source_cat.rename_column("Flags", "Flags_" + filter_name)
@@ -1114,7 +1122,10 @@ class HAPPointCatalog(HAPCatalogBase):
             A table containing a subset of columns from a filter catalog.
 
         """
-        if len(subset_table) == 0:
+        return
+        # Evaluate self.sources (the total product list) even though len(self.sources) should not be possible
+        if len(subset_table) == 0 or len(self.sources) == 0:
+            log.error("No sources found in the current filter table nor in the total source table.")
             return
 
         # Keep all the rows in the original total detection table and add columns from the filter
@@ -1128,9 +1139,7 @@ class HAPPointCatalog(HAPCatalogBase):
         for col2del in ['sharpness', 'roundness1', 'roundness2', 'npix', 'sky', 'peak', 'flux', 'mag']:
             if col2del in self.sources.colnames:
                 self.sources.remove_column(col2del)
-        if 'RA' in self.sources.colnames and 'DEC' in self.sources.colnames:
-            subset_table.remove_columns(['RA', 'DEC'])
-        self.sources = join(self.sources, subset_table, keys="ID", join_type="inner")
+        self.sources = join(self.sources, subset_table, keys="ID", join_type="left")
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -1201,7 +1210,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         Returns
         -------
         self.sources
-        self.source_catalog
+        self.source_cat
 
         Defines
         -------
@@ -2139,12 +2148,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
         subset_table : Astropy table
             A table containing a subset of columns from a filter catalog.
         """
-        if len(subset_table) == 0:
+        # Evaluate self.source_cat (the total product list) even though len(self.source_cat) should not be possible
+        if len(subset_table) == 0 or len(self.source_cat) == 0:
+            log.error("No sources found in the current filter table nor in the total source table.")
             return
 
         # Keep all the rows in the original total detection table and add columns from the filter
         # table where a matching "id" key is present
-        self.source_cat = join(self.source_cat, subset_table, keys="ID", join_type="inner")
+        self.source_cat = join(self.source_cat, subset_table, keys="ID", join_type="left")
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

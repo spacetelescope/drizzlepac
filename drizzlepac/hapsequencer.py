@@ -305,6 +305,31 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             # ...and append the filter columns to the total detection product catalog.
             total_product_catalogs.combine(subset_columns_dict)
 
+        # At this point the total product catalog contains all columns contributed
+        # by each filter catalog. However, some of the columns originating in one or more of
+        # the filter catalogs contain no measurements for a particular source.  Remove all
+        # rows which contain empty strings (masked values) for all measurements for all
+        # of the filter catalogs.
+        for cat_type in total_product_catalogs.catalogs.keys():
+            good_rows_index = []
+            if cat_type == 'aperture':
+                all_columns = total_product_catalogs.catalogs[cat_type].sources.colnames
+                table_filled = total_product_catalogs.catalogs[cat_type].sources.filled(-9999.9)
+            else:
+                all_columns = total_product_catalogs.catalogs[cat_type].source_cat.colnames
+                table_filled = total_product_catalogs.catalogs[cat_type].source_cat.filled(-9999.9)
+            flag_columns = [colname for colname in all_columns if "Flags_" in colname]
+            filled_flag_columns = table_filled[flag_columns]
+            for i, trow in enumerate(filled_flag_columns):
+                for tcol in trow:
+                    if tcol != -9999:
+                        good_rows_index.append(i)
+                        break
+            if cat_type == 'aperture':
+                total_product_catalogs.catalogs[cat_type].sources = total_product_catalogs.catalogs[cat_type].sources[good_rows_index]
+            else:
+                total_product_catalogs.catalogs[cat_type].source_cat = total_product_catalogs.catalogs[cat_type].source_cat[good_rows_index]
+
         # Determine whether any catalogs should be written out at all based on comparison to expected
         # rate of cosmic-ray contamination for the total detection product
         reject_catalogs = total_product_catalogs.verify_crthresh(n1_exposure_time)
