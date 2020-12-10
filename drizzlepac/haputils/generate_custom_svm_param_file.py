@@ -24,22 +24,18 @@ __version_date__ = '04-Dec-2020'
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def make_svm_input_file(input_filename, diagnostic_mode=False, input_custom_pars_file=None,
-                        output_custom_pars_file=None, phot_mode="both",
+def make_svm_input_file(input_filename, input_custom_pars_file=None, output_custom_pars_file=None,
                         clobber=False, log_level=logutil.logging.INFO):
     """
-    Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
-    controller which invokes the high-level functionality to process the single visit data.
+    create a custom SVM processing pipeline parameter file based on the observations present in the current
+    working directory using config_utils.HapConfig() and optionally update_ci_values() to adjust CI upper and
+    lower limits for filter products
 
     Parameters
     ----------
     input_filename: string
         The 'poller file' where each line contains information regarding an exposures taken
         during a single visit.
-
-    diagnostic_mode : bool, optional
-        Allows printing of additional diagnostic information to the log.  Also, can turn on
-        creation and use of pickled information.
 
     input_custom_pars_file: string, optional
         Represents a fully specified input filename of a configuration JSON file which has been
@@ -51,24 +47,14 @@ def make_svm_input_file(input_filename, diagnostic_mode=False, input_custom_pars
         Fully specified output filename which contains all the configuration parameters
         available during the processing session.  The default is None.
 
-    phot_mode : str, optional
-        Which algorithm should be used to generate the sourcelists? 'aperture' for aperture photometry;
-        'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'.
-        Default value is 'both'.
-
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
         .log file. Default value is 20, or 'info'.
 
-
     RETURNS
     -------
-    return_value: integer
-        A return exit code used by the calling Condor/OWL workflow code: 0 (zero) for success, 1 for error
+    Nothing.
     """
-    # This routine needs to return an exit code, return_value, for use by the calling
-    # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
-    return_value = 0
     log.setLevel(log_level)
     if not clobber:
         if os.path.exists(output_custom_pars_file):
@@ -77,9 +63,11 @@ def make_svm_input_file(input_filename, diagnostic_mode=False, input_custom_pars
             sys.exit()
     # Define trailer file (log file) that will contain the log entries for all processing
     if isinstance(input_filename, str):  # input file is a poller file -- easy case
-        logname = input_filename.replace('.out', '.log')
+        logname = input_filename.replace('.out', '_svm_partam_gen.log')
+
     else:
         logname = 'svm_param_gen.log'
+
     # Initialize total trailer filename as temp logname
     logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
     # start processing
