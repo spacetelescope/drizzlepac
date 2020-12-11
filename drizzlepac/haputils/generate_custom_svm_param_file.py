@@ -1,5 +1,35 @@
 #!/usr/bin/env python
 
+""" generate_custom_svm_param_file - a module to create a template SVM processing pipeline parameter file
+    based on the observations present in the current working directory for the user to customize
+
+    Command-line USAGE: python generate_custom_svm_param_file.py [-clo] poller_filename
+
+    Optional inputs:
+    -c: If turned on, existing files with the same name as the output custom SVM parameter file created by
+    this script will be overwritten.
+
+    -l: The desired level of verboseness in the log statements displayed on the screen and written to the
+    .log file. Valid input options are 'critical', 'error', 'warning', 'info', or 'debug'.
+
+    -o: Name of the output configuration JSON file which will be created for specialized processing. This
+    file will contain ALL the input parameters necessary for processing. If not explicitly specified, the
+    default name for the output file is "custom_svm_params.json".
+
+    Python USAGE:
+    python
+    from drizzlepac.haputils import generate_custom_svm_param_file
+    generate_custom_svm_param_file.make_svm_input_file(input_filename,
+                                                       output_custom_pars_file='custom_svm_params.json',
+                                                       clobber=False,
+                                                       log_level=logutil.logging.INFO)
+
+    Important Note:
+    - This script generates only generates a template input parameter file populated with default values
+    based on the observations present in the current working directory. It is entirely incumbent on the user
+    to modify this file with non-default values.
+    """
+
 import argparse
 import datetime
 import json
@@ -24,7 +54,7 @@ __version_date__ = '04-Dec-2020'
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def make_svm_input_file(input_filename, output_custom_pars_file=None, clobber=False,
+def make_svm_input_file(input_filename, output_custom_pars_file='custom_svm_params.json', clobber=False,
                         log_level=logutil.logging.INFO):
     """
     create a custom SVM processing pipeline parameter file based on the observations present in the current
@@ -39,7 +69,7 @@ def make_svm_input_file(input_filename, output_custom_pars_file=None, clobber=Fa
 
     output_custom_pars_file: string, optional
         Fully specified output filename which contains all the configuration parameters
-        available during the processing session.  The default is None.
+        available during the processing session.  The default is 'custom_svm_params.json'.
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -204,9 +234,10 @@ if __name__ == '__main__':
                         'only record/display "critical" log statements, and specifying "error" will '
                         'record/display both "error" and "critical" log statements, and so on.')
     parser.add_argument('-o', '--output_custom_pars_file', required=False, default="custom_svm_params.json",
-                        help='Filename of a configuration JSON file which will been customized for '
-                             'specialized processing.  This file will contain ALL the input parameters '
-                             'necessary for processing.')
+                        help='Name of the output configuration JSON file which will be created for '
+                             'specialized processing. This file will contain ALL the input parameters '
+                             'necessary for processing. If not explicitly specified, the default name for '
+                             'the output file is "custom_svm_params.json".')
     user_args = parser.parse_args()
 
     log_level_dict = {"critical": logutil.logging.CRITICAL,
