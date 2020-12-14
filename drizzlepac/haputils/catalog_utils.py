@@ -904,9 +904,16 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                               reg_rms_median))
                     # Perform manual detection of sources using theoretical PSFs
                     # Initial test data: ictj65
+                    # determine the name of at least 1 input exposure
+                    calname = determine_input_image(self.image.imgname)
+                    user_peaks = decutils.find_point_sources(self.image.imgname,
+                                                             calname,
+                                                             mask=self.image.footprint_mask)
                     daofind = UserStarFinder(fwhm=source_fwhm,
                                             threshold=self.param_dict['nsigma'] * reg_rms_median)
-                    reg_sources = daofind(region, mask=self.image.inv_footprint_mask)
+                    reg_sources = daofind(region,
+                                          coords=user_peaks,
+                                          mask=self.image.inv_footprint_mask)
                 else:
                     err_msg = "'{}' is not a valid 'starfinder_algorithm' parameter input in the catalog_generation parameters json file. Valid options are 'dao' for photutils.detection.DAOStarFinder() or 'iraf' for photutils.detection.IRAFStarFinder().".format(self.param_dict["starfinder_algorithm"])
                     log.error(err_msg)
@@ -2224,3 +2231,12 @@ def make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11, 11)
         limit /= scale
 
     return masks
+
+def determine_input_image(image):
+    """Determine the name of an input exposure for the given drizzle product"""
+    with fits.open(image) as hdu:
+        calimg = hdu.header['d001data']
+
+    calimg = calimg.split('[]')[0]
+
+    return calimg

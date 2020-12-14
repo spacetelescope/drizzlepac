@@ -27,6 +27,7 @@ from astropy.table import Column, MaskedColumn, Table, join, vstack
 from astropy.convolution import RickerWavelet2DKernel
 from astropy.coordinates import SkyCoord
 from scipy import ndimage
+import scipy.signal as ss
 
 from photutils import CircularAperture, CircularAnnulus, DAOStarFinder, IRAFStarFinder
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
@@ -58,7 +59,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 # ======================================================================================================================
 
-def fft_deconv_img(img, psf, freq_limit=0.95):
+def fft_deconv_img(img, psf, freq_limit=0.95, sigma=None):
     """ FFT image deconvolution
 
     PARAMETERS
@@ -75,6 +76,10 @@ def fft_deconv_img(img, psf, freq_limit=0.95):
         Compute regularization parameter (frequency limit) to be used with PSF in deconvolution.
         This value should result in selecting a frequency
         one to two orders of magnitude below the largest spectral component of the point-spread function.
+
+    sigma : float or None, optional
+        Sigma of Gaussian filter to apply to deconvolved array to smooth out
+        final results.  If None, no smoothing gets applied.
 
     RETURNS
     -------
@@ -137,6 +142,8 @@ def fft_deconv_img(img, psf, freq_limit=0.95):
     # m_map = U (conj(S)/(|S|^2 + alpha^2)) U^H d
     m_map = (D.shape[1] * D.shape[0]) * np.fft.fftshift(np.fft.ifft2(M).real)
 
+    if sigma:
+        m_map = ndimage.gaussian_filter(m_map, sigma=sigma)
     return m_map
 
 # ======================================================================================================================
@@ -175,9 +182,20 @@ def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None,
         Full name, with path, for PSF from library.
 
     """
-    # look for instrument, detector, and filter in input image name
-    # Start by looking in the input image header for these values, so we know what to look
-    kw_vals = [fits.getval(imgname, kw).lower() for kw in instr_kws]
+    if 'total' not in imgname:
+        # look for instrument, detector, and filter in input image name
+        # Start by looking in the input image header for these values, so we know what to look
+        kw_vals = [fits.getval(imgname, kw).lower() for kw in instr_kws]
+    else:
+        with fits.open(imgname) as hdu:
+            for extn in hdu:
+                if 'detector' in extn.header:
+                    detector = extn.header['detector']
+                if 'photmode' in extn.header:
+                    photmode = extn.header['photmode']
+                    break
+        kw_vals = photmode.split(' ')[:3]
+        kw_vals[1] = detector
 
     if len(kw_vals) < len(instr_kws):
         kw_vals = [instr, detector] + filter
@@ -204,7 +222,10 @@ def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None,
     return psf_name
 
 
-def convert_library_psf(calimg, drzimg, psf, total_flux, smoothing=1.0):
+def convert_library_psf(calimg, drzimg, psf,
+                        total_flux=100000.0,
+                        pixfrac=1.0,
+                        smoothing=1.2):
     """Drizzle library PSF to match science image. """
 
     # Create copy of input science image based on input psf filename
@@ -213,6 +234,11 @@ def convert_library_psf(calimg, drzimg, psf, total_flux, smoothing=1.0):
     lib_psf_arr *= total_flux
 
     lib_size = [lib_psf_arr.shape[0] // 2, lib_psf_arr.shape[1] // 2]
+
+    # create hamming 2d filter to avoid edge effects
+    h = ss.hamming(lib_psf_arr.shape[0])
+    h2d = np.sqrt(np.outer(h,h))
+    lib_psf_arr *= h2d
 
     # This will be the name of the new file containing the library PSF that will be drizzled to
     # match the input iamge `drzimg`
@@ -223,8 +249,12 @@ def convert_library_psf(calimg, drzimg, psf, total_flux, smoothing=1.0):
     psf_base = fits.getdata(calimg, ext=1) * 0.0
     # Copy library PSF into this array
     out_cen = [psf_base.shape[0] // 2, psf_base.shape[1] // 2]
-    psf_base[out_cen[0] - lib_size[0]: out_cen[0] + lib_size[0],
-             out_cen[1] - lib_size[1]: out_cen[1] + lib_size[1]] = lib_psf_arr
+    edge = (lib_psf_arr.shape[0] % 2, lib_psf_arr.shape[1] % 2)
+    psf_base[out_cen[0] - lib_size[0]: out_cen[0] + lib_size[0] + edge[0],
+             out_cen[1] - lib_size[1]: out_cen[1] + lib_size[1] + edge[1]] = lib_psf_arr
+
+    # Smooth the PSF in order to avoid sharp edges in the deconvolution(FFT)
+    psf_base = ndimage.gaussian_filter(psf_base, sigma=smoothing)
 
     # Write out library PSF FLT file now
     psf_flt = shutil.copy(calimg, psf_flt_name)
@@ -238,7 +268,7 @@ def convert_library_psf(calimg, drzimg, psf, total_flux, smoothing=1.0):
         for extn in range(2, num_sci + 1):
             flt_hdu[('sci', extn)].data *= 0.0
     flt_hdu.close()
-    del flt_hdu
+    del flt_hdu, lib_psf_arr
 
     # Insure only final drizzle step is run
     drizzle_pars = {}
@@ -256,13 +286,14 @@ def convert_library_psf(calimg, drzimg, psf, total_flux, smoothing=1.0):
     drizzle_pars["driz_cr"] = False
     drizzle_pars["driz_combine"] = True
     drizzle_pars['final_wcs'] = True
-    drizzle_pars['final_pixfrac'] = smoothing
+    drizzle_pars['final_pixfrac'] = pixfrac
     drizzle_pars["final_refimage"] = "{}[1]".format(drzimg)
 
     # Drizzle PSF FLT file to match orientation and plate scale of drizzled science (total detection) image
     astrodrizzle.AstroDrizzle(input=psf_flt_name,
                               output=psf_drz_name,
                               **drizzle_pars)
+
 
     return psf_flt_name.replace("flt.fits", "drz.fits")
 
@@ -571,3 +602,36 @@ class UserStarFinder(findstars.StarFinderBase):
             table[column] = [getattr(props, column) for props in star_props]
 
         return table
+
+
+# -----------------------------------------------------------------------------
+#
+# Main user interface
+#
+# -----------------------------------------------------------------------------
+def find_point_sources(drzimg, calimg, mask=None, nsigma=5.0, box_size=11, sigma=2.0):
+    """ Identify point sources most similar to TinyTim PSFs"""
+    # Identify PSF for image
+    psfname = find_psf(drzimg)
+    # Load PSF and convert to be consistent (orientation) with image
+    drzpsf = convert_library_psf(calimg, drzimg, psfname, pixfrac=0.8)
+
+    # load image
+    with fits.open(drzimg) as drzhdu:
+        if len(drzhdu) == 1:
+            drz = drzhdu[0].data.copy()
+        else:
+            drz = drzhdu[('sci',1)].data.copy()
+
+    # Apply any user-specified mask
+    drz *= mask
+
+    # deconvolve the image with the PSF
+    decdrz = fft_deconv_img(drz, drzpsf, sigma=sigma)
+    import pdb;pdb.set_trace()
+
+    # find sources in deconvolved image
+    s = sigma_clipped_stats(decdrz, maxiters=1)
+    peaks = find_peaks(decdrz, threshold=s[1]+nsigma*s[2])
+
+    return peaks
