@@ -31,7 +31,7 @@ import scipy.signal as ss
 
 from photutils import CircularAperture, CircularAnnulus, DAOStarFinder, IRAFStarFinder
 from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
-from photutils import detect_sources, source_properties, deblend_sources
+from photutils import detect_sources, source_properties, deblend_sources, find_peaks
 from photutils import make_source_mask
 from photutils.utils import calc_total_error
 from stsci.tools import logutil
@@ -190,9 +190,9 @@ def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None,
         with fits.open(imgname) as hdu:
             for extn in hdu:
                 if 'detector' in extn.header:
-                    detector = extn.header['detector']
+                    detector = extn.header['detector'].lower()
                 if 'photmode' in extn.header:
-                    photmode = extn.header['photmode']
+                    photmode = extn.header['photmode'].lower()
                     break
         kw_vals = photmode.split(' ')[:3]
         kw_vals[1] = detector
@@ -218,6 +218,8 @@ def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None,
     if not os.path.exists(psf_name):
         log.error('No PSF found for keywords {} \n   with values of {}'.format(instr_kws, kw_vals))
         raise ValueError
+
+    log.info("Using Library PSF: {}".format(os.path.basename(psf_name)))
 
     return psf_name
 
@@ -320,6 +322,9 @@ def get_cutouts(data, star_list, kernel, threshold_eff, exclude_border=False):
 
         slices = (slice(y0, y1), slice(x0, x1))
         data_cutout = data[slices]
+        # Skip slices which include pixels with a value of NaN
+        if np.isnan(data_cutout).any():
+            continue
         convdata_cutout = convolved_data[slices]
 
         # correct pixel values for the previous image padding
@@ -335,7 +340,7 @@ def get_cutouts(data, star_list, kernel, threshold_eff, exclude_border=False):
         star_cutouts.append(findstars._StarCutout(data_cutout, convdata_cutout, slices,
                                         xpeak, ypeak, kernel, threshold_eff))
 
-        return star_cutouts
+    return star_cutouts
 
 
 class UserStarFinder(findstars.StarFinderBase):
@@ -440,6 +445,11 @@ class UserStarFinder(findstars.StarFinderBase):
             pixel values are negative. Therefore, setting ``peakmax`` to a
             non-positive value would result in exclusion of all objects.
 
+    coords : `~astropy.table.Table` or `None`
+        A table, such as returned by `find_peaks`, with approximate X,Y positions
+        of identified sources.
+        If not provided, the DAOFind algorithm will be used to find sources.
+
     See Also
     --------
     IRAFStarFinder
@@ -473,6 +483,7 @@ class UserStarFinder(findstars.StarFinderBase):
     def __init__(self, threshold, fwhm, ratio=1.0, theta=0.0,
                  sigma_radius=1.5, sharplo=0.2, sharphi=1.0, roundlo=-1.0,
                  roundhi=1.0, sky=0.0, exclude_border=False,
+                 coords=None,
                  brightest=None, peakmax=None):
 
         if not np.isscalar(threshold):
@@ -483,6 +494,7 @@ class UserStarFinder(findstars.StarFinderBase):
             raise TypeError('fwhm must be a scalar value.')
         self.fwhm = fwhm
 
+        self.coords = coords
         self.ratio = ratio
         self.theta = theta
         self.sigma_radius = sigma_radius
@@ -500,7 +512,7 @@ class UserStarFinder(findstars.StarFinderBase):
         self.peakmax = peakmax
         self._star_cutouts = None
 
-    def find_stars(self, data, coords=None, mask=None):
+    def find_stars(self, data, mask=None):
         """
         Find stars in an astronomical image.
 
@@ -515,9 +527,6 @@ class UserStarFinder(findstars.StarFinderBase):
             is masked.  Masked pixels are ignored when searching for
             stars.
 
-        coords : `~astropy.table.Table` or `None`
-            A table, such as returned by `find_peaks`, with approximate X,Y positions of identified sources
-            If not provided, the DAOFind algorithm will be used to find sources.
 
         Returns
         -------
@@ -544,9 +553,11 @@ class UserStarFinder(findstars.StarFinderBase):
             `None` is returned if no stars are found.
 
         """
-
-        if coords:
-            star_cutouts = get_cutouts(data, coords, kernel=self.kernel)
+        if self.coords:
+            star_cutouts = get_cutouts(data, self.coords,
+                                        self.kernel,
+                                        self.threshold_eff,
+                                        exclude_border=self.exclude_border)
         else:
             star_cutouts = findstars._find_stars(data, self.kernel, self.threshold_eff,
                                                  mask=mask,
@@ -609,29 +620,50 @@ class UserStarFinder(findstars.StarFinderBase):
 # Main user interface
 #
 # -----------------------------------------------------------------------------
-def find_point_sources(drzimg, calimg, mask=None, nsigma=5.0, box_size=11, sigma=2.0):
+def find_point_sources(drzname, data=None, mask=None, nsigma=5.0, box_size=11, sigma=2.0):
     """ Identify point sources most similar to TinyTim PSFs"""
+    # determine the name of at least 1 input exposure
+    calname = determine_input_image(drzname)
+
     # Identify PSF for image
-    psfname = find_psf(drzimg)
+    psfname = find_psf(drzname)
     # Load PSF and convert to be consistent (orientation) with image
-    drzpsf = convert_library_psf(calimg, drzimg, psfname, pixfrac=0.8)
+    drzpsfname = convert_library_psf(calname, drzname, psfname, pixfrac=0.8)
+    drzpsf = fits.getdata(drzpsfname)
 
-    # load image
-    with fits.open(drzimg) as drzhdu:
-        if len(drzhdu) == 1:
-            drz = drzhdu[0].data.copy()
-        else:
-            drz = drzhdu[('sci',1)].data.copy()
+    if data is None:
+        # load image
+        with fits.open(drzname) as drzhdu:
+            if len(drzhdu) == 1:
+                drz = drzhdu[0].data.copy()
+            else:
+                drz = drzhdu[('sci',1)].data.copy()
+        # Apply any user-specified mask
+        drz *= mask
+    else:
+        drz = data
 
-    # Apply any user-specified mask
-    drz *= mask
+    # invert the mask
+    invmask = np.invert(mask)
 
     # deconvolve the image with the PSF
     decdrz = fft_deconv_img(drz, drzpsf, sigma=sigma)
-    import pdb;pdb.set_trace()
 
     # find sources in deconvolved image
     s = sigma_clipped_stats(decdrz, maxiters=1)
-    peaks = find_peaks(decdrz, threshold=s[1]+nsigma*s[2])
+    peaks = find_peaks(decdrz, threshold=s[1]+nsigma*s[2],
+                       mask=invmask)
 
     return peaks
+
+def determine_input_image(image):
+    """Determine the name of an input exposure for the given drizzle product"""
+    calimg = None
+    with fits.open(image) as hdu:
+        calimg = hdu[0].header['d001data']
+    if calimg:
+        calimg = calimg.split('[')[0]
+    else:
+        log.warn('No input image found in "D001DATA" keyword for {}'.format(image))
+
+    return calimg

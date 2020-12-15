@@ -25,6 +25,7 @@ from stwcs.wcsutil import HSTWCS
 
 from . import astrometric_utils
 from . import photometry_tools
+from . import deconvolve_utils as decutils
 
 try:
     from matplotlib import pyplot as plt
@@ -258,10 +259,11 @@ class CatalogImage:
                                                                 cenfunc='median',
                                                                 maxiters=maxiters)
             # Refine background to better compute the median value
-            imgnz = imgdata[imgdata > 0.0]  # only want non-negative values
+            imgnz = imgdata * self.footprint_mask
+            imgnz = imgnz[imgnz > 0.0]  # only want non-negative values
             imgvals = imgnz[imgnz < (bkg_median_full + (bkg_rms_full*0.1))]
             bkg_mean, bkg_median, bkg_rms = sigma_clipped_stats(imgvals,
-                                                                self.inv_footprint_mask,
+                                                                None,
                                                                 sigma=nsigma_clip,
                                                                 cenfunc='median')
 
@@ -878,7 +880,7 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("{}".format("=" * 80))
 
             sources = None
-            for mask in self.tp_masks:
+            for masknum,mask in enumerate(self.tp_masks):
                 # apply mask for each separate range of WHT values
                 region = image * mask['mask']
 
@@ -899,21 +901,37 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                                reg_rms_median))
                     isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * reg_rms_median)
                     reg_sources = isf(region, mask=self.image.inv_footprint_mask)
-                elif self.param_dict["starfinder_algorithm"] == "tpsf":
+                elif self.param_dict["starfinder_algorithm"] == "psf":
                     log.info("UserStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
                                                                               reg_rms_median))
                     # Perform manual detection of sources using theoretical PSFs
                     # Initial test data: ictj65
-                    # determine the name of at least 1 input exposure
-                    calname = determine_input_image(self.image.imgname)
                     user_peaks = decutils.find_point_sources(self.image.imgname,
-                                                             calname,
+                                                             data=region,
+                                                             box_size=self.param_dict['region_size'],
+                                                             nsigma=self.param_dict['nsigma'],
                                                              mask=self.image.footprint_mask)
-                    daofind = UserStarFinder(fwhm=source_fwhm,
-                                            threshold=self.param_dict['nsigma'] * reg_rms_median)
+                    if len(user_peaks) == 0:
+                        user_peaks = None
+
+                    log.info("UserStarFinder identified {} sources".format(len(user_peaks)))
+                    if self.diagnostic_mode:
+                        peak_name = "{}_peaks{}.reg".format(self.image.imgname.split('.')[0], masknum)
+                        peak_reg = user_peaks['x_peak', 'y_peak']
+                        peak_reg['x_peak'] += 1
+                        peak_reg['y_peak'] += 1
+                        peak_reg.write(peak_name,
+                                       format='ascii.fast_no_header',
+                                       overwrite=True)
+
+                    daofind = decutils.UserStarFinder(fwhm=source_fwhm,
+                                            coords=user_peaks,
+                                            threshold=self.param_dict['nsigma'] * reg_rms_median,
+                                            sharphi=0.9)
+                    fits.PrimaryHDU(data=region).writeto(self.image.imgname.replace('drc.fits','region{}.fits'.format(masknum)), overwrite=True)
                     reg_sources = daofind(region,
-                                          coords=user_peaks,
                                           mask=self.image.inv_footprint_mask)
+                    reg_sources.write(self.image.imgname.replace('drc.fits','starfind_sources{}.ecsv'.format(masknum)), format='ascii.ecsv', overwrite=True)
                 else:
                     err_msg = "'{}' is not a valid 'starfinder_algorithm' parameter input in the catalog_generation parameters json file. Valid options are 'dao' for photutils.detection.DAOStarFinder() or 'iraf' for photutils.detection.IRAFStarFinder().".format(self.param_dict["starfinder_algorithm"])
                     log.error(err_msg)
@@ -932,6 +950,9 @@ class HAPPointCatalog(HAPCatalogBase):
                 log.warning("Processing for point source catalogs for this product is ending.")
                 return
 
+            log.info("Measured {} sources in {}".format(len(sources), self.image.imgname))
+            log.info("   colnames: {}".format(sources.colnames))
+
             # calculate and add RA and DEC columns to table
             ra, dec = self.transform_list_xy_to_ra_dec(sources["xcentroid"], sources["ycentroid"], self.imgname)
             ra_col = Column(name="RA", data=ra, dtype=np.float64)
@@ -942,6 +963,7 @@ class HAPPointCatalog(HAPCatalogBase):
             for col in sources.colnames:
                 sources[col].info.format = '.8g'  # for consistent table output
 
+            sources.write(self.image.imgname.replace('drc.fits','raw-point-cat.ecsv'), format='ascii.ecsv', overwrite=True)
             self.sources = sources
 
         # if processing filter product, use sources identified by parent total drizzle product identify_sources() run
@@ -2231,12 +2253,3 @@ def make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11, 11)
         limit /= scale
 
     return masks
-
-def determine_input_image(image):
-    """Determine the name of an input exposure for the given drizzle product"""
-    with fits.open(image) as hdu:
-        calimg = hdu.header['d001data']
-
-    calimg = calimg.split('[]')[0]
-
-    return calimg
