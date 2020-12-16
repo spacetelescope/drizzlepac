@@ -1133,7 +1133,6 @@ class HAPPointCatalog(HAPCatalogBase):
             A table containing a subset of columns from a filter catalog.
 
         """
-        return
         # Evaluate self.sources (the total product list) even though len(self.sources) should not be possible
         if len(subset_table) == 0 or len(self.sources) == 0:
             log.error("No sources found in the current filter table nor in the total source table.")
