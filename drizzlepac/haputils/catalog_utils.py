@@ -11,6 +11,7 @@ from astropy.stats import sigma_clipped_stats, gaussian_fwhm_to_sigma
 from astropy.table import Column, MaskedColumn, Table, join, vstack
 from astropy.convolution import RickerWavelet2DKernel
 from astropy.coordinates import SkyCoord
+from astropy.convolution import Gaussian2DKernel
 import numpy as np
 from scipy import ndimage, stats
 
@@ -665,6 +666,7 @@ class HAPCatalogBase:
     catalog_suffix = ".ecsv"
     catalog_region_suffix = ".reg"
     catalog_format = "ascii.ecsv"
+    catalog_type = None
 
     def __init__(self, image, param_dict, param_dict_qc, diagnostic_mode, tp_sources):
         self.image = image
@@ -841,6 +843,7 @@ class HAPPointCatalog(HAPCatalogBase):
     """Generate photometric sourcelist(s) for specified image(s) using aperture photometry of point sources.
     """
     catalog_suffix = "_point-cat.ecsv"
+    catalog_type = 'aperture'
 
     def __init__(self, image, param_dict, param_dict_qc, diagnostic_mode, tp_sources):
         super().__init__(image, param_dict, param_dict_qc, diagnostic_mode, tp_sources)
@@ -853,7 +856,7 @@ class HAPPointCatalog(HAPCatalogBase):
         """
         source_fwhm = self.image.kernel_fwhm
         # read in sci, wht extensions of drizzled product
-        image = np.nan_to_num(self.image.data, 0.0)
+        image = np.nan_to_num(self.image.data.copy(), 0.0)
 
         # Create the background-subtracted image
         image -= self.image.bkg_background_ra
@@ -977,6 +980,7 @@ class HAPPointCatalog(HAPCatalogBase):
         dec_col = Column(name="DEC", data=dec, dtype=np.float64)
         photometry_tbl.add_column(ra_col, index=2)
         photometry_tbl.add_column(dec_col, index=3)
+        log.info('Obtained photometry measurements for {} sources'.format(len(photometry_tbl)))
 
         try:
             # Calculate and add concentration index (CI) column to table
@@ -1027,6 +1031,7 @@ class HAPPointCatalog(HAPCatalogBase):
         self.source_cat = self.annotate_table(output_photometry_table,
                                               self.param_dict_qc,
                                               product=self.image.ghd_product)
+        log.info("Saved photometry table with {} sources".format(len(self.source_cat)))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1173,6 +1178,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
            Dictionary containing computed information for each catalog type
     """
     catalog_suffix = "_segment-cat.ecsv"
+    catalog_type = 'segment'
 
     # Class variable which indicates to the Filter object the Total object had to determine
     # the image background by the sigma_clipped alternate algorithm
@@ -1187,7 +1193,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._nlevels = self.param_dict["sourcex"]["nlevels"]
         self._contrast = self.param_dict["sourcex"]["contrast"]
         self._border = self.param_dict["sourcex"]["border"]
-        self._nsigma = self.param_dict["nsigma"]
+        self._nsigma = self.param_dict["sourcex"]["segm_nsigma"]
         self._rw2d_size = self.param_dict["sourcex"]["rw2d_size"]
         self._rw2d_nsigma = self.param_dict["sourcex"]["rw2d_nsigma"]
         self._max_biggest_source = self.param_dict["sourcex"]["max_biggest_source"]
@@ -1263,25 +1269,33 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 outname = self.imgname.replace(".fits", "_bkg.fits")
                 fits.PrimaryHDU(data=self.image.bkg_background_ra).writeto(outname)
 
+                # filter kernel as well
+                outname = self.imgname.replace(".fits", "_kernel.fits")
+                fits.PrimaryHDU(data=self.image.kernel).writeto(outname)
+
             # Compute the threshold to use for source detection
-            threshold = self.compute_threshold(self._nsigma, self.image.bkg_background_ra + self.image.bkg_rms_ra)
+            threshold = self.compute_threshold(self._nsigma, self.image.bkg_background_ra, self.image.bkg_rms_ra)
+
+            # Define smoothing kernel
+            sigma = 1.0 * gaussian_fwhm_to_sigma
+            g2d = Gaussian2DKernel(sigma, x_size=3, y_size=3)
+            g2d.normalize()
 
             ncount = 0
             if self.diagnostic_mode:
                 outname = self.imgname.replace(".fits", "_threshold" + str(ncount) + ".fits")
-                fits.PrimaryHDU(data=threshold).writeto(outname)
+                fits.PrimaryHDU(data=threshold).writeto(outname, overwrite=True)
 
             # Generate the segmentation map by detecting and deblending "sources" using the nominal
             # settings. Use all the parameters here developed for the "custom kernel".  Note: if the
             # "custom kernel" did not work out, build_auto_kernel() drops back to a Gaussian.
-            log.info('Kernel shape: {}    source_box: {}'.format(self.image.kernel.shape, self._size_source_box))
-            inv_footprint_mask = ndimage.binary_erosion(self.image.inv_footprint_mask, iterations=10)
+            log.info('Kernel shape: {}    source_box: {}'.format(g2d.shape, self._size_source_box))
             custom_segm_img = self.detect_and_deblend_sources(imgarr,
                                                               threshold,
                                                               ncount,
-                                                              filter_kernel=self.image.kernel,
+                                                              filter_kernel=g2d,
                                                               source_box=self._size_source_box,
-                                                              mask=inv_footprint_mask)
+                                                              mask=self.image.inv_footprint_mask)
 
             # Check if custom_segm_image is None indicating there are no detectable sources in the
             # total detection image.  If value is None, a warning has already been issued.  Issue
@@ -1315,7 +1329,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 rw2d_kernel.normalize()
 
                 # Re-compute the threshold to use for source detection
-                threshold = self.compute_threshold(self._rw2d_nsigma, self.image.bkg_background_ra + self.image.bkg_rms_ra)
+                threshold = self.compute_threshold(self._rw2d_nsigma, self.image.bkg_background_ra, self.image.bkg_rms_ra)
 
                 ncount += 1
                 if self.diagnostic_mode:
@@ -1427,7 +1441,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def compute_threshold(self, nsigma, bkg_rms):
+    def compute_threshold(self, nsigma, bkg_mean, bkg_rms):
         """Compute the threshold value above which sources are deemed detected.
 
            Parameters
@@ -1448,12 +1462,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
         log.info("Computing the threshold value used for source detection.")
 
         if not self.tp_masks:
-            threshold = nsigma * bkg_rms
+            threshold = bkg_mean + (nsigma * bkg_rms)
         else:
             threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
             log.info("Using WHT masks as a scale on the RMS to compute threshold detection limit.")
             for wht_mask in self.tp_masks:
-                threshold_item = nsigma * bkg_rms * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'].max())
+                threshold_item = (bkg_mean + (nsigma * bkg_rms)) * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'].max())
                 threshold_item[np.isnan(threshold_item)] = 0.0
                 threshold += threshold_item
             del(threshold_item)
