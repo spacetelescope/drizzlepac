@@ -252,24 +252,11 @@ class CatalogImage:
         if not is_zero_background_defined:
             log.info("")
             log.info("Computing the background using sigma-clipped statistics algorithm.")
-            bkg_mean_full, bkg_median_full, bkg_rms_full = sigma_clipped_stats(imgdata,
+            bkg_mean, bkg_median, bkg_rms = sigma_clipped_stats(imgdata,
                                                                 self.inv_footprint_mask,
                                                                 sigma=nsigma_clip,
-                                                                cenfunc='median',
-                                                                maxiters=maxiters)
+                                                                cenfunc='median')
 
-            log.info("FULL Sigma-clipped Statistics - Background mean: {}  median: {}  rms: {}".format(bkg_mean_full, bkg_median_full, bkg_rms_full))
-            # Refine background to better compute the median value
-            imgnz = imgdata.copy()
-            imgnz[self.inv_footprint_mask] = 0.0  # apply mask ahead of time
-            imgnz = imgnz[imgnz > 0.0]  # only want non-negative values
-            imgvals = imgnz[imgnz < (bkg_median_full + (bkg_rms_full*0.5))]
-            bkg_mean, bkg_median, bkg_rms = sigma_clipped_stats(imgvals,
-                                                                None,
-                                                                sigma=nsigma_clip,
-                                                                cenfunc='median',
-                                                                maxiters=maxiters)
-            del imgnz, imgvals
             log.info("Sigma-clipped Statistics - Background mean: {}  median: {}  rms: {}".format(bkg_mean, bkg_median, bkg_rms))
             log.info("")
 
@@ -318,7 +305,7 @@ class CatalogImage:
             # If the sigma-clipped background image skew is greater than the threshold,
             # compute a two-dimensional background fit.  A larger skew implies
             # more sources in the field, which requires a more complex background.
-            if bkg_skew < bkg_skew_threshold:
+            if bkg_skew > bkg_skew_threshold:
                 log.info("Computing the background using the Background2D algorithm.")
 
                 exclude_percentiles = [10, 25, 50, 75]
@@ -856,7 +843,7 @@ class HAPPointCatalog(HAPCatalogBase):
         """
         source_fwhm = self.image.kernel_fwhm
         # read in sci, wht extensions of drizzled product
-        image = np.nan_to_num(self.image.data.copy(), 0.0)
+        image = np.nan_to_num(self.image.data, copy=True, nan=0.0)
 
         # Create the background-subtracted image
         image -= self.image.bkg_background_ra
@@ -1476,7 +1463,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def detect_and_deblend_sources(self, imgarr_bkgsub, threshold, ncount, filter_kernel=None, source_box=7, mask=None):
+    def detect_and_deblend_sources(self, imgarr, threshold, ncount, filter_kernel=None, source_box=7, mask=None):
         """Detect and deblend sources found in the input total detection (aka white light) image.
 
            Image regions are identified as sources in the background subtracted 'total detection image'
@@ -1485,8 +1472,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
            Parameters
            ----------
-           imgarr_bkgsub :
-               Background subtracted total detection image
+           imgarr :
+               Total detection image (no background subtraction)
 
            threshold :
                Image which defines, on a pixel-by-pixel basis, the low limit above which
@@ -1511,7 +1498,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         log.info("Detecting sources in total image product.")
         # Note: SExtractor has "connectivity=8" which is the default for detect_sources().
         segm_img = None
-        segm_img = detect_sources(imgarr_bkgsub,
+        segm_img = detect_sources(imgarr,
                                   threshold,
                                   npixels=source_box,
                                   filter_kernel=filter_kernel,
@@ -1527,7 +1514,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Evaluate the segmentation image as this has an impact on the deblending time
         # This computation is just informational at this time
         _ = self._evaluate_segmentation_image(segm_img,
-                                              imgarr_bkgsub,
+                                              imgarr,
                                               big_island_only=False,
                                               max_biggest_source=self._max_biggest_source,
                                               max_source_fraction=self._max_source_fraction)
@@ -1542,7 +1529,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # segmentation. Sextractor uses a multi-thresholding technique.
             # npixels = number of connected pixels in source
             # npixels and filter_kernel should match those used by detect_sources()
-            segm_deblended_img = deblend_sources(imgarr_bkgsub,
+            segm_deblended_img = deblend_sources(imgarr,
                                                  segm_img,
                                                  npixels=source_box,
                                                  filter_kernel=filter_kernel,

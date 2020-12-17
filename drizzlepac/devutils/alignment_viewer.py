@@ -144,12 +144,12 @@ class Datasets:
                     plt.close()
                     json_summary[os.path.basename(p)] = summary
             plt.ion()
-            
+
         with open(pdfname.replace('.pdf', '_summary.json'), 'w') as jsonfile:
             json.dump(json_summary, jsonfile)
-        
 
-def create_product_page(prodname, zoom_size=128, wcsname="", 
+
+def create_product_page(prodname, zoom_size=128, wcsname="",
                         gcolor='magenta', fsize=8):
     """Create a matplotlib Figure() object which summarizes this product FITS file."""
 
@@ -167,7 +167,7 @@ def create_product_page(prodname, zoom_size=128, wcsname="",
         wcstype = prod[1].header['wcstype']
         wcs = wcsutil.HSTWCS(prod, ext=1)
         hdrtab = prod['hdrtab'].data
-        filters = ';'.join([phdr[f] for f in phdr['filter*']]) 
+        filters = ';'.join([phdr[f] for f in phdr['filter*']])
         dateobs = phdr['date-obs']  # human-readable date
         expstart = phdr['expstart']  # MJD float value
         asnid = phdr.get('asn_id', '')
@@ -175,7 +175,7 @@ def create_product_page(prodname, zoom_size=128, wcsname="",
     center = (data.shape[0] // 2, data.shape[1] // 2)
     prod_path = os.path.split(prodname)[0]
 
-    data = np.nan_to_num(data, 0.0)
+    data = np.nan_to_num(data, nan=0.0)
 
     # Get GAIA catalog
     refcat = amutils.create_astrometric_catalog(prodname, existing_wcs=wcs,
@@ -243,15 +243,15 @@ def create_product_page(prodname, zoom_size=128, wcsname="",
     hdrtab_cols = hdrtab.columns.names
     mtflag = get_col_val(hdrtab, 'mtflag', default="")
     gyromode = get_col_val(hdrtab, 'gyromode', default='N/A')
-    
-        
+
+
     # populate JSON summary info
     summary = dict(wcsname=wcsname, targname=targname, asnid=asnid,
                     dateobs=dateobs, expstart=expstart,
                     instrument=(inst, det), exptime=texptime,
                     wcstype=wcstype, num_gaia=len(refx), filters=filters,
                     rms_ra=-1, rms_dec=-1, nmatch=-1, catalog="")
-    obs_kws = ['gyromode', 'fgslock', 'aperture', 'mtflag', 'subarray', 
+    obs_kws = ['gyromode', 'fgslock', 'aperture', 'mtflag', 'subarray',
                 'obstype', 'obsmode', 'scan_typ', 'photmode']
     for kw in obs_kws:
         summary[kw] = get_col_val(hdrtab, kw, default="")
@@ -278,14 +278,13 @@ def create_product_page(prodname, zoom_size=128, wcsname="",
             fig_summary.text(0.01, 0.35, "# matches: {}".format(nmatch), fontsize=fsize)
             fig_summary.text(0.01, 0.3, "Matched to {} catalog".format(catalog), fontsize=fsize)
         except:
-            fig_summary.text(0.01, 0.35, "No MATCH to GAIA") 
+            fig_summary.text(0.01, 0.35, "No MATCH to GAIA")
             print("Data without a match to GAIA: {},{}".format(inexp, wcsname))
-            
-    
+
+
     return fig, summary
-    
+
 def get_col_val(hdrtab, keyword, default=None):
     val = hdrtab[0][keyword.upper()] if keyword.upper() in hdrtab.columns.names else default
     if isinstance(val, bool) or isinstance(val, np.bool_): val = str(val)
     return val
-    
