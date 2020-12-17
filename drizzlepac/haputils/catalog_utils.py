@@ -1302,7 +1302,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                max_source_fraction=self._rw2d_source_fraction)
 
             # If the science field via the segmentation map is deemed crowded or has big islands, compute the
-            # RickerWavelet2DKernel.  Still use the custom fwhm as it should be better than a generic fwhm.
+            # RickerWavelet2DKernel and perform the detect_segments() again. Still use the custom fwhm as it 
+            # should be better than a generic fwhm as it is based upon the data.
             # Note: the fwhm might be a default if the custom algorithm had to fall back to a Gaussian.
             if is_big_crowded:
                 log.info("")
@@ -1346,13 +1347,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 del custom_segm_img
 
             # SHOULD THERE BE ANOTHER CHECK ON BIG ISLANDS AND SOURCE FRACTION HERE and ITERATE - this can
-            # be a future improvement.
+            # be a future improvement.  There will need to be a scheme to handle what to do if the BI and SF
+            # are still too big.  This involves altering the background and/or threshold.
 
             # Deblend the segmentation image
             ncount += 1
             self.deblend_segments(segm_img,
                                   imgarr,
-                                  threshold,
                                   ncount,
                                   filter_kernel=self.image.kernel,
                                   source_box=self._size_source_box)
