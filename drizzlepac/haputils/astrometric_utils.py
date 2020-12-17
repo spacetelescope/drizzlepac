@@ -630,7 +630,7 @@ def find_fwhm(psf, default_fwhm):
                                                        niters=2)
     phot_results = itr_phot_obj(psf)
     # Insure none of the fluxes determined by photutils is np.nan
-    phot_results['flux_fit'] = np.nan_to_num(phot_results['flux_fit'].data, 0)
+    phot_results['flux_fit'] = np.nan_to_num(phot_results['flux_fit'].data, nan=0)
 
     if len(phot_results['flux_fit']) == 0:
         return None
@@ -1667,8 +1667,8 @@ def compute_similarity(image, reference):
     """
 
     # Insure NaNs are replaced with 0
-    image = np.nan_to_num(image[:], 0)
-    reference = np.nan_to_num(reference[:], 0)
+    image = np.nan_to_num(image[:], nan=0)
+    reference = np.nan_to_num(reference[:], nan=0)
 
     imgshape = (min(image.shape[0], reference.shape[0]),
                 min(image.shape[1], reference.shape[1]))
@@ -1816,7 +1816,7 @@ def get_align_fwhm(focus_dict, default_fwhm, src_size=11):
 
     # For sources near the edge of the image data, insure that any NaN's are converted to 0
     # This is necessary in order to allow FWHM to be determined
-    src = np.nan_to_num(src, 0)
+    src = np.nan_to_num(src, nan=0)
 
     # Normalize to total flux of 1 for FWHM determination
     kernel = src / src.sum()
@@ -1917,8 +1917,8 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsig
         sfile_region = sdata * soverlap
 
         # Insure all np.nan's are converted to zeros
-        drz_region = np.nan_to_num(drz_region, 0)
-        sfile_region = np.nan_to_num(sfile_region, 0)
+        drz_region = np.nan_to_num(drz_region, nan=0)
+        sfile_region = np.nan_to_num(sfile_region, nan=0)
 
         # Also compute focus index for the same region of the single drizzle file
         focus_val, focus_pos = determine_focus_index(sfile_region, sigma=sigma)

@@ -11,6 +11,7 @@ from astropy.stats import sigma_clipped_stats, gaussian_fwhm_to_sigma
 from astropy.table import Column, MaskedColumn, Table, join, vstack
 from astropy.convolution import RickerWavelet2DKernel
 from astropy.coordinates import SkyCoord
+from astropy.convolution import Gaussian2DKernel
 import numpy as np
 from scipy import ndimage, stats
 
@@ -77,6 +78,7 @@ class CatalogImage:
         self.bkg_rms_median = None
         self.footprint_mask = None
         self.inv_footprint_mask = None
+        self.negative_threshold = 0.0
 
         # Populated by self.build_kernel()
         self.kernel = None
@@ -97,7 +99,6 @@ class CatalogImage:
                      bkg_skew_threshold=0.5,
                      zero_percent=25.0,
                      negative_percent=15.0,
-                     negative_threshold=-0.5,
                      nsigma_clip=3.0,
                      maxiters=3,
                      good_fwhm=[1.5, 3.5]):
@@ -108,7 +109,6 @@ class CatalogImage:
                                     bkg_skew_threshold=bkg_skew_threshold,
                                     zero_percent=zero_percent,
                                     negative_percent=negative_percent,
-                                    negative_threshold=negative_threshold,
                                     nsigma_clip=nsigma_clip,
                                     maxiters=maxiters)
 
@@ -128,7 +128,6 @@ class CatalogImage:
                            bkg_skew_threshold=0.5,
                            zero_percent=25.0,
                            negative_percent=15.0,
-                           negative_threshold=0.0,
                            nsigma_clip=3.0,
                            maxiters=3):
         """Use a sigma-clipped algorithm or Background2D to determine the background of the input image.
@@ -169,9 +168,6 @@ class CatalogImage:
             background-subtracted image is determined - below this limit the Background2D algorithm stays in play,
             otherwise the sigma_clipped_stats algorithm is used.
 
-        negative_threshold : float, optional
-            Value below which negative values are counted in the computation of the negative_percent
-
         nsigma_clip : float, optional
             Parameter for the sigma_clipped_stats algorithm - number of standard deviations to use for both
             the lower and upper clipping limit.
@@ -207,7 +203,7 @@ class CatalogImage:
         log.info("File: {}".format(self.imgname))
         log.info("Zero threshold: {}".format(zero_percent))
         log.info("Sigma-clipped Background Configuration Variables")
-        log.info("  Negative threshold: {}".format(negative_threshold))
+        log.info("  Negative threshold: {}".format(self.negative_threshold))
         log.info("  Negative percent: {}".format(negative_percent))
         log.info("  Nsigma: {}".format(nsigma_clip))
         log.info("  Number of iterations: {}".format(maxiters))
@@ -259,8 +255,7 @@ class CatalogImage:
             bkg_mean, bkg_median, bkg_rms = sigma_clipped_stats(imgdata,
                                                                 self.inv_footprint_mask,
                                                                 sigma=nsigma_clip,
-                                                                cenfunc='median',
-                                                                maxiters=maxiters)
+                                                                cenfunc='median')
 
             log.info("Sigma-clipped Statistics - Background mean: {}  median: {}  rms: {}".format(bkg_mean, bkg_median, bkg_rms))
             log.info("")
@@ -299,6 +294,7 @@ class CatalogImage:
             self.bkg_rms_ra = np.full_like(imgdata, bkg_rms)
             self.bkg_median = bkg_median
             self.bkg_rms_median = bkg_rms
+            self.negative_threshold = -1.0 * bkg_rms
 
         # BACKGROUND COMPUTATION 3 (Background2D)
         # The simple_bkg = True is the way to force the background to be computed with the
@@ -306,9 +302,10 @@ class CatalogImage:
         # the compute_background() is done, otherwise try to use Background2D to compute the background.
         if not simple_bkg and not is_zero_background_defined:
 
-            # If the sigma-clipped background image skew is less than the threshold,
-            # compute a two-dimensional background fit.
-            if bkg_skew < bkg_skew_threshold:
+            # If the sigma-clipped background image skew is greater than the threshold,
+            # compute a two-dimensional background fit.  A larger skew implies
+            # more sources in the field, which requires a more complex background.
+            if bkg_skew > bkg_skew_threshold:
                 log.info("Computing the background using the Background2D algorithm.")
 
                 exclude_percentiles = [10, 25, 50, 75]
@@ -334,7 +331,9 @@ class CatalogImage:
                         bkg_rms_ra = bkg.background_rms
                         bkg_rms_median = bkg.background_rms_median
                         bkg_median = bkg.background_median
+                        self.negative_threshold = -1.0 * bkg.background_rms_median
                         break
+
 
                 # If computation of a two-dimensional background image were successful, compute the
                 # background-subtracted image and evaluate it for the number of negative values.
@@ -347,11 +346,12 @@ class CatalogImage:
 
                     # Determine how much of the illuminated portion of the background subtracted
                     # image is negative
-                    num_negative = np.count_nonzero(imgdata_bkgsub[self.footprint_mask] < 0)
+                    num_negative = np.count_nonzero(imgdata_bkgsub[self.footprint_mask] < self.negative_threshold)
                     negative_ratio = num_negative / num_of_illuminated_pixels
                     del imgdata_bkgsub
 
                     # Report this information so the relative percentage and the threshold are known
+                    log.info("Threshold value for negative values in the background subtracted image {0:.3f}.".format(self.negative_threshold))
                     log.info("Percentage of negative values in the background subtracted image {0:.2f} vs low threshold of {1:.2f}.".format(100.0 * negative_ratio, negative_percent))
 
                     # If the background subtracted image has too many negative values which may be
@@ -368,6 +368,7 @@ class CatalogImage:
                         self.bkg_rms_ra = bkg_rms_ra.copy()
                         self.bkg_rms_median = bkg_rms_median
                         self.bkg_median = bkg_median
+                        self.negative_threshold = -1.0 * bkg_rms_median
                         log.info("")
                         log.info("*** Use the background image determined from the Background2D. ***")
 
@@ -512,7 +513,6 @@ class HAPCatalogs:
                                       bkg_skew_threshold=self.param_dict['bkg_skew_threshold'],
                                       zero_percent=self.param_dict['zero_percent'],
                                       negative_percent=self.param_dict['negative_percent'],
-                                      negative_threshold=self.param_dict['negative_threshold'],
                                       nsigma_clip=self.param_dict['nsigma_clip'],
                                       maxiters=self.param_dict['maxiters'])
 
@@ -522,7 +522,6 @@ class HAPCatalogs:
                                 self.param_dict['bkg_skew_threshold'],
                                 self.param_dict['zero_percent'],
                                 self.param_dict['negative_percent'],
-                                self.param_dict['negative_threshold'],
                                 self.param_dict['nsigma_clip'],
                                 self.param_dict['maxiters'],
                                 self.param_dict['good_fwhm'])
@@ -654,6 +653,7 @@ class HAPCatalogBase:
     catalog_suffix = ".ecsv"
     catalog_region_suffix = ".reg"
     catalog_format = "ascii.ecsv"
+    catalog_type = None
 
     def __init__(self, image, param_dict, param_dict_qc, diagnostic_mode, tp_sources):
         self.image = image
@@ -830,6 +830,7 @@ class HAPPointCatalog(HAPCatalogBase):
     """Generate photometric sourcelist(s) for specified image(s) using aperture photometry of point sources.
     """
     catalog_suffix = "_point-cat.ecsv"
+    catalog_type = 'aperture'
 
     def __init__(self, image, param_dict, param_dict_qc, diagnostic_mode, tp_sources):
         super().__init__(image, param_dict, param_dict_qc, diagnostic_mode, tp_sources)
@@ -842,7 +843,7 @@ class HAPPointCatalog(HAPCatalogBase):
         """
         source_fwhm = self.image.kernel_fwhm
         # read in sci, wht extensions of drizzled product
-        image = np.nan_to_num(self.image.data, 0.0)
+        image = np.nan_to_num(self.image.data, copy=True, nan=0.0)
 
         # Create the background-subtracted image
         image -= self.image.bkg_background_ra
@@ -966,6 +967,7 @@ class HAPPointCatalog(HAPCatalogBase):
         dec_col = Column(name="DEC", data=dec, dtype=np.float64)
         photometry_tbl.add_column(ra_col, index=2)
         photometry_tbl.add_column(dec_col, index=3)
+        log.info('Obtained photometry measurements for {} sources'.format(len(photometry_tbl)))
 
         try:
             # Calculate and add concentration index (CI) column to table
@@ -1016,6 +1018,7 @@ class HAPPointCatalog(HAPCatalogBase):
         self.source_cat = self.annotate_table(output_photometry_table,
                                               self.param_dict_qc,
                                               product=self.image.ghd_product)
+        log.info("Saved photometry table with {} sources".format(len(self.source_cat)))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1122,7 +1125,6 @@ class HAPPointCatalog(HAPCatalogBase):
             A table containing a subset of columns from a filter catalog.
 
         """
-        return
         # Evaluate self.sources (the total product list) even though len(self.sources) should not be possible
         if len(subset_table) == 0 or len(self.sources) == 0:
             log.error("No sources found in the current filter table nor in the total source table.")
@@ -1163,6 +1165,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
            Dictionary containing computed information for each catalog type
     """
     catalog_suffix = "_segment-cat.ecsv"
+    catalog_type = 'segment'
 
     # Class variable which indicates to the Filter object the Total object had to determine
     # the image background by the sigma_clipped alternate algorithm
@@ -1177,7 +1180,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._nlevels = self.param_dict["sourcex"]["nlevels"]
         self._contrast = self.param_dict["sourcex"]["contrast"]
         self._border = self.param_dict["sourcex"]["border"]
-        self._nsigma = self.param_dict["nsigma"]
+        self._nsigma = self.param_dict["sourcex"]["segm_nsigma"]
         self._rw2d_size = self.param_dict["sourcex"]["rw2d_size"]
         self._rw2d_nsigma = self.param_dict["sourcex"]["rw2d_nsigma"]
         self._max_biggest_source = self.param_dict["sourcex"]["max_biggest_source"]
@@ -1243,9 +1246,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Get the SCI image data
             imgarr = copy.deepcopy(self.image.data)
 
-            # The imgarr should be background subtracted to match the threshold which has no background
-            imgarr_bkgsub = imgarr - self.image.bkg_background_ra
-
             # Write out diagnostic data
             if self.diagnostic_mode:
                 # Exclusion mask
@@ -1256,25 +1256,31 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 outname = self.imgname.replace(".fits", "_bkg.fits")
                 fits.PrimaryHDU(data=self.image.bkg_background_ra).writeto(outname)
 
-                # Background-subtracted image
-                outname = self.imgname.replace(".fits", "_bkgsub.fits")
-                fits.PrimaryHDU(data=imgarr_bkgsub).writeto(outname)
+                # filter kernel as well
+                outname = self.imgname.replace(".fits", "_kernel.fits")
+                fits.PrimaryHDU(data=self.image.kernel).writeto(outname)
 
             # Compute the threshold to use for source detection
-            threshold = self.compute_threshold(self._nsigma, self.image.bkg_rms_ra)
+            threshold = self.compute_threshold(self._nsigma, self.image.bkg_background_ra, self.image.bkg_rms_ra)
+
+            # Define smoothing kernel
+            sigma = 1.0 * gaussian_fwhm_to_sigma
+            g2d = Gaussian2DKernel(sigma, x_size=3, y_size=3)
+            g2d.normalize()
 
             ncount = 0
             if self.diagnostic_mode:
                 outname = self.imgname.replace(".fits", "_threshold" + str(ncount) + ".fits")
-                fits.PrimaryHDU(data=threshold).writeto(outname)
+                fits.PrimaryHDU(data=threshold).writeto(outname, overwrite=True)
 
             # Generate the segmentation map by detecting and deblending "sources" using the nominal
             # settings. Use all the parameters here developed for the "custom kernel".  Note: if the
             # "custom kernel" did not work out, build_auto_kernel() drops back to a Gaussian.
-            custom_segm_img = self.detect_and_deblend_sources(imgarr_bkgsub,
+            log.info('Kernel shape: {}    source_box: {}'.format(g2d.shape, self._size_source_box))
+            custom_segm_img = self.detect_and_deblend_sources(imgarr,
                                                               threshold,
                                                               ncount,
-                                                              filter_kernel=self.image.kernel,
+                                                              filter_kernel=g2d,
                                                               source_box=self._size_source_box,
                                                               mask=self.image.inv_footprint_mask)
 
@@ -1291,7 +1297,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # the background subtracted total detection image are used for the evaluation.
             is_big_crowded = False
             is_big_crowded = self._evaluate_segmentation_image(custom_segm_img,
-                                                               imgarr_bkgsub,
+                                                               imgarr,
                                                                big_island_only=False,
                                                                max_biggest_source=self._max_biggest_source,
                                                                max_source_fraction=self._max_source_fraction)
@@ -1304,13 +1310,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
             if is_big_crowded:
                 log.info("")
                 log.info("Using RickerWavelet2DKernel to generate an alternate segmentation map.")
-                log.info("RickerWavelet image kernel FWHM, {}, and kernel array size, {}.".format(self.image.kernel_fwhm, self._rw2d_size))
                 rw2d_kernel = RickerWavelet2DKernel(self.image.kernel_fwhm,
                                                     x_size=self._rw2d_size,
                                                     y_size=self._rw2d_size)
+                rw2d_kernel.normalize()
 
                 # Re-compute the threshold to use for source detection
-                threshold = self.compute_threshold(self._rw2d_nsigma, self.image.bkg_rms_ra)
+                threshold = self.compute_threshold(self._rw2d_nsigma, self.image.bkg_background_ra, self.image.bkg_rms_ra)
 
                 ncount += 1
                 if self.diagnostic_mode:
@@ -1318,7 +1324,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     fits.PrimaryHDU(data=threshold).writeto(outname)
 
                 # Generate the new segmentation map with the new kernel
-                rw2d_segm_img = self.detect_and_deblend_sources(imgarr_bkgsub,
+                rw2d_segm_img = self.detect_and_deblend_sources(imgarr,
                                                                 threshold,
                                                                 ncount,
                                                                 filter_kernel=rw2d_kernel,
@@ -1335,7 +1341,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # Evaluate the new segmentation image for completeness
                 self.is_big_island = False
                 self.is_big_island = self._evaluate_segmentation_image(rw2d_segm_img,
-                                                                       imgarr_bkgsub,
+                                                                       imgarr,
                                                                        big_island_only=True,
                                                                        max_biggest_source=self._max_biggest_source,
                                                                        max_source_fraction=self._max_source_fraction)
@@ -1349,7 +1355,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
                 # images using the coordinates determined from the total drizzled image.
                 self.segm_img = copy.deepcopy(rw2d_segm_img)
-                self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
+                self.source_cat = source_properties(imgarr, self.segm_img, background=self.image.bkg_background_ra,
                                                     filter_kernel=rw2d_kernel, wcs=self.image.imgwcs)
 
             # Situation where the image was not deemed to be crowded
@@ -1358,7 +1364,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
                 # images using the coordinates determined from the total drizzled image.
                 self.segm_img = copy.deepcopy(custom_segm_img)
-                self.source_cat = source_properties(imgarr_bkgsub, self.segm_img, background=self.image.bkg_background_ra,
+                self.source_cat = source_properties(imgarr, self.segm_img, background=self.image.bkg_background_ra,
                                                     filter_kernel=self.image.kernel, wcs=self.image.imgwcs)
 
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
@@ -1422,7 +1428,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def compute_threshold(self, nsigma, bkg_rms):
+    def compute_threshold(self, nsigma, bkg_mean, bkg_rms):
         """Compute the threshold value above which sources are deemed detected.
 
            Parameters
@@ -1443,12 +1449,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
         log.info("Computing the threshold value used for source detection.")
 
         if not self.tp_masks:
-            threshold = nsigma * bkg_rms
+            threshold = bkg_mean + (nsigma * bkg_rms)
         else:
             threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
             log.info("Using WHT masks as a scale on the RMS to compute threshold detection limit.")
             for wht_mask in self.tp_masks:
-                threshold_item = nsigma * bkg_rms * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'].max())
+                threshold_item = (bkg_mean + (nsigma * bkg_rms)) * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'].max())
                 threshold_item[np.isnan(threshold_item)] = 0.0
                 threshold += threshold_item
             del(threshold_item)
@@ -1457,7 +1463,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def detect_and_deblend_sources(self, imgarr_bkgsub, threshold, ncount, filter_kernel=None, source_box=7, mask=None):
+    def detect_and_deblend_sources(self, imgarr, threshold, ncount, filter_kernel=None, source_box=7, mask=None):
         """Detect and deblend sources found in the input total detection (aka white light) image.
 
            Image regions are identified as sources in the background subtracted 'total detection image'
@@ -1466,8 +1472,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
            Parameters
            ----------
-           imgarr_bkgsub :
-               Background subtracted total detection image
+           imgarr :
+               Total detection image (no background subtraction)
 
            threshold :
                Image which defines, on a pixel-by-pixel basis, the low limit above which
@@ -1492,7 +1498,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         log.info("Detecting sources in total image product.")
         # Note: SExtractor has "connectivity=8" which is the default for detect_sources().
         segm_img = None
-        segm_img = detect_sources(imgarr_bkgsub,
+        segm_img = detect_sources(imgarr,
                                   threshold,
                                   npixels=source_box,
                                   filter_kernel=filter_kernel,
@@ -1508,7 +1514,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Evaluate the segmentation image as this has an impact on the deblending time
         # This computation is just informational at this time
         _ = self._evaluate_segmentation_image(segm_img,
-                                              imgarr_bkgsub,
+                                              imgarr,
                                               big_island_only=False,
                                               max_biggest_source=self._max_biggest_source,
                                               max_source_fraction=self._max_source_fraction)
@@ -1523,7 +1529,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # segmentation. Sextractor uses a multi-thresholding technique.
             # npixels = number of connected pixels in source
             # npixels and filter_kernel should match those used by detect_sources()
-            segm_deblended_img = deblend_sources(imgarr_bkgsub,
+            segm_deblended_img = deblend_sources(imgarr,
                                                  segm_img,
                                                  npixels=source_box,
                                                  filter_kernel=filter_kernel,

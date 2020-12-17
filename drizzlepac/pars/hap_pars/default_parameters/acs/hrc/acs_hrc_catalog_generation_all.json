@@ -16,7 +16,6 @@
     "flag_trim_value": 5,
     "simple_bkg": false,
     "zero_percent": 25.0,
-    "negative_threshold": 0.0,
     "negative_percent": 15.0,
     "nsigma_clip": 3.0,
     "maxiters": 3,
@@ -30,13 +29,14 @@
     },
     "sourcex": {
         "fwhm": 0.073,
-        "source_box": 7,
+        "source_box": 5,
+        "segm_nsigma": 3.0,
         "nlevels": 32,
         "contrast": 0.005,
         "border": 10,
         "rw2d_size": 15,
         "rw2d_nsigma": 1.5,
-        "max_biggest_source": 0.015,
-        "max_source_fraction": 0.075
+        "max_biggest_source": 0.045,
+        "max_source_fraction": 0.15
     }
 }

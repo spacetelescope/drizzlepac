@@ -1,5 +1,5 @@
 {
-    "bkg_box_size": 27,
+    "bkg_box_size": 13,
     "bkg_filter_size": 3,
     "good_fwhm": [0.9, 2.0],
     "nsigma": 1.0,
@@ -9,14 +9,13 @@
     "aperture_2": 0.45,
     "salgorithm": "mode",
     "starfinder_algorithm": "dao",
-    "scale": 100.0,
+    "scale": 1.5,
     "sensitivity": 0.95,
     "cr_residual": 0.0,
     "region_size": 11,
     "flag_trim_value": 65368,
     "simple_bkg": false,
     "zero_percent": 25.0,
-    "negative_threshold": 0.0,
     "negative_percent": 15.0,
     "nsigma_clip": 3.0,
     "maxiters": 3,
@@ -30,13 +29,14 @@
     },
     "sourcex": {
         "fwhm": 0.14,
-        "source_box": 7,
+        "source_box": 5,
+        "segm_nsigma": 3.0,
         "nlevels": 32,
-        "contrast": 0.005,
+        "contrast": 0.001,
         "border": 10,
-        "rw2d_size": 15,
+        "rw2d_size": 11,
         "rw2d_nsigma": 1.5,
-        "max_biggest_source": 0.015,
-        "max_source_fraction": 0.075
+        "max_biggest_source": 0.045,
+        "max_source_fraction": 0.15
     }
 }
