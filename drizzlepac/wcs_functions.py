@@ -284,9 +284,11 @@ def make_outputwcs(imageObjectList, output, configObj=None, perfect=False):
         for chip in chip_wcs:
             if chip.idcscale is None:
                 chip.idcscale = chip.pscale
+                warn_str = "{}: Data from {} was NOT updated with the distortion model from {}!"
+                print(warn_str.format("WARNING", chip.filename, chip.idctab))
 
         hstwcs_list += chip_wcs
-        
+
     if not undistort and len(hstwcs_list) == 1:
         default_wcs = hstwcs_list[0].deepcopy()
     else:

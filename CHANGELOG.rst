@@ -14,6 +14,12 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+3.2.1 (unreleased)
+==================
+
+- Update ``AstroDrizzle`` to work with data which have not been updated using
+  the IDCTAB. [#902]
+  
 3.2.0 (7-Dec-2020)
 ==================
 
