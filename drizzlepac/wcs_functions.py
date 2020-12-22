@@ -280,7 +280,13 @@ def make_outputwcs(imageObjectList, output, configObj=None, perfect=False):
                 cw.cpdis2 = None
                 cw.det2im = None
             undistort = False
+        # Insure that information is available for output_wcs to always work
+        for chip in chip_wcs:
+            if chip.idcscale is None:
+                chip.idcscale = chip.pscale
+
         hstwcs_list += chip_wcs
+        
     if not undistort and len(hstwcs_list) == 1:
         default_wcs = hstwcs_list[0].deepcopy()
     else:

@@ -376,6 +376,9 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
     ymin = 1
     xmax, ymax = source_wcs.pixel_shape
 
+    if blot_wcs.idcscale is None:
+        blot_wcs.idcscale = blot_wcs.pscale
+
     # compute the undistorted 'natural' plate scale for this chip
     if coeffs:
         wcslin = distortion.utils.make_orthogonal_cd(blot_wcs)
