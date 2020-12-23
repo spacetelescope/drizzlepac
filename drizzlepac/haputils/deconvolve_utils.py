@@ -46,6 +46,8 @@ except Exception:
     plt = None
 
 CATALOG_TYPES = ['aperture', 'segment']
+INSTR_KWS = ['INSTRUME', 'DETECTOR']
+FILTER_KW = "FILTER*"
 
 PSF_PATH = ['pars', 'psfs']
 
@@ -150,8 +152,7 @@ def fft_deconv_img(img, psf, freq_limit=0.95, sigma=None):
 
 # Functions to manage PSF library for deconvolution
 
-def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None,
-             instr_kws=['INSTRUME', 'DETECTOR', 'FILTER']):
+def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None):
     """Pull PSF from library based on unique combination of intrument/detector/filter.
 
     Parameters
@@ -172,20 +173,28 @@ def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None,
     path_root : str, optional
         Full path to parent directory of PSF library IF not the default path for package.
 
-    instr_kws : list
-        List of keywords from input image header where the instrument, detector and filter
-        names are specified.
-
     Returns
     ========
     psfname : str
         Full name, with path, for PSF from library.
 
     """
+
     if 'total' not in imgname:
         # look for instrument, detector, and filter in input image name
         # Start by looking in the input image header for these values, so we know what to look
-        kw_vals = [fits.getval(imgname, kw).lower() for kw in instr_kws]
+        kw_vals = [fits.getval(imgname, kw).lower() for kw in INSTR_KWS]
+        filter_vals = fits.getval(imgname, FILTER_KW)
+        if isinstance(filter_vals, str):
+            filter_list = [filter_vals]
+        else:
+            filter_list = [fv.lower() for fv in filter_vals.values()]
+        for f in filter_list:
+            if f.startswith('clear'):
+                filter_list.remove(f)
+        if len(filter_list) == 0:
+            filter_list = ['clear']
+
     else:
         with fits.open(imgname) as hdu:
             for extn in hdu:
@@ -194,11 +203,31 @@ def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None,
                 if 'photmode' in extn.header:
                     photmode = extn.header['photmode'].lower()
                     break
-        kw_vals = photmode.split(' ')[:3]
-        kw_vals[1] = detector
+        if 'CAL' in photmode:
+            split_str = "CAL"
+        else:
+            split_str = "MJD"
+        phot_vals = photmode.split(split_str)[0].rstrip().split(" ")
+        kw_vals = [phot_vals[0], detector]
+        filter_list = phot_vals[2:]
 
-    if len(kw_vals) < len(instr_kws):
-        kw_vals = [instr, detector] + filter
+    # Interpret filter to match best PSF
+    # crossed filters should default to widest-band filter used
+    # remove pol filters
+    for f in filter_list:
+        if f.lower().startswith('pol'):
+            filter_list.remove(f)
+
+    if len(filter_list) > 1:
+        bandpass = ['lp', 'w', 'm']
+        for bp in bandpass:
+            for f in filter_list:
+                if f.lower().endswith(bp):
+                    filter_list = [f]
+                    break
+    # create full psf designation we are looking for:
+    # instr, det, filter
+    kw_vals += filter_list
 
     if kw_vals[0] is None:
         log.error("No valid keywords found.")
@@ -211,12 +240,12 @@ def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None,
 
     path_root = os.path.join(path_root, kw_vals[0], kw_vals[1])
 
-    psf_name = os.path.join(path_root, "_".join(kw_vals + ['psf.fits']))
+    psf_name = os.path.join(path_root, "{}.fits".format("_".join(kw_vals)))
 
     log.debug('Looking for Library PSF {}'.format(psf_name))
 
     if not os.path.exists(psf_name):
-        log.error('No PSF found for keywords {} \n   with values of {}'.format(instr_kws, kw_vals))
+        log.error('No PSF found for keywords {} \n   with values of {}'.format(INSTR_KWS, kw_vals))
         raise ValueError
 
     log.info("Using Library PSF: {}".format(os.path.basename(psf_name)))
@@ -244,7 +273,7 @@ def convert_library_psf(calimg, drzimg, psf,
 
     # This will be the name of the new file containing the library PSF that will be drizzled to
     # match the input iamge `drzimg`
-    psf_flt_name = psf_root.replace('psf.fits', 'psf_flt.fits')
+    psf_flt_name = psf_root.replace('.fits', '_psf_flt.fits')
     psf_drz_name = psf_flt_name.replace('_flt.fits', '')  # astrodrizzle will add suffix
 
     # create version of PSF that will be drizzled
@@ -276,6 +305,7 @@ def convert_library_psf(calimg, drzimg, psf,
     drizzle_pars = {}
     drizzle_pars["build"] = True
     drizzle_pars['context'] = False
+    drizzle_pars['preserve'] = False
     drizzle_pars['clean'] = True
     drizzle_pars['in_memory'] = True
     drizzle_pars["resetbits"] = 0
@@ -303,8 +333,7 @@ def convert_library_psf(calimg, drzimg, psf,
 def get_cutouts(data, star_list, kernel, threshold_eff, exclude_border=False):
 
     coords = [(row[1], row[0]) for row in star_list]
-    convolved_data = findstars._filter_data(data, kernel.data, mode='constant',
-                                            fill_value=0.0, check_normalization=False)
+    convolved_data = data
 
     star_cutouts = []
     for (ypeak, xpeak) in coords:
@@ -328,7 +357,7 @@ def get_cutouts(data, star_list, kernel, threshold_eff, exclude_border=False):
         convdata_cutout = convolved_data[slices]
 
         # correct pixel values for the previous image padding
-        if not exclude_border:
+        if exclude_border:
             x0 -= kernel.xradius
             x1 -= kernel.xradius
             y0 -= kernel.yradius
@@ -643,8 +672,11 @@ def find_point_sources(drzname, data=None, mask=None, nsigma=5.0, box_size=11, s
     else:
         drz = data
 
-    # invert the mask
-    invmask = np.invert(mask)
+    if mask is not None:
+        # invert the mask
+        invmask = np.invert(mask)
+    else:
+        invmask = None
 
     # deconvolve the image with the PSF
     decdrz = fft_deconv_img(drz, drzpsf, sigma=sigma)

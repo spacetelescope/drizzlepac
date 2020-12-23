@@ -859,6 +859,11 @@ class HAPPointCatalog(HAPCatalogBase):
         image -= self.image.bkg_background_ra
         image = np.clip(image, 0, image.max())  # Insure there are no neg pixels to trip up StarFinder
 
+        if 'drz.fits' in self.image.imgname:
+            reg_suffix = 'drz.fits'
+        else:
+            reg_suffix = 'drc.fits'
+
         if not self.tp_sources:
             # Report configuration values to log
             log.info("{}".format("=" * 80))
@@ -928,10 +933,12 @@ class HAPPointCatalog(HAPCatalogBase):
                                             coords=user_peaks,
                                             threshold=self.param_dict['nsigma'] * reg_rms_median,
                                             sharphi=0.9)
-                    fits.PrimaryHDU(data=region).writeto(self.image.imgname.replace('drc.fits','region{}.fits'.format(masknum)), overwrite=True)
+
+                    fits.PrimaryHDU(data=region).writeto(self.image.imgname.replace(reg_suffix,'region{}.fits'.format(masknum)), overwrite=True)
+
                     reg_sources = daofind(region,
                                           mask=self.image.inv_footprint_mask)
-                    reg_sources.write(self.image.imgname.replace('drc.fits','starfind_sources{}.ecsv'.format(masknum)), format='ascii.ecsv', overwrite=True)
+                    reg_sources.write(self.image.imgname.replace(reg_suffix,'starfind_sources{}.ecsv'.format(masknum)), format='ascii.ecsv', overwrite=True)
                 else:
                     err_msg = "'{}' is not a valid 'starfinder_algorithm' parameter input in the catalog_generation parameters json file. Valid options are 'dao' for photutils.detection.DAOStarFinder() or 'iraf' for photutils.detection.IRAFStarFinder().".format(self.param_dict["starfinder_algorithm"])
                     log.error(err_msg)
@@ -963,7 +970,7 @@ class HAPPointCatalog(HAPCatalogBase):
             for col in sources.colnames:
                 sources[col].info.format = '.8g'  # for consistent table output
 
-            sources.write(self.image.imgname.replace('drc.fits','raw-point-cat.ecsv'), format='ascii.ecsv', overwrite=True)
+            sources.write(self.image.imgname.replace(reg_suffix,'raw-point-cat.ecsv'), format='ascii.ecsv', overwrite=True)
             self.sources = sources
 
         # if processing filter product, use sources identified by parent total drizzle product identify_sources() run
