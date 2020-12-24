@@ -96,7 +96,7 @@ by ``DAOFIND`` (without actually using any ``DAOFIND`` code).
           as "good" all other pixels (regardless of their DQ flag),
           set `dqbits` to ``~4+8``, or ``~4,8``. To obtain the
           same effect with an `int` input value (except for 0),
-          enter -(4+8+1)=-9. Following this convention,
+          enter -(4+8+1)=-13. Following this convention,
           a `dqbits` string value of ``'~0'`` would be equivalent to
           setting ``dqbits=None``.
 
