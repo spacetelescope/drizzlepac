@@ -160,7 +160,7 @@ num_cores : int (Default = None)
     this parameter will be forced to a value of 1 internally when running
     under Windows.  This restriction will be lifted in a future release once
     issues in the code related to using logging with multiprocessing are resolved.
-    
+
 in_memory : bool (Default = False)
     This parameter sets whether or not to keep all intermediate products
     in memory when processing. This includes all single drizzle products
@@ -352,7 +352,7 @@ sky_bits : int, str, None (Default = 0)
       as "good" all other pixels (regardless of their DQ flag),
       set ``sky_bits`` to ``~4+8``, or ``~4,8``. To obtain the
       same effect with an `int` input value (except for 0),
-      enter -(4+8+1)=-9. Following this convention,
+      enter -(4+8+1)=-13. Following this convention,
       a ``sky_bits`` string value of ``'~0'`` would be equivalent to
       setting ``sky_bits=None``.
 
