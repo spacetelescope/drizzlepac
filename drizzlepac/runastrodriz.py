@@ -1130,12 +1130,6 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                         wcsnames = headerlet.get_headerlet_kw_names(fhdu, kw='WCSNAME')
                         hdrnames = headerlet.get_headerlet_kw_names(fhdu)
                         extvers = headerlet.get_headerlet_kw_names(fhdu, kw='extver')
-                        hlets = [fhdu[('hdrlet',e)].headerlet for e in extvers]
-                        idctabs = [h[0].header['idctab'] for h in hlets]
-
-                        # This actually returns the date for the IDCTAB itself,
-                        # not just when the specific WCS was created using it.
-                        wcsdates = [fits.getval(fileutil.osfn(idc), 'date') for idc in idctabs]
 
                         # Remove duplicate hdrlet extensions
                         c = [hdrnames.count(h) for h in hdrnames]
@@ -1148,9 +1142,12 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                         for extvals in extdict.values():
                             if extvals:
                                 extvals.sort()
+                                remove_e = []
                                 for e in extvals[:-1]:
                                     del fhdu[('hdrlet'),e]
-
+                                    remove_e.append(e)
+                                for e in remove_e:
+                                    del extvers[extvers.index(e)]
                         # Remove OPUS based solutions
                         opus_indx = []
                         for i, w in enumerate(wcsnames):
@@ -1172,6 +1169,12 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                                 indx = wcsnames.index(defwcs)
                                 del wcsnames[indx]
                                 del hdrnames[indx]
+
+                    # This actually returns the date for the IDCTAB itself,
+                    # not just when the specific WCS was created using it.
+                    hlets = [fhdu[('hdrlet',e)].headerlet for e in extvers]
+                    idctabs = [h[0].header['idctab'] for h in hlets]
+                    wcsdates = [fits.getval(fileutil.osfn(idc), 'date') for idc in idctabs]
 
                     # Look for priority apriori WCS
                     restored = False
