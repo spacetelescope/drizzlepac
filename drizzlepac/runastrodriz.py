@@ -1130,7 +1130,9 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                         wcsnames = headerlet.get_headerlet_kw_names(fhdu, kw='WCSNAME')
                         hdrnames = headerlet.get_headerlet_kw_names(fhdu)
                         extvers = headerlet.get_headerlet_kw_names(fhdu, kw='extver')
-                        idctabs = headerlet.get_headerlet_kw_names(fhdu, kw='IDCTAB')
+                        hlets = [fhdu[('hdrlet',e)].headerlet for e in extvers]
+                        idctabs = [h[0].header['idctab'] for h in hlets]
+
                         # This actually returns the date for the IDCTAB itself,
                         # not just when the specific WCS was created using it.
                         wcsdates = [fits.getval(fileutil.osfn(idc), 'date') for idc in idctabs]
