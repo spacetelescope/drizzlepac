@@ -433,9 +433,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # Run updatewcs on each list of images to define pipeline default WCS
         # based on latest distortion models
         # Always apply latest distortion to replace pipeline-default OPUS WCS
-        updatewcs.updatewcs(_calfiles, use_db=False)
+        updatewcs.updatewcs(_calfiles, use_db=False, checkfiles=False)
         if _calfiles_flc:
-            updatewcs.updatewcs(_calfiles_flc, use_db=False)
+            updatewcs.updatewcs(_calfiles_flc, use_db=False, checkfiles=False)
 
         # Integrate user-specified drizzle parameters into pipeline_pars
         _trlmsg = _timestamp('Starting alignment with bad-pixel identification')
@@ -461,12 +461,12 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
             # run updatewcs with use_db=True to insure all products have
             # have a priori solutions as extensions
-            updatewcs.updatewcs(_calfiles, checkfiles=False)
+            updatewcs.updatewcs(_calfiles)
             _trlmsg += "Adding apriori WCS solutions to {}".format(_calfiles)
             _trlmsg += verify_gaia_wcsnames(_calfiles)
             if _calfiles_flc:
                 _trlmsg += "Adding apriori WCS solutions to {}".format(_calfiles_flc)
-                updatewcs.updatewcs(_calfiles_flc, checkfiles=False)
+                updatewcs.updatewcs(_calfiles_flc)
                 _trlmsg += verify_gaia_wcsnames(_calfiles_flc)
 
             # Check for the case where no update was performed due to all inputs
@@ -1129,8 +1129,12 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                     if wcsnames is None:
                         wcsnames = headerlet.get_headerlet_kw_names(fhdu, kw='WCSNAME')
                         hdrnames = headerlet.get_headerlet_kw_names(fhdu)
-                        wcsdates = headerlet.get_headerlet_kw_names(fhdu, kw='DATE')
                         extvers = headerlet.get_headerlet_kw_names(fhdu, kw='extver')
+                        idctabs = headerlet.get_headerlet_kw_names(fhdu, kw='IDCTAB')
+                        # This actually returns the date for the IDCTAB itself,
+                        # not just when the specific WCS was created using it.
+                        wcsdates = [fits.getval(fileutil.osfn(idc), 'date') for idc in idctabs]
+
                         # Remove duplicate hdrlet extensions
                         c = [hdrnames.count(h) for h in hdrnames]
                         extdict = {}
@@ -1173,7 +1177,7 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                     for apriori_type in apriori_priority:
                         # For each WCSNAME/HDRNAME in the file...
                         for wname, hname, wdate in zip(wcsnames, hdrnames, wcsdates):
-                            # Look for most recently added apriori_type (HSC, GSC,...)
+                            # Look for apriori_type (HSC, GSC,...) based on newest IDCTAB
                             if apriori_type in wname:
                                 if (most_recent_wcs and wdate > most_recent_wcs[0]) \
                                     or most_recent_wcs is None:
