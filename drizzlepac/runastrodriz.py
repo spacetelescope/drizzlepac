@@ -327,49 +327,54 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         else:
             dcorr = None
 
-    if dcorr == 'PERFORM':
-        if '_asn.fits' not in inFilename:
-            # Working with a singleton
-            # However, we always want to make sure we always use
-            # a calibrated product as input, if available.
-            _infile = fileutil.buildRootname(_cal_prodname, ext=cal_ext)
-            _infile_flc = fileutil.buildRootname(_cal_prodname, ext=['_flc.fits'])
+    if '_asn.fits' not in inFilename:
+        # Working with a singleton
+        # However, we always want to make sure we always use
+        # a calibrated product as input, if available.
+        _infile = fileutil.buildRootname(_cal_prodname, ext=cal_ext)
+        _infile_flc = fileutil.buildRootname(_cal_prodname, ext=['_flc.fits'])
 
-            _cal_prodname = _infile
-            _calfiles = [_infile]
+        _cal_prodname = _infile
+        _calfiles = [_infile]
 
-            _inlist = [_infile]
+        _inlist = [_infile]
 
-            print("_calfiles initialized as: {}".format(_calfiles))
-            if len(_calfiles) == 1 and "_raw" in _calfiles[0]:
-                _verify = False
+        print("_calfiles initialized as: {}".format(_calfiles))
+        if len(_calfiles) == 1 and "_raw" in _calfiles[0]:
+            _verify = False
 
-            # Add CTE corrected filename as additional input if present
-            if os.path.exists(_infile_flc) and _infile_flc != _infile:
-                _calfiles_flc = [_infile_flc]
-                _inlist = [_infile, _infile_flc]
+        # Add CTE corrected filename as additional input if present
+        if os.path.exists(_infile_flc) and _infile_flc != _infile:
+            _calfiles_flc = [_infile_flc]
+            _inlist = [_infile, _infile_flc]
 
+    else:
+        # Working with an ASN table...
+        _infile = inFilename
+        flist, duplist = processInput.checkForDuplicateInputs(_asndict['order'])
+        _calfiles = flist
+        if len(duplist) > 0:
+            origasn = processInput.changeSuffixinASN(inFilename, 'flt')
+            dupasn = processInput.changeSuffixinASN(inFilename, 'flc')
+            _inlist = [origasn, dupasn]
         else:
-            # Working with an ASN table...
-            _infile = inFilename
-            flist, duplist = processInput.checkForDuplicateInputs(_asndict['order'])
-            _calfiles = flist
-            if len(duplist) > 0:
-                origasn = processInput.changeSuffixinASN(inFilename, 'flt')
-                dupasn = processInput.changeSuffixinASN(inFilename, 'flc')
-                _inlist = [origasn, dupasn]
-            else:
-                _inlist = [_infile]
-            # We want to keep the original specification of the calibration
-            # product name, though, not a lower-case version...
-            _cal_prodname = inFilename
-            _new_asn.extend(_inlist)  # kept so we can delete it when finished
+            _inlist = [_infile]
+        # We want to keep the original specification of the calibration
+        # product name, though, not a lower-case version...
+        _cal_prodname = inFilename
+        _new_asn.extend(_inlist)  # kept so we can delete it when finished
 
-            # check to see whether FLC files are also present, and need to be updated
-            # generate list of FLC files
-            _calfiles_flc = [f.replace('_flt.fits', '_flc.fits')
-                             for f in _calfiles
-                             if os.path.exists(f.replace('_flt.fits', '_flc.fits'))]
+        # check to see whether FLC files are also present, and need to be updated
+        # generate list of FLC files
+        _calfiles_flc = [f.replace('_flt.fits', '_flc.fits')
+                         for f in _calfiles
+                         if os.path.exists(f.replace('_flt.fits', '_flc.fits'))]
+
+    # Add S_REGION keyword to input files regardless of whether DRIZCORR is turned on
+    for f in _calfiles+_calfiles_flc:
+        processing_utils.compute_sregion(f)
+
+    if dcorr == 'PERFORM':
 
         """
         Start updating the data and verifying that the new alignment is valid.
@@ -426,10 +431,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         updatewcs.updatewcs(_calfiles, use_db=False)
         if _calfiles_flc:
             updatewcs.updatewcs(_calfiles_flc, use_db=False)
-
-        # Add S_REGION keyword to input files
-        for f in _calfiles+_calfiles_flc:
-            processing_utils.compute_sregion(f)
 
         # Integrate user-specified drizzle parameters into pipeline_pars
         _trlmsg = _timestamp('Starting alignment with bad-pixel identification')
