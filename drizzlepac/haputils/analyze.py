@@ -37,7 +37,7 @@ TARKEY = 'TARGNAME'
 EXPKEY = 'EXPTIME'
 FGSKEY = 'FGSLOCK'
 CHINKEY = 'CHINJECT'
-
+DRIZKEY = 'DRIZCORR'
 
 # Annotates level to which image can be aligned according observational parameters
 # as described through FITS keywords
@@ -123,6 +123,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
     TARGNAME : DARK, TUNGSTEN, BIAS, FLAT, EARTH-CALIB, DEUTERIUM
     EXPTIME : 0
     CHINJECT : is not NONE
+    DRIZCORR : OMIT, SKIPPED
 
     The keyword/value pairs below define the category which the data can be processed, but
     the results may be compromised
@@ -204,6 +205,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
         mjdutc = header_data['EXPSTART']
 
         # Obtain keyword values for analysis of viability
+        drizcorr = (header_data[DRIZKEY]).upper()
         obstype = (header_data[OBSKEY]).upper()
         mtflag = (header_data[MTKEY]).upper()
         scan_typ = ''
@@ -249,6 +251,11 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
         if obstype != 'IMAGING':
             no_proc_key = OBSKEY
             no_proc_value = obstype
+
+        # drizzling has been turned off
+        elif drizcorr in ['OMIT', 'SKIPPED']:
+            no_proc_key = DRIZKEY
+            no_proc_value = drizcorr
 
         # Moving target
         elif mtflag == 'T':
