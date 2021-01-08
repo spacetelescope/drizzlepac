@@ -593,8 +593,7 @@ class SkyCell(object):
         pcell_id = int(scell_id[1:5])
         x = int(scell_id[6:8])
         y = int(scell_id[9:11])
-
-        return cls(projection_cell=pcell_id, x=x, y=y, scale=scale)
+        return cls(projection_cell=ProjectionCell(index=pcell_id), x=x, y=y, scale=scale)
 
     def __repr__(self):
         return "SkyCell object: {}".format(self.sky_cell_id)
