@@ -9,9 +9,8 @@ import astropy.units as u
 from astropy.io import fits as fits
 from astropy.stats import sigma_clipped_stats, gaussian_fwhm_to_sigma
 from astropy.table import Column, MaskedColumn, Table, join, vstack
-from astropy.convolution import RickerWavelet2DKernel
+from astropy.convolution import Gaussian2DKernel, RickerWavelet2DKernel
 from astropy.coordinates import SkyCoord
-from astropy.convolution import Gaussian2DKernel
 import numpy as np
 from scipy import ndimage, stats
 
@@ -1246,6 +1245,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Get the SCI image data
             imgarr = copy.deepcopy(self.image.data)
 
+            # Compute the threshold to use for source detection
+            threshold = self.compute_threshold(self._nsigma, self.image.bkg_background_ra, self.image.bkg_rms_ra)
+
             # Write out diagnostic data
             if self.diagnostic_mode:
                 # Exclusion mask
@@ -1260,17 +1262,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 outname = self.imgname.replace(".fits", "_kernel.fits")
                 fits.PrimaryHDU(data=self.image.kernel).writeto(outname)
 
-            # Compute the threshold to use for source detection
-            threshold = self.compute_threshold(self._nsigma, self.image.bkg_background_ra, self.image.bkg_rms_ra)
+                outname = self.imgname.replace(".fits", "_threshold.fits")
+                fits.PrimaryHDU(data=threshold).writeto(outname)
 
             # Define smoothing kernel
             sigma = 1.0 * gaussian_fwhm_to_sigma
             g2d = Gaussian2DKernel(sigma, x_size=3, y_size=3)
             g2d.normalize()
-
-            if self.diagnostic_mode:
-                outname = self.imgname.replace(".fits", "_threshold.fits")
-                fits.PrimaryHDU(data=threshold).writeto(outname)
 
             # Generate the segmentation map by detecting "sources" using the nominal settings. 
             # Use all the parameters here developed for the "custom kernel".  Note: if the
@@ -1339,16 +1337,29 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     log.warning("End processing for the Segmentation Catalog due to no sources detected with RickerWavelet Kernel.")
                     return
 
+                # Check the segmentation image again.
+                is_big_crowded = False
+                is_big_crowded = self._evaluate_segmentation_image(rw2d_segm_img,
+                                                                   imgarr,
+                                                                   big_island_only=False,
+                                                                   max_biggest_source=self._rw2d_biggest_source,
+                                                                   max_source_fraction=self._rw2d_source_fraction)
+
+                # Report if the segmentation image still seems to be problematic
+                if is_big_crowded:
+                    log.info("")
+                    log.warning("Computed Segmentation image still contains large islands or a large source fraction.")
+                    log.warning("Deblending may take significant time.")
+
+                # What should be done if is_big_crowded is still true - a future improvement??
+                # This involves altering the background and/or threshold.
+
                 segm_img = copy.deepcopy(rw2d_segm_img)
                 del rw2d_segm_img
 
             else:
                 segm_img = copy.deepcopy(custom_segm_img)
                 del custom_segm_img
-
-            # SHOULD THERE BE ANOTHER CHECK ON BIG ISLANDS AND SOURCE FRACTION HERE and ITERATE - this can
-            # be a future improvement.  There will need to be a scheme to handle what to do if the BI and SF
-            # are still too big.  This involves altering the background and/or threshold.
 
             # Deblend the segmentation image
             ncount += 1
@@ -1375,7 +1386,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
             # The total product catalog consists of at least the X/Y and RA/Dec coordinates for the detected
             # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
-            # images using the coordinates determined from the total drizzled image.
+            # images using the coordinates determined from the total drizzled image.  Measure the coordinates now.
             self.segm_img = copy.deepcopy(segm_img)
             del segm_img
             self.source_cat = source_properties(imgarr, self.segm_img, background=self.image.bkg_background_ra,
@@ -1386,7 +1397,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             total_measurements_table = Table(self.source_cat.to_table(columns=['id', 'xcentroid', 'ycentroid', 'sky_centroid_icrs']))
 
             # Filter the table to eliminate nans or inf based on the coordinates, then remove these segments from
-            # the segmentation image
+            # the segmentation image too
             good_rows = []
             bad_segm_rows_by_id = []
             updated_table = None
@@ -1471,8 +1482,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
             threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
             log.info("Using WHT masks as a scale on the RMS to compute threshold detection limit.")
             for wht_mask in self.tp_masks:
-                threshold_item = (bkg_mean + (nsigma * bkg_rms)) * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'].max())
-                threshold_item[np.isnan(threshold_item)] = 0.0
+                #threshold_item = (bkg_mean + (nsigma * bkg_rms)) * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'].max())
+                #threshold_item[np.isnan(threshold_item)] = 0.0
+                #threshold += threshold_item
+
+                threshold_rms = bkg_rms * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'].max())
+                threshold_rms_median = np.nanmedian(threshold_rms[threshold_rms > 0])
+                thereshold_item = (threshold_rms_median * nsigma) + bkg_mean
                 threshold += threshold_item
             del(threshold_item)
 
@@ -2054,7 +2070,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         Parameters
         ----------
         segm_img : Segmentation image
-            Segmentation image created by the Photutils package by detect_sources ()
+            Segmentation image created by the Photutils package by detect_sources().
 
         detection_image :  FITS data
             The total drizzled detection image (aka white light data).
