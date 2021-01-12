@@ -812,8 +812,11 @@ def build_poller_table(input, log_level, poller_type='svm'):
                 # Translate new format back to old format ("NEW" -> 0 and "OLD" -> 1)
                 poller_table_mapping = {"NEW": 0, "OLD": 1}
                 reverse_table_mapping = {"0": "NEW", "1": "OLD"}
+                rows_to_drop = []
                 for tbl_ctr in range(0, len(input_table)):
                     if input_table[tbl_ctr]['skycell_new'].upper() in ["OLD", "NEW"]:
+                        if input_table[tbl_ctr]['skycell_new'].upper() == "OLD":
+                            rows_to_drop.append(tbl_ctr)
                         input_table[tbl_ctr]['skycell_new'] = poller_table_mapping[input_table[tbl_ctr]['skycell_new'].upper()]
                     elif input_table[tbl_ctr]['skycell_new'] in ['0', '1']:
                         err_msg = "'{}' is an invalid skycell_new poller file value. (Legal values: 'NEW' or 'OLD'). Please use '{}' instead of '{}'. Exiting... ".format(input_table[tbl_ctr]['skycell_new'],
@@ -825,6 +828,19 @@ def build_poller_table(input, log_level, poller_type='svm'):
                         err_msg = "'{}' is an invalid skycell_new poller file value. (Legal values: 'NEW' or 'OLD').  Exiting... ".format(input_table[tbl_ctr]['skycell_new'])
                         log.error(err_msg)
                         raise Exception(err_msg)
+                # Omit input images listed as "OLD" in the poller file from processing
+                if len(rows_to_drop) == len(input_table):
+                    err_msg = "All images have already been MVM processed. No new MVM processing is needed. Exiting..."
+                    log.error(err_msg)
+                    raise Exception(err_msg)
+                elif len(rows_to_drop) == 0:
+                    log.info("None of the input images have previously been MVM processed. Proceeding with MVM processing of all input images... ")
+                else:
+                    log.info("The following {} input image(s) have already been MVM processed and will be omitted from MVM processing:".format(len(rows_to_drop)))
+                    for tbl_idx in rows_to_drop:
+                        log.info("   {}".format(input_table[tbl_idx]['filename']))
+                    input_table.remove_rows(rows_to_drop)
+
                 input_table['skycell_new'] = [int(not BOOL_STR_DICT[str(val).upper()]) for val in input_table['skycell_new']]
             is_poller_file = True
 
