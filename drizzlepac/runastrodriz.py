@@ -433,6 +433,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # Run updatewcs on each list of images to define pipeline default WCS
         # based on latest distortion models
         # Always apply latest distortion to replace pipeline-default OPUS WCS
+        # for successful creation of updated headerlets for the cases where
+        # all inputs having EXPTIME==0 (for example)
         updatewcs.updatewcs(_calfiles, use_db=False, checkfiles=False)
         if _calfiles_flc:
             updatewcs.updatewcs(_calfiles_flc, use_db=False, checkfiles=False)
@@ -461,7 +463,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
             # run updatewcs with use_db=True to insure all products have
             # have a priori solutions as extensions
-            # FIX: This should probably only be done in the apriori sub-directory! 
+            # FIX: This should probably only be done in the apriori sub-directory!
             updatewcs.updatewcs(_calfiles)
             _trlmsg += "Adding apriori WCS solutions to {}".format(_calfiles)
             _trlmsg += verify_gaia_wcsnames(_calfiles)
@@ -470,23 +472,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 updatewcs.updatewcs(_calfiles_flc)
                 _trlmsg += verify_gaia_wcsnames(_calfiles_flc)
 
-            # Check for the case where no update was performed due to all inputs
-            # having EXPTIME==0 (for example) and apply updatewcs anyway to allow
-            # for successful creation of updated headerlets for this data.
-            """
-            force_updatewcs = False
-            for cfile in _calfiles:
-                # If any file in the input list was NOT updated, force update with use_db now...
-                with fits.open(cfile) as img0:
-                    if 'wcsname' not in img0[1].header:
-                        force_updatewcs = True
-                        _trlmsg += "Forcing reference file update for WCS for: {}".format(_calfiles)
-                        break
-            if force_updatewcs:
-                updatewcs.updatewcs(_calfiles, checkfiles=False)
-                if _calfiles_flc:
-                    updatewcs.updatewcs(_calfiles_flc, checkfiles=False)
-            """
             try:
                 tmpname = "_".join([_trlroot, 'apriori'])
                 sub_dirs.append(tmpname)
@@ -963,7 +948,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 for fltfile, flcfile in zip(align_update_files, alignfiles):
                     row = align_table[align_table['imageName'] == flcfile]
                     headerlet_file = row['headerletFile'][0]
-                    if headerlet_file != "None":
+                    if headerlet_file not in ["None", '']:
                         apply_headerlet(fltfile, headerlet_file, flcfile=flcfile)
                         # headerlet.apply_headerlet_as_primary(fltfile, headerlet_file,
                         #                                     attach=True, archive=True)
@@ -1072,7 +1057,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             if calfiles_flc:
                 _ = [shutil.copy(f, parent_dir) for f in calfiles_flc]
             # Copy drizzle products to parent directory to replace 'less aligned' versions
-            _ = [shutil.copy(f, parent_dir) for f in drz_products + headerlet_files]
+            _ = [shutil.copy(f, parent_dir) for f in headerlet_files]
 
         _trlmsg += _timestamp('Verification of alignment completed ')
         _updateTrlFile(trlfile, _trlmsg)
@@ -1145,7 +1130,7 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                                 extvals.sort()
                                 remove_e = []
                                 for e in extvals[:-1]:
-                                    del fhdu[('hdrlet'),e]
+                                    del fhdu[('hdrlet'), e]
                                     remove_e.append(e)
                                 for e in remove_e:
                                     del extvers[extvers.index(e)]
