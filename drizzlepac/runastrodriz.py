@@ -465,16 +465,16 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             # have a priori solutions as extensions
             # FIX: This should probably only be done in the apriori sub-directory!
             updatewcs.updatewcs(_calfiles)
-            _trlmsg += "Adding apriori WCS solutions to {}".format(_calfiles)
-            _trlmsg += verify_gaia_wcsnames(_calfiles)
+            _trlmsg += "Adding apriori WCS solutions to {}\n".format(_calfiles)
+            _trlmsg += verify_gaia_wcsnames(_calfiles) + '\n'
             _wnames_calfiles = [(c, fits.getval(c, 'wcsname', ext=1)) for c in _calfiles]
-            _trlmsg += "Verifying apriori WCSNAMEs:"
+            _trlmsg += "Verifying apriori WCSNAMEs:\n"
             for (_cname, _wname) in _wnames_calfiles:
                 _trlmsg += "   {}: {}\n".format(_cname, _wname)
             if _calfiles_flc:
-                _trlmsg += "Adding apriori WCS solutions to {}".format(_calfiles_flc)
+                _trlmsg += "Adding apriori WCS solutions to {}\n".format(_calfiles_flc)
                 updatewcs.updatewcs(_calfiles_flc)
-                _trlmsg += verify_gaia_wcsnames(_calfiles_flc)
+                _trlmsg += verify_gaia_wcsnames(_calfiles_flc) + '\n'
 
             try:
                 tmpname = "_".join([_trlroot, 'apriori'])
