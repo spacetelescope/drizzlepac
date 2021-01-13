@@ -14,6 +14,12 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
+3.2.1 (unreleased)
+==================
+
+- Fix a bug in ``tweakback`` that may cause incorrect "updated" WCS to be
+  picked up from the drizzled image. [#913]
+
 3.1.9 (unreleased)
 ==================
 

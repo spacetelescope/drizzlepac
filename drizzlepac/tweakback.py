@@ -161,6 +161,8 @@ def tweakback(drzfile, input=None,  origwcs = None,
     ### Step 1: Read in updated and original WCS solutions
     # determine keys for all alternate WCS solutions in drizzled image header
     wkeys = wcsutil.altwcs.wcskeys(drzfile, ext=sciext)
+    if len(wkeys) < 2:
+        raise ValueError(f"'{drzfile}' must contain at least two valid WCS: original and updated.")
     wnames = wcsutil.altwcs.wcsnames(drzfile, ext=sciext)
     if not util.is_blank(newname):
         final_name = newname
@@ -170,25 +172,30 @@ def tweakback(drzfile, input=None,  origwcs = None,
     # Read in HSTWCS objects for final,updated WCS and previous WCS from
     # from drizzled image header
     # The final solution also serves as reference WCS when using updatehdr
+
     if not util.is_blank(wcsname):
-        for k in wnames:
-            if wnames[k] == wcsname:
-                wcskey = k
+        for wkey, wname in wnames.items():
+            if wname == wcsname:
+                wcskey = wkey
                 break
+        else:
+            raise ValueError(f"WCS with name '{wcsname}' not found in '{drzfile}'")
     else:
         wcskey = wkeys[-1]
-    final_wcs = wcsutil.HSTWCS(drzfile, ext=sciext, wcskey=wkeys[-1])
+
+    final_wcs = wcsutil.HSTWCS(drzfile, ext=sciext, wcskey=wcskey)
 
     if not util.is_blank(origwcs):
-        for k in wnames:
-            if wnames[k] == origwcs:
-                orig_wcskey = k
-                orig_wcsname = origwcs
+        for wkey, wname in wnames.items():
+            if wname == origwcs:
+                orig_wcskey = wkey
                 break
+        else:
+            raise ValueError(f"WCS with name '{origwcs}' not found in '{drzfile}'")
     else:
-        orig_wcsname,orig_wcskey = determine_orig_wcsname(scihdr,wnames,wkeys)
+         _, orig_wcskey = determine_orig_wcsname(scihdr, wnames, wkeys)
 
-    orig_wcs = wcsutil.HSTWCS(drzfile,ext=sciext,wcskey=orig_wcskey)
+    orig_wcs = wcsutil.HSTWCS(drzfile, ext=sciext, wcskey=orig_wcskey)
 
     # read in RMS values reported for new solution
     crderr1kw = 'CRDER1'+wkeys[-1]
