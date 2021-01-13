@@ -468,7 +468,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             _trlmsg += "Adding apriori WCS solutions to {}".format(_calfiles)
             _trlmsg += verify_gaia_wcsnames(_calfiles)
             _wnames_calfiles = [(c, fits.getval(c, 'wcsname', ext=1)) for c in _calfiles]
-            _trlmsg += "Evaluating apriori WCSNAMEs:\n   {}".format(_wnames_calfiles)
+            _trlmsg += "Verifying apriori WCSNAMEs:\n   {}".format(_wnames_calfiles)
             if _calfiles_flc:
                 _trlmsg += "Adding apriori WCS solutions to {}".format(_calfiles_flc)
                 updatewcs.updatewcs(_calfiles_flc)
