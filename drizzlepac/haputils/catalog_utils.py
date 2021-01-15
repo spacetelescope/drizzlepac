@@ -114,7 +114,7 @@ class CatalogImage:
                                     maxiters=maxiters)
 
         log.info("Attempt to determine FWHM based upon input data within a good FWHM range of {:.1f} to {:.1f}.".format(good_fwhm[0], good_fwhm[1]))
-        log.info("If no good FWHM candidate is identified, a value of {:.1f} will be used instead.".format(fwhmpsf/self.imgwcs.pscale))
+        log.info("If no good FWHM candidate is identified, a value of {:.1f} will be used instead.".format(fwhmpsf / self.imgwcs.pscale))
         k, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
                                                                   self.wht_image,
                                                                   good_fwhm=good_fwhm,
@@ -261,7 +261,7 @@ class CatalogImage:
             # Refine background to better compute the median value
             imgnz = imgdata * self.footprint_mask
             imgnz = imgnz[imgnz > 0.0]  # only want non-negative values
-            imgvals = imgnz[imgnz < (bkg_median_full + (bkg_rms_full*0.1))]
+            imgvals = imgnz[imgnz < (bkg_median_full + (bkg_rms_full * 0.1))]
             bkg_mean, bkg_median, bkg_rms = sigma_clipped_stats(imgvals,
                                                                 None,
                                                                 sigma=nsigma_clip,

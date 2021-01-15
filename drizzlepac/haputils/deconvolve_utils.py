@@ -18,27 +18,14 @@ from .. import astrodrizzle
 #
 # Original imports
 #
-import copy
-import pickle  # FIX Remove
 
-import astropy.units as u
-from astropy.stats import sigma_clipped_stats, gaussian_fwhm_to_sigma
-from astropy.table import Column, MaskedColumn, Table, join, vstack
-from astropy.convolution import RickerWavelet2DKernel
-from astropy.coordinates import SkyCoord
+from astropy.stats import sigma_clipped_stats
+from astropy.table import Table
 from scipy import ndimage
 import scipy.signal as ss
 
-from photutils import CircularAperture, CircularAnnulus, DAOStarFinder, IRAFStarFinder
-from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
-from photutils import detect_sources, source_properties, deblend_sources, find_peaks
-from photutils import make_source_mask
-from photutils.utils import calc_total_error
+from photutils import find_peaks
 from stsci.tools import logutil
-from stwcs.wcsutil import HSTWCS
-
-from . import astrometric_utils
-from . import photometry_tools
 
 try:
     from matplotlib import pyplot as plt
@@ -256,7 +243,7 @@ def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None):
 def convert_library_psf(calimg, drzimg, psf,
                         total_flux=100000.0,
                         pixfrac=1.0,
-                        smoothing=1.2):
+                        smoothing=1.25):
     """Drizzle library PSF to match science image. """
 
     # Create copy of input science image based on input psf filename
@@ -268,7 +255,7 @@ def convert_library_psf(calimg, drzimg, psf,
 
     # create hamming 2d filter to avoid edge effects
     h = ss.hamming(lib_psf_arr.shape[0])
-    h2d = np.sqrt(np.outer(h,h))
+    h2d = np.sqrt(np.outer(h, h))
     lib_psf_arr *= h2d
 
     # This will be the name of the new file containing the library PSF that will be drizzled to
@@ -666,7 +653,7 @@ def find_point_sources(drzname, data=None, mask=None, nsigma=5.0, box_size=11, s
             if len(drzhdu) == 1:
                 drz = drzhdu[0].data.copy()
             else:
-                drz = drzhdu[('sci',1)].data.copy()
+                drz = drzhdu[('sci', 1)].data.copy()
         # Apply any user-specified mask
         drz *= mask
     else:
@@ -683,7 +670,7 @@ def find_point_sources(drzname, data=None, mask=None, nsigma=5.0, box_size=11, s
 
     # find sources in deconvolved image
     s = sigma_clipped_stats(decdrz, maxiters=1)
-    peaks = find_peaks(decdrz, threshold=s[1]+nsigma*s[2],
+    peaks = find_peaks(decdrz, threshold=s[1] + nsigma * s[2],
                        mask=invmask)
 
     return peaks
