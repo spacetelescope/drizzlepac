@@ -77,7 +77,7 @@ class TestAlignMosaic(BaseHLATest):
         # Examine the output table to extract the RMS for the entire fit and the compromised
         # information
         if dataset_table:
-            total_rms = dataset_table['total_rms'][0]
+            total_rms = dataset_table.filtered_table['total_rms'][0]
 
         assert 0.0 < total_rms <= RMS_LIMIT
 
@@ -108,7 +108,7 @@ class TestAlignMosaic(BaseHLATest):
         # Examine the output table to extract the RMS for the entire fit and the compromised
         # information
         if dataset_table:
-            total_rms = dataset_table['total_rms'][0]
+            total_rms = dataset_table.filtered_table['total_rms'][0]
 
         assert 0.0 < total_rms <= RMS_LIMIT
 
@@ -171,7 +171,7 @@ class TestAlignMosaic(BaseHLATest):
         # Examine the output table to extract the RMS for the entire fit and the compromised
         # information
         if dataset_table:
-            total_rms = dataset_table['total_rms'][0]
+            total_rms = dataset_table.filtered_table['total_rms'][0]
 
         assert 0.0 < total_rms <= RMS_LIMIT
 
@@ -218,7 +218,7 @@ class TestAlignMosaic(BaseHLATest):
         # Examine the output table to extract the RMS for the entire fit and the compromised
         # information
         if dataset_table:
-            total_rms = dataset_table['total_rms'][0]
+            total_rms = dataset_table.filtered_table['total_rms'][0]
 
         assert 0.0 < total_rms <= RMS_LIMIT
 
@@ -235,6 +235,6 @@ class TestAlignMosaic(BaseHLATest):
         # Examine the output table to extract the RMS for the entire fit and the compromised
         # information
         if dataset_table:
-            total_rms = dataset_table['total_rms'][0]
+            total_rms = dataset_table.filtered_table['total_rms'][0]
 
         assert 0.0 < total_rms <= RMS_LIMIT
