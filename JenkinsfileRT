@@ -20,7 +20,7 @@ data_config.match_prefix = '(.*)_result' // .json is appended automatically
 bc = new BuildConfig()
 bc.nodetype = 'linux'
 bc.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
-bc.name = '3.6'
+bc.name = '3.7'
 bc.conda_channels = ['http://ssb.stsci.edu/astroconda']
 bc.conda_packages = ['python=3.7']
 bc.build_cmds = ["pip install numpy astropy codecov pytest-cov",

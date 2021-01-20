@@ -204,7 +204,7 @@ def updatewcs_with_shift(image, reference, wcsname='TWEAK', reusename=False,
     if isinstance(image, fits.HDUList):
         open_image = False
         filename = image.filename()
-        if image.fileinfo(0)['filemode'] is 'update':
+        if image.fileinfo(0)['filemode'] == 'update':
             image_update = True
         else:
             image_update = False
