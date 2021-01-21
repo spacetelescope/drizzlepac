@@ -1298,10 +1298,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Get the SCI image data
             imgarr = copy.deepcopy(self.image.data)
 
-            # The imgarr should be background subtracted to match the threshold which has no background
-            # imgarr_bkgsub = imgarr - self.image.bkg_background_ra
-            imgarr_bkgsub = imgarr
-
             # Write out diagnostic data
             if self.diagnostic_mode:
                 # Exclusion mask
