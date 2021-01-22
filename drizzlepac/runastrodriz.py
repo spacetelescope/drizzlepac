@@ -1209,7 +1209,11 @@ def restore_pipeline_default(files):
 
 
 def apply_apriori_wcs(calfiles, calfiles_flc, trlmsg, gsc_catalog='GSC240'):
-    """ Apply apriori WCS's from astrometry database based on currently defined IDCTAB"""
+    """ Apply apriori WCS's from astrometry database based on currently defined IDCTAB """
+    #
+    # TODO:  Have this code only update the headers with the WCSs based on the IDCTAB specified
+    #        in the image header (the 'latest' model).
+    #
     # Determine what IDCTAB reference file has been specified in the header
     idctab = fits.getval(calfiles[0], 'idctab')
     # Define:  refval - env var for dir with IDCTAB
@@ -1223,6 +1227,7 @@ def apply_apriori_wcs(calfiles, calfiles_flc, trlmsg, gsc_catalog='GSC240'):
         idcroot = idctab.split('_')[0]
         refval = None
 
+    del refval
     rootname = fits.getval(calfiles[0], 'rootname')
 
     # Query the astrometry database to determine what distortion models
@@ -1275,20 +1280,28 @@ def apply_apriori_wcs(calfiles, calfiles_flc, trlmsg, gsc_catalog='GSC240'):
                                          fitgeom='rscale', rot=0.0, scale=1.0,
                                          xsh=pix_offsets['x'], ysh=pix_offsets['y'],
                                          verbose=False, force=True)
+                # Save this new WCS as a headerlet extension and separate headerlet file
+                hdrname = "{}_{}".format(image.replace('.fits', ''), wname)
+                newhlt = max(headerlet.get_headerlet_kw_names(fits.open(image), kw='EXTVER')) + 1
+                numext = len(fits.open(image))
+                descrip = "A Priori WCS based on ICRS guide star positions"
+                trlmsg += "Appending a priori WCS {} to {}".format(wname, image)
+                headerlet.archive_as_headerlet(image, hdrname,
+                                               sciext='SCI',
+                                               wcskey="PRIMARY",
+                                               author="Pipeline",
+                                               descrip=descrip)
+                fits.setval(image, 'EXTVER', value=newhlt, ext=numext)
+                # Now, write out new a priori WCS to a unique headerlet file
+                hfilename = "{}_hlet.fits".format(hdrname)
+                trlmsg += "Writing out a priori WCS {} to headerlet {}".format(wname, hfilename)
+                headerlet.extract_headerlet(image, hfilename, extnum=numext)
+
         else:
             # Apply astrometry DB WCS consistent with IDCTAB from header
             # This is a situation which should NEVER occur in the pipeline
             pass
 
-
-def build_new_apriori_wcs(filename):
-    """ Define new apriori WCS for IDCTAB specified in filename header
-
-    This function creates a new apriori WCS based on the currently specified IDCTAB
-    reference file using the offsets for the apriori WCS reported by the astrometry
-    database for this file.
-    """
-    pass
 
 def _lowerAsn(asnfile):
     """ Create a copy of the original asn file and change
