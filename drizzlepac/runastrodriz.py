@@ -463,7 +463,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
             # run updatewcs with use_db=True to insure all products have
             # have a priori solutions as extensions
-            # FIX: This should probably only be done in the apriori sub-directory!
+            # This is NOT done in the apriori sub-directory in order to insure that all
+            # relevant solutions from the astrometry database get appended to the input FLT/FLC files.
+            apply_apriori_wcs(_calfiles, _calfiles_flc, _trlmsg)
+            """
             updatewcs.updatewcs(_calfiles)
             _trlmsg += "Adding apriori WCS solutions to {}\n".format(_calfiles)
             _trlmsg += verify_gaia_wcsnames(_calfiles) + '\n'
@@ -475,7 +478,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 _trlmsg += "Adding apriori WCS solutions to {}\n".format(_calfiles_flc)
                 updatewcs.updatewcs(_calfiles_flc)
                 _trlmsg += verify_gaia_wcsnames(_calfiles_flc) + '\n'
-
+            """
             try:
                 tmpname = "_".join([_trlroot, 'apriori'])
                 sub_dirs.append(tmpname)
@@ -518,7 +521,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     _trlmsg += 'A priori alignment FAILED! No a priori astrometry correction applied.\n'
             _updateTrlFile(_trlfile, _trlmsg)
 
-        aposteriori_table=None
+        aposteriori_table = None
         if align_to_gaia:
             _trlmsg = _timestamp('Starting a posteriori alignment')
             _trlmsg += __trlmarker__
@@ -1203,6 +1206,89 @@ def restore_pipeline_default(files):
             for sciext in range(num_sci):
                 if 'hdrname' in fhdu[('sci', sciext + 1)].header:
                     del fhdu[('sci', sciext + 1)].header['hdrname']
+
+
+def apply_apriori_wcs(calfiles, calfiles_flc, trlmsg, gsc_catalog='GSC240'):
+    """ Apply apriori WCS's from astrometry database based on currently defined IDCTAB"""
+    # Determine what IDCTAB reference file has been specified in the header
+    idctab = fits.getval(calfiles[0], 'idctab')
+    # Define:  refval - env var for dir with IDCTAB
+    #          idctab - full filename for IDCTAB
+    #          idcroot - rootname of IDCTAB
+    if '$' in idctab:
+        refval, idctab = idctab.split('$')
+        idcroot = idctab.split('_')[0]
+
+    else:
+        idcroot = idctab.split('_')[0]
+        refval = None
+
+    rootname = fits.getval(calfiles[0], 'rootname')
+
+    # Query the astrometry database to determine what distortion models
+    # were used for the WCSs stored in the database
+    adb = updatewcs.astrometry_utils.AstrometryDB()
+    # Retrieve the list of solutions for the first exposure
+    hdrlist, best_wcs_id = adb.getObservation(rootname)
+    wcsnames = [hdrlist[num][0].header['wcsname'] for num in hdrlist]
+
+    # the 'best_wcs_id' represents the WCS which will be applied as the
+    # 'best' apriori WCS from the database and should be the most recent WCS
+    #
+    # Observations where the exposure may have an older
+    # IDCTAB in the header will need to pull the older WCS solutions from the
+    # database and use them... What is in the header gets used regardless of age!!
+    #
+    best_idctab = best_wcs_id.split('-')[0].split('_')[1]
+
+    # compare best_idctab with idctab in headers
+    if best_idctab == idctab:
+        # run updatewcs with use_db=True as normal.
+        updatewcs.updatewcs(calfiles)
+        trlmsg += "Adding apriori WCS solutions to {}\n".format(calfiles)
+        trlmsg += verify_gaia_wcsnames(calfiles) + '\n'
+        _wnames_calfiles = [(c, fits.getval(c, 'wcsname', ext=1)) for c in calfiles]
+        trlmsg += "Verifying apriori WCSNAMEs:\n"
+        for (_cname, _wname) in _wnames_calfiles:
+            trlmsg += "   {}: {}\n".format(_cname, _wname)
+        if calfiles_flc:
+            trlmsg += "Adding apriori WCS solutions to {}\n".format(calfiles_flc)
+            updatewcs.updatewcs(calfiles_flc)
+            trlmsg += verify_gaia_wcsnames(calfiles_flc) + '\n'
+
+    else:
+        # Look to see whether header IDCTAB name was used for solutions
+        # already in the astrometry database.
+        idcused = any([idcroot in wname for wname in wcsnames])
+        if not idcused:
+            # We need to create new apriori WCS based on new IDCTAB
+            # Get guide star offsets from DB
+            offsets = amutils.find_gsc_offset(rootname)
+            wname = 'IDC_{}-{}'.format(idcroot, gsc_catalog)
+
+            # Now apply these offsets to all the input images being processed
+            for image in calfiles + calfiles_flc:
+                refwcs = amutils.build_self_reference(image)
+                pix_offsets = amutils.convert_gsc_offsets(offsets, refwcs)
+
+                updatehdr.updatewcs_with_shift(image, refwcs, wcsname=wname, reusename=False,
+                                         fitgeom='rscale', rot=0.0, scale=1.0,
+                                         xsh=pix_offsets['x'], ysh=pix_offsets['y'],
+                                         verbose=False, force=True)
+        else:
+            # Apply astrometry DB WCS consistent with IDCTAB from header
+            # This is a situation which should NEVER occur in the pipeline
+            pass
+
+
+def build_new_apriori_wcs(filename):
+    """ Define new apriori WCS for IDCTAB specified in filename header
+
+    This function creates a new apriori WCS based on the currently specified IDCTAB
+    reference file using the offsets for the apriori WCS reported by the astrometry
+    database for this file.
+    """
+    pass
 
 def _lowerAsn(asnfile):
     """ Create a copy of the original asn file and change
