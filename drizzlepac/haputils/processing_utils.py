@@ -153,16 +153,12 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
 
         for expname in input_exposures:
             if rootname in expname:
-                if level == 1:
-                    # Intrepret inputs as exposures (FLT/FLC) filename not HAP names
-                    name_col.append(expname)
-                else:
-                    # Convert input exposure names into HAP names
-                    for tot_obj in total_obj_list:
-                        for exposure in tot_obj.edp_list:
-                            if rootname in exposure.full_filename:
-                                name_col.append(exposure.product_basename)
-                                break
+                # Convert input exposure names into HAP names
+                for tot_obj in total_obj_list:
+                    for exposure in tot_obj.edp_list:
+                        if rootname in exposure.full_filename:
+                            name_col.append(exposure.product_basename)
+                            break
 
     # define new column with HAP expname
     max_len = min(max([len(name) for name in name_col]), 51)
