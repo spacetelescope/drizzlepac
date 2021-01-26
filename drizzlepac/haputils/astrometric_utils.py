@@ -393,9 +393,9 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
 
     NOTES
     ------
-    The default transform is GSC2-GAIA. The options were primarily for transforming 
-    individual objects from the catalogs and that is not specified in the limited 
-    documentation. The ipppssoot input is a special case where it pulls the gsids, 
+    The default transform is GSC2-GAIA. The options were primarily for transforming
+    individual objects from the catalogs and that is not specified in the limited
+    documentation. The ipppssoot input is a special case where it pulls the gsids,
     epoch and refframe from the dms databases and overrides the transform using this logic.
         REFFRAME=GSC1 sets GSC1-GAIA
         REFFRAME=ICRS and EPOCH < 2017.75 sets GSC2-GAIA
@@ -422,8 +422,10 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
 
     # Define what service needs to be used to get the offsets
     serviceType = "GSCConvert/GSCconvert.aspx"
-    spec_str = "TRANSFORM={}-{}&IPPPSSOOT={}"
-    spec = spec_str.format(input_catalog, output_catalog, ippssoot)
+    # spec_str = "TRANSFORM={}-{}&IPPPSSOOT={}"
+    # spec = spec_str.format(input_catalog, output_catalog, ippssoot)
+    spec_str = "REFFRAME=ICRS&IPPPSSOOT={}"
+    spec = spec_str.format(ippssoot)
     serviceUrl = "{}/{}?{}".format(SERVICELOCATION, serviceType, spec)
     rawcat = requests.get(serviceUrl)
     if not rawcat.ok:

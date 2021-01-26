@@ -204,7 +204,7 @@ def updatewcs_with_shift(image, reference, wcsname='TWEAK', reusename=False,
     if isinstance(image, fits.HDUList):
         open_image = False
         filename = image.filename()
-        if image.fileinfo(0)['filemode'] == 'update':
+        if image.fileinfo(0)['filemode'] is 'update':
             image_update = True
         else:
             image_update = False
@@ -397,7 +397,7 @@ def update_refchip_with_shift(chip_wcs, wcslin, fitgeom='rscale',
 
 
 ###
-### Header keyword prefix related archive functions
+#   Header keyword prefix related archive functions
 ###
 def update_wcs(image, extnum, new_wcs, wcsname="", reusename=False, verbose=False):
     """
