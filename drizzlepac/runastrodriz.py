@@ -178,7 +178,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     trlmsg += "    stwcs version {}".format(stwcs.__version__)
     trlmsg += "    numpy version {}".format(np.__version__)
     pipeline_pars = PIPELINE_PARS.copy()
-    _verify = True  # Switch to control whether to verify alignment or not
 
     # interpret envvar variable, if specified
     if envvar_compute_name in os.environ:
@@ -344,7 +343,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
         print("_calfiles initialized as: {}".format(_calfiles))
         if len(_calfiles) == 1 and "_raw" in _calfiles[0]:
-            _verify = False
+            align_to_gaia = align_with_apriori = False
 
         # Add CTE corrected filename as additional input if present
         if os.path.exists(_infile_flc) and _infile_flc != _infile:
@@ -374,7 +373,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                          if os.path.exists(f.replace('_flt.fits', '_flc.fits'))]
 
     # Add S_REGION keyword to input files regardless of whether DRIZCORR is turned on
-    for f in _calfiles+_calfiles_flc:
+    for f in _calfiles + _calfiles_flc:
         processing_utils.compute_sregion(f)
 
     if dcorr == 'PERFORM':
@@ -453,32 +452,36 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                                              force_alignment=force_alignment,
                                              find_crs=True, **adriz_pars)
 
-        if align_with_apriori:
+        if align_dicts is not None:
+            find_crs = not align_dicts[0]['alignment_verified']
+        else:
+            find_crs = False
+
+        # run updatewcs with use_db=True to insure all products have
+        # have a priori solutions as extensions
+        # This is NOT done in the apriori sub-directory in order to insure that all
+        # relevant solutions from the astrometry database get appended to the input FLT/FLC files.
+        #
+        updatewcs.updatewcs(_calfiles, use_db=True, all_wcs=False)
+        if _calfiles_flc:
+            _trlmsg += "Adding apriori WCS solutions to {}\n".format(_calfiles_flc)
+            updatewcs.updatewcs(_calfiles_flc, use_db=True, all_wcs=False)
+
+        _wnames_calfiles = [fits.getval(c, 'wcsname', ext=1) for c in _calfiles]
+
+        if any(['-FIT' in wname for wname in _wnames_calfiles]):
+            # we already have a previously determined a posteriori solution,
+            # and applied it as the 'best' solution based on this distortion model
+            # so we can skip any further verification effort.
+            _trlmsg += "A posteriori WCS solutions already added to {}\n".format(_calfiles)
+            align_with_apriori = False
+            align_to_gaia = False
+
+        _updateTrlFile(_trlfile, _trlmsg)
+
+        if align_with_apriori or force_alignment:
             _trlmsg = _timestamp('Starting alignment with a priori solutions')
             _trlmsg += __trlmarker__
-            if align_dicts is not None:
-                find_crs = not align_dicts[0]['alignment_verified']
-            else:
-                find_crs = False
-
-            # run updatewcs with use_db=True to insure all products have
-            # have a priori solutions as extensions
-            # This is NOT done in the apriori sub-directory in order to insure that all
-            # relevant solutions from the astrometry database get appended to the input FLT/FLC files.
-            apply_apriori_wcs(_calfiles, _calfiles_flc, _trlmsg)
-            """
-            updatewcs.updatewcs(_calfiles)
-            _trlmsg += "Adding apriori WCS solutions to {}\n".format(_calfiles)
-            _trlmsg += verify_gaia_wcsnames(_calfiles) + '\n'
-            _wnames_calfiles = [(c, fits.getval(c, 'wcsname', ext=1)) for c in _calfiles]
-            _trlmsg += "Verifying apriori WCSNAMEs:\n"
-            for (_cname, _wname) in _wnames_calfiles:
-                _trlmsg += "   {}: {}\n".format(_cname, _wname)
-            if _calfiles_flc:
-                _trlmsg += "Adding apriori WCS solutions to {}\n".format(_calfiles_flc)
-                updatewcs.updatewcs(_calfiles_flc)
-                _trlmsg += verify_gaia_wcsnames(_calfiles_flc) + '\n'
-            """
             try:
                 tmpname = "_".join([_trlroot, 'apriori'])
                 sub_dirs.append(tmpname)
@@ -522,7 +525,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             _updateTrlFile(_trlfile, _trlmsg)
 
         aposteriori_table = None
-        if align_to_gaia:
+        if align_to_gaia or force_alignment:
             _trlmsg = _timestamp('Starting a posteriori alignment')
             _trlmsg += __trlmarker__
 
@@ -904,7 +907,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             try:
 
                 full_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
-                                                  clobber=False, output=debug,
+                                                  clobber=True, output=debug,
                                                   debug=debug, sat_flags=sat_flags)
                 if full_table is None:
                     raise Exception("No successful aposteriori fit determined.")
@@ -958,7 +961,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                     if headerlet_file not in ["None", '']:
                         apply_headerlet(fltfile, headerlet_file, flcfile=flcfile)
                         # headerlet.apply_headerlet_as_primary(fltfile, headerlet_file,
-                        #                                     attach=True, archive=True)
+                        #                                      attach=True, archive=True)
                         headerlet_files.append(headerlet_file)
                         # append log file contents to _trlmsg for inclusion in trailer file
                         _trlstr = "Applying headerlet {} as Primary WCS to {}\n"
@@ -1082,117 +1085,13 @@ def apply_headerlet(filename, headerlet_file, flcfile=None):
     # Use headerlet module to apply headerlet as PRIMARY WCS
     headerlet.apply_headerlet_as_primary(filename, headerlet_file,
                                         attach=True, archive=True)
-    # Verify that all keywords from headerlet got applied
+
+    # Apply headerlet to both versions of the FLT/FLC file here
     if flcfile is not None:
-        with fits.open(filename, mode='update') as fhdu:
-            num_sci = fileutil.countExtn(fhdu)
-            for sciext in range(1, num_sci + 1):
-                extn = ('sci', sciext)
-                fhdu[extn].header['wcstype'] = fits.getval(flcfile, 'wcstype', extn)
+        # Use headerlet module to apply headerlet as PRIMARY WCS
+        headerlet.apply_headerlet_as_primary(flcfile, headerlet_file,
+                                            attach=True, archive=True)
 
-
-def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_date):
-    """Insure that data taken with GAIA has WCSNAME reflecting that"""
-    gsc240 = catalog_date.split('-')
-    gdate = datetime.date(int(gsc240[0]), int(gsc240[1]), int(gsc240[2]))
-    msg = ''
-
-    for f in filenames:
-        wcsnames = None
-        with fits.open(f, mode='update') as fhdu:
-            # Check to see whether a RAW/uncalibrated file has been provided
-            # If so, skip it since updatewcs has not been run on it yet.
-            if '_raw' in f or 'wcsname' not in fhdu[('sci', 1)].header:
-                continue
-            num_sci = fileutil.countExtn(fhdu)
-            dateobs = fhdu[0].header['date-obs'].split('-')
-            # convert to datetime object
-            fdate = datetime.date(int(dateobs[0]), int(dateobs[1]), int(dateobs[2]))
-            for sciext in range(num_sci):
-                wcsname = fhdu['sci', sciext + 1].header['wcsname']
-                if fdate > gdate and '-' not in wcsname:
-                    wcsname = "{}-{}".format(wcsname, catalog_name)
-                    fhdu['sci', sciext + 1].header['wcsname'] = wcsname
-                    msg += "Updating WCSNAME of {}[sci,{}] for use of {} catalog \n".format(f,
-                            sciext + 1, catalog_name)
-                    continue
-                # Check to see whether it is an aposteriori solution
-                # If so, replace it with an apriori solution instead
-                if '-FIT' in wcsname:
-                    if wcsnames is None:
-                        wcsnames = headerlet.get_headerlet_kw_names(fhdu, kw='WCSNAME')
-                        hdrnames = headerlet.get_headerlet_kw_names(fhdu)
-                        extvers = headerlet.get_headerlet_kw_names(fhdu, kw='extver')
-
-                        # Remove duplicate hdrlet extensions
-                        c = [hdrnames.count(h) for h in hdrnames]
-                        extdict = {}
-                        for num, hname, ev in zip(c, hdrnames, extvers):
-                            if hname not in extdict:
-                                extdict[hname] = []
-                            if num > 1:
-                                extdict[hname].append(ev)
-                        for extvals in extdict.values():
-                            if extvals:
-                                extvals.sort()
-                                remove_e = []
-                                for e in extvals[:-1]:
-                                    del fhdu[('hdrlet'), e]
-                                    remove_e.append(e)
-                                for e in remove_e:
-                                    del extvers[extvers.index(e)]
-                        # Remove OPUS based solutions
-                        opus_indx = []
-                        for i, w in enumerate(wcsnames):
-                            if 'OPUS' in w: opus_indx.append(i)
-                        opus_indx.reverse()
-                        for i in opus_indx:
-                            del wcsnames[i]
-                            del hdrnames[i]
-                        gscwcs = any(['GSC' in w for w in wcsnames])
-                        if not gscwcs:
-                            priwcs = fhdu['sci', sciext + 1].header['wcsname']
-                            if priwcs not in wcsnames:
-                                wcsnames.append(priwcs)
-                                hdrnames.append(priwcs)
-                                # Build IDC_* only WCSNAME
-                                defwcs = priwcs.split("-")[0]
-                                # delete this from list of WCSNAMEs since it was
-                                # already replaced by GSC240 WCSNAME
-                                indx = wcsnames.index(defwcs)
-                                del wcsnames[indx]
-                                del hdrnames[indx]
-
-                    # This actually returns the date for the IDCTAB itself,
-                    # not just when the specific WCS was created using it.
-                    hlets = [fhdu[('hdrlet',e)].headerlet for e in extvers]
-                    idctabs = [h[0].header['idctab'] for h in hlets]
-                    wcsdates = [fits.getval(fileutil.osfn(idc), 'date') for idc in idctabs]
-
-                    # Look for priority apriori WCS
-                    restored = False
-                    most_recent_wcs = None
-                    for apriori_type in apriori_priority:
-                        # For each WCSNAME/HDRNAME in the file...
-                        for wname, hname, wdate in zip(wcsnames, hdrnames, wcsdates):
-                            # Look for apriori_type (HSC, GSC,...) based on newest IDCTAB
-                            if apriori_type in wname:
-                                if (most_recent_wcs and wdate > most_recent_wcs[0]) \
-                                    or most_recent_wcs is None:
-                                    most_recent_wcs = (wdate, hname)
-
-                        if most_recent_wcs:
-                            break
-
-                    if most_recent_wcs:
-                        # restore this WCS
-                        msg += 'Restoring apriori WCS {} as primary WCS in {}\n'.format(wname, f)
-                        headerlet.restore_from_headerlet(fhdu,
-                                                         force=True,
-                                                         hdrname=most_recent_wcs[1],
-                                                         archive=False)
-
-    return msg
 
 def restore_pipeline_default(files):
     """Restore pipeline-default IDC_* WCS as PRIMARY WCS in all input files"""
@@ -1206,101 +1105,6 @@ def restore_pipeline_default(files):
             for sciext in range(num_sci):
                 if 'hdrname' in fhdu[('sci', sciext + 1)].header:
                     del fhdu[('sci', sciext + 1)].header['hdrname']
-
-
-def apply_apriori_wcs(calfiles, calfiles_flc, trlmsg, gsc_catalog='GSC240'):
-    """ Apply apriori WCS's from astrometry database based on currently defined IDCTAB """
-    #
-    # TODO:  Have this code only update the headers with the WCSs based on the IDCTAB specified
-    #        in the image header (the 'latest' model).
-    #
-    # Determine what IDCTAB reference file has been specified in the header
-    idctab = fits.getval(calfiles[0], 'idctab')
-    # Define:  refval - env var for dir with IDCTAB
-    #          idctab - full filename for IDCTAB
-    #          idcroot - rootname of IDCTAB
-    if '$' in idctab:
-        refval, idctab = idctab.split('$')
-        idcroot = idctab.split('_')[0]
-
-    else:
-        idcroot = idctab.split('_')[0]
-        refval = None
-
-    del refval
-    rootname = fits.getval(calfiles[0], 'rootname')
-
-    # Query the astrometry database to determine what distortion models
-    # were used for the WCSs stored in the database
-    adb = updatewcs.astrometry_utils.AstrometryDB()
-    # Retrieve the list of solutions for the first exposure
-    hdrlist, best_wcs_id = adb.getObservation(rootname)
-    wcsnames = [hdrlist[num][0].header['wcsname'] for num in hdrlist]
-
-    # the 'best_wcs_id' represents the WCS which will be applied as the
-    # 'best' apriori WCS from the database and should be the most recent WCS
-    #
-    # Observations where the exposure may have an older
-    # IDCTAB in the header will need to pull the older WCS solutions from the
-    # database and use them... What is in the header gets used regardless of age!!
-    #
-    best_idctab = best_wcs_id.split('-')[0].split('_')[1]
-
-    # compare best_idctab with idctab in headers
-    if best_idctab == idctab:
-        # run updatewcs with use_db=True as normal.
-        updatewcs.updatewcs(calfiles)
-        trlmsg += "Adding apriori WCS solutions to {}\n".format(calfiles)
-        trlmsg += verify_gaia_wcsnames(calfiles) + '\n'
-        _wnames_calfiles = [(c, fits.getval(c, 'wcsname', ext=1)) for c in calfiles]
-        trlmsg += "Verifying apriori WCSNAMEs:\n"
-        for (_cname, _wname) in _wnames_calfiles:
-            trlmsg += "   {}: {}\n".format(_cname, _wname)
-        if calfiles_flc:
-            trlmsg += "Adding apriori WCS solutions to {}\n".format(calfiles_flc)
-            updatewcs.updatewcs(calfiles_flc)
-            trlmsg += verify_gaia_wcsnames(calfiles_flc) + '\n'
-
-    else:
-        # Look to see whether header IDCTAB name was used for solutions
-        # already in the astrometry database.
-        idcused = any([idcroot in wname for wname in wcsnames])
-        if not idcused:
-            # We need to create new apriori WCS based on new IDCTAB
-            # Get guide star offsets from DB
-            offsets = amutils.find_gsc_offset(rootname)
-            wname = 'IDC_{}-{}'.format(idcroot, gsc_catalog)
-
-            # Now apply these offsets to all the input images being processed
-            for image in calfiles + calfiles_flc:
-                refwcs = amutils.build_self_reference(image)
-                pix_offsets = amutils.convert_gsc_offsets(offsets, refwcs)
-
-                updatehdr.updatewcs_with_shift(image, refwcs, wcsname=wname, reusename=False,
-                                         fitgeom='rscale', rot=0.0, scale=1.0,
-                                         xsh=pix_offsets['x'], ysh=pix_offsets['y'],
-                                         verbose=False, force=True)
-                # Save this new WCS as a headerlet extension and separate headerlet file
-                hdrname = "{}_{}".format(image.replace('.fits', ''), wname)
-                newhlt = max(headerlet.get_headerlet_kw_names(fits.open(image), kw='EXTVER')) + 1
-                numext = len(fits.open(image))
-                descrip = "A Priori WCS based on ICRS guide star positions"
-                trlmsg += "Appending a priori WCS {} to {}".format(wname, image)
-                headerlet.archive_as_headerlet(image, hdrname,
-                                               sciext='SCI',
-                                               wcskey="PRIMARY",
-                                               author="Pipeline",
-                                               descrip=descrip)
-                fits.setval(image, 'EXTVER', value=newhlt, ext=numext)
-                # Now, write out new a priori WCS to a unique headerlet file
-                hfilename = "{}_hlet.fits".format(hdrname)
-                trlmsg += "Writing out a priori WCS {} to headerlet {}".format(wname, hfilename)
-                headerlet.extract_headerlet(image, hfilename, extnum=numext)
-
-        else:
-            # Apply astrometry DB WCS consistent with IDCTAB from header
-            # This is a situation which should NEVER occur in the pipeline
-            pass
 
 
 def _lowerAsn(asnfile):

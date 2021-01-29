@@ -444,6 +444,8 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
         dGSinputDEC = float(refXMLtree.findtext('dGSinputDEC'))
         dGSoutputRA = float(refXMLtree.findtext('dGSoutputRA'))
         dGSoutputDEC = float(refXMLtree.findtext('dGSoutputDEC'))
+        outputCatalog = refXMLtree.findtext('outputCatalog')
+        inputCatalog = refXMLtree.findtext('inputCatalog')
 
 
     # Use GS coordinate as reference point
@@ -451,7 +453,8 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
     new_coordinate = (dGSoutputRA, dGSoutputDEC)
 
     deltas = {'ra': delta_ra, 'dec': delta_dec, 'roll': delta_roll, 'scale': delta_scale,
-              'old_coordinate': old_coordinate, 'new_coordinate': new_coordinate}
+              'old_coordinate': old_coordinate, 'new_coordinate': new_coordinate,
+              'output_catalog': outputCatalog, 'input_catalog': inputCatalog}
     return deltas
 
 
