@@ -20,6 +20,11 @@ of the list).
 - Fix a bug in ``tweakback`` that may cause incorrect "updated" WCS to be
   picked up from the drizzled image. [#913]3.1.9 (unreleased)
 
+- Change ``runastrodriz`` to generate aligned products based only on
+  the IDCTAB specified in the input image headers, creating new a WCS
+  if no WCS was found in the astrometry database. [#922].  This requires
+  the installation of STWCS > 1.6.2.
+
 
 3.2.0 (7-Dec-2020)
 ==================
