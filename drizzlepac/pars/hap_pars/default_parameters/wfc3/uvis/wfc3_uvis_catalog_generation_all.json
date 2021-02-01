@@ -8,7 +8,7 @@
     "aperture_1": 0.05,
     "aperture_2": 0.15,
     "salgorithm": "mode",
-    "starfinder_algorithm": "dao",
+    "starfinder_algorithm": "psf",
     "scale": 1.5,
     "sensitivity": 0.95,
     "cr_residual": 0.05,

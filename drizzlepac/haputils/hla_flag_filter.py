@@ -161,12 +161,12 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag swarm sources
-    log.info("Flagging possible swarm features in catalogs")
-    log.debug("hla_swarm_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>",
-                                                                      exptime, plate_scale, median_sky, proc_type,
-                                                                      param_dict, column_titles, diagnostic_mode))
-    catalog_data = hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky,
-                                   proc_type, param_dict, column_titles, diagnostic_mode)
+    # log.info("Flagging possible swarm features in catalogs")
+    # log.debug("hla_swarm_flags({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<Catalog Data>",
+    #                                                                  exptime, plate_scale, median_sky, proc_type,
+    #                                                                   param_dict, column_titles, diagnostic_mode))
+    # catalog_data = hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_scale, median_sky,
+    #                               proc_type, param_dict, column_titles, diagnostic_mode)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources from regions where there are a low (or a null) number of contributing exposures
