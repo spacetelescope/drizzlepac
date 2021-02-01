@@ -14,8 +14,6 @@ reference catalog. ::
 
 """
 import os
-import pdb
-from io import BytesIO
 import requests
 import inspect
 import sys
@@ -31,6 +29,7 @@ try:
 except Exception:
     plt = None
 
+from astropy.utils.decorators import deprecated
 from astropy import units as u
 from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord
@@ -48,7 +47,7 @@ import photutils  # needed to check version
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import Background2D
 from photutils import SExtractorBackground, StdBackgroundRMS
-from photutils import DAOStarFinder, IRAFStarFinder
+from photutils import DAOStarFinder
 from photutils import MMMBackground
 from photutils.psf import IntegratedGaussianPRF, DAOGroup
 from photutils.psf import IterativelySubtractedPSFPhotometry
@@ -345,7 +344,7 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
 
     footprint_string = ""
     for item in footprint:
-        footprint_string += "%20{}%20{}".format(item[0],item[1])
+        footprint_string += "%20{}%20{}".format(item[0], item[1])
     spec = spec_str.format(footprint_string, fmt, catalog)
     if epoch:
         spec += epoch_str.format(epoch)
@@ -375,7 +374,9 @@ def compute_radius(wcs):
 
     return radius
 
-
+@deprecated(since='3.2.1',
+            message='This function has moved to the STWCS package.',
+            alternative='stwcs.updatewcs.astrometry_utils.find_gsc_offset')
 def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
     """Find the GSC to GAIA offset based on guide star coordinates
 
@@ -456,51 +457,6 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
               'old_coordinate': old_coordinate, 'new_coordinate': new_coordinate,
               'output_catalog': outputCatalog, 'input_catalog': inputCatalog}
     return deltas
-
-
-def convert_gsc_offsets(offsets, expwcs):
-    pix_offsets = {'x': 0.0, 'y': 0.0, 'roll': 0., 'scale': 1.0}
-
-    if ((offsets['ra'] in [None, 0.0]) or (offsets['dec'] in [None, 0.0])):
-        return pix_offsets
-
-    """
-    #
-    # Original algorithm provided by E. Tollerud July 2018
-    #
-    """
-    wcsframe = expwcs.wcs.radesys.lower()
-
-    # Use WCS to compute offset in pixels of shift applied to WCS Reference pixel
-    # RA,Dec of ref pixel in decimal degrees
-    crval = SkyCoord(expwcs.wcs.crval[0], expwcs.wcs.crval[1],
-                     unit='deg', frame=wcsframe)
-    old_gs = offsets['old_coordinate']
-    new_gs = offsets['new_coordinate']
-
-    # Define SkyCoord for Guide Star using old/original coordinates used to
-    # originally compute WCS for exposure
-    old_gs_coord = SkyCoord(old_gs[0], old_gs[1], unit='deg', frame=wcsframe)
-    sof_old = old_gs_coord.skyoffset_frame()
-    # Define new SkyOffsetFrame based on new GS coords
-    new_gs_coord = SkyCoord(new_gs[0], new_gs[1], unit='deg',
-                       frame=wcsframe)
-    # Determine offset from old GS position to the new GS position
-    sof_new = new_gs_coord.transform_to(sof_old)
-    # Compute new CRVAL position as old CRVAL+GS offset (sof_new)
-    new_crval_coord = SkyCoord(sof_new.lon.arcsec, sof_new.lat.arcsec,
-                         unit='arcsecond',
-                         frame=crval.skyoffset_frame())
-    # Return RA/Dec for new/updated CRVAL position
-    new_crval = new_crval_coord.icrs
-
-    # Compute offset in pixels for new CRVAL
-    newpix = expwcs.all_world2pix(new_crval.ra.value, new_crval.dec.value, 1)
-    deltaxy = newpix - expwcs.wcs.crpix  # offset from ref pixel position
-    deltaxy *= -1
-
-    pix_offsets = {'x': deltaxy[0], 'y': deltaxy[1], 'rot': offsets['roll'], 'scale': offsets['scale']}
-    return pix_offsets
 
 
 def compute_2d_background(imgarr, box_size, win_size,
@@ -741,11 +697,11 @@ def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
 
     sigma = np.sqrt(2.0 * np.abs(bkg[1]))
     x, y, flux, src_id, sharp, round1, round2 = ndfind(img,
-                                                     sigma*threshold,
+                                                     sigma * threshold,
                                                      fwhm, bkg[1],
                                                      nbright=nbright,
                                                      use_sharp_round=True)
-    srcs = Table([x,y,flux,src_id], names=['xcentroid', 'ycentroid', 'flux', 'id'])
+    srcs = Table([x, y, flux, src_id], names=['xcentroid', 'ycentroid', 'flux', 'id'])
 
     """
     # Now, use IRAFStarFinder to identify sources across chip
@@ -1457,14 +1413,14 @@ def within_footprint(img, wcsobj, x, y):
 
     skymask = np.bitwise_and(fprint, xymask)
 
-    mask = [True if skymask[yx]==True else False for yx in zip(yint, xint)]
+    mask = [True if skymask[yx] == True else False for yx in zip(yint, xint)]
     mask = np.array(mask).astype(np.bool)
 
     # NOTE: There is probably a way to use list comprehension to do this,
     # but for now, this works as intended.
     onimg = wcsmask.copy()
-    indx=0
-    for i,w in enumerate(onimg):
+    indx = 0
+    for i, w in enumerate(onimg):
         if w == True:
             if mask[indx] == False:
                 onimg[i] = False
@@ -2066,7 +2022,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsig
 def sigma_clipped_bkg(arr, sigma=3.0, nsigma=4, maxiters=None):
     # Account for input being blank
     if arr.max() == 0:
-        return 0.0, [0.0,0.0,0.0]
+        return 0.0, [0.0, 0.0, 0.0]
     if maxiters is None:
         maxiters = int(np.log10(arr.max() / 2) + 0.5)
 
