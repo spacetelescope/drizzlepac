@@ -95,6 +95,7 @@ envvar_cat_str = "SVM_CATALOG_{}"
 
 # --------------------------------------------------------------------------------------------------------------
 
+
 def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, phot_mode='both',
                             catalog_switches=None):
     """This subroutine utilizes haputils/catalog_utils module to produce photometric sourcelists for the specified
@@ -469,6 +470,7 @@ def create_drizzle_products(total_obj_list):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_file=None,
                        output_custom_pars_file=None, phot_mode="both", log_level=logutil.logging.INFO):
     """
@@ -700,6 +702,7 @@ def run_align_to_gaia(tot_obj, log_level=logutil.logging.INFO, diagnostic_mode=F
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_level, diagnostic_mode=False):
     """
     Super-basic and profoundly inelegant interface to hla_flag_filter.py.
@@ -825,18 +828,19 @@ def _get_envvar_switch(envvar_name, default=None):
 
 # ------------------------------------------------------------------------------
 
+
 def update_wcs_grism_in_visit(tdp):
     """Examine entries in the total data produce for Grism/Prism data
 
     This routine is only invoked if the total data product for a particular detector
-    for the visit is comprised of both an ExposureProduct list AND a 
+    for the visit is comprised of both an ExposureProduct list AND a
     GrismExposureProduct list which contain entries.
 
     *** If the visit contains Grism/Prism data, then either the 'a priori' WCS for
     the Grism/Prism data or the pipeline default WCS for the direct images will be
     set as the primary/active WCS for all the Grism/Prism and direct image data for
     that detector - whichever WCS is common to all the images.
-    
+
     Parameters
     ----------
     tdp : total data product (TotalProduct) object
@@ -908,7 +912,7 @@ def update_wcs_grism_in_visit(tdp):
             grism_wcsname = match_list[0]
             log.info("Proposed WCS for use after Grism/Prism examination: {}".format(grism_wcsname))
             break
-    
+
     if not grism_wcsname:
         log.error("None of the preferred WCS names are present in the common set of WCS names for the Grism/Prism images.")
         log.error("    There is a problem with this visit")
@@ -936,9 +940,9 @@ def update_wcs_grism_in_visit(tdp):
         # pre-existing class which could cause an issue
         drizcorr = hdu[0].header['DRIZCORR']
         if drizcorr == "OMIT":
-             updatewcs.updatewcs(filename, use_db=False, verbose=False)
+            updatewcs.updatewcs(filename, use_db=False, verbose=False)
         else:
-             updatewcs.updatewcs(filename, use_db=True, verbose=False)
+            updatewcs.updatewcs(filename, use_db=True, verbose=False)
 
         # Get all the WCS names which are common to all of the direct images
         dict_names = wcsutil.altwcs.wcsnames(filename, ext=1)
@@ -1013,6 +1017,7 @@ def update_wcs_grism_in_visit(tdp):
     return grism_product_list
 
 # ------------------------------------------------------------------------------
+
 
 def update_active_wcs(filename, wcsname):
     """

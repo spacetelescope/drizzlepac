@@ -60,6 +60,7 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
+
 # -----------------------------------------------------------------------------
 # Single Visit Processing Functions
 #
@@ -150,6 +151,7 @@ def interpret_obset_input(results, log_level):
                 edp_obj.is_singleton = is_singleton
 
     return obset_dict, tdp_list
+
 
 # Translate the database query on an obset into actionable lists of filenames
 def build_obset_tree(obset_table):
@@ -305,7 +307,6 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0, u
     #
     # obset_dict, tdp_list = merge_mvm_trees(obset_tree, layer_tree, log_level)
 
-
     # This little bit of code adds an attribute to single exposure objects that is True
     # if a given filter only contains one input (e.g. n_exp = 1)
     for filt_obj in tdp_list:
@@ -317,6 +318,7 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0, u
             edp_obj.is_singleton = is_singleton
 
     return obset_dict, tdp_list
+
 
 # Translate the database query on an obset into actionable lists of filenames
 def build_mvm_tree(obset_table):
@@ -496,7 +498,7 @@ def parse_mvm_tree(det_tree, log_level):
                     # FilterProduct(prop_id, obset_id, instrument, detector,
                     #               filename, filters, filetype, log_level)
                     filt_obj = SkyCellProduct(str(0), str(0), prod_list[1], prod_list[2],
-                                             prod_list[0], layer, ftype, log_level)
+                                              prod_list[0], layer, ftype, log_level)
                 # Append exposure object to the list of exposure objects for this specific filter product object
                 filt_obj.add_member(sep_obj)
                 # Populate filter product dictionary with input filename
@@ -518,11 +520,10 @@ def parse_mvm_tree(det_tree, log_level):
                         # FilterProduct(prop_id, obset_id, instrument, detector,
                         #               filename, filters, filetype, log_level)
                         filt_obj_fine = SkyCellProduct(str(0), str(0), prod_list[1], prod_list[2],
-                                                 prod_list[0], layer_fine, ftype, log_level)
+                                                       prod_list[0], layer_fine, ftype, log_level)
 
                     obset_products[fprod_fine]['files'].append(filename[1])
                     filt_obj_fine.add_member(sep_obj)
-
 
             filt_indx += filt_indx_inc
 
@@ -534,8 +535,8 @@ def parse_mvm_tree(det_tree, log_level):
                 log1 = "Attach the sky cell layer object {}"
                 log2 = "to its associated total product object {}/{}."
                 log.debug(' '.join([log1, log2]).format(filt_obj.filters,
-                                           filt_obj.instrument,
-                                           filt_obj.detector))
+                                                        filt_obj.instrument,
+                                                        filt_obj.detector))
             # Add the total product object to the list of TotalProducts
             tdp_list.append(filt_obj)
             if pscale == 'coarse':
@@ -620,7 +621,7 @@ def parse_obset_tree(det_tree, log_level):
                 # Create a single exposure product object
                 #
                 # The prod_list[5] is the filter - use this information to distinguish between
-                # a direct exposure for drizzling (ExposureProduct) and an exposure 
+                # a direct exposure for drizzling (ExposureProduct) and an exposure
                 # (GrismExposureProduct) which is carried along (Grism/Prism) to make analysis
                 # easier for the user by having the same WCS in both the direct and
                 # Grism/Prism products.
@@ -694,6 +695,7 @@ def parse_obset_tree(det_tree, log_level):
     return obset_products, tdp_list
 
 # ------------------------------------------------------------------------------
+
 
 def define_exp_layers(obset_table, method='hard', exp_limit=None):
     """Determine what exposures will be grouped into the same layer of a sky cell"""
@@ -992,7 +994,6 @@ def build_poller_table(input, log_level, poller_type='svm'):
         poller_names = [colname for colname in cols]
         poller_table = Table(data=poller_data, names=poller_names,
                              dtype=poller_dtype)
-
 
     # The input was a poller file, so just keep the viable data rows for output
     else:

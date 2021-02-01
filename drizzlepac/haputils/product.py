@@ -42,6 +42,7 @@ MASK_KWS = {"NPIXFRAC": [None, "Fraction of pixels with data"],
             "MEDNEXP": [None, "Median number of exposures per pixel with data"],
             }
 
+
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
         astrometry update and mosaicing of image data.
@@ -176,7 +177,7 @@ class TotalProduct(HAPProduct):
         """ Add an ExposureProduct object to the list - composition.
         """
         self.edp_list.append(edp)
- 
+
     def add_grism_member(self, edp):
         """ Add an GrismExposureProduct object to the list - composition.
         """
@@ -226,6 +227,7 @@ class TotalProduct(HAPProduct):
         except PermissionError:
             pass
 
+
 class FilterProduct(HAPProduct):
     """ A Filter Detection Product is a mosaic comprised of images acquired
         during a single visit with one instrument, one detector, a single filter,
@@ -272,14 +274,14 @@ class FilterProduct(HAPProduct):
                 break
         return desired_member
 
-
     def add_member(self, edp):
+
         """ Add an ExposureProduct object to the list - composition.
         """
         self.edp_list.append(edp)
 
     def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
-                        fit_label='EVM', align_table=None, fitgeom='rscale'):
+                      fit_label='EVM', align_table=None, fitgeom='rscale'):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment
            routine.
@@ -337,7 +339,7 @@ class FilterProduct(HAPProduct):
 
                     align_table.select_fit(catalog_name, method_name)
                     align_table.apply_fit(headerlet_filenames=headerlet_filenames,
-                                         fit_label=fit_label)
+                                          fit_label=fit_label)
                 else:
                     log.warning("Not enough reference sources for absolute alignment...")
                     raise ValueError
@@ -357,7 +359,6 @@ class FilterProduct(HAPProduct):
             # created for alignment of each filter product here.
             if self.refname and os.path.exists(self.refname):
                 os.remove(self.refname)
-
 
         # Return a table which contains data regarding the alignment, as well as the
         # list of the flt/flc exposures which were part of the alignment process
@@ -410,6 +411,7 @@ class FilterProduct(HAPProduct):
         except PermissionError:
             # TODO:  trailer filename should be saved for moving later...
             pass
+
 
 class ExposureProduct(HAPProduct):
     """ An Exposure Product is an individual exposure/image (flt/flc).
@@ -556,9 +558,9 @@ class GrismExposureProduct(HAPProduct):
 
         drizcorr = hdu_list[0].header['DRIZCORR']
         if drizcorr == "OMIT":
-             updatewcs.updatewcs(self.full_filename, use_db=False)
+            updatewcs.updatewcs(self.full_filename, use_db=False)
         else:
-             updatewcs.updatewcs(self.full_filename, use_db=True)
+            updatewcs.updatewcs(self.full_filename, use_db=True)
         hdu_list.close()
 
         self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
@@ -806,7 +808,7 @@ class SkyCellProduct(HAPProduct):
         return self.meta_wcs
 
     def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
-                        fit_label='MVM', align_table=None, fitgeom='rscale'):
+                      fit_label='MVM', align_table=None, fitgeom='rscale'):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment
            routine.
@@ -842,10 +844,10 @@ class SkyCellProduct(HAPProduct):
                 align_table.reference_catalogs[self.refname] = ref_catalog
                 if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
                     align_table.perform_fit(method_name, catalog_name, ref_catalog,
-                                           fitgeom=fitgeom)
+                                            fitgeom=fitgeom)
                     align_table.select_fit(catalog_name, method_name)
                     align_table.apply_fit(headerlet_filenames=headerlet_filenames,
-                                         fit_label=fit_label)
+                                          fit_label=fit_label)
                 else:
                     log.warning("Not enough reference sources for absolute alignment...")
                     raise ValueError
@@ -865,7 +867,6 @@ class SkyCellProduct(HAPProduct):
             # created for alignment of each filter product here.
             if self.refname and os.path.exists(self.refname):
                 os.remove(self.refname)
-
 
         # Return a table which contains data regarding the alignment, as well as the
         # list of the flt/flc exposures which were part of the alignment process
