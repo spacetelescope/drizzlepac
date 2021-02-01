@@ -21,7 +21,8 @@ from astropy.io import fits
 from astropy.io import ascii
 from astropy.io.fits import getheader
 from astropy.table import Table, Column
-from drizzlepac.haputils.product import ExposureProduct, FilterProduct, TotalProduct
+from drizzlepac import util
+from drizzlepac.haputils.product import ExposureProduct, FilterProduct, TotalProduct, GrismExposureProduct
 from drizzlepac.haputils.product import SkyCellProduct, SkyCellExposure
 from . import analyze
 from . import astroquery_utils as aqutils
@@ -561,6 +562,14 @@ def parse_obset_tree(det_tree, log_level):
       * total detection product per detector
       * filter products per detector
       * single exposure product
+
+    Grism/Prism images were added to the "doProcess" list after most of this
+    code was developed as they need to have the same Primary WCS as the direct
+    images from the same detector in the visit.  These images are deliberately
+    not added to the output obset_products as they will not be drizzled. They
+    are added as individual GrismExposureProduct objects to the TotalProduct only.
+    The GrismExposureProduct list in the TotalProduct is separate and distinct
+    from the ExposureProduct list of direct images.
     """
     log.setLevel(log_level)
 
@@ -609,21 +618,41 @@ def parse_obset_tree(det_tree, log_level):
                                        'files': [filename[1]]}
 
                 # Create a single exposure product object
+                #
+                # The prod_list[5] is the filter - use this information to distinguish between
+                # a direct exposure for drizzling (ExposureProduct) and an exposure 
+                # (GrismExposureProduct) which is carried along (Grism/Prism) to make analysis
+                # easier for the user by having the same WCS in both the direct and
+                # Grism/Prism products.
+                #
+                # The GrismExposureProduct will only be an attibute of the TotalProduct. It
+                # object is NOT part of the FilterProduct or the obset_products.
                 prod_list = prod_info.split(" ")
-                sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
-                                          filename[1], prod_list[5], prod_list[6], log_level)
+
+                # Determine if this image is a Grism/Prism
+                is_grism = False
+                if prod_list[5].lower().startswith('g') or prod_list[5].lower().startswith('pr'):
+                    is_grism = True
+                    filt_indx -= 1
+                    grism_sep_obj = GrismExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
+                                                         filename[1], prod_list[5], prod_list[6], log_level)
+                else:
+                    sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
+                                              filename[1], prod_list[5], prod_list[6], log_level)
+
                 # Set up the filter product dictionary and create a filter product object
                 # Initialize `info` key for this filter product dictionary
-                if not obset_products[fprod]['info']:
-                    obset_products[fprod]['info'] = prod_info
+                if not is_grism:
+                    if not obset_products[fprod]['info']:
+                        obset_products[fprod]['info'] = prod_info
 
-                    # Create a filter product object for this instrument/detector
-                    filt_obj = FilterProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
-                                             prod_list[4], prod_list[5], prod_list[6], log_level)
-                # Append exposure object to the list of exposure objects for this specific filter product object
-                filt_obj.add_member(sep_obj)
-                # Populate filter product dictionary with input filename
-                obset_products[fprod]['files'].append(filename[1])
+                        # Create a filter product object for this instrument/detector
+                        filt_obj = FilterProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
+                                                 prod_list[4], prod_list[5], prod_list[6], log_level)
+                    # Append exposure object to the list of exposure objects for this specific filter product object
+                    filt_obj.add_member(sep_obj)
+                    # Populate filter product dictionary with input filename
+                    obset_products[fprod]['files'].append(filename[1])
 
                 # Set up the total detection product dictionary and create a total detection product object
                 # Initialize `info` key for total detection product
@@ -635,28 +664,31 @@ def parse_obset_tree(det_tree, log_level):
                                            prod_list[4], prod_list[6], log_level)
 
                 # Append exposure object to the list of exposure objects for this specific total detection product
-                tdp_obj.add_member(sep_obj)
-                # Populate total detection product dictionary with input filename
-                obset_products[totprod]['files'].append(filename[1])
+                if not is_grism:
+                    tdp_obj.add_member(sep_obj)
 
-                # Increment single exposure index
-                sep_indx += 1
+                    # Increment single exposure index
+                    sep_indx += 1
 
-            # Append filter object to the list of filter objects for this specific total product object
-            log.debug("Attach the filter object {} to its associated total detection product object {}/{}.".format(filt_obj.filters,
-                                                                                                                   tdp_obj.instrument,
-                                                                                                                   tdp_obj.detector))
-            # Identify what exposures should use single-image CR identification algorithm
-            is_ccd = not (filt_obj.instrument.lower() == 'wfc3' and filt_obj.detector.lower() == 'ir')
-            if is_ccd and len(filt_obj.edp_list) == 1:
-                for e in filt_obj.edp_list:
-                    e.crclean = True
+                    # Populate total detection product dictionary with input filename
+                    obset_products[totprod]['files'].append(filename[1])
 
-            tdp_obj.add_product(filt_obj)
+                    # Append filter object to the list of filter objects for this specific total product object
+                    log.debug("Attach the filter object {} to its associated total detection product object {}/{}.".format(filt_obj.filters,
+                                                                                                                           tdp_obj.instrument,
+                                                                                                                           tdp_obj.detector))
+                    # Identify what exposures should use single-image CR identification algorithm
+                    is_ccd = not (filt_obj.instrument.lower() == 'wfc3' and filt_obj.detector.lower() == 'ir')
+                    if is_ccd and len(filt_obj.edp_list) == 1:
+                        for e in filt_obj.edp_list:
+                            e.crclean = True
+
+                    tdp_obj.add_product(filt_obj)
+                else:
+                    tdp_obj.add_grism_member(grism_sep_obj)
 
         # Add the total product object to the list of TotalProducts
         tdp_list.append(tdp_obj)
-
 
     # Done... return dict and object product list
     return obset_products, tdp_list

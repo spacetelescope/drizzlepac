@@ -17,8 +17,9 @@ import os
 import traceback
 import shutil
 
-from stsci.tools import logutil
 from astropy.io import fits
+from stsci.tools import logutil
+from stwcs import updatewcs
 import numpy as np
 
 from .. import astrodrizzle
@@ -158,6 +159,7 @@ class TotalProduct(HAPProduct):
         self.edp_list = []
         self.fdp_list = []
         self.regions_dict = {}
+        self.grism_edp_list = []
 
         log.debug("Total detection object {}/{} created.".format(self.instrument, self.detector))
 
@@ -174,6 +176,11 @@ class TotalProduct(HAPProduct):
         """ Add an ExposureProduct object to the list - composition.
         """
         self.edp_list.append(edp)
+ 
+    def add_grism_member(self, edp):
+        """ Add an GrismExposureProduct object to the list - composition.
+        """
+        self.grism_edp_list.append(edp)
 
     def add_product(self, fdp):
         """ Add a FilterProduct object to the list - composition.
@@ -491,6 +498,81 @@ class ExposureProduct(HAPProduct):
             shutil.move(self.trl_logname, self.trl_filename)
         except PermissionError:
             pass
+
+    def copy_exposure(self, filename):
+        """
+            Create a copy of the original input to be renamed and used for single-visit processing.
+
+            New exposure filename needs to follow the convention:
+            hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_fl[ct].fits
+
+            Parameters
+            ----------
+            filename : str
+                Original pipeline filename for input exposure
+
+            Returns
+            -------
+            edp_filename : str
+                New SVM-compatible HAP filename for input exposure
+
+        """
+        suffix = filename.split("_")[1]
+        edp_filename = self.basename + \
+                       "_".join(map(str, [self.filters, filename[:8], suffix]))
+
+        log.info("Copying {} to SVM input: \n    {}".format(filename, edp_filename))
+        try:
+            shutil.copy(filename, edp_filename)
+        except PermissionError:
+            pass
+
+        # Add HAP keywords as required by pipeline processing
+        with fits.open(edp_filename, mode='update') as edp_hdu:
+            edp_hdu[0].header['HAPLEVEL'] = (0, 'Classification level of this product')
+            edp_hdu[0].header['IPPPSSOO'] = edp_hdu[0].header['ROOTNAME']
+            edp_hdu[0].header['FILENAME'] = edp_filename
+
+        return edp_filename
+
+
+class GrismExposureProduct(HAPProduct):
+    """ A Grism Exposure Product is an individual Grism/Prism exposure/image (flt/flc).
+
+        The "grism_edp" is short hand for GrismExposureProduct.
+    """
+    def __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype, log_level):
+        super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
+
+        self.info = '_'.join([prop_id, obset_id, instrument, detector, filename, filters, filetype])
+        self.filters = filters
+        self.full_filename = self.copy_exposure(filename)
+
+        # Open the input FITS file to mine some header information.
+        # and make sure the WCS is up-to-date
+        hdu_list = fits.open(filename)
+        self.mjdutc = hdu_list[0].header['EXPSTART']
+        self.exptime = hdu_list[0].header['EXPTIME']
+
+        drizcorr = hdu_list[0].header['DRIZCORR']
+        if drizcorr == "OMIT":
+             updatewcs.updatewcs(self.full_filename, use_db=False)
+        else:
+             updatewcs.updatewcs(self.full_filename, use_db=True)
+        hdu_list.close()
+
+        self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
+        self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
+        self.headerlet_filename = self.product_basename + "_hlet.fits"
+        self.trl_logname = self.product_basename + "_trl.log"
+        self.trl_filename = self.product_basename + "_trl.txt"
+
+        self.regions_dict = {}
+
+        # Define HAPLEVEL value for this product
+        self.haplevel = 1
+
+        log.info("Grism Exposure object {} created.".format(self.full_filename))
 
     def copy_exposure(self, filename):
         """

@@ -54,9 +54,11 @@ import sys
 import traceback
 
 import numpy as np
+from astropy.io import fits
 from astropy.table import Table
 
 import drizzlepac
+from drizzlepac import util
 from drizzlepac.haputils import config_utils
 from drizzlepac.haputils import diagnostic_utils
 from drizzlepac.haputils import hla_flag_filter
@@ -67,8 +69,9 @@ from drizzlepac.haputils import svm_quality_analysis as svm_qa
 from drizzlepac.haputils.catalog_utils import HAPCatalogs
 
 from stsci.tools import logutil
+from stwcs import updatewcs
 from stwcs import wcsutil
-
+from stwcs.wcsutil import headerlet
 
 __taskname__ = 'hapsequencer'
 MSG_DATEFMT = '%Y%j%H%M%S'
@@ -525,7 +528,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
     cat_switches = {sw: _get_envvar_switch(sw, default=envvar_cat_svm[sw]) for sw in envvar_cat_svm}
 
     total_obj_list = []
-    product_list = []
     try:
         # Parse the poller file and generate the the obs_info_dict, as well as the total detection
         # product lists which contain the ExposureProduct, FilterProduct, and TotalProduct objects
@@ -573,6 +575,14 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             reference_catalog = run_align_to_gaia(total_item, log_level=log_level, diagnostic_mode=diagnostic_mode)
             if reference_catalog:
                 product_list += reference_catalog
+
+        # If there are Grism/Prism images present in this visit, as well as corresponding direct images
+        # for the same detector, update the primary WCS in the direct and/or Grism/Prism images as
+        # appropriate to be an 'a priori' or the pipeline default (fallback) solution
+        for total_item in total_obj_list:
+            if total_item.grism_edp_list and total_item.edp_list:
+                grism_flt_list = update_wcs_grism_in_visit(total_item)
+                product_list += grism_flt_list
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
@@ -812,3 +822,220 @@ def _get_envvar_switch(envvar_name, default=None):
         switch_val = envvar_bool_dict[default] if default else None
 
     return switch_val
+
+# ------------------------------------------------------------------------------
+
+def update_wcs_grism_in_visit(tdp):
+    """Examine entries in the total data produce for Grism/Prism data
+
+    This routine is only invoked if the total data product for a particular detector
+    for the visit is comprised of both an ExposureProduct list AND a 
+    GrismExposureProduct list which contain entries.
+
+    *** If the visit contains Grism/Prism data, then either the 'a priori' WCS for
+    the Grism/Prism data or the pipeline default WCS for the direct images will be
+    set as the primary/active WCS for all the Grism/Prism and direct image data for
+    that detector - whichever WCS is common to all the images.
+    
+    Parameters
+    ----------
+    tdp : total data product (TotalProduct) object
+        Object comprised of FilterProduct, ExposureProduct, and GrismExposureProduct
+
+    Returns
+    -------
+    grism_product_list : list
+        List of all the SVM Grism/Prism FLT/FLC files generated
+
+    """
+    log.info("\n***** Grism/Prism Image Processing *****")
+    # The TotalProduct (tdp) for this instrument/dectector has both a Grism/Prism
+    # exposure list and a direct exposure list - both with contents.
+    wcs_preference = ['IDC_?????????-GSC240', 'IDC_?????????']
+
+    # Grism output product list for the manifest
+    grism_product_list = []
+
+    grism_wcsname = ''
+    grism_wcs_set = set()
+    skip_grism_list = []
+    exist_grism_set = False
+    # Loop over all the Grism/Prism images for this detector in the visit
+    for g_edp in tdp.grism_edp_list:
+
+        # NOTE: An updatewcs was performed on these images upon instantiation
+        # of the GrismExposureProduct objects
+        filename = g_edp.full_filename
+        hdu = fits.open(filename)
+
+        # Get all the WCS names which are common to all of the Grism/Prism images
+        dict_names = wcsutil.altwcs.wcsnames(filename, ext=1)
+        log.info("WCS solutions for file {} are {}.".format(filename, dict_names))
+        hdu.close()
+        if dict_names:
+            # Initialize a set with wcsnames
+            if not exist_grism_set:
+                grism_wcs_set = set(dict_names.values())
+                exist_grism_set = True
+            # Generate the intersection with the set of existing wcsnames and the wcsnames
+            # from the current image
+            else:
+                grism_wcs_set &= set(dict_names.values())
+
+            log.info("***********8grism set: {}".format(grism_wcs_set))
+
+            # Oops...no common wcsnames
+            if not grism_wcs_set:
+                log.error("There are no common WCS solutions with this Grism/Prism image {} and previously processed images".format(filename))
+                log.error("    There is a problem with this Grism/Prism image/visit.")
+                sys.exit(1)
+        # If there are no WCS solutions, the image could be bad (e.g., EXPTIME=0 or EXPFLAG="TDF-DOWN...")
+        else:
+            log.warning("There are no WCS solutions in the Grism/Prism image {} in this visit.".format(filename))
+            log.warning("    Skip this image.")
+            skip_grism_list.append(filename)
+
+    log.info("WCS solutions common to all viable Grism/Prism images: {}".format(grism_wcs_set))
+
+    # There is a preference for the active WCS for the viable images in the visit
+    # Check the grism_wcs_set for the preferential solutions
+    # If a common name is found here, wait to report it as the active WCS may still need to
+    # be rolled back depending upon the WCS solutions available in the direct images.
+    match_list = []
+    for wcs_item in wcs_preference:
+        match_list = fnmatch.filter(grism_wcs_set, wcs_item)
+        if match_list:
+            grism_wcsname = match_list[0]
+            log.info("Proposed WCS for use after Grism/Prism examination: {}".format(grism_wcsname))
+            break
+    
+    if not grism_wcsname:
+        log.error("None of the preferred WCS names are present in the common set of WCS names for the Grism/Prism images.")
+        log.error("    There is a problem with this visit")
+        sys.exit(1)
+
+        log.info("\nProposed WCS for use after Grism/Prism examination: {}".format(grism_wcsname))
+
+    # If it is now known there is at least one viable Grism/Prism observation, it is desired to make
+    # the active Grism/Prism WCS be the same for all of the Grism/Prism as well as the direct images
+    # in the visit.  The catch can be if any of the direct images do not have an 'a priori' solution
+    # which matches the Grism/Prism images.  In this case, it will be necessary to "fall back" to
+    # the pipeline WCS solution.
+    log.info("\n***** Direct Image Processing *****")
+    direct_wcsname = ''
+    direct_wcs_set = set()
+    skip_direct_list = []
+    exist_direct_set = False
+    # Loop over all the direct images for this detector in the visit
+    for edp in tdp.edp_list:
+        filename = edp.full_filename
+        hdu = fits.open(filename)
+
+        # Make sure the WCS is up-to-date - doing the update for the
+        # direct images here so there is no need to modify a
+        # pre-existing class which could cause an issue
+        drizcorr = hdu[0].header['DRIZCORR']
+        if drizcorr == "OMIT":
+             updatewcs.updatewcs(filename, use_db=False, verbose=False)
+        else:
+             updatewcs.updatewcs(filename, use_db=True, verbose=False)
+
+        # Get all the WCS names which are common to all of the direct images
+        dict_names = wcsutil.altwcs.wcsnames(filename, ext=1)
+        log.info("WCS solutions for file {} are {}.".format(filename, dict_names))
+        hdu.close()
+        if dict_names:
+            # Initialize a set with wcsnames
+            if not exist_direct_set:
+                direct_wcs_set = set(dict_names.values())
+                exist_direct_set = True
+            # Generate the intersection with the set of existing wcsnames and the wcsnames
+            # from the current image
+            else:
+                direct_wcs_set &= set(dict_names.values())
+
+            # Oops...no common wcsnames
+            if not direct_wcs_set:
+                log.error("There are no common WCS solutions with this direct image {} and previously processed images".format(filename))
+                log.error("    There is a problem with this direct image/visit.")
+                sys.exit(1)
+        # If there are no WCS solutions, the image could be bad (e.g., EXPTIME=0 or EXPFLAG="TDF-DOWN...")
+        else:
+            log.warning("There are no WCS solutions in the direct image {} in this visit".format(filename))
+            log.warning("    Skip this image.")
+            skip_direct_list.append(filename)
+
+    log.info("WCS solutions common to all viable direct images: {}".format(direct_wcs_set))
+
+    # Are the grism_wcs_set and the direct_wcs_set disjoint?  If they are disjoint, there can
+    # be no common WCS solution.
+    is_disjoint = grism_wcs_set.isdisjoint(direct_wcs_set)
+    if not is_disjoint:
+        # Generate the intersection between the Grism/Prism and direct images
+        grism_wcs_set &= direct_wcs_set
+        log.info("Common WCS solutions exist between the Grism/Prism and the direct images.")
+        log.info("    The common WCS solutions are: {}".format(grism_wcs_set))
+
+        # There is a preference for the active WCS for the viable images in the visit
+        # Check the grism_wcs_set for the preferential solutions
+        match_list = []
+        final_wcsname = ''
+        for wcs_item in wcs_preference:
+            match_list = fnmatch.filter(grism_wcs_set, wcs_item)
+            if match_list:
+                final_wcsname = match_list[0]
+                log.info("Final WCS solution to use for all Grism/Prism and direct images: {}".format(final_wcsname))
+                break
+
+        if final_wcsname:
+            # Finally, reset the primary WCS in all the images -- if the image is not in a skip list
+
+            for g_edp in tdp.grism_edp_list:
+                filename = g_edp.full_filename
+                if filename not in skip_grism_list:
+                    update_active_wcs(filename, final_wcsname)
+                    log.info("Setting the primary WCS for Grism/Prism image {} to {}.".format(filename, final_wcsname))
+
+                    # Only Grism/Prism images not in the skip list need to go into the manifest
+                    grism_product_list.append(filename)
+
+            for edp in tdp.edp_list:
+                filename = edp.full_filename
+                if filename not in skip_direct_list:
+                    update_active_wcs(filename, final_wcsname)
+                    log.info("Setting the primary WCS for direct image {} to {}.".format(filename, final_wcsname))
+
+    # Disjoint
+    else:
+        log.info("The Grism/Prism and direct images in this visit have no WCS solution common to both sets of data.")
+        log.info("The active WCS solution for each Grism/Prism and direct image is not changed.")
+
+    return grism_product_list
+
+# ------------------------------------------------------------------------------
+
+def update_active_wcs(filename, wcsname):
+    """
+    Utility to update the active/primary WCS solution
+
+    This small utility updates the active/primary WCS solution for the input
+    file with the WCS solution indicted by the input parameter "wcsname"
+
+    PARAMETERS
+    -----------
+    filename : str
+        Output SVM FLT/FLC filename
+
+    wcsname : str
+        Name of the desired WCS active/primary solution to be set for the filename
+    """
+    # For exposures with multiple science extensions (multiple chips),
+    # generate a combined WCS
+    num_sci_ext, extname = util.count_sci_extensions(filename)
+    extname_list = []
+    for x in range(num_sci_ext):
+        extname_list.append((extname, x+1))
+
+    hdu = fits.open(filename, mode="update")
+    wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=wcsname)
+    hdu.close()

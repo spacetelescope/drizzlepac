@@ -287,12 +287,19 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
             no_proc_key = CHINKEY
             no_proc_value = chinject
 
-        # Filter name which starts with "G" for Grism, "PR" for Prism, or
-        # "BLOCK" for internal calibration of SBC
+        # Filter name which starts with "BLOCK" for internal calibration of SBC
         # The sfilter variable may be the concatenation of two filters (F160_CLEAR)
-        split_sfilter = sfilter.split('_')
+        #
+        # Grism/Prism images are also IMAGING=SPECTROSCOPIC, suppress the "no processing"
+        # indicators to allow the Grism/Prism images to be minimally processed for
+        # keyword updates.  This was done as a retrofit to allow Grism/Prism images
+        # to have the same WCS solution as the direct images in the visit (same detector).
+        split_sfilter = sfilter.upper().split('_')
         for item in split_sfilter:
-            if item.startswith(('G', 'PR', 'BLOCK')):
+            if item.startswith(('G', 'PR')):
+                no_proc_key = None
+                no_proc_value = None
+            if item.startswith(('BLOCK')):
                 no_proc_key = FILKEY
                 no_proc_value = sfilter
 
