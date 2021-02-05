@@ -4,15 +4,25 @@
 
 :License: :doc:`LICENSE`
 
-USAGE: runsinglehap [-d] inputFilename
+USAGE:
+    >>> runsinglehap [-cdl] inputFilename
 
-The '-d' option will run this task in DEBUG mode producing additional outputs.
+    - The '-c' option allows the user to specify a customized configuration JSON file which has been tuned for
+      specialized processing.  This file should contain ALL the input parameters necessary for processing. If
+      not specified, default configuration values will be used.
+
+    - The '-d' option will run this task in a more verbose diagnostic mode producing additional log messages
+      will be displayed and additional files will be created.
+
+    - The '-l' option allows the user to set the desired level of verboseness in the log statements displayed on
+      the screen and written to the .log file. Specifying "critical" will only record/display "critical" log
+      statements, and specifying "error" will record/display both "error" and "critical" log statements, and so
+      on. Valid inputs: 'critical', 'error', 'warning', 'info', or 'debug'.
 
 Python USAGE:
-    python
-    from drizzlepac import runsinglehap
-    runsinglehap.perform(inputFilename,debug=True)
-
+    >>> python
+    >>> from drizzlepac import runsinglehap
+    >>> runsinglehap.perform(inputFilename, debug=False, input_custom_pars_file=None, log_level='info')
 """
 # Import standard Python modules
 import argparse
@@ -48,11 +58,18 @@ def perform(input_filename, **kwargs):
         Name of the input csv file containing information about the files to
         be processed
 
-    debug : Boolean
-        display all tracebacks, and debug information?
+    debug : Boolean, optional
+        display all tracebacks, and debug information? If not specified, the default value is Boolean 'False'.
 
-    log_level : string
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+    input_custom_pars_file: string, optional
+        Represents a fully specified input filename of a configuration JSON file which has been
+        customized for specialized processing. This file should contain ALL the input parameters necessary
+        for processing. If not specified, default configuration parameter values will be used.
+
+    log_level : string, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Valid inputs: 'critical', 'error', 'warning', 'info', or 'debug'. If not specified, the
+        default value is 'info'.
 
     Updates
     -------
@@ -89,21 +106,22 @@ def perform(input_filename, **kwargs):
 
 def main():
     parser = argparse.ArgumentParser(description='Process images, produce drizzled images and sourcelists')
-    parser.add_argument('input_filename', help='Name of the input csv file containing information about the files to '
-                        'be processed')
+    parser.add_argument('input_filename', help='Name of the input csv file containing information about the '
+                        'files to be processed')
     parser.add_argument('-c', '--input_custom_pars_file', required=False, default=None, help='filename of a '
-                        'configuration JSON file which has been customized for specialized processing.  This '
-                        'file should contain ALL the input parameters necessary for processing. ')
-    parser.add_argument('-d', '--diagnostic_mode', required=False, action='store_true', help='If this option is turned '
-                        'on, additional log messages will be displayed and additional files will be created during the '
-                        'course of the run.')
+                        'configuration JSON file which has been customized for specialized processing. This '
+                        'file should contain ALL the input parameters necessary for processing. If not '
+                        'specified, default configuration parameter values will be used.')
+    parser.add_argument('-d', '--diagnostic_mode', required=False, action='store_true', help='If this option '
+                        'is turned on, additional log messages will be displayed and additional files will '
+                        'be created during the course of the run.')
     parser.add_argument('-l', '--log_level', required=False, default='info',
-                        choices=['critical', 'error', 'warning', 'info', 'debug'], help='The desired level of '
-                        'verboseness in the log statements displayed on the screen and written to the .log file. The '
-                        'level of verboseness from left to right, and includes all log statements with a log_level '
-                        'left of the specified level. Specifying "critical" will only record/display "critical" log '
-                        'statements, and specifying "error" will record/display both "error" and "critical" log '
-                        'statements, and so on.')
+                        choices=['critical', 'error', 'warning', 'info', 'debug'], help='The desired level '
+                        'of verboseness in the log statements displayed on the screen and written to the '
+                        '.log file. The level of verboseness from left to right, and includes all log '
+                        'statements with a log_level left of the specified level. Specifying "critical" will '
+                        'only record/display "critical" log statements, and specifying "error" will '
+                        'record/display both "error" and "critical" log statements, and so on.')
     user_args = parser.parse_args()
 
     print("Single-visit processing started for: {}".format(user_args.input_filename))
