@@ -21,7 +21,7 @@ of the list).
   picked up from the drizzled image. [#913]
 
 - Added ``DRIZPARS`` keyword to final output drizzle product primary header
-  to document the name of the associated trailer file. [#9xx]
+  to document the name of the associated trailer file. [#934]
 
 3.2.0 (7-Dec-2020)
 ==================
