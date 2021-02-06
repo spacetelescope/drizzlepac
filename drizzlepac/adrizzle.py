@@ -65,16 +65,16 @@ def drizzle(input, outdata, wcsmap=None, editpars=False, configObj=None, **input
     #
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
-    configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
+    configObj = util.getDefaultConfigObj(__taskname__, configObj, input_dict, loadOnly=(not editpars))
     if configObj is None:
         return
 
     if not editpars:
-        run(configObj,wcsmap=wcsmap)
+        run(configObj, wcsmap=wcsmap)
 
 
 #
-####  User level interface to run drizzle tasks from TEAL
+# ###  User level interface to run drizzle tasks from TEAL
 #
 def run(configObj, wcsmap=None):
     """ Interface for running `wdrizzle` from TEAL or Python command-line.
@@ -105,17 +105,17 @@ def run(configObj, wcsmap=None):
     # Open the SCI (and WHT?) image
     # read file to get science array
     insci = get_data(configObj['input'])
-    expin = fileutil.getKeyword(configObj['input'],scale_pars['expkey'])
+    expin = fileutil.getKeyword(configObj['input'], scale_pars['expkey'])
     in_sci_phdr = fits.getheader(fileutil.parseFilename(configObj['input'])[0], memmap=False)
 
     # we need to read in the input WCS
-    input_wcs = stwcs.wcsutil.HSTWCS(configObj['input'],wcskey=_wcskey)
+    input_wcs = stwcs.wcsutil.HSTWCS(configObj['input'], wcskey=_wcskey)
 
     if not util.is_blank(configObj['inweight']):
         inwht = get_data(configObj['inweight']).astype(np.float32)
     else:
         # Generate a default weight map of all good pixels
-        inwht = np.ones(insci.shape,dtype=insci.dtype)
+        inwht = np.ones(insci.shape, dtype=insci.dtype)
 
     output_exists = False
     outname = fileutil.osfn(fileutil.parseFilename(configObj['outdata'])[0])
@@ -131,7 +131,7 @@ def run(configObj, wcsmap=None):
         out_sci_hdr = fits.getheader(outname, memmap=False)
         outexptime = out_sci_hdr['DRIZEXPT']
         if 'ndrizim' in out_sci_hdr:
-            uniqid = out_sci_hdr['ndrizim']+1
+            uniqid = out_sci_hdr['ndrizim'] + 1
         else:
             uniqid = 1
 
@@ -145,27 +145,27 @@ def run(configObj, wcsmap=None):
                     user_wcs_pars['raref'], user_wcs_pars['decref'],
                     user_wcs_pars['xrefpix'], user_wcs_pars['yrefpix'],
                     int(user_wcs_pars['outnx']), int(user_wcs_pars['outny']),
-                    user_wcs_pars['outscale'], user_wcs_pars['orient'] )
+                    user_wcs_pars['outscale'], user_wcs_pars['orient'])
             else:
                 # Define default WCS based on input image
                 applydist = True
-                if input_wcs.sip is None or input_wcs.instrument=='DEFAULT':
+                if input_wcs.sip is None or input_wcs.instrument == 'DEFAULT':
                     applydist = False
-                output_wcs = stwcs.distortion.utils.output_wcs([input_wcs],undistort=applydist)
+                output_wcs = stwcs.distortion.utils.output_wcs([input_wcs], undistort=applydist)
         else:
             refimage = configObj['User WCS Parameters']['refimage']
-            refroot,extroot = fileutil.parseFilename(refimage)
+            refroot, extroot = fileutil.parseFilename(refimage)
             if extroot is None:
                 fimg = fits.open(refroot, memmap=False)
-                for i,extn in enumerate(fimg):
-                    if 'CRVAL1' in extn.header: # Key on CRVAL1 for valid WCS
-                        refwcs = stwcs.wcsutil.HSTWCS('{}[{}]'.format(refroot,i))
+                for i, extn in enumerate(fimg):
+                    if 'CRVAL1' in extn.header:  # Key on CRVAL1 for valid WCS
+                        refwcs = stwcs.wcsutil.HSTWCS('{}[{}]'.format(refroot, i))
                         if refwcs.wcs.has_cd():
                             extroot = i
                             break
                 fimg.close()
                 # try to find extension with valid WCS
-                refimage = "{}[{}]".format(refroot,extroot)
+                refimage = "{}[{}]".format(refroot, extroot)
             # Define the output WCS based on a user specified reference image WCS
             output_wcs = stwcs.wcsutil.HSTWCS(refimage)
         # Initialize values used for combining results
@@ -205,7 +205,7 @@ def run(configObj, wcsmap=None):
             outcon = np.zeros((1,) + output_wcs.array_shape, dtype=np.int32)
         else:
             outcon = outcon.astype(np.int32)
-            planeid = int((uniqid - 1)/ 32)
+            planeid = int((uniqid - 1) / 32)
 
             # Add a new plane to the context image if planeid overflows
             while outcon.shape[0] <= planeid:
@@ -216,7 +216,7 @@ def run(configObj, wcsmap=None):
     if configObj['wt_scl'] == 'exptime':
         wt_scl = expin
     elif configObj['wt_scl'] == 'expsq':
-        wt_scl = expin*expin
+        wt_scl = expin * expin
     else:
         wt_scl = float(configObj['wt_scl'])
 
@@ -231,18 +231,18 @@ def run(configObj, wcsmap=None):
         input_wcs.cpdis2 = None
         input_wcs.det2im = None
 
-    wcslin = distortion.utils.output_wcs([input_wcs],undistort=undistort)
+    wcslin = distortion.utils.output_wcs([input_wcs], undistort=undistort)
 
     # Perform actual drizzling now...
     _vers = do_driz(insci, input_wcs, inwht,
             output_wcs, outsci, outwht, outcon,
             expin, scale_pars['in_units'],
-            wt_scl, wcslin_pscale=wcslin.pscale ,uniqid=uniqid,
+            wt_scl, wcslin_pscale=wcslin.pscale, uniqid=uniqid,
             pixfrac=configObj['pixfrac'], kernel=configObj['kernel'],
             fillval=scale_pars['fillval'], stepsize=configObj['stepsize'],
             wcsmap=None)
 
-    out_sci_handle,outextn = create_output(configObj['outdata'])
+    out_sci_handle, outextn = create_output(configObj['outdata'])
     if not output_exists:
         # Also, define default header based on input image Primary header
         out_sci_handle[outextn].header = in_sci_phdr.copy()
@@ -256,8 +256,8 @@ def run(configObj, wcsmap=None):
     # create CTYPE strings
     ctype1 = input_wcs.wcs.ctype[0]
     ctype2 = input_wcs.wcs.ctype[1]
-    if ctype1.find('-SIP'): ctype1 = ctype1.replace('-SIP','')
-    if ctype2.find('-SIP'): ctype2 = ctype2.replace('-SIP','')
+    if ctype1.find('-SIP'): ctype1 = ctype1.replace('-SIP', '')
+    if ctype2.find('-SIP'): ctype2 = ctype2.replace('-SIP', '')
 
     # Update header with WCS keywords
     out_sci_handle[outextn].header['ORIENTAT'] = output_wcs.orientat
@@ -285,7 +285,7 @@ def run(configObj, wcsmap=None):
     # been combined in this product so far
     out_sci_handle[outextn].header['NDRIZIM'] = uniqid
 
-    #define keywords to be written out to product header
+    # define keywords to be written out to product header
     drizdict = outputimage.DRIZ_KEYWORDS.copy()
 
     # Update drizdict with current values
@@ -302,20 +302,20 @@ def run(configObj, wcsmap=None):
     drizdict['OUUN']['value'] = scale_pars['out_units']
     drizdict['FVAL']['value'] = scale_pars['fillval']
     drizdict['WKEY']['value'] = configObj['wcskey']
-    outputimage.writeDrizKeywords(out_sci_handle[outextn].header,uniqid,drizdict)
+    outputimage.writeDrizKeywords(out_sci_handle[outextn].header, uniqid, drizdict)
 
     # add output array to output file
     out_sci_handle[outextn].data = outsci
     out_sci_handle.close()
 
     if not util.is_blank(configObj['outweight']):
-        out_wht_handle,outwhtext = create_output(configObj['outweight'])
+        out_wht_handle, outwhtext = create_output(configObj['outweight'])
         out_wht_handle[outwhtext].header = out_sci_handle[outextn].header.copy()
         out_wht_handle[outwhtext].data = outwht
         out_wht_handle.close()
 
     if keep_con:
-        out_con_handle,outconext = create_output(configObj['outcontext'])
+        out_con_handle, outconext = create_output(configObj['outcontext'])
         out_con_handle[outconext].data = outcon
         out_con_handle.close()
 
@@ -324,14 +324,15 @@ def run(configObj, wcsmap=None):
 # drizzlepac based interfaces: relying on imageObject instances and drizzlepac internals
 #
 #
-#### Top-level interface from inside MultiDrizzle
+# ### Top-level interface from inside MultiDrizzle
 #
-def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None):
+def drizSeparate(imageObjectList, output_wcs, configObj,
+                 logfile=None, wcsmap=None, procSteps=None):
     if procSteps is not None:
         procSteps.addStep('Separate Drizzle')
 
     # ConfigObj needs to be parsed specifically for driz_separate set of parameters
-    single_step = util.getSectionName(configObj,_single_step_num_)
+    single_step = util.getSectionName(configObj, _single_step_num_)
     # This can be called directly from MultiDrizle, so only execute if
     # switch has been turned on (no guarantee MD will check before calling).
     if configObj[single_step]['driz_separate']:
@@ -350,6 +351,8 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None
         log.info('USER INPUT PARAMETERS for Separate Drizzle Step:')
         util.printParams(paramDict, log=log)
 
+        paramDict['logfile'] = logfile
+
         # override configObj[build] value with the value of the build parameter
         # this is necessary in order for AstroDrizzle to always have build=False
         # for single-drizzle step when called from the top-level.
@@ -362,16 +365,18 @@ def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=None,procSteps=None
         procSteps.endStep('Separate Drizzle')
 
 
-def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,procSteps=None):
+def drizFinal(imageObjectList, output_wcs, configObj,
+              build=None, wcsmap=None, logfile=None, procSteps=None):
 
     if procSteps is not None:
         procSteps.addStep('Final Drizzle')
     # ConfigObj needs to be parsed specifically for driz_final set of parameters
-    final_step = util.getSectionName(configObj,_final_step_num_)
+    final_step = util.getSectionName(configObj, _final_step_num_)
+
     # This can be called directly from MultiDrizle, so only execute if
     # switch has been turned on (no guarantee MD will check before calling).
     if configObj[final_step]['driz_combine']:
-        paramDict = buildDrizParamDict(configObj,single=False)
+        paramDict = buildDrizParamDict(configObj, single=False)
         paramDict['crbit'] = configObj['crbit']
         paramDict['proc_unit'] = configObj['proc_unit']
         paramDict['wht_type'] = configObj[final_step]['final_wht_type']
@@ -384,6 +389,8 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,proc
             build = paramDict['build']
         # Record whether or not intermediate files should be deleted when finished
         paramDict['clean'] = configObj['STATE OF INPUT FILES']['clean']
+
+        paramDict['logfile'] = logfile
 
         log.info('USER INPUT PARAMETERS for Final Drizzle Step:')
         util.printParams(paramDict, log=log)
@@ -398,7 +405,7 @@ def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=None,proc
 
 # Run 'drizzle' here...
 #
-def mergeDQarray(maskname,dqarr):
+def mergeDQarray(maskname, dqarr):
     """ Merge static or CR mask with mask created from DQ array on-the-fly here.
     """
     maskarr = None
@@ -418,9 +425,9 @@ def mergeDQarray(maskname,dqarr):
 
         if maskarr is not None:
             # merge array with dqarr now
-            np.bitwise_and(dqarr,maskarr,dqarr)
+            np.bitwise_and(dqarr, maskarr, dqarr)
 
-def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
+def updateInputDQArray(dqfile, dq_extn, chip, crmaskname, cr_bits_value):
     if not isinstance(crmaskname, fits.HDUList) and not os.path.exists(crmaskname):
         log.warning('No CR mask file found! Input DQ array not updated.')
         return
@@ -434,20 +441,20 @@ def updateInputDQArray(dqfile,dq_extn,chip, crmaskname,cr_bits_value):
         crmask = fileutil.openImage(crmaskname, memmap=False)
 
     if os.path.exists(dqfile):
-        fullext=dqfile+"["+dq_extn+str(chip)+"]"
+        fullext = dqfile + "[" + dq_extn + str(chip) + "]"
         infile = fileutil.openImage(fullext, mode='update', memmap=False)
         __bitarray = np.logical_not(crmask[0].data).astype(np.int16) * cr_bits_value
-        np.bitwise_or(infile[dq_extn,chip].data,__bitarray,infile[dq_extn,chip].data)
+        np.bitwise_or(infile[dq_extn, chip].data, __bitarray, infile[dq_extn, chip].data)
         infile.close()
         crmask.close()
 
-def buildDrizParamDict(configObj,single=True):
-    chip_pars = ['units','wt_scl','pixfrac','kernel','fillval','bits','maskval']
-    cfunc_pars = {'pixfrac':float}
+def buildDrizParamDict(configObj, single=True):
+    chip_pars = ['units', 'wt_scl', 'pixfrac', 'kernel', 'fillval', 'bits', 'maskval']
+    cfunc_pars = {'pixfrac': float}
 
     # Initialize paramDict with global parameter(s)
-    paramDict = {'build':configObj['build'],'stepsize':configObj['stepsize'],
-                'coeffs':configObj['coeffs'],'wcskey':configObj['wcskey']}
+    paramDict = {'build': configObj['build'], 'stepsize': configObj['stepsize'],
+                'coeffs': configObj['coeffs'], 'wcskey': configObj['wcskey']}
 
     # build appro
     if single:
@@ -456,9 +463,9 @@ def buildDrizParamDict(configObj,single=True):
     else:
         driz_prefix = 'final_'
         stepnum = 7
-    section_name = util.getSectionName(configObj,stepnum)
+    section_name = util.getSectionName(configObj, stepnum)
     # Copy values from configObj for the appropriate step to paramDict
-    for p in list(configObj[section_name].keys())+[driz_prefix+'units']:
+    for p in list(configObj[section_name].keys()) + [driz_prefix + 'units']:
         if p.startswith(driz_prefix):
             par = p[len(driz_prefix):]
             if par == 'units':
@@ -466,13 +473,13 @@ def buildDrizParamDict(configObj,single=True):
                     # Hard-code single-drizzle to always returns 'cps'
                     paramDict[par] = 'cps'
                 else:
-                    paramDict[par] = configObj[section_name][driz_prefix+par]
+                    paramDict[par] = configObj[section_name][driz_prefix + par]
             else:
-                val = configObj[section_name][driz_prefix+par]
+                val = configObj[section_name][driz_prefix + par]
                 if par in cfunc_pars:
                     val = cfunc_pars[par](val)
                 paramDict[par] = val
-    log.info("Interpreted paramDict with single={} as:\n{}".format(single,paramDict))
+    log.info("Interpreted paramDict with single={} as:\n{}".format(single, paramDict))
     return paramDict
 
 def _setDefaults(configObj={}):
@@ -484,30 +491,31 @@ def _setDefaults(configObj={}):
 
     """
 
-    paramDict={"build":True,
-              "single":True,
-              "stepsize":10,
-              "in_units":"cps",
-              "wt_scl":1.,
-              "pixfrac":1.,
-              "kernel":"square",
-              "fillval":999.,
+    paramDict = {"build": True,
+              "single": True,
+              "stepsize": 10,
+              "in_units": "cps",
+              "wt_scl": 1.,
+              "pixfrac": 1.,
+              "kernel": "square",
+              "fillval": 999.,
               "maskval": None,
-              "rot":0.,
-              "scale":1.,
-              "xsh":0.,
-              "ysh":0.,
-              "blotnx":2048,
-              "blotny":2048,
-              "outnx":4096,
-              "outny":4096,
-              "data":None,
-              "driz_separate":True,
-              "driz_combine":False}
+              "rot": 0.,
+              "scale": 1.,
+              "xsh": 0.,
+              "ysh": 0.,
+              "blotnx": 2048,
+              "blotny": 2048,
+              "outnx": 4096,
+              "outny": 4096,
+              "data": None,
+              "driz_separate": True,
+              "driz_combine": False,
+              "logfile": "astrodrizzle.log"}
 
-    if(len(configObj) !=0):
+    if(len(configObj) != 0):
         for key in configObj.keys():
-            paramDict[key]=configObj[key]
+            paramDict[key] = configObj[key]
 
     return paramDict
 
@@ -522,10 +530,10 @@ def interpret_maskval(paramDict):
     if maskval is None:
         maskval = np.nan
     else:
-        maskval = float(maskval) # just to be clear and absolutely sure...
+        maskval = float(maskval)  # just to be clear and absolutely sure...
     return maskval
 
-def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
+def run_driz(imageObjectList, output_wcs, paramDict, single, build, wcsmap=None):
     """ Perform drizzle operation on input to create output.
     The input parameters originally was a list
     of dictionaries, one for each input, that matches the
@@ -546,12 +554,12 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     # Setup the versions info dictionary for output to PRIMARY header
     # The keys will be used as the name reported in the header, as-is
     #
-    _versions = {'AstroDrizzle':__version__,
-                 'PyFITS':util.__fits_version__,
-                 'Numpy':util.__numpy_version__}
+    _versions = {'AstroDrizzle': __version__,
+                 'PyFITS': util.__fits_version__,
+                 'Numpy': util.__numpy_version__}
 
     # Set sub-sampling rate for drizzling
-    #stepsize = 2.0
+    # stepsize = 2.0
     log.info('  **Using sub-sampling value of %s for kernel %s' %
              (paramDict['stepsize'], paramDict['kernel']))
 
@@ -575,7 +583,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     if will_parallel:
         log.info('Executing %d parallel workers' % pool_size)
     else:
-        if single: # not yet an option for final drizzle, msg would confuse
+        if single:  # not yet an option for final drizzle, msg would confuse
             log.info('Executing serially')
 
     # Set parameters for each input and run drizzle on it here.
@@ -585,7 +593,7 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
     numctx = 0
     for img in imageObjectList:
         numctx += img._nmembers
-    _numctx = {'all':numctx}
+    _numctx = {'all': numctx}
 
     #            if single:
     # Determine how many chips make up each single image
@@ -596,10 +604,10 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             else: _numctx[plsingle] = 1
 
     # Compute how many planes will be needed for the context image.
-    _nplanes = int((_numctx['all']-1) / 32) + 1
+    _nplanes = int((_numctx['all'] - 1) / 32) + 1
     # For single drizzling or when context is turned off,
     # minimize to 1 plane only...
-    if single or imageObjectList[0][1].outputNames['outContext'] in [None,'',' ']:
+    if single or imageObjectList[0][1].outputNames['outContext'] in [None, '', ' ']:
         _nplanes = 1
 
     #
@@ -613,11 +621,11 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
        (single and (not will_parallel) and (not imageObjectList[0].inmemory)):
         # Note there are four cases/combinations for single drizzle alone here:
         # (not-inmem, serial), (not-inmem, parallel), (inmem, serial), (inmem, parallel)
-        _outsci=np.empty(output_wcs.array_shape, dtype=np.float32)
+        _outsci = np.empty(output_wcs.array_shape, dtype=np.float32)
         _outsci.fill(maskval)
-        _outwht=np.zeros(output_wcs.array_shape, dtype=np.float32)
+        _outwht = np.zeros(output_wcs.array_shape, dtype=np.float32)
         # initialize context to 3-D array but only pass appropriate plane to drizzle as needed
-        _outctx=np.zeros((_nplanes,) + output_wcs.array_shape, dtype=np.int32)
+        _outctx = np.zeros((_nplanes,) + output_wcs.array_shape, dtype=np.int32)
         _hdrlist = []
 
     # Keep track of how many chips have been processed
@@ -658,21 +666,21 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
             # use multiprocessing.Manager only if in parallel and in memory
             if img.inmemory:
                 manager = multiprocessing.Manager()
-                dproxy = manager.dict(img.virtualOutputs) # copy & wrap it in proxy
+                dproxy = manager.dict(img.virtualOutputs)  # copy & wrap it in proxy
                 img.virtualOutputs = dproxy
 
             # parallelize run_driz_img (currently for separate drizzle only)
             p = multiprocessing.Process(target=run_driz_img,
-                name='adrizzle.run_driz_img()', # for err msgs
-                args=(img,chiplist,output_wcs,outwcs,template,paramDict,
-                      single,num_in_prod,build,_versions,_numctx,_nplanes,
-                      _chipIdx,None,None,None,None,wcsmap))
+                name='adrizzle.run_driz_img()',  # for err msgs
+                args=(img, chiplist, output_wcs, outwcs, template, paramDict,
+                      single, num_in_prod, build, _versions, _numctx, _nplanes,
+                      _chipIdx, None, None, None, None, wcsmap))
             subprocs.append(p)
         else:
             # serial run_driz_img run (either separate drizzle or final drizzle)
-            run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,
-                         single,num_in_prod,build,_versions,_numctx,_nplanes,
-                         _chipIdx,_outsci,_outwht,_outctx,_hdrlist,wcsmap)
+            run_driz_img(img, chiplist, output_wcs, outwcs, template, paramDict,
+                         single, num_in_prod, build, _versions, _numctx, _nplanes,
+                         _chipIdx, _outsci, _outwht, _outctx, _hdrlist, wcsmap)
 
         # Increment/reset master chip counter
         _chipIdx += len(chiplist)
@@ -681,9 +689,9 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 
     # do the join if we spawned tasks
     if will_parallel:
-        mputil.launch_and_wait(subprocs, pool_size) # blocks till all done
+        mputil.launch_and_wait(subprocs, pool_size)  # blocks till all done
 
-    del _outsci,_outwht,_outctx,_hdrlist
+    del _outsci, _outwht, _outctx, _hdrlist
     # have looped over each img/chip
 
 
@@ -691,9 +699,9 @@ def run_driz(imageObjectList,output_wcs,paramDict,single,build,wcsmap=None):
 # Still to check:
 #    - why have both output_wcs and outwcs?
 
-def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
-                 num_in_prod,build,_versions,_numctx,_nplanes,chipIdxCopy,
-                 _outsci,_outwht,_outctx,_hdrlist,wcsmap):
+def run_driz_img(img, chiplist, output_wcs, outwcs, template, paramDict, single,
+                 num_in_prod, build, _versions, _numctx, _nplanes, chipIdxCopy,
+                 _outsci, _outwht, _outctx, _hdrlist, wcsmap):
     """ Perform the drizzle operation on a single image.
     This is separated out from :py:func:`run_driz` so as to keep together
     the entirety of the code which is inside the loop over
@@ -705,13 +713,13 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
     # Check for unintialized inputs
     here = _outsci is None and _outwht is None and _outctx is None
     if _outsci is None:
-        _outsci=np.empty(output_wcs.array_shape, dtype=np.float32)
+        _outsci = np.empty(output_wcs.array_shape, dtype=np.float32)
         if single:
             _outsci.fill(0)
         else:
             _outsci.fill(maskval)
     if _outwht is None:
-        _outwht=np.zeros(output_wcs.array_shape, dtype=np.float32)
+        _outwht = np.zeros(output_wcs.array_shape, dtype=np.float32)
     if _outctx is None:
         _outctx = np.zeros((_nplanes,) + output_wcs.array_shape, dtype=np.int32)
     if _hdrlist is None:
@@ -720,16 +728,16 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
     # Work on each chip - note that they share access to the arrays above
     for chip in chiplist:
         # See if we will be writing out data
-        doWrite = chipIdxCopy == num_in_prod-1
+        doWrite = chipIdxCopy == num_in_prod - 1
 
 #       debuglog('#chips='+str(chipIdxCopy)+', num_in_prod='+\
 #                 str(num_in_prod)+', single='+str(single)+', write='+\
 #                 str(doWrite)+', here='+str(here))
 
         # run_driz_chip
-        run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,
-                      single,doWrite,build,_versions,_numctx,_nplanes,
-                      chipIdxCopy,_outsci,_outwht,_outctx,_hdrlist,wcsmap)
+        run_driz_chip(img, chip, output_wcs, outwcs, template, paramDict,
+                      single, doWrite, build, _versions, _numctx, _nplanes,
+                      chipIdxCopy, _outsci, _outwht, _outctx, _hdrlist, wcsmap)
 
         # Increment chip counter (also done outside of this function)
         chipIdxCopy += 1
@@ -738,22 +746,22 @@ def run_driz_img(img,chiplist,output_wcs,outwcs,template,paramDict,single,
     # Reset for next output image...
     #
     if here:
-        del _outsci,_outwht,_outctx,_hdrlist
+        del _outsci, _outwht, _outctx, _hdrlist
     elif single:
-        np.multiply(_outsci,0.,_outsci)
-        np.multiply(_outwht,0.,_outwht)
-        np.multiply(_outctx,0,_outctx)
+        np.multiply(_outsci, 0., _outsci)
+        np.multiply(_outwht, 0., _outwht)
+        np.multiply(_outctx, 0, _outctx)
         # this was "_hdrlist=[]", but we need to preserve the var ptr itself
-        while len(_hdrlist)>0: _hdrlist.pop()
+        while len(_hdrlist) > 0: _hdrlist.pop()
     # else, these were intended to live and be used beyond this function call
 
     # img.saveVirtualOutputs() has already been done in run_driz_chip (but
     # only if single and doWrite)
 
 
-def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
-                  doWrite,build,_versions,_numctx,_nplanes,_numchips,
-                  _outsci,_outwht,_outctx,_hdrlist,wcsmap):
+def run_driz_chip(img, chip, output_wcs, outwcs, template, paramDict, single,
+                  doWrite, build, _versions, _numctx, _nplanes, _numchips,
+                  _outsci, _outwht, _outctx, _hdrlist, wcsmap):
     """ Perform the drizzle operation on a single chip.
     This is separated out from `run_driz_img` so as to keep together
     the entirety of the code which is inside the loop over
@@ -765,8 +773,8 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
 
     # Look for sky-subtracted product
     if os.path.exists(chip.outputNames['outSky']):
-        chipextn = '['+chip.header['extname']+','+str(chip.header['extver'])+']'
-        _expname = chip.outputNames['outSky']+chipextn
+        chipextn = '[' + chip.header['extname'] + ',' + str(chip.header['extver']) + ']'
+        _expname = chip.outputNames['outSky'] + chipextn
     else:
         # If sky-subtracted product does not exist, use regular input
         _expname = chip.outputNames['data']
@@ -774,18 +782,18 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
 
     # Open the SCI image
     _handle = fileutil.openImage(_expname, mode='readonly', memmap=False)
-    _sciext = _handle[chip.header['extname'],chip.header['extver']]
+    _sciext = _handle[chip.header['extname'], chip.header['extver']]
 
     # Apply sky subtraction and unit conversion to input array
     if chip.computedSky is None:
         _insci = _sciext.data
     else:
-        log.info("Applying sky value of %0.6f to %s"%(chip.computedSky,_expname))
+        log.info("Applying sky value of %0.6f to %s" % (chip.computedSky, _expname))
         _insci = _sciext.data - chip.computedSky
     # If input SCI image is still integer format (RAW files)
     # transform it to float32 for all subsequent operations
     # needed for numpy >=1.12.x
-    if np.issubdtype(_insci[0,0],np.int16):
+    if np.issubdtype(_insci[0, 0], np.int16):
         _insci = _insci.astype(np.float32)
 
     _insci *= chip._effGain
@@ -832,7 +840,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         # when only 1 context image plane gets generated
         # to prevent overflow problems with trying to access
         # planes that weren't created for large numbers of inputs.
-        _uniqid = ((_uniqid-1) % 32) + 1
+        _uniqid = ((_uniqid - 1) % 32) + 1
 
     # Select which mask needs to be read in for drizzling
     ####
@@ -842,7 +850,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     #
     ####
     # Build basic DQMask from DQ array and bits value
-    dqarr = img.buildMask(chip._chip,bits=paramDict['bits'])
+    dqarr = img.buildMask(chip._chip, bits=paramDict['bits'])
 
     # get correct mask filenames/objects
     staticMaskName = chip.outputNames['staticMask']
@@ -856,26 +864,26 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
 
     # Merge appropriate additional mask(s) with DQ mask
     if single:
-        mergeDQarray(staticMaskName,dqarr)
+        mergeDQarray(staticMaskName, dqarr)
         if dqarr.sum() == 0:
             log.warning('All pixels masked out when applying static mask!')
     else:
-        mergeDQarray(staticMaskName,dqarr)
+        mergeDQarray(staticMaskName, dqarr)
 
         if dqarr.sum() == 0:
             log.warning('All pixels masked out when applying static mask!')
         else:
             # Only apply cosmic-ray mask when some good pixels remain after
             # applying the static mask
-            mergeDQarray(crMaskName,dqarr)
+            mergeDQarray(crMaskName, dqarr)
 
             if dqarr.sum() == 0:
                 log.warning('WARNING: All pixels masked out when applying '
                             'cosmic ray mask to %s' % _expname)
-        updateInputDQArray(chip.dqfile,chip.dq_extn,chip._chip,
+        updateInputDQArray(chip.dqfile ,chip.dq_extn, chip._chip,
                            crMaskName, paramDict['crbit'])
 
-    img.set_wtscl(chip._chip,paramDict['wt_scl'])
+    img.set_wtscl(chip._chip, paramDict['wt_scl'])
 
     pix_ratio = outwcs.pscale / chip.wcslin_pscale
 
@@ -884,11 +892,11 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     wht_type = paramDict['wht_type']
 
     if wht_type == 'ERR':
-        _inwht = img.buildERRmask(chip._chip,dqarr,pix_ratio)
+        _inwht = img.buildERRmask(chip._chip, dqarr, pix_ratio)
     elif wht_type == 'IVM':
-        _inwht = img.buildIVMmask(chip._chip,dqarr,pix_ratio)
+        _inwht = img.buildIVMmask(chip._chip, dqarr, pix_ratio)
     elif wht_type == 'EXP':
-        _inwht = img.buildEXPmask(chip._chip,dqarr)
+        _inwht = img.buildEXPmask(chip._chip, dqarr)
     else:  # wht_type == None, used for single drizzle images
         _inwht = chip._exptime * dqarr.astype(np.float32)
 
@@ -902,7 +910,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
         _outmaskname = chip.outputNames[step_mask]
         if os.path.exists(_outmaskname): os.remove(_outmaskname)
         pimg = fits.PrimaryHDU(data=_inwht)
-        img.saveVirtualOutputs({step_mask:pimg})
+        img.saveVirtualOutputs({step_mask: pimg})
         # Only write out mask files if in_memory=False
         if not img.inmemory:
             pimg.writeto(_outmaskname)
@@ -920,7 +928,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
     time_driz = time.time() - epoch; epoch = time.time()
 
     # Set up information for generating output FITS image
-    #### Check to see what names need to be included here for use in _hdrlist
+    # ### Check to see what names need to be included here for use in _hdrlist
     chip.outputNames['driz_version'] = _vers
     chip.outputNames['driz_wcskey'] = paramDict['wcskey']
     outputvals = chip.outputNames.copy()
@@ -961,9 +969,9 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
 
         # record IDCSCALE for output to product header
         paramDict['idcscale'] = chip.wcs.idcscale
-        #If output units were set to 'counts', rescale the array in-place
+        # If output units were set to 'counts', rescale the array in-place
         if paramDict['units'] == 'counts':
-            #determine what exposure time needs to be used
+            # determine what exposure time needs to be used
             # to rescale the product.
             if single:
                 _expscale = chip._exptime
@@ -980,9 +988,10 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
                                           wcs=output_wcs, single=single)
         _outimg.set_bunit(_bunit)
         _outimg.set_units(paramDict['units'])
-        outimgs = _outimg.writeFITS(template,_outsci,_outwht,ctxarr=_outctx,
-                                        versions=_versions,virtual=img.inmemory,
-                                        rules_file=paramDict['rules_file'])
+        outimgs = _outimg.writeFITS(template, _outsci, _outwht, ctxarr=_outctx,
+                                        versions=_versions, virtual=img.inmemory,
+                                        rules_file=paramDict['rules_file'],
+                                        logfile=paramDict['logfile'])
         del _outimg
 
         # update imageObject with product in memory
@@ -991,7 +1000,7 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
 
     # this is after the doWrite
     time_write = time.time() - epoch; epoch = time.time()
-    if False and not single: # turn off all this perf reporting for now
+    if False and not single:  # turn off all this perf reporting for now
         time_pre_all.append(time_pre)
         time_driz_all.append(time_driz)
         time_post_all.append(time_post)
@@ -1007,18 +1016,18 @@ def run_driz_chip(img,chip,output_wcs,outwcs,template,paramDict,single,
             tot_driz = sum(time_driz_all)
             tot_post = sum(time_post_all)
             tot_write = sum(time_write_all)
-            tot = tot_pre+tot_driz+tot_post+tot_write
-            log.info('chip total pre-drizzling:  %6.3f (%4.1f%%)' % (tot_pre,   (100.*tot_pre/tot)))
-            log.info('chip total drizzling:      %6.3f (%4.1f%%)' % (tot_driz,  (100.*tot_driz/tot)))
-            log.info('chip total post-drizzling: %6.3f (%4.1f%%)' % (tot_post,  (100.*tot_post/tot)))
-            log.info('chip total writing output: %6.3f (%4.1f%%)' % (tot_write, (100.*tot_write/tot)))
+            tot = tot_pre + tot_driz + tot_post + tot_write
+            log.info('chip total pre-drizzling:  %6.3f (%4.1f%%)' % (tot_pre, (100. * tot_pre / tot)))
+            log.info('chip total drizzling:      %6.3f (%4.1f%%)' % (tot_driz, (100. * tot_driz / tot)))
+            log.info('chip total post-drizzling: %6.3f (%4.1f%%)' % (tot_post, (100. * tot_post / tot)))
+            log.info('chip total writing output: %6.3f (%4.1f%%)' % (tot_write, (100. * tot_write / tot)))
 
 
 def do_driz(insci, input_wcs, inwht,
             output_wcs, outsci, outwht, outcon,
             expin, in_units, wt_scl,
-            wcslin_pscale=1.0,uniqid=1, pixfrac=1.0, kernel='square',
-            fillval="INDEF", stepsize=10,wcsmap=None):
+            wcslin_pscale=1.0, uniqid=1, pixfrac=1.0, kernel='square',
+            fillval="INDEF", stepsize=10, wcsmap=None):
     """
     Core routine for performing 'drizzle' operation on a single input image
     All input values will be Python objects such as ndarrays, instead
@@ -1039,7 +1048,7 @@ def do_driz(insci, input_wcs, inwht,
 
     # Compute what plane of the context image this input would
     # correspond to:
-    planeid = int((uniqid-1) / 32)
+    planeid = int((uniqid - 1) / 32)
 
     # Check if the context image has this many planes
     if outcon.ndim == 3:
@@ -1058,7 +1067,7 @@ def do_driz(insci, input_wcs, inwht,
     else:
         outctx = outcon[planeid]
 
-    pix_ratio = output_wcs.pscale/wcslin_pscale
+    pix_ratio = output_wcs.pscale / wcslin_pscale
 
     if wcsmap is None and cdriz is not None:
         log.info('Using WCSLIB-based coordinate transformation...')
@@ -1070,13 +1079,13 @@ def do_driz(insci, input_wcs, inwht,
         )
     else:
         #
-        ##Using the Python class for the WCS-based transformation
+        # # Using the Python class for the WCS-based transformation
         #
         # Use user provided mapping function
         log.info('Using coordinate transformation defined by user...')
         if wcsmap is None:
             wcsmap = wcs_functions.WCSMap
-        wmap = wcsmap(input_wcs,output_wcs)
+        wmap = wcsmap(input_wcs, output_wcs)
         mapping = wmap.forward
 
     _shift_fr = 'output'
@@ -1090,10 +1099,10 @@ def do_driz(insci, input_wcs, inwht,
     _dny = insci.shape[0]
     # Call 'drizzle' to perform image combination
     if insci.dtype > np.float32:
-        #WARNING: Input array recast as a float32 array
+        # WARNING: Input array recast as a float32 array
         insci = insci.astype(np.float32)
 
-    _vers,nmiss,nskip = cdriz.tdriz(insci, inwht, outsci, outwht,
+    _vers, nmiss, nskip = cdriz.tdriz(insci, inwht, outsci, outwht,
         outctx, uniqid, ystart, 1, 1, _dny,
         pix_ratio, 1.0, 1.0, 'center', pixfrac,
         kernel, in_units, expscale, wt_scl,
@@ -1108,7 +1117,7 @@ def do_driz(insci, input_wcs, inwht,
 
 
 def get_data(filename):
-    fileroot,extn = fileutil.parseFilename(filename)
+    fileroot, extn = fileutil.parseFilename(filename)
     extname = fileutil.parseExtn(extn)
     if extname[0] == '': extname = "PRIMARY"
     if os.path.exists(fileroot):
@@ -1120,7 +1129,7 @@ def get_data(filename):
     return data
 
 def create_output(filename):
-    fileroot,extn = fileutil.parseFilename(filename)
+    fileroot, extn = fileutil.parseFilename(filename)
     extname = fileutil.parseExtn(extn)
     if extname[0] == '': extname = "PRIMARY"
 
@@ -1144,7 +1153,7 @@ def create_output(filename):
 
     handle = fits.open(fileroot, mode='update', memmap=False)
 
-    return handle,extname
+    return handle, extname
 
 
 def help(file=None):
@@ -1159,17 +1168,17 @@ def help(file=None):
         writing out the help.
 
     """
-    helpstr = getHelpAsString(docstring=True, show_ver = True)
+    helpstr = getHelpAsString(docstring=True, show_ver=True)
     if file is None:
         print(helpstr)
     else:
         if os.path.exists(file): os.remove(file)
-        f = open(file, mode = 'w')
+        f = open(file, mode='w')
         f.write(helpstr)
         f.close()
 
 
-def getHelpAsString(docstring = False, show_ver = True):
+def getHelpAsString(docstring=False, show_ver=True):
     """
     return useful help from a file in the script directory
     called ``__taskname__.help``
@@ -1184,7 +1193,7 @@ def getHelpAsString(docstring = False, show_ver = True):
         if show_ver:
             helpString = os.linesep + \
                 ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __version_date__]) + 2*os.linesep
+                ' updated on ', __version_date__]) + 2 * os.linesep
         else:
             helpString = ''
         if os.path.exists(helpfile):
@@ -1198,4 +1207,4 @@ def getHelpAsString(docstring = False, show_ver = True):
     return helpString
 
 
-drizzle.__doc__ = getHelpAsString(docstring = True, show_ver = False)
+drizzle.__doc__ = getHelpAsString(docstring=True, show_ver=False)

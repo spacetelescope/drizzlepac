@@ -159,6 +159,9 @@ def run(configobj, wcsmap=None):
         def_logname = None
         return
 
+    # Build name of output trailer file
+    logfile = "{}.tra".format(def_logname)
+
     clean = configobj['STATE OF INPUT FILES']['clean']
     procSteps = util.ProcSteps()
 
@@ -196,33 +199,35 @@ def run(configobj, wcsmap=None):
         util.printParams(configobj, log=log)
 
         # Call rest of MD steps...
-        #create static masks for each image
+        # create static masks for each image
         staticMask.createStaticMask(imgObjList, configobj,
                                     procSteps=procSteps)
 
-        #subtract the sky
+        # subtract the sky
         sky.subtractSky(imgObjList, configobj, procSteps=procSteps)
 
 #       _dbg_dump_virtual_outputs(imgObjList)
 
-        #drizzle to separate images
+        # drizzle to separate images
         adrizzle.drizSeparate(imgObjList, outwcs, configobj, wcsmap=wcsmap,
+                              logfile=logfile,
                               procSteps=procSteps)
 
 #       _dbg_dump_virtual_outputs(imgObjList)
 
-        #create the median images from the driz sep images
+        # create the median images from the driz sep images
         createMedian.createMedian(imgObjList, configobj, procSteps=procSteps)
 
-        #blot the images back to the original reference frame
+        # blot the images back to the original reference frame
         ablot.runBlot(imgObjList, outwcs, configobj, wcsmap=wcsmap,
                       procSteps=procSteps)
 
-        #look for cosmic rays
+        # look for cosmic rays
         drizCR.rundrizCR(imgObjList, configobj, procSteps=procSteps)
 
-        #Make your final drizzled image
+        # Make your final drizzled image
         adrizzle.drizFinal(imgObjList, outwcs, configobj, wcsmap=wcsmap,
+                           logfile=logfile,
                            procSteps=procSteps)
 
         print()
@@ -231,7 +236,7 @@ def run(configobj, wcsmap=None):
         print("", flush=True)
 
 
-    except:
+    except Exception:
         clean = False
         print(textutil.textbox(
             "ERROR:\nAstroDrizzle Version {:s} encountered a problem!  "
