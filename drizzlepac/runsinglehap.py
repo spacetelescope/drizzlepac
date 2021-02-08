@@ -49,11 +49,10 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # ----------------------------------------------------------------------------------------------------------------------
 
 def perform(input_filename, **kwargs):
-    """
-    Main calling subroutine.
+    """Main calling subroutine for the ``runsinglehap`` task.
 
     Parameters
-    ----------
+    -----------
     input_filename : string
         Name of the input csv file containing information about the files to
         be processed
@@ -61,7 +60,7 @@ def perform(input_filename, **kwargs):
     debug : Boolean, optional
         display all tracebacks, and debug information? If not specified, the default value is Boolean 'False'.
 
-    input_custom_pars_file: string, optional
+    input_custom_pars_file : string, optional
         Represents a fully specified input filename of a configuration JSON file which has been
         customized for specialized processing. This file should contain ALL the input parameters necessary
         for processing. If not specified, default configuration parameter values will be used.
@@ -73,7 +72,7 @@ def perform(input_filename, **kwargs):
 
     Updates
     -------
-    return_value : list
+    return_value: list
         a simple status value. '0' for a successful run and '1' for a failed
         run
     """
