@@ -160,6 +160,21 @@ class TotalProduct(HAPProduct):
 
         log.debug("Total detection object {}/{} created.".format(self.instrument, self.detector))
 
+    def update_drizpars(self):
+        """ Update ALL products with final name of trailer file """
+        # Update this total product
+        fits.setval(self.drizzle_filename, 'DRIZPARS', value=self.trl_filename)
+
+        # Update all filter drizzle products that were actually written out
+        for fdp in self.fdp_list:
+            if os.path.exists(fdp.drizzle_filename):
+                fits.setval(fdp.drizzle_filename, 'DRIZPARS', value=fdp.trl_filename)
+
+        # Update all exposure drizzle products that were actually written out
+        for edp in self.edp_list:
+            if os.path.exists(edp.drizzle_filename):
+                fits.setval(edp.drizzle_filename, 'DRIZPARS', value=edp.trl_filename)
+
     def find_member(self, name):
         """ Return member instance with filename 'name' """
         desired_member = None
