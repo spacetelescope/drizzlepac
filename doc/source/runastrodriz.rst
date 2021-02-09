@@ -213,7 +213,7 @@ for the distortion model to the WCS.  This operation gets performed using the
     from stwcs.updatewcs import updatewcs
     updatewcs(calfiles_flc, use_db=False)
 
-where `calfiles_flc' is the list of CTE-corrected FLC files or in the case there are
+where `calfiles_flc` is the list of CTE-corrected FLC files or in the case there are
 no CTE-corrected files, the list of calibrated FLT files.  Crucially, the use
 of `use_db=False` forces `updatewcs` to only apply the distortion model to the
 default WCS to create what is referred to as the **pipeline-default WCS**.  This
@@ -375,8 +375,8 @@ A priori WCS solutions defined for use with HST data refer to improvements to th
 WCS solutions that were pre-computed.  As of 2020, there were 2 primary sources
 of `a priori` WCS solutions:
 
-    * GSC240:  correcting the previous guide star coordinates to the GAIA frame
-    * HSC30: corrections derived using the Hubble Source Catalog(HSC) coordinates cross-matched to the GAIA catalog
+    * **GSC240**:  correcting the previous guide star coordinates to the GAIA frame
+    * **HSC30**: corrections derived using the Hubble Source Catalog(HSC) coordinates cross-matched to the GAIA catalog
 
 The updated ``a priori`` solutions are stored as ``headerlets`` in an astrometry database.
 The headerlet format allows them to be applied directly to the exposure using the
@@ -656,8 +656,8 @@ Successful alignment of the WCSs to a GAIA catalog means that these ``a posterio
 updated exposures can be combined to create a drizzled product using ``AstroDrizzle``.
 
 
-Verify A Posteriori Alignment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Verify the A Posteriori Alignment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 These newly updated drizzle products still need to be evaluated to insure that the
 fit performed to GAIA maintained relative alignment between the images as well.
 Mis-alignment of the images to each other can result from too few sources being
