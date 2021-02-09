@@ -474,7 +474,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
 
     Parameters
     ----------
-    input_filename: string
+    input_filename : str
         The 'poller file' where each line contains information regarding an exposures taken
         during a single visit.
 
@@ -482,28 +482,29 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         Allows printing of additional diagnostic information to the log.  Also, can turn on
         creation and use of pickled information.
 
-    input_custom_pars_file: string, optional
+    input_custom_pars_file : str, optional
         Represents a fully specified input filename of a configuration JSON file which has been
-        customized for specialized processing.  This file should contain ALL the input parameters
-        necessary for processing.  If there is a filename present for this parameter, the
-        'use_defaults_configs' parameter is ignored. The default is None.
+        customized for specialized processing. This file should contain ALL the input parameters necessary
+        for processing. If not specified, default configuration parameter values will be used. The default is
+        None.
 
-    output_custom_pars_file: string, optional
+    output_custom_pars_file : str, optional
         Fully specified output filename which contains all the configuration parameters
         available during the processing session.  The default is None.
 
     phot_mode : str, optional
         Which algorithm should be used to generate the sourcelists? 'aperture' for aperture photometry;
-        'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
+        'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'. Default value is
+        'both'.
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 20, or 'info'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
 
 
     RETURNS
     -------
-    return_value: integer
+    return_value: int
         A return exit code used by the calling Condor/OWL workflow code: 0 (zero) for success, 1 for error
     """
     # This routine needs to return an exit code, return_value, for use by the calling

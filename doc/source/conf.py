@@ -17,7 +17,7 @@
 import os
 import sys
 import sphinx
-import stsci_rtd_theme
+
 from distutils.version import LooseVersion
 try:
     from ConfigParser import ConfigParser
@@ -214,7 +214,7 @@ graphviz_dot_args = [
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-html_theme = 'stsci_rtd_theme'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -222,7 +222,6 @@ html_theme = 'stsci_rtd_theme'
 #html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = [stsci_rtd_theme.get_html_theme_path()]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".

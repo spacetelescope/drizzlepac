@@ -7,6 +7,7 @@ The task ``runsinglehap`` serves as the primary interface for processing data
 from a single-visit into a uniform set of images.
 
 .. automodule:: drizzlepac.runsinglehap
+.. autofunction:: drizzlepac.runsinglehap.perform
 
 .. automodule:: drizzlepac.hapsequencer
 .. autofunction:: drizzlepac.hapsequencer.run_hap_processing
