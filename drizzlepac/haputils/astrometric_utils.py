@@ -14,7 +14,6 @@ reference catalog. ::
 
 """
 import os
-import pdb
 from io import BytesIO
 import requests
 import inspect
@@ -43,12 +42,13 @@ from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.time import Time
+from astropy.utils.decorators import deprecated
 
 import photutils  # needed to check version
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import Background2D
 from photutils import SExtractorBackground, StdBackgroundRMS
-from photutils import DAOStarFinder, IRAFStarFinder
+from photutils import DAOStarFinder
 from photutils import MMMBackground
 from photutils.psf import IntegratedGaussianPRF, DAOGroup
 from photutils.psf import IterativelySubtractedPSFPhotometry
@@ -57,6 +57,7 @@ from photutils import make_source_mask
 from tweakwcs import FITSWCS
 from stwcs.distortion import utils
 from stwcs import wcsutil
+from stwcs.updatewcs import astrometry_utils
 from stsci.tools import fileutil as fu
 from stsci.tools import parseinput
 from stsci.tools import logutil
@@ -81,10 +82,12 @@ else:
 
 MODULE_PATH = os.path.dirname(inspect.getfile(inspect.currentframe()))
 
-__all__ = ['build_reference_wcs', 'create_astrometric_catalog', 'compute_radius',
-           'find_gsc_offset', 'get_catalog',
+__all__ = ['create_astrometric_catalog', 'compute_radius',
+            'build_auto_kernel', 'find_fwhm',
+           'get_catalog', 'get_catalog_from_footprint',
            'extract_sources', 'find_hist2d_offset', 'generate_source_catalog',
-           'classify_sources']
+           'classify_sources', 'within_footprint',
+           'compute_similarity', 'determine_focus_index', 'max_overlap_diff']
 
 FOCUS_DICT = {'exp': [], 'prod': [], 'stats': {},
               'exp_pos': None, 'prod_pos': None,
@@ -168,7 +171,7 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
     if existing_wcs is not None:
         outwcs = existing_wcs
     else:
-        outwcs = build_reference_wcs(inputs)
+        outwcs = astrometry_utils.build_reference_wcs(inputs)
 
     if use_footprint:
         footprint = outwcs.calc_footprint()
@@ -238,7 +241,10 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
 
     return ref_table
 
-
+@deprecated(since="3.2.1",
+            name='drizzlepac.haputils.astrometric_utils.build_reference_wcs',
+            message='Replaced by stwcs.updatewcs.astrometry_utils.build_reference_wcs',
+            alternative='stwcs.updatewcs.astrometry_utils.build_reference_wcs')
 def build_reference_wcs(inputs, sciname='sci'):
     """Create the reference WCS based on all the inputs for a field"""
     # start by creating a composite field-of-view for all inputs
@@ -375,7 +381,10 @@ def compute_radius(wcs):
 
     return radius
 
-
+@deprecated(since="3.2.1",
+            message="Replaced by stwcs.updatewcs.astrometry_utils.find_gsc_offset",
+            name='drizzlepac.haputils.astrometric_utils.find_gsc_offset',
+            alternative='stwcs.updatewcs.astrometry_utils.find_gsc_offset')
 def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
     """Find the GSC to GAIA offset based on guide star coordinates
 
@@ -612,8 +621,28 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
 
     return (kernel, kernel_psf), kernel_fwhm
 
+
 def find_fwhm(psf, default_fwhm):
-    """Determine FWHM for auto-kernel PSF"""
+    """Determine FWHM for auto-kernel PSF
+
+    This function iteratively fits a Gaussian model to the extracted PSF
+    using `photutils.IterativelySubtractedPSFPhotometry` to determine
+    the FWHM of the PSF.
+
+    Parameters
+    -----------
+    psf : ndarray
+        Array (preferably a slice) containing the PSF to be measured.
+
+    default_fwhm : float
+        Starting guess for the FWHM
+
+    Returns
+    --------
+    fwhm : float
+        Value of the computed Gaussian FWHM for the PSF
+
+    """
     daogroup = DAOGroup(crit_separation=8)
     mmm_bkg = MMMBackground()
     iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
@@ -653,11 +682,11 @@ def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
 
     sigma = np.sqrt(2.0 * np.abs(bkg[1]))
     x, y, flux, src_id, sharp, round1, round2 = ndfind(img,
-                                                     sigma*threshold,
+                                                     sigma * threshold,
                                                      fwhm, bkg[1],
                                                      nbright=nbright,
                                                      use_sharp_round=True)
-    srcs = Table([x,y,flux,src_id], names=['xcentroid', 'ycentroid', 'flux', 'id'])
+    srcs = Table([x, y, flux, src_id], names=['xcentroid', 'ycentroid', 'flux', 'id'])
 
     """
     # Now, use IRAFStarFinder to identify sources across chip
@@ -1155,7 +1184,7 @@ def generate_sky_catalog(image, refwcs, dqname="DQ", output=False):
     numSci = countExtn(image, extname='SCI')
     # if no refwcs specified, build one now...
     if refwcs is None:
-        refwcs = build_reference_wcs([image])
+        refwcs = astrometry_utils.build_reference_wcs([image])
     for chip in range(numSci):
         chip += 1
         # work with sources identified from this specific chip
@@ -1290,7 +1319,7 @@ def build_self_reference(filename, clean_wcs=False):
     else:
         sciname = 'sci'
 
-    wcslin = build_reference_wcs([filename], sciname=sciname)
+    wcslin = astrometry_utils.build_reference_wcs([filename], sciname=sciname)
 
     if clean_wcs:
         wcsbase = wcslin.wcs
@@ -1301,7 +1330,10 @@ def build_self_reference(filename, clean_wcs=False):
         customwcs = wcslin
     return customwcs
 
-
+@deprecated(since="3.2.1",
+            name='drizzlepac.haputils.astrometric_utils.read_hlet_wcs',
+            message='Replaced by stwcs.updatewcs.astrometry_utils.read_hlet_wcs',
+            alternative='stwcs.updatewcs.astrometry_utils.read_hlet_wcs')
 def read_hlet_wcs(filename, ext):
     """Insure `~stwcs.wcsutil.HSTWCS` includes all attributes of a full image WCS.
 
