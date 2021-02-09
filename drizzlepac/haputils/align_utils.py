@@ -53,18 +53,28 @@ class AlignmentTable:
     def __init__(self, input_list, clobber=False, dqname='DQ',
                  log_level=logutil.logging.NOTSET, **alignment_pars):
         """
-        **alignment_pars needs to contain the following entries:
-                          # kernel defining, source finding par
-                          fwhmpsf=0.12,
-                          # background computing pars
-                          box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
-                          bkg_estimator=SExtractorBackground,
-                          rms_estimator=StdBackgroundRMS,
-                          nsigma=5., threshold_flag=None,
-                          # object finding pars
-                          source_box=7,
-                          classify=True, centering_mode="starfind", nlargest=None,
-                          plot=False, vmax=None, deblend=False
+        ``**alignment_pars`` needs to contain the following entries:
+
+        .. code-block:: python
+
+            {'fwhmpsf': 0.12,  # kernel defining, source finding par
+             # background computing pars
+             'box_size': BKG_BOX_SIZE,
+             'win_size': BKG_FILTER_SIZE,
+             'bkg_estimator': SExtractorBackground,
+             'rms_estimator': StdBackgroundRMS,
+             'nsigma': 5.,
+             'threshold_flag': None,
+             # object finding pars
+             'source_box': 7,
+             'classify': True,
+             'centering_mode': "starfind",
+             'nlargest': None,
+             'plot': False,
+             'vmax': None,
+             'deblend': False
+            }
+
         """
         log.setLevel(log_level)
         # Register fit methods with the class
@@ -312,8 +322,8 @@ class HAPImage:
     """Core class defining interface for each input exposure/product
 
     .. note:: This class is compatible with the CatalogImage class, while including
-    additional functionality and attributes required for processing beyond
-    catalog generation.
+              additional functionality and attributes required for processing beyond
+              catalog generation.
 
     """
 

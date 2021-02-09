@@ -513,6 +513,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     This algorithm looks for an isolated point-source that is non-saturated to use as a template
     for the source detection kernel.  Failing to find any suitable sources, it will return a
     Gaussian2DKernel based on the provided FWHM as a default.
+
     Parameters
     ----------
     imgarr : ndarray
@@ -520,17 +521,22 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     fwhm : float
         Value of FWHM to use for creating a Gaussian2DKernel object in case no suitable source
         can be identified in the image.
+
     threshold : float
         Value from the image which serves as the limit for determining sources.
         If None, compute a default value of (background+5*rms(background)).
         If threshold < 0.0, use absolute value as scaling factor for default value.
+
     source_box : int
         Size of box (in pixels) which defines the minimum size of a valid source.
+
     isolation_size : int
         Separation (in pixels) to use to identify sources that are isolated from any other sources
         in the image.
+
     saturation_limit : float
         Flux in the image that represents the onset of saturation for a pixel.
+
     Notes
     ------
     Ideally, it would be best to determine the saturation_limit value from the data itself,
@@ -1671,17 +1677,16 @@ def maxBit(int_val):
 def compute_similarity(image, reference):
     """Compute a similarity index for an image compared to a reference image.
 
-    Similarity index is based on a the general algorithm used in the AmphiIndex
-    algorithm.
+    Similarity index is based on a the general algorithm used in the AmphiIndex algorithm.
+
         - identify slice of image that is a factor of 256 in size
         - rebin image slice down to a (256,256) image
         - rebin same slice from reference down to a (256,256) image
         - sum the differences of the rebinned slices
         - divide absolute value of difference scaled by reference slice sum
 
-    .. note::
-    This index will typically return values < 0.1 for similar images, and
-    values > 1 for dis-similar images.
+    .. note:: This index will typically return values < 0.1 for similar images, and
+              values > 1 for dis-similar images.
 
     Parameters
     ----------
@@ -1890,11 +1895,14 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsig
         Dictionary of difference scores for each input exposure drizzle product
         (from `singlefiles`) calculated for the region of maximum overlap with the final
         drizzle product `prodfile`.  Entries for each singlefile includes:
-            - distance : Hamming distance of singlefile from prodfile
-            - focus : focus index of singlefile
-            - focus_pos : position for best focus in singlefile
-            - product_focus : focus index for prodfile
-            - product_focus_pos : position for best focus in prodfile
+
+        ===================   =============================================
+        distance              Hamming distance of singlefile from prodfile
+        focus                 focus index of singlefile
+        focus_pos             position for best focus in singlefile
+        product_focus         focus index for prodfile
+        product_focus_pos     position for best focus in prodfile
+        ===================   =============================================
 
     """
 
