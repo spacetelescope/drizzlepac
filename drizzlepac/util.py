@@ -43,6 +43,7 @@ if 'ASTRODRIZ_NO_PARALLEL' not in os.environ:
             can_parallel = _cpu_count > 1
         except Exception:
             can_parallel = False
+
     except ImportError:
         print('\nCould not import multiprocessing, will only take advantage of a single CPU core')
 
@@ -105,7 +106,7 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None, level=logging.INFO):
             logname = fileutil.buildNewRootname(default, '.log')
         else:
             logname = DEFAULT_LOGNAME
-    elif logfile not in [None, "" , " "]:
+    elif logfile not in [None, "", " "]:
         if logfile.endswith('.log'):
             logname = logfile
         else:
@@ -127,6 +128,10 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None, level=logging.INFO):
         _log_file_handler = logging.FileHandler(logname)
         # TODO: Make the default level configurable in the task parameters
         _log_file_handler.setLevel(level)
+
+        # Insure file handler has '.name' set so calling code can get it.
+        _log_file_handler.set_name(logname)
+
         _log_file_handler.setFormatter(
             logging.Formatter('[%(levelname)-8s] %(message)s'))
         root_logger.setLevel(level)
@@ -269,24 +274,24 @@ def print_pkg_versions(packages=None, git=False, svn=False, log=None):
     for software in pkgs:
         try:
             package = __import__(software)
-            vstr = "%s "%(software)
+            vstr = "%s " % (software)
             try:
-                vstr+= "Version -> "+package.__version__+" "
-            except:
+                vstr += "Version -> " + package.__version__ + " "
+            except Exception:
                 vstr += "No version defined.  "
             if svn:
                 git = True
-                #try:
+                # try:
                 #    vstr += "\n    SVN version -> "+package.__svn_version__.rstrip()
-                #except:
+                # except:
                 #    vstr += " "
             if git:
                 try:
                     vstr += "\n    GIT version -> " + '-'.join([package.__version__, package.__version_post__, package.__version_commit]).rstrip()
-                except:
+                except Exception:
                     vstr += " "
-        except:
-            vstr = software+" not found in path..."
+        except Exception:
+            vstr = software + " not found in path..."
         output(vstr)
 
 
@@ -302,9 +307,9 @@ class ProcSteps:
         The 'reportTimes()' method can then be used to provide a summary
         of all the elapsed times and total run time.
     """
-    __report_header = '\n   %20s          %s\n'%('-'*20,'-'*20)
-    __report_header += '   %20s          %s\n'%('Step','Elapsed time')
-    __report_header += '   %20s          %s\n'%('-'*20,'-'*20)
+    __report_header = '\n   %20s          %s\n' % ('-' * 20, '-' * 20)
+    __report_header += '   %20s          %s\n' % ('Step', 'Elapsed time')
+    __report_header += '   %20s          %s\n' % ('-' * 20, '-' * 20)
 
     def __init__(self):
         self.steps = {}
@@ -312,7 +317,7 @@ class ProcSteps:
         self.start = _ptime()
         self.end = None
 
-    def addStep(self,key):
+    def addStep(self, key):
         """
         Add information about a new step to the dict of steps
         The value 'ptime' is the output from '_ptime()' containing
@@ -320,12 +325,12 @@ class ProcSteps:
         step.
         """
         ptime = _ptime()
-        print('==== Processing Step ',key,' started at ',ptime[0])
+        print('==== Processing Step ', key, ' started at ', ptime[0])
         print("", flush=True)
-        self.steps[key] = {'start':ptime}
+        self.steps[key] = {'start': ptime}
         self.order.append(key)
 
-    def endStep(self,key):
+    def endStep(self, key):
         """
         Record the end time for the step.
 
@@ -338,7 +343,7 @@ class ProcSteps:
             self.steps[key]['elapsed'] = ptime[1] - self.steps[key]['start'][1]
         self.end = ptime
 
-        print('==== Processing Step {} finished at {}'.format(key,ptime[0]), flush=True)
+        print('==== Processing Step {} finished at {}'.format(key, ptime[0]), flush=True)
 
     def reportTimes(self):
         """
@@ -362,8 +367,8 @@ class ProcSteps:
         print("", flush=True)
 
         # Compute overall runtime of entire program, including overhead
-        #total = self.end[1] - self.start[1]
-        #print '   %20s          %0.4f sec.'%('Total Runtime',total)
+        # total = self.end[1] - self.start[1]
+        # print '   %20s          %0.4f sec.'%('Total Runtime',total)
 
 
 def _ptime():
@@ -376,14 +381,14 @@ def _ptime():
     if dtime:
         # This time stamp includes sub-second timing...
         _ltime = dtime.datetime.fromtimestamp(ftime)
-        tlm_str = _ltime.strftime("%H:%M:%S")+str(_ltime.microsecond/1e+6)[1:-3]+_ltime.strftime(" (%d/%m/%Y)")
+        tlm_str = _ltime.strftime("%H:%M:%S" + str(_ltime.microsecond / 1e+6)[1:-3] + _ltime.strftime(" (%d/%m/%Y)"))
     else:
         # Basic time stamp which only includes integer seconds
         # Format time values for keywords IRAF-TLM, and DATE
         _ltime = time.localtime(ftime)
-        tlm_str = time.strftime('%H:%M:%S (%d/%m/%Y)',_ltime)
-        #date_str = time.strftime('%Y-%m-%dT%H:%M:%S',_ltime)
-    return tlm_str,ftime
+        tlm_str = time.strftime('%H:%M:%S (%d/%m/%Y)', _ltime)
+        # date_str = time.strftime('%Y-%m-%dT%H:%M:%S',_ltime)
+    return tlm_str, ftime
 
 
 def findrootname(filename):
@@ -397,12 +402,12 @@ def findrootname(filename):
     else:
         val = sys.maxint
     for num in puncloc:
-        if num !=-1 and num < val:
+        if num != -1 and num < val:
             val = num
-    return filename[0:val]
+    return filename[0: val]
 
 
-def removeFileSafely(filename,clobber=True):
+def removeFileSafely(filename, clobber=True):
     """ Delete the file specified, but only if it exists and clobber is True.
     """
     if filename is not None and filename.strip() != '':
@@ -417,9 +422,9 @@ def displayEmptyInputWarningBox(display=True, parent=None):
         from tkMessageBox import showwarning
 
     if display:
-        msg = 'No valid input files found! '+\
+        msg = 'No valid input files found! ' + \
         'Please check the value for the "input" parameter.'
-        showwarning(parent=parent,message=msg, title="No valid inputs!")
+        showwarning(parent=parent, message=msg, title="No valid inputs!")
     return "yes"
 
 def displayBadRefimageWarningBox(display=True, parent=None):
@@ -431,13 +436,13 @@ def displayBadRefimageWarningBox(display=True, parent=None):
         from tkMessageBox import showwarning
 
     if display:
-        msg = 'No refimage with WCS found!\n '+\
-        ' This could be caused by one of 2 problems:\n'+\
-        '   * filename does not specify an extension with a valid WCS.\n'+\
-        '   * can not find the file.\n'+\
+        msg = 'No refimage with WCS found!\n ' + \
+        ' This could be caused by one of 2 problems:\n' + \
+        '   * filename does not specify an extension with a valid WCS.\n' +\
+        '   * can not find the file.\n' +\
         'Please check the filename specified in the "refimage" parameter.'
 
-        showwarning(parent=parent,message=msg, title="No valid inputs!")
+        showwarning(parent=parent, message=msg, title="No valid inputs!")
     return "yes"
 
 def updateNEXTENDKw(fobj):
@@ -445,7 +450,7 @@ def updateNEXTENDKw(fobj):
         reflect the number of extensions in the MEF file.
     """
     if 'nextend' in fobj[0].header:
-        fobj[0].header['nextend'] = len(fobj)-1
+        fobj[0].header['nextend'] = len(fobj) - 1
 
 def count_sci_extensions(filename):
     """ Return the number of SCI extensions and the EXTNAME from a input MEF file.
@@ -465,7 +470,7 @@ def count_sci_extensions(filename):
 
     hdu_list.close()
 
-    return num_sci,extname
+    return num_sci, extname
 
 
 def verifyUniqueWcsname(fname, wcsname, include_primary=True):
@@ -484,8 +489,8 @@ def verifyUpdatewcs(fname):
     was found in all SCI extensions.
     """
     updated = True
-    numsci,extname = count_sci_extensions(fname)
-    for n in range(1,numsci+1):
+    numsci, extname = count_sci_extensions(fname)
+    for n in range(1, numsci + 1):
         hdr = fits.getheader(fname, extname=extname, extver=n, memmap=False)
         if 'wcsname' not in hdr:
             updated = False
@@ -552,13 +557,13 @@ def findWCSExtn(filename):
                 `HSTWCS('{}[{}]'.format(filename,extnum))
 
     """
-    rootname,extroot = fileutil.parseFilename(filename)
+    rootname, extroot = fileutil.parseFilename(filename)
     extnum = None
     if extroot is None:
         fimg = fits.open(rootname, memmap=False)
-        for i,extn in enumerate(fimg):
+        for i, extn in enumerate(fimg):
             if 'crval1' in extn.header:
-                refwcs = wcsutil.HSTWCS('{}[{}]'.format(rootname,i))
+                refwcs = wcsutil.HSTWCS('{}[{}]'.format(rootname, i))
                 if refwcs.wcs.has_cd():
                     extnum = '{}'.format(i)
                     break
@@ -568,7 +573,7 @@ def findWCSExtn(filename):
             refwcs = wcsutil.HSTWCS(filename)
             if refwcs.wcs.has_cd():
                 extnum = extroot
-        except:
+        except Exception:
             extnum = None
 
     return extnum
@@ -587,7 +592,7 @@ def verifyFilePermissions(filelist, chmod=True):
         if 'OrIg_files' in os.path.split(fname)[0]:
             archive_dir = True
         try:
-            fp = open(fname,mode='a')
+            fp = open(fname, mode='a')
             fp.close()
         except IOError as e:
             if e.errno == errno.EACCES:
@@ -599,21 +604,21 @@ def verifyFilePermissions(filelist, chmod=True):
     if num_bad > 0:
         if archive_dir:
             print('\n')
-            print('#'*40)
+            print('#' * 40)
             print('    Working in "OrIg_files" (archive) directory. ')
             print('    This directory has been created to serve as an archive')
             print('    for the original input images. ')
             print('\n    These files should be copied into another directory')
             print('     for processing. ')
-            print('#'*40)
+            print('#' * 40)
 
         print('\n')
-        print('#'*40)
-        print('Found %d files which can not be updated!'%(num_bad))
+        print('#' * 40)
+        print('Found %d files which can not be updated!' % (num_bad))
         for img in badfiles:
-            print('    %s'%(img))
+            print('    %s' % (img))
         print('\nPlease reset permissions for these files and restart...')
-        print('#'*40)
+        print('#' * 40)
         print('\n', flush=True)
         filelist = None
 
@@ -626,13 +631,13 @@ def getFullParList(configObj):
     """
     plist = []
     for par in configObj.keys():
-        if isinstance(configObj[par],configobj.Section):
+        if isinstance(configObj[par], configobj.Section):
             plist.extend(getFullParList(configObj[par]))
         else:
             plist.append(par)
     return plist
 
-def validateUserPars(configObj,input_dict):
+def validateUserPars(configObj, input_dict):
     """ Compares input parameter names specified by user with those already
         recognized by the task.
 
@@ -649,12 +654,12 @@ def validateUserPars(configObj,input_dict):
         if kw not in plist:
             extra_pars.append(kw)
     if len(extra_pars) > 0:
-        print ('='*40)
-        print ('The following input parameters were not recognized as valid inputs:')
+        print('=' * 40)
+        print('The following input parameters were not recognized as valid inputs:')
         for p in extra_pars:
-            print("    %s"%(p))
+            print("    %s" % (p))
         print('\nPlease check the spelling of the parameter(s) and try again...')
-        print('='*40)
+        print('=' * 40)
         raise ValueError
 
 def applyUserPars_steps(configObj, input_dict, step='3a'):
@@ -662,7 +667,7 @@ def applyUserPars_steps(configObj, input_dict, step='3a'):
         any parameter on command-line regardless of how final_wcs was set.
     """
     step_kws = {'7a': 'final_wcs', '3a': 'driz_sep_wcs'}
-    stepname = getSectionName(configObj,step)
+    stepname = getSectionName(configObj, step)
     finalParDict = configObj[stepname].copy()
     del finalParDict[step_kws[step]]
 
@@ -674,7 +679,7 @@ def applyUserPars_steps(configObj, input_dict, step='3a'):
         configObj[stepname][step_kws[step]] = True
 
 
-def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
+def getDefaultConfigObj(taskname, configObj, input_dict={}, loadOnly=True):
     """ Return default configObj instance for task updated
         with user-specified values from input_dict.
 
@@ -704,12 +709,12 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
         # This insures that all subsequent use of the configObj includes
         # all parameters and their last saved values
         configObj = teal.load(taskname)
-    elif isinstance(configObj,str):
+    elif isinstance(configObj, str):
         if configObj.lower().strip() == 'defaults':
             # Load task default .cfg file with all default values
-            configObj = teal.load(taskname,defaults=True)
+            configObj = teal.load(taskname, defaults=True)
             # define default filename for configObj
-            configObj.filename = taskname.lower()+'.cfg'
+            configObj.filename = taskname.lower() + '.cfg'
         else:
             # Load user-specified .cfg file with its special default values
             # we need to call 'fileutil.osfn()' to insure all environment
@@ -719,31 +724,31 @@ def getDefaultConfigObj(taskname,configObj,input_dict={},loadOnly=True):
 
     # merge in the user values for this run
     # this, though, does not save the results for use later
-    if input_dict not in [None,{}]:# and configObj not in [None, {}]:
+    if input_dict not in [None, {}]:  # and configObj not in [None, {}]:
         # check to see whether any input parameters are unexpected.
         # Any unexpected parameters provided on input should be reported and
         # the code should stop
-        validateUserPars(configObj,input_dict)
+        validateUserPars(configObj, input_dict)
 
         # If everything looks good, merge user inputs with configObj and continue
         cfgpars.mergeConfigObj(configObj, input_dict)
         # Update the input .cfg file with the updated parameter values
-        #configObj.filename = os.path.join(cfgpars.getAppDir(),os.path.basename(configObj.filename))
-        #configObj.write()
+        # configObj.filename = os.path.join(cfgpars.getAppDir(),os.path.basename(configObj.filename))
+        # configObj.write()
 
     if not loadOnly:
     # We want to run the GUI AFTER merging in any parameters
     # specified by the user on the command-line and provided in
     # input_dict
-        configObj = teal.teal(configObj,loadOnly=False)
+        configObj = teal.teal(configObj, loadOnly=False)
 
     return configObj
 
-def getSectionName(configObj,stepnum):
+def getSectionName(configObj, stepnum):
     """ Return section label based on step number.
     """
     for key in configObj.keys():
-        if key.find('STEP '+str(stepnum)+':') >= 0:
+        if key.find('STEP ' + str(stepnum) + ':') >= 0:
             return key
 
 def getConfigObjPar(configObj, parname):
@@ -760,12 +765,12 @@ def displayMakewcsWarningBox(display=True, parent=None):
     else:
         from tkMessageBox import showwarning
 
-    ans = {'yes':True,'no':False}
+    ans = {'yes': True, 'no': False}
     if ans[display]:
-        msg = 'Setting "updatewcs=yes" will result '+ \
-              'in all input WCS values to be recomputed '+ \
+        msg = 'Setting "updatewcs=yes" will result ' + \
+              'in all input WCS values to be recomputed ' + \
               'using the original distortion model and alignment.'
-        showwarning(parent=parent,message=msg, title="WCS will be overwritten!")
+        showwarning(parent=parent, message=msg, title="WCS will be overwritten!")
     return True
 
 """
@@ -820,14 +825,14 @@ def printParams(paramDictionary, all=False, log=None):
 def print_key(key, val, lev=0, logfn=print):
     if isinstance(val, dict):
         logfn('')
-        logfn('{}{}:'.format(2*lev*' ', key))
+        logfn('{}{}:'.format(2 * lev * ' ', key))
         for kw, vl in val.items():
-            print_key(kw, vl, lev+1, logfn=logfn)
+            print_key(kw, vl, lev + 1, logfn=logfn)
         return
     elif isinstance(val, str):
-        logfn("{}{}: '{:s}'".format(2*lev*' ', key, val))
+        logfn("{}{}: '{:s}'".format(2 * lev * ' ', key, val))
     else:
-        logfn("{}{}: {}".format(2*lev*' ', key, val))
+        logfn("{}{}: {}".format(2 * lev * ' ', key, val))
 
 
 def print_cfg(cfg, logfn=None):
@@ -850,7 +855,7 @@ def print_cfg(cfg, logfn=None):
 
 def isASNTable(inputFilelist):
     """Return TRUE if inputFilelist is a fits ASN file."""
-    if ("_asn"  or "_asc") in inputFilelist:
+    if ("_asn" or "_asc") in inputFilelist:
         return True
     return False
 
@@ -868,10 +873,12 @@ def loadFileList(inputFilelist):
     """Open up the '@ file' and read in the science and possible
        ivm filenames from the first two columns.
     """
+    from stsci.tools import iraglob
+
     f = open(inputFilelist[1:])
     # check the first line in order to determine whether
     # IVM files have been specified in a second column...
-    lines = f.readline()
+    line = f.readline()
     f.close()
 
     # If there is a second column...
@@ -886,8 +893,8 @@ def loadFileList(inputFilelist):
 
 def readCommaList(fileList):
     """ Return a list of the files with the commas removed. """
-    names=fileList.split(',')
-    fileList=[]
+    names = fileList.split(',')
+    fileList = []
     for item in names:
         fileList.append(item)
     return fileList
@@ -909,6 +916,8 @@ def runmakewcs(input):
         (For GEIS files returns the translated names).
 
     """
+    from stwcs import updatewcs
+
     newNames = updatewcs.updatewcs(input, checkfiles=False)
 
     return newNames
@@ -926,7 +935,7 @@ def update_input(filelist, ivmlist=None, removed_files=None):
     else:
         sci_ivm = list(zip(filelist, ivmlist))
         for f in removed_files:
-            result=[sci_ivm.remove(t) for t in sci_ivm if t[0] == f ]
+            result = [sci_ivm.remove(t) for t in sci_ivm if t[0] == f]
         ivmlist = [el[1] for el in sci_ivm]
         newfilelist = [el[0] for el in sci_ivm]
         return newfilelist, ivmlist
@@ -952,16 +961,16 @@ def countImages(imageObjectList):
             nimages += 1
     return nimages
 
-def get_detnum(hstwcs,filename,extnum):
+def get_detnum(hstwcs, filename, extnum):
     detnum = None
     binned = None
     if hstwcs.filename == filename and hstwcs.extver == extnum:
         detnum = hstwcs.chip
         binned = hstwcs.binned
 
-    return detnum,binned
+    return detnum, binned
 
-def get_expstart(header,primary_hdr):
+def get_expstart(header, primary_hdr):
     """shouldn't this just be defined in the instrument subclass of imageobject?"""
 
     if 'expstart' in primary_hdr:
@@ -976,7 +985,7 @@ def get_expstart(header,primary_hdr):
         expstart = 0.
         expend = 0.0
 
-    return (expstart,expend)
+    return (expstart, expend)
 
 def compute_texptime(imageObjectList):
     """
@@ -1003,7 +1012,7 @@ def compute_texptime(imageObjectList):
             exposure = expnames[n]
             exptime += exptimes[n]
 
-    return (exptime,expstart,expend)
+    return (exptime, expstart, expend)
 
 
 def computeRange(corners):
@@ -1048,13 +1057,13 @@ def readcols(infile, cols=[0, 1, 2, 3], hms=False):
 
     """
 
-    fin = open(infile,'r')
+    fin = open(infile, 'r')
     outarr = []
     for l in fin.readlines():
         l = l.strip()
         if len(l) == 0 or len(l.split()) < len(cols) or (len(l) > 0 and l[0] == '#' or (l.find("INDEF") > -1)): continue
         for i in range(10):
-            lnew = l.replace("  "," ")
+            lnew = l.replace("  ", " ")
             if lnew == l: break
             else: l = lnew
         lspl = lnew.split(" ")
@@ -1062,7 +1071,7 @@ def readcols(infile, cols=[0, 1, 2, 3], hms=False):
         if len(outarr) == 0:
             for c in range(len(cols)): outarr.append([])
 
-        for c,n in zip(cols,list(range(len(cols)))):
+        for c, n in zip(cols, list(range(len(cols)))):
             if not hms:
                 val = float(lspl[c])
             else:
@@ -1073,11 +1082,11 @@ def readcols(infile, cols=[0, 1, 2, 3], hms=False):
         outarr[n] = np.array(outarr[n])
     return outarr
 
-def parse_colnames(colnames,coords=None):
+def parse_colnames(colnames, coords=None):
     """ Convert colnames input into list of column numbers.
     """
     cols = []
-    if not isinstance(colnames,list):
+    if not isinstance(colnames, list):
         colnames = colnames.split(',')
     # parse column names from coords file and match to input values
     if coords is not None and fileutil.isFits(coords)[0]:
@@ -1090,7 +1099,7 @@ def parse_colnames(colnames,coords=None):
                 cnames = extn.columns.names
                 if colnames is not None:
                     for c in colnames:
-                        for name,i in zip(cnames,list(range(len(cnames)))):
+                        for name, i in zip(cnames, list(range(len(cnames)))):
                             if c == name.lower(): cols.append(i)
                     if len(cols) < len(colnames):
                         errmsg = "Not all input columns found in table..."
@@ -1103,7 +1112,7 @@ def parse_colnames(colnames,coords=None):
     else:
         for c in colnames:
             if isinstance(c, str):
-                if c[0].lower() == 'c': cols.append(int(c[1:])-1)
+                if c[0].lower() == 'c': cols.append(int(c[1:]) - 1)
                 else:
                     cols.append(int(c))
             else:
@@ -1205,11 +1214,11 @@ def base_taskname(taskname, packagename=None):
     indx = taskname.rfind('.')
 
     if indx >= 0:
-        base_taskname = taskname[(indx+1):]
-        pkg_name      = taskname[:indx]
+        base_taskname = taskname[(indx + 1):]
+        pkg_name = taskname[:indx]
     else:
         base_taskname = taskname
-        pkg_name      = ''
+        pkg_name = ''
 
     assert(True if packagename is None else (packagename == pkg_name))
 

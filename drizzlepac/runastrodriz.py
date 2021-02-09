@@ -741,6 +741,11 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
         try:
             drizzlepac.astrodrizzle.AstroDrizzle(input=infile, configobj=None,
                                                  **pipeline_pars)
+
+            # Edit trailer file name since 'runastrodriz' copies what astrodrizzle used
+            # to another file...
+            fits.setval(drz_product, 'DRIZPARS', value=trlfile)
+
             util.end_logging(drizlog)
 
         except Exception as errorobj:

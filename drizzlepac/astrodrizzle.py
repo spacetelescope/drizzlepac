@@ -32,6 +32,7 @@ aspects of each of the processing steps.
 """
 import os
 import sys
+import logging
 
 from stsci.tools import teal, logutil, textutil
 
@@ -70,7 +71,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
             configobj = teal.load(__taskname__)
         else:
             if not os.path.exists(configobj):
-                raise RuntimeError('Cannot find .cfg file: '+configobj)
+                raise RuntimeError('Cannot find .cfg file: ' + configobj)
             configobj = teal.load(configobj, strict=False)
     elif configobj is None:
         # load 'astrodrizzle' parameter defaults as described in the docs:
@@ -82,7 +83,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
         raise TypeError("AstroDrizzle() needs either 'input' or "
                         "'configobj' arguments")
 
-    if 'updatewcs' in input_dict: # user trying to explicitly turn on updatewcs
+    if 'updatewcs' in input_dict:  # user trying to explicitly turn on updatewcs
         configobj['updatewcs'] = input_dict['updatewcs']
         del input_dict['updatewcs']
 
@@ -118,7 +119,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
         run(configObj, wcsmap=wcsmap)
 
 ##############################
-##  Interfaces used by TEAL ##
+#   Interfaces used by TEAL  #
 ##############################
 @util.with_logging
 def run(configobj, wcsmap=None):
@@ -160,7 +161,10 @@ def run(configobj, wcsmap=None):
         return
 
     # Build name of output trailer file
-    logfile = "{}.tra".format(def_logname)
+    logging_handlers = logging.getLogger().handlers
+    log_name = [lh.name for lh in logging_handlers if lh.level > 0][0]
+    logfile = log_name if log_name else "{}.tra".format(def_logname)
+    print("AstroDrizzle log file: {}".format(logfile))
 
     clean = configobj['STATE OF INPUT FILES']['clean']
     procSteps = util.ProcSteps()
