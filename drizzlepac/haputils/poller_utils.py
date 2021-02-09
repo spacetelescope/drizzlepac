@@ -82,7 +82,7 @@ def interpret_obset_input(results, log_level):
     values for use in generating the names of all the expected output products.
 
     Input will have format of:
-        ib4606c5q_flc.fits,11665,B46,06,1.0,F555W,UVIS,/ifs/archive/ops/hst/public/ib46/ib4606c5q/ib4606c5q_flc.fits
+        ib4606c5q_flc.fits,11665,B46,06,1.0,F555W,UVIS,/foo/bar/ib4606c5q_flc.fits
         which are
         filename, proposal_id, program_id, obset_id, exptime, filters, detector, pathname
 
