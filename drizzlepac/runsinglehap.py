@@ -52,29 +52,28 @@ def perform(input_filename, **kwargs):
     """Main calling subroutine for the ``runsinglehap`` task.
 
     Parameters
-    -----------
-    input_filename : string
+    ----------
+    input_filename : str
         Name of the input csv file containing information about the files to
         be processed
 
-    debug : Boolean, optional
+    debug : bool, optional
         display all tracebacks, and debug information? If not specified, the default value is Boolean 'False'.
 
-    input_custom_pars_file : string, optional
+    input_custom_pars_file : str, optional
         Represents a fully specified input filename of a configuration JSON file which has been
         customized for specialized processing. This file should contain ALL the input parameters necessary
         for processing. If not specified, default configuration parameter values will be used.
 
-    log_level : string, optional
+    log_level : str, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
         .log file. Valid inputs: 'critical', 'error', 'warning', 'info', or 'debug'. If not specified, the
         default value is 'info'.
 
     Updates
     -------
-    return_value: list
-        a simple status value. '0' for a successful run and '1' for a failed
-        run
+    return_value : list
+        a simple status value. '0' for a successful run and '1' for a failed run
     """
     # set up log_level as an input to hapsequencer.run_hap_processing().
     log_level_dict = {"critical": logutil.logging.CRITICAL,

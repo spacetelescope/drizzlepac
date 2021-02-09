@@ -7,8 +7,7 @@
     'HAPLEVEL' keyword.  The 'HAPLEVEL' values are:
 
       * 1 : calibrated (FLT/FLC) input images and exposure level drizzle products with improved astrometry
-      * 2 : filter and total products combined using the improved astrometry,
-            consistent pixel scale, and oriented to North.
+      * 2 : filter and total products combined using the improved astrometry, consistent pixel scale, and oriented to North.
       * 3 : (future) multi-visit mosaics aligned to common tangent plane
 """
 import logging
