@@ -381,16 +381,13 @@ of `a priori` WCS solutions:
 The updated ``a priori`` solutions are stored as ``headerlets`` in an astrometry database.
 The headerlet format allows them to be applied directly to the exposure using the
 STWCS package while requiring very little storage space (typically, < 120Kb per
-headerlet). More details on the ``headerlet`` can be found at https://stwcs.readthedocs.io/en/latest/headerlet.html.
+headerlet). More details on the ``headerlet`` can be found at `https://stwcs.readthedocs.io/en/latest/headerlet.html <https://stwcs.readthedocs.io/en/latest/headerlet.html>`_.
 
 These solutions get applied through the use of the `updatewcs <https://stwcs.readthedocs.io/en/latest/updatewcs.html>`_ task in STWCS.  This task not only recomputes the PRIMARY WCS (one used by DS9 for
 coordinates), but also queries the astrometry database to append all additional updated WCS solutions
 as headerlet extensions based on the IDCTAB specified in the image header. The astrometry database may
 also have solutions based on additional IDCTAB solutions, but those will only be applied if ``updatewcs``
-gets run manually with a non-default value for the ``all_wcs`` parameter. If the ``IDCTAB`` specified in
-the image is not found in any of the WCSs in the database, then it will query the guide-star web
-interface and compute the ```a priori`` GSC WCS for that IDCTAB on-the-fly.  This insures that there is
-always a GAIA-based WCS available for all exposures.
+gets run manually with a non-default value for the ``all_wcs`` parameter.
 
 In the process of modifying the file, ``updatewcs`` also insures that there
 are no duplicate solutions based on the ``HDRNAME`` keyword unless otherwise specified by the user.
@@ -411,7 +408,31 @@ module <https://stwcs.readthedocs.io/en/latest/astrometry_utils.html>`_.  This c
 in several WCS solutions being available for each exposure, with one set of solutions for
 each distortion model that has been in use for these instruments since we initialized the
 database in early 2019.  The functions in the ``stwcs.updatewcs.astrometry_utils`` module will
-allow someone to determine the full list of WCSs available for a given exposure.
+allow someone to determine the full list of WCSs available for a given exposure and have them applied
+as desired to a given exposure.
+
+
+Supporting New IDCTABs
+^^^^^^^^^^^^^^^^^^^^^^^
+Calibrations of the distortion model for each instrument evolves over time due to changes in the telescope as
+well as improvements in the modeling of the distortion, including better understanding of the time-dependent
+aspects of the distortion model.  These new models get provided as new versions of the
+``IDCTAB`` reference file, along with the ``D2IMFILE`` and ``NPOLFILE``.  The astrometry database
+contains ``a priori`` WCSs which represent the WCS for each
+exposure based on the coordinates of the guide stars used for the exposure after updating
+their coordinates to ones determined from the GAIA catalogs. However, they were originally computed
+based on the ``IDCTAB`` reference file in use when the database was first established.
+
+If the ``IDCTAB`` specified in
+the image is not found in any of the WCSs in the database, the ``a priori`` WCS based on that ``IDCTAB`` get
+determined by the ``updatewcs`` task. It starts by querying the guide-star web
+interface to retrieve the corrections from the original guide star coordinates using the `stwcs.updatewcs.astrometry_utils.find_gsc_offset function <https://stwcs.readthedocs.io/en/latest/astrometry_utils.html>`_.  These offsets can also evolve as new GAIA catalogs are released to provide more accurate coordinates for the guide stars.  These offsets are then used to correct the reference point of the pipeline-default WCS based on the new ``IDCTAB`` using the ``apply_new_apriori`` method in the `AstrometryDB class <https://stwcs.readthedocs.io/en/latest/astrometry_utils.html#stwcs.updatewcs.astrometry_utils.AstrometryDB.apply_new_apriori>`_.
+This method uses the same lines of code used to populate the astrometry database with the original set
+of ``a priori`` WCS solutions. This not only insures that there is
+always a GAIA-based WCS available for all exposures, but it does it using the best available information.
+This new ``a priori`` WCS not only gets added to the image as an alternate (and perhaps PRIMARY) WCS, but it
+also gets written out as a headerlet as an archive of the new WCS.
+
 
 GSC240: GAIA and the HST Guide Stars
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
