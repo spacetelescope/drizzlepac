@@ -563,6 +563,7 @@ def parse_obset_tree(det_tree, log_level):
       * total detection product per detector
       * filter products per detector
       * single exposure product
+      * grism/prism single exposure product [only if Grism/Prism exposures]
 
     Grism/Prism images were added to the "doProcess" list after most of this
     code was developed as they need to have the same Primary WCS as the direct
@@ -626,11 +627,10 @@ def parse_obset_tree(det_tree, log_level):
                 # easier for the user by having the same WCS in both the direct and
                 # Grism/Prism products.
                 #
-                # The GrismExposureProduct will only be an attibute of the TotalProduct. It
-                # object is NOT part of the FilterProduct or the obset_products.
+                # The GrismExposureProduct is only an attibutes of the TotalProduct.
                 prod_list = prod_info.split(" ")
 
-                # Determine if this image is a Grism/Prism
+                # Determine if this image is a Grism/Prism or a nominal direct exposure
                 is_grism = False
                 if prod_list[5].lower().startswith('g') or prod_list[5].lower().startswith('pr'):
                     is_grism = True
@@ -664,8 +664,8 @@ def parse_obset_tree(det_tree, log_level):
                     tdp_obj = TotalProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
                                            prod_list[4], prod_list[6], log_level)
 
-                # Append exposure object to the list of exposure objects for this specific total detection product
                 if not is_grism:
+                    # Append exposure object to the list of exposure objects for this specific total detection product
                     tdp_obj.add_member(sep_obj)
 
                     # Increment single exposure index
@@ -684,9 +684,10 @@ def parse_obset_tree(det_tree, log_level):
                         for e in filt_obj.edp_list:
                             e.crclean = True
 
-                    tdp_obj.add_product(filt_obj)
-                else:
+                elif is_grism:
                     tdp_obj.add_grism_member(grism_sep_obj)
+
+            tdp_obj.add_product(filt_obj)
 
         # Add the total product object to the list of TotalProducts
         tdp_list.append(tdp_obj)

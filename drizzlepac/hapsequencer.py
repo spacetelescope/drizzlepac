@@ -307,6 +307,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                     filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat
 
             # ...and append the filter columns to the total detection product catalog.
+            log.info("create catalogs. combine() columns: {}".format(subset_columns_dict))
             total_product_catalogs.combine(subset_columns_dict)
 
         # At this point the total product catalog contains all columns contributed
@@ -536,7 +537,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         # A poller file contains visit data for a single instrument.  The TotalProduct discriminant
         # is the detector.  A TotalProduct object is comprised of FilterProducts and ExposureProducts
         # where its FilterProduct is distinguished by the filter in use, and the ExposureProduct
-        # is the atomic exposure data.
+        # is the atomic exposure data. Note: the TotalProduct was enhanced to also be comprised
+        # of GrismExposureProduct and QuadExposureProduct lists which are exclusive to the TotalProduct.
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
         obs_info_dict, total_obj_list = poller_utils.interpret_obset_input(input_filename, log_level)
 
@@ -554,6 +556,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         # Update all of the product objects with their associated configuration information.
         for total_item in total_obj_list:
             log.info("Preparing configuration parameter values for total product {}".format(total_item.drizzle_filename))
+
             total_item.configobj_pars = config_utils.HapConfig(total_item,
                                                                log_level=log_level,
                                                                input_custom_pars_file=input_custom_pars_file,
@@ -578,6 +581,11 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             if reference_catalog:
                 product_list += reference_catalog
 
+            # Need to delete the Quad/Ramp filter Exposure objects from the *Product lists as
+            # these images will not be processed beyond the alignment to Gaia (run_align_to_gaia).
+            delete_quad_and_ramp(total_item.fdp_list)
+            delete_quad_and_ramp(total_item.edp_list)
+  
         # If there are Grism/Prism images present in this visit, as well as corresponding direct images
         # for the same detector, update the primary WCS in the direct and/or Grism/Prism images as
         # appropriate to be an 'a priori' or the pipeline default (fallback) solution
@@ -830,7 +838,7 @@ def _get_envvar_switch(envvar_name, default=None):
 
 
 def update_wcs_grism_in_visit(tdp):
-    """Examine entries in the total data produce for Grism/Prism data
+    """Examine entries in the total data product for Grism/Prism data
 
     This routine is only invoked if the total data product for a particular detector
     for the visit is comprised of both an ExposureProduct list AND a
@@ -849,7 +857,7 @@ def update_wcs_grism_in_visit(tdp):
     Returns
     -------
     grism_product_list : list
-        List of all the SVM Grism/Prism FLT/FLC files generated
+        List of all the SVM Grism/Prism FLT/FLC files updated with the common WCS
 
     """
     log.info("\n***** Grism/Prism Image Processing *****")
@@ -886,12 +894,11 @@ def update_wcs_grism_in_visit(tdp):
             else:
                 grism_wcs_set &= set(dict_names.values())
 
-            log.info("***********8grism set: {}".format(grism_wcs_set))
-
             # Oops...no common wcsnames
             if not grism_wcs_set:
                 log.error("There are no common WCS solutions with this Grism/Prism image {} and previously processed images".format(filename))
                 log.error("    There is a problem with this Grism/Prism image/visit.")
+                log.error("    Make sure the input data are not *_raw.fits files.")
                 sys.exit(1)
         # If there are no WCS solutions, the image could be bad (e.g., EXPTIME=0 or EXPFLAG="TDF-DOWN...")
         else:
@@ -940,9 +947,7 @@ def update_wcs_grism_in_visit(tdp):
         # pre-existing class which could cause an issue
         drizcorr = hdu[0].header['DRIZCORR']
         if drizcorr == "OMIT":
-            updatewcs.updatewcs(filename, use_db=False, verbose=False)
-        else:
-            updatewcs.updatewcs(filename, use_db=True, verbose=False)
+            updatewcs.updatewcs(filename, use_db=True)
 
         # Get all the WCS names which are common to all of the direct images
         dict_names = wcsutil.altwcs.wcsnames(filename, ext=1)
@@ -962,6 +967,7 @@ def update_wcs_grism_in_visit(tdp):
             if not direct_wcs_set:
                 log.error("There are no common WCS solutions with this direct image {} and previously processed images".format(filename))
                 log.error("    There is a problem with this direct image/visit.")
+                log.error("    Make sure the input data are not *_raw.fits files.")
                 sys.exit(1)
         # If there are no WCS solutions, the image could be bad (e.g., EXPTIME=0 or EXPFLAG="TDF-DOWN...")
         else:
@@ -1037,10 +1043,21 @@ def update_active_wcs(filename, wcsname):
     # For exposures with multiple science extensions (multiple chips),
     # generate a combined WCS
     num_sci_ext, extname = util.count_sci_extensions(filename)
-    extname_list = []
-    for x in range(num_sci_ext):
-        extname_list.append((extname, x+1))
+    extname_list = [(extname, x+1) for x in range(num_sci_ext)]
 
     hdu = fits.open(filename, mode="update")
     wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=wcsname)
     hdu.close()
+
+# ------------------------------------------------------------------------------
+
+
+def delete_quad_and_ramp(obj_list):
+    temp = []
+    while obj_list:
+        obj = obj_list.pop()
+        if not obj.filters.lower().startswith('fq') and not obj.filters.lower().startswith('fr'):
+            temp.append(obj)
+    while temp:
+        obj_list.append(temp.pop()) 
+

@@ -107,8 +107,9 @@ class HAPProduct:
 
     def generate_metawcs(self):
         """ A method to build a unique WCS for each TotalProduct product which is
-            generated based upon the merging of all the ExposureProducts which comprise the
-            specific TotalProduct.  This is done on a per TotalProduct basis as the Single
+            generated based upon the merging of all the ExposureProducts
+            which comprise the specific TotalProduct.  This
+            is done on a per TotalProduct basis as the Single
             Visit Mosaics need to be represented in their native scale.
 
         """
@@ -180,6 +181,8 @@ class TotalProduct(HAPProduct):
 
     def add_grism_member(self, edp):
         """ Add an GrismExposureProduct object to the list - composition.
+
+            This routine adds Grism or Prism exposures to the exposure list.
         """
         self.grism_edp_list.append(edp)
 
@@ -263,7 +266,8 @@ class FilterProduct(HAPProduct):
         self.edp_list = []
         self.regions_dict = {}
 
-        log.debug("Filter object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
+        #log.debug("Filter object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
+        log.info("Filter object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
 
     def find_member(self, name):
         """ Return member instance with filename 'name' """
@@ -558,8 +562,6 @@ class GrismExposureProduct(HAPProduct):
 
         drizcorr = hdu_list[0].header['DRIZCORR']
         if drizcorr == "OMIT":
-            updatewcs.updatewcs(self.full_filename, use_db=False)
-        else:
             updatewcs.updatewcs(self.full_filename, use_db=True)
         hdu_list.close()
 
