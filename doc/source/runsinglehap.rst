@@ -1,7 +1,9 @@
 .. _runsinglehap_api:
+
 ====================
 API for runsinglehap
 ====================
+
 .. toctree::
    :maxdepth: 2
 
