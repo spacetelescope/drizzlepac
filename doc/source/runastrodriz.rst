@@ -66,6 +66,7 @@ running AstroDrizzle.
   lift this enforced restriction on Windows systems once issues with logging are
   resolved.
 
+
 .. _runastrodriz-description:
 
 Pipeline Astrometric Calibration Description
@@ -87,6 +88,9 @@ it identifies from the observations and checks to see if any fit was successful.
 Finally, it selects the WCS solution most closely aligned to GAIA that as the
 basis for creating the final, distorted-corrected, combined
 drizzle products for the set of exposures being processed.
+
+.. note:: The API for the code used for these operations are described in more detail
+          :ref:`advanced_products_api`.
 
 Overview
 --------

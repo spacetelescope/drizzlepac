@@ -1,8 +1,10 @@
 .. _runsinglehap_api:
-
 ====================
 API for runsinglehap
 ====================
+.. toctree::
+   :maxdepth: 2
+
 The task ``runsinglehap`` serves as the primary interface for processing data
 from a single-visit into a uniform set of images.
 

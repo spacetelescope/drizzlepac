@@ -117,11 +117,12 @@ The task 'runastrodriz' can be used to reproduce the same Drizzle processing tha
    :maxdepth: 2
 
    Running Astrodriz <runastrodriz.rst>
-   astrometry_api.rst
+   API for Astrometry Code <astrometry_api.rst>
 
    singlevisit.rst
    runsinglehap.rst
 
+   Glossary of HAP Terms <hap_glossary.rst>
 
 Astrometry and Advanced Pipeline Products
 ------------------------------------------
@@ -134,11 +135,11 @@ The code being used in the automated HST calibration pipeline to generate the pr
 
   Astrometry and Headerlets <astrometry.rst>
 
+  Glossary of HAP Terms <hap_glossary.rst>
+
 
 Indices and tables
 ==================
-* :ref:`hap-glossary`
-
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`

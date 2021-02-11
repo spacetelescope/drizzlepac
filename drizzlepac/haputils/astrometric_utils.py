@@ -271,7 +271,11 @@ def build_reference_wcs(inputs, sciname='sci'):
 
 
 def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
-    """ Extract catalog from VO web service.
+    """ Extract reference catalog from VO web service.
+
+    Queries the catalog available at the ``SERVICELOCATION`` specified
+    for this module to get any available astrometric source catalog entries
+    around the specified position in the sky based on a cone-search.
 
     Parameters
     ----------
@@ -324,6 +328,10 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
 def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
     """ Extract catalog from VO web service based on the specified footprint
 
+    Queries the catalog available at the ``SERVICELOCATION`` specified
+    for this module to get any available astrometric source catalog entries
+    around the specified position in the sky based on the input footprint.
+
     Parameters
     ----------
     footprint : numpy.ndarray
@@ -370,7 +378,14 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
 
 
 def compute_radius(wcs):
-    """Compute the radius from the center to the furthest edge of the WCS."""
+    """Compute the radius from the center to the furthest edge of the WCS.
+
+    Parameters
+    -----------
+    wcs : `~astropy.wcsutil.HSTWCS` object
+        HSTWCS object for an exposure including a valid footprint
+
+    """
 
     ra, dec = wcs.wcs.crval
     img_center = SkyCoord(ra=ra * u.degree, dec=dec * u.degree)
@@ -428,6 +443,9 @@ def compute_2d_background(imgarr, box_size, win_size,
                           bkg_estimator=SExtractorBackground,
                           rms_estimator=StdBackgroundRMS):
     """Compute a 2D background for the input array.
+
+    This function uses `~photutils.Background2D` to determine an adaptive
+    background that takes into account variations in flux across the image.
 
     Parameters
     ==========
@@ -518,6 +536,11 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     ----------
     imgarr : ndarray
         Image array (ndarray object) with sources to be identified
+
+    whtarr : ndarray
+        Image array (ndarray object) for `imgarr` that provides an estimate of the
+        weight or errors for the processed image.
+
     fwhm : float
         Value of FWHM to use for creating a Gaussian2DKernel object in case no suitable source
         can be identified in the image.
