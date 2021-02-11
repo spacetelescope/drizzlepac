@@ -37,7 +37,7 @@ Primary User-Interface
 =======================
 One task has been written to perform the single-visit processing: ``runsinglehap``. 
 It gets used by STScI to generate the single-visit products which
-can be found in the Mikulsik Archive for Space Telescopes (MAST) archive. This task 
+can be found in the Mikulski Archive for Space Telescopes (MAST) archive. This task
 can also be run from the operating system command-line or from within a
 Python session to reproduce those results, or with modification of the input 
 parameters, perhaps improve on the standard archived results.  Full details on 
@@ -310,7 +310,7 @@ The **product list** is a Python list of
 which represent each and every output product to be created for the visit.  
 Each **Product** instance contains:
 
-  * list of filenames for all input exposures that will contribute to the output drizzlep product
+  * list of filenames for all input exposures that will contribute to the output drizzle product
   * WCS for output drizzle product
   * pre-defined names for all output files associated with this **Product** including:
 
@@ -326,7 +326,7 @@ Each **Product** instance contains:
     * aligning the exposures to an astrometric reference (GAIA)
     * applying the selected parameters to ``AstroDrizzle``
     * drizzling the inputs to create the output drizzle product
-    * determining the source catalogs fron the drizzle product 
+    * determining the source catalogs from the drizzle product
 
 This interpretation of the list of input filenames gets performed using the 
 code in :ref:`poller_utils_api` by
