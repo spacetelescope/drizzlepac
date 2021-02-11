@@ -51,20 +51,21 @@ relies on the results of the standard astrometric
 processing of the individual exposures and associations as the starting point
 for alignment. This processing then follows these steps to create the final products:
 
-  * interpret the list of filenames for all exposures taken as part of a single visit
-  * copy the pipeline-calibrated (FLT/FLC) files to the current directory for processing
-  * rename the input files to conform to the single-visit naming conventions
-    
-    * This step insures that the original pipeline results remain available in 
-      the archive unchanged
-  
-  * Define what output products can be generated 
-  * Align all exposures in a relative sense (all to each other)
-  * Create a composite source catalog from all aligned input exposures
-  * Cross-match and fit this composite catalog to GAIA to determine new WCS solution
-  * Update renamed input exposures with results of alignment to GAIA
-  * Create each of the output products using the updated WCS solutions
- 
+  #. interpret the list of filenames for all exposures taken as part of a single visit
+  #. copy the pipeline-calibrated (FLT/FLC) files to the current directory for processing
+  #. rename the input files to conform to the single-visit naming conventions. (This step insures that the original
+     pipeline results remain available in the archive unchanged)
+  #. Define what output products can be generated
+  #. Align all exposures in a relative sense (all to each other)
+  #. Create a composite source catalog from all aligned input exposures
+  #. Cross-match and fit this composite catalog to GAIA to determine new WCS solution
+  #. Update renamed input exposures with results of alignment to GAIA
+  #. Create each of the output products using the updated WCS solutions
+
+.. note::
+    It should be noted that processing is performed on a detector-by-detector basis; if a visit contains input data
+    from *n* detectors, steps 5-9 will be executed serially *n* times to process the input images from each detector
+    separately.
 
 .. _svm_naming_convention:
 
