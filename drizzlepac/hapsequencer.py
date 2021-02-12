@@ -97,27 +97,26 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
     """This subroutine utilizes haputils/catalog_utils module to produce photometric sourcelists for the specified
     total drizzle product and it's associated child filter products.
 
-    Parameters
-    ----------
-    total_obj_list : drizzlepac.haputils.Product.TotalProduct
-        total drizzle product that will be processed by catalog_utils. catalog_utils will also create photometric
-        sourcelists for the child filter products of this total product.
-
+    PARAMETERS
+    -----------
+    total_obj_list : `drizzlepac.haputils.product.TotalProduct`
+                    total drizzle product that will be processed by catalog_utils.
+                    catalog_utils will also create photometric
+                    sourcelists for the child filter products of this total product.
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-
+                The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
     diagnostic_mode : bool, optional
-        generate ds9 region file counterparts to the photometric sourcelists? Default value is False.
-
+                      generate ds9 region file counterparts to the photometric sourcelists? Default value is False.
     phot_mode : str, optional
-        Which algorithm should be used to generate the sourcelists? 'aperture' for aperture photometry;
-        'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
-
+                Which algorithm should be used to generate the sourcelists? 'aperture' for aperture photometry;
+                'segment' for segment map photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
     catalog_switches : dict, optional
-        Specify which, if any, catalogs should be generated at all, based on detector.  This dictionary
-        needs to contain values for all instruments; namely:
-        SVM_CATALOG_HRC, SVM_CATALOG_SBC, SVM_CATALOG_WFC, SVM_CATALOG_UVIS, SVM_CATALOG_IR
-        These variables can be defined with values of 'on'/'off'/'yes'/'no'/'true'/'false'.
+                       Specify which, if any, catalogs should be generated at all, based on detector.  This dictionary
+                       needs to contain values for all instruments; namely:
+
+                       SVM_CATALOG_HRC, SVM_CATALOG_SBC, SVM_CATALOG_WFC, SVM_CATALOG_UVIS, SVM_CATALOG_IR
+
+                       These variables can be defined with values of 'on'/'off'/'yes'/'no'/'true'/'false'.
 
     Returns
     -------
@@ -369,14 +368,14 @@ def create_drizzle_products(total_obj_list):
 
     Parameters
     ----------
-    total_obj_list: list
+    total_obj_list : list
         List of TotalProduct objects, one object per instrument/detector combination is
         a visit.  The TotalProduct objects are comprised of FilterProduct and ExposureProduct
         objects.
 
     RETURNS
     -------
-    product_list: list
+    product_list : list
         A list of output products
     """
     log.info("Processing with astrodrizzle version {}".format(drizzlepac.astrodrizzle.__version__))

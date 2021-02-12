@@ -38,7 +38,7 @@ mosaic processing used to create the single-visit mosaics products.
 
 
 3.1.8 (11-Aug-2020)
-==================
+===================
 
 A number of changes have been implemented to either correct problems or
 improve the processed results.  The most significant of the changes are:

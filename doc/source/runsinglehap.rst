@@ -3,6 +3,10 @@
 ====================
 API for runsinglehap
 ====================
+
+.. toctree::
+   :maxdepth: 2
+
 The task ``runsinglehap`` serves as the primary interface for processing data
 from a single-visit into a uniform set of images.
 
@@ -12,10 +16,16 @@ from a single-visit into a uniform set of images.
 .. automodule:: drizzlepac.hapsequencer
 .. autofunction:: drizzlepac.hapsequencer.run_hap_processing
 
+
 Supporting code
 ===============
 These modules and functions provide the core functionality for the single-visit
 processing.
+
+.. automodule:: drizzlepac.hapsequencer
+.. autofunction:: drizzlepac.hapsequencer.create_catalog_products
+.. autofunction:: drizzlepac.hapsequencer.create_drizzle_products
+
 
 .. _product_api:
 
