@@ -78,16 +78,20 @@ components:
 
   * **<propid>** : the proposal ID for this visit
   * **<obsetid>** : the 2-digit visit ID from this proposal 
-  * **<instr>** : 3 letter designation of the instrument used for the observations
+  * **<instr>** : 3 or 4 letter designation of the instrument used for the observations
   * **<detector>** : name of the detector used for the observations
   * **<filter>** : hyphen-separated list of filter names used for the observations
   * **<ipppssoo>** : standard 8 character rootname for a single exposure defined by the pipeline
   * **<ipppss>** : standard 6 character designation of the **<instr>**/**<propid>**/**<obsetid>** for this visit
+  * **asn.fits** : suffix for the association table
   * **dr[cz].fits** : suffix for drizzled products
   * **fl[ct].fits** : suffix for pipeline-calibrated files
-  * **asn.fits** : suffix for the association table
   * **hlet.fits** : suffix for headerlet files containing the WCS solution used to create the final drizzle products/mosaics
-  
+  * **<ipppss>_trl.txt** : single visit processing log files
+  * **point-cat.ecsv** : suffix for point (aperture) photometric catalog products
+  * **segment-cat.ecsv** : suffix for segment photometric catalog products
+
+
 These components get combined to create filenames specific to each type of file being
 processed.  The following table provides a complete list of all the products 
 created as a result of single-visit processing.
@@ -411,7 +415,7 @@ catalog (defaults to **GAIADR2**) are lower under the expectation that large
 offsets (> 0.5 arcseconds) have already been removed in the pipeline processing.  
 This makes the SVM alignment more robust across a wider range of types of fields-of-view.
 The final updated WCS will be provided with a name that reflects this cross-filter
-alignment using **-FIT-SVM-<catalog name>** as the final half of the **WCSNAME** 
+alignment using **-FIT_SVM_<catalog name>** as the final half of the **WCSNAME**
 keyword.  More details on the WCS naming conventions can be found in the
 :ref:`wcsname-conventions` section.
 
@@ -461,7 +465,7 @@ a **filter product** would end up using the **filter_basic** criteria, while an
 
 User-customization of Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The parameter configuration file now included in the ``drizzlepac`` package are
+The parameter configuration files now included in the ``drizzlepac`` package are
 designed to be easily customized for manual processing with both ``runastrodriz`` 
 (pipeline astrometry processing) and ``runsinglehap`` (SVM processing).  These 
 ASCII JSON files can be edited prior to manual reprocessing to include whatever
