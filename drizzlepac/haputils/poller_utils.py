@@ -684,13 +684,34 @@ def parse_obset_tree(det_tree, log_level):
                         for e in filt_obj.edp_list:
                             e.crclean = True
 
+                    #tdp_obj.add_product(filt_obj)
+
                 elif is_grism:
                     tdp_obj.add_grism_member(grism_sep_obj)
 
-            tdp_obj.add_product(filt_obj)
+            if not is_grism:
+                tdp_obj.add_product(filt_obj)
 
         # Add the total product object to the list of TotalProducts
         tdp_list.append(tdp_obj)
+
+    # If the total product object has Grism members, it MUST have direct exposure
+    # members too, or the total product object is not valid.  In this case,
+    # the total product object, as well as its object contents must be deleted.
+    # Also, the SVM FLT/FLC files for the Grism/Prism images must be deleted.
+    index_to_delete = []
+    for index, tdp in enumerate(tdp_list):
+        if tdp.grism_edp_list and not tdp.edp_list:
+            for item in tdp.grism_edp_list:
+                try:
+                    os.remove(item.full_filename)
+                except OSError:
+                    pass
+            index_to_delete.append(index)
+            tdp.grism_edp_list.clear()
+            del tdp.grism_edp_list[:]
+    for item in index_to_delete:
+        del tdp_list[item]
 
     # Done... return dict and object product list
     return obset_products, tdp_list
