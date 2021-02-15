@@ -710,6 +710,8 @@ def parse_obset_tree(det_tree, log_level):
             index_to_delete.append(index)
             tdp.grism_edp_list.clear()
             del tdp.grism_edp_list[:]
+    # Make sure to delete from the end of the list
+    index_to_delete.reverse()
     for item in index_to_delete:
         del tdp_list[item]
 
