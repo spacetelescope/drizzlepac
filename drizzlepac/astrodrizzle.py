@@ -32,6 +32,7 @@ aspects of each of the processing steps.
 """
 import os
 import sys
+import logging
 
 from stsci.tools import teal, logutil, textutil
 
@@ -70,7 +71,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
             configobj = teal.load(__taskname__)
         else:
             if not os.path.exists(configobj):
-                raise RuntimeError('Cannot find .cfg file: '+configobj)
+                raise RuntimeError('Cannot find .cfg file: ' + configobj)
             configobj = teal.load(configobj, strict=False)
     elif configobj is None:
         # load 'astrodrizzle' parameter defaults as described in the docs:
@@ -82,7 +83,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
         raise TypeError("AstroDrizzle() needs either 'input' or "
                         "'configobj' arguments")
 
-    if 'updatewcs' in input_dict: # user trying to explicitly turn on updatewcs
+    if 'updatewcs' in input_dict:  # user trying to explicitly turn on updatewcs
         configobj['updatewcs'] = input_dict['updatewcs']
         del input_dict['updatewcs']
 
@@ -118,7 +119,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
         run(configObj, wcsmap=wcsmap)
 
 ##############################
-##  Interfaces used by TEAL ##
+#   Interfaces used by TEAL  #
 ##############################
 @util.with_logging
 def run(configobj, wcsmap=None):
@@ -159,6 +160,12 @@ def run(configobj, wcsmap=None):
         def_logname = None
         return
 
+    # Build name of output trailer file
+    logging_handlers = logging.getLogger().handlers
+    log_name = [lh.name for lh in logging_handlers if lh.level > 0][0]
+    logfile = log_name if log_name else "{}.tra".format(def_logname)
+    print("AstroDrizzle log file: {}".format(logfile))
+
     clean = configobj['STATE OF INPUT FILES']['clean']
     procSteps = util.ProcSteps()
 
@@ -196,33 +203,35 @@ def run(configobj, wcsmap=None):
         util.printParams(configobj, log=log)
 
         # Call rest of MD steps...
-        #create static masks for each image
+        # create static masks for each image
         staticMask.createStaticMask(imgObjList, configobj,
                                     procSteps=procSteps)
 
-        #subtract the sky
+        # subtract the sky
         sky.subtractSky(imgObjList, configobj, procSteps=procSteps)
 
 #       _dbg_dump_virtual_outputs(imgObjList)
 
-        #drizzle to separate images
+        # drizzle to separate images
         adrizzle.drizSeparate(imgObjList, outwcs, configobj, wcsmap=wcsmap,
+                              logfile=logfile,
                               procSteps=procSteps)
 
 #       _dbg_dump_virtual_outputs(imgObjList)
 
-        #create the median images from the driz sep images
+        # create the median images from the driz sep images
         createMedian.createMedian(imgObjList, configobj, procSteps=procSteps)
 
-        #blot the images back to the original reference frame
+        # blot the images back to the original reference frame
         ablot.runBlot(imgObjList, outwcs, configobj, wcsmap=wcsmap,
                       procSteps=procSteps)
 
-        #look for cosmic rays
+        # look for cosmic rays
         drizCR.rundrizCR(imgObjList, configobj, procSteps=procSteps)
 
-        #Make your final drizzled image
+        # Make your final drizzled image
         adrizzle.drizFinal(imgObjList, outwcs, configobj, wcsmap=wcsmap,
+                           logfile=logfile,
                            procSteps=procSteps)
 
         print()
@@ -231,7 +240,7 @@ def run(configobj, wcsmap=None):
         print("", flush=True)
 
 
-    except:
+    except Exception:
         clean = False
         print(textutil.textbox(
             "ERROR:\nAstroDrizzle Version {:s} encountered a problem!  "

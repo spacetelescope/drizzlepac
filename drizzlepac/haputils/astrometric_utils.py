@@ -795,7 +795,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
     if segm is None or segm.nlabels == 0:
         log.info("No detected sources!")
-        return None, None
+        return None, None, None
 
     log.debug("Creating segmentation map for {} ".format(outroot))
     if kernel is not None:
@@ -948,7 +948,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         log.info("Total Number of detected sources: {}".format(len(src_table)))
     else:
         log.info("No detected sources!")
-        return None, None
+        return None, None, None
 
     # Move 'id' column from first to last position
     # Makes it consistent for remainder of code

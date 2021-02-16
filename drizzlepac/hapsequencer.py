@@ -634,6 +634,9 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         if total_obj_list:
             for tot_obj in total_obj_list:
                 proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
+                # Update DRIZPARS keyword value with new logfile name in ALL drizzle products
+                tot_obj.update_drizpars()
+
         # Now remove single temp log file
         if os.path.exists(logname):
             os.remove(logname)
