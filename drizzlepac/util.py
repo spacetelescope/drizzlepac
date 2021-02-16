@@ -279,12 +279,6 @@ def print_pkg_versions(packages=None, git=False, svn=False, log=None):
                 vstr += "Version -> " + package.__version__ + " "
             except Exception:
                 vstr += "No version defined.  "
-            if svn:
-                git = True
-                # try:
-                #    vstr += "\n    SVN version -> "+package.__svn_version__.rstrip()
-                # except:
-                #    vstr += " "
             if git:
                 try:
                     vstr += "\n    GIT version -> " + '-'.join([package.__version__, package.__version_post__, package.__version_commit]).rstrip()
@@ -366,10 +360,6 @@ class ProcSteps:
         print('   %20s          %0.4f sec.' % ('Total', total_time))
         print("", flush=True)
 
-        # Compute overall runtime of entire program, including overhead
-        # total = self.end[1] - self.start[1]
-        # print '   %20s          %0.4f sec.'%('Total Runtime',total)
-
 
 def _ptime():
     import time
@@ -387,7 +377,6 @@ def _ptime():
         # Format time values for keywords IRAF-TLM, and DATE
         _ltime = time.localtime(ftime)
         tlm_str = time.strftime('%H:%M:%S (%d/%m/%Y)', _ltime)
-        # date_str = time.strftime('%Y-%m-%dT%H:%M:%S',_ltime)
     return tlm_str, ftime
 
 
@@ -732,9 +721,6 @@ def getDefaultConfigObj(taskname, configObj, input_dict={}, loadOnly=True):
 
         # If everything looks good, merge user inputs with configObj and continue
         cfgpars.mergeConfigObj(configObj, input_dict)
-        # Update the input .cfg file with the updated parameter values
-        # configObj.filename = os.path.join(cfgpars.getAppDir(),os.path.basename(configObj.filename))
-        # configObj.write()
 
     if not loadOnly:
     # We want to run the GUI AFTER merging in any parameters

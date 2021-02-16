@@ -880,7 +880,7 @@ def run_driz_chip(img, chip, output_wcs, outwcs, template, paramDict, single,
             if dqarr.sum() == 0:
                 log.warning('WARNING: All pixels masked out when applying '
                             'cosmic ray mask to %s' % _expname)
-        updateInputDQArray(chip.dqfile ,chip.dq_extn, chip._chip,
+        updateInputDQArray(chip.dqfile, chip.dq_extn, chip._chip,
                            crMaskName, paramDict['crbit'])
 
     img.set_wtscl(chip._chip, paramDict['wt_scl'])
