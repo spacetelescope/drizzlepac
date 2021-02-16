@@ -222,6 +222,7 @@ class TestAlignMosaic(BaseHLATest):
 
         assert 0.0 < total_rms <= RMS_LIMIT
 
+    @pytest.mark.xfail
     def test_astroquery(self):
         """Verify that new astroquery interface will work"""
 
