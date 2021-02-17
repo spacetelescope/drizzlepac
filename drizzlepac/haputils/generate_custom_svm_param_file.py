@@ -3,40 +3,32 @@
 """ generate_custom_svm_param_file - a module to create a template SVM processing pipeline parameter file
 based on the observations present in the current working directory for the user to customize
 
-**Command-line USAGE**
+Command-line USAGE:
+    >>> python generate_custom_svm_param_file.py [-clo] poller_filename
 
-python generate_custom_svm_param_file.py [-clo] poller_filename
+    - poller_filename: (required) the name of the input SVM poller file
 
-Required command-line inputs:
+    - -c: (optional) If turned on, existing files with the same name as the output custom SVM parameter file
+      created by this script will be overwritten.
 
-- poller_filename: the name of the input SVM poller file
+    - -l: (optional) The desired level of verboseness in the log statements displayed on the screen and
+      written to the .log file. Valid input options are 'critical', 'error', 'warning', 'info', or 'debug'.
 
-Optional Command-line inputs:
+    - -o: (optional) Name of the output configuration JSON file which will be created for specialized
+      processing. This file will contain ALL the input parameters necessary for processing. If not explicitly
+      specified, the default name for the output file is "custom_svm_params.json".
 
-- -c: If turned on, existing files with the same name as the output custom SVM parameter file created by this
-script will be overwritten.
-
-- -l: The desired level of verboseness in the log statements displayed on the screen and written to the .log
-file. Valid input options are 'critical', 'error', 'warning', 'info', or 'debug'.
-
-- -o: Name of the output configuration JSON file which will be created for specialized processing. This file
-will contain ALL the input parameters necessary for processing. If not explicitly specified, the default name
-for the output file is "custom_svm_params.json".
-
-
-**Python USAGE**
-
-python
-
-from drizzlepac.haputils import generate_custom_svm_param_file
-
-generate_custom_svm_param_file.make_svm_input_file(input_filename,
-                                                   output_custom_pars_file='custom_svm_params.json',
-                                                   clobber=False, log_level=logutil.logging.INFO)
+Python USAGE:
+    >>> python
+    >>> from drizzlepac.haputils import generate_custom_svm_param_file
+    >>> generate_custom_svm_param_file.make_svm_input_file(input_filename,
+                                                           output_custom_pars_file='custom_svm_params.json',
+                                                           clobber=False,
+                                                           log_level=logutil.logging.INFO)
 
 .. note:: This script only generates a template input parameter file populated with default values based on
-the observations present in the current working directory. It is entirely incumbent on the user to modify
-this file with non-default values.
+          the observations present in the current working directory. It is entirely incumbent on the user to
+          modify this file with non-default values.
 """
 
 import argparse
@@ -72,11 +64,11 @@ def make_svm_input_file(input_filename, output_custom_pars_file='custom_svm_para
 
     Parameters
     ----------
-    input_filename: string
+    input_filename: str
         The 'poller file' where each line contains information regarding an exposures taken
         during a single visit.
 
-    output_custom_pars_file: string, optional
+    output_custom_pars_file: str, optional
         Fully specified output filename which contains all the configuration parameters
         available during the processing session. Default is 'custom_svm_params.json'.
 
