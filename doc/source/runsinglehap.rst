@@ -72,6 +72,8 @@ drizzlepac.haputils.processing_utils
 .. autofunction:: drizzlepac.haputils.processing_utils.refine_product_headers
 .. autofunction:: drizzlepac.haputils.processing_utils.compute_sregion
 
+.. _generate_custom_svm_param_file:
+
 drizzlepac.haputils.generate_custom_svm_param_file
 --------------------------------------------------
 .. automodule:: drizzlepac.haputils.generate_custom_svm_param_file

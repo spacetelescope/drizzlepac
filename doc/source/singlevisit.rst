@@ -470,7 +470,10 @@ designed to be easily customized for manual processing with both ``runastrodriz`
 (pipeline astrometry processing) and ``runsinglehap`` (SVM processing).  These 
 ASCII JSON files can be edited prior to manual reprocessing to include whatever
 custom settings would best suit the science needs of the research being performed
-with the data.  
+with the data. Template SVM processing pipeline parameter files populated with default
+values can be created using ``generate_custom_svm_param_file``. For details on how these
+parameter files can be created, please refer to the :ref:`generate_custom_svm_param_file`
+documentation.
 
 
 Defining the Output WCS
