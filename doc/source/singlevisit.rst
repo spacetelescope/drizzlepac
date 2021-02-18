@@ -555,5 +555,13 @@ from each drizzled **filter product** to provide a standardized measure of each
 visit. For more details on how the catalogs are produced, please refer to the :ref:`catalog_generation` documentation
 page.
 
-
+Catalog Quality Control
+------------------------
+All detected sources are not created equal. Raw source catalogs typically contain a mix of scientifically legitimate
+point sources, scientifically legitimate extended sources, and scientifically dubious sources (those likely impacted by
+low signal-to-noise ratio, detector artifacts, saturation, cosmic rays, etc.). The last set of algorithms run by SVM
+processing classifies each detected source into one or more of these groups and assigns each source a classification
+value, known as a flag. Based on the flag value, sources that are obviously scientifically dubious are filtered out and
+not written to the final source catalogs. More details on this process can be found in section :ref:`flag_generation`
+of the catalog generation documentation page.
 

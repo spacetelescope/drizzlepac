@@ -256,6 +256,8 @@ We use the concentration index to classify automatically each identified photome
 (i.e. stars), an extended source (i.e. galaxies, nebulosity, etc.), or as an “anomalous” source (i.e. saturation,
 hot pixels, cosmic ray hits, etc.). This designation is described by the value in the "flags" column
 
+.. _flag_generation:
+
 2.4.2: Determination of Flag Values
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The flag value associated with each source provides users with a means to distinguish between legitimate point sources,
