@@ -202,7 +202,7 @@ def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None):
     # crossed filters should default to widest-band filter used
     # remove pol filters
     for f in filter_list:
-        if f.lower().startswith('pol'):
+        if f.lower().startswith('pol') or f.lower().startswith('mjd'):
             filter_list.remove(f)
 
     if len(filter_list) > 1:
@@ -215,6 +215,8 @@ def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None):
     # create full psf designation we are looking for:
     # instr, det, filter
     kw_vals += filter_list
+    # remove duplicate entries...
+    kw_vals = list(dict.fromkeys(kw_vals))
 
     if kw_vals[0] is None:
         log.error("No valid keywords found.")
@@ -229,6 +231,7 @@ def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None):
 
     psf_name = os.path.join(path_root, "{}.fits".format("_".join(kw_vals)))
 
+    print('Looking for Library PSF {}'.format(psf_name))
     log.debug('Looking for Library PSF {}'.format(psf_name))
 
     if not os.path.exists(psf_name):
