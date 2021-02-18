@@ -171,7 +171,7 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
     if existing_wcs is not None:
         outwcs = existing_wcs
     else:
-        outwcs = astrometry_utils.build_reference_wcs(inputs)
+        outwcs = build_reference_wcs(inputs)  # TODO: replace with stwcs.updatewcs.astrometry_utils version
 
     if use_footprint:
         footprint = outwcs.calc_footprint()
