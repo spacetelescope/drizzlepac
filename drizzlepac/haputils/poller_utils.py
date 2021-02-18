@@ -645,7 +645,7 @@ def parse_obset_tree(det_tree, log_level):
 
                 # Determine if this image is a Grism/Prism or a nominal direct exposure
                 is_grism = False
-                if prod_list[5].lower().startswith('g') or prod_list[5].lower().startswith('pr'):
+                if prod_list[5].lower().find('g') != -1 or prod_list[5].lower().find('pr') != -1:
                     is_grism = True
                     filt_indx -= 1
                     grism_sep_obj = GrismExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
