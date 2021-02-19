@@ -880,7 +880,7 @@ def update_wcs_in_visit(tdp):
     # Grism output product list for the manifest
     grism_product_list = []
 
-    grism_wcs_set, skip_grism_list, g_keyword_wcs_names, grism_dict = collect_wcs_names(tdp.grism_edp_list, 'GRISM')
+    grism_wcs_set, skip_grism_list, g_keyword_wcs_names_dict, grism_dict = collect_wcs_names(tdp.grism_edp_list, 'GRISM')
     log.info("WCS solutions common to all viable Grism/Prism images: {}".format(grism_wcs_set))
 
     # There is a preference for the active WCS for the viable images in the visit
@@ -929,7 +929,7 @@ def update_wcs_in_visit(tdp):
             updatewcs.updatewcs(filename, use_db=True)
         hdu.close()
 
-    direct_wcs_set, skip_direct_list, d_keyword_wcs_names, direct_dict = collect_wcs_names(tdp.edp_list, 'DIRECT')
+    direct_wcs_set, skip_direct_list, d_keyword_wcs_names_dict, direct_dict = collect_wcs_names(tdp.edp_list, 'DIRECT')
     log.info("WCS solutions common to all viable direct images: {}".format(direct_wcs_set))
 
     # Are the grism_wcs_set and the direct_wcs_set disjoint?  If they are disjoint, there can
@@ -959,7 +959,7 @@ def update_wcs_in_visit(tdp):
                 filename = g_edp.full_filename
                 if filename not in skip_grism_list:
                     log.info("Setting the primary WCS for Grism/Prism image {} to {}.".format(filename, final_wcsname))
-                    update_active_wcs(filename, final_wcsname, g_keyword_wcs_names, grism_dict)
+                    update_active_wcs(filename, final_wcsname, g_keyword_wcs_names_dict, grism_dict)
 
                     # Add the Grism/Prism images to the manifest as all of the files exist.
                     grism_product_list.append(filename)
@@ -968,7 +968,7 @@ def update_wcs_in_visit(tdp):
                 filename = edp.full_filename
                 if filename not in skip_direct_list:
                     log.info("Setting the primary WCS for direct image {} to {}.".format(filename, final_wcsname))
-                    update_active_wcs(filename, final_wcsname, d_keyword_wcs_names, direct_dict)
+                    update_active_wcs(filename, final_wcsname, d_keyword_wcs_names_dict, direct_dict)
         else:
             # Do nothing
             pass
@@ -1007,9 +1007,9 @@ def collect_wcs_names(edp_list, image_type):
         This is a list of exposures in the input list which should be
         skipped/ignored when updating the active WCS solution
 
-    keyword_wcs_names: list
-        List of WCS solution names which were obtained from the FITS
-        keyword solutions (not the headerlets)
+    keyword_wcs_names_dict: dictionary {filename: list}
+        The dictionary is used to associate an individual image/filename with
+        a list of WCS solution names in the file stored as keywords (not headerlets)
 
     image_dict: dictionary {filename: list}
         The dictionary is used to associate an individual image/filename with
@@ -1021,6 +1021,7 @@ def collect_wcs_names(edp_list, image_type):
     skip_image_list = []
     exist_image_set = False
     image_dict = {}
+    keyword_wcs_names_dict = {}
     # Loop over all the Grism/Prism images for this detector in the visit
     for edp in edp_list:
 
@@ -1035,6 +1036,7 @@ def collect_wcs_names(edp_list, image_type):
         # Get the headerlet WCS solution names
         headerlet_wcs_names = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="WCSNAME")
         all_wcs_names = keyword_wcs_names + headerlet_wcs_names
+        keyword_wcs_names_dict[filename] = keyword_wcs_names
         image_dict[filename] = all_wcs_names
         if all_wcs_names:
             log.debug("WCS solutions for file {} are {}.".format(filename, all_wcs_names))
@@ -1068,12 +1070,12 @@ def collect_wcs_names(edp_list, image_type):
             else:
                 log.warning("    Skip this image.")
 
-    return image_wcs_set, skip_image_list, keyword_wcs_names, image_dict
+    return image_wcs_set, skip_image_list, keyword_wcs_names_dict, image_dict
 
 # ------------------------------------------------------------------------------
 
 
-def update_active_wcs(filename, wcsname, keyword_wcs_names, image_dict):
+def update_active_wcs(filename, wcsname, keyword_wcs_names_dict, image_dict):
     """
     Utility to update the active/primary WCS solution
 
@@ -1088,8 +1090,8 @@ def update_active_wcs(filename, wcsname, keyword_wcs_names, image_dict):
     wcsname : str
         Name of the desired WCS active/primary solution to be set for the filename
 
-    keyword_wcs_names : list
-        List of WCS solution names stored as keywords in the SCI header
+    keyword_wcs_names_dict : dictionary associated with each image in visit
+        The dictionary is {filename: List of WCS solution names stored as keywords in SCI}
 
     image_dict : dictionary associated with each image in visit
         The dictionary is {filename: List of WCS solution names}
@@ -1122,9 +1124,10 @@ def update_active_wcs(filename, wcsname, keyword_wcs_names, image_dict):
         # Is the source of the wcsname for this image from keywords or a headerlet?
         # The source dictates how the WCS will be made the active WCS
         # Examine the "keyword" WCS solutions as a full string match...
-        found_string = [i for i in keyword_wcs_names if wcsname == i]
+        keyword_wcs_list = keyword_wcs_names_dict[filename]
+        found_string = [i for i in keyword_wcs_list if wcsname == i]
         if found_string:
-            wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=wcsname)
+            wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=found_string[0])
         #...the headerlet WCS solutions -- need to get the HDRNAME to retrieve the headerlet
         else:
             headerlet_hdr_names = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="HDRNAME")
