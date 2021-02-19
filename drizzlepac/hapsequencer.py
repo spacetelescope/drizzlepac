@@ -295,6 +295,8 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
 
                 # Trim based on user-specified/default flag limit 'flag_trim_value' specified in parameter file
                 trimmed_rows = np.where(source_mask[cat_type])[0].tolist()
+                log.info("Removed {} rows with flag values > {} from catalog {}".format(len(trimmed_rows), flag_trim_value, filter_product_catalogs.catalogs[cat_type].sourcelist_filename))
+                log.info("{} catalog rows remain".format(len(filter_product_catalogs.catalogs[cat_type].source_cat['Flags']) - len(trimmed_rows)))
                 filter_product_catalogs.catalogs[cat_type].source_cat.remove_rows(trimmed_rows)
                 filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat.remove_rows(trimmed_rows)
 
