@@ -288,6 +288,15 @@ these values. Specific flag values are defined below in table 2:
     |            | or other region with a low number of input images         |
     +------------+-----------------------------------------------------------+
 
+.. attention::
+
+    The final output filter-specific sourcelists do not contain all detected sources. Sources that are considered
+    scientifically dubious are filtered out and not written to the final source catalogs. For all detectors other than
+    WFC3/IR, sources with a flag value greater than 5 are filtered out. For WFC3/IR, sources with a flag value of
+    65368 are filtered out. Users can adjust this value using a custom input parameter file and changing the
+    "flag_trim_value" parameter. For more details on how to create a custom parameter file, please refer to the
+    :ref:`generate_custom_svm_param_file` documentation page.
+
 2.4.2.1: Assignment of Flag Values 0 (Point Source), 1 (Extended Source), and 16 (Hot Pixels)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Assignment of flag values 0 (point source), 1 (extended source), and 16 (hot pixels) are determined purely based on the
