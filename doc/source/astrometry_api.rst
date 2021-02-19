@@ -18,7 +18,6 @@ align
 .. autofunction:: drizzlepac.align.check_and_get_data
 .. autofunction:: drizzlepac.align.perform_align
 .. autofunction:: drizzlepac.align.determine_fit_quality
-.. autofunction:: drizzlepac.align.generate_astrometric_catalog
 
 
 .. _amutils_api:
