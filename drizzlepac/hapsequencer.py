@@ -544,6 +544,14 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
         obs_info_dict, total_obj_list = poller_utils.interpret_obset_input(input_filename, log_level)
 
+        # It is possible the total_obj_list output from the poller_utils is an empty list.  An example
+        # of this would be a visit with only Grism/Prism and no direct images.  If this is the case,
+        # there is actually nothing to be done for the visit.
+        if not total_obj_list:
+            log.warning("")
+            log.warning("There are no viable Total Data Products in this visit so processing is exiting.")
+            sys.exit(0)
+
         # Generate the name for the manifest file which is for the entire visit.  It is fine
         # to use only one of the Total Products to generate the manifest name as the name is not
         # dependent on the detector.
