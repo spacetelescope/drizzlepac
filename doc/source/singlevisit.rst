@@ -293,7 +293,8 @@ input exposures using these header keywords for the stated rejection criteria.
 
 
 Any observation which meets any of these criteria are flagged to be ignored (not
-processed).  In addition, any data taken where the FGSLOCK keyword contains 'COARSE' or 'GY' will be flagged as potentially compromised in the comments generated during
+processed).  In addition, any data taken where the FGSLOCK keyword contains 'COARSE'
+or 'GY' will be flagged as potentially compromised in the comments generated during
 processing.
 
 All observations which are alignable based on these criteria are then
@@ -458,9 +459,12 @@ The SVM processing interprets the input data and verifies what input data can be
 processed.  At that point, the code determines what selection criteria apply to
 the data and uses that to obtain the appropriate parameter settings for the processing
 steps.  Applying the selection to select the appropriate parameter file simply requires
-matching up the key in the JSON file with the selection information. For example,
-a **filter product** would end up using the **filter_basic** criteria, while an
-8 exposure ACS/WFC association would end up selecting the **acs_wfc_any_n6** entry.
+matching up the key in the JSON file with the selection information. Depending on the
+detector, selection information can take the form of the number of input observations,
+the date that the observations were taken, the central filter wavelength or the dispersive
+element type. For example, a **filter product** would end up using the **filter_basic**
+criteria, while an 8 exposure ACS/WFC association would end up selecting the
+**acs_wfc_any_n6** entry.
 
 
 User-customization of Parameters
