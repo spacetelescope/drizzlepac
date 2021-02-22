@@ -914,7 +914,7 @@ class HAPPointCatalog(HAPCatalogBase):
                                                              box_size=self.param_dict['region_size'],
                                                              nsigma=self.param_dict['nsigma'],
                                                              mask=self.image.footprint_mask)
-                    if len(user_peaks) == 0:
+                    if not user_peaks:
                         user_peaks = None
 
                     log.info("UserStarFinder identified {} sources".format(len(user_peaks)))
