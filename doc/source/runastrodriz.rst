@@ -213,7 +213,7 @@ for the distortion model to the WCS.  This operation gets performed using the
     from stwcs.updatewcs import updatewcs
     updatewcs(calfiles_flc, use_db=False)
 
-where `calfiles_flc' is the list of CTE-corrected FLC files or in the case there are
+where `calfiles_flc` is the list of CTE-corrected FLC files or in the case there are
 no CTE-corrected files, the list of calibrated FLT files.  Crucially, the use
 of `use_db=False` forces `updatewcs` to only apply the distortion model to the
 default WCS to create what is referred to as the **pipeline-default WCS**.  This
