@@ -173,7 +173,7 @@ class OutputImage:
 
     def writeFITS(self, template, sciarr, whtarr, ctxarr=None,
                 versions=None, overwrite=yes, blend=True, virtual=False,
-                rules_file=None):
+                rules_file=None, logfile=None):
         """
         Generate PyFITS objects for each output extension
         using the file given by 'template' for populating
@@ -261,6 +261,7 @@ class OutputImage:
         prihdu.header['NEXTEND'] = nextend
         prihdu.header['FILENAME'] = self.output
         prihdu.header['PROD_VER'] = 'DrizzlePac {}'.format(version.__version__)
+        prihdu.header['DRIZPARS'] = (logfile, "Logfile for processing")
 
         # Update the ROOTNAME with the new value as well
         _indx = self.output.find('_drz')

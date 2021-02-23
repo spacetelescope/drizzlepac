@@ -14,7 +14,6 @@ reference catalog. ::
 
 """
 import os
-import pdb
 from io import BytesIO
 import requests
 import inspect
@@ -43,12 +42,13 @@ from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.time import Time
+from astropy.utils.decorators import deprecated
 
 import photutils  # needed to check version
 from photutils import detect_sources, source_properties, deblend_sources
 from photutils import Background2D
 from photutils import SExtractorBackground, StdBackgroundRMS
-from photutils import DAOStarFinder, IRAFStarFinder
+from photutils import DAOStarFinder
 from photutils import MMMBackground
 from photutils.psf import IntegratedGaussianPRF, DAOGroup
 from photutils.psf import IterativelySubtractedPSFPhotometry
@@ -57,6 +57,7 @@ from photutils import make_source_mask
 from tweakwcs import FITSWCS
 from stwcs.distortion import utils
 from stwcs import wcsutil
+from stwcs.updatewcs import astrometry_utils
 from stsci.tools import fileutil as fu
 from stsci.tools import parseinput
 from stsci.tools import logutil
@@ -81,10 +82,12 @@ else:
 
 MODULE_PATH = os.path.dirname(inspect.getfile(inspect.currentframe()))
 
-__all__ = ['build_reference_wcs', 'create_astrometric_catalog', 'compute_radius',
-           'find_gsc_offset', 'get_catalog',
+__all__ = ['create_astrometric_catalog', 'compute_radius',
+            'build_auto_kernel', 'find_fwhm',
+           'get_catalog', 'get_catalog_from_footprint',
            'extract_sources', 'find_hist2d_offset', 'generate_source_catalog',
-           'classify_sources']
+           'classify_sources', 'within_footprint',
+           'compute_similarity', 'determine_focus_index', 'max_overlap_diff']
 
 FOCUS_DICT = {'exp': [], 'prod': [], 'stats': {},
               'exp_pos': None, 'prod_pos': None,
@@ -168,7 +171,7 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
     if existing_wcs is not None:
         outwcs = existing_wcs
     else:
-        outwcs = build_reference_wcs(inputs)
+        outwcs = build_reference_wcs(inputs)  # TODO: replace with stwcs.updatewcs.astrometry_utils version
 
     if use_footprint:
         footprint = outwcs.calc_footprint()
@@ -238,7 +241,10 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
 
     return ref_table
 
-
+@deprecated(since="3.2.1",
+            name='drizzlepac.haputils.astrometric_utils.build_reference_wcs',
+            message='Replaced by stwcs.updatewcs.astrometry_utils.build_reference_wcs',
+            alternative='stwcs.updatewcs.astrometry_utils.build_reference_wcs')
 def build_reference_wcs(inputs, sciname='sci'):
     """Create the reference WCS based on all the inputs for a field"""
     # start by creating a composite field-of-view for all inputs
@@ -265,7 +271,11 @@ def build_reference_wcs(inputs, sciname='sci'):
 
 
 def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
-    """ Extract catalog from VO web service.
+    """ Extract reference catalog from VO web service.
+
+    Queries the catalog available at the ``SERVICELOCATION`` specified
+    for this module to get any available astrometric source catalog entries
+    around the specified position in the sky based on a cone-search.
 
     Parameters
     ----------
@@ -318,6 +328,10 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
 def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
     """ Extract catalog from VO web service based on the specified footprint
 
+    Queries the catalog available at the ``SERVICELOCATION`` specified
+    for this module to get any available astrometric source catalog entries
+    around the specified position in the sky based on the input footprint.
+
     Parameters
     ----------
     footprint : numpy.ndarray
@@ -364,7 +378,14 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
 
 
 def compute_radius(wcs):
-    """Compute the radius from the center to the furthest edge of the WCS."""
+    """Compute the radius from the center to the furthest edge of the WCS.
+
+    Parameters
+    -----------
+    wcs : `~astropy.wcsutil.HSTWCS` object
+        HSTWCS object for an exposure including a valid footprint
+
+    """
 
     ra, dec = wcs.wcs.crval
     img_center = SkyCoord(ra=ra * u.degree, dec=dec * u.degree)
@@ -375,7 +396,10 @@ def compute_radius(wcs):
 
     return radius
 
-
+@deprecated(since="3.2.1",
+            message="Replaced by stwcs.updatewcs.astrometry_utils.find_gsc_offset",
+            name='drizzlepac.haputils.astrometric_utils.find_gsc_offset',
+            alternative='stwcs.updatewcs.astrometry_utils.find_gsc_offset')
 def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
     """Find the GSC to GAIA offset based on guide star coordinates
 
@@ -419,6 +443,9 @@ def compute_2d_background(imgarr, box_size, win_size,
                           bkg_estimator=SExtractorBackground,
                           rms_estimator=StdBackgroundRMS):
     """Compute a 2D background for the input array.
+
+    This function uses `~photutils.Background2D` to determine an adaptive
+    background that takes into account variations in flux across the image.
 
     Parameters
     ==========
@@ -504,24 +531,35 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     This algorithm looks for an isolated point-source that is non-saturated to use as a template
     for the source detection kernel.  Failing to find any suitable sources, it will return a
     Gaussian2DKernel based on the provided FWHM as a default.
+
     Parameters
     ----------
     imgarr : ndarray
         Image array (ndarray object) with sources to be identified
+
+    whtarr : ndarray
+        Image array (ndarray object) for `imgarr` that provides an estimate of the
+        weight or errors for the processed image.
+
     fwhm : float
         Value of FWHM to use for creating a Gaussian2DKernel object in case no suitable source
         can be identified in the image.
+
     threshold : float
         Value from the image which serves as the limit for determining sources.
         If None, compute a default value of (background+5*rms(background)).
         If threshold < 0.0, use absolute value as scaling factor for default value.
+
     source_box : int
         Size of box (in pixels) which defines the minimum size of a valid source.
+
     isolation_size : int
         Separation (in pixels) to use to identify sources that are isolated from any other sources
         in the image.
+
     saturation_limit : float
         Flux in the image that represents the onset of saturation for a pixel.
+
     Notes
     ------
     Ideally, it would be best to determine the saturation_limit value from the data itself,
@@ -612,8 +650,28 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
 
     return (kernel, kernel_psf), kernel_fwhm
 
+
 def find_fwhm(psf, default_fwhm):
-    """Determine FWHM for auto-kernel PSF"""
+    """Determine FWHM for auto-kernel PSF
+
+    This function iteratively fits a Gaussian model to the extracted PSF
+    using `photutils.IterativelySubtractedPSFPhotometry` to determine
+    the FWHM of the PSF.
+
+    Parameters
+    -----------
+    psf : ndarray
+        Array (preferably a slice) containing the PSF to be measured.
+
+    default_fwhm : float
+        Starting guess for the FWHM
+
+    Returns
+    --------
+    fwhm : float
+        Value of the computed Gaussian FWHM for the PSF
+
+    """
     daogroup = DAOGroup(crit_separation=8)
     mmm_bkg = MMMBackground()
     iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
@@ -653,11 +711,11 @@ def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
 
     sigma = np.sqrt(2.0 * np.abs(bkg[1]))
     x, y, flux, src_id, sharp, round1, round2 = ndfind(img,
-                                                     sigma*threshold,
+                                                     sigma * threshold,
                                                      fwhm, bkg[1],
                                                      nbright=nbright,
                                                      use_sharp_round=True)
-    srcs = Table([x,y,flux,src_id], names=['xcentroid', 'ycentroid', 'flux', 'id'])
+    srcs = Table([x, y, flux, src_id], names=['xcentroid', 'ycentroid', 'flux', 'id'])
 
     """
     # Now, use IRAFStarFinder to identify sources across chip
@@ -737,7 +795,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
     if segm is None or segm.nlabels == 0:
         log.info("No detected sources!")
-        return None, None
+        return None, None, None
 
     log.debug("Creating segmentation map for {} ".format(outroot))
     if kernel is not None:
@@ -890,7 +948,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         log.info("Total Number of detected sources: {}".format(len(src_table)))
     else:
         log.info("No detected sources!")
-        return None, None
+        return None, None, None
 
     # Move 'id' column from first to last position
     # Makes it consistent for remainder of code
@@ -1155,7 +1213,7 @@ def generate_sky_catalog(image, refwcs, dqname="DQ", output=False):
     numSci = countExtn(image, extname='SCI')
     # if no refwcs specified, build one now...
     if refwcs is None:
-        refwcs = build_reference_wcs([image])
+        refwcs = astrometry_utils.build_reference_wcs([image])
     for chip in range(numSci):
         chip += 1
         # work with sources identified from this specific chip
@@ -1290,7 +1348,7 @@ def build_self_reference(filename, clean_wcs=False):
     else:
         sciname = 'sci'
 
-    wcslin = build_reference_wcs([filename], sciname=sciname)
+    wcslin = astrometry_utils.build_reference_wcs([filename], sciname=sciname)
 
     if clean_wcs:
         wcsbase = wcslin.wcs
@@ -1301,7 +1359,10 @@ def build_self_reference(filename, clean_wcs=False):
         customwcs = wcslin
     return customwcs
 
-
+@deprecated(since="3.2.1",
+            name='drizzlepac.haputils.astrometric_utils.read_hlet_wcs',
+            message='Replaced by stwcs.updatewcs.astrometry_utils.read_hlet_wcs',
+            alternative='stwcs.updatewcs.astrometry_utils.read_hlet_wcs')
 def read_hlet_wcs(filename, ext):
     """Insure `~stwcs.wcsutil.HSTWCS` includes all attributes of a full image WCS.
 
@@ -1639,17 +1700,16 @@ def maxBit(int_val):
 def compute_similarity(image, reference):
     """Compute a similarity index for an image compared to a reference image.
 
-    Similarity index is based on a the general algorithm used in the AmphiIndex
-    algorithm.
+    Similarity index is based on a the general algorithm used in the AmphiIndex algorithm.
+
         - identify slice of image that is a factor of 256 in size
         - rebin image slice down to a (256,256) image
         - rebin same slice from reference down to a (256,256) image
         - sum the differences of the rebinned slices
         - divide absolute value of difference scaled by reference slice sum
 
-    .. note::
-    This index will typically return values < 0.1 for similar images, and
-    values > 1 for dis-similar images.
+    .. note:: This index will typically return values < 0.1 for similar images, and
+              values > 1 for dis-similar images.
 
     Parameters
     ----------
@@ -1858,11 +1918,14 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsig
         Dictionary of difference scores for each input exposure drizzle product
         (from `singlefiles`) calculated for the region of maximum overlap with the final
         drizzle product `prodfile`.  Entries for each singlefile includes:
-            - distance : Hamming distance of singlefile from prodfile
-            - focus : focus index of singlefile
-            - focus_pos : position for best focus in singlefile
-            - product_focus : focus index for prodfile
-            - product_focus_pos : position for best focus in prodfile
+
+        ===================   =============================================
+        distance              Hamming distance of singlefile from prodfile
+        focus                 focus index of singlefile
+        focus_pos             position for best focus in singlefile
+        product_focus         focus index for prodfile
+        product_focus_pos     position for best focus in prodfile
+        ===================   =============================================
 
     """
 

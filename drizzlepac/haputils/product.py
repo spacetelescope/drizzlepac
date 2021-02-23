@@ -16,8 +16,9 @@ import os
 import traceback
 import shutil
 
-from stsci.tools import logutil
 from astropy.io import fits
+from stsci.tools import logutil
+from stwcs import updatewcs
 import numpy as np
 
 from .. import astrodrizzle
@@ -39,6 +40,7 @@ MASK_KWS = {"NPIXFRAC": [None, "Fraction of pixels with data"],
             "MEANNEXP": [None, "Mean number of exposures per pixel with data"],
             "MEDNEXP": [None, "Median number of exposures per pixel with data"],
             }
+
 
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
@@ -104,8 +106,9 @@ class HAPProduct:
 
     def generate_metawcs(self):
         """ A method to build a unique WCS for each TotalProduct product which is
-            generated based upon the merging of all the ExposureProducts which comprise the
-            specific TotalProduct.  This is done on a per TotalProduct basis as the Single
+            generated based upon the merging of all the ExposureProducts
+            which comprise the specific TotalProduct.  This
+            is done on a per TotalProduct basis as the Single
             Visit Mosaics need to be represented in their native scale.
 
         """
@@ -157,8 +160,24 @@ class TotalProduct(HAPProduct):
         self.edp_list = []
         self.fdp_list = []
         self.regions_dict = {}
+        self.grism_edp_list = []
 
         log.debug("Total detection object {}/{} created.".format(self.instrument, self.detector))
+
+    def update_drizpars(self):
+        """ Update ALL products with final name of trailer file """
+        # Update this total product
+        fits.setval(self.drizzle_filename, 'DRIZPARS', value=self.trl_filename)
+
+        # Update all filter drizzle products that were actually written out
+        for fdp in self.fdp_list:
+            if os.path.exists(fdp.drizzle_filename):
+                fits.setval(fdp.drizzle_filename, 'DRIZPARS', value=fdp.trl_filename)
+
+        # Update all exposure drizzle products that were actually written out
+        for edp in self.edp_list:
+            if os.path.exists(edp.drizzle_filename):
+                fits.setval(edp.drizzle_filename, 'DRIZPARS', value=edp.trl_filename)
 
     def find_member(self, name):
         """ Return member instance with filename 'name' """
@@ -173,6 +192,13 @@ class TotalProduct(HAPProduct):
         """ Add an ExposureProduct object to the list - composition.
         """
         self.edp_list.append(edp)
+
+    def add_grism_member(self, edp):
+        """ Add an GrismExposureProduct object to the list - composition.
+
+            This routine adds Grism or Prism exposures to the exposure list.
+        """
+        self.grism_edp_list.append(edp)
 
     def add_product(self, fdp):
         """ Add a FilterProduct object to the list - composition.
@@ -218,6 +244,7 @@ class TotalProduct(HAPProduct):
         except PermissionError:
             pass
 
+
 class FilterProduct(HAPProduct):
     """ A Filter Detection Product is a mosaic comprised of images acquired
         during a single visit with one instrument, one detector, a single filter,
@@ -253,7 +280,8 @@ class FilterProduct(HAPProduct):
         self.edp_list = []
         self.regions_dict = {}
 
-        log.debug("Filter object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
+        #log.debug("Filter object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
+        log.info("Filter object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
 
     def find_member(self, name):
         """ Return member instance with filename 'name' """
@@ -264,14 +292,14 @@ class FilterProduct(HAPProduct):
                 break
         return desired_member
 
-
     def add_member(self, edp):
+
         """ Add an ExposureProduct object to the list - composition.
         """
         self.edp_list.append(edp)
 
     def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
-                        fit_label='EVM', align_table=None, fitgeom='rscale'):
+                      fit_label='EVM', align_table=None, fitgeom='rscale'):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment
            routine.
@@ -329,7 +357,7 @@ class FilterProduct(HAPProduct):
 
                     align_table.select_fit(catalog_name, method_name)
                     align_table.apply_fit(headerlet_filenames=headerlet_filenames,
-                                         fit_label=fit_label)
+                                          fit_label=fit_label)
                 else:
                     log.warning("Not enough reference sources for absolute alignment...")
                     raise ValueError
@@ -349,7 +377,6 @@ class FilterProduct(HAPProduct):
             # created for alignment of each filter product here.
             if self.refname and os.path.exists(self.refname):
                 os.remove(self.refname)
-
 
         # Return a table which contains data regarding the alignment, as well as the
         # list of the flt/flc exposures which were part of the alignment process
@@ -402,6 +429,7 @@ class FilterProduct(HAPProduct):
         except PermissionError:
             # TODO:  trailer filename should be saved for moving later...
             pass
+
 
 class ExposureProduct(HAPProduct):
     """ An Exposure Product is an individual exposure/image (flt/flc).
@@ -490,6 +518,79 @@ class ExposureProduct(HAPProduct):
             shutil.move(self.trl_logname, self.trl_filename)
         except PermissionError:
             pass
+
+    def copy_exposure(self, filename):
+        """
+            Create a copy of the original input to be renamed and used for single-visit processing.
+
+            New exposure filename needs to follow the convention:
+            hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_fl[ct].fits
+
+            Parameters
+            ----------
+            filename : str
+                Original pipeline filename for input exposure
+
+            Returns
+            -------
+            edp_filename : str
+                New SVM-compatible HAP filename for input exposure
+
+        """
+        suffix = filename.split("_")[1]
+        edp_filename = self.basename + \
+                       "_".join(map(str, [self.filters, filename[:8], suffix]))
+
+        log.info("Copying {} to SVM input: \n    {}".format(filename, edp_filename))
+        try:
+            shutil.copy(filename, edp_filename)
+        except PermissionError:
+            pass
+
+        # Add HAP keywords as required by pipeline processing
+        with fits.open(edp_filename, mode='update') as edp_hdu:
+            edp_hdu[0].header['HAPLEVEL'] = (0, 'Classification level of this product')
+            edp_hdu[0].header['IPPPSSOO'] = edp_hdu[0].header['ROOTNAME']
+            edp_hdu[0].header['FILENAME'] = edp_filename
+
+        return edp_filename
+
+
+class GrismExposureProduct(HAPProduct):
+    """ A Grism Exposure Product is an individual Grism/Prism exposure/image (flt/flc).
+
+        The "grism_edp" is short hand for GrismExposureProduct.
+    """
+    def __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype, log_level):
+        super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
+
+        self.info = '_'.join([prop_id, obset_id, instrument, detector, filename, filters, filetype])
+        self.filters = filters
+        self.full_filename = self.copy_exposure(filename)
+
+        # Open the input FITS file to mine some header information.
+        # and make sure the WCS is up-to-date
+        hdu_list = fits.open(filename)
+        self.mjdutc = hdu_list[0].header['EXPSTART']
+        self.exptime = hdu_list[0].header['EXPTIME']
+
+        drizcorr = hdu_list[0].header['DRIZCORR']
+        if drizcorr == "OMIT":
+            updatewcs.updatewcs(self.full_filename, use_db=True)
+        hdu_list.close()
+
+        self.product_basename = self.basename + "_".join(map(str, [filters, self.exposure_name]))
+        self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
+        self.headerlet_filename = self.product_basename + "_hlet.fits"
+        self.trl_logname = self.product_basename + "_trl.log"
+        self.trl_filename = self.product_basename + "_trl.txt"
+
+        self.regions_dict = {}
+
+        # Define HAPLEVEL value for this product
+        self.haplevel = 1
+
+        log.info("Grism Exposure object {} created.".format(self.full_filename))
 
     def copy_exposure(self, filename):
         """
@@ -723,7 +824,7 @@ class SkyCellProduct(HAPProduct):
         return self.meta_wcs
 
     def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
-                        fit_label='MVM', align_table=None, fitgeom='rscale'):
+                      fit_label='MVM', align_table=None, fitgeom='rscale'):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment
            routine.
@@ -759,10 +860,10 @@ class SkyCellProduct(HAPProduct):
                 align_table.reference_catalogs[self.refname] = ref_catalog
                 if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
                     align_table.perform_fit(method_name, catalog_name, ref_catalog,
-                                           fitgeom=fitgeom)
+                                            fitgeom=fitgeom)
                     align_table.select_fit(catalog_name, method_name)
                     align_table.apply_fit(headerlet_filenames=headerlet_filenames,
-                                         fit_label=fit_label)
+                                          fit_label=fit_label)
                 else:
                     log.warning("Not enough reference sources for absolute alignment...")
                     raise ValueError
@@ -782,7 +883,6 @@ class SkyCellProduct(HAPProduct):
             # created for alignment of each filter product here.
             if self.refname and os.path.exists(self.refname):
                 os.remove(self.refname)
-
 
         # Return a table which contains data regarding the alignment, as well as the
         # list of the flt/flc exposures which were part of the alignment process

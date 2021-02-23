@@ -66,6 +66,7 @@ running AstroDrizzle.
   lift this enforced restriction on Windows systems once issues with logging are
   resolved.
 
+
 .. _runastrodriz-description:
 
 Pipeline Astrometric Calibration Description
@@ -87,6 +88,9 @@ it identifies from the observations and checks to see if any fit was successful.
 Finally, it selects the WCS solution most closely aligned to GAIA that as the
 basis for creating the final, distorted-corrected, combined
 drizzle products for the set of exposures being processed.
+
+.. note:: The API for the code used for these operations are described in more detail
+          :ref:`advanced_products_api`.
 
 Overview
 --------
@@ -375,13 +379,63 @@ A priori WCS solutions defined for use with HST data refer to improvements to th
 WCS solutions that were pre-computed.  As of 2020, there were 2 primary sources
 of `a priori` WCS solutions:
 
-    * GSC240:  correcting the previous guide star coordinates to the GAIA frame
-    * HSC30: corrections derived using the Hubble Source Catalog(HSC) coordinates cross-matched to the GAIA catalog
+    * **GSC240**:  correcting the previous guide star coordinates to the GAIA frame
+    * **HSC30**: corrections derived using the Hubble Source Catalog(HSC) coordinates cross-matched to the GAIA catalog
 
-The updated ``a priori`` solutions are stored as ``headerlets`` in the database.
+The updated ``a priori`` solutions are stored as ``headerlets`` in an astrometry database.
 The headerlet format allows them to be applied directly to the exposure using the
 STWCS package while requiring very little storage space (typically, < 120Kb per
-headerlet). More details on the ``headerlet`` can be found at https://stwcs.readthedocs.io/en/latest/headerlet.html.
+headerlet). More details on the ``headerlet`` can be found at `https://stwcs.readthedocs.io/en/latest/headerlet.html <https://stwcs.readthedocs.io/en/latest/headerlet.html>`_.
+
+These solutions get applied through the use of the `updatewcs <https://stwcs.readthedocs.io/en/latest/updatewcs.html>`_ task in STWCS.  This task not only recomputes the PRIMARY WCS (one used by DS9 for
+coordinates), but also queries the astrometry database to append all additional updated WCS solutions
+as headerlet extensions based on the IDCTAB specified in the image header. The astrometry database may
+also have solutions based on additional IDCTAB solutions, but those will only be applied if ``updatewcs``
+gets run manually with a non-default value for the ``all_wcs`` parameter.
+
+In the process of modifying the file, ``updatewcs`` also insures that there
+are no duplicate solutions based on the ``HDRNAME`` keyword unless otherwise specified by the user.
+Duplicate solutions can come from any source, even inadvertantly by the user when performing image
+alignment on their own, so removing duplicates insures that the file does not get cluttered with
+unnecessary extensions. This also highlights the need to insure that all new WCS solutions get
+provided with unique ``HDRNAME``, and preferably ``WCSNAME`` also, keyword values.  This will insure
+that the headerlet module does not thrown an Exception when trying to work with these alternate WCS
+headerlet extensions.
+
+Astrometry Database
+^^^^^^^^^^^^^^^^^^^^
+A publicly accessible database has been established to serve as a repository of
+``a priori`` WCS solutions (full descriptions of which are found in the following
+sections) as well as pipeline-generated ``a posteriori`` WCS solutions.
+This database can be accessed through functions provided by the `STWCS updatewcs.astrometry_utils
+module <https://stwcs.readthedocs.io/en/latest/astrometry_utils.html>`_.  This can result
+in several WCS solutions being available for each exposure, with one set of solutions for
+each distortion model that has been in use for these instruments since we initialized the
+database in early 2019.  The functions in the ``stwcs.updatewcs.astrometry_utils`` module will
+allow someone to determine the full list of WCSs available for a given exposure and have them applied
+as desired to a given exposure.
+
+
+Supporting New IDCTABs
+^^^^^^^^^^^^^^^^^^^^^^^
+Calibrations of the distortion model for each instrument evolves over time due to changes in the telescope as
+well as improvements in the modeling of the distortion, including better understanding of the time-dependent
+aspects of the distortion model.  These new models get provided as new versions of the
+``IDCTAB`` reference file, along with the ``D2IMFILE`` and ``NPOLFILE``.  The astrometry database
+contains ``a priori`` WCSs which represent the WCS for each
+exposure based on the coordinates of the guide stars used for the exposure after updating
+their coordinates to ones determined from the GAIA catalogs. However, they were originally computed
+based on the ``IDCTAB`` reference file in use when the database was first established.
+
+If the ``IDCTAB`` specified in
+the image is not found in any of the WCSs in the database, the ``a priori`` WCS based on that ``IDCTAB`` get
+determined by the ``updatewcs`` task. It starts by querying the guide-star web
+interface to retrieve the corrections from the original guide star coordinates using the `stwcs.updatewcs.astrometry_utils.find_gsc_offset function <https://stwcs.readthedocs.io/en/latest/astrometry_utils.html>`_.  These offsets can also evolve as new GAIA catalogs are released to provide more accurate coordinates for the guide stars.  These offsets are then used to correct the reference point of the pipeline-default WCS based on the new ``IDCTAB`` using the ``apply_new_apriori`` method in the `AstrometryDB class <https://stwcs.readthedocs.io/en/latest/astrometry_utils.html#stwcs.updatewcs.astrometry_utils.AstrometryDB.apply_new_apriori>`_.
+This method uses the same lines of code used to populate the astrometry database with the original set
+of ``a priori`` WCS solutions. This not only insures that there is
+always a GAIA-based WCS available for all exposures, but it does it using the best available information.
+This new ``a priori`` WCS not only gets added to the image as an alternate (and perhaps PRIMARY) WCS, but it
+also gets written out as a headerlet as an archive of the new WCS.
 
 
 GSC240: GAIA and the HST Guide Stars
@@ -402,13 +456,16 @@ astrometry database to be applied on-demand to all observations taken before Oct
 
 These solutions will not result in perfect alignment to the GAIA catalog, due to
 temporal uncertainties in the calibration of the instrument's field of view relative
-to the FGS's used to point and to guid the telescope during the observations.  This
+to the FGS's used to point and to guide the telescope during the observations.  This
 uncertainty can be up to 0.5 arcseconds, but it still represents a significant improvement
 in the absolute astrometry from the 1-sigma of 1 arcsecond for previous WCS solutions.
 
 All observations
 taken after Oct 2017 already used guide-star coordinates based on GAIA, so no new
-WCS was needed as it would simply be the same as the pipeline default WCS.
+WCS was needed as it would simply be the same as the pipeline default WCS.  However, if
+``updatewcs`` computes the new ``a priori`` WCS on-the-fly for a new IDCTAB for observations
+taken after Oct 2017, it will be given the 'GSC240' (or newer) label in the `WCSNAME` to indicate
+the type of WCS being applied to the image.
 
 HSC30: Hubble Source Catalog WCSs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -434,23 +491,30 @@ and ASN file (if processing an association) are copied from the main directory i
 the new sub-directory and the process moves to the sub-directory to continue its
 processing.
 
-
-Applying the A Priori Solutions
+Applying A Priori Solutions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Application of these `a priori` WCS solutions simply involves running the ``updatewcs``
+Application of ``a priori`` WCS solutions computed in previous STScI automated
+calibration (pipeline) processing also occurs when running the ``updatewcs``
 task with ``use_db=True`` (the default setting).  This queries the astrometry
-database and retrieves the headerlets for all the ``a priori`` solutions.  The
-database also reports what solution is flagged as the ``best`` solution, which will
-typically result in the closest alignment to GAIA.  All the headerlets get appended
-as new extensions to the observations FITS file, then the ``a priori`` solution flagged as ``best``
+database and retrieves the headerlets for all the ``a priori`` solutions.  Only
+those WCSs based on the currently specified IDCTAB will be retained unless the user
+requests that all solutions be kept.
+
+The database reports what solution is flagged as the ``best`` solution, which will
+typically result in the closest alignment to GAIA and will be the previously
+computed ``a posteriori`` solution if available.  All the retrieved headerlets get appended
+as new extensions to the observations FITS file, then the database WCS solution flagged as ``best``
 gets applied to replace the active or primary WCS in the observation after saving
-a copy of the original primary WCS.  Other solutions could be provided by the
-database that were derived directly from the observation itself, perhaps in previous
-pipeline processing runs.  These solutions are retained, but not applied at this point
-since it is not clear whether the distortion model has changed from those saved
-in the database, or whether the pipeline software has been improved to provide a
-more accurate or more robust solution.  Finally, we are only interested in seeing
-whether there are any issues in applying the pre-defined ``a priori`` corrections.
+a copy of the original primary WCS.  However, this solution only gets used
+to replace the current PRIMARY WCS in the SCI header if it was based on the
+same IDCTAB as currently specified in the image primary header.
+The other solutions returned by the database are retained, but not applied at this point
+to enable the user to switch between them later as appropriate for their work.
+
+When performing the standard processing with ``runastrodriz``, we are only interested in seeing
+whether there are any issues in applying the pre-defined ``a priori`` corrections, while
+also setting the standard for the relative alignment for comparison with any new ``a posteriori``
+fit that may be determined later in the processing.
 
 Generating A Priori Products
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -617,8 +681,8 @@ Successful alignment of the WCSs to a GAIA catalog means that these ``a posterio
 updated exposures can be combined to create a drizzled product using ``AstroDrizzle``.
 
 
-Verify A Posteriori Alignment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Verify the A Posteriori Alignment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 These newly updated drizzle products still need to be evaluated to insure that the
 fit performed to GAIA maintained relative alignment between the images as well.
 Mis-alignment of the images to each other can result from too few sources being
