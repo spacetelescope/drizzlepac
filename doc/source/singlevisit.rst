@@ -55,7 +55,8 @@ relies on the results of the standard astrometric
 processing of the individual exposures and associations as the starting point
 for alignment. This processing then follows these steps to create the final products:
 
-  #. interpret the list of filenames for all exposures taken as part of a single visit
+  #. interpret the list of filenames for all exposures taken as part of a single visit and filter out images that
+     cannot and/or should not be processed (e.g., exposure time of zero) from further processing.
   #. copy the pipeline-calibrated (FLT/FLC) files to the current directory for processing
   #. rename the input files to conform to the single-visit naming conventions. (This step insures that the original
      pipeline results remain available in the archive unchanged)
