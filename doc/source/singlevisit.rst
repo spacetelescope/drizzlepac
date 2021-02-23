@@ -87,7 +87,6 @@ components:
   * **<filter>** : hyphen-separated list of filter names used for the observations
   * **<ipppssoo>** : standard 8 character rootname for a single exposure defined by the pipeline
   * **<ipppss>** : standard 6 character designation of the **<instr>**/**<propid>**/**<obsetid>** for this visit
-  * **asn.fits** : suffix for the association table
   * **dr[cz].fits** : suffix for drizzled products
   * **fl[ct].fits** : suffix for pipeline-calibrated files
   * **hlet.fits** : suffix for headerlet files containing the WCS solution used to create the final drizzle products/mosaics
