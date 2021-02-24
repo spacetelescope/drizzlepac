@@ -13,7 +13,7 @@
     "sensitivity": 0.95,
     "cr_residual": 0.0,
     "region_size": 11,
-    "flag_trim_value": 65368,
+    "flag_trim_value": 5,
     "simple_bkg": false,
     "zero_percent": 25.0,
     "negative_percent": 15.0,
