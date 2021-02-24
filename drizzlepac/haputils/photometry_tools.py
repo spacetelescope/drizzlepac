@@ -20,9 +20,10 @@ All the stats are sigma clipped.  These are calculated by the
 functions in aperture_stats_tbl.
 
 .. note::
-    Currently, the background computations will fully include a pixel that has ANY overlap with the background aperture
-    (the annulus). This is to simplify the computation of the median, as a weighted median is nontrivial, and slower.
-    Copied from https://grit.stsci.edu/HLA/software/blob/master/HLApipeline/HLApipe/scripts/photometry_tools.py
+    Currently, the background computations will fully include a pixel that has ANY overlap with the
+    background aperture (the annulus). This is to simplify the computation of the median, as a weighted
+    median is nontrivial, and slower. Copied from https://grit.stsci.edu/HLA/software/blob/master/HLApipeline/HLApipe/scripts/photometry_tools.py
+
 Authors
 -------
     - Varun Bajaj, January 2018

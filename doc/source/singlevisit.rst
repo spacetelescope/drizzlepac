@@ -42,7 +42,7 @@ Primary User-Interface
 =======================
 One task has been written to perform the single-visit processing: ``runsinglehap``.
 It gets used by STScI to generate the single-visit products which
-can be found in the Mikulsik Archive for Space Telescopes (MAST) archive. This task
+can be found in the Mikulski Archive for Space Telescopes (MAST) archive. This task
 can also be run from the operating system command-line or from within a
 Python session to reproduce those results, or with modification of the input
 parameters, perhaps improve on the standard archived results.  Full details on
@@ -55,20 +55,22 @@ relies on the results of the standard astrometric
 processing of the individual exposures and associations as the starting point
 for alignment. This processing then follows these steps to create the final products:
 
-  * interpret the list of filenames for all exposures taken as part of a single visit
-  * copy the pipeline-calibrated (FLT/FLC) files to the current directory for processing
-  * rename the input files to conform to the single-visit naming conventions
+  #. interpret the list of filenames for all exposures taken as part of a single visit and filter out images that
+     cannot and/or should not be processed (e.g., exposure time of zero) from further processing.
+  #. copy the pipeline-calibrated (FLT/FLC) files to the current directory for processing
+  #. rename the input files to conform to the single-visit naming conventions. (This step insures that the original
+     pipeline results remain available in the archive unchanged)
+  #. Define what output products can be generated
+  #. Align all exposures in a relative sense (all to each other)
+  #. Create a composite source catalog from all aligned input exposures
+  #. Cross-match and fit this composite catalog to GAIA to determine new WCS solution
+  #. Update renamed input exposures with results of alignment to GAIA
+  #. Create each of the output products using the updated WCS solutions
 
-    * This step insures that the original pipeline results remain available in
-      the archive unchanged
-
-  * Define what output products can be generated
-  * Align all exposures in a relative sense (all to each other)
-  * Create a composite source catalog from all aligned input exposures
-  * Cross-match and fit this composite catalog to GAIA to determine new WCS solution
-  * Update renamed input exposures with results of alignment to GAIA
-  * Create each of the output products using the updated WCS solutions
-
+.. note::
+    It should be noted that processing is performed on a detector-by-detector basis; if a visit contains input data
+    from *n* detectors, steps 5-9 will be executed serially *n* times to process the input images from each detector
+    separately.
 
 .. _svm_naming_convention:
 
@@ -80,16 +82,19 @@ convention used for the names of these input and output files uses these
 components:
 
   * **<propid>** : the proposal ID for this visit
-  * **<obsetid>** : the 2-digit visit ID from this proposal
-  * **<instr>** : 3 letter designation of the instrument used for the observations
+  * **<obsetid>** : the 2-digit visit ID from this proposal 
+  * **<instr>** : 3 or 4 letter designation of the instrument used for the observations
   * **<detector>** : name of the detector used for the observations
   * **<filter>** : hyphen-separated list of filter names used for the observations
   * **<ipppssoo>** : standard 8 character rootname for a single exposure defined by the pipeline
   * **<ipppss>** : standard 6 character designation of the **<instr>**/**<propid>**/**<obsetid>** for this visit
   * **dr[cz].fits** : suffix for drizzled products
   * **fl[ct].fits** : suffix for pipeline-calibrated files
-  * **asn.fits** : suffix for the association table
   * **hlet.fits** : suffix for headerlet files containing the WCS solution used to create the final drizzle products/mosaics
+  * **<ipppss>_trl.txt** : single visit processing log files
+  * **point-cat.ecsv** : suffix for point (aperture) photometric catalog products
+  * **segment-cat.ecsv** : suffix for segment photometric catalog products
+
 
 These components get combined to create filenames specific to each type of file being
 processed.  The following table provides a complete list of all the products
@@ -98,7 +103,7 @@ created as a result of single-visit processing.
 .. list-table:: Single-visit product filenames
   :widths: 8 25 83
   :header-rows: 1
-
+  
   * - Product
     - File Type
     - Filename for Files Produced
@@ -108,7 +113,7 @@ created as a result of single-visit processing.
   * -
     - flat-field product
     - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_fl[ct].fits
-  * -
+  * - 
     - headerlet file
     - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_hlet.fits
   * -
@@ -117,7 +122,7 @@ created as a result of single-visit processing.
   * -
     - preview (full size)
     - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_dr[cz].jpg
-  * -
+  * - 
     - preview (thumbnail)
     - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_dr[cz]_thumb.jpg
   * - Filter
@@ -129,7 +134,7 @@ created as a result of single-visit processing.
   * -
     - segment-source catalog
     - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppss>_segment-cat.ecsv
-  * -
+  * - 
     - trailer file
     - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppss>_trl.txt
   * -
@@ -147,22 +152,22 @@ created as a result of single-visit processing.
   * -
     - segment-source catalog
     - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_segment-cat.ecsv
-  * -
+  * - 
     - trailer file
     - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_trl.txt
   * -
     - preview (full size)
     - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_dr[cz].jpg
-  * -
+  * - 
     - preview (thumbnail)
     - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_dr[cz]_thumb.jpg
-  * -
+  * - 
     - color preview (full size)
     - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_<filters>_dr[cz].jpg
-  * -
+  * - 
     - color preview (thumbnail)
     - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_<filters>_dr[cz]_thumb.jpg
-
+    
 
 Processing the Input Data
 =========================
@@ -281,9 +286,9 @@ input exposures using these header keywords for the stated rejection criteria.
     - 0
     - no exposure time, no data to align
   * - TARGNAME
-    - DARK, TUNGSTEN, BIAS, FLAT,
-    - No alignable external sources in these calibration modes
-  * -
+    - DARK, TUNGSTEN, BIAS, FLAT, 
+    - No alignable external sources in these calibration modes 
+  * - 
     - EARTH-CALIB, DEUTERIUM
     - No alignable external sources in these calibration modes
   * - CHINJECT
@@ -292,7 +297,8 @@ input exposures using these header keywords for the stated rejection criteria.
 
 
 Any observation which meets any of these criteria are flagged to be ignored (not
-processed).  In addition, any data taken where the FGSLOCK keyword contains 'COARSE' or 'GY' will be flagged as potentially compromised in the comments generated during
+processed).  In addition, any data taken where the FGSLOCK keyword contains 'COARSE'
+or 'GY' will be flagged as potentially compromised in the comments generated during
 processing.
 
 All observations which are alignable based on these criteria are then
@@ -314,7 +320,7 @@ The **product list** is a Python list of
 which represent each and every output product to be created for the visit.
 Each **Product** instance contains:
 
-  * list of filenames for all input exposures that will contribute to the output drizzlep product
+  * list of filenames for all input exposures that will contribute to the output drizzle product
   * WCS for output drizzle product
   * pre-defined names for all output files associated with this **Product** including:
 
@@ -330,7 +336,7 @@ Each **Product** instance contains:
     * aligning the exposures to an astrometric reference (GAIA)
     * applying the selected parameters to ``AstroDrizzle``
     * drizzling the inputs to create the output drizzle product
-    * determining the source catalogs fron the drizzle product
+    * determining the source catalogs from the drizzle product
 
 This interpretation of the list of input filenames gets performed using the
 code in :ref:`poller_utils_api` by
@@ -414,7 +420,7 @@ catalog (defaults to **GAIADR2**) are lower under the expectation that large
 offsets (> 0.5 arcseconds) have already been removed in the pipeline processing.
 This makes the SVM alignment more robust across a wider range of types of fields-of-view.
 The final updated WCS will be provided with a name that reflects this cross-filter
-alignment using **-FIT-SVM-<catalog name>** as the final half of the **WCSNAME**
+alignment using **-FIT_SVM_<catalog name>** as the final half of the **WCSNAME**
 keyword.  More details on the WCS naming conventions can be found in the
 :ref:`wcsname-conventions` section.
 
@@ -457,19 +463,25 @@ The SVM processing interprets the input data and verifies what input data can be
 processed.  At that point, the code determines what selection criteria apply to
 the data and uses that to obtain the appropriate parameter settings for the processing
 steps.  Applying the selection to select the appropriate parameter file simply requires
-matching up the key in the JSON file with the selection information. For example,
-a **filter product** would end up using the **filter_basic** criteria, while an
-8 exposure ACS/WFC association would end up selecting the **acs_wfc_any_n6** entry.
+matching up the key in the JSON file with the selection information. Depending on the
+detector, selection information can take the form of the number of input observations,
+the date that the observations were taken, the central filter wavelength or the dispersive
+element type. For example, a **filter product** would end up using the **filter_basic**
+criteria, while an 8 exposure ACS/WFC association would end up selecting the
+**acs_wfc_any_n6** entry.
 
 
 User-customization of Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The parameter configuration file now included in the ``drizzlepac`` package are
-designed to be easily customized for manual processing with both ``runastrodriz``
-(pipeline astrometry processing) and ``runsinglehap`` (SVM processing).  These
+The parameter configuration files now included in the ``drizzlepac`` package are
+designed to be easily customized for manual processing with both ``runastrodriz`` 
+(pipeline astrometry processing) and ``runsinglehap`` (SVM processing).  These 
 ASCII JSON files can be edited prior to manual reprocessing to include whatever
 custom settings would best suit the science needs of the research being performed
-with the data.
+with the data. Template SVM processing pipeline parameter files populated with default
+values can be created using ``generate_custom_svm_param_file``. For details on how these
+parameter files can be created, please refer to the :ref:`generate_custom_svm_param_file`
+documentation.
 
 
 Defining the Output WCS
@@ -550,3 +562,14 @@ the standard calibration pipeline.  Instead, it derives 2 separate source catalo
 from each drizzled **filter product** to provide a standardized measure of each
 visit. For more details on how the catalogs are produced, please refer to the :ref:`catalog_generation` documentation
 page.
+
+Catalog Quality Control
+------------------------
+All detected sources are not created equal. Raw source catalogs typically contain a mix of scientifically legitimate
+point sources, scientifically legitimate extended sources, and scientifically dubious sources (those likely impacted by
+low signal-to-noise ratio, detector artifacts, saturation, cosmic rays, etc.). The last set of algorithms run by SVM
+processing classifies each detected source into one or more of these groups and assigns each source a classification
+value, known as a flag. Based on the flag value, sources that are obviously scientifically dubious are filtered out and
+not written to the final source catalogs. More details on this process can be found in section :ref:`flag_generation`
+of the catalog generation documentation page.
+

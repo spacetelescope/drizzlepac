@@ -256,6 +256,8 @@ We use the concentration index to classify automatically each identified photome
 (i.e. stars), an extended source (i.e. galaxies, nebulosity, etc.), or as an “anomalous” source (i.e. saturation,
 hot pixels, cosmic ray hits, etc.). This designation is described by the value in the "flags" column
 
+.. _flag_generation:
+
 2.4.2: Determination of Flag Values
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The flag value associated with each source provides users with a means to distinguish between legitimate point sources,
@@ -285,6 +287,14 @@ these values. Specific flag values are defined below in table 2:
     | 64         | False detection due proximity of source to image edge     |
     |            | or other region with a low number of input images         |
     +------------+-----------------------------------------------------------+
+
+.. attention::
+
+    The final output filter-specific sourcelists do not contain all detected sources. Sources that are considered
+    scientifically dubious are filtered out and not written to the final source catalogs. For all detectors, sources
+    with a flag value greater than 5 are filtered out. Users can adjust this value using a custom input parameter file
+    and changing the "flag_trim_value" parameter. For more details on how to create a custom parameter file, please
+    refer to the :ref:`generate_custom_svm_param_file` documentation page.
 
 2.4.2.1: Assignment of Flag Values 0 (Point Source), 1 (Extended Source), and 16 (Hot Pixels)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
