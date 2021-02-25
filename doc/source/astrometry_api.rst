@@ -10,6 +10,15 @@ observations and to verify the alignment of the observations.
 .. toctree::
    :maxdepth: 1
 
+.. _align_api:
+
+align
+------
+.. automodule:: drizzlepac.align
+.. autofunction:: drizzlepac.align.check_and_get_data
+.. autofunction:: drizzlepac.align.perform_align
+.. autofunction:: drizzlepac.align.determine_fit_quality
+
 
 .. _amutils_api:
 
