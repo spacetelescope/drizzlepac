@@ -11,6 +11,7 @@
     "starfinder_algorithm": "psf",
     "scale": 100.0,
     "sensitivity": 0.95,
+    "block_size": [1024, 1024],
     "cr_residual": 0.0,
     "region_size": 11,
     "flag_trim_value": 5,

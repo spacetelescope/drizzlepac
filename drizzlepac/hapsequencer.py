@@ -738,10 +738,10 @@ def run_align_to_gaia(tot_obj, log_level=logutil.logging.INFO, diagnostic_mode=F
     # Clean up if the align_table does not exist - the metawcs file
     # may already be deleted, but make sure here.
     if align_table is None:
-        gaia_obj.refname = None
         headerlet_filenames = []
         try:
             os.remove(gaia_obj.refname)
+            gaia_obj.refname = None
         except (OSError, TypeError):
             pass
     else:
@@ -1045,8 +1045,8 @@ def collect_wcs_names(edp_list, image_type):
 
     image_dict: dictionary {filename: list}
         The dictionary is used to associate an individual image/filename with
-        a list of *all* WCS solution names in the file 
-    
+        a list of *all* WCS solution names in the file
+
     """
 
     image_wcs_set = set()
@@ -1131,7 +1131,7 @@ def update_active_wcs(filename, wcsname, keyword_wcs_names_dict, image_dict):
     Returns
     -------
     None
-    
+
     """
     # For exposures with multiple science extensions (multiple chips),
     # generate a combined WCS
@@ -1179,7 +1179,7 @@ def delete_ramp_exposures(obj_list, type_of_list):
     The Total Data Product (tdp) object is comprised of a list of Filter Product objects,
     as well as a list of Exposure Product objects.  The Ramp filter
     images need to be processed in the same manner as nominal exposures for at least
-    some of the processing steps.  Because of this, it was deemed best to keep the 
+    some of the processing steps.  Because of this, it was deemed best to keep the
     Ramp exposures in the tdp list attributes, until their final processing
     stage (align_to_gaia), and then delete these objects from the attribute
     lists. This function handles the deletion of Ramp images from the input

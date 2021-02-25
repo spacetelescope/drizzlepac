@@ -8,11 +8,13 @@ import warnings
 
 import numpy as np
 
+import skimage
 from astropy.io import fits as fits
 from photutils.detection import findstars
 
 from stsci.tools import fileutil as fu
 
+from . import astrometric_utils as amutils
 from .. import astrodrizzle
 
 #
@@ -48,7 +50,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 # ======================================================================================================================
 
-def fft_deconv_img(img, psf, freq_limit=0.95, sigma=None):
+def fft_deconv_img(img, psf, freq_limit=0.95, block_size=(1024, 1024)):
     """ FFT image deconvolution
 
     PARAMETERS
@@ -66,10 +68,6 @@ def fft_deconv_img(img, psf, freq_limit=0.95, sigma=None):
         This value should result in selecting a frequency
         one to two orders of magnitude below the largest spectral component of the point-spread function.
 
-    sigma : float or None, optional
-        Sigma of Gaussian filter to apply to deconvolved array to smooth out
-        final results.  If None, no smoothing gets applied.
-
     RETURNS
     -------
     deconv : ndarray
@@ -83,6 +81,8 @@ def fft_deconv_img(img, psf, freq_limit=0.95, sigma=None):
     # This also has the advantage of insuring we are only working on a copy of the input PSF
     psf = np.nan_to_num(psf, 0.0)
 
+    psf = _center_psf(psf, block_size)
+
     # Compute alpha scaling based on PSF frequency limit
     P2 = np.abs(np.copy(psf).flatten())
     P2 = np.sort(P2)[::-1]
@@ -90,37 +90,50 @@ def fft_deconv_img(img, psf, freq_limit=0.95, sigma=None):
     alpha = P2[index]
     del P2
 
-    psf_y, psf_x = np.where(psf == psf.max())
-    psf_y = psf_y[0]
-    psf_x = psf_x[0]
-    psf_center = [psf.shape[0] // 2, psf.shape[1] // 2]
-    if int(psf_y) != psf_center[0] or int(psf_x) != psf_center[1]:
-        # We need to recenter the PSF
-        psf_section = np.where(psf != 0.0)
-        psf_xr = [psf_section[1].min(), psf_section[1].max()]
-        psf_yr = [psf_section[0].min(), psf_section[0].max()]
-        psf_size = [(psf_yr[1] - psf_yr[0]) // 2, (psf_xr[1] - psf_xr[0]) // 2]
-        # If psf_size is not at least 2 * psf_max//2, increase to that value
-        # This will insure that the final position of the PSF in the output is at the exact center
-        psf_max = np.where(psf[psf_yr[0]:psf_yr[1], psf_xr[0]:psf_xr[1]] == psf.max())
-        psf_len = max(max(psf_max[0][0] // 2, psf_size[0]), max(psf_max[1][0] // 2, psf_size[1]))
+    # Insure input image also has no NaN values, only if necessary
+    # This should be less memory-intensive that np.isnan()
+    if len(np.where(img == np.nan)[0]) > 0:
+        img = np.nan_to_num(img, copy=True, nan=0.0)
+    img_shape = img.shape
 
-        centered_psf = psf * 0.0
-        centered_psf[psf_center[0] - psf_len: psf_center[0] + psf_len,
-                     psf_center[1] - psf_len: psf_center[1] + psf_len] = psf[psf_y - psf_len: psf_y + psf_len,
-                                                                             psf_x - psf_len: psf_x + psf_len]
-        psf = centered_psf
-
-    # Insure input image also has no NaN values
-    img = np.nan_to_num(img, 0.0)
+    # Break up image into blocks that will be deconvolved separately, then
+    # pieced back together again.
+    # Returns: {'slices':[], 'new_shape':(y, x), 'blocks':[N, M, y, x]}
+    block_dict = create_blocks(img, block_size=block_size)
+    img_blocks = block_dict['blocks']
+    del img
 
     # FFT point spread function (first column of theory matrix G)
+    # In order to avoid memory errors, this code:
+    #   - Splits the input into (non-overlapping) blocks using:
+    #        slices = skimage.util.view_as_blocks(arr, block_shape=(1024,1024))
+    #   -  perform the FFT on each block separately (as if separate exposures)
+    #        spectrum = np.fft.fft2(slices)
+    m_maps = img_blocks * 0.
+    for a in range(img_blocks.shape[0]):
+        for b in range(img_blocks.shape[1]):
+            block = img_blocks[a, b, :, :]
+            m_map = _perform_deconv(block, psf, alpha)
+            m_maps[a, b, :, :] = m_map
+
+    # Re-constitute deconvolved image blocks into single image
+    # rebuild_arr(block_arr, slices, new_shape, output_shape)
+    deconv_img = rebuild_arr(m_maps,
+                             block_dict['slices'],
+                             block_dict['new_shape'],
+                             img_shape)
+    return deconv_img
+
+# ======================================================================================================================
+# Functions to manage PSF library for deconvolution
+#
+def _perform_deconv(img_block, psf, alpha):
     P = np.fft.fft2(psf)
 
     # FFT2 measurement
     # Use image in husky_conv.png
     # U^H d
-    D = np.fft.fft2(img)
+    D = np.fft.fft2(img_block)
 
     # -dampped spectral components,
     # -also known as Wiener filtering
@@ -131,165 +144,209 @@ def fft_deconv_img(img, psf, freq_limit=0.95, sigma=None):
     # m_map = U (conj(S)/(|S|^2 + alpha^2)) U^H d
     m_map = (D.shape[1] * D.shape[0]) * np.fft.fftshift(np.fft.ifft2(M).real)
 
-    if sigma:
-        m_map = ndimage.gaussian_filter(m_map, sigma=sigma)
+    zero_mask = (img_block > 0).astype(np.int16)
+    m_map *= zero_mask
+
     return m_map
 
-# ======================================================================================================================
 
-# Functions to manage PSF library for deconvolution
+def _center_psf(psf, img_block_shape):
+    """Create centered PSF image with same shape as img_block"""
+    psf_y, psf_x = np.where(psf == psf.max())
+    psf_y = psf_y[0]
+    psf_x = psf_x[0]
+    psf_center = [(img_block_shape[0] // 2), (img_block_shape[1] // 2)]
+    centered_psf = np.zeros(img_block_shape, dtype=psf.dtype)
 
-def find_psf(imgname, instr=None, detector=None, filter=None, path_root=None):
+    # We need to recenter the PSF
+    psf_section = np.where(psf != 0.0)
+    psf_xr = [psf_section[1].min(), psf_section[1].max()]
+    psf_yr = [psf_section[0].min(), psf_section[0].max()]
+    psf_size = [(psf_yr[1] - psf_yr[0]) // 2, (psf_xr[1] - psf_xr[0]) // 2]
+    # If psf_size is not at least 2 * psf_max//2, increase to that value
+    # This will insure that the final position of the PSF in the output is at the exact center
+    psf_max = np.where(psf[psf_yr[0]:psf_yr[1], psf_xr[0]:psf_xr[1]] == psf.max())
+    psf_len = max(max(psf_max[0][0] // 2, psf_size[0]), max(psf_max[1][0] // 2, psf_size[1]))
+
+    centered_psf[psf_center[0] - psf_len: psf_center[0] + psf_len,
+                 psf_center[1] - psf_len: psf_center[1] + psf_len] = psf[psf_y - psf_len: psf_y + psf_len,
+                                                                         psf_x - psf_len: psf_x + psf_len]
+    return centered_psf
+
+
+def pad_arr(arr, block=1024):
+    """ Zero-pad an input array up to an integer number of blocks in each dimension"""
+    if isinstance(block, int):
+        block = (block, block)
+    new_shape = (arr.shape[0] + (block[0] - (arr.shape[0] % block[0])),
+                 arr.shape[1] + (block[1] - (arr.shape[1] % block[1])))
+    new_arr = np.zeros(new_shape, dtype=arr.dtype)
+    new_arr[:arr.shape[0], :arr.shape[1]] = arr
+    return new_arr
+
+
+def create_blocks(arr, block_size=(1024, 1024)):
+    if arr.shape[0] % block_size[0] != 0 or arr.shape[1] % block_size[1] != 0:
+        new_arr = pad_arr(arr, block=block_size)
+    else:
+        new_arr = arr
+
+    new_shape = new_arr.shape
+
+    # Create blocks from image of size block_size
+    # Output set of blocks will have shape: [N, M, block_size[0], block_size[1]]
+    blocks = skimage.util.view_as_blocks(new_arr, block_size)
+
+    slices = []
+    for a in range(blocks.shape[0]):
+        for b in range(blocks.shape[1]):
+            slices.append([a, b, slice(block_size[0] * a, block_size[0] * (a + 1)),
+                                 slice(block_size[1] * b, block_size[1] * (b + 1))])
+
+    del new_arr
+    return {'slices': slices, 'new_shape': new_shape, 'blocks': blocks}
+
+
+def rebuild_arr(block_arr, slices, new_shape, output_shape):
+    """Convert convolved blocks into full array that matches original input array"""
+    out_arr = np.zeros(new_shape, dtype=block_arr.dtype)
+    for s in slices:
+        out_arr[(s[2], s[3])] = block_arr[s[0], s[1], :, :]
+    return out_arr[:output_shape[0], :output_shape[1]]
+
+
+def find_psf(imgname, path_root=None):
     """Pull PSF from library based on unique combination of intrument/detector/filter.
 
     Parameters
     ===========
     imgname : str
-        Image name of science image to be deconvolved.  If the header contains instrument, detector, and filters,
-        then those additional parameters do not need to be specified.
-
-    instr : str, optional
-        If not included in `imgname`, specify instrument for PSF.
-
-    detector : str, optional
-        If not included in `imgname`, specify detector for PSF.
-
-    filter : list, optional
-        If not included in `imgname`, specify detector for PSF.
+        Image name of science image to be deconvolved.  If the header contains
+        instrument, detector, and filters, then those additional parameters do not need to be specified.
 
     path_root : str, optional
         Full path to parent directory of PSF library IF not the default path for package.
 
     Returns
     ========
-    psfname : str
-        Full name, with path, for PSF from library.
+    psfnames : list
+        List of the Full filenames, with path, for all PSFs from the library
+        that apply to the input image.
 
     """
+    # We need to create an average PSF made up of all the filters
+    # used to create the image.
+    # Start by looking in the input image header for
+    # the values for the instrument, detector and filter* keywords,
+    # so we know what PSF(s) to look for.
+    total_hdu = fits.open(imgname)
+    # get list of all input exposures
+    input_files = [f.split('[')[0] for f in total_hdu[0].header.get('d*data').values()]
+    # If there were (for any reason) no D???DATA keywords,
+    #  only use the input image to define the filters for the PSF
+    if len(input_files) == 0:
+        input_files = [imgname]
+    total_hdu.close()
+    del total_hdu
 
-    if 'total' not in imgname:
-        # look for instrument, detector, and filter in input image name
-        # Start by looking in the input image header for these values, so we know what to look
-        kw_vals = [fits.getval(imgname, kw).lower() for kw in INSTR_KWS]
-        filter_vals = fits.getval(imgname, FILTER_KW)
-        if isinstance(filter_vals, str):
-            filter_list = [filter_vals]
-        else:
-            filter_list = [fv.lower() for fv in filter_vals.values()]
-        for f in filter_list:
-            if f.startswith('clear'):
-                filter_list.remove(f)
-        if len(filter_list) == 0:
-            filter_list = ['clear']
+    # Reduce the list down to only unique filenames
+    input_files = list(dict.fromkeys(input_files))
+    # get filter names from each input file
+    filter_list = [get_filter_names(f) for f in input_files]
+    kw_vals = [filter_list[0][0].lower(), filter_list[0][1].lower()]
 
-    else:
-        with fits.open(imgname) as hdu:
-            for extn in hdu:
-                if 'detector' in extn.header:
-                    detector = extn.header['detector'].lower()
-                if 'photmode' in extn.header:
-                    photmode = extn.header['photmode'].lower()
-                    break
-        if 'CAL' in photmode:
-            split_str = "CAL"
-        else:
-            split_str = "MJD"
-        phot_vals = photmode.split(split_str)[0].rstrip().split(" ")
-        kw_vals = [phot_vals[0], detector]
-        filter_list = phot_vals[2:]
-
-    # Interpret filter to match best PSF
-    # crossed filters should default to widest-band filter used
-    # remove pol filters
-    for f in filter_list:
-        if f.lower().startswith('pol') or f.lower().startswith('mjd'):
-            filter_list.remove(f)
-
-    if len(filter_list) > 1:
-        bandpass = ['lp', 'w', 'm']
-        for bp in bandpass:
-            for f in filter_list:
-                if f.lower().endswith(bp):
-                    filter_list = [f]
-                    break
-    # create full psf designation we are looking for:
-    # instr, det, filter
-    kw_vals += filter_list
-    # remove duplicate entries...
-    kw_vals = list(dict.fromkeys(kw_vals))
-
-    if kw_vals[0] is None:
-        log.error("No valid keywords found.")
-        raise ValueError
-
+    # Set up path to PSF library installed with code based on tree:
+    #     drizzlepac/pars/psfs/<instrument>/<detector>
     if path_root is None:
         path_root = os.path.split(os.path.dirname(__file__))[0]
         for psf_path in PSF_PATH:
             path_root = os.path.join(path_root, psf_path)
-
     path_root = os.path.join(path_root, kw_vals[0], kw_vals[1])
 
-    psf_name = os.path.join(path_root, "{}.fits".format("_".join(kw_vals)))
+    # Now look for filename associated with selected filter
+    psf_names = [os.path.join(path_root, "{}.fits".format("_".join(kw_vals))) for kw_vals in filter_list]
+    # Again, remove duplicate entries
+    psf_names = list(dict.fromkeys(psf_names))
 
-    print('Looking for Library PSF {}'.format(psf_name))
-    log.debug('Looking for Library PSF {}'.format(psf_name))
+    log.debug('Looking for Library PSFs:\n  {}'.format(psf_names))
 
-    if not os.path.exists(psf_name):
-        log.error('No PSF found for keywords {} \n   with values of {}'.format(INSTR_KWS, kw_vals))
-        raise ValueError
+    psfs_exist = [os.path.exists(fname) for fname in psf_names]
+    if not all(psfs_exist):
+        log.error('Some PSF NOT found for keywords {} \n   with values of {}'.format(INSTR_KWS, filter_list))
+        if not any(psfs_exist):
+            log.error('NO PSF(s) found for keywords {} \n   with values of {}'.format(INSTR_KWS, filter_list))
+            raise ValueError
 
-    log.info("Using Library PSF: {}".format(os.path.basename(psf_name)))
+    log.info("Using Library PSF(s):\n    {}".format([os.path.basename(name) for name in psf_names]))
 
-    return psf_name
+    return psf_names
 
 
-def convert_library_psf(calimg, drzimg, psf,
+def get_filter_names(imgname):
+    """Interpret photmode from image
+
+    Parameters
+    -----------
+    imgname : str
+        Filename of observation to extract filter names from
+
+    Returns
+    --------
+    kw_vals : list
+        List containing instrument, detector, and filter names in that order.
+    """
+
+    # look for instrument, detector, and filter in input image name
+    # Start by looking in the input image header for these values, so we know what to look
+    hdu = fits.open(imgname)
+    photmode = hdu[('sci', 1)].header.get('photmode')
+    if photmode is None:
+        photmode = hdu[0].header.get('photmode')
+
+    detector = hdu[0].header.get('detector')
+    hdu.close()
+    del hdu
+
+    # Remove duplicate entries from photmode, if any (like 2 CLEAR filters)
+    filter_list = list(dict.fromkeys(photmode.split(' ')))
+    # Key off of instrument and detector (first 2 members of photmode)
+    kw_vals = [filter_list[0].lower(), detector.lower()]
+
+    # This will remove all polarizer, grism and prism filter entries as well.
+    excl_filters = ['CAL', 'MJD', 'POL', 'GR', 'PR']
+    for e in excl_filters:
+        indx = [filter_list.index(i) for i in filter_list if i.startswith(e)]
+        indx.reverse()
+        for i in indx:
+            del filter_list[i]
+
+    # Now select the widest-band filter used for this observation
+    # This accounts for cross-filter usage.
+    found_filter = False
+    if len(filter_list[2:]) >= 1:
+        # Loop over types of bandpass based on filter names
+        # going from widest band to narrowest bands
+        bandpass = ['lp', 'w', 'm', 'n']
+        for bp in bandpass:
+            for f in filter_list[2:]:
+                if f.lower().endswith(bp):
+                    kw_vals += [f.lower()]
+                    found_filter = True
+                    break
+
+    if not found_filter:
+        kw_vals += ['clear']
+    # The result at this point will be:
+    #  kw_vals = [instrument, detector, selected filter]
+    return kw_vals
+
+def convert_library_psf(calimg, drzimg, psfs,
                         total_flux=100000.0,
                         pixfrac=1.0,
-                        smoothing=1.25):
-    """Drizzle library PSF to match science image. """
+                        clean_psfs=True):
+    """Drizzle library PSFs to match science image. """
 
-    # Create copy of input science image based on input psf filename
-    psf_root = os.path.basename(psf)
-    lib_psf_arr = fits.getdata(psf)
-    lib_psf_arr *= total_flux
-
-    lib_size = [lib_psf_arr.shape[0] // 2, lib_psf_arr.shape[1] // 2]
-
-    # create hamming 2d filter to avoid edge effects
-    h = ss.hamming(lib_psf_arr.shape[0])
-    h2d = np.sqrt(np.outer(h, h))
-    lib_psf_arr *= h2d
-
-    # This will be the name of the new file containing the library PSF that will be drizzled to
-    # match the input iamge `drzimg`
-    psf_flt_name = psf_root.replace('.fits', '_psf_flt.fits')
-    psf_drz_name = psf_flt_name.replace('_flt.fits', '')  # astrodrizzle will add suffix
-
-    # create version of PSF that will be drizzled
-    psf_base = fits.getdata(calimg, ext=1) * 0.0
-    # Copy library PSF into this array
-    out_cen = [psf_base.shape[0] // 2, psf_base.shape[1] // 2]
-    edge = (lib_psf_arr.shape[0] % 2, lib_psf_arr.shape[1] % 2)
-    psf_base[out_cen[0] - lib_size[0]: out_cen[0] + lib_size[0] + edge[0],
-             out_cen[1] - lib_size[1]: out_cen[1] + lib_size[1] + edge[1]] = lib_psf_arr
-
-    # Smooth the PSF in order to avoid sharp edges in the deconvolution(FFT)
-    psf_base = ndimage.gaussian_filter(psf_base, sigma=smoothing)
-
-    # Write out library PSF FLT file now
-    psf_flt = shutil.copy(calimg, psf_flt_name)
-
-    # Update file with library PSF
-    flt_hdu = fits.open(psf_flt, mode='update')
-    flt_hdu[('sci', 1)].data = psf_base
-    num_sci = fu.countExtn(calimg)
-    # Also zero out all other science data in this 'PSF' file.
-    if num_sci > 1:
-        for extn in range(2, num_sci + 1):
-            flt_hdu[('sci', extn)].data *= 0.0
-    flt_hdu.close()
-    del flt_hdu, lib_psf_arr
+    psf_flt_names = [_create_input_psf(psfname, calimg, total_flux) for psfname in psfs]
 
     # Insure only final drizzle step is run
     drizzle_pars = {}
@@ -308,17 +365,69 @@ def convert_library_psf(calimg, drzimg, psf,
     drizzle_pars["driz_cr"] = False
     drizzle_pars["driz_combine"] = True
     drizzle_pars['final_wcs'] = True
+    drizzle_pars['final_fillval'] = 0.0
     drizzle_pars['final_pixfrac'] = pixfrac
     drizzle_pars["final_refimage"] = "{}[1]".format(drzimg)
 
+    psf_drz_name = psf_flt_names[0].replace('_flt.fits', '')  # astrodrizzle will add suffix
+    psf_drz_output = "{}_drz.fits".format(psf_drz_name)
+
     # Drizzle PSF FLT file to match orientation and plate scale of drizzled science (total detection) image
-    astrodrizzle.AstroDrizzle(input=psf_flt_name,
+    astrodrizzle.AstroDrizzle(input=psf_flt_names,
                               output=psf_drz_name,
                               **drizzle_pars)
 
+    if clean_psfs:
+        # clean up intermediate files
+        for psf_name in psf_flt_names:
+            os.remove(psf_name)
 
-    return psf_flt_name.replace("flt.fits", "drz.fits")
+    return psf_drz_output
 
+
+def _create_input_psf(psf_name, calimg, total_flux):
+
+    # Create copy of input science image based on input psf filename
+    psf_root = os.path.basename(psf_name)
+    lib_psf_arr = fits.getdata(psf_name)
+    lib_psf_arr *= total_flux
+
+    lib_size = [lib_psf_arr.shape[0] // 2, lib_psf_arr.shape[1] // 2]
+
+    # create hamming 2d filter to avoid edge effects
+    h = ss.hamming(lib_psf_arr.shape[0])
+    h2d = np.sqrt(np.outer(h, h))
+    lib_psf_arr *= h2d
+
+    # This will be the name of the new file containing the library PSF that will be drizzled to
+    # match the input iamge `drzimg`
+    psf_flt_name = psf_root.replace('.fits', '_psf_flt.fits')
+
+    # create version of PSF that will be drizzled
+    psf_base = fits.getdata(calimg, ext=1) * 0.0
+    # Copy library PSF into this array
+    out_cen = [psf_base.shape[0] // 2, psf_base.shape[1] // 2]
+    edge = (lib_psf_arr.shape[0] % 2, lib_psf_arr.shape[1] % 2)
+    psf_base[out_cen[0] - lib_size[0]: out_cen[0] + lib_size[0] + edge[0],
+             out_cen[1] - lib_size[1]: out_cen[1] + lib_size[1] + edge[1]] = lib_psf_arr
+
+    # Write out library PSF FLT file now
+    psf_flt = shutil.copy(calimg, psf_flt_name)
+
+    # Update file with library PSF
+    flt_hdu = fits.open(psf_flt, mode='update')
+    flt_hdu[('sci', 1)].data = psf_base
+    flt_hdu[('sci', 1)].header['psf_nx'] = psf_base.shape[1]
+    flt_hdu[('sci', 1)].header['psf_ny'] = psf_base.shape[0]
+    num_sci = fu.countExtn(calimg)
+    # Also zero out all other science data in this 'PSF' file.
+    if num_sci > 1:
+        for extn in range(2, num_sci + 1):
+            flt_hdu[('sci', extn)].data *= 0.0
+    flt_hdu.close()
+    del flt_hdu, lib_psf_arr
+
+    return psf_flt_name
 
 def get_cutouts(data, star_list, kernel, threshold_eff, exclude_border=False):
 
@@ -639,28 +748,33 @@ class UserStarFinder(findstars.StarFinderBase):
 # Main user interface
 #
 # -----------------------------------------------------------------------------
-def find_point_sources(drzname, data=None, mask=None, nsigma=5.0, box_size=11, sigma=2.0):
+def find_point_sources(drzname, data=None, mask=None,
+                       box_size=11, block_size=(1024, 1024),
+                       diagnostic_mode=False):
     """ Identify point sources most similar to TinyTim PSFs"""
     # determine the name of at least 1 input exposure
     calname = determine_input_image(drzname)
+    sep = box_size // 2
 
-    # Identify PSF for image
-    psfname = find_psf(drzname)
-    # Load PSF and convert to be consistent (orientation) with image
-    drzpsfname = convert_library_psf(calname, drzname, psfname, pixfrac=0.8)
-    drzpsf = fits.getdata(drzpsfname)
+    if not isinstance(block_size, tuple):
+        block_size = tuple(block_size)
 
     if data is None:
         # load image
-        with fits.open(drzname) as drzhdu:
-            if len(drzhdu) == 1:
-                drz = drzhdu[0].data.copy()
-            else:
-                drz = drzhdu[('sci', 1)].data.copy()
-        # Apply any user-specified mask
-        drz *= mask
+        drzhdu = fits.open(drzname)
+
+        sciext = 0 if len(drzhdu) == 1 else ('sci', 1)
+        drz = drzhdu[sciext].data.copy()
+        drzhdr = drzhdu[sciext].header.copy()
+        drzhdu.close()
+        del drzhdu
+
+        if mask is not None:
+            # Apply any user-specified mask
+            drz *= mask
     else:
         drz = data
+        drzhdr = None
 
     if mask is not None:
         # invert the mask
@@ -668,15 +782,64 @@ def find_point_sources(drzname, data=None, mask=None, nsigma=5.0, box_size=11, s
     else:
         invmask = None
 
-    # deconvolve the image with the PSF
-    decdrz = fft_deconv_img(drz, drzpsf, sigma=sigma)
+    # Identify PSF for image
+    psfnames = find_psf(drzname)
+    # Load PSF and convert to be consistent (orientation) with image
+    clean_psfs = True if not diagnostic_mode else False
 
+    drzpsfname = convert_library_psf(calname, drzname, psfnames,
+                                     pixfrac=0.8,
+                                     clean_psfs=clean_psfs)
+    drzpsf = fits.getdata(drzpsfname)
+    psf_fwhm = amutils.find_fwhm(drzpsf, 2.0)
+
+    # deconvolve the image with the PSF
+    decdrz = fft_deconv_img(drz, drzpsf,
+                            block_size=block_size)
+
+    if mask is not None:
+        decmask = ndimage.binary_erosion(mask, iterations=box_size)
+        decdrz *= decmask
+
+    if diagnostic_mode:
+        fits.PrimaryHDU(data=decdrz,
+                        header=drzhdr).writeto(drzname.replace('.fits', '_deconv.fits'),
+                                               overwrite=True)
+        fits.PrimaryHDU(data=decmask.astype(np.uint16)).writeto(drzname.replace('.fits', '_deconv_mask.fits'),
+                                                                overwrite=True)
     # find sources in deconvolved image
+    """
     s = sigma_clipped_stats(decdrz, maxiters=1)
     peaks = find_peaks(decdrz, threshold=s[1] + nsigma * s[2],
-                       mask=invmask)
+                       mask=invmask, box_size=5)
+    """
+    dec_peaks = find_peaks(decdrz, threshold=0.0,
+                       mask=invmask, box_size=box_size)
 
-    return peaks
+    # Use these positions as an initial guess for the final position
+    peak_mask = (drz * 0.).astype(np.uint8)
+    # Do this by creating a mask for the original input that only
+    # includes those pixels with 2 pixels of each peak from the
+    # deconvolved image.
+    for peak in dec_peaks:
+        x = peak['x_peak']
+        y = peak['y_peak']
+        peak_mask[y - sep: y + sep + 1, x - sep: x + sep + 1] = 1
+    drz *= peak_mask
+    if diagnostic_mode:
+        fits.PrimaryHDU(data=drz).writeto(drzname.replace('.fits', '_peak_mask.fits'), overwrite=True)
+
+    # Use this new mask to find the actual peaks in the original input
+    # but only to integer pixel precision.
+    peaks = find_peaks(drz, threshold=0., box_size=5)
+
+    # Remove PSF used, unless running in diagnostic_mode
+    if not diagnostic_mode:
+        if os.path.exists(drzpsfname):
+            os.remove(drzpsfname)
+    del peak_mask
+
+    return peaks, psf_fwhm
 
 def determine_input_image(image):
     """Determine the name of an input exposure for the given drizzle product"""
