@@ -7,6 +7,9 @@ import shutil
 
 import numpy as np
 
+from scipy import ndimage
+from skimage.feature import corner_peaks, corner_harris, corner_foerstner
+
 from astropy.io import fits as fits
 from astropy.io.fits import Column
 from astropy.time import Time
@@ -196,7 +199,8 @@ def compute_sregion(image, extname='SCI'):
         sregion_str = 'POLYGON ICRS '
         sciext = (extname, extnum)
         extwcs = wcsutil.HSTWCS(hdu, ext=sciext)
-        footprint = extwcs.calc_footprint(center=True)
+        footprint = extwcs.all_pix2world(compute_corners(hdu[sciext].data), 0)
+        # footprint = extwcs.calc_footprint(center=True)
         for corner in footprint:
             sregion_str += '{} {} '.format(corner[0], corner[1])
         hdu[sciext].header['s_region'] = sregion_str
@@ -204,6 +208,53 @@ def compute_sregion(image, extname='SCI'):
     # close file if opened by this functions
     if closefits:
         hdu.close()
+
+
+def compute_corners(arr):
+    """Determine corners of image data within an array.
+
+    This function returns the corners in counter-clockwise order
+    of the outline of the non-zero pixels from the input array.
+    The mask of just the edges of the images within the array
+    are processed using Harris corner detection to find the corners.
+
+    Parameters
+    ===========
+    arr : ndarray
+        Numpy array of input image where non-exposed pixels have a value of 0
+        instead of np.nan.
+
+    Returns
+    ========
+    corners : ndarray
+        A array of 4 (x, y) coordinate pairs corresponding to the corners
+        of the image starting with the top-most corner, then left-most
+        and so on.
+
+    """
+    footprint = arr != 0
+    edges = footprint.astype(np.int16) - ndimage.binary_erosion(footprint).astype(np.int16)
+    coords = corner_peaks(corner_harris(edges), min_distance=5, threshold_rel=0.1)
+
+    # put corner coords in (x,y)-order, not (y,x)-order as from numpy
+    # This will facilitate use with WCS coordinate transformations
+    xy = coords.copy()
+    xy[:, 0] = coords[:, 1]
+    xy[:, 1] = coords[:, 0]
+
+    corners = np.zeros((4, 2), dtype=coords.dtype)
+    # Now get corners in counter-clockwise fashion
+    # start at top most
+    corners[0] = xy[np.where(xy[:, 1] == xy[:, 1].max())[0]][0]
+    # Next, get leftmost (least X)
+    corners[1] = xy[np.where(xy[:, 0] == xy[:, 0].min())[0]][0]
+    # Now, bottom-most
+    corners[2] = xy[np.where(xy[:, 1] == xy[:, 1].min())[0]][0]
+    # now last corner
+    corners[3] = xy[np.where(xy[:, 0] == xy[:, 0].max())[0]][0]
+
+    return corners
+
 
 def _process_input(input):
     """Verify that input is an Astropy HDUList object opened in 'update' mode
