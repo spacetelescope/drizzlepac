@@ -15,7 +15,7 @@ removal of as many calibration effects as possible.
 Observations taken within a single visit, on the other hand, represent data
 intended to produce a multi-wavelength view of the objects in the desired
 field-of-view. Most of the time, those observations are taken using pairs of guide
-stars to provide very stable field-of-view throughout the entire visit resulting
+stars to provide a very stable field-of-view throughout the entire visit resulting
 in images which overlap almost perfectly.  Unfortunately, this is not
 always possible due to increasing limitations of the aging telescope systems.
 The result is that an increasing number of visits are taken where observations
@@ -55,17 +55,17 @@ relies on the results of the standard astrometric
 processing of the individual exposures and associations as the starting point
 for alignment. This processing then follows these steps to create the final products:
 
-  #. interpret the list of filenames for all exposures taken as part of a single visit and filter out images that
+  #. Interpret the list of filenames for all exposures taken as part of a single visit and filter out images that
      cannot and/or should not be processed (e.g., exposure time of zero) from further processing.
-  #. copy the pipeline-calibrated (FLT/FLC) files to the current directory for processing
-  #. rename the input files to conform to the single-visit naming conventions. (This step insures that the original
+  #. Copy the pipeline-calibrated (FLT/FLC) files to the current directory for processing.
+  #. Rename the input files to conform to the single-visit naming conventions. (This step insures that the original
      pipeline results remain available in the archive unchanged)
-  #. Define what output products can be generated
-  #. Align all exposures in a relative sense (all to each other)
-  #. Create a composite source catalog from all aligned input exposures
-  #. Cross-match and fit this composite catalog to GAIA to determine new WCS solution
-  #. Update renamed input exposures with results of alignment to GAIA
-  #. Create each of the output products using the updated WCS solutions
+  #. Define what output products can be generated.
+  #. Align all exposures in a relative sense (all to each other).
+  #. Create a composite source catalog from all aligned input exposures.
+  #. Cross-match and fit this composite catalog to GAIA to determine new WCS solution.
+  #. Update renamed input exposures with results of alignment to GAIA.
+  #. Create each of the output products using the updated WCS solutions.
 
 .. note::
     It should be noted that processing is performed on a detector-by-detector basis; if a visit contains input data
@@ -195,7 +195,7 @@ This example comes from the 'ic0s1' visit where the columns are:
   #. program ID - ppp value from exposure filename
   #. obset_id - visit number from proposal
   #. exposure time of the exposure
-  #. filters used for the exposure
+  #. filters used for the exposure, with muliple filters separated by a semicolon (e.g., F850LP;CLEAR2L)
   #. detector used to take the exposure
   #. location of the exposure in a local cache
 
@@ -259,8 +259,8 @@ to the larger uncertainties for HST pointing prior to October 2017.
 Filtering the input data
 --------------------------
 Not all HST imaging observations can be aligned using SVM processing.  Observations
-taken with the GRISM or in SPATIAL SCAN mode result in sources which can not be
-aligned, for example.  The :ref:`analyze_api` module evaluates all
+taken, for example, in SPATIAL SCAN mode result in sources which can not be
+aligned.  The :ref:`analyze_api` module evaluates all
 input exposures using these header keywords for the stated rejection criteria.
 
 .. list-table:: Single-visit product filenames
@@ -272,7 +272,10 @@ input exposures using these header keywords for the stated rejection criteria.
     - Explanation
   * - OBSTYPE
     - (not IMAGING)
-    - Only Imaging mode data processed
+    - Tyically only Imaging mode data is processed with the
+  * -
+    -
+    - exception of SPECTROSCOPIC Grism and Prism images
   * - MTFLAG
     - T
     - No moving targets, WCS and background sources vary
@@ -280,8 +283,8 @@ input exposures using these header keywords for the stated rejection criteria.
     - C or D (or not N)
     - Can not align streaked sources
   * - FILTER or FILTER1, FILTER2
-    - G*, PR*, BLOCK
-    - G=Grism and PR=Prism, Can not align streaked sources
+    - BLOCK
+    - Internal calibration of SBC detector
   * - EXPTIME
     - 0
     - no exposure time, no data to align
@@ -297,9 +300,13 @@ input exposures using these header keywords for the stated rejection criteria.
 
 
 Any observation which meets any of these criteria are flagged to be ignored (not
-processed).  In addition, any data taken where the FGSLOCK keyword contains 'COARSE'
-or 'GY' will be flagged as potentially compromised in the comments generated during
-processing.
+processed).  An exception has been allowed for data where the OBSTYPE keyword is equal 
+to SPECTROSCOPIC and FILTER (or FILTER1, FILTER2) is equal to Grism or Prism.  
+The Grism/Prism
+SVM FLT/FLC data are retained to reconcile the active WCS between the Grism/Prism
+images and any valid direct exposures obtained with the same detector.
+In addition, any data taken where the FGSLOCK keyword contains 'COARSE' or 'GY' will be
+flagged as potentially compromised in the comments generated during processing.
 
 All observations which are alignable based on these criteria are then
 passed along as a table to create the SVM products.  Those inputs which can be
@@ -318,7 +325,8 @@ This grouping will be used to create the **product list**.
 The **product list** is a Python list of
 `drizzlepac/haputils/product/HAPProduct` objects, described in :ref:`product_api` API docs,
 which represent each and every output product to be created for the visit.
-Each **Product** instance contains:
+While the specifics of each Product class vary, representative Product
+instances contain:
 
   * list of filenames for all input exposures that will contribute to the output drizzle product
   * WCS for output drizzle product
@@ -328,6 +336,7 @@ Each **Product** instance contains:
     * point-source catalog determined from the drizzle-combined image
     * segmentation-based catalog determined from the drizzle-combined image
     * astrometric catalog used to align the input exposures
+    * output trailer (aka log) file recording the processing stages
 
   * methods for:
 
@@ -372,9 +381,12 @@ For example, a relatively simple visit of a fairly bright and crowded field with
 would result in the definition of these output products:
 
   * a drizzled image for each separate exposure
-  * a single F555W product
-  * a single F814W product, and
-  * a single **total product**
+  * a WCS updated FLT/FLC image for each separate exposure
+  * a headerlet file for each separate exposure
+  * a trailer file for each separate exposure
+  * a single F555W product (a drizzled filter image and corresponding trailer file)
+  * a single F814W product (a drizzled filter image and corresponding trailer file)
+  * a single **total product** (a drizzled total detection image and corresponding trailer file)
   * a point-source catalog for the F555W product
   * a segmentation-based source catalog for the F555W product
   * a point-source catalog for the F814W product
@@ -382,15 +394,16 @@ would result in the definition of these output products:
   * a point-source catalog for the total product
   * a segmentation-based catalog for the total product
 
-The function ``haputils.poller_utils.interpret_obset_input`` serves as the sole interface
-for this interpretation. A basic tree gets defined (as a dictionary of dictionaries)
-by this function where the
+The function ``haputils.poller_utils.interpret_obset_input`` serves as the sole
+interface for interpreting either the input **poller** file which contains exposure
+information for a visit or a file which contains dataset names, one per line.
+A basic tree is created (as a dictionary of dictionaries) by this function where the
 output exposures are identified along with all the names of the input exposures.
 This tree then serves as the basis for organizing the rest of the SVM processing.
 
 In addition to defining what output products need to be generated, all the SVM
 products names are defined using the :ref:`svm_naming_convention`.  This insures
-that all the output products have filenames which are not only unique but also
+that all the output products have filenames which are not only unique, but also
 understandable (if a bit long) that are easily grouped on disk.
 
 
@@ -428,7 +441,7 @@ keyword.  More details on the WCS naming conventions can be found in the
 Creating the Output Products
 ============================
 Successful alignment of the exposures allows them to be combined into the
-pre-defined output products; primarily, the **filter products**  and the **total product**.
+pre-defined output products; primarily, the **filter products**  and the **total products**.
 These products get created using ``drizzlepac.astrodrizzle.AstroDrizzle``.
 
 Selecting Drizzle Parameters
@@ -444,7 +457,7 @@ The default parameters have been included as part of the ``drizzlepac`` package
 in the ``drizzlepac/pars/hap_pars`` directory.  Index JSON files provide the options
 that have been developed for selecting the best available default parameter set
 for processing.  The INDEX JSON files point to different parameter files (also in
-JSON format) that are also stored in sub-directories the code organized by instrument
+JSON format) that are also stored in sub-directories which are organized by instrument
 and detector.
 
 Selection criteria are also listed in these Index JSON files for each
@@ -462,10 +475,10 @@ the specific instrument and detector of the exposures.
 The SVM processing interprets the input data and verifies what input data can be
 processed.  At that point, the code determines what selection criteria apply to
 the data and uses that to obtain the appropriate parameter settings for the processing
-steps.  Applying the selection to select the appropriate parameter file simply requires
+steps.  Applying the selection to obtain the appropriate parameter file simply requires
 matching up the key in the JSON file with the selection information. Depending on the
 detector, selection information can take the form of the number of input observations,
-the date that the observations were taken, the central filter wavelength or the dispersive
+the date that the observations were taken, the central filter wavelength, or the dispersive
 element type. For example, a **filter product** would end up using the **filter_basic**
 criteria, while an 8 exposure ACS/WFC association would end up selecting the
 **acs_wfc_any_n6** entry.
@@ -503,6 +516,54 @@ WCS which spans the entire field-of-view for all the input exposures with the sa
 plate scale and orientation as the first **HSTWCS** in the input list.  This **metawcs**
 then gets used to define the shape, size and WCS pointing for all drizzle products
 taken with the same detector in the visit.
+
+
+Handling Special Images
+-------------------------
+Grism and Prism images are acquired as part of a visit, in conjunction with their
+direct image counterparts, and classified as spectroscopic data.  It is beneficial for these
+images to share a common WCS with the corresponding direct images from the same detector 
+in the visit.  Because the Grism/Prism data cannot be used in the alignment procedure due
+to the nature of the data, the best WCS solution that can be generated for these images
+is an **a priori** solution. An **a priori** solution has been determined for essentially
+all HST data by correcting the coordinates of the guide stars that were used for the observation 
+to the coordinates of the same guide stars as determined by GAIA, in this case.  The actual 
+image pixels have not be used in the WCS determination.  The WCSNAME for this 
+**a priori** solution is of the form::
+
+  <Starting WCS>-<Astrometric Catalog>
+
+  For example,
+  'IDC_0461802ej-GSC240'
+
+
+where the **Astrometric Catalog** refers to the specific astrometric catalog used to correct 
+the guide star positions.  
+
+During SVM processing, all
+the WCS solutions in common to **all** of the Grism/Prism and direct images
+from the same detector in the visit are gathered and matched against a list of prioritized
+WCS solutions, where the preferred solution is of the form 'IDC_?????????-GSC240' and
+the 'IDC_?????????' represents the particular IDCTAB reference file.
+Once a common WCS solution is determined, the active (aka primary) WCS solution 
+for the Grism/Prism and direct images from the same detector is then set to this
+common solution.  Any previously active WCS for the image that is not already stored 
+in the image will be archived as a new WCS headerlet, unless the solution as identified
+by the HDRNAME, already exists as a headerlet.
+
+The only SVM processing performed on or with Grism/Prism images is with respect to the 
+potential update to a common active WCS with its corresponding direct images.  These images
+are not used in *any* SVM processing steps.  Effectively the images are only processed
+to an exposure level product.  If the Grism/Prism images have no corresponding direct 
+images acquired with the same detector, then the process of reconciling the WCS of the 
+images in the visit is not done.
+
+
+Ramp images are utilized only in the alignment to GAIA stage of the processing, thereby
+contributing to the computation of the **metawcs** of the total detection image based 
+upon all exposures in the visit.  During this process it is possible the active WCS of 
+each Ramp exposure has been updated.  The Ramp exposures, similar to the Grism/Prism images, 
+are only processed to an exposure level product.
 
 
 Drizzling
