@@ -133,237 +133,237 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
     input_phot_mode = phot_mode
 
     for total_product_obj in total_obj_list:
-        cat_sw_name = envvar_cat_str.format(total_product_obj.detector.upper())
-        if catalog_switches[cat_sw_name] is False:
-            log.info("Catalog generation turned OFF for {}".format(total_product_obj.detector.upper()))
-            continue
-
-        # Make sure this is re-initialized for the new total product
-        phot_mode = input_phot_mode
-
-        # Generate an "n" exposure mask which has the image footprint set to the number
-        # of exposures which constitute each pixel.
-        total_product_obj.generate_footprint_mask()
-
-        # Instantiate filter catalog product object
-        total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename,
-                                             total_product_obj.configobj_pars.get_pars('catalog generation'),
-                                             total_product_obj.configobj_pars.get_pars('quality control'),
-                                             total_product_obj.mask,
-                                             log_level,
-                                             types=input_phot_mode,
-                                             diagnostic_mode=diagnostic_mode)
-
-        # Identify sources in the input image and delay writing the total detection
-        # catalog until the photometric measurements have been done on the filter
-        # images and some of the measurements can be appended to the total catalog
-        total_product_catalogs.identify(mask=total_product_obj.mask)
-
-        # Determine how to continue if "aperture" or "segment" fails to find sources for this total
-        # detection product - take into account the initial setting of phot_mode.
-        # If no sources were found by either the point or segmentation algorithms, go on to
-        # the next total detection product (detector) in the visit with the initially requested
-        # phot_mode.  If the point or segmentation algorithms found sources, need to continue
-        # processing for that (those) algorithm(s) only.
-
-        # When both algorithms have been requested...
-        if input_phot_mode == 'both':
-            # If no sources found with either algorithm, skip to the next total detection product
-            if total_product_catalogs.catalogs['aperture'].sources is None and total_product_catalogs.catalogs['segment'].sources is None:
-                del total_product_catalogs.catalogs['aperture']
-                del total_product_catalogs.catalogs['segment']
+        # Need to have direct exposures for catalog generation
+        if total_product_obj.edp_list:
+            cat_sw_name = envvar_cat_str.format(total_product_obj.detector.upper())
+            if catalog_switches[cat_sw_name] is False:
+                log.info("Catalog generation turned OFF for {}".format(total_product_obj.detector.upper()))
                 continue
 
-            # Only point algorithm found sources, continue to the filter catalogs for just point
-            if total_product_catalogs.catalogs['aperture'].sources is not None and total_product_catalogs.catalogs['segment'].sources is None:
-                phot_mode = 'aperture'
-                del total_product_catalogs.catalogs['segment']
+            # Make sure this is re-initialized for the new total product
+            phot_mode = input_phot_mode
 
-            # Only segment algorithm found sources, continue to the filter catalogs for just segmentation
-            if total_product_catalogs.catalogs['aperture'].sources is None and total_product_catalogs.catalogs['segment'].sources is not None:
-                phot_mode = 'segment'
-                del total_product_catalogs.catalogs['aperture']
-
-        # Only requested the point algorithm
-        elif input_phot_mode == 'aperture':
-            if total_product_catalogs.catalogs['aperture'].sources is None:
-                del total_product_catalogs.catalogs['aperture']
-                continue
-
-        # Only requested the segmentation algorithm
-        elif input_phot_mode == 'segment':
-            if total_product_catalogs.catalogs['segment'].sources is None:
-                del total_product_catalogs.catalogs['segment']
-                continue
-
-        # Build dictionary of total_product_catalogs.catalogs[*].sources to use for
-        # filter photometric catalog generation
-        sources_dict = {}
-        filter_catalogs = {}
-        source_mask = {}
-        for cat_type in total_product_catalogs.catalogs.keys():
-            sources_dict[cat_type] = {}
-            sources_dict[cat_type]['sources'] = total_product_catalogs.catalogs[cat_type].sources
-            # For the segmentation source finding, both the segmentation image AND the segmentation catalog
-            # computed for the total object need to be provided to the filter objects
-            if cat_type == "segment":
-                sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
-                sources_dict['segment']['source_cat'] = total_product_catalogs.catalogs['segment'].source_cat
-
-        # Get parameter from config files for CR rejection of catalogs
-        cr_residual = total_product_obj.configobj_pars.get_pars('catalog generation')['cr_residual']
-        n1_exposure_time = 0
-
-        log.info("Generating filter product source catalogs")
-        for filter_product_obj in total_product_obj.fdp_list:
-
-            # Load a dictionary with the filter subset table for each catalog...
-            subset_columns_dict = {}
+            # Generate an "n" exposure mask which has the image footprint set to the number
+            # of exposures which constitute each pixel.
+            total_product_obj.generate_footprint_mask()
 
             # Instantiate filter catalog product object
-            filter_product_catalogs = HAPCatalogs(filter_product_obj.drizzle_filename,
-                                                  total_product_obj.configobj_pars.get_pars('catalog generation'),
-                                                  total_product_obj.configobj_pars.get_pars('quality control'),
-                                                  total_product_obj.mask,
-                                                  log_level,
-                                                  types=phot_mode,
-                                                  diagnostic_mode=diagnostic_mode,
-                                                  tp_sources=sources_dict)
+            total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename,
+                                                 total_product_obj.configobj_pars.get_pars('catalog generation'),
+                                                 total_product_obj.configobj_pars.get_pars('quality control'),
+                                                 total_product_obj.mask,
+                                                 log_level,
+                                                 types=input_phot_mode,
+                                                 diagnostic_mode=diagnostic_mode)
 
-            flag_trim_value = filter_product_catalogs.param_dict['flag_trim_value']
+            # Identify sources in the input image and delay writing the total detection
+            # catalog until the photometric measurements have been done on the filter
+            # images and some of the measurements can be appended to the total catalog
+            total_product_catalogs.identify(mask=total_product_obj.mask)
 
-            # Perform photometry
-            # The measure method also copies a specified portion of the filter table into
-            # a filter "subset" table which will be combined with the total detection table.
-            filter_name = filter_product_obj.filters
-            filter_product_catalogs.measure(filter_name)
+            # Determine how to continue if "aperture" or "segment" fails to find sources for this total
+            # detection product - take into account the initial setting of phot_mode.
+            # If no sources were found by either the point or segmentation algorithms, go on to
+            # the next total detection product (detector) in the visit with the initially requested
+            # phot_mode.  If the point or segmentation algorithms found sources, need to continue
+            # processing for that (those) algorithm(s) only.
 
-            log.info("Flagging sources in filter product catalog")
-            filter_product_catalogs = run_sourcelist_flagging(filter_product_obj,
-                                                              filter_product_catalogs,
-                                                              log_level,
-                                                              diagnostic_mode)
+            # When both algorithms have been requested...
+            if input_phot_mode == 'both':
+                # If no sources found with either algorithm, skip to the next total detection product
+                if total_product_catalogs.catalogs['aperture'].sources is None and total_product_catalogs.catalogs['segment'].sources is None:
+                    del total_product_catalogs.catalogs['aperture']
+                    del total_product_catalogs.catalogs['segment']
+                    continue
 
-            if total_product_obj.detector.upper() not in ['IR', 'SBC']:
-                # Apply cosmic-ray threshold criteria used by HLA to determine whether or not to reject
-                # the catalogs.
-                tot_exposure_time = 0
-                n1_factor = 0.0
-                for edp in total_product_obj.edp_list:
-                    tot_exposure_time += edp.exptime
-                    if edp.crclean:
-                        n1_exposure_time += edp.exptime
-                        n1_factor += cr_residual
+                # Only point algorithm found sources, continue to the filter catalogs for just point
+                if total_product_catalogs.catalogs['aperture'].sources is not None and total_product_catalogs.catalogs['segment'].sources is None:
+                    phot_mode = 'aperture'
+                    del total_product_catalogs.catalogs['segment']
 
-                # Account for the influence of the single-image cosmic-ray identification
-                # This fraction represents the residual number of cosmic-rays after single-image identification
-                if n1_exposure_time < tot_exposure_time:
-                    n1_exposure_time *= n1_factor
+                # Only segment algorithm found sources, continue to the filter catalogs for just segmentation
+                if total_product_catalogs.catalogs['aperture'].sources is None and total_product_catalogs.catalogs['segment'].sources is not None:
+                    phot_mode = 'segment'
+                    del total_product_catalogs.catalogs['aperture']
 
-            # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
-            if diagnostic_mode and phot_mode in ['aperture', 'both']:
-                if "fwhm" in total_product_catalogs.catalogs['aperture'].sources.colnames:
-                    diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
-                    diag_obj.instantiate_from_hap_obj(filter_product_obj,
-                                                      data_source=__taskname__,
-                                                      description="CI vs. FWHM values")
-                    output_table = Table([filter_product_catalogs.catalogs['aperture'].source_cat['CI'], total_product_catalogs.catalogs['aperture'].sources['fwhm']], names=("CI", "FWHM"))
+            # Only requested the point algorithm
+            elif input_phot_mode == 'aperture':
+                if total_product_catalogs.catalogs['aperture'].sources is None:
+                    del total_product_catalogs.catalogs['aperture']
+                    continue
 
-                    diag_obj.add_data_item(output_table, "CI_FWHM")
-                    diag_obj.write_json_file(filter_product_obj.point_cat_filename.replace(".ecsv", "_ci_fwhm.json"))
-                    del output_table
-                    del diag_obj
+            # Only requested the segmentation algorithm
+            elif input_phot_mode == 'segment':
+                if total_product_catalogs.catalogs['segment'].sources is None:
+                    del total_product_catalogs.catalogs['segment']
+                    continue
 
-            # Replace zero-value total-product catalog 'Flags' column values with meaningful filter-product catalog
-            # 'Flags' column values
-            for cat_type in filter_product_catalogs.catalogs.keys():
-                filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat[
-                   'Flags_{}'.format(filter_product_obj.filters)] = \
-                   filter_product_catalogs.catalogs[cat_type].source_cat['Flags']
-                source_mask[cat_type] = None
+            # Build dictionary of total_product_catalogs.catalogs[*].sources to use for
+            # filter photometric catalog generation
+            sources_dict = {}
+            filter_catalogs = {}
+            source_mask = {}
+            for cat_type in total_product_catalogs.catalogs.keys():
+                sources_dict[cat_type] = {}
+                sources_dict[cat_type]['sources'] = total_product_catalogs.catalogs[cat_type].sources
+                # For the segmentation source finding, both the segmentation image AND the segmentation catalog
+                # computed for the total object need to be provided to the filter objects
+                if cat_type == "segment":
+                    sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
+                    sources_dict['segment']['source_cat'] = total_product_catalogs.catalogs['segment'].source_cat
 
-            filter_catalogs[filter_product_obj.drizzle_filename] = filter_product_catalogs
+            # Get parameter from config files for CR rejection of catalogs
+            cr_residual = total_product_obj.configobj_pars.get_pars('catalog generation')['cr_residual']
+            n1_exposure_time = 0
 
-            # Determine which rows should be removed from each type of catalog based on Flag values
-            # Any source with Flag > 5 in any filter product catalog will be marked for removal from
-            # all catalogs.
-            # This requires collating results for each type of catalog from all filter products.
-            for cat_type in filter_product_catalogs.catalogs.keys():
-                catalog_mask = filter_product_catalogs.catalogs[cat_type].source_cat['Flags'] > flag_trim_value
-                if source_mask[cat_type] is None:
-                    source_mask[cat_type] = catalog_mask
-                else:
-                    # Combine masks for all filters for this catalog type
-                    source_mask[cat_type] = np.bitwise_or(source_mask[cat_type], catalog_mask)
-
-                # Trim based on user-specified/default flag limit 'flag_trim_value' specified in parameter file
-                trimmed_rows = np.where(source_mask[cat_type])[0].tolist()
-                log.info("Removed {} rows with flag values > {} from catalog {}".format(len(trimmed_rows), flag_trim_value, filter_product_catalogs.catalogs[cat_type].sourcelist_filename))
-                log.info("{} catalog rows remain".format(len(filter_product_catalogs.catalogs[cat_type].source_cat['Flags']) - len(trimmed_rows)))
-                filter_product_catalogs.catalogs[cat_type].source_cat.remove_rows(trimmed_rows)
-                filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat.remove_rows(trimmed_rows)
-
-                subset_columns_dict[cat_type] = {}
-                subset_columns_dict[cat_type]['subset'] = \
-                    filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat
-
-            # ...and append the filter columns to the total detection product catalog.
-            log.info("create catalogs. combine() columns: {}".format(subset_columns_dict))
-            total_product_catalogs.combine(subset_columns_dict)
-
-        # At this point the total product catalog contains all columns contributed
-        # by each filter catalog. However, some of the columns originating in one or more of
-        # the filter catalogs contain no measurements for a particular source.  Remove all
-        # rows which contain empty strings (masked values) for all measurements for all
-        # of the filter catalogs.
-        for cat_type in total_product_catalogs.catalogs.keys():
-            good_rows_index = []
-            if cat_type == 'aperture':
-                all_columns = total_product_catalogs.catalogs[cat_type].sources.colnames
-                table_filled = total_product_catalogs.catalogs[cat_type].sources.filled(-9999.9)
-            else:
-                all_columns = total_product_catalogs.catalogs[cat_type].source_cat.colnames
-                table_filled = total_product_catalogs.catalogs[cat_type].source_cat.filled(-9999.9)
-            flag_columns = [colname for colname in all_columns if "Flags_" in colname]
-            filled_flag_columns = table_filled[flag_columns]
-            for i, trow in enumerate(filled_flag_columns):
-                for tcol in trow:
-                    if tcol != -9999:
-                        good_rows_index.append(i)
-                        break
-            if cat_type == 'aperture':
-                total_product_catalogs.catalogs[cat_type].sources = total_product_catalogs.catalogs[cat_type].sources[good_rows_index]
-            else:
-                total_product_catalogs.catalogs[cat_type].source_cat = total_product_catalogs.catalogs[cat_type].source_cat[good_rows_index]
-
-        # Determine whether any catalogs should be written out at all based on comparison to expected
-        # rate of cosmic-ray contamination for the total detection product
-        reject_catalogs = total_product_catalogs.verify_crthresh(n1_exposure_time)
-
-        if not reject_catalogs:
+            log.info("Generating filter product source catalogs")
             for filter_product_obj in total_product_obj.fdp_list:
-                filter_product_catalogs = filter_catalogs[filter_product_obj.drizzle_filename]
 
-                # Now write the catalogs out for this filter product
-                log.info("Writing out filter product catalog")
-                # Write out photometric (filter) catalog(s)
-                filter_product_catalogs.write()
+                # Load a dictionary with the filter subset table for each catalog...
+                subset_columns_dict = {}
 
-                # append filter product catalogs to list
+                # Instantiate filter catalog product object
+                filter_product_catalogs = HAPCatalogs(filter_product_obj.drizzle_filename,
+                                                      total_product_obj.configobj_pars.get_pars('catalog generation'),
+                                                      total_product_obj.configobj_pars.get_pars('quality control'),
+                                                      total_product_obj.mask,
+                                                      log_level,
+                                                      types=phot_mode,
+                                                      diagnostic_mode=diagnostic_mode,
+                                                      tp_sources=sources_dict)
+
+                flag_trim_value = filter_product_catalogs.param_dict['flag_trim_value']
+
+                # Perform photometry
+                # The measure method also copies a specified portion of the filter table into
+                # a filter "subset" table which will be combined with the total detection table.
+                filter_name = filter_product_obj.filters
+                filter_product_catalogs.measure(filter_name)
+
+                log.info("Flagging sources in filter product catalog")
+                filter_product_catalogs = run_sourcelist_flagging(filter_product_obj,
+                                                                  filter_product_catalogs,
+                                                                  log_level,
+                                                                  diagnostic_mode)
+
+                if total_product_obj.detector.upper() not in ['IR', 'SBC']:
+                    # Apply cosmic-ray threshold criteria used by HLA to determine whether or not to reject
+                    # the catalogs.
+                    tot_exposure_time = 0
+                    n1_factor = 0.0
+                    for edp in total_product_obj.edp_list:
+                        tot_exposure_time += edp.exptime
+                        if edp.crclean:
+                            n1_exposure_time += edp.exptime
+                            n1_factor += cr_residual
+
+                    # Account for the influence of the single-image cosmic-ray identification
+                    # This fraction represents the residual number of cosmic-rays after single-image identification
+                    if n1_exposure_time < tot_exposure_time:
+                        n1_exposure_time *= n1_factor
+
+                # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
+                if diagnostic_mode and phot_mode in ['aperture', 'both']:
+                    if "fwhm" in total_product_catalogs.catalogs['aperture'].sources.colnames:
+                        diag_obj = diagnostic_utils.HapDiagnostic(log_level=log_level)
+                        diag_obj.instantiate_from_hap_obj(filter_product_obj,
+                                                          data_source=__taskname__,
+                                                          description="CI vs. FWHM values")
+                        output_table = Table([filter_product_catalogs.catalogs['aperture'].source_cat['CI'], total_product_catalogs.catalogs['aperture'].sources['fwhm']], names=("CI", "FWHM"))
+
+                        diag_obj.add_data_item(output_table, "CI_FWHM")
+                        diag_obj.write_json_file(filter_product_obj.point_cat_filename.replace(".ecsv", "_ci_fwhm.json"))
+                        del output_table
+                        del diag_obj
+
+                # Replace zero-value total-product catalog 'Flags' column values with meaningful filter-product catalog
+                # 'Flags' column values
+                for cat_type in filter_product_catalogs.catalogs.keys():
+                    filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat[
+                       'Flags_{}'.format(filter_product_obj.filters)] = \
+                       filter_product_catalogs.catalogs[cat_type].source_cat['Flags']
+                    source_mask[cat_type] = None
+
+                filter_catalogs[filter_product_obj.drizzle_filename] = filter_product_catalogs
+
+                # Determine which rows should be removed from each type of catalog based on Flag values
+                # Any source with Flag > 5 in any filter product catalog will be marked for removal from
+                # all catalogs.
+                # This requires collating results for each type of catalog from all filter products.
+                for cat_type in filter_product_catalogs.catalogs.keys():
+                    catalog_mask = filter_product_catalogs.catalogs[cat_type].source_cat['Flags'] > flag_trim_value
+                    if source_mask[cat_type] is None:
+                        source_mask[cat_type] = catalog_mask
+                    else:
+                        # Combine masks for all filters for this catalog type
+                        source_mask[cat_type] = np.bitwise_or(source_mask[cat_type], catalog_mask)
+
+                    # Trim based on user-specified/default flag limit 'flag_trim_value' specified in parameter file
+                    trimmed_rows = np.where(source_mask[cat_type])[0].tolist()
+                    filter_product_catalogs.catalogs[cat_type].source_cat.remove_rows(trimmed_rows)
+                    filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat.remove_rows(trimmed_rows)
+
+                    subset_columns_dict[cat_type] = {}
+                    subset_columns_dict[cat_type]['subset'] = \
+                        filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat
+
+                # ...and append the filter columns to the total detection product catalog.
+                log.info("create catalogs. combine() columns: {}".format(subset_columns_dict))
+                total_product_catalogs.combine(subset_columns_dict)
+
+            # At this point the total product catalog contains all columns contributed
+            # by each filter catalog. However, some of the columns originating in one or more of
+            # the filter catalogs contain no measurements for a particular source.  Remove all
+            # rows which contain empty strings (masked values) for all measurements for all
+            # of the filter catalogs.
+            for cat_type in total_product_catalogs.catalogs.keys():
+                good_rows_index = []
+                if cat_type == 'aperture':
+                    all_columns = total_product_catalogs.catalogs[cat_type].sources.colnames
+                    table_filled = total_product_catalogs.catalogs[cat_type].sources.filled(-9999.9)
+                else:
+                    all_columns = total_product_catalogs.catalogs[cat_type].source_cat.colnames
+                    table_filled = total_product_catalogs.catalogs[cat_type].source_cat.filled(-9999.9)
+                flag_columns = [colname for colname in all_columns if "Flags_" in colname]
+                filled_flag_columns = table_filled[flag_columns]
+                for i, trow in enumerate(filled_flag_columns):
+                    for tcol in trow:
+                        if tcol != -9999:
+                            good_rows_index.append(i)
+                            break
+                if cat_type == 'aperture':
+                    total_product_catalogs.catalogs[cat_type].sources = total_product_catalogs.catalogs[cat_type].sources[good_rows_index]
+                else:
+                    total_product_catalogs.catalogs[cat_type].source_cat = total_product_catalogs.catalogs[cat_type].source_cat[good_rows_index]
+
+            # Determine whether any catalogs should be written out at all based on comparison to expected
+            # rate of cosmic-ray contamination for the total detection product
+            reject_catalogs = total_product_catalogs.verify_crthresh(n1_exposure_time)
+
+            if not reject_catalogs:
+                for filter_product_obj in total_product_obj.fdp_list:
+                    filter_product_catalogs = filter_catalogs[filter_product_obj.drizzle_filename]
+
+                    # Now write the catalogs out for this filter product
+                    log.info("Writing out filter product catalog")
+                    # Write out photometric (filter) catalog(s)
+                    filter_product_catalogs.write()
+
+                    # append filter product catalogs to list
+                    if phot_mode in ['aperture', 'both']:
+                        product_list.append(filter_product_obj.point_cat_filename)
+                    if phot_mode in ['segment', 'both']:
+                        product_list.append(filter_product_obj.segment_cat_filename)
+
+                log.info("Writing out total product catalog")
+                # write out list(s) of identified sources
+                total_product_catalogs.write()
+
+                # append total product catalogs to manifest list
                 if phot_mode in ['aperture', 'both']:
-                    product_list.append(filter_product_obj.point_cat_filename)
+                    product_list.append(total_product_obj.point_cat_filename)
                 if phot_mode in ['segment', 'both']:
-                    product_list.append(filter_product_obj.segment_cat_filename)
-
-            log.info("Writing out total product catalog")
-            # write out list(s) of identified sources
-            total_product_catalogs.write()
-
-            # append total product catalogs to manifest list
-            if phot_mode in ['aperture', 'both']:
-                product_list.append(total_product_obj.point_cat_filename)
-            if phot_mode in ['segment', 'both']:
-                product_list.append(total_product_obj.segment_cat_filename)
+                    product_list.append(total_product_obj.segment_cat_filename)
     return product_list
 
 
@@ -407,40 +407,42 @@ def create_drizzle_products(total_obj_list):
     # create the drizzle-combined filtered image, the drizzled exposure (aka single) images,
     # and finally the drizzle-combined total detection image.
     for total_obj in total_obj_list:
-        log.info("~" * 118)
-        # Get the common WCS for all images which are part of a total detection product,
-        # where the total detection product is detector-dependent.
-        meta_wcs = total_obj.generate_metawcs()
-
-        # Create drizzle-combined filter image as well as the single exposure drizzled image
-        for filt_obj in total_obj.fdp_list:
+        # Need to have direct exposures to drizzle
+        if total_obj.edp_list:
             log.info("~" * 118)
-            filt_obj.rules_file = rules_files[filt_obj.edp_list[0].full_filename]
+            # Get the common WCS for all images which are part of a total detection product,
+            # where the total detection product is detector-dependent.
+            meta_wcs = total_obj.generate_metawcs()
 
-            log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
-            filt_obj.wcs_drizzle_product(meta_wcs)
-            product_list.append(filt_obj.drizzle_filename)
-            product_list.append(filt_obj.trl_filename)
-
-            # Create individual single drizzled images
-            for exposure_obj in filt_obj.edp_list:
+            # Create drizzle-combined filter image as well as the single exposure drizzled image
+            for filt_obj in total_obj.fdp_list:
                 log.info("~" * 118)
-                exposure_obj.rules_file = rules_files[exposure_obj.full_filename]
+                filt_obj.rules_file = rules_files[filt_obj.edp_list[0].full_filename]
 
-                log.info("CREATE SINGLE DRIZZLED IMAGE: {}".format(exposure_obj.drizzle_filename))
-                exposure_obj.wcs_drizzle_product(meta_wcs)
-                product_list.append(exposure_obj.drizzle_filename)
-                product_list.append(exposure_obj.full_filename)
-                # product_list.append(exposure_obj.headerlet_filename)
-                product_list.append(exposure_obj.trl_filename)
+                log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
+                filt_obj.wcs_drizzle_product(meta_wcs)
+                product_list.append(filt_obj.drizzle_filename)
+                product_list.append(filt_obj.trl_filename)
 
-        # Create drizzle-combined total detection image after the drizzle-combined filter image and
-        # drizzled exposure images in order to take advantage of the cosmic ray flagging.
-        log.info("CREATE DRIZZLE-COMBINED TOTAL IMAGE: {}\n".format(total_obj.drizzle_filename))
-        total_obj.rules_file = total_obj.fdp_list[0].rules_file
-        total_obj.wcs_drizzle_product(meta_wcs)
-        product_list.append(total_obj.drizzle_filename)
-        product_list.append(total_obj.trl_filename)
+                # Create individual single drizzled images
+                for exposure_obj in filt_obj.edp_list:
+                    log.info("~" * 118)
+                    exposure_obj.rules_file = rules_files[exposure_obj.full_filename]
+
+                    log.info("CREATE SINGLE DRIZZLED IMAGE: {}".format(exposure_obj.drizzle_filename))
+                    exposure_obj.wcs_drizzle_product(meta_wcs)
+                    product_list.append(exposure_obj.drizzle_filename)
+                    product_list.append(exposure_obj.full_filename)
+                    # product_list.append(exposure_obj.headerlet_filename)
+                    product_list.append(exposure_obj.trl_filename)
+
+            # Create drizzle-combined total detection image after the drizzle-combined filter image and
+            # drizzled exposure images in order to take advantage of the cosmic ray flagging.
+            log.info("CREATE DRIZZLE-COMBINED TOTAL IMAGE: {}\n".format(total_obj.drizzle_filename))
+            total_obj.rules_file = total_obj.fdp_list[0].rules_file
+            total_obj.wcs_drizzle_product(meta_wcs)
+            product_list.append(total_obj.drizzle_filename)
+            product_list.append(total_obj.trl_filename)
 
     # Ensure that all drizzled products have headers that are to specification
     try:
@@ -461,11 +463,12 @@ def create_drizzle_products(total_obj_list):
 
     # Add primary header information to all objects
     for total_obj in total_obj_list:
-        total_obj = poller_utils.add_primary_fits_header_as_attr(total_obj)
-        for filt_obj in total_obj.fdp_list:
-            filt_obj = poller_utils.add_primary_fits_header_as_attr(filt_obj)
-            for exposure_obj in filt_obj.edp_list:
-                exposure_obj = poller_utils.add_primary_fits_header_as_attr(exposure_obj)
+        if total_obj.edp_list:
+            total_obj = poller_utils.add_primary_fits_header_as_attr(total_obj)
+            for filt_obj in total_obj.fdp_list:
+                filt_obj = poller_utils.add_primary_fits_header_as_attr(filt_obj)
+                for exposure_obj in filt_obj.edp_list:
+                    exposure_obj = poller_utils.add_primary_fits_header_as_attr(exposure_obj)
 
     # Return product list for creation of pipeline manifest file
     return product_list
@@ -549,11 +552,27 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         # dependent on the detector.
         # Example: instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
         manifest_name = total_obj_list[0].manifest_name
-        log.info("\nGenerate the manifest name for this visit.")
+        log.info("Generate the manifest name for this visit.")
         log.info("The manifest will contain the names of all the output products.")
 
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
+
+        # It is possible the total_obj_list output from the poller_utils contains only Grism/Prism
+        # data and no direct images, so no further processing should be done.  If this is the case,
+        # there is actually nothing to be done for the visit, except write out a manifest and 
+        # a log file.  Check every item in the total data product list.
+        found_data = False
+        for total_item in total_obj_list:
+            if total_item.edp_list and not found_data:
+               found_data = True
+            elif total_item.grism_edp_list:
+               no_data_trl = total_item.trl_filename
+        if not found_data:
+            log.warning("")
+            log.warning("There are no viable direct images in any Total Data Product. No processing can be done.")
+            product_list += [no_data_trl]
+            sys.exit(0)
 
         # Update all of the product objects with their associated configuration information.
         for total_item in total_obj_list:
@@ -586,17 +605,24 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
                     product_list += reference_catalog
 
             # Need to delete the Ramp filter Exposure objects from the *Product lists as
-            # these images will not be processed beyond the alignment to Gaia (run_align_to_gaia).
-            delete_ramp_exposures(total_item.fdp_list)
-            delete_ramp_exposures(total_item.edp_list)
+            # these images should not be processed beyond the alignment to Gaia (run_align_to_gaia).
+            _ = delete_ramp_exposures(total_item.fdp_list, 'FILTER')
+            ramp_list = delete_ramp_exposures(total_item.edp_list, 'EXPOSURE')
+            product_list += ramp_list
   
-        # If there are Grism/Prism images present in this visit, as well as corresponding direct images
-        # for the same detector, update the primary WCS in the direct and/or Grism/Prism images as
-        # appropriate to be an 'a priori' or the pipeline default (fallback) solution
-        for total_item in total_obj_list:
+            # If there are Grism/Prism images present in this visit, as well as corresponding direct images
+            # for the same detector, update the primary WCS in the direct and/or Grism/Prism images as
+            # appropriate to be an 'a priori' or the pipeline default (fallback) solution.  Note: there
+            # is no need to delete the Grism/Prism lists after the WCS update as the Grism/Prism
+            # exposures are stored in an list ignored by a majority of the processing.
             if total_item.grism_edp_list and total_item.edp_list:
                 grism_flt_list = update_wcs_in_visit(total_item)
                 product_list += grism_flt_list
+
+            # Need a trailer file to log the situation in this special case of a visit with
+            # only Grism/Prism and no direct images.  No processing is actually done in this case.
+            if total_item.grism_edp_list and not total_item.edp_list:
+                product_list += [total_item.trl_filename]
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
@@ -633,11 +659,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             log.info("SVM Quality Assurance statistics have been requested for this dataset, {}.".format(input_filename))
             svm_qa.run_quality_analysis(total_obj_list, log_level=log_level)
 
-        # Write out manifest file listing all products generated during processing
-        log.info("Creating manifest file {}.".format(manifest_name))
-        log.info("  The manifest contains the names of products generated during processing.")
-        with open(manifest_name, mode='w') as catfile:
-            [catfile.write("{}\n".format(name)) for name in product_list]
         # 10: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
     except Exception:
@@ -648,6 +669,13 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         logging.exception("message")
 
     finally:
+        # Write out manifest file listing all products generated during processing
+        log.info("Creating manifest file {}.".format(manifest_name))
+        log.info("  The manifest contains the names of products generated during processing.")
+        with open(manifest_name, mode='w') as catfile:
+            if total_obj_list:
+                [catfile.write("{}\n".format(name)) for name in product_list]
+
         end_dt = datetime.datetime.now()
         log.info('Processing completed at {}'.format(str(end_dt)))
         log.info('Total processing time: {} sec'.format((end_dt - starting_dt).total_seconds()))
@@ -658,14 +686,16 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         if total_obj_list:
             for tot_obj in total_obj_list:
                 proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
-                # Update DRIZPARS keyword value with new logfile name in ALL drizzle products
-                tot_obj.update_drizpars()
+                if tot_obj.edp_list:
+                    # Update DRIZPARS keyword value with new logfile name in ALL drizzle products
+                    tot_obj.update_drizpars()
 
         # Now remove single temp log file
         if os.path.exists(logname):
             os.remove(logname)
         else:
             print("Master log file not found.  Please check logs to locate processing messages.")
+
         return return_value
 
 
@@ -712,7 +742,7 @@ def run_align_to_gaia(tot_obj, log_level=logutil.logging.INFO, diagnostic_mode=F
         headerlet_filenames = []
         try:
             os.remove(gaia_obj.refname)
-        except OSError:
+        except (OSError, TypeError):
             pass
     else:
         # Get names of all headerlet files written out to file
@@ -1143,7 +1173,7 @@ def update_active_wcs(filename, wcsname, keyword_wcs_names_dict, image_dict):
 # ------------------------------------------------------------------------------
 
 
-def delete_ramp_exposures(obj_list):
+def delete_ramp_exposures(obj_list, type_of_list):
     """Delete the Ramp filter objects from the Total Product internal lists
 
     The Total Data Product (tdp) object is comprised of a list of Filter Product objects,
@@ -1160,15 +1190,25 @@ def delete_ramp_exposures(obj_list):
     obj_list : list of either FilterProduct ro ExposureProduct objects
         The list is updated in-place.
 
+    type_of_list : str
+        String literal indicating if the list contains FILTER or EXPOSURE objects
+
     Returns
     -------
-    None
+    ramp_filenames_list : list of str
+        List of ramp exposure SVM FLT/FLC filenames
 
     """
     temp = []
+    ramp_filenames_list = []
     while obj_list:
         obj = obj_list.pop()
-        if not obj.filters.lower().startswith('fr'):
+        if obj.filters.lower().find('fr') == -1:
             temp.append(obj)
+        else:
+            if type_of_list is 'EXPOSURE':
+                ramp_filenames_list.append(obj.full_filename)
     while temp:
         obj_list.append(temp.pop()) 
+
+    return ramp_filenames_list
