@@ -7,9 +7,6 @@ import shutil
 
 import numpy as np
 
-from scipy import ndimage
-from skimage.feature import corner_peaks, corner_harris, corner_foerstner
-
 from astropy.io import fits as fits
 from astropy.io.fits import Column
 from astropy.time import Time
@@ -198,9 +195,17 @@ def compute_sregion(image, extname='SCI'):
     for extnum in range(1, numext + 1):
         sregion_str = 'POLYGON ICRS '
         sciext = (extname, extnum)
-        extwcs = wcsutil.HSTWCS(hdu, ext=sciext)
-        footprint = extwcs.all_pix2world(compute_corners(hdu[sciext].data), 0)
-        # footprint = extwcs.calc_footprint(center=True)
+        if 'd001data' not in hdu[0].header:
+            # Working with FLT/FLC file, so simply use
+            #  the array corners directly
+            extwcs = wcsutil.HSTWCS(hdu, ext=sciext)
+            footprint = extwcs.calc_footprint(center=True)
+
+        else:
+            # Working with a drizzled image, so we need to
+            # get all the corners from each of the input files
+            footprint = find_footprint(hdu, extname=extname)
+
         for corner in footprint:
             sregion_str += '{} {} '.format(corner[0], corner[1])
         hdu[sciext].header['s_region'] = sregion_str
@@ -209,49 +214,53 @@ def compute_sregion(image, extname='SCI'):
     if closefits:
         hdu.close()
 
+def find_footprint(hdu, extname='SCI'):
+    """Extract the footprints from each input file
 
-def compute_corners(arr):
-    """Determine corners of image data within an array.
-
-    This function returns the corners in counter-clockwise order
-    of the outline of the non-zero pixels from the input array.
-    The mask of just the edges of the images within the array
-    are processed using Harris corner detection to find the corners.
+    Determine the composite of all the input chip's corners
+    as the footprint for the entire set of overlapping images
+    that went into creating this drizzled image.
 
     Parameters
     ===========
-    arr : ndarray
-        Numpy array of input image where non-exposed pixels have a value of 0
-        instead of np.nan.
+    hdu : str or `fits.HDUList`
+        Filename or HDUList for a drizzled image
+
+    extname : str, optional
+        Name of science array extension (extname value)
 
     Returns
     ========
-    corners : ndarray
-        A array of 4 (x, y) coordinate pairs corresponding to the corners
-        of the image starting with the top-most corner, then left-most
-        and so on.
+    footprint : ndarray
+        Array of RA/Dec for the 4 corners that comprise the
+        footprint on the sky for this mosaic.  Values were
+        determined from northern-most corner counter-clockwise
+        to the rest.
 
     """
-    footprint = arr != 0
-    edges = footprint.astype(np.int16) - ndimage.binary_erosion(footprint).astype(np.int16)
-    coords = corner_peaks(corner_harris(edges), min_distance=5, threshold_rel=0.1)
+    # Extract list of input files from Drizzle keywords
+    data_kws = hdu[0].header['d*data'] if isinstance(hdu, fits.HDUList) else fits.getval(hdu, 'd*data')
+    input_files = [kw.split('[')[0] for kw in data_kws.values()]
+    # Determine footprint from each chip of each input file
+    input_corners = []
+    for infile in input_files:
+        numext = countExtn(infile, extname=extname)
+        for extnum in range(1, numext + 1):
+            sciwcs = wcsutil.HSTWCS(infile, ext=(extname, extnum))
+            input_corners.append(sciwcs.calc_footprint())
 
-    # put corner coords in (x,y)-order, not (y,x)-order as from numpy
-    # This will facilitate use with WCS coordinate transformations
-    xy = coords.copy()
-    xy[:, 0] = coords[:, 1]
-    xy[:, 1] = coords[:, 0]
-
-    corners = np.zeros((4, 2), dtype=coords.dtype)
+    input_corners = np.concatenate(input_corners)
+    # Now reduce these down to the 4 corners of the total footprint
+    corners = np.zeros((4, 2), dtype=input_corners.dtype)
     # Now get corners in counter-clockwise fashion
     # start at top most
-    corners[0] = xy[np.where(xy[:, 1] == xy[:, 1].max())[0]][0]
+    corners[0] = input_corners[np.where(input_corners[:, 1] == input_corners[:, 1].max())[0]][0]
     # Next, get leftmost (least X)
-    corners[1] = xy[np.where(xy[:, 0] == xy[:, 0].min())[0]][0]
+    corners[1] = input_corners[np.where(input_corners[:, 0] == input_corners[:, 0].min())[0]][0]
     # Now, bottom-most
-    corners[2] = xy[np.where(xy[:, 1] == xy[:, 1].min())[0]][0]
+    corners[2] = input_corners[np.where(input_corners[:, 1] == input_corners[:, 1].min())[0]][0]
     # now last corner
-    corners[3] = xy[np.where(xy[:, 0] == xy[:, 0].max())[0]][0]
+    corners[3] = input_corners[np.where(input_corners[:, 0] == input_corners[:, 0].max())[0]][0]
 
     return corners
 
