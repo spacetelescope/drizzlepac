@@ -447,9 +447,13 @@ class OutputImage:
             # explicitly set EXTEND to FALSE for simple FITS files.
             dim = len(sciarr.shape)
             hdu.header.set('extend', value=False, after='NAXIS%s' % dim)
-            # explicitly set EXTNAME, EXTVER to (sci,1)
-            hdu.header.set('EXTNAME', value='SCI', before='TELESCOP')
-            hdu.header.set('EXTVER', value=1, after='EXTNAME')
+
+            # explicitly remove EXTNAME, EXTVER from header - they are not allowed
+            for kw in RESERVED_KEYS[-2:]:
+                if kw in hdu.header:
+                    del hdu.header[kw]
+
+            hdu.header.set('filetype', 'SCI', before='TELESCOP')
 
             # Add primary header to output file...
             fo.append(hdu)
@@ -502,9 +506,12 @@ class OutputImage:
                     addWCSKeywords(self.wcs, hdu.header, blot=self.blot,
                                    single=self.single, after=pre_wcs_kw)
 
-                # explicitly set EXTNAME, EXTVER to (sci,1)
-                hdu.header.set('EXTNAME', value='WHT', before='TELESCOP')
-                hdu.header.set('EXTVER', value=1, after='EXTNAME')
+                # explicitly remove EXTNAME, EXTVER from header - they are not allowed
+                for kw in RESERVED_KEYS[-2:]:
+                    if kw in hdu.header:
+                        del hdu.header[kw]
+
+                hdu.header.set('filetype', 'WHT', before='TELESCOP')
 
                 # Add primary header to output file...
                 fwht.append(hdu)
@@ -550,9 +557,12 @@ class OutputImage:
                     addWCSKeywords(self.wcs, hdu.header, blot=self.blot,
                                    single=self.single, after=pre_wcs_kw)
 
-                # explicitly set EXTNAME, EXTVER to (sci,1)
-                hdu.header.set('EXTNAME', value='CTX', before='TELESCOP')
-                hdu.header.set('EXTVER', value=1, after='EXTNAME')
+                # explicitly remove EXTNAME, EXTVER from header - they are not allowed
+                for kw in RESERVED_KEYS[-2:]:
+                    if kw in hdu.header:
+                        del hdu.header[kw]
+
+                hdu.header.set('filetype', 'CTX', before='TELESCOP')
 
                 fctx.append(hdu)
                 # remove all alternate WCS solutions from headers of this product
@@ -756,11 +766,16 @@ def deleteDistortionKeywords(hdr):
     """ Delete distortion related keywords from output drizzle science header
         since the drizzled image should have no remaining distortion.
     """
-    dist_kws = ['D2IMERR1', 'D2IMERR2', 'D2IMDIS1', 'D2IMDIS2', 'D2IM1.*', 'D2IM2.*',
-                'D2IMEXT', 'DP1', 'DP2', 'CPDIS?', 'CPERR?']
+    dist_kws = ['D2IMERR1', 'D2IMERR2', 'D2IMDIS1', 'D2IMDIS2',
+                'D2IMEXT', 'DP1', 'DP2', ]
+    dist_multi_kws = ['D2IM1.*', 'D2IM2.*', 'CPDIS?', 'CPERR?']
     for kw in dist_kws:
         if kw in hdr:
             del hdr[kw]
+    for multi_kw in dist_multi_kws:
+        for kw in hdr[multi_kw]:
+            if kw in hdr:
+                del hdr[kw]
 
 
 def writeSingleFITS(data, wcs, output, template, clobber=True, verbose=True,
