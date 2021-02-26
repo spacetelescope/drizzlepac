@@ -543,8 +543,8 @@ the guide star positions.
 During SVM processing, all
 the WCS solutions in common to **all** of the Grism/Prism and direct images
 from the same detector in the visit are gathered and matched against a list of prioritized
-WCS solutions, where the preferred solution is of the form 'IDC_?????????-GSC240' and
-the 'IDC_?????????' represents the particular IDCTAB reference file.
+WCS solutions, where the preferred solution is of the form *IDC_?????????-GSC240* and
+the *IDC_?????????* represents the particular IDCTAB reference file.
 Once a common WCS solution is determined, the active (aka primary) WCS solution 
 for the Grism/Prism and direct images from the same detector is then set to this
 common solution.  Any previously active WCS for the image that is not already stored 

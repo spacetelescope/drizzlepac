@@ -708,7 +708,7 @@ except for the specific columns.  In the case of the segment filter catalogs, th
 order of the columns were designed to be similar to the Source Extractor catalogs produced by the 
 `Hubble Legacy Archive (HLA) <https://hla.stsci.edu>`_ project.
 
-Having said this, the `PhotUtils <https://photutils.readthedocs.io/en/stable/segmentation.html>`_
+Having said this, the `PhotUtils/Segmentation <https://photutils.readthedocs.io/en/stable/segmentation.html>`_
 tool is not as mature as Source Extractor, and it was not clear that all of the output columns in the HLA 
 product were relevant for most users.  As a result, some measurements in the HLA Source Extractor 
 catalog may be missing from the output segment catalog at this time.
