@@ -453,7 +453,7 @@ class OutputImage:
                 if kw in hdu.header:
                     del hdu.header[kw]
 
-            hdu.header.set('filetype', 'SCI', before='TELESCOP')
+            hdu.header.set('filetype', 'SCI', before='TELESCOP', comment='Type of data in array')
 
             # Add primary header to output file...
             fo.append(hdu)
@@ -511,7 +511,7 @@ class OutputImage:
                     if kw in hdu.header:
                         del hdu.header[kw]
 
-                hdu.header.set('filetype', 'WHT', before='TELESCOP')
+                hdu.header.set('filetype', 'WHT', before='TELESCOP', comment='Type of data in array')
 
                 # Add primary header to output file...
                 fwht.append(hdu)
@@ -562,7 +562,7 @@ class OutputImage:
                     if kw in hdu.header:
                         del hdu.header[kw]
 
-                hdu.header.set('filetype', 'CTX', before='TELESCOP')
+                hdu.header.set('filetype', 'CTX', before='TELESCOP', comment='Type of data in array')
 
                 fctx.append(hdu)
                 # remove all alternate WCS solutions from headers of this product
