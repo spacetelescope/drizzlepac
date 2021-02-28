@@ -528,7 +528,7 @@ to the nature of the data, the best WCS solution that can be generated for these
 is an **a priori** solution. An **a priori** solution has been determined for essentially
 all HST data by correcting the coordinates of the guide stars that were used for the observation 
 to the coordinates of the same guide stars as determined by GAIA, in this case.  The actual 
-image pixels have not be used in the WCS determination.  The WCSNAME for this 
+image pixels have not been used in the WCS determination.  The WCSNAME for this
 **a priori** solution is of the form::
 
   <Starting WCS>-<Astrometric Catalog>
@@ -537,7 +537,8 @@ image pixels have not be used in the WCS determination.  The WCSNAME for this
   'IDC_0461802ej-GSC240'
 
 
-where the **Astrometric Catalog** refers to the specific astrometric catalog used to correct 
+where the `Astrometric Catalog <https://outerspace.stsci.edu/display/GC/Basic+Catalog+information>`_
+refers to the specific astrometric catalog used to correct
 the guide star positions.  
 
 During SVM processing, all
@@ -548,7 +549,7 @@ the *IDC_?????????* represents the particular IDCTAB reference file.
 Once a common WCS solution is determined, the active (aka primary) WCS solution 
 for the Grism/Prism and direct images from the same detector is then set to this
 common solution.  Any previously active WCS for the image that is not already stored 
-in the image will be archived as a new WCS headerlet, unless the solution as identified
+in the image will be archived as a new WCS headerlet extension, unless the solution as identified
 by the HDRNAME, already exists as a headerlet.
 
 The only SVM processing performed on or with Grism/Prism images is with respect to the 
