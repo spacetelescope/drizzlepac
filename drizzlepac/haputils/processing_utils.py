@@ -14,6 +14,7 @@ from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
 from stwcs import wcsutil
 
+from .cell_utils import SkyFootprint
 
 LEVEL_DEFS = {1: 'single exposure product', 2: 'filter product', 3: 'total detection product'}
 HAPCOLNAME = 'HAPEXPNAME'
@@ -241,28 +242,17 @@ def find_footprint(hdu, extname='SCI'):
     # Extract list of input files from Drizzle keywords
     data_kws = hdu[0].header['d*data'] if isinstance(hdu, fits.HDUList) else fits.getval(hdu, 'd*data')
     input_files = [kw.split('[')[0] for kw in data_kws.values()]
-    # Determine footprint from each chip of each input file
-    input_corners = []
-    for infile in input_files:
-        numext = countExtn(infile, extname=extname)
-        for extnum in range(1, numext + 1):
-            sciwcs = wcsutil.HSTWCS(infile, ext=(extname, extnum))
-            input_corners.append(sciwcs.calc_footprint())
 
-    input_corners = np.concatenate(input_corners)
-    # Now reduce these down to the 4 corners of the total footprint
-    corners = np.zeros((4, 2), dtype=input_corners.dtype)
-    # Now get corners in counter-clockwise fashion
-    # start at top most
-    corners[0] = input_corners[np.where(input_corners[:, 1] == input_corners[:, 1].max())[0]][0]
-    # Next, get leftmost (least X)
-    corners[1] = input_corners[np.where(input_corners[:, 0] == input_corners[:, 0].min())[0]][0]
-    # Now, bottom-most
-    corners[2] = input_corners[np.where(input_corners[:, 1] == input_corners[:, 1].min())[0]][0]
-    # now last corner
-    corners[3] = input_corners[np.where(input_corners[:, 0] == input_corners[:, 0].max())[0]][0]
+    # extract WCS from this product
+    meta_wcs = wcsutil.HSTWCS(hdu, ext=('sci', 1))
+    # create SkyFootprint object for all input_files to determine footprint
+    footprint = SkyFootprint(meta_wcs=meta_wcs)
+    # create mask of all input chips as they overlap on the product WCS
+    footprint.build(input_files)
+    # Now, find the corners from this mask
+    footprint.find_corners()
 
-    return corners
+    return footprint.corners
 
 
 def _process_input(input):

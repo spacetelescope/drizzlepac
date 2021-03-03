@@ -4,6 +4,7 @@ from itertools import chain, combinations
 
 from matplotlib import path
 from matplotlib import pyplot as plt
+from skimage.feature import corner_peaks, corner_harris
 from scipy.ndimage import morphology
 from scipy.spatial import distance
 import numpy as np
@@ -151,7 +152,50 @@ def interpret_scells(sky_cells):
 
 
 class SkyFootprint(object):
+    """Object for computing footprint of overlapping images.
 
+    This class allows a user to virtually build up a mosaic from a set of
+    presumably overlapping exposures.
+
+    Attributes
+    -----------
+    meta_wcs : `stwcs.wcsutil.HSTWCS`
+        WCS of entire mosaic
+    members : `list`
+        List of filenames for all input exposures that make up the mosaic
+    total_mask : `numpy.ndarray`
+        Mask of combined footprint of all input exposures scaled by number of exposures at each pixel
+    scaled_mask : `numpy.ndarray`
+        Mask of combined footprint scaled by each input's exposure value (e.g., EXPTIME)
+    footprint : `numpy.ndarray`
+        Binary (numpy.int16) mask of combined footprint of all input exposures
+    exp_masks : `dict`
+        Separate entries for each exposure containing:
+
+        ``"mask"``
+            Binary mask showing where this exposure overlaps the mosaic
+        ``"xy_corners"``
+            positions of the corners of the exposure in mosaic X,Y coordinates
+        ``"sky_corners"``
+            positions of the corners of the exposure in sky coordinates
+            derived using the input exposure's `wcs.calc_footprint()` method
+    edges : `numpy.ndarray`
+        Binary (numpy.int16) mask containing only the pixels along the outside edge
+         of the total footprint
+
+    Methods
+    -------
+    build(expnames, scale=False, scale_kw='EXPTIME')
+        Primary method for building up the mask of the footprint based on the
+        provided input exposures.  This optionally allows the user to also compute an
+        exposure time mask if desired.
+    find_footprint()
+        Once all input exposures have been used to build the masks, this method
+        generates the total footprint masks.
+    find_corners()
+        This method computes the vertices of the total mask, something useful for
+        creating the region FITS keywords (like S_REGION).
+    """
     def __init__(self, meta_wcs):
 
         self.meta_wcs = meta_wcs
@@ -161,11 +205,11 @@ class SkyFootprint(object):
         self.members = []
         self.corners = []
         self.sky_corners = []
+        self.xy_corners = []
 
         self.total_mask = np.zeros(meta_wcs.array_shape, dtype=np.int16)
         self.scaled_mask = np.zeros(meta_wcs.array_shape, dtype=np.float32)
         self.footprint = None
-        self.inside = None
 
         self.edges = None
         self.edges_ra = None
@@ -244,11 +288,6 @@ class SkyFootprint(object):
 
             self.total_mask += self.exp_masks[exposure]['mask']
 
-            # Compile set of corners for all input exposures
-            # Each chip will be a separate list so that the corners for
-            # each chip can be evaluated separately and unambiguously.
-            self.corners.append(self.exp_masks[exposure]['xy_corners'])
-            self.sky_corners.append(self.exp_masks[exposure]['sky_corners'])
 
 
     # Methods with 'find' compute values
@@ -264,21 +303,19 @@ class SkyFootprint(object):
             mask = self.exp_masks[member]['mask']
         self.footprint = np.clip(mask, 0, 1)
 
-        # Shrink footprint by 1 pixel, then invert.
-        # This results in a mask where pixels inside the footprint (but not
-        # the very edge) will be False.
-        # This will allow for easy identification of any pixel interior to the footprint
-        self.inside = np.invert(morphology.binary_erosion(self.footprint))
 
     def find_edges(self, member='total'):
-        self.find_footprint(member=member)
+
+        if self.footprint is None:
+            self.find_footprint(member=member)
 
         edges = morphology.binary_erosion(self.footprint).astype(np.int16)
         self.edges = self.footprint - edges
 
+
     def find_corners(self, member='total'):
         """Extract corners from footprint """
-        if len(self.corners) == 0:
+        if len(self.members) == 0:
             print("Please add exposures before looking for corners...")
             return
 
@@ -287,20 +324,36 @@ class SkyFootprint(object):
             self.find_footprint(member=member)
 
         if member == 'total':
-            corners = np.array(self.corners)
-            # Loop over each set of corners (each chip)
-            # We must assume that the order of the corners provided is
-            # effectively random.
-            # Only keep segments for parts of chip edges which fall outside
-            # the 'interior' of the footprint
-            corners = corners[self.inside[corners[:, 1], corners[:, 0]]]
+            # Use Harris corner detection to identify corners in the
+            # total footprint
+            mask_corners = corner_peaks(corner_harris(self.footprint),
+                                   min_distance=1,
+                                   threshold_rel=0.5)
+            xy_corners = mask_corners * 0.
+            xy_corners[:, 0] = mask_corners[:, 1]
+            xy_corners[:, 1] = mask_corners[:, 0]
+
+            # determine RA/Dec of these positions in the image
+            # use this to make sure they are ordered correctly
+            corners_sky = self.meta_wcs.all_pix2world(xy_corners, 0)
+
+            # with this Nx2 array of points, we need to order them according
+            # to IVOA standards: counter-clockwise when oriented N up starting from
+            # northernmost point
+            center = self.meta_wcs.wcs.crpix
+            dist, phi, deg = cart2pol(xy_corners[:, 0] - center[0], xy_corners[:, 1] - center[1])
+            order = np.argsort(deg)
+            corners = corners_sky[order].tolist()
+            xy_corners = xy_corners[order].tolist()
 
         else:
             if member not in self.exp_masks:
                 raise ValueError("Member {} not added to footprint".format(member))
-            corners = self.exp_masks[member]['xy_corners']
+            xy_corners = self.exp_masks[member]['xy_corners']
+            corners = self.meta_wcs.all_pix2world(xy_corners, 0)
 
-        return corners
+        self.xy_corners = xy_corners
+        self.corners = corners
 
     def get_edges_sky(self, member='total'):
         self.find_footprint(member=member)
@@ -745,14 +798,20 @@ class SkyCorners(object):
 
     def apply_mask(self, footprint, wcs):
         """Compute segments which make up the outline of the total footprint"""
-        self.inside = np.invert(morphology.binary_erosion(footprint))
+        # Shrink footprint by 1 pixel, then invert.
+        # This results in a mask where pixels inside the footprint (but not
+        # the very edge) will be False.
+        # This will allow for easy identification of any pixel interior to the footprint
+        inside = morphology.binary_erosion(footprint, iterations=1).astype(np.int16)
+        self.inside = trace_polygon(inside - morphology.binary_erosion(inside).astype(np.int16))
+
 
         # Start by identifying what portions of each chip edge makes up
         # the exterior of the total footprint as specified on input
         for edge in self.edges:
             segments, sky_segments = find_segments(edge['edge'][0], edge['edge'][1], self.inside, wcs)
-            self.segments.append({'edge': segments, 'sky_edge': sky_segments})
-
+            if len(segments) > 0:
+                self.segments.append({'edge': segments, 'sky_edge': sky_segments})
 
         # Now connect all exterior chip segments into a continuous polygon
         # Start with the corner (start/end of edge) with largest Y value
@@ -770,8 +829,8 @@ class SkyCorners(object):
                 remaining_segments += 1
                 # Look for starting corner as corner with largest Dec (closest to +90)
                 # which has the smallest RA (if multiple points have identical Dec)
-                if (start_corner and start[1] > start_corner[1]) or \
-                    start_corner and start[1] == start_corner[1] and start[0] < start_corner[0] or \
+                if (start_corner is not None and ((start[1] > start_corner[1]) or \
+                    start[1] == start_corner[1] and start[0] < start_corner[0])) or \
                     start_corner is None:
                     start_corner = start
                     start_edge = [start, end]
@@ -798,6 +857,7 @@ class SkyCorners(object):
             # start populating the polygon (s_region coordinates)
             end_corner = start_edge['sky_edge'][1]
 
+        # At this point, both the starting edge and end corner are defined.
         # Now start building up region polygon from all exterior segments
         # starting from this edge
         remaining_segments -= 1
@@ -807,13 +867,28 @@ class SkyCorners(object):
         while region_end != end_corner and remaining_segments > 0:
             pass
 
+
+def cart2pol(x, y, clockwise=False):
+    """Converts x,y arrays into radial coordinates of distance and degrees."""
+    rho = np.sqrt(x**2 + y**2)
+    phi = np.arctan2(y, x)
+    deg = 90. - np.rad2deg(phi) if clockwise else np.rad2deg(phi) - 90.
+    deg[deg < 0.] += 360.
+    return(rho, phi, deg)
+
+def pol2cart(rho, phi):
+    x = rho * np.cos(phi)
+    y = rho * np.sin(phi)
+    return(x, y)
+
+
 def trace_polygon(input_mask):
     """Convert mask with only edge pixels into a single contiguous polygon"""
     # find a starting point on the mask
     mask = input_mask.copy()
     for x in range(mask.shape[1]):
         pts = np.where(mask[:, x] == 1)[0]
-        if pts:
+        if len(pts) > 0:
             ystart = pts[0]
             xstart = x
             break
@@ -830,13 +905,13 @@ def trace_polygon(input_mask):
     # determine how many pixels should be in polygon.
     num_pixels = mask.sum()
     while new_start or (num_pixels > 0):
-        new_start = False
         xstart = new_x
         ystart = new_y
         # Zero out already identified pixels on the polygon
         mask[ystart, xstart] = 0
         box = get_box(mask, xstart, ystart)
         pts = np.where(box == 1)
+
         if len(pts[0]) == 0:
             dist = distance.cdist([[xstart, ystart]], [polygon[0]])[0][0]
             if dist <= np.sqrt(2):
@@ -848,7 +923,7 @@ def trace_polygon(input_mask):
             # Perform some disambiguation to look for
             # pixel which leads to the most pixels going on
             # start with pixels along the same slope that we have been going
-            slope_indx = 0 if slope < 0 else 1
+            slope_indx = 0 if slope <= 0 else 1
             slope_y = pts[0][slope_indx] + ystart - 1
             slope_x = pts[1][slope_indx] + xstart - 1
             slope_sum = get_box(mask, slope_x, slope_y).sum()
@@ -857,18 +932,45 @@ def trace_polygon(input_mask):
             y2 = pts[0][indx2] + ystart - 1
             x2 = pts[1][indx2] + xstart - 1
             sum2 = get_box(mask, x2, y2).sum()
-            # select point which leads to the largest sum
-            indx = indx2 if sum2 > slope_sum else slope_indx
+            # select point which leads to the largest sum,
+            # but favor the previous slope if both directions are equal.
+            if slope_sum == sum2:
+                indx = slope_indx
+            else:
+                indx = indx2 if sum2 > slope_sum else slope_indx
 
         new_y = pts[0][indx] + ystart - 1
         new_x = pts[1][indx] + xstart - 1
         polygon.append([new_x, new_y])
+        # reset for next pixel
         num_pixels -= 1
+        new_start = False
         slope = (new_y - ystart) / (new_x - xstart)
 
     # close the polygon
     polygon.append(polygon[0])
-    return polygon
+    return np.array(polygon, dtype=np.int32)
+
+def perp(a):
+    b = np.empty_like(a)
+    b[0] = -a[1]
+    b[1] = a[0]
+    return b
+
+# line segment a given by endpoints a1, a2
+# line segment b given by endpoints b1, b2
+# return
+def seg_intersect(start, end):
+    a1, a2 = start
+    b1, b2 = end
+    da = a2 - a1
+    db = b2 - b1
+    dp = a1 - b1
+    dap = perp(da)
+    denom = np.dot(dap, db)
+    num = np.dot(dap, dp)
+    return (num / denom.astype(float)) * db + b1
+
 
 def get_box(arr, x, y, size=3):
     """subarray extraction with limits checking """
@@ -911,18 +1013,24 @@ def find_segments(start, end, polygon, wcs):
         segment of this edge of the exposure.  This may be empty for an exposure
         completely interior to the overall footprint.
     """
+    # Convert input polygon pixels into a usable Path object
+    poly_path = path.Path(polygon)
+
+    # initialize output values
     segments = []
     sky_segments = []
 
+    # define segment going from starting pixel to ending pixel
     ends = np.array([start, end], dtype=np.int32)
 
-    poly_path = path.Path(polygon)
 
     # Identify all the pixels along the entire length of this segment
     # in the footprint(WCS) specified
-    xpts = np.linspace(ends[1, 0], ends[0, 0], abs(ends[1, 0] - ends[0, 0]))
-    slope = (ends[0, 1] - ends[1, 1]) / (ends[0, 0] - ends[1, 0])
-    ypts = ends[1, 1] + slope * (xpts - ends[1, 0])
+    xpts = np.linspace(ends[0, 0], ends[1, 0], abs(ends[1, 0] - ends[0, 0]) + 1)
+    slope = (ends[1, 1] - ends[0, 1]) / (ends[1, 0] - ends[0, 0])
+    y0 = ends[0, 1] if ends[0, 0] < ends[1, 0] else ends[1, 1]
+    x0 = ends[0, 0] if ends[0, 0] < ends[1, 0] else ends[1, 0]
+    ypts = y0 + slope * (xpts - x0)
 
     # Now we have (x,y) pairs for all pixels that comprise this edge in this WCS
     line_pts = np.array([xpts, ypts]).T.astype(np.int32)
@@ -935,12 +1043,15 @@ def find_segments(start, end, polygon, wcs):
     dist_limit = raw_distances.min() + raw_distances.max()
 
     # Apply mask to remove points which are inside the footprint
-    masked_line = line_pts[poly_path.contains_points(line_pts)]
+    masked_line = line_pts[np.invert(poly_path.contains_points(line_pts))]
 
     # extract segments consisting of starting and ending (x,y) pairs
     # for each contiguous set of pixels remaining (if any)
     if len(masked_line) > 0:
-        distances = np.diagonal(distance.cdist(masked_line[1:], masked_line[:-1]))
+        deltas = masked_line[1:] - masked_line[:-1]
+        distances = np.sqrt(np.power(deltas[:, 0], 2) + np.power(deltas[:, 1], 2))
+        # distances = np.diagonal(distance.cdist(masked_line[1:], masked_line[:-1]))
+
         # look for sets of pixels within the 'dist_limit' of each other along the line
         segment_indx = np.where(distances > dist_limit)[0]
         if len(segment_indx) == 0:
