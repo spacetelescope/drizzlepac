@@ -1,8 +1,11 @@
 import os
 import shutil
+from itertools import chain, combinations
 
+from matplotlib import path
 from matplotlib import pyplot as plt
 from scipy.ndimage import morphology
+from scipy.spatial import distance
 import numpy as np
 import astropy
 from astropy import units as u
@@ -156,10 +159,13 @@ class SkyFootprint(object):
         # the exp_masks dict records the individual footprints of each exposure
         self.exp_masks = {}
         self.members = []
+        self.corners = []
+        self.sky_corners = []
 
         self.total_mask = np.zeros(meta_wcs.array_shape, dtype=np.int16)
         self.scaled_mask = np.zeros(meta_wcs.array_shape, dtype=np.float32)
         self.footprint = None
+        self.inside = None
 
         self.edges = None
         self.edges_ra = None
@@ -191,7 +197,8 @@ class SkyFootprint(object):
         for exposure in expnames:
             if exposure not in self.members:
                 self.members.append(exposure)
-            self.exp_masks[exposure] = np.zeros(self.meta_wcs.array_shape, dtype=np.int16)
+            self.exp_masks[exposure] = {'mask': None, 'sky_corners': [], 'xy_corners': []}
+            self.exp_masks[exposure]['mask'] = np.zeros(self.meta_wcs.array_shape, dtype=np.int16)
             exp = fits.open(exposure)
             if scale:
                 scale_val = fits.getval(exposure, scale_kw)
@@ -199,9 +206,17 @@ class SkyFootprint(object):
             sci_extns = wcs_functions.get_extns(exp)
             for sci in sci_extns:
                 wcs = HSTWCS(exp, ext=sci)
+                # save the footprint for each chip as RA/Dec corner positions
+                radec = wcs.calc_footprint().tolist()
+                self.exp_masks[exposure]['sky_corners'].append(radec)
+
+                # Also save those corner positions as X,Y positions in the footprint
+                xycorners = self.meta_wcs.all_world2pix(radec, 0).astype(np.int32).tolist()
+                self.exp_masks[exposure]['xy_corners'].append(xycorners)
+
+                # Now compute RA/Dec of all pixels along each edge
                 edges_x = [0] * wcs.naxis2 + [wcs.naxis1 - 1] * wcs.naxis2 + list(range(wcs.naxis1)) * 2
                 edges_y = list(range(wcs.naxis2)) * 2 + [0] * wcs.naxis1 + [wcs.naxis2 - 1] * wcs.naxis1
-
                 sky_edges = wcs.pixel_to_world_values(edges_x, edges_y)
                 meta_x, meta_y = self.meta_wcs.world_to_pixel_values(sky_edges[0], sky_edges[1])
                 meta_x = meta_x.astype(np.int32)
@@ -225,9 +240,15 @@ class SkyFootprint(object):
                 if scale:
                     scaled_blank = blank * scale_val
                     self.scaled_mask += scaled_blank
-                self.exp_masks[exposure] += blank
+                self.exp_masks[exposure]['mask'] += blank
 
-            self.total_mask += self.exp_masks[exposure]
+            self.total_mask += self.exp_masks[exposure]['mask']
+
+            # Compile set of corners for all input exposures
+            # Each chip will be a separate list so that the corners for
+            # each chip can be evaluated separately and unambiguously.
+            self.corners.append(self.exp_masks[exposure]['xy_corners'])
+            self.sky_corners.append(self.exp_masks[exposure]['sky_corners'])
 
 
     # Methods with 'find' compute values
@@ -240,9 +261,14 @@ class SkyFootprint(object):
         else:
             if member not in self.exp_masks:
                 raise ValueError("Member {} not added to footprint".format(member))
-            mask = self.exp_masks[member]
+            mask = self.exp_masks[member]['mask']
         self.footprint = np.clip(mask, 0, 1)
-        # self.footprint = np.clip(self.total_mask, 0, 1)
+
+        # Shrink footprint by 1 pixel, then invert.
+        # This results in a mask where pixels inside the footprint (but not
+        # the very edge) will be False.
+        # This will allow for easy identification of any pixel interior to the footprint
+        self.inside = np.invert(morphology.binary_erosion(self.footprint))
 
     def find_edges(self, member='total'):
         self.find_footprint(member=member)
@@ -251,7 +277,30 @@ class SkyFootprint(object):
         self.edges = self.footprint - edges
 
     def find_corners(self, member='total'):
-        self.find_footprint(member=member)
+        """Extract corners from footprint """
+        if len(self.corners) == 0:
+            print("Please add exposures before looking for corners...")
+            return
+
+        # Insure footprint has been determined
+        if self.footprint is None:
+            self.find_footprint(member=member)
+
+        if member == 'total':
+            corners = np.array(self.corners)
+            # Loop over each set of corners (each chip)
+            # We must assume that the order of the corners provided is
+            # effectively random.
+            # Only keep segments for parts of chip edges which fall outside
+            # the 'interior' of the footprint
+            corners = corners[self.inside[corners[:, 1], corners[:, 0]]]
+
+        else:
+            if member not in self.exp_masks:
+                raise ValueError("Member {} not added to footprint".format(member))
+            corners = self.exp_masks[member]['xy_corners']
+
+        return corners
 
     def get_edges_sky(self, member='total'):
         self.find_footprint(member=member)
@@ -280,7 +329,7 @@ class SkyFootprint(object):
             hdulist.writeto(filename, overwrite=overwrite)
         return hdulist
 
-    def get_footprint_hdu(self, filename=None, overwrite=True, mmeber='total'):
+    def get_footprint_hdu(self, filename=None, overwrite=True, member='total'):
         self.find_footprint(member=member)
         return self._get_fits_hdu(self.footprint, filename=filename, overwrite=overwrite)
 
@@ -377,10 +426,10 @@ class GridDefs(object):
         plt.subplot(111, projection=projection)
         plt.grid(True)
         for pc in self.projection_cells:
-            plt.fill(pc.footprint[:,0], pc.footprint[:,1],
+            plt.fill(pc.footprint[:, 0], pc.footprint[:, 1],
                      facecolor='green', edgecolor='forestgreen',
                      alpha=0.25)
-            plt.text(pc.footprint[0,0], pc.footprint[0,1], "{}".format(pc.cell_id),
+            plt.text(pc.footprint[0, 0], pc.footprint[0, 1], "{}".format(pc.cell_id),
                      horizontalalignment='right', verticalalignment='bottom')
 
 
@@ -447,8 +496,8 @@ class ProjectionCell(object):
 
     def build_mask(self):
         naxis1, naxis2 = self.wcs.pixel_shape
-        edges_x = [0]*naxis2 + [naxis1-1]*naxis2 + list(range(naxis1)) * 2
-        edges_y = list(range(naxis2)) * 2 + [0]*naxis1 + [naxis2-1]*naxis1
+        edges_x = [0] * naxis2 + [naxis1 - 1] * naxis2 + list(range(naxis1)) * 2
+        edges_y = list(range(naxis2)) * 2 + [0] * naxis1 + [naxis2 - 1] * naxis1
 
         polygon = list(zip(edges_x, edges_y))
         img = Image.new("L", (naxis1, naxis2), 0)
@@ -538,7 +587,7 @@ class ProjectionCell(object):
         fig = plt.figure(figsize=(8, 6))
         ax = fig.add_subplot(111, projection="mollweide")
         ax.fill(self.corners[:, 0], self.corners[:, 1],
-                facecolor='green',edgecolor='forestgreen', alpha=0.25)
+                facecolor='green', edgecolor='forestgreen', alpha=0.25)
         if output:
             fig.write(output)
         return ax
@@ -648,6 +697,277 @@ class SkyCell(object):
 
         self.mask = mask
 
+
+class SkyCorners(object):
+    def __init__(self):
+        # attributes keeping track of combined set of inputs
+        self.xy_corners = []
+        self.sky_corners = []
+        self.edges = []
+        self.sky_edges = []
+
+        # keep track of how inputs relate to each chip
+        self.chips = []
+
+        # attributes related to WCS used to define the output footprint
+        self.inside = None
+        self.footprint = None
+        self.segments = []
+
+    def add_footprint(self, footprint, corners):
+
+        xy_corners = corners.copy()
+        xy_corners.append(xy_corners[0])
+
+        sky_corners = footprint.copy()
+        sky_corners.append(sky_corners[0])
+
+        edges = []
+        sky_edges = []
+        # Define edges for each chip based on input corners for the chip
+        for i, xy in enumerate(xy_corners[:-1]):
+            # Saving edge definitions in 'reverse' order compensates for
+            # the clock-wise orientation of the corners from `wcs.calc_footprint()`.
+            edge = [xy_corners[i + 1], xy]
+            sky_edge = [sky_corners[i + 1], sky_corners[i]]
+
+            chip_edge = {'edge': edge, 'sky_edge': sky_edge}
+            edges.append(chip_edge)
+            sky_edges.append(sky_edge)
+            self.edges.append(chip_edge)
+
+        new_chip = {'sky_corners': sky_corners, 'xy_corners': xy_corners,
+                    'edges': edges, 'sky_edges': sky_edges}
+
+        self.chips.append(new_chip)
+        self.sky_corners.append(footprint)
+        self.xy_corners.append(corners)
+
+    def apply_mask(self, footprint, wcs):
+        """Compute segments which make up the outline of the total footprint"""
+        self.inside = np.invert(morphology.binary_erosion(footprint))
+
+        # Start by identifying what portions of each chip edge makes up
+        # the exterior of the total footprint as specified on input
+        for edge in self.edges:
+            segments, sky_segments = find_segments(edge['edge'][0], edge['edge'][1], self.inside, wcs)
+            self.segments.append({'edge': segments, 'sky_edge': sky_segments})
+
+
+        # Now connect all exterior chip segments into a continuous polygon
+        # Start with the corner (start/end of edge) with largest Y value
+        start_corner = None
+        region = []
+        # define what edge will close/finish the polygon when going counter-clockwise
+        # This edge defines the last 2 points on the sky for the S_REGION keyword
+        last_edge = None
+        start_edge = None
+        remaining_segments = 0
+
+        for segment in self.segments:
+            # The segment may contain 0 or multiple segments
+            for start, end in segment['sky_edge']:
+                remaining_segments += 1
+                # Look for starting corner as corner with largest Dec (closest to +90)
+                # which has the smallest RA (if multiple points have identical Dec)
+                if (start_corner and start[1] > start_corner[1]) or \
+                    start_corner and start[1] == start_corner[1] and start[0] < start_corner[0] or \
+                    start_corner is None:
+                    start_corner = start
+                    start_edge = [start, end]
+
+                if end[1] > start_corner[1]:
+                    start_corner = end
+                    last_edge = [start, end]
+                    start_edge = None  # Try again to find starting edge
+
+        # After finding starting corner, if last_edge is not None, we know
+        # that the starting corner is the 'start' of the segment when
+        # going counter-clockwise
+        end_corner = None
+        if start_edge is None:
+            # last_edge will always be defined in this case, so
+            # look for edge with start closest to this edge end point
+            for edge in self.segments:
+                for start, end in self.segments['sky_edge']:
+                    if start == last_edge['sky_edge'][1]:
+                        start_edge = edge
+                        end_corner = end
+                        break
+        else:
+            # start populating the polygon (s_region coordinates)
+            end_corner = start_edge['sky_edge'][1]
+
+        # Now start building up region polygon from all exterior segments
+        # starting from this edge
+        remaining_segments -= 1
+        region.append(start_edge)
+        region_end = None
+
+        while region_end != end_corner and remaining_segments > 0:
+            pass
+
+def trace_polygon(input_mask):
+    """Convert mask with only edge pixels into a single contiguous polygon"""
+    # find a starting point on the mask
+    mask = input_mask.copy()
+    for x in range(mask.shape[1]):
+        pts = np.where(mask[:, x] == 1)[0]
+        if pts:
+            ystart = pts[0]
+            xstart = x
+            break
+    # Now start tracing looking at a 3x3 set of pixels around that position
+    polygon = [[xstart, ystart]]
+    # Zero out already identified pixels on the polygon
+    mask[ystart, xstart] = 0
+    new_x = xstart
+    new_y = ystart
+    xstart = None
+    ystart = None
+    new_start = True
+    slope = -1
+    # determine how many pixels should be in polygon.
+    num_pixels = mask.sum()
+    while new_start or (num_pixels > 0):
+        new_start = False
+        xstart = new_x
+        ystart = new_y
+        # Zero out already identified pixels on the polygon
+        mask[ystart, xstart] = 0
+        box = get_box(mask, xstart, ystart)
+        pts = np.where(box == 1)
+        if len(pts[0]) == 0:
+            dist = distance.cdist([[xstart, ystart]], [polygon[0]])[0][0]
+            if dist <= np.sqrt(2):
+                # We are back where we started, so quit
+                break
+
+        indx = 0
+        if len(pts[0]) > 1:
+            # Perform some disambiguation to look for
+            # pixel which leads to the most pixels going on
+            # start with pixels along the same slope that we have been going
+            slope_indx = 0 if slope < 0 else 1
+            slope_y = pts[0][slope_indx] + ystart - 1
+            slope_x = pts[1][slope_indx] + xstart - 1
+            slope_sum = get_box(mask, slope_x, slope_y).sum()
+            # Now get sum for the other pixel
+            indx2 = 1 if slope < 0 else 0
+            y2 = pts[0][indx2] + ystart - 1
+            x2 = pts[1][indx2] + xstart - 1
+            sum2 = get_box(mask, x2, y2).sum()
+            # select point which leads to the largest sum
+            indx = indx2 if sum2 > slope_sum else slope_indx
+
+        new_y = pts[0][indx] + ystart - 1
+        new_x = pts[1][indx] + xstart - 1
+        polygon.append([new_x, new_y])
+        num_pixels -= 1
+        slope = (new_y - ystart) / (new_x - xstart)
+
+    # close the polygon
+    polygon.append(polygon[0])
+    return polygon
+
+def get_box(arr, x, y, size=3):
+    """subarray extraction with limits checking """
+    amin = size // 2
+    amax = amin + 1
+    ymin = y - amin if y != 0 else 0
+    ymax = y + amax if y != arr.shape[0] - 1 else arr.shape[0] - 1
+    xmin = x - amin if x != 0 else 0
+    xmax = x + amax if x != arr.shape[1] - 1 else arr.shape[1] - 1
+    box = arr[ymin: ymax, xmin: xmax]
+
+    return box
+
+
+def find_segments(start, end, polygon, wcs):
+    """Compute the segments of a single edge which make up the footprint
+
+    Parameters
+    ----------
+    start : tuple
+        (X, Y) coordinates for starting corner
+
+    end : tuple
+        (X, Y) coordinates for ending corner
+
+    polygon : list or ndarray
+        N x 2 list or array of (x, y) pixel positions which trace out the
+        outline of the total footprint.  These positions must be in order
+        around the polygon.
+
+    Returns
+    -------
+    segments : list
+        List of [(x0,y0), (x1,y1)] pairs representing the start/stop pixels for each exterior
+        segment of this edge of the exposure.  This may be empty for an exposure
+        completely interior to the overall footprint.
+
+    rd_segments : list
+        List of [(RA0,Dec0), (RA1,Dec1)] pairs representing the start/stop pixels for each exterior
+        segment of this edge of the exposure.  This may be empty for an exposure
+        completely interior to the overall footprint.
+    """
+    segments = []
+    sky_segments = []
+
+    ends = np.array([start, end], dtype=np.int32)
+
+    poly_path = path.Path(polygon)
+
+    # Identify all the pixels along the entire length of this segment
+    # in the footprint(WCS) specified
+    xpts = np.linspace(ends[1, 0], ends[0, 0], abs(ends[1, 0] - ends[0, 0]))
+    slope = (ends[0, 1] - ends[1, 1]) / (ends[0, 0] - ends[1, 0])
+    ypts = ends[1, 1] + slope * (xpts - ends[1, 0])
+
+    # Now we have (x,y) pairs for all pixels that comprise this edge in this WCS
+    line_pts = np.array([xpts, ypts]).T.astype(np.int32)
+
+    # This limit accounts for aliasing along the edge where an individual pixel
+    # may be considered 'inside' when it was merely a matter of integerization of
+    # the edge.  This computation also takes into account the orientation of the
+    # edge relative to the X,Y pixel grid.
+    raw_distances = np.diagonal(distance.cdist(line_pts[1:], line_pts[:-1]))
+    dist_limit = raw_distances.min() + raw_distances.max()
+
+    # Apply mask to remove points which are inside the footprint
+    masked_line = line_pts[poly_path.contains_points(line_pts)]
+
+    # extract segments consisting of starting and ending (x,y) pairs
+    # for each contiguous set of pixels remaining (if any)
+    if len(masked_line) > 0:
+        distances = np.diagonal(distance.cdist(masked_line[1:], masked_line[:-1]))
+        # look for sets of pixels within the 'dist_limit' of each other along the line
+        segment_indx = np.where(distances > dist_limit)[0]
+        if len(segment_indx) == 0:
+            # Only 1 segment
+            xy_edge = [masked_line[0], masked_line[-1]]
+            rd_edge = wcs.all_pix2world(xy_edge, 0)
+            segments.append(xy_edge)
+            sky_segments.append(rd_edge)
+        else:
+            # Multiple segments found
+            start_indx = 0
+            for i in range(len(segment_indx)):
+                xy_edge = [masked_line[start_indx], masked_line[segment_indx[i]]]
+                rd_edge = wcs.all_pix2world(xy_edge, 0)
+                segments.append(xy_edge)
+                sky_segments.append(rd_edge)
+                start_indx = segment_indx[i] + 1
+            # append last segment
+            xy_edge = [masked_line[start_indx], masked_line[-1]]
+            rd_edge = wcs.all_pix2world(xy_edge, 0).tolist()
+            segments.append(xy_edge)
+            sky_segments.append(rd_edge)
+
+    return segments, sky_segments
+
+
+
 #
 # Utility functions used in generating or supporting the grid definitions
 #
@@ -740,40 +1060,40 @@ def compute_band_height(wcs):
 #
 def ssq(j, i, sum_x, sum_x_sq):
     if (j > 0):
-        muji = (sum_x[i] - sum_x[j-1]) / (i - j + 1)
-        sji = sum_x_sq[i] - sum_x_sq[j-1] - (i - j + 1) * muji ** 2
+        muji = (sum_x[i] - sum_x[j - 1]) / (i - j + 1)
+        sji = sum_x_sq[i] - sum_x_sq[j - 1] - (i - j + 1) * muji ** 2
     else:
-        sji = sum_x_sq[i] - sum_x[i] ** 2 / (i+1)
+        sji = sum_x_sq[i] - sum_x[i] ** 2 / (i + 1)
 
     return 0 if sji < 0 else sji
 
 def fill_row_k(imin, imax, k, S, J, sum_x, sum_x_sq, N):
     if imin > imax: return
 
-    i = (imin+imax) // 2
-    S[k][i] = S[k-1][i-1]
+    i = (imin + imax) // 2
+    S[k][i] = S[k - 1][i - 1]
     J[k][i] = i
 
     jlow = k
 
     if imin > k:
-        jlow = int(max(jlow, J[k][imin-1]))
-    jlow = int(max(jlow, J[k-1][i]))
+        jlow = int(max(jlow, J[k][imin - 1]))
+    jlow = int(max(jlow, J[k - 1][i]))
 
-    jhigh = i-1
-    if imax < N-1:
-        jhigh = int(min(jhigh, J[k][imax+1]))
+    jhigh = i - 1
+    if imax < N - 1:
+        jhigh = int(min(jhigh, J[k][imax + 1]))
 
-    for j in range(jhigh, jlow-1, -1):
+    for j in range(jhigh, jlow - 1, -1):
         sji = ssq(j, i, sum_x, sum_x_sq)
 
-        if sji + S[k-1][jlow-1] >= S[k][i]: break
+        if sji + S[k - 1][jlow - 1] >= S[k][i]: break
 
         # Examine the lower bound of the cluster border
         # compute s(jlow, i)
         sjlowi = ssq(jlow, i, sum_x, sum_x_sq)
 
-        SSQ_jlow = sjlowi + S[k-1][jlow-1]
+        SSQ_jlow = sjlowi + S[k - 1][jlow - 1]
 
         if SSQ_jlow < S[k][i]:
             S[k][i] = SSQ_jlow
@@ -781,39 +1101,39 @@ def fill_row_k(imin, imax, k, S, J, sum_x, sum_x_sq, N):
 
         jlow += 1
 
-        SSQ_j = sji + S[k-1][j-1]
+        SSQ_j = sji + S[k - 1][j - 1]
         if SSQ_j < S[k][i]:
             S[k][i] = SSQ_j
             J[k][i] = j
 
-    fill_row_k(imin, i-1, k, S, J, sum_x, sum_x_sq, N)
-    fill_row_k(i+1, imax, k, S, J, sum_x, sum_x_sq, N)
+    fill_row_k(imin, i - 1, k, S, J, sum_x, sum_x_sq, N)
+    fill_row_k(i + 1, imax, k, S, J, sum_x, sum_x_sq, N)
 
 def fill_dp_matrix(data, S, J, K, N):
     sum_x = np.zeros(N, dtype=np.float_)
     sum_x_sq = np.zeros(N, dtype=np.float_)
 
     # median. used to shift the values of x to improve numerical stability
-    shift = data[N//2]
+    shift = data[N // 2]
 
     for i in range(N):
         if i == 0:
             sum_x[0] = data[0] - shift
             sum_x_sq[0] = (data[0] - shift) ** 2
         else:
-            sum_x[i] = sum_x[i-1] + data[i] - shift
-            sum_x_sq[i] = sum_x_sq[i-1] + (data[i] - shift) ** 2
+            sum_x[i] = sum_x[i - 1] + data[i] - shift
+            sum_x_sq[i] = sum_x_sq[i - 1] + (data[i] - shift) ** 2
 
         S[0][i] = ssq(0, i, sum_x, sum_x_sq)
         J[0][i] = 0
 
     for k in range(1, K):
-        if (k < K-1):
+        if (k < K - 1):
             imin = max(1, k)
         else:
-            imin = N-1
+            imin = N - 1
 
-        fill_row_k(imin, N-1, k, S, J, sum_x, sum_x_sq, N)
+        fill_row_k(imin, N - 1, k, S, J, sum_x, sum_x_sq, N)
 
 def ckmeans(data, n_clusters):
     if n_clusters <= 0:
@@ -837,11 +1157,11 @@ def ckmeans(data, n_clusters):
     fill_dp_matrix(data, S, J, n_clusters, n)
 
     clusters = []
-    cluster_right = n-1
+    cluster_right = n - 1
 
-    for cluster in range(n_clusters-1, -1, -1):
+    for cluster in range(n_clusters - 1, -1, -1):
         cluster_left = int(J[cluster][cluster_right])
-        clusters.append(data[cluster_left:cluster_right+1])
+        clusters.append(data[cluster_left:cluster_right + 1])
 
         if cluster > 0:
             cluster_right = cluster_left - 1
@@ -849,13 +1169,11 @@ def ckmeans(data, n_clusters):
     return list(reversed(clusters))
 
 ##
-## HELPER CODE FOR TESTS
+# # HELPER CODE FOR TESTS
 ##
 
 # partition recipe modified from
 # http://wordaligned.org/articles/partitioning-with-python
-from itertools import chain, combinations
-
 def sliceable(xs):
     '''Return a sliceable version of the iterable xs.'''
     try:
@@ -868,13 +1186,13 @@ def partition_n(iterable, n):
     s = sliceable(iterable)
     l = len(s)
     b, mid, e = [0], list(range(1, l)), [l]
-    splits = (d for i in range(l) for d in combinations(mid, n-1))
+    splits = (d for i in range(l) for d in combinations(mid, n - 1))
     return [[s[sl] for sl in map(slice, chain(b, d), chain(d, e))]
             for d in splits]
 
 def squared_distance(part):
-    mean = sum(part)/len(part)
-    return sum((x-mean)**2 for x in part)
+    mean = sum(part) / len(part)
+    return sum((x - mean)**2 for x in part)
 
 # given a partition, return the sum of the squared distances of each part
 def sum_of_squared_distances(partition):
@@ -890,24 +1208,24 @@ def min_squared_distance(data, n):
 def ckmeans_test():
     try:
         ckmeans([], 10)
-        1/0
+        1 / 0
     except ValueError:
         pass
 
     tests = [
-        (([1], 1),                    [[1]]),
-        (([0,3,4], 2),                [[0], [3,4]]),
-        (([-3,0,4], 2),               [[-3,0], [4]]),
-        (([1,1,1,1], 1),              [[1,1,1,1]]),
-        (([1,2,3], 3),                [[1], [2], [3]]),
-        (([1,2,2,3], 3),              [[1], [2,2], [3]]),
-        (([1,2,2,3,3], 3),            [[1], [2,2], [3,3]]),
-        (([1,2,3,2,3], 3),            [[1], [2,2], [3,3]]),
-        (([3,2,3,2,1], 3),            [[1], [2,2], [3,3]]),
-        (([3,2,3,5,2,1], 3),          [[1,2,2], [3,3], [5]]),
-        (([0,1,2,100,101,103], 2),    [[0,1,2], [100,101,103]]),
-        (([0,1,2,50,100,101,103], 3), [[0,1,2], [50], [100,101,103]]),
-        (([-1,2,-1,2,4,5,6,-1,2,-1], 3),
+        (([1], 1),                          [[1]]),
+        (([0, 3, 4], 2),                    [[0], [3, 4]]),
+        (([-3, 0, 4], 2),                   [[-3, 0], [4]]),
+        (([1, 1, 1, 1], 1),                 [[1, 1, 1, 1]]),
+        (([1, 2, 3], 3),                    [[1], [2], [3]]),
+        (([1, 2, 2, 3], 3),                 [[1], [2, 2], [3]]),
+        (([1, 2, 2, 3, 3], 3),              [[1], [2, 2], [3, 3]]),
+        (([1, 2, 3, 2, 3], 3),              [[1], [2, 2], [3, 3]]),
+        (([3, 2, 3, 2, 1], 3),              [[1], [2, 2], [3, 3]]),
+        (([3, 2, 3, 5, 2, 1], 3),           [[1, 2, 2], [3, 3], [5]]),
+        (([0, 1, 2, 100, 101, 103], 2),     [[0, 1, 2], [100, 101, 103]]),
+        (([0, 1, 2, 50, 100, 101, 103], 3), [[0, 1, 2], [50], [100, 101, 103]]),
+        (([-1, 2, -1, 2, 4, 5, 6, -1, 2, -1], 3),
             [[-1, -1, -1, -1], [2, 2, 2], [4, 5, 6]]),
     ]
 
