@@ -40,7 +40,8 @@ def make_search_string(arg_dict):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def query_dataframe(master_observations_file, search_string, out_file=None):
+def query_dataframe(master_observations_file, search_string, output_columns=None, output_sorting=None,
+                    output_filename=None):
     """Read in master observations file to pandas dataframe, run query and display (and optionally) write out
     the query results. The results will be sorted first by skycell name, then by instrument/detector, filter
     name and finally by image name.
@@ -54,7 +55,15 @@ def query_dataframe(master_observations_file, search_string, out_file=None):
     search_string : str
         properly formatted search string to use in the query of the master observations file.
 
-    out_file : str, optional
+    output_columns : list, optional
+        Optional list describing which query result columns to display, and in what order. If not explicitly
+        specified, all columns will be displayed.
+
+    output_sorting : list, optional
+        Optional list describing how, and in what order query results should be sorted. If not explicitly
+        specified, no sorting will be performed on query results.
+
+    output_filename : str, optional
         Optional name of an output .csv file to write the query results to.
 
     Returns
@@ -63,8 +72,10 @@ def query_dataframe(master_observations_file, search_string, out_file=None):
     """
     dataframe = pd.DataFrame.from_csv(master_observations_file, header=0, index_col=0)
     results = dataframe.query(search_string)
-    results = results.sort_values(by=['skycell', 'config', 'spec', 'exposure'])
-    results = results[['exposure', 'skycell']]
+    if output_sorting:
+        results = results.sort_values(by=output_sorting)
+    if output_columns:
+        results = results[output_columns]
     n_lines = results.index.size
     print("\n")
     print(results.to_string())
@@ -73,9 +84,14 @@ def query_dataframe(master_observations_file, search_string, out_file=None):
         print('Query "{}" found 1 result.'.format(search_string))
     else:
         print('Query "{}" found {} results.'.format(search_string, n_lines))
-    if out_file:
-        results.to_csv(out_file)
-        print("Wrote query results to {}".format(out_file))
+    if output_sorting:
+        col_sorting_str = ", ".join(output_sorting)
+    else:
+        col_sorting_str = "No sorting"
+    print("Column sorting order: {}".format(col_sorting_str))
+    if output_filename:
+        results.to_csv(output_filename)
+        print("Wrote query results to {}".format(output_filename))
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -100,10 +116,20 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output_results_file', required=False, default="None",
                         help='Optional name of an output .csv file to write the query results to. If not '
                              'explicitly specified, no output file will be written.')
+    parser.add_argument('--output_columns', required=False, default="None", nargs='?',
+                        help="Columns to display in the query results. Needs to be some combination of "
+                             "'exposure', 'skycell', 'config' and/or 'spec'. If not explicitly specified, "
+                             "columns will be displayed in the query results.")
+    parser.add_argument('--output_sorting', required=False, default="None", nargs='?',
+                        help="Order (if any) in which to sort columns of the query results. Needs to be some "
+                             "combination of 'exposure', 'skycell', 'config' and/or 'spec'. If not "
+                             "explicitly specified, query results will not be sorted. Recommended sorting "
+                             "order is 'skycell,config,spec,exposure'.")
     in_args = parser.parse_args()
     arg_dict = {}
     for item in in_args.__dict__.keys():
-        if item not in ["master_observations_file", "output_results_file"]:
+        if item not in ["master_observations_file", "output_results_file",
+                        "output_columns", "output_sorting"]:
             arg_dict[item] = in_args.__dict__[item]
 
     # Reformat input args
@@ -112,18 +138,49 @@ if __name__ == '__main__':
         if arg_dict[item] == "None":
             arg_dict[item] = None
             blank_entry_ctr += 1
+
     if arg_dict['spec']:
         arg_dict['spec'] = arg_dict['spec'].lower()
+
     if in_args.output_results_file == "None":
         in_args.output_results_file = None
 
-    # Bail out if user didn't enter any search criteria
+    if in_args.output_columns == "None":
+        in_args.output_columns = None
+    else:
+        in_args.output_columns = in_args.output_columns.split(",")
+
+    if in_args.output_sorting == "None":
+        in_args.output_sorting = None
+    else:
+        in_args.output_sorting = in_args.output_sorting.split(",")
+
+    # FAULT TOLERANCE. Exit if something in the input arguments isn't quite right.
+    # Exit if user didn't enter any search criteria
     if blank_entry_ctr == 4:
         sys.exit("ERROR: Search results too broad. No search criteria were entered.")
 
-    # Bail out if in_args.master_observations_file == in_args.output_results_file so the master observations table doesn't get overwritten
+    # Exit if in_args.master_observations_file == in_args.output_results_file so the master observations table doesn't get overwritten
     if in_args.master_observations_file == in_args.output_results_file:
         sys.exit("ERROR: The output results file cannot have the same name is the input master observations table")
+
+    # Exit if named columns don't match the names of the available columns.
+    valid_cols = ['exposure', 'skycell', 'config', 'spec']
+    if in_args.output_columns is not None:
+        for item in in_args.output_columns:
+            if item not in valid_cols:
+                sys.exit("ERROR: {} is not a valid column name. Valid column names are 'exposure', 'skycell', 'config', 'spec'.".format(item))
+
+    if in_args.output_sorting is not None:
+        for item in in_args.output_sorting:
+            if item not in valid_cols:
+                sys.exit("ERROR: {} is not a valid column name. Valid column names are 'exposure', 'skycell', 'config', 'spec'.".format(item))
+
+    # Generate search string and run query
     search_string = make_search_string(arg_dict)
 
-    query_dataframe(in_args.master_observations_file, search_string, out_file=in_args.output_results_file)
+    query_dataframe(in_args.master_observations_file,
+                    search_string,
+                    output_columns=in_args.output_columns,
+                    output_sorting=in_args.output_sorting,
+                    output_filename=in_args.output_results_file)
