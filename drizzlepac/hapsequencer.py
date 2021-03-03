@@ -560,17 +560,18 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
 
         # It is possible the total_obj_list output from the poller_utils contains only Grism/Prism
         # data and no direct images, so no further processing should be done.  If this is the case,
-        # there is actually nothing to be done for the visit, except write out a manifest and 
+        # there is actually nothing to be done for the visit, except write out a manifest and
         # a log file.  Check every item in the total data product list.
         found_data = False
         for total_item in total_obj_list:
             if total_item.edp_list and not found_data:
-               found_data = True
+                found_data = True
             elif total_item.grism_edp_list:
-               no_data_trl = total_item.trl_filename
+                no_data_trl = total_item.trl_filename
         if not found_data:
             log.warning("")
-            log.warning("There are no viable direct images in any Total Data Product. No processing can be done.")
+            log.warning("There are no viable direct images in any Total Data Product for this visit. No processing can be done.")
+            log.warning("No SVM processing is done for the Grism/Prism data - no SVM output products are generated.") 
             product_list += [no_data_trl]
             sys.exit(0)
 
@@ -609,7 +610,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             _ = delete_ramp_exposures(total_item.fdp_list, 'FILTER')
             ramp_list = delete_ramp_exposures(total_item.edp_list, 'EXPOSURE')
             product_list += ramp_list
-  
+
             # If there are Grism/Prism images present in this visit, as well as corresponding direct images
             # for the same detector, update the primary WCS in the direct and/or Grism/Prism images as
             # appropriate to be an 'a priori' or the pipeline default (fallback) solution.  Note: there
@@ -619,9 +620,11 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
                 grism_flt_list = update_wcs_in_visit(total_item)
                 product_list += grism_flt_list
 
-            # Need a trailer file to log the situation in this special case of a visit with
+            # Need a trailer file to log the situation in this special case of a total data product in the visit with
             # only Grism/Prism and no direct images.  No processing is actually done in this case.
             if total_item.grism_edp_list and not total_item.edp_list:
+                log.warning("This Total Data Product only has Grism/Prism data and no direct images: {}".format(total_item.drizzle_filename)) 
+                log.warning("No SVM processing is done for the Grism/Prism data - no SVM output products are generated.") 
                 product_list += [total_item.trl_filename]
 
         # Run AstroDrizzle to produce drizzle-combined products
@@ -907,7 +910,7 @@ def update_wcs_in_visit(tdp):
     # The TotalProduct (tdp) for this instrument/dectector has both a Grism/Prism
     # exposure list and a direct exposure list - both with contents.
     # Every image should (!) have an IDC_?????????-GSC240 solution.
-    wcs_preference = ['IDC_?????????-GSC240', 'IDC_?????????', 'OPUS']
+    wcs_preference = ['IDC_?????????-GSC240', 'IDC_?????????']
 
     # Grism output product list for the manifest
     grism_product_list = []
@@ -991,7 +994,7 @@ def update_wcs_in_visit(tdp):
                 filename = g_edp.full_filename
                 if filename not in skip_grism_list:
                     log.info("Setting the primary WCS for Grism/Prism image {} to {}.".format(filename, final_wcsname))
-                    update_active_wcs(filename, final_wcsname, g_keyword_wcs_names_dict, grism_dict)
+                    update_active_wcs(filename, final_wcsname)
 
                     # Add the Grism/Prism images to the manifest as all of the files exist.
                     grism_product_list.append(filename)
@@ -1000,7 +1003,7 @@ def update_wcs_in_visit(tdp):
                 filename = edp.full_filename
                 if filename not in skip_direct_list:
                     log.info("Setting the primary WCS for direct image {} to {}.".format(filename, final_wcsname))
-                    update_active_wcs(filename, final_wcsname, d_keyword_wcs_names_dict, direct_dict)
+                    update_active_wcs(filename, final_wcsname)
         else:
             # Do nothing
             pass
@@ -1045,8 +1048,8 @@ def collect_wcs_names(edp_list, image_type):
 
     image_dict: dictionary {filename: list}
         The dictionary is used to associate an individual image/filename with
-        a list of *all* WCS solution names in the file 
-    
+        a list of *all* WCS solution names in the file
+
     """
 
     image_wcs_set = set()
@@ -1061,7 +1064,7 @@ def collect_wcs_names(edp_list, image_type):
 
         # Get all the WCS names which are common to all of the images
         # Note that WCS solutions may be represented as FITS keyword values in the
-        # SCI extension and/or as headerlets in the HDRLET extensions.  
+        # SCI extension and/or as headerlets in the HDRLET extensions.
         # Get the keyword WCS solution names.
         keyword_wcs_names = list(wcsutil.altwcs.wcsnames(filename, ext=1).values())
 
@@ -1093,7 +1096,7 @@ def collect_wcs_names(edp_list, image_type):
             skip_image_list.append(filename)
             if image_type == 'GRISM':
                 log.warning("    Skip and delete this image.")
-                # Delete the SVM FLT/FlC Grism/Prism image as it has no updated WCS 
+                # Delete the SVM FLT/FlC Grism/Prism image as it has no updated WCS
                 try:
                     os.remove(filename)
                     log.warning("Deleted Grism/Prism image {}.".format(filename))
@@ -1107,7 +1110,7 @@ def collect_wcs_names(edp_list, image_type):
 # ------------------------------------------------------------------------------
 
 
-def update_active_wcs(filename, wcsname, keyword_wcs_names_dict, image_dict):
+def update_active_wcs(filename, wcsname):
     """
     Utility to update the active/primary WCS solution
 
@@ -1122,49 +1125,76 @@ def update_active_wcs(filename, wcsname, keyword_wcs_names_dict, image_dict):
     wcsname : str
         Name of the desired WCS active/primary solution to be set for the filename
 
-    keyword_wcs_names_dict : dictionary associated with each image in visit
-        The dictionary is {filename: List of WCS solution names stored as keywords in SCI}
-
-    image_dict : dictionary associated with each image in visit
-        The dictionary is {filename: List of WCS solution names}
-
     Returns
     -------
     None
-    
+
     """
     # For exposures with multiple science extensions (multiple chips),
     # generate a combined WCS
     num_sci_ext, extname = util.count_sci_extensions(filename)
     extname_list = [(extname, x+1) for x in range(num_sci_ext)]
 
-    hdu = fits.open(filename, mode="update")
+    hdu = fits.open(filename, mode='update')
 
     # Check if the desired WCS solution is already the active solution
     # whereupon there is nothing to do
-    key = wcsutil.altwcs.getKeyFromName(hdu[1].header, wcsname)
-    if key != " ":
+    key = wcsutil.altwcs.getKeyFromName(hdu['SCI', 1].header, wcsname)
 
-        # If the current active solution is not already saved in the file, it
-        # must be stored as an alternate solution
-        wcs_list = image_dict[filename]
-        is_stored = [item for item in wcs_list if wcsname == item]
-        if not is_stored:
-            out_tuple = wcsutil.altwcs.archive_wcs(filename, extname_list, wcsname = wcsname)
-            log.info("Archiving previous active WCS solution: {}".format(out_tuple))
+    # Case where the desired active solution is not the current active
+    # solution
+    if key != ' ':
+        # If the current active WCS solution is not already archived, this method will do it
+        current_active_hdrname = hdu['SCI', 1].header['HDRNAME']
+        current_active_wcsname = hdu['SCI', 1].header['WCSNAME']
+        wcsutil.headerlet.archive_as_headerlet(filename, current_active_hdrname, wcskey='PRIMARY')
+        log.info("Archiving previous active WCS solution as necessary: {}".format(current_active_wcsname))
 
-        # Is the source of the wcsname for this image from keywords or a headerlet?
-        # The source dictates how the WCS will be made the active WCS
-        # Examine the "keyword" WCS solutions as a full string match...
-        keyword_wcs_list = keyword_wcs_names_dict[filename]
+        # Get the distortion model identification of the desired active WCS solution
+        index = wcsname.upper().find('IDC_')
+        idc_new_string = ''
+        if index > 0:
+            idc_new_string = wcsname[0:13]
+
+        # Examine the alternate WCS solutions to determine if they will be auto-archived due
+        # to a distortion model change
+        wcs_key_dict = wcsutil.altwcs.wcsnames(filename, ext=1)
+        for wkey, wname in wcs_key_dict.items():
+            index = wname.upper().find(idc_new_string.upper())
+
+            # No match so solution will be copied to a headerlet automatically when the new primary is set
+            if index == -1 and wkey.upper() != 'O':
+                log.info("Archiving alternate WCS solution as a headerlet as necessary: {}".format(wname))
+
+                # Now check if the HDRNAME between this solution and a headerlet already exists
+                # Get the headerlet HDRNAMES fresh every time
+                hdr_keyword = hdu[1].header['HDRNAME' + wkey.upper()]
+                headerlet_hdrnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="HDRNAME")
+
+                # Solution already exists as a headerlet extension, so just delete it
+                if hdr_keyword in headerlet_names:
+                    wcsutil.altwcs.deleteWCS(filename, extname_list, wcskey=wkey)
+                    log.info("Alternate WCS solution {} is already a headerlet.".format(wname))
+
+        # Finally, install the desired WCS as the active WCS solution
+        # Is the source of the wcsname for this image from keywords or a headerlet
+        # as the source dictates how the WCS will be made the active WCS.
+        # Examine the "keyword" WCS solutions...
+        headerlet_hdrnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="HDRNAME")
+        headerlet_wcsnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="WCSNAME")
+
+        keyword_wcs_list = list(wcsutil.altwcs.wcsnames(filename, ext=1).values())
         found_string = [i for i in keyword_wcs_list if wcsname == i]
         if found_string:
             wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=found_string[0])
-        #...the headerlet WCS solutions -- need to get the HDRNAME to retrieve the headerlet
+        # ...the headerlet WCS solutions -- need to use the HDRNAME to retrieve the headerlet
         else:
-            headerlet_hdr_names = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="HDRNAME")
-            found_string = [i for i in headerlet_hdr_names if wcsname in i]
-            wcsutil.headerlet.restore_from_headerlet(filename, hdrname=found_string[0], force=True)
+            hdrname = ''
+            for h, w in zip(headerlet_hdrnames, headerlet_wcsnames):
+                if w == wcsname:
+                    hdrname = h
+                    break
+            wcsutil.headerlet.restore_from_headerlet(filename, hdrname=hdrname, force=True)
     else:
         log.info("No need to update active WCS solution of {} for {} as it is already the active solution.".format(wcsname, filename))
 
@@ -1179,7 +1209,7 @@ def delete_ramp_exposures(obj_list, type_of_list):
     The Total Data Product (tdp) object is comprised of a list of Filter Product objects,
     as well as a list of Exposure Product objects.  The Ramp filter
     images need to be processed in the same manner as nominal exposures for at least
-    some of the processing steps.  Because of this, it was deemed best to keep the 
+    some of the processing steps.  Because of this, it was deemed best to keep the
     Ramp exposures in the tdp list attributes, until their final processing
     stage (align_to_gaia), and then delete these objects from the attribute
     lists. This function handles the deletion of Ramp images from the input
@@ -1209,6 +1239,6 @@ def delete_ramp_exposures(obj_list, type_of_list):
             if type_of_list is 'EXPOSURE':
                 ramp_filenames_list.append(obj.full_filename)
     while temp:
-        obj_list.append(temp.pop()) 
+        obj_list.append(temp.pop())
 
     return ramp_filenames_list
