@@ -24,6 +24,9 @@ EXTLIST = ('SCI', 'WHT', 'CTX')
 
 WCS_KEYWORDS = ['CD1_1', 'CD1_2', 'CD2_1', 'CD2_2', 'CRPIX1',
 'CRPIX2', 'CRVAL1', 'CRVAL2', 'CTYPE1', 'CTYPE2', 'WCSNAME']
+DIST_KWS = ['D2IMERR1', 'D2IMERR2', 'D2IMDIS1', 'D2IMDIS2',
+            'D2IMEXT', 'DP1', 'DP2', ]
+DIST_MULTI_KWS = ['D2IM1.*', 'D2IM2.*', 'CPDIS?', 'CPERR?', 'TDD*']
 
 # fits.CompImageHDU() crashes with default arguments.
 # Instead check that fits module has *attribute* 'CompImageHDU':
@@ -301,10 +304,7 @@ class OutputImage:
             self.addDrizKeywords(prihdu.header, versions)
 
         if scihdr:
-            try:
-                del scihdr['OBJECT']
-            except KeyError:
-                pass
+            scihdr.pop('OBJECT', None)
 
             if 'CCDCHIP' in scihdr: scihdr['CCDCHIP'] = '-999'
             if 'NCOMBINE' in scihdr:
@@ -430,28 +430,24 @@ class OutputImage:
                     if _card.keyword not in RESERVED_KEYS and _card.keyword not in hdu_header:
                         hdu_header.append(_card)
 
-            for kw in ['PCOUNT', 'GCOUNT']:
-                try:
-                    del kw
-                except KeyError:
-                    pass
             hdu_header['filename'] = self.outdata
 
             if self.compress:
                 hdu = fits.CompImageHDU(data=sciarr, header=hdu_header)
                 wcs_ext = [1]
             else:
-                hdu = fits.ImageHDU(data=sciarr, header=hdu_header)
+                hdu = fits.PrimaryHDU(data=sciarr, header=hdu_header)
                 wcs_ext = [0]
 
             # explicitly set EXTEND to FALSE for simple FITS files.
             dim = len(sciarr.shape)
             hdu.header.set('extend', value=False, after='NAXIS%s' % dim)
 
-            # explicitly remove EXTNAME, EXTVER from header - they are not allowed
-            for kw in RESERVED_KEYS[-2:]:
-                if kw in hdu.header:
-                    del hdu.header[kw]
+            # explicitly remove EXTNAME, EXTVER from header
+            # since this header may have been used
+            # to create a CompImageHDU instance instead of a PrimaryHDU instance
+            for kw in ['EXTNAME', 'EXTVER', 'PCOUNT', 'GCOUNT']:
+                hdu.header.pop(kw, None)
 
             hdu.header.set('filetype', 'SCI', before='TELESCOP', comment='Type of data in array')
 
@@ -489,7 +485,7 @@ class OutputImage:
                 if self.compress:
                     hdu = fits.CompImageHDU(data=whtarr, header=prihdu.header)
                 else:
-                    hdu = fits.ImageHDU(data=whtarr, header=prihdu.header)
+                    hdu = fits.PrimaryHDU(data=whtarr, header=prihdu.header)
                 # Append remaining unique header keywords from template DQ
                 # header to Primary header...
                 if errhdr:
@@ -506,10 +502,11 @@ class OutputImage:
                     addWCSKeywords(self.wcs, hdu.header, blot=self.blot,
                                    single=self.single, after=pre_wcs_kw)
 
-                # explicitly remove EXTNAME, EXTVER from header - they are not allowed
-                for kw in RESERVED_KEYS[-2:]:
-                    if kw in hdu.header:
-                        del hdu.header[kw]
+                # explicitly remove EXTNAME, EXTVER from header
+                # since this header may have been used
+                # to create a CompImageHDU instance instead of a PrimaryHDU instance
+                for kw in ['EXTNAME', 'EXTVER', 'PCOUNT', 'GCOUNT']:
+                    hdu.header.pop(kw, None)
 
                 hdu.header.set('filetype', 'WHT', before='TELESCOP', comment='Type of data in array')
 
@@ -540,7 +537,7 @@ class OutputImage:
                 if self.compress:
                     hdu = fits.CompImageHDU(data=_ctxarr, header=prihdu.header)
                 else:
-                    hdu = fits.ImageHDU(data=_ctxarr, header=prihdu.header)
+                    hdu = fits.PrimaryHDU(data=_ctxarr, header=prihdu.header)
                 # Append remaining unique header keywords from template DQ
                 # header to Primary header...
                 if dqhdr:
@@ -557,10 +554,11 @@ class OutputImage:
                     addWCSKeywords(self.wcs, hdu.header, blot=self.blot,
                                    single=self.single, after=pre_wcs_kw)
 
-                # explicitly remove EXTNAME, EXTVER from header - they are not allowed
-                for kw in RESERVED_KEYS[-2:]:
-                    if kw in hdu.header:
-                        del hdu.header[kw]
+                # explicitly remove EXTNAME, EXTVER from header
+                # since this header may have been used
+                # to create a CompImageHDU instance instead of a PrimaryHDU instance
+                for kw in ['EXTNAME', 'EXTVER', 'PCOUNT', 'GCOUNT']:
+                    hdu.header.pop(kw, None)
 
                 hdu.header.set('filetype', 'CTX', before='TELESCOP', comment='Type of data in array')
 
@@ -683,18 +681,9 @@ def cleanTemplates(scihdr, errhdr, dqhdr):
 
     # Now, safeguard against having BSCALE and BZERO
     for kw in ['BSCALE', 'BZERO']:
-        try:
-            del scihdr[kw]
-        except KeyError:
-            pass
-        try:
-            del errhdr[kw]
-        except KeyError:
-            pass
-        try:
-            del dqhdr[kw]
-        except KeyError:
-            pass
+        scihdr.pop(kw, None)
+        errhdr.pop(kw, None)
+        dqhdr.pop(kw, None)
 
     # At this point, check errhdr and dqhdr to make sure they
     # have all the requisite keywords (as listed in updateDTHKeywords).
@@ -706,6 +695,7 @@ def cleanTemplates(scihdr, errhdr, dqhdr):
                     errhdr[keyword] = scihdr[keyword]
                 if keyword not in dqhdr:
                     dqhdr[keyword] = scihdr[keyword]
+
 
 def getTemplates(fnames, blend=True, rules_file=None):
     """ Process all headers to produce a set of combined headers
@@ -766,16 +756,15 @@ def deleteDistortionKeywords(hdr):
     """ Delete distortion related keywords from output drizzle science header
         since the drizzled image should have no remaining distortion.
     """
-    dist_kws = ['D2IMERR1', 'D2IMERR2', 'D2IMDIS1', 'D2IMDIS2',
-                'D2IMEXT', 'DP1', 'DP2', ]
-    dist_multi_kws = ['D2IM1.*', 'D2IM2.*', 'CPDIS?', 'CPERR?']
-    for kw in dist_kws:
-        if kw in hdr:
-            del hdr[kw]
-    for multi_kw in dist_multi_kws:
-        for kw in hdr[multi_kw]:
-            if kw in hdr:
-                del hdr[kw]
+    # We need to use '.pop' to guard against the possibility, however remote,
+    # that the keyword has already been removed before calling this function.
+    for kw in DIST_KWS:
+        hdr.pop(kw, None)
+
+    # This can use 'del' since it will work even if the keywords
+    # are missing altogether since the multi_kw uses wild-cards
+    for multi_kw in DIST_MULTI_KWS:
+        del hdr[multi_kw]
 
 
 def writeSingleFITS(data, wcs, output, template, clobber=True, verbose=True,
