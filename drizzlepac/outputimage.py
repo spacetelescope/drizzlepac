@@ -18,15 +18,18 @@ from fitsblender import blendheaders
 yes = True
 no = False
 
-RESERVED_KEYS = ['NAXIS', 'BITPIX', 'DATE', 'IRAF-TLM', 'XTENSION', 'EXTNAME', ' EXTVER']
+RESERVED_KEYS = ['NAXIS', 'NAXIS1', 'NAXIS2', 'EXTEND',
+                 'BITPIX', 'DATE', 'IRAF-TLM',
+                 'XTENSION', 'EXTNAME', ' EXTVER']
 
 EXTLIST = ('SCI', 'WHT', 'CTX')
 
 WCS_KEYWORDS = ['CD1_1', 'CD1_2', 'CD2_1', 'CD2_2', 'CRPIX1',
 'CRPIX2', 'CRVAL1', 'CRVAL2', 'CTYPE1', 'CTYPE2', 'WCSNAME']
+
 DIST_KWS = ['D2IMERR1', 'D2IMERR2', 'D2IMDIS1', 'D2IMDIS2',
             'D2IMEXT', 'DP1', 'DP2', ]
-DIST_MULTI_KWS = ['D2IM1.*', 'D2IM2.*', 'CPDIS?', 'CPERR?', 'TDD*']
+DIST_MULTI_KWS = ['D2IM1.*', 'D2IM2.*', 'CPDIS?', 'CPERR?', 'TDD_C*']
 
 # fits.CompImageHDU() crashes with default arguments.
 # Instead check that fits module has *attribute* 'CompImageHDU':
