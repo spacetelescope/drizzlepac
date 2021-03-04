@@ -321,7 +321,7 @@ class SkyFootprint(object):
         self.edges = self.footprint - edges
 
 
-    def find_corners(self, member='total'):
+    def find_corners(self, member='total', sensitivity=0.1):
         """Extract corners from footprint """
         if len(self.members) == 0:
             print("Please add exposures before looking for corners...")
@@ -340,6 +340,7 @@ class SkyFootprint(object):
             xy_corners = mask_corners * 0.
             xy_corners[:, 0] = mask_corners[:, 1]
             xy_corners[:, 1] = mask_corners[:, 0]
+            self.full_corners = xy_corners.copy()
 
             # with this Nx2 array of points, we need to order them according
             # to IVOA standards: counter-clockwise when oriented N up starting from
@@ -351,38 +352,52 @@ class SkyFootprint(object):
             # Create a mask from the total footprint consisting solely of the
             # pixels at the outer edge, ordered in clockwise fashion.
             inside = ndimage.binary_erosion(self.footprint).astype(np.int16)
-            edge_pixels = trace_polygon(inside - ndimage.binary_erosion(inside).astype(np.int16))
+            edge_lists = trace_polygon(inside - ndimage.binary_erosion(inside).astype(np.int16),
+                                        sensitivity=sensitivity)
+            xy_pixels = None
+            for edge_pixels in edge_lists:
+                # Start matching the xy_corner positions, one-by-one, to pixels
+                # along the edge.  We only want the index of the corner that matches
+                # as we travel along the edge in order which will be used to
+                # sort the corner positions.
+                #
+                # start at the position closest to North where `deg` is closest to 0
+                corner_dist = distance.cdist(edge_pixels, [xy_corners[radial_order[0]]])
+                start_indx = np.where(corner_dist == corner_dist.min())[0][0]
 
-            # Start matching the xy_corner positions, one-by-one, to pixels
-            # along the edge.  We only want the index of the corner that matches
-            # as we travel along the edge in order which will be used to
-            # sort the corner positions.
-            #
-            # start at the position closest to North where `deg` is closest to 0
-            corner_dist = distance.cdist(edge_pixels, [xy_corners[radial_order[0]]])
-            start_indx = np.where(corner_dist == corner_dist.min())[0][0]
+                # re-order edge_pixels so that the list starts at this pixel.
+                ordered_edge = edge_pixels * 0.
+                ordered_edge[:edge_pixels.shape[0] - start_indx] = edge_pixels[start_indx:]
+                ordered_edge[-start_indx:] = edge_pixels[:start_indx]
 
-            # re-order edge_pixels so that the list starts at this pixel.
-            ordered_edge = edge_pixels * 0.
-            ordered_edge[:edge_pixels.shape[0] - start_indx] = edge_pixels[start_indx:]
-            ordered_edge[-start_indx:] = edge_pixels[:start_indx]
+                # Now compute the distances for all the identified corners
+                # ordered_dists = distance.cdist(xy_corners, ordered_edge)
+                # This results in a list of distances for each xy_corner
+                # Now sort by index along ordered edge
+                # dist_indx = np.sort([np.where(dist == dist.min())[0][0] for dist in ordered_dists])
 
-            # Now compute the distances for all the identified corners
-            ordered_dists = distance.cdist(xy_corners, ordered_edge)
-            # This results in a list of distances for each xy_corner
-            # Now sort by index along ordered edge
-            dist_indx = np.sort([np.where(dist == dist.min())[0][0] for dist in ordered_dists])
+                # determine RA/Dec of these positions in the image
+                # use this to make sure they are ordered correctly
+                if xy_pixels is None:
+                    xy_pixels = detect_corners(ordered_edge)
+                    xy_pixels = np.concatenate([xy_pixels, [xy_pixels[0]]])  # close the polygon
+                    sky_corners = self.meta_wcs.all_pix2world(xy_pixels, 0)
+                    ordered_xy = [ordered_edge.copy()]
+                else:
+                    new_xy = detect_corners(ordered_edge)
+                    new_xy = np.concatenate([new_xy, [new_xy[0]]])  # close the polygon
+                    xy_pixels = np.concatenate([xy_pixels, new_xy])
+                    sky_corners = np.concatenate([sky_corners, self.meta_wcs.all_pix2world(new_xy, 0)])
+                    ordered_xy.append(ordered_edge)
 
-            # determine RA/Dec of these positions in the image
-            # use this to make sure they are ordered correctly
-            xy_corners = ordered_edge[dist_indx]
-            corners = self.meta_wcs.all_pix2world(xy_corners, 0)
+            xy_corners = xy_pixels
+            corners = sky_corners
+            ordered_edge = ordered_xy
 
             # clean up memory a bit
             del edge_pixels
             del inside
             del corner_dist
-            del ordered_dists
 
         else:
             if member not in self.exp_masks:
@@ -920,9 +935,49 @@ def pol2cart(rho, phi):
     y = rho * np.sin(phi)
     return(x, y)
 
+def detect_corners(edge_pixels):
+    """Try to detect pixels based on change of sign of slope"""
+    # rotate edge_pixels by a few so starting point is off a corner
+    edge = edge_pixels * 0.
+    edge[:10] = edge_pixels[-10:]
+    edge[10:] = edge_pixels[:-10]
 
-def trace_polygon(input_mask):
+    deltas = edge[2:] - edge[:-2]
+    slopes = deltas[:, 1] / deltas[:, 0]
+
+    asign = np.sign(slopes)
+    signchange = ((np.roll(asign, 1) - asign) != 0).astype(int)
+    corner_indx = np.where(signchange == 1)[0] + 1
+    corners = edge[corner_indx]
+
+    return corners
+
+def trace_polygon(input_mask, sensitivity=0.1):
     """Convert mask with only edge pixels into a single contiguous polygon"""
+    edge_pixels, mask_residuals = _poly_trace(input_mask)
+    edge_lists = [edge_pixels]
+
+    if mask_residuals.sum() > sensitivity * edge_pixels.shape[0]:
+        ratio = mask_residuals.sum() / edge_pixels.shape[0]
+        # mask_residuals only contains those pixels which were not
+        # part of the already traced edge.
+        residual_pixels = np.where(mask_residuals == 1)
+        residual_pixels = np.array([residual_pixels[1], residual_pixels[0]]).T
+        # look for significantly large sets of pixels with consistent distance
+        # from the already identified edge_pixels
+        residual_dists = distance.cdist(residual_pixels, edge_pixels)
+        residual_mins = np.array([resid.min() for resid in residual_dists])
+        # count number of edge pixels remaining which are the same distance
+        # from pixels in the already identified edge
+        num_mins = np.where(np.abs(residual_mins - residual_mins.min()) < 3 * np.sqrt(2))[0].shape[0]
+        if num_mins > (sensitivity * ratio * residual_pixels.shape[0]):
+            # try tracing the remaining pixels
+            edge_pixels, mask_residuals = _poly_trace(mask_residuals)
+            if edge_pixels.shape[0] > 0:
+                edge_lists.append(edge_pixels)
+    return edge_lists
+
+def _poly_trace(input_mask):
     # find a starting point on the mask
     mask = input_mask.copy()
     for x in range(mask.shape[1]):
@@ -988,7 +1043,7 @@ def trace_polygon(input_mask):
 
     # close the polygon
     polygon.append(polygon[0])
-    return np.array(polygon, dtype=np.int32)
+    return np.array(polygon, dtype=np.int32), mask
 
 def perp(a):
     b = np.empty_like(a)
