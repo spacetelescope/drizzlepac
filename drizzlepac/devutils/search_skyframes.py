@@ -9,7 +9,6 @@ import argparse
 import sys
 import pandas as pd
 
-
 def make_search_string(arg_dict):
     """Create search string that will be used to query observation tables
 
@@ -29,7 +28,10 @@ def make_search_string(arg_dict):
     for item in arg_dict:
         if not arg_dict[item]:
             continue
-        substring = "{} == '{}'".format(item, arg_dict[item])
+        if item is "skycell":
+            substring = "{} == '{}'".format(item, arg_dict[item])
+        else:
+            substring = "{}.str.contains('{}')".format(item, arg_dict[item])
         if len(search_string) == 0:
             query_delimiter = ""
         else:
@@ -71,7 +73,7 @@ def query_dataframe(master_observations_file, search_string, output_columns=None
     Nothing.
     """
     dataframe = pd.DataFrame.from_csv(master_observations_file, header=0, index_col=0)
-    results = dataframe.query(search_string)
+    results = dataframe.query(search_string, engine='python')
     if output_sorting:
         results = results.sort_values(by=output_sorting)
     if output_columns:
@@ -92,8 +94,6 @@ def query_dataframe(master_observations_file, search_string, output_columns=None
     if output_filename:
         results.to_csv(output_filename)
         print("Wrote query results to {}".format(output_filename))
-
-
 # ------------------------------------------------------------------------------------------------------------
 
 
@@ -104,8 +104,11 @@ if __name__ == '__main__':
                         help='Name of the master observations .csv file containing comma-separated columns '
                              'index #, exposure, skycell, config, and spec. '
                              'Default value is "allexposures.csv".')
-    parser.add_argument('-i', '--exposure', required=False, default="None", help='Image name.')
-    parser.add_argument('-s', '--skycell', required=False, default="None", help='Skycell name.')
+    parser.add_argument('-i', '--exposure', required=False, default="None",
+                        help='Image name. Does not have to be a full 9-character iamge name. Partials are '
+                             'acceptable.')
+    parser.add_argument('-s', '--skycell', required=False, default="None",
+                        help='Skycell name. Only full skycell names are accepted.')
     parser.add_argument('-d', '--config', required=False, default="None", choices=["ACS/HRC", "ACS/SBC",
                                                                                    "ACS/WFC", "WFC3/IR",
                                                                                    "WFC3/UVIS", "None"],
@@ -184,3 +187,5 @@ if __name__ == '__main__':
                     output_columns=in_args.output_columns,
                     output_sorting=in_args.output_sorting,
                     output_filename=in_args.output_results_file)
+# IPPSSOOT
+# j92c01b9q
