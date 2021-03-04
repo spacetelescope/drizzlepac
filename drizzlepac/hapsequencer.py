@@ -50,6 +50,7 @@ import fnmatch
 import logging
 import os
 import pickle
+import shutil
 import sys
 import traceback
 
@@ -607,18 +608,20 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
 
             # Need to delete the Ramp filter Exposure objects from the *Product lists as
             # these images should not be processed beyond the alignment to Gaia (run_align_to_gaia).
+            ramp_product_list = []
             _ = delete_ramp_exposures(total_item.fdp_list, 'FILTER')
-            ramp_list = delete_ramp_exposures(total_item.edp_list, 'EXPOSURE')
-            product_list += ramp_list
+            ramp_product_list = delete_ramp_exposures(total_item.edp_list, 'EXPOSURE')
+            product_list += ramp_product_list
 
             # If there are Grism/Prism images present in this visit, as well as corresponding direct images
             # for the same detector, update the primary WCS in the direct and/or Grism/Prism images as
             # appropriate to be an 'a priori' or the pipeline default (fallback) solution.  Note: there
             # is no need to delete the Grism/Prism lists after the WCS update as the Grism/Prism
             # exposures are stored in an list ignored by a majority of the processing.
+            grism_product_list = []
             if total_item.grism_edp_list and total_item.edp_list:
-                grism_flt_list = update_wcs_in_visit(total_item)
-                product_list += grism_flt_list
+                grism_product_list = update_wcs_in_visit(total_item)
+                product_list += grism_product_list
 
             # Need a trailer file to log the situation in this special case of a total data product in the visit with
             # only Grism/Prism and no direct images.  No processing is actually done in this case.
@@ -685,6 +688,20 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         log.info("Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error ")
         log.info("Return condition {}".format(return_value))
         logging.shutdown()
+
+        # The Grism/Prism SVM FLT/FLC images which have had their WCS reconciled with the
+        # corresponding direct images need trailer files.  This is also true of the Ramp images
+        # which have only been processed through the "align to Gaia" stage.  At this time, just
+        # copy the total trailer file, and rename it appropriately.
+        if total_obj_list:
+            for tot_obj in total_obj_list:
+                for gitem in grism_product_list:
+                    if gitem.endswith('trl.txt'):
+                        shutil.copy(logname, gitem)
+                for ritem in ramp_product_list:
+                    if ritem.endswith('trl.txt'):
+                        shutil.copy(logname, ritem)
+
         # Append total trailer file (from astrodrizzle) to all total log files
         if total_obj_list:
             for tot_obj in total_obj_list:
@@ -904,6 +921,7 @@ def update_wcs_in_visit(tdp):
     -------
     grism_product_list : list
         List of all the SVM Grism/Prism FLT/FLC files updated with the common WCS
+        and their corresponding trailer filenames
 
     """
     log.info("\n***** Grism/Prism Image Processing *****")
@@ -997,7 +1015,10 @@ def update_wcs_in_visit(tdp):
                     update_active_wcs(filename, final_wcsname)
 
                     # Add the Grism/Prism images to the manifest as all of the files exist.
+                    # Also, add the Grism/Prism trailer filename here.  The file will be created by
+                    # by copying the Total Data Product trailer file at the end of processing.
                     grism_product_list.append(filename)
+                    grism_product_list.append(g_edp.trl_filename)
 
             for edp in tdp.edp_list:
                 filename = edp.full_filename
@@ -1226,9 +1247,11 @@ def delete_ramp_exposures(obj_list, type_of_list):
     Returns
     -------
     ramp_filenames_list : list of str
-        List of ramp exposure SVM FLT/FLC filenames
+        List of ramp exposure SVM FLT/FLC filenames and their corresponding trailer filenames
 
     """
+    log.info('Removing the Ramp images from the Total Data Product exposure list.')
+    log.info('Theses images are not processed beyond the "align to Gaia" stage.')
     temp = []
     ramp_filenames_list = []
     while obj_list:
@@ -1236,8 +1259,12 @@ def delete_ramp_exposures(obj_list, type_of_list):
         if obj.filters.lower().find('fr') == -1:
             temp.append(obj)
         else:
+            # Add the Ramp images to the manifest as well as the Ramp trailer filename here.
+            # The file will be created by by copying the Total Data Product trailer file at
+            # the end of processing.
             if type_of_list is 'EXPOSURE':
                 ramp_filenames_list.append(obj.full_filename)
+                ramp_filenames_list.append(obj.trl_filename)
     while temp:
         obj_list.append(temp.pop())
 
