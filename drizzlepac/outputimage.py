@@ -20,7 +20,7 @@ no = False
 
 RESERVED_KEYS = ['NAXIS', 'NAXIS1', 'NAXIS2', 'EXTEND',
                  'BITPIX', 'DATE', 'IRAF-TLM',
-                 'XTENSION', 'EXTNAME', ' EXTVER']
+                 'XTENSION', 'EXTNAME', 'EXTVER']
 
 EXTLIST = ('SCI', 'WHT', 'CTX')
 
