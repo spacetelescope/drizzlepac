@@ -5,7 +5,7 @@ from itertools import chain, combinations
 from matplotlib import path
 from matplotlib import pyplot as plt
 from skimage.feature import corner_peaks, corner_harris
-from scipy.ndimage import morphology
+from scipy import ndimage
 from scipy.spatial import distance
 import numpy as np
 import astropy
@@ -169,6 +169,13 @@ class SkyFootprint(object):
         Mask of combined footprint scaled by each input's exposure value (e.g., EXPTIME)
     footprint : `numpy.ndarray`
         Binary (numpy.int16) mask of combined footprint of all input exposures
+    corners : `numpy.ndarray`
+        List of vertices of the footprint in sky coordinates
+    xy_corners : `numpy.ndarray`
+        List of vertices of the footprint in X,Y coordinates
+    edge_pixels : `numpy.ndarray`
+        List of all pixels along the outside edge of the footprint, in
+        counter-clockwise order
     exp_masks : `dict`
         Separate entries for each exposure containing:
 
@@ -206,6 +213,7 @@ class SkyFootprint(object):
         self.corners = []
         self.sky_corners = []
         self.xy_corners = []
+        self.edge_pixels = []
 
         self.total_mask = np.zeros(meta_wcs.array_shape, dtype=np.int16)
         self.scaled_mask = np.zeros(meta_wcs.array_shape, dtype=np.float32)
@@ -309,7 +317,7 @@ class SkyFootprint(object):
         if self.footprint is None:
             self.find_footprint(member=member)
 
-        edges = morphology.binary_erosion(self.footprint).astype(np.int16)
+        edges = ndimage.binary_erosion(self.footprint).astype(np.int16)
         self.edges = self.footprint - edges
 
 
@@ -333,18 +341,48 @@ class SkyFootprint(object):
             xy_corners[:, 0] = mask_corners[:, 1]
             xy_corners[:, 1] = mask_corners[:, 0]
 
-            # determine RA/Dec of these positions in the image
-            # use this to make sure they are ordered correctly
-            corners_sky = self.meta_wcs.all_pix2world(xy_corners, 0)
-
             # with this Nx2 array of points, we need to order them according
             # to IVOA standards: counter-clockwise when oriented N up starting from
             # northernmost point
             center = self.meta_wcs.wcs.crpix
             dist, phi, deg = cart2pol(xy_corners[:, 0] - center[0], xy_corners[:, 1] - center[1])
-            order = np.argsort(deg)
-            corners = corners_sky[order].tolist()
-            xy_corners = xy_corners[order].tolist()
+            radial_order = np.argsort(deg)
+
+            # Create a mask from the total footprint consisting solely of the
+            # pixels at the outer edge, ordered in clockwise fashion.
+            inside = ndimage.binary_erosion(self.footprint).astype(np.int16)
+            edge_pixels = trace_polygon(inside - ndimage.binary_erosion(inside).astype(np.int16))
+
+            # Start matching the xy_corner positions, one-by-one, to pixels
+            # along the edge.  We only want the index of the corner that matches
+            # as we travel along the edge in order which will be used to
+            # sort the corner positions.
+            #
+            # start at the position closest to North where `deg` is closest to 0
+            corner_dist = distance.cdist(edge_pixels, [xy_corners[radial_order[0]]])
+            start_indx = np.where(corner_dist == corner_dist.min())[0][0]
+
+            # re-order edge_pixels so that the list starts at this pixel.
+            ordered_edge = edge_pixels * 0.
+            ordered_edge[:edge_pixels.shape[0] - start_indx] = edge_pixels[start_indx:]
+            ordered_edge[-start_indx:] = edge_pixels[:start_indx]
+
+            # Now compute the distances for all the identified corners
+            ordered_dists = distance.cdist(xy_corners, ordered_edge)
+            # This results in a list of distances for each xy_corner
+            # Now sort by index along ordered edge
+            dist_indx = np.sort([np.where(dist == dist.min())[0][0] for dist in ordered_dists])
+
+            # determine RA/Dec of these positions in the image
+            # use this to make sure they are ordered correctly
+            xy_corners = ordered_edge[dist_indx]
+            corners = self.meta_wcs.all_pix2world(xy_corners, 0)
+
+            # clean up memory a bit
+            del edge_pixels
+            del inside
+            del corner_dist
+            del ordered_dists
 
         else:
             if member not in self.exp_masks:
@@ -352,6 +390,7 @@ class SkyFootprint(object):
             xy_corners = self.exp_masks[member]['xy_corners']
             corners = self.meta_wcs.all_pix2world(xy_corners, 0)
 
+        self.edge_pixels = ordered_edge
         self.xy_corners = xy_corners
         self.corners = corners
 
@@ -802,8 +841,8 @@ class SkyCorners(object):
         # This results in a mask where pixels inside the footprint (but not
         # the very edge) will be False.
         # This will allow for easy identification of any pixel interior to the footprint
-        inside = morphology.binary_erosion(footprint, iterations=1).astype(np.int16)
-        self.inside = trace_polygon(inside - morphology.binary_erosion(inside).astype(np.int16))
+        inside = ndimage.binary_erosion(footprint, iterations=1).astype(np.int16)
+        self.inside = trace_polygon(inside - ndimage.binary_erosion(inside).astype(np.int16))
 
 
         # Start by identifying what portions of each chip edge makes up

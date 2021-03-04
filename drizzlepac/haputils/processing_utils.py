@@ -254,6 +254,23 @@ def find_footprint(hdu, extname='SCI'):
 
     return footprint.corners
 
+def interpret_sregion(image, extname='SCI'):
+    """Interpret the S_REGION keyword as a list of RA/Dec points"""
+    # This function could, conceivably, be called directly...
+    hdu, closefits = _process_input(image)
+
+    # Find all extensions to be updated
+    numext = countExtn(hdu, extname=extname)
+    sregions = []
+    for extnum in range(1, numext + 1):
+        sregions.append(fits.getval(image, 's_region', ext=(extname, extnum)))
+
+    coords = []
+    for region_str in sregions:
+        radec_str = np.array(region_str.split(' ')[2:], dtype=np.float64)
+        coords.append(radec_str.reshape((radec_str.shape[0] // 2, 2)))
+
+    return coords
 
 def _process_input(input):
     """Verify that input is an Astropy HDUList object opened in 'update' mode
