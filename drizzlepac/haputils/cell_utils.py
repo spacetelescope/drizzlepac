@@ -347,6 +347,11 @@ class SkyFootprint(object):
             # northernmost point
             center = self.meta_wcs.wcs.crpix
             dist, phi, deg = cart2pol(xy_corners[:, 0] - center[0], xy_corners[:, 1] - center[1])
+            # set '0' to be at -45deg.  This will avoid points at 358 deg being skipped over for a
+            # point at 88 degrees, for example, insuring that more points near the top of the image
+            # get selected as the starting point.
+            deg += 45.0
+            deg[deg > 360.] -= 360.
             radial_order = np.argsort(deg)
 
             # Create a mask from the total footprint consisting solely of the
@@ -364,11 +369,14 @@ class SkyFootprint(object):
                 # start at the position closest to North where `deg` is closest to 0
                 corner_dist = distance.cdist(edge_pixels, [xy_corners[radial_order[0]]])
                 start_indx = np.where(corner_dist == corner_dist.min())[0][0]
-
-                # re-order edge_pixels so that the list starts at this pixel.
-                ordered_edge = edge_pixels * 0.
-                ordered_edge[:edge_pixels.shape[0] - start_indx] = edge_pixels[start_indx:]
-                ordered_edge[-start_indx:] = edge_pixels[:start_indx]
+                print(start_indx)
+                if start_indx != 0:
+                    # re-order edge_pixels so that the list starts at this pixel.
+                    ordered_edge = edge_pixels * 0.
+                    ordered_edge[:edge_pixels.shape[0] - start_indx] = edge_pixels[start_indx:]
+                    ordered_edge[-start_indx:] = edge_pixels[:start_indx]
+                else:
+                    ordered_edge = edge_pixels
 
                 # Now compute the distances for all the identified corners
                 # ordered_dists = distance.cdist(xy_corners, ordered_edge)
