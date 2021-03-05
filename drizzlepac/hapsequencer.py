@@ -1172,15 +1172,23 @@ def update_active_wcs(filename, wcsname):
         log.info("Archiving previous active WCS solution as necessary: {}".format(current_active_wcsname))
 
         # Get the distortion model identification of the desired active WCS solution
-        index = wcsname.upper().find('IDC_')
+        tmp_wcsname = wcsname.split('-')[0]
+        index = tmp_wcsname.upper().find('IDC_')
         idc_new_string = ''
-        if index > 0:
-            idc_new_string = wcsname[0:13]
+        if index > -1:
+            idc_new_string = tmp_wcsname[index:]
+
+        # Get the headerlet HDRNAMES for comparison to the alternate WCS solutions
+        headerlet_hdrnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="HDRNAME")
 
         # Examine the alternate WCS solutions to determine if they will be auto-archived due
-        # to a distortion model change
+        # to a distortion model change.  The auto-archiving will happen when the desired WCS
+        # solution is installed as the active solution - just deleting duplicates here pro-actively.
         wcs_key_dict = wcsutil.altwcs.wcsnames(filename, ext=1)
         for wkey, wname in wcs_key_dict.items():
+            if wkey == ' ':
+                continue
+
             index = wname.upper().find(idc_new_string.upper())
 
             # No match so solution will be copied to a headerlet automatically when the new primary is set
@@ -1188,34 +1196,28 @@ def update_active_wcs(filename, wcsname):
                 log.info("Archiving alternate WCS solution as a headerlet as necessary: {}".format(wname))
 
                 # Now check if the HDRNAME between this solution and a headerlet already exists
-                # Get the headerlet HDRNAMES fresh every time
                 hdr_keyword = hdu[1].header['HDRNAME' + wkey.upper()]
-                headerlet_hdrnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="HDRNAME")
 
                 # Solution already exists as a headerlet extension, so just delete it
-                if hdr_keyword in headerlet_names:
+                if hdr_keyword in headerlet_hdrnames:
                     wcsutil.altwcs.deleteWCS(filename, extname_list, wcskey=wkey)
-                    log.info("Alternate WCS solution {} is already a headerlet.".format(wname))
+
+        # Get all the WCS solution names
+        headerlet_wcsnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="WCSNAME")
+        keyword_wcs_list = list(wcs_key_dict.values())
 
         # Finally, install the desired WCS as the active WCS solution
-        # Is the source of the wcsname for this image from keywords or a headerlet
-        # as the source dictates how the WCS will be made the active WCS.
-        # Examine the "keyword" WCS solutions...
-        headerlet_hdrnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="HDRNAME")
-        headerlet_wcsnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="WCSNAME")
-
-        keyword_wcs_list = list(wcsutil.altwcs.wcsnames(filename, ext=1).values())
-        found_string = [i for i in keyword_wcs_list if wcsname == i]
-        if found_string:
-            wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=found_string[0])
-        # ...the headerlet WCS solutions -- need to use the HDRNAME to retrieve the headerlet
-        else:
-            hdrname = ''
-            for h, w in zip(headerlet_hdrnames, headerlet_wcsnames):
-                if w == wcsname:
-                    hdrname = h
-                    break
+        # Is the source of the wcsname for this image from a headerlet extension
+        # or from the alternate solutions in the header as the source dictates how
+        # the WCS will be made the active WCS. If available, restore a WCS solution
+        # from the headerlet extension.
+        hdrname = ''
+        try:
+            hdrname = headerlet_hdrnames[headerlet_wcsnames.index(wcsname)]
             wcsutil.headerlet.restore_from_headerlet(filename, hdrname=hdrname, force=True)
+        except ValueError:
+            found_string = [i for i in keyword_wcs_list if wcsname == i]
+            wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=found_string[0])
     else:
         log.info("No need to update active WCS solution of {} for {} as it is already the active solution.".format(wcsname, filename))
 
@@ -1250,8 +1252,7 @@ def delete_ramp_exposures(obj_list, type_of_list):
         List of ramp exposure SVM FLT/FLC filenames and their corresponding trailer filenames
 
     """
-    log.info('Removing the Ramp images from the Total Data Product exposure list.')
-    log.info('Theses images are not processed beyond the "align to Gaia" stage.')
+    reported = False
     temp = []
     ramp_filenames_list = []
     while obj_list:
@@ -1265,6 +1266,10 @@ def delete_ramp_exposures(obj_list, type_of_list):
             if type_of_list is 'EXPOSURE':
                 ramp_filenames_list.append(obj.full_filename)
                 ramp_filenames_list.append(obj.trl_filename)
+                if not reported:
+                    log.info('Removing the Ramp images from the Total Data Product exposure list.')
+                    log.info('Theses images are not processed beyond the "align to Gaia" stage.')
+                    reported = True
     while temp:
         obj_list.append(temp.pop())
 
