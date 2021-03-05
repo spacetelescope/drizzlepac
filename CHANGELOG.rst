@@ -17,6 +17,12 @@ of the list).
 3.2.1 (unreleased)
 ==================
 
+- Changed to insure that EXTNAME and EXTVER are always removed from
+  simple FITS drizzle product headers. [#954]
+
+- Changed to insure that all the distortion keywords (e.g., TDD*, D2IM*,...)
+  are removed from from the output drizzle product headers [#954].
+
 - Fix a bug in ``tweakback`` that may cause incorrect "updated" WCS to be
   picked up from the drizzled image. [#913]
 
