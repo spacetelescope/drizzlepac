@@ -53,6 +53,11 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 def fft_deconv_img(img, psf, freq_limit=0.95, block_size=(1024, 1024)):
     """ FFT image deconvolution
 
+    This function performs a simple 1-step FFT-based deconvolution of the
+    input image using the specified PSF.  The input image get transformed
+    by FFT section-by-section in blocks defined by the `block_size` parameter
+    in order to minimize the memory use for what can be extremely large images.
+
     PARAMETERS
     -----------
     img : ndarray
@@ -67,6 +72,9 @@ def fft_deconv_img(img, psf, freq_limit=0.95, block_size=(1024, 1024)):
         Compute regularization parameter (frequency limit) to be used with PSF in deconvolution.
         This value should result in selecting a frequency
         one to two orders of magnitude below the largest spectral component of the point-spread function.
+
+    block_size : tuple, optional
+        This specifies how much of the input image will be transformed using an FFT at one time.
 
     RETURNS
     -------
@@ -91,7 +99,7 @@ def fft_deconv_img(img, psf, freq_limit=0.95, block_size=(1024, 1024)):
     del P2
 
     # Insure input image also has no NaN values, only if necessary
-    # This should be less memory-intensive that np.isnan()
+    # This should be less memory-intensive than np.isnan()
     if len(np.where(img == np.nan)[0]) > 0:
         img = np.nan_to_num(img, copy=True, nan=0.0)
     img_shape = img.shape
@@ -174,8 +182,25 @@ def _center_psf(psf, img_block_shape):
     return centered_psf
 
 
-def pad_arr(arr, block=1024):
-    """ Zero-pad an input array up to an integer number of blocks in each dimension"""
+def pad_arr(arr, block=(1024, 1024)):
+    """ Zero-pad an input array up to an integer number of blocks in each dimension
+
+    Parameters
+    ----------
+    arr : `numpy.ndarray`
+        Original input array to be padded to the new size
+
+    block : `tuple` or `int`
+        Size of blocks which should be used to define the output size so that the
+        output image is an integer number of blocks with this size.  If only an
+        integer is specified, then a block size of (block, block) will be used.
+
+    Returns
+    -------
+    new_arr : `numpy.ndarray`
+        Resized output array of size (n*block[0], m*block[1]).
+
+    """
     if isinstance(block, int):
         block = (block, block)
     new_shape = (arr.shape[0] + (block[0] - (arr.shape[0] % block[0])),
@@ -186,6 +211,38 @@ def pad_arr(arr, block=1024):
 
 
 def create_blocks(arr, block_size=(1024, 1024)):
+    """Split input array into uniformly-sized blocks
+
+    This function will split the input array into uniformly-sized blocks
+    with the size of each block specified as `block_size`.  The input array
+    will be zero-padded in either or both axes in order to expand the array
+    to an integer number of blocks in both dimensions.
+
+    Parameters
+    ----------
+    arr : `numpy.ndarray`
+        2-D Input image of size N x M
+
+    block_size : `tuple`, optional
+        Tuple specifying the block size n x m
+
+    Returns
+    --------
+    block_dict : `dict`
+        This dictionary contains all the information describing all the blocks
+        created from the input array consisting of
+        {'slices':[], 'new_shape': (N`, M`), `blocks`: []} where:
+
+        ``"slices"``:
+            List of indices [y, x, n, m] describing each block, where,
+            (y,x) is index of the block in the original array and
+            (n,m) is the number of pixels in the block.
+        ``"new_shape"``:
+            Full size of the padded array that was cut into blocks
+        ``"blocks"``:
+            Actual blocks as returned by `skimage.util.view_as_blocks`.
+
+    """
     if arr.shape[0] % block_size[0] != 0 or arr.shape[1] % block_size[1] != 0:
         new_arr = pad_arr(arr, block=block_size)
     else:
@@ -208,7 +265,30 @@ def create_blocks(arr, block_size=(1024, 1024)):
 
 
 def rebuild_arr(block_arr, slices, new_shape, output_shape):
-    """Convert convolved blocks into full array that matches original input array"""
+    """Convert convolved blocks into full array that matches original input array
+
+    Parameters
+    -----------
+    block_arr : `numpy.ndarray`
+        List of image blocks which need to be pieced back together into a single
+        array.
+
+    slices : `list`
+        List of `slices` from `create_blocks` specifying the location ajd size of each
+        block from the original input array.
+
+    new_shape : `tuple`
+        Full size of the padded image used to create the uniformly sized blocks.
+
+    output_shape : `tuple`
+        The original shape of the array before padding and creating the blocks.
+
+    Returns
+    --------
+    out_arr : `numpy.ndarray`
+        Single array of same size as original input array before padding and splitting into blocks.
+
+    """
     out_arr = np.zeros(new_shape, dtype=block_arr.dtype)
     for s in slices:
         out_arr[(s[2], s[3])] = block_arr[s[0], s[1], :, :]
@@ -400,7 +480,7 @@ def _create_input_psf(psf_name, calimg, total_flux):
     lib_psf_arr *= h2d
 
     # This will be the name of the new file containing the library PSF that will be drizzled to
-    # match the input iamge `drzimg`
+    # match the input image `drzimg`
     psf_flt_name = psf_root.replace('.fits', '_psf_flt.fits')
 
     # create version of PSF that will be drizzled
@@ -751,7 +831,54 @@ class UserStarFinder(findstars.StarFinderBase):
 def find_point_sources(drzname, data=None, mask=None,
                        box_size=11, block_size=(1024, 1024),
                        diagnostic_mode=False):
-    """ Identify point sources most similar to TinyTim PSFs"""
+    """ Identify point sources most similar to TinyTim PSFs
+
+    Primary user-interface to identifying point-sources in the
+    drizzle product image most similar to the TinyTim PSF for the
+    filter-combination closest to that found in the drizzled image.
+    The PSFs are pulled, by default, from those installed with the
+    code as created using the TinyTim PSF modelling software for
+    every direct image filter used by the ACS and WFC3 cameras on HST.
+
+    .. note: Sources identified by this function will only have integer pixel
+    positions.
+
+    Parameters
+    -----------
+    drzname : `str`
+        Filename of the drizzled image which should be used to find
+        point sources.  This will provide the information on the filters
+        used on the all the input exposures.
+
+    data : `numpy.ndarray`, optional
+        If provided, will be used as the image to be evaluated instead
+        of opening the file specified in `drzname`.
+
+    mask : `numpy.ndarray`, optional
+        If provided, this mask will be used to eliminate regions in the
+        input array from being searched for point sources.  Pixels with
+        a value of 0 in the mask indicate what pixels should be ignored.
+
+    box_size : `int`, optional
+        Size of the box used to recognize each point source.
+
+    block_size : `tuple`, optional
+        (Y, X) size of the block used by the FFT to process the drizzled image.
+
+    diagnostic_mode : `bool`, optional
+        Specify whether or not to provide additional diagnostic messages
+        and output while processing.
+
+    Returns
+    -------
+    peaks : `astropy.table.Table`
+        Output from `photutils.detection.find_peaks` for all identified sources
+        with columns `x_peak`, `y_peak` and `peak_value`.
+
+    psf_fwhm : `float`
+        FWHM (in pixels) of PSF used to identify the sources.
+
+    """
     # determine the name of at least 1 input exposure
     calname = determine_input_image(drzname)
     sep = box_size // 2
