@@ -72,7 +72,7 @@ def query_dataframe(master_observations_file, search_string, output_columns=None
     -------
     Nothing.
     """
-    dataframe = pd.DataFrame.from_csv(master_observations_file, header=0, index_col=0)
+    dataframe = pd.read_csv(master_observations_file, header=0, index_col=0)
     results = dataframe.query(search_string, engine='python')
     if output_sorting:
         results = results.sort_values(by=output_sorting)
