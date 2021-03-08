@@ -301,6 +301,22 @@ class SkyFootprint(object):
     # Methods with 'find' compute values
     # Methods with 'get' return values
     def find_footprint(self, member='total'):
+        """Compute a mask for the footprint
+
+        This method converts the full mask built up from all the input
+        exposures, or for a single exposure, and converts it to a
+        boolean mask.  The mask has a value of 1 where a pixel was
+        part of an exposure.
+
+        The resulting mask gets saved as the ``footprint`` attribute.
+
+        Parameters
+        ==========
+        member : `str`, optional
+            Specify what member to compute the footprint for.
+
+        """
+
         if self.total_mask is None:
             print("Please add exposures before computing footprint...")
         if member == 'total':
@@ -313,6 +329,7 @@ class SkyFootprint(object):
 
 
     def find_edges(self, member='total'):
+        """Computes a mask containing only those pixels along the edge of the footprint."""
 
         if self.footprint is None:
             self.find_footprint(member=member)
@@ -322,7 +339,36 @@ class SkyFootprint(object):
 
 
     def find_corners(self, member='total', sensitivity=0.1):
-        """Extract corners from footprint """
+        """Extract corners/vertices from footprint
+
+        This method computes the positions of all the corners that
+        make up the footprint.  The corners are computed starting with
+        the corner nearest (within 45deg) of vertical as measured from
+        the center of the footprint, then proceeds counter-clockwise
+        (North to East).  The corners are initially identified using
+        the `skimage.corner_harris` function on the footprint mask to
+        identify the starting corner which is closest to veritical.  The
+        edge pixels are then ordered counter-clockwise, and corners are
+        finally confirmed in order where the slope along each edge changes
+        sign.
+
+        This results in a list of corner positions
+        which can be used to populate the `S_REGION` keyword and traces
+        out the outline of the footprint.
+
+        The results are saved as the attributes:
+
+          * ``edge_pixels`` : the complete list of all pixels, as a list
+            of `numpy.ndarray` instances, that make up the edge of the
+            footprint in counter-clockwise order.  For
+            multiple chips in the footprint, there will be a separate
+            array of the ordered pixel positions per chip.
+          * ``xy_corners`` : `numpy.ndarray` of (X,Y) positions for all
+            identified corners from the footprint.
+          * ``corners`` : `numpy.ndarray` of (RA, Dec) positions for
+            all identified corners from the footprint.
+
+        """
         if len(self.members) == 0:
             print("Please add exposures before looking for corners...")
             return
@@ -418,6 +464,18 @@ class SkyFootprint(object):
         self.corners = corners
 
     def get_edges_sky(self, member='total'):
+        """Returns the sky coordinates of all edge pixels.
+
+        This method uses the WCS of the footprint to convert the (X,Y)
+        pixel positions of all the edge pixels and converts them to
+        world coordinates.
+
+        The results are saved as the attributes:
+
+          * ``edges_ra``
+          * ``edges_dec``
+
+        """
         self.find_footprint(member=member)
         if self.edges is None:
             self.find_edges()
@@ -429,6 +487,15 @@ class SkyFootprint(object):
         return self.edges_ra, self.edges_dec
 
     def build_polygon(self, member='total'):
+        """Convert the edges into a SphericalPolygon object.
+
+        This method converts the sky coordinates of the footprint edges
+        into a `spherical_geometry.SphericalPolygon` instance.
+
+        The results are saved as the ``polygon`` attribute.
+
+        """
+
         if self.edges_ra is None:
             self.get_edges_sky(member=member)
 
@@ -445,14 +512,72 @@ class SkyFootprint(object):
         return hdulist
 
     def get_footprint_hdu(self, filename=None, overwrite=True, member='total'):
+        """Convert the footprint into a FITS HDUList object
+
+        Parameters
+        ----------
+        filename : `str`, optional
+            If specified, write out the object to the specified FITS file.
+
+        overwrite : `bool`, optional
+            Specify whether or not to overwrite a previously written footprint FITS file.
+
+        member : `str`, optional
+            Name of member, or 'total', footprint to write out as FITS HDUList object.
+
+        Returns
+        --------
+        hdu : `fits.PrimaryHDU`
+            FITS HDU containing the footprint
+        """
         self.find_footprint(member=member)
         return self._get_fits_hdu(self.footprint, filename=filename, overwrite=overwrite)
 
     def get_edges_hdu(self, filename=None, overwrite=True, member='total'):
+        """Convert the edge pixels mask into a FITS HDUList object
+
+        Parameters
+        ----------
+        filename : `str`, optional
+            If specified, write out the object to the specified FITS file.
+
+        overwrite : `bool`, optional
+            Specify whether or not to overwrite a previously written mask FITS file.
+
+        member : `str`, optional
+            Name of member, or 'total', footprint to write out as FITS HDUList object.
+
+        Returns
+        --------
+        hdu : `fits.PrimaryHDU`
+            FITS HDU containing the edge pixels mask
+        """
         self.find_edges(member=member)
         return self._get_fits_hdu(self.edges, filename=filename, overwrite=overwrite)
 
     def get_mask_hdu(self, filename=None, overwrite=True):
+        """Convert the total mask into a FITS HDUList object
+
+        The `total mask` attribute represents the number of exposures per pixel for the mosaic,
+        optionally scaled by the exposure time.  This gets written out as a FITS
+        PrimaryHDU object by this method.
+
+        Parameters
+        ----------
+        filename : `str`, optional
+            If specified, write out the object to the specified FITS file.
+
+        overwrite : `bool`, optional
+            Specify whether or not to overwrite a previously written mask FITS file.
+
+        member : `str`, optional
+            Name of member, or 'total', footprint to write out as FITS HDUList object.
+
+        Returns
+        --------
+        hdu : `fits.PrimaryHDU`
+            FITS HDU containing the total mask
+        """
         return self._get_fits_hdu(self.total_mask, filename=filename, overwrite=overwrite)
 
 
@@ -813,123 +938,6 @@ class SkyCell(object):
         self.mask = mask
 
 
-class SkyCorners(object):
-    def __init__(self):
-        # attributes keeping track of combined set of inputs
-        self.xy_corners = []
-        self.sky_corners = []
-        self.edges = []
-        self.sky_edges = []
-
-        # keep track of how inputs relate to each chip
-        self.chips = []
-
-        # attributes related to WCS used to define the output footprint
-        self.inside = None
-        self.footprint = None
-        self.segments = []
-
-    def add_footprint(self, footprint, corners):
-
-        xy_corners = corners.copy()
-        xy_corners.append(xy_corners[0])
-
-        sky_corners = footprint.copy()
-        sky_corners.append(sky_corners[0])
-
-        edges = []
-        sky_edges = []
-        # Define edges for each chip based on input corners for the chip
-        for i, xy in enumerate(xy_corners[:-1]):
-            # Saving edge definitions in 'reverse' order compensates for
-            # the clock-wise orientation of the corners from `wcs.calc_footprint()`.
-            edge = [xy_corners[i + 1], xy]
-            sky_edge = [sky_corners[i + 1], sky_corners[i]]
-
-            chip_edge = {'edge': edge, 'sky_edge': sky_edge}
-            edges.append(chip_edge)
-            sky_edges.append(sky_edge)
-            self.edges.append(chip_edge)
-
-        new_chip = {'sky_corners': sky_corners, 'xy_corners': xy_corners,
-                    'edges': edges, 'sky_edges': sky_edges}
-
-        self.chips.append(new_chip)
-        self.sky_corners.append(footprint)
-        self.xy_corners.append(corners)
-
-    def apply_mask(self, footprint, wcs):
-        """Compute segments which make up the outline of the total footprint"""
-        # Shrink footprint by 1 pixel, then invert.
-        # This results in a mask where pixels inside the footprint (but not
-        # the very edge) will be False.
-        # This will allow for easy identification of any pixel interior to the footprint
-        inside = ndimage.binary_erosion(footprint, iterations=1).astype(np.int16)
-        self.inside = trace_polygon(inside - ndimage.binary_erosion(inside).astype(np.int16))
-
-
-        # Start by identifying what portions of each chip edge makes up
-        # the exterior of the total footprint as specified on input
-        for edge in self.edges:
-            segments, sky_segments = find_segments(edge['edge'][0], edge['edge'][1], self.inside, wcs)
-            if len(segments) > 0:
-                self.segments.append({'edge': segments, 'sky_edge': sky_segments})
-
-        # Now connect all exterior chip segments into a continuous polygon
-        # Start with the corner (start/end of edge) with largest Y value
-        start_corner = None
-        region = []
-        # define what edge will close/finish the polygon when going counter-clockwise
-        # This edge defines the last 2 points on the sky for the S_REGION keyword
-        last_edge = None
-        start_edge = None
-        remaining_segments = 0
-
-        for segment in self.segments:
-            # The segment may contain 0 or multiple segments
-            for start, end in segment['sky_edge']:
-                remaining_segments += 1
-                # Look for starting corner as corner with largest Dec (closest to +90)
-                # which has the smallest RA (if multiple points have identical Dec)
-                if (start_corner is not None and ((start[1] > start_corner[1]) or \
-                    start[1] == start_corner[1] and start[0] < start_corner[0])) or \
-                    start_corner is None:
-                    start_corner = start
-                    start_edge = [start, end]
-
-                if end[1] > start_corner[1]:
-                    start_corner = end
-                    last_edge = [start, end]
-                    start_edge = None  # Try again to find starting edge
-
-        # After finding starting corner, if last_edge is not None, we know
-        # that the starting corner is the 'start' of the segment when
-        # going counter-clockwise
-        end_corner = None
-        if start_edge is None:
-            # last_edge will always be defined in this case, so
-            # look for edge with start closest to this edge end point
-            for edge in self.segments:
-                for start, end in self.segments['sky_edge']:
-                    if start == last_edge['sky_edge'][1]:
-                        start_edge = edge
-                        end_corner = end
-                        break
-        else:
-            # start populating the polygon (s_region coordinates)
-            end_corner = start_edge['sky_edge'][1]
-
-        # At this point, both the starting edge and end corner are defined.
-        # Now start building up region polygon from all exterior segments
-        # starting from this edge
-        remaining_segments -= 1
-        region.append(start_edge)
-        region_end = None
-
-        while region_end != end_corner and remaining_segments > 0:
-            pass
-
-
 def cart2pol(x, y, clockwise=False):
     """Converts x,y arrays into radial coordinates of distance and degrees."""
     rho = np.sqrt(x**2 + y**2)
@@ -939,6 +947,7 @@ def cart2pol(x, y, clockwise=False):
     return(rho, phi, deg)
 
 def pol2cart(rho, phi):
+    """Converts radial coordinates of distance and radians into x,y arrays."""
     x = rho * np.cos(phi)
     y = rho * np.sin(phi)
     return(x, y)
