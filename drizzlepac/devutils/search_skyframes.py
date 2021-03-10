@@ -8,6 +8,9 @@
 import argparse
 import sys
 import pandas as pd
+import pdb
+
+from drizzlepac.haputils import make_poller_files
 
 def make_search_string(arg_dict):
     """Create search string that will be used to query observation tables
@@ -70,7 +73,8 @@ def query_dataframe(master_observations_file, search_string, output_columns=None
 
     Returns
     -------
-    Nothing.
+    results : Pandas DataFrame class
+        A Pandas DataFrame continaing the query results.
     """
     dataframe = pd.read_csv(master_observations_file, header=0, index_col=0)
     results = dataframe.query(search_string, engine='python')
@@ -94,6 +98,25 @@ def query_dataframe(master_observations_file, search_string, output_columns=None
     if output_filename:
         results.to_csv(output_filename)
         print("Wrote query results to {}".format(output_filename))
+
+    return results
+
+# ------------------------------------------------------------------------------------------------------------
+
+
+def visualize_footprints(results):
+    """Visualize footprints of skycells and exposures in query result
+
+    Parameters
+    ----------
+    results : Pandas DataFrame class
+        Pandas DataFrame containing query results.
+
+    Returns
+    -------
+    Nothing.
+    """
+
 # ------------------------------------------------------------------------------------------------------------
 
 
@@ -115,7 +138,6 @@ if __name__ == '__main__':
                         help='Instrument/Detector name. All caps, separated by a "/" (e.g. WFC3/IR).')
 
     parser.add_argument('-f', '--spec', required=False, default="None", help='Filter name.')
-    
     parser.add_argument('-o', '--output_results_file', required=False, default="None",
                         help='Optional name of an output .csv file to write the query results to. If not '
                              'explicitly specified, no output file will be written.')
@@ -128,6 +150,9 @@ if __name__ == '__main__':
                              "combination of 'exposure', 'skycell', 'config' and/or 'spec'. If not "
                              "explicitly specified, query results will not be sorted. Recommended sorting "
                              "order is 'skycell,config,spec,exposure'.")
+    parser.add_argument('-v', '--visualize_footprints', required=False, action='store_true',
+                        help='If turned on, the footprints of the skycell and the exposures returned by the '
+                             'query will be displayed.')
     in_args = parser.parse_args()
     arg_dict = {}
     for item in in_args.__dict__.keys():
@@ -182,10 +207,15 @@ if __name__ == '__main__':
     # Generate search string and run query
     search_string = make_search_string(arg_dict)
 
-    query_dataframe(in_args.master_observations_file,
-                    search_string,
-                    output_columns=in_args.output_columns,
-                    output_sorting=in_args.output_sorting,
-                    output_filename=in_args.output_results_file)
-# IPPSSOOT
-# j92c01b9q
+    results = query_dataframe(in_args.master_observations_file,
+                              search_string,
+                              output_columns=in_args.output_columns,
+                              output_sorting=in_args.output_sorting,
+                              output_filename=in_args.output_results_file)
+
+    # Optionally visualize footprints of skycells and exposures returned by the query.
+    if in_args.visualize_footprints:
+        if len(results > 0):
+            visualize_footprints(results)
+        else:
+            print("WARNING: Null query result. No footprints to visualize.")
