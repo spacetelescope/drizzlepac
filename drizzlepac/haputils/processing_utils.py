@@ -14,6 +14,7 @@ from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
 from stwcs import wcsutil
 
+from .cell_utils import SkyFootprint
 
 LEVEL_DEFS = {1: 'single exposure product', 2: 'filter product', 3: 'total detection product'}
 HAPCOLNAME = 'HAPEXPNAME'
@@ -195,8 +196,17 @@ def compute_sregion(image, extname='SCI'):
     for extnum in range(1, numext + 1):
         sregion_str = 'POLYGON ICRS '
         sciext = (extname, extnum)
-        extwcs = wcsutil.HSTWCS(hdu, ext=sciext)
-        footprint = extwcs.calc_footprint(center=True)
+        if 'd001data' not in hdu[0].header:
+            # Working with FLT/FLC file, so simply use
+            #  the array corners directly
+            extwcs = wcsutil.HSTWCS(hdu, ext=sciext)
+            footprint = extwcs.calc_footprint(center=True)
+
+        else:
+            # Working with a drizzled image, so we need to
+            # get all the corners from each of the input files
+            footprint = find_footprint(hdu, extname=extname)
+
         for corner in footprint:
             sregion_str += '{} {} '.format(corner[0], corner[1])
         hdu[sciext].header['s_region'] = sregion_str
@@ -204,6 +214,63 @@ def compute_sregion(image, extname='SCI'):
     # close file if opened by this functions
     if closefits:
         hdu.close()
+
+def find_footprint(hdu, extname='SCI'):
+    """Extract the footprints from each input file
+
+    Determine the composite of all the input chip's corners
+    as the footprint for the entire set of overlapping images
+    that went into creating this drizzled image.
+
+    Parameters
+    ===========
+    hdu : str or `fits.HDUList`
+        Filename or HDUList for a drizzled image
+
+    extname : str, optional
+        Name of science array extension (extname value)
+
+    Returns
+    ========
+    footprint : ndarray
+        Array of RA/Dec for the 4 corners that comprise the
+        footprint on the sky for this mosaic.  Values were
+        determined from northern-most corner counter-clockwise
+        to the rest.
+
+    """
+    # Extract list of input files from Drizzle keywords
+    data_kws = hdu[0].header['d*data'] if isinstance(hdu, fits.HDUList) else fits.getval(hdu, 'd*data')
+    input_files = [kw.split('[')[0] for kw in data_kws.values()]
+
+    # extract WCS from this product
+    meta_wcs = wcsutil.HSTWCS(hdu, ext=('sci', 1))
+    # create SkyFootprint object for all input_files to determine footprint
+    footprint = SkyFootprint(meta_wcs=meta_wcs)
+    # create mask of all input chips as they overlap on the product WCS
+    footprint.build(input_files)
+    # Now, find the corners from this mask
+    footprint.find_corners()
+
+    return footprint.corners
+
+def interpret_sregion(image, extname='SCI'):
+    """Interpret the S_REGION keyword as a list of RA/Dec points"""
+    # This function could, conceivably, be called directly...
+    hdu, closefits = _process_input(image)
+
+    # Find all extensions to be updated
+    numext = countExtn(hdu, extname=extname)
+    sregions = []
+    for extnum in range(1, numext + 1):
+        sregions.append(fits.getval(image, 's_region', ext=(extname, extnum)))
+
+    coords = []
+    for region_str in sregions:
+        radec_str = np.array(region_str.split(' ')[2:], dtype=np.float64)
+        coords.append(radec_str.reshape((radec_str.shape[0] // 2, 2)))
+
+    return coords
 
 def _process_input(input):
     """Verify that input is an Astropy HDUList object opened in 'update' mode
