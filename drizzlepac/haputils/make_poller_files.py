@@ -43,19 +43,7 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
     output_list = []
     for rootname in rootname_list:
         rootname = rootname.strip()
-        fullfilepath = ""
-        # Find the best available version of the file. Assume flc preferred to flt, local preferred to network
-        for fits_ext in ["flc", "flt"]:
-            for file_path in [os.getcwd(), os.getenv("DATA_PATH")]:
-                if len(fullfilepath) > 0:
-                    continue
-                if file_path == os.getcwd():
-                    fullfilepath_guess = "{}/{}_{}.fits".format(file_path, rootname, fits_ext)
-                else:
-                    fullfilepath_guess = "{}/{}/{}/{}_{}.fits".format(os.getenv("DATA_PATH"), rootname[:4],
-                                                                      rootname, rootname, fits_ext)
-                if os.path.exists(fullfilepath_guess):
-                    fullfilepath = fullfilepath_guess
+        fullfilepath = locate_fitspath_from_rootname(rootname)
         if len(fullfilepath) > 0:
             print("Rootname {}: Found fits file {}".format(rootname, fullfilepath))
             imgname = fullfilepath.split("/")[-1]
@@ -100,6 +88,39 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
         f.writelines(output_list)
     print("wrote {} poller file '{}'.".format(poller_file_type.upper(), output_poller_filename))
 
+
+# ============================================================================================================
+
+def locate_fitspath_from_rootname(rootname):
+    """returns full file name (fullpath + filename) for a specified rootname.
+
+    Parameters
+    ----------
+    rootname : str
+        rootname to process
+
+    Returns
+    -------
+    fullfilepath : str
+        full path + image name of specified rootname.
+    """
+    fullfilepath = ""
+    # Find the best available version of the file. Assume flc preferred to flt, local preferred to network
+    for fits_ext in ["flc", "flt"]:
+        for file_path in [os.getcwd(), os.getenv("DATA_PATH")]:
+            if len(fullfilepath) > 0:
+                continue
+            if file_path == os.getcwd():
+                fullfilepath_guess = "{}/{}_{}.fits".format(file_path, rootname, fits_ext)
+            else:
+                fullfilepath_guess = "{}/{}/{}/{}_{}.fits".format(os.getenv("DATA_PATH"), rootname[:4],
+                                                                  rootname, rootname, fits_ext)
+            if os.path.exists(fullfilepath_guess):
+                fullfilepath = fullfilepath_guess
+    return fullfilepath
+
+
+# ============================================================================================================
 
 if __name__ == '__main__':
     # Parse input arguments
