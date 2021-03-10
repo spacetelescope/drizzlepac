@@ -116,7 +116,30 @@ def visualize_footprints(results):
     -------
     Nothing.
     """
-    print()
+
+    # Get list of flc/flt.fits image full paths from query results
+    img_path_list = []
+    for idx in results.index:
+        rootname = results.exposure[idx]
+        fullfilepath = make_poller_files.locate_fitspath_from_rootname(rootname)
+        if len(fullfilepath) > 0:
+            print("Rootname {}: Found fits file {}".format(rootname, fullfilepath))
+            img_path_list.append(fullfilepath)
+        else:
+            # Warn user if no fits file can be located for a given rootname, and skip processing of the file.
+            print("WARNING: No fits file found for rootname '{}'. This rootname will be omitted from "
+                  "footprint visualization generation.".format(rootname))
+            # remove line from results dataframe
+            results = results.drop(index=idx)
+            continue
+    # Get list of all the unique skycells in the query results.
+    unique_skycell_list = []
+    if 'skycell' in results.keys(): print('yay!')
+        for idx in results.index:
+            unique_skycell_list.append(results.skycell[idx])
+    unique_skycell_list = list(set(unique_skycell_list))
+
+
     pdb.set_trace()
     # print(make_poller_files.locate_fitspath_from_rootname())
 
