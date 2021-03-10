@@ -116,6 +116,9 @@ def visualize_footprints(results):
     -------
     Nothing.
     """
+    print()
+    pdb.set_trace()
+    # print(make_poller_files.locate_fitspath_from_rootname())
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -123,7 +126,8 @@ def visualize_footprints(results):
 if __name__ == '__main__':
     # Argparse input
     parser = argparse.ArgumentParser(description='Search all observations')
-    parser.add_argument('-m', '--master_observations_file', required=False, default="allexposures.csv",
+    parser.add_argument('-m', '--master_observations_file', required=False,
+                        default="~/Documents/HLAtransition/mvm_testing/allexp/allexposures.csv",
                         help='Name of the master observations .csv file containing comma-separated columns '
                              'index #, exposure, skycell, config, and spec. '
                              'Default value is "allexposures.csv".')
@@ -141,6 +145,9 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output_results_file', required=False, default="None",
                         help='Optional name of an output .csv file to write the query results to. If not '
                              'explicitly specified, no output file will be written.')
+    parser.add_argument('-v', '--visualize_footprints', required=False, action='store_true',
+                        help='If turned on, the footprints of the skycell and the exposures returned by the '
+                             'query will be displayed.')
     parser.add_argument('--output_columns', required=False, default="None", nargs='?',
                         help="Columns to display in the query results. Needs to be some combination of "
                              "'exposure', 'skycell', 'config' and/or 'spec'. If not explicitly specified, "
@@ -150,14 +157,11 @@ if __name__ == '__main__':
                              "combination of 'exposure', 'skycell', 'config' and/or 'spec'. If not "
                              "explicitly specified, query results will not be sorted. Recommended sorting "
                              "order is 'skycell,config,spec,exposure'.")
-    parser.add_argument('-v', '--visualize_footprints', required=False, action='store_true',
-                        help='If turned on, the footprints of the skycell and the exposures returned by the '
-                             'query will be displayed.')
     in_args = parser.parse_args()
     arg_dict = {}
     for item in in_args.__dict__.keys():
         if item not in ["master_observations_file", "output_results_file",
-                        "output_columns", "output_sorting"]:
+                        "output_columns", "output_sorting", "visualize_footprints"]:
             arg_dict[item] = in_args.__dict__[item]
 
     # Reformat input args
@@ -215,7 +219,7 @@ if __name__ == '__main__':
 
     # Optionally visualize footprints of skycells and exposures returned by the query.
     if in_args.visualize_footprints:
-        if len(results > 0):
+        if results.index.size > 0:
             visualize_footprints(results)
         else:
             print("WARNING: Null query result. No footprints to visualize.")
