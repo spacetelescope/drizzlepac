@@ -7,10 +7,15 @@
 
 import argparse
 import sys
-import pandas as pd
 import pdb
 
+import pandas as pd
+
+from drizzlepac.haputils import cell_utils
 from drizzlepac.haputils import make_poller_files
+
+# ------------------------------------------------------------------------------------------------------------
+
 
 def make_search_string(arg_dict):
     """Create search string that will be used to query observation tables
@@ -78,6 +83,7 @@ def query_dataframe(master_observations_file, search_string, output_columns=None
     """
     dataframe = pd.read_csv(master_observations_file, header=0, index_col=0)
     results = dataframe.query(search_string, engine='python')
+    ret_results = results.copy()
     if output_sorting:
         results = results.sort_values(by=output_sorting)
     if output_columns:
@@ -99,7 +105,7 @@ def query_dataframe(master_observations_file, search_string, output_columns=None
         results.to_csv(output_filename)
         print("Wrote query results to {}".format(output_filename))
 
-    return results
+    return ret_results
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -116,15 +122,16 @@ def visualize_footprints(results):
     -------
     Nothing.
     """
-
     # Get list of flc/flt.fits image full paths from query results
-    img_path_list = []
+    img_path_dict = {}
     for idx in results.index:
         rootname = results.exposure[idx]
         fullfilepath = make_poller_files.locate_fitspath_from_rootname(rootname)
         if len(fullfilepath) > 0:
             print("Rootname {}: Found fits file {}".format(rootname, fullfilepath))
-            img_path_list.append(fullfilepath)
+            if results.config[idx] not in img_path_dict.keys():
+                img_path_dict[results.config[idx]] = []
+            img_path_dict[results.config[idx]].append(fullfilepath)
         else:
             # Warn user if no fits file can be located for a given rootname, and skip processing of the file.
             print("WARNING: No fits file found for rootname '{}'. This rootname will be omitted from "
@@ -132,16 +139,21 @@ def visualize_footprints(results):
             # remove line from results dataframe
             results = results.drop(index=idx)
             continue
-    # Get list of all the unique skycells in the query results.
+
+    # Get list of all the unique skycells in the query results
     unique_skycell_list = []
-    if 'skycell' in results.keys(): print('yay!')
-        for idx in results.index:
-            unique_skycell_list.append(results.skycell[idx])
-    unique_skycell_list = list(set(unique_skycell_list))
+
+    for idx in results.index:
+        unique_skycell_list.append(results.skycell[idx])
+    unique_skycell_list = list(set(unique_skycell_list))  # remove duplicate items from skycell list
+    skycell_dict = {}
+    for skycell_name in unique_skycell_list:
+        skycell_dict[skycell_name] = cell_utils.SkyCell.from_name("skycell-{}".format(skycell_name))
+
 
 
     pdb.set_trace()
-    # print(make_poller_files.locate_fitspath_from_rootname())
+
 
 # ------------------------------------------------------------------------------------------------------------
 
