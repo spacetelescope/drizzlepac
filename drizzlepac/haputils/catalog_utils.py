@@ -958,13 +958,16 @@ class HAPPointCatalog(HAPCatalogBase):
                                                 sharphi=0.9, sharplo=0.4)
 
                         _region_name = self.image.imgname.replace(reg_suffix, 'region{}.fits'.format(masknum))
-                        fits.PrimaryHDU(data=region).writeto(_region_name, overwrite=True)
+                        if self.diagnostic_mode:
+                            fits.PrimaryHDU(data=region).writeto(_region_name, overwrite=True)
 
                         reg_sources = daofind(region,
                                               mask=self.image.inv_footprint_mask)
 
                         _region_name = self.image.imgname.replace(reg_suffix, 'starfind_sources{}.ecsv'.format(masknum))
-                        reg_sources.write(_region_name, format='ascii.ecsv', overwrite=True)
+                        if self.diagnostic_mode:
+                            reg_sources.write(_region_name, format='ascii.ecsv', overwrite=True)
+
                     else:
                         # No sources found to match the PSF model, perhaps due to CTE.
                         # Try standard daofind instead
@@ -1005,7 +1008,8 @@ class HAPPointCatalog(HAPCatalogBase):
             for col in sources.colnames:
                 sources[col].info.format = '.8g'  # for consistent table output
 
-            sources.write(self.image.imgname.replace(reg_suffix,'raw-point-cat.ecsv'), format='ascii.ecsv', overwrite=True)
+            if self.diagnostic_mode:
+                sources.write(self.image.imgname.replace(reg_suffix,'raw-point-cat.ecsv'), format='ascii.ecsv', overwrite=True)
             self.sources = sources
 
         # if processing filter product, use sources identified by parent total drizzle product identify_sources() run
