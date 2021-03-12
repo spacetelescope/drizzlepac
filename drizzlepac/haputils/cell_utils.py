@@ -4,6 +4,7 @@ from itertools import chain, combinations
 
 from matplotlib import path
 from matplotlib import pyplot as plt
+from matplotlib.path import Path
 from skimage.feature import corner_peaks, corner_harris
 from scipy import ndimage
 from scipy.spatial import distance
@@ -259,7 +260,9 @@ class SkyFootprint(object):
             for sci in sci_extns:
                 wcs = HSTWCS(exp, ext=sci)
                 # save the footprint for each chip as RA/Dec corner positions
-                radec = wcs.calc_footprint().tolist()
+                # radec = wcs.calc_footprint().tolist()
+                radec = calc_wcs_footprint(wcs, offset=1).tolist()
+                radec.append(radec[0])  # close the polygon/chip
                 self.exp_masks[exposure]['sky_corners'].append(radec)
 
                 # Also save those corner positions as X,Y positions in the footprint
@@ -378,6 +381,11 @@ class SkyFootprint(object):
             self.find_footprint(member=member)
 
         if member == 'total':
+            # Get all the X,Y positions of the corners of all input chips
+            # These will be used to identify the vertices of the footprint
+            exp_masks = [mask['xy_corners'] for mask in self.exp_masks.values()]
+
+
             # Use Harris corner detection to identify corners in the
             # total footprint
             mask_corners = corner_peaks(corner_harris(self.footprint),
@@ -402,10 +410,14 @@ class SkyFootprint(object):
 
             # Create a mask from the total footprint consisting solely of the
             # pixels at the outer edge, ordered in clockwise fashion.
-            inside = ndimage.binary_erosion(self.footprint).astype(np.int16)
+            #
+            # We need to erode the outer edge by 3 pixels in order to avoid single-pixel
+            # artifacts along the outer edge.
+            inside = ndimage.binary_erosion(self.footprint, iterations=3).astype(np.int16)
             edge_lists = trace_polygon(inside - ndimage.binary_erosion(inside).astype(np.int16),
-                                        sensitivity=sensitivity)
+                                       sensitivity=sensitivity)
             xy_pixels = None
+
             for edge_pixels in edge_lists:
                 # Start matching the xy_corner positions, one-by-one, to pixels
                 # along the edge.  We only want the index of the corner that matches
@@ -415,7 +427,7 @@ class SkyFootprint(object):
                 # start at the position closest to North where `deg` is closest to 0
                 corner_dist = distance.cdist(edge_pixels, [xy_corners[radial_order[0]]])
                 start_indx = np.where(corner_dist == corner_dist.min())[0][0]
-                print(start_indx)
+
                 if start_indx != 0:
                     # re-order edge_pixels so that the list starts at this pixel.
                     ordered_edge = edge_pixels * 0.
@@ -424,22 +436,32 @@ class SkyFootprint(object):
                 else:
                     ordered_edge = edge_pixels
 
-                # Now compute the distances for all the identified corners
-                # ordered_dists = distance.cdist(xy_corners, ordered_edge)
-                # This results in a list of distances for each xy_corner
-                # Now sort by index along ordered edge
-                # dist_indx = np.sort([np.where(dist == dist.min())[0][0] for dist in ordered_dists])
+                # Create polygon for inside edges to use for identifying vertices
+                edge_path = Path(ordered_edge)
 
                 # determine RA/Dec of these positions in the image
                 # use this to make sure they are ordered correctly
                 if xy_pixels is None:
-                    xy_pixels = detect_corners(ordered_edge)
-                    xy_pixels = np.concatenate([xy_pixels, [xy_pixels[0]]])  # close the polygon
+                    xy_pixels = find_vertices(edge_path, exp_masks)
+                    # sort vertices by order from ordered_edge
+                    xy_dist = distance.cdist(xy_pixels, ordered_edge)
+                    xy_order = np.array([np.where(d == d.min())[0][0] for d in xy_dist])
+                    xy_pixels = xy_pixels[np.argsort(xy_order)]
+                    # close the polygon
+                    xy_pixels = np.append(xy_pixels, [xy_pixels[0]], axis=0)
+
                     sky_corners = self.meta_wcs.all_pix2world(xy_pixels, 0)
                     ordered_xy = [ordered_edge.copy()]
+
                 else:
-                    new_xy = detect_corners(ordered_edge)
-                    new_xy = np.concatenate([new_xy, [new_xy[0]]])  # close the polygon
+                    new_xy = find_vertices(edge_path, exp_masks)
+                    # sort vertices by order from ordered_edge
+                    xy_dist = distance.cdist(new_xy, ordered_edge)
+                    xy_order = [np.where(d == d.min())[0][0] for d in xy_dist]
+                    new_xy = new_xy[np.argsort(xy_order)]
+                    # close the polygon
+                    new_xy = np.append(new_xy, [new_xy[0]], axis=0)
+
                     xy_pixels = np.concatenate([xy_pixels, new_xy])
                     sky_corners = np.concatenate([sky_corners, self.meta_wcs.all_pix2world(new_xy, 0)])
                     ordered_xy.append(ordered_edge)
@@ -952,28 +974,97 @@ def pol2cart(rho, phi):
     y = rho * np.sin(phi)
     return(x, y)
 
-def detect_corners(edge_pixels):
-    """Try to detect pixels based on change of sign of slope"""
-    # rotate edge_pixels by a few so starting point is off a corner
-    edge = edge_pixels * 0.
-    edge[:10] = edge_pixels[-10:]
-    edge[10:] = edge_pixels[:-10]
+def calc_wcs_footprint(wcs, offset=1, sample=4):
+    """Calculate the sky coordinates for positions inside each corner."""
+    delta_x = wcs.naxis1 // sample
+    delta_y = wcs.naxis2 // sample
 
-    deltas = edge[2:] - edge[:-2]
-    slopes = deltas[:, 1] / deltas[:, 0]
+    new_corners = []
+    # along X edge at Y=0
+    new_corners = [[offset, offset]]
+    for ix in range(0, sample):
+        new_corners.append([(delta_x * ix) - offset, offset])
+    # along Y edge at X=naxis1
+    for iy in range(0, sample):
+        new_corners.append([wcs.naxis1 - offset, (delta_y * iy) - offset])
+    # along top X edge
+    for ix in range(sample, 0, -1):
+        new_corners.append([(delta_x * ix) - offset, wcs.naxis2 - offset])
+    # along Y edge at X=0
+    for iy in range(sample, 0, -1):
+        new_corners.append([offset, (delta_y * iy) - offset])
 
-    asign = np.sign(slopes)
-    signchange = ((np.roll(asign, 1) - asign) != 0).astype(int)
-    corner_indx = np.where(signchange == 1)[0] + 1
-    corners = edge[corner_indx]
+    new_sky = wcs.all_pix2world(new_corners, 0)
 
-    return corners
+    return new_sky
+
+def find_vertices(edge_path, exp_masks):
+    """Find vertices the input exposures that overlap this part of the footprint.
+
+    For each input exp_mask, check to see whether it intersects the
+    Path of the ordered_edge pixels
+    if so, get the list of pixel positions for each edge of the exp_mask
+    then determine what points of that line are OUTSIDE (not contained by)
+    the Path of the ordered_edge pixels
+    the first and last position of all segments outside the Path are the vertices
+    only 1 entry for each vertex will be kept in the final list based on
+    looking at the cdist the positions relative to each other and deleting
+    any duplicate within 1 pixel of another.
+
+    """
+    vertices = []
+    for image in exp_masks:
+        for chip in image:
+            chip_path = Path(chip)
+            if chip_path.intersects_path(edge_path):
+                num_pts = len(chip)
+                for indx in range(num_pts - 1):
+                    # convert each edge into a list of pixel positions (float values, not int)
+                    edge_line = compute_edge(chip[indx], chip[indx + 1], int_pixel=False)
+                    edge_bool = edge_path.contains_points(edge_line)
+                    edge_pixels = edge_line.astype(np.int32)
+                    # Only report integer pixel positions to make it easier to weed out duplicates
+                    edge_outside = np.where(~edge_bool)[0]
+                    if len(edge_outside) > 0:
+                        # start with the first pixel on the line that along the outer edge.
+                        vertices.append(edge_pixels[edge_outside[0]].tolist())
+                        # Now look for the rest of the segments
+                        for i, pos in enumerate(edge_outside[:-1]):
+                            if edge_outside[i + 1] - edge_outside[i] == 1:
+                                continue
+                            else:
+                                vertices.append(edge_pixels[edge_outside[i]].tolist())
+
+    # Now, we need to remove duplicate vertices
+    all_vertices = set(map(tuple, vertices))
+    vertices_arr = np.array(list(all_vertices))
+
+    return vertices_arr
+
+
+def compute_edge(start, end, int_pixel=True):
+    """"Return a list of nb_points equally spaced points between start and end"""
+    # If we have 8 intermediate points, we have 8+1=9 spaces
+    # between p1 and p2
+    nb_points = max(abs(end[0] - start[0]), abs(end[1] - start[1]))
+    x_spacing = (end[0] - start[0]) / (nb_points + 1)
+    y_spacing = (end[1] - start[1]) / (nb_points + 1)
+
+    xy = [[start[0] + i * x_spacing, start[1] + i * y_spacing]
+            for i in range(1, nb_points + 1)]
+
+    if int_pixel:
+        xy = np.array(xy, dtype=np.int32)
+    else:
+        xy = np.array(xy)
+
+    return xy
+
 
 def trace_polygon(input_mask, sensitivity=0.1):
     """Convert mask with only edge pixels into a single contiguous polygon"""
     edge_pixels, mask_residuals = _poly_trace(input_mask)
     edge_lists = [edge_pixels]
-
     if mask_residuals.sum() > sensitivity * edge_pixels.shape[0]:
         ratio = mask_residuals.sum() / edge_pixels.shape[0]
         # mask_residuals only contains those pixels which were not
@@ -997,6 +1088,7 @@ def trace_polygon(input_mask, sensitivity=0.1):
 def _poly_trace(input_mask):
     # find a starting point on the mask
     mask = input_mask.copy()
+
     for x in range(mask.shape[1]):
         pts = np.where(mask[:, x] == 1)[0]
         if len(pts) > 0:
@@ -1015,6 +1107,7 @@ def _poly_trace(input_mask):
     slope = -1
     # determine how many pixels should be in polygon.
     num_pixels = mask.sum()
+
     while new_start or (num_pixels > 0):
         xstart = new_x
         ystart = new_y
@@ -1024,8 +1117,10 @@ def _poly_trace(input_mask):
         pts = np.where(box == 1)
 
         if len(pts[0]) == 0:
-            dist = distance.cdist([[xstart, ystart]], [polygon[0]])[0][0]
-            if dist <= np.sqrt(2):
+            # try a larger box to see if we can jump this gap
+            box = get_box(mask, xstart, ystart, size=5)
+            pts = np.where(box == 1)
+            if len(pts[0]) == 0:
                 # We are back where we started, so quit
                 break
 
