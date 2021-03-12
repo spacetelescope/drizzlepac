@@ -6,6 +6,7 @@
     instrument/detector, filter name and finally by image name."""
 
 import argparse
+from datetime import datetime
 import os
 import pdb
 import sys
@@ -68,7 +69,7 @@ def make_search_string(arg_dict):
     """
     search_string = ""
     for item in arg_dict:
-        if not arg_dict[item]:
+        if not arg_dict[item] or item is "date_range":
             continue
         if item is "skycell":
             substring = "{} == '{}'".format(item, arg_dict[item])
@@ -186,13 +187,15 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--config', required=False, default="None", choices=["ACS/HRC", "ACS/SBC",
                                                                                    "ACS/WFC", "WFC3/IR",
                                                                                    "WFC3/UVIS", "None"],
-                        help='Instrument/Detector configuration. All caps, separated by a "/" (e.g. '
-                             'WFC3/IR).')
-
+                        help='Instrument/Detector configuration to search for. All caps, separated by a "/" '
+                             '(e.g. WFC3/IR).')
+    parser.add_argument('-d', '--date_range', required=False, default=None, nargs=2,
+                        help='Min and max date (inclusive) of dateobs search window. FORMAT: Date format is '
+                             '"YYYY-MM-DD". min amd max dates should be seperated by a space.')
     parser.add_argument('-e', '--exposure', required=False, default="None",
-                        help='Exposure name. Does not have to be a full 9-character exposure name. Partials '
-                             'are acceptable.')
-    parser.add_argument('-f', '--spec', required=False, default="None", help='Filter name.')
+                        help='Exposure name to search for. Does not have to be a full 9-character exposure '
+                             'name. Partials are acceptable.')
+    parser.add_argument('-f', '--spec', required=False, default="None", help='Filter name to search for.')
     parser.add_argument('-m', '--master_observations_file', required=False,
                         default="~/Documents/HLAtransition/mvm_testing/allexp/allexposures.csv",
                         help='Name of the master observations .csv file containing comma-separated columns '
@@ -202,7 +205,7 @@ if __name__ == '__main__':
                         help='Optional name of an output .csv file to write the query results to. If not '
                              'explicitly specified, no output file will be written.')
     parser.add_argument('-s', '--skycell', required=False, default="None",
-                        help='Skycell name. Only full skycell names are accepted.')
+                        help='Skycell name to search for. Only full skycell names are accepted.')
     parser.add_argument('-v', '--visualize_footprints', required=False, action='store_true',
                         help='If turned on, the footprints of the skycell and the exposures returned by the '
                              'query will be displayed.')
@@ -247,8 +250,21 @@ if __name__ == '__main__':
 
     # FAULT TOLERANCE. Exit if something in the input arguments isn't quite right.
     # Exit if user didn't enter any search criteria
-    if blank_entry_ctr == 4:
+    if blank_entry_ctr == 5:
         sys.exit("ERROR: Search results too broad. No search criteria were entered.")
+    # Exit if specified dates don't match the format "YYYY-MM-DD".
+    if arg_dict["date_range"]:
+        date_range_dt = []
+        for date_string, date_label in zip(arg_dict["date_range"], ["Start", "End"]):
+            print(date_string, date_label)
+            try:
+                date_range_dt.append(datetime.strptime(date_string, "%Y-%m-%d"))
+            except:
+                sys.exit("{} date value {} not properly formatted. Please use the format 'YYYY-MM-DD'.".format(date_label, date_string))
+        arg_dict["date_range"] = date_range_dt
+        # flip order of dates if first is later than the second.
+        if arg_dict["date_range"][1] < arg_dict["date_range"][0]:
+            arg_dict["date_range"].reverse()
 
     # Exit if in_args.master_observations_file == in_args.output_results_file so the master observations table doesn't get overwritten
     if in_args.master_observations_file == in_args.output_results_file:
