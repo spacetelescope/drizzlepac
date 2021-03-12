@@ -14,8 +14,6 @@ from astropy.io import fits
 import pandas as pd
 
 from drizzlepac.haputils import cell_utils
-from drizzlepac.haputils import make_poller_files
-
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -48,7 +46,6 @@ def augment_results(results):
     results['dateobs'] = dateobs_list
     results['dateobs'] = pd.to_datetime(results.dateobs)
     results['filename'] = path_list
-    pdb.set_trace()
     return results
 
 
@@ -169,11 +166,12 @@ def visualize_footprints(results):
     for skycell_name in unique_skycell_list:
         skycell = cell_utils.SkyCell.from_name("skycell-{}".format(skycell_name))
         footprint = cell_utils.SkyFootprint(meta_wcs=skycell.wcs)
-        footprint.build(img_path_dict[skycell_name])
+        img_list = results.query('skycell == "{}"'.format(skycell_name)).filename.values.tolist()
+        footprint.build(img_list)
         footprint_imgname = "skycell-{}-footprint.fits".format(skycell_name)
         foo = footprint.get_footprint_hdu(filename=footprint_imgname)
         print("Skycell footprint image {} contains {} individual exposures.".format(footprint_imgname,
-                                                                                    len(img_path_dict[skycell_name])))
+                                                                                    len(img_list)))
     print("\a\a\a")
 
 # ------------------------------------------------------------------------------------------------------------
@@ -182,25 +180,29 @@ def visualize_footprints(results):
 if __name__ == '__main__':
     # Argparse input
     parser = argparse.ArgumentParser(description='Search all observations')
+
+
+
+    parser.add_argument('-c', '--config', required=False, default="None", choices=["ACS/HRC", "ACS/SBC",
+                                                                                   "ACS/WFC", "WFC3/IR",
+                                                                                   "WFC3/UVIS", "None"],
+                        help='Instrument/Detector configuration. All caps, separated by a "/" (e.g. '
+                             'WFC3/IR).')
+
+    parser.add_argument('-e', '--exposure', required=False, default="None",
+                        help='Exposure name. Does not have to be a full 9-character exposure name. Partials '
+                             'are acceptable.')
+    parser.add_argument('-f', '--spec', required=False, default="None", help='Filter name.')
     parser.add_argument('-m', '--master_observations_file', required=False,
                         default="~/Documents/HLAtransition/mvm_testing/allexp/allexposures.csv",
                         help='Name of the master observations .csv file containing comma-separated columns '
                              'index #, exposure, skycell, config, and spec. '
                              'Default value is "allexposures.csv".')
-    parser.add_argument('-i', '--exposure', required=False, default="None",
-                        help='Image name. Does not have to be a full 9-character iamge name. Partials are '
-                             'acceptable.')
-    parser.add_argument('-s', '--skycell', required=False, default="None",
-                        help='Skycell name. Only full skycell names are accepted.')
-    parser.add_argument('-d', '--config', required=False, default="None", choices=["ACS/HRC", "ACS/SBC",
-                                                                                   "ACS/WFC", "WFC3/IR",
-                                                                                   "WFC3/UVIS", "None"],
-                        help='Instrument/Detector name. All caps, separated by a "/" (e.g. WFC3/IR).')
-
-    parser.add_argument('-f', '--spec', required=False, default="None", help='Filter name.')
     parser.add_argument('-o', '--output_results_file', required=False, default="None",
                         help='Optional name of an output .csv file to write the query results to. If not '
                              'explicitly specified, no output file will be written.')
+    parser.add_argument('-s', '--skycell', required=False, default="None",
+                        help='Skycell name. Only full skycell names are accepted.')
     parser.add_argument('-v', '--visualize_footprints', required=False, action='store_true',
                         help='If turned on, the footprints of the skycell and the exposures returned by the '
                              'query will be displayed.')
