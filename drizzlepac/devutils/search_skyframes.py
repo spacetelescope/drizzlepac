@@ -8,13 +8,13 @@
 import argparse
 from datetime import datetime
 import os
-import pdb
 import sys
 
 from astropy.io import fits
 import pandas as pd
 
 from drizzlepac.haputils import cell_utils
+
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ def augment_results(results):
     basepath = os.getcwd()
     for idx in results.index:
         rootname = results.exposure[idx]
-        filestub="{}/{}".format(basepath, rootname)
+        filestub = "{}/{}".format(basepath, rootname)  # TODO: update path generation once the hlalab port is done.
         if os.path.exists("{}_flc.fits".format(filestub)):
             imgname = "{}_flc.fits".format(filestub)
         else:
@@ -118,7 +118,7 @@ def query_dataframe(master_observations_file, search_string, date_range=None, ou
     Returns
     -------
     results : Pandas DataFrame class
-        A Pandas DataFrame continaing the query results.
+        A Pandas DataFrame containing the query results.
     """
     dataframe = pd.read_csv(master_observations_file, header=0, index_col=0)
     results = dataframe.query(search_string, engine='python')
@@ -193,9 +193,6 @@ def visualize_footprints(results):
 if __name__ == '__main__':
     # Argparse input
     parser = argparse.ArgumentParser(description='Search all observations')
-
-
-
     parser.add_argument('-c', '--config', required=False, default="None", choices=["ACS/HRC", "ACS/SBC",
                                                                                    "ACS/WFC", "WFC3/IR",
                                                                                    "WFC3/UVIS", "None"],
@@ -203,13 +200,13 @@ if __name__ == '__main__':
                              '(e.g. WFC3/IR).')
     parser.add_argument('-d', '--date_range', required=False, default=None, nargs=2,
                         help='Min and max date (inclusive) of dateobs search window. FORMAT: Date format is '
-                             '"YYYY-MM-DD". min amd max dates should be seperated by a space.')
+                             '"YYYY-MM-DD". min amd max dates should be separated by a space.')
     parser.add_argument('-e', '--exposure', required=False, default="None",
                         help='Exposure name to search for. Does not have to be a full 9-character exposure '
                              'name. Partials are acceptable.')
     parser.add_argument('-f', '--spec', required=False, default="None", help='Filter name to search for.')
     parser.add_argument('-m', '--master_observations_file', required=False,
-                        default="~/Documents/HLAtransition/mvm_testing/allexp/allexposures.csv",
+                        default="~/Documents/HLAtransition/mvm_testing/allexp/allexposures.csv",  # TODO: update this path for HLALAB port.
                         help='Name of the master observations .csv file containing comma-separated columns '
                              'index #, exposure, skycell, config, and spec. '
                              'Default value is "allexposures.csv".')
@@ -270,8 +267,8 @@ if __name__ == '__main__':
         for date_string, date_label in zip(arg_dict["date_range"], ["Start", "End"]):
             try:
                 date_range_dt.append(datetime.strptime(date_string, "%Y-%m-%d"))
-            except:
-                sys.exit("{} date value {} not properly formatted. Please use the format 'YYYY-MM-DD'.".format(date_label, date_string))
+            except ValueError:
+                sys.exit("{} date value '{}' is not properly formatted. Please use the format 'YYYY-MM-DD'.".format(date_label, date_string))
         # flip order of dates if first is later than the second.
         if date_range_dt[1] < date_range_dt[0]:
             arg_dict["date_range"].reverse()
@@ -297,7 +294,7 @@ if __name__ == '__main__':
 
     results = query_dataframe(in_args.master_observations_file,
                               search_string,
-                              date_range = arg_dict["date_range"],
+                              date_range=arg_dict["date_range"],
                               output_columns=in_args.output_columns,
                               output_sorting=in_args.output_sorting,
                               output_filename=in_args.output_results_file)
