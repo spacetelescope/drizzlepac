@@ -6,16 +6,53 @@
     instrument/detector, filter name and finally by image name."""
 
 import argparse
-import sys
+import os
 import pdb
+import sys
 
+from astropy.io import fits
 import pandas as pd
 
 from drizzlepac.haputils import cell_utils
 from drizzlepac.haputils import make_poller_files
 
+
 # ------------------------------------------------------------------------------------------------------------
 
+def augment_results(results):
+    """Add additional searchable columns to query results. Columns added are date-obs and  full flt/flc fits
+    file path
+
+    Parameters
+    ----------
+    results : pandas.DataFrame
+        query results to augment
+
+    Returns
+    -------
+    results : pandas.DataFrame
+        Augmented query results
+    """
+    dateobs_list = []
+    path_list = []
+    basepath = os.getcwd()
+    for idx in results.index:
+        rootname = results.exposure[idx]
+        filestub="{}/{}".format(basepath, rootname)
+        if os.path.exists("{}_flc.fits".format(filestub)):
+            imgname = "{}_flc.fits".format(filestub)
+        else:
+            imgname = "{}_flt.fits".format(filestub)
+        dateobs_list.append(fits.getval(imgname, "DATE-OBS"))
+        path_list.append(imgname)
+    results['dateobs'] = dateobs_list
+    results['dateobs'] = pd.to_datetime(results.dateobs)
+    results['filename'] = path_list
+    pdb.set_trace()
+    return results
+
+
+# ------------------------------------------------------------------------------------------------------------
 
 def make_search_string(arg_dict):
     """Create search string that will be used to query observation tables
@@ -83,6 +120,7 @@ def query_dataframe(master_observations_file, search_string, output_columns=None
     """
     dataframe = pd.read_csv(master_observations_file, header=0, index_col=0)
     results = dataframe.query(search_string, engine='python')
+    results = augment_results(results)
     ret_results = results.copy()
     if output_sorting:
         results = results.sort_values(by=output_sorting)
@@ -122,38 +160,21 @@ def visualize_footprints(results):
     -------
     Nothing.
     """
-    # Get list of flc/flt.fits image full paths from query results
-    img_path_dict = {}
-    for idx in results.index:
-        rootname = results.exposure[idx]
-        fullfilepath = make_poller_files.locate_fitspath_from_rootname(rootname)
-        if len(fullfilepath) > 0:
-            print("Rootname {}: Found fits file {}".format(rootname, fullfilepath))
-            if results.config[idx] not in img_path_dict.keys():
-                img_path_dict[results.config[idx]] = []
-            img_path_dict[results.config[idx]].append(fullfilepath)
-        else:
-            # Warn user if no fits file can be located for a given rootname, and skip processing of the file.
-            print("WARNING: No fits file found for rootname '{}'. This rootname will be omitted from "
-                  "footprint visualization generation.".format(rootname))
-            # remove line from results dataframe
-            results = results.drop(index=idx)
-            continue
-
     # Get list of all the unique skycells in the query results
     unique_skycell_list = []
-
     for idx in results.index:
         unique_skycell_list.append(results.skycell[idx])
     unique_skycell_list = list(set(unique_skycell_list))  # remove duplicate items from skycell list
-    skycell_dict = {}
+
     for skycell_name in unique_skycell_list:
-        skycell_dict[skycell_name] = cell_utils.SkyCell.from_name("skycell-{}".format(skycell_name))
-
-
-
-    pdb.set_trace()
-
+        skycell = cell_utils.SkyCell.from_name("skycell-{}".format(skycell_name))
+        footprint = cell_utils.SkyFootprint(meta_wcs=skycell.wcs)
+        footprint.build(img_path_dict[skycell_name])
+        footprint_imgname = "skycell-{}-footprint.fits".format(skycell_name)
+        foo = footprint.get_footprint_hdu(filename=footprint_imgname)
+        print("Skycell footprint image {} contains {} individual exposures.".format(footprint_imgname,
+                                                                                    len(img_path_dict[skycell_name])))
+    print("\a\a\a")
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -185,13 +206,13 @@ if __name__ == '__main__':
                              'query will be displayed.')
     parser.add_argument('--output_columns', required=False, default="None", nargs='?',
                         help="Columns to display in the query results. Needs to be some combination of "
-                             "'exposure', 'skycell', 'config' and/or 'spec'. If not explicitly specified, "
-                             "columns will be displayed in the query results.")
+                             "'dateobs', 'exposure', 'skycell', 'config' and/or 'spec'. If not explicitly "
+                             "specified, columns will be displayed in the query results.")
     parser.add_argument('--output_sorting', required=False, default="None", nargs='?',
                         help="Order (if any) in which to sort columns of the query results. Needs to be some "
-                             "combination of 'exposure', 'skycell', 'config' and/or 'spec'. If not "
-                             "explicitly specified, query results will not be sorted. Recommended sorting "
-                             "order is 'skycell,config,spec,exposure'.")
+                             "combination of 'dateobs', 'exposure', 'skycell', 'config' and/or 'spec'. If "
+                             "not explicitly specified, query results will not be sorted. Recommended "
+                             "sorting order is 'skycell,config,spec,exposure'.")
     in_args = parser.parse_args()
     arg_dict = {}
     for item in in_args.__dict__.keys():
@@ -232,16 +253,16 @@ if __name__ == '__main__':
         sys.exit("ERROR: The output results file cannot have the same name is the input master observations table")
 
     # Exit if named columns don't match the names of the available columns.
-    valid_cols = ['exposure', 'skycell', 'config', 'spec']
+    valid_cols = ['dateobs', 'exposure', 'skycell', 'config', 'spec']
     if in_args.output_columns is not None:
         for item in in_args.output_columns:
             if item not in valid_cols:
-                sys.exit("ERROR: {} is not a valid column name. Valid column names are 'exposure', 'skycell', 'config', 'spec'.".format(item))
+                sys.exit("ERROR: {} is not a valid column name. Valid column names are 'dateobs', 'exposure', 'skycell', 'config', 'spec'.".format(item))
 
     if in_args.output_sorting is not None:
         for item in in_args.output_sorting:
             if item not in valid_cols:
-                sys.exit("ERROR: {} is not a valid column name. Valid column names are 'exposure', 'skycell', 'config', 'spec'.".format(item))
+                sys.exit("ERROR: {} is not a valid column name. Valid column names are 'dateobs', 'exposure', 'skycell', 'config', 'spec'.".format(item))
 
     # Generate search string and run query
     search_string = make_search_string(arg_dict)
