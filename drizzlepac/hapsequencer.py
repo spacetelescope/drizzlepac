@@ -74,6 +74,8 @@ from stwcs import updatewcs
 from stwcs import wcsutil
 from stwcs.wcsutil import headerlet
 
+import pdb
+
 __taskname__ = 'hapsequencer'
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
@@ -1035,6 +1037,8 @@ def update_wcs_in_visit(tdp):
         log.info("The active WCS solution for each Grism/Prism and direct image is not changed.")
 
     log.info("Grism product list: {}".format(grism_product_list))
+    # MDD
+    sys.exit(0)
     return grism_product_list
 
 # ------------------------------------------------------------------------------
@@ -1162,13 +1166,14 @@ def update_active_wcs(filename, wcsname):
     # whereupon there is nothing to do
     key = wcsutil.altwcs.getKeyFromName(hdu['SCI', 1].header, wcsname)
 
-    # Case where the desired active solution is not the current active
-    # solution
+    # Case where the desired active solution is not the current active solution
     if key != ' ':
         # If the current active WCS solution is not already archived, this method will do it
+        # MDD - Do I need to do this?
         current_active_hdrname = hdu['SCI', 1].header['HDRNAME']
         current_active_wcsname = hdu['SCI', 1].header['WCSNAME']
-        wcsutil.headerlet.archive_as_headerlet(filename, current_active_hdrname, wcskey='PRIMARY')
+        #wcsutil.headerlet.archive_as_headerlet(filename, current_active_hdrname, wcskey='PRIMARY')
+        wcsutil.headerlet.archive_as_headerlet(filename, "my_new_hdrname", wcskey='PRIMARY')
         log.info("Archiving previous active WCS solution as necessary: {}".format(current_active_wcsname))
 
         # Get the distortion model identification of the desired active WCS solution
@@ -1180,46 +1185,75 @@ def update_active_wcs(filename, wcsname):
 
         # Get the headerlet HDRNAMES for comparison to the alternate WCS solutions
         headerlet_hdrnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="HDRNAME")
+        log.info("BEFORE Headerlet hdrnames: {}".format(headerlet_hdrnames))
 
-        # Examine the alternate WCS solutions to determine if they will be auto-archived due
-        # to a distortion model change.  The auto-archiving will happen when the desired WCS
-        # solution is installed as the active solution - just deleting duplicates here pro-actively.
-        wcs_key_dict = wcsutil.altwcs.wcsnames(filename, ext=1)
-        for wkey, wname in wcs_key_dict.items():
-            if wkey == ' ':
-                continue
+        if headerlet_hdrnames:
+            # Examine the alternate WCS solutions to determine if they will be auto-archived due
+            # to a distortion model change.  The auto-archiving will happen when the desired WCS
+            # solution is installed as the active solution - just deleting duplicates here pro-actively.
+            wcs_key_dict = wcsutil.altwcs.wcsnames(filename, ext=1)
+            for wkey, wname in wcs_key_dict.items():
+                if wkey == ' ':
+                    continue
 
-            index = wname.upper().find(idc_new_string.upper())
+                index = wname.upper().find(idc_new_string.upper())
 
-            # No match so solution will be copied to a headerlet automatically when the new primary is set
-            if index == -1 and wkey.upper() != 'O':
-                log.info("Archiving alternate WCS solution as a headerlet as necessary: {}".format(wname))
+                # No match so solution will be copied to a headerlet automatically when the new primary is set
+                if index == -1 and wkey.upper() != 'O':
+                    log.info("Archiving alternate WCS solution as a headerlet as necessary: {}".format(wname))
 
-                # Now check if the HDRNAME between this solution and a headerlet already exists
-                hdr_keyword = hdu[1].header['HDRNAME' + wkey.upper()]
+                    # Now check if the HDRNAME between this solution and a headerlet already exists
+                    hdr_keyword = hdu[1].header['HDRNAME' + wkey.upper()]
 
-                # Solution already exists as a headerlet extension, so just delete it
-                if hdr_keyword in headerlet_hdrnames:
-                    wcsutil.altwcs.deleteWCS(filename, extname_list, wcskey=wkey)
+                    # Solution already exists as a headerlet extension, so just delete it
+                    if hdr_keyword in headerlet_hdrnames:
+                        wcsutil.altwcs.deleteWCS(filename, extname_list, wcskey=wkey)
 
-        # Get all the WCS solution names
-        headerlet_wcsnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="WCSNAME")
-        keyword_wcs_list = list(wcs_key_dict.values())
+            # Get all the WCS solution names
+            headerlet_wcsnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="WCSNAME")
+            keyword_wcs_list = list(wcs_key_dict.values())
 
-        # Finally, install the desired WCS as the active WCS solution
-        # Is the source of the wcsname for this image from a headerlet extension
-        # or from the alternate solutions in the header as the source dictates how
-        # the WCS will be made the active WCS. If available, restore a WCS solution
-        # from the headerlet extension.
-        hdrname = ''
-        try:
+            # Prepare to install a new active WCS, but need to do some checking first
+            #
+            # This returns the first matching instance
             hdrname = headerlet_hdrnames[headerlet_wcsnames.index(wcsname)]
-            wcsutil.headerlet.restore_from_headerlet(filename, hdrname=hdrname, force=True)
-        except ValueError:
+            extensions = []
+            extensions = wcsutil.headerlet.find_headerlet_HDUs(filename, hdrname=hdrname)
+  
+            # It is possible the hdrname is not unique, so need to delete the dups
+            for ext in reversed(extensions[1:]):
+                wcsutil.headerlet.delete_headerlet(filename, hdrext=ext)
+                log.info("Delete duplicate headerlet extension {} in filename {}.".format(ext, filename))
+
+            log.info("Desired active WCS solution {} has an HDRNAME of {}.".format(wcsname, hdrname))
+
+            # Finally, install the desired WCS as the active WCS solution
+            # Is the source of the wcsname for this image from a headerlet extension
+            # or from the alternate solutions in the header as the source dictates how
+            # the WCS will be made the active WCS. If available, restore a WCS solution
+            # from the headerlet extension.
+            try:
+                wcsutil.headerlet.restore_from_headerlet(filename, hdrname=hdrname, force=True)
+            except ValueError:
+                found_string = [i for i in keyword_wcs_list if wcsname == i]
+                if found_string:
+                    wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=found_string[0])
+                else:
+                    log.warning("Could not restore the common WCS, {}, as the active WCS in this file {}.".format(wcsname, filename))
+            except AssertionError:
+                log.warning("Could not restore the common WCS, {}, as the active WCS in this file {}.".format(wcsname, filename))
+        else:
             found_string = [i for i in keyword_wcs_list if wcsname == i]
-            wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=found_string[0])
+            if found_string:
+                wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=found_string[0])
+            else:
+                log.warning("Could not restore the common WCS, {}, as the active WCS in this file {}.".format(wcsname, filename))
     else:
         log.info("No need to update active WCS solution of {} for {} as it is already the active solution.".format(wcsname, filename))
+
+    # MDD
+    headerlet_hdrnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="HDRNAME")
+    log.info("AFTER Headerlet hdrnames: {}".format(headerlet_hdrnames))
 
     hdu.close()
 
