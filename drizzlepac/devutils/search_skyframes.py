@@ -85,8 +85,8 @@ def make_search_string(arg_dict):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def query_dataframe(master_observations_file, search_string, output_columns=None, output_sorting=None,
-                    output_filename=None):
+def query_dataframe(master_observations_file, search_string, date_range=None, output_columns=None,
+                    output_sorting=None, output_filename=None):
     """Read in master observations file to pandas dataframe, run query and display (and optionally) write out
     the query results. The results will be sorted first by skycell name, then by instrument/detector, filter
     name and finally by image name.
@@ -99,6 +99,10 @@ def query_dataframe(master_observations_file, search_string, output_columns=None
 
     search_string : str
         properly formatted search string to use in the query of the master observations file.
+
+    date_range : list
+        Optional two-element list containing the start and end dates (inclusive) of the date range to
+        query. Date format: YYYY-MM-DD
 
     output_columns : list, optional
         Optional list describing which query result columns to display, and in what order. If not explicitly
@@ -119,6 +123,9 @@ def query_dataframe(master_observations_file, search_string, output_columns=None
     dataframe = pd.read_csv(master_observations_file, header=0, index_col=0)
     results = dataframe.query(search_string, engine='python')
     results = augment_results(results)
+    if date_range:
+        search_string = "{} and '{}' <= dateobs <= '{}'".format(search_string, date_range[0], date_range[1])
+        results = results[(results['dateobs'] >= date_range[0]) & (results['dateobs'] <= date_range[1])]
     ret_results = results.copy()
     if output_sorting:
         results = results.sort_values(by=output_sorting)
@@ -163,7 +170,12 @@ def visualize_footprints(results):
     for idx in results.index:
         unique_skycell_list.append(results.skycell[idx])
     unique_skycell_list = list(set(unique_skycell_list))  # remove duplicate items from skycell list
-
+    n_unique_skycells = len(unique_skycell_list)
+    if n_unique_skycells > 1:
+        add_an_s = "s"
+    else:
+        add_an_s = ""
+    print("Building footprint {} image{}. Please be patient. This may take some time...".format(n_unique_skycells, add_an_s))
     for skycell_name in unique_skycell_list:
         skycell = cell_utils.SkyCell.from_name("skycell-{}".format(skycell_name))
         footprint = cell_utils.SkyFootprint(meta_wcs=skycell.wcs)
@@ -173,7 +185,7 @@ def visualize_footprints(results):
         foo = footprint.get_footprint_hdu(filename=footprint_imgname)
         print("Skycell footprint image {} contains {} individual exposures.".format(footprint_imgname,
                                                                                     len(img_list)))
-    print("\a\a\a")
+
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -256,14 +268,12 @@ if __name__ == '__main__':
     if arg_dict["date_range"]:
         date_range_dt = []
         for date_string, date_label in zip(arg_dict["date_range"], ["Start", "End"]):
-            print(date_string, date_label)
             try:
                 date_range_dt.append(datetime.strptime(date_string, "%Y-%m-%d"))
             except:
                 sys.exit("{} date value {} not properly formatted. Please use the format 'YYYY-MM-DD'.".format(date_label, date_string))
-        arg_dict["date_range"] = date_range_dt
         # flip order of dates if first is later than the second.
-        if arg_dict["date_range"][1] < arg_dict["date_range"][0]:
+        if date_range_dt[1] < date_range_dt[0]:
             arg_dict["date_range"].reverse()
 
     # Exit if in_args.master_observations_file == in_args.output_results_file so the master observations table doesn't get overwritten
@@ -287,6 +297,7 @@ if __name__ == '__main__':
 
     results = query_dataframe(in_args.master_observations_file,
                               search_string,
+                              date_range = arg_dict["date_range"],
                               output_columns=in_args.output_columns,
                               output_sorting=in_args.output_sorting,
                               output_filename=in_args.output_results_file)
