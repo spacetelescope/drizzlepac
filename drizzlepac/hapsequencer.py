@@ -74,8 +74,6 @@ from stwcs import updatewcs
 from stwcs import wcsutil
 from stwcs.wcsutil import headerlet
 
-import pdb
-
 __taskname__ = 'hapsequencer'
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
@@ -1013,6 +1011,7 @@ def update_wcs_in_visit(tdp):
             for g_edp in tdp.grism_edp_list:
                 filename = g_edp.full_filename
                 if filename not in skip_grism_list:
+                    log.info("")
                     log.info("Setting the primary WCS for Grism/Prism image {} to {}.".format(filename, final_wcsname))
                     update_active_wcs(filename, final_wcsname)
 
@@ -1025,6 +1024,7 @@ def update_wcs_in_visit(tdp):
             for edp in tdp.edp_list:
                 filename = edp.full_filename
                 if filename not in skip_direct_list:
+                    log.info("")
                     log.info("Setting the primary WCS for direct image {} to {}.".format(filename, final_wcsname))
                     update_active_wcs(filename, final_wcsname)
         else:
@@ -1037,8 +1037,7 @@ def update_wcs_in_visit(tdp):
         log.info("The active WCS solution for each Grism/Prism and direct image is not changed.")
 
     log.info("Grism product list: {}".format(grism_product_list))
-    # MDD
-    sys.exit(0)
+
     return grism_product_list
 
 # ------------------------------------------------------------------------------
@@ -1168,14 +1167,6 @@ def update_active_wcs(filename, wcsname):
 
     # Case where the desired active solution is not the current active solution
     if key != ' ':
-        # If the current active WCS solution is not already archived, this method will do it
-        # MDD - Do I need to do this?
-        current_active_hdrname = hdu['SCI', 1].header['HDRNAME']
-        current_active_wcsname = hdu['SCI', 1].header['WCSNAME']
-        #wcsutil.headerlet.archive_as_headerlet(filename, current_active_hdrname, wcskey='PRIMARY')
-        wcsutil.headerlet.archive_as_headerlet(filename, "my_new_hdrname", wcskey='PRIMARY')
-        log.info("Archiving previous active WCS solution as necessary: {}".format(current_active_wcsname))
-
         # Get the distortion model identification of the desired active WCS solution
         tmp_wcsname = wcsname.split('-')[0]
         index = tmp_wcsname.upper().find('IDC_')
@@ -1185,7 +1176,6 @@ def update_active_wcs(filename, wcsname):
 
         # Get the headerlet HDRNAMES for comparison to the alternate WCS solutions
         headerlet_hdrnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="HDRNAME")
-        log.info("BEFORE Headerlet hdrnames: {}".format(headerlet_hdrnames))
 
         if headerlet_hdrnames:
             # Examine the alternate WCS solutions to determine if they will be auto-archived due
@@ -1234,26 +1224,27 @@ def update_active_wcs(filename, wcsname):
             # from the headerlet extension.
             try:
                 wcsutil.headerlet.restore_from_headerlet(filename, hdrname=hdrname, force=True)
-            except ValueError:
+            except ValueError as err:
+                log.warning("Trapped ValueError - attempting recovery: {}".format(str(err)))
                 found_string = [i for i in keyword_wcs_list if wcsname == i]
                 if found_string:
                     wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=found_string[0])
                 else:
                     log.warning("Could not restore the common WCS, {}, as the active WCS in this file {}.".format(wcsname, filename))
             except AssertionError:
+                _, _, tb = sys.exc_info()
+                tb_info = traceback.extract_tb(tb)
+                _, _, _, text = tb_info[-1]
+                log.warning("Trapped AssertionError: {}.".format(text))
                 log.warning("Could not restore the common WCS, {}, as the active WCS in this file {}.".format(wcsname, filename))
         else:
             found_string = [i for i in keyword_wcs_list if wcsname == i]
             if found_string:
                 wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=found_string[0])
             else:
-                log.warning("Could not restore the common WCS, {}, as the active WCS in this file {}.".format(wcsname, filename))
+                log.warning("Could not restore the common WCS from alternate WCS solutions, {}, as the active WCS in this file {}.".format(wcsname, filename))
     else:
         log.info("No need to update active WCS solution of {} for {} as it is already the active solution.".format(wcsname, filename))
-
-    # MDD
-    headerlet_hdrnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="HDRNAME")
-    log.info("AFTER Headerlet hdrnames: {}".format(headerlet_hdrnames))
 
     hdu.close()
 
