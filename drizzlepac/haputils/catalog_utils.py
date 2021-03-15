@@ -929,6 +929,7 @@ class HAPPointCatalog(HAPCatalogBase):
                     try:
                         user_peaks, source_fwhm = decutils.find_point_sources(self.image.imgname,
                                                                  data=region,
+                                                                 def_fwhm=source_fwhm,
                                                                  box_size=self.param_dict['region_size'],
                                                                  mask=self.image.footprint_mask,
                                                                  block_size=self.param_dict['block_size'],
@@ -940,7 +941,7 @@ class HAPPointCatalog(HAPCatalogBase):
                         log.warning("Exception thrown when trying to use PSFs to find sources with UserStarFinder.")
                         user_peaks = None
 
-                    if user_peaks and len(user_peaks) > 0:
+                    if user_peaks is not None and len(user_peaks) > 0:
 
                         log.info("UserStarFinder identified {} sources".format(len(user_peaks)))
                         if self.diagnostic_mode:
