@@ -7,13 +7,14 @@
 
 import argparse
 from datetime import datetime
-import os
+
 import sys
 
 from astropy.io import fits
 import pandas as pd
 
 from drizzlepac.haputils import cell_utils
+from drizzlepac.haputils import make_poller_files
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -34,16 +35,15 @@ def augment_results(results):
     """
     dateobs_list = []
     path_list = []
-    basepath = os.getcwd()
+
+    # populate dateobs_list, path_list
     for idx in results.index:
         rootname = results.exposure[idx]
-        filestub = "{}/{}".format(basepath, rootname)  # TODO: update path generation once the hlalab port is done.
-        if os.path.exists("{}_flc.fits".format(filestub)):
-            imgname = "{}_flc.fits".format(filestub)
-        else:
-            imgname = "{}_flt.fits".format(filestub)
+        imgname = make_poller_files.locate_fitspath_from_rootname(rootname)
         dateobs_list.append(fits.getval(imgname, "DATE-OBS"))
         path_list.append(imgname)
+
+    # Add 'dateobs' (as datetime objects) and 'filename' columns to results dataframe.
     results['dateobs'] = dateobs_list
     results['dateobs'] = pd.to_datetime(results.dateobs)
     results['filename'] = path_list
@@ -206,7 +206,7 @@ if __name__ == '__main__':
                              'name. Partials are acceptable.')
     parser.add_argument('-f', '--spec', required=False, default="None", help='Filter name to search for.')
     parser.add_argument('-m', '--master_observations_file', required=False,
-                        default="~/Documents/HLAtransition/mvm_testing/allexp/allexposures.csv",  # TODO: update this path for HLALAB port.
+                        default="~/drizzlepac/drizzlepac/haputils/allexposures.csv",
                         help='Name of the master observations .csv file containing comma-separated columns '
                              'index #, exposure, skycell, config, and spec. '
                              'Default value is "allexposures.csv".')

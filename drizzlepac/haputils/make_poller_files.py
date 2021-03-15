@@ -104,19 +104,11 @@ def locate_fitspath_from_rootname(rootname):
     fullfilepath : str
         full path + image name of specified rootname.
     """
-    fullfilepath = ""
-    # Find the best available version of the file. Assume flc preferred to flt, local preferred to network
-    for fits_ext in ["flc", "flt"]:
-        for file_path in [os.getcwd(), os.getenv("DATA_PATH")]:
-            if len(fullfilepath) > 0:
-                continue
-            if file_path == os.getcwd():
-                fullfilepath_guess = "{}/{}_{}.fits".format(file_path, rootname, fits_ext)
-            else:
-                fullfilepath_guess = "{}/{}/{}/{}_{}.fits".format(os.getenv("DATA_PATH"), rootname[:4],
-                                                                  rootname, rootname, fits_ext)
-            if os.path.exists(fullfilepath_guess):
-                fullfilepath = fullfilepath_guess
+    filenamestub = "{}/{}/{}/{}".format(os.getenv("DATA_PATH"), rootname[:4], rootname, rootname)
+    if os.path.exists("{}_flc.fits".format(filenamestub)):
+        fullfilepath = "{}_flc.fits".format(filenamestub)
+    else:
+        fullfilepath = "{}_flt.fits".format(filenamestub)
     return fullfilepath
 
 
@@ -129,7 +121,7 @@ if __name__ == '__main__':
     parser.add_argument('input_list',
                         help='Name of a file containing a list of rootnames (9 characters, usually ending '
                              'with a "q" to process. The corresponding flc.fits or flt.fits files must '
-                             'exist either in the current working directory on in the online cache')  # TODO: VERIFY NAME
+                             'exist in the online cache')
     parser.add_argument('-o', '--output_poller_filename', required=False, default="poller_file.out",
                         help='Name of an output poller file that will be created. If not explicitly '
                              'specified, the poller file will be named "poller_file.out".')
