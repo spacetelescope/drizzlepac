@@ -1321,7 +1321,7 @@ def _verify_sci_hdrname(filename):
     for ext in range(1, numext + 1):
         sciext = ('sci', ext)
         scihdr = fhdu[sciext].header
-        if 'hdrname' not in scihdr or scihdr['hdrname'] == '':
+        if 'hdrname' not in scihdr or scihdr['hdrname'].rstrip() == '':
             # We need to create a valid value for the keyword
             # Define new HDRNAME value in case it is needed.
             # Same value for all SCI extensions, so just precompute it and be ready.
