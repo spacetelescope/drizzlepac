@@ -69,10 +69,10 @@ from drizzlepac.haputils import processing_utils as proc_utils
 from drizzlepac.haputils import svm_quality_analysis as svm_qa
 from drizzlepac.haputils.catalog_utils import HAPCatalogs
 
+from stsci.tools.fileutil import countExtn
 from stsci.tools import logutil
 from stwcs import updatewcs
 from stwcs import wcsutil
-from stwcs.wcsutil import headerlet
 
 __taskname__ = 'hapsequencer'
 MSG_DATEFMT = '%Y%j%H%M%S'
@@ -572,7 +572,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         if not found_data:
             log.warning("")
             log.warning("There are no viable direct images in any Total Data Product for this visit. No processing can be done.")
-            log.warning("No SVM processing is done for the Grism/Prism data - no SVM output products are generated.") 
+            log.warning("No SVM processing is done for the Grism/Prism data - no SVM output products are generated.")
             product_list += [no_data_trl]
             sys.exit(0)
 
@@ -626,8 +626,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             # Need a trailer file to log the situation in this special case of a total data product in the visit with
             # only Grism/Prism and no direct images.  No processing is actually done in this case.
             if total_item.grism_edp_list and not total_item.edp_list:
-                log.warning("This Total Data Product only has Grism/Prism data and no direct images: {}".format(total_item.drizzle_filename)) 
-                log.warning("No SVM processing is done for the Grism/Prism data - no SVM output products are generated.") 
+                log.warning("This Total Data Product only has Grism/Prism data and no direct images: {}".format(total_item.drizzle_filename))
+                log.warning("No SVM processing is done for the Grism/Prism data - no SVM output products are generated.")
                 product_list += [total_item.trl_filename]
 
         # Run AstroDrizzle to produce drizzle-combined products
@@ -980,7 +980,10 @@ def update_wcs_in_visit(tdp):
         drizcorr = hdu[0].header['DRIZCORR']
         if drizcorr == "OMIT":
             updatewcs.updatewcs(filename, use_db=True)
+
         hdu.close()
+        # Insure HDRNAME keywords are properly populated in SCI extensions.
+        _verify_sci_hdrname(filename)
 
     direct_wcs_set, skip_direct_list, d_keyword_wcs_names_dict, direct_dict = collect_wcs_names(tdp.edp_list, 'DIRECT')
     log.info("WCS solutions common to all viable direct images: {}".format(direct_wcs_set))
@@ -1288,7 +1291,7 @@ def delete_ramp_exposures(obj_list, type_of_list):
             # Add the Ramp images to the manifest as well as the Ramp trailer filename here.
             # The file will be created by by copying the Total Data Product trailer file at
             # the end of processing.
-            if type_of_list is 'EXPOSURE':
+            if type_of_list == 'EXPOSURE':
                 ramp_filenames_list.append(obj.full_filename)
                 ramp_filenames_list.append(obj.trl_filename)
                 if not reported:
@@ -1299,3 +1302,33 @@ def delete_ramp_exposures(obj_list, type_of_list):
         obj_list.append(temp.pop())
 
     return ramp_filenames_list
+
+
+def _verify_sci_hdrname(filename):
+    """Insures that HDRNAME keyword is populated in SCI extensions.
+
+    This function checks to make sure the HDRNAME keyword in the SCI
+    extension of the science image `filename` is populated with a valid
+    non-empty string.
+    """
+    fhdu, closefits = proc_utils._process_input(filename)
+
+    # Find all extensions to be updated
+    numext = countExtn(fhdu, extname='SCI')
+
+    for ext in range(1, numext + 1):
+        sciext = ('sci', ext)
+        scihdr = fhdu[sciext].header
+        if 'hdrname' not in scihdr or scihdr['hdrname'] == '':
+            # We need to create a valid value for the keyword
+            # Define new HDRNAME value in case it is needed.
+            # Same value for all SCI extensions, so just precompute it and be ready.
+            # This code came from 'stwcs.updatewcs.astrometry_utils'
+            hdrname = "{}_{}".format(filename.replace('.fits', ''), scihdr['wcsname'])
+            # Create full filename for headerlet:
+            hfilename = "{}_hlet.fits".format(hdrname)
+            # Update the header with the new value, inserting after WCSNAME
+            scihdr.set('hdrname', hfilename, 'Name of headerlet file', after='wcsname')
+
+    if closefits:
+        fhdu.close()
