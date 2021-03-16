@@ -1160,13 +1160,16 @@ def update_active_wcs(filename, wcsname):
     # For exposures with multiple science extensions (multiple chips),
     # generate a combined WCS
     num_sci_ext, extname = util.count_sci_extensions(filename)
-    extname_list = [(extname, x+1) for x in range(num_sci_ext)]
+    extname_list = [(extname, x + 1) for x in range(num_sci_ext)]
 
-    hdu = fits.open(filename, mode='update')
+    hdu = fits.open(filename)
 
     # Check if the desired WCS solution is already the active solution
     # whereupon there is nothing to do
     key = wcsutil.altwcs.getKeyFromName(hdu['SCI', 1].header, wcsname)
+
+    # No need to keep this file handle open anymore
+    hdu.close()
 
     # Case where the desired active solution is not the current active solution
     if key != ' ':
@@ -1196,7 +1199,7 @@ def update_active_wcs(filename, wcsname):
                     log.info("Archiving alternate WCS solution as a headerlet as necessary: {}".format(wname))
 
                     # Now check if the HDRNAME between this solution and a headerlet already exists
-                    hdr_keyword = hdu[1].header['HDRNAME' + wkey.upper()]
+                    hdr_keyword = fits.getval(filename, 'HDRNAME{}'.format(wkey.upper()), ext=1)
 
                     # Solution already exists as a headerlet extension, so just delete it
                     if hdr_keyword in headerlet_hdrnames:
@@ -1212,7 +1215,7 @@ def update_active_wcs(filename, wcsname):
             hdrname = headerlet_hdrnames[headerlet_wcsnames.index(wcsname)]
             extensions = []
             extensions = wcsutil.headerlet.find_headerlet_HDUs(filename, hdrname=hdrname)
-  
+
             # It is possible the hdrname is not unique, so need to delete the dups
             for ext in reversed(extensions[1:]):
                 wcsutil.headerlet.delete_headerlet(filename, hdrext=ext)
@@ -1249,7 +1252,6 @@ def update_active_wcs(filename, wcsname):
     else:
         log.info("No need to update active WCS solution of {} for {} as it is already the active solution.".format(wcsname, filename))
 
-    hdu.close()
 
 # ------------------------------------------------------------------------------
 
@@ -1332,3 +1334,4 @@ def _verify_sci_hdrname(filename):
 
     if closefits:
         fhdu.close()
+        del fhdu
