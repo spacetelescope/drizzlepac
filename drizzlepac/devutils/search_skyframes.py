@@ -73,6 +73,11 @@ def make_search_string(arg_dict):
             continue
         if item is "skycell":
             substring = "{} == '{}'".format(item, arg_dict[item])
+        elif item is "spec":
+            parse_spec = arg_dict[item].split("-")
+            substring = "{}.str.contains('{}')".format(item, arg_dict[item])
+            if len(parse_spec) == 2:  # Search for two-filter observations (ACS)
+                substring = "{} and {}.str.contains('{}')".format(substring, item, arg_dict[item])
         else:
             substring = "{}.str.contains('{}')".format(item, arg_dict[item])
         if len(search_string) == 0:
@@ -204,7 +209,10 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--exposure', required=False, default="None",
                         help='Exposure name to search for. Does not have to be a full 9-character exposure '
                              'name. Partials are acceptable.')
-    parser.add_argument('-f', '--spec', required=False, default="None", help='Filter name to search for.')
+    parser.add_argument('-f', '--spec', required=False, default="None",
+                        help='Filter name(s) to search for. To search for ACS observations that use two '
+                             'spectral elements, enter the names of both spectral elements in any order '
+                             'seperated by a dash. Example two-spectral element input: f606w-pol60v')
     parser.add_argument('-m', '--master_observations_file', required=False,
                         default=os.getenv("ALL_EXP_FILE"),
                         help='Name of the master observations .csv file containing comma-separated columns '
