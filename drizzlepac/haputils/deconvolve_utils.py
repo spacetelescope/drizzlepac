@@ -920,13 +920,25 @@ def find_point_sources(drzname, data=None, mask=None,
     clean_psfs = True if not diagnostic_mode else False
 
     drzpsfname = convert_library_psf(calname, drzname, psfnames,
-                                     pixfrac=0.8,
+                                     pixfrac=1.5,
                                      clean_psfs=clean_psfs)
     drzpsf = fits.getdata(drzpsfname)
-    psf_fwhm = amutils.find_fwhm(drzpsf, def_fwhm)
+    # try to measure just the core of the PSF
+    # This will be a lot less likely to result in invalid/impossible FWHM values
+    yc, xc = np.where(drzpsf == drzpsf.max())[0]
+    psf_core = drzpsf[yc - box_size: yc + box_size, xc - box_size: yc - box_size]
+    psf_fwhm = amutils.find_fwhm(psf_core, def_fwhm)
+
+    # check value
     if psf_fwhm < 0 or psf_fwhm > 2.0 * def_fwhm:
-        log.debug("FWHM computed as {}.  Reverting to using default FWHM of {}".format(psf_fwhm, def_fwhm))
-        psf_fwhm = def_fwhm
+        # Try a different starting guess for the FWHM
+        psf_fwhm = amutils.find_fwhm(psf_core, def_fwhm + 1)
+
+        if psf_fwhm < 0 or psf_fwhm > 2.0 * def_fwhm:
+            log.debug("FWHM computed as {}.  Reverting to using default FWHM of {}".format(psf_fwhm, def_fwhm))
+            psf_fwhm = def_fwhm
+
+    log.info("Library PSF FWHM computed as {}.".format(psf_fwhm))
 
     # deconvolve the image with the PSF
     decdrz = fft_deconv_img(drz, drzpsf,

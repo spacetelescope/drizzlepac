@@ -669,7 +669,7 @@ class HAPImage:
                                                                  dao_threshold=self.bkg_rms_mean[chip],
                                                                  fwhm=self.kernel_fwhm,
                                                                  **extract_pars)
-            if crclean and crmap:
+            if crclean and crmap is not None:
                 i = self.imgname.replace('.fits', '')
                 if log.level < logutil.logging.INFO:
                     # apply crmap to input image
