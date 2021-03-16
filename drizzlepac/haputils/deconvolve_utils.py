@@ -829,6 +829,7 @@ class UserStarFinder(findstars.StarFinderBase):
 #
 # -----------------------------------------------------------------------------
 def find_point_sources(drzname, data=None, mask=None,
+                       def_fwhm=2.0,
                        box_size=11, block_size=(1024, 1024),
                        diagnostic_mode=False):
     """ Identify point sources most similar to TinyTim PSFs
@@ -858,6 +859,10 @@ def find_point_sources(drzname, data=None, mask=None,
         If provided, this mask will be used to eliminate regions in the
         input array from being searched for point sources.  Pixels with
         a value of 0 in the mask indicate what pixels should be ignored.
+
+    def_fwhm : `float`, optional
+        Default FWHM to use in case the model PSF can not be accurately
+        measured by `photutils`.
 
     box_size : `int`, optional
         Size of the box used to recognize each point source.
@@ -915,10 +920,25 @@ def find_point_sources(drzname, data=None, mask=None,
     clean_psfs = True if not diagnostic_mode else False
 
     drzpsfname = convert_library_psf(calname, drzname, psfnames,
-                                     pixfrac=0.8,
+                                     pixfrac=1.5,
                                      clean_psfs=clean_psfs)
     drzpsf = fits.getdata(drzpsfname)
-    psf_fwhm = amutils.find_fwhm(drzpsf, 2.0)
+    # try to measure just the core of the PSF
+    # This will be a lot less likely to result in invalid/impossible FWHM values
+    yc, xc = np.where(drzpsf == drzpsf.max())[0]
+    psf_core = drzpsf[yc - box_size: yc + box_size, xc - box_size: xc + box_size]
+    psf_fwhm = amutils.find_fwhm(psf_core, def_fwhm)
+
+    # check value
+    if psf_fwhm < 0 or psf_fwhm > 2.0 * def_fwhm:
+        # Try a different starting guess for the FWHM
+        psf_fwhm = amutils.find_fwhm(psf_core, def_fwhm + 1)
+
+        if psf_fwhm < 0 or psf_fwhm > 2.0 * def_fwhm:
+            log.debug("FWHM computed as {}.  Reverting to using default FWHM of {}".format(psf_fwhm, def_fwhm))
+            psf_fwhm = def_fwhm
+
+    log.info("Library PSF FWHM computed as {}.".format(psf_fwhm))
 
     # deconvolve the image with the PSF
     decdrz = fft_deconv_img(drz, drzpsf,
@@ -935,11 +955,6 @@ def find_point_sources(drzname, data=None, mask=None,
         fits.PrimaryHDU(data=decmask.astype(np.uint16)).writeto(drzname.replace('.fits', '_deconv_mask.fits'),
                                                                 overwrite=True)
     # find sources in deconvolved image
-    """
-    s = sigma_clipped_stats(decdrz, maxiters=1)
-    peaks = find_peaks(decdrz, threshold=s[1] + nsigma * s[2],
-                       mask=invmask, box_size=5)
-    """
     dec_peaks = find_peaks(decdrz, threshold=0.0,
                        mask=invmask, box_size=box_size)
 
@@ -958,7 +973,9 @@ def find_point_sources(drzname, data=None, mask=None,
 
     # Use this new mask to find the actual peaks in the original input
     # but only to integer pixel precision.
-    peaks = find_peaks(drz, threshold=0., box_size=5)
+    peaks = find_peaks(drz, threshold=0., box_size=box_size // 2)
+    if len(peaks) == 0:
+        peaks = None
 
     # Remove PSF used, unless running in diagnostic_mode
     if not diagnostic_mode:
