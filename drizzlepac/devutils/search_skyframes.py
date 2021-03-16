@@ -7,7 +7,7 @@
 
 import argparse
 from datetime import datetime
-
+import os
 import sys
 
 from astropy.io import fits
@@ -206,7 +206,7 @@ if __name__ == '__main__':
                              'name. Partials are acceptable.')
     parser.add_argument('-f', '--spec', required=False, default="None", help='Filter name to search for.')
     parser.add_argument('-m', '--master_observations_file', required=False,
-                        default="~/drizzlepac/drizzlepac/devutils/allexposures.csv",
+                        default=os.getenv("ALL_EXP_FILE"),
                         help='Name of the master observations .csv file containing comma-separated columns '
                              'index #, exposure, skycell, config, and spec. '
                              'Default value is "allexposures.csv".')
@@ -228,6 +228,7 @@ if __name__ == '__main__':
                              "not explicitly specified, query results will not be sorted. Recommended "
                              "sorting order is 'skycell,config,spec,exposure'.")
     in_args = parser.parse_args()
+
     arg_dict = {}
     for item in in_args.__dict__.keys():
         if item not in ["master_observations_file", "output_results_file",
