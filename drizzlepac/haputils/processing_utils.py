@@ -346,3 +346,24 @@ def make_section_str(str="", width=60, symbol='-'):
     side_dash = symbol * (dash_len // 2)
     section_str = "{}{}{}".format(side_dash, str, side_dash)
     return section_str
+
+
+def _find_open_files():
+    """Useful utility function to identify any open file handles during processing."""
+    import psutil
+
+    cwd = os.getcwd()
+    log.info("Checking for open files in {}".format(cwd))
+
+    open_files = []
+    for proc in psutil.process_iter():
+        try:
+            for pfile, pid in proc.open_files():
+                if os.path.dirname(pfile) == cwd:
+                    open_files.append(pfile)
+        except psutil.AccessDenied:
+            continue
+        except FileNotFoundError:
+            continue
+
+    return open_files
