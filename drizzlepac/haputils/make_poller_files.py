@@ -10,6 +10,7 @@ from astropy.io import fits
 
 from drizzlepac.haputils import poller_utils
 
+__taskname__ = 'make_poller_files'
 
 def generate_poller_file(input_list, poller_file_type='svm', output_poller_filename="poller_file.out",
                          skycell_name=None):
