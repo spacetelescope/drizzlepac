@@ -75,9 +75,9 @@ def make_search_string(arg_dict):
             substring = "{} == '{}'".format(item, arg_dict[item])
         elif item is "spec":
             parse_spec = arg_dict[item].split("-")
-            substring = "{}.str.contains('{}')".format(item, arg_dict[item])
+            substring = "{}.str.contains('{}')".format(item, parse_spec[0])
             if len(parse_spec) == 2:  # Search for two-filter observations (ACS)
-                substring = "{} and {}.str.contains('{}')".format(substring, item, arg_dict[item])
+                substring = "{} and {}.str.contains('{}')".format(substring, item, parse_spec[1])
         else:
             substring = "{}.str.contains('{}')".format(item, arg_dict[item])
         if len(search_string) == 0:
