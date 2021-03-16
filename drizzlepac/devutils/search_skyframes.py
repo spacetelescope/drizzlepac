@@ -206,7 +206,7 @@ if __name__ == '__main__':
                              'name. Partials are acceptable.')
     parser.add_argument('-f', '--spec', required=False, default="None", help='Filter name to search for.')
     parser.add_argument('-m', '--master_observations_file', required=False,
-                        default="~/drizzlepac/drizzlepac/haputils/allexposures.csv",
+                        default="~/drizzlepac/drizzlepac/devutils/allexposures.csv",
                         help='Name of the master observations .csv file containing comma-separated columns '
                              'index #, exposure, skycell, config, and spec. '
                              'Default value is "allexposures.csv".')
