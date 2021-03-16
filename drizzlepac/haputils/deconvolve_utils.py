@@ -926,7 +926,7 @@ def find_point_sources(drzname, data=None, mask=None,
     # try to measure just the core of the PSF
     # This will be a lot less likely to result in invalid/impossible FWHM values
     yc, xc = np.where(drzpsf == drzpsf.max())[0]
-    psf_core = drzpsf[yc - box_size: yc + box_size, xc - box_size: yc - box_size]
+    psf_core = drzpsf[yc - box_size: yc + box_size, xc - box_size: xc + box_size]
     psf_fwhm = amutils.find_fwhm(psf_core, def_fwhm)
 
     # check value
