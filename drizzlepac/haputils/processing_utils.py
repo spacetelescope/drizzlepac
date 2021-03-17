@@ -400,3 +400,23 @@ def find_flt_keyword (hdu, keyword, extname="SCI", extver=1):
             raise
 
     return value
+
+def _find_open_files():
+    """Useful utility function to identify any open file handles during processing."""
+    import psutil
+
+    cwd = os.getcwd()
+    log.info("Checking for open files in {}".format(cwd))
+
+    open_files = []
+    for proc in psutil.process_iter():
+        try:
+            for pfile, pid in proc.open_files():
+                if os.path.dirname(pfile) == cwd:
+                    open_files.append(pfile)
+        except psutil.AccessDenied:
+            continue
+        except FileNotFoundError:
+            continue
+
+    return open_files

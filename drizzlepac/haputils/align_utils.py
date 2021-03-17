@@ -580,7 +580,6 @@ class HAPImage:
                     else:
                         bkg_rms_mean = 3. * threshold_flag
                         threshold = default_threshold
-
                     break
 
             # If Background2D does not work at all, define default scalar values for
@@ -670,7 +669,7 @@ class HAPImage:
                                                                  dao_threshold=self.bkg_rms_mean[chip],
                                                                  fwhm=self.kernel_fwhm,
                                                                  **extract_pars)
-            if crclean:
+            if crclean and crmap is not None:
                 i = self.imgname.replace('.fits', '')
                 if log.level < logutil.logging.INFO:
                     # apply crmap to input image
