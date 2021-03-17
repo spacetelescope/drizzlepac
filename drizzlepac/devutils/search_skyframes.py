@@ -3,7 +3,13 @@
 """ This script allows the user to query a master observations .csv file by any combination of exposure name,
     skycell name, instrument/detector, and/or filter name. The results are printed the screen and optionally
     written to a user-specified output .csv file. The results will be sorted first by skycell name, then by
-    instrument/detector, filter name and finally by image name."""
+    instrument/detector, filter name and finally by image name. Optionally, footprint fits files will be
+    generated that show the footprints of the images in the query result in the skycell in which they
+    reside. These multi-detector, multi-filter composite footprint images use the naming format "
+    "skycell-<SKYCELL NAME>_all_footprint.fits". Additional footprint images are created for each
+    skycell-instrument/detector/filter combination present in the query results. These
+    skycell/detector/filter-specific footprint images use the naming format
+    "skycell-<SKYCELL NAME>_<INSTRUMENT NAME>-<DETECTOR NAME>-<FILTER NAME_footprint.fits"."""
 
 import argparse
 from datetime import datetime
@@ -159,7 +165,13 @@ def query_dataframe(master_observations_file, search_string, date_range=None, ou
 
 
 def visualize_footprints(results):
-    """Visualize footprints of skycells and exposures in query result
+    """Visualize footprints of skycells and exposures in query result. footprint fits files will be
+    generated that show the footprints of the images in the query result in the skycell in which they
+    reside. These multi-detector, multi-filter composite footprint images use the naming format "
+    "skycell-<SKYCELL NAME>_all_footprint.fits". Additional footprint images are created for each
+    skycell-instrument/detector/filter combination present in the query results. These
+    skycell/detector/filter-specific footprint images use the naming format
+    "skycell-<SKYCELL NAME>_<INSTRUMENT NAME>-<DETECTOR NAME>-<FILTER NAME_footprint.fits".
 
     Parameters
     ----------
@@ -176,20 +188,54 @@ def visualize_footprints(results):
         unique_skycell_list.append(results.skycell[idx])
     unique_skycell_list = list(set(unique_skycell_list))  # remove duplicate items from skycell list
     n_unique_skycells = len(unique_skycell_list)
-    if n_unique_skycells > 1:
+
+    print("Building footprint image(s) Please be patient. This may take some time...")
+    for skycell_name in unique_skycell_list:
+        footprint_imgname = "skycell-{}_all_footprint.fits".format(skycell_name)
+        img_list = results.query('skycell == "{}"'.format(skycell_name)).filename.values.tolist()
+        make_footprint_fits_file(skycell_name, img_list, footprint_imgname)
+        for config_name in list(set(results.query('skycell == "{}"'.format(skycell_name)).config.values.tolist())):
+            print("SKYCELL: {}   CONFIG: {}".format(skycell_name, config_name))
+            for spec_name in list(set(results.query('skycell == "{}" and config == "{}"'.format(skycell_name, config_name)).spec.values.tolist())):
+                print("SKYCELL: {}   CONFIG: {}   SPEC: {}".format(skycell_name, config_name, spec_name))
+                print(results.query('skycell == "{}" and config == "{}" and spec == "{}"'.format(skycell_name, config_name, spec_name)).to_string())
+                img_list = results.query('skycell == "{}" and config == "{}" and spec == "{}"'.format(skycell_name, config_name, spec_name)).filename.values.tolist()
+                footprint_imgname = "skycell-{}_{}_{}_footprint.fits".format(skycell_name, config_name.replace("/", "-"), spec_name)
+                make_footprint_fits_file(skycell_name, img_list, footprint_imgname)
+
+
+# ------------------------------------------------------------------------------------------------------------
+
+
+def make_footprint_fits_file(skycell_name, img_list, footprint_imgname):
+    """Generates footprint fits file
+
+    Parameters
+    ----------
+    skycell_name : str
+        Name of the skycell
+
+    img_list : list
+        list containing the images to process into a footprint fits files
+
+    footprint_imgname : str
+        name of the footprint fits file to generate
+
+    Returns
+    -------
+    Nothing.
+    """
+    skycell = cell_utils.SkyCell.from_name("skycell-{}".format(skycell_name))
+    footprint = cell_utils.SkyFootprint(meta_wcs=skycell.wcs)
+    footprint.build(img_list)
+    foo = footprint.get_footprint_hdu(filename=footprint_imgname)
+    n_images = len(img_list)
+    if n_images > 1:
         add_an_s = "s"
     else:
         add_an_s = ""
-    print("Building footprint {} image{}. Please be patient. This may take some time...".format(n_unique_skycells, add_an_s))
-    for skycell_name in unique_skycell_list:
-        skycell = cell_utils.SkyCell.from_name("skycell-{}".format(skycell_name))
-        footprint = cell_utils.SkyFootprint(meta_wcs=skycell.wcs)
-        img_list = results.query('skycell == "{}"'.format(skycell_name)).filename.values.tolist()
-        footprint.build(img_list)
-        footprint_imgname = "skycell-{}-footprint.fits".format(skycell_name)
-        foo = footprint.get_footprint_hdu(filename=footprint_imgname)
-        print("Skycell footprint image {} contains {} individual exposures.".format(footprint_imgname,
-                                                                                    len(img_list)))
+    print("Skycell footprint image {} contains {} individual exposure{}.".format(footprint_imgname, n_images,
+                                                                                 add_an_s))
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -224,8 +270,9 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--skycell', required=False, default="None",
                         help='Skycell name to search for. Only full skycell names are accepted.')
     parser.add_argument('-v', '--visualize_footprints', required=False, action='store_true',
-                        help='If turned on, the footprints of the skycell and the exposures returned by the '
-                             'query will be displayed.')
+                        help='If turned on, footprint fits files will be generated that show the footprints '
+                             'of the images returned by the query result in the skycell in which they '
+                             'reside.')
     parser.add_argument('--output_columns', required=False, default="None", nargs='?',
                         help="Columns to display in the query results. Needs to be some combination of "
                              "'dateobs', 'exposure', 'skycell', 'config' and/or 'spec'. If not explicitly "
