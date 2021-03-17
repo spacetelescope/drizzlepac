@@ -352,6 +352,9 @@ def find_flt_keyword (hdu, keyword, extname="SCI", extver=1):
 
     This routine deliberately does not use astropy.io.fits getval() as it
     should not be used in application code due to its self-documented inefficiency.
+    This routine is only a STOPGAP to be used as a backstop to handle the
+    issue when refine_product_headers() does not successfully update the drizzle
+    product headers.
 
     Parameters
     ----------
@@ -386,7 +389,7 @@ def find_flt_keyword (hdu, keyword, extname="SCI", extver=1):
             log.info("Read keyword from the {} header.".format(sciext))
         except KeyError as err:
             log.error("Keyword {} does not exist in the Primary or {} extension.".format(keyword, sciext))
-            raise err
+            raise
 
     # Now ensure the returned variable is of the proper type
     try:
@@ -394,6 +397,6 @@ def find_flt_keyword (hdu, keyword, extname="SCI", extver=1):
         log.info("Keyword {}: {}.".format(keyword, value))
     except (ValueError, TypeError) as err:
             log.error("The value of keyword, {}, cannot be cast as a floating point value.".format(keyword))
-            raise err
+            raise
 
     return value
