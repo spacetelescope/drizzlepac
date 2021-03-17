@@ -286,13 +286,20 @@ if __name__ == '__main__':
     if in_args.master_observations_file == in_args.output_results_file:
         sys.exit("ERROR: The output results file cannot have the same name is the input master observations table")
 
+    # Exit if in_args.master_observations_file is not found.
+    if in_args.master_observations_file is "":
+        sys.exit("ERROR: Undefined master observations table path. Please set environment variable 'ALL_EXP_FILE'")
+
+    # Exit if the specified master observations table doesn't exist
+    if os.path.exists(in_args.master_observations_file) == False:
+        sys.exit("ERROR: Specified master observations table {} does not exist.".format(in_args.master_observation_file.replace(os.getenv("ALL_EXP_FILE"), "$ALL_EXP_FILE/")))
+
     # Exit if named columns don't match the names of the available columns.
     valid_cols = ['dateobs', 'exposure', 'skycell', 'config', 'spec']
     if in_args.output_columns is not None:
         for item in in_args.output_columns:
             if item not in valid_cols:
                 sys.exit("ERROR: {} is not a valid column name. Valid column names are 'dateobs', 'exposure', 'skycell', 'config', 'spec'.".format(item))
-
     if in_args.output_sorting is not None:
         for item in in_args.output_sorting:
             if item not in valid_cols:

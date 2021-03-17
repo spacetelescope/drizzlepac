@@ -5,6 +5,7 @@ working dir"""
 
 import argparse
 import os
+import sys
 
 from astropy.io import fits
 
@@ -105,6 +106,8 @@ def locate_fitspath_from_rootname(rootname):
     fullfilepath : str
         full path + image name of specified rootname.
     """
+    if in_args.master_observations_file is "":
+        sys.exit("ERROR: Undefined online cache data root path. Please set environment variable 'DATA_PATH'")
     filenamestub = "{}/{}/{}/{}".format(os.getenv("DATA_PATH"), rootname[:4], rootname, rootname)
     if os.path.exists("{}_flc.fits".format(filenamestub)):
         fullfilepath = "{}_flc.fits".format(filenamestub)
