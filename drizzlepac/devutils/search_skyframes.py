@@ -236,7 +236,6 @@ if __name__ == '__main__':
                              "not explicitly specified, query results will not be sorted. Recommended "
                              "sorting order is 'skycell,config,spec,exposure'.")
     in_args = parser.parse_args()
-
     arg_dict = {}
     for item in in_args.__dict__.keys():
         if item not in ["master_observations_file", "output_results_file",
@@ -282,17 +281,17 @@ if __name__ == '__main__':
         if date_range_dt[1] < date_range_dt[0]:
             arg_dict["date_range"].reverse()
 
-    # Exit if in_args.master_observations_file == in_args.output_results_file so the master observations table doesn't get overwritten
-    if in_args.master_observations_file == in_args.output_results_file:
-        sys.exit("ERROR: The output results file cannot have the same name is the input master observations table")
-
     # Exit if in_args.master_observations_file is not found.
-    if in_args.master_observations_file is "":
+    if not in_args.master_observations_file:
         sys.exit("ERROR: Undefined master observations table path. Please set environment variable 'ALL_EXP_FILE'")
 
     # Exit if the specified master observations table doesn't exist
-    if os.path.exists(in_args.master_observations_file) == False:
-        sys.exit("ERROR: Specified master observations table {} does not exist.".format(in_args.master_observation_file.replace(os.getenv("ALL_EXP_FILE"), "$ALL_EXP_FILE/")))
+    if not os.path.exists(in_args.master_observations_file):
+        sys.exit("ERROR: Specified master observations table '{}' does not exist.".format(in_args.master_observations_file.replace(os.getenv("ALL_EXP_FILE"), "$ALL_EXP_FILE/")))
+
+    # Exit if in_args.master_observations_file == in_args.output_results_file so the master observations table doesn't get overwritten
+    if in_args.master_observations_file == in_args.output_results_file:
+        sys.exit("ERROR: The output results file cannot have the same name is the input master observations table")
 
     # Exit if named columns don't match the names of the available columns.
     valid_cols = ['dateobs', 'exposure', 'skycell', 'config', 'spec']
