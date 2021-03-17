@@ -472,7 +472,6 @@ class CatalogImage:
         keyword_dict["aperture_dec"] = self.imghdu[1].header["DEC_APER"]
         keyword_dict["photflam"] = proc_utils.find_flt_keyword(self.imghdu, "PHOTFLAM")
         keyword_dict["photplam"] = proc_utils.find_flt_keyword(self.imghdu, "PHOTPLAM")
-        keyword_dict["photplam"] = proc_utils.find_flt_keyword(self.imghdu, "BLEE")
 
         return keyword_dict
 
