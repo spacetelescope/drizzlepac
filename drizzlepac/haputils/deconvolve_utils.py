@@ -925,7 +925,9 @@ def find_point_sources(drzname, data=None, mask=None,
     drzpsf = fits.getdata(drzpsfname)
     # try to measure just the core of the PSF
     # This will be a lot less likely to result in invalid/impossible FWHM values
-    yc, xc = np.where(drzpsf == drzpsf.max())[0]
+    max_y, max_x = np.where(drzpsf == drzpsf.max())
+    xc = max_x[0]
+    yc = max_y[0]
     psf_core = drzpsf[yc - box_size: yc + box_size, xc - box_size: xc + box_size]
     psf_fwhm = amutils.find_fwhm(psf_core, def_fwhm)
 
@@ -952,7 +954,8 @@ def find_point_sources(drzname, data=None, mask=None,
         fits.PrimaryHDU(data=decdrz,
                         header=drzhdr).writeto(drzname.replace('.fits', '_deconv.fits'),
                                                overwrite=True)
-        fits.PrimaryHDU(data=decmask.astype(np.uint16)).writeto(drzname.replace('.fits', '_deconv_mask.fits'),
+        if mask is not None:
+            fits.PrimaryHDU(data=decmask.astype(np.uint16)).writeto(drzname.replace('.fits', '_deconv_mask.fits'),
                                                                 overwrite=True)
     # find sources in deconvolved image
     dec_peaks = find_peaks(decdrz, threshold=0.0,
