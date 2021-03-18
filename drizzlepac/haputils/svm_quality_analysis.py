@@ -58,6 +58,7 @@ from drizzlepac import util, wcs_functions
 from drizzlepac.haputils import hla_flag_filter
 from drizzlepac.haputils import catalog_utils
 from drizzlepac.haputils import astrometric_utils as au
+from drizzlepac.haputils import cell_utils
 import drizzlepac.haputils.comparison_utils as cu
 import drizzlepac.haputils.diagnostic_utils as du
 try:
@@ -261,6 +262,9 @@ def compare_num_sources(drizzle_list, json_timestamp=None, json_time_since_epoch
     # Drizzle filename example: hst_11665_06_wfc3_ir_total_ib4606_drz.fits
     # The filename is all lower-case by design.
     for drizzle_file in drizzle_list:
+        if not os.path.exists(drizzle_file):
+            log.warning("[compare_num_sources] Input {} not found. Skipping comparison.".format(drizzle_file))
+            continue
         tokens = drizzle_file.split('_')
         detector = tokens[4]
 
@@ -369,6 +373,11 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
     sl_names = [hap_obj.point_cat_filename, hap_obj.segment_cat_filename]
     img_names = [hap_obj.drizzle_filename, hap_obj.drizzle_filename]
     good_flag_sum = 255  # all bits good
+
+    for name in sl_names:
+        if name.rstrip == '' or not os.path.exists(name):
+            log.warning("[compare_ra_dec_crossmatches] Catalog {} Missing!  No comparison can be made.".format(name))
+            return
 
     diag_obj = du.HapDiagnostic(log_level=log_level)
     diag_obj.instantiate_from_hap_obj(hap_obj,
@@ -1005,8 +1014,12 @@ def find_hap_point_sources(filt_obj, log_level=logutil.logging.NOTSET):
     # Initiate logging!
     log.setLevel(log_level)
 
+    # Need to create footprint mask of number_of_images_per_pixel
+    footprint = cell_utils.SkyFootprint(filt_obj.meta_wcs)
+    exp_list = [e.full_filename for e in filt_obj.edp_list]
+    footprint.build(exp_list)
     # Initialize image object
-    img_obj = catalog_utils.CatalogImage(filt_obj.drizzle_filename, log_level)
+    img_obj = catalog_utils.CatalogImage(filt_obj.drizzle_filename, footprint.total_mask, log_level)
     img_obj.compute_background(filt_obj.configobj_pars.get_pars("catalog generation")['bkg_box_size'],
                                filt_obj.configobj_pars.get_pars("catalog generation")['bkg_filter_size'])
     img_obj.build_kernel(filt_obj.configobj_pars.get_pars("catalog generation")['bkg_box_size'],
@@ -1028,7 +1041,7 @@ def find_hap_point_sources(filt_obj, log_level=logutil.logging.NOTSET):
                                                               nsigma, img_obj.bkg_rms_median))
     daofind = DAOStarFinder(fwhm=img_obj.kernel_fwhm, threshold=nsigma * img_obj.bkg_rms_median)
     sources = daofind(image, mask=exclusion_mask)
-    cat_name = filt_obj.product_basename+"_point-cat-fxm.ecsv"
+    cat_name = filt_obj.product_basename + "_point-cat-fxm.ecsv"
 
     return {"filt_obj": filt_obj, "sources": sources, "cat_name": cat_name}
 
@@ -1066,6 +1079,11 @@ def generate_gaia_catalog(hap_obj, columns_to_remove=None):
     # Example: '10265_01_acs_wfc_j92c01b9q_flc.fits_f606w_drc'
     # what is being extracted here is just the input filename, which in this case is 'j92c01b9q_flc.fits'.
     if hasattr(hap_obj, "edp_list"):  # for total and filter product objects
+        if not os.path.exists(hap_obj.drizzle_filename) or len(hap_obj.edp_list) == 0:
+            # No valid products to evaluate
+            log.warning('[generate_gaia_catalog] {} was not created.  Skipping.'.format(hap_obj.drizzle_filename))
+            return None
+
         for edp_item in hap_obj.edp_list:
             parse_info = edp_item.info.split("_")
             imgname = "{}_{}".format(parse_info[4], parse_info[5])
@@ -1525,8 +1543,8 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
 
             diagnostic_obj.write_json_file(json_filename)
 
-        # Clean up
-        del diagnostic_obj
+            # Clean up
+            del diagnostic_obj
 
     # This routine does not return any values
 
