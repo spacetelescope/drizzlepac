@@ -352,7 +352,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             # rate of cosmic-ray contamination for the total detection product
             reject_catalogs = total_product_catalogs.verify_crthresh(n1_exposure_time)
 
-            if not reject_catalogs or diagnostic_mode:
+            if not reject_catalogs:
                 for filter_product_obj in total_product_obj.fdp_list:
                     filter_product_catalogs = filter_catalogs[filter_product_obj.drizzle_filename]
 
