@@ -1175,6 +1175,10 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
     # The "product" in this context is a filter name.
     # The filename is all lower-case by design.
     for drizzle_file in drizzle_list:
+        if not os.path.exists(drizzle_file):
+            log.warning("[compare_photometry] Input {} not found. Skipping comparison.".format(drizzle_file))
+            continue
+
         tokens = drizzle_file.split('_')
         detector = tokens[4]
         filter_name = tokens[5]
