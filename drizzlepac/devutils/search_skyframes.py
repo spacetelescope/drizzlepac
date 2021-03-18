@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" This script allows the user to query a master observations .csv file by any combination of exposure name,
+""" This script allows users to query a master observations .csv file by any combination of exposure name,
     skycell name, instrument/detector, and/or filter name. The results are printed the screen and optionally
     written to a user-specified output .csv file. The results will be sorted first by skycell name, then by
     instrument/detector, filter name and finally by image name. Optionally, footprint fits files will be
@@ -9,7 +9,63 @@
     "skycell-<SKYCELL NAME>_all_footprint.fits". Additional footprint images are created for each
     skycell-instrument/detector/filter combination present in the query results. These
     skycell/detector/filter-specific footprint images use the naming format
-    "skycell-<SKYCELL NAME>_<INSTRUMENT NAME>-<DETECTOR NAME>-<FILTER NAME_footprint.fits"."""
+    "skycell-<SKYCELL NAME>_<INSTRUMENT NAME>-<DETECTOR NAME>-<FILTER NAME_footprint.fits".
+
+
+    USAGE:
+
+        >>> search_skyframes [-cdefmosv --output_columns --output_sorting]
+
+        - The '-c' option allows users to specify an instrument/detector configuration to search for. The
+        expected format is instrument name, then detector name in all caps, separated by a "/"; example:
+        "-c WFC3/IR"
+
+        - The '-d' option allows users to specify the Min and max date (inclusive) of dateobs search
+        window. The exected date format is "YYYY-MM-DD". Min amd max dates should be separated by a space;
+        example: "-d 2011-06-15 2019-04-21"
+
+        - The '-e' option allows users to specify an exposure name to search for. The expected format is a
+        lower-case full or partial image name; examples: "-e j92", "-e j92c01" or "-e j92c01b4q"
+
+        - The '-f' option allows users to specify filter name(s) to search for. To search for ACS
+        observations that use two spectral elements, enter the names of both spectral elements in any order
+        seperated by a dash. The expected format is filter name(s), lower-case; Example ACS two-spectral
+        element input: "-f f606w-pol60v", Example single-filter input: "-f f814w"
+
+        - The '-m' option allows users to specify the name of the master observations .csv file containing
+        comma-separated columns "index #", "exposure", "skycell", "config", and "spec" that are searched to
+        produce query results.
+
+        - The '-o' option allows users to specify an output file to write the query results to. The output
+        file format is '.csv'.
+
+        - The '-s' option allows users to specify the skycell name to search for. Only full skycell names are
+        accepted. Expected format is lowercase; Example: "-s p0797x13y05"
+
+        - The '-v' opition allows users to visualize the footprints of the images returned by the query
+        results. If turned on, footprint fits files will be generated that show the footprints of the images
+        returned by the query result in the skycell in which they reside. Additional footprint images are
+        created for each skycell-instrument/detector/filter combination present in the query results. This
+        input arguemnt does not expect any additinal information. Simply specifying "-v" turns on the
+        footprint generation.
+
+        - The '--output_columns' option allows users to specify which columns to display (and optionally
+        write to the output file, and in what order.  Valid column names are 'dateobs', 'exposure',
+        'filename', 'skycell', 'config', and 'spec'; Example: "--output_columns skycell,config,spec,exposure"
+
+        - The '--output_sorting' option allows users Order in which to sort columns of the query results.
+        The expected input is to be some combination of 'dateobs', 'exposure', 'skycell', 'config', 'spec'
+        and 'filename'. If not explicitly specified, query results will not be sorted; Example:
+        "--output_sorting skycell,config,spec"
+
+    EXAMPLE RUN:
+
+    Search for all ACS/WFC F814W observations located in skycell p0123x45y67 taken during 2015; return
+    date and exposure name; sort by date; write results to file 'query_results.csv'; generate footprint
+    visualization footprint fits imaages
+
+        >>> search_skyframes -c ACS/WFC -d 2015-01-01 2015-12-31 -f f814w -s p0123x45y67 -o query_results.csv -v --output_columns dateobs, exposure --output_sorting dateobs
+    """
 
 import argparse
 from datetime import datetime
@@ -143,8 +199,9 @@ def query_dataframe(master_observations_file, search_string, date_range=None, ou
     if output_columns:
         results = results[output_columns]
     n_lines = results.index.size
+
     print("\n")
-    print(results.to_string())
+    print(results.to_string(index=False))
     print("\n")
     if n_lines == 1:
         print('Query "{}" found 1 result.'.format(search_string))
@@ -182,23 +239,13 @@ def visualize_footprints(results):
     -------
     Nothing.
     """
-    # Get list of all the unique skycells in the query results
-    unique_skycell_list = []
-    for idx in results.index:
-        unique_skycell_list.append(results.skycell[idx])
-    unique_skycell_list = list(set(unique_skycell_list))  # remove duplicate items from skycell list
-    n_unique_skycells = len(unique_skycell_list)
-
-    print("Building footprint image(s) Please be patient. This may take some time...")
-    for skycell_name in unique_skycell_list:
+    print("Building footprint images. Please be patient. This may take some time...")
+    for skycell_name in list(set(results.skycell.values.tolist())):
         footprint_imgname = "skycell-{}_all_footprint.fits".format(skycell_name)
         img_list = results.query('skycell == "{}"'.format(skycell_name)).filename.values.tolist()
         make_footprint_fits_file(skycell_name, img_list, footprint_imgname)
         for config_name in list(set(results.query('skycell == "{}"'.format(skycell_name)).config.values.tolist())):
-            print("SKYCELL: {}   CONFIG: {}".format(skycell_name, config_name))
             for spec_name in list(set(results.query('skycell == "{}" and config == "{}"'.format(skycell_name, config_name)).spec.values.tolist())):
-                print("SKYCELL: {}   CONFIG: {}   SPEC: {}".format(skycell_name, config_name, spec_name))
-                print(results.query('skycell == "{}" and config == "{}" and spec == "{}"'.format(skycell_name, config_name, spec_name)).to_string())
                 img_list = results.query('skycell == "{}" and config == "{}" and spec == "{}"'.format(skycell_name, config_name, spec_name)).filename.values.tolist()
                 footprint_imgname = "skycell-{}_{}_{}_footprint.fits".format(skycell_name, config_name.replace("/", "-"), spec_name)
                 make_footprint_fits_file(skycell_name, img_list, footprint_imgname)
@@ -276,7 +323,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_columns', required=False, default="None", nargs='?',
                         help="Columns to display in the query results. Needs to be some combination of "
                              "'dateobs', 'exposure', 'skycell', 'config' and/or 'spec'. If not explicitly "
-                             "specified, columns will be displayed in the query results.")
+                             "specified, all columns will be displayed in the query results.")
     parser.add_argument('--output_sorting', required=False, default="None", nargs='?',
                         help="Order (if any) in which to sort columns of the query results. Needs to be some "
                              "combination of 'dateobs', 'exposure', 'skycell', 'config' and/or 'spec'. If "
@@ -341,15 +388,15 @@ if __name__ == '__main__':
         sys.exit("ERROR: The output results file cannot have the same name is the input master observations table")
 
     # Exit if named columns don't match the names of the available columns.
-    valid_cols = ['dateobs', 'exposure', 'skycell', 'config', 'spec']
+    valid_cols = ['dateobs', 'exposure', 'filename', 'skycell', 'config', 'spec']
     if in_args.output_columns is not None:
         for item in in_args.output_columns:
             if item not in valid_cols:
-                sys.exit("ERROR: {} is not a valid column name. Valid column names are 'dateobs', 'exposure', 'skycell', 'config', 'spec'.".format(item))
+                sys.exit("ERROR: {} is not a valid column name. Valid column names are 'dateobs', 'exposure', 'filename', 'skycell', 'config', 'spec'.".format(item))
     if in_args.output_sorting is not None:
         for item in in_args.output_sorting:
             if item not in valid_cols:
-                sys.exit("ERROR: {} is not a valid column name. Valid column names are 'dateobs', 'exposure', 'skycell', 'config', 'spec'.".format(item))
+                sys.exit("ERROR: {} is not a valid column name. Valid column names are 'dateobs', 'exposure', 'filename', 'skycell', 'config', 'spec'.".format(item))
 
     # Generate search string and run query
     search_string = make_search_string(arg_dict)
