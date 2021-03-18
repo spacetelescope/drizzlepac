@@ -252,11 +252,22 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                     # the catalogs.
                     tot_exposure_time = 0
                     n1_factor = 0.0
+                    n1_dict = {}
+                    for edp in total_product_obj.edp_list:
+                        if edp.filters not in n1_dict:
+                            n1_dict[edp.filters] = {'n': 1, 'texptime': edp.exptime}
+                        else:
+                            n1_dict[edp.filters]['n'] += 1
+                            n1_dict[edp.filters]['texptime'] += edp.exptime
+
                     for edp in total_product_obj.edp_list:
                         tot_exposure_time += edp.exptime
-                        if edp.crclean:
+                        if n1_dict[edp.filters]['n'] == 1:
                             n1_exposure_time += edp.exptime
                             n1_factor += cr_residual
+
+                    # Insure that n1_factor only improves the threshold, not make it worse.
+                    n1_factor = min(n1_factor, 1.0)
 
                     # Account for the influence of the single-image cosmic-ray identification
                     # This fraction represents the residual number of cosmic-rays after single-image identification
