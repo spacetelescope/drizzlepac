@@ -347,6 +347,59 @@ def make_section_str(str="", width=60, symbol='-'):
     section_str = "{}{}{}".format(side_dash, str, side_dash)
     return section_str
 
+def find_flt_keyword (hdu, keyword, extname="SCI", extver=1):
+    """Look for the FITS keyword in the Primary and specified extension header
+
+    This routine deliberately does not use astropy.io.fits getval() as it
+    should not be used in application code due to its self-documented inefficiency.
+    This routine is only a STOPGAP to be used as a backstop to handle the
+    issue when refine_product_headers() does not successfully update the drizzle
+    product headers.
+
+    Parameters
+    ----------
+    hdu : HDUList
+    List of Header Data Unit objects
+
+    keyword : str
+    Keyword of interest
+
+    extname : str
+    Named extension to check in case the keyword is not found in the Primary
+    e.g., (extname, extver) ("SCI", 2)
+
+    extver : int
+    Specified extver of an extname to check in case the keyword is not found in the Primary
+    e.g., (extname, extver) ("SCI", 2)
+
+    Returns
+    -------
+    value : float
+    """
+
+    # Look for the keyword in the Primary header
+    try:
+        value = hdu[0].header[keyword]
+        log.info("Read keyword {} from the Primary header.".format(keyword))
+    # Oops.  Look for the keyword in the extension
+    except KeyError:
+        try:
+            sciext = (extname, extver)
+            value = hdu[sciext].header[keyword]
+            log.info("Read keyword from the {} header.".format(sciext))
+        except KeyError as err:
+            log.error("Keyword {} does not exist in the Primary or {} extension.".format(keyword, sciext))
+            raise
+
+    # Now ensure the returned variable is of the proper type
+    try:
+        value = float(value)
+        log.info("Keyword {}: {}.".format(keyword, value))
+    except (ValueError, TypeError) as err:
+            log.error("The value of keyword, {}, cannot be cast as a floating point value.".format(keyword))
+            raise
+
+    return value
 
 def _find_open_files():
     """Useful utility function to identify any open file handles during processing."""

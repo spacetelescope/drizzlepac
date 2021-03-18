@@ -25,6 +25,7 @@ from stwcs.wcsutil import HSTWCS
 from . import astrometric_utils
 from . import photometry_tools
 from . import deconvolve_utils as decutils
+from . import processing_utils as proc_utils
 
 try:
     from matplotlib import pyplot as plt
@@ -469,10 +470,11 @@ class CatalogImage:
         keyword_dict["orientation"] = self.imghdu[1].header["ORIENTAT"]
         keyword_dict["aperture_ra"] = self.imghdu[1].header["RA_APER"]
         keyword_dict["aperture_dec"] = self.imghdu[1].header["DEC_APER"]
-        keyword_dict["photflam"] = self.imghdu[1].header["PHOTFLAM"]
-        keyword_dict["photplam"] = self.imghdu[1].header["PHOTPLAM"]
+        keyword_dict["photflam"] = proc_utils.find_flt_keyword(self.imghdu, "PHOTFLAM")
+        keyword_dict["photplam"] = proc_utils.find_flt_keyword(self.imghdu, "PHOTPLAM")
 
         return keyword_dict
+
 
     def _get_max_key_value(self, header, root_of_keyword):
         """Read FITS keywords with the same prefix from primary header and return the maximum value
