@@ -1177,7 +1177,7 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
     for drizzle_file in drizzle_list:
         if not os.path.exists(drizzle_file):
             log.warning("[compare_photometry] Input {} not found. Skipping comparison.".format(drizzle_file))
-            continue
+            return  # So calling routine can continue to next test
 
         tokens = drizzle_file.split('_')
         detector = tokens[4]
@@ -1210,7 +1210,7 @@ def compare_photometry(drizzle_list, json_timestamp=None, json_time_since_epoch=
                             "for comparison.".format(catalog))
                 log.warning("Program skipping comparison of catalogs associated "
                             "with {}.\n".format(drizzle_file))
-                continue
+                return  # So calling routine can continue to next test
 
         # If the catalogs were actually produced, then get the data.
         tab_point_measurements = ascii.read(cat_names[0])
