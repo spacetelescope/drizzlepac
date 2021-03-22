@@ -823,7 +823,7 @@ class HAPCatalogBase:
         data_table.meta["h10"] = ["IMPORTANT NOTES"]
         data_table.meta["h11"] = ["The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
         data_table.meta["h12"] = ["RA and Dec values in this table are in sky coordinates (i.e. coordinates at the epoch of observation"]
-        data_table.meta["h12.1"] = ["and fit to GAIADR1 (2015.0) or GAIADR2 (2015.5))."]
+        data_table.meta["h12.1"] = ["and fit to GAIADR1 (2015.0), GAIADR2 (2015.5)), or GAIAedr3 (XXX EPOCH GOES HERE XXX)."]  # TODO: What epoch is associated with GAIAedr3??
         data_table.meta["h13"] = ["Magnitude values in this table are in the ABMAG system."]
         data_table.meta["h14"] = ["Column titles in this table ending with Ap1 refer to the inner photometric aperture "]
         data_table.meta["h14.1"] = ["(radius = {} pixels, {} arcsec.".format(self.aper_radius_list_pixels[0],
