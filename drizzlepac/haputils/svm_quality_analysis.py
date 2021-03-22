@@ -1422,7 +1422,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                 # Examples of WCS name formats:
                 # Default WCS name: IDC_xxxxxxxxx
                 # A priori WCS name: IDC_xxxxxxxxx-HSC30
-                # A posteriori WCS name: IDC_xxxxxxxxx-FIT_REL_GAIADR1
+                # A posteriori WCS name: IDC_xxxxxxxxx-FIT_REL_GAIAedr3
                 for key, value in dict_of_wcskeys_names.items():
                     if key != ' ':
                         alt_key = key
