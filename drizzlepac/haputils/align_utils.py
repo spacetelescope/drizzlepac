@@ -271,8 +271,8 @@ class AlignmentTable:
 
         catalog_name : str
             Name of reference catalog to use for the fit.  These are defined
-            by the user.  Examples include: 'GAIADR1' and 'GAIADR2'.  This acts
-            as the label for indexing this fit in the `fit_dict` table.
+            by the user.  Examples include: 'GAIADR1', 'GAIADR2', and 'GAIAedr3'.
+            This acts as the label for indexing this fit in the `fit_dict` table.
 
         reference_catalog : `astropy.table.Table`
             Table containing the reference sources to be used for the fit.
