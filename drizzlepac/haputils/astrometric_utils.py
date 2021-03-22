@@ -112,7 +112,7 @@ Primary function for creating an astrometric reference catalog.
 """
 
 
-def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
+def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv",
                                gaia_only=False, table_format="ascii.ecsv",
                                existing_wcs=None, num_sources=None,
                                use_footprint=False, full_catalog=False):
@@ -125,7 +125,7 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
 
     catalog : str, optional
         Name of catalog to extract astrometric positions for sources in the
-        input images' field-of-view. Default: GAIADR2. Options available are
+        input images' field-of-view. Default: GAIAedr3. Options available are
         documented on the catalog web page.
 
     output : str, optional
