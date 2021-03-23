@@ -140,9 +140,13 @@ def characterize_gaia_distribution(hap_obj, json_timestamp=None, json_time_since
     if log_level <= logutil.logging.DEBUG:
         reg_file = "{}_gaia_sources.reg".format(hap_obj.drizzle_filename[:-9])
         cname = gaia_table.colnames[0]
+        orig_cname = cname
         gaia_table.rename_column(cname, "#{}".format(cname))  # Make reg file DS9-compatible
         gaia_table.write(reg_file, format='ascii.csv')
         log.debug("Wrote GAIA source RA and Dec positions to DS9 region file '{}'".format(reg_file))
+        # Reset the column name back
+        cname = gaia_table.colnames[0]
+        gaia_table.rename_column(cname, orig_cname)
 
     # convert RA, Dec to image X, Y
     outwcs = HSTWCS(hap_obj.drizzle_filename + "[1]")
