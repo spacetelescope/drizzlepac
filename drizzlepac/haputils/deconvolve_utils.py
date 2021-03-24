@@ -10,7 +10,10 @@ import numpy as np
 
 import skimage
 from astropy.io import fits as fits
-from photutils.detection import findstars
+from photutils.detection import (StarFinderBase, find_peaks,
+                                 _DAOFindProperties, _StarCutout,
+                                 _StarFinderKernel, _find_stars)
+from photutils.utils import NoDetectionsWarning
 
 from stsci.tools import fileutil as fu
 
@@ -26,7 +29,6 @@ from astropy.table import Table
 from scipy import ndimage
 import scipy.signal as ss
 
-from photutils import find_peaks
 from stsci.tools import logutil
 
 try:
@@ -545,13 +547,13 @@ def get_cutouts(data, star_list, kernel, threshold_eff, exclude_border=False):
             ypeak -= kernel.yradius
             slices = (slice(y0, y1), slice(x0, x1))
 
-        star_cutouts.append(findstars._StarCutout(data_cutout, convdata_cutout, slices,
+        star_cutouts.append(_StarCutout(data_cutout, convdata_cutout, slices,
                                         xpeak, ypeak, kernel, threshold_eff))
 
     return star_cutouts
 
 
-class UserStarFinder(findstars.StarFinderBase):
+class UserStarFinder(StarFinderBase):
     """
     Measure stars in an image using the DAOFIND (`Stetson 1987
     <https://ui.adsabs.harvard.edu/abs/1987PASP...99..191S/abstract>`_)
@@ -713,7 +715,7 @@ class UserStarFinder(findstars.StarFinderBase):
         self.sky = sky
         self.exclude_border = exclude_border
 
-        self.kernel = findstars._StarFinderKernel(self.fwhm, self.ratio, self.theta,
+        self.kernel = _StarFinderKernel(self.fwhm, self.ratio, self.theta,
                                         self.sigma_radius)
         self.threshold_eff = self.threshold * self.kernel.relerr
         self.brightest = brightest
@@ -767,19 +769,19 @@ class UserStarFinder(findstars.StarFinderBase):
                                         self.threshold_eff,
                                         exclude_border=self.exclude_border)
         else:
-            star_cutouts = findstars._find_stars(data, self.kernel, self.threshold_eff,
-                                                 mask=mask,
-                                                 exclude_border=self.exclude_border)
+            star_cutouts = _find_stars(data, self.kernel, self.threshold_eff,
+                                       mask=mask,
+                                       exclude_border=self.exclude_border)
 
         if star_cutouts is None:
-            warnings.warn('No sources were found.', findstars.NoDetectionsWarning)
+            warnings.warn('No sources were found.', NoDetectionsWarning)
             return None
 
         self._star_cutouts = star_cutouts
 
         star_props = []
         for star_cutout in star_cutouts:
-            props = findstars._DAOFindProperties(star_cutout, self.kernel, self.sky)
+            props = _DAOFindProperties(star_cutout, self.kernel, self.sky)
 
             if np.isnan(props.dx_hx).any() or np.isnan(props.dy_hy).any():
                 continue
@@ -804,7 +806,7 @@ class UserStarFinder(findstars.StarFinderBase):
         nstars = len(star_props)
         if nstars == 0:
             warnings.warn('Sources were found, but none pass the sharpness '
-                          'and roundness criteria.', findstars.NoDetectionsWarning)
+                          'and roundness criteria.', NoDetectionsWarning)
             return None
 
         if self.brightest is not None:
