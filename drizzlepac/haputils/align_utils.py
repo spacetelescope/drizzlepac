@@ -18,6 +18,7 @@ from astropy import units as u
 
 import photutils
 from photutils import Background2D
+from photutils.utils import NoDetectionsWarning
 
 from stwcs.wcsutil import HSTWCS
 from stwcs.wcsutil import headerlet
@@ -44,9 +45,6 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
-NoDetectionsWarning = photutils.findstars.NoDetectionsWarning if \
-                        hasattr(photutils.findstars, 'NoDetectionsWarning') else \
-                        photutils.utils.NoDetectionsWarning
 
 class AlignmentTable:
     """ This class handles alignment operations for HST data.
