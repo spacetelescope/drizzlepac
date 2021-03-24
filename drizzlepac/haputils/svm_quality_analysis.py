@@ -49,7 +49,7 @@ from bokeh.models import ColumnDataSource, Label
 from bokeh.models.tools import HoverTool
 from itertools import chain
 import numpy as np
-from photutils import DAOStarFinder
+from photutils.detection import DAOStarFinder
 from scipy import ndimage
 from scipy.spatial import KDTree
 

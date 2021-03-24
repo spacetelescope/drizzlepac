@@ -17,7 +17,7 @@ from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
 
 import photutils
-from photutils import Background2D
+from photutils.background import Background2D
 from photutils.utils import NoDetectionsWarning
 
 from stwcs.wcsutil import HSTWCS

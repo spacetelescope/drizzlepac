@@ -45,14 +45,13 @@ from astropy.time import Time
 from astropy.utils.decorators import deprecated
 
 import photutils  # needed to check version
-from photutils import detect_sources, source_properties, deblend_sources
-from photutils import Background2D
-from photutils import SExtractorBackground, StdBackgroundRMS
-from photutils import DAOStarFinder
-from photutils import MMMBackground
-from photutils.psf import IntegratedGaussianPRF, DAOGroup
-from photutils.psf import IterativelySubtractedPSFPhotometry
-from photutils import make_source_mask
+from photutils.background import (Background2D, MMMBackground,
+                                  SExtractorBackground, StdBackgroundRMS)
+from photutils.detection import DAOStarFinder, find_peaks
+from photutils.segmentation import (detect_sources, source_properties,
+                                    deblend_sources, make_source_mask)
+from photutils.psf import (IntegratedGaussianPRF, DAOGroup,
+                           IterativelySubtractedPSFPhotometry)
 
 from tweakwcs import FITSWCS
 from stwcs.distortion import utils
@@ -444,8 +443,9 @@ def compute_2d_background(imgarr, box_size, win_size,
                           rms_estimator=StdBackgroundRMS):
     """Compute a 2D background for the input array.
 
-    This function uses `~photutils.Background2D` to determine an adaptive
-    background that takes into account variations in flux across the image.
+    This function uses `~photutils.background.Background2D` to determine
+    an adaptive background that takes into account variations in flux
+    across the image.
 
     Parameters
     ==========
@@ -577,15 +577,15 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     kern_img[:, -edge:] = 0.0
     kernel_psf = False
 
-    peaks = photutils.detection.find_peaks(kern_img, threshold=threshold * 5,
-                                          box_size=isolation_size)
+    peaks = find_peaks(kern_img, threshold=threshold * 5,
+                       box_size=isolation_size)
     if peaks is None or (peaks is not None and len(peaks) == 0):
         tmean = threshold.mean() if isinstance(threshold, np.ndarray) else threshold
         if tmean > kern_img.mean():
             kern_stats = sigma_clipped_stats(kern_img)
             threshold = kern_stats[2]
-        peaks = photutils.detection.find_peaks(kern_img, threshold=threshold,
-                                              box_size=isolation_size)
+        peaks = find_peaks(kern_img, threshold=threshold,
+                           box_size=isolation_size)
 
     if peaks is not None:
         # Sort based on peak_value to identify brightest sources for use as a kernel
@@ -655,7 +655,7 @@ def find_fwhm(psf, default_fwhm):
     """Determine FWHM for auto-kernel PSF
 
     This function iteratively fits a Gaussian model to the extracted PSF
-    using `photutils.IterativelySubtractedPSFPhotometry` to determine
+    using `photutils.psf.IterativelySubtractedPSFPhotometry` to determine
     the FWHM of the PSF.
 
     Parameters
@@ -766,7 +766,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         sources are identified using segmentation.  Centering using `segmentation`
         will rely on `photutils.segmentation.source_properties` to generate the
         properties for the source catalog.  Centering using `starfind` will use
-        `photutils.IRAFStarFinder` to characterize each source in the catalog.
+        `photutils.detection.IRAFStarFinder` to characterize each source in the catalog.
     nlargest : int, None
         Number of largest (brightest) sources in each chip/array to measure
         when using 'starfind' mode.
@@ -996,7 +996,7 @@ def classify_sources(catalog, fwhm, sources=None):
 
     Parameters
     ----------
-    catalog : `~photutils.SourceCatalog`
+    catalog : `~photutils.segmentation.SourceCatalog`
         The photutils catalog for the image/chip.
 
     sources : tuple
