@@ -16,7 +16,7 @@ from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
 
-import photutils
+from photutils import background
 from photutils.background import Background2D
 from photutils.utils import NoDetectionsWarning
 
@@ -1190,6 +1190,5 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
 def register_photutils_function(name):
     """Convert photutils name as a string into a pointer to the actual photutils function"""
 
-    if name in dir(photutils):
-        func = eval("photutils.{}".format(name))
+    func = getattr(background, name)  # raises AttributeError if not found
     return func
