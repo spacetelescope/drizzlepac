@@ -352,14 +352,14 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             # rate of cosmic-ray contamination for the total detection product
             reject_catalogs = total_product_catalogs.verify_crthresh(n1_exposure_time)
 
-            if not reject_catalogs:
+            if not reject_catalogs or diagnostic_mode:
                 for filter_product_obj in total_product_obj.fdp_list:
                     filter_product_catalogs = filter_catalogs[filter_product_obj.drizzle_filename]
 
                     # Now write the catalogs out for this filter product
                     log.info("Writing out filter product catalog")
                     # Write out photometric (filter) catalog(s)
-                    filter_product_catalogs.write()
+                    filter_product_catalogs.write(reject_catalogs)
 
                     # append filter product catalogs to list
                     if phot_mode in ['aperture', 'both']:
@@ -369,7 +369,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
 
                 log.info("Writing out total product catalog")
                 # write out list(s) of identified sources
-                total_product_catalogs.write()
+                total_product_catalogs.write(reject_catalogs)
 
                 # append total product catalogs to manifest list
                 if phot_mode in ['aperture', 'both']:

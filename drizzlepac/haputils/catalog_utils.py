@@ -642,11 +642,14 @@ class HAPCatalogs:
         for catalog in self.catalogs.values():
             catalog.image.close()
 
-    def write(self, **pars):
+    def write(self, reject_catalogs, **pars):
         """Write catalogs for this image to output files.
 
         Parameters
         ----------
+        reject_catalogs : bool
+            Indicator as to whether or not the catalogs (*.ecsv) should be written.
+
         types : list
             List of catalog types to be generated.  If None, build all available catalogs.
             Supported types of catalogs include: 'aperture', 'segment'.
@@ -656,7 +659,7 @@ class HAPCatalogs:
         for catalog in self.catalogs.values():
             if catalog.source_cat is None:
                 catalog.source_cat = catalog.sources
-            catalog.write_catalog
+            catalog.write_catalog(reject_catalogs)
 
     def combine(self, subset_dict):
         """Combine subset columns from the filter catalog with the total detection catalog.
@@ -747,7 +750,7 @@ class HAPCatalogBase:
     def measure_sources(self, filter_name, **pars):
         pass
 
-    def write_catalog(self, **pars):
+    def write_catalog(self, reject_catalogs, **pars):
         pass
 
     def combine_tables(self, subset_dict):
@@ -1116,28 +1119,31 @@ class HAPPointCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    @property
-    def write_catalog(self):
+    def write_catalog(self, reject_catalogs):
         """Write specified catalog to file on disk
+
+        Regardless of the setting for reject_catalogs, the regions file will be written
+        solely based upon the setting of diagnostic_mode.
 
         Parameters
         ----------
-        write_region_file : Boolean
-           Write ds9-compatible region file along with the catalog file? Default value = False
+        reject_catalogs : bool
+            Indicator as to whether or not the catalogs (*.ecsv) should be written.
 
         Returns
         -------
         Nothing!
 
         """
-        # Write out catalog to ecsv file
-        self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, product=self.image.ghd_product)
-        # self.source_cat.meta['comments'] = \
-        #     ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
-        self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
-        log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
+        if not reject_catalogs:
+            # Write out catalog to ecsv file
+            self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, product=self.image.ghd_product)
+            # self.source_cat.meta['comments'] = \
+            #     ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
+            self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
+            log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
-        # Write out region file if input 'write_region_file' is turned on.
+        # Write out region file if in diagnostic_mode.
         if self.diagnostic_mode:
             out_table = self.source_cat.copy()
             if 'xcentroid' in out_table.keys():  # for point-source source catalogs
@@ -2234,13 +2240,27 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    @property
-    def write_catalog(self):
+    def write_catalog(self, reject_catalogs):
         """Write the specified source catalog out to disk.
+
+        Regardless of the setting for reject_catalogs, the regions file will be written
+        solely based upon the setting of diagnostic_mode.
+        
+        Parameters
+        ----------
+        reject_catalogs : bool
+            Indicator as to whether or not the catalogs (*.ecsv) should be written.
+
+        Returns
+        -------
+        Nothing
+
         """
-        self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, product=self.image.ghd_product)
-        self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
-        log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
+        if not reject_catalogs:
+            # Write out catalog to ecsv file
+            self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, product=self.image.ghd_product)
+            self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
+            log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
         # For debugging purposes only, create a "regions" files to use for ds9 overlay of the segm_img.
         # Create the image regions file here in case there is a failure.  This diagnostic portion of the
