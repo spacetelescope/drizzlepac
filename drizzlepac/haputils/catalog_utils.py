@@ -344,11 +344,7 @@ class CatalogImage:
                                            bkg_estimator=bkg_estimator(),
                                            bkgrms_estimator=rms_estimator(),
                                            exclude_percentile=percentile, edge_method="pad",
-                                           mask=self.inv_footprint_mask)
-
-                        # Apply the coverage mask to the returned background image to clear out
-                        # any information in the non-illuminated portion of the image
-                        bkg.background *= self.footprint_mask
+                                           coverage_mask=self.inv_footprint_mask)
 
                     except Exception:
                         bkg = None
