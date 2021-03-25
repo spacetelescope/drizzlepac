@@ -61,7 +61,7 @@ Classes and Functions
 import numpy as np
 from astropy.table import Table
 from drizzlepac.haputils.background_median import aperture_stats_tbl
-from photutils import aperture_photometry
+from photutils.aperture import aperture_photometry
 
 
 def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam, error_array=None,
