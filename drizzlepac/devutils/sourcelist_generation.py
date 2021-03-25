@@ -9,7 +9,8 @@ import sys
 from astropy.io import fits
 from astropy.stats import mad_std
 import numpy as np
-from photutils import aperture_photometry, CircularAperture, DAOStarFinder
+from photutils.aperture import aperture_photometry, CircularAperture
+from photutils.detection import DAOStarFinder
 from stsci.tools import logutil
 
 from drizzlepac import util
@@ -34,7 +35,7 @@ def create_dao_like_coordlists(fitsfile,sourcelist_filename,make_region_file=Fal
         Name of optionally generated ds9-compatible region file
 
     dao_fwhm : float
-        (photutils.DAOstarfinder param 'fwhm') The full-width half-maximum (FWHM) of the major axis of the
+        (`~photutils.detection.DAOstarfinder` param 'fwhm') The full-width half-maximum (FWHM) of the major axis of the
         Gaussian kernel in units of pixels. Default value = 3.5.
 
     make_region_file : Boolean

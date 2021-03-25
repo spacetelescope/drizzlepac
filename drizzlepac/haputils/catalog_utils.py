@@ -14,11 +14,14 @@ from astropy.coordinates import SkyCoord
 import numpy as np
 from scipy import ndimage, stats
 
-from photutils import CircularAperture, CircularAnnulus, DAOStarFinder, IRAFStarFinder
-from photutils import Background2D, SExtractorBackground, StdBackgroundRMS
-from photutils import detect_sources, source_properties, deblend_sources
-from photutils import make_source_mask
+from photutils.aperture import CircularAperture, CircularAnnulus
+from photutils.background import (Background2D, SExtractorBackground,
+                                  StdBackgroundRMS)
+from photutils.detection import DAOStarFinder, IRAFStarFinder
+from photutils.segmentation import (detect_sources, source_properties,
+                                    deblend_sources, make_source_mask)
 from photutils.utils import calc_total_error
+
 from stsci.tools import logutil
 from stwcs.wcsutil import HSTWCS
 
@@ -1638,7 +1641,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
            Returns
            -------
-           segm_img : photutils.SegmentationImage or None
+           segm_img : `~photutils.segmentation.SegmentationImage` or None
 
         """
 
@@ -1674,7 +1677,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
            Parameters
            ----------
-           segm_img : photutils.SegmentationImage
+           segm_img : `~photutils.segmentation.SegmentationImage`
                Segmentation image created by detect_segments() based on the total detection image
 
            imgarr :
@@ -1693,7 +1696,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
            Updates
            -------
-           segm_img : photutils.SegmentationImage
+           segm_img : `~photutils.segmentation.SegmentationImage`
                Deblended segmentation image
         """
 
@@ -2245,7 +2248,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         Regardless of the setting for reject_catalogs, the regions file will be written
         solely based upon the setting of diagnostic_mode.
-        
+
         Parameters
         ----------
         reject_catalogs : bool
