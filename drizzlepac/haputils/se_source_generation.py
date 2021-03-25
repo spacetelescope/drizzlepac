@@ -126,8 +126,8 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_
     # For debugging purposes...
     if se_debug:
         # Write out a catalog which can be used as an overlay for image in ds9
-        cat = source_properties(imgarr_bkgsub, segm, background=bkg.background,
-                                filter_kernel=kernel, wcs=imgwcs)
+        cat = SourceCatalog(imgarr_bkgsub, segm, background=bkg.background,
+                            kernel=kernel, wcs=imgwcs)
         table = cat.to_table()
 
         # Copy out only the X and Y coordinates to a "debug table" and
@@ -185,8 +185,8 @@ def create_sextractor_like_sourcelists(source_filename, catalog_filename, param_
     """
 
     # Regenerate the source catalog with presumably now only good sources
-    seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background,
-                                filter_kernel=kernel, wcs=imgwcs)
+    seg_cat = SourceCatalog(imgarr_bkgsub, segm, background=bkg.background,
+                            kernel=kernel, wcs=imgwcs)
 
     _write_catalog(seg_cat, keyword_dict, catalog_filename)
 
@@ -259,8 +259,8 @@ def measure_source_properties(segm, kernel, source_filename, catalog_filename, p
     imgarr_bkgsub = imgarr - bkg.background
 
     # Compute source properties...
-    seg_cat = source_properties(imgarr_bkgsub, segm, background=bkg.background,
-                                filter_kernel=kernel, wcs=imgwcs)
+    seg_cat = SourceCatalog(imgarr_bkgsub, segm, background=bkg.background,
+                            kernel=kernel, wcs=imgwcs)
     print(Table(seg_cat.to_table()).colnames)
 
     # Write the source catalog
@@ -434,7 +434,7 @@ def _write_catalog(seg_cat, keyword_dict, catalog_filename, product="tdp"):
         seg_table = _annotate_table(seg_table, keyword_dict, num_sources, product=product)
 
         # Rework the current table for output
-        del seg_table["id"]
+        del seg_table["label"]
         del seg_table["sky_centroid"]
         del seg_table["sky_centroid_icrs"]
         rr = Column(ra_icrs, name="RA_icrs", description="SExtractor Column RA", unit=u.deg)
@@ -445,9 +445,9 @@ def _write_catalog(seg_cat, keyword_dict, catalog_filename, product="tdp"):
         # Add a description for columns which map to SExtractor catalog columns
         seg_table["xcentroid"].description = "SExtractor Column x_image"
         seg_table["ycentroid"].description = "SExtractor Column y_image"
-        seg_table["background_at_centroid"].description = "SExtractor Column background"
-        seg_table["source_sum"].description = "SExtractor Column flux_iso"
-        seg_table["source_sum_err"].description = "SExtractor Column fluxerr_iso"
+        seg_table["background_centroid"].description = "SExtractor Column background"
+        seg_table["segment_flux"].description = "SExtractor Column flux_iso"
+        seg_table["segment_fluxerr"].description = "SExtractor Column fluxerr_iso"
         # FIX: is mapping to _image or _world?  _image
         seg_table["cxx"].description = "SExtractor Column cxx_image, ellipse parameter"
         seg_table["cyy"].description = "SExtractor Column cyy_image, ellipse parameter"
