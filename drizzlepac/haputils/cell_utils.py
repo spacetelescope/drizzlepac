@@ -388,7 +388,9 @@ class SkyFootprint(object):
 
             # Use Harris corner detection to identify corners in the
             # total footprint
-            mask_corners = corner_peaks(corner_harris(self.footprint),
+            # insure footprint has enough signal to deterct corners
+            fp = self.footprint.astype(np.int32) * (10000./self.footprint.max())
+            mask_corners = corner_peaks(corner_harris(fp),
                                    min_distance=1,
                                    threshold_rel=0.5)
             xy_corners = mask_corners * 0.
