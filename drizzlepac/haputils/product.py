@@ -298,7 +298,7 @@ class FilterProduct(HAPProduct):
         """
         self.edp_list.append(edp)
 
-    def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
+    def align_to_gaia(self, catalog_name='GAIAedr3', headerlet_filenames=None, output=True,
                       fit_label='EVM', align_table=None, fitgeom='rscale'):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment
@@ -823,7 +823,7 @@ class SkyCellProduct(HAPProduct):
         self.meta_wcs = self.skycell.wcs
         return self.meta_wcs
 
-    def align_to_gaia(self, catalog_name='GAIADR2', headerlet_filenames=None, output=True,
+    def align_to_gaia(self, catalog_name='GAIAedr3', headerlet_filenames=None, output=True,
                       fit_label='MVM', align_table=None, fitgeom='rscale'):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment

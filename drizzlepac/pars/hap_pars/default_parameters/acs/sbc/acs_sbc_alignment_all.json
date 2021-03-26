@@ -8,7 +8,7 @@
   "run_align":
     {
       "update_hdr_wcs": true,
-      "catalog_list": ["GAIADR2", "GAIADR1"],
+      "catalog_list": ["GAIAedr3", "GAIADR2", "GAIADR1"],
       "fit_algorithm_list_ngt1": ["match_relative_fit", "match_2dhist_fit", "match_default_fit"],
       "fit_algorithm_list_n1": ["match_2dhist_fit", "match_default_fit"],
       "MIN_CATALOG_THRESHOLD": 3,
