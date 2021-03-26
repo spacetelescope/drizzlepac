@@ -357,7 +357,7 @@ def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic
         catalog_name = gaia_obj.configobj_pars.pars['alignment'].pars_multidict['all']['run_align']['catalog_list'][0]  # For now, just pass in 'catalog_name = GAIAedr3'
         align_table, filt_exposures = gaia_obj.align_to_gaia(catalog_name=catalog_name,
                                                              output=diagnostic_mode,
-                                                             fit_label='SVM')
+                                                             fit_label='MVM')
 
         for tot_obj in total_obj_list:
             tot_obj.generate_metawcs()
