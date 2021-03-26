@@ -82,7 +82,7 @@ else:
 MODULE_PATH = os.path.dirname(inspect.getfile(inspect.currentframe()))
 
 __all__ = ['create_astrometric_catalog', 'compute_radius',
-            'build_auto_kernel', 'find_fwhm',
+           'build_auto_kernel', 'find_fwhm',
            'get_catalog', 'get_catalog_from_footprint',
            'extract_sources', 'find_hist2d_offset', 'generate_source_catalog',
            'classify_sources', 'within_footprint',
@@ -111,7 +111,7 @@ Primary function for creating an astrometric reference catalog.
 """
 
 
-def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
+def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv",
                                gaia_only=False, table_format="ascii.ecsv",
                                existing_wcs=None, num_sources=None,
                                use_footprint=False, full_catalog=False):
@@ -124,7 +124,7 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
 
     catalog : str, optional
         Name of catalog to extract astrometric positions for sources in the
-        input images' field-of-view. Default: GAIADR2. Options available are
+        input images' field-of-view. Default: GAIAedr3. Options available are
         documented on the catalog web page.
 
     output : str, optional
@@ -190,14 +190,9 @@ def create_astrometric_catalog(inputs, catalog="GAIADR2", output="ref_cat.ecsv",
 
     # perform query for this field-of-view
     if use_footprint:
-        ref_table = get_catalog_from_footprint(footprint,
-                                              epoch=epoch,
-                                              catalog=catalog)
+        ref_table = get_catalog_from_footprint(footprint, epoch=epoch, catalog=catalog)
     else:
-        ref_table = get_catalog(ra, dec,
-                               sr=radius,
-                               epoch=epoch,
-                               catalog=catalog)
+        ref_table = get_catalog(ra, dec, sr=radius, epoch=epoch, catalog=catalog)
 
     if not ref_table:
         return ref_table
@@ -375,7 +370,6 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
     return r_csv
 
 
-
 def compute_radius(wcs):
     """Compute the radius from the center to the furthest edge of the WCS.
 
@@ -437,6 +431,7 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
             delta_dec = float(element.text)
 
     return delta_ra, delta_dec
+
 
 def compute_2d_background(imgarr, box_size, win_size,
                           bkg_estimator=SExtractorBackground,
@@ -577,15 +572,13 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     kern_img[:, -edge:] = 0.0
     kernel_psf = False
 
-    peaks = find_peaks(kern_img, threshold=threshold * 5,
-                       box_size=isolation_size)
+    peaks = find_peaks(kern_img, threshold=threshold * 5, box_size=isolation_size)
     if peaks is None or (peaks is not None and len(peaks) == 0):
         tmean = threshold.mean() if isinstance(threshold, np.ndarray) else threshold
         if tmean > kern_img.mean():
             kern_stats = sigma_clipped_stats(kern_img)
             threshold = kern_stats[2]
-        peaks = find_peaks(kern_img, threshold=threshold,
-                           box_size=isolation_size)
+        peaks = find_peaks(kern_img, threshold=threshold, box_size=isolation_size)
 
     if peaks is not None:
         # Sort based on peak_value to identify brightest sources for use as a kernel
@@ -606,7 +599,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
                             kernel_pos[1] - source_box:kernel_pos[1] + source_box + 1].copy()
 
             kernel_wht = whtarr[kernel_pos[0] - wht_box:kernel_pos[0] + wht_box + 1,
-                            kernel_pos[1] - wht_box:kernel_pos[1] + wht_box + 1].copy()
+                         kernel_pos[1] - wht_box:kernel_pos[1] + wht_box + 1].copy()
 
             minsize = min(kernel.shape)
             # search square cut-out (of size 2 x wht_box + 1 pixels on a side) of weight image centered on peak coords for
@@ -680,12 +673,12 @@ def find_fwhm(psf, default_fwhm):
     gaussian_prf = IntegratedGaussianPRF(sigma=sigma_psf)
     gaussian_prf.sigma.fixed = False
     itr_phot_obj = IterativelySubtractedPSFPhotometry(finder=iraffind,
-                                                       group_maker=daogroup,
-                                                       bkg_estimator=mmm_bkg,
-                                                       psf_model=gaussian_prf,
-                                                       fitter=fitter,
-                                                       fitshape=(11, 11),
-                                                       niters=2)
+                                                      group_maker=daogroup,
+                                                      bkg_estimator=mmm_bkg,
+                                                      psf_model=gaussian_prf,
+                                                      fitter=fitter,
+                                                      fitshape=(11, 11),
+                                                      niters=2)
     phot_results = itr_phot_obj(psf)
     # Insure none of the fluxes determined by photutils is np.nan
     phot_results['flux_fit'] = np.nan_to_num(phot_results['flux_fit'].data, nan=0)
@@ -699,9 +692,10 @@ def find_fwhm(psf, default_fwhm):
 
     return fwhm
 
+
 def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
-                            nbright=1000,
-                            threshold=200.0, sigma=3.0, source_box=7):
+                          nbright=1000,
+                          threshold=200.0, sigma=3.0, source_box=7):
     """Use photutils to replicate the IRAF point-source catalogs"""
 
     # Detect threshold using a relatively fast method and
@@ -711,10 +705,10 @@ def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
 
     sigma = np.sqrt(2.0 * np.abs(bkg[1]))
     x, y, flux, src_id, sharp, round1, round2 = ndfind(img,
-                                                     sigma * threshold,
-                                                     fwhm, bkg[1],
-                                                     nbright=nbright,
-                                                     use_sharp_round=True)
+                                                       sigma * threshold,
+                                                       fwhm, bkg[1],
+                                                       nbright=nbright,
+                                                       use_sharp_round=True)
     srcs = Table([x, y, flux, src_id], names=['xcentroid', 'ycentroid', 'flux', 'id'])
 
     """
@@ -820,8 +814,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                         kcenter - koffset: kcenter + koffset + 1].copy()
         kernel /= kernel.sum()  # normalize to total sum == 1
         log.info("Looking for crowded sources using smaller kernel with shape: {}".format(kernel.shape))
-        segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
-                            filter_kernel=kernel)
+        segm = detect_sources(imgarr, segment_threshold, npixels=source_box, filter_kernel=kernel)
 
     if deblend:
         segm = deblend_sources(imgarr, segm, npixels=5,
@@ -850,7 +843,6 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                 idx[segm.labels] = segm.labels
                 idx[bad_srcs] = 0
                 segm.data = idx[segm.data]
-
 
     # convert segm to mask for daofind
     if centering_mode == 'starfind':
@@ -1151,11 +1143,11 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
         dao_threshold = nsigma * bkg_rms_median
 
         (kernel, kernel_psf), kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr,
-                                                threshold=threshold,
-                                                fwhm=def_fwhm,
-                                                source_box=source_box,
-                                                isolation_size=isolation_size,
-                                                saturation_limit=saturation_limit)
+                                                              threshold=threshold,
+                                                              fwhm=def_fwhm,
+                                                              source_box=source_box,
+                                                              isolation_size=isolation_size,
+                                                              saturation_limit=saturation_limit)
         log.debug("Built kernel with FWHM = {}".format(kernel_fwhm))
 
         seg_tab, segmap, crmap = extract_sources(imgarr - bkg_ra, dqmask=dqmask,
@@ -1678,6 +1670,7 @@ def check_mag_corr(imglist, threshold=0.5):
 
     return mag_checks
 
+
 def rebin(arr, new_shape):
     """Rebin 2D array arr to shape new_shape by summing."""
     shape = (new_shape[0], arr.shape[0] // new_shape[0],
@@ -1752,6 +1745,7 @@ def compute_similarity(image, reference):
     sim_indx = diffs / img.sum()
     return sim_indx
 
+
 def compute_prob(val, mean, sigma):
     """Return z-score for val relative to a distribution
 
@@ -1763,6 +1757,7 @@ def compute_prob(val, mean, sigma):
     z_score = st.norm.ppf(p)
 
     return z_score
+
 
 def determine_focus_index(img, sigma=1.5):
     """Determine blurriness indicator for an image
@@ -1795,6 +1790,7 @@ def determine_focus_index(img, sigma=1.5):
 
     return focus_val, focus_pos
 
+
 def compute_zero_mask(imgarr, iterations=8, ext=0):
     """Find section from image with no masked out pixels and max total flux"""
     if isinstance(imgarr, str):
@@ -1806,6 +1802,7 @@ def compute_zero_mask(imgarr, iterations=8, ext=0):
     img_mask = ndimage.binary_erosion(img_mask, iterations=iterations)
 
     return img_mask
+
 
 def build_focus_dict(singlefiles, prodfile, sigma=2.0):
 
@@ -1847,6 +1844,7 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
 
     return focus_dict
 
+
 def evaluate_focus(focus_dict, tolerance=0.8):
     if focus_dict is None:
         return True
@@ -1864,6 +1862,7 @@ def evaluate_focus(focus_dict, tolerance=0.8):
         alignment_verified = True
 
     return alignment_verified
+
 
 def get_align_fwhm(focus_dict, default_fwhm, src_size=11):
     """Determine FWHM based on position of sharpest focus in the product"""
@@ -2001,8 +2000,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsig
         # as well as noise from the background (if too low
         #  a background value is used)
         drzlabels, drznum = detect_point_sources(drz_arr, scale=scale, log_sigma=lsigma)
-        slabels, snum = detect_point_sources(sfile_arr, scale=scale, exp_weight=exp_weight,
-                                                log_sigma=lsigma)
+        slabels, snum = detect_point_sources(sfile_arr, scale=scale, exp_weight=exp_weight, log_sigma=lsigma)
 
         drzsrcs = np.clip(drzlabels, 0, 1).astype(np.int16)
         sfilesrcs = np.clip(slabels, 0, 1).astype(np.int16)
@@ -2038,10 +2036,11 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsig
 
     return diff_dict
 
+
 def sigma_clipped_bkg(arr, sigma=3.0, nsigma=4, maxiters=None):
     # Account for input being blank
     if arr.max() == 0:
-        return 0.0, [0.0,0.0,0.0]
+        return 0.0, [0.0, 0.0, 0.0]
     if maxiters is None:
         maxiters = int(np.log10(arr.max() / 2) + 0.5)
 
@@ -2051,8 +2050,9 @@ def sigma_clipped_bkg(arr, sigma=3.0, nsigma=4, maxiters=None):
 
     return bkg_total, bkg
 
+
 def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
-                        sigma=3.0, exp_weight=None):
+                       sigma=3.0, exp_weight=None):
     """Convert the image into a background-removed array"""
     # Provide option to rebin to a smaller image size to minimize
     # impact from high-frequency (pixel-to-pixel) differences in low S/N data
@@ -2087,8 +2087,7 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
 
     elif isinstance(background, Background2D):
         bkg_total = background.background + nsigma * background.background_rms
-        log.debug("background: max={}, mean={}".format(bkg_total.max(),
-                    bkg_total.mean()))
+        log.debug("background: max={}, mean={}".format(bkg_total.max(), bkg_total.mean()))
         blank_image = True if (background.median < background.median_rms and
                                background.median < 1.0) else False
 
@@ -2100,6 +2099,7 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
     rebin_arr = np.clip(rebin_arr, 0, rebin_arr.max())
 
     return rebin_arr
+
 
 def detect_point_sources(arr, background=None, nsigma=4, log_sigma=3.0, scale=1,
                          sigma=3.0, exp_weight=None):
@@ -2117,6 +2117,7 @@ def detect_point_sources(arr, background=None, nsigma=4, log_sigma=3.0, scale=1,
     slabels, snum = ndimage.label(srclog)
 
     return slabels, snum
+
 
 def diff_score(arr):
 
