@@ -572,13 +572,13 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     kern_img[:, -edge:] = 0.0
     kernel_psf = False
 
-    peaks = photutils.detection.find_peaks(kern_img, threshold=threshold * 5, box_size=isolation_size)
+    peaks = find_peaks(kern_img, threshold=threshold * 5, box_size=isolation_size)
     if peaks is None or (peaks is not None and len(peaks) == 0):
         tmean = threshold.mean() if isinstance(threshold, np.ndarray) else threshold
         if tmean > kern_img.mean():
             kern_stats = sigma_clipped_stats(kern_img)
             threshold = kern_stats[2]
-        peaks = photutils.detection.find_peaks(kern_img, threshold=threshold, box_size=isolation_size)
+        peaks = find_peaks(kern_img, threshold=threshold, box_size=isolation_size)
 
     if peaks is not None:
         # Sort based on peak_value to identify brightest sources for use as a kernel
