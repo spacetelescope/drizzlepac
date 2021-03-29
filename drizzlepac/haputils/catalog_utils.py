@@ -759,7 +759,7 @@ class HAPCatalogBase:
     def combine_tables(self, subset_dict):
         pass
 
-    def annotate_table(self, data_table, param_dict_qc, product="tdp"):
+    def annotate_table(self, data_table, param_dict_qc, proc_type="aperture", product="tdp"):
         """Add state metadata to the top of the output source catalog.
 
         Parameters
@@ -769,6 +769,9 @@ class HAPCatalogBase:
 
         param_dict_qc : dictionary
             Configuration values for quality control step based upon input JSON files (used to build catalog header)
+
+        proc_type : str, optional
+            Identification of catalog type: aperture (aka point) or segment
 
         product : str, optional
             Identification string for the catalog product being written.  This
@@ -818,10 +821,7 @@ class HAPCatalogBase:
         num_sources = len(data_table)
         data_table.meta["Number of sources"] = num_sources
 
-        if any(item in ["X-Center", "xcentroid"] for item in data_table.colnames):
-            proc_type = "aperture"
-        else:
-            proc_type = "segment"
+        proc_type = proc_type.lower()
         ci_lower = float(param_dict_qc['ci filter'][proc_type]['ci_lower_limit'])
         ci_upper = float(param_dict_qc['ci filter'][proc_type]['ci_upper_limit'])
 
@@ -829,7 +829,7 @@ class HAPCatalogBase:
         data_table.meta["h10"] = ["IMPORTANT NOTES"]
         data_table.meta["h11"] = ["The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
         data_table.meta["h12"] = ["RA and Dec values in this table are in sky coordinates (i.e. coordinates at the epoch of observation"]
-        data_table.meta["h12.1"] = ["and fit to GAIADR1 (2015.0), GAIADR2 (2015.5)), or GAIAedr3 (2016.0)."]
+        data_table.meta["h12.1"] = ["and an {}).".format(self.image.keyword_dict["wcs_type"])]
         data_table.meta["h13"] = ["Magnitude values in this table are in the ABMAG system."]
         data_table.meta["h14"] = ["Column titles in this table ending with Ap1 refer to the inner photometric aperture "]
         data_table.meta["h14.1"] = ["(radius = {} pixels, {} arcsec.".format(self.aper_radius_list_pixels[0],
@@ -844,7 +844,7 @@ class HAPCatalogBase:
         data_table.meta["h17.3"] = ["    2 - Questionable Photometry (Single-Pixel Saturation)"]
         data_table.meta["h17.4"] = ["    4 - Questionable Photometry (Multi-Pixel Saturation)"]
         data_table.meta["h17.5"] = ["    8 - Faint Detection Limit"]
-        data_table.meta["h17.6"] = ["   16 - Hot Pixels (CI < {})".format(ci_lower)]
+        data_table.meta["h17.6"] = ["   16 - Hot pixels (CI < {})".format(ci_lower)]
         data_table.meta["h17.7"] = ["   32 - False Detection Swarm Around Saturated Source"]
         data_table.meta["h17.8"] = ["   64 - False Detections Near Image Edge"]
         data_table.meta["h17.9"] = ["  128 - Bleeding and Cosmic Rays"]
@@ -1017,6 +1017,25 @@ class HAPPointCatalog(HAPCatalogBase):
             for col in sources.colnames:
                 sources[col].info.format = '.8g'  # for consistent table output
 
+            # format output table columns
+            final_col_format = {"xcentroid": "10.3f", "ycentroid": "10.3f", "RA": "13.7f", "DEC": "13.7f", "id": "7d"}
+            for fcf_key in final_col_format.keys():
+                sources[fcf_key].format = final_col_format[fcf_key]
+
+            # descriptions
+            final_col_descrip = {"xcentroid": "Pixel Coordinate", "ycentroid": "Pixel Coordinate",
+                                 "RA": "Sky coordinate at epoch of observation",
+                                 "DEC": "Sky coordinate at epoch of observation",
+                                 "id": "Catalog Object Identification Number"}
+            for fcd_key in final_col_descrip.keys():
+                sources[fcd_key].description = final_col_descrip[fcd_key]
+
+            # add units to columns
+            final_col_units = {"xcentroid": "pixels", "ycentroid": "pixels", "RA": "degrees", "DEC": "degrees",
+                               "id": "unitless"}
+            for col_title in final_col_units:
+                sources[col_title].unit = final_col_units[col_title]
+
             if self.diagnostic_mode:
                 sources.write(self.image.imgname.replace(reg_suffix,'raw-point-cat.ecsv'), format='ascii.ecsv', overwrite=True)
             self.sources = sources
@@ -1094,17 +1113,36 @@ class HAPPointCatalog(HAPCatalogBase):
         output_photometry_table = photometry_tbl[final_col_order]
 
         # format output table columns
-        final_col_format = {"X-Center": "10.3f", "Y-Center": "10.3f", "RA": "13.10f", "DEC": "13.10f", "ID": ".8g", "MagAp1": '6.3f', "MagErrAp1": '6.3f', "MagAp2": '6.3f',
-                            "MagErrAp2": '6.3f', "MSkyAp2": '10.8f', "StdevAp2": '10.4f',
-                            "FluxAp2": '10.8f', "CI": "7.3f", "Flags": "3d"}  # TODO: Standardize precision
+        final_col_format = {"X-Center": "10.3f", "Y-Center": "10.3f", "RA": "13.7f", "DEC": "13.7f", "ID": "7d",
+                            "MagAp1": '7.3f', "MagErrAp1": '7.3f', "MagAp2": '7.3f',
+                            "MagErrAp2": '7.3f', "MSkyAp2": '7.3f', "StdevAp2": '7.3f',
+                            "FluxAp2": '10.4f', "CI": "7.3f", "Flags": "5d"}  # TODO: Standardize precision
         for fcf_key in final_col_format.keys():
             output_photometry_table[fcf_key].format = final_col_format[fcf_key]
 
+        # column descriptions
+        final_col_descrip = {"ID": "Catalog Object Identification Number",
+                             "X-Center": "Pixel Coordinate",
+                             "Y-Center": "Pixel Coordinate",
+                             "RA": "Sky coordinate at epoch of observation",
+                             "DEC": "Sky coordinate at epoch of observation",
+                             "MagAp1": "ABMAG of source based on the inner (smaller) aperture",
+                             "MagErrAp1": "Error of MagAp1",
+                             "MagAp2": "ABMAG of source based on the outer (larger) aperture",
+                             "MagErrAp2": "Error of MagAp2",
+                             "MSkyAp2": "ABMAG of sky based on outer (larger) aperture",
+                             "StdevAp2": "Standard deviation of sky measurement in outer (larger) aperture",
+                             "FluxAp2": "Flux of source based on the outer (larger) aperture",
+                             "CI": "Concentration Index",
+                             "Flags": "Numeric encoding for conditions on detected sources"}
+        for fcd_key in final_col_descrip.keys():
+            output_photometry_table[fcd_key].description = final_col_descrip[fcd_key]
+
         # add units to columns
-        final_col_units = {"X-Center": "Pixels", "Y-Center": "Pixels", "RA": "Sky Coords", "DEC": "Sky Coords",
-                           "ID": "Unitless", "MagAp1": "ABMAG", "MagErrAp1": "ABMAG", "MagAp2": "ABMAG",
+        final_col_units = {"X-Center": "pixels", "Y-Center": "pixels", "RA": "degrees", "DEC": "degrees",
+                           "ID": "unitless", "MagAp1": "ABMAG", "MagErrAp1": "ABMAG", "MagAp2": "ABMAG",
                            "MagErrAp2": "ABMAG", "MSkyAp2": "ABMAG", "StdevAp2": "ABMAG",
-                           "FluxAp2": "electrons/sec", "CI": "ABMAG", "Flags": "Unitless"}
+                           "FluxAp2": "electrons/sec", "CI": "ABMAG", "Flags": "unitless"}
         for col_title in final_col_units:
             output_photometry_table[col_title].unit = final_col_units[col_title]
 
@@ -1117,6 +1155,7 @@ class HAPPointCatalog(HAPCatalogBase):
         # Add the header information to the table
         self.source_cat = self.annotate_table(output_photometry_table,
                                               self.param_dict_qc,
+                                              proc_type = "aperture",
                                               product=self.image.ghd_product)
         log.info("Saved photometry table with {} sources".format(len(self.source_cat)))
 
@@ -1140,7 +1179,7 @@ class HAPPointCatalog(HAPCatalogBase):
         """
         if not reject_catalogs:
             # Write out catalog to ecsv file
-            self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, product=self.image.ghd_product)
+            self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="aperture", product=self.image.ghd_product)
             # self.source_cat.meta['comments'] = \
             #     ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
             self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
@@ -1817,8 +1856,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         radec_data = SkyCoord(filter_measurements_table["sky_centroid_icrs"])
         ra_icrs = radec_data.ra.degree
         dec_icrs = radec_data.dec.degree
-        rr = Column(ra_icrs, name="RA", unit=u.deg)
-        dd = Column(dec_icrs, name="DEC", unit=u.deg)
+        rr = Column(ra_icrs, name="RA", unit="degrees")
+        dd = Column(dec_icrs, name="DEC", unit="degrees")
         filter_measurements_table.add_columns([dd, rr])
 
         # Compute the MagIso
@@ -2021,13 +2060,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
         final_filter_table = filter_table[final_col_order]
 
         # Define the format
-        final_col_format = {"X-Centroid": "10.3f", "Y-Centroid": "10.3f", "RA": "13.7f", "DEC": "13.7f", "ID": "6d",
+        final_col_format = {"X-Centroid": "10.3f", "Y-Centroid": "10.3f", "RA": "13.7f", "DEC": "13.7f", "ID": "7d",
                             "CI": "7.3f", "Flags": "5d",
-                            "MagAp1": "8.2f", "MagErrAp1": "9.4f", "FluxAp1": "9.2f", "FluxErrAp1": "10.5f",
-                            "MagAp2": "8.2f", "MagErrAp2": "9.4f", "FluxAp2": "9.2f", "FluxErrAp2": "10.5f",
-                            "MSkyAp2": "8.2f", "Bck": "9.4f", "MagIso": "8.2f", "FluxIso": "9.2f", "FluxIsoErr": "10.5f",
+                            "MagAp1": "7.3f", "MagErrAp1": "7.3f", "FluxAp1": "10.4f", "FluxErrAp1": "10.4f",
+                            "MagAp2": "7.3f", "MagErrAp2": "7.3f", "FluxAp2": "10.4f", "FluxErrAp2": "10.4f",
+                            "MSkyAp2": "7.3f", "Bck": "10.4f", "MagIso": "7.3f", "FluxIso": "10.4f", "FluxIsoErr": "10.4f",
                             "Xmin": "8.0f", "Ymin": "8.0f", "Xmax": "8.0f", "Ymax": "8.0f",
-                            "X2": "8.4f", "Y2": "8.4f", "XY": "10.5f",
+                            "X2": "8.4f", "Y2": "8.4f", "XY": "8.4f",
                             "CXX": "9.5f", "CYY": "9.5f", "CXY": "9.5f",
                             "Elongation": "7.2f", "Ellipticity": "7.2f", "Theta": "8.3f", "Area": "8.3f"}
         for fcf_key in final_col_format.keys():
@@ -2036,8 +2075,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Add description
         final_col_descrip = {"ID": "Catalog Object Identification Number",
                              "X-Centroid": "Pixel Coordinate", "Y-Centroid": "Pixel Coordinate",
-                             "RA": "Sky coordinate at epoch of observation and fit to GAIA",
-                             "DEC": "Sky coordinate at epoch of observation and fit to GAIA",
+                             "RA": "Sky coordinate at epoch of observation",
+                             "DEC": "Sky coordinate at epoch of observation",
                              "Bck": "Background at the position of the source centroid",
                              "Area": "Total unmasked area of the source segment",
                              "MagAp1": "ABMAG of source based on the inner (smaller) aperture",
@@ -2061,17 +2100,18 @@ class HAPSegmentCatalog(HAPCatalogBase):
                              "Xmax": "Maximum X pixel within the minimal bounding box containing the source segment",
                              "Ymin": "Minimum Y pixel within the minimal bounding box containing the source segment",
                              "Ymax": "Maximum Y pixel within the minimal bounding box containing the source segment",
-                             "Elongation": "Ratio of the lengths of the semimajor and semiminor axes of the ellipse",
-                             "Ellipticity": "The value '1 minus the elongation",
+                             "Elongation": "Ratio of the lengths of the semi-major and semi-minor axes of the ellipse",
+                             "Ellipticity": "Computed as 1 minus the inverse of the elongation",
                              "Theta": "Angle between the X axis and the major axis of the 2D Gaussian function that has the same second-order moments as the source.",
 
-                             "CI": "Concentration Index"}
+                             "CI": "Concentration Index",
+                             "Flags": "Numeric encoding for conditions on detected sources"}
         for fcd_key in final_col_descrip.keys():
             final_filter_table[fcd_key].description = final_col_descrip[fcd_key]
 
         # Add units
-        final_col_unit = {"X-Centroid": u.pix, "Y-Centroid": u.pix,
-                          "RA": u.deg, "DEC": u.deg,
+        final_col_unit = {"X-Centroid": "pixels", "Y-Centroid": "pixels",
+                          "RA": "degrees", "DEC": "degrees",
                           "Bck": "electrons/s",
                           "Area": "pixels**2",
                           "MagAp1": "ABMAG",
@@ -2082,20 +2122,26 @@ class HAPSegmentCatalog(HAPCatalogBase):
                           "MagErrAp2": "ABMAG",
                           "FluxAp2": "electrons/s",
                           "FluxErrAp2": "electrons/s",
+                          "MSkyAp2": "ABMAG",
                           "MagIso": "ABMAG",
                           "FluxIso": "electrons/s",
                           "FluxIsoErr": "electrons/s",
-                          "X2": "pixel**2",
-                          "Y2": "pixel**2",
-                          "XY": "pixel**2",
-                          "CXX": "pixel**2",
-                          "CYY": "pixel**2",
-                          "CXY": "pixel**2",
-                          "Xmin": u.pix,
-                          "Ymin": u.pix,
-                          "Xmax": u.pix,
-                          "Ymax": u.pix,
-                          "Theta": u.rad}
+                          "X2": "pixels**2",
+                          "Y2": "pixels**2",
+                          "XY": "pixels**2",
+                          "CXX": "pixels**2",
+                          "CYY": "pixels**2",
+                          "CXY": "pixels**2",
+                          "Xmin": "pixels",
+                          "Ymin": "pixels",
+                          "Xmax": "pixels",
+                          "Ymax": "pixels",
+                          "Theta": "radians",
+                          "CI": "ABMAG",
+                          "Flags": "unitless",
+                          "ID": "unitless",
+                          "Elongation": "unitless",
+                          "Ellipticity": "unitless"}
         for fcu_key in final_col_unit.keys():
             final_filter_table[fcu_key].unit = final_col_unit[fcu_key]
 
@@ -2134,8 +2180,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         radec_data = SkyCoord(updated_table["sky_centroid_icrs"])
         ra_icrs = radec_data.ra.degree
         dec_icrs = radec_data.dec.degree
-        rr = Column(ra_icrs, name="RA", unit=u.deg)
-        dd = Column(dec_icrs, name="DEC", unit=u.deg)
+        rr = Column(ra_icrs, name="RA", unit="degrees")
+        dd = Column(dec_icrs, name="DEC", unit="degrees")
         table.add_columns([rr, dd])
 
         # Rename columns to names to those used when HLA Classic catalog distributed by MAST
@@ -2146,12 +2192,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
             table.rename_column(old_col_title, final_col_names[old_col_title])
 
         # Format the current columns
-        final_col_format = {"ID": "6d", "X-Centroid": "10.3f", "Y-Centroid": "10.3f", "RA": "13.7f", "DEC": "13.7f"}
+        final_col_format = {"ID": "7d", "X-Centroid": "10.3f", "Y-Centroid": "10.3f", "RA": "13.7f", "DEC": "13.7f"}
         for fcf_key in final_col_format.keys():
             table[fcf_key].format = final_col_format[fcf_key]
 
         # Add description
-        descr_str = "Sky coordinate at epoch of observation and " + self.image.keyword_dict["wcs_type"]
+        descr_str = "Sky coordinate at epoch of observation"
         final_col_descrip = {"ID": "Catalog Object Identification Number",
                              "X-Centroid": "Pixel Coordinate", "Y-Centroid": "Pixel Coordinate",
                              "RA": descr_str, "DEC": descr_str}
@@ -2159,8 +2205,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             table[fcd_key].description = final_col_descrip[fcd_key]
 
         # Add units
-        final_col_unit = {"X-Centroid": u.pix, "Y-Centroid": u.pix,
-                          "RA": u.deg, "DEC": u.deg}
+        final_col_unit = {"X-Centroid": "pixels", "Y-Centroid": "pixels",
+                          "RA": "degrees", "DEC": "degrees"}
         for fcu_key in final_col_unit.keys():
             table[fcu_key].unit = final_col_unit[fcu_key]
 
@@ -2261,7 +2307,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         """
         if not reject_catalogs:
             # Write out catalog to ecsv file
-            self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, product=self.image.ghd_product)
+            self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="segment", product=self.image.ghd_product)
             self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
             log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
