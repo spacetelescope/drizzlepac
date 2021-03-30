@@ -334,7 +334,11 @@ class FilterProduct(HAPProduct):
                                                                  catalog=catalog_name,
                                                                  output=self.refname,
                                                                  full_catalog=True)
-                ref_weight = 1. / np.sqrt(ref_catalog['pmra_error'] ** 2 + ref_catalog['pmdec_error'] ** 2)
+                if 'pmra_error' in ref_catalog:
+                    ref_weight = 1. / np.sqrt(ref_catalog['pmra_error'] ** 2 + ref_catalog['pmdec_error'] ** 2)
+                    ref_weight = np.nan_to_num(ref_weight, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
+                else:
+                    ref_weight = np.ones_like(ref_catalog['RA'])
                 ref_catalog.add_column(ref_weight, name='weight')
 
             log.debug("Abbreviated reference catalog displayed below\n{}".format(ref_catalog))
