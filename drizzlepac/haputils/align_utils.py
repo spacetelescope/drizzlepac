@@ -444,6 +444,7 @@ class HAPImage:
             # Build pseudo-wht array for detection purposes
             errarr = np.concatenate([self.imghdu[('ERR', i + 1)].data for i in range(self.num_sci)])
             wht_image = errarr.max() / errarr
+            wht_image = np.nan_to_num(wht_image, nan=0.0, posinf=0.0, neginf=0.0)
             if self.dqmask is not None:
                 wht_image[self.dqmask] = 0
         else:
@@ -772,7 +773,6 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         for image in imglist:
             image.meta["group_id"] = 1234567
         # 2: Perform absolute alignment
-
         matched_cat = tweakwcs.align_wcs(imglist, reference_catalog,
                                          match=match,
                                          minobj=common_pars['MIN_FIT_MATCHES'],

@@ -341,7 +341,7 @@ class FilterProduct(HAPProduct):
                     ref_weight = np.ones_like(ref_catalog['RA'])
                 ref_catalog.add_column(ref_weight, name='weight')
 
-            log.debug("Abbreviated reference catalog displayed below\n{}".format(ref_catalog))
+                log.debug("Abbreviated reference catalog displayed below\n{}".format(ref_catalog))
                 align_table.reference_catalogs[self.refname] = ref_catalog
                 if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
                     fit_again = False
