@@ -368,7 +368,7 @@ class AlignmentTable:
 
         fit_label : str
             Name of fit to apply to indicate how the fit was performed in
-            the WCSNAME keyword.  Common options: IMG, REL, SVM.
+            the WCSNAME keyword.  Common options: IMG, REL, SVM, and MVM.
 
         """
         if not self.selected_fit:
