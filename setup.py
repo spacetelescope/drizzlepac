@@ -107,6 +107,7 @@ setup(
         'PyPDF2',
         'tables',
         'PyYAML',
+        'scikit-image',
     ],
     extras_require={
         'test': TESTS_REQUIRE
