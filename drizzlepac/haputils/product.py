@@ -271,6 +271,9 @@ class FilterProduct(HAPProduct):
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
+
+        # This attribute is reset in align_to_gaia to distinguish different catalogs
+        # which may be created
         self.refname = self.product_basename + "_ref_cat.ecsv"
 
         # Define HAPLEVEL value for this product
@@ -298,13 +301,12 @@ class FilterProduct(HAPProduct):
         """
         self.edp_list.append(edp)
 
-    def align_to_gaia(self, catalog_name='GAIAedr3', headerlet_filenames=None, output=True,
+    def align_to_gaia(self, catalog_list=[], headerlet_filenames=None, output=True,
                       fit_label='SVM', align_table=None, fitgeom='rscale'):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment
            routine.
         """
-        log.info('Starting alignment to absolute astrometric reference frame {}'.format(catalog_name))
         alignment_pars = self.configobj_pars.get_pars('alignment')
 
         exposure_filenames = []
@@ -312,15 +314,21 @@ class FilterProduct(HAPProduct):
         align_table = None
         crclean = []
 
+        # If no catalog list has been provided, use the list defined in the configuration file
+        # mosaic_catalog_list = ['PS1BEST', '2MASS']  # For future
+        if not catalog_list:
+            mosaic_catalog_list = alignment_pars['run_align']['mosaic_catalog_list']
+        else:
+            mosaic_catalog_list = catalog_list
+        num_cat = len(mosaic_catalog_list)
+
+        # Fitting methods
+        mosaic_method_list = alignment_pars['run_align']['mosaic_fit_list']
+
         for edp in self.edp_list:
             exposure_filenames.append(edp.full_filename)
             headerlet_filenames[edp.full_filename] = edp.headerlet_filename
             crclean.append(edp.crclean)
-
-        # These should be in a configuration file
-        catalog_list = [catalog_name, 'GAIADR2']
-        num_cat = len(catalog_list)
-        method_list = ['relative', 'default']
 
         try:
             # Proceed only if there is data to process
@@ -336,7 +344,13 @@ class FilterProduct(HAPProduct):
                     align_table.configure_fit()
 
                 is_good_fit = False
-                for index_cat, catalog_item in enumerate(catalog_list):
+                for index_cat, catalog_item in enumerate(mosaic_catalog_list):
+
+                    # Override the default self.refname as it really needs to be
+                    # catalog-specific to be useful
+                    self.refname = self.product_basename + "_" + catalog_item + "_ref_cat.ecsv"
+             
+                    log.info('Starting alignment to absolute astrometric reference frame {}.'.format(catalog_item))
                     log.debug('Creating reference catalog {}'.format(self.refname))
                     ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
                                                                      catalog=catalog_item,
@@ -355,7 +369,7 @@ class FilterProduct(HAPProduct):
                     # Need to satisfy the minimum criterion of found sources
                     if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
 
-                        for method_name in method_list:
+                        for method_name in mosaic_method_list:
                             try:
                                 log.info("Trying '{}' fit to {}.".format(method_name, catalog_item))
                                 align_table.perform_fit(method_name, catalog_item, ref_catalog,
@@ -363,7 +377,9 @@ class FilterProduct(HAPProduct):
 
                                 # Evaluate the quality of the fit
                                 # Mike's method here with perhaps some code wrap
-                                # is_good_fit = True
+                                # FIX: This is just for testing now.
+                                if method_name == 'default':
+                                    is_good_fit = True
 
                                 # The fit was good...
                                 if is_good_fit:
