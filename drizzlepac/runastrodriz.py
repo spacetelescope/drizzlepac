@@ -1195,6 +1195,7 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                                                          archive=False)
                         # insure IDCSCALE is still present
                         if 'idcscale' not in fhdu[('sci', 1)].header:
+                            msg += "Headerlet {} was missing IDCSCALE keyword".format(most_recent_wcs[1])
                             # get IDCTAB name
                             itabroot = fhdu[0].header['idctab'].split('$')[1].split('_')[0]
                             fhdu_idscale = None
@@ -1211,7 +1212,7 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                                 fhdu_idscale = round(np.sqrt(np.power(cd11, 2) + np.power(cd21, 2)) * 3600., 3)
                             # Set the value of the IDCSCALE keyword
                             for sciext in range(num_sci):
-                                print('Adding IDCSCALE {} to {}'.format(fhdu_idscale, fhdu.filename()))
+                                msg +=  'Adding IDCSCALE {} to {}[sci,{}]'.format(fhdu_idscale, fhdu.filename(), sciext + 1)
                                 fhdu[('sci', sciext + 1)].header['idcscale'] = fhdu_idscale
     return msg
 
