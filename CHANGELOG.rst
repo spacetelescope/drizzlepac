@@ -10,12 +10,17 @@ The version of DrizzlePac can be identified using ::
 >>> import drizzlepac
 >>> drizzlepac.__version__
 
+
 The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
 3.2.1 (unreleased)
 ==================
+
+- Sky Subtraction step will automatically downgrade from 'match' to 'localmin',
+  and from 'globalmin+match' to 'globalmin' when sky matching runs into an
+  Exception. [# 1007]
 
 - Changed to insure that EXTNAME and EXTVER are always removed from
   simple FITS drizzle product headers. [#954]
