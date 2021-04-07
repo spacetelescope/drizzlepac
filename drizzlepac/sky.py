@@ -350,10 +350,8 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
                  _taskname4history = 'AstroDrizzle')
     except AssertionError:
         if 'match' in paramDict['skymethod']:  # This catches 'match' and 'globalmin+match'
-            if 'globalmin' in paramDict['skymethod']:
-                new_method = 'globalmin'
-            else:
-                new_method = 'localmin'
+            new_method = 'globalmin' if 'globalmin' in paramDict['skymethod'] else 'localmin'
+
             # revert to simpler sky computation algorithm
             log.warning('Reverting sky computation to "localmin" from "{}'.format(paramDict['skymethod']))
             skymatch(new_fi,
