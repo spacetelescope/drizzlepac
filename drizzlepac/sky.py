@@ -327,26 +327,52 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
 
         new_fi.append(fi)
 
-    # Run skymatch algorithm:
-    skymatch(new_fi,
-             skymethod   = paramDict['skymethod'],
-             skystat     = paramDict['skystat'],
-             lower       = paramDict['skylower'],
-             upper       = paramDict['skyupper'],
-             nclip       = paramDict['skyclip'],
-             lsigma      = paramDict['skylsigma'],
-             usigma      = paramDict['skyusigma'],
-             binwidth    = paramDict['skywidth'],
-             skyuser_kwd = skyKW,
-             units_kwd   = 'BUNIT',
-             readonly    = not paramDict['skysub'],
-             dq_bits     = None,
-             optimize    = 'inmemory' if in_memory else 'balanced',
-             clobber     = True,
-             clean       = clean,
-             verbose     = True,
-             flog        = MultiFileLog(console = True, enableBold = False),
-             _taskname4history = 'AstroDrizzle')
+    try:
+        # Run skymatch algorithm:
+        skymatch(new_fi,
+                 skymethod   = paramDict['skymethod'],
+                 skystat     = paramDict['skystat'],
+                 lower       = paramDict['skylower'],
+                 upper       = paramDict['skyupper'],
+                 nclip       = paramDict['skyclip'],
+                 lsigma      = paramDict['skylsigma'],
+                 usigma      = paramDict['skyusigma'],
+                 binwidth    = paramDict['skywidth'],
+                 skyuser_kwd = skyKW,
+                 units_kwd   = 'BUNIT',
+                 readonly    = not paramDict['skysub'],
+                 dq_bits     = None,
+                 optimize    = 'inmemory' if in_memory else 'balanced',
+                 clobber     = True,
+                 clean       = clean,
+                 verbose     = True,
+                 flog        = MultiFileLog(console = True, enableBold = False),
+                 _taskname4history = 'AstroDrizzle')
+    except AssertionError:
+        if paramDict['skymethod'] != 'localmin':
+            # revert to simpler sky computation algorithm
+            log.warning('Reverting sky computation to "localmin" from "{}'.format(paramDict['skymethod']))
+            skymatch(new_fi,
+                     skymethod='localmin',
+                     skystat=paramDict['skystat'],
+                     lower=paramDict['skylower'],
+                     upper=paramDict['skyupper'],
+                     nclip=paramDict['skyclip'],
+                     lsigma=paramDict['skylsigma'],
+                     usigma=paramDict['skyusigma'],
+                     binwidth=paramDict['skywidth'],
+                     skyuser_kwd=skyKW,
+                     units_kwd='BUNIT',
+                     readonly=not paramDict['skysub'],
+                     dq_bits=None,
+                     optimize='inmemory' if in_memory else 'balanced',
+                     clobber=True,
+                     clean=clean,
+                     verbose=True,
+                     flog=MultiFileLog(console=True, enableBold=False),
+                     _taskname4history='AstroDrizzle')
+        else:
+            raise
 
     # Populate 'subtractedSky' and 'computedSky' of input image objects:
     for i in range(nimg):
