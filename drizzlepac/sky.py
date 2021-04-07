@@ -212,8 +212,8 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
 
     nimg = len(imageList)
     if nimg == 0:
-        ml.logentry("Skymatch needs at least one images to perform{0}" \
-                    "sky matching. Nothing to be done.",os.linesep)
+        log.info("Skymatch needs at least one images to perform{0} \
+                    sky matching. Nothing to be done.",os.linesep)
         return
 
     # create a list of input file names as provided by the user:
@@ -823,7 +823,7 @@ def getreferencesky(image,keyval):
     _refplatescale=image.header["REFPLTSCL"]
     _platescale=image.header["PLATESCL"]
 
-    return (_subtractedsky * (_refplatescale / _platescale)**2 )
+    return (_subtractedSky * (_refplatescale / _platescale)**2 )
 
 
 def help(file=None):
