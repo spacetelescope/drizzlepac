@@ -349,11 +349,15 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
                  flog        = MultiFileLog(console = True, enableBold = False),
                  _taskname4history = 'AstroDrizzle')
     except AssertionError:
-        if paramDict['skymethod'] != 'localmin':
+        if 'match' in paramDict['skymethod']:  # This catches 'match' and 'globalmin+match'
+            if 'globalmin' in paramDict['skymethod']:
+                new_method = 'globalmin'
+            else:
+                new_method = 'localmin'
             # revert to simpler sky computation algorithm
             log.warning('Reverting sky computation to "localmin" from "{}'.format(paramDict['skymethod']))
             skymatch(new_fi,
-                     skymethod='localmin',
+                     skymethod=new_method,
                      skystat=paramDict['skystat'],
                      lower=paramDict['skylower'],
                      upper=paramDict['skyupper'],
