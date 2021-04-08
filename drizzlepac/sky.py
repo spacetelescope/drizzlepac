@@ -212,8 +212,8 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
 
     nimg = len(imageList)
     if nimg == 0:
-        ml.logentry("Skymatch needs at least one images to perform{0}" \
-                    "sky matching. Nothing to be done.",os.linesep)
+        log.info("Skymatch needs at least one image to perform{0} \
+                    sky matching. Nothing to be done.",os.linesep)
         return
 
     # create a list of input file names as provided by the user:
@@ -327,26 +327,54 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
 
         new_fi.append(fi)
 
-    # Run skymatch algorithm:
-    skymatch(new_fi,
-             skymethod   = paramDict['skymethod'],
-             skystat     = paramDict['skystat'],
-             lower       = paramDict['skylower'],
-             upper       = paramDict['skyupper'],
-             nclip       = paramDict['skyclip'],
-             lsigma      = paramDict['skylsigma'],
-             usigma      = paramDict['skyusigma'],
-             binwidth    = paramDict['skywidth'],
-             skyuser_kwd = skyKW,
-             units_kwd   = 'BUNIT',
-             readonly    = not paramDict['skysub'],
-             dq_bits     = None,
-             optimize    = 'inmemory' if in_memory else 'balanced',
-             clobber     = True,
-             clean       = clean,
-             verbose     = True,
-             flog        = MultiFileLog(console = True, enableBold = False),
-             _taskname4history = 'AstroDrizzle')
+    try:
+        # Run skymatch algorithm:
+        skymatch(new_fi,
+                 skymethod   = paramDict['skymethod'],
+                 skystat     = paramDict['skystat'],
+                 lower       = paramDict['skylower'],
+                 upper       = paramDict['skyupper'],
+                 nclip       = paramDict['skyclip'],
+                 lsigma      = paramDict['skylsigma'],
+                 usigma      = paramDict['skyusigma'],
+                 binwidth    = paramDict['skywidth'],
+                 skyuser_kwd = skyKW,
+                 units_kwd   = 'BUNIT',
+                 readonly    = not paramDict['skysub'],
+                 dq_bits     = None,
+                 optimize    = 'inmemory' if in_memory else 'balanced',
+                 clobber     = True,
+                 clean       = clean,
+                 verbose     = True,
+                 flog        = MultiFileLog(console = True, enableBold = False),
+                 _taskname4history = 'AstroDrizzle')
+    except AssertionError:
+        if 'match' in paramDict['skymethod']:  # This catches 'match' and 'globalmin+match'
+            new_method = 'globalmin' if 'globalmin' in paramDict['skymethod'] else 'localmin'
+
+            # revert to simpler sky computation algorithm
+            log.warning('Reverting sky computation to "localmin" from "{}'.format(paramDict['skymethod']))
+            skymatch(new_fi,
+                     skymethod=new_method,
+                     skystat=paramDict['skystat'],
+                     lower=paramDict['skylower'],
+                     upper=paramDict['skyupper'],
+                     nclip=paramDict['skyclip'],
+                     lsigma=paramDict['skylsigma'],
+                     usigma=paramDict['skyusigma'],
+                     binwidth=paramDict['skywidth'],
+                     skyuser_kwd=skyKW,
+                     units_kwd='BUNIT',
+                     readonly=not paramDict['skysub'],
+                     dq_bits=None,
+                     optimize='inmemory' if in_memory else 'balanced',
+                     clobber=True,
+                     clean=clean,
+                     verbose=True,
+                     flog=MultiFileLog(console=True, enableBold=False),
+                     _taskname4history='AstroDrizzle')
+        else:
+            raise
 
     # Populate 'subtractedSky' and 'computedSky' of input image objects:
     for i in range(nimg):
@@ -795,7 +823,7 @@ def getreferencesky(image,keyval):
     _refplatescale=image.header["REFPLTSCL"]
     _platescale=image.header["PLATESCL"]
 
-    return (_subtractedsky * (_refplatescale / _platescale)**2 )
+    return (_subtractedSky * (_refplatescale / _platescale)**2 )
 
 
 def help(file=None):
