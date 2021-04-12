@@ -114,7 +114,8 @@ Primary function for creating an astrometric reference catalog.
 def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv",
                                gaia_only=False, table_format="ascii.ecsv",
                                existing_wcs=None, num_sources=None,
-                               use_footprint=False, full_catalog=False):
+                               use_footprint=False, full_catalog=False,
+                               user_epoch='match'):
     """Create an astrometric catalog that covers the inputs' field-of-view.
 
     Parameters
@@ -149,6 +150,12 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
     full_catalog : bool, optional
         Return the full set of columns provided by the web service.
 
+    user_epoch : str or float, optional
+        Epoch of returned astrometric catalog.  If 'match', match the
+        epoch of the specified observation.  If None, return the values
+        at the epoch of the catalog.  If a decimal year is specified,
+        returned values will be for that epoch.
+
     Notes
     -----
     This function will point to astrometric catalog web service defined
@@ -181,12 +188,11 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
         radius = compute_radius(outwcs)
         ra, dec = outwcs.wcs.crval
 
-    use_pm = int(catalog[-1]) > 1 and catalog.upper().startswith('GAIA')
-    if use_pm:
+    if user_epoch == 'match':
         # Get the observation date
         epoch = Time(fits.getval(inputs[0], 'date-obs')).decimalyear
     else:
-        epoch = None
+        epoch = user_epoch
 
     # perform query for this field-of-view
     if use_footprint:
@@ -196,10 +202,6 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
 
     if not ref_table:
         return ref_table
-
-    # weed out sources which are not accurate (no proper motions in catalog)
-    if epoch and hasattr(ref_table, 'mask') and 'pmra' in ref_table.colnames:
-        ref_table = ref_table[~ref_table.mask['pmra']]
 
     colnames = ('ra', 'dec', 'mag', 'objID')
     if not full_catalog:
@@ -308,6 +310,7 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
         spec += epoch_str.format(epoch)
 
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
+    log.debug("Getting catalog using: \n    {}".format(serviceUrl))
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
     rstr = r_contents.split('\r\n')
