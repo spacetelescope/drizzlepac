@@ -1441,7 +1441,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                 # Activate an alternate WCS in order to gather its information.
                 # First copy the original primary WCS to an alternate (in case there was
                 # not already a duplicate). Use key 'Z'.  *** FIX MDD Should check for Z in use.
-                wcsutil.altwcs.archiveWCS(edp_object.full_filename, ext=extname_list, wcskey='Z')
+                wcsutil.altwcs.archive_wcs(edp_object.full_filename, ext=extname_list, wcskey='Z')
 
                 icnt = 0
                 # Restore an alternate to be the primary WCS
@@ -1532,7 +1532,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
                         wcsutil.altwcs.deleteWCS(edp_object.full_filename, ext=extname_list, wcskey=alt_key)
 
                         # ... and archive the current primary with its original key
-                        wcsutil.altwcs.archiveWCS(edp_object.full_filename, ext=extname_list, wcskey=alt_key)
+                        wcsutil.altwcs.archive_wcs(edp_object.full_filename, ext=extname_list, wcskey=alt_key)
 
                         icnt += 1
 
