@@ -1193,7 +1193,27 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                                                          force=True,
                                                          hdrname=most_recent_wcs[1],
                                                          archive=False)
-
+                        # insure IDCSCALE is still present
+                        if 'idcscale' not in fhdu[('sci', 1)].header:
+                            msg += "Headerlet {} was missing IDCSCALE keyword".format(most_recent_wcs[1])
+                            # get IDCTAB name
+                            itabroot = fhdu[0].header['idctab'].split('$')[1].split('_')[0]
+                            fhdu_idscale = None
+                            # pull a value from one of the other headerlet extensions
+                            for extn in extvers:
+                                if itabroot in fhdu[('HDRLET', extn)].header['wcsname']:
+                                    _hdrlet = fhdu[('HDRLET', extn)].headerlet
+                                    if 'idcscale' in _hdrlet[('SIPWCS', 1)].header:
+                                        fhdu_idscale = _hdrlet[('SIPWCS', 1)].header['idcscale']
+                                        break
+                            if fhdu_idscale is None:
+                                cd11 = fhdu[('sci', sciext + 1)].header['CD1_1']
+                                cd21 = fhdu[('sci', sciext + 1)].header['CD2_1']
+                                fhdu_idscale = round(np.sqrt(np.power(cd11, 2) + np.power(cd21, 2)) * 3600., 3)
+                            # Set the value of the IDCSCALE keyword
+                            for extn in range(num_sci):
+                                msg +=  'Adding IDCSCALE {} to {}[sci,{}]'.format(fhdu_idscale, fhdu.filename(), extn + 1)
+                                fhdu[('sci', extn + 1)].header['idcscale'] = fhdu_idscale
     return msg
 
 def restore_pipeline_default(files):
