@@ -1211,9 +1211,9 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                                 cd21 = fhdu[('sci', sciext + 1)].header['CD2_1']
                                 fhdu_idscale = round(np.sqrt(np.power(cd11, 2) + np.power(cd21, 2)) * 3600., 3)
                             # Set the value of the IDCSCALE keyword
-                            for sciext in range(num_sci):
-                                msg +=  'Adding IDCSCALE {} to {}[sci,{}]'.format(fhdu_idscale, fhdu.filename(), sciext + 1)
-                                fhdu[('sci', sciext + 1)].header['idcscale'] = fhdu_idscale
+                            for extn in range(num_sci):
+                                msg +=  'Adding IDCSCALE {} to {}[sci,{}]'.format(fhdu_idscale, fhdu.filename(), extn + 1)
+                                fhdu[('sci', extn + 1)].header['idcscale'] = fhdu_idscale
     return msg
 
 def restore_pipeline_default(files):
