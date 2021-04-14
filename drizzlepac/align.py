@@ -28,6 +28,7 @@ from .haputils import config_utils
 
 __taskname__ = 'align'
 
+# TODO: Move all these hard-coded values into the "determine_fit_quality" section of the *_alignment_all.json files
 MIN_CATALOG_THRESHOLD = 3
 MIN_OBSERVABLE_THRESHOLD = 4
 MIN_CROSS_MATCHES = 3
@@ -37,7 +38,7 @@ MAX_FIT_LIMIT = 150  # Maximum RMS that a result is useful
 MAX_SOURCES_PER_CHIP = 250  # Maximum number of sources per chip to include in source catalog
 # MAX_RMS_RATIO = 1.0  # Maximum ratio between RMS in RA and DEC which still represents a valid fit
 MAS_TO_ARCSEC = 1000.  # Conversion factor from milli-arcseconds to arcseconds
-
+GOOD_FIT_QUALITY_VALUES = [1, 2, 3, 4]  # list of determine_fit_quality "fit_quality" values considered "good"
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
@@ -865,6 +866,85 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+def determine_fit_quality_mvm_interface(imglist, filtered_table, catalogs_remaining, ref_catalog_length, print_fit_parameters=True):
+    """Simple interface to allow MVM code to use determine_fit_quality().
+
+    Parameters
+    ----------
+    imglist : list
+        output of interpret_fits. Contains sourcelist tables, newly computed WCS info, etc. for every chip of
+        every valid input image.  This list should have been  updated, in-place, with the new RMS values;
+        specifically,
+
+            * 'FIT_RMS': RMS of the separations between fitted image positions and reference positions
+            * 'TOTAL_RMS': mean of the FIT_RMS values for all observations
+            * 'NUM_FITS': number of images/group_id's with successful fits included in the TOTAL_RMS
+
+        These entries are added to the 'fit_info' dictionary.
+
+    filtered_table : object
+        Astropy Table object containing data pertaining to the associated dataset, including
+        the doProcess bool.  It is intended this table is updated by subsequent functions for
+        bookkeeping purposes.
+
+    catalogs_remaining : bool
+        Specify whether additional catalogs remain to be fit against.
+
+    print_fit_parameters : bool
+        Specify whether or not to print out FIT results for each chip
+
+    Returns
+    -------
+    is_good_fit : bool
+        Is the fit acceptable (Is fit_quality value in GOOD_FIT_QUALITY_VALUES)?
+
+    max_rms_val : float
+        The best Total rms determined from all of the images
+
+    num_xmatches: int
+        The number of stars used in matching the data
+
+    fit_quality : int
+        fit quality category:
+            * 1 = valid solution with rms < 10 mas
+            * 2 = Valid but compromised solution with rms < 10 mas
+            * 3 = Valid solution with RMS >= 10 mas
+            * 4 = Valid but compromised solution with RMS >= 10 mas
+            * 5 = Not valid solution
+
+    filtered_table : object
+        modified filtered_table object
+
+    fit_status_dict : dictionary
+        Dictionary containing the following:
+            * overall fit validity (Boolean)
+            * total (visit-level) RMS value in mas (float)
+            * number of matched sources (int)
+            * fit compromised status (Boolean)
+            * reason fit is considered 'compromised' (only populated if "compromised" field is "True")
+
+    """
+    # Check if num_ref_catalog is in imglist...if not, add it.
+    for ctr in range(0, len(imglist)):
+        if 'num_ref_catalog' not in imglist[ctr].meta.keys():
+            imglist[ctr].meta['num_ref_catalog'] = ref_catalog_length
+
+    # Execute determine_fit_quality
+    fit_rms, fit_num, fit_quality, filtered_table, fit_status_dict = determine_fit_quality(imglist,
+                                                                                           filtered_table,
+                                                                                           catalogs_remaining,
+                                                                                           print_fit_parameters)
+
+    # Determine if the fit quality is acceptable
+    if fit_quality in GOOD_FIT_QUALITY_VALUES:
+        is_good_fit = True
+    else:
+        is_good_fit = False
+
+    return is_good_fit, fit_rms, fit_num, fit_quality, filtered_table, fit_status_dict
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 def generate_astrometric_catalog(imglist, **pars):
     """Generates a catalog of all sources from an existing astrometric catalog are
