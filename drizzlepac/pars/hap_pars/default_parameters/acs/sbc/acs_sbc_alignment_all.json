@@ -60,7 +60,13 @@
     },
   "determine_fit_quality":
     {
+      "MIN_CATALOG_THRESHOLD": 3,
+      "MIN_OBSERVABLE_THRESHOLD": 4,
       "MIN_CROSS_MATCHES": 3,
+      "MIN_FIT_MATCHES": 4,
+      "MAX_FIT_RMS": 10,
+      "MAX_FIT_LIMIT": 150,
+      "MAX_SOURCES_PER_CHIP": 250,
       "MAS_TO_ARCSEC": 1000
     }
 }
