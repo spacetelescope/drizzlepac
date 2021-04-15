@@ -67,6 +67,7 @@
         "MAX_FIT_RMS": 10,
         "MAX_FIT_LIMIT": 150,
         "MAX_SOURCES_PER_CHIP": 250,
-        "MAS_TO_ARCSEC": 1000
+        "MAS_TO_ARCSEC": 1000,
+        "GOOD_FIT_QUALITY_VALUES": [1, 2, 3, 4]
       }
 }
