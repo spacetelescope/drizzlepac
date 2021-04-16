@@ -28,18 +28,6 @@ from .haputils import config_utils
 
 __taskname__ = 'align'
 
-# TODO: Move all these hard-coded values into the "determine_fit_quality" section of the *_alignment_all.json files
-# MIN_CATALOG_THRESHOLD = 3 # X perform_align
-# MIN_OBSERVABLE_THRESHOLD = 4 # X perform_align
-# MIN_CROSS_MATCHES = 3 # X DFQ
-# MIN_FIT_MATCHES = 4 # X UNUSED?
-# MAX_FIT_RMS = 10  # RMS now in mas, 1.0 ## X perform_align, DFQ
-# MAX_FIT_LIMIT = 150  # Maximum RMS that a result is useful # X perform_align
-# # MAX_SOURCES_PER_CHIP = 250  # Maximum number of sources per chip to include in source catalog # X UNUSED?
-# # MAX_RMS_RATIO = 1.0  # Maximum ratio between RMS in RA and DEC which still represents a valid fit
-# MAS_TO_ARCSEC = 1000.  # Conversion factor from milli-arcseconds to arcseconds #DFQ
-# GOOD_FIT_QUALITY_VALUES = [1, 2, 3, 4]  # list of determine_fit_quality "fit_quality" values considered "good" # X DFQ_INTERFACE
-
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
