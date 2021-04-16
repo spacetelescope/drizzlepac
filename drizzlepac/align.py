@@ -29,16 +29,16 @@ from .haputils import config_utils
 __taskname__ = 'align'
 
 # TODO: Move all these hard-coded values into the "determine_fit_quality" section of the *_alignment_all.json files
-MIN_CATALOG_THRESHOLD = 3
-MIN_OBSERVABLE_THRESHOLD = 4
-MIN_CROSS_MATCHES = 3
-MIN_FIT_MATCHES = 4
-MAX_FIT_RMS = 10  # RMS now in mas, 1.0
-MAX_FIT_LIMIT = 150  # Maximum RMS that a result is useful
-MAX_SOURCES_PER_CHIP = 250  # Maximum number of sources per chip to include in source catalog
-# MAX_RMS_RATIO = 1.0  # Maximum ratio between RMS in RA and DEC which still represents a valid fit
-MAS_TO_ARCSEC = 1000.  # Conversion factor from milli-arcseconds to arcseconds
-GOOD_FIT_QUALITY_VALUES = [1, 2, 3, 4]  # list of determine_fit_quality "fit_quality" values considered "good"
+# MIN_CATALOG_THRESHOLD = 3 # X perform_align
+# MIN_OBSERVABLE_THRESHOLD = 4 # X perform_align
+# MIN_CROSS_MATCHES = 3 # X DFQ
+# MIN_FIT_MATCHES = 4 # X UNUSED?
+# MAX_FIT_RMS = 10  # RMS now in mas, 1.0 ## X perform_align, DFQ
+# MAX_FIT_LIMIT = 150  # Maximum RMS that a result is useful # X perform_align
+# # MAX_SOURCES_PER_CHIP = 250  # Maximum number of sources per chip to include in source catalog # X UNUSED?
+# # MAX_RMS_RATIO = 1.0  # Maximum ratio between RMS in RA and DEC which still represents a valid fit
+# MAS_TO_ARCSEC = 1000.  # Conversion factor from milli-arcseconds to arcseconds #DFQ
+# GOOD_FIT_QUALITY_VALUES = [1, 2, 3, 4]  # list of determine_fit_quality "fit_quality" values considered "good" # X DFQ_INTERFACE
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
@@ -369,7 +369,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
             # Update filtered table with number of found sources
             alignment_table.filtered_table[index]['foundSources'] = total_num_sources
 
-            if total_num_sources < MIN_OBSERVABLE_THRESHOLD:
+            if total_num_sources < apars['determine_fit_quality']['MIN_OBSERVABLE_THRESHOLD']:
                 log.warning("Not enough sources ({}) found in image {}".format(total_num_sources, imgname))
                 alignment_table.filtered_table[:]['status'] = 1
                 alignment_table.filtered_table[:]['processMsg'] = "Not enough sources found"
@@ -424,7 +424,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                 log.info(make_label('Processing time of [STEP 5]', starting_dt))
                 starting_dt = datetime.datetime.now()
 
-                if len(reference_catalog) < MIN_CATALOG_THRESHOLD:
+                if len(reference_catalog) < apars['determine_fit_quality']['MIN_CATALOG_THRESHOLD']:
                     log.warning("Not enough sources found in catalog {}".format(catalog_name))
                     fit_quality = 5
                     if catalog_index < len(catalog_list) - 1:
@@ -462,6 +462,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                                 alignment_table.imglist,
                                 alignment_table.filtered_table,
                                 (catalog_index < (len(catalog_list) - 1)),
+                                apars,
                                 print_fit_parameters=print_fit_parameters)
                         alignment_table.filtered_table = filtered_table
 
@@ -539,7 +540,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         log.info(
             "{} STEP 6: Collect up information and populate the filtered table "
             "{}".format("-" * 20, "-" * 20))
-        if 0 < best_fit_rms < MAX_FIT_RMS:
+        if 0 < best_fit_rms < apars['determine_fit_quality']['MAX_FIT_RMS']:
             log.info("The fitting process was successful with a best fit total "
                      "rms of {} mas".format(best_fit_rms))
         else:
@@ -547,7 +548,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                 "The fitting process was unsuccessful with a best fit total rms "
                 "of {} mas".format(best_fit_rms))
 
-        if 0 < best_fit_rms < MAX_FIT_LIMIT:
+        if 0 < best_fit_rms < apars['determine_fit_quality']['MAX_FIT_LIMIT']:
             # Update filtered table with best fit results
             filtered_table['status'][:] = 0
             fit_status_dict = best_fit_status_dict.copy()
@@ -628,7 +629,7 @@ def make_label(label, starting_dt):
 # ----------------------------------------------------------------------------------------------------------
 
 
-def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit_parameters=True):
+def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_pars, print_fit_parameters=True):
     """Determine the quality of the fit to the data
 
     Parameters
@@ -651,6 +652,9 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
 
     catalogs_remaining : bool
         Specify whether additional catalogs remain to be fit against.
+
+    align_pars : dict
+        Parameters from the appropriate '_align_all.json' parameter file
 
     print_fit_parameters : bool
         Specify whether or not to print out FIT results for each chip
@@ -721,7 +725,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         fit_status_dict[dict_key]['max_rms'] = max_rms_val
         fit_status_dict[dict_key]['num_matches'] = num_xmatches
 
-        if num_xmatches < MIN_CROSS_MATCHES:
+        if num_xmatches < align_pars['determine_fit_quality']['MIN_CROSS_MATCHES']:
             if catalogs_remaining:
                 log.warning(
                     "Not enough cross matches found between astrometric"
@@ -760,7 +764,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
         consistency_check = True
         rms_limit = max(item.meta['fit_info']['TOTAL_RMS'], 10.)
         if not math.sqrt(np.std(np.asarray(xshifts)) ** 2 + np.std(
-                         np.asarray(yshifts)) ** 2) <= (rms_limit / MAS_TO_ARCSEC) / (item.wcs.pscale):  # \
+                         np.asarray(yshifts)) ** 2) <= (rms_limit / align_pars['determine_fit_quality']['MAS_TO_ARCSEC']) / (item.wcs.pscale):  # \
                          # or rms_ratio > MAX_RMS_RATIO:
             consistency_check = False
 
@@ -853,11 +857,11 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
     if print_fit_parameters:
         for item in imglist: log.info(fit_status_dict["{},{}".format(item.meta['name'], item.meta['chip'])])
 
-    if max_rms_val > MAX_FIT_RMS:
-        log.info("Total fit RMS value = {} mas greater than the maximum threshold value {}.".format(max_rms_val, MAX_FIT_RMS))
+    if max_rms_val > align_pars['determine_fit_quality']['MAX_FIT_RMS']:
+        log.info("Total fit RMS value = {} mas greater than the maximum threshold value {}.".format(max_rms_val, align_pars['determine_fit_quality']['MAX_FIT_RMS']))
     if not overall_valid:
         log.info("The fit solution for some or all of the images is not valid.")
-    if max_rms_val > MAX_FIT_RMS or not overall_valid:
+    if max_rms_val > align_pars['determine_fit_quality']['MAX_FIT_RMS'] or not overall_valid:
         log.info("Try again with the next catalog")
     else:
         log.info("Fit calculations successful.")
@@ -866,7 +870,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, print_fit
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def determine_fit_quality_mvm_interface(imglist, filtered_table, catalogs_remaining, ref_catalog_length, print_fit_parameters=True):
+def determine_fit_quality_mvm_interface(imglist, filtered_table, catalogs_remaining, ref_catalog_length, align_pars, print_fit_parameters=True):
     """Simple interface to allow MVM code to use determine_fit_quality().
 
     Parameters
@@ -889,6 +893,9 @@ def determine_fit_quality_mvm_interface(imglist, filtered_table, catalogs_remain
 
     catalogs_remaining : bool
         Specify whether additional catalogs remain to be fit against.
+
+    align_pars : dict
+        Parameters from the appropriate '_align_all.json' parameter file
 
     print_fit_parameters : bool
         Specify whether or not to print out FIT results for each chip
@@ -933,10 +940,11 @@ def determine_fit_quality_mvm_interface(imglist, filtered_table, catalogs_remain
     fit_rms, fit_num, fit_quality, filtered_table, fit_status_dict = determine_fit_quality(imglist,
                                                                                            filtered_table,
                                                                                            catalogs_remaining,
+                                                                                           align_pars,
                                                                                            print_fit_parameters)
 
     # Determine if the fit quality is acceptable
-    if fit_quality in GOOD_FIT_QUALITY_VALUES:
+    if fit_quality in align_pars['determine_fit_quality']['GOOD_FIT_QUALITY_VALUES']:
         is_good_fit = True
     else:
         is_good_fit = False
