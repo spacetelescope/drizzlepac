@@ -37,6 +37,8 @@ __version__ = 0.0
 __version_date__ = '21-Aug-2019'
 
 # ----------------------------------------------------------------------------------------------------------
+
+
 def check_and_get_data(input_list, **pars):
     """Verify that all specified files are present. If not, retrieve them from MAST.
 
@@ -153,10 +155,11 @@ def check_and_get_data(input_list, **pars):
 
 # ------------------------------------------------------------------------------------------------------------
 
+
 def perform_align(input_list, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
-              runfile=None, print_fit_parameters=True, print_git_info=False, output=False, num_sources=500,
-              headerlet_filenames=None, catalog_list=['GAIAedr3', 'GAIADR2', 'GAIADR1'], fit_label=None,
-              **alignment_pars):
+                  runfile=None, print_fit_parameters=True, print_git_info=False, output=False,
+                  num_sources=500, headerlet_filenames=None, catalog_list=['GAIAedr3', 'GAIADR2', 'GAIADR1'],
+                  fit_label=None, **alignment_pars):
     """Actual Main calling function.
 
     This function performs `a posteriori` astrometric fits to the images specified in the
@@ -218,9 +221,9 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
         `fit_label="User"` will result in fits to GAIAedr3 with names ending in `-FIT_User_GAIAedr3`.
 
     alignment_pars : dictionary or keyword args
-        keyword-arg parameters containing user-specified values for the parameters used in source identification and
-        alignment which should replace the default values found in the JSON parameter files in
-        `drizzlepac.pars.hap_pars` based on the instrument and detector.
+        keyword-arg parameters containing user-specified values for the parameters used in source
+        identification and alignment which should replace the default values found in the JSON parameter
+        files in `drizzlepac.pars.hap_pars` based on the instrument and detector.
         The code will look for default values for all the parameters in the JSON parameter files using
         `~get_default_pars`.  For example, should the user feel it would be more successful to only look
         out to a radius of 25 pixels during alignment, the user could simply specify `searchrad=25`.
@@ -257,7 +260,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
             repo_path = full_path.split("drizzlepac")[0] + "drizzlepac"
         else:
             pass
-        if not os.path.exists(repo_path): repo_path = None  # protect against non-existent paths
+        if not os.path.exists(repo_path):
+            repo_path = None  # protect against non-existent paths
         if repo_path:
             get_git_rev_info.print_rev_id(repo_path)  # Display git repository information
         else:
@@ -329,7 +333,6 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                 log.info("Wrote {}".format(pickle_filename))
         else:
             alignment_table.find_alignment_sources(output=output)
-
 
         alignment_table.configure_fit()
 
@@ -429,8 +432,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                         alignment_table.close()
                         return alignment_table
                 else:
-                    log.info("{} Cross matching and "
-                         "fitting {}".format("-" * 20, "-" * 47))
+                    log.info("{} Cross matching and fitting {}".format("-" * 20, "-" * 47))
                     imglist = copy.deepcopy(orig_imglist)  # reset imglist to pristine state
 
                     log.info(
@@ -442,7 +444,9 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                         alignment_table.reset_group_id(len(reference_catalog))
 
                         # execute the correct fitting/matching algorithm
-                        alignment_table.imglist = alignment_table.perform_fit(algorithm_name, catalog_name, reference_catalog)
+                        alignment_table.imglist = alignment_table.perform_fit(algorithm_name,
+                                                                              catalog_name,
+                                                                              reference_catalog)
 
                         # determine the quality of the fit
                         fit_rms, fit_num, fit_quality, filtered_table, fit_status_dict = \
@@ -463,8 +467,7 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                         # populate fit_info_dict
                         fit_info_dict["{} {}".format(catalog_name, algorithm_name)] = \
                             fit_status_dict[next(iter(fit_status_dict))]
-                        fit_info_dict["{} {}".format(catalog_name,
-                            algorithm_name)]['fit_qual'] = fit_quality
+                        fit_info_dict["{} {}".format(catalog_name, algorithm_name)]['fit_qual'] = fit_quality
 
                         # Figure out which fit solution to go with based on fit_quality value and maybe also total_rms
                         if fit_quality < 5:
@@ -508,10 +511,8 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
                         continue
                     if fit_quality == 1:  # break out of inner  astrometric catalog loop
                         break
-            # break out of outer fit algorithm loop
-            # either with a fit_rms < 10 or a 'valid' relative fit
-            if fit_quality == 1 or (best_fit_qual in [2, 3, 4] and
-                "relative" in algorithm_name):
+            # break out of outer fit algorithm loop either with a fit_rms < 10 or a 'valid' relative fit
+            if fit_quality == 1 or (best_fit_qual in [2, 3, 4] and "relative" in algorithm_name):
                 break
         log.info("best_fit found to be: {}".format(best_fit_label))
         log.info("FIT_DICT: {}".format(alignment_table.fit_dict.keys()))
@@ -602,17 +603,14 @@ def perform_align(input_list, archive=False, clobber=False, debug=False, update_
             filtered_table.pprint(max_width=-1)
     return alignment_table
 
-
-
 # ----------------------------------------------------------------------------------------------------------
+
 
 def make_label(label, starting_dt):
     """Create a time-stamped label for use in log messages"""
     current_dt = datetime.datetime.now()
     delta_dt = (current_dt - starting_dt).total_seconds()
     return '{}: {} sec'.format(label, delta_dt)
-
-
 
 # ----------------------------------------------------------------------------------------------------------
 
@@ -694,10 +692,10 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
         # Build fit_status_dict entry
         dict_key = "{},{}".format(image_name, chip_num)
         fit_status_dict[dict_key] = {'valid': False,
-                                  'max_rms': max_rms_val,
-                                  'num_matches': num_xmatches,
-                                  'compromised': False,
-                                  'reason': ""}
+                                     'max_rms': max_rms_val,
+                                     'num_matches': num_xmatches,
+                                     'compromised': False,
+                                     'reason': ""}
         # Handle fitting failures (no matches found)
         if item.meta['fit_info']['status'].startswith("FAILED") is True:
             log.warning("No cross matches found in any catalog for {} "
@@ -796,10 +794,9 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
                                           num_xmatches))
         # print fit params to screen
         if print_fit_parameters:
-            log_info_keys = ['status', 'fitgeom', 'eff_minobj', 'matrix', 'shift', 'center',
-                'proper_rot', 'proper',
-                '<rot>', '<scale>', 'skew', 'rmse', 'mae', 'nmatches', 'FIT_RMS', 'TOTAL_RMS', 'NUM_FITS',
-                'RMS_RA', 'RMS_DEC', 'catalog']
+            log_info_keys = ['status', 'fitgeom', 'eff_minobj', 'matrix', 'shift', 'center', 'proper_rot',
+                             'proper', '<rot>', '<scale>', 'skew', 'rmse', 'mae', 'nmatches', 'FIT_RMS',
+                             'TOTAL_RMS', 'NUM_FITS', 'RMS_RA', 'RMS_DEC', 'catalog']
             log.info("{} FIT PARAMETERS {}".format("~" * 35, "~" * 34))
             log.info("image: {}".format(image_name))
             log.info("chip: {}".format(item.meta['chip']))
@@ -810,10 +807,9 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
             log.info("nmatches_check: {} radial_offset_check: {}"
                      " large_rms_check: {},"
                      " consistency_check: {}".format(nmatches_check,
-                                                    radial_offset_check,
-                                                    large_rms_check,
-                                                    consistency_check))
-
+                                                     radial_offset_check,
+                                                     large_rms_check,
+                                                     consistency_check))
 
     # determine which fit quality category this latest fit falls into
     if overall_valid is False:
