@@ -65,7 +65,11 @@ def compare_wcs_alignment(dataset, force=False):
     try:
         # Step 1:
         #   Determine alignment for pipeline-defined WCS
-        align_table = align.perform_align([dataset], clobber=force, debug=True)
+        align_table = align.perform_align([dataset],
+                                          catalog_list=['GAIADR2', 'GAIADR1'],
+                                          num_sources=250,
+                                          clobber=force,
+                                          debug=True)
         results = align_table.filtered_table
         if not results:
             msg = "No valid exposures found for {}.".format(dataset)
@@ -115,7 +119,11 @@ def compare_wcs_alignment(dataset, force=False):
                                                      archive=False, force=True)
         
             print("[testutils] Aligning: {} for WCSNAME: {}".format(dataset, wcs))
-            align_table = align.perform_align([dataset], clobber=False, debug=True)
+            align_table = align.perform_align([dataset],
+                                              catalog_list=['GAIADR2', 'GAIADR1'],
+                                              num_sources=250,
+                                              clobber=False,
+                                              debug=True)
             results = align_table.filtered_table
             alignment[wcs] = extract_results(results)
 

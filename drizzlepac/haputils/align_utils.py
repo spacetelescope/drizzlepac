@@ -657,7 +657,7 @@ class HAPImage:
             #  TODO: replace detector_pars with dict from OO Config class
             extract_pars = {'classify': alignment_pars['classify'],
                             'centering_mode': alignment_pars['centering_mode'],
-                            'nlargest': alignment_pars['num_sources'],
+                            'nlargest': alignment_pars['MAX_SOURCES_PER_CHIP'],
                             'deblend': alignment_pars['deblend']}
 
             with warnings.catch_warnings():

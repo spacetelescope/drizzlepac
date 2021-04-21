@@ -884,6 +884,8 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
         alignfiles = calfiles_flc if calfiles_flc else calfiles
         align_update_files = calfiles if calfiles_flc else None
+        inst = fits.getval(alignfiles[0], 'instrume').lower()
+        det = fits.getval(alignfiles[0], 'detector').lower()
 
         if find_crs:
             trlmsg = _timestamp("Resetting CRs ")
@@ -901,13 +903,17 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             trlmsg = _timestamp("Align_to_GAIA started ")
             _updateTrlFile(trlfile, trlmsg)
 
+            instdet_pars = align.get_default_pars(inst, det)
+
             alignlog = trlfile.replace('.tra', '_align.log')
             alignlog_copy = alignlog.replace('_align', '_align_copy')
             try:
-
-                full_table = align.perform_align(alignfiles, update_hdr_wcs=True, runfile=alignlog,
-                                                  clobber=False, output=debug,
-                                                  debug=debug, sat_flags=sat_flags)
+                full_table = align.perform_align(alignfiles,
+                                                 catalog_list=instdet_pars['run_align']['catalog_list'],
+                                                 num_sources=instdet_pars['general']['MAX_SOURCES_PER_CHIP'],
+                                                 update_hdr_wcs=True, runfile=alignlog,
+                                                 clobber=False, output=debug,
+                                                 debug=debug, sat_flags=sat_flags)
                 if full_table is None:
                     raise Exception("No successful aposteriori fit determined.")
 
@@ -990,8 +996,6 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             # Only check focus on CTE corrected, when available
             align_focus = focus_dicts[-1] if 'drc' in focus_dicts[-1]['prodname'] else focus_dicts[0]
 
-            inst = fits.getval(alignfiles[0], 'instrume').lower()
-            det = fits.getval(alignfiles[0], 'detector').lower()
             pscale = HSTWCS(alignfiles[0], ext=1).pscale
 
             det_pars = align.get_default_pars(inst, det)['generate_source_catalogs']

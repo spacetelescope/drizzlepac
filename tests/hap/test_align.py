@@ -69,7 +69,10 @@ class TestAlignMosaic(BaseHLATest):
         for input_file in input_filenames:
             get_bigdata('hst-hla-pipeline', 'dev', 'mosaic_ngc188', input_file)
 
-        dataset_table = alignimages.perform_align(input_filenames, archive=False, clobber=False,
+        dataset_table = alignimages.perform_align(input_filenames,
+                                                  catalog_list=['GAIADR2', 'GAIADR1'],
+                                                  num_sources=250,
+                                                  archive=False, clobber=False,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
                                                   output=False)
@@ -100,7 +103,10 @@ class TestAlignMosaic(BaseHLATest):
         for input_file in input_filenames:
             get_bigdata('hst-hla-pipeline', 'dev', 'mosaic_47tuc', input_file)
 
-        dataset_table = alignimages.perform_align(input_filenames, archive=False, clobber=False,
+        dataset_table = alignimages.perform_align(input_filenames,
+                                                  catalog_list=['GAIADR2', 'GAIADR1'],
+                                                  num_sources=250,
+                                                  archive=False, clobber=False,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
                                                   output=False)
@@ -163,7 +169,10 @@ class TestAlignMosaic(BaseHLATest):
         for input_file in input_filenames:
             get_bigdata('hst-hla-pipeline', 'dev', 'base_tests', input_file)
 
-        dataset_table = alignimages.perform_align(input_filenames, archive=False, clobber=False,
+        dataset_table = alignimages.perform_align(input_filenames,
+                                                  catalog_list=['GAIADR2', 'GAIADR1'],
+                                                  num_sources=250,
+                                                  archive=False, clobber=False,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
                                                   output=False)
@@ -210,7 +219,10 @@ class TestAlignMosaic(BaseHLATest):
         for input_file in input_filenames:
             get_bigdata('hst-hla-pipeline', 'dev', 'base_tests', input_file)
 
-        dataset_table = alignimages.perform_align(input_filenames, archive=False, clobber=False,
+        dataset_table = alignimages.perform_align(input_filenames,
+                                                  catalog_list=['GAIADR2', 'GAIADR1'],
+                                                  num_sources=250,
+                                                  archive=False, clobber=False,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
                                                   output=False)
@@ -227,7 +239,10 @@ class TestAlignMosaic(BaseHLATest):
 
         total_rms = 0.0
 
-        dataset_table = alignimages.perform_align(['IB6V06060'], archive=False, clobber=True,
+        dataset_table = alignimages.perform_align(['IB6V06060'],
+                                                  catalog_list=['GAIADR2', 'GAIADR1'],
+                                                  num_sources=250,
+                                                  archive=False, clobber=True,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
                                                   output=False)
