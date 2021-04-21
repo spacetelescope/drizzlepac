@@ -110,7 +110,10 @@ def test_randomlist(tmpdir, dataset):
 
     try:
 
-        dataset_table = alignimages.perform_align([dataset], archive=False,
+        dataset_table = alignimages.perform_align([dataset],
+                                                  catalog_list=['GAIADR2', 'GAIADR1'],
+                                                  num_sources=250,
+                                                  archive=False,
                                                   clobber=True, debug=False,
                                                   update_hdr_wcs=False,
                                                   print_fit_parameters=True,
