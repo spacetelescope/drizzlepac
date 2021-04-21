@@ -167,7 +167,7 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
                                gaia_only=False, table_format="ascii.ecsv",
                                existing_wcs=None, num_sources=None,
                                use_footprint=False, full_catalog=False,
-                               user_epoch='match'):
+                               user_epoch='match', debug=False):
     """Create an astrometric catalog that covers the inputs' field-of-view.
 
     This function will return a table containing sources derived from the
@@ -268,9 +268,9 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
 
     # perform query for this field-of-view
     if use_footprint:
-        ref_table = get_catalog_from_footprint(footprint, epoch=epoch, catalog=catalog)
+        ref_table = get_catalog_from_footprint(footprint, epoch=epoch, catalog=catalog, debug=debug)
     else:
-        ref_table = get_catalog(ra, dec, sr=radius, epoch=epoch, catalog=catalog)
+        ref_table = get_catalog(ra, dec, sr=radius, epoch=epoch, catalog=catalog, debug=debug)
 
     if not ref_table:
         return ref_table
@@ -281,7 +281,7 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
     ref_table.meta['epoch'] = epoch
 
     # Convert common set of columns into standardized column names
-    convert_astrometric_table(ref_table, catalog)
+    convert_astrometric_table(ref_table, catalog, debug=debug)
 
     if not full_catalog:
         ref_table = ref_table['RA', 'DEC', 'mag', 'objID']
@@ -308,13 +308,19 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
     return ref_table
 
 
-def convert_astrometric_table(table, catalog_name):
+def convert_astrometric_table(table, catalog_name, debug=False):
     """Convert a table with varying column names into a more standardized table"""
     if catalog_name in SUPPORTED_CATALOGS:
         cat_dict = SUPPORTED_CATALOGS[catalog_name]
         table.meta['converted'] = True
+        if debug:
+            log.debug('Converting supported catalog: {}'.format(catalog_name))
+            print('Converting supported catalog: {}'.format(catalog_name))
     else:
         table.meta['converted'] = False
+        if debug:
+            log.debug('NOT converting catalog: {}'.format(catalog_name))
+            print('NOT converting catalog: {}'.format(catalog_name))
         return table
 
     # Now for each column specified in this dict,
@@ -373,19 +379,21 @@ def build_reference_wcs(inputs, sciname='sci'):
             else:
                 # Working with HDRLET as input and do the best we can...
                 extwcs = read_hlet_wcs(img, ext=extname)
-
             wcslist.append(extwcs)
 
     # This default output WCS will have the same plate-scale and orientation
     # as the first chip in the list, which for WFPC2 data means the PC.
     # Fortunately, for alignment, this doesn't matter since no resampling of
     # data will be performed
-    outwcs = utils.output_wcs(wcslist)
+    if len(wcslist) == 1 and not wcslist[0].has_distortion and wcslist[0].idcscale is None:
+        outwcs = wcslist[0]
+    else:
+        outwcs = utils.output_wcs(wcslist)
 
     return outwcs
 
 
-def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
+def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241', debug=False):
     """ Extract reference catalog from VO web service.
 
     Queries the catalog available at the ``SERVICELOCATION`` specified
@@ -429,6 +437,8 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
 
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
     log.debug("Getting catalog using: \n    {}".format(serviceUrl))
+    if debug:
+        print("Getting catalog using: \n    {}".format(serviceUrl))
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
     rstr = r_contents.split('\r\n')
@@ -447,7 +457,7 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
     return r_csv
 
 
-def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
+def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241', debug=False):
     """ Extract catalog from VO web service based on the specified footprint
 
     Queries the catalog available at the ``SERVICELOCATION`` specified
@@ -487,6 +497,9 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
         spec += epoch_str.format(epoch)
 
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
+    if debug:
+        print("Getting catalog using: \n    {}".format(serviceUrl))
+
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
     rstr = r_contents.split('\r\n')
