@@ -13,7 +13,9 @@
       "fit_algorithm_list_n1": ["match_2dhist_fit", "match_default_fit"],
       "MIN_CATALOG_THRESHOLD": 3,
       "MIN_OBSERVABLE_THRESHOLD": 10,
-      "MAX_FIT_LIMIT": 150
+      "MAX_FIT_LIMIT": 150,
+      "mosaic_catalog_list": ["GAIAedr3", "GSC242", "2MASS"],
+      "mosaic_fit_list": ["relative", "default"]
     },
   "generate_source_catalogs":
     {
