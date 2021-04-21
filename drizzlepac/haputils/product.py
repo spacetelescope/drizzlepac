@@ -21,6 +21,7 @@ from stsci.tools import logutil
 from stwcs import updatewcs
 import numpy as np
 
+from .. import align
 from .. import astrodrizzle
 from .. import wcs_functions
 from . import align_utils
@@ -315,7 +316,6 @@ class FilterProduct(HAPProduct):
         crclean = []
 
         # If no catalog list has been provided, use the list defined in the configuration file
-        # mosaic_catalog_list = ['PS1BEST', '2MASS']  # For future
         if not catalog_list:
             mosaic_catalog_list = alignment_pars['run_align']['mosaic_catalog_list']
         else:
@@ -346,6 +346,10 @@ class FilterProduct(HAPProduct):
                 is_good_fit = False
                 for index_cat, catalog_item in enumerate(mosaic_catalog_list):
 
+                    more_catalogs = True
+                    if (index_cat + 1) == num_cat:
+                        more_catalogs = False 
+
                     # Override the default self.refname as it really needs to be
                     # catalog-specific to be useful
                     self.refname = self.product_basename + "_" + catalog_item + "_ref_cat.ecsv"
@@ -372,14 +376,20 @@ class FilterProduct(HAPProduct):
                         for method_name in mosaic_method_list:
                             try:
                                 log.info("Trying '{}' fit to {}.".format(method_name, catalog_item))
-                                align_table.perform_fit(method_name, catalog_item, ref_catalog,
-                                                        fitgeom=fitgeom)
+                                align_table.imglist = align_table.perform_fit(method_name, catalog_item, ref_catalog,
+                                                                              fitgeom=fitgeom)
+
+                                align_table.select_fit(catalog_item, method_name)
+                                align_table.apply_fit(headerlet_filenames=headerlet_filenames,
+                                                      fit_label=fit_label)
 
                                 # Evaluate the quality of the fit
-                                # Mike's method here with perhaps some code wrap
-                                # FIX: This is just for testing now.
-                                if method_name == 'default':
-                                    is_good_fit = True
+                                is_good_fit, _, _, _, _, _ = align.determine_fit_quality_mvm_interface(align_table.imglist,
+                                                                                                       align_table.filtered_table,
+                                                                                                       more_catalogs,
+                                                                                                       num_cat,
+                                                                                                       alignment_pars,
+                                                                                                       print_fit_parameters=True)
 
                                 # The fit was good...
                                 if is_good_fit:
@@ -410,12 +420,8 @@ class FilterProduct(HAPProduct):
                             log.warning("Not enough reference sources for absolute alignment in any catalog.")
                             raise ValueError
 
-                # Got a good fit...
-                if is_good_fit:
-                    align_table.select_fit(catalog_item, method_name)
-                    align_table.apply_fit(headerlet_filenames=headerlet_filenames,
-                                          fit_label=fit_label)
-                else:
+                # Not able to get a good fit...
+                if not is_good_fit:
                     log.warning("No satisfactory fit found for any catalog.")
                     raise ValueError
 
