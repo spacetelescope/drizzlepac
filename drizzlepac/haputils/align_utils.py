@@ -121,8 +121,9 @@ class AlignmentTable:
         self.alignment_pars.update(alignment_pars['general'])
         self.alignment_pars.update(alignment_pars['generate_source_catalogs'])
         self.alignment_pars.update(alignment_pars['determine_fit_quality'])
+        # Make sure to use the values from "determine_fit_quality" instead of "general"
         for key in self.fit_pars:
-            self.fit_pars[key]['pars'] = alignment_pars['general']
+            self.fit_pars[key]['pars'] = alignment_pars['determine_fit_quality']
 
         self.dqname = dqname
         self.haplist = []
@@ -368,7 +369,7 @@ class AlignmentTable:
 
         fit_label : str
             Name of fit to apply to indicate how the fit was performed in
-            the WCSNAME keyword.  Common options: IMG, REL, SVM.
+            the WCSNAME keyword.  Common options: IMG, REL, SVM, and MVM.
 
         """
         if not self.selected_fit:

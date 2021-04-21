@@ -21,6 +21,7 @@ from stsci.tools import logutil
 from stwcs import updatewcs
 import numpy as np
 
+from .. import align
 from .. import astrodrizzle
 from .. import wcs_functions
 from . import align_utils
@@ -271,6 +272,9 @@ class FilterProduct(HAPProduct):
         self.point_cat_filename = self.product_basename + "_point-cat.ecsv"
         self.segment_cat_filename = self.product_basename + "_segment-cat.ecsv"
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
+
+        # This attribute is reset in align_to_gaia to distinguish different catalogs
+        # which may be created
         self.refname = self.product_basename + "_ref_cat.ecsv"
 
         # Define HAPLEVEL value for this product
@@ -298,30 +302,39 @@ class FilterProduct(HAPProduct):
         """
         self.edp_list.append(edp)
 
-    def align_to_gaia(self, catalog_name='GAIAedr3', headerlet_filenames=None, output=True,
-                      fit_label='EVM', align_table=None, fitgeom='rscale'):
+    def align_to_gaia(self, catalog_list=[], headerlet_filenames=None, output=True,
+                      fit_label='SVM', align_table=None, fitgeom='rscale'):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment
            routine.
         """
-        log.info('Starting alignment to absolute astrometric reference frame {}'.format(catalog_name))
         alignment_pars = self.configobj_pars.get_pars('alignment')
-
-        # Only perform the relative alignment
-        method_name = 'relative'
 
         exposure_filenames = []
         headerlet_filenames = {}
         align_table = None
         crclean = []
 
-        try:
-            if self.edp_list:
-                for edp in self.edp_list:
-                    exposure_filenames.append(edp.full_filename)
-                    headerlet_filenames[edp.full_filename] = edp.headerlet_filename
-                    crclean.append(edp.crclean)
+        # If no catalog list has been provided, use the list defined in the configuration file
+        if not catalog_list:
+            mosaic_catalog_list = alignment_pars['run_align']['mosaic_catalog_list']
+        else:
+            mosaic_catalog_list = catalog_list
+        num_cat = len(mosaic_catalog_list)
 
+        # Fitting methods
+        mosaic_method_list = alignment_pars['run_align']['mosaic_fit_list']
+
+        for edp in self.edp_list:
+            exposure_filenames.append(edp.full_filename)
+            headerlet_filenames[edp.full_filename] = edp.headerlet_filename
+            crclean.append(edp.crclean)
+
+        try:
+            # Proceed only if there is data to process
+            if self.edp_list:
+
+                # If necessary, generate the alignment table only once
                 if align_table is None:
                     align_table = align_utils.AlignmentTable(exposure_filenames,
                                                              log_level=self.log_level,
@@ -329,43 +342,87 @@ class FilterProduct(HAPProduct):
 
                     align_table.find_alignment_sources(output=output, crclean=crclean)
                     align_table.configure_fit()
-                log.debug('Creating reference catalog {}'.format(self.refname))
-                ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
-                                                                 catalog=catalog_name,
-                                                                 output=self.refname,
-                                                                 full_catalog=True)
-                if 'pmra_error' in ref_catalog:
-                    ref_weight = 1. / np.sqrt(ref_catalog['pmra_error'] ** 2 + ref_catalog['pmdec_error'] ** 2)
-                    ref_weight = np.nan_to_num(ref_weight, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
-                else:
-                    ref_weight = np.ones_like(ref_catalog['RA'])
-                ref_catalog.add_column(ref_weight, name='weight')
 
-                log.debug("Abbreviated reference catalog displayed below\n{}".format(ref_catalog))
-                align_table.reference_catalogs[self.refname] = ref_catalog
-                if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
-                    fit_again = False
-                    try:
-                        align_table.perform_fit(method_name, catalog_name, ref_catalog,
-                                                fitgeom=fitgeom)
-                    except Exception:
-                        log.info('Problem with initial fit...')
-                        fit_again = True
+                is_good_fit = False
+                for index_cat, catalog_item in enumerate(mosaic_catalog_list):
 
-                    # If there was a problem with the first fit...
-                    if fit_again:
-                        log.info("Trying 'DEFAULT' fit to {} instead.".format(catalog_name))
-                        # Try one more time with slightly different cross-matching algorithm
-                        method_name = 'default'
-                        align_table.configure_fit()
-                        align_table.perform_fit(method_name, catalog_name, ref_catalog,
-                                                fitgeom=fitgeom)
+                    more_catalogs = True
+                    if (index_cat + 1) == num_cat:
+                        more_catalogs = False 
 
-                    align_table.select_fit(catalog_name, method_name)
-                    align_table.apply_fit(headerlet_filenames=headerlet_filenames,
-                                          fit_label=fit_label)
-                else:
-                    log.warning("Not enough reference sources for absolute alignment...")
+                    # Override the default self.refname as it really needs to be
+                    # catalog-specific to be useful
+                    self.refname = self.product_basename + "_" + catalog_item + "_ref_cat.ecsv"
+             
+                    log.info('Starting alignment to absolute astrometric reference frame {}.'.format(catalog_item))
+                    log.debug('Creating reference catalog {}'.format(self.refname))
+                    ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
+                                                                     catalog=catalog_item,
+                                                                     output=self.refname,
+                                                                     full_catalog=True)
+                    if 'pmra_error' in ref_catalog:
+                        ref_weight = 1. / np.sqrt(ref_catalog['pmra_error'] ** 2 + ref_catalog['pmdec_error'] ** 2)
+                        ref_weight = np.nan_to_num(ref_weight, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
+                    else:
+                        ref_weight = np.ones_like(ref_catalog['RA'])
+                    ref_catalog.add_column(ref_weight, name='weight')
+
+                    log.debug("Abbreviated reference catalog displayed below\n{}".format(ref_catalog))
+                    align_table.reference_catalogs[self.refname] = ref_catalog
+
+                    # Need to satisfy the minimum criterion of found sources
+                    if len(ref_catalog) > align_utils.MIN_CATALOG_THRESHOLD:
+
+                        for method_name in mosaic_method_list:
+                            try:
+                                log.info("Trying '{}' fit to {}.".format(method_name, catalog_item))
+                                align_table.imglist = align_table.perform_fit(method_name, catalog_item, ref_catalog,
+                                                                              fitgeom=fitgeom)
+
+                                align_table.select_fit(catalog_item, method_name)
+                                align_table.apply_fit(headerlet_filenames=headerlet_filenames,
+                                                      fit_label=fit_label)
+
+                                # Evaluate the quality of the fit
+                                is_good_fit, _, _, _, _, _ = align.determine_fit_quality_mvm_interface(align_table.imglist,
+                                                                                                       align_table.filtered_table,
+                                                                                                       more_catalogs,
+                                                                                                       num_cat,
+                                                                                                       alignment_pars,
+                                                                                                       print_fit_parameters=True)
+
+                                # The fit was good...
+                                if is_good_fit:
+                                    log.info("Fit done with method '{}' and catalog {} was satisfactory.".format(method_name, catalog_item))
+                                    log.info('Summary of good stuff here')
+
+                                    # Break out of "fit" for loop
+                                    break
+
+                                # The fit was not good
+                                else:
+                                    log.info("Fit with done with method '{}' was not satisfactory.".format(method_name))
+
+                            except Exception:
+                                log.info("Problem with '{}' fit ...".format(method_name))
+
+                            # Try again with a slightly different cross-matching algorithm
+                            align_table.configure_fit()
+
+                        # Break out of "catalog" for loop
+                        if is_good_fit:
+                            break
+                    else:
+                        log.warning("Not enough reference sources for absolute alignment using catalog {}.".format(catalog_item))
+                        if index_cat + 1 < num_cat:
+                            log.info("Proceeding to try the next catalog.")
+                        else:
+                            log.warning("Not enough reference sources for absolute alignment in any catalog.")
+                            raise ValueError
+
+                # Not able to get a good fit...
+                if not is_good_fit:
+                    log.warning("No satisfactory fit found for any catalog.")
                     raise ValueError
 
         except Exception:
@@ -876,7 +933,7 @@ class SkyCellProduct(HAPProduct):
 
         except Exception:
             # Report a problem with the alignment
-            log.warning("EXCEPTION encountered in align_to_gaia for the FilteredProduct.\n")
+            log.warning("EXCEPTION encountered in align_to_gaia for the SkyCellProduct.\n")
             log.warning("No correction to absolute astrometric frame applied.\n")
             log.warning("Proceeding with previous best solution.\n")
 
