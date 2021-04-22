@@ -359,7 +359,8 @@ class FilterProduct(HAPProduct):
                     ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
                                                                      catalog=catalog_item,
                                                                      output=self.refname,
-                                                                     full_catalog=True)
+                                                                     full_catalog=True,
+                                                                     log_level=self.log_level)
                     if ref_catalog.meta['converted'] and ref_catalog['RA_error'][0] != np.nan:
                         ref_weight = 1. / np.sqrt(ref_catalog['RA_error'] ** 2 + ref_catalog['DEC_error'] ** 2)
                         ref_weight = np.nan_to_num(ref_weight, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
@@ -917,7 +918,8 @@ class SkyCellProduct(HAPProduct):
                 ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
                                                                  catalog=catalog_name,
                                                                  output=self.refname,
-                                                                 gaia_only=False)
+                                                                 gaia_only=False,
+                                                                 log_level=self.log_level)
 
                 log.debug("Abbreviated reference catalog displayed below\n{}".format(ref_catalog))
                 align_table.reference_catalogs[self.refname] = ref_catalog
