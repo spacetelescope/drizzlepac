@@ -111,7 +111,7 @@ MAX_AREA_LIMIT = 1964
 # `create_astrometric_catalog`.
 #
 SUPPORTED_CATALOGS = {
-    'GAIAeDR3': {'RA': 'ra', 'RA_error': 'ra_error',
+    'GAIAEDR3': {'RA': 'ra', 'RA_error': 'ra_error',
                  'DEC': 'dec', 'DEC_error': 'dec_error',
                  'pmra': 'pmra', 'pmra_error': 'pmra_error',
                  'pmdec': 'pmdec', 'pmdec_error': 'pmdec_error',
@@ -136,7 +136,7 @@ SUPPORTED_CATALOGS = {
                'pmra': '', 'pmra_error': '',
                'pmdec': '', 'pmdec_error': '',
                'mag': 'mag', 'objID': 'objid', 'epoch': 'epochMean'},
-    'PS1best': {'RA': 'ra', 'RA_error': 'raMeanErr',
+    'PS1BEST': {'RA': 'ra', 'RA_error': 'raMeanErr',
                'DEC': 'dec', 'DEC_error': 'decMeanErr',
                'pmra': '', 'pmra_error': '',
                'pmdec': '', 'pmdec_error': '',
@@ -167,7 +167,7 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
                                gaia_only=False, table_format="ascii.ecsv",
                                existing_wcs=None, num_sources=None,
                                use_footprint=False, full_catalog=False,
-                               user_epoch='match', debug=False):
+                               user_epoch='match', log_level=logutil.logging.NOTSET):
     """Create an astrometric catalog that covers the inputs' field-of-view.
 
     This function will return a table containing sources derived from the
@@ -196,9 +196,9 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
 
     catalog : str, optional
         Name of catalog to extract astrometric positions for sources in the
-        input images' field-of-view. Default: GAIAedr3. Only those catalogs
+        input images' field-of-view. Default: GAIAeDR3. Only those catalogs
         listed in `SUPPORTED_CATALOGS` will be returned with standardized
-        column names.
+        column names.  Catalog names are case-insensitive.
 
     output : str, optional
         Filename to give to the astrometric catalog read in from the master
@@ -239,6 +239,9 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
         Astropy Table object of the catalog
 
     """
+    # Initialize logging for this user-callable function
+    log.setLevel(log_level)
+
     inputs, _ = parseinput.parseinput(inputs)
 
     # start by creating a composite field-of-view for all inputs
@@ -268,9 +271,9 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
 
     # perform query for this field-of-view
     if use_footprint:
-        ref_table = get_catalog_from_footprint(footprint, epoch=epoch, catalog=catalog, debug=debug)
+        ref_table = get_catalog_from_footprint(footprint, epoch=epoch, catalog=catalog)
     else:
-        ref_table = get_catalog(ra, dec, sr=radius, epoch=epoch, catalog=catalog, debug=debug)
+        ref_table = get_catalog(ra, dec, sr=radius, epoch=epoch, catalog=catalog)
 
     if not ref_table:
         return ref_table
@@ -281,7 +284,7 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
     ref_table.meta['epoch'] = epoch
 
     # Convert common set of columns into standardized column names
-    convert_astrometric_table(ref_table, catalog, debug=debug)
+    convert_astrometric_table(ref_table, catalog)
 
     if not full_catalog:
         ref_table = ref_table['RA', 'DEC', 'mag', 'objID']
@@ -308,19 +311,16 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
     return ref_table
 
 
-def convert_astrometric_table(table, catalog_name, debug=False):
+def convert_astrometric_table(table, catalog_name):
     """Convert a table with varying column names into a more standardized table"""
-    if catalog_name in SUPPORTED_CATALOGS:
-        cat_dict = SUPPORTED_CATALOGS[catalog_name]
+    cat_name = catalog_name.upper()
+    if cat_name in SUPPORTED_CATALOGS:
+        cat_dict = SUPPORTED_CATALOGS[cat_name]
         table.meta['converted'] = True
-        if debug:
-            log.debug('Converting supported catalog: {}'.format(catalog_name))
-            print('Converting supported catalog: {}'.format(catalog_name))
+        log.debug('Converting supported catalog: {}'.format(catalog_name))
     else:
         table.meta['converted'] = False
-        if debug:
-            log.debug('NOT converting catalog: {}'.format(catalog_name))
-            print('NOT converting catalog: {}'.format(catalog_name))
+        log.debug('NOT converting catalog: {}'.format(catalog_name))
         return table
 
     # Now for each column specified in this dict,
@@ -393,7 +393,7 @@ def build_reference_wcs(inputs, sciname='sci'):
     return outwcs
 
 
-def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241', debug=False):
+def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
     """ Extract reference catalog from VO web service.
 
     Queries the catalog available at the ``SERVICELOCATION`` specified
@@ -437,8 +437,6 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241', debug=False):
 
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
     log.debug("Getting catalog using: \n    {}".format(serviceUrl))
-    if debug:
-        print("Getting catalog using: \n    {}".format(serviceUrl))
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
     rstr = r_contents.split('\r\n')
@@ -457,7 +455,7 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241', debug=False):
     return r_csv
 
 
-def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241', debug=False):
+def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
     """ Extract catalog from VO web service based on the specified footprint
 
     Queries the catalog available at the ``SERVICELOCATION`` specified
@@ -497,8 +495,7 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241', debug=Fa
         spec += epoch_str.format(epoch)
 
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
-    if debug:
-        print("Getting catalog using: \n    {}".format(serviceUrl))
+    log.debug("Getting catalog using: \n    {}".format(serviceUrl))
 
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
@@ -662,7 +659,7 @@ def compute_2d_background(imgarr, box_size, win_size,
 
 def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
                       good_fwhm=[1.0, 4.0], num_fwhm=30,
-                      isolation_size=11, saturation_limit=70000.):
+                      isolation_size=11, saturation_limit=70000., log_level=logutil.logging.NOTSET):
     """Build kernel for use in source detection based on image PSF
     This algorithm looks for an isolated point-source that is non-saturated to use as a template
     for the source detection kernel.  Failing to find any suitable sources, it will return a
@@ -703,6 +700,9 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     the value less than the minimum flux of all those pixels, or maximum pixel value in the
     image if non-were flagged as saturated (in the DQ array).
     """
+    # Initialize logging for this user-callable function
+    log.setLevel(log_level)
+
     # Try to use PSF derived from image as detection kernel
     # Kernel must be derived from well-isolated sources not near the edge of the image
     kern_img = imgarr.copy()
@@ -836,8 +836,10 @@ def find_fwhm(psf, default_fwhm):
 
 def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
                           nbright=1000,
-                          threshold=200.0, sigma=3.0, source_box=7):
+                          threshold=200.0, sigma=3.0, source_box=7, log_level=logutil.logging.NOTSET):
     """Use photutils to replicate the IRAF point-source catalogs"""
+    # Initialize logging for this user-callable function
+    log.setLevel(log_level)
 
     # Detect threshold using a relatively fast method and
     # subtract off that background.
@@ -871,7 +873,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     segment_threshold=None, dao_threshold=None,
                     dao_nsigma=3.0, source_box=7,
                     classify=True, centering_mode="starfind", nlargest=None,
-                    outroot=None, plot=False, vmax=None, deblend=False):
+                    outroot=None, plot=False, vmax=None, deblend=False, log_level=logutil.logging.NOTSET):
     """Use photutils to find sources in image based on segmentation.
 
     Parameters
@@ -915,6 +917,9 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         Specify whether or not to apply photutils deblending algorithm when
         evaluating each of the identified segments (sources) from the chip.
     """
+    # Initialize logging for this user-callable function
+    log.setLevel(log_level)
+
     # apply any provided dqmask for segmentation only
     imgarr = img.copy()
     if dqmask is not None:
