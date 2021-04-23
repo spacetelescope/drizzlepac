@@ -30,8 +30,6 @@ from . import align_utils
 from . import astrometric_utils as amutils
 from . import cell_utils
 
-import pdb
-
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
@@ -238,7 +236,6 @@ class HAPProduct:
                         # If there are not enough references sources for the specified fitgeom,
                         # downgrade the fitgeom until a valid one is found.  Also, if the fit done
                         # with the fitgeom was unsatisfactory, downgrade if possible and try again.
-                        # pdb.set_trace()
                         while num_ref_sources < mosaic_fitgeom_list[mosaic_fitgeom_index][1]:
                             log.warning("Not enough reference sources for alignment using catalog '{}' with fit method '{}' and fit geometry '{}'.".format(catalog_item, method_name, mosaic_fitgeom))
                             mosaic_fitgeom_index -= 1
@@ -259,7 +256,6 @@ class HAPProduct:
 
                                 log.info("Trying '{}' wth method '{}' using fit geometry '{}'.".
                                          format(catalog_item, method_name, mosaic_fitgeom))
-                                # pdb.set_trace()
                                 align_table.imglist = align_table.perform_fit(method_name, catalog_item, ref_catalog,
                                                                               fitgeom=mosaic_fitgeom)
 
@@ -504,7 +500,6 @@ class FilterProduct(HAPProduct):
         self.edp_list = []
         self.regions_dict = {}
 
-        # log.debug("Filter object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
         log.info("Filter object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
 
     def find_member(self, name):
