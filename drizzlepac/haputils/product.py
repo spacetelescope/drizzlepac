@@ -192,7 +192,7 @@ class HAPProduct:
                     # catalog-specific to be useful
                     self.refname = self.product_basename + "_" + catalog_item + "_ref_cat.ecsv"
 
-                    log.info('Starting alignment to absolute astrometric reference frame {}.'.format(catalog_item))
+                    log.info("Starting alignment to absolute astrometric reference frame '{}'.".format(catalog_item))
                     log.debug('Creating reference catalog {}'.format(self.refname))
                     ref_catalog = amutils.create_astrometric_catalog(align_table.process_list,
                                                                      catalog=catalog_item,
@@ -214,7 +214,7 @@ class HAPProduct:
                     # Will need to satisfy the minimum criterion of found sources for the proposed
                     # fit geometry, or the fit geometry must be downgraded
                     num_ref_sources = len(ref_catalog)
-                    log.info("Number of sources for reference catalog {} is {}.".format(catalog_item, num_ref_sources))
+                    log.info("Number of sources for reference catalog '{}' is {}.".format(catalog_item, num_ref_sources))
 
                     # Loop for specified fit methods
                     for index_method, full_method_name in enumerate(mosaic_method_list):
@@ -241,7 +241,7 @@ class HAPProduct:
                         # pdb.set_trace()
                         while num_ref_sources < mosaic_fitgeom_list[mosaic_fitgeom_index][1]:
                             log.warning("Not enough reference sources for alignment using catalog '{}' with fit method '{}' and fit geometry '{}'.".format(catalog_item, method_name, mosaic_fitgeom))
-                            mosaic_fitgeom_index = -1
+                            mosaic_fitgeom_index -= 1
                             if mosaic_fitgeom_index < 0:
                                 log.warning("No further fit geometries to try. Proceeding to try another fit method.")
                                 break
@@ -262,10 +262,6 @@ class HAPProduct:
                                 # pdb.set_trace()
                                 align_table.imglist = align_table.perform_fit(method_name, catalog_item, ref_catalog,
                                                                               fitgeom=mosaic_fitgeom)
-
-                                align_table.select_fit(catalog_item, method_name)
-                                align_table.apply_fit(headerlet_filenames=headerlet_filenames,
-                                                      fit_label=fit_label)
 
                                 # Evaluate the quality of the fit
                                 is_good_fit, _, _, _, _, _ = align.determine_fit_quality_mvm_interface(align_table.imglist,
@@ -314,11 +310,15 @@ class HAPProduct:
                         if index_cat + 1 < num_cat:
                             log.info("Proceeding to try the next catalog.")
                         else:
-                            log.warning("Not enough reference sources for absolute alignment in any catalog.")
+                            log.warning("Not enough reference sources for absolute alignment in any available catalog.")
                             break
 
-                # Not able to get a good fit...
-                if not is_good_fit:
+                # Got a good fit...
+                if is_good_fit:
+                    align_table.select_fit(catalog_item, method_name)
+                    align_table.apply_fit(headerlet_filenames=headerlet_filenames,
+                                          fit_label=fit_label)
+                else:
                     log.warning("No satisfactory fit found for any catalog.")
                     raise ValueError
 
