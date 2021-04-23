@@ -129,7 +129,7 @@ class HAPProduct:
 
         return meta_wcs
 
-    def align_to_gaia(self, catalog_list=[], headerlet_filenames=None, output=True,
+    def align_to_gaia(self, catalog_list=[], output=True,
                       fit_label='SVM', align_table=None, fitgeom=''):
         """Extract the flt/flc filenames from the exposure product list, as
            well as the corresponding headerlet filenames to use legacy alignment
