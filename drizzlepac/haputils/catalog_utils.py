@@ -936,7 +936,7 @@ class HAPPointCatalog(HAPCatalogBase):
                     # Initial test data: ictj65
                     try:
                         # Subtract the detection threshold image so that detection is anything > 0
-                        region -= - (reg_rms * self.param_dict['nsigma'])
+                        region -= (reg_rms * self.param_dict['nsigma'])
                         # insure no negative values for deconvolution
                         region = np.clip(region, 0., region.max())
                         user_peaks, source_fwhm = decutils.find_point_sources(self.image.imgname,
