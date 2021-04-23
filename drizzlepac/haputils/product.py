@@ -259,6 +259,10 @@ class HAPProduct:
                                 align_table.imglist = align_table.perform_fit(method_name, catalog_item, ref_catalog,
                                                                               fitgeom=mosaic_fitgeom)
 
+                                # Define comparison for min cross-matches based on fitgeom used
+                                alignment_pars['determine_fit_quality']['min_xmatches'] = \
+                                    alignment_pars['run_align']['mosaic_fitgeom_list'][mosaic_fitgeom]
+
                                 # Evaluate the quality of the fit
                                 is_good_fit, _, _, _, _, _ = align.determine_fit_quality_mvm_interface(align_table.imglist,
                                                                                                        align_table.filtered_table,
