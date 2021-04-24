@@ -740,6 +740,9 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
         radial_offset = math.sqrt(
             float(item.meta['fit_info']['shift'][0])**2 +
             float(item.meta['fit_info']['shift'][1])**2) * item.wcs.pscale  # radial offset in arssec
+        # Without the '+2', this will always fail for xmatches < 3 regardless of how small
+        # the offset is:  2*0.36 == 0.72 vs 0.8 + 0 [perfect alignment]
+        # Adding 2 allows low offset solutions with only 1 or 2 sources to pass this check.
         if float(num_xmatches + 2) * 0.36 > 0.8 + (radial_offset / 10.0)**8:
             radial_offset_check = True
 
