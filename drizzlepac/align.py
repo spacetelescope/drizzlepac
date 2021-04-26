@@ -286,6 +286,9 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
     alignment_pars.update(apars)
     alignment_pars['MAX_SOURCES_PER_CHIP'] = num_sources
 
+    # define min num of acceptable cross-matches for a good fit
+    apars['determine_fit_quality']['min_xmatches'] = apars['determine_fit_quality']['MIN_FIT_MATCHES']
+
     try:
         # Instantiate AlignmentTable class with these input files
         alignment_table = align_utils.AlignmentTable(imglist, log_level=loglevel,
@@ -711,7 +714,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
         fit_status_dict[dict_key]['max_rms'] = max_rms_val
         fit_status_dict[dict_key]['num_matches'] = num_xmatches
 
-        if num_xmatches < align_pars['determine_fit_quality']['MIN_CROSS_MATCHES']:
+        if num_xmatches < align_pars['determine_fit_quality']['min_xmatches']:
             if catalogs_remaining:
                 log.warning(
                     "Not enough cross matches found between astrometric"
@@ -729,18 +732,23 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
 
         # Execute checks
         nmatches_check = False
-        if num_xmatches > 4 or (num_xmatches > 2 and fit_rms_val > 0.5):
+        if num_xmatches >= align_pars['determine_fit_quality']['min_xmatches'] or \
+                (num_xmatches >= 2 and fit_rms_val > 0.5):
             nmatches_check = True
 
         radial_offset_check = False
         radial_offset = math.sqrt(
             float(item.meta['fit_info']['shift'][0])**2 +
-            float(item.meta['fit_info']['shift'][0])**2) * item.wcs.pscale  # radial offset in arssec
-        if float(num_xmatches) * 0.36 > 0.8 + (radial_offset / 10.0)**8:
+            float(item.meta['fit_info']['shift'][1])**2) * item.wcs.pscale  # radial offset in arssec
+        # Without the '+2', this will always fail for xmatches < 3 regardless of how small
+        # the offset is:  2*0.36 == 0.72 vs 0.8 + 0 [perfect alignment]
+        # Adding 2 allows low offset solutions with only 1 or 2 sources to pass this check.
+        if float(num_xmatches + 2) * 0.36 > 0.8 + (radial_offset / 10.0)**8:
             radial_offset_check = True
 
         large_rms_check = True
-        if fit_rms_val > 150. or max_rms_val > 150.:
+        max_fit_limit = align_pars['determine_fit_quality']['MAX_FIT_LIMIT']
+        if fit_rms_val > max_fit_limit or max_rms_val > max_fit_limit:
             large_rms_check = False
 
         # fitRmsCheck = False
