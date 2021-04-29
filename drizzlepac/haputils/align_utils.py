@@ -10,6 +10,7 @@ from collections import OrderedDict
 import numpy as np
 from scipy import ndimage
 
+import astropy
 from astropy.io import fits
 from astropy.table import Table
 from astropy.nddata.bitmask import bitfield_to_boolean_mask
@@ -20,6 +21,7 @@ from photutils import background
 from photutils.background import Background2D
 from photutils.utils import NoDetectionsWarning
 
+import stwcs
 from stwcs.wcsutil import HSTWCS
 from stwcs.wcsutil import headerlet
 
@@ -1067,6 +1069,33 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
         image_name = item.meta['filename']
         chipnum = item.meta['chip']
         hdulist = fits.open(image_name, mode='update')
+        # start by insuring that the current version of STWCS and Astropy are recorded
+        # in the header, not the versions used to create the previous WCS
+        # This logic comes from STWCS in order to be compatible with STWCS in
+        # terms of where these keywords should be found in the PRIMARY header.
+        upwcsver = stwcs.__version__
+        pywcsver = astropy.__version__
+
+        log.info('Updating PRIMARY header with:')
+        log.info('    UPWCSVER = {}'.format(upwcsver))
+        log.info('    PYWCSVER = {}'.format(pywcsver))
+        if 'HISTORY' in hdulist[0].header:
+            after_kw = None
+            before_kw = 'HISTORY'
+        elif 'ASN_MTYP' in hdulist[0].header:
+            after_kw = 'ASN_MTYP'
+            before_kw = None
+        else:
+            after_kw = hdulist[0].header.cards[-1][0]
+            before_kw = None
+
+        hdulist[0].header.set('UPWCSVER', value=upwcsver,
+                        comment="Version of STWCS used to updated the WCS",
+                        after=after_kw, before=before_kw)
+        hdulist[0].header.set('PYWCSVER', value=pywcsver,
+                        comment="Version of Astropy used to update the WCS",
+                        after='UPWCSVER')
+
         if chipnum == 1:
             chipctr = 1
             num_sci_ext = amutils.countExtn(hdulist)
