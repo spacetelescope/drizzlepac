@@ -450,6 +450,10 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
         r_contents = rawcat.content.decode()  # convert from bytes to a String
         rstr = r_contents.split('\r\n')
 
+    # If we still have an error returned by the web-service, report the exact error
+    if rstr[0].startswith('Error'):
+        log.warning("Astrometric catalog generation FAILED with: \n{}".format(rstr))
+
     del rstr[0]
     r_csv = Table.read(rstr, format='ascii.csv')
     return r_csv
@@ -490,9 +494,9 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
     footprint_string = ""
     for item in footprint:
         footprint_string += "%20{}%20{}".format(item[0],item[1])
-    spec = spec_str.format(footprint_string, fmt, catalog)
-    if epoch:
-        spec += epoch_str.format(epoch)
+
+    base_spec = spec_str.format(footprint_string, fmt, catalog)
+    spec = base_spec + epoch_str.format(epoch) if epoch else base_spec
 
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
     log.debug("Getting catalog using: \n    {}".format(serviceUrl))
@@ -500,6 +504,20 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
     rstr = r_contents.split('\r\n')
+
+    # Check for any error conditions, and try without the epoch in case that was the problem
+    if rstr[0].startswith('Error'):
+        # Try again without EPOCH
+        serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, base_spec)
+        log.debug("Getting catalog using: \n    {}".format(serviceUrl))
+        rawcat = requests.get(serviceUrl, headers=headers)
+        r_contents = rawcat.content.decode()  # convert from bytes to a String
+        rstr = r_contents.split('\r\n')
+
+    # If we still have an error returned by the web-service, report the exact error
+    if rstr[0].startswith('Error'):
+        log.warning("Astrometric catalog generation FAILED with: \n{}".format(rstr))
+
     # remove initial line describing the number of sources returned
     # CRITICAL to proper interpretation of CSV data
     del rstr[0]
