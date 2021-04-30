@@ -1090,7 +1090,7 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
             before_kw = None
 
         hdulist[0].header.set('UPWCSVER', value=upwcsver,
-                        comment="Version of STWCS used to updated the WCS",
+                        comment="Version of STWCS used to update the WCS",
                         after=after_kw, before=before_kw)
         hdulist[0].header.set('PYWCSVER', value=pywcsver,
                         comment="Version of Astropy used to update the WCS",
