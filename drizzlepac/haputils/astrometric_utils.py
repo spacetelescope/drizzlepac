@@ -19,6 +19,8 @@ import requests
 import inspect
 import sys
 from distutils.version import LooseVersion
+from datetime import datetime
+import time
 
 import numpy as np
 import scipy.stats as st
@@ -1772,6 +1774,8 @@ def build_wcscat(image, group_id, source_catalog):
         log.info("Wrong type of input, {}, for build_wcscat...".format(type(image)))
         raise ValueError
 
+    # interpret date for exposure
+    epoch = get_epoch(hdulist)
     wcs_catalogs = []
     numsci = countExtn(hdulist)
     for chip in range(1, numsci + 1):
@@ -1801,6 +1805,7 @@ def build_wcscat(image, group_id, source_catalog):
                 'filename': fname,
                 'rootname': "_".join(fname.split("_")[:-1]),
                 'catalog': imcat,
+                'epoch': epoch,
                 'name': fname
             }
         )
@@ -1811,6 +1816,30 @@ def build_wcscat(image, group_id, source_catalog):
         hdulist.close()
 
     return wcs_catalogs
+
+
+def get_epoch(hdulist):
+    """Interpret observation date as epoch"""
+    d = hdulist[0].header['date-obs']
+    dt = datetime.strptime(d, '%Y-%m-%d')
+
+    return decimal_year(dt)
+
+
+def decimal_year(date):
+    def since_epoch(date): # returns seconds since epoch
+        return time.mktime(date.timetuple())
+    se = since_epoch
+
+    year = date.year
+    start_of_this_year = datetime(year=year, month=1, day=1)
+    start_of_next_year = datetime(year=year+1, month=1, day=1)
+
+    year_elapsed = se(date) - se(start_of_this_year)
+    year_elapsed = se(start_of_next_year) - se(start_of_this_year)
+    fraction = year_elapsed/year_elapsed
+
+    return date.year + fraction
 
 
 # -------------------------------------------------------------------------------------------------------------
