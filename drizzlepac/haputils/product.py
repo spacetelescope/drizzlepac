@@ -237,7 +237,7 @@ class HAPProduct:
                         # downgrade the fitgeom until a valid one is found.  Also, if the fit done
                         # with the fitgeom was unsatisfactory, downgrade if possible and try again.
                         while num_ref_sources < mosaic_fitgeom_list[mosaic_fitgeom_index][1]:
-                            log.warning("Not enough reference sources for alignment using catalog '{}' with fit method '{}' and fit geometry '{}'.".format(catalog_item, method_name, mosaic_fitgeom))
+                            log.warning("Not enough reference sources for alignment using catalog '{}' with fit method '{}' and fit geometry '{}'.".format(catalog_item, method_name, mosaic_fitgeom_list[mosaic_fitgeom_index][0]))
                             mosaic_fitgeom_index -= 1
                             if mosaic_fitgeom_index < 0:
                                 log.warning("No further fit geometries to try. Proceeding to try another fit method.")
