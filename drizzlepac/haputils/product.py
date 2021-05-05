@@ -154,6 +154,9 @@ class HAPProduct:
 
         # Fitting methods
         mosaic_method_list = alignment_pars['run_align']['mosaic_fit_list']
+        if len(self.edp_list) == 1:
+            # Remove 'match_relative_fit' (first entry) since there is only 1 image to align
+            del mosaic_method_list[0]
         num_method = len(mosaic_method_list)
 
         # Fit geometry methods
