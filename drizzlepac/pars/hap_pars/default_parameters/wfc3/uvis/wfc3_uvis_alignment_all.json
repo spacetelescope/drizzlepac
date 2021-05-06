@@ -56,8 +56,8 @@
     "match_2dhist_fit":
       {
         "fitgeom": "rscale",
-        "searchrad": 100,
-        "separation": 0.1,
+        "searchrad": 400,
+        "separation": 4.0,
         "tolerance": 2,
         "use2dhist": true
       },
