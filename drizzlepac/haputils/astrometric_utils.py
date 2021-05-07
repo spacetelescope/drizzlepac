@@ -1836,8 +1836,8 @@ def decimal_year(date):
     start_of_next_year = datetime(year=year+1, month=1, day=1)
 
     year_elapsed = se(date) - se(start_of_this_year)
-    year_elapsed = se(start_of_next_year) - se(start_of_this_year)
-    fraction = year_elapsed/year_elapsed
+    full_year = se(start_of_next_year) - se(start_of_this_year)
+    fraction = year_elapsed/full_year
 
     return date.year + fraction
 
