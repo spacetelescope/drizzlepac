@@ -272,7 +272,8 @@ class HAPProduct:
                                                                                                        more_catalogs,
                                                                                                        num_cat,
                                                                                                        alignment_pars,
-                                                                                                       print_fit_parameters=True)
+                                                                                                       print_fit_parameters=True,
+                                                                                                       loglevel=self.log_level)
 
                                 # Ensure the original parameters stay intact for the iterations
                                 # as the perform_fit() modifies the fitgeom
@@ -294,6 +295,7 @@ class HAPProduct:
                             except Exception:
                                 log.info("Problem with fit done for catalog '{}' with method '{}' using fit geometry '{}'.".
                                          format(catalog_item, method_name, mosaic_fitgeom))
+                                traceback.print_exc()
 
                             # Try again with a different fit geometry algorithm
                             mosaic_fitgeom_index -= 1

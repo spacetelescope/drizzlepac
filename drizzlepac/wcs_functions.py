@@ -121,12 +121,12 @@ class LinearMap:
 
 
 # Stand-alone functions for WCS handling
-def get_hstwcs(filename, hdulist, extnum):
+def get_hstwcs(filename, extnum):
     """ Return the HSTWCS object for a given chip. """
-    hdrwcs = wcsutil.HSTWCS(hdulist, ext=extnum)
+    hdrwcs = wcsutil.HSTWCS(filename, ext=extnum)
     hdrwcs.filename = filename
-    hdrwcs.expname = hdulist[extnum].header['expname']
-    hdrwcs.extver = hdulist[extnum].header['extver']
+    hdrwcs.expname = pyfits.getval(filename, 'expname', ext=extnum)
+    hdrwcs.extver = pyfits.getval(filename, 'extver', ext=extnum)
 
     return hdrwcs
 
@@ -1070,8 +1070,7 @@ def make_mosaic_wcs(filenames, rot=None, scale=None):
     # Compile list of WCSs for all chips from all input filenames
     hstwcs_list = []
     for f in filenames:
-        with pyfits.open(f) as hdulist:
-            hstwcs_list.extend([get_hstwcs(f, hdulist, extnum) for extnum in get_extns(f)])
+        hstwcs_list.extend([get_hstwcs(f, extnum) for extnum in get_extns(f)])
     # Combine them into a single mosaic WCS
     output_wcs = utils.output_wcs(hstwcs_list, undistort=True)
     output_wcs.wcs.cd = make_perfect_cd(output_wcs)
