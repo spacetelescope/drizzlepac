@@ -1819,27 +1819,27 @@ def build_wcscat(image, group_id, source_catalog):
 
 
 def get_epoch(hdulist):
-    """Interpret observation date as epoch"""
+    """Interpret observation date 'date-obs' as epoch
+
+    Parameters
+    ----------
+    hdulist : `fits.HDUList`
+        Input HDUList object containing the 'date-obs' keyword in
+        the Primary header in 'YYYY-MM-DD' format.
+
+    Returns
+    -------
+    decimal_year : float
+        Floating value for the year of the observation
+
+    """
     d = hdulist[0].header['date-obs']
-    dt = datetime.strptime(d, '%Y-%m-%d')
+    atime = Time(d)
+    return atime.decimalyear
 
-    return decimal_year(dt)
 
-
-def decimal_year(date):
-    def since_epoch(date): # returns seconds since epoch
-        return time.mktime(date.timetuple())
-    se = since_epoch
-
-    year = date.year
-    start_of_this_year = datetime(year=year, month=1, day=1)
-    start_of_next_year = datetime(year=year+1, month=1, day=1)
-
-    year_elapsed = se(date) - se(start_of_this_year)
-    full_year = se(start_of_next_year) - se(start_of_this_year)
-    fraction = year_elapsed/full_year
-
-    return date.year + fraction
+def since_epoch(date): # returns seconds since epoch
+    return time.mktime(date.timetuple())
 
 
 # -------------------------------------------------------------------------------------------------------------
