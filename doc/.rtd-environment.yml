@@ -2,16 +2,16 @@ name: drizzlepac
 channels:
     - defaults
 dependencies:
-    - "python>=3.5"
+    - python
     - setuptools
     - numpy
     - numpydoc
     - scipy
-    - "astropy>=3.1"
+    - astropy
     - graphviz
     - pip:
       - -e ..
-      - "sphinx<=1.8.5"
+      - sphinx
       - sphinx_rtd_theme
       - sphinx_automodapi
       - matplotlib
@@ -27,7 +27,7 @@ dependencies:
       - stsci.imagestats
       - stsci.skypac
       - stsci.stimage
-      - "tweakwcs>=0.4.0"
+      - "tweakwcs>=0.7.0"
       - stregion
       - astroquery
       - photutils
