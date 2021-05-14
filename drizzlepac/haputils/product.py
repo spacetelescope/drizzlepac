@@ -272,7 +272,8 @@ class HAPProduct:
                                                                                                        more_catalogs,
                                                                                                        num_cat,
                                                                                                        alignment_pars,
-                                                                                                       print_fit_parameters=True)
+                                                                                                       print_fit_parameters=True,
+                                                                                                       loglevel=self.log_level)
 
                                 # Ensure the original parameters stay intact for the iterations
                                 # as the perform_fit() modifies the fitgeom

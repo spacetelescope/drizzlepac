@@ -46,7 +46,7 @@ def check_and_get_data(input_list, **pars):
     <https://astroquery.readthedocs.io/en/latest/mast/mast.html>`_
     to retrieve the exposures from the `input_list` that are not found in the current directory.  This
     function calls the simplified interface in
-    `~haputils/astroquery_utils/retrieve_observation`_
+    `~drizzlepac/haputils/astroquery_utils/retrieve_observation`_
     to get the files through AstroQuery.
 
     Parameters
@@ -153,12 +153,13 @@ def check_and_get_data(input_list, **pars):
     log.info("TOTAL INPUT LIST: {}".format(total_input_list))
     return(total_input_list)
 
-# ------------------------------------------------------------------------------------------------------------
 
-def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=False, debug=False, update_hdr_wcs=False, result=None,
-              runfile=None, print_fit_parameters=True, print_git_info=False, output=False,
-              headerlet_filenames=None, fit_label=None,
-              **alignment_pars):
+# ------------------------------------------------------------------------------------------------------------
+def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=False, debug=False,
+                  update_hdr_wcs=False, result=None,
+                  runfile=None, print_fit_parameters=True, print_git_info=False, output=False,
+                  headerlet_filenames=None, fit_label=None,
+                  **alignment_pars):
     """Actual Main calling function.
 
     This function performs `a posteriori` astrometric fits to the images specified in the
@@ -691,6 +692,12 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
     for item in imglist:
         image_name = item.meta['name']
         chip_num = item.meta['chip']
+        fitgeom = item.meta['fit_info']['fitgeom'] if 'fitgeom' in item.meta['fit_info'] else 'rscale'
+
+        log.debug("\n{}\n".format("-"*40))
+        log.debug("FIT being evaluated for {}".format(image_name))
+        log.debug(item.meta['fit_info'])
+        log.debug("\n{}\n".format("-"*40))
 
         # Build fit_status_dict entry
         dict_key = "{},{}".format(image_name, chip_num)
@@ -714,7 +721,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
         fit_status_dict[dict_key]['max_rms'] = max_rms_val
         fit_status_dict[dict_key]['num_matches'] = num_xmatches
 
-        if num_xmatches < align_pars['determine_fit_quality']['min_xmatches']:
+        if num_xmatches < align_pars['run_align']['mosaic_fitgeom_list'][fitgeom]:
             if catalogs_remaining:
                 log.warning(
                     "Not enough cross matches found between astrometric"
@@ -732,7 +739,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
 
         # Execute checks
         nmatches_check = False
-        if num_xmatches >= align_pars['determine_fit_quality']['min_xmatches'] or \
+        if num_xmatches >= align_pars['run_align']['mosaic_fitgeom_list'][fitgeom] or \
                 (num_xmatches >= 2 and fit_rms_val > 0.5):
             nmatches_check = True
 
@@ -862,7 +869,8 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def determine_fit_quality_mvm_interface(imglist, filtered_table, catalogs_remaining, ref_catalog_length, align_pars, print_fit_parameters=True):
+def determine_fit_quality_mvm_interface(imglist, filtered_table, catalogs_remaining, ref_catalog_length,
+                                        align_pars, print_fit_parameters=True, loglevel=logutil.logging.NOTSET):
     """Simple interface to allow MVM code to use determine_fit_quality().
 
     Parameters
@@ -923,6 +931,8 @@ def determine_fit_quality_mvm_interface(imglist, filtered_table, catalogs_remain
             * reason fit is considered 'compromised' (only populated if "compromised" field is "True")
 
     """
+    log.setLevel(loglevel)
+
     # Check if num_ref_catalog is in imglist...if not, add it.
     for ctr in range(0, len(imglist)):
         if 'num_ref_catalog' not in imglist[ctr].meta.keys():
