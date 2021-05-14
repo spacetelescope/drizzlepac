@@ -40,7 +40,7 @@
   "match_relative_fit":
     {
       "fitgeom": "rscale",
-      "searchrad": 75,
+      "searchrad": 125,
       "separation": 4.0,
       "tolerance": 2.0,
       "use2dhist": true
