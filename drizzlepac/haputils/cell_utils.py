@@ -98,10 +98,11 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     #  This will weed out exposures which were not processed by the pipeline
     #  such as those with EXPTIME==0
     for filename in expnames:
-        with fits.open(filename) as fimg:
-            print("Checking {}".format(filename))
-            if 'wcsname' not in fimg[1].header:
-                expnames.remove(filename)
+        fimg = fits.open(filename)
+        print("Checking {}".format(filename))
+        if 'wcsname' not in fimg[1].header:
+            expnames.remove(filename)
+        fimg.close()
     if len(expnames) == 0:
         print("No valid exposures to define sky cells")
         return None

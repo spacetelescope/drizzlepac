@@ -684,7 +684,7 @@ class HAPImage:
             self.catalog_table[chip] = seg_tab
 
         if crclean and log.level < logutil.logging.INFO:
-            self.imghdu.writeto(self.imgname.replace('.fits', '_crmap.fits'))
+            self.imghdu.writeto(self.imgname.replace('.fits', '_crmap.fits'), overwrite=True)
 
         if self.imghdu is not None:
             self.imghdu.close()

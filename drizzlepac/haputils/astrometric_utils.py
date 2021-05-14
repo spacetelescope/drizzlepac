@@ -19,6 +19,8 @@ import requests
 import inspect
 import sys
 from distutils.version import LooseVersion
+from datetime import datetime
+import time
 
 import numpy as np
 import scipy.stats as st
@@ -1772,6 +1774,8 @@ def build_wcscat(image, group_id, source_catalog):
         log.info("Wrong type of input, {}, for build_wcscat...".format(type(image)))
         raise ValueError
 
+    # interpret date for exposure
+    epoch = get_epoch(hdulist)
     wcs_catalogs = []
     numsci = countExtn(hdulist)
     for chip in range(1, numsci + 1):
@@ -1801,6 +1805,7 @@ def build_wcscat(image, group_id, source_catalog):
                 'filename': fname,
                 'rootname': "_".join(fname.split("_")[:-1]),
                 'catalog': imcat,
+                'epoch': epoch,
                 'name': fname
             }
         )
@@ -1811,6 +1816,30 @@ def build_wcscat(image, group_id, source_catalog):
         hdulist.close()
 
     return wcs_catalogs
+
+
+def get_epoch(hdulist):
+    """Interpret observation date 'date-obs' as epoch
+
+    Parameters
+    ----------
+    hdulist : `fits.HDUList`
+        Input HDUList object containing the 'date-obs' keyword in
+        the Primary header in 'YYYY-MM-DD' format.
+
+    Returns
+    -------
+    decimal_year : float
+        Floating value for the year of the observation
+
+    """
+    d = hdulist[0].header['date-obs']
+    atime = Time(d)
+    return atime.decimalyear
+
+
+def since_epoch(date): # returns seconds since epoch
+    return time.mktime(date.timetuple())
 
 
 # -------------------------------------------------------------------------------------------------------------

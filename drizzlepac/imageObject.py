@@ -1071,7 +1071,7 @@ class imageObject(baseImageObject):
                     sci_chip.dqname = sci_chip.dqfile +'['+sci_chip.dq_extn+','+str(chip)+']'
 
                 # build up HSTWCS object for each chip, which will be necessary for drizzling operations
-                sci_chip.wcs=wcs_functions.get_hstwcs(self._filename,self._image,sci_chip.extnum)
+                sci_chip.wcs=wcs_functions.get_hstwcs(self._filename, sci_chip.extnum)
                 sci_chip.detnum,sci_chip.binned = util.get_detnum(sci_chip.wcs,self._filename,chip)
                 sci_chip.wcslin_pscale = 1.0
 

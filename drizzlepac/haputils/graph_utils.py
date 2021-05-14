@@ -327,7 +327,7 @@ class HAPFigure:
 
     def __build_triangle_glyph(self):
 
-        if self.glyph_color is 'colormap':
+        if self.glyph_color == 'colormap':
             self.fig.triangle(x=self.x,
                               y=self.y,
                               source=self.sourceCDS,
