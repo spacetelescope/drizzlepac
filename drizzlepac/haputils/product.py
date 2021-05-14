@@ -294,6 +294,7 @@ class HAPProduct:
                             except Exception:
                                 log.info("Problem with fit done for catalog '{}' with method '{}' using fit geometry '{}'.".
                                          format(catalog_item, method_name, mosaic_fitgeom))
+                                traceback.print_exc()
 
                             # Try again with a different fit geometry algorithm
                             mosaic_fitgeom_index -= 1
