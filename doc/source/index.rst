@@ -141,12 +141,10 @@ The **HAP Single Visit Mosaics (SVMs)** differ from the standard HST drizzled da
 
   Astrometry and Headerlets <astrometry.rst>
 
+  singlevisit.rst
+  runsinglehap.rst
+
   Glossary of HAP Terms <hap_glossary.rst>
-
-   singlevisit.rst
-   runsinglehap.rst
-
-   Glossary of HAP Terms <hap_glossary.rst>
 
 
 Indices and tables
