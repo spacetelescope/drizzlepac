@@ -15,8 +15,26 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-3.2.1 (unreleased)
+3.2.2 (unreleased)
 ==================
+In addition to a couple dozen bug fixes for the new SVM processing code
+to expand the number of visits which can be aligned to GAIA, the
+following significant changes to the code or some of the API's have also
+been implemented:
+
+- Update documentation based on revisions to the code.
+  [#941, #947, #953]
+
+- Update default astrometry catalogs for alignment to try alignment to
+  the GAIA eDR3 catalog first. [#986, #1012]
+
+- Enable user epoch selection when a user requests a GAIA catalog from
+  the astrometry catalog web service. [#1006]
+
+- Insure that HDRNAME is always valid for updated WCS solutions. [#966]
+
+- Revised S_REGION keyword value to reflect actual outline of chips in
+  drizzle products.  [#951]
 
 - Sky Subtraction step will automatically downgrade from 'match' to 'localmin',
   and from 'globalmin+match' to 'globalmin' when sky matching runs into an
@@ -33,6 +51,13 @@ of the list).
 
 - Added ``DRIZPARS`` keyword to final output drizzle product primary header
   to document the name of the associated trailer file. [#934]
+
+
+3.2.1 (16-Feb-2021)
+===================
+
+- Fix problems with testing code for this package [#940]
+
 
 3.2.0 (7-Dec-2020)
 ==================

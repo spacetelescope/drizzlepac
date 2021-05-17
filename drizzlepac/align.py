@@ -39,20 +39,24 @@ __version_date__ = '21-Aug-2019'
 # ----------------------------------------------------------------------------------------------------------
 
 
-def check_and_get_data(input_list, **pars):
+def check_and_get_data(input_list: list, **pars: object) -> list:
     """Verify that all specified files are present. If not, retrieve them from MAST.
 
     This function relies on the `AstroQuery interface to MAST
     <https://astroquery.readthedocs.io/en/latest/mast/mast.html>`_
     to retrieve the exposures from the `input_list` that are not found in the current directory.  This
     function calls the simplified interface in
-    `~drizzlepac/haputils/astroquery_utils/retrieve_observation`_
+    :func:`haputils/astroquery_utils/retrieve_observation`
     to get the files through AstroQuery.
 
     Parameters
     ----------
     input_list : list
         List of one or more calibrated fits images that will be used for catalog generation.
+
+    pars : dict
+        Set of additional parameters for :func:`haputils/astroquery_utils/retrieve_observation`
+        to use in retrieving any data that was not already in the current working directory.
 
     Returns
     =======
@@ -61,7 +65,7 @@ def check_and_get_data(input_list, **pars):
 
     See Also
     ========
-    `~haputils/astroquery_utils/retrieve_observation`
+    haputils/astroquery_utils/retrieve_observation
 
     """
     empty_list = []
