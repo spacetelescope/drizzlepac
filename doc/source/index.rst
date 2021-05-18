@@ -132,7 +132,7 @@ Three levels of products are available as part of this release:
 
   * Exposure level products contain data from a single HST exposure.
   * Filter level products are produced from all exposures in a visit with a common filter.
-  * Total level products combine all exposures from a visit and are intended as a detection image for producing catalogs.
+  * Total level products combine all exposures from a visit for a specific detector and are intended as a detection image for producing catalogs.
 
 The **HAP Single Visit Mosaics (SVMs)** differ from the standard HST drizzled data products, which are aligned filter-by-filter to Gaia.  SVM data products, on the other hand, are all drizzled onto the same north-up pixel grid and may have improved relative alignment across filters within a given visit, enabling easy comparison of the images through multiple filters or for images to be combined to create color mosaics. When possible, sources in the images have been aligned directly to the Gaia source catalog to improve the WCS of the images. SVM data products with both relative alignment (by filter) and absolute alignment to Gaia will contain the string 'FIT_SVM_GAIA' in the 'WCSNAME' keyword in the science extension of the image header. More discussion on HAP alignment, may be found on the webpage `Improvements in HST Astrometry <https://outerspace.stsci.edu/pages/viewpage.action?spaceKey=HAdP&title=Improvements+in+HST+Astrometry>`_.
 
