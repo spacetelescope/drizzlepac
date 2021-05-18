@@ -1090,7 +1090,7 @@ def create_mosaic_pars(mosaic_wcs):
     --------
     mosaic_pars : dict
         This dictionary can be used as input to astrodrizzle.AstroDrizzle with
-        the syntax 'AstroDrizzle(filenames, **mosaic_pars)'
+        the syntax ``AstroDrizzle(filenames, **mosaic_pars)``
 
     """
     mosaic_pars = dict(

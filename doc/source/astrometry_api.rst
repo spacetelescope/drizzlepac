@@ -15,7 +15,6 @@ observations and to verify the alignment of the observations.
 align
 ------
 .. automodule:: drizzlepac.align
-.. autofunction:: drizzlepac.align.check_and_get_data
 .. autofunction:: drizzlepac.align.perform_align
 .. autofunction:: drizzlepac.align.determine_fit_quality
 
@@ -45,6 +44,14 @@ haputils.astrometric_utils
 .. autofunction:: drizzlepac.haputils.astrometric_utils.determine_focus_index
 .. autofunction:: drizzlepac.haputils.astrometric_utils.max_overlap_diff
 .. autofunction:: drizzlepac.haputils.astrometric_utils.detect_point_sources
+
+
+.. _astroquery_utils_api:
+
+haputils.astroquery_utils
+--------------------------
+.. automodule:: drizzlepac.haputils.astroquery_utils
+.. autofunction:: drizzlepac.haputils.astroquery_utils.retrieve_observation
 
 
 .. _analyze_api:
