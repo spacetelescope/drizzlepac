@@ -785,7 +785,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         # 2: Perform absolute alignment
         matched_cat = tweakwcs.align_wcs(imglist, reference_catalog,
                                          match=match,
-                                         minobj=common_pars['MIN_FIT_MATCHES'],
+                                         minobj=common_pars['minobj'][fitgeom],
                                          fitgeom=fitgeom)
     else:
         # Insure the expanded reference catalog has all the information needed
@@ -851,7 +851,7 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
     # Align images and correct WCS
     matched_cat = tweakwcs.align_wcs(imglist, reference_catalog,
                                      match=match,
-                                     minobj=common_pars['MIN_FIT_MATCHES'],
+                                     minobj=common_pars['minobj'][fitgeom],
                                      expand_refcat=False,
                                      fitgeom=fitgeom)
 
@@ -912,7 +912,7 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     # Align images and correct WCS
     matched_cat = tweakwcs.align_wcs(imglist, reference_catalog,
                                      match=match,
-                                     minobj=common_pars['MIN_FIT_MATCHES'],
+                                     minobj=common_pars['minobj'][fitgeom],
                                      expand_refcat=False,
                                      fitgeom=fitgeom)
 
