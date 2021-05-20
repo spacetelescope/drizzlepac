@@ -747,7 +747,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     # limits.
     match_relcat = tweakwcs.align_wcs(imglist, None,
                                       match=match,
-                                      minobj=None,  # common_pars['minobj'][fitgeom],
+                                      minobj=common_pars['minobj'][fitgeom],
                                       expand_refcat=True,
                                       fitgeom=fitgeom)
     # Implement a consistency check even before trying absolute alignment
