@@ -743,6 +743,8 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     #       allows all the input images to be aligned in
     #       a relative way using the first input image as the reference.
     # 1: Perform relative alignment
+    # Setting 'minobj' to None allows 'tweakwcs' to use its own built-in
+    # limits.
     match_relcat = tweakwcs.align_wcs(imglist, None,
                                       match=match,
                                       minobj=None,  # common_pars['minobj'][fitgeom],
