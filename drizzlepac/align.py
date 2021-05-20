@@ -688,6 +688,9 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
     yshifts = []
     overall_valid = True
     overall_comp = False
+
+    do_consistency_check = align_pars['determine_fit_quality'].get('consistency_check', True)
+
     for item in imglist:
         if item.meta['fit_info']['status'].startswith('FAILED') is False:
             xshifts.append(item.meta['fit_info']['shift'][0])
@@ -705,15 +708,15 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
 
         # Build fit_status_dict entry
         dict_key = "{},{}".format(image_name, chip_num)
-        fit_status_dict[dict_key] = {'valid': False,
+        fit_status_dict[dict_key] = {'valid': True,
                                      'max_rms': max_rms_val,
                                      'num_matches': num_xmatches,
                                      'compromised': False,
                                      'reason': ""}
-        # Handle fitting failures (no matches found)
+
+        # Handle fitting failures (no matches found or any other failure in fit)
         if item.meta['fit_info']['status'].startswith("FAILED") is True:
-            log.warning("No cross matches found in any catalog for {} "
-                        "- no processing done.".format(image_name))
+            log.warning("Alignment FAILED for {} - no processing done.".format(image_name))
             overall_valid = False
             continue
         fit_rms_val = item.meta['fit_info']['FIT_RMS']
@@ -767,11 +770,12 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
         #     fitRmsCheck = True
 
         consistency_check = True
-        rms_limit = max(item.meta['fit_info']['TOTAL_RMS'], 10.)
-        if not math.sqrt(np.std(np.asarray(xshifts)) ** 2 + np.std(
-                         np.asarray(yshifts)) ** 2) <= (rms_limit / align_pars['determine_fit_quality']['MAS_TO_ARCSEC']) / (item.wcs.pscale):  # \
-                         # or rms_ratio > MAX_RMS_RATIO:
-            consistency_check = False
+        if do_consistency_check:
+            rms_limit = max(item.meta['fit_info']['TOTAL_RMS'], 10.)
+            if not math.sqrt(np.std(np.asarray(xshifts)) ** 2 + np.std(
+                             np.asarray(yshifts)) ** 2) <= (rms_limit / align_pars['determine_fit_quality']['MAS_TO_ARCSEC']) / (item.wcs.pscale):  # \
+                             # or rms_ratio > MAX_RMS_RATIO:
+                consistency_check = False
 
         # Decide if fit solutions are valid based on checks
         if not consistency_check:  # Failed consistency check
