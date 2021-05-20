@@ -190,24 +190,22 @@ def updatewcs_with_shift(image, reference, wcsname='TWEAK', reusename=False,
         wref = reference
     else:
         refimg = fits.open(reference, memmap=False)
-        wref = None
         for extn in refimg:
             if 'extname' in extn.header and extn.header['extname'] == 'WCS':
                 wref = pywcs.WCS(refimg['wcs'].header)
                 break
-        refimg.close()
-        # else, we have presumably been provided a full undistorted image
-        # as a reference, so use it with HSTWCS instead
-        if wref is None:
+        else:
+            # else, we have presumably been provided a full undistorted image
+            # as a reference, so use it with HSTWCS instead
             wref = wcsutil.HSTWCS(reference)
+        refimg.close()
 
     if isinstance(image, fits.HDUList):
         open_image = False
         filename = image.filename()
-        if image.fileinfo(0)['filemode'] == 'update':
-            image_update = True
-        else:
-            image_update = False
+        if filename is None:
+            filename = 'In-memory HDUList'
+        image_update = image.fileinfo(0)['filemode'] == 'update'
     else:
         open_image = True
         filename = image
@@ -215,9 +213,9 @@ def updatewcs_with_shift(image, reference, wcsname='TWEAK', reusename=False,
 
     # Now that we are sure we have a good reference WCS to use,
     # continue with the update
-    logstr = "....Updating header for {:s}...".format(filename)
+    logstr = f"....Updating header for '{filename:s}' ..."
     if verbose:
-        print("\n{:s}\n".format(logstr))
+        print(f"\n{logstr:s}\n")
     else:
         log.info(logstr)
 
@@ -239,12 +237,12 @@ def updatewcs_with_shift(image, reference, wcsname='TWEAK', reusename=False,
 
     # Process MEF images...
     for ext in extlist:
-        logstr = "Processing {:s}[{:s}]".format(fimg.filename(),
-                                                ext2str(ext))
+        logstr = f"Processing {filename:s}[{ext2str(ext):s}]"
         if verbose:
-            print("\n{:s}\n".format(logstr))
+            print(f"\n{logstr:s}\n")
         else:
             log.info(logstr)
+
         chip_wcs = wcsutil.HSTWCS(fimg, ext=ext)
 
         update_refchip_with_shift(chip_wcs, wref, fitgeom=fitgeom,
