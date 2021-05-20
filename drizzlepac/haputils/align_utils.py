@@ -126,6 +126,7 @@ class AlignmentTable:
         # Make sure to use the values from "determine_fit_quality" instead of "general"
         for key in self.fit_pars:
             self.fit_pars[key]['pars'] = alignment_pars['determine_fit_quality']
+            self.fit_pars[key]['pars']['minobj'] = self.alignment_pars['mosaic_fitgeom_list']
 
         self.dqname = dqname
         self.haplist = []
@@ -744,9 +745,13 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     # 1: Perform relative alignment
     match_relcat = tweakwcs.align_wcs(imglist, None,
                                       match=match,
-                                      minobj=common_pars['MIN_FIT_MATCHES'],
+                                      minobj=None,  # common_pars['minobj'][fitgeom],
                                       expand_refcat=True,
                                       fitgeom=fitgeom)
+    # Implement a consistency check even before trying absolute alignment
+    # If relative alignment in question, no use in aligning to GAIA
+    if not check_consistency(imglist):
+            return imglist
 
     log.info("Relative alignment found: ")
     for i in imglist:
@@ -917,6 +922,56 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     return imglist
 
 # ----------------------------------------------------------------------------------------------------------
+def check_consistency(imglist, rot_tolerance=0.1, shift_tolerance=1.0):
+    """Check to see whether relative alignment solutions are realistically consistent
+
+        Should any image end up with a relative alignment fit where rot is more than
+        0.1 degree or 1 pixel off from the other images fits, this check will
+        mark this fit as 'FAILED' in the '.meta["fit_info"]["status"]' field for
+        all images.
+    """
+    is_consistent = True
+
+    # set up arrays for relative alignment rotation and shifts
+    rots = np.zeros(len(imglist)+1, np.float64)
+    nmatches = np.zeros(len(imglist), np.int16)
+
+    for i, img in enumerate(imglist):
+        finfo = img.meta['fit_info']
+        status = finfo['status']
+        if not status.startswith("FAILED"):
+            if 'rot' in finfo:
+                rots[i] = finfo['proper_rot']
+                nmatches[i] = finfo['nmatches']
+        else:
+            # Set default as value larger than we can use
+            nmatches[i] = 1000000
+
+    # We should only need to check for consistency when less than 5
+    # matches were used for the fit, leading to a higher potential for
+    # a singular solution or mis-identified cross-matches.
+    if nmatches.min() > 4:
+        return imglist
+
+    # compute deltas to look for outliers
+    delta_rots = rots[1:] - rots[:-1]
+    if delta_rots.max() >= rot_tolerance:
+        for i, img in enumerate(imglist):
+            msg = 'Relative consistency check failed: {}'.format(rots[i])
+            img.meta['fit_info']['status'] = 'FAILED'
+            img.meta['fit_info']['process_msg'] = msg
+
+        log.info('Relative fit solution is NOT consistent!')
+        log.debug('DELTAS for "{}" fit:'.format(finfo['fitgeom']))
+        log.debug('  max rot={:.4f}\n '.format(delta_rots.max()))
+        is_consistent = False
+
+    else:
+        log.info('Relative fit solution is consistent')
+
+    return is_consistent
+
+
 def interpret_fit_rms(tweakwcs_output, reference_catalog):
     """Interpret the FIT information to convert RMS to physical units
 

@@ -266,6 +266,10 @@ class HAPProduct:
                                 alignment_pars['determine_fit_quality']['min_xmatches'] = \
                                     alignment_pars['run_align']['mosaic_fitgeom_list'][mosaic_fitgeom]
 
+                                # turn off consistency check for SVM and MVM processing since filter-to-filter
+                                # or visit-to-visit offsets could be large relative to measurement RMS.
+                                alignment_pars['determine_fit_quality']['consistency_check'] = False
+
                                 # Evaluate the quality of the fit
                                 is_good_fit, _, _, _, _, _ = align.determine_fit_quality_mvm_interface(align_table.imglist,
                                                                                                        align_table.filtered_table,

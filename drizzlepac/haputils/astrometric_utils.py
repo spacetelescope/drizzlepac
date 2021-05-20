@@ -1853,7 +1853,7 @@ def check_mag_corr(imglist, threshold=0.5):
     for image in imglist:
         input_mags = image.meta['fit_info']['input_mag']
         ref_mags = image.meta['fit_info']['ref_mag']
-        if input_mags is not None and len(input_mags) > 0:
+        if input_mags is not None and len(input_mags) > 1:
             mag_corr, mag_corr_std = pearsonr(input_mags, ref_mags)
             log.info("{} Magnitude correlation: {}".format(image.meta['name'], mag_corr))
             cross_match_check = True if abs(mag_corr) > threshold else False
