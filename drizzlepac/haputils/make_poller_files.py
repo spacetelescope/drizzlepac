@@ -57,7 +57,7 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
         # Build each individual poller file line
         linelist = []
         linelist.append(imgname)
-        imghdu = fits.open(imgname)
+        imghdu = fits.open(fullfilepath)
         imghdr = imghdu[0].header
         linelist.append("{}".format(imghdr['proposid']))
         linelist.append(imgname[1:4].upper())
