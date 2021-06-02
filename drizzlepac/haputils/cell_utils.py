@@ -210,6 +210,7 @@ class SkyFootprint(object):
         self.meta_wcs = meta_wcs
         # bounded_wcs corresponds to WCS of bounding box of footprint
         self.bounded_wcs = None
+        self.bounding_box = None
 
         # the exp_masks dict records the individual footprints of each exposure
         self.exp_masks = {}
@@ -316,6 +317,7 @@ class SkyFootprint(object):
 
         # make a copy of the full WCS to be revised
         self.bounded_wcs = self.meta_wcs.copy()
+        self.bounding_box = [slice(ymin, ymax), slice(xmin, xmax)]
 
         # Use this box to compute new CRPIX position
         self.bounded_wcs.wcs.crpix -= [xmin, ymin]
