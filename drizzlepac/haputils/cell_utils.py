@@ -208,6 +208,8 @@ class SkyFootprint(object):
     def __init__(self, meta_wcs):
 
         self.meta_wcs = meta_wcs
+        # bounded_wcs corresponds to WCS of bounding box of footprint
+        self.bounded_wcs = None
 
         # the exp_masks dict records the individual footprints of each exposure
         self.exp_masks = {}
@@ -300,6 +302,24 @@ class SkyFootprint(object):
 
             self.total_mask += self.exp_masks[exposure]['mask']
 
+            # Compute the bounded WCS for this footprint
+            self.find_bounded_wcs()
+
+
+    def find_bounded_wcs(self):
+        """Compute the WCS based on the bounding box of footprint """
+        if self.total_mask is None:
+            print("Please add exposures before computing bounding box WCS...")
+
+        # start by computing the bounding box for the footprint
+        ymin, ymax, xmin, xmax = calc_bounding_box(self.total_mask)
+
+        # make a copy of the full WCS to be revised
+        self.bounded_wcs = self.meta_wcs.copy()
+
+        # Use this box to compute new CRPIX position
+        self.bounded_wcs.wcs.crpix -= [xmin, ymin]
+        self.bounded_wcs.wcs.naxis = [xmax - xmin + 1, ymax - ymin + 1]
 
 
     # Methods with 'find' compute values
@@ -961,6 +981,15 @@ class SkyCell(object):
         mask = np.array(img)
 
         self.mask = mask
+
+def calc_bounding_box(img):
+    """Compute bounding box for non-zero section of img """
+    rows = np.any(img, axis=1)
+    cols = np.any(img, axis=0)
+    rmin, rmax = np.where(rows)[0][[0, -1]]
+    cmin, cmax = np.where(cols)[0][[0, -1]]
+
+    return rmin, rmax, cmin, cmax
 
 
 def cart2pol(x, y, clockwise=False):
