@@ -446,9 +446,9 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
                                                                    algorithm_name, "-" * 18))
                     try:
                         alignment_table.configure_fit()
-                        print("####\n# Running configure fit for AlignmentTable to use: \n")
-                        print([img.wcs for img in alignment_table.imglist])
-                        print("####\n")
+                        log.debug("####\n# Running configure fit for AlignmentTable to use: \n")
+                        log.debug([img.wcs for img in alignment_table.imglist])
+                        log.debug("####\n")
 
                         # restore group IDs to their pristine state prior to each run.
                         alignment_table.reset_group_id(len(reference_catalog))
