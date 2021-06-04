@@ -1284,8 +1284,8 @@ def reset_idctab_kw(files, files_flc, logfile=None):
             print(newmsg)
 
         # Get info from all hdrlet extensions in file
-        wnames = headerlet.get_headerlet_kw_names('j8mbnlkbq_flc.fits', 'wcsname')
-        hnames = headerlet.get_headerlet_kw_names('j8mbnlkbq_flc.fits', 'hdrname')
+        wnames = headerlet.get_headerlet_kw_names(flt, 'wcsname')
+        hnames = headerlet.get_headerlet_kw_names(flt, 'hdrname')
         # find the HDRNAME kw value for the hlet extension that has the desired WCSNAME
         idc_hdrname = hnames[wnames.index(raw_wcsname)]
         # Find the actual extension number for the headerlet with this HDRNAME
