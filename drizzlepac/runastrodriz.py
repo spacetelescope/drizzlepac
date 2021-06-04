@@ -52,6 +52,14 @@ the alignment and output data through the use of the environment variable:
       processing to generate a JSON file which contains the results of
       evaluating the quality of the generated products.
 
+This processing can also insure that the IDCTAB reference file in the FLT/FLC
+files are as up-to-date as the IDCTAB specified in the RAW file using:
+
+    - PIPELINE_RESET_IDCTAB : Turn on automatic reset of IDCTAB in FLT/FLC
+      files so that they are identical to those in the RAW files.  This
+      does nothing if they are already in sync.
+
+
 *** INITIAL VERSION
 W.J. Hack  12 Aug 2011: Initial version based on Version 1.2.0 of
                         STSDAS$pkg/hst_calib/wfc3/runwf3driz.py
@@ -160,6 +168,7 @@ envvar_compute_name = 'ASTROMETRY_COMPUTE_APOSTERIORI'
 envvar_new_apriori_name = "ASTROMETRY_APPLY_APRIORI"
 envvar_old_apriori_name = "ASTROMETRY_STEP_CONTROL"
 envvar_qa_stats_name = "PIPELINE_QUALITY_TESTING"
+envvar_reset_idctab_name = "PIPELINE_RESET_IDCTAB"
 
 # History:
 # Version 1.0.0 - Derived from v1.2.0 of wfc3.runwf3driz to run astrodrizzle
@@ -213,6 +222,13 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     if envvar_new_apriori_name in os.environ:
         val = os.environ[envvar_new_apriori_name].lower()
         align_with_apriori = envvar_bool_dict[val]
+
+    # Add support for environment variable switch to automatically
+    # reset IDCTAB in FLT/FLC files if different from IDCTAB in RAW files.
+    reset_idctab_switch = False
+    if envvar_reset_idctab_name in os.environ:
+        val = os.environ[envvar_reset_idctab_name].lower()
+        reset_idctab_switch = envvar_bool_dict[val]
 
     if headerlets or align_to_gaia:
         from stwcs.wcsutil import headerlet
@@ -372,6 +388,11 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         _calfiles_flc = [f.replace('_flt.fits', '_flc.fits')
                          for f in _calfiles
                          if os.path.exists(f.replace('_flt.fits', '_flc.fits'))]
+
+    # If specified, insure that IDCTAB in FLT/FLC files are the same
+    # as the IDCTAB found in the RAW files
+    if reset_idctab_switch:
+        reset_idctab_kw(_calfiles, _calfiles_flc, logfile=_trlfile)
 
     # Add S_REGION keyword to input files regardless of whether DRIZCORR is turned on
     for f in _calfiles+_calfiles_flc:
@@ -1232,6 +1253,48 @@ def restore_pipeline_default(files):
             for sciext in range(num_sci):
                 if 'hdrname' in fhdu[('sci', sciext + 1)].header:
                     del fhdu[('sci', sciext + 1)].header['hdrname']
+
+
+def reset_idctab_kw(files, files_flc, logfile=None):
+    """Insure IDCTAB in files are the same as those in RAW files"""
+    trlmsg = "Insuring IDCTAB keywords are up-to-date\n"
+
+    raw_files = [f.replace('_flt', '_raw') for f in files]
+    # determine what IDCTAB should be in FLT files
+    raw_idctab = fits.getval(raw_files[0], 'idctab')
+    raw_wcsname = 'IDC_{}'.format(raw_idctab.split('_')[0].split('$')[1])
+    trlmsg += "IDCTAB from RAW file: {}\n".format(raw_idctab)
+
+    if logfile:
+        # Write message out to temp file and append it to full trailer file
+        _updateTrlFile(logfile, trlmsg)
+    else:
+        print(trlmsg)
+
+    # Now, restore headerlet with this WCSNAME as primary WCS
+    for flt in files+files_flc:
+        flt_idctab = fits.getval(flt, 'idctab')
+        if flt_idctab == raw_idctab:
+            # We don't need to update anything
+            continue
+        newmsg = "Updating IDCTAB {} in {}\n".format(flt_idctab, flt)
+        if logfile:
+            # Write message out to temp file and append it to full trailer file
+            _updateTrlFile(logfile, newmsg)
+        else:
+            print(newmsg)
+
+        # Get info from all hdrlet extensions in file
+        wnames = headerlet.get_headerlet_kw_names(flt, 'wcsname')
+        hnames = headerlet.get_headerlet_kw_names(flt, 'hdrname')
+        # find the HDRNAME kw value for the hlet extension that has the desired WCSNAME
+        idc_hdrname = hnames[wnames.index(raw_wcsname)]
+        # Find the actual extension number for the headerlet with this HDRNAME
+        hdrname_ext = headerlet.find_headerlet_HDUs(flt, hdrname=idc_hdrname)[0]
+        # Restore the WCS from this HDRLET extension
+        headerlet.restore_from_headerlet(flt, hdrext=hdrname_ext, force=True)
+
+
 
 def _lowerAsn(asnfile):
     """ Create a copy of the original asn file and change
