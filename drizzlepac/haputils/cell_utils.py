@@ -303,12 +303,12 @@ class SkyFootprint(object):
 
             self.total_mask += self.exp_masks[exposure]['mask']
 
-            # Compute the bounded WCS for this footprint
+            # Compute the bounded WCS for this mask of exposed pixels
             self.find_bounded_wcs()
 
 
     def find_bounded_wcs(self):
-        """Compute the WCS based on the bounding box of footprint """
+        """Compute the WCS based on the bounding box of exposed pixels(mask) """
         if self.total_mask is None:
             print("Please add exposures before computing bounding box WCS...")
 
