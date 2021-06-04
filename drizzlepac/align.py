@@ -342,8 +342,6 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
         else:
             alignment_table.find_alignment_sources(output=output)
 
-        alignment_table.configure_fit()
-
         for imgname in alignment_table.extracted_sources.keys():
             table = alignment_table.extracted_sources[imgname]
 
@@ -400,7 +398,8 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
         # create pristine copy of imglist that will be used to restore imglist back so it always starts exactly the same
         # for each run.
         orig_imglist = copy.deepcopy(imglist)
-        # create dummy list that will be used to preserve imglist best_meta information through the imglist reset process
+        # create dummy list that will be used to preserve imglist best_meta information
+        # through the imglist reset process
         # best_imglist = []
         fit_info_dict = OrderedDict()
         for algorithm_name in fit_algorithm_list:  # loop over fit algorithm type
@@ -441,13 +440,16 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
                         return alignment_table
                 else:
                     log.info("{} Cross matching and fitting {}".format("-" * 20, "-" * 47))
-                    imglist = copy.deepcopy(orig_imglist)  # reset imglist to pristine state
-
                     log.info(
                         "{} Catalog {} matched using {} {}".format("-" * 18,
                                                                    catalog_name,
                                                                    algorithm_name, "-" * 18))
                     try:
+                        alignment_table.configure_fit()
+                        print("####\n# Running configure fit for AlignmentTable to use: \n")
+                        print([img.wcs for img in alignment_table.imglist])
+                        print("####\n")
+
                         # restore group IDs to their pristine state prior to each run.
                         alignment_table.reset_group_id(len(reference_catalog))
 
@@ -467,7 +469,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
                         alignment_table.filtered_table = filtered_table
 
                         # save fit algorithm name to dictionary key "fit method" in imglist.
-                        for imglist_ctr in range(0, len(imglist)):
+                        for imglist_ctr in range(0, len(alignment_table.imglist)):
                             table_fit = alignment_table.fit_dict[(catalog_name, algorithm_name)]
                             table_fit[imglist_ctr].meta['fit method'] = algorithm_name
                             table_fit[imglist_ctr].meta['fit quality'] = fit_quality
