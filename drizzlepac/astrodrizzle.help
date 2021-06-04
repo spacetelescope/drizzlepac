@@ -174,10 +174,10 @@ in_memory : bool (Default = False)
 rules_file : str (Default = "")
     Rules for how to blend the header keyword values for all the input
     exposures into a single header for the drizzle products are specified
-    using this `rules_file`.  The `fitsblender` package uses this file to determine
+    using this ``rules_file``.  The ``fitsblender`` package uses this file to determine
     what keywords should be written out to the drizzle product headers.  If
     no file is specified (default), the rules file for the instrument as included
-    with the `fitsblender` package will be used for defining the product headers.
+    with the ``fitsblender`` package will be used for defining the product headers.
 
 
 **STATE OF INPUT FILES**
@@ -1003,8 +1003,9 @@ command-line using ``PyRAF`` or Python. These examples illustrate the various
 syntax options available.
 
 **Example 1:**  Drizzle a set of calibrated (``_flt.fits``) images using
-mostly default parameters.  Select the 'World Coordinate System' keyword
-to the updated solution computed from ``TweakReg``.  When combining images,
+mostly default parameters. Select the desired 'World Coordinate System' (WCS)
+aligned/updated by ``TweakReg``. Let's say this WCS is stored with *key*
+``'A'`` (different from the primary WCS).  When combining images,
 ignore pixel flags of 64 and 32 in the DQ array of the (``_flt.fits``)
 images.  Align the final product such that North is
 up, and set the final pixel scale to 0.05 arcseconds/pixel.
@@ -1019,7 +1020,7 @@ up, and set the final pixel scale to 0.05 arcseconds/pixel.
     >>> import drizzlepac
     >>> from drizzlepac import astrodrizzle
     >>> astrodrizzle.AstroDrizzle('*flt.fits', output='final',
-    ...     wcskey='TWEAK', driz_sep_bits='64,32', final_wcs=True,
+    ...     wcskey='A', driz_sep_bits='64,32', final_wcs=True,
     ...     final_scale=0.05, final_rot=0)
 
    Or, run the same task from the PyRAF command line, but specify all
@@ -1031,7 +1032,7 @@ up, and set the final pixel scale to 0.05 arcseconds/pixel.
 
     >>> from drizzlepac import astrodrizzle
     >>> astrodrizzle.AstroDrizzle('*flt.fits', output='final',
-    ...     wcskey='TWEAK', driz_sep_bits='64,32', final_wcs=True,
+    ...     wcskey='A', driz_sep_bits='64,32', final_wcs=True,
     ...     final_scale=0.05, final_rot=0)
 
 4. Help can be accessed via the "Help" pulldown menu in the ``TEAL`` GUI.
