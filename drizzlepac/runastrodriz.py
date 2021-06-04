@@ -225,6 +225,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
     # Add support for environment variable switch to automatically
     # reset IDCTAB in FLT/FLC files if different from IDCTAB in RAW files.
+    reset_idctab_switch = False
     if envvar_reset_idctab_name in os.environ:
         val = os.environ[envvar_reset_idctab_name].lower()
         reset_idctab_switch = envvar_bool_dict[val]
