@@ -17,6 +17,10 @@ of the list).
 
 3.2.2 (unreleased)
 ==================
+
+- Fix a memory corruption issue in ``interpolate_bilinear()`` in
+  ``cdrizzleblot.c`` which could result in segfault. [#1048]
+
 In addition to a couple dozen bug fixes for the new SVM processing code
 to expand the number of visits which can be aligned to GAIA, the
 following significant changes to the code or some of the APIs have also
