@@ -352,52 +352,47 @@ interpolate_bilinear(const void* state UNUSED_PARAM,
                      float* value,
                      struct driz_error_t* error UNUSED_PARAM) {
   integer_t nx, ny;
-  float sx, tx, sy, ty;
-  float hold21, hold12, hold22;
+  float sx, tx, sy, ty, f00;
 
   assert(state == NULL);
   INTERPOLATION_ASSERTS;
 
-  nx = (integer_t)x;
-  ny = (integer_t)y;
+  nx = (integer_t) x;
+  ny = (integer_t) y;
 
-  sx = x - (float)nx;
-  tx = 1.0f - sx;
-  sy = y - (float)ny;
-  ty = 1.0f - sy;
-
-  if (nx >= dnx - 1) {
-    hold21 = 2.0f * DATA_VALUE(nx, ny) - DATA_VALUE(nx - 1, ny);
-  } else {
-    assert(nx < dnx - 1);
-
-    hold21 = DATA_VALUE(nx + 1, ny);
+  if (nx < 0 || ny < 0 || nx >= dnx || ny >= dny) {
+      driz_error_set_message(error,
+          "Bilinear interpolation: point outside of the image.");
+      return 1;
   }
 
-  if (ny >= dny - 1) {
-    hold12 = 2.0f * DATA_VALUE(nx, ny) - DATA_VALUE(nx, ny-1);
+  f00 = DATA_VALUE(nx, ny);
+
+  if (nx == (dnx - 1)) {
+    if (ny == (dny - 1)) {
+      /* This is the last pixel (in x and y). Assign constant value of this pixel. */
+      *value = f00;
+      return 0;
+    }
+    /* Interpolate along Y-direction only */
+    sy = y - (float)ny;
+    *value = (1.0f - sy) * f00 + sy * DATA_VALUE(nx, ny + 1);
+  } else if (ny == (dny - 1)) {
+    /* Interpolate along X-direction only */
+    sx = x - (float)nx;
+    *value = (1.0f - sx) * f00 + sx * DATA_VALUE(nx + 1, ny);
   } else {
-    assert(ny < dny - 1);
+    /* Bilinear - interpolation */
+    sx = x - (float)nx;
+    tx = 1.0f - sx;
+    sy = y - (float)ny;
+    ty = 1.0f - sy;
 
-    hold12 = DATA_VALUE(nx, ny+1);
+    *value = tx * ty * f00 +
+             sx * ty * DATA_VALUE(nx + 1, ny) +
+             sy * tx * DATA_VALUE(nx, ny + 1) +
+             sx * sy * DATA_VALUE(nx + 1, ny + 1);
   }
-
-  if (nx >= dnx && ny >= dny) {
-    hold22 = 2.0f * hold21 - (2.0f * DATA_VALUE(nx, ny-1) -
-                              DATA_VALUE(nx-1, ny-1));
-  } else if (nx >= dnx) {
-    hold22 = 2.0f * hold12 - DATA_VALUE(nx-1, ny+1);
-  } else if (ny >= dny) {
-    hold22 = 2.0f * hold21 - DATA_VALUE(nx+1, ny+1);
-  } else {
-    hold22 = DATA_VALUE(nx+1, ny+1);
-  }
-
-  *value =
-    tx * ty * DATA_VALUE(nx, ny) +
-    sx * ty * hold21 +
-    sy * tx * hold12 +
-    sx * sy * hold22;
 
   return 0;
 }
