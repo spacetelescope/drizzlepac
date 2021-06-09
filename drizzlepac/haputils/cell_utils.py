@@ -208,11 +208,11 @@ class SkyFootprint(object):
     def __init__(self, meta_wcs):
 
         self.meta_wcs = meta_wcs
-        # bounded_wcs corresponds to WCS of bounding box of footprint
+        # bounded_wcs corresponds to WCS of bounding box of exposed pixels
         self.bounded_wcs = None
         self.bounding_box = None
 
-        # the exp_masks dict records the individual footprints of each exposure
+        # the exp_masks dict records the individual exposed pixels mask for each exposure
         self.exp_masks = {}
         self.members = []
         self.corners = []
@@ -230,7 +230,7 @@ class SkyFootprint(object):
         self.polygon = None
 
     def build(self, expnames, scale=False, scale_kw='EXPTIME'):
-        """ Create mask showing where all input exposures overlap the footprint's WCS
+        """ Create mask showing where all input exposures overlap the SkyFootprint's WCS
 
         Notes
         -----
@@ -251,6 +251,7 @@ class SkyFootprint(object):
             in the PRIMARY header.
 
         """
+
         for exposure in expnames:
             if exposure not in self.members:
                 self.members.append(exposure)
@@ -261,15 +262,19 @@ class SkyFootprint(object):
                 scale_val = fits.getval(exposure, scale_kw)
 
             sci_extns = wcs_functions.get_extns(exp)
+            if len(sci_extns) == 0 and '_single' in exposure:
+                sci_extns = [0]
+
             for sci in sci_extns:
                 wcs = HSTWCS(exp, ext=sci)
+
                 # save the footprint for each chip as RA/Dec corner positions
                 # radec = wcs.calc_footprint().tolist()
                 radec = calc_wcs_footprint(wcs, offset=1).tolist()
                 radec.append(radec[0])  # close the polygon/chip
                 self.exp_masks[exposure]['sky_corners'].append(radec)
 
-                # Also save those corner positions as X,Y positions in the footprint
+                # Also save those corner positions as X,Y positions in the exposed pixels mask
                 xycorners = self.meta_wcs.all_world2pix(radec, 0).astype(np.int32).tolist()
                 self.exp_masks[exposure]['xy_corners'].append(xycorners)
 
