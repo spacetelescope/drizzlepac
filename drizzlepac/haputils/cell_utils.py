@@ -357,10 +357,15 @@ class SkyFootprint(object):
                     scaled_blank = blank * scale_val
                     self.scaled_mask[scell_slice] += scaled_blank
 
-            self.total_mask += self.exp_masks[exposure]['mask']
+                self.total_mask[scell_slice] += blank
+                del blank
 
-            # Compute the bounded WCS for this mask of exposed pixels
-            self.find_bounded_wcs()
+            # Only add members which contributed to this footprint
+            if exposure not in self.members:
+                self.members.append(exposure)
+
+        # Compute the bounded WCS for this mask of exposed pixels
+        self.find_bounded_wcs()
 
 
     def find_bounded_wcs(self):
