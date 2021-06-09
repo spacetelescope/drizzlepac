@@ -212,7 +212,7 @@ class SkyFootprint(object):
         self.bounded_wcs = None
         self.bounding_box = None
 
-        # the exp_masks dict records the individual exposed pixels mask for each exposure
+        # the exp_masks dict records the individual footprints of each exposure
         self.exp_masks = {}
         self.members = []
         self.corners = []
@@ -221,7 +221,7 @@ class SkyFootprint(object):
         self.edge_pixels = []
 
         self.total_mask = np.zeros(meta_wcs.array_shape, dtype=np.int16)
-        self.scaled_mask = np.zeros(meta_wcs.array_shape, dtype=np.float32)
+        self.scaled_mask = None
         self.footprint = None
 
         self.edges = None
@@ -255,11 +255,13 @@ class SkyFootprint(object):
         for exposure in expnames:
             if exposure not in self.members:
                 self.members.append(exposure)
-            self.exp_masks[exposure] = {'mask': None, 'sky_corners': [], 'xy_corners': []}
-            self.exp_masks[exposure]['mask'] = np.zeros(self.meta_wcs.array_shape, dtype=np.int16)
+
+            self.exp_masks[exposure] = {'sky_corners': [], 'xy_corners': [], 'mask': {}}
             exp = fits.open(exposure)
             if scale:
-                scale_val = fits.getval(exposure, scale_kw)
+                # Only assign memory for this array if requested.
+                self.scaled_mask = np.zeros(self.meta_wcs.array_shape, dtype=np.float32)
+            scale_val = exp[0].header[scale_kw]
 
             sci_extns = wcs_functions.get_extns(exp)
             if len(sci_extns) == 0 and '_single' in exposure:
@@ -274,7 +276,7 @@ class SkyFootprint(object):
                 radec.append(radec[0])  # close the polygon/chip
                 self.exp_masks[exposure]['sky_corners'].append(radec)
 
-                # Also save those corner positions as X,Y positions in the exposed pixels mask
+                # Also save those corner positions as X,Y positions in the footprint
                 xycorners = self.meta_wcs.all_world2pix(radec, 0).astype(np.int32).tolist()
                 self.exp_masks[exposure]['xy_corners'].append(xycorners)
 
@@ -286,25 +288,48 @@ class SkyFootprint(object):
                 meta_x = meta_x.astype(np.int32)
                 meta_y = meta_y.astype(np.int32)
 
+                # check to see whether or not this image falls within meta_wcs at all...
+                off_x = (meta_x.max() < 0) or meta_x.min() > (self.meta_wcs.array_shape[1] - 1)
+                off_y = (meta_y.max() < 0) or meta_y.min() > (self.meta_wcs.array_shape[0] - 1)
+                # if this chip falls completely outside SkyCell, skip to next chip
+                if off_x or off_y:
+                    continue
+
                 # Account for rounding problems with creating meta_wcs
                 meta_y = np.clip(meta_y, 0, self.meta_wcs.array_shape[0] - 1)
                 meta_x = np.clip(meta_x, 0, self.meta_wcs.array_shape[1] - 1)
+
+                # define subarray spanned by this chip on the SkyCell
+                scell_slice = [slice(meta_y.min(), meta_y.max()),
+                               slice(meta_x.min(), meta_x.max())]
+                scell_ltm = [meta_x.min(), meta_y.min()]
+                # Reset range of pixels to be relative to starting pixel position in SkyCell
+                meta_x -= scell_ltm[0]
+                meta_y -= scell_ltm[1]
 
                 # apply meta_edges to blank mask
                 # Use PIL to create mask
                 # parray = np.array(meta_edges.T)
                 parray = (meta_x, meta_y)
                 polygon = list(zip(parray[0], parray[1]))
-                nx = self.meta_wcs.array_shape[1]
-                ny = self.meta_wcs.array_shape[0]
+                nx = self.total_mask[scell_slice].shape[1]
+                ny = self.total_mask[scell_slice].shape[0]
                 img = Image.new('L', (nx, ny), 0)
                 ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
                 blank = np.array(img).astype(np.int16)
 
+                # Remember information needed to recreate the mask for this chip
+                sci_dict = {}
+                sci_dict['scell_slice'] = scell_slice
+                sci_dict['scell_ltm'] = scell_ltm
+                sci_dict['scale_val'] = scale_val
+                sci_dict['polygon'] = polygon
+                sci_dict['img_shape'] = (nx, ny)
+                self.exp_masks[exposure]['mask'][sci] = sci_dict
+
                 if scale:
                     scaled_blank = blank * scale_val
-                    self.scaled_mask += scaled_blank
-                self.exp_masks[exposure]['mask'] += blank
+                    self.scaled_mask[scell_slice] += scaled_blank
 
             self.total_mask += self.exp_masks[exposure]['mask']
 
@@ -356,7 +381,17 @@ class SkyFootprint(object):
         else:
             if member not in self.exp_masks:
                 raise ValueError("Member {} not added to footprint".format(member))
-            mask = self.exp_masks[member]['mask']
+            # Recompute mask specifically for this member
+            #mask = self.exp_masks[member]['mask']
+            exp_mask = self.exp_masks[member]['mask']
+            mask = np.zeros(self.meta_wcs.array_shape, dtype=np.int16)
+
+            for sci in exp_mask.values():
+                img = Image.new('L', sci['img_shape'], 0)
+                ImageDraw.Draw(img).polygon(sci['polygon'], outline=1, fill=1)
+                blank = np.array(img).astype(np.int16)
+                mask[sci['scell_slice']] += blank
+
         self.footprint = np.clip(mask, 0, 1)
 
 
@@ -651,7 +686,9 @@ class GridDefs(object):
         self.sc_nxy = self.hdu[0].header['SC_NXY']
 
     def find_ring_by_id(self, id):
-        return self.rings[np.searchsorted(self.rings['projcell'], id) - 1]
+        ring_indx = np.searchsorted(self.rings['projcell'], id)
+        ring_id = ring_indx - 1 if ring_indx > 0 else 0
+        return self.rings[ring_id]
 
     def get_projection_cells(self, skyfootprint=None, member='total',
                              ra=None, dec=None, id=None):
