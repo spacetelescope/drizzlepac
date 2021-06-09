@@ -99,7 +99,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     #  such as those with EXPTIME==0
     for filename in expnames:
         fimg = fits.open(filename)
-        print("Checking {}".format(filename))
+        print("Validating WCS solutions for {}".format(filename))
         if 'wcsname' not in fimg[1].header:
             expnames.remove(filename)
         fimg.close()
@@ -111,15 +111,44 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     # This includes setting the pixel scale.
     sky_grid = GridDefs(scale=scale, cell_size=cell_size)
 
-    # build reference wcs for combined footprint of all input exposures
-    meta_wcs = wcs_functions.make_mosaic_wcs(expnames, rot=0.0, scale=sky_grid.scale)
+    # Group input expnames by visit and look for SkyCell overlap
+    # on each 'visit' separately, then only update final list of
+    # output SkyCells with unique SkyCells merging list of input
+    # expnames as needed.  Doing this will minimize the size of
+    # the 'meta_wcs' defined for the SkyFootprint used to overlap
+    # the SkyCells.  Otherwise, the 'meta_wcs' could become almost
+    # arbitrarily large compared to the size of a SkyCell.
+    #
+    visit_groups = {}
+    for exp in expnames:
+        exp_visit = extract_visit(exp)
+        if exp_visit not in visit_groups:
+            visit_groups[exp_visit] = []
+        visit_groups[exp_visit].append(exp)
+    # at this point, we have a dict of visit IDs with a list of all expnames that go with each visit
+    sky_cells = {}
+    for visit_id, visit_expnames in visit_groups.items():
+        print('Looking for SkyCells that overlap exposures from visit "{}"'.format(visit_id))
 
-    # create footprint on the sky (as a tangent plane array) for all input exposures using meta_wcs
-    footprint = SkyFootprint(meta_wcs)
-    footprint.build(expnames)
+        # build reference wcs for combined footprint of all input exposures
+        meta_wcs = wcs_functions.make_mosaic_wcs(visit_expnames, rot=0.0, scale=sky_grid.scale)
 
-    # Use this footprint to identify overlapping sky cells
-    sky_cells = sky_grid.get_sky_cells(footprint)
+        print('Visit WCS: \n{}'.format(meta_wcs))
+
+        # create footprint on the sky (as a tangent plane array) for all input exposures using meta_wcs
+        footprint = SkyFootprint(meta_wcs)
+        footprint.build(visit_expnames)
+
+        # Use this footprint to identify overlapping sky cells
+        visit_cells = sky_grid.get_sky_cells(footprint)
+        print('Visit "{}" overlapped SkyCells:\n{}'.format(visit_id, visit_cells))
+
+        for scell in visit_cells:
+            if scell not in sky_cells:
+                sky_cells[scell] = visit_cells[scell]
+            else:
+                # It overlapped previous exposures, so add these exposures to the SkyCell definition
+                sky_cells[scell].members.extend(visit_cells[scell].members)
 
     return sky_cells
 
@@ -253,9 +282,6 @@ class SkyFootprint(object):
         """
 
         for exposure in expnames:
-            if exposure not in self.members:
-                self.members.append(exposure)
-
             self.exp_masks[exposure] = {'sky_corners': [], 'xy_corners': [], 'mask': {}}
             exp = fits.open(exposure)
             if scale:
@@ -393,12 +419,13 @@ class SkyFootprint(object):
                 mask[sci['scell_slice']] += blank
 
         self.footprint = np.clip(mask, 0, 1)
+        self.footprint_member = member
 
 
     def find_edges(self, member='total'):
         """Computes a mask containing only those pixels along the edge of the footprint."""
 
-        if self.footprint is None:
+        if self.footprint_member != member:
             self.find_footprint(member=member)
 
         edges = ndimage.binary_erosion(self.footprint).astype(np.int16)
@@ -441,7 +468,7 @@ class SkyFootprint(object):
             return
 
         # Insure footprint has been determined
-        if self.footprint is None:
+        if self.footprint_member != member:
             self.find_footprint(member=member)
 
         if member == 'total':
@@ -855,10 +882,8 @@ class ProjectionCell(object):
         skycell00 = SkyCell(x=0, y=0, projection_cell=self)
         skycells = {}
 
-        member = 'total'
-
         # Get the edges of the mosaic on the sky
-        mosaic_ra, mosaic_dec = mosaic.get_edges_sky(member=member)
+        mosaic_ra, mosaic_dec = mosaic.get_edges_sky()
         # Convert edges to positions in projection cell
         mosaic_edges_x, mosaic_edges_y = self.wcs.world_to_pixel_values(mosaic_ra, mosaic_dec)
 
@@ -874,7 +899,6 @@ class ProjectionCell(object):
         for xi in range(mosaic_xr[0], mosaic_xr[1]):
             for yi in range(mosaic_yr[0], mosaic_yr[1]):
                 skycell = SkyCell(x=xi, y=yi, projection_cell=self)
-                # skycell.build_mask()
 
                 sc_overlap = self.compute_overlap(skycell, mosaic_ra, mosaic_dec)
 
@@ -962,7 +986,10 @@ class SkyCell(object):
         self.overlap = self.projection_cell.sc_overlap  # overlap between sky cells
         self.nxy = self.projection_cell.sc_nxy
 
-        self._build_wcs()
+        # Initialize computed attributes
+        self._build_wcs()  # compute .wcs and .corners
+        self.mask = None
+        self.polygon = None
 
     @classmethod
     def from_name(cls, name, scale="fine"):
@@ -1636,3 +1663,13 @@ def ckmeans_test():
                 sum_of_squared_distances(expected))
         assert np.array_equal(result, expected), errormsg
         print("✓ {}".format(result))
+
+def extract_visit(filename):
+    """Extract the VISIT ID from the input filename"""
+    if filename.startswith('hst_'):
+        rootname = filename.split('_')[-2]
+        visit_id = rootname[:6]
+    else:
+        visit_id = filename[:6]
+
+    return visit_id
