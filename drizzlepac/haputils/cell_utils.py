@@ -208,8 +208,11 @@ class SkyFootprint(object):
     def __init__(self, meta_wcs):
 
         self.meta_wcs = meta_wcs
+        # bounded_wcs corresponds to WCS of bounding box of exposed pixels
+        self.bounded_wcs = None
+        self.bounding_box = None
 
-        # the exp_masks dict records the individual footprints of each exposure
+        # the exp_masks dict records the individual exposed pixels mask for each exposure
         self.exp_masks = {}
         self.members = []
         self.corners = []
@@ -227,7 +230,7 @@ class SkyFootprint(object):
         self.polygon = None
 
     def build(self, expnames, scale=False, scale_kw='EXPTIME'):
-        """ Create mask showing where all input exposures overlap the footprint's WCS
+        """ Create mask showing where all input exposures overlap the SkyFootprint's WCS
 
         Notes
         -----
@@ -248,6 +251,7 @@ class SkyFootprint(object):
             in the PRIMARY header.
 
         """
+
         for exposure in expnames:
             if exposure not in self.members:
                 self.members.append(exposure)
@@ -258,15 +262,19 @@ class SkyFootprint(object):
                 scale_val = fits.getval(exposure, scale_kw)
 
             sci_extns = wcs_functions.get_extns(exp)
+            if len(sci_extns) == 0 and '_single' in exposure:
+                sci_extns = [0]
+
             for sci in sci_extns:
                 wcs = HSTWCS(exp, ext=sci)
+
                 # save the footprint for each chip as RA/Dec corner positions
                 # radec = wcs.calc_footprint().tolist()
                 radec = calc_wcs_footprint(wcs, offset=1).tolist()
                 radec.append(radec[0])  # close the polygon/chip
                 self.exp_masks[exposure]['sky_corners'].append(radec)
 
-                # Also save those corner positions as X,Y positions in the footprint
+                # Also save those corner positions as X,Y positions in the exposed pixels mask
                 xycorners = self.meta_wcs.all_world2pix(radec, 0).astype(np.int32).tolist()
                 self.exp_masks[exposure]['xy_corners'].append(xycorners)
 
@@ -300,6 +308,26 @@ class SkyFootprint(object):
 
             self.total_mask += self.exp_masks[exposure]['mask']
 
+            # Compute the bounded WCS for this mask of exposed pixels
+            self.find_bounded_wcs()
+
+
+    def find_bounded_wcs(self):
+        """Compute the WCS based on the bounding box of exposed pixels(mask) """
+        if self.total_mask is None:
+            print("Please add exposures before computing bounding box WCS...")
+
+        # start by computing the bounding box for the footprint
+        ymin, ymax, xmin, xmax = calc_bounding_box(self.total_mask)
+
+        # make a copy of the full WCS to be revised
+        self.bounded_wcs = self.meta_wcs.copy()
+        self.bounding_box = [slice(ymin, ymax), slice(xmin, xmax)]
+
+        # Use this box to compute new CRPIX position
+        self.bounded_wcs.wcs.crpix -= [xmin, ymin]
+        self.bounded_wcs.naxis1 = xmax - xmin + 1
+        self.bounded_wcs.naxis2 = ymax - ymin + 1
 
 
     # Methods with 'find' compute values
@@ -961,6 +989,15 @@ class SkyCell(object):
         mask = np.array(img)
 
         self.mask = mask
+
+def calc_bounding_box(img):
+    """Compute bounding box for non-zero section of img """
+    rows = np.any(img, axis=1)
+    cols = np.any(img, axis=0)
+    rmin, rmax = np.where(rows)[0][[0, -1]]
+    cmin, cmax = np.where(cols)[0][[0, -1]]
+
+    return rmin, rmax, cmin, cmax
 
 
 def cart2pol(x, y, clockwise=False):
