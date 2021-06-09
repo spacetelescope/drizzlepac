@@ -874,7 +874,7 @@ class ProjectionCell(object):
         for xi in range(mosaic_xr[0], mosaic_xr[1]):
             for yi in range(mosaic_yr[0], mosaic_yr[1]):
                 skycell = SkyCell(x=xi, y=yi, projection_cell=self)
-                skycell.build_mask()
+                # skycell.build_mask()
 
                 sc_overlap = self.compute_overlap(skycell, mosaic_ra, mosaic_dec)
 
