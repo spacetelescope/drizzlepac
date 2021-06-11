@@ -99,7 +99,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     #  such as those with EXPTIME==0
     for filename in expnames:
         fimg = fits.open(filename)
-        print("Checking {}".format(filename))
+        print("Validating WCS solutions for {}".format(filename))
         if 'wcsname' not in fimg[1].header:
             expnames.remove(filename)
         fimg.close()
@@ -111,15 +111,44 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     # This includes setting the pixel scale.
     sky_grid = GridDefs(scale=scale, cell_size=cell_size)
 
-    # build reference wcs for combined footprint of all input exposures
-    meta_wcs = wcs_functions.make_mosaic_wcs(expnames, rot=0.0, scale=sky_grid.scale)
+    # Group input expnames by visit and look for SkyCell overlap
+    # on each 'visit' separately, then only update final list of
+    # output SkyCells with unique SkyCells merging list of input
+    # expnames as needed.  Doing this will minimize the size of
+    # the 'meta_wcs' defined for the SkyFootprint used to overlap
+    # the SkyCells.  Otherwise, the 'meta_wcs' could become almost
+    # arbitrarily large compared to the size of a SkyCell.
+    #
+    visit_groups = {}
+    for exp in expnames:
+        exp_visit = extract_visit(exp)
+        if exp_visit not in visit_groups:
+            visit_groups[exp_visit] = []
+        visit_groups[exp_visit].append(exp)
+    # at this point, we have a dict of visit IDs with a list of all expnames that go with each visit
+    sky_cells = {}
+    for visit_id, visit_expnames in visit_groups.items():
+        print('Looking for SkyCells that overlap exposures from visit "{}"'.format(visit_id))
 
-    # create footprint on the sky (as a tangent plane array) for all input exposures using meta_wcs
-    footprint = SkyFootprint(meta_wcs)
-    footprint.build(expnames)
+        # build reference wcs for combined footprint of all input exposures
+        meta_wcs = wcs_functions.make_mosaic_wcs(visit_expnames, rot=0.0, scale=sky_grid.scale)
 
-    # Use this footprint to identify overlapping sky cells
-    sky_cells = sky_grid.get_sky_cells(footprint)
+        print('Visit WCS: \n{}'.format(meta_wcs))
+
+        # create footprint on the sky (as a tangent plane array) for all input exposures using meta_wcs
+        footprint = SkyFootprint(meta_wcs)
+        footprint.build(visit_expnames)
+
+        # Use this footprint to identify overlapping sky cells
+        visit_cells = sky_grid.get_sky_cells(footprint)
+        print('Visit "{}" overlapped SkyCells:\n{}'.format(visit_id, visit_cells))
+
+        for scell in visit_cells:
+            if scell not in sky_cells:
+                sky_cells[scell] = visit_cells[scell]
+            else:
+                # It overlapped previous exposures, so add these exposures to the SkyCell definition
+                sky_cells[scell].members.extend(visit_cells[scell].members)
 
     return sky_cells
 
@@ -212,7 +241,7 @@ class SkyFootprint(object):
         self.bounded_wcs = None
         self.bounding_box = None
 
-        # the exp_masks dict records the individual exposed pixels mask for each exposure
+        # the exp_masks dict records the individual footprints of each exposure
         self.exp_masks = {}
         self.members = []
         self.corners = []
@@ -221,7 +250,7 @@ class SkyFootprint(object):
         self.edge_pixels = []
 
         self.total_mask = np.zeros(meta_wcs.array_shape, dtype=np.int16)
-        self.scaled_mask = np.zeros(meta_wcs.array_shape, dtype=np.float32)
+        self.scaled_mask = None
         self.footprint = None
 
         self.edges = None
@@ -253,13 +282,12 @@ class SkyFootprint(object):
         """
 
         for exposure in expnames:
-            if exposure not in self.members:
-                self.members.append(exposure)
-            self.exp_masks[exposure] = {'mask': None, 'sky_corners': [], 'xy_corners': []}
-            self.exp_masks[exposure]['mask'] = np.zeros(self.meta_wcs.array_shape, dtype=np.int16)
+            self.exp_masks[exposure] = {'sky_corners': [], 'xy_corners': [], 'mask': {}}
             exp = fits.open(exposure)
             if scale:
-                scale_val = fits.getval(exposure, scale_kw)
+                # Only assign memory for this array if requested.
+                self.scaled_mask = np.zeros(self.meta_wcs.array_shape, dtype=np.float32)
+            scale_val = exp[0].header[scale_kw]
 
             sci_extns = wcs_functions.get_extns(exp)
             if len(sci_extns) == 0 and '_single' in exposure:
@@ -274,7 +302,7 @@ class SkyFootprint(object):
                 radec.append(radec[0])  # close the polygon/chip
                 self.exp_masks[exposure]['sky_corners'].append(radec)
 
-                # Also save those corner positions as X,Y positions in the exposed pixels mask
+                # Also save those corner positions as X,Y positions in the footprint
                 xycorners = self.meta_wcs.all_world2pix(radec, 0).astype(np.int32).tolist()
                 self.exp_masks[exposure]['xy_corners'].append(xycorners)
 
@@ -286,30 +314,58 @@ class SkyFootprint(object):
                 meta_x = meta_x.astype(np.int32)
                 meta_y = meta_y.astype(np.int32)
 
+                # check to see whether or not this image falls within meta_wcs at all...
+                off_x = (meta_x.max() < 0) or meta_x.min() > (self.meta_wcs.array_shape[1] - 1)
+                off_y = (meta_y.max() < 0) or meta_y.min() > (self.meta_wcs.array_shape[0] - 1)
+                # if this chip falls completely outside SkyCell, skip to next chip
+                if off_x or off_y:
+                    continue
+
                 # Account for rounding problems with creating meta_wcs
                 meta_y = np.clip(meta_y, 0, self.meta_wcs.array_shape[0] - 1)
                 meta_x = np.clip(meta_x, 0, self.meta_wcs.array_shape[1] - 1)
+
+                # define subarray spanned by this chip on the SkyCell
+                scell_slice = [slice(meta_y.min(), meta_y.max()),
+                               slice(meta_x.min(), meta_x.max())]
+                scell_ltm = [meta_x.min(), meta_y.min()]
+                # Reset range of pixels to be relative to starting pixel position in SkyCell
+                meta_x -= scell_ltm[0]
+                meta_y -= scell_ltm[1]
 
                 # apply meta_edges to blank mask
                 # Use PIL to create mask
                 # parray = np.array(meta_edges.T)
                 parray = (meta_x, meta_y)
                 polygon = list(zip(parray[0], parray[1]))
-                nx = self.meta_wcs.array_shape[1]
-                ny = self.meta_wcs.array_shape[0]
+                nx = self.total_mask[scell_slice].shape[1]
+                ny = self.total_mask[scell_slice].shape[0]
                 img = Image.new('L', (nx, ny), 0)
                 ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
                 blank = np.array(img).astype(np.int16)
 
+                # Remember information needed to recreate the mask for this chip
+                sci_dict = {}
+                sci_dict['scell_slice'] = scell_slice
+                sci_dict['scell_ltm'] = scell_ltm
+                sci_dict['scale_val'] = scale_val
+                sci_dict['polygon'] = polygon
+                sci_dict['img_shape'] = (nx, ny)
+                self.exp_masks[exposure]['mask'][sci] = sci_dict
+
                 if scale:
                     scaled_blank = blank * scale_val
-                    self.scaled_mask += scaled_blank
-                self.exp_masks[exposure]['mask'] += blank
+                    self.scaled_mask[scell_slice] += scaled_blank
 
-            self.total_mask += self.exp_masks[exposure]['mask']
+                self.total_mask[scell_slice] += blank
+                del blank
 
-            # Compute the bounded WCS for this mask of exposed pixels
-            self.find_bounded_wcs()
+            # Only add members which contributed to this footprint
+            if exposure not in self.members:
+                self.members.append(exposure)
+
+        # Compute the bounded WCS for this mask of exposed pixels
+        self.find_bounded_wcs()
 
 
     def find_bounded_wcs(self):
@@ -356,14 +412,25 @@ class SkyFootprint(object):
         else:
             if member not in self.exp_masks:
                 raise ValueError("Member {} not added to footprint".format(member))
-            mask = self.exp_masks[member]['mask']
+            # Recompute mask specifically for this member
+            #mask = self.exp_masks[member]['mask']
+            exp_mask = self.exp_masks[member]['mask']
+            mask = np.zeros(self.meta_wcs.array_shape, dtype=np.int16)
+
+            for sci in exp_mask.values():
+                img = Image.new('L', sci['img_shape'], 0)
+                ImageDraw.Draw(img).polygon(sci['polygon'], outline=1, fill=1)
+                blank = np.array(img).astype(np.int16)
+                mask[sci['scell_slice']] += blank
+
         self.footprint = np.clip(mask, 0, 1)
+        self.footprint_member = member
 
 
     def find_edges(self, member='total'):
         """Computes a mask containing only those pixels along the edge of the footprint."""
 
-        if self.footprint is None:
+        if self.footprint_member != member:
             self.find_footprint(member=member)
 
         edges = ndimage.binary_erosion(self.footprint).astype(np.int16)
@@ -406,7 +473,7 @@ class SkyFootprint(object):
             return
 
         # Insure footprint has been determined
-        if self.footprint is None:
+        if self.footprint_member != member:
             self.find_footprint(member=member)
 
         if member == 'total':
@@ -651,7 +718,9 @@ class GridDefs(object):
         self.sc_nxy = self.hdu[0].header['SC_NXY']
 
     def find_ring_by_id(self, id):
-        return self.rings[np.searchsorted(self.rings['projcell'], id) - 1]
+        ring_indx = np.searchsorted(self.rings['projcell'], id)
+        ring_id = ring_indx - 1 if ring_indx > 0 else 0
+        return self.rings[ring_id]
 
     def get_projection_cells(self, skyfootprint=None, member='total',
                              ra=None, dec=None, id=None):
@@ -818,10 +887,8 @@ class ProjectionCell(object):
         skycell00 = SkyCell(x=0, y=0, projection_cell=self)
         skycells = {}
 
-        member = 'total'
-
         # Get the edges of the mosaic on the sky
-        mosaic_ra, mosaic_dec = mosaic.get_edges_sky(member=member)
+        mosaic_ra, mosaic_dec = mosaic.get_edges_sky()
         # Convert edges to positions in projection cell
         mosaic_edges_x, mosaic_edges_y = self.wcs.world_to_pixel_values(mosaic_ra, mosaic_dec)
 
@@ -837,7 +904,6 @@ class ProjectionCell(object):
         for xi in range(mosaic_xr[0], mosaic_xr[1]):
             for yi in range(mosaic_yr[0], mosaic_yr[1]):
                 skycell = SkyCell(x=xi, y=yi, projection_cell=self)
-                skycell.build_mask()
 
                 sc_overlap = self.compute_overlap(skycell, mosaic_ra, mosaic_dec)
 
@@ -925,7 +991,10 @@ class SkyCell(object):
         self.overlap = self.projection_cell.sc_overlap  # overlap between sky cells
         self.nxy = self.projection_cell.sc_nxy
 
-        self._build_wcs()
+        # Initialize computed attributes
+        self._build_wcs()  # compute .wcs and .corners
+        self.mask = None
+        self.polygon = None
 
     @classmethod
     def from_name(cls, name, scale="fine"):
@@ -1599,3 +1668,13 @@ def ckmeans_test():
                 sum_of_squared_distances(expected))
         assert np.array_equal(result, expected), errormsg
         print("✓ {}".format(result))
+
+def extract_visit(filename):
+    """Extract the VISIT ID from the input filename"""
+    if filename.startswith('hst_'):
+        rootname = filename.split('_')[-2]
+        visit_id = rootname[:6]
+    else:
+        visit_id = filename[:6]
+
+    return visit_id
