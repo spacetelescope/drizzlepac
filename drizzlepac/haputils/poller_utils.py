@@ -317,6 +317,9 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0, u
 
     # This little bit of code adds an attribute to single exposure objects that is True
     # if a given filter only contains one input (e.g. n_exp = 1)
+    #
+    # Also, gather a full list of the individual exposure filenames.
+    sc_exposure_filenames = []
     for filt_obj in tdp_list:
         if len(filt_obj.edp_list) == 1:
             is_singleton = True
@@ -324,8 +327,53 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0, u
             is_singleton = False
         for edp_obj in filt_obj.edp_list:
             edp_obj.is_singleton = is_singleton
+            sc_exposure_filenames.append(edp_obj.full_filename)
+
+    # Get the skycell ID (skycell-p####x##y##) from one of the SkyCellProduct objects
+    mvm_skycell_id = str(tdp_list[0].skycell).split(" ")[-1]
+
+    # Compute the wcs for the sky cell based upon the constituent images
+    meta_wcs, meta_bounded_wcs = get_mvm_exposure_wcs(mvm_skycell_id, sc_exposure_filenames)
+    # TODO: MDD Remove when done.
+    log.info("\n***** Meta WCS: {}".format(meta_wcs))
+    log.info("\n***** Meta Bounded WCS: {}".format(meta_bounded_wcs))
 
     return obset_dict, tdp_list
+
+
+def get_mvm_exposure_wcs(mvm_skycell_id, exp_filenames):
+    """Get the skycell WCS and bounded WCS based upon the constituent exposures.
+
+    Parameters
+    ----------
+    mvm_skycell_id : str
+        Skycell identification in the form "skycell-p####x##y##".
+
+    exp_filenames : list
+        List of strings which represent all of the constituent exposure names
+        for the sky cell.
+
+    Returns
+    -------
+    mvm_skycell_wcs : astropy.wcs
+        Computed WCS based upon all exposures which comprise the skycell
+
+    mvm_bounded_wcs : string
+        Computed 'bounded' WCS based upon all exposures which c.omprise the skycell.
+        The 'bounded' WCS corresponds to the WCS of the bounding box of exposed pixels.
+    """
+
+    # Get the pre-defined WCS from the skycell ID
+    sc_obj = cell_utils.SkyCell.from_name(name=mvm_skycell_id)
+    mvm_skycell_wcs = sc_obj.wcs
+
+    # Create footprint on the sky for all input exposures using the skycell wcs
+    mvm_footprint = cell_utils.SkyFootprint(mvm_skycell_wcs)
+    # mvm_footprint.meta_wcs should be sc_obj.wcs
+    mvm_footprint.build(exp_filenames)
+    mvm_bounded_wcs = mvm_footprint.bounded_wcs
+
+    return mvm_skycell_wcs, mvm_bounded_wcs
 
 
 # Translate the database query on an obset into actionable lists of filenames
@@ -485,7 +533,7 @@ def parse_mvm_tree(det_tree, log_level):
                 xindx = cellid.index('x')
                 prop_id = cellid[1:xindx]
                 obset_id = cellid[xindx:]
-                # Create a single exposure product object
+                # Create a single sky cell exposure product object
                 # __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype, log_level)
                 sep_obj = SkyCellExposure(prop_id, obset_id, prod_list[1], prod_list[2],
                                           filename[1], layer, ftype, log_level)
@@ -498,6 +546,8 @@ def parse_mvm_tree(det_tree, log_level):
                 sep_obj.new_process = int(prod_list[-2])
 
                 # Set up the filter product dictionary and create a filter product object
+                # The SkyCellProduct is the MVM equivalent of the SVM FilterProduct. Each SkyCellProduct
+                # is comprised of a list of exposures in the visit which were taken with the same filter.
                 # Initialize `info` key for this filter product dictionary
                 if not obset_products[fprod]['info']:
                     obset_products[fprod]['info'] = prod_info
@@ -545,7 +595,10 @@ def parse_mvm_tree(det_tree, log_level):
                 log.debug(' '.join([log1, log2]).format(filt_obj.filters,
                                                         filt_obj.instrument,
                                                         filt_obj.detector))
-            # Add the total product object to the list of TotalProducts
+
+            # There really is no MVM equivalent to the SVM TotalProduct as the TotalProduct can consist
+            # of objects with different filters.  The need here is to gather all the SkyCellProduct
+            # objects (aka MVM FilterProduct objects), whether they are "coarse" or "fine", into a list.
             tdp_list.append(filt_obj)
             if pscale == 'coarse':
                 tdp_list.append(filt_obj_fine)
