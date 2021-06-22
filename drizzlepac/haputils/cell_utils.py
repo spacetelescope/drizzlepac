@@ -382,8 +382,7 @@ class SkyFootprint(object):
 
         # Use this box to compute new CRPIX position
         self.bounded_wcs.wcs.crpix -= [xmin, ymin]
-        self.bounded_wcs.naxis1 = xmax - xmin + 1
-        self.bounded_wcs.naxis2 = ymax - ymin + 1
+        self.bounded_wcs.pixel_shape = [xmax - xmin + 1, ymax - ymin + 1]
 
 
     # Methods with 'find' compute values
