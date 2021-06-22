@@ -258,6 +258,7 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # Quality assurance portion of the processing - done only if the environment
         # variable, SVM_QUALITY_TESTING, is set to 'on', 'yes', or 'true'.
         qa_switch = _get_envvar_switch(envvar_qa_svm)
+        qa_switch = False  # TODO: temporarily set to False to skip QA stuff
 
         # If requested, generate quality assessment statistics for the SVM products
         if qa_switch:
