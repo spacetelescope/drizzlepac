@@ -804,6 +804,8 @@ class SkyCellExposure(HAPProduct):
         self.trl_logname = self.product_basename + "_trl.log"
         self.trl_filename = self.product_basename + "_trl.txt"
 
+        log.info("Original filename: {}".format(filename))
+
         self.full_filename = self.copy_exposure(filename)
 
         self.regions_dict = {}
@@ -947,6 +949,10 @@ class SkyCellProduct(HAPProduct):
         self.regions_dict = {}
         self.skycell = cell_utils.SkyCell.from_name(skycell_name, scale=layer_scale)
         self.configobj_pars = None
+        self.meta_wcs = None
+
+        self.all_mvm_exposures = []
+        self.meta_bounded_wcs = None
 
         log.debug("SkyCell object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
 
@@ -965,9 +971,28 @@ class SkyCellProduct(HAPProduct):
         self.edp_list.append(edp)
         self.new_to_layer += edp.new_process
 
+    def add_all_mvm_exposures_list(self, exp_list):
+        """ Add a list containing all the MVM FLT or FLC filenames, even the
+            filenames for exposures which have been previously processed.
+        """
+        self.all_mvm_exposures = exp_list
+
     def generate_metawcs(self):
+
+        # This is the exposure-independent WCS.
         self.meta_wcs = self.skycell.wcs
-        return self.meta_wcs
+
+        # Create footprint on the sky for all input exposures using the skycell wcs
+        # This footprint includes all the exposures in the visit, NEW exposures, as well
+        # as exposures which have been previously processed (all are listed in the original
+        # poller file).
+        mvm_footprint = cell_utils.SkyFootprint(self.skycell.wcs)
+        mvm_footprint.build(self.all_mvm_exposures)
+
+        # This is the exposure-dependent WCS.
+        self.meta_bounded_wcs = mvm_footprint.bounded_wcs
+
+        return self.meta_bounded_wcs
 
     def wcs_drizzle_product(self, meta_wcs):
         """
