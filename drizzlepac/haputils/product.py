@@ -804,8 +804,6 @@ class SkyCellExposure(HAPProduct):
         self.trl_logname = self.product_basename + "_trl.log"
         self.trl_filename = self.product_basename + "_trl.txt"
 
-        log.info("Original filename: {}".format(filename))
-
         self.full_filename = self.copy_exposure(filename)
 
         self.regions_dict = {}
