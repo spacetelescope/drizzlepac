@@ -377,13 +377,12 @@ class SkyFootprint(object):
         ymin, ymax, xmin, xmax = calc_bounding_box(self.total_mask)
 
         # make a copy of the full WCS to be revised
-        self.bounded_wcs = self.meta_wcs.copy()
+        self.bounded_wcs = self.meta_wcs.deepcopy()
         self.bounding_box = [slice(ymin, ymax), slice(xmin, xmax)]
 
         # Use this box to compute new CRPIX position
         self.bounded_wcs.wcs.crpix -= [xmin, ymin]
-        self.bounded_wcs.naxis1 = xmax - xmin + 1
-        self.bounded_wcs.naxis2 = ymax - ymin + 1
+        self.bounded_wcs.pixel_shape = [xmax - xmin + 1, ymax - ymin + 1]
 
 
     # Methods with 'find' compute values

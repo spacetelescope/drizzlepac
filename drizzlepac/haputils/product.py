@@ -97,6 +97,10 @@ class HAPProduct:
         footprint = cell_utils.SkyFootprint(self.meta_wcs)
         exposure_names = [element.full_filename for element in self.edp_list]
         footprint.build(exposure_names, scale=True)
+
+        # This mask actually represents the number of chips per pixel, not True/False.
+        # To have the True/False mask it should be self.mask = footprint.footprint.
+        # Do not fix this until it can be verified that a change will not have repercussions.
         self.mask = footprint.total_mask
 
         # Compute footprint-based SVM-specific keywords for product image header
@@ -947,6 +951,10 @@ class SkyCellProduct(HAPProduct):
         self.regions_dict = {}
         self.skycell = cell_utils.SkyCell.from_name(skycell_name, scale=layer_scale)
         self.configobj_pars = None
+        self.meta_wcs = None
+
+        self.all_mvm_exposures = []
+        self.meta_bounded_wcs = None
 
         log.debug("SkyCell object {}/{}/{} created.".format(self.instrument, self.detector, self.filters))
 
@@ -965,9 +973,28 @@ class SkyCellProduct(HAPProduct):
         self.edp_list.append(edp)
         self.new_to_layer += edp.new_process
 
+    def add_all_mvm_exposures_list(self, exp_list):
+        """ Add a list containing all the MVM FLT or FLC filenames, even the
+            filenames for exposures which have been previously processed.
+        """
+        self.all_mvm_exposures = exp_list
+
     def generate_metawcs(self):
+
+        # This is the exposure-independent WCS.
         self.meta_wcs = self.skycell.wcs
-        return self.meta_wcs
+
+        # Create footprint on the sky for all input exposures using the skycell wcs
+        # This footprint includes all the exposures in the visit, NEW exposures, as well
+        # as exposures which have been previously processed (all are listed in the original
+        # poller file).
+        mvm_footprint = cell_utils.SkyFootprint(self.skycell.wcs)
+        mvm_footprint.build(self.all_mvm_exposures)
+
+        # This is the exposure-dependent WCS.
+        self.meta_bounded_wcs = mvm_footprint.bounded_wcs
+
+        return self.meta_bounded_wcs
 
     def wcs_drizzle_product(self, meta_wcs):
         """
