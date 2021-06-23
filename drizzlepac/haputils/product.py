@@ -97,6 +97,10 @@ class HAPProduct:
         footprint = cell_utils.SkyFootprint(self.meta_wcs)
         exposure_names = [element.full_filename for element in self.edp_list]
         footprint.build(exposure_names, scale=True)
+
+        # This mask actually represents the number of chips per pixel, not True/False.
+        # To have the True/False mask it should be self.mask = footprint.footprint.
+        # Do not fix this until it can be verified that a change will not have repercussions.
         self.mask = footprint.total_mask
 
         # Compute footprint-based SVM-specific keywords for product image header
