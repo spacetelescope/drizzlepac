@@ -65,6 +65,7 @@ from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
 
 from ..tweakutils import build_xy_zeropoint, ndfind
+from . import laplace_point_cat as lpc
 
 __taskname__ = 'astrometric_utils'
 
@@ -945,12 +946,13 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     if dqmask is not None:
         imgarr[dqmask] = 0
 
-    if segment_threshold is None:
+    if dao_threshold is None:
         dao_threshold, bkg = sigma_clipped_bkg(imgarr, sigma=4.0, nsigma=dao_nsigma)
-        segment_threshold = np.ones(imgarr.shape, imgarr.dtype) * dao_threshold
 
-    segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
-                          filter_kernel=kernel, connectivity=4)
+    log.debug('Detecting point sources using lpc.detect_LoG_segments...')
+    segm, segfiles = lpc.detect_LoG_segments(imgarr, sciext=1, imglist=None, edge_distance=10,
+                                         nsigma=3.0, npixels=8, classify=False,
+                                         diagnostic_mode=(log_level==logutil.logging.DEBUG))
 
     # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
     if segm is None or segm.nlabels == 0:
@@ -958,6 +960,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         return None, None, None
 
     log.debug("Creating segmentation map for {} ".format(outroot))
+    """
     if kernel is not None:
         kernel_area = ((kernel.shape[0] // 2) ** 2) * np.pi
         log.debug("   based on kernel shape of {}".format(kernel.shape))
@@ -980,8 +983,10 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                         kcenter - koffset: kcenter + koffset + 1].copy()
         kernel /= kernel.sum()  # normalize to total sum == 1
         log.info("Looking for crowded sources using smaller kernel with shape: {}".format(kernel.shape))
-        segm = detect_sources(imgarr, segment_threshold, npixels=source_box, filter_kernel=kernel)
-
+        segm, segfiles = lpc.detect_LoG_segments(imgarr, sciext=1, imglist=None, edge_distance=10,
+                                                 nsigma=3.0, npixels=8, classify=False,
+                                                 diagnostic_mode=(log_level == logutil.logging.DEBUG))
+    """
     if deblend:
         segm = deblend_sources(imgarr, segm, npixels=5,
                                filter_kernel=kernel, nlevels=32,
@@ -1043,7 +1048,6 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
             seg_yoffset = seg_slice[0].start
             seg_xoffset = seg_slice[1].start
 
-            dao_threshold = segment_threshold[seg_slice].mean()
             daofind = DAOStarFinder(fwhm=fwhm, threshold=dao_threshold)
             log.debug("Setting up DAOStarFinder with: \n    fwhm={}  threshold={}".format(fwhm, dao_threshold))
 
@@ -1191,6 +1195,28 @@ def classify_sources(catalog, fwhm, sources=None):
         if valid_src and not valid_streak:
             srctype[src] = 1
     return srctype
+
+
+def find_crs(imgarr, segmap, fwhm):
+
+    # If classify is turned on, it should modify the segmentation map
+    cat = source_properties(imgarr, segmap)
+    # Remove likely cosmic-rays based on central_moments classification
+    bad_srcs = np.where(classify_sources(cat, fwhm) == 0)[0] + 1
+
+    if LooseVersion(photutils.__version__) >= '0.7':
+        segmap.remove_labels(bad_srcs)
+    else:
+        # this is the photutils >= 0.7 fast code for removing labels
+        segmap.check_labels(bad_srcs)
+        bad_srcs = np.atleast_1d(bad_srcs)
+        if len(bad_srcs) != 0:
+            idx = np.zeros(segmap.max_label + 1, dtype=int)
+            idx[segmap.labels] = segmap.labels
+            idx[bad_srcs] = 0
+            segmap.data = idx[segmap.data]
+
+    return segmap
 
 
 def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
