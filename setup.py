@@ -83,7 +83,7 @@ setup(
         'astropy>=4.0.0',
         'fitsblender',
         'nictools',
-        'numpy>=1.18',
+        'numpy<1.21',
         'scipy',
         'matplotlib',
         'acstools',
