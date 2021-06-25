@@ -74,7 +74,8 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
     if isinstance(visit_input, list):
         expnames = visit_input.copy()
     else:
-        expnames = Table.read(visit_input, format='ascii.fast_no_header')[0]
+        table = Table.read(visit_input, format='ascii.fast_no_header')
+        expnames = table['col1'].tolist()
 
     # Check that exposures are located in current working directory
     if not os.path.exists(expnames[0]):
