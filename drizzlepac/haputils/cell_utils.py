@@ -598,13 +598,9 @@ class SkyFootprint(object):
 
         """
         self.find_footprint(member=member)
-        if self.edges is None:
-            self.find_edges()
-        edges = np.where(self.edges)
-        self.edges_ra, self.edges_dec = self.meta_wcs.pixel_to_world_values(edges[0], edges[1])
-        # close the polygon
-        self.edges_ra = np.append(self.edges_ra, [self.edges_ra[0]], axis=0)
-        self.edges_dec = np.append(self.edges_dec, [self.edges_dec[0]], axis=0)
+        if len(self.corners) == 0:
+            self.find_corners()
+        self.edges_ra, self.edges_dec = self.meta_wcs.pixel_to_world_values(self.edge_pixels[0][:,0], self.edge_pixels[0][:,1])
         return self.edges_ra, self.edges_dec
 
     def build_polygon(self, member='total'):
@@ -719,8 +715,7 @@ class GridDefs(object):
         self.sc_nxy = self.hdu[0].header['SC_NXY']
 
     def find_ring_by_id(self, id):
-        ring_indx = np.searchsorted(self.rings['projcell'], id)
-        ring_id = ring_indx - 1 if ring_indx > 0 else 0
+        ring_id = np.where(self.rings['projcell'] <= id)[0][-1]
         return self.rings[ring_id]
 
     def get_projection_cells(self, skyfootprint=None, member='total',
@@ -896,8 +891,8 @@ class ProjectionCell(object):
         # Determine roughly what sky cells overlap this mosaic
         mosaic_edges_x = (mosaic_edges_x / skycell00.wcs.pixel_shape[0] + 0.5).astype(np.int32)
         mosaic_edges_y = (mosaic_edges_y / skycell00.wcs.pixel_shape[1] + 0.5).astype(np.int32)
-        mosaic_xr = [mosaic_edges_x.min() - 1, mosaic_edges_x.max() + 1]
-        mosaic_yr = [mosaic_edges_y.min() - 1, mosaic_edges_y.max() + 1]
+        mosaic_xr = [mosaic_edges_x.min() - 1, mosaic_edges_x.max() + 2]
+        mosaic_yr = [mosaic_edges_y.min() - 1, mosaic_edges_y.max() + 2]
 
         print("SkyCell Ranges: {}, {}".format(mosaic_xr, mosaic_yr))
         # for each suspected sky cell or neighbor, look for any pixel by pixel
@@ -1018,13 +1013,21 @@ class SkyCell(object):
         # Determine plate scale ratio between sky cell layer and projection cell
         ratio = self.projection_cell.wcs.pscale / self.scale
         # Define attributes based on projection cell
-        pc_nx = self.projection_cell.wcs.pixel_shape[0] * ratio
-        pc_ny = self.projection_cell.wcs.pixel_shape[1] * ratio
+        pc_nx = self.projection_cell.wcs.pixel_shape[0]
+        pc_ny = self.projection_cell.wcs.pixel_shape[1]
 
-        naxis1 = int((pc_nx - (2 * self.overlap)) / self.nxy + 0.5)
-        naxis2 = int((pc_ny - (2 * self.overlap)) / self.nxy + 0.5)
-        crpix1 = (self.projection_cell.wcs.wcs.crpix[0] * ratio) - ((self.x_index * naxis1) - self.overlap)
-        crpix2 = (self.projection_cell.wcs.wcs.crpix[1] * ratio) - ((self.y_index * naxis2) - self.overlap)
+        # Define size of SkyCells at default/fine plate scale
+        # CRPIX of SkyCells should always be at exactly ((pc_nx/self.nxy) * ratio) apart
+        # Size of SkyCells needs to self.overlap * 2 larger than the distance between CRPIX values
+        sc_nx1 = int(pc_nx / self.nxy + 0.5)
+        sc_nx2 = int(pc_ny / self.nxy + 0.5)
+        naxis1 = int((sc_nx1 + self.overlap * 2) * ratio)
+        naxis2 = int((sc_nx2 + self.overlap * 2) * ratio)
+        xindx = self.x_index - 1 if self.x_index > 0 else 0
+        yindx = self.y_index - 1 if self.y_index > 0 else 0
+
+        crpix1 = ((self.projection_cell.wcs.wcs.crpix[0] - xindx * sc_nx1) ) * ratio
+        crpix2 = ((self.projection_cell.wcs.wcs.crpix[1] - yindx * sc_nx2) ) * ratio
 
         # apply definitions
         self.wcs = astropy.wcs.WCS(naxis=2)
