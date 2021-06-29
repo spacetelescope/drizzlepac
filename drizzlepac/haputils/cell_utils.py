@@ -253,6 +253,7 @@ class SkyFootprint(object):
         self.total_mask = np.zeros(meta_wcs.array_shape, dtype=np.int16)
         self.scaled_mask = None
         self.footprint = None
+        self.footprint_member = None
 
         self.edges = None
         self.edges_ra = None

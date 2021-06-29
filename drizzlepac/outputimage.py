@@ -629,20 +629,22 @@ class OutputImage:
 
             drizdict = DRIZ_KEYWORDS.copy()
             # Update drizdict with current values
-            drizdict['VER']['value'] = pl['driz_version'][:44]
-            drizdict['DATA']['value'] = pl['data'][:64]
+            # Any limit on the length of the strings was removed as an update to
+            # new versions of the FITS standard and to accommodate MVM processing.
+            drizdict['VER']['value'] = pl['driz_version']
+            drizdict['DATA']['value'] = pl['data']
             drizdict['DEXP']['value'] = pl['exptime']
-            drizdict['OUDA']['value'] = pl['outFinal'][:64]
-            drizdict['OUWE']['value'] = pl['outWeight'][:64]
+            drizdict['OUDA']['value'] = pl['outFinal']
+            drizdict['OUWE']['value'] = pl['outWeight']
             if pl['outContext'] is None:
                 outcontext = ""
             else:
-                outcontext = pl['outContext'][:64]
+                outcontext = pl['outContext']
             drizdict['OUCO']['value'] = outcontext
             if self.single:
-                drizdict['MASK']['value'] = pl['singleDrizMask'][:64]
+                drizdict['MASK']['value'] = pl['singleDrizMask']
             else:
-                drizdict['MASK']['value'] = pl['finalMask'][:64]
+                drizdict['MASK']['value'] = pl['finalMask']
 
             # Process the values of WT_SCL to be consistent with
             # what IRAF Drizzle would output
