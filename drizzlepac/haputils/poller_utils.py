@@ -551,6 +551,13 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
 
             filt_obj.add_all_mvm_exposures_list(all_mvm_exposures)
 
+            if pscale == 'coarse':
+                filt_obj_fine.add_all_mvm_exposures_list(all_mvm_exposures)
+            # For MVM processing there are no TotalProduct objects, and the TotalProduct list is a list
+            # comprised of the SkyCellProduct objects which are equivalent to the FilterProduct objects
+            # in SVM processing. The need here is to gather all the SkyCellProduct objects, whether they
+            # are "coarse" or "fine", into a list.
+
             # For MVM processing there are no TotalProduct objects, and the TotalProduct list is a list
             # comprised of the SkyCellProduct objects which are equivalent to the FilterProduct objects
             # in SVM processing. The need here is to gather all the SkyCellProduct objects, whether they
