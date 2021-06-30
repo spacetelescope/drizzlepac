@@ -83,9 +83,17 @@ def create_drizzle_products(total_obj_list):
     rules_files = {}
 
     log.info("Processing with astrodrizzle version {}".format(drizzlepac.astrodrizzle.__version__))
-    # Get rules files
-    for imgname in glob.glob("*skycell*fl?.fits"):
+
+    # Generate list of all input exposure filenames that are to be processed
+    edp_names = []
+    for t in total_obj_list:
+        edp_names += [e.full_filename for e in t.edp_list]
+
+    # Define dataset-specific rules filenames for each input exposure
+    for imgname in edp_names:
         rules_files[imgname] = proc_utils.get_rules_file(imgname)
+
+    print('Generated RULES_FILE names of: \n{}\n'.format(rules_files))
 
     # Keep track of all the products created for the output manifest
     product_list = []
