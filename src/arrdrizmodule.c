@@ -787,7 +787,6 @@ arrmoments(PyObject *obj, PyObject *args)
   long x,y;
   double moment = 0.0;
   integer_t i,j;
-  double val;
 
   if (!PyArg_ParseTuple(args,"Oll:arrmoments", &oimg, &p, &q)){
     return PyErr_Format(gl_Error, "cdriz.arrmoments: Invalid Parameters.");
