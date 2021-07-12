@@ -889,10 +889,13 @@ class ProjectionCell(object):
         mosaic_edges_x, mosaic_edges_y = self.wcs.world_to_pixel_values(mosaic_ra, mosaic_dec)
 
         # Determine roughly what sky cells overlap this mosaic
-        mosaic_edges_x = (mosaic_edges_x / skycell00.wcs.pixel_shape[0] + 0.5).astype(np.int32)
-        mosaic_edges_y = (mosaic_edges_y / skycell00.wcs.pixel_shape[1] + 0.5).astype(np.int32)
-        mosaic_xr = [mosaic_edges_x.min() - 1, mosaic_edges_x.max() + 2]
-        mosaic_yr = [mosaic_edges_y.min() - 1, mosaic_edges_y.max() + 2]
+        # The 1.5 enforces 1-based indexing for the SkyCell IDs within the Projection Cell
+        mosaic_edges_x = (mosaic_edges_x / skycell00.wcs.pixel_shape[0] + 1.5).astype(np.int32)
+        mosaic_edges_y = (mosaic_edges_y / skycell00.wcs.pixel_shape[1] + 1.5).astype(np.int32)
+        # Define range of SkyCells in X,Y to evaluate for overlap
+        # Enforce a range of SkyCell IDs that are 1-based from 1 to self.sc_nxy
+        mosaic_xr = [max(1, mosaic_edges_x.min() - 1), min(self.sc_nxy, mosaic_edges_x.max() + 2)]
+        mosaic_yr = [max(1, mosaic_edges_y.min() - 1), min(self.sc_nxy, mosaic_edges_y.max() + 2)]
 
         print("SkyCell Ranges: {}, {}".format(mosaic_xr, mosaic_yr))
         # for each suspected sky cell or neighbor, look for any pixel by pixel
