@@ -395,6 +395,7 @@ class TotalProduct(HAPProduct):
         self.fdp_list = []
         self.regions_dict = {}
         self.grism_edp_list = []
+        self.bkg_used = ""
 
         log.debug("Total detection object {}/{} created.".format(self.instrument, self.detector))
 
