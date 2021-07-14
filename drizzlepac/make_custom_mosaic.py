@@ -54,11 +54,9 @@ def create_input_image_list(user_input):
         # clean up any stray carrage returns
         for ctr in range(0, len(img_list)):
             img_list[ctr] = img_list[ctr].strip()
-    # Assume user specifed a search pattern
+    # Assume user specified a search pattern
     else:
         img_list = glob.glob(user_input)
-
-    pdb.set_trace()
     return img_list
 
 # ------------------------------------------------------------------------------------------------------------
@@ -89,12 +87,31 @@ def perform(input_image_source, output_wcs_source=None):
     """
     # optimistically pre-set return value to 0.
     return_value = 0
-
-    # Get list input fits files from input args
+    log.setLevel(logging.DEBUG)
+    # Get list input fits files from input args, and raise an exception if no input images can be found.
     img_list = create_input_image_list(input_image_source)
+    if not img_list:
+        err_msg = ("ERROR: No input images were found. Please double-check the search pattern or contents of the input list text file.")
+        log.critical(err_msg)
+        raise Exception(err_msg)
 
     # Generate WCS object based on user-specified WCS info source file (or lack there of)
 
+    if output_wcs_source.endswith("hlet.fits"):
+        # WCS source is a headerlet.
+        print("WCS source is a headerlet.")
+        # TODO: check that file exists.
+    elif output_wcs_source.endswith(".fits"):
+        # WCS source is a fits image.
+        print("WCS source is a fits image")
+        # TODO: check that file exists.
+    elif os.path.isfile(output_wcs_source) and not output_wcs_source.endswith(".fits"):
+        # WCS source is a user-specified text file
+        print("WCS source is a user-specified text file")
+        # TODO: check that file exists.
+    else:
+        # Use WCS of skycell containing the largest input dataset footprint fraction
+        print("Use WCS of skycell containing the largest input dataset footprint fraction")
 
     return return_value
 
@@ -131,7 +148,7 @@ def main():
                              'largest fraction of the input observations will be used.')
     user_args = parser.parse_args()
 
-    rv = perform(user_args.input_images, output_wcs_soruce = user_args.output_wcs_source)
+    rv = perform(user_args.input_image_source, output_wcs_source=user_args.output_wcs_source)
 # ------------------------------------------------------------------------------------------------------------
 
 
