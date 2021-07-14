@@ -17,7 +17,7 @@
     "flag_trim_value": 5,
     "simple_bkg": false,
     "zero_percent": 25.0,
-    "negative_percent": 20.0,
+    "negative_percent": 15.0,
     "nsigma_clip": 3.0,
     "maxiters": 3,
     "bkg_skew_threshold": 0.5,
@@ -38,6 +38,8 @@
         "rw2d_size": 15,
         "rw2d_nsigma": 3.0,
         "rw2d_biggest_source": 0.015,
-        "rw2d_source_fraction": 0.075
+        "rw2d_source_fraction": 0.075,
+        "biggest_source_deblend_limit": 0.15,
+        "source_fraction_deblend_limit": 0.20
     }
 }

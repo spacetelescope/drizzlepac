@@ -201,10 +201,8 @@ class CatalogImage:
             Inverse of the footprint_mask
 
         """
-        # MDD
         # Negative allowance in sigma
         negative_sigma = -1.0
-        #negative_sigma = -1.5
 
         # Report configuration values to log
         log.info("")
@@ -1339,6 +1337,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._rw2d_nsigma = self.param_dict["sourcex"]["rw2d_nsigma"]
         self._rw2d_biggest_source = self.param_dict["sourcex"]["rw2d_biggest_source"]
         self._rw2d_source_fraction = self.param_dict["sourcex"]["rw2d_source_fraction"]
+        self._bs_deblend_limit = self.param_dict["sourcex"]["biggest_source_deblend_limit"]
+        self._sf_deblend_limit = self.param_dict["sourcex"]["source_fraction_deblend_limit"]
 
         # Columns to include from the computation of source properties to save
         # computation time from computing values which are not used
@@ -1394,6 +1394,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("RickerWavelet kernel X- and Y-dimension: {}".format(self._rw2d_size))
             log.info("Percentage limit on biggest source (criterion for  RickerWavelet kernel): {}".format(100.0 * self._rw2d_biggest_source))
             log.info("Percentage limit on source fraction over the image (criterion for RickerWavelet kernel): {}".format(100.0 * self._rw2d_source_fraction))
+            log.info("Percentage limit on biggest source deblending limit: {}".format(100.0 * self._bs_deblend_limit))
+            log.info("Percentage limit on source fraction deblending limit: {}".format(100.0 * self._sf_deblend_limit))
             log.info("")
             log.info("{}".format("=" * 80))
 
@@ -1422,7 +1424,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             ncount = 0
             log.info("")
             log.info("Using Custom kernel or Gaussian to generate a segmentation map.")
-            g_segm_img, g_is_big_crowded, g_bi, g_sf = self.detect_and_eval_segments(imgarr,
+            g_segm_img, g_is_big_crowded, g_bs, g_sf = self.detect_and_eval_segments(imgarr,
                                                                                      g2d_kernel,
                                                                                      ncount,
                                                                                      self._size_source_box, 
@@ -1436,7 +1438,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Note: the fwhm might be a default if the custom algorithm had to fall back to a Gaussian.
             if g_is_big_crowded:
                 log.info("")
-                log.info("The segmentation map contains big islands or a large source fraction of segments.")
+                log.info("The segmentation map contains big sources/islands or a large source fraction of segments.")
                 log.info("Using RickerWavelet2DKernel to generate an alternate segmentation map.")
                 rw2d_kernel = RickerWavelet2DKernel(self.image.kernel_fwhm,
                                                     x_size=self._rw2d_size,
@@ -1446,7 +1448,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # Detect segments and evaluate the detection in terms of big islands or crowded fields
                 # Round 1
                 ncount += 1
-                rw_segm_img, rw_is_big_crowded, rw_bi, rw_sf = self.detect_and_eval_segments(imgarr,
+                rw_segm_img, rw_is_big_crowded, rw_bs, rw_sf = self.detect_and_eval_segments(imgarr,
                                                                                              rw2d_kernel,
                                                                                              ncount,
                                                                                              self._size_source_box, 
@@ -1501,14 +1503,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         sigma_for_threshold = self._nsigma * 2.0
                         rw2d_sigma_for_threshold = self._rw2d_nsigma * 2.0
 
-
                     # Detect segments and evaluate the detection in terms of big islands or crowded fields
                     # Round 2
                     ncount += 1
                     log.info("")
                     log.info("With alternate background...using Gaussian kernel to generate a segmentation map.")
                     del g_segm_img
-                    g_segm_img, g_is_big_crowded, g_bi, g_sf = self.detect_and_eval_segments(imgarr,
+                    g_segm_img, g_is_big_crowded, g_bs, g_sf = self.detect_and_eval_segments(imgarr,
                                                                                              g2d_kernel,
                                                                                              ncount,
                                                                                              self._size_source_box, 
@@ -1516,17 +1517,17 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                              self.image.bkg_background_ra,
                                                                                              self.image.bkg_rms_ra)
 
-                    # Check again for big islands or a large source fraction
+                    # Check again for big sources/islands or a large source fraction
                     if g_is_big_crowded:
                         log.info("")
-                        log.info("The segmentation map contains big islands or a large source fraction of segments.")
+                        log.info("The segmentation map contains big sources/islands or a large source fraction of segments.")
                         log.info("With alternate background...using RickerWavelet2DKernel to generate an alternate segmentation map.")
 
                         # Detect segments and evaluate the detection in terms of big islands or crowded fields
                         # Round 2
                         ncount += 1
                         del rw_segm_img
-                        rw_segm_img, rw_is_big_crowded, rw_bi, rw_sf = self.detect_and_eval_segments(imgarr,
+                        rw_segm_img, rw_is_big_crowded, rw_bs, rw_sf = self.detect_and_eval_segments(imgarr,
                                                                                                      rw2d_kernel,
                                                                                                      ncount,
                                                                                                      self._size_source_box, 
@@ -1536,9 +1537,21 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                                      check_big_island_only=True)
 
                         # Last chance - check if the RickerWavelet segmentation image still seems to be problematic
-                        # *** TODO: Should the bi or sf be checked?  If they are not too much over the thresholds, then
-                        # deblending could take nominal time and a catalog could be generated. ***
-                        if rw_is_big_crowded:
+                        #
+                        # If problematic, BUT the big island and/or source fraction are below the pre-defined limits,
+                        # allow deblending as statistically these images can be deblended in a reasonable time.
+                        #
+                        # Use the second round RickerWavelet segmentation image
+                        if not rw_is_big_crowded or (rw_is_big_crowded and rw_bs < self._bs_deblend_limit and rw_sf < self._sf_deblend_limit):
+                            log.info("The second round of segmentation images still contain big islands or a\n"
+                                     "large source fraction of segments.")
+                            log.info("Proceeding as the time to deblend should be nominal.")
+                            self.kernel = rw2d_kernel
+                            segm_img = copy.deepcopy(rw_segm_img)
+                            del rw_segm_img
+                        # The segmentation image is problematic and the big island/source fraction limits are exceeded,
+                        # so deblending could take days, and the results would not be viable in any case.
+                        else:
                             log.info("")
                             log.info("The second round of segmentation images still contain big islands or a\n"
                                      "large source fraction of segments.")
@@ -1546,12 +1559,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
                             del g_segm_img
                             del rw_segm_img
                             return
-
-                        # Use the second round RickerWavelet segmentation image
-                        else:
-                            self.kernel = rw2d_kernel
-                            segm_img = copy.deepcopy(rw_segm_img)
-                            del rw_segm_img
 
                     # Use the second round custom/Gaussian segmentation image
                     else:
@@ -1675,10 +1682,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # a final message and return.
             if segm_img is None:
                 log.warning("End processing for the segmentation catalog due to no sources detected with the current kernel.")
-                # MDD FIX the return values
                 return
 
-            # Determine if the segmentation image is filled with big islands (bi) or is crowded with a large
+            # Determine if the segmentation image is filled with big sources/islands (bs) or is crowded with a large
             # source fraction (sf). Depending upon these measurements, it can take a very, very long time to deblend
             # the sources.
             is_big_crowded = False
@@ -2362,12 +2368,17 @@ class HAPSegmentCatalog(HAPCatalogBase):
         if biggest_source > max_biggest_source:
             log.info("Biggest source %.4f percent exceeds %f percent of the image", (100.0*biggest_source), (100.0*max_biggest_source))
             is_poor_quality = True
+
+        # Always compute the source_fraction so the value can be reported.  Setting the
+        # big_island_only parameter allows control over whether the source_fraction should
+        # or should not be ignored.
+        source_fraction = n.sum()/float(real_pixels)
+        log.info("Source_fraction: %f", source_fraction)
         if not big_island_only:
-            source_fraction = n.sum()/float(real_pixels)
-            log.info("Source_fraction: %f", source_fraction)
             if source_fraction > max_source_fraction:
                 log.info("Total source fraction %.4f percent exceeds %f percent of the image.", (100.0*source_fraction), (100.0*max_source_fraction))
                 is_poor_quality = True
+
         return is_poor_quality, biggest_source, source_fraction
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
