@@ -1493,6 +1493,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                 self.param_dict['bkg_filter_size'],
                                                 self.param_dict['dao']['TWEAK_FWHMPSF'])
 
+                        # Reset the local version of the Custom/Gaussian kernel and the RickerWavelet
+                        # kernel when the background type changes
+                        g2d_kernel = self.image.kernel
+
+                        rw2d_kernel = RickerWavelet2DKernel(self.image.kernel_fwhm,
+                                                            x_size=self._rw2d_size,
+                                                            y_size=self._rw2d_size)
+                        rw2d_kernel.normalize()
 
                         sigma_for_threshold = self._nsigma
                         rw2d_sigma_for_threshold = self._rw2d_nsigma
@@ -1552,10 +1560,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         # The segmentation image is problematic and the big island/source fraction limits are exceeded,
                         # so deblending could take days, and the results would not be viable in any case.
                         else:
-                            log.info("")
-                            log.info("The second round of segmentation images still contain big islands or a\n"
+                            log.warning("")
+                            log.warning("The second round of segmentation images still contain big islands or a\n"
                                      "large source fraction of segments.")
-                            log.info("The segmentation algorithm is unable to continue.")
+                            log.warning("The segmentation algorithm is unable to continue and no segmentation catalog will be produced.")
                             del g_segm_img
                             del rw_segm_img
                             return
@@ -1682,6 +1690,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # a final message and return.
             if segm_img is None:
                 log.warning("End processing for the segmentation catalog due to no sources detected with the current kernel.")
+                log.warning("No segmentation catalog will be produced.")
                 return
 
             # Determine if the segmentation image is filled with big sources/islands (bs) or is crowded with a large
