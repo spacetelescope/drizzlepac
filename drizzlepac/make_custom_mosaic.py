@@ -17,6 +17,7 @@ import argparse
 import datetime
 import glob
 import logging
+import math
 import pdb
 import os
 import sys
@@ -71,7 +72,9 @@ def create_input_image_list(user_input):
         plural_string = ""
     else:
         plural_string = "s"
-    log.info("Found {} input image{} {}.".format(len(img_list), plural_string, search_method_string))
+    log.info("Found {} input image{} {}:".format(len(img_list), plural_string, search_method_string))
+    for item in img_list:
+        log.info("{}".format(item))
     return img_list
 
 # ------------------------------------------------------------------------------------------------------------
@@ -102,17 +105,33 @@ def determine_projection_cell(img_list):
             proj_cell_dict[proj_cell] = {}
         proj_cell_dict[proj_cell][key] = skycell_dict[key]
 
+    # Determine which skycell's WCS information should be used as the basis for WCS of the output product(s)
     if len(proj_cell_dict.keys()) == 1:
-        log.info("Output WCS will be based on WCS from projection cell {}".format(list(proj_cell_dict)[0]))
+        log.info("Observations are present in only a single projection cell.")
+        best_pc = list(proj_cell_dict)[0]
     else:
         log.info("Observations are present in multiple projection cells.")
+        log.info("Output WCS will be based on WCS from the projection cell whose center is closest to the center of the input observations.")
+        # Determine which projection cell's center is closest to the center of the observations
+        min_dist = 99.0
+        best_pc = ""
+        for pc in proj_cell_dict.keys():
+            dist_ra = np.empty(len(proj_cell_dict[pc].keys()))
+            for i, skycell_name in zip(range(0, len(proj_cell_dict[pc].keys())), proj_cell_dict[pc].keys()):
+                print(pc, i, skycell_name)
+                dist_ra[i] = math.sqrt((11.0-proj_cell_dict[pc][skycell_name].x_index)**2+(11.0-proj_cell_dict[pc][skycell_name].y_index)**2)
+            print("      {}, {}".format(pc, dist_ra.mean()))
+            if min_dist > dist_ra.mean():
+                min_dist = dist_ra.mean()
+                best_pc = pc
+    log.info("Output WCS will be based on WCS from projection cell {}".format(best_pc))
 
 
-    pdb.set_trace()
+    return proj_cell_dict[best_pc]
 # ------------------------------------------------------------------------------------------------------------
 
 
-
+whatisdsfasdf
 def perform(input_image_source):
     """Main calling subroutine
 
@@ -138,11 +157,11 @@ def perform(input_image_source):
         raise Exception(err_msg)
 
     # get list of skycells/projection cells that observations are in
-    determine_projection_cell(img_list)
+    proj_cell_dict = determine_projection_cell(img_list)
     # figure out which projection cell center is closest to the center of the observations, use that projection cell as basis for WCS
     # use cell_utils.bounded_wcs() to crop down image size to just around the mosaic footprint.
 
-
+    pdb.set_trace()
     return return_value
 
 # ------------------------------------------------------------------------------------------------------------
