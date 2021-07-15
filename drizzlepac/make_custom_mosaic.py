@@ -1,9 +1,20 @@
 #!/usr/bin/env python
 
+""" runmultihap.py - Module to control processing of user-defined custom mosaics
+
+USAGE:
+- python drizzlepac/make_custom_mosaic.py <search pattern enclosed in quotes> -w <output wcs source>
+- python drizzlepac/make_custom_mosaic.py <text file with list of input files> -w <output wcs source>
+
+The '-w' option will specify a soruce file that contins the desired world coordine system (WCS) for the
+output mosaic product(s). f a source file for the output WCS information is not explicitly specified, the
+WCS information of the skycell containing the largest fraction of the input observations will be used.
+
+Python USAGE:
+    python
+    from drizzlepac import make_custom_mosaic
+    make_custom_mosaic.perform(<list file or search pattern,output_wcs_source=<WCS source file>)
 """
-MAIN DOCSTRING GOES HERE!
-"""
-# TODO: Add main docstring
 
 import argparse
 import datetime
@@ -136,7 +147,7 @@ def main():
                         help='Search pattern to be used to identify images to process (NOTE: Pattern must be '
                              'enclosed in single or double quotes) or alternately, the '
                              'name of a text file containing a list of images to process')
-    parser.add_argument('-i', '--output_wcs_source', required=False, default=None,
+    parser.add_argument('-w', '--output_wcs_source', required=False, default=None,
                         help='Name of a file that contains the desired world coordinate system (WCS) '
                              'information for the final output mosaic product(s). Users should use one of '
                              'the following valid filetypes: 1) a calibrated fits image file (_flt.fits or '
