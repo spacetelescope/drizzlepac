@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" runmultihap.py - Module to control processing of user-defined custom mosaics
+""" make_custom_mosaic.py - Module to control processing of user-defined custom mosaics
 
 USAGE:
 - python drizzlepac/make_custom_mosaic.py <search pattern enclosed in quotes> -w <output wcs source>
@@ -65,15 +65,53 @@ def create_input_image_list(user_input):
         # clean up any stray carrage returns
         for ctr in range(0, len(img_list)):
             img_list[ctr] = img_list[ctr].strip()
+        search_method_string = "in list file {}".format(user_input)
     # Assume user specified a search pattern
     else:
         img_list = glob.glob(user_input)
+        search_method_string = "using search pattern '{}'".format(user_input)
+    if len(img_list) == 1:
+        plural_string = ""
+    else:
+        plural_string = "s"
+    log.info("Found {} input image{} {}.".format(len(img_list), plural_string, search_method_string))
     return img_list
 
 # ------------------------------------------------------------------------------------------------------------
 
+def determine_projection_cell(img_list):
+    """Determine which projection cell should be used as the basis for the WCS of the output mosaic
+    product(s)
 
-def perform(input_image_source, output_wcs_source=None):
+        Parameters
+    ----------
+    img_list : list
+        A list of images to process
+
+    Returns
+    -------
+    Not sure yet: Unknown type
+        I really just don't know at this point.
+    """
+
+    # Get list of skycells that contain input images
+    foo = cell_utils.get_sky_cells(img_list)
+    proj_cell_list = []
+    for key in foo.keys():
+        proj_cell = key[9:13]
+        if proj_cell not in proj_cell_list:
+            proj_cell_list.append(proj_cell)
+
+    print(proj_cell_list)
+
+
+
+
+# ------------------------------------------------------------------------------------------------------------
+
+
+
+def perform(input_image_source):
     """Main calling subroutine
 
     Parameters
@@ -81,15 +119,6 @@ def perform(input_image_source, output_wcs_source=None):
     input_image_source : str
         Search pattern to be used to identify images to process or the name of a text file containing a list
         of images to process.
-
-    output_wcs_source : str, optional.
-        Name of a file that contains the desired world coordinate system (WCS) information for the final
-        output mosaic product(s). Users should use one of the following valid filetypes: 1) a calibrated fits
-        image file (_flt.fits or _flc.fits fits) 2) a headerlet fits file (_hlet.fits) or 3) a text file
-        containing all values of a complete WCS solution, one value per line, in the following specific
-        order: CRVAL terms, CRPIX terms, Platescale value, and Orientation. If a source file for the output
-        WCS information is not explicitly specified, the WCS information of the skycell containing the
-        largest fraction of the input observations will be used.'
 
     Returns
     -------
@@ -102,27 +131,15 @@ def perform(input_image_source, output_wcs_source=None):
     # Get list input fits files from input args, and raise an exception if no input images can be found.
     img_list = create_input_image_list(input_image_source)
     if not img_list:
-        err_msg = ("ERROR: No input images were found. Please double-check the search pattern or contents of the input list text file.")
+        err_msg = "ERROR: No input images were found. Please double-check the search pattern or contents of the input list text file."
         log.critical(err_msg)
         raise Exception(err_msg)
 
-    # Generate WCS object based on user-specified WCS info source file (or lack there of)
+    # get list of skycells/projection cells that observations are in
+    determine_projection_cell(img_list)
+    # figure out which projection cell center is closest to the center of the observations, use that projection cell as basis for WCS
+    # use cell_utils.bounded_wcs() to crop down image size to just around the mosaic footprint.
 
-    if output_wcs_source.endswith("hlet.fits"):
-        # WCS source is a headerlet.
-        print("WCS source is a headerlet.")
-        # TODO: check that file exists.
-    elif output_wcs_source.endswith(".fits"):
-        # WCS source is a fits image.
-        print("WCS source is a fits image")
-        # TODO: check that file exists.
-    elif os.path.isfile(output_wcs_source) and not output_wcs_source.endswith(".fits"):
-        # WCS source is a user-specified text file
-        print("WCS source is a user-specified text file")
-        # TODO: check that file exists.
-    else:
-        # Use WCS of skycell containing the largest input dataset footprint fraction
-        print("Use WCS of skycell containing the largest input dataset footprint fraction")
 
     return return_value
 
@@ -147,19 +164,9 @@ def main():
                         help='Search pattern to be used to identify images to process (NOTE: Pattern must be '
                              'enclosed in single or double quotes) or alternately, the '
                              'name of a text file containing a list of images to process')
-    parser.add_argument('-w', '--output_wcs_source', required=False, default=None,
-                        help='Name of a file that contains the desired world coordinate system (WCS) '
-                             'information for the final output mosaic product(s). Users should use one of '
-                             'the following valid filetypes: 1) a calibrated fits image file (_flt.fits or '
-                             '_flc.fits fits) 2) a headerlet fits file (_hlet.fits) or 3) a text file '
-                             'containing all values of a complete WCS solution, one value per line, in the '
-                             'following specific order: CRVAL terms, CRPIX terms, Platescale value, and '
-                             'Orientation. If a source file for the output WCS information is not '
-                             'explicitly specified, the WCS information of the skycell containing the '
-                             'largest fraction of the input observations will be used.')
     user_args = parser.parse_args()
 
-    rv = perform(user_args.input_image_source, output_wcs_source=user_args.output_wcs_source)
+    rv = perform(user_args.input_image_source)
 # ------------------------------------------------------------------------------------------------------------
 
 
