@@ -3,17 +3,14 @@
 """ make_custom_mosaic.py - Module to control processing of user-defined custom mosaics
 
 USAGE:
-- python drizzlepac/make_custom_mosaic.py <search pattern enclosed in quotes> -w <output wcs source>
-- python drizzlepac/make_custom_mosaic.py <text file with list of input files> -w <output wcs source>
 
-The '-w' option will specify a soruce file that contins the desired world coordine system (WCS) for the
-output mosaic product(s). f a source file for the output WCS information is not explicitly specified, the
-WCS information of the skycell containing the largest fraction of the input observations will be used.
+- python drizzlepac/make_custom_mosaic.py <search pattern enclosed in quotes>
+- python drizzlepac/make_custom_mosaic.py <text file with list of input files>
 
 Python USAGE:
     python
     from drizzlepac import make_custom_mosaic
-    make_custom_mosaic.perform(<list file or search pattern,output_wcs_source=<WCS source file>)
+    make_custom_mosaic.perform(<list file or search pattern)
 """
 
 import argparse
@@ -83,7 +80,7 @@ def determine_projection_cell(img_list):
     """Determine which projection cell should be used as the basis for the WCS of the output mosaic
     product(s)
 
-        Parameters
+    Parameters
     ----------
     img_list : list
         A list of images to process
@@ -94,19 +91,24 @@ def determine_projection_cell(img_list):
         I really just don't know at this point.
     """
 
-    # Get list of skycells that contain input images
-    foo = cell_utils.get_sky_cells(img_list)
-    proj_cell_list = []
-    for key in foo.keys():
+    # Create dictionary containing information about the skycells that contain input images
+    skycell_dict = cell_utils.get_sky_cells(img_list)
+
+    # recast skycell_dict into nested dictionary with the top-most layer keyed by projection cell name
+    proj_cell_dict = {}
+    for key in skycell_dict.keys():
         proj_cell = key[9:13]
-        if proj_cell not in proj_cell_list:
-            proj_cell_list.append(proj_cell)
+        if proj_cell not in proj_cell_dict.keys():
+            proj_cell_dict[proj_cell] = {}
+        proj_cell_dict[proj_cell][key] = skycell_dict[key]
 
-    print(proj_cell_list)
+    if len(proj_cell_dict.keys()) == 1:
+        log.info("Output WCS will be based on WCS from projection cell {}".format(list(proj_cell_dict)[0]))
+    else:
+        log.info("Observations are present in multiple projection cells.")
 
 
-
-
+    pdb.set_trace()
 # ------------------------------------------------------------------------------------------------------------
 
 
