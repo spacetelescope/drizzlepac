@@ -17,6 +17,7 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout, 
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
+
 def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
     """Simple interface for retrieving an observation from the MAST archive
 
@@ -25,10 +26,12 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
 
     Parameters
     -----------
-    obsid : string
-        ID for observation to be retrieved from the MAST archive.  Only the
-        IPPSSOOT (rootname) of exposure or ASN needs to be provided; eg.,
-        ib6v06060.
+    obsid : string or list of strings
+        ID or list of IDs for observations to be retrieved from the MAST archive.
+        Only the IPPSSOOT (rootname) of exposure or ASN needs to be provided; eg.,
+        ib6v06060.  Additionally, a wild-carded `obsid` can be provided to
+        retrieve all products for a visit; e.g., "ib6v06*".  Data from multiple
+        ASNs, exposures or visits can be retrieved by simply providing them as a list.
 
     suffix : list, optional
         List containing suffixes of files which should be requested from MAST.
@@ -55,6 +58,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
     # Query MAST for the data with an observation type of either "science" or
     # "calibration"
     obs_table = Observations.query_criteria(obs_id=obsid)
+
     # Catch the case where no files are found for download
     if not obs_table:
         log.info("WARNING: Query for {} returned NO RESULTS!".format(obsid))
