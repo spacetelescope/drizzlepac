@@ -340,8 +340,8 @@ class SkyFootprint(object):
                 # parray = np.array(meta_edges.T)
                 parray = (meta_x, meta_y)
                 polygon = list(zip(parray[0], parray[1]))
-                nx = self.total_mask[scell_slice].shape[1]
-                ny = self.total_mask[scell_slice].shape[0]
+                nx = self.total_mask[tuple(scell_slice)].shape[1]
+                ny = self.total_mask[tuple(scell_slice)].shape[0]
                 img = Image.new('L', (nx, ny), 0)
                 ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
                 blank = np.array(img).astype(np.int16)
@@ -357,9 +357,9 @@ class SkyFootprint(object):
 
                 if scale:
                     scaled_blank = blank * scale_val
-                    self.scaled_mask[scell_slice] += scaled_blank
+                    self.scaled_mask[tuple(scell_slice)] += scaled_blank
 
-                self.total_mask[scell_slice] += blank
+                self.total_mask[tuple(scell_slice)] += blank
                 del blank
 
             # Only add members which contributed to this footprint
