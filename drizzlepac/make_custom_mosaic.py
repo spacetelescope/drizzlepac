@@ -22,7 +22,7 @@ import pdb
 import os
 import sys
 
-
+from astropy.io import fits
 from astropy.table import Table
 import numpy as np
 import drizzlepac
@@ -93,7 +93,6 @@ def determine_projection_cell(img_list):
     Not sure yet: Unknown type
         I really just don't know at this point.
     """
-
     # Create dictionary containing information about the skycells that contain input images
     skycell_dict = cell_utils.get_sky_cells(img_list)
 
@@ -113,13 +112,18 @@ def determine_projection_cell(img_list):
         log.info("Observations are present in multiple projection cells.")
         log.info("Output WCS will be based on WCS from the projection cell whose center is closest to the center of the input observations.")
         # Determine which projection cell's center is closest to the center of the observations
-        min_dist = 99.0
+        pcell_filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pars', 'allsky_cells.fits')
+        sc_nxy = fits.getval(pcell_filename, "SC_NXY", ext=0) # Projection cell side length (in skycells) in X or Y
+        min_dist = math.sqrt(sc_nxy**2 + sc_nxy**2) + 1.0
         best_pc = ""
         for pc in proj_cell_dict.keys():
             dist_ra = np.empty(len(proj_cell_dict[pc].keys()))
             for i, skycell_name in zip(range(0, len(proj_cell_dict[pc].keys())), proj_cell_dict[pc].keys()):
                 print(pc, i, skycell_name)
-                dist_ra[i] = math.sqrt((11.0-proj_cell_dict[pc][skycell_name].x_index)**2+(11.0-proj_cell_dict[pc][skycell_name].y_index)**2)
+                ps_center_length = math.ceil(21/2.0)
+                x_index = proj_cell_dict[pc][skycell_name].x_index
+                y_index = proj_cell_dict[pc][skycell_name].y_index
+                dist_ra[i] = math.sqrt((ps_center_length - x_index)**2 + (ps_center_length - y_index)**2)
             print("      {}, {}".format(pc, dist_ra.mean()))
             if min_dist > dist_ra.mean():
                 min_dist = dist_ra.mean()
@@ -131,7 +135,6 @@ def determine_projection_cell(img_list):
 # ------------------------------------------------------------------------------------------------------------
 
 
-whatisdsfasdf
 def perform(input_image_source):
     """Main calling subroutine
 
