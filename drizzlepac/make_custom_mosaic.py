@@ -81,7 +81,7 @@ def create_input_image_list(user_input):
 
 def determine_projection_cell(img_list):
     """Determine which projection cell should be used as the basis for the WCS of the output mosaic
-    product(s)
+    product(s) based on which projection cell center is closest to the center of the observations.
 
     Parameters
     ----------
@@ -119,12 +119,10 @@ def determine_projection_cell(img_list):
         for pc in proj_cell_dict.keys():
             dist_ra = np.empty(len(proj_cell_dict[pc].keys()))
             for i, skycell_name in zip(range(0, len(proj_cell_dict[pc].keys())), proj_cell_dict[pc].keys()):
-                print(pc, i, skycell_name)
-                ps_center_length = math.ceil(21/2.0)
+                pc_center_length = math.ceil(21/2.0)
                 x_index = proj_cell_dict[pc][skycell_name].x_index
                 y_index = proj_cell_dict[pc][skycell_name].y_index
-                dist_ra[i] = math.sqrt((ps_center_length - x_index)**2 + (ps_center_length - y_index)**2)
-            print("      {}, {}".format(pc, dist_ra.mean()))
+                dist_ra[i] = math.sqrt((pc_center_length - x_index)**2 + (pc_center_length - y_index)**2)
             if min_dist > dist_ra.mean():
                 min_dist = dist_ra.mean()
                 best_pc = pc
@@ -160,8 +158,17 @@ def perform(input_image_source):
         raise Exception(err_msg)
 
     # get list of skycells/projection cells that observations are in
-    proj_cell_dict = determine_projection_cell(img_list)
     # figure out which projection cell center is closest to the center of the observations, use that projection cell as basis for WCS
+    proj_cell_dict = determine_projection_cell(img_list)
+
+    # Create MVM poller file
+
+    # Generate custom MVM config .json file and insert relevant WCS info from proj_cell_dict
+
+    # Execute hapmultisequencer.run_mvm_processing() with poller file, custom config file
+    # TODO: PROBLEM: This will still cut off image at skycell boundry.
+
+
     # use cell_utils.bounded_wcs() to crop down image size to just around the mosaic footprint.
 
     pdb.set_trace()
