@@ -923,7 +923,6 @@ class SkyCellProduct(HAPProduct):
         layer_scale = layer[1]
 
         self.info = '_'.join(['hst', skycell_name, instrument, detector, filter_str, layer_str])
-        self.manifest_info = '_'.join(['hst', skycell_name, instrument, detector, filter_str])
         self.exposure_name = skycell_name
         self.product_basename = self.info
 
@@ -937,11 +936,11 @@ class SkyCellProduct(HAPProduct):
         self.drizzle_filename = '_'.join([self.product_basename, self.filetype]) + ".fits"
         self.refname = self.product_basename + "_ref_cat.ecsv"
 
-        # Generate the name for the manifest file which is for the entire visit.  It is fine
-        # to create it as an attribute of a TotalProduct as it is independent of
-        # the detector in use.
-        # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
-        self.manifest_name = '_'.join([self.manifest_info, "manifest.txt"])
+        # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
+        # to use only one of the SkyCellProducts to generate the manifest name as the name
+        # is only dependent on the sky cell.
+        # Example: hst_skycell-p<PPPP>x<XX>y<YY>_manifest.txt (e.g., hst_skycell-p0797x12y05_manifest.txt)
+        self.manifest_name = '_'.join(['hst', skycell_name, 'manifest.txt'])
 
         # Define HAPLEVEL value for this product
         self.haplevel = 3

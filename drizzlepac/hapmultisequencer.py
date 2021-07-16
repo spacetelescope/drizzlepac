@@ -221,11 +221,11 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                                                                          layer_method='all')
 
         # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
-        # to use only one of the Total Products to generate the manifest name as the name is not
-        # dependent on the detector.
-        # Example: instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
+        # to use only one of the SkyCellProducts to generate the manifest name as the name
+        # is only dependent on the sky cell.
+        # Example: hst_skycell-p<PPPP>x<XX>y<YY>_manifest.txt (e.g., hst_skycell-p0797x12y05_manifest.txt)
         manifest_name = total_obj_list[0].manifest_name
-        log.info("\nGenerate the manifest name for this multi-visit.")
+        log.info("\nGenerate the manifest name for this multi-visit: {}.".format(manifest_name))
         log.info("The manifest will contain the names of all the output products.")
 
         # The product_list is a list of all the output products which will be put into the manifest file
