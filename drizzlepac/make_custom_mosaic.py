@@ -21,6 +21,7 @@ import math
 import pdb
 import os
 import sys
+import tempfile
 
 from astropy.io import fits
 from astropy.table import Table
@@ -28,6 +29,7 @@ import numpy as np
 import drizzlepac
 
 from drizzlepac.haputils import cell_utils
+from drizzlepac.haputils import make_poller_files
 
 from stsci.tools import logutil
 from stwcs import wcsutil
@@ -78,6 +80,55 @@ def create_input_image_list(user_input):
     return img_list
 
 # ------------------------------------------------------------------------------------------------------------
+def create_poller_file(img_list, proj_cell_dict):
+    """Subroutine to generate custom MVM poller file for hapmultisequencer
+
+    Parameters
+    ----------
+    img_list : list
+        list of images to process
+
+    proj_cell_dict : dictionary
+        Dictionary containing projection cell information
+
+    Returns
+    -------
+    output_poller_filename : str
+        Name of the newly created poller_filename
+    """
+    # Locate bottom-left most skycell
+    pcell_filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pars', 'allsky_cells.fits')
+    sc_nxy = fits.getval(pcell_filename, "SC_NXY",
+                         ext=0)  # Projection cell side length (in skycells) in X or Y
+    closest_skycell = ""
+    min_dist = math.sqrt(sc_nxy ** 2 + sc_nxy ** 2) + 1.0
+    for sc in proj_cell_dict.keys():
+        x_index = proj_cell_dict[sc].x_index
+        y_index = proj_cell_dict[sc].y_index
+        dist = math.sqrt(x_index**2 + y_index**2)
+        if dist < min_dist:
+            min_dist = dist
+            closest_skycell = sc
+
+    # Create poller file
+    skycell_name = closest_skycell.replace("skycell-", "")
+    poller_filename = "temp_{}_mvm.out".format(skycell_name)
+    rootname_list = []
+    for imgname in img_list:
+        rootname_list.append(imgname.split("_")[0]+"\n")
+    tf = tempfile.NamedTemporaryFile(mode='w+t', dir=os.getcwd())
+    with open(tf.name, 'w') as f:
+        f.writelines(rootname_list)
+        f.close()
+
+        make_poller_files.generate_poller_file(tf.name, input_file_path=os.getcwd(),
+                                               poller_file_type="mvm",
+                                               output_poller_filename=poller_filename,
+                                               skycell_name=skycell_name)
+    return poller_filename
+
+# ------------------------------------------------------------------------------------------------------------
+
 
 def determine_projection_cell(img_list):
     """Determine which projection cell should be used as the basis for the WCS of the output mosaic
@@ -162,6 +213,7 @@ def perform(input_image_source):
     proj_cell_dict = determine_projection_cell(img_list)
 
     # Create MVM poller file
+    poller_file = create_poller_file(img_list, proj_cell_dict)
 
     # Generate custom MVM config .json file and insert relevant WCS info from proj_cell_dict
 
@@ -171,7 +223,7 @@ def perform(input_image_source):
 
     # use cell_utils.bounded_wcs() to crop down image size to just around the mosaic footprint.
 
-    pdb.set_trace()
+
     return return_value
 
 # ------------------------------------------------------------------------------------------------------------
