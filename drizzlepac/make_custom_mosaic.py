@@ -44,6 +44,7 @@ __version__ = 0.1
 __version_date__ = '14-July-2021'
 # ------------------------------------------------------------------------------------------------------------
 
+
 def create_input_image_list(user_input):
     """Create list of input images based in user input from command-line
     
@@ -80,6 +81,8 @@ def create_input_image_list(user_input):
     return img_list
 
 # ------------------------------------------------------------------------------------------------------------
+
+
 def create_poller_file(img_list, proj_cell_dict):
     """Subroutine to generate custom MVM poller file for hapmultisequencer
 
@@ -164,7 +167,7 @@ def determine_projection_cell(img_list):
         log.info("Output WCS will be based on WCS from the projection cell whose center is closest to the center of the input observations.")
         # Determine which projection cell's center is closest to the center of the observations
         pcell_filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pars', 'allsky_cells.fits')
-        sc_nxy = fits.getval(pcell_filename, "SC_NXY", ext=0) # Projection cell side length (in skycells) in X or Y
+        sc_nxy = fits.getval(pcell_filename, "SC_NXY", ext=0)  # Projection cell side length (in skycells) in X or Y
         min_dist = math.sqrt(sc_nxy**2 + sc_nxy**2) + 1.0
         best_pc = ""
         for pc in proj_cell_dict.keys():
@@ -178,7 +181,6 @@ def determine_projection_cell(img_list):
                 min_dist = dist_ra.mean()
                 best_pc = pc
     log.info("Output WCS will be based on WCS from projection cell {}".format(best_pc))
-
 
     return proj_cell_dict[best_pc]
 # ------------------------------------------------------------------------------------------------------------
@@ -220,9 +222,7 @@ def perform(input_image_source):
     # Execute hapmultisequencer.run_mvm_processing() with poller file, custom config file
     # TODO: PROBLEM: This will still cut off image at skycell boundry.
 
-
     # use cell_utils.bounded_wcs() to crop down image size to just around the mosaic footprint.
-
 
     return return_value
 
