@@ -12,7 +12,6 @@ Python USAGE:
     from drizzlepac import make_custom_mosaic
     make_custom_mosaic.perform(<list file or search pattern)
 """
-
 import argparse
 import datetime
 import glob
@@ -26,8 +25,8 @@ import tempfile
 from astropy.io import fits
 from astropy.table import Table
 import numpy as np
-import drizzlepac
 
+from drizzlepac import hapmultisequencer
 from drizzlepac.haputils import cell_utils
 from drizzlepac.haputils import make_poller_files
 
@@ -42,6 +41,29 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 __version__ = 0.1
 __version_date__ = '14-July-2021'
+# ------------------------------------------------------------------------------------------------------------
+
+
+def create_config_file(poller_filename, proj_cell_dict):
+    """Creates custom MVM pipeline parameter configuration .json file and splices in projection cell WCS info
+
+    Parameters
+    ----------
+    poller_filename : str
+        Name of the freshly created MVM pipeline poller file
+
+    proj_cell_dict : dictionary
+        Dictionary containing projection cell information
+
+    Returns
+    -------
+    config_filename : str
+        Name of the newly created MVM pipeline input configuration parameter file
+    """
+
+    config_filename = None
+    return config_filename
+
 # ------------------------------------------------------------------------------------------------------------
 
 
@@ -84,7 +106,8 @@ def create_input_image_list(user_input):
 
 
 def create_poller_file(img_list, proj_cell_dict):
-    """Subroutine to generate custom MVM poller file for hapmultisequencer
+    """Subroutine that executes make_poller_files.generate_poller_file() to generate custom MVM poller file
+    for execution of hapmultisequencer.run_mvm_processing().
 
     Parameters
     ----------
@@ -96,7 +119,7 @@ def create_poller_file(img_list, proj_cell_dict):
 
     Returns
     -------
-    output_poller_filename : str
+    poller_filename : str
         Name of the newly created poller_filename
     """
     # Locate bottom-left most skycell
@@ -183,10 +206,11 @@ def determine_projection_cell(img_list):
     log.info("Output WCS will be based on WCS from projection cell {}".format(best_pc))
 
     return proj_cell_dict[best_pc]
+
 # ------------------------------------------------------------------------------------------------------------
 
 
-def perform(input_image_source):
+def perform(input_image_source, log_level='info'):
     """Main calling subroutine
 
     Parameters
@@ -195,34 +219,67 @@ def perform(input_image_source):
         Search pattern to be used to identify images to process or the name of a text file containing a list
         of images to process.
 
+    log_level : str, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. The level of verboseness from left to right, and includes all log statements with a
+        log_level left of the specified level. Specifying "critical" will only record/display "critical" log
+        statements, and specifying "error" will record/display both "error" and "critical" log statements,
+        and so on. Unless explicitly set, the default value is 'info'.
+
+
     Returns
     -------
     return_value : int
         A simple status value. '0' for a successful run or '1' for a failed run.
     """
-    # optimistically pre-set return value to 0.
-    return_value = 0
-    log.setLevel(logging.DEBUG)
-    # Get list input fits files from input args, and raise an exception if no input images can be found.
-    img_list = create_input_image_list(input_image_source)
-    if not img_list:
-        err_msg = "ERROR: No input images were found. Please double-check the search pattern or contents of the input list text file."
-        log.critical(err_msg)
-        raise Exception(err_msg)
+    try:
+        # optimistically pre-set return value to 0.
+        return_value = 0
+        log_level_dict = {"critical": logutil.logging.CRITICAL,
+                          "error": logutil.logging.ERROR,
+                          "warning": logutil.logging.WARNING,
+                          "info": logutil.logging.INFO,
+                          "debug": logutil.logging.DEBUG}
+        log.setLevel(log_level_dict[log_level])
+        temp_files_to_delete = []
+        # Get list input fits files from input args, and raise an exception if no input images can be found.
+        img_list = create_input_image_list(input_image_source)
+        if not img_list:
+            err_msg = "ERROR: No input images were found. Please double-check the search pattern or contents of the input list text file."
+            log.critical(err_msg)
+            raise Exception(err_msg)
 
-    # get list of skycells/projection cells that observations are in
-    # figure out which projection cell center is closest to the center of the observations, use that projection cell as basis for WCS
-    proj_cell_dict = determine_projection_cell(img_list)
+        # get list of skycells/projection cells that observations are in
+        # figure out which projection cell center is closest to the center of the observations, use that projection cell as basis for WCS
+        proj_cell_dict = determine_projection_cell(img_list)
 
-    # Create MVM poller file
-    poller_file = create_poller_file(img_list, proj_cell_dict)
+        # Create MVM poller file
+        poller_filename = create_poller_file(img_list, proj_cell_dict)
+        temp_files_to_delete.append(poller_filename)
 
-    # Generate custom MVM config .json file and insert relevant WCS info from proj_cell_dict
+        # Generate custom MVM config .json file and insert relevant WCS info from proj_cell_dict
+        config_filename = create_config_file(poller_filename, proj_cell_dict)
+        # temp_files_to_delete.append(config_filename)
 
-    # Execute hapmultisequencer.run_mvm_processing() with poller file, custom config file
-    # TODO: PROBLEM: This will still cut off image at skycell boundry.
+        # Execute hapmultisequencer.run_mvm_processing() with poller file, custom config file
+        # TODO: PROBLEM: This will still cut off image at skycell boundry.
+        # use cell_utils.bounded_wcs() to crop down image size to just around the mosaic footprint.
+        return_value = hapmultisequencer.run_mvm_processing(poller_filename,
+                                                            input_custom_pars_file=config_filename,
+                                                            log_level=log_level_dict[log_level])
+    except Exception:
+        return_value = 1
+        print("\a\a\a")
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+    finally:
+        if temp_files_to_delete and log_level is not "debug":
+            log.info("Time delete some temporary files...")
+            for filename in temp_files_to_delete:
+                if os.path.exists(filename):
+                    os.remove(filename)
+                    log.info("Removed temporary file {}.".format(filename))
 
-    # use cell_utils.bounded_wcs() to crop down image size to just around the mosaic footprint.
 
     return return_value
 
@@ -247,9 +304,17 @@ def main():
                         help='Search pattern to be used to identify images to process (NOTE: Pattern must be '
                              'enclosed in single or double quotes) or alternately, the '
                              'name of a text file containing a list of images to process')
+    parser.add_argument('-l', '--log_level', required=False, default='info',
+                        choices=['critical', 'error', 'warning', 'info', 'debug'],
+                        help='The desired level of verboseness in the log statements displayed on the screen '
+                             'and written to the .log file. The level of verboseness from left to right, and '
+                             'includes all log statements with a log_level left of the specified level. '
+                             'Specifying "critical" will only record/display "critical" log statements, and '
+                             'specifying "error" will record/display both "error" and "critical" log '
+                             'statements, and so on.')
     user_args = parser.parse_args()
 
-    rv = perform(user_args.input_image_source)
+    rv = perform(user_args.input_image_source, user_args.log_level)
 # ------------------------------------------------------------------------------------------------------------
 
 
