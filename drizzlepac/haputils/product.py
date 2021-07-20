@@ -789,7 +789,16 @@ class SkyCellExposure(HAPProduct):
         super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
 
         filter_str = layer[0]
-        layer_str = '-'.join(layer[1:])
+
+        # parse layer information into filename layer_str
+        # layer: [filter_str, pscale_str, exptime_str, epoch_str]
+        # e.g.: [f160w, coarse, all, all]
+        #
+        if layer[1] == 'coarse':
+            layer_vals = [layer[1], layer[2], self.exposure_name]
+        else:
+            layer_vals = ['all', self.exposure_name]
+        layer_str = '-'.join(layer_vals)
 
         cell_id = "p{}{}".format(prop_id, obset_id)
         self.basename = "hst_skycell-" + "_".join(map(str, [cell_id, instrument, detector])) + "_"
@@ -803,7 +812,7 @@ class SkyCellExposure(HAPProduct):
         self.exptime = hdu_list[0].header['EXPTIME']
         hdu_list.close()
 
-        self.product_basename = self.basename + "_".join(map(str, [filter_str, layer_str, self.exposure_name]))
+        self.product_basename = self.basename + "_".join(map(str, [filter_str, layer_str]))
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
         self.headerlet_filename = self.product_basename + "_hlet.fits"
         self.trl_logname = self.product_basename + "_trl.log"
@@ -919,7 +928,16 @@ class SkyCellProduct(HAPProduct):
         # May need to exclude 'filter' component from layer_str
         filter_str = layer[0]
         self.filters = filter_str
-        layer_str = '-'.join(layer[1:])
+
+        # parse layer information into filename layer_str
+        # layer: [filter_str, pscale_str, exptime_str, epoch_str]
+        # e.g.: [f160w, coarse, all, all]
+        #
+        if layer[1] == 'coarse':
+            layer_str = '-'.join([layer[1], layer[2]])
+        else:
+            layer_str = 'all'
+
         layer_scale = layer[1]
 
         self.info = '_'.join(['hst', skycell_name, instrument, detector, filter_str, layer_str])
