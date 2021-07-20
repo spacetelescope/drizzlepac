@@ -44,39 +44,6 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 __version__ = 0.1
 __version_date__ = '14-July-2021'
-# ------------------------------------------------------------------------------------------------------------
-
-
-def create_config_file(poller_filename, proj_cell_dict, log_level):
-    """Creates custom MVM pipeline parameter configuration .json file and splices in projection cell WCS info
-
-    Parameters
-    ----------
-    poller_filename : str
-        Name of the freshly created MVM pipeline poller file
-
-    proj_cell_dict : dictionary
-        Dictionary containing projection cell information
-
-    Returns
-    -------
-    config_filename : str
-        Name of the newly created MVM pipeline input configuration parameter file
-    """
-    # Create base custom MVM config pars file
-    obs_info_dict, total_obj_list = poller_utils.interpret_mvm_input(poller_filename, log_level,
-                                                                     layer_method='all')
-    config_filename = "temp_mvm_config.json"
-    for filter_item in total_obj_list:
-        _ = filter_item.generate_metawcs()
-        filter_item.generate_footprint_mask()
-        filter_item.configobj_pars = config_utils.HapConfig(filter_item,
-                                                            log_level=log_level,
-                                                            output_custom_pars_file=config_filename)
-
-    # insert relevant projection cell WCS info into config file
-
-    return config_filename
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -254,7 +221,8 @@ def perform(input_image_source, log_level='info'):
                           "warning": logutil.logging.WARNING,
                           "info": logutil.logging.INFO,
                           "debug": logutil.logging.DEBUG}
-        log.setLevel(log_level_dict[log_level])
+        logging_level = log_level_dict[log_level]
+        log.setLevel(logging_level)
         temp_files_to_delete = []
         # Get list input fits files from input args, and raise an exception if no input images can be found.
         img_list = create_input_image_list(input_image_source)
@@ -267,21 +235,17 @@ def perform(input_image_source, log_level='info'):
         # figure out which projection cell center is closest to the center of the observations, use that projection cell as basis for WCS
         proj_cell_dict = determine_projection_cell(img_list)
 
+
         # Create MVM poller file
         poller_filename = create_poller_file(img_list, proj_cell_dict)
         temp_files_to_delete.append(poller_filename)
-
-        # Generate custom MVM config .json file and insert relevant WCS info from proj_cell_dict
-        config_filename = create_config_file(poller_filename, proj_cell_dict, log_level_dict[log_level])
-        temp_files_to_delete.append(config_filename)
+        print("\a\a")
         pdb.set_trace()
         # Execute hapmultisequencer.run_mvm_processing() with poller file, custom config file
         # TODO: PROBLEM: This will still cut off image at skycell boundry.
         # use cell_utils.bounded_wcs() to crop down image size to just around the mosaic footprint.
         log.info("===========================================================================================================")
-        return_value = hapmultisequencer.run_mvm_processing(poller_filename,
-                                                            input_custom_pars_file="../orig/testout.json",
-                                                            log_level=log_level_dict[log_level])
+        return_value = hapmultisequencer.run_mvm_processing(poller_filename, log_level=logging_level)
     except Exception:
         if return_value == 0:
             return_value = 1
