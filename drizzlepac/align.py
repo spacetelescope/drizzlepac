@@ -734,7 +734,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
             if catalogs_remaining:
                 log.warning(
                     "Not enough cross matches found between astrometric"
-                    "catalog and sources found in {}".format(image_name))
+                    " catalog and sources found in {}".format(image_name))
                 overall_valid = False
                 continue
 
