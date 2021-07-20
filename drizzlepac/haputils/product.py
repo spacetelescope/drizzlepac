@@ -934,10 +934,9 @@ class SkyCellProduct(HAPProduct):
         # e.g.: [f160w, coarse, all, all]
         #
         if layer[1] == 'coarse':
-            layer_vals = [layer[1], layer[2], self.exposure_name]
+            layer_str = '-'.join([layer[1], layer[2]])
         else:
-            layer_vals = ['all', self.exposure_name]
-        layer_str = '-'.join(layer_vals)
+            layer_str = 'all'
 
         layer_scale = layer[1]
 
