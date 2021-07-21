@@ -3,8 +3,10 @@ from drizzlepac import astrodrizzle
 
 from ..resources import BaseACS
 from ci_watson.hst_helpers import raw_from_asn
+import pytest
 
 
+@pytest.mark.skip(reason="artifactory dev and code version mismatch")
 class TestAsnNarrowband(BaseACS):
 
     def test_acs_narrowband(self):

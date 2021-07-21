@@ -117,6 +117,7 @@ class BaseWFC3Pipeline(BasePipeline):
 
 
 
+@pytest.mark.skip(reason="artifactory dev and code version mismatch")
 class TestSingleton(BaseWFC3Pipeline):
 
     @pytest.mark.parametrize(

@@ -1,4 +1,5 @@
 import os
+import pytest
 import shutil
 
 from stsci.tools import teal
@@ -8,7 +9,7 @@ from stwcs import updatewcs
 
 from ..resources import BaseSTIS
 
-
+@pytest.mark.skip(reason="artifactory dev and code version mismatch")
 class TestSTIS(BaseSTIS):
 
     def test_fuv_mama(self):

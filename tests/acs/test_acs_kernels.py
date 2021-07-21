@@ -1,4 +1,5 @@
 import os
+import pytest
 
 from stsci.tools import teal
 from drizzlepac import astrodrizzle
@@ -14,6 +15,7 @@ def pytest_generate_tests(metafunc):
             for funcargs in funcarglist])
 
 
+@pytest.mark.skip(reason="artifactory dev and code version mismatch")
 class TestAcsKernels(BaseACS):
 
     params = {
