@@ -971,7 +971,8 @@ def check_consistency(imglist, rot_tolerance=0.1, shift_tolerance=1.0):
             img.meta['fit_info']['process_msg'] = msg
 
         log.info('Relative fit solution is NOT consistent!')
-        log.debug('DELTAS for "{}" fit:'.format(finfo['fitgeom']))
+        fitgeom = finfo['fitgeom'] if 'fitgeom' in finfo else 'Unknown'
+        log.debug('DELTAS for "{}" fit:'.format(fitgeom))
         log.debug('  max rot={:.4f}\n '.format(delta_rots.max()))
         is_consistent = False
 
