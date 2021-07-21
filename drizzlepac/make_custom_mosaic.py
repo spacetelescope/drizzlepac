@@ -196,7 +196,7 @@ def compute_mosaic_wcs(proj_cell_dict):
             print(sc_name, i, ra_dec[0], ra_dec[1], x_y[0], x_y[1])
             i += 1
 
-    # Find min, max RA Dec values
+    # Find min, max RA, Dec, X and Y values
     ra_minmax = [ra_values.min(), ra_values.max()]
     dec_minmax = [dec_values.min(), dec_values.max()]
     x_minmax = [x_values.min(), x_values.max()]
