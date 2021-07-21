@@ -1,4 +1,5 @@
 import os
+import pytest
 
 from stsci.tools import teal
 import drizzlepac
@@ -10,6 +11,7 @@ from ..resources import BaseWFC3
 from ci_watson.hst_helpers import raw_from_asn
 
 
+@pytest.mark.skip(reason="artifactory dev and code version mismatch")
 class TestWFC3(BaseWFC3):
 
     def test_binned_single(self):

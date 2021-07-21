@@ -9,6 +9,7 @@ import drizzlepac.adrizzle as adrizzle
 import drizzlepac.ablot as ablot
 
 
+@pytest.mark.skip(reason="artifactory dev and code version mismatch")
 class TestDriz(BaseUnit):
 
     def test_square_with_point(self):
@@ -373,6 +374,7 @@ class TestDriz(BaseUnit):
         self.ignore_keywords += ['rootname']
         self.compare_outputs([(output, output_template)])
 
+@pytest.mark.skip(reason="artifactory dev and code version mismatch")
 class TestBlot(BaseUnit):
     buff = 1
 

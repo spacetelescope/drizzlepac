@@ -53,6 +53,7 @@ def pytest_generate_tests(metafunc):
     metafunc.parametrize('dataset', random_candidate_table)
 
 
+@pytest.mark.skip(reason="artifactory dev and code version mismatch")
 @pytest.mark.bigdata
 @pytest.mark.slow
 @pytest.mark.unit

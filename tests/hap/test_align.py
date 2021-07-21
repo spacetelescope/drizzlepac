@@ -8,6 +8,7 @@ from .base_test import BaseHLATest
 # Nominal acceptable RMS limit for a good solution (IMPROVE THIS)
 RMS_LIMIT = 10.0
 
+@pytest.mark.skip(reason="artifactory dev and code version mismatch ")
 @pytest.mark.bigdata
 class TestAlignMosaic(BaseHLATest):
     """ Tests which validate whether mosaics can be aligned to an astrometric standard.

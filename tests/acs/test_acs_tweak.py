@@ -10,6 +10,7 @@ from drizzlepac import pixtopix, pixtosky, skytopix
 from ..resources import BaseACS
 
 
+@pytest.mark.skip(reason="artifactory dev and code version mismatch")
 class TestAcsTweak(BaseACS):
 
     @pytest.mark.xfail

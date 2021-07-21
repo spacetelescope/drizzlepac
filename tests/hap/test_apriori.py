@@ -91,6 +91,7 @@ def compare_apriori(dataset):
     assert success
 
 
+@pytest.mark.skip(reason="artifactory dev and code version mismatch")
 class TestAcsApriori(BaseACS):
     """ Tests which validate whether mosaics can be aligned to an astrometric standard,
         evaluate the quality of the fit, and generate a new WCS.
@@ -109,6 +110,7 @@ class TestAcsApriori(BaseACS):
         compare_apriori(dataset)
 
 
+@pytest.mark.skip(reason="artifactory dev and code version mismatch")
 class TestWFC3Apriori(BaseWFC3):
     """ Tests which validate whether mosaics can be aligned to an astrometric
         standard, evaluate the quality of the fit, and generate a new WCS.

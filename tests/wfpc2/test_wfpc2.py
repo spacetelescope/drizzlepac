@@ -7,6 +7,7 @@ from stwcs import updatewcs
 from ..resources import BaseWFPC2
 
 
+@pytest.mark.skip(reason="artifactory dev and code version mismatch")
 class TestWFPC2(BaseWFPC2):
 
     @pytest.mark.skip(reason="disable until truth files can be updated")

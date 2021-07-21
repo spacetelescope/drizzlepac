@@ -1,4 +1,5 @@
 import os
+import pytest
 
 from stsci.tools import teal
 import drizzlepac
@@ -7,7 +8,7 @@ from drizzlepac import astrodrizzle
 from ..resources import BaseACS
 from ci_watson.hst_helpers import raw_from_asn
 
-
+@pytest.mark.skip(reason="artifactory dev and code version mismatch")
 class TestAsnRegress(BaseACS):
 
     def test_hrc_asn(self):
