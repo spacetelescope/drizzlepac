@@ -47,6 +47,32 @@ __version_date__ = '14-July-2021'
 
 # ------------------------------------------------------------------------------------------------------------
 
+def calc_skycell_dist(x, y, x_ref, y_ref):
+    """Calculate distance from one skyframe to another
+
+    Parameters
+    ----------
+    x : int
+        skyframe x index
+
+    y : int
+        skyframe y index
+
+    x_ref : int
+        reference x index
+
+    y_ref : int
+        reference y index
+
+    Returns
+    -------
+    dist : float
+        distance from (x, y) to (x_ref, y_ref)
+    """
+    dist = math.sqrt(float((x - x_ref)**2) + float((y - y_ref)**2))
+    return(dist)
+# ------------------------------------------------------------------------------------------------------------
+
 
 def create_input_image_list(user_input):
     """Create list of input images based in user input from command-line
@@ -108,11 +134,12 @@ def create_poller_file(img_list, proj_cell_dict):
     sc_nxy = fits.getval(pcell_filename, "SC_NXY",
                          ext=0)  # Projection cell side length (in skycells) in X or Y
     closest_skycell = ""
-    min_dist = math.sqrt(sc_nxy ** 2 + sc_nxy ** 2) + 1.0
+    min_dist = calc_skycell_dist(sc_nxy, sc_nxy, 1, 1) + 2.0
     for sc in proj_cell_dict.keys():
         x_index = proj_cell_dict[sc].x_index
         y_index = proj_cell_dict[sc].y_index
-        dist = math.sqrt(x_index**2 + y_index**2)
+
+        dist = calc_skycell_dist(x_index, y_index, 1, 1)
         if dist < min_dist:
             min_dist = dist
             closest_skycell = sc
@@ -172,7 +199,7 @@ def determine_projection_cell(img_list):
         # Determine which projection cell's center is closest to the center of the observations
         pcell_filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pars', 'allsky_cells.fits')
         sc_nxy = fits.getval(pcell_filename, "SC_NXY", ext=0)  # Projection cell side length (in skycells) in X or Y
-        min_dist = math.sqrt(sc_nxy**2 + sc_nxy**2) + 1.0
+        min_dist = calc_skycell_dist(sc_nxy, sc_nxy, 1, 1) + 2.0
         best_pc = ""
         for pc in proj_cell_dict.keys():
             dist_ra = np.empty(len(proj_cell_dict[pc].keys()))
@@ -180,7 +207,7 @@ def determine_projection_cell(img_list):
                 pc_center_length = math.ceil(21/2.0)
                 x_index = proj_cell_dict[pc][skycell_name].x_index
                 y_index = proj_cell_dict[pc][skycell_name].y_index
-                dist_ra[i] = math.sqrt((pc_center_length - x_index)**2 + (pc_center_length - y_index)**2)
+                dist_ra[i] = calc_skycell_dist(x_index, y_index, pc_center_length, pc_center_length)
             if min_dist > dist_ra.mean():
                 min_dist = dist_ra.mean()
                 best_pc = pc
