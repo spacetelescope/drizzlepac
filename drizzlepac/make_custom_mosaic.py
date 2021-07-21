@@ -193,7 +193,6 @@ def compute_mosaic_wcs(proj_cell_dict):
             dec_values[i] = ra_dec[1]
             x_values[i] = x_y[0]
             y_values[i] = x_y[1]
-            print(sc_name, i, ra_dec[0], ra_dec[1], x_y[0], x_y[1])
             i += 1
 
     # Find min, max RA, Dec, X and Y values
@@ -204,7 +203,10 @@ def compute_mosaic_wcs(proj_cell_dict):
 
     # create WCS based on these values.
 
-    pdb.set_trace()
+
+
+    mosaic_wcs = None  # TODO: Remove placeholder return value
+    return mosaic_wcs
 # ------------------------------------------------------------------------------------------------------------
 
 
@@ -308,16 +310,18 @@ def perform(input_image_source, log_level='info'):
 
         # compute bounded WCS for mosaic observations
         mosaic_wcs = compute_mosaic_wcs(proj_cell_dict)
+
         # Create MVM poller file
         poller_filename = create_poller_file(img_list, proj_cell_dict)
         temp_files_to_delete.append(poller_filename)
         print("\a\a")
         pdb.set_trace()
-        # Execute hapmultisequencer.run_mvm_processing() with poller file, custom config file
-        # TODO: PROBLEM: This will still cut off image at skycell boundry.
+
+        # Execute hapmultisequencer.run_mvm_processing() with poller file
         # use cell_utils.bounded_wcs() to crop down image size to just around the mosaic footprint.
-        log.info("===========================================================================================================")
+        log.debug("=" * 100)
         return_value = hapmultisequencer.run_mvm_processing(poller_filename, log_level=logging_level)
+
     except Exception:
         if return_value == 0:
             return_value = 1
