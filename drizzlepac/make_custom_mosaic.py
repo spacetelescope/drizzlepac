@@ -163,6 +163,37 @@ def create_poller_file(img_list, proj_cell_dict):
 
 # ------------------------------------------------------------------------------------------------------------
 
+def compute_mosaic_wcs(proj_cell_dict):
+    """Compute bounded WCS of a rectangle that encloses the mosaic observations bounded by the lower left and
+    upper right skycells
+
+    Parameters
+    ----------
+    proj_cell_dict : dictionary
+        Dictionary containing projection cell information
+
+    Returns
+    -------
+    wcs : wcs object
+        Bounded WCS object for the mosaic region
+    """
+    # Use wcs.calc_footprint() to get skycell corners
+    ra_values = np.empty(len(proj_cell_dict.keys()) * 4)
+    dec_values = np.empty(len(proj_cell_dict.keys()) * 4)
+    i = 0
+    for sc_name in proj_cell_dict.keys():
+        for ra_dec in proj_cell_dict[sc_name].wcs.calc_footprint().tolist():
+            print(sc_name, i, ra_dec[0], ra_dec[1])
+            ra_values[i] = ra_dec[0]
+            dec_values[i] = ra_dec[1]
+            i += 1
+
+    # Find min, max RA Dec values
+    # convert min, max RA Dec values to X, Y pixel values in the projection cell frame of reference
+    # create WCS based on these values.
+    pdb.set_trace()
+# ------------------------------------------------------------------------------------------------------------
+
 
 def determine_projection_cell(img_list):
     """Determine which projection cell should be used as the basis for the WCS of the output mosaic
@@ -262,7 +293,8 @@ def perform(input_image_source, log_level='info'):
         # figure out which projection cell center is closest to the center of the observations, use that projection cell as basis for WCS
         proj_cell_dict = determine_projection_cell(img_list)
 
-
+        # compute bounded WCS for mosaic observations
+        mosaic_wcs = compute_mosaic_wcs(proj_cell_dict)
         # Create MVM poller file
         poller_filename = create_poller_file(img_list, proj_cell_dict)
         temp_files_to_delete.append(poller_filename)
