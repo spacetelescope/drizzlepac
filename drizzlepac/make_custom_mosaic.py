@@ -164,8 +164,8 @@ def create_poller_file(img_list, proj_cell_dict):
 # ------------------------------------------------------------------------------------------------------------
 
 def compute_mosaic_wcs(proj_cell_dict):
-    """Compute bounded WCS of a rectangle that encloses the mosaic observations bounded by the lower left and
-    upper right skycells
+    """Compute bounded WCS of a rectangle that encloses the mosaic observations based on observation skycell
+    corners
 
     Parameters
     ----------
@@ -177,20 +177,33 @@ def compute_mosaic_wcs(proj_cell_dict):
     wcs : wcs object
         Bounded WCS object for the mosaic region
     """
-    # Use wcs.calc_footprint() to get skycell corners
-    ra_values = np.empty(len(proj_cell_dict.keys()) * 4)
-    dec_values = np.empty(len(proj_cell_dict.keys()) * 4)
+    # set up storage arrays
+    array_size = len(proj_cell_dict.keys()) * 4
+    ra_values = np.empty(array_size)
+    dec_values = np.empty(array_size)
+    x_values = np.empty(array_size)
+    y_values = np.empty(array_size)
+
+    # Use wcs.calc_footprint() to get skycell corners, convert RA, Dec to X, Y in projection cell frame of reference
     i = 0
     for sc_name in proj_cell_dict.keys():
         for ra_dec in proj_cell_dict[sc_name].wcs.calc_footprint().tolist():
-            print(sc_name, i, ra_dec[0], ra_dec[1])
+            x_y = proj_cell_dict[sc_name].projection_cell.wcs.all_world2pix([ra_dec], 0).tolist()[0]
             ra_values[i] = ra_dec[0]
             dec_values[i] = ra_dec[1]
+            x_values[i] = x_y[0]
+            y_values[i] = x_y[1]
+            print(sc_name, i, ra_dec[0], ra_dec[1], x_y[0], x_y[1])
             i += 1
 
     # Find min, max RA Dec values
-    # convert min, max RA Dec values to X, Y pixel values in the projection cell frame of reference
+    ra_minmax = [ra_values.min(), ra_values.max()]
+    dec_minmax = [dec_values.min(), dec_values.max()]
+    x_minmax = [x_values.min(), x_values.max()]
+    y_minmax = [y_values.min(), y_values.max()]
+
     # create WCS based on these values.
+
     pdb.set_trace()
 # ------------------------------------------------------------------------------------------------------------
 
