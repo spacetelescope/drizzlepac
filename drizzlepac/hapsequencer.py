@@ -548,6 +548,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
     cat_switches = {sw: _get_envvar_switch(sw, default=envvar_cat_svm[sw]) for sw in envvar_cat_svm}
 
     total_obj_list = []
+    manifest_name = ""
     try:
         # Parse the poller file and generate the the obs_info_dict, as well as the total detection
         # product lists which contain the ExposureProduct, FilterProduct, and TotalProduct objects
@@ -686,6 +687,14 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         logging.exception("message")
 
     finally:
+        # Try to ensure there is a manifest filename if the code exits in the poller_utils.py
+        # so the shutdown is tidy
+        ntokens = len(input_filename.split("_"))
+        if manifest_name == "" and input_filename.lower().endswith("input.out") and ntokens == 4:
+            manifest_name = input_filename.lower().replace("input.out", "manifest.txt")
+        else:
+            manifest_name = "manifest.txt"
+
         # Write out manifest file listing all products generated during processing
         log.info("Creating manifest file {}.".format(manifest_name))
         log.info("  The manifest contains the names of products generated during processing.")
