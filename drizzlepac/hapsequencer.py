@@ -973,12 +973,16 @@ def update_wcs_in_visit(tdp):
             break
 
     if not grism_wcsname:
+        log.error("")
         log.error("None of the preferred WCS names are present in the common set of WCS names for the Grism/Prism images.")
-        log.error("    There is a problem with this visit.  Deleting all SVM Grism/Prism FLT/FLC files.")
+        log.error("There is a problem with this visit.  Deleting all SVM Grism/Prism FLT/FLC files.")
+        log.error("")
         try:
-            for image_file in tdp.grism_edp_list.full_filename:
-                os.remove(image_file)
-                log.warning("Deleted Grism/Prism image {}.".format(image_file))
+            for image_file in tdp.grism_edp_list:
+               os.remove(image_file.full_filename)
+               log.warning("Deleted Grism/Prism image {}.".format(image_file.full_filename))
+            tdp.grims_edp_list = []
+            return grism_product_list
         except OSError:
             pass
         sys.exit(1)
