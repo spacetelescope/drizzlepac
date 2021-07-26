@@ -200,7 +200,12 @@ def compute_mosaic_wcs(proj_cell_dict):
     dec_minmax = [dec_values.min(), dec_values.max()]
     x_minmax = [x_values.min(), x_values.max()]
     y_minmax = [y_values.min(), y_values.max()]
-
+    print("X: ", x_minmax)
+    print("Y: ", y_minmax)
+    print("xmin = {}".format(x_minmax[0]))
+    print("xmax = {}".format(x_minmax[1]))
+    print("ymin = {}".format(x_minmax[0]))
+    print("ymax = {}".format(x_minmax[1]))
     # create WCS based on these values.
 
 

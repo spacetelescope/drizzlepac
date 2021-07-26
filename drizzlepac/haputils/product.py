@@ -14,6 +14,7 @@ import copy
 import logging
 import sys
 import os
+import pdb
 import traceback
 import shutil
 
@@ -980,15 +981,28 @@ class SkyCellProduct(HAPProduct):
         self.all_mvm_exposures = exp_list
 
     def generate_metawcs(self):
+        # To make testing easier
+        wcs = copy.deepcopy(self.skycell.wcs) # TODO: original code. uncomment
+        # START TEST CODE SECTION
+        # wcs = copy.deepcopy(self.skycell.projection_cell.wcs)
+        # xmin = int(278745.9999999997)
+        # xmax = int(322141.00000000163)
+        # ymin = int(278745.9999999997)
+        # ymax = int(322141.00000000163)
+        # self.bounding_box = [slice(ymin, ymax), slice(xmin, xmax)]
+        # wcs.wcs.crpix -= [xmin, ymin]
+        # wcs.pixel_shape = [xmax - xmin + 1, ymax - ymin + 1]
+        # END TEST CODE SECTION
 
         # This is the exposure-independent WCS.
-        self.meta_wcs = self.skycell.wcs
+        # self.meta_wcs = self.skycell.wcs
+        self.meta_wcs = wcs # TODO: original code. uncomment
 
         # Create footprint on the sky for all input exposures using the skycell wcs
         # This footprint includes all the exposures in the visit, NEW exposures, as well
         # as exposures which have been previously processed (all are listed in the original
         # poller file).
-        mvm_footprint = cell_utils.SkyFootprint(self.skycell.wcs)
+        mvm_footprint = cell_utils.SkyFootprint(wcs)
         mvm_footprint.build(self.all_mvm_exposures)
 
         # This is the exposure-dependent WCS.

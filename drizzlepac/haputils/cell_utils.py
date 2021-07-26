@@ -1,4 +1,5 @@
 import os
+import pdb
 import shutil
 from itertools import chain, combinations
 
@@ -376,8 +377,7 @@ class SkyFootprint(object):
             print("Please add exposures before computing bounding box WCS...")
 
         # start by computing the bounding box for the footprint
-        ymin, ymax, xmin, xmax = calc_bounding_box(self.total_mask)
-
+        ymin, ymax, xmin, xmax = calc_bounding_box(self.total_mask)  # TODO: THIS IS WHERE IT TIMES OUT!
         # make a copy of the full WCS to be revised
         self.bounded_wcs = self.meta_wcs.deepcopy()
         self.bounding_box = [slice(ymin, ymax), slice(xmin, xmax)]
@@ -1070,6 +1070,7 @@ def calc_bounding_box(img):
     """Compute bounding box for non-zero section of img """
     rows = np.any(img, axis=1)
     cols = np.any(img, axis=0)
+    pdb.set_trace()
     rmin, rmax = np.where(rows)[0][[0, -1]]
     cmin, cmax = np.where(cols)[0][[0, -1]]
 
