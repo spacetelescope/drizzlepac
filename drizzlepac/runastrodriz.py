@@ -765,7 +765,8 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
 
             # Edit trailer file name since 'runastrodriz' copies what astrodrizzle used
             # to another file...
-            fits.setval(drz_product, 'DRIZPARS', value=trlfile)
+            if os.path.exists(drz_product):
+                fits.setval(drz_product, 'DRIZPARS', value=trlfile)
 
             util.end_logging(drizlog)
 
