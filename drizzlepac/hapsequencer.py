@@ -981,7 +981,7 @@ def update_wcs_in_visit(tdp):
             for image_file in tdp.grism_edp_list:
                os.remove(image_file.full_filename)
                log.warning("Deleted Grism/Prism image {}.".format(image_file.full_filename))
-            tdp.grims_edp_list = []
+            tdp.grism_edp_list = []
             return grism_product_list
         except OSError:
             pass
