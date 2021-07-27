@@ -244,6 +244,10 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
         # Determine if the image has one of these conditions.  The routine
         # will exit processing upon the first satisfied condition.
 
+        # Compute if the exposure time is very close to zero as it will be
+        # needed when deciding whether or not to use the particular Grism/Prism data
+        is_zero = True if math.isclose(exptime, 0.0, abs_tol=1e-5) else False
+
         no_proc_key = None
         no_proc_value = None
         do_process = True
@@ -294,11 +298,17 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
         # indicators to allow the Grism/Prism images to be minimally processed for
         # keyword updates.  This was done as a retrofit to allow Grism/Prism images
         # to have the same WCS solution as the direct images in the visit (same detector).
+        # The exception to this will be if the Grism/Prism data has a zero exposure time as
+        # the WCS will be only "OPUS" under this condition, and this will disrupt processing
+        # for all the good data.
         split_sfilter = sfilter.upper().split('_')
         for item in split_sfilter:
-            if item.startswith(('G', 'PR')):
+            if item.startswith(('G', 'PR')) and not is_zero:
                 no_proc_key = None
                 no_proc_value = None
+            elif item.startswith(('G', 'PR')) and is_zero:
+                no_proc_value += " and EXPTIME = 0.0"
+
             if item.startswith(('BLOCK')):
                 no_proc_key = FILKEY
                 no_proc_value = sfilter
