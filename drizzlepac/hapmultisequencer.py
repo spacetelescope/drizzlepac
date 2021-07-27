@@ -63,7 +63,7 @@ envvar_qa_svm = "SVM_QUALITY_TESTING"
 # --------------------------------------------------------------------------------------------------------------
 
 
-def create_drizzle_products(total_obj_list):
+def create_drizzle_products(total_obj_list, custom_limits=None):
     """
     Run astrodrizzle to produce products specified in the total_obj_list.
 
@@ -107,7 +107,7 @@ def create_drizzle_products(total_obj_list):
         log.info("~" * 118)
         # Get the common WCS for all images which are part of a total detection product,
         # where the total detection product is detector-dependent.
-        meta_wcs = filt_obj.generate_metawcs()
+        meta_wcs = filt_obj.generate_metawcs(custom_limits=custom_limits)
 
         log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
         filt_obj.wcs_drizzle_product(meta_wcs)
@@ -148,7 +148,7 @@ def create_drizzle_products(total_obj_list):
 
 def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_configs=True,
                        input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
-                       log_level=logutil.logging.INFO):
+                       custom_limits=None, log_level=logutil.logging.INFO):
     """
     Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
     controller which invokes the high-level functionality to process the multi-visit data.
@@ -233,7 +233,7 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
         # Update the SkyCellProduct objects with their associated configuration information.
         for filter_item in total_obj_list:
-            _ = filter_item.generate_metawcs()  # TODO: insert new WCS info here!
+            _ = filter_item.generate_metawcs(custom_limits=custom_limits)  # TODO: insert new WCS info here!
             filter_item.generate_footprint_mask()
             log.info("Preparing configuration parameter values for filter product {}".format(filter_item.drizzle_filename))
             filter_item.configobj_pars = config_utils.HapConfig(filter_item,
@@ -246,13 +246,13 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
         # TODO: This is the place where updated WCS info is migrated from drizzlepac params to filter objects
 
-        reference_catalog = run_align_to_gaia(total_obj_list, log_level=log_level, diagnostic_mode=diagnostic_mode)
+        reference_catalog = run_align_to_gaia(total_obj_list, custom_limits=custom_limits, log_level=log_level, diagnostic_mode=diagnostic_mode)
         if reference_catalog:
             product_list += [reference_catalog]
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
-        driz_list = create_drizzle_products(total_obj_list)
+        driz_list = create_drizzle_products(total_obj_list, custom_limits=custom_limits)
         product_list += driz_list
 
         # Store total_obj_list to a pickle file to speed up development
@@ -339,7 +339,7 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
 # ------------------------------------------------------------------------------------------------------------
 
-def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic_mode=False):
+def run_align_to_gaia(total_obj_list, custom_limits= None, log_level=logutil.logging.INFO, diagnostic_mode=False):
     # Run align.py on all input images sorted by overlap with GAIA bandpass
     log.info("\n{}: Align the all filters to GAIA with the same fit".format(str(datetime.datetime.now())))
     gaia_obj = None
@@ -371,7 +371,7 @@ def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic
                                                              fit_label='MVM')
 
         for tot_obj in total_obj_list:
-            _ = tot_obj.generate_metawcs()
+            _ = tot_obj.generate_metawcs(custom_limits=custom_limits)
         log.info("\n{}: Finished aligning gaia_obj to GAIA".format(str(datetime.datetime.now())))
 
         # Return the name of the alignment catalog

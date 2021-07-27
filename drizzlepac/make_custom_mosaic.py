@@ -204,14 +204,11 @@ def compute_mosaic_wcs(proj_cell_dict):
     print("Y: ", y_minmax)
     print("xmin = {}".format(x_minmax[0]))
     print("xmax = {}".format(x_minmax[1]))
-    print("ymin = {}".format(x_minmax[0]))
-    print("ymax = {}".format(x_minmax[1]))
+    print("ymin = {}".format(y_minmax[0]))
+    print("ymax = {}".format(y_minmax[1]))
     # create WCS based on these values.
 
-
-
-    mosaic_wcs = None  # TODO: Remove placeholder return value
-    return mosaic_wcs
+    return [x_values.min(), x_values.max(), y_values.min(), y_values.max()]
 # ------------------------------------------------------------------------------------------------------------
 
 
@@ -314,18 +311,16 @@ def perform(input_image_source, log_level='info'):
         proj_cell_dict = determine_projection_cell(img_list)
 
         # compute bounded WCS for mosaic observations
-        mosaic_wcs = compute_mosaic_wcs(proj_cell_dict)
+        custom_limits = compute_mosaic_wcs(proj_cell_dict)
 
         # Create MVM poller file
         poller_filename = create_poller_file(img_list, proj_cell_dict)
         temp_files_to_delete.append(poller_filename)
-        print("\a\a")
-        pdb.set_trace()
 
         # Execute hapmultisequencer.run_mvm_processing() with poller file
         # use cell_utils.bounded_wcs() to crop down image size to just around the mosaic footprint.
         log.debug("=" * 100)
-        return_value = hapmultisequencer.run_mvm_processing(poller_filename, log_level=logging_level)
+        return_value = hapmultisequencer.run_mvm_processing(poller_filename, custom_limits = custom_limits, log_level=logging_level)
 
     except Exception:
         if return_value == 0:
