@@ -234,7 +234,6 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # Update the SkyCellProduct objects with their associated configuration information.
         for filter_item in total_obj_list:
             _ = filter_item.generate_metawcs()  # TODO: insert new WCS info here!
-            pdb.set_trace()
             filter_item.generate_footprint_mask()
             log.info("Preparing configuration parameter values for filter product {}".format(filter_item.drizzle_filename))
             filter_item.configobj_pars = config_utils.HapConfig(filter_item,
