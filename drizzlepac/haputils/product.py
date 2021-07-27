@@ -980,19 +980,18 @@ class SkyCellProduct(HAPProduct):
         """
         self.all_mvm_exposures = exp_list
 
-    def generate_metawcs(self):
-        # To make testing easier
-        wcs = copy.deepcopy(self.skycell.wcs) # TODO: original code. uncomment
-        # START TEST CODE SECTION
-        # wcs = copy.deepcopy(self.skycell.projection_cell.wcs)
-        # xmin = int(278745.9999999997)
-        # xmax = int(322141.00000000163)
-        # ymin = int(278745.9999999997)
-        # ymax = int(322141.00000000163)
-        # self.bounding_box = [slice(ymin, ymax), slice(xmin, xmax)]
-        # wcs.wcs.crpix -= [xmin, ymin]
-        # wcs.pixel_shape = [xmax - xmin + 1, ymax - ymin + 1]
-        # END TEST CODE SECTION
+    def generate_metawcs(self, custom_limits=None):
+        if custom_limits: # for creation of custom mosaics
+            wcs = copy.deepcopy(self.skycell.projection_cell.wcs)
+            xmin = int(custom_limits[0])
+            xmax = int(custom_limits[1])
+            ymin = int(custom_limits[2])
+            ymax = int(custom_limits[3])
+            self.bounding_box = [slice(ymin, ymax), slice(xmin, xmax)]
+            wcs.wcs.crpix -= [xmin, ymin]
+            wcs.pixel_shape = [xmax - xmin + 1, ymax - ymin + 1]
+        else: # For regular MVM processing
+            wcs = copy.deepcopy(self.skycell.wcs)
 
         # This is the exposure-independent WCS.
         # self.meta_wcs = self.skycell.wcs
