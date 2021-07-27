@@ -1070,7 +1070,6 @@ def calc_bounding_box(img):
     """Compute bounding box for non-zero section of img """
     rows = np.any(img, axis=1)
     cols = np.any(img, axis=0)
-    pdb.set_trace()
     rmin, rmax = np.where(rows)[0][[0, -1]]
     cmin, cmax = np.where(cols)[0][[0, -1]]
 
