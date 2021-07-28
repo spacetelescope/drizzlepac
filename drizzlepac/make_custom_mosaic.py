@@ -191,10 +191,10 @@ def compute_mosaic_limits(proj_cell_dict):
 
     # Return mosaic bounding rectangle X min and max and Y min and max values
     mosaic_limits = [x_values.min(), x_values.max(), y_values.min(), y_values.max()]
-
-    for label, limit_val in zip(["X_min", "X_max", "Y_min", "Y_max"], mosaic_limits):
-        print("{}: {}".format(label, limit_val))
-
+    limit_labels = ["X_min", "X_max", "Y_min", "Y_max"]
+    for i in range(0, 4):
+        mosaic_limits[i] = int(np.rint(mosaic_limits[i]))
+        print("{}: {}".format(limit_labels[i], mosaic_limits[i]))
     return mosaic_limits
 # ------------------------------------------------------------------------------------------------------------
 

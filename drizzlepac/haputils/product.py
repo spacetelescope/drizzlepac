@@ -983,10 +983,10 @@ class SkyCellProduct(HAPProduct):
     def generate_metawcs(self, custom_limits=None):
         if custom_limits: # for creation of custom mosaics
             wcs = copy.deepcopy(self.skycell.projection_cell.wcs)
-            xmin = int(custom_limits[0])
-            xmax = int(custom_limits[1])
-            ymin = int(custom_limits[2])
-            ymax = int(custom_limits[3])
+            xmin = custom_limits[0]
+            xmax = custom_limits[1]
+            ymin = custom_limits[2]
+            ymax = custom_limits[3]
             self.bounding_box = [slice(ymin, ymax), slice(xmin, xmax)]
             wcs.wcs.crpix -= [xmin, ymin]
             wcs.pixel_shape = [xmax - xmin + 1, ymax - ymin + 1]
