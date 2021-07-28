@@ -13,9 +13,7 @@ Python USAGE:
     make_custom_mosaic.perform(<list file or search pattern)
 """
 import argparse
-import datetime
 import glob
-import logging
 import math
 import pdb
 import os
@@ -24,14 +22,11 @@ import tempfile
 import traceback
 
 from astropy.io import fits
-from astropy.table import Table
 import numpy as np
 
 from drizzlepac import hapmultisequencer
 from drizzlepac.haputils import cell_utils
-from drizzlepac.haputils import config_utils
 from drizzlepac.haputils import make_poller_files
-from drizzlepac.haputils import poller_utils
 
 from stsci.tools import logutil
 from stwcs import wcsutil
@@ -163,9 +158,8 @@ def create_poller_file(img_list, proj_cell_dict):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def compute_mosaic_wcs(proj_cell_dict):
-    """Compute bounded WCS of a rectangle that encloses the mosaic observations based on observation skycell
-    corners
+def compute_mosaic_limits(proj_cell_dict):
+    """Compute min and max limits of the rectangle that encloses the mosaic observations
 
     Parameters
     ----------
@@ -174,8 +168,8 @@ def compute_mosaic_wcs(proj_cell_dict):
 
     Returns
     -------
-    wcs : wcs object
-        Bounded WCS object for the mosaic region
+    mosaic_limits : list
+        4-element list containing the mosaic bounding rectangle X min and max and Y min and max values
     """
     # set up storage arrays
     array_size = len(proj_cell_dict.keys()) * 4
@@ -195,20 +189,13 @@ def compute_mosaic_wcs(proj_cell_dict):
             y_values[i] = x_y[1]
             i += 1
 
-    # Find min, max RA, Dec, X and Y values
-    ra_minmax = [ra_values.min(), ra_values.max()]
-    dec_minmax = [dec_values.min(), dec_values.max()]
-    x_minmax = [x_values.min(), x_values.max()]
-    y_minmax = [y_values.min(), y_values.max()]
-    print("X: ", x_minmax)
-    print("Y: ", y_minmax)
-    print("xmin = {}".format(x_minmax[0]))
-    print("xmax = {}".format(x_minmax[1]))
-    print("ymin = {}".format(y_minmax[0]))
-    print("ymax = {}".format(y_minmax[1]))
-    # create WCS based on these values.
+    # Return mosaic bounding rectangle X min and max and Y min and max values
+    mosaic_limits = [x_values.min(), x_values.max(), y_values.min(), y_values.max()]
 
-    return [x_values.min(), x_values.max(), y_values.min(), y_values.max()]
+    for label, limit_val in zip(["X_min", "X_max", "Y_min", "Y_max"], mosaic_limits):
+        print("{}: {}".format(label, limit_val))
+
+    return mosaic_limits
 # ------------------------------------------------------------------------------------------------------------
 
 
@@ -282,7 +269,6 @@ def perform(input_image_source, log_level='info'):
         statements, and specifying "error" will record/display both "error" and "critical" log statements,
         and so on. Unless explicitly set, the default value is 'info'.
 
-
     Returns
     -------
     return_value : int
@@ -310,17 +296,17 @@ def perform(input_image_source, log_level='info'):
         # figure out which projection cell center is closest to the center of the observations, use that projection cell as basis for WCS
         proj_cell_dict = determine_projection_cell(img_list)
 
-        # compute bounded WCS for mosaic observations
-        custom_limits = compute_mosaic_wcs(proj_cell_dict)
+        # compute bounding rectangle limits for mosaic observations
+        custom_limits = compute_mosaic_limits(proj_cell_dict)
 
         # Create MVM poller file
         poller_filename = create_poller_file(img_list, proj_cell_dict)
         temp_files_to_delete.append(poller_filename)
 
         # Execute hapmultisequencer.run_mvm_processing() with poller file
-        # use cell_utils.bounded_wcs() to crop down image size to just around the mosaic footprint.
-        log.debug("=" * 100)
-        return_value = hapmultisequencer.run_mvm_processing(poller_filename, custom_limits = custom_limits, log_level=logging_level)
+        return_value = hapmultisequencer.run_mvm_processing(poller_filename,
+                                                            custom_limits=custom_limits,
+                                                            log_level=logging_level)
 
     except Exception:
         if return_value == 0:
