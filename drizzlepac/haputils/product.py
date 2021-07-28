@@ -983,19 +983,30 @@ class SkyCellProduct(HAPProduct):
     def generate_metawcs(self, custom_limits=None):
         if custom_limits: # for creation of custom mosaics
             wcs = copy.deepcopy(self.skycell.projection_cell.wcs)
+            ratio = self.skycell.projection_cell.wcs.pscale / self.skycell.scale
+            for i in range(0, 4):
+                custom_limits[i] = int(np.rint(custom_limits[i] * ratio))
             xmin = custom_limits[0]
             xmax = custom_limits[1]
             ymin = custom_limits[2]
             ymax = custom_limits[3]
+
+            wcs._naxis[0] = int(np.rint(wcs._naxis[0] * ratio))
+            wcs._naxis[1] = int(np.rint(wcs._naxis[1] * ratio))
+
             self.bounding_box = [slice(ymin, ymax), slice(xmin, xmax)]
             wcs.wcs.crpix -= [xmin, ymin]
             wcs.pixel_shape = [xmax - xmin + 1, ymax - ymin + 1]
         else: # For regular MVM processing
             wcs = copy.deepcopy(self.skycell.wcs)
-
+        print(">>> IMAGE:                                   ", self.drizzle_filename)
+        print(">>> ratio:                                   ", ratio)
+        print(">>> self.skycell.projection_cell.wcs.pscale: ", self.skycell.projection_cell.wcs.pscale)
+        print(">>> self.skycell.scale:                      ", self.skycell.scale)
+        print("\a")
+        pdb.set_trace()
         # This is the exposure-independent WCS.
-        # self.meta_wcs = self.skycell.wcs
-        self.meta_wcs = wcs # TODO: original code. uncomment
+        self.meta_wcs = wcs
 
         # Create footprint on the sky for all input exposures using the skycell wcs
         # This footprint includes all the exposures in the visit, NEW exposures, as well
