@@ -117,6 +117,11 @@ def create_drizzle_products(total_obj_list):
         # Add individual single input images with updated WCS headers to manifest
         for exposure_obj in filt_obj.edp_list:
             product_list.append(exposure_obj.full_filename)
+            # Create Drizzled images for each input on SkyCell pixels
+            exposure_obj.wcs_drizzle_product(meta_wcs)
+            # Add drizzled FLC images to manifest
+            product_list.append(exposure_obj.drizzle_filename)
+
 
     # Ensure that all drizzled products have headers that are to specification
     try:
