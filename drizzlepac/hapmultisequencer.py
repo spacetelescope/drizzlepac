@@ -247,6 +247,12 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
                                                                 input_custom_pars_file=input_custom_pars_file,
                                                                 output_custom_pars_file=output_custom_pars_file)
 
+            for edp in filter_item.edp_list:
+                edp.configobj_pars = config_utils.HapConfig(edp,
+                                                                log_level=log_level,
+                                                                use_defaults=use_defaults_configs,
+                                                                input_custom_pars_file=input_custom_pars_file,
+                                                                output_custom_pars_file=output_custom_pars_file)
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
 
         reference_catalog = run_align_to_gaia(total_obj_list, log_level=log_level, diagnostic_mode=diagnostic_mode)
