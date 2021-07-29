@@ -981,30 +981,47 @@ class SkyCellProduct(HAPProduct):
         self.all_mvm_exposures = exp_list
 
     def generate_metawcs(self, custom_limits=None):
+        """Generate a meta wcs
+
+        Parameters
+        ----------
+        custom_limits : list, optional.
+            a 4-element list containing the mosaic bounding rectangle X min and max and Y min and max values
+            This input argument is only used for creation of custom mosaics.
+        """
+
         if custom_limits: # for creation of custom mosaics
             wcs = copy.deepcopy(self.skycell.projection_cell.wcs)
             ratio = self.skycell.projection_cell.wcs.pscale / self.skycell.scale
-            for i in range(0, 4):
-                custom_limits[i] = int(np.rint(custom_limits[i] * ratio))
-            xmin = custom_limits[0]
-            xmax = custom_limits[1]
-            ymin = custom_limits[2]
-            ymax = custom_limits[3]
 
-            wcs._naxis[0] = int(np.rint(wcs._naxis[0] * ratio))
-            wcs._naxis[1] = int(np.rint(wcs._naxis[1] * ratio))
+            # Store unscaled and scaled versions of the custom mosaic bounding box X and Y limits
+            xmin_unscaled = int(np.rint(custom_limits[0]))
+            xmax_unscaled = int(np.rint(custom_limits[1]))
+            ymin_unscaled = int(np.rint(custom_limits[2]))
+            ymax_unscaled = int(np.rint(custom_limits[3]))
 
-            self.bounding_box = [slice(ymin, ymax), slice(xmin, xmax)]
-            wcs.wcs.crpix -= [xmin, ymin]
-            wcs.pixel_shape = [xmax - xmin + 1, ymax - ymin + 1]
+            xmin_scaled = int(np.rint(custom_limits[0] * ratio))
+            xmax_scaled = int(np.rint(custom_limits[1] * ratio))
+            ymin_scaled = int(np.rint(custom_limits[2] * ratio))
+            ymax_scaled = int(np.rint(custom_limits[3] * ratio))
+
+
+            # wcs._naxis[0] = int(np.rint(wcs._naxis[0] * ratio))
+            # wcs._naxis[1] = int(np.rint(wcs._naxis[1] * ratio))
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            self.bounding_box = [slice(ymin_unscaled, ymax_unscaled), slice(xmin_unscaled, xmax_unscaled)]
+            wcs.wcs.crpix -= [xmin_unscaled, ymin_unscaled]
+            wcs.pixel_shape = [xmax_unscaled - xmin_unscaled + 1, ymax_unscaled - ymin_unscaled + 1]
         else: # For regular MVM processing
             wcs = copy.deepcopy(self.skycell.wcs)
+
         print(">>> IMAGE:                                   ", self.drizzle_filename)
-        print(">>> ratio:                                   ", ratio)
+        print(">>> ratio:                                   ", self.skycell.projection_cell.wcs.pscale / self.skycell.scale)
         print(">>> self.skycell.projection_cell.wcs.pscale: ", self.skycell.projection_cell.wcs.pscale)
         print(">>> self.skycell.scale:                      ", self.skycell.scale)
         print("\a")
         pdb.set_trace()
+
         # This is the exposure-independent WCS.
         self.meta_wcs = wcs
 
