@@ -121,6 +121,7 @@ def create_drizzle_products(total_obj_list):
             exposure_obj.wcs_drizzle_product(meta_wcs)
             # Add drizzled FLC images to manifest
             product_list.append(exposure_obj.drizzle_filename)
+            product_list.append(exposure_obj.trl_filename)
 
 
     # Ensure that all drizzled products have headers that are to specification
