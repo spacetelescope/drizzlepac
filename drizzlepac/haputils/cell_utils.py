@@ -317,8 +317,8 @@ class SkyFootprint(object):
                 meta_y = meta_y.astype(np.int32)
 
                 # check to see whether or not this image falls within meta_wcs at all...
-                off_x = (meta_x.max() < 0) or meta_x.min() > (self.meta_wcs.array_shape[1] - 1)
-                off_y = (meta_y.max() < 0) or meta_y.min() > (self.meta_wcs.array_shape[0] - 1)
+                off_x = (meta_x.max() <= 0) or meta_x.min() > (self.meta_wcs.array_shape[1] - 1)
+                off_y = (meta_y.max() <= 0) or meta_y.min() > (self.meta_wcs.array_shape[0] - 1)
                 # if this chip falls completely outside SkyCell, skip to next chip
                 if off_x or off_y:
                     continue
@@ -342,6 +342,8 @@ class SkyFootprint(object):
                 polygon = list(zip(parray[0], parray[1]))
                 nx = self.total_mask[tuple(scell_slice)].shape[1]
                 ny = self.total_mask[tuple(scell_slice)].shape[0]
+                if nx == 0 or ny == 0:
+                    continue
                 img = Image.new('L', (nx, ny), 0)
                 ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
                 blank = np.array(img).astype(np.int16)
