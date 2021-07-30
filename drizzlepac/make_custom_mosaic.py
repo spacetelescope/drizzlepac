@@ -304,6 +304,12 @@ def perform(input_image_source, log_level='info'):
         temp_files_to_delete.append(poller_filename)
 
         # Execute hapmultisequencer.run_mvm_processing() with poller file
+        log.debug("Creating custom mosaic from the following {} input images".format(len(img_list)))
+        for item in img_list:
+            log.debug(" {}".format(item))
+        log.info("Mosaic bounding box limits")
+        for limit_name, limit_value in zip(["X_min", "X_max", "Y_min", "Y_max"], custom_limits):
+            log.debug("{}: {}".format(limit_name, int(np.rint(limit_value))))
         return_value = hapmultisequencer.run_mvm_processing(poller_filename,
                                                             custom_limits=custom_limits,
                                                             log_level=logging_level)
