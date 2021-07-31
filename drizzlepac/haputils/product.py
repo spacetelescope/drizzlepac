@@ -961,7 +961,7 @@ class SkyCellProduct(HAPProduct):
         self.manifest_name = '_'.join(['hst', skycell_name, 'manifest.txt'])
 
         # Define HAPLEVEL value for this product
-        self.haplevel = 3
+        self.haplevel = 4
 
         # These attributes will be populated during processing
         self.edp_list = []
