@@ -1004,36 +1004,31 @@ class SkyCellProduct(HAPProduct):
             xmax_scaled = int(np.rint(custom_limits[1] * ratio))
             ymin_scaled = int(np.rint(custom_limits[2] * ratio))
             ymax_scaled = int(np.rint(custom_limits[3] * ratio))
-            pdb.set_trace()
+            # pdb.set_trace()
             #  -  -  -  -  -  -  Port of cell_utils.SkyCell._build_wcs()  -  -  -  -  -  -  -  -  -  -  -  -
             # Define attributes based on projection cell
-            pc_nx = self.projection_cell.wcs.pixel_shape[0]
-            pc_ny = self.projection_cell.wcs.pixel_shape[1]
+            # pc_nx = self.projection_cell.wcs.pixel_shape[0]
+            # pc_ny = self.projection_cell.wcs.pixel_shape[1]
 
             # Define size of SkyCells at default/fine plate scale
             # CRPIX of SkyCells should always be at exactly ((pc_nx/self.nxy) * ratio) apart
             # Size of SkyCells needs to self.overlap * 2 larger than the distance between CRPIX values
-            sc_nx1 = int(pc_nx / self.nxy + 0.5)
-            sc_nx2 = int(pc_ny / self.nxy + 0.5)
-            naxis1 = int((sc_nx1 + self.overlap * 2) * ratio)
-            naxis2 = int((sc_nx2 + self.overlap * 2) * ratio)
-            xindx = self.x_index - 1 if self.x_index > 0 else 0
-            yindx = self.y_index - 1 if self.y_index > 0 else 0
+            # sc_nx1 = int(pc_nx / self.nxy + 0.5)
+            # sc_nx2 = int(pc_ny / self.nxy + 0.5)
+            # naxis1 = int((sc_nx1 + self.overlap * 2) * ratio)
+            # naxis2 = int((sc_nx2 + self.overlap * 2) * ratio)
 
-            crpix1 = ((self.projection_cell.wcs.wcs.crpix[0] - xindx * sc_nx1)) * ratio
-            crpix2 = ((self.projection_cell.wcs.wcs.crpix[1] - yindx * sc_nx2)) * ratio
 
             # apply definitions
-            self.wcs = astropy.wcs.WCS(naxis=2)
-            self.wcs.wcs.crpix = [crpix1, crpix2]
-            self.wcs.wcs.crval = self.projection_cell.wcs.wcs.crval
-            self.wcs.wcs.cd = self.projection_cell.wcs.wcs.cd / ratio
-            self.wcs.wcs.ctype = ['RA---TAN', 'DEC--TAN']
-            self.wcs.pixel_shape = (naxis1, naxis2)
-            self.wcs.ltv1 = (self.projection_cell.wcs.wcs.crpix[0] * ratio) - crpix1
-            self.wcs.ltv2 = (self.projection_cell.wcs.wcs.crpix[1] * ratio) - crpix2
-            self.wcs.orientat = self.projection_cell.wcs.orientat
-            self.wcs.pscale = self.projection_cell.wcs.pscale / ratio
+            wcs.wcs.crpix -= [xmin_unscaled, ymin_unscaled]
+            wcs.wcs.crval = wcs.wcs.crval
+            wcs.wcs.cd = wcs.wcs.cd / ratio
+            wcs.wcs.ctype = ['RA---TAN', 'DEC--TAN']
+            wcs.pixel_shape = [xmax_unscaled - xmin_unscaled + 1, ymax_unscaled - ymin_unscaled + 1]
+            # wcs.ltv1 = (wcs.wcs.crpix[0] * ratio) - crpix1
+            # wcs.ltv2 = (wcs.wcs.crpix[1] * ratio) - crpix2
+            # wcs.orientat = self.projection_cell.wcs.orientat
+            wcs.pscale = wcs.pscale / ratio
 
             #  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1041,8 +1036,8 @@ class SkyCellProduct(HAPProduct):
             # wcs._naxis[1] = int(np.rint(wcs._naxis[1] * ratio))
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             self.bounding_box = [slice(ymin_unscaled, ymax_unscaled), slice(xmin_unscaled, xmax_unscaled)]
-            wcs.wcs.crpix -= [xmin_unscaled, ymin_unscaled]
-            wcs.pixel_shape = [xmax_unscaled - xmin_unscaled + 1, ymax_unscaled - ymin_unscaled + 1]
+            # wcs.wcs.crpix -= [xmin_unscaled, ymin_unscaled]
+            # wcs.pixel_shape = [xmax_unscaled - xmin_unscaled + 1, ymax_unscaled - ymin_unscaled + 1]
         else: # For regular MVM processing
             wcs = copy.deepcopy(self.skycell.wcs)
 
@@ -1051,7 +1046,7 @@ class SkyCellProduct(HAPProduct):
         print(">>> self.skycell.projection_cell.wcs.pscale: ", self.skycell.projection_cell.wcs.pscale)
         print(">>> self.skycell.scale:                      ", self.skycell.scale)
         print("\a")
-        pdb.set_trace()
+        # pdb.set_trace()
 
         # This is the exposure-independent WCS.
         self.meta_wcs = wcs
