@@ -13,17 +13,14 @@ from drizzlepac.haputils import poller_utils
 
 __taskname__ = 'make_poller_files'
 
-def generate_poller_file(input_list, input_file_path=None, poller_file_type='svm',
-                         output_poller_filename="poller_file.out", skycell_name=None):
+def generate_poller_file(input_list, poller_file_type='svm', output_poller_filename="poller_file.out",
+                         skycell_name=None):
     """Creates a properly formatted SVM or MVM poller file.
 
     Parameters
     ----------
     input_list : str
         Name of the file containing the list of rootnames to process
-
-    input_file_path : str, optional
-        Full absolute path containing all input files to process
 
     poller_file_type : str, optional
         Type of poller file to create. 'svm' for single visit mosaic, 'mvm' for multi-visit mosaic. Default
@@ -48,7 +45,7 @@ def generate_poller_file(input_list, input_file_path=None, poller_file_type='svm
     output_list = []
     for rootname in rootname_list:
         rootname = rootname.strip()
-        fullfilepath = locate_fitspath_from_rootname(rootname, input_file_path=input_file_path)
+        fullfilepath = locate_fitspath_from_rootname(rootname)
         if len(fullfilepath) > 0:
             print("Rootname {}: Found fits file {}".format(rootname, fullfilepath))
             imgname = fullfilepath.split("/")[-1]
@@ -96,7 +93,7 @@ def generate_poller_file(input_list, input_file_path=None, poller_file_type='svm
 
 # ============================================================================================================
 
-def locate_fitspath_from_rootname(rootname, input_file_path=None):
+def locate_fitspath_from_rootname(rootname):
     """returns full file name (fullpath + filename) for a specified rootname.
 
     Parameters
@@ -104,26 +101,22 @@ def locate_fitspath_from_rootname(rootname, input_file_path=None):
     rootname : str
         rootname to process
 
-    input_file_path : str
-        Full absolute path containing all input files to process
-
     Returns
     -------
     fullfilepath : str
         full path + image name of specified rootname.
     """
-    if not input_file_path:
-        if not os.getenv("DATA_PATH"):
-            sys.exit("ERROR: Undefined online cache data root path. Please set environment variable 'DATA_PATH'")
-        filenamestub = "{}/{}/{}/{}".format(os.getenv("DATA_PATH"), rootname[:4], rootname, rootname)
-    else:
-        filenamestub = "{}/{}".format(input_file_path,rootname)
-
+    import glob
+    files = sorted(glob.glob('{}*fl?.fits'.format(rootname[:4])))
+    if rootname in files:
+        return rootname
+    if not os.getenv("DATA_PATH"):
+        sys.exit("ERROR: Undefined online cache data root path. Please set environment variable 'DATA_PATH'")
+    filenamestub = "{}/{}/{}/{}".format(os.getenv("DATA_PATH"), rootname[:4], rootname, rootname)
     if os.path.exists("{}_flc.fits".format(filenamestub)):
         fullfilepath = "{}_flc.fits".format(filenamestub)
     else:
         fullfilepath = "{}_flt.fits".format(filenamestub)
-
     return fullfilepath
 
 
@@ -140,9 +133,6 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output_poller_filename', required=False, default="poller_file.out",
                         help='Name of an output poller file that will be created. If not explicitly '
                              'specified, the poller file will be named "poller_file.out".')
-    parser.add_argument('-p', '--input_file_path', required=False, default="None",
-                        help="Path of all input files. If not explicitly specified, the path defined by the "
-                             "environment varialble 'DATA_PATH' will be used to find the input files.")
     parser.add_argument('-s', '--skycell_name', required=False, default="None",
                         help='Name of the skycell. NOTE: this input argument is *REQUIRED* only for MVM '
                              'poller file creation. ')
@@ -155,8 +145,6 @@ if __name__ == '__main__':
     in_args = parser.parse_args()
 
     # reformat input args
-    if in_args.input_file_path == 'None':
-        in_args.input_file_path = None
     if in_args.skycell_name == 'None':
         in_args.skycell_name = None
 
@@ -165,7 +153,6 @@ if __name__ == '__main__':
         parser.error("ERROR: To create a MVM poller file, a skycell name must be specified with the '-s' argument.")
 
     generate_poller_file(in_args.input_list,
-                         input_file_path=in_args.input_file_path,
                          poller_file_type=in_args.poller_file_type,
                          output_poller_filename=in_args.output_poller_filename,
                          skycell_name=in_args.skycell_name)

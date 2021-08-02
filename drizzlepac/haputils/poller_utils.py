@@ -283,9 +283,9 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0, u
         obset_table = copy.deepcopy(user_table)
 
     # Add INSTRUMENT column
-    instr = INSTRUMENT_DICT[obset_table['filename'][0][0]]
+    instr = [INSTRUMENT_DICT[fname[0]] for fname in obset_table['filename']]
     # convert input to an Astropy Table for parsing
-    obset_table.add_column(Column([instr] * len(obset_table)), name='instrument')
+    obset_table.add_column(Column(instr, name='instrument'))
 
     # Add Date column
     # Uncomment this if we want to control the observation date in the same way as the exposure times.
@@ -301,7 +301,6 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0, u
     obset_table = sort_poller_table(obset_table)
 
     define_exp_layers(obset_table, method=layer_method, exp_limit=exp_limit)
-
     # parse Table into a tree-like dict
     log.debug("Build the multi-visit layers tree.")
     obset_tree = build_mvm_tree(obset_table)
@@ -471,7 +470,6 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 #
                 # mvm prod_info = 'skycell_p1234_x01y01 wfc3 uvis f200lp all 2009 1 drz'
                 #
-
                 prod_list = prod_info.split(" ")
                 pscale = 'fine' if prod_list[2].upper() != 'IR' else 'coarse'
                 prod_info += " {:s}".format(pscale)

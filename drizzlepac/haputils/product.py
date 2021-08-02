@@ -396,6 +396,7 @@ class TotalProduct(HAPProduct):
         self.fdp_list = []
         self.regions_dict = {}
         self.grism_edp_list = []
+        self.bkg_used = ""
 
         log.debug("Total detection object {}/{} created.".format(self.instrument, self.detector))
 
@@ -789,7 +790,16 @@ class SkyCellExposure(HAPProduct):
         super().__init__(prop_id, obset_id, instrument, detector, filename, filetype, log_level)
 
         filter_str = layer[0]
-        layer_str = '-'.join(layer[1:])
+
+        # parse layer information into filename layer_str
+        # layer: [filter_str, pscale_str, exptime_str, epoch_str]
+        # e.g.: [f160w, coarse, all, all]
+        #
+        if layer[1] == 'coarse':
+            layer_vals = [layer[1], layer[2], self.exposure_name]
+        else:
+            layer_vals = ['all', self.exposure_name]
+        layer_str = '-'.join(layer_vals)
 
         cell_id = "p{}{}".format(prop_id, obset_id)
         self.basename = "hst_skycell-" + "_".join(map(str, [cell_id, instrument, detector])) + "_"
@@ -803,7 +813,7 @@ class SkyCellExposure(HAPProduct):
         self.exptime = hdu_list[0].header['EXPTIME']
         hdu_list.close()
 
-        self.product_basename = self.basename + "_".join(map(str, [filter_str, layer_str, self.exposure_name]))
+        self.product_basename = self.basename + "_".join(map(str, [filter_str, layer_str]))
         self.drizzle_filename = self.product_basename + "_" + self.filetype + ".fits"
         self.headerlet_filename = self.product_basename + "_hlet.fits"
         self.trl_logname = self.product_basename + "_trl.log"
@@ -919,11 +929,19 @@ class SkyCellProduct(HAPProduct):
         # May need to exclude 'filter' component from layer_str
         filter_str = layer[0]
         self.filters = filter_str
-        layer_str = '-'.join(layer[1:])
+
+        # parse layer information into filename layer_str
+        # layer: [filter_str, pscale_str, exptime_str, epoch_str]
+        # e.g.: [f160w, coarse, all, all]
+        #
+        if layer[1] == 'coarse':
+            layer_str = '-'.join([layer[1], layer[2]])
+        else:
+            layer_str = 'all'
+
         layer_scale = layer[1]
 
         self.info = '_'.join(['hst', skycell_name, instrument, detector, filter_str, layer_str])
-        self.manifest_info = '_'.join(['hst', skycell_name, instrument, detector, filter_str])
         self.exposure_name = skycell_name
         self.product_basename = self.info
 
@@ -937,11 +955,11 @@ class SkyCellProduct(HAPProduct):
         self.drizzle_filename = '_'.join([self.product_basename, self.filetype]) + ".fits"
         self.refname = self.product_basename + "_ref_cat.ecsv"
 
-        # Generate the name for the manifest file which is for the entire visit.  It is fine
-        # to create it as an attribute of a TotalProduct as it is independent of
-        # the detector in use.
-        # instrument_programID_obsetID_manifest.txt (e.g.,wfc3_b46_06_manifest.txt)
-        self.manifest_name = '_'.join([self.manifest_info, "manifest.txt"])
+        # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
+        # to use only one of the SkyCellProducts to generate the manifest name as the name
+        # is only dependent on the sky cell.
+        # Example: hst_skycell-p<PPPP>x<XX>y<YY>_manifest.txt (e.g., hst_skycell-p0797x12y05_manifest.txt)
+        self.manifest_name = '_'.join(['hst', skycell_name, 'manifest.txt'])
 
         # Define HAPLEVEL value for this product
         self.haplevel = 3

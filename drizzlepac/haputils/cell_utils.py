@@ -318,8 +318,8 @@ class SkyFootprint(object):
                 meta_y = meta_y.astype(np.int32)
 
                 # check to see whether or not this image falls within meta_wcs at all...
-                off_x = (meta_x.max() < 0) or meta_x.min() > (self.meta_wcs.array_shape[1] - 1)
-                off_y = (meta_y.max() < 0) or meta_y.min() > (self.meta_wcs.array_shape[0] - 1)
+                off_x = (meta_x.max() <= 0) or meta_x.min() > (self.meta_wcs.array_shape[1] - 1)
+                off_y = (meta_y.max() <= 0) or meta_y.min() > (self.meta_wcs.array_shape[0] - 1)
                 # if this chip falls completely outside SkyCell, skip to next chip
                 if off_x or off_y:
                     continue
@@ -341,8 +341,10 @@ class SkyFootprint(object):
                 # parray = np.array(meta_edges.T)
                 parray = (meta_x, meta_y)
                 polygon = list(zip(parray[0], parray[1]))
-                nx = self.total_mask[scell_slice].shape[1]
-                ny = self.total_mask[scell_slice].shape[0]
+                nx = self.total_mask[tuple(scell_slice)].shape[1]
+                ny = self.total_mask[tuple(scell_slice)].shape[0]
+                if nx == 0 or ny == 0:
+                    continue
                 img = Image.new('L', (nx, ny), 0)
                 ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
                 blank = np.array(img).astype(np.int16)
@@ -358,9 +360,9 @@ class SkyFootprint(object):
 
                 if scale:
                     scaled_blank = blank * scale_val
-                    self.scaled_mask[scell_slice] += scaled_blank
+                    self.scaled_mask[tuple(scell_slice)] += scaled_blank
 
-                self.total_mask[scell_slice] += blank
+                self.total_mask[tuple(scell_slice)] += blank
                 del blank
 
             # Only add members which contributed to this footprint

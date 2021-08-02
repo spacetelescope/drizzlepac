@@ -733,6 +733,8 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     common_pars = fit_pars['pars']
     del fit_pars['pars']
 
+    nclip = None if fitgeom == 'shift' else 3
+
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
     # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
@@ -749,7 +751,8 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
                                       match=match,
                                       minobj=common_pars['minobj'][fitgeom],
                                       expand_refcat=True,
-                                      fitgeom=fitgeom)
+                                      fitgeom=fitgeom,
+                                      nclip=nclip)
     # Implement a consistency check even before trying absolute alignment
     # If relative alignment in question, no use in aligning to GAIA
     if not check_consistency(imglist):
@@ -786,18 +789,18 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         matched_cat = tweakwcs.align_wcs(imglist, reference_catalog,
                                          match=match,
                                          minobj=common_pars['minobj'][fitgeom],
-                                         fitgeom=fitgeom)
-    else:
+                                         fitgeom=fitgeom,
+                                         nclip=nclip)
         # Insure the expanded reference catalog has all the information needed
         # to complete processing.
         # TODO: Work out how to get the 'mag' column from input source catalog
         #       into this extended reference catalog...
-        reference_catalog = match_relcat
-        reference_catalog['mag'] = np.array([-999.9] * len(reference_catalog),
-                                            np.float32)
-        reference_catalog.meta['catalog'] = 'relative'
+        # reference_catalog = match_relcat
+        # reference_catalog['mag'] = np.array([-999.9] * len(reference_catalog),
+        #                                    np.float32)
+        # reference_catalog.meta['catalog'] = 'relative'
 
-    # 3: Interpret RMS values from tweakwcs
+        # 3: Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
 
     del match_relcat
@@ -842,6 +845,7 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
     common_pars = fit_pars['pars']
     del fit_pars['pars']
 
+    nclip = None if fitgeom == 'shift' else 3
 
     log.info("{} (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
@@ -853,7 +857,8 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
                                      match=match,
                                      minobj=common_pars['minobj'][fitgeom],
                                      expand_refcat=False,
-                                     fitgeom=fitgeom)
+                                     fitgeom=fitgeom,
+                                     nclip=nclip)
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
@@ -904,6 +909,7 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     common_pars = fit_pars['pars']
     del fit_pars['pars']
 
+    nclip = None if fitgeom == 'shift' else 3
 
     log.info("{} (match_2dhist_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 28))
@@ -914,7 +920,8 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
                                      match=match,
                                      minobj=common_pars['minobj'][fitgeom],
                                      expand_refcat=False,
-                                     fitgeom=fitgeom)
+                                     fitgeom=fitgeom,
+                                     nclip=nclip)
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
@@ -964,7 +971,8 @@ def check_consistency(imglist, rot_tolerance=0.1, shift_tolerance=1.0):
             img.meta['fit_info']['process_msg'] = msg
 
         log.info('Relative fit solution is NOT consistent!')
-        log.debug('DELTAS for "{}" fit:'.format(finfo['fitgeom']))
+        fitgeom = finfo['fitgeom'] if 'fitgeom' in finfo else 'Unknown'
+        log.debug('DELTAS for "{}" fit:'.format(fitgeom))
         log.debug('  max rot={:.4f}\n '.format(delta_rots.max()))
         is_consistent = False
 
