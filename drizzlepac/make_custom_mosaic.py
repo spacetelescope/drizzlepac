@@ -150,8 +150,7 @@ def create_poller_file(img_list, proj_cell_dict):
         f.writelines(rootname_list)
         f.close()
 
-        make_poller_files.generate_poller_file(tf.name, input_file_path=os.getcwd(),
-                                               poller_file_type="mvm",
+        make_poller_files.generate_poller_file(tf.name, poller_file_type="mvm",
                                                output_poller_filename=poller_filename,
                                                skycell_name=skycell_name)
     return poller_filename
