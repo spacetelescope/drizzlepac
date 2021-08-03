@@ -338,7 +338,7 @@ class HAPProduct:
 
         except Exception:
             # Report a problem with the alignment
-            if fit_label.upper().strip()  == 'SVM':
+            if fit_label.upper().strip() == 'SVM':
                 log.warning("EXCEPTION encountered in align_to_gaia for the FilteredProduct.\n")
             else:
                 log.warning("EXCEPTION encountered in align_to_gaia for the SkyCellProduct.\n")
@@ -912,7 +912,7 @@ class SkyCellExposure(HAPProduct):
             pass
 
         # Add HAPLEVEL keyword as required by pipeline processing
-        fits.setval(sce_filename, 'HAPLEVEL', value=0, comment='Classificaion level of this product')
+        fits.setval(sce_filename, 'HAPLEVEL', value=0, comment='Classification level of this product')
 
         return sce_filename
 
@@ -1008,7 +1008,7 @@ class SkyCellProduct(HAPProduct):
             This input argument is only used for creation of custom mosaics. These coordinates are in the
             frame of reference of the projection cell, at fine (platescale = 0.04 arcsec/pixel) resolution.
         """
-        if custom_limits: # for creation of custom multi-skycell mosaics, base meta_wcs on projection cell WCS
+        if custom_limits:  # for creation of custom multi-skycell mosaics, base meta_wcs on projection cell WCS
             wcs = copy.deepcopy(self.skycell.projection_cell.wcs)
             ratio = self.skycell.projection_cell.wcs.pscale / self.skycell.scale
 
@@ -1034,7 +1034,7 @@ class SkyCellProduct(HAPProduct):
             wcs._naxis[1] = int(np.rint(wcs._naxis[1] * ratio))
             self.bounding_box = [slice(ymin_scaled, ymax_scaled), slice(xmin_scaled, xmax_scaled)]
             wcs.pixel_shape = [xmax_scaled - xmin_scaled + 1, ymax_scaled - ymin_scaled + 1]
-        else: #  For regular MVM processing (single skycell), base meta_wcs on skycell wcs
+        else:  # For regular MVM processing (single skycell), base meta_wcs on skycell wcs
             wcs = copy.deepcopy(self.skycell.wcs)
 
         # This is the exposure-independent WCS.
