@@ -10,12 +10,12 @@ USAGE:
 Python USAGE:
     python
     from drizzlepac import make_custom_mosaic
-    make_custom_mosaic.perform(<list file or search pattern)
+    make_custom_mosaic.perform(<list file or search pattern>)
 """
+
 import argparse
 import glob
 import math
-import pdb
 import os
 import sys
 import tempfile
@@ -29,7 +29,6 @@ from drizzlepac.haputils import cell_utils
 from drizzlepac.haputils import make_poller_files
 
 from stsci.tools import logutil
-from stwcs import wcsutil
 
 __taskname__ = 'make_custom_mosaic'
 MSG_DATEFMT = '%Y%j%H%M%S'
@@ -41,6 +40,7 @@ __version__ = 0.1
 __version_date__ = '14-July-2021'
 
 # ------------------------------------------------------------------------------------------------------------
+
 
 def calc_skycell_dist(x, y, x_ref, y_ref):
     """Calculate distance from one skyframe to another
@@ -66,6 +66,7 @@ def calc_skycell_dist(x, y, x_ref, y_ref):
     """
     dist = math.sqrt(float((x - x_ref)**2) + float((y - y_ref)**2))
     return(dist)
+
 # ------------------------------------------------------------------------------------------------------------
 
 
@@ -157,6 +158,7 @@ def create_poller_file(img_list, proj_cell_dict):
 
 # ------------------------------------------------------------------------------------------------------------
 
+
 def compute_mosaic_limits(proj_cell_dict):
     """Compute min and max limits of the rectangle that encloses the mosaic observations
 
@@ -195,6 +197,7 @@ def compute_mosaic_limits(proj_cell_dict):
         mosaic_limits[i] = int(np.rint(mosaic_limits[i]))
         print("{}: {}".format(limit_labels[i], mosaic_limits[i]))
     return mosaic_limits
+
 # ------------------------------------------------------------------------------------------------------------
 
 
@@ -229,7 +232,8 @@ def determine_projection_cell(img_list):
         best_pc = list(proj_cell_dict)[0]
     else:
         log.info("Observations are present in multiple projection cells.")
-        log.info("Output WCS will be based on WCS from the projection cell whose center is closest to the center of the input observations.")
+        log.info("Output WCS will be based on WCS from the projection cell whose center is closest to the "
+                 "center of the input observations.")
         # Determine which projection cell's center is closest to the center of the observations
         pcell_filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pars', 'allsky_cells.fits')
         sc_nxy = fits.getval(pcell_filename, "SC_NXY", ext=0)  # Projection cell side length (in skycells) in X or Y
@@ -326,8 +330,6 @@ def perform(input_image_source, log_level='info'):
                 if os.path.exists(filename):
                     os.remove(filename)
                     log.info("Removed temporary file {}.".format(filename))
-
-
     return return_value
 
 # ------------------------------------------------------------------------------------------------------------
@@ -342,7 +344,8 @@ def main():
 
     Returns
     -------
-    Nothing.
+    return_value : int
+        return value from the run. 0 for successful run, something else otherwise.
     """
     # Parse command-line inputs
     parser = argparse.ArgumentParser(description='Create custom mosaic based on user-specified images and '
@@ -361,7 +364,7 @@ def main():
                              'statements, and so on.')
     user_args = parser.parse_args()
 
-    rv = perform(user_args.input_image_source, user_args.log_level)
+    return_value = perform(user_args.input_image_source, user_args.log_level)
 # ------------------------------------------------------------------------------------------------------------
 
 
