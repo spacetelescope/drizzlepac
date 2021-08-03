@@ -868,6 +868,7 @@ class SkyCellExposure(HAPProduct):
         drizzle_pars["preserve"] = False
         drizzle_pars['rules_file'] = self.rules_file
         drizzle_pars['resetbits'] = "0"
+        drizzle_pars['context'] = False
 
         log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
                   "have been updated for the drizzle step of the exposure drizzle product."
@@ -1032,6 +1033,8 @@ class SkyCellProduct(HAPProduct):
         # Setting "preserve" to false so the OrIg_files directory is deleted as the purpose
         # of this directory is now obsolete.
         drizzle_pars["preserve"] = False
+        # Turn off generation of CTX extension (not useful for these products)
+        drizzle_pars["context"] = False
         log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
                   "have been updated for the drizzle step of the filter drizzle product."
                   .format(meta_wcs, self.trl_logname))
