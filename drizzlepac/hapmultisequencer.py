@@ -154,7 +154,7 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
 
 def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_configs=True,
                        input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
-                       custom_limits=None, log_level=logutil.logging.INFO):
+                       custom_limits=None, output_file_prefix=None, log_level=logutil.logging.INFO):
     """
     Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
     controller which invokes the high-level functionality to process the multi-visit data.
@@ -192,9 +192,20 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         4-element list containing the mosaic bounding rectangle X min and max and Y min and max values for
         custom mosaics
 
+    output_file_prefix : str, optional
+        'Text string that will be used as the filename prefix all files created by hapmultisequencer.py
+        during the MVM custom mosaic generation process. If not explicitly specified, all output files will
+        start with the following formatted text string:
+        "hst-skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>", where p<pppp> is the projection cell ID,
+        ra<##>d<####> are the whole-number and decimal portions of the right ascention, respectively, and
+        dec<n|s><##>d<####> are the whole-number and decimal portions of the declination, respectively. Note
+        that the "<n|s>" denotes if the declination is north (positive) or south (negative). Example: For
+        skycell = 1974, ra = 201.9512, and dec = +26.0012, The filename prefix would be
+        "skycell-p1974-ra201d9512-decn26d0012".
+
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 20, or 'info'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
 
 
     RETURNS
