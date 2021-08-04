@@ -188,6 +188,10 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         Which algorithm should be used to generate the sourcelists? 'aperture' for aperture (point) photometry;
         'segment' for isophotal photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
 
+    custom_limits : list, optional
+        4-element list containing the mosaic bounding rectangle X min and max and Y min and max values for
+        custom mosaics
+
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
         Default value is 20, or 'info'.
