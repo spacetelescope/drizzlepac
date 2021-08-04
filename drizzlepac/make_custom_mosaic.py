@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-""" make_custom_mosaic.py - Module to control processing of user-defined custom mosaics
+""" make_custom_mosaic.py - Module to control the generation of user-defined multi-skycell mosaics. This
+script extends the capabilities of the HAP multi-visit mosaics (MVM) processing code (hapmultisequencer.py).
+Based on user input, this script will produce drizzle-combined mosaics that will be as large as necessary to
+incorporate all input images. Mosaic images can span multiple skycells, but NOT multiple projection cells.
 
 USAGE:
 
@@ -212,8 +215,10 @@ def determine_projection_cell(img_list):
 
     Returns
     -------
-    Not sure yet: Unknown type
-        I really just don't know at this point.
+    best_pc_dict : dict
+        Dictionary of SkyCell objects for the input observations. These SkyCell objects contain projection
+        cell information from the projection cell whose center is closest to the geometric center of the
+        input observations.
     """
     # Create dictionary containing information about the skycells that contain input images
     skycell_dict = cell_utils.get_sky_cells(img_list)
@@ -251,7 +256,8 @@ def determine_projection_cell(img_list):
                 best_pc = pc
     log.info("Output WCS will be based on WCS from projection cell {}".format(best_pc))
 
-    return proj_cell_dict[best_pc]
+    best_pc_dict = proj_cell_dict[best_pc]
+    return best_pc_dict
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -324,6 +330,7 @@ def perform(input_image_source, log_level='info'):
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
     finally:
+        # remove any temp files like the poller file and
         if temp_files_to_delete and log_level != "debug":
             log.info("Time delete some temporary files...")
             for filename in temp_files_to_delete:
