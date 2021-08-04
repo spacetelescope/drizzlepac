@@ -393,8 +393,6 @@ def main():
                              '(negative). Example: For skycell = 1974, ra = 201.9512, and dec = +26.0012, '
                              'The filename prefix would be "skycell-p1974-ra201d9512-decn26d0012".')
     user_args = parser.parse_args()
-    import pdb
-    pdb.set_trace()
     return_value = perform(user_args.input_image_source, user_args.log_level, user_args.output_file_prefix)
 # ------------------------------------------------------------------------------------------------------------
 
