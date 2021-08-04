@@ -262,7 +262,7 @@ def determine_projection_cell(img_list):
 # ------------------------------------------------------------------------------------------------------------
 
 
-def perform(input_image_source, log_level='info'):
+def perform(input_image_source, log_level='info', output_file_prefix=None):
     """Main calling subroutine
 
     Parameters
@@ -277,6 +277,17 @@ def perform(input_image_source, log_level='info'):
         log_level left of the specified level. Specifying "critical" will only record/display "critical" log
         statements, and specifying "error" will record/display both "error" and "critical" log statements,
         and so on. Unless explicitly set, the default value is 'info'.
+
+    output_file_prefix : str, optional
+        'Text string that will be used as the filename prefix all files created by hapmultisequencer.py
+        during the MVM custom mosaic generation process. If not explicitly specified, all output files will
+        start with the following formatted text string:
+        "hst-skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>", where p<pppp> is the projection cell ID,
+        ra<##>d<####> are the whole-number and decimal portions of the right ascention, respectively, and
+        dec<n|s><##>d<####> are the whole-number and decimal portions of the declination, respectively. Note
+        that the "<n|s>" denotes if the declination is north (positive) or south (negative). Example: For
+        skycell = 1974, ra = 201.9512, and dec = +26.0012, The filename prefix would be
+        "skycell-p1974-ra201d9512-decn26d0012".
 
     Returns
     -------
@@ -321,7 +332,8 @@ def perform(input_image_source, log_level='info'):
             log.debug("{}: {}".format(limit_name, int(np.rint(limit_value))))
         return_value = hapmultisequencer.run_mvm_processing(poller_filename,
                                                             custom_limits=custom_limits,
-                                                            log_level=logging_level)
+                                                            log_level=logging_level,
+                                                            output_file_prefix=output_file_prefix)
 
     except Exception:
         if return_value == 0:
@@ -369,9 +381,21 @@ def main():
                              'Specifying "critical" will only record/display "critical" log statements, and '
                              'specifying "error" will record/display both "error" and "critical" log '
                              'statements, and so on.')
+    parser.add_argument('-o', '--output_file_prefix', required=False,
+                        help='Text string that will be used as the filename prefix all files created by '
+                             'hapmultisequencer.py during the MVM custom mosaic generation process. If not '
+                             'explicitly specified, all output files will start with the following formatted '
+                             'text string: "hst-skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>", where '
+                             'p<pppp> is the projection cell ID, ra<##>d<####> are the whole-number and '
+                             'decimal portions of the right ascention, respectively, and dec<n|s><##>d<####> '
+                             'are the whole-number and decimal portions of the declination, respectively. '
+                             'Note that the "<n|s>" denotes if the declination is north (positive) or south '
+                             '(negative). Example: For skycell = 1974, ra = 201.9512, and dec = +26.0012, '
+                             'The filename prefix would be "skycell-p1974-ra201d9512-decn26d0012".')
     user_args = parser.parse_args()
-
-    return_value = perform(user_args.input_image_source, user_args.log_level)
+    import pdb
+    pdb.set_trace()
+    return_value = perform(user_args.input_image_source, user_args.log_level, user_args.output_file_prefix)
 # ------------------------------------------------------------------------------------------------------------
 
 
