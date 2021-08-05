@@ -241,6 +241,36 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         obs_info_dict, total_obj_list = poller_utils.interpret_mvm_input(input_filename, log_level,
                                                                          layer_method='all')
 
+        # Optionally rename files
+        output_file_prefix = "hst_skycell-p1894MULTI"
+        if output_file_prefix:
+            for i in range(0, len(total_obj_list)):
+                attr_list = ["drizzle_filename",
+                             "exposure_name",
+                             "manifest_name",
+                             "refname",
+                             "trl_filename",
+                             "trl_logname"
+
+                             ]
+                text_to_replace = "hst_"+getattr(total_obj_list[i], 'exposure_name')
+                for attr_name in attr_list:
+                    orig_name = getattr(total_obj_list[i], attr_name)
+                    new_name = orig_name.replace(text_to_replace, output_file_prefix)
+                    print("Filter object attr {}: {} -> {}".format(attr_name, orig_name, new_name))
+                    setattr(total_obj_list[i], attr_name, new_name)
+                for attr_name in ['manifest_name', 'refname']:
+                    attr_list.remove(attr_name)
+                # for attr_name in ["full_filename", "headerlet_filename"]:
+                #     attr_list.append(attr_name)
+                for j in range(0, len(total_obj_list[i].edp_list)):
+                    for attr_name in attr_list:
+                        orig_name = getattr(total_obj_list[i].edp_list[j], attr_name)
+                        new_name = orig_name.replace(text_to_replace, output_file_prefix)
+                        print("exposure object attr {}: {} -> {}".format(attr_name, orig_name, new_name))
+                        setattr(total_obj_list[i].edp_list[j], attr_name, new_name)
+
+
         # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
         # to use only one of the SkyCellProducts to generate the manifest name as the name
         # is only dependent on the sky cell.
@@ -256,6 +286,8 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         for filter_item in total_obj_list:
             _ = filter_item.generate_metawcs(custom_limits=custom_limits)
             filter_item.generate_footprint_mask()
+            # TODO: move all that rename stuff here!
+            pdb.set_trace()
             log.info("Preparing configuration parameter values for filter product {}".format(filter_item.drizzle_filename))
             filter_item.configobj_pars = config_utils.HapConfig(filter_item,
                                                                 log_level=log_level,
