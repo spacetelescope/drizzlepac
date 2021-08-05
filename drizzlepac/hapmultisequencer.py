@@ -62,6 +62,80 @@ envvar_qa_svm = "SVM_QUALITY_TESTING"
 
 # --------------------------------------------------------------------------------------------------------------
 
+def rename_output_products(filter_obj, output_file_prefix=None):
+    """Rename a number of filter and exposure object attributes to facilitate custom-naming of output products
+
+    Parameters
+    ----------
+    filter_obj : drizzlepac.haputils.product.SkyCellProduct
+        a skycell object that stores all the information for a set of observations for a given filter
+
+    output_file_prefix : str, optional
+        'Text string that will be used as the filename prefix all files created by hapmultisequencer.py
+        during the MVM custom mosaic generation process. If not explicitly specified, all output files will
+        start with the following formatted text string:
+        "hst-skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>", where p<pppp> is the projection cell ID,
+        ra<##>d<####> are the whole-number and decimal portions of the right ascention, respectively, and
+        dec<n|s><##>d<####> are the whole-number and decimal portions of the declination, respectively. Note
+        that the "<n|s>" denotes if the declination is north (positive) or south (negative). Example: For
+        skycell = 1974, ra = 201.9512, and dec = +26.0012, The filename prefix would be
+        "skycell-p1974-ra201d9512-decn26d0012".
+
+    Returns
+    -------
+    filter_obj : drizzlepac.haputils.product.SkyCellProduct
+        The input skycell object with updated attributes
+    """
+    if output_file_prefix:
+        if output_file_prefix.endswith("_"):
+            output_file_prefix = output_file_prefix[:-2]
+    else:
+        # Auto-generate output file prefix based on skycell, RA and Dec info from WCS
+        log.info("Generating output file prefix based on skycell, RA and Dec info from WCS...")
+        # Start with the projection cell name
+        output_file_prefix = "hst_" + filter_obj.exposure_name.split("x")[0] + "-"
+        # add right ascention
+        text_ra = str(filter_obj.meta_wcs.wcs.crval[0])
+        ra_string = "ra{}d{}-".format(text_ra.split(".")[0], text_ra.split(".")[1])
+        output_file_prefix += ra_string
+        # Add declination
+        text_dec = str(filter_obj.meta_wcs.wcs.crval[1])
+        dec_string = "{}d{}".format(text_dec.split(".")[0], text_dec.split(".")[1])
+        if filter_obj.meta_wcs.wcs.crval[1] > 0:
+            dec_string = "decn" + dec_string
+        else:
+            north_sast = "s"
+            dec_string = dec_string.replace("-", "decs")
+        output_file_prefix += dec_string
+        log.info("Auto-generated output filename prefix: {}".format(output_file_prefix))
+
+    attr_list = ["drizzle_filename",
+                 "exposure_name",
+                 "manifest_name",
+                 "refname",
+                 "trl_filename",
+                 "trl_logname"]
+    text_to_replace = "hst_" + getattr(filter_obj, 'exposure_name')
+    for attr_name in attr_list:
+        orig_name = getattr(filter_obj, attr_name)
+        new_name = orig_name.replace(text_to_replace, output_file_prefix)
+        log.info("Filter object attr {}: {} -> {}".format(attr_name, orig_name, new_name))
+        setattr(filter_obj, attr_name, new_name)
+    for attr_name in ['manifest_name', 'refname']:
+        attr_list.remove(attr_name)
+    # for attr_name in ["full_filename", "headerlet_filename"]:
+    #     attr_list.append(attr_name)
+    for j in range(0, len(filter_obj.edp_list)):
+        for attr_name in attr_list:
+            orig_name = getattr(filter_obj.edp_list[j], attr_name)
+            new_name = orig_name.replace(text_to_replace, output_file_prefix)
+            log.info("exposure object attr {}: {} -> {}".format(attr_name, orig_name, new_name))
+            setattr(filter_obj.edp_list[j], attr_name, new_name)
+
+    return filter_obj
+
+# --------------------------------------------------------------------------------------------------------------
+
 
 def create_drizzle_products(total_obj_list, custom_limits=None):
     """
@@ -240,37 +314,6 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
         obs_info_dict, total_obj_list = poller_utils.interpret_mvm_input(input_filename, log_level,
                                                                          layer_method='all')
-
-        # Optionally rename files
-        output_file_prefix = "hst_skycell-p1894MULTI"
-        if output_file_prefix:
-            for i in range(0, len(total_obj_list)):
-                attr_list = ["drizzle_filename",
-                             "exposure_name",
-                             "manifest_name",
-                             "refname",
-                             "trl_filename",
-                             "trl_logname"
-
-                             ]
-                text_to_replace = "hst_"+getattr(total_obj_list[i], 'exposure_name')
-                for attr_name in attr_list:
-                    orig_name = getattr(total_obj_list[i], attr_name)
-                    new_name = orig_name.replace(text_to_replace, output_file_prefix)
-                    print("Filter object attr {}: {} -> {}".format(attr_name, orig_name, new_name))
-                    setattr(total_obj_list[i], attr_name, new_name)
-                for attr_name in ['manifest_name', 'refname']:
-                    attr_list.remove(attr_name)
-                # for attr_name in ["full_filename", "headerlet_filename"]:
-                #     attr_list.append(attr_name)
-                for j in range(0, len(total_obj_list[i].edp_list)):
-                    for attr_name in attr_list:
-                        orig_name = getattr(total_obj_list[i].edp_list[j], attr_name)
-                        new_name = orig_name.replace(text_to_replace, output_file_prefix)
-                        print("exposure object attr {}: {} -> {}".format(attr_name, orig_name, new_name))
-                        setattr(total_obj_list[i].edp_list[j], attr_name, new_name)
-
-
         # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
         # to use only one of the SkyCellProducts to generate the manifest name as the name
         # is only dependent on the sky cell.
@@ -286,8 +329,11 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         for filter_item in total_obj_list:
             _ = filter_item.generate_metawcs(custom_limits=custom_limits)
             filter_item.generate_footprint_mask()
-            # TODO: move all that rename stuff here!
-            pdb.set_trace()
+
+            # Optionally rename output products
+            if output_file_prefix or custom_limits:
+                filter_item = rename_output_products(filter_item, output_file_prefix=output_file_prefix)
+
             log.info("Preparing configuration parameter values for filter product {}".format(filter_item.drizzle_filename))
             filter_item.configobj_pars = config_utils.HapConfig(filter_item,
                                                                 log_level=log_level,
