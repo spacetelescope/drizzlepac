@@ -1049,8 +1049,6 @@ class SkyCellProduct(HAPProduct):
 
         # This is the exposure-dependent WCS.
         self.meta_bounded_wcs = mvm_footprint.bounded_wcs
-        import pdb
-        pdb.set_trace()
         return self.meta_bounded_wcs
 
     def wcs_drizzle_product(self, meta_wcs):
