@@ -617,9 +617,9 @@ class HAPImage:
         # apply any DQ array, if available
         dqmask = None
         if chip:
-            dqarr = self.imghdu[('DQ', chip)].data
+            dqarr = self.imghdu[('DQ', chip)].data.astype(np.int16)
         else:
-            dqarr = np.concatenate([self.imghdu[('DQ', i + 1)].data for i in range(self.num_sci)])
+            dqarr = np.concatenate([self.imghdu[('DQ', i + 1)].data.astype(np.int16) for i in range(self.num_sci)])
 
         # "grow out" regions in DQ mask flagged as saturated by several
         # pixels in every direction to prevent the

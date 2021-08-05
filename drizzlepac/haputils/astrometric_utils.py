@@ -18,8 +18,6 @@ from io import BytesIO
 import requests
 import inspect
 import sys
-from distutils.version import LooseVersion
-from datetime import datetime
 import time
 
 import numpy as np
@@ -49,8 +47,9 @@ import photutils  # needed to check version
 from photutils.background import (Background2D, MMMBackground,
                                   SExtractorBackground, StdBackgroundRMS)
 from photutils.detection import DAOStarFinder, find_peaks
-from photutils.segmentation import (detect_sources, source_properties,
-                                    deblend_sources, make_source_mask)
+from photutils.segmentation import (detect_sources, SourceCatalog,
+                                    deblend_sources, make_source_mask,
+                                    SegmentationImage)
 from photutils.psf import (IntegratedGaussianPRF, DAOGroup,
                            IterativelySubtractedPSFPhotometry)
 
@@ -923,7 +922,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         Algorithm to use when computing the positions of the detected sources.
         Centering will only take place after `threshold` has been determined, and
         sources are identified using segmentation.  Centering using `segmentation`
-        will rely on `photutils.segmentation.source_properties` to generate the
+        will rely on `photutils.segmentation.SourceCatalog` to generate the
         properties for the source catalog.  Centering using `starfind` will use
         `photutils.detection.IRAFStarFinder` to characterize each source in the catalog.
     nlargest : int, None
@@ -992,7 +991,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     # If classify is turned on, it should modify the segmentation map
     dqmap = None
     if classify:
-        cat = source_properties(imgarr, segm)
+        cat = SourceCatalog(imgarr, segm)
         # Remove likely cosmic-rays based on central_moments classification
         bad_srcs = np.where(classify_sources(cat, fwhm) == 0)[0] + 1
         # Convert this bad_srcs into a segmap that can be used to update a DQ array
@@ -1000,17 +999,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         for src in bad_srcs:
             dqmap[segm.data == src] += CRBIT
 
-        if LooseVersion(photutils.__version__) >= '0.7':
-            segm.remove_labels(bad_srcs)
-        else:
-            # this is the photutils >= 0.7 fast code for removing labels
-            segm.check_labels(bad_srcs)
-            bad_srcs = np.atleast_1d(bad_srcs)
-            if len(bad_srcs) != 0:
-                idx = np.zeros(segm.max_label + 1, dtype=int)
-                idx[segm.labels] = segm.labels
-                idx[bad_srcs] = 0
-                segm.data = idx[segm.data]
+        segm.remove_labels(bad_srcs)
 
     # convert segm to mask for daofind
     if centering_mode == 'starfind':
@@ -1075,7 +1064,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                 if (detection_img > detection_img.max() * 0.9).sum() > 3:
 
                     # Revert to segmentation photometry for sat. source posns
-                    segment_properties = source_properties(detection_img, segment.data)
+                    segimg = SegmentationImage(segment.data)
+                    segment_properties = SourceCatalog(detection_img, segimg)
                     sat_table = segment_properties.to_table()
                     seg_table['flux'][max_row] = sat_table['source_sum'][0]
                     seg_table['peak'][max_row] = sat_table['max_value'][0]
@@ -1084,7 +1074,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     seg_table['npix'][max_row] = sat_table['area'][0].value
                     sky = sat_table['background_mean'][0]
                     seg_table['sky'][max_row] = sky.value if sky is not None and not np.isnan(sky) else 0.0
-                    seg_table['mag'][max_row] = -2.5 * np.log10(sat_table['source_sum'][0])
+                    seg_table['mag'][max_row] = -2.5 * np.log10(sat_table['segment_flux'][0])
 
                 # Add row for detected source to master catalog
                 # apply offset to slice to convert positions into full-frame coordinates
@@ -1097,11 +1087,11 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                 break
     else:
         log.debug("Determining source properties as src_table...")
-        cat = source_properties(img, segm)
+        cat = SourceCatalog(img, segm)
         src_table = cat.to_table()
         # Make column names consistent with IRAFStarFinder column names
-        src_table.rename_column('source_sum', 'flux')
-        src_table.rename_column('source_sum_err', 'flux_err')
+        src_table.rename_column('segment_flux', 'flux')
+        src_table.rename_column('segment_fluxerr', 'flux_err')
         src_table.rename_column('max_value', 'peak')
 
     if src_table is not None:
@@ -1110,19 +1100,13 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         log.info("No detected sources!")
         return None, None, None
 
-    # Move 'id' column from first to last position
-    # Makes it consistent for remainder of code
-    cnames = src_table.colnames
-    cnames.append(cnames[0])
-    del cnames[0]
-    tbl = src_table[cnames]
     # Include magnitudes for each source for use in verification of alignment through
     # comparison with GAIA magnitudes
     tbl = compute_photometry(tbl, photmode)
 
     # Insure all IDs are sequential and unique (at least in this catalog)
+    tbl.remove_column('label')
     tbl['cat_id'] = np.arange(1, len(tbl) + 1)
-    del tbl['id']
 
     if outroot:
         tbl['xcentroid'].info.format = '.10f'  # optional format
@@ -1149,7 +1133,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
 def classify_sources(catalog, fwhm, sources=None):
     """ Convert moments_central attribute for source catalog into star/cr flag.
 
-    This algorithm interprets the central_moments from the source_properties
+    This algorithm interprets the central_moments from the SourceCatalog
     generated for the sources as more-likely a star or a cosmic-ray.  It is not
     intended or expected to be precise, merely a means of making a first cut at
     removing likely cosmic-rays or other artifacts.
@@ -1170,7 +1154,7 @@ def classify_sources(catalog, fwhm, sources=None):
         source, and a value of 0 indicates a likely cosmic-ray.
     """
     moments = catalog.moments_central
-    semiminor_axis = catalog.semiminor_axis_sigma
+    semiminor_axis = catalog.semiminor_sigma
     elon = catalog.elongation
     if sources is None:
         sources = (0, len(moments))
@@ -1276,7 +1260,7 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
         # apply any DQ array, if available
         dqmask = None
         if image.index_of(dqname):
-            dqarr = image[dqname, chip].data
+            dqarr = image[dqname, chip].data.astype(np.int16)
 
             # "grow out" regions in DQ mask flagged as saturated by several
             # pixels in every direction to prevent the
