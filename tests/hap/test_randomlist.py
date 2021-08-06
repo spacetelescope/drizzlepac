@@ -116,7 +116,7 @@ def test_randomlist(tmpdir, dataset):
 
     try:
 
-        dataset_table = alignimages.perform_align([dataset],
+        align_table = alignimages.perform_align([dataset],
                                                   catalog_list=['GAIADR2', 'GAIADR1'],
                                                   num_sources=250,
                                                   archive=False,
@@ -125,6 +125,7 @@ def test_randomlist(tmpdir, dataset):
                                                   print_fit_parameters=True,
                                                   print_git_info=False,
                                                   output=False)
+        dataset_table = align_table.filtered_table
 
         # Filtered datasets
         if dataset_table['doProcess'].sum() == 0:
