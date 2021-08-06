@@ -5,6 +5,33 @@ script extends the capabilities of the HAP multi-visit mosaics (MVM) processing 
 Based on user input, this script will produce drizzle-combined mosaics that will be as large as necessary to
 incorporate all input images. Mosaic images can span multiple skycells, but NOT multiple projection cells.
 
+As this script is simply a wrapper around hapmultisequencer.py, the final output products are the exact same
+as what one would expect from a pipeline MVM run. For a complete details about all hapmultisequencer.py
+inputs and output products, please refer to the hapmultisequencer.py documentation. # TODO: Make hapmultisequencer.py documentation
+
+hapmultisequencer.py  was explicitly written to process data from only a single skycell. However, this script
+gives users the ability to create mosaics spanning multiple skycells. As such, all output products produced
+by hapmultisequencer.py normally include both the projection cell and skycell names in the all output
+products. To avoid any confusion that might arise during the creation of mosaics that span multiple skycells,
+all custom mosaic output product filenames will by default include projection cell name and the projection
+cell reference right ascension and declination instead of the skycell name. Users can also optionally
+specify an output product filename prefix of their choosing.
+
+The output world cooordinate system (WCS) information is based on that of the projection cell in which the
+observations reside. If the input observations happen to fall in a region of the sky where more than one
+projection cells overlap, the WCS information of the output products will be based on the projection cell
+whose center is closest to the geometric center of the input observations.
+
+For all detectors, output products will be generated with a plate scale of 0.04 arcseconds per pixel. The
+script produces an additional set up output products for WFC3/IR observations. This additional set of
+products is generated using the native detector platescale of 0.12 arcseconds per pixel. These files end in
+"_coarse_all_flt.fits".
+
+The output world cooordinate system (WCS) information is based on that of the projection cell in which the
+observations reside. If the input observations happen to fall in a region of the sky where more than one
+projection cells overlap, the WCS information of the output products will be based on the projection cell
+whose center is closest to the geometric center of the input observations.
+
 USAGE:
 
 - python drizzlepac/make_custom_mosaic.py <search pattern enclosed in quotes>
