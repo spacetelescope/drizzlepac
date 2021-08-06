@@ -25,10 +25,8 @@
 """
 import datetime
 import fnmatch
-import glob
 import logging
 import os
-import pdb
 import pickle
 import sys
 import traceback
@@ -61,6 +59,7 @@ envvar_bool_dict = {'off': False, 'on': True, 'no': False, 'yes': True, 'false':
 envvar_qa_svm = "SVM_QUALITY_TESTING"
 
 # --------------------------------------------------------------------------------------------------------------
+
 
 def rename_output_products(filter_obj, output_file_prefix=None):
     """Rename a number of filter and exposure object attributes to facilitate custom-naming of output products
@@ -119,18 +118,21 @@ def rename_output_products(filter_obj, output_file_prefix=None):
     for attr_name in attr_list:
         orig_name = getattr(filter_obj, attr_name)
         new_name = orig_name.replace(text_to_replace, output_file_prefix)
-        log.info("Filter object attr {}: {} -> {}".format(attr_name, orig_name, new_name))
+        log.debug("Filter object attr {}: {} -> {}".format(attr_name, orig_name, new_name))
         setattr(filter_obj, attr_name, new_name)
     for attr_name in ['manifest_name', 'refname']:
         attr_list.remove(attr_name)
-    # for attr_name in ["full_filename", "headerlet_filename"]:
-    #     attr_list.append(attr_name)
+    for attr_name in ["full_filename", "headerlet_filename"]:
+        attr_list.append(attr_name)
     for j in range(0, len(filter_obj.edp_list)):
         for attr_name in attr_list:
             orig_name = getattr(filter_obj.edp_list[j], attr_name)
             new_name = orig_name.replace(text_to_replace, output_file_prefix)
-            log.info("exposure object attr {}: {} -> {}".format(attr_name, orig_name, new_name))
+            log.debug("exposure object attr {}: {} -> {}".format(attr_name, orig_name, new_name))
             setattr(filter_obj.edp_list[j], attr_name, new_name)
+            if attr_name is "full_filename":
+                os.rename(orig_name, new_name)
+                log.debug("Renamed file {} -> {}".format(orig_name, new_name))
 
     return filter_obj
 
@@ -147,6 +149,10 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
         List of TotalProduct objects, one object per instrument/detector combination is
         a visit.  The TotalProduct objects are comprised of FilterProduct and ExposureProduct
         objects.
+
+    custom_limits : list, optional
+        4-element list containing the mosaic bounding rectangle X min and max and Y min and max values for
+        custom mosaics
 
     RETURNS
     -------
@@ -197,7 +203,6 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
             product_list.append(exposure_obj.drizzle_filename)
             product_list.append(exposure_obj.trl_filename)
 
-
     # Ensure that all drizzled products have headers that are to specification
     try:
         log.info("Updating these drizzle products for CAOM compatibility:")
@@ -229,8 +234,8 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
 def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_configs=True,
                        input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
                        custom_limits=None, output_file_prefix=None, log_level=logutil.logging.INFO):
-    """
-    Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
+
+    """Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
     controller which invokes the high-level functionality to process the multi-visit data.
 
     Parameters
@@ -259,8 +264,9 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         available during the processing session.  The default is None.
 
     phot_mode : str, optional
-        Which algorithm should be used to generate the sourcelists? 'aperture' for aperture (point) photometry;
-        'segment' for isophotal photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
+        Which algorithm should be used to generate the sourcelists? 'aperture' for aperture (point)
+        photometry; 'segment' for isophotal photometry; 'both' for both 'segment' and 'aperture'. Default
+        value is 'both'.
 
     custom_limits : list, optional
         4-element list containing the mosaic bounding rectangle X min and max and Y min and max values for
@@ -314,13 +320,6 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
         obs_info_dict, total_obj_list = poller_utils.interpret_mvm_input(input_filename, log_level,
                                                                          layer_method='all')
-        # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
-        # to use only one of the SkyCellProducts to generate the manifest name as the name
-        # is only dependent on the sky cell.
-        # Example: hst_skycell-p<PPPP>x<XX>y<YY>_manifest.txt (e.g., hst_skycell-p0797x12y05_manifest.txt)
-        manifest_name = total_obj_list[0].manifest_name
-        log.info("\nGenerate the manifest name for this multi-visit: {}.".format(manifest_name))
-        log.info("The manifest will contain the names of all the output products.")
 
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
@@ -334,6 +333,15 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
             if output_file_prefix or custom_limits:
                 filter_item = rename_output_products(filter_item, output_file_prefix=output_file_prefix)
 
+            if 'manifest_name' not in locals():
+                # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
+                # to use only one of the SkyCellProducts to generate the manifest name as the name
+                # is only dependent on the sky cell.
+                # Example: hst_skycell-p<PPPP>x<XX>y<YY>_manifest.txt (e.g., hst_skycell-p0797x12y05_manifest.txt)
+                manifest_name = total_obj_list[0].manifest_name
+                log.info("\nGenerate the manifest name for this multi-visit: {}.".format(manifest_name))
+                log.info("The manifest will contain the names of all the output products.")
+
             log.info("Preparing configuration parameter values for filter product {}".format(filter_item.drizzle_filename))
             filter_item.configobj_pars = config_utils.HapConfig(filter_item,
                                                                 log_level=log_level,
@@ -343,15 +351,16 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
             for edp in filter_item.edp_list:
                 edp.configobj_pars = config_utils.HapConfig(edp,
-                                                                log_level=log_level,
-                                                                use_defaults=use_defaults_configs,
-                                                                input_custom_pars_file=input_custom_pars_file,
-                                                                output_custom_pars_file=output_custom_pars_file)
+                                                            log_level=log_level,
+                                                            use_defaults=use_defaults_configs,
+                                                            input_custom_pars_file=input_custom_pars_file,
+                                                            output_custom_pars_file=output_custom_pars_file)
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
 
         # TODO: This is the place where updated WCS info is migrated from drizzlepac params to filter objects
 
-        reference_catalog = run_align_to_gaia(total_obj_list, custom_limits=custom_limits, log_level=log_level, diagnostic_mode=diagnostic_mode)
+        reference_catalog = run_align_to_gaia(total_obj_list, custom_limits=custom_limits,
+                                              log_level=log_level, diagnostic_mode=diagnostic_mode)
         if reference_catalog:
             product_list += [reference_catalog]
 
@@ -444,7 +453,7 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
 # ------------------------------------------------------------------------------------------------------------
 
-def run_align_to_gaia(total_obj_list, custom_limits= None, log_level=logutil.logging.INFO, diagnostic_mode=False):
+def run_align_to_gaia(total_obj_list, custom_limits=None, log_level=logutil.logging.INFO, diagnostic_mode=False):
     # Run align.py on all input images sorted by overlap with GAIA bandpass
     log.info("\n{}: Align the all filters to GAIA with the same fit".format(str(datetime.datetime.now())))
     gaia_obj = None
