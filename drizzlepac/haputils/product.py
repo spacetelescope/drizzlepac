@@ -868,6 +868,8 @@ class SkyCellExposure(HAPProduct):
         drizzle_pars["preserve"] = False
         drizzle_pars['rules_file'] = self.rules_file
         drizzle_pars['resetbits'] = "0"
+        # Set 'context' to False in order to turn off creation of CTX extensions in MVM products
+        # to save on disk space and memory use during processing.
         drizzle_pars['context'] = False
 
         log.debug("The 'final_refimage' ({}) and 'runfile' ({}) configuration variables "
