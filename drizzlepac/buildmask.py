@@ -35,10 +35,7 @@ Functions to build mask files for PyDrizzle.
 import os
 
 from stsci.tools import fileutil, readgeis
-try:
-    from stsci.tools.bitmask import bitfield_to_boolean_mask
-except ImportError:
-    from stsci.tools.bitmask import bitmask2mask as bitfield_to_boolean_mask
+from astropy.nddata.bitmask import bitfield_to_boolean_mask
 
 from astropy.io import fits
 import numpy as np
