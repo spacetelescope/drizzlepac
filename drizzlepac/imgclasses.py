@@ -13,13 +13,12 @@ import copy
 import numpy as np
 
 from astropy import wcs as pywcs
-from astropy.nddata import interpret_bit_flags
-import stwcs
 from astropy.io import fits
 from spherical_geometry.polygon import SphericalPolygon
 from stsci.skypac.parseat import FileExtMaskInfo, parse_cs_line
 from stsci.skypac import utils as spu
 
+import stwcs
 from stwcs.distortion import utils
 from stwcs.wcsutil import wcscorr
 from stwcs.wcsutil import headerlet
@@ -27,6 +26,7 @@ from stwcs.wcsutil import altwcs
 from stsci.tools import fileutil as fu
 from stsci.stimage import xyxymatch
 from stsci.tools import logutil, textutil
+from stsci.tools.bitmask import interpret_bit_flags
 
 
 from . import catalogs
