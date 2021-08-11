@@ -13,7 +13,7 @@ from scipy import ndimage
 import astropy
 from astropy.io import fits
 from astropy.table import Table
-from astropy.nddata.bitmask import bitfield_to_boolean_mask
+from stsci.tools.bitmask import bitfield_to_boolean_mask
 from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
 

@@ -39,7 +39,6 @@ from astropy.io import fits as fits
 from astropy.io import ascii
 from astropy.convolution import Gaussian2DKernel
 from astropy.stats import gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm, sigma_clipped_stats
-from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 from astropy.modeling.fitting import LevMarLSQFitter
@@ -63,6 +62,7 @@ from stsci.tools import fileutil as fu
 from stsci.tools import parseinput
 from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
+from stsci.tools.bitmask import bitfield_to_boolean_mask
 
 from ..tweakutils import build_xy_zeropoint, ndfind
 

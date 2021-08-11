@@ -90,7 +90,7 @@ setup(
         'stsci.tools>=3.6',
         'stsci.image>=2.3.0',
         'stsci.imagestats',
-        'stsci.skypac>=1.0',
+        'stsci.skypac>=1.0.7',
         'stsci.stimage',
         'stwcs>=1.5.3',
         'tweakwcs>=0.7.2',
