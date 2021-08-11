@@ -12,9 +12,9 @@ input image while recording the subtracted value in the image header.
 import os, sys
 
 import numpy as np
-from astropy.nddata import interpret_bit_flags
 
 from stsci.tools import fileutil, teal, logutil
+from stsci.tools.bitmask import interpret_bit_flags
 import stsci.imagestats as imagestats
 
 from stsci.skypac.skymatch import skymatch
