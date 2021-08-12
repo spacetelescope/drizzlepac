@@ -579,9 +579,9 @@ def run_driz(imageObjectList, output_wcs, paramDict, single, build, wcsmap=None)
 
     # Will we be running in parallel?
     pool_size = util.get_pool_size(paramDict.get('num_cores'), len(imageObjectList))
-    will_parallel = single and pool_size > 1 and platform.system() != "Windows"
-    if will_parallel:
-        log.info('Executing %d parallel workers' % pool_size)
+    run_parallel = single and pool_size > 1
+    if run_parallel:
+        log.info(f'Executing {pool_size:d} parallel workers')
     else:
         if single:  # not yet an option for final drizzle, msg would confuse
             log.info('Executing serially')
@@ -618,7 +618,7 @@ def run_driz(imageObjectList, output_wcs, paramDict, single, build, wcsmap=None)
     #
     _outsci = _outwht = _outctx = _hdrlist = None
     if (not single) or \
-       (single and (not will_parallel) and (not imageObjectList[0].inmemory)):
+       (single and (not run_parallel) and (not imageObjectList[0].inmemory)):
         # Note there are four cases/combinations for single drizzle alone here:
         # (not-inmem, serial), (not-inmem, parallel), (inmem, serial), (inmem, parallel)
         _outsci = np.empty(output_wcs.array_shape, dtype=np.float32)
@@ -662,19 +662,23 @@ def run_driz(imageObjectList, output_wcs, paramDict, single, build, wcsmap=None)
             template.extend(fnames)
 
         # Work each image, possibly in parallel
-        if will_parallel:
+        if run_parallel:
             # use multiprocessing.Manager only if in parallel and in memory
+            mp_ctx = multiprocessing.get_context('fork')
+
             if img.inmemory:
-                manager = multiprocessing.Manager()
+                manager = mp_ctx.Manager()
                 dproxy = manager.dict(img.virtualOutputs)  # copy & wrap it in proxy
                 img.virtualOutputs = dproxy
 
             # parallelize run_driz_img (currently for separate drizzle only)
-            p = multiprocessing.Process(target=run_driz_img,
+            p = mp_ctx.Process(
+                target=run_driz_img,
                 name='adrizzle.run_driz_img()',  # for err msgs
                 args=(img, chiplist, output_wcs, outwcs, template, paramDict,
                       single, num_in_prod, build, _versions, _numctx, _nplanes,
-                      _chipIdx, None, None, None, None, wcsmap))
+                      _chipIdx, None, None, None, None, wcsmap)
+            )
             subprocs.append(p)
         else:
             # serial run_driz_img run (either separate drizzle or final drizzle)
@@ -688,7 +692,7 @@ def run_driz(imageObjectList, output_wcs, paramDict, single, build, wcsmap=None)
             _chipIdx = 0
 
     # do the join if we spawned tasks
-    if will_parallel:
+    if run_parallel:
         mputil.launch_and_wait(subprocs, pool_size)  # blocks till all done
 
     del _outsci, _outwht, _outctx, _hdrlist

@@ -14,6 +14,7 @@ import os
 import sys
 import string
 import errno
+import platform
 
 import numpy as np
 import astropy
@@ -30,22 +31,21 @@ from .version import *
 __fits_version__ = astropy.__version__
 __numpy_version__ = np.__version__
 
-
-multiprocessing = None
+_cpu_count = 1
 can_parallel = False
-_cpu_count = -1
-if 'ASTRODRIZ_NO_PARALLEL' not in os.environ:
+if 'ASTRODRIZ_NO_PARALLEL' not in os.environ and platform.system() != "Windows":
     try:
         import multiprocessing
-        try:
-            # sanity check - do we even have the hardware?
-            _cpu_count = multiprocessing.cpu_count()
-            can_parallel = _cpu_count > 1
-        except Exception:
-            can_parallel = False
+        _cpu_count = multiprocessing.cpu_count()
+        multiprocessing.get_context('fork')
+        can_parallel = _cpu_count > 1
+
+    except (NotImplementedError, ValueError):
+        print('Multiprocessing is not available on this platform.')
 
     except ImportError:
-        print('\nCould not import multiprocessing, will only take advantage of a single CPU core')
+        print('Could not import multiprocessing, will only take advantage '
+              'of a single CPU core')
 
 
 def get_pool_size(usr_config_value, num_tasks):
