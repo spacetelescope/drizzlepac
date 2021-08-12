@@ -424,10 +424,10 @@ def min_med(images, weight_images, readnoise_list, exptime_list,
     if weight_masks == [] or weight_masks is None:
         weight_masks = None
         mask_sum = np.zeros(images.shape[1:], dtype=np.int16)
-        all_bad_idx = np.array([], dtype=np.int)
-        all_bad_idy = np.array([], dtype=np.int)
+        all_bad_idx = np.array([], dtype=int)
+        all_bad_idy = np.array([], dtype=int)
     else:
-        weight_masks = np.asarray(weight_masks, dtype=np.bool)
+        weight_masks = np.asarray(weight_masks, dtype=bool)
         mask_sum = np.sum(weight_masks, axis=0, dtype=np.int16)
         all_bad_idx, all_bad_idy = np.where(mask_sum == nimages)
 

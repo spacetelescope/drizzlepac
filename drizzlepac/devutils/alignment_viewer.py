@@ -286,5 +286,6 @@ def create_product_page(prodname, zoom_size=128, wcsname="",
 
 def get_col_val(hdrtab, keyword, default=None):
     val = hdrtab[0][keyword.upper()] if keyword.upper() in hdrtab.columns.names else default
-    if isinstance(val, bool) or isinstance(val, np.bool_): val = str(val)
+    if isinstance(val, (bool, np.bool_)):
+        val = str(val)
     return val

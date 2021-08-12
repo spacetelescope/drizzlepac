@@ -414,14 +414,14 @@ def mergeDQarray(maskname, dqarr):
             # working with file on disk (default case)
             if os.path.exists(maskname):
                 mask = fileutil.openImage(maskname, memmap=False)
-                maskarr = mask[0].data.astype(np.bool)
+                maskarr = mask[0].data.astype(bool)
                 mask.close()
         else:
             if isinstance(maskname, fits.HDUList):
                 # working with a virtual input file
-                maskarr = maskname[0].data.astype(np.bool)
+                maskarr = maskname[0].data.astype(bool)
             else:
-                maskarr = maskname.data.astype(np.bool)
+                maskarr = maskname.data.astype(bool)
 
         if maskarr is not None:
             # merge array with dqarr now

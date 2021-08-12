@@ -1583,13 +1583,13 @@ def within_footprint(img, wcsobj, x, y):
     yint = y[wcsmask].astype(np.int32)
 
     fprint = ~np.isnan(img)
-    xymask = np.zeros(img.shape, dtype=np.bool)
+    xymask = np.zeros(img.shape, dtype=bool)
     xymask[yint, xint] = True
 
     skymask = np.bitwise_and(fprint, xymask)
 
     mask = [True if skymask[yx]==True else False for yx in zip(yint, xint)]
-    mask = np.array(mask).astype(np.bool)
+    mask = np.array(mask).astype(bool)
 
     # NOTE: There is probably a way to use list comprehension to do this,
     # but for now, this works as intended.

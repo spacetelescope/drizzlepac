@@ -148,7 +148,7 @@ def ndfind(array, hmin, fwhm, skymode,
         return tuple([[] for i in range(7 if use_sharp_round else 4)])
 
     star_list = list(np.array(star_list).T)
-    fluxes = np.array(fluxes, np.float)
+    fluxes = np.array(fluxes, float)
 
     if nbright is not None:
         idx = np.argsort(fluxes)[::-1]
