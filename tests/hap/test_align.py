@@ -237,7 +237,7 @@ class TestAlignMosaic(BaseHLATest):
     def test_astroquery(self):
         """Verify that new astroquery interface will work"""
 
-        total_rms = 0.0
+        total_rms = 0.01
 
         dataset_table = alignimages.perform_align(['IB6V06060'],
                                                   catalog_list=['GAIADR2', 'GAIADR1'],
