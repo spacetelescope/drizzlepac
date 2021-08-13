@@ -688,7 +688,7 @@ def run(configobj):
 
 def _overlap_matrix(images):
     nimg = len(images)
-    m = np.zeros((nimg,nimg), dtype=np.float)
+    m = np.zeros((nimg,nimg), dtype=float)
     for i in range(nimg):
         for j in range(i+1,nimg):
             p = images[i].skyline.intersection(images[j].skyline)
@@ -750,7 +750,7 @@ def _max_overlap_image(refimage, images, expand_refcat, enforce_user_order):
         # revert to old tweakreg behavior
         return images.pop(0)
 
-    area = np.zeros(nimg, dtype=np.float)
+    area = np.zeros(nimg, dtype=float)
     for i in range(nimg):
         area[i] = np.fabs(
             refimage.skyline.intersection(images[i].skyline).area()

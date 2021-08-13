@@ -1428,7 +1428,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             g_segm_img, g_is_big_crowded, g_bs, g_sf = self.detect_and_eval_segments(imgarr,
                                                                                      g2d_kernel,
                                                                                      ncount,
-                                                                                     self._size_source_box, 
+                                                                                     self._size_source_box,
                                                                                      self._nsigma,
                                                                                      self.image.bkg_background_ra,
                                                                                      self.image.bkg_rms_ra,
@@ -1455,7 +1455,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 rw_segm_img, rw_is_big_crowded, rw_bs, rw_sf = self.detect_and_eval_segments(imgarr,
                                                                                              rw2d_kernel,
                                                                                              ncount,
-                                                                                             self._size_source_box, 
+                                                                                             self._size_source_box,
                                                                                              self._rw2d_nsigma,
                                                                                              self.image.bkg_background_ra,
                                                                                              self.image.bkg_rms_ra,
@@ -1477,7 +1477,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     log.info("")
                     log.info("RickerWavelet computed segmentation image still contains big sources/islands.")
                     log.info("Recomputing the threshold or background image for improved segmentation detection.")
-                
+
                     # Make sure to be working with the unmodified image data
                     imgarr = copy.deepcopy(self.image.data)
 
@@ -1530,7 +1530,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     g_segm_img, g_is_big_crowded, g_bs, g_sf = self.detect_and_eval_segments(imgarr,
                                                                                              g2d_kernel,
                                                                                              ncount,
-                                                                                             self._size_source_box, 
+                                                                                             self._size_source_box,
                                                                                              sigma_for_threshold,
                                                                                              self.image.bkg_background_ra,
                                                                                              self.image.bkg_rms_ra,
@@ -1552,7 +1552,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         rw_segm_img, rw_is_big_crowded, rw_bs, rw_sf = self.detect_and_eval_segments(imgarr,
                                                                                                      rw2d_kernel,
                                                                                                      ncount,
-                                                                                                     self._size_source_box, 
+                                                                                                     self._size_source_box,
                                                                                                      rw2d_sigma_for_threshold,
                                                                                                      self.image.bkg_background_ra,
                                                                                                      self.image.bkg_rms_ra,
@@ -2489,7 +2489,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 def make_inv_mask(mask):
 
-    invmask = ~(mask.astype(np.bool))
+    invmask = ~(mask.astype(bool))
     invmask = invmask.astype(np.uint8)
 
     return invmask

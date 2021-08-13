@@ -475,7 +475,7 @@ class ImageCatalog(Catalog):
             for ext in extlist:
                 usermask = hdulist[ext].data
                 if usermask.shape == (img_ny, img_nx):
-                    regmask = usermask.astype(np.bool)
+                    regmask = usermask.astype(bool)
                     break
             hdulist.close()
             if regmask is None:
@@ -523,7 +523,7 @@ class ImageCatalog(Catalog):
             # create a mask from regions:
             regmask = np.asarray(
                 reglist.get_mask(shape=(img_ny, img_nx)),
-                dtype=np.bool
+                dtype=bool
             )
 
         if mask is not None and regmask is not None:

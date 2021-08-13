@@ -1449,7 +1449,7 @@ def update_grid_defs(pc_size=5.0, output=None, grid_file=None):
         c1_pixels = [np.abs(pcell.wcs.world_to_pixel_values(e.ra, e.dec)) for e in c1_edges]
 
         # Compute overall size of cell in pixels
-        naxis1, naxis2 = (np.array(c1_pixels).sum(axis=0) + 1).astype(np.int)
+        naxis1, naxis2 = (np.array(c1_pixels).sum(axis=0) + 1).astype(int)
         # apply new definition to cell WCS
         pcell.wcs.wcs.crpix = [naxis1 / 2. + 0.5, naxis2 / 2. + 0.5]
         pcell.wcs.naxis1 = naxis1
