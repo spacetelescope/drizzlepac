@@ -424,7 +424,7 @@ def expand_image(image, shape):
     oy = (sy - 1.0) / (2.0 * sy)
 
     # generate output coordinates:
-    y, x = np.indices(shape, dtype=np.float)
+    y, x = np.indices(shape, dtype=float)
     x = x / sx - ox
     y = y / sy - oy
 
@@ -444,8 +444,8 @@ def bilinear_interp(data, x, y):
     x = x.ravel()
     y = y.ravel()
 
-    x0 = np.empty(out_size, dtype=np.int)
-    y0 = np.empty(out_size, dtype=np.int)
+    x0 = np.empty(out_size, dtype=int)
+    y0 = np.empty(out_size, dtype=int)
     np.clip(x, 0, data.shape[1] - 2, out=x0)
     np.clip(y, 0, data.shape[0] - 2, out=y0)
     x1 = x0 + 1

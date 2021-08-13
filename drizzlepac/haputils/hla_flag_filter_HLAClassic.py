@@ -81,7 +81,7 @@ y_limit = 2051.
 def run_source_list_flaging(all_drizzled_filelist, filter_sorted_flt_dict,param_dict, exp_dictionary_scis,
                             dict_newTAB_matched2drz, phot_table_matched2drz, proc_type, drz_root_dir, debug=True):
     """Simple calling subroutine that executes the other flagging subroutines.
-    
+
     Parameters
     ----------
     all_drizzled_filelist : list
@@ -89,7 +89,7 @@ def run_source_list_flaging(all_drizzled_filelist, filter_sorted_flt_dict,param_
 
     filter_sorted_flt_dict : dictionary
         dictionary containing lists of calibrated images sorted (also keyed) by filter name.
-    
+
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
 
@@ -110,7 +110,7 @@ def run_source_list_flaging(all_drizzled_filelist, filter_sorted_flt_dict,param_
 
     debug : bool
         write intermediate files?
-    
+
     Returns
     -------
     catalog_data : astropy.Table object
@@ -473,7 +473,7 @@ def HLASaturationFlags(drizzled_image, flt_list, catalog_name, catalog_data, pro
     all_detections = catalog_data
 
     nrows = len(all_detections)
-    full_coordList = numpy.empty((nrows, 2), dtype=numpy.float)
+    full_coordList = numpy.empty((nrows, 2), dtype=float)
     for row_count, detection in enumerate(all_detections):
         full_coordList[row_count, 0] = float(detection[0])
         full_coordList[row_count, 1] = float(detection[1])
@@ -569,7 +569,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
     ----------
     drizzled_image : string
         Name of drizzled image to process
-    
+
     catalog_name : string
         drizzled filter product catalog filename to process
 
@@ -587,7 +587,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
 
     debug : bool
         write intermediate files?
-    
+
     Returns
     -------
     catalog_data : astropy.Table object
@@ -650,7 +650,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
 
     nrows = len(catalog_data)
 
-    complete_src_list = numpy.empty((nrows,6), dtype=numpy.float)
+    complete_src_list = numpy.empty((nrows,6), dtype=float)
 
     for row_num,row in enumerate(catalog_data[0:]):
         x_val = float(row[0])
@@ -1012,7 +1012,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
 
             # select just the lowest value of refepp/swarm threshold for each source
             # create array with extra columns
-            ring_source_list = numpy.empty((len(ring_index_list),9), dtype=numpy.float)
+            ring_source_list = numpy.empty((len(ring_index_list),9), dtype=float)
             ring_source_list[:,0:6] = swarm_listB[ring_index_list,:]
             ring_source_list[:,6] = numpy.concatenate(ring_refepp_list)
             ring_source_list[:,7] = numpy.repeat(ring_thresh_list,ring_count)
@@ -1159,7 +1159,7 @@ def HLASwarmFlags(drizzled_image, catalog_name, catalog_data, exptime, proc_type
 
 def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_data, drz_root_dir, debug):
     """flags out sources from regions where there are a low (or a null) number of contributing exposures
-   
+
     drizzled_image : string
         Name of drizzled image to process
 
@@ -1185,7 +1185,7 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
     -------
     catalog_data : astropy.Table object
         drizzled filter product catalog data with updated flag values
-    
+
     """
     # ------------------
     # CREATE NEXP IMAGE
@@ -1728,7 +1728,7 @@ def HLASaturationFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted
         inputfile.close()
 
         nrows = len(all_detections)-1
-        full_coordList = numpy.empty((nrows,2), dtype=numpy.float)
+        full_coordList = numpy.empty((nrows,2), dtype=float)
         for row_count,detection in enumerate(all_detections[1:]):
             ss = detection.split(',')
             full_coordList[row_count,0] = float(ss[0])
@@ -1957,7 +1957,7 @@ def HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hl
 
         nrows = len(phot_table_rows) - 1
 
-        complete_src_list = numpy.empty((nrows, 6), dtype=numpy.float)
+        complete_src_list = numpy.empty((nrows, 6), dtype=float)
 
         for row_num, row in enumerate(phot_table_rows[1:]):
 
@@ -2349,7 +2349,7 @@ def HLASwarmFlags_OLD(all_drizzled_filelist, dict_newTAB_matched2drz, working_hl
 
                 # select just the lowest value of refepp/swarm threshold for each source
                 # create array with extra columns
-                ring_source_list = numpy.empty((len(ring_index_list), 9), dtype=numpy.float)
+                ring_source_list = numpy.empty((len(ring_index_list), 9), dtype=float)
                 ring_source_list[:, 0:6] = swarm_listB[ring_index_list, :]
                 ring_source_list[:, 6] = numpy.concatenate(ring_refepp_list)
                 ring_source_list[:, 7] = numpy.repeat(ring_thresh_list, ring_count)
@@ -2891,24 +2891,24 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
 
     Marcel Haas, 2012-06-29, after IDL routine xymatch.pro by Rick White
     With some tweaks by Rick White
-    
+
     Parameters
     ----------
     cat1 : numpy.ndarray
         list of x,y source coords to match.
-    
+
     cat2 : numpy.ndarray
         list of x,y source coords to match.
-    
+
     sep : float
         maximum separation (in pixels) allowed for source matching.
-    
+
     multiple : Boolean
         If multiple is true, returns a tuple (p1,p2) such that cat1[p1] and cat2[p2] are within sep.  p1 and p2 may include multiple pointers to the same objects in cat1 or cat2.  In this case objects that don't match are simply omitted from the lists. Default value is 'False'.
-    
+
     stack : Boolean
         If stack is true, the returned matching pointers are stacked into a single big array, so both p1 and p2 are 1-D arrays of length nmatches. Default value is 'True'.
-    
+
     verbose : Boolean
         print verbose output? Default value is 'True'.
 
@@ -3004,7 +3004,7 @@ def sorted_median(a):
     ----------
     a : numpy.ndarray
         list of values what will be processed.
-     
+
     Returns
     -------
     med : numpy.float32
@@ -3022,7 +3022,7 @@ def sorted_median(a):
 
 def get_median_sky(drizzled_image):
     """Read drizzled image from FITS file and compute sky
-    
+
     Parameters
     ----------
     drizzled_image : string
@@ -3031,7 +3031,7 @@ def get_median_sky(drizzled_image):
     Returns
     -------
     median_sky : float
-        median sky value for image specified by 'drizzled_image'. 
+        median sky value for image specified by 'drizzled_image'.
     """
 
     driz_img_data = getdata(drizzled_image,1).ravel()
@@ -3069,13 +3069,13 @@ def rdtoxy(rd_coord_array, image, image_ext):
 
     rd_coord_array : numpy.ndarray
         array containing RA and dec values to convert.
-    
+
     image : string
-        drizzled image whose WCS info will be used in the coordinate conversion. 
-    
+        drizzled image whose WCS info will be used in the coordinate conversion.
+
     image_ext : string
         fits image extension to be used in the conversion.
-    
+
     Returns
     xy_arr: array
         array of converted x,y coordinate value pairs
@@ -3122,9 +3122,9 @@ def xytord(xy_coord_array, image, image_ext):
 # ========================================================================================================
 def extract_name(stringWpath):
     """This task will extract just the name of  specific filename that includes the path in the name: 'stringWpath'.
-    
+
     Tested.
-    
+
     stringWpath : string
         input path to be processed
 
@@ -3181,7 +3181,7 @@ def arrayfy_ctx(ctx, maxindex):
 
     ctxarray = numpy.zeros ( (nx, ny, n3), dtype="bool" )
     comparison = numpy.zeros ( (nx, ny), dtype="int32")
-    
+
     for i in range(n3):
         ilayer = int(i/32)
         ibit = i - 32*ilayer

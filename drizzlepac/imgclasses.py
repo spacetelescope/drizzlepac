@@ -1334,7 +1334,7 @@ class RefImage:
         print("Adding {} new sources to the reference catalog "
               "for a total of {} sources."
               .format(adding_nsources, old_ref_nsources + adding_nsources))
-        not_matched_mask = np.ones(image.outxy.shape[0], dtype=np.bool)
+        not_matched_mask = np.ones(image.outxy.shape[0], dtype=bool)
         not_matched_mask[matched_idx] = False
         not_matched_outxy = image.outxy[not_matched_mask]
 

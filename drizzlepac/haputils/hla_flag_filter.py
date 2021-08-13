@@ -515,7 +515,7 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
     all_detections = catalog_data
 
     nrows = len(all_detections)
-    full_coord_list = numpy.empty((nrows, 2), dtype=numpy.float)
+    full_coord_list = numpy.empty((nrows, 2), dtype=float)
     for row_count, detection in enumerate(all_detections):
         full_coord_list[row_count, 0] = float(detection[column_titles["x_coltitle"]])
         full_coord_list[row_count, 1] = float(detection[column_titles["y_coltitle"]])
@@ -712,7 +712,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
     nrows = len(catalog_data)
 
-    complete_src_list = numpy.empty((nrows, 6), dtype=numpy.float)
+    complete_src_list = numpy.empty((nrows, 6), dtype=float)
 
     for row_num, row in enumerate(catalog_data[0:]):
         x_val = float(row[column_titles["x_coltitle"]])
@@ -1080,7 +1080,7 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
 
             # select just the lowest value of refepp/swarm threshold for each source
             # create array with extra columns
-            ring_source_list = numpy.empty((len(ring_index_list), 9), dtype=numpy.float)
+            ring_source_list = numpy.empty((len(ring_index_list), 9), dtype=float)
             ring_source_list[:, 0:6] = swarm_list_b[ring_index_list, :]
             ring_source_list[:, 6] = numpy.concatenate(ring_refepp_list)
             ring_source_list[:, 7] = numpy.repeat(ring_thresh_list, ring_count)
