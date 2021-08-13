@@ -162,7 +162,7 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
 def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=False, debug=False,
                   update_hdr_wcs=False, result=None,
                   runfile=None, print_fit_parameters=True, print_git_info=False, output=False,
-                  headerlet_filenames=None, fit_label=None,
+                  headerlet_filenames=None, fit_label=None, product_type=None,
                   **alignment_pars):
     """Actual Main calling function.
 
@@ -278,7 +278,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
     log.info("{} STEP 1: Get data {}".format("-" * 20, "-" * 66))
     zero_dt = starting_dt = datetime.datetime.now()
     log.info(str(starting_dt))
-    imglist = check_and_get_data(input_list, archive=archive, clobber=clobber)
+    imglist = check_and_get_data(input_list, archive=archive, clobber=clobber, product_type=product_type)
     log.info("SUCCESS")
 
     log.info(make_label('Processing time of [STEP 1]', starting_dt))

@@ -64,6 +64,8 @@ from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
 from stsci.tools.bitmask import bitfield_to_boolean_mask
 
+import stsci.tools
+
 from ..tweakutils import build_xy_zeropoint, ndfind
 
 __taskname__ = 'astrometric_utils'
@@ -1292,10 +1294,10 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
 
             # combine the two temporary DQ masks into a single composite DQ mask.
             dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
-
-            # dqmask = bitfield_to_boolean_mask(dqarr, good_mask_value=False)
-            # TODO: <---Remove this old no-sat bit grow line once this
-            # thing works
+            # astropy's code returned the opposite bitmask from what was originally
+            # defined by stsci.tools own bitmask code.
+            if LooseVersion(stsci.tools.__version__) >= '4.0.0':
+                dqmask = ~dqmask
 
         if numWht > 0:
             whtarr = image['wht', chip].data

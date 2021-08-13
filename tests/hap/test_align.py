@@ -75,6 +75,7 @@ class TestAlignMosaic(BaseHLATest):
                                                   archive=False, clobber=False,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
+                                                  product_type='pipeline',
                                                   output=False)
 
         # Examine the output table to extract the RMS for the entire fit and the compromised
@@ -109,6 +110,7 @@ class TestAlignMosaic(BaseHLATest):
                                                   archive=False, clobber=False,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
+                                                  product_type='pipeline',
                                                   output=False)
 
         # Examine the output table to extract the RMS for the entire fit and the compromised
@@ -175,6 +177,7 @@ class TestAlignMosaic(BaseHLATest):
                                                   archive=False, clobber=False,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
+                                                  product_type='pipeline',
                                                   output=False)
 
         # Examine the output table to extract the RMS for the entire fit and the compromised
@@ -225,6 +228,7 @@ class TestAlignMosaic(BaseHLATest):
                                                   archive=False, clobber=False,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
+                                                  product_type='pipeline',
                                                   output=False)
 
         # Examine the output table to extract the RMS for the entire fit and the compromised
@@ -245,6 +249,7 @@ class TestAlignMosaic(BaseHLATest):
                                                   archive=False, clobber=True,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
+                                                  product_type='pipeline',
                                                   output=False)
 
         # Examine the output table to extract the RMS for the entire fit and the compromised

@@ -69,7 +69,8 @@ def compare_wcs_alignment(dataset, force=False):
                                           catalog_list=['GAIADR2', 'GAIADR1'],
                                           num_sources=250,
                                           clobber=force,
-                                          debug=True)
+                                          debug=True,
+                                          product_type='pipeline')
         results = align_table.filtered_table
         if not results:
             msg = "No valid exposures found for {}.".format(dataset)
