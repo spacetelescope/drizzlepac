@@ -366,6 +366,8 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
             # Update filtered table with number of found sources
             alignment_table.filtered_table[index]['foundSources'] = total_num_sources
 
+            # TODO: Revise this logic, if possible, to allow for a subset of the input images to
+            #       be ignored if they have no identifiable sources.
             if total_num_sources < apars['determine_fit_quality']['MIN_OBSERVABLE_THRESHOLD']:
                 log.warning("Not enough sources ({}) found in image {}".format(total_num_sources, imgname))
                 alignment_table.filtered_table[:]['status'] = 1
