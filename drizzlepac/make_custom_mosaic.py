@@ -3,7 +3,9 @@
 """ make_custom_mosaic.py - Module to control the generation of user-defined multi-skycell mosaics. This
 script extends the capabilities of the HAP multi-visit mosaics (MVM) processing code (hapmultisequencer.py).
 Based on user input, this script will produce drizzle-combined mosaics that will be as large as necessary to
-incorporate all input images. Mosaic images can span multiple skycells, but NOT multiple projection cells.
+incorporate all input images. Mosaic images can span multiple skycells, but NOT multiple projection cells. In
+the exceedingly rare case that a custom mosaic contains observations that fall on multiple adjacent
+projection cells, the bounds of the mosaic will be automatically clipped at the projection cell edge.
 
 As this script is simply a wrapper around hapmultisequencer.py, the final output products are the exact same
 as what one would expect from a pipeline MVM run. For a complete details about all hapmultisequencer.py
@@ -220,12 +222,34 @@ def compute_mosaic_limits(proj_cell_dict):
             y_values[i] = x_y[1]
             i += 1
 
-    # Return mosaic bounding rectangle X min and max and Y min and max values
-    mosaic_limits = [x_values.min(), x_values.max(), y_values.min(), y_values.max()]
-    limit_labels = ["X_min", "X_max", "Y_min", "Y_max"]
-    for i in range(0, 4):
-        mosaic_limits[i] = int(np.rint(mosaic_limits[i]))
-        print("{}: {}".format(limit_labels[i], mosaic_limits[i]))
+    # determine min and max X and Y values, convert them from floating points to integers
+    x_min = int(np.rint(x_values.min()))
+    x_max = int(np.rint(x_values.max()))
+    y_min = int(np.rint(y_values.min()))
+    y_max = int(np.rint(y_values.max()))
+
+    # Make sure all min and max X and Y values are within the projection cell. If not, reset to the projection cell limit.
+    ps_x_max = proj_cell_dict[sc_name].projection_cell.wcs.pixel_shape[0]
+    ps_y_max = proj_cell_dict[sc_name].projection_cell.wcs.pixel_shape[1]
+    if x_min < 0:
+        log.warning("Custom mosaic minimum X value '{}' is beyond the projection cell minimum X value of '{}' Resetting custom mosaic minimum X value to projection cell minimum X value.".format(x_min, 0))
+        x_min = 0
+    if x_max > ps_x_max:
+        log.warning("Custom mosaic maximum X value '{}' is beyond the projection cell maximum X value of '{}' Resetting custom mosaic maximum X value to projection cell maximum X value.".format(x_max, ps_x_max))
+        x_max = ps_x_max
+    if y_min < 0:
+        log.warning("Custom mosaic minimum Y value '{}' is beyond the projection cell minimum Y value of '{}' Resetting custom mosaic minimum Y value to projection cell minimum Y value.".format(y_min, 0))
+        y_min = 0
+    if y_max > ps_y_max:
+        log.warning("Custom mosaic maximum Y value '{}' is beyond the projection cell maximum Y value of '{}' Resetting custom mosaic maximum Y value to projection cell maximum Y value.".format(y_max, ps_y_max))
+        y_max = ps_y_max
+
+    mosaic_limits = [x_min, x_max, y_min, y_max]
+
+    if log.level <= 10:  # only display x and y limits if logging level is set to "debug".
+        for mosaic_limit, limit_label in zip(mosaic_limits, ["minimum X", "maximum X", "minimum Y", "maximum Y"]):
+            log.debug("Custom mosaic {} value (in projection cell pixels) : {}".format(limit_label, mosaic_limit))
+
     return mosaic_limits
 
 # ------------------------------------------------------------------------------------------------------------
