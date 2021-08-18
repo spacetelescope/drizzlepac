@@ -337,7 +337,7 @@ class HAPProduct:
 
         except Exception:
             # Report a problem with the alignment
-            if fit_label.upper().strip()  == 'SVM':
+            if fit_label.upper().strip() == 'SVM':
                 log.warning("EXCEPTION encountered in align_to_gaia for the FilteredProduct.\n")
             else:
                 log.warning("EXCEPTION encountered in align_to_gaia for the SkyCellProduct.\n")
@@ -914,7 +914,7 @@ class SkyCellExposure(HAPProduct):
             pass
 
         # Add HAPLEVEL keyword as required by pipeline processing
-        fits.setval(sce_filename, 'HAPLEVEL', value=0, comment='Classificaion level of this product')
+        fits.setval(sce_filename, 'HAPLEVEL', value=0, comment='Classification level of this product')
 
         return sce_filename
 
@@ -1000,21 +1000,57 @@ class SkyCellProduct(HAPProduct):
         """
         self.all_mvm_exposures = exp_list
 
-    def generate_metawcs(self):
+    def generate_metawcs(self, custom_limits=None):
+        """Generate a meta wcs
+
+        Parameters
+        ----------
+        custom_limits : list, optional.
+            a 4-element list containing the mosaic bounding rectangle X min and max and Y min and max values
+            This input argument is only used for creation of custom mosaics. These coordinates are in the
+            frame of reference of the projection cell, at fine (platescale = 0.04 arcsec/pixel) resolution.
+        """
+        if custom_limits:  # for creation of custom multi-skycell mosaics, base meta_wcs on projection cell WCS
+            wcs = copy.deepcopy(self.skycell.projection_cell.wcs)
+            ratio = self.skycell.projection_cell.wcs.pscale / self.skycell.scale
+
+            # Store unscaled and scaled versions of the custom mosaic bounding box X and Y limits
+            xmin_unscaled = int(np.rint(custom_limits[0]))
+            xmax_unscaled = int(np.rint(custom_limits[1]))
+            ymin_unscaled = int(np.rint(custom_limits[2]))
+            ymax_unscaled = int(np.rint(custom_limits[3]))
+            xmin_scaled = int(np.rint(custom_limits[0] * ratio))
+            xmax_scaled = int(np.rint(custom_limits[1] * ratio))
+            ymin_scaled = int(np.rint(custom_limits[2] * ratio))
+            ymax_scaled = int(np.rint(custom_limits[3] * ratio))
+
+            # Adjust WCS values as needed
+            crpix1 = int(np.rint((wcs.wcs.crpix[0] - xmin_unscaled) * ratio))
+            crpix2 = int(np.rint((wcs.wcs.crpix[1] - ymin_unscaled) * ratio))
+            wcs.wcs.crpix = [crpix1, crpix2]
+            wcs.wcs.crval = wcs.wcs.crval
+            wcs.wcs.cd = wcs.wcs.cd / ratio
+            wcs.wcs.ctype = ['RA---TAN', 'DEC--TAN']
+            wcs.pscale = wcs.pscale / ratio
+            wcs._naxis[0] = int(np.rint(wcs._naxis[0] * ratio))
+            wcs._naxis[1] = int(np.rint(wcs._naxis[1] * ratio))
+            self.bounding_box = [slice(ymin_scaled, ymax_scaled), slice(xmin_scaled, xmax_scaled)]
+            wcs.pixel_shape = [xmax_scaled - xmin_scaled + 1, ymax_scaled - ymin_scaled + 1]
+        else:  # For regular MVM processing (single skycell), base meta_wcs on skycell wcs
+            wcs = copy.deepcopy(self.skycell.wcs)
 
         # This is the exposure-independent WCS.
-        self.meta_wcs = self.skycell.wcs
+        self.meta_wcs = wcs
 
         # Create footprint on the sky for all input exposures using the skycell wcs
         # This footprint includes all the exposures in the visit, NEW exposures, as well
         # as exposures which have been previously processed (all are listed in the original
         # poller file).
-        mvm_footprint = cell_utils.SkyFootprint(self.skycell.wcs)
+        mvm_footprint = cell_utils.SkyFootprint(wcs)
         mvm_footprint.build(self.all_mvm_exposures)
 
         # This is the exposure-dependent WCS.
         self.meta_bounded_wcs = mvm_footprint.bounded_wcs
-
         return self.meta_bounded_wcs
 
     def wcs_drizzle_product(self, meta_wcs):
