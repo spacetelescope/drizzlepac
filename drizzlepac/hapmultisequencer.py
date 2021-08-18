@@ -25,10 +25,8 @@
 """
 import datetime
 import fnmatch
-import glob
 import logging
 import os
-import pdb
 import pickle
 import sys
 import traceback
@@ -63,7 +61,85 @@ envvar_qa_svm = "SVM_QUALITY_TESTING"
 # --------------------------------------------------------------------------------------------------------------
 
 
-def create_drizzle_products(total_obj_list):
+def rename_output_products(filter_obj, output_file_prefix=None):
+    """Rename a number of filter and exposure object attributes to facilitate custom-naming of output products
+
+    Parameters
+    ----------
+    filter_obj : drizzlepac.haputils.product.SkyCellProduct
+        a skycell object that stores all the information for a set of observations for a given filter
+
+    output_file_prefix : str, optional
+        'Text string that will be used as the filename prefix all files created by hapmultisequencer.py
+        during the MVM custom mosaic generation process. If not explicitly specified, all output files will
+        start with the following formatted text string:
+        "hst-skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>", where p<pppp> is the projection cell ID,
+        ra<##>d<####> are the whole-number and decimal portions of the right ascention, respectively, and
+        dec<n|s><##>d<####> are the whole-number and decimal portions of the declination, respectively. Note
+        that the "<n|s>" denotes if the declination is north (positive) or south (negative). Example: For
+        skycell = 1974, ra = 201.9512, and dec = +26.0012, The filename prefix would be
+        "skycell-p1974-ra201d9512-decn26d0012".
+
+    Returns
+    -------
+    filter_obj : drizzlepac.haputils.product.SkyCellProduct
+        The input skycell object with updated attributes
+    """
+    if output_file_prefix:
+        if output_file_prefix.endswith("_"):
+            output_file_prefix = output_file_prefix[:-2]
+    else:
+        # Auto-generate output file prefix based on skycell, RA and Dec info from WCS
+        log.info("Generating output file prefix based on skycell, RA and Dec info from WCS...")
+        # Start with the projection cell name
+        output_file_prefix = "hst_" + filter_obj.exposure_name.split("x")[0] + "-"
+        # add right ascention
+        text_ra = str(filter_obj.meta_wcs.wcs.crval[0])
+        ra_string = "ra{}d{}-".format(text_ra.split(".")[0], text_ra.split(".")[1])
+        output_file_prefix += ra_string
+        # Add declination
+        text_dec = str(filter_obj.meta_wcs.wcs.crval[1])
+        dec_string = "{}d{}".format(text_dec.split(".")[0], text_dec.split(".")[1])
+        if filter_obj.meta_wcs.wcs.crval[1] > 0:
+            dec_string = "decn" + dec_string
+        else:
+            north_sast = "s"
+            dec_string = dec_string.replace("-", "decs")
+        output_file_prefix += dec_string
+        log.info("Auto-generated output filename prefix: {}".format(output_file_prefix))
+
+    attr_list = ["drizzle_filename",
+                 "exposure_name",
+                 "manifest_name",
+                 "refname",
+                 "trl_filename",
+                 "trl_logname"]
+    text_to_replace = "hst_" + getattr(filter_obj, 'exposure_name')
+    for attr_name in attr_list:
+        orig_name = getattr(filter_obj, attr_name)
+        new_name = orig_name.replace(text_to_replace, output_file_prefix)
+        log.debug("Filter object attr {}: {} -> {}".format(attr_name, orig_name, new_name))
+        setattr(filter_obj, attr_name, new_name)
+    for attr_name in ['manifest_name', 'refname']:
+        attr_list.remove(attr_name)
+    for attr_name in ["full_filename", "headerlet_filename"]:
+        attr_list.append(attr_name)
+    for j in range(0, len(filter_obj.edp_list)):
+        for attr_name in attr_list:
+            orig_name = getattr(filter_obj.edp_list[j], attr_name)
+            new_name = orig_name.replace(text_to_replace, output_file_prefix)
+            log.debug("exposure object attr {}: {} -> {}".format(attr_name, orig_name, new_name))
+            setattr(filter_obj.edp_list[j], attr_name, new_name)
+            if attr_name is "full_filename":
+                os.rename(orig_name, new_name)
+                log.debug("Renamed file {} -> {}".format(orig_name, new_name))
+
+    return filter_obj
+
+# --------------------------------------------------------------------------------------------------------------
+
+
+def create_drizzle_products(total_obj_list, custom_limits=None):
     """
     Run astrodrizzle to produce products specified in the total_obj_list.
 
@@ -73,6 +149,10 @@ def create_drizzle_products(total_obj_list):
         List of TotalProduct objects, one object per instrument/detector combination is
         a visit.  The TotalProduct objects are comprised of FilterProduct and ExposureProduct
         objects.
+
+    custom_limits : list, optional
+        4-element list containing the mosaic bounding rectangle X min and max and Y min and max values for
+        custom mosaics
 
     RETURNS
     -------
@@ -107,7 +187,7 @@ def create_drizzle_products(total_obj_list):
         log.info("~" * 118)
         # Get the common WCS for all images which are part of a total detection product,
         # where the total detection product is detector-dependent.
-        meta_wcs = filt_obj.generate_metawcs()
+        meta_wcs = filt_obj.generate_metawcs(custom_limits=custom_limits)
 
         log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
         filt_obj.wcs_drizzle_product(meta_wcs)
@@ -122,7 +202,6 @@ def create_drizzle_products(total_obj_list):
             # Add drizzled FLC images to manifest
             product_list.append(exposure_obj.drizzle_filename)
             product_list.append(exposure_obj.trl_filename)
-
 
     # Ensure that all drizzled products have headers that are to specification
     try:
@@ -154,9 +233,9 @@ def create_drizzle_products(total_obj_list):
 
 def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_configs=True,
                        input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
-                       log_level=logutil.logging.INFO):
-    """
-    Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
+                       custom_limits=None, output_file_prefix=None, log_level=logutil.logging.INFO):
+
+    """Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
     controller which invokes the high-level functionality to process the multi-visit data.
 
     Parameters
@@ -185,12 +264,28 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         available during the processing session.  The default is None.
 
     phot_mode : str, optional
-        Which algorithm should be used to generate the sourcelists? 'aperture' for aperture (point) photometry;
-        'segment' for isophotal photometry; 'both' for both 'segment' and 'aperture'. Default value is 'both'.
+        Which algorithm should be used to generate the sourcelists? 'aperture' for aperture (point)
+        photometry; 'segment' for isophotal photometry; 'both' for both 'segment' and 'aperture'. Default
+        value is 'both'.
+
+    custom_limits : list, optional
+        4-element list containing the mosaic bounding rectangle X min and max and Y min and max values for
+        custom mosaics
+
+    output_file_prefix : str, optional
+        'Text string that will be used as the filename prefix all files created by hapmultisequencer.py
+        during the MVM custom mosaic generation process. If not explicitly specified, all output files will
+        start with the following formatted text string:
+        "hst-skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>", where p<pppp> is the projection cell ID,
+        ra<##>d<####> are the whole-number and decimal portions of the right ascention, respectively, and
+        dec<n|s><##>d<####> are the whole-number and decimal portions of the declination, respectively. Note
+        that the "<n|s>" denotes if the declination is north (positive) or south (negative). Example: For
+        skycell = 1974, ra = 201.9512, and dec = +26.0012, The filename prefix would be
+        "skycell-p1974-ra201d9512-decn26d0012".
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
-        Default value is 20, or 'info'.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
 
 
     RETURNS
@@ -226,21 +321,27 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         obs_info_dict, total_obj_list = poller_utils.interpret_mvm_input(input_filename, log_level,
                                                                          layer_method='all')
 
-        # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
-        # to use only one of the SkyCellProducts to generate the manifest name as the name
-        # is only dependent on the sky cell.
-        # Example: hst_skycell-p<PPPP>x<XX>y<YY>_manifest.txt (e.g., hst_skycell-p0797x12y05_manifest.txt)
-        manifest_name = total_obj_list[0].manifest_name
-        log.info("\nGenerate the manifest name for this multi-visit: {}.".format(manifest_name))
-        log.info("The manifest will contain the names of all the output products.")
-
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
 
         # Update the SkyCellProduct objects with their associated configuration information.
         for filter_item in total_obj_list:
-            _ = filter_item.generate_metawcs()
+            _ = filter_item.generate_metawcs(custom_limits=custom_limits)
             filter_item.generate_footprint_mask()
+
+            # Optionally rename output products
+            if output_file_prefix or custom_limits:
+                filter_item = rename_output_products(filter_item, output_file_prefix=output_file_prefix)
+
+            if 'manifest_name' not in locals():
+                # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
+                # to use only one of the SkyCellProducts to generate the manifest name as the name
+                # is only dependent on the sky cell.
+                # Example: hst_skycell-p<PPPP>x<XX>y<YY>_manifest.txt (e.g., hst_skycell-p0797x12y05_manifest.txt)
+                manifest_name = total_obj_list[0].manifest_name
+                log.info("\nGenerate the manifest name for this multi-visit: {}.".format(manifest_name))
+                log.info("The manifest will contain the names of all the output products.")
+
             log.info("Preparing configuration parameter values for filter product {}".format(filter_item.drizzle_filename))
             filter_item.configobj_pars = config_utils.HapConfig(filter_item,
                                                                 log_level=log_level,
@@ -250,19 +351,22 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
             for edp in filter_item.edp_list:
                 edp.configobj_pars = config_utils.HapConfig(edp,
-                                                                log_level=log_level,
-                                                                use_defaults=use_defaults_configs,
-                                                                input_custom_pars_file=input_custom_pars_file,
-                                                                output_custom_pars_file=output_custom_pars_file)
+                                                            log_level=log_level,
+                                                            use_defaults=use_defaults_configs,
+                                                            input_custom_pars_file=input_custom_pars_file,
+                                                            output_custom_pars_file=output_custom_pars_file)
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
 
-        reference_catalog = run_align_to_gaia(total_obj_list, log_level=log_level, diagnostic_mode=diagnostic_mode)
+        # TODO: This is the place where updated WCS info is migrated from drizzlepac params to filter objects
+
+        reference_catalog = run_align_to_gaia(total_obj_list, custom_limits=custom_limits,
+                                              log_level=log_level, diagnostic_mode=diagnostic_mode)
         if reference_catalog:
             product_list += [reference_catalog]
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
-        driz_list = create_drizzle_products(total_obj_list)
+        driz_list = create_drizzle_products(total_obj_list, custom_limits=custom_limits)
         product_list += driz_list
 
         # Store total_obj_list to a pickle file to speed up development
@@ -278,6 +382,7 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         # Quality assurance portion of the processing - done only if the environment
         # variable, SVM_QUALITY_TESTING, is set to 'on', 'yes', or 'true'.
         qa_switch = _get_envvar_switch(envvar_qa_svm)
+        qa_switch = False  # TODO: temporarily set to False to skip QA stuff
 
         # If requested, generate quality assessment statistics for the SVM products
         if qa_switch:
@@ -348,7 +453,7 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
 
 # ------------------------------------------------------------------------------------------------------------
 
-def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic_mode=False):
+def run_align_to_gaia(total_obj_list, custom_limits=None, log_level=logutil.logging.INFO, diagnostic_mode=False):
     # Run align.py on all input images sorted by overlap with GAIA bandpass
     log.info("\n{}: Align the all filters to GAIA with the same fit".format(str(datetime.datetime.now())))
     gaia_obj = None
@@ -380,7 +485,7 @@ def run_align_to_gaia(total_obj_list, log_level=logutil.logging.INFO, diagnostic
                                                              fit_label='MVM')
 
         for tot_obj in total_obj_list:
-            _ = tot_obj.generate_metawcs()
+            _ = tot_obj.generate_metawcs(custom_limits=custom_limits)
         log.info("\n{}: Finished aligning gaia_obj to GAIA".format(str(datetime.datetime.now())))
 
         # Return the name of the alignment catalog

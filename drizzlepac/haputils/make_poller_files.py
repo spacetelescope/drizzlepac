@@ -106,10 +106,12 @@ def locate_fitspath_from_rootname(rootname):
     fullfilepath : str
         full path + image name of specified rootname.
     """
-    import glob
-    files = sorted(glob.glob('{}*fl?.fits'.format(rootname[:4])))
-    if rootname in files:
-        return rootname
+    # Look for files in CWD first
+    if os.path.exists("{}_flc.fits".format(rootname)):
+        return "{}_flc.fits".format(rootname)
+    if os.path.exists("{}_flt.fits".format(rootname)):
+        return "{}_flt.fits".format(rootname)
+    # If not found in CWD, look elsewhere...
     if not os.getenv("DATA_PATH"):
         sys.exit("ERROR: Undefined online cache data root path. Please set environment variable 'DATA_PATH'")
     filenamestub = "{}/{}/{}/{}".format(os.getenv("DATA_PATH"), rootname[:4], rootname, rootname)
