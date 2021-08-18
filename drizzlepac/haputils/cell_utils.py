@@ -580,7 +580,6 @@ class SkyFootprint(object):
                 ordered_xyc = xy_corners[radial_order].tolist()
                 ordered_xyc.append(ordered_xyc[0])  # close polygon
                 ordered_xy.append(np.array(ordered_xyc, dtype=np.float64))
-                import pickle; pickle.dump({'ordered_xyc':ordered_xyc, 'radial_order':radial_order, 'cordist': cordist, 'ordered_indices':ordered_indices}, open('radial_results{}.pkl'.format(label), 'wb'))
                 sky_corners.append(self.meta_wcs.all_pix2world(ordered_xyc, 0))
 
                 ordered_edges.append(edge_pixels)
