@@ -236,9 +236,11 @@ class SkyFootprint(object):
         This method computes the vertices of the total mask, something useful for
         creating the region FITS keywords (like S_REGION).
     """
-    def __init__(self, meta_wcs):
+    def __init__(self, meta_wcs, debug=False):
 
         self.meta_wcs = meta_wcs
+        self.debug = debug
+
         # bounded_wcs corresponds to WCS of bounding box of exposed pixels
         self.bounded_wcs = None
         self.bounding_box = None
@@ -440,7 +442,7 @@ class SkyFootprint(object):
         self.edges = self.footprint - edges
 
 
-    def find_corners(self, member='total', sensitivity=0.1):
+    def find_corners(self, member='total'):
         """Extract corners/vertices from footprint
 
         This method computes the positions of all the corners that
@@ -482,51 +484,82 @@ class SkyFootprint(object):
         if member == 'total':
             # Get all the X,Y positions of the corners of all input chips
             # These will be used to identify the vertices of the footprint
-            exp_masks = [mask['xy_corners'] for mask in self.exp_masks.values()]
-
+            # exp_masks = [mask['xy_corners'] for mask in self.exp_masks.values()]
 
             # Use Harris corner detection to identify corners in the
             # total footprint
-            # insure footprint has enough signal to deterct corners
-            fp = self.footprint.astype(np.int32) * (10000./self.footprint.max())
-            mask_corners = corner_peaks(corner_harris(fp),
-                                   min_distance=1,
-                                   threshold_rel=0.5)
-            xy_corners = mask_corners * 0.
-            xy_corners[:, 0] = mask_corners[:, 1]
-            xy_corners[:, 1] = mask_corners[:, 0]
-            self.full_corners = xy_corners.copy()
+            # insure footprint has enough signal to detect corners
+            fp = np.clip(self.footprint, 0, 1).astype(np.int16)
+            # simple trick to remove noise and small regions 3x3 or less.
+            scmask = ndimage.binary_dilation(ndimage.binary_erosion(fp, iterations=3), iterations=2)
+            sclabels, nlabels = ndimage.label(scmask)
+            slices = ndimage.find_objects(sclabels)
+            ordered_xy = []
+            ordered_edges = []
+            sky_corners = []
 
-            # with this Nx2 array of points, we need to order them according
-            # to IVOA standards: counter-clockwise when oriented N up starting from
-            # northernmost point
-            center = self.meta_wcs.wcs.crpix
-            dist, phi, deg = cart2pol(xy_corners[:, 0] - center[0], xy_corners[:, 1] - center[1])
-            # set '0' to be at -45deg.  This will avoid points at 358 deg being skipped over for a
-            # point at 88 degrees, for example, insuring that more points near the top of the image
-            # get selected as the starting point.
-            deg += 45.0
-            deg[deg > 360.] -= 360.
-            radial_order = np.argsort(deg)
+            for label, mask_slice in enumerate(slices):
+                label += 1
+                # get slice with just the region/label of interest
+                label_mask = sclabels[mask_slice].copy()
+                # make sure no pixels from other regions are present in this mask
+                label_mask[label_mask != label] = 0
+                # reset label to be a binary mask only
+                label_mask[label_mask == label] = 1000
+                # insure there is a border all around the region
+                # THIS IS CRITICAL to being able to identify corners correctly in slice
+                label_mask = ndimage.binary_erosion(label_mask)
+                print('extracting corners for label {} in slice {}'.format(label, mask_slice))
+                # Perform corner detection on each region/chip separately.
+                mask_corners = corner_peaks(corner_harris(label_mask),
+                                       min_distance=1,
+                                       threshold_rel=0.2)
+                xy_corners = mask_corners * 0.
+                xy_corners[:, 0] = mask_corners[:, 1]
+                xy_corners[:, 1] = mask_corners[:, 0]
+                # shift corner positions to full array positions
+                xy_corners += (mask_slice[1].start, mask_slice[0].start)
 
-            # Create a mask from the total footprint consisting solely of the
-            # pixels at the outer edge, ordered in clockwise fashion.
-            #
-            # We need to erode the outer edge by 3 pixels in order to avoid single-pixel
-            # artifacts along the outer edge.
-            inside = ndimage.binary_erosion(self.footprint, iterations=3).astype(np.int16)
-            edge_lists = trace_polygon(inside - ndimage.binary_erosion(inside).astype(np.int16),
-                                       sensitivity=sensitivity)
-            xy_pixels = None
+                """
+                # with this Nx2 array of points, we need to order them according
+                # to IVOA standards: counter-clockwise when oriented N up starting from
+                # northernmost point
+                center = (label_mask.shape[1] // 2, label_mask.shape[0] // 2)  # self.meta_wcs.wcs.crpix
+                dist, phi, deg = cart2pol(xy_corners[:, 0] - center[0], xy_corners[:, 1] - center[1])
+                # set '0' to be at -45deg.  This will avoid points at 358 deg being skipped over for a
+                # point at 88 degrees, for example, insuring that more points near the top of the image
+                # get selected as the starting point.
+                deg += 45.0
+                deg[deg > 360.] -= 360.
+                radial_order = np.argsort(deg)
+                # apply radial ordering to discovered corner positions
+                ordered_xyc = xy_corners[radial_order].tolist()
 
-            for edge_pixels in edge_lists:
+                # close the polygon
+                # and convert it back to an array...
+                ordered_xyc.append(ordered_xyc[0])
+                ordered_xy.append(np.array(ordered_xyc, dtype=np.float64))
+                """
+
+                # Create a mask from the total footprint consisting solely of the
+                # pixels at the outer edge, ordered in clockwise fashion.
+                #
+                # We need to erode the outer edge by 3 pixels in order to avoid single-pixel
+                # artifacts along the outer edge.
+                # inside = ndimage.binary_erosion(label_mask, iterations=3).astype(np.int16)
+                # get list of (X,Y) coordinates of all edges from each separate 'region' or chip
+                edge_pixels = trace_polygon(label_mask, mask_slice)
+                # xy_pixels = None
+
+                """
+                # for edge_pixels in edge_lists:
                 # Start matching the xy_corner positions, one-by-one, to pixels
                 # along the edge.  We only want the index of the corner that matches
                 # as we travel along the edge in order which will be used to
                 # sort the corner positions.
                 #
                 # start at the position closest to North where `deg` is closest to 0
-                corner_dist = distance.cdist(edge_pixels, [xy_corners[radial_order[0]]])
+                corner_dist = distance.cdist(edge_pixels, [ordered_xyc[0]])
                 start_indx = np.where(corner_dist == corner_dist.min())[0][0]
 
                 if start_indx != 0:
@@ -536,7 +569,24 @@ class SkyFootprint(object):
                     ordered_edge[-start_indx:] = edge_pixels[:start_indx]
                 else:
                     ordered_edge = edge_pixels
+                """
 
+                # use the ordering of the traced edge pixels to order the corners in the same way
+                cordist = distance.cdist(xy_corners, edge_pixels)  # returns distances for each corner position
+                ordered_indices = []
+                for distarr, minval in zip(cordist, np.min(cordist, axis=1)):
+                    ordered_indices.append(np.where(distarr == minval)[0][0])
+                radial_order = np.argsort(ordered_indices)
+                ordered_xyc = xy_corners[radial_order].tolist()
+                ordered_xyc.append(ordered_xyc[0])  # close polygon
+                ordered_xy.append(np.array(ordered_xyc, dtype=np.float64))
+                import pickle; pickle.dump({'ordered_xyc':ordered_xyc, 'radial_order':radial_order, 'cordist': cordist, 'ordered_indices':ordered_indices}, open('radial_results{}.pkl'.format(label), 'wb'))
+                sky_corners.append(self.meta_wcs.all_pix2world(ordered_xyc, 0))
+
+                ordered_edges.append(edge_pixels)
+                """
+                # convert corner positions to RA/Dec
+                sky_corners = self.meta_wcs.all_pix2world(xy_pixels, 0)
                 # Create polygon for inside edges to use for identifying vertices
                 edge_path = Path(ordered_edge)
 
@@ -566,15 +616,15 @@ class SkyFootprint(object):
                     xy_pixels = np.concatenate([xy_pixels, new_xy])
                     sky_corners = np.concatenate([sky_corners, self.meta_wcs.all_pix2world(new_xy, 0)])
                     ordered_xy.append(ordered_edge)
-
-            xy_corners = xy_pixels
-            corners = sky_corners
-            ordered_edge = ordered_xy
+                """
+            # xy_corners = xy_pixels
+            # corners = sky_corners
+            # ordered_edge = edge_pixels
 
             # clean up memory a bit
-            del edge_pixels
-            del inside
-            del corner_dist
+            # del edge_pixels
+            #del inside
+            # del corner_dist
 
         else:
             if member not in self.exp_masks:
@@ -582,9 +632,9 @@ class SkyFootprint(object):
             xy_corners = self.exp_masks[member]['xy_corners']
             corners = self.meta_wcs.all_pix2world(xy_corners, 0)
 
-        self.edge_pixels = ordered_edge
-        self.xy_corners = xy_corners
-        self.corners = corners
+        self.edge_pixels = np.array(ordered_edges)
+        self.xy_corners = np.array(ordered_xy)
+        self.corners = np.array(sky_corners)
 
     def get_edges_sky(self, member='total'):
         """Returns the sky coordinates of all edge pixels.
@@ -1179,33 +1229,28 @@ def compute_edge(start, end, int_pixel=True):
     return xy
 
 
-def trace_polygon(input_mask, sensitivity=0.1):
+def trace_polygon(input_mask, mask_slice):
     """Convert mask with only edge pixels into a single contiguous polygon"""
-    edge_pixels, mask_residuals = _poly_trace(input_mask)
-    edge_lists = [edge_pixels]
-    if mask_residuals.sum() > sensitivity * edge_pixels.shape[0]:
-        ratio = mask_residuals.sum() / edge_pixels.shape[0]
-        # mask_residuals only contains those pixels which were not
-        # part of the already traced edge.
-        residual_pixels = np.where(mask_residuals == 1)
-        residual_pixels = np.array([residual_pixels[1], residual_pixels[0]]).T
-        # look for significantly large sets of pixels with consistent distance
-        # from the already identified edge_pixels
-        residual_dists = distance.cdist(residual_pixels, edge_pixels)
-        residual_mins = np.array([resid.min() for resid in residual_dists])
-        # count number of edge pixels remaining which are the same distance
-        # from pixels in the already identified edge
-        num_mins = np.where(np.abs(residual_mins - residual_mins.min()) < 3 * np.sqrt(2))[0].shape[0]
-        if num_mins > (sensitivity * ratio * residual_pixels.shape[0]):
-            # try tracing the remaining pixels
-            edge_pixels, mask_residuals = _poly_trace(mask_residuals)
-            if edge_pixels.shape[0] > 0:
-                edge_lists.append(edge_pixels)
-    return edge_lists
 
-def _poly_trace(input_mask):
+    # now extract the edges to trace
+    slice_edges = input_mask.astype(np.int16) - \
+                  ndimage.binary_erosion(input_mask).astype(np.int16)
+
+    # trace edge from this region and identify corners of edge
+    edge_pixels = _poly_trace(slice_edges)
+    # shift the origin of the edge pixels to coincide with the slice from the full mask
+    edge_pixels += (mask_slice[1].start, mask_slice[0].start)
+
+    return edge_pixels
+
+
+def _poly_trace(input_mask, box_size=3):
     # find a starting point on the mask
-    mask = input_mask.copy()
+    # expand input array to include empty border pixels to account for extraction box
+    border = (box_size // 2)
+    mask = np.zeros((input_mask.shape[0] + (border * 2), input_mask.shape[1] + (border * 2)),
+                    dtype=input_mask.dtype)
+    mask[border:-border, border:-border] = input_mask.copy()
 
     for x in range(mask.shape[1]):
         pts = np.where(mask[:, x] == 1)[0]
@@ -1271,9 +1316,10 @@ def _poly_trace(input_mask):
         new_start = False
         slope = (new_y - ystart) / (new_x - xstart)
 
+    del mask
     # close the polygon
     polygon.append(polygon[0])
-    return np.array(polygon, dtype=np.int32), mask
+    return np.array(polygon, dtype=np.int32)
 
 def perp(a):
     b = np.empty_like(a)
@@ -1300,10 +1346,10 @@ def get_box(arr, x, y, size=3):
     """subarray extraction with limits checking """
     amin = size // 2
     amax = amin + 1
-    ymin = y - amin if y != 0 else 0
-    ymax = y + amax if y != arr.shape[0] - 1 else arr.shape[0] - 1
-    xmin = x - amin if x != 0 else 0
-    xmax = x + amax if x != arr.shape[1] - 1 else arr.shape[1] - 1
+    ymin = y - amin if y >= 0 else 0
+    ymax = y + amax if y <= arr.shape[0] else arr.shape[0]
+    xmin = x - amin if x >= 0 else 0
+    xmax = x + amax if x <= arr.shape[1] else arr.shape[1]
     box = arr[ymin: ymax, xmin: xmax]
 
     return box
