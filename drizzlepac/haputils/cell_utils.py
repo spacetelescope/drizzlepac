@@ -374,6 +374,42 @@ class SkyFootprint(object):
         # Compute the bounded WCS for this mask of exposed pixels
         self.find_bounded_wcs()
 
+    def extract_mask(self, filename):
+        """Extract a total_mask from the SCI data directly"""
+        sciext = ("SCI", 1)
+        arr = fits.getdata(filename, ext=sciext)
+        # If working with drizzled data which has NaN as non-exposed pixel values
+        if np.isnan(arr.min()):
+            self.total_mask = (np.isnan(arr) == 0).astype(np.int16)
+        else:
+            self.total_mask = (arr != 0).astype(np.int16)
+
+        """
+        # populate exp_masks with footprint of full WCS for 'total' exposure
+        exposure = 'total'
+        self.exp_masks[exposure] = {'sky_corners': [], 'xy_corners': [], 'mask': {}}
+        wcs = HSTWCS(filename, ext=sciext)
+
+        # save the footprint for each chip as RA/Dec corner positions
+        # radec = wcs.calc_footprint().tolist()
+        radec = calc_wcs_footprint(wcs, offset=1).tolist()
+        radec.append(radec[0])  # close the polygon/chip
+        self.exp_masks[exposure]['sky_corners'].append(radec)
+
+        # Also save those corner positions as X,Y positions in the footprint
+        xycorners = self.meta_wcs.all_world2pix(radec, 0).astype(np.int32).tolist()
+        self.exp_masks[exposure]['xy_corners'].append(xycorners)
+        self.exp_masks[exposure]['mask'] = self.total_mask
+        """
+        # clean up as quickly as possible
+        del arr
+
+        # populate footprint with this mask
+        self.members += [filename]
+        self.find_footprint()
+
+        # Now compute the bounded_wcs, if possible.
+        self.find_bounded_wcs()
 
     def find_bounded_wcs(self):
         """Compute the WCS based on the bounding box of exposed pixels(mask) """

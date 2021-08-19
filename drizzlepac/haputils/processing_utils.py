@@ -220,13 +220,15 @@ def compute_sregion(image, extname='SCI'):
             # get all the corners from each of the input files
             footprint = find_footprint(hdu, extname=extname)
 
-        for corner in footprint:
-            sregion_str += '{} {} '.format(corner[0], corner[1])
+        for chip in footprint:
+            for corner in chip:
+                sregion_str += '{} {} '.format(corner[0], corner[1])
         hdu[sciext].header['s_region'] = sregion_str
 
     # close file if opened by this functions
     if closefits:
         hdu.close()
+
 
 def find_footprint(hdu, extname='SCI'):
     """Extract the footprints from each input file
@@ -253,19 +255,21 @@ def find_footprint(hdu, extname='SCI'):
 
     """
     # Extract list of input files from Drizzle keywords
-    data_kws = hdu[0].header['d*data'] if isinstance(hdu, fits.HDUList) else fits.getval(hdu, 'd*data')
-    input_files = [kw.split('[')[0] for kw in data_kws.values()]
+    # data_kws = hdu[0].header['d*data'] if isinstance(hdu, fits.HDUList) else fits.getval(hdu, 'd*data')
+    # input_files = [kw.split('[')[0] for kw in data_kws.values()]
 
     # extract WCS from this product
     meta_wcs = wcsutil.HSTWCS(hdu, ext=('sci', 1))
     # create SkyFootprint object for all input_files to determine footprint
     footprint = SkyFootprint(meta_wcs=meta_wcs)
     # create mask of all input chips as they overlap on the product WCS
-    footprint.build(input_files)
+    # footprint.build(input_files)
+    footprint.extract_mask(hdu.filename())
     # Now, find the corners from this mask
     footprint.find_corners()
 
     return footprint.corners
+
 
 def interpret_sregion(image, extname='SCI'):
     """Interpret the S_REGION keyword as a list of RA/Dec points"""
@@ -284,6 +288,7 @@ def interpret_sregion(image, extname='SCI'):
         coords.append(radec_str.reshape((radec_str.shape[0] // 2, 2)))
 
     return coords
+
 
 def _process_input(input):
     """Verify that input is an Astropy HDUList object opened in 'update' mode
@@ -323,6 +328,7 @@ def _process_input(input):
 
     return hdu, closefits
 
+
 def append_trl_file(trlfile, drizfile, clean=True):
     """ Append log file to already existing log or trailer file.
 
@@ -352,6 +358,7 @@ def append_trl_file(trlfile, drizfile, clean=True):
         # Now, clean up astrodrizzle trailer file
         os.remove(drizfile)
 
+
 def make_section_str(str="", width=60, symbol='-'):
     """Generate string for starting/ending sections of log messages"""
     strlen = len(str)
@@ -359,6 +366,7 @@ def make_section_str(str="", width=60, symbol='-'):
     side_dash = symbol * (dash_len // 2)
     section_str = "{}{}{}".format(side_dash, str, side_dash)
     return section_str
+
 
 def find_flt_keyword (hdu, keyword, extname="SCI", extver=1):
     """Look for the FITS keyword in the Primary and specified extension header
@@ -413,6 +421,7 @@ def find_flt_keyword (hdu, keyword, extname="SCI", extver=1):
             raise
 
     return value
+
 
 def _find_open_files():
     """Useful utility function to identify any open file handles during processing."""
