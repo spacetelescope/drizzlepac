@@ -156,14 +156,14 @@ def mvm_id_filenames(sky_coord, cutout_size, verbose=False):
 
 def mvm_retrieve_files(products, archive=False, clobber=False, verbose=False):
     """
-    This function retrieves a table of image filenames with additional information 
-    from the archive.  The function returns a list of filenames available on disk.
+    This function retrieves specified files from the archive - unless the file is found
+    to be locally resident on disk.  Upon completion, The function returns a list of 
+    filenames available on disk. 
 
     Parameters
     ----------
-    products : str, list or Table
-        Either a filename string, a list of filename strings or a Table of products
-        (as returned by mvm_id_filenames). 
+    products : Table
+        A Table of products as returned by the mvm_id_filenames function. 
 
     archive : Boolean, optional
         Retain copies of the downloaded files in the astroquery created
@@ -182,16 +182,6 @@ def mvm_retrieve_files(products, archive=False, clobber=False, verbose=False):
 
     Note: Code here cribbed from retrieve_obsevation in astroquery_utils module.
     """
-
-    # FIXME BEG
-    if type(products) == str:
-        products = [products]
-
-    if not isinstance(products, Table):
-        new_table = Table()
-        new_table['productFilename'] = products
-        products = new_table.copy()
-    # FIXME END
 
     all_images = []
     all_images = products['productFilename'].tolist()
@@ -240,7 +230,7 @@ def mvm_retrieve_files(products, archive=False, clobber=False, verbose=False):
     return(local_files)
 
 
-def make_the_cut(input_files, sky_coord, cutout_size, verbose=False):
+def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, output_dir=".", verbose=False):
     """
     This function makes the actual cut in the input images. As such it isa a high-level
     interface for the `˜astrocut.cutout.fits_cut` functionality.
@@ -248,8 +238,8 @@ def make_the_cut(input_files, sky_coord, cutout_size, verbose=False):
     Parameters
     ----------
     input_files : list
-        List of fits image filenames from which to create cutouts. The SCI image is assumed to be in the
-        first extension with the weight image in the second extension.
+        List of fits image filenames from which to create cutouts. The SCI image is assumed to be
+        in the first extension with the weight image in the second extension.
 
     sky_coord : str or `~astropy.coordinates.SkyCoord` object
         The position around which to cutout. It may be specified as a string ("ra dec" in degrees)
@@ -262,11 +252,15 @@ def make_the_cut(input_files, sky_coord, cutout_size, verbose=False):
         in ``cutout_size`` are assumed to be in units of arcseconds. `~astropy.units.Quantity` objects
         must be in angular units.
 
-    single_outfile : bool 
+    single_outfile : bool
         Default True. If True, return all cutouts in a single fits file with one cutout per extension,
-        if False return cutouts in individual fits files. If returing a single file the filename will 
-        have the form: <cutout_prefix>_<ra>_<dec>_<size x>_<size y>.fits. If returning multiple files
+        if False return cutouts in individual fits files.  Since both the SCI and WHT extensions of the
+        input files are cutout, individual fits files will contain two image extensions, a SCI followed
+        by the WHT.  Correspondingly, the single fits file will contain a SCI and then a WHT extension
+        for each input image.  If returing a single file the filename will have the form: 
+        <cutout_prefix>_<ra>_<dec>_<size x>_<size y>.fits. If returning multiple files
         each will be named: <original filemame base>_<ra>_<dec>_<size x>_<size y>.fits.
+        Output filename of the form: hst_skycell_cutout-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>_detector_filter.fits
 
     output_dir : str
         Default value '.'. The directory to save the cutout file(s) to.
@@ -282,13 +276,12 @@ def make_the_cut(input_files, sky_coord, cutout_size, verbose=False):
         If memory_only is True a list of `~astropy.io.fit.HDUList` objects is returned instead of
         file name(s).
 
-    Note: Output filename of the form: hst_skycell_cutout-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>
     """
 
     # Set the values for fits_cut that we are not allowing the user to modify
     CORRECT_WCS = False
     EXTENSION = [1, 2]  # SCI and WHT
-    OUTPUT_PREFIX = "hst_skycell_cutout-"
+    OUTPUT_PREFIX = "hst_cutout_skycell-"
     MEMORY_ONLY = True # This code will modify the output before it is written.
 
     # Making sure we have an array of images
@@ -305,20 +298,43 @@ def make_the_cut(input_files, sky_coord, cutout_size, verbose=False):
 
     # Call the cutout workhorse
     out_HDUList = fits_cut(input_files, sky_coord, cutout_size, correct_wcs=CORRECT_WCS,
-                           extension=EXTENSION, single_outfile=True, cutout_prefix=OUTPUT_PREFIX,
-                           output_dir=".", memory_only=MEMORY_ONLY, verbose=False)
+                           extension=EXTENSION, single_outfile=single_outfile, cutout_prefix=OUTPUT_PREFIX,
+                           output_dir=".", memory_only=MEMORY_ONLY, verbose=True)
      
-    # Fix up the EXTNAME to be more illustrative of the actual data as
-    # all of the EXTNAMEs are "CUTOUT" and all the EXTVERs are "1".
-    # sci_detector_filter
-    extlist = out_HDUList[1:]
+    # ORIG_FLE example is hst_skycell-p1253x05y09_acs_wfc_f658n_all_drc.fits
+    extlist = out_HDUList[0][1:]
     for index in range(len(extlist)):
+        tokens = extlist[index].header["ORIG_FLE"].split("_")
+        skycell = tokens[1].split("-")[1][1:5]
+        detector = tokens[3]
+        filter = tokens[4]
         extlist[index].header["EXTNAME"] = extlist[index].header["O_EXT_NM"] + \
-                                           "_CUTOUT_" + \
-                                           extlist[index].header["ORIG_FLE"].split("_")[6].upper()
+                                               "_CUTOUT_" + skycell + "_" + detector + \
+                                               "_" + filter
 
-    # Finally, construct an MVM-style output filename
-    #output_filename = OUTPUT_PREFIX + 
+    # Finally, construct an MVM-style output filenames
+    # hst_cutout_skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>_detector[_filter].fits 
+    ra_whole = int(sky_coord.ra.value)
+    ra_frac  = str(sky_coord.ra.value % 1).split(".")[1][0:4]
+    dec_whole = abs(int(sky_coord.dec.value))
+    dec_frac = str(sky_coord.dec.value % 1).split(".")[1][0:4]
+    ns = "s" if sky_coord.dec.degree < 0.0 else "n"
+
+    cutout_path = None
+    if single_outfile:
+        output_filename = OUTPUT_PREFIX + "p" + skycell + "-ra" + str(ra_whole) + \
+                          "d" + ra_frac + "-dec" + ns + str(dec_whole) + "d" + \
+                          dec_frac + "_" + detector + "_" + filter + ".fits"
         
+        if verbose:
+            print("Returning cutout as single FITS file.")
 
-    #return out_HDUList
+        cutout_path = os.path.join(output_dir, output_filename)
+        if verbose:
+            print("Cutout fits file: {}".format(cutout_path))
+
+        #with warnings.catch_warnings():
+        #    warnings.simplefilter("ignore")
+        out_HDUList[0].writeto(cutout_path, overwrite=True)
+
+    return output_filename
