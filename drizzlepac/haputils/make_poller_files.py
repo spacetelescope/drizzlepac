@@ -60,7 +60,7 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
         imghdu = fits.open(fullfilepath)
         imghdr = imghdu[0].header
         linelist.append("{}".format(imghdr['proposid']))
-        linelist.append(imgname[1:4].upper())
+        linelist.append(imgname.split("_")[-2][1:4].upper())
         linelist.append(imghdr['linenum'].split(".")[0])
         linelist.append("{}".format(imghdr['exptime']))
         if imghdr['INSTRUME'].lower() == "acs":
@@ -70,7 +70,10 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
         linelist.append(filter.upper())
         linelist.append(imghdr['detector'].upper())
         if poller_file_type == 'mvm':  # Additional stuff to add to MVM poller files
-            linelist.append("skycell-{}".format(skycell_name))
+            if skycell_name.startswith("skycell-"):
+                linelist.append("{}".format(skycell_name))
+            if skycell_name.startswith("p"):
+                linelist.append("skycell-{}".format(skycell_name))
             linelist.append("NEW")
         linelist.append(fullfilepath)
         imghdu.close()
