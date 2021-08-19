@@ -3,14 +3,16 @@
 
 from astrocut import fits_cut
 from astropy import units as u
-from astropy.units.quantity import Quantity
 from astropy.coordinates import SkyCoord
-from drizzlepac.haputils import cell_utils as cu
-from astroquery.mast import Observations
+from astropy.io import fits
 from astropy.table import Table, vstack
+from astropy.units.quantity import Quantity
+from astroquery.mast import Observations
+from drizzlepac.haputils import cell_utils as cu
 from stsci.tools import logutil
-import numpy as np
+
 import math
+import numpy as np
 import os
 import shutil
 import sys
@@ -109,8 +111,7 @@ def mvm_id_filenames(sky_coord, cutout_size, verbose=False):
     good_rows = []
     updated_table = None
     for i, old_row in enumerate(query_table):
-        #if old_row["obs_id"].startswith("hst_skycell"):
-        if old_row["obs_id"].startswith("hst_"):
+        if old_row["obs_id"].startswith("hst_skycell"):
             if old_row["s_ra"] >= ra_min and old_row["s_ra"] <= ra_max and \
                old_row["s_dec"] >= dec_min and old_row["s_dec"] <= dec_max:
                 good_rows.append(old_row)
@@ -232,8 +233,8 @@ def mvm_retrieve_files(products, archive=False, clobber=False, verbose=False):
 
 def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, output_dir=".", verbose=False):
     """
-    This function makes the actual cut in the input images. As such it isa a high-level
-    interface for the `˜astrocut.cutout.fits_cut` functionality.
+    This function makes the actual cut in the input MVM drizzled filter-level images. As such it is
+    a high-level interface for the `˜astrocut.cutout.fits_cut` functionality.
 
     Parameters
     ----------
@@ -297,44 +298,86 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
         sky_coord = SkyCoord(sky_coord, unit="deg")
 
     # Call the cutout workhorse
+    # MULTIPLE FILES: For each file cutout, there is an HDUList comprised of a PHDU and one or more EHDUs. 
+    # The out_HDUList is then a list of HDULists.
+    # SINGLE FILES: There is one bare minimum PHDU followed by all of the EHDUs.
     out_HDUList = fits_cut(input_files, sky_coord, cutout_size, correct_wcs=CORRECT_WCS,
                            extension=EXTENSION, single_outfile=single_outfile, cutout_prefix=OUTPUT_PREFIX,
                            output_dir=".", memory_only=MEMORY_ONLY, verbose=True)
-     
-    # ORIG_FLE example is hst_skycell-p1253x05y09_acs_wfc_f658n_all_drc.fits
-    extlist = out_HDUList[0][1:]
-    for index in range(len(extlist)):
-        tokens = extlist[index].header["ORIG_FLE"].split("_")
-        skycell = tokens[1].split("-")[1][1:5]
-        detector = tokens[3]
-        filter = tokens[4]
-        extlist[index].header["EXTNAME"] = extlist[index].header["O_EXT_NM"] + \
-                                               "_CUTOUT_" + skycell + "_" + detector + \
-                                               "_" + filter
 
-    # Finally, construct an MVM-style output filenames
     # hst_cutout_skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>_detector[_filter].fits 
+    # Get the whole number and fractional components of the RA and Dec
     ra_whole = int(sky_coord.ra.value)
     ra_frac  = str(sky_coord.ra.value % 1).split(".")[1][0:4]
     dec_whole = abs(int(sky_coord.dec.value))
     dec_frac = str(sky_coord.dec.value % 1).split(".")[1][0:4]
     ns = "s" if sky_coord.dec.degree < 0.0 else "n"
 
-    cutout_path = None
-    if single_outfile:
-        output_filename = OUTPUT_PREFIX + "p" + skycell + "-ra" + str(ra_whole) + \
-                          "d" + ra_frac + "-dec" + ns + str(dec_whole) + "d" + \
-                          dec_frac + "_" + detector + "_" + filter + ".fits"
+    if not single_outfile and verbose:
+        print("Returning cutouts as multiple FITS files.")
+     
+    # ORIG_FLE example is hst_skycell-p1253x05y09_acs_wfc_f658n_all_drc.fits
+    filename_list = []
+    for HDU in out_HDUList:
+        extlist = HDU[1:]
         
+        # Update the EXTNAME for all of the EHDUs
+        for index in range(len(extlist)):
+            tokens = extlist[index].header["ORIG_FLE"].split("_")
+            skycell = tokens[1].split("-")[1][1:5]
+            detector = tokens[3]
+            filter = tokens[4]
+            old_extname = extlist[index].header["O_EXT_NM"].strip().upper()
+            extlist[index].header["EXTNAME"] = old_extname + "_CUTOUT_" + skycell + "_" + \
+                                               detector + "_" + filter
+
+            # If generating multiple output files, it is efficient to create them now
+            if not single_outfile:
+                # SCI extensions are followed by WHT extensions - when the WHT extension
+                # has been updated, time to write out the file
+                if old_extname == "WHT":
+
+                    # Construct an MVM-style output filename with detector and filter
+                    output_filename = OUTPUT_PREFIX + "p" + skycell + "-ra" + str(ra_whole) + \
+                                      "d" + ra_frac + "-dec" + ns + str(dec_whole) + "d" + \
+                                      dec_frac + "_" + detector + "_" + filter + ".fits"
+
+                    cutout_path = os.path.join(output_dir, output_filename)
+
+                    if verbose:
+                        print("Cutout FITS filename: {}".format(cutout_path))
+
+                    output_HDUs = fits.HDUList(HDU)
+                    output_HDUs.writeto(cutout_path, overwrite=True)
+
+                    filename_list.append(output_filename)
+
+    # The single output file option was chosen - do not include a detector or 
+    # filter in the output filename.
+    if single_outfile:
         if verbose:
             print("Returning cutout as single FITS file.")
 
+        # Construct an MVM-style output filename WITHOUT detector and filter
+        single_token = out_HDUList[0][1].header["ORIG_FLE"].split("_")
+        single_skycell = single_token[1].split("-")[1][1:5]
+        output_filename = OUTPUT_PREFIX + "p" + single_skycell + "-ra" + str(ra_whole) + \
+                          "d" + ra_frac + "-dec" + ns + str(dec_whole) + "d" + \
+                          dec_frac + ".fits"
+
         cutout_path = os.path.join(output_dir, output_filename)
+
         if verbose:
-            print("Cutout fits file: {}".format(cutout_path))
+            print("Cutout FITS filename: {}".format(cutout_path))
+    
+        # Get the primary header from the first input file, so we can retain
+        # a lot of information from at least the first observation
+        hdu = fits.open(input_files[0])
+        out_HDUList[0][0].header = hdu[0].header
+        hdu.close()
+        out_HDUList[0][0].header["HISTORY"] = input_files
 
-        #with warnings.catch_warnings():
-        #    warnings.simplefilter("ignore")
         out_HDUList[0].writeto(cutout_path, overwrite=True)
+        filename_list.append(output_filename)
 
-    return output_filename
+    return filename_list
