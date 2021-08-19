@@ -214,15 +214,17 @@ def compute_sregion(image, extname='SCI'):
             #  the array corners directly
             extwcs = wcsutil.HSTWCS(hdu, ext=sciext)
             footprint = extwcs.calc_footprint(center=True)
-
+            for corner in footprint:
+                sregion_str += '{} {} '.format(corner[0], corner[1])
         else:
             # Working with a drizzled image, so we need to
             # get all the corners from each of the input files
             footprint = find_footprint(hdu, extname=extname)
 
-        for chip in footprint:
-            for corner in chip:
-                sregion_str += '{} {} '.format(corner[0], corner[1])
+            for chip in footprint.corners:
+                for corner in chip:
+                    sregion_str += '{} {} '.format(corner[0], corner[1])
+
         hdu[sciext].header['s_region'] = sregion_str
 
     # close file if opened by this functions
@@ -268,7 +270,7 @@ def find_footprint(hdu, extname='SCI'):
     # Now, find the corners from this mask
     footprint.find_corners()
 
-    return footprint.corners
+    return footprint
 
 
 def interpret_sregion(image, extname='SCI'):
