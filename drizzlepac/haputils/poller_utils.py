@@ -7,6 +7,7 @@ parse_obset_tree, converts the tree into product catagories.
 """
 from collections import OrderedDict
 import os
+import pdb
 import shutil
 import sys
 
@@ -283,7 +284,7 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0, u
         obset_table = copy.deepcopy(user_table)
 
     # Add INSTRUMENT column
-    instr = [INSTRUMENT_DICT[fname[0]] for fname in obset_table['filename']]
+    instr = [INSTRUMENT_DICT[fname.split("_")[-2][0]] for fname in obset_table['filename']]
     # convert input to an Astropy Table for parsing
     obset_table.add_column(Column(instr, name='instrument'))
 
