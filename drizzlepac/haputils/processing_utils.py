@@ -220,9 +220,12 @@ def compute_sregion(image, extname='SCI'):
             # Working with a drizzled image, so we need to
             # get all the corners from each of the input files
             footprint = find_footprint(hdu, extname=extname)
-
-            for chip in footprint.corners:
-                for corner in chip:
+            sregion_str = ''
+            for region in footprint.corners:
+                # S_REGION string should contain a separate POLYGON
+                # for each region or chip in the SCI array
+                sregion_str += 'POLYGON ICRS '
+                for corner in region:
                     sregion_str += '{} {} '.format(corner[0], corner[1])
 
         hdu[sciext].header['s_region'] = sregion_str
