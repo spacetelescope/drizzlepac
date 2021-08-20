@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-"""Makes .out files used as input to runsinglehap.py, runmultihap.py based on the files found in the current
-working dir"""
+"""Makes .out files used as input to runsinglehap.py, runmultihap.py based on the files or rootnames listed
+user-specifed list file."""
 
 import argparse
 import os
@@ -45,7 +45,7 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
     output_list = []
     for rootname in rootname_list:
         rootname = rootname.strip()
-        fullfilepath = locate_fitspath_from_rootname(rootname)
+        fullfilepath = locate_fitsfile(rootname)
         if len(fullfilepath) > 0:
             print("Rootname {}: Found fits file {}".format(rootname, fullfilepath))
             imgname = fullfilepath.split("/")[-1]
@@ -96,33 +96,51 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
 
 # ============================================================================================================
 
-def locate_fitspath_from_rootname(rootname):
-    """returns full file name (fullpath + filename) for a specified rootname.
+def locate_fitsfile(search_string):
+    """returns full file name (fullpath + filename) for a specified rootname or filename. The search
+    algorithm looks for the file in the following order:
+
+    - Search for a _flc.fits file in the current working directory
+    - Search for a _flt.fits file in the current working directory
+    - Search for a _flc.fits file in subdirectory in the path specified in $DATA_PATH
+    - Search for a _flt.fits file in subdirectory in the path specified in $DATA_PATH
 
     Parameters
     ----------
-    rootname : str
-        rootname to process
+    search_string : str
+        rootname or filename to locate
 
     Returns
     -------
     fullfilepath : str
-        full path + image name of specified rootname.
+         full file path + image name of specified search_string.
     """
-    # Look for files in CWD first
-    if os.path.exists("{}_flc.fits".format(rootname)):
-        return "{}_flc.fits".format(rootname)
-    if os.path.exists("{}_flt.fits".format(rootname)):
-        return "{}_flt.fits".format(rootname)
-    # If not found in CWD, look elsewhere...
-    if not os.getenv("DATA_PATH"):
-        sys.exit("ERROR: Undefined online cache data root path. Please set environment variable 'DATA_PATH'")
-    filenamestub = "{}/{}/{}/{}".format(os.getenv("DATA_PATH"), rootname[:4], rootname, rootname)
-    if os.path.exists("{}_flc.fits".format(filenamestub)):
-        fullfilepath = "{}_flc.fits".format(filenamestub)
-    else:
-        fullfilepath = "{}_flt.fits".format(filenamestub)
-    return fullfilepath
+    if search_string.endswith("_flt.fits") or search_string.endswith("_flc.fits"):  # Process search_string as a full filename
+        # Look for files in CWD first
+        if os.path.exists(search_string):
+            return os.getcwd()+"/"+search_string
+        # If not found in CWD, look elsewhere...
+        if not os.getenv("DATA_PATH"):
+            sys.exit("ERROR: Undefined online cache data root path. Please set environment variable 'DATA_PATH'")
+        fullfilepath = "{}/{}/{}/{}".format(os.getenv("DATA_PATH"), search_string[:4], search_string, search_string)
+        if os.path.exists(search_string):
+            return fullfilepath
+            
+    else:  # Process search_string as a rootname
+        # Look for files in CWD first
+        if os.path.exists("{}_flc.fits".format(search_string)):
+            return "{}/{}_flc.fits".format(os.getcwd(), search_string)
+        if os.path.exists("{}_flt.fits".format(search_string)):
+            return "{}/{}_flt.fits".format(os.getcwd(), search_string)
+        # If not found in CWD, look elsewhere...
+        if not os.getenv("DATA_PATH"):
+            sys.exit("ERROR: Undefined online cache data root path. Please set environment variable 'DATA_PATH'")
+        filenamestub = "{}/{}/{}/{}".format(os.getenv("DATA_PATH"), search_string[:4], search_string, search_string)
+        if os.path.exists("{}_flc.fits".format(filenamestub)):
+            fullfilepath = "{}_flc.fits".format(filenamestub)
+        else:
+            fullfilepath = "{}_flt.fits".format(filenamestub)
+        return fullfilepath
 
 
 # ============================================================================================================
@@ -132,7 +150,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create a HAP SVM or MVM poller file')
 
     parser.add_argument('input_list',
-                        help='Name of a file containing a list of rootnames (9 characters, usually ending '
+                        help='Name of a file containing a list of calibrated fits files (ending with '
+                             '"_flt.fits" or "_flc.fits") or rootnames (9 characters, usually ending '
                              'with a "q" to process. The corresponding flc.fits or flt.fits files must '
                              'exist in the online cache')
     parser.add_argument('-o', '--output_poller_filename', required=False, default="poller_file.out",

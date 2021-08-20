@@ -101,7 +101,7 @@ def augment_results(results):
     # populate dateobs_list, path_list
     for idx in results.index:
         rootname = results.exposure[idx]
-        imgname = make_poller_files.locate_fitspath_from_rootname(rootname)
+        imgname = make_poller_files.locate_fitsfile(rootname)
         dateobs_list.append(fits.getval(imgname, "DATE-OBS"))
         path_list.append(imgname)
 
