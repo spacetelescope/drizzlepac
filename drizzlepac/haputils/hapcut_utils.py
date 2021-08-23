@@ -21,11 +21,11 @@ __taskname__ = 'hapcut_utils'
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout, 
-                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+log = logutil.create_logger("hapcut", level=logutil.logging.NOTSET, stream=sys.stdout, 
+                            filename="hapcut_utility.log", format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 
-def mvm_id_filenames(sky_coord, cutout_size, verbose=False):
+def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
     """
     This function retrieves a table of MVM drizzled image filenames with additional
     information from the archive.  The user can then further cull the table to use as
@@ -44,14 +44,18 @@ def mvm_id_filenames(sky_coord, cutout_size, verbose=False):
         in ``cutout_size`` are assumed to be in units of arcseconds. `~astropy.units.Quantity` objects
         must be in angular units.
 
-    verbose : bool
-        Default False.  If True, additional intermediate information is printed.
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
 
     Returns
     -------
     filtered_dp_table : `~astropy.table.Table` object
 
     """
+
+    # set logging level to user-specified level
+    log.setLevel(log_level)
 
     # If the cutout_size is not an astropy.units.Quantity object, the scalar(s)
     # are assumed to be arcseconds.  The variable must be cast as a Quantity.
@@ -74,8 +78,7 @@ def mvm_id_filenames(sky_coord, cutout_size, verbose=False):
 
     # Careful - the radius must be a str or Quantity
     radius *= u.arcsec
-    if verbose:
-        print("Performing query for ACS images. Radius: {}.".format(radius))
+    log.info("Performing query for ACS images. Radius: {}.".format(radius))
 
     # Note: calib_level does not seem to work
     acs_query_table = Observations.query_criteria(coordinates=sky_coord,
@@ -86,8 +89,7 @@ def mvm_id_filenames(sky_coord, cutout_size, verbose=False):
                                                   calib_level=3,
                                                   obs_collection="HST") 
 
-    if verbose:
-        print("Performing query for WFC3 images.")
+    log.info("Performing query for WFC3 images.")
     wfc3_query_table = Observations.query_criteria(coordinates=sky_coord,
                                                    radius=radius,
                                                    dataproduct_type="IMAGE",
@@ -98,64 +100,90 @@ def mvm_id_filenames(sky_coord, cutout_size, verbose=False):
 
     query_table = vstack([acs_query_table, wfc3_query_table])
 
+    # Catch the case where no files are found which satisfied the Query
+    if not query_table:
+        log.warning("Query for objects within {} of {} returned NO RESULTS!".format(radius, (str_ra, str_dec)))
+        return query_table
+
     # Compute the limits of the cutout region
     deg_cutout_size = cutout_size.to(u.deg)
-    ra_min = sky_coord.ra.value - deg_cutout_size.value[0]
-    ra_max = sky_coord.ra.value + deg_cutout_size.value[0]
-    dec_min = sky_coord.dec.value - deg_cutout_size.value[1]
-    dec_max = sky_coord.dec.value + deg_cutout_size.value[1]
+    ra_min = sky_coord.ra.degree - deg_cutout_size.value[0]
+    ra_max = sky_coord.ra.degree + deg_cutout_size.value[0]
+    dec_min = sky_coord.dec.degree - deg_cutout_size.value[1]
+    dec_max = sky_coord.dec.degree + deg_cutout_size.value[1]
+    str_ra = "{:.6f}".format(sky_coord.ra.degree)
+    str_dec = "{:.6f}".format(sky_coord.dec.degree)
 
     # Filter the output as necessary to include only MVM filenames (MVM prefix: hst_skycell).
     # Also, filter out images which are not actually in the requested cutout region as the
     # archive search had to be done using a radius.
     good_rows = []
-    updated_table = None
-    for i, old_row in enumerate(query_table):
+    updated_query_table = None
+    for old_row in query_table:
         if old_row["obs_id"].startswith("hst_skycell"):
             if old_row["s_ra"] >= ra_min and old_row["s_ra"] <= ra_max and \
                old_row["s_dec"] >= dec_min and old_row["s_dec"] <= dec_max:
                 good_rows.append(old_row)
-    updated_query_table = Table(rows=good_rows, names=query_table.colnames)
-
-    # Catch the case where no files are found which satisfy the criteria
-    if not updated_query_table:
-        print("WARNING: Query for objects within {} of {} returned NO RESULTS!".format(radius, sky_coord))
+    
+    # Catch the case where no files are found which satisfy the clean up criteria
+    if len(good_rows) == 0:
+        log.warning("Query for objects within cutout {} of {} returned NO RESULTS!".format(cutout_size, (str_ra, str_dec)))
         return updated_query_table
+    
+    # Make the cleaned up table
+    updated_query_table = Table(rows=good_rows, names=query_table.colnames)
+    del query_table
 
     # Get the data product list associated with the elements of the table
-    if verbose:
-        print("Get the product list for all entries in the query table.")
+    log.info("Get the product list for all entries in the query table.")
     dp_table = Observations.get_product_list(updated_query_table)
+    del updated_query_table
 
-    # Filter on MVM drizzled product
+    # Filter on MVM drizzled products only
     suffix = ["DRZ", "DRC"]
-    if verbose:
-        print("Filter the product list table for only {} filenames.".format(suffix))
+    log.info("Filter the product list table for only {} filenames.".format(suffix))
     filtered_dp_table = Observations.filter_products(dp_table,
                                                      productSubGroupDescription=suffix,
                                                      extension="fits")
 
     if not filtered_dp_table:
-        print("WARNING: No drizzle product files (DRZ/DRC) found.")
+        log.warning("No MVM drizzle product datasets (DRZ/DRC) found within {} of {}.".format(radius, (str_ra, str_dec)))
         return filtered_dp_table
+    del dp_table
 
-    # Write the filtered data product table out to a file.  This allows for further
-    # manipulation of the information before a list of filenames is distilled from
-    # the table.
+    # Need to filter out any non-hst-skycell entries AGAIN which may have
+    # crept back into the list via the get_product_list() function.
+    good_rows = []
+    output_table = None
+    for old_row in filtered_dp_table:
+        if old_row["obs_id"].startswith("hst_skycell"):
+            good_rows.append(old_row)
+    
+    # Catch the case where no files are found which satisfy the criteria
+    if len(good_rows) == 0:
+        log.warning("After filtering datasets there are NO RESULTS within {} of {}!".format(radius, (str_ra, str_dec)))
+        return output_table
+    
+    # Make the final output table
+    output_table = Table(rows=good_rows, names=filtered_dp_table.colnames)
+    del filtered_dp_table
+
+    # Write the output table to a file.  This allows for further manipulation of
+    # the information before a list of filenames is distilled from the table.
     # Output filename in the form: mvm_query_ra.dddd_sdec.dddd_radius_cutout.ecsv.
     #                              mvm_query_84.9208_s69.1483_71_cutout.ecsv
     ns = "s" if sky_coord.dec.degree < 0.0 else "n"
-    query_filename = "mvm_query_" + str(sky_coord.ra.degree) + "_" + ns + str(abs(sky_coord.dec.degree)) + \
+    query_filename = "mvm_query_" + "{:.6f}".format(sky_coord.ra.degree) + "_" + ns + \
+                     "{:.6f}".format(abs(sky_coord.dec.degree)) + \
                      "_{:.0f}_cutout".format(radius.value) + ".ecsv" 
 
-    if verbose:
-        print("Writing out the filter product list table to {}.".format(query_filename))
-    filtered_dp_table.write(query_filename, format="ascii.ecsv")
+    log.info("Writing out the filter product list table to {}.".format(query_filename))
+    output_table.write(query_filename, format="ascii.ecsv")
 
-    return filtered_dp_table
+    return output_table
 
 
-def mvm_retrieve_files(products, archive=False, clobber=False, verbose=False):
+def mvm_retrieve_files(products, archive=False, clobber=False, log_level=logutil.logging.INFO):
     """
     This function retrieves specified files from the archive - unless the file is found
     to be locally resident on disk.  Upon completion, The function returns a list of 
@@ -173,8 +201,9 @@ def mvm_retrieve_files(products, archive=False, clobber=False, verbose=False):
     clobber : Boolean, optional
         Download and Overwrite existing files? Default is "False".
 
-    verbose : bool
-        Default False.  If True, additional intermediate information is printed.
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
 
     Returns
     -------
@@ -184,6 +213,11 @@ def mvm_retrieve_files(products, archive=False, clobber=False, verbose=False):
     Note: Code here cribbed from retrieve_obsevation in astroquery_utils module.
     """
 
+    # set logging level to user-specified level
+    log.setLevel(log_level)
+
+    # Determine if the files of interest are already on the local disk. If so,
+    # remove the filename from the download list.
     all_images = []
     all_images = products['productFilename'].tolist()
     if not clobber:
@@ -191,13 +225,19 @@ def mvm_retrieve_files(products, archive=False, clobber=False, verbose=False):
         for row_idx, row in enumerate(products):
             fname = row['productFilename']
             if os.path.isfile(fname):
-                print(fname + " already exists. File download skipped.")
+                log.info(fname + " already exists. File download skipped.")
                 rows_to_remove.append(row_idx)
         products.remove_rows(rows_to_remove)
 
-    # Actual download of products
-    manifest = Observations.download_products(products, mrp_only=False)
+    # Only download files as necessary
+    if products:
+        # Actual download of products
+        log.info("Downloading files now...")
+        manifest = Observations.download_products(products, mrp_only=False)
+    else:
+        log.info("There are no files to download as they are all resident on disk.")
 
+    # Manifest has the following columns: "Local Path", "Status", "Message", and "URL"
     if not clobber:
         for rownum in rows_to_remove[::-1]:
             if manifest:
@@ -231,7 +271,7 @@ def mvm_retrieve_files(products, archive=False, clobber=False, verbose=False):
     return(local_files)
 
 
-def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, output_dir=".", verbose=False):
+def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, output_dir=".", log_level=logutil.logging.INFO, verbose=False):
     """
     This function makes the actual cut in the input MVM drizzled filter-level images. As such it is
     a high-level interface for the `˜astrocut.cutout.fits_cut` functionality.
@@ -266,8 +306,13 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
     output_dir : str
         Default value '.'. The directory to save the cutout file(s) to.
 
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
+
     verbose : bool
-        Default False. If True, additional intermediate information is printed.
+        Default False. If True, additional intermediate information is printed for the underlying 
+        `˜spacetelescope.astrocut` utilities.
 
     Returns
     -------
@@ -278,6 +323,9 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
         file name(s).
 
     """
+
+    # set logging level to user-specified level
+    log.setLevel(log_level)
 
     # Set the values for fits_cut that we are not allowing the user to modify
     CORRECT_WCS = False
@@ -308,13 +356,13 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
     # hst_cutout_skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>_detector[_filter].fits 
     # Get the whole number and fractional components of the RA and Dec
     ra_whole = int(sky_coord.ra.value)
-    ra_frac  = str(sky_coord.ra.value % 1).split(".")[1][0:4]
+    ra_frac  = str(sky_coord.ra.value % 1).split(".")[1][0:6]
     dec_whole = abs(int(sky_coord.dec.value))
-    dec_frac = str(sky_coord.dec.value % 1).split(".")[1][0:4]
+    dec_frac = str(sky_coord.dec.value % 1).split(".")[1][0:6]
     ns = "s" if sky_coord.dec.degree < 0.0 else "n"
 
-    if not single_outfile and verbose:
-        print("Returning cutouts as multiple FITS files.")
+    if not single_outfile:
+        log.info("Returning cutouts as multiple FITS files.")
      
     # ORIG_FLE example is hst_skycell-p1253x05y09_acs_wfc_f658n_all_drc.fits
     filename_list = []
@@ -344,8 +392,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
 
                     cutout_path = os.path.join(output_dir, output_filename)
 
-                    if verbose:
-                        print("Cutout FITS filename: {}".format(cutout_path))
+                    log.info("Cutout FITS filename: {}".format(cutout_path))
 
                     output_HDUs = fits.HDUList(HDU)
                     output_HDUs.writeto(cutout_path, overwrite=True)
@@ -355,8 +402,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
     # The single output file option was chosen - do not include a detector or 
     # filter in the output filename.
     if single_outfile:
-        if verbose:
-            print("Returning cutout as single FITS file.")
+        log.info("Returning cutout as single FITS file.")
 
         # Construct an MVM-style output filename WITHOUT detector and filter
         single_token = out_HDUList[0][1].header["ORIG_FLE"].split("_")
@@ -367,8 +413,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
 
         cutout_path = os.path.join(output_dir, output_filename)
 
-        if verbose:
-            print("Cutout FITS filename: {}".format(cutout_path))
+        log.info("Cutout FITS filename: {}".format(cutout_path))
     
         # Get the primary header from the first input file, so we can retain
         # a lot of information from at least the first observation
