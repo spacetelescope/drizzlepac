@@ -162,7 +162,7 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
 def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=False, debug=False,
                   update_hdr_wcs=False, result=None,
                   runfile=None, print_fit_parameters=True, print_git_info=False, output=False,
-                  headerlet_filenames=None, fit_label=None,
+                  headerlet_filenames=None, fit_label=None, product_type=None,
                   **alignment_pars):
     """Actual Main calling function.
 
@@ -278,7 +278,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
     log.info("{} STEP 1: Get data {}".format("-" * 20, "-" * 66))
     zero_dt = starting_dt = datetime.datetime.now()
     log.info(str(starting_dt))
-    imglist = check_and_get_data(input_list, archive=archive, clobber=clobber)
+    imglist = check_and_get_data(input_list, archive=archive, clobber=clobber, product_type=product_type)
     log.info("SUCCESS")
 
     log.info(make_label('Processing time of [STEP 1]', starting_dt))
@@ -366,6 +366,8 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
             # Update filtered table with number of found sources
             alignment_table.filtered_table[index]['foundSources'] = total_num_sources
 
+            # TODO: Revise this logic, if possible, to allow for a subset of the input images to
+            #       be ignored if they have no identifiable sources.
             if total_num_sources < apars['determine_fit_quality']['MIN_OBSERVABLE_THRESHOLD']:
                 log.warning("Not enough sources ({}) found in image {}".format(total_num_sources, imgname))
                 alignment_table.filtered_table[:]['status'] = 1

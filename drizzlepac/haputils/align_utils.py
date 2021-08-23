@@ -5,6 +5,7 @@ import sys
 import traceback
 import warnings
 
+from distutils.version import LooseVersion
 from collections import OrderedDict
 
 import numpy as np
@@ -25,6 +26,7 @@ import stwcs
 from stwcs.wcsutil import HSTWCS
 from stwcs.wcsutil import headerlet
 
+import stsci.tools
 from stsci.tools import logutil
 from stsci.tools import fileutil
 
@@ -638,6 +640,12 @@ class HAPImage:
 
         # combine the two temporary DQ masks into a single composite DQ mask.
         dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
+
+        # astropy's code returned the opposite bitmask from what was originally
+        # defined by stsci.tools own bitmask code.
+        if LooseVersion(stsci.tools.__version__) >= '4.0.0':
+            dqmask = ~dqmask
+
         return dqmask
 
 
