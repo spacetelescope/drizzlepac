@@ -1,6 +1,7 @@
 """ This module is the high-level wrapper for running a test on a list of input
     datasets in order to collect statistics on alignment of each dataset to an
     astrometric catalog."""
+import sys
 import datetime
 import os
 import shutil
@@ -9,6 +10,11 @@ from astropy.table import Table
 import pytest
 
 from drizzlepac import align as alignimages
+
+from stsci.tools import logutil
+
+log = logutil.create_logger('test_randomlist', level=logutil.logging.INFO, stream=sys.stdout)
+
 
 def pytest_generate_tests(metafunc):
     """Get the command line option."""
