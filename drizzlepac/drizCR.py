@@ -20,6 +20,7 @@ from . import quickDeriv
 from . import util
 from . import processInput
 from . version import __version__, __version_date__
+
 if util.can_parallel:
     import multiprocessing
 
@@ -76,11 +77,12 @@ def rundrizCR(imgObjList, configObj, procSteps=None):
     subprocs = []
     if pool_size > 1:
         log.info('Executing {:d} parallel workers'.format(pool_size))
+        mp_ctx = multiprocessing.get_context('fork')
         for image in imgObjList:
-            manager = multiprocessing.Manager()
+            manager = mp_ctx.Manager()
             mgr = manager.dict({})
 
-            p = multiprocessing.Process(
+            p = mp_ctx.Process(
                 target=_driz_cr,
                 name='drizCR._driz_cr()',  # for err msgs
                 args=(image, mgr, paramDict.dict())

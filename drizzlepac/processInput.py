@@ -260,8 +260,7 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
         numchips += img._nmembers # account for group parameter set by user
 
     # if we have the cpus and s/w, ok, but still allow user to set pool size
-    pool_size = util.get_pool_size(num_cores, None)
-    pool_size = pool_size if (numchips >= pool_size) else numchips
+    pool_size = util.get_pool_size(num_cores, numchips)
 
     inimg = 0
     chip_mem = 0
@@ -600,10 +599,14 @@ def _process_input_wcs(infiles, wcskey, updatewcs):
     if pool_size > 1:
         log.info('Executing %d parallel workers' % pool_size)
         subprocs = []
+        mp_ctx = multiprocessing.get_context('fork')
+
         for fname in outfiles:
-            p = multiprocessing.Process(target=_process_input_wcs_single,
+            p = mp_ctx.Process(
+                target=_process_input_wcs_single,
                 name='processInput._process_input_wcs()', # for err msgs
-                args=(fname, wcskey, updatewcs) )
+                args=(fname, wcskey, updatewcs)
+            )
             subprocs.append(p)
         mputil.launch_and_wait(subprocs, pool_size) # blocks till all done
     else:
