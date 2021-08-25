@@ -1,4 +1,4 @@
-
+from astropy import units as u
 """The module is a high-level interface to astrocut for use with HAP SVM and MVM files."""
 
 from astrocut import fits_cut
@@ -11,6 +11,8 @@ from astroquery.mast import Observations
 from drizzlepac.haputils import cell_utils as cu
 from stsci.tools import logutil
 
+import astrocut
+import glob
 import math
 import numpy as np
 import os
@@ -45,7 +47,7 @@ def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
         must be in angular units.
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the
+        The desired level of verbosity in the log statements displayed on the screen and written to the
         .log file. Default value is 20, or 'info'.
 
     Returns
@@ -202,7 +204,7 @@ def mvm_retrieve_files(products, archive=False, clobber=False, log_level=logutil
         Download and Overwrite existing files? Default is "False".
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the
+        The desired level of verbosity in the log statements displayed on the screen and written to the
         .log file. Default value is 20, or 'info'.
 
     Returns
@@ -274,7 +276,7 @@ def mvm_retrieve_files(products, archive=False, clobber=False, log_level=logutil
 def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, output_dir=".", log_level=logutil.logging.INFO, verbose=False):
     """
     This function makes the actual cut in the input MVM drizzled filter-level images. As such it is
-    a high-level interface for the `˜astrocut.cutout.fits_cut` functionality.
+    a high-level interface for the `˜astrocut.cutouts.fits_cut` functionality.
 
     Parameters
     ----------
@@ -307,7 +309,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
         Default value '.'. The directory to save the cutout file(s) to.
 
     log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the
+        The desired level of verbosity in the log statements displayed on the screen and written to the
         .log file. Default value is 20, or 'info'.
 
     verbose : bool
@@ -319,8 +321,6 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
     response : str or list
         If single_outfile is True returns the single output filepath. Otherwise returns a list of all 
         the output filepaths.
-        If memory_only is True a list of `~astropy.io.fit.HDUList` objects is returned instead of
-        file name(s).
 
     """
 
@@ -380,6 +380,9 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
                                                detector + "_" + filter
 
             # If generating multiple output files, it is efficient to create them now
+            # NOTE: The multiple output cutout files are input to the CutoutsCombiner, so
+            # there is some additional keyword manipulation which is not done for the 
+            # single output file.
             if not single_outfile:
                 # SCI extensions are followed by WHT extensions - when the WHT extension
                 # has been updated, time to write out the file
@@ -394,10 +397,38 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
 
                     log.info("Cutout FITS filename: {}".format(cutout_path))
 
+                    # Retain some keywords written in the PHDU of the cutout file
+                    # by the astrocut software
+                    ra_obj = HDU[0].header["RA_OBJ"]
+                    dec_obj = HDU[0].header["DEC_OBJ"]
+
+                    # Replace the minimal primary header written by the astrocut
+                    # software with the primary header from the input file, so we can
+                    # retain a lot of information from the observation
+                    phdu = fits.open(input_files[0])
+                    HDU[0].header = phdu[0].header
+                    phdu.close()
+
+                    # Put the new RA/DEC_OBJ keywords back
+                    HDU[0].header["RA_OBJ"] = (ra_obj, "[deg] right ascension")
+                    HDU[0].header["DEC_OBJ"] = (dec_obj, "[deg] declination")
+
+                    # Update PHDU FILENAME keyword with the new filename
+                    HDU[0].header['FILENAME'] = output_filename
+
+                    # Populate a PHDU HISTORY keyword with the input filename
+                    HDU[0].header["HISTORY"] = input_files[0]
+
                     output_HDUs = fits.HDUList(HDU)
                     output_HDUs.writeto(cutout_path, overwrite=True)
 
                     filename_list.append(output_filename)
+
+    # Clean up any files left by `˜astrocut.cutouts.fits_cut`
+    kruft_filenames = glob.glob(output_dir + "/hst_skycell*_astrocut.fits")
+    if kruft_filenames:
+        for kf in kruft_filenames:
+           os.remove(kf)
 
     # The single output file option was chosen - do not include a detector or 
     # filter in the output filename.
@@ -420,9 +451,105 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
         hdu = fits.open(input_files[0])
         out_HDUList[0][0].header = hdu[0].header
         hdu.close()
+
+        # Update PHDU FILENAME keyword with the new filename
+        out_HDUList[0][0].header["FILENAME"] = output_filename
+
+        # Populate a PHDU HISTORY keyword with the names of all the input filenames
         out_HDUList[0][0].header["HISTORY"] = input_files
 
         out_HDUList[0].writeto(cutout_path, overwrite=True)
         filename_list.append(output_filename)
 
     return filename_list
+
+
+def combiner_example_function(template_hdu_arr, no_data_val=np.nan):
+    """
+    Just a test...
+    Given an array of `~astropy.io.fits.ImageHdu` objects, 
+    initialize a function to combine an array of the same size/shape 
+    images where each pixel the mean of all images with available
+    data at that pixel.
+
+    Parameters
+    ----------
+    template_hdu_arr : list
+        A list of `~astropy.io.fits.ImageHdu` objects that will be 
+        used to create the image combine function.
+    no_data_val : scaler
+        Optional. The image value that indicates "no data" at a particular pixel.
+        The deavault is `~numpy.nan`.
+
+    Returns
+    -------
+    response : func
+        The combiner function that can be applying to other arrays of images.
+    """
+
+    img_arrs = np.array([hdu.data for hdu in template_hdu_arr])
+
+    if np.isnan(no_data_val):
+        templates = (~np.isnan(img_arrs)).astype(float)
+    else:
+        templates = (img_arrs != no_data_val).astype(float)
+
+    #multiplier_arr = np.sum(templates, axis=0)
+    #multiplier_arr = np.divide(1, multiplier_arr, where=(multiplier_arr != 0))
+    for t_arr in templates:
+        t_arr *= 2.3
+
+
+def mvm_combine(cutout_files, img_combiner=None, output_dir=".", log_level=logutil.logging.INFO):
+#def mvm_combine(cutout_files, img_combiner=None, builder_args=None, output_dir=".", log_level=logutil.logging.INFO):
+    """
+    This function combines multiple MVM skycell cutout images to create a single view of the
+    requested data.  All of the functions in this module are designed to work in conjunction
+    with one another, so the cutout images should be on the user's local disk.  This task is
+    a high-level wrapper for the `˜astrocut.cutout_processing.combine` functionality.
+
+    Parameters
+    ----------
+    cutout_files : list
+        List of fits image cutout filenames where the cutouts are presumed to have been created
+        with `drizzlepac.haputils.hapcut_utils.make_the_cut`. 
+
+    img_combiner : func
+        The function to be used to combine the images
+
+    output_dir : str
+        Default value '.'. The directory to save the cutout file(s) to.
+
+    log_level : int, optional
+        The desired level of verbosity in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
+
+    Note: The combiner only works with cutouts which have been generated as multiple output files,
+    rather than one large file with many cutout extensions.
+
+    """
+
+    # Make sure the cutout_files are really a list of MULTIPLE filenames
+    if type(cutout_files) == str or type(cutout_files) == list and len(cutout_files) < 2:
+        log.error("The 'mvm_combine' function requires a list of MULTIPLE cutout filenames where" \
+                  " the files were generated by 'make_the_cut' with the parameter single_output=False.")
+    
+    # Report the cutout files to be used for the combination process
+    log.info("Input cutout files:")
+    for cf in cutout_files:
+        log.info("{}".format(cf))
+
+    # Cutout filenames: hst_cutout_skycell-p0081-ra84d920799-decs69d851699[_uvis_f275w].fits
+    # Construct the combined filename based on the first file in the list as only RA and Dec are used
+    output_prefix = "hst_combined_skycells-"
+    filename = fits.getheader(cutout_files[0], ext=0)['FILENAME']
+    tokens = filename.split("_")[2].split("-")
+    skycell = tokens[1][1:5]
+    ra = tokens[2]
+    dec = tokens[3]
+    output_filename = os.path.join(output_dir, output_prefix + ra + "-" + dec + ".fits")
+
+    # Combine the SCI and then the WHT extensions in the specified files 
+    log.info("Combining the SCI and then the WHT extensions of the input cutout files.")
+    log.info("The combined output filename is {}.".format(output_filename))
+    combined_cutout = astrocut.CutoutsCombiner(cutout_files, img_combiner=img_combiner).combine(output_file=output_filename)
