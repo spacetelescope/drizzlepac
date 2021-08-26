@@ -4,6 +4,7 @@ aperture photometry and segmentation-map based photometry."""
 import copy
 import pickle  # FIX Remove
 import sys
+from distutils.version import LooseVersion
 
 from astropy.io import fits as fits
 from astropy.stats import sigma_clipped_stats
@@ -13,12 +14,20 @@ from astropy.coordinates import SkyCoord
 import numpy as np
 from scipy import ndimage, stats
 
+import photutils
+import photutils  # needed to check version
+if LooseVersion(photutils.__version__) < '1.1.0':
+    OLD_PHOTUTILS = True
+    from photutils.segmentation import (detect_sources, source_properties,
+                                        deblend_sources)
+else:
+    OLD_PHOTUTILS = False
+    from photutils.segmentation import (detect_sources, SourceCatalog,
+                                        deblend_sources)
 from photutils.aperture import CircularAperture, CircularAnnulus
 from photutils.background import (Background2D, SExtractorBackground,
                                   StdBackgroundRMS)
 from photutils.detection import DAOStarFinder, IRAFStarFinder
-from photutils.segmentation import (detect_sources, SourceCatalog,
-                                    deblend_sources)
 from photutils.utils import calc_total_error
 
 from stsci.tools import logutil
@@ -35,6 +44,17 @@ except Exception:
     plt = None
 
 CATALOG_TYPES = ['aperture', 'segment']
+
+if OLD_PHOTUTILS:
+    id_colname = 'id'
+    flux_colname = 'source_sum'
+    ferr_colname = 'source_sum_err'
+    bac_colname = 'background_at_centroid'
+else:
+    id_colname = 'label'
+    flux_colname = 'segment_flux'
+    ferr_colname = 'segment_fluxerr'
+    bac_colname = 'background_centroid'
 
 __taskname__ = 'catalog_utils'
 
@@ -1338,10 +1358,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Columns to include from the computation of source properties to save
         # computation time from computing values which are not used
-        self.include_filter_cols = ['area', 'background_centroid', 'bbox_xmax', 'bbox_xmin', 'bbox_ymax', 'bbox_ymin',
+        self.include_filter_cols = ['area', bac_colname, 'bbox_xmax', 'bbox_xmin', 'bbox_ymax', 'bbox_ymin',
                                     'covar_sigx2', 'covar_sigxy', 'covar_sigy2', 'cxx', 'cxy', 'cyy',
-                                    'ellipticity', 'elongation', 'label', 'orientation', 'sky_centroid_icrs',
-                                    'segment_flux', 'segment_fluxerr', 'xcentroid', 'ycentroid']
+                                    'ellipticity', 'elongation', id_colname, 'orientation', 'sky_centroid_icrs',
+                                    flux_colname, ferr_colname, 'xcentroid', 'ycentroid']
 
         # Initialize attributes to be computed later
         self.segm_img = None  # Segmentation image
@@ -1617,8 +1637,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("Identifying sources in total detection image.")
             self.segm_img = copy.deepcopy(segm_img)
             del segm_img
-            self.source_cat = SourceCatalog(imgarr, self.segm_img, background=self.image.bkg_background_ra,
-                                                kernel=self.kernel, wcs=self.image.imgwcs)
+            if OLD_PHOTUTILS:
+                self.source_cat = source_properties(imgarr, self.segm_img, background=self.image.bkg_background_ra,
+                                                    filter_kernel=self.kernel, wcs=self.image.imgwcs)
+            else:
+                self.source_cat = SourceCatalog(imgarr, self.segm_img, background=self.image.bkg_background_ra,
+                                                    kernel=self.kernel, wcs=self.image.imgwcs)
 
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
             # form to filter out bad rows and correspondingly bad segments before the filter images are processed.
@@ -1920,8 +1944,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
         total_error = calc_total_error(imgarr_bkgsub, self.image.bkg_rms_ra, 1.0)
 
         # Compute source properties...
-        self.source_cat = SourceCatalog(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
-                                            error=total_error, kernel=self.kernel, wcs=self.image.imgwcs)
+        if OLD_PHOTUTILS:
+            self.source_cat = source_properties(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
+                                                error=total_error, filter_kernel=self.kernel, wcs=self.image.imgwcs)
+        else:
+            self.source_cat = SourceCatalog(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
+                                                error=total_error, kernel=self.kernel, wcs=self.image.imgwcs)
 
         # Convert source_cat which is a SourceCatalog to an Astropy Table
         filter_measurements_table = Table(self.source_cat.to_table(columns=self.include_filter_cols))
@@ -1978,7 +2006,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         filter_measurements_table.add_columns([dd, rr])
 
         # Compute the MagIso
-        filter_measurements_table["MagIso"] = photometry_tools.convert_flux_to_abmag(filter_measurements_table["segment_flux"],
+        filter_measurements_table["MagIso"] = photometry_tools.convert_flux_to_abmag(filter_measurements_table[flux_colname],
                                                                                      self.image.keyword_dict['photflam'],
                                                                                      self.image.keyword_dict['photplam'])
 
@@ -2130,7 +2158,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # table.add_column(iso_col)
 
         # Add zero-value "Flags" column in preparation for source flagging
-        flag_col = Column(name="Flags", data=np.zeros_like(table["label"]))
+
+        flag_col = Column(name="Flags", data=np.zeros_like(table[id_colname]))
         table.add_column(flag_col)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2155,8 +2184,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         """
 
         # Rename columns to names used when HLA Classic catalog distributed by MAST
-        final_col_names = {"label": "ID", "xcentroid": "X-Centroid", "ycentroid": "Y-Centroid",
-                           "background_centroid": "Bck", "segment_flux": "FluxIso", "segment_fluxerr": "FluxIsoErr",
+        final_col_names = {id_colname: "ID", "xcentroid": "X-Centroid", "ycentroid": "Y-Centroid",
+                           bac_colname: "Bck", flux_colname: "FluxIso", ferr_colname: "FluxIsoErr",
                            "bbox_xmin": "Xmin", "bbox_ymin": "Ymin", "bbox_xmax": "Xmax", "bbox_ymax": "Ymax",
                            "cxx": "CXX", "cyy": "CYY", "cxy": "CXY",
                            "covar_sigx2": "X2", "covar_sigy2": "Y2", "covar_sigxy": "XY",

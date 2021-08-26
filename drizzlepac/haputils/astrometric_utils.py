@@ -19,6 +19,7 @@ import requests
 import inspect
 import sys
 import time
+from distutils.version import LooseVersion
 
 import numpy as np
 import scipy.stats as st
@@ -44,12 +45,21 @@ from astropy.time import Time
 from astropy.utils.decorators import deprecated
 
 import photutils  # needed to check version
+if LooseVersion(photutils.__version__) < '1.1.0':
+    OLD_PHOTUTILS = True
+    from photutils.segmentation import (detect_sources,
+                                        deblend_sources, make_source_mask)
+    from photutils.segmentation import source_properties as SourceCatalog
+else:
+    OLD_PHOTUTILS = False
+    from photutils.segmentation import (detect_sources, SourceCatalog,
+                                        deblend_sources, make_source_mask,
+                                        SegmentationImage)
+
+from photutils.detection import DAOStarFinder, find_peaks
+
 from photutils.background import (Background2D, MMMBackground,
                                   SExtractorBackground, StdBackgroundRMS)
-from photutils.detection import DAOStarFinder, find_peaks
-from photutils.segmentation import (detect_sources, SourceCatalog,
-                                    deblend_sources, make_source_mask,
-                                    SegmentationImage)
 from photutils.psf import (IntegratedGaussianPRF, DAOGroup,
                            IterativelySubtractedPSFPhotometry)
 
@@ -1001,6 +1011,13 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
 
         segm.remove_labels(bad_srcs)
 
+    if OLD_PHOTUTILS:
+        flux_colname = 'source_sum'
+        ferr_colname = 'source_sum_err'
+    else:
+        flux_colname = 'segment_flux'
+        ferr_colname = 'segment_fluxerr'
+
     # convert segm to mask for daofind
     if centering_mode == 'starfind':
         src_table = None
@@ -1064,17 +1081,21 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                 if (detection_img > detection_img.max() * 0.9).sum() > 3:
 
                     # Revert to segmentation photometry for sat. source posns
-                    segimg = SegmentationImage(segment.data)
-                    segment_properties = SourceCatalog(detection_img, segimg)
+                    if OLD_PHOTUTILS:
+                        segment_properties = source_properties(detection_img, segment.data)
+                    else:
+                        segimg = SegmentationImage(segment.data)
+                        segment_properties = SourceCatalog(detection_img, segimg)
+
                     sat_table = segment_properties.to_table()
-                    seg_table['flux'][max_row] = sat_table['source_sum'][0]
+                    seg_table['flux'][max_row] = sat_table[flux_colname][0]
                     seg_table['peak'][max_row] = sat_table['max_value'][0]
                     seg_table['xcentroid'][max_row] = sat_table['xcentroid'][0].value
                     seg_table['ycentroid'][max_row] = sat_table['ycentroid'][0].value
                     seg_table['npix'][max_row] = sat_table['area'][0].value
                     sky = sat_table['background_mean'][0]
                     seg_table['sky'][max_row] = sky.value if sky is not None and not np.isnan(sky) else 0.0
-                    seg_table['mag'][max_row] = -2.5 * np.log10(sat_table['segment_flux'][0])
+                    seg_table['mag'][max_row] = -2.5 * np.log10(sat_table[flux_colname][0])
 
                 # Add row for detected source to master catalog
                 # apply offset to slice to convert positions into full-frame coordinates
@@ -1090,8 +1111,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         cat = SourceCatalog(img, segm)
         src_table = cat.to_table()
         # Make column names consistent with IRAFStarFinder column names
-        src_table.rename_column('segment_flux', 'flux')
-        src_table.rename_column('segment_fluxerr', 'flux_err')
+        src_table.rename_column(flux_colname, 'flux')
+        src_table.rename_column(ferr_colname, 'flux_err')
         src_table.rename_column('max_value', 'peak')
 
     if src_table is not None:

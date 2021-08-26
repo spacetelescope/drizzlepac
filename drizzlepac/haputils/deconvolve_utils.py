@@ -5,15 +5,22 @@ import os
 import sys
 import shutil
 import warnings
+from distutils.version import LooseVersion
 
 import numpy as np
 
 import skimage
 from astropy.io import fits as fits
 
-from photutils.detection._utils import (_StarCutout, _StarFinderKernel,
-                                        _find_stars)
-from photutils.detection.daofinder import _DAOFindProperties
+import photutils
+if LooseVersion(photutils.__version__) < '1.1.0':
+    from photutils.detection.findstars import (_DAOFindProperties, _StarCutout,
+                                               _StarFinderKernel, _find_stars)
+else:
+    from photutils.detection._utils import (_StarCutout, _StarFinderKernel,
+                                            _find_stars)
+    from photutils.detection.daofinder import _DAOFindProperties
+
 from photutils.detection import StarFinderBase, find_peaks
 from photutils.utils import NoDetectionsWarning
 
