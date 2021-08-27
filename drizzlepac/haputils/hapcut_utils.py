@@ -9,6 +9,7 @@ from astropy.table import Table, vstack
 from astropy.units.quantity import Quantity
 from astroquery.mast import Observations
 from drizzlepac.haputils import cell_utils as cu
+from pprint import pprint
 from stsci.tools import logutil
 
 import astrocut
@@ -371,6 +372,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
         
         # Update the EXTNAME for all of the EHDUs
         for index in range(len(extlist)):
+            input_filename = extlist[index].header["ORIG_FLE"]
             tokens = extlist[index].header["ORIG_FLE"].split("_")
             skycell = tokens[1].split("-")[1][1:5]
             detector = tokens[3]
@@ -403,11 +405,9 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
                     dec_obj = HDU[0].header["DEC_OBJ"]
 
                     # Replace the minimal primary header written by the astrocut
-                    # software with the primary header from the input file, so we can
-                    # retain a lot of information from the observation
-                    phdu = fits.open(input_files[0])
-                    HDU[0].header = phdu[0].header
-                    phdu.close()
+                    # software with the primary header from the corresponding input file,
+                    # so we can retain a lot of information from the observation
+                    HDU[0].header = fits.getheader(input_filename)
 
                     # Put the new RA/DEC_OBJ keywords back
                     HDU[0].header["RA_OBJ"] = (ra_obj, "[deg] right ascension")
@@ -417,7 +417,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
                     HDU[0].header['FILENAME'] = output_filename
 
                     # Populate a PHDU HISTORY keyword with the input filename
-                    HDU[0].header["HISTORY"] = input_files[0]
+                    HDU[0].header["HISTORY"] = extlist[index].header["ORIG_FLE"]
 
                     output_HDUs = fits.HDUList(HDU)
                     output_HDUs.writeto(cutout_path, overwrite=True)
@@ -425,10 +425,17 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
                     filename_list.append(output_filename)
 
     # Clean up any files left by `˜astrocut.cutouts.fits_cut`
-    cruft_filenames = glob.glob(output_dir + "/hst_skycell*_astrocut.fits")
-    if cruft_filenames:
-        for cf in cruft_filenames:
-           os.remove(kf)
+    try:
+        cruft_filenames = glob.glob(output_dir + "/hst_skycell*_astrocut.fits")
+        if cruft_filenames:
+            for cf in cruft_filenames:
+               os.remove(cf)
+    except Exception as x_cept:
+        log.warning("")
+        log.warning("Exception encountered: {}.".format(x_cept))
+        log.warning("The following residual files could not be deleted from disk. " \
+                    "Please delete these files to avoid confusion at your earliest convenience:")
+        pprint(cruft_filenames)
 
     # The single output file option was chosen - do not include a detector or 
     # filter in the output filename.
@@ -447,10 +454,8 @@ def make_the_cut(input_files, sky_coord, cutout_size, single_outfile=True, outpu
         log.info("Cutout FITS filename: {}".format(cutout_path))
     
         # Get the primary header from the first input file, so we can retain
-        # a lot of information from at least the first observation
-        hdu = fits.open(input_files[0])
-        out_HDUList[0][0].header = hdu[0].header
-        hdu.close()
+        # a lot of information from at least the first observation for the PHDU
+        out_HDUList[0][0].header = fits.getheader(input_files[0])
 
         # Update PHDU FILENAME keyword with the new filename
         out_HDUList[0][0].header["FILENAME"] = output_filename
