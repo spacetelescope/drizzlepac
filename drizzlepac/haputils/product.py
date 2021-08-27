@@ -471,8 +471,6 @@ class TotalProduct(HAPProduct):
         with fits.open(self.drizzle_filename, mode='update') as hdu:
             for kw in self.mask_kws:
                 hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
-        # Compute S_REGION keyword and add it to the header of this product
-        putils.compute_sregion(self.drizzle_filename)
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Total combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
@@ -574,8 +572,6 @@ class FilterProduct(HAPProduct):
         with fits.open(self.drizzle_filename, mode='update') as hdu:
             for kw in self.mask_kws:
                 hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
-        # Compute S_REGION keyword and add it to the header of this product
-        putils.compute_sregion(self.drizzle_filename)
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Filter combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
@@ -666,9 +662,6 @@ class ExposureProduct(HAPProduct):
         astrodrizzle.AstroDrizzle(input=self.full_filename,
                                   output=self.drizzle_filename,
                                   **drizzle_pars)
-
-        # Compute S_REGION keyword and add it to the header of this product
-        putils.compute_sregion(self.drizzle_filename)
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Exposure image {}".format(self.drizzle_filename))
@@ -889,6 +882,7 @@ class SkyCellExposure(HAPProduct):
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Exposure image {}".format(self.drizzle_filename))
+
         try:
             shutil.move(self.trl_logname, self.trl_filename)
         except PermissionError:

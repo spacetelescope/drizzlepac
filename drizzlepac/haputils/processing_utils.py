@@ -207,9 +207,9 @@ def compute_sregion(image, extname='SCI'):
     numext = countExtn(hdu, extname=extname)
 
     for extnum in range(1, numext + 1):
-        sregion_str = 'POLYGON ICRS '
         sciext = (extname, extnum)
         if 'd001data' not in hdu[0].header:
+            sregion_str = 'POLYGON ICRS '
             # Working with FLT/FLC file, so simply use
             #  the array corners directly
             extwcs = wcsutil.HSTWCS(hdu, ext=sciext)
@@ -219,7 +219,7 @@ def compute_sregion(image, extname='SCI'):
         else:
             # Working with a drizzled image, so we need to
             # get all the corners from each of the input files
-            footprint = find_footprint(hdu, extname=extname)
+            footprint = find_footprint(hdu, extname=extname, extnum=extnum)
             sregion_str = ''
             for region in footprint.corners:
                 # S_REGION string should contain a separate POLYGON
@@ -235,7 +235,7 @@ def compute_sregion(image, extname='SCI'):
         hdu.close()
 
 
-def find_footprint(hdu, extname='SCI'):
+def find_footprint(hdu, extname='SCI', extnum=1):
     """Extract the footprints from each input file
 
     Determine the composite of all the input chip's corners
@@ -250,6 +250,9 @@ def find_footprint(hdu, extname='SCI'):
     extname : str, optional
         Name of science array extension (extname value)
 
+    extnum : int, optional
+        EXTVER value for science array extension
+
     Returns
     ========
     footprint : ndarray
@@ -259,16 +262,11 @@ def find_footprint(hdu, extname='SCI'):
         to the rest.
 
     """
-    # Extract list of input files from Drizzle keywords
-    # data_kws = hdu[0].header['d*data'] if isinstance(hdu, fits.HDUList) else fits.getval(hdu, 'd*data')
-    # input_files = [kw.split('[')[0] for kw in data_kws.values()]
-
     # extract WCS from this product
-    meta_wcs = wcsutil.HSTWCS(hdu, ext=('sci', 1))
+    meta_wcs = wcsutil.HSTWCS(hdu, ext=(extname, extnum))
     # create SkyFootprint object for all input_files to determine footprint
     footprint = SkyFootprint(meta_wcs=meta_wcs)
     # create mask of all input chips as they overlap on the product WCS
-    # footprint.build(input_files)
     footprint.extract_mask(hdu.filename())
     # Now, find the corners from this mask
     footprint.find_corners()
