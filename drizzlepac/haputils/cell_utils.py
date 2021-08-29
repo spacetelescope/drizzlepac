@@ -381,14 +381,14 @@ class SkyFootprint(object):
         arr = fits.getdata(filename, ext=sciext)
         # If working with drizzled data which has NaN as non-exposed pixel values
         if np.isnan(arr.min()):
-            self.total_mask = (np.isnan(arr) == 0).astype(np.int16)
+            total_mask = (np.isnan(arr) == 0).astype(np.int16)
         else:
             total_mask = (arr != 0).astype(np.int16)
-            # Remove 'small' holes in the image due to noise to avoid
-            # creating extraneous 'regions' from the image when it is really
-            # all one region/chip.
-            total_mask = ndimage.binary_fill_holes(total_mask)
-            self.total_mask = total_mask
+        # Remove 'small' holes in the image due to noise to avoid
+        # creating extraneous 'regions' from the image when it is really
+        # all one region/chip.
+        total_mask = ndimage.binary_fill_holes(total_mask)
+        self.total_mask = total_mask
 
         # clean up as quickly as possible
         del arr
