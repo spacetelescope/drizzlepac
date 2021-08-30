@@ -12,13 +12,16 @@ from stsci.tools import logutil
 
 __taskname__ = 'astroquery_utils'
 
+product_type_dict = {'HAP': 'HAP', 'pipeline': 'DADS', 'both': ''}
+
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout, 
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 
-def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
+def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False,
+                         product_type=None):
     """Simple interface for retrieving an observation from the MAST archive
 
     If the input obsid is for an association, it will request all members with
@@ -65,6 +68,10 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False):
         return local_files
 
     dpobs = Observations.get_product_list(obs_table)
+    if product_type:
+        ptypes = [product_type_dict[product_type] in descr for descr in dpobs['description']]
+        dpobs = dpobs[ptypes]
+
     data_products_by_id = Observations.filter_products(dpobs,
                                                        productSubGroupDescription=suffix,
                                                        extension='fits',

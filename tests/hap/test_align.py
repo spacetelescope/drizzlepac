@@ -1,12 +1,17 @@
 """ This module runs tests on specific datasets to determine if the datasets can
     be aligned to an astrometric catalog. """
+import sys
 import pytest
 from drizzlepac import align as alignimages
 from ci_watson.artifactory_helpers import get_bigdata
 from .base_test import BaseHLATest
 
+from stsci.tools import logutil
+
+log = logutil.create_logger('test_align', level=logutil.logging.INFO, stream=sys.stdout)
+
 # Nominal acceptable RMS limit for a good solution (IMPROVE THIS)
-RMS_LIMIT = 10.0
+RMS_LIMIT = 30.0
 
 @pytest.mark.bigdata
 class TestAlignMosaic(BaseHLATest):
@@ -75,6 +80,7 @@ class TestAlignMosaic(BaseHLATest):
                                                   archive=False, clobber=False,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
+                                                  product_type='pipeline',
                                                   output=False)
 
         # Examine the output table to extract the RMS for the entire fit and the compromised
@@ -109,6 +115,7 @@ class TestAlignMosaic(BaseHLATest):
                                                   archive=False, clobber=False,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
+                                                  product_type='pipeline',
                                                   output=False)
 
         # Examine the output table to extract the RMS for the entire fit and the compromised
@@ -123,8 +130,7 @@ class TestAlignMosaic(BaseHLATest):
                                                   'j8ura1j4q_flt.fits', 'j8ura1j6q_flt.fits',
                                                   'j8ura1j7q_flt.fits', 'j8ura1j8q_flt.fits',
                                                   'j8ura1j9q_flt.fits', 'j8ura1jaq_flt.fits',
-                                                  'j8ura1jbq_flt.fits', 'j8ura1jcq_flt.fits',
-                                                  'j8ura1jdq_flt.fits', 'j8ura1jeq_flt.fits',
+                                                  'j8ura1jbq_flt.fits',
                                                   'j8ura1jfq_flt.fits', 'j8ura1jgq_flt.fits',
                                                   'j8ura1jhq_flt.fits', 'j8ura1jiq_flt.fits',
                                                   'j8ura1jjq_flt.fits', 'j8ura1jkq_flt.fits'],
@@ -175,6 +181,7 @@ class TestAlignMosaic(BaseHLATest):
                                                   archive=False, clobber=False,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
+                                                  product_type='pipeline',
                                                   output=False)
 
         # Examine the output table to extract the RMS for the entire fit and the compromised
@@ -225,6 +232,7 @@ class TestAlignMosaic(BaseHLATest):
                                                   archive=False, clobber=False,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
+                                                  product_type='pipeline',
                                                   output=False)
 
         # Examine the output table to extract the RMS for the entire fit and the compromised
@@ -237,7 +245,7 @@ class TestAlignMosaic(BaseHLATest):
     def test_astroquery(self):
         """Verify that new astroquery interface will work"""
 
-        total_rms = 0.0
+        total_rms = 0.01
 
         dataset_table = alignimages.perform_align(['IB6V06060'],
                                                   catalog_list=['GAIADR2', 'GAIADR1'],
@@ -245,6 +253,7 @@ class TestAlignMosaic(BaseHLATest):
                                                   archive=False, clobber=True,
                                                   debug=False, update_hdr_wcs=False,
                                                   print_fit_parameters=True, print_git_info=False,
+                                                  product_type='pipeline',
                                                   output=False)
 
         # Examine the output table to extract the RMS for the entire fit and the compromised
