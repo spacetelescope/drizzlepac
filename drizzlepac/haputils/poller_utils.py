@@ -309,7 +309,21 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0, u
     # Now create the output product objects
     log.debug("Parse the observation set tree and create the exposure, filter, and total detection objects.")
     obset_dict, tdp_list = parse_mvm_tree(obset_tree, all_mvm_exposures, log_level)
+    for key in vars(tdp_list[0]).keys():
+        try:
+            print("vars(tdp_list[0])[{}]: {}".format(key, vars(tdp_list[0])[key]))
+        except:
+            print("vars(tdp_list[0])[{}]: {}".format(key, "MISSING"))
+    print("\n")
+    for key in vars(tdp_list[0]).keys():
+        try:
+            print("vars(tdp_list[0].edp_list[0])[{}]: {}".format(key, vars(tdp_list[0].edp_list[0])[key]))
+        except:
+            print("vars(tdp_list[0].edp_list[0])[{}]: {}".format(key, "MISSING"))
 
+    #
+    print("\a\a")
+    pdb.set_trace()
     # Now we need to merge any pre-existing layer products with the new products
     # This will add the exposure products from the pre-existing definitions of
     # the overlapping sky cell layers with those defined for the new exposures
@@ -458,7 +472,7 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 # Parse the first filename[1] to determine if the products are flt or flc
                 if det_indx != prev_det_indx:
                     filetype = "drc"
-                    if filename[1][10:13].lower().endswith("flt"):
+                    if filename[1][-8:-5].lower().endswith("flt"):
                         filetype = "drz"
                     prev_det_indx = det_indx
 

@@ -1078,9 +1078,7 @@ class SkyCellProduct(HAPProduct):
                   .format(meta_wcs, self.trl_logname))
 
         edp_filenames = [element.full_filename for element in self.edp_list]
-        print(edp_filenames)
-        import pdb
-        pdb.set_trace()
+
         astrodrizzle.AstroDrizzle(input=edp_filenames,
                                   output=self.drizzle_filename,
                                   **drizzle_pars)
