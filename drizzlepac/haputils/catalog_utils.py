@@ -14,7 +14,6 @@ from astropy.coordinates import SkyCoord
 import numpy as np
 from scipy import ndimage, stats
 
-import photutils
 import photutils  # needed to check version
 if LooseVersion(photutils.__version__) < '1.1.0':
     OLD_PHOTUTILS = True
