@@ -534,10 +534,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
     return_value = 0
     log.setLevel(log_level)
     # Define trailer file (log file) that will contain the log entries for all processing
-    if isinstance(input_filename, str):  # input file is a poller file -- easy case
-        logname = input_filename.replace('.out', '.log')
-    else:
-        logname = 'svm_process.log'
+    logname = proc_utils.build_logname(input_filename)
+
     # Initialize total trailer filename as temp logname
     logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
     # start processing
