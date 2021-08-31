@@ -42,6 +42,19 @@ def get_rules_file(product):
 
     return new_rules_name
 
+
+def build_logname(input_filename, process_type='svm'):
+    """Build the log filename based on the input filename"""
+
+    suffix = '.{}'.format(input_filename.split('.')[-1])
+    if isinstance(input_filename, str):  # input file is a poller file -- easy case
+        logname = input_filename.replace(suffix, '.log')
+    else:
+        logname = '{}_process.log'.format(process_type)
+
+    return logname
+
+
 def refine_product_headers(product, total_obj_list):
     """Refines output product headers to include values not available to AstroDrizzle.
 

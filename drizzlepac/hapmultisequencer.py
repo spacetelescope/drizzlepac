@@ -130,7 +130,7 @@ def rename_output_products(filter_obj, output_file_prefix=None):
             new_name = orig_name.replace(text_to_replace, output_file_prefix)
             log.debug("exposure object attr {}: {} -> {}".format(attr_name, orig_name, new_name))
             setattr(filter_obj.edp_list[j], attr_name, new_name)
-            if attr_name is "full_filename":
+            if attr_name == "full_filename":
                 os.rename(orig_name, new_name)
                 log.debug("Renamed file {} -> {}".format(orig_name, new_name))
 
@@ -298,10 +298,7 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
     return_value = 0
     log.setLevel(log_level)
     # Define trailer file (log file) that will contain the log entries for all processing
-    if isinstance(input_filename, str):  # input file is a poller file -- easy case
-        logname = input_filename.replace('.out', '.log')
-    else:
-        logname = 'mvm_process.log'
+    logname = proc_utils.build_logname(input_filename, process_type='mvm')
 
     # Initialize total trailer filename as temp logname
     logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
