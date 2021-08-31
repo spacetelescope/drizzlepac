@@ -20,6 +20,7 @@ else:
     from photutils.detection._utils import (_StarCutout, _StarFinderKernel,
                                             _find_stars)
     from photutils.detection.daofinder import _DAOFindProperties
+
 from photutils.detection import StarFinderBase, find_peaks
 from photutils.utils import NoDetectionsWarning
 
