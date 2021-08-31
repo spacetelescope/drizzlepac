@@ -30,9 +30,23 @@ bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml 
                 "codecov"]
 bc.test_configs = [data_config]
 
-bc1 = utils.copy(bc)
-bc1.name = '3.6-dev'
-bc1.build_cmds[1] = "pip install -r requirements-dev.txt --upgrade -e '.[test]'"
+bc1 = new BuildConfig()
+bc1.nodetype = 'linux'
+bc1.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
+bc1.name = '3.8'
+bc1.conda_channels = ['http://ssb.stsci.edu/astroconda']
+bc1.conda_packages = ['python=3.8']
+bc1.build_cmds = ["pip install numpy astropy codecov pytest-cov",
+		 "pip install --upgrade -e '.[test]'",
+                 "pip freeze"]
+bc1.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata",
+                "codecov"]
+bc1.test_configs = [data_config]
+
+
+bc2 = utils.copy(bc1)
+bc2.name = '3.8-dev'
+bc2.build_cmds[1] = "pip install -r requirements-dev.txt --upgrade -e '.[test]'"
 
 // Iterate over configurations that define the (distributed) build matrix.
 // Spawn a host (or workdir) for each combination and run in parallel.
