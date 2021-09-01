@@ -173,17 +173,20 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             if input_phot_mode == 'both':
                 # If no sources found with either algorithm, skip to the next total detection product
                 if total_product_catalogs.catalogs['aperture'].sources is None and total_product_catalogs.catalogs['segment'].sources is None:
+                    log.info("No sources found with Segmentation or Point algorithms for TDP {} - skip to next TDP".format(total_product_obj.drizzle_filename))
                     del total_product_catalogs.catalogs['aperture']
                     del total_product_catalogs.catalogs['segment']
                     continue
 
                 # Only point algorithm found sources, continue to the filter catalogs for just point
                 if total_product_catalogs.catalogs['aperture'].sources is not None and total_product_catalogs.catalogs['segment'].sources is None:
+                    log.info("Sources only found with Point algorithm for TDP {} - phot_mode set only to POINT for this TDP".format(total_product_obj.drizzle_filename))
                     phot_mode = 'aperture'
                     del total_product_catalogs.catalogs['segment']
 
                 # Only segment algorithm found sources, continue to the filter catalogs for just segmentation
                 if total_product_catalogs.catalogs['aperture'].sources is None and total_product_catalogs.catalogs['segment'].sources is not None:
+                    log.info("Sources only found with Segmentation algorithm for TDP {} - phot_mode set only to SEGMENT for this TDP".format(total_product_obj.drizzle_filename))
                     phot_mode = 'segment'
                     del total_product_catalogs.catalogs['aperture']
 
