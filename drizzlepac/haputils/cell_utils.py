@@ -376,9 +376,19 @@ class SkyFootprint(object):
 
     def extract_mask(self, filename):
         """Extract a total_mask from the SCI data directly"""
-        sciext = ("SCI", 1)
-        # Try to use the WHT array as a msk
-        arr = fits.getdata(filename, ext=sciext)
+        # Determine what extension contains the SCI array
+        # It could be 0 if 'build=no' for drizzling
+        fhdu = fits.open(filename)
+        if len(fhdu) > 1:
+            sciext = ("SCI", 1)
+        else:
+            sciext = 0
+        # Get the SCI array to use as a mask
+        arr = fhdu[sciext].data.copy()
+        # Done with image, so close immediately.
+        fhdu.close()
+        del fhdu
+
         # If working with drizzled data which has NaN as non-exposed pixel values
         if np.isnan(arr.min()):
             total_mask = (np.isnan(arr) == 0).astype(np.int16)
@@ -536,7 +546,7 @@ class SkyFootprint(object):
                 # insure there is a border all around the region
                 # THIS IS CRITICAL to being able to identify corners correctly in slice
                 label_mask = ndimage.binary_erosion(label_mask)
-                print('extracting corners for label {} in slice {}'.format(label, mask_slice))
+                print('extracting corners for region {} in slice {}'.format(label, mask_slice))
                 # Perform corner detection on each region/chip separately.
                 mask_corners = corner_peaks(corner_harris(label_mask),
                                        min_distance=1,
