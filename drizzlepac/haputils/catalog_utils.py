@@ -1617,7 +1617,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
                 # No segments were detected in the total data product - no further processing done for this TDP,
                 # but processing of another TDP should proceed.
-                else not rw_segm_img:
+                elif not rw_segm_img:
                     return
 
             # The first round custom/Gaussian segmentation image is good, continue with the processing
