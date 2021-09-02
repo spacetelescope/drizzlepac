@@ -1477,6 +1477,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
                 # Compute the ratio of big sources/islands using Custom/Gaussian kernel vs Rickerwavelet kernel
                 # This value can be used as a discriminant between overlapping point sources and nebulousity fields
+                ratio_cg2rw = 0.0
                 if rw_bs > 0.0:
                     ratio_cg2rw_bigsource = g_bs / rw_bs
 
