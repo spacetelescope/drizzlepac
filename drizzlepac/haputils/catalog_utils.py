@@ -1477,7 +1477,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
                 # Compute the ratio of big sources/islands using Custom/Gaussian kernel vs Rickerwavelet kernel
                 # This value can be used as a discriminant between overlapping point sources and nebulousity fields
-                ratio_cg2rw = 0.0
+                ratio_cg2rw_bigsource = 3.0
                 if rw_bs > 0.0:
                     ratio_cg2rw_bigsource = g_bs / rw_bs
 
@@ -1746,15 +1746,15 @@ class HAPSegmentCatalog(HAPCatalogBase):
             if segm_img is None:
                 log.warning("End processing for the segmentation catalog due to no sources detected with the current kernel.")
                 log.warning("No segmentation catalog will be produced for this total detection product, {}.".format(self.imgname))
-                is_big_crowded = False
-                big_island = 100.0
-                source_fraction = 100.0
+                is_big_crowded = True
+                big_island = 1.0
+                source_fraction = 1.0
 
             else:
                 # Determine if the segmentation image is filled with big sources/islands (bs) or is crowded with a large
                 # source fraction (sf). Depending upon these measurements, it can take a very, very long time to deblend
                 # the sources.
-                is_big_crowded = False
+                is_big_crowded = True
                 is_big_crowded, big_island, source_fraction = self._evaluate_segmentation_image(segm_img,
                                                                                                 imgarr,
                                                                                                 big_island_only=check_big_island_only,
@@ -2413,25 +2413,30 @@ class HAPSegmentCatalog(HAPCatalogBase):
         is_poor_quality: boolean
             True/False value indicating if the largest source or the total combination of
             all detected sources took up an abnormally high portion of the image (aka 'big islands').
+
+        biggest_source : float
+            Value of the largest source in comparison to the total number of illuminated
+            pixels in the image.
+
+        source_fraction : float
+            Value of the total combination of all detected sources in comparison to the total
+            number of illuminated pixels in the image.
         """
 
         log.info("")
         log.info("Analyzing segmentation image.")
 
-        is_poor_quality = False
-        biggest_source = 0.0
-        source_fraction = 0.0
+        is_poor_quality = True
+        biggest_source = 1.0
+        source_fraction = 1.0
 
         if segm_img is None:
             log.info("Segmentation image is blank.")
-            return False
+            return is_poor_quality, biggest_source, source_fraction
 
-        # segm_img is a SegmentationImage
+        # segm_img is a SegmentationImage, nbins must be at least 1 or segm_img == None
         nbins = segm_img.max_label
         log.info("Number of sources from segmentation map: %d", nbins)
-
-        if nbins == 0:
-            return False
 
         # narray = np.bincount(segm_img)
         # n = narray[1:]
