@@ -882,6 +882,7 @@ class SkyCellExposure(HAPProduct):
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Exposure image {}".format(self.drizzle_filename))
+
         try:
             shutil.move(self.trl_logname, self.trl_filename)
         except PermissionError:
