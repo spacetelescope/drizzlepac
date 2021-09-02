@@ -1411,8 +1411,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("Percentage limit on source fraction over the image (criterion for RickerWavelet kernel): {}".format(100.0 * self._rw2d_source_fraction))
             log.info("Percentage limit on biggest source deblending limit: {}".format(100.0 * self._bs_deblend_limit))
             log.info("Percentage limit on source fraction deblending limit: {}".format(100.0 * self._sf_deblend_limit))
-            log.info("")
-            log.info("{}".format("=" * 80))
 
             # Get the SCI image data
             imgarr = copy.deepcopy(self.image.data)
@@ -1454,7 +1452,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # RickerWavelet2DKernel and call detect_and_eval_segments() again. Still use the custom fwhm as it
             # should be better than a generic fwhm as it is based upon the data.
             # Note: the fwhm might be a default if the custom algorithm had to fall back to a Gaussian.
-            if g_is_big_crowded:
+            if g_is_big_crowded and g_segm_img:
                 log.info("")
                 log.info("The segmentation map contains big sources/islands or a large source fraction of segments.")
                 log.info("Using RickerWavelet2DKernel to generate an alternate segmentation map.")
@@ -1479,10 +1477,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
                 # Compute the ratio of big sources/islands using Custom/Gaussian kernel vs Rickerwavelet kernel
                 # This value can be used as a discriminant between overlapping point sources and nebulousity fields
-                ratio_cg2rw_bigsource = g_bs / rw_bs
+                ratio_cg2rw_bigsource = 3.0
+                if rw_bs > 0.0:
+                    ratio_cg2rw_bigsource = g_bs / rw_bs
 
                 # Check if the RickerWavelet segmentation image still seems to be problematic
-                if rw_is_big_crowded:
+                if rw_is_big_crowded and rw_segm_img:
 
                     # Before giving up, check the type of background computed for the detection image,
                     # and proceed based upon the type.  If a "sigma-clipped background" is in use, compute
@@ -1610,17 +1610,27 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         del g_segm_img
 
                 # The first round RickerWavelet segmentation image is good, continue with the processing
-                else:
+                elif not rw_is_big_crowded and rw_segm_img:
                     self.kernel = rw2d_kernel
                     segm_img = copy.deepcopy(rw_segm_img)
                     del rw_segm_img
                     del g_segm_img
 
+                # No segments were detected in the total data product - no further processing done for this TDP,
+                # but processing of another TDP should proceed.
+                elif not rw_segm_img:
+                    return
+
             # The first round custom/Gaussian segmentation image is good, continue with the processing
-            else:
+            elif not g_is_big_crowded and g_segm_img:
                 self.kernel = g2d_kernel
                 segm_img = copy.deepcopy(g_segm_img)
                 del g_segm_img
+
+            # No segments were detected in the total data product - no further processing done for this TDP,
+            # but processing of another TDP should proceed.
+            elif not g_segm_img:
+                return
 
             # Deblend the segmentation image
             ncount += 1
@@ -1674,6 +1684,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
             self.sources = copy.deepcopy(self.segm_img)
 
             log.info("Done identifying sources in total detection image for the segmentation catalog.")
+            log.info("")
+            log.info("{}".format("=" * 80))
+            log.info("")
 
         # If filter product, use sources identified in total detection product previously generated
         else:
@@ -1727,23 +1740,27 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                             source_box=size_source_box,
                                             mask=self.image.inv_footprint_mask)
 
-            # Check if custom_segm_image is None indicating there are no detectable sources in the
+            # Check if custom_segm_image is None indicating there are no detectable sources in this
             # total detection image.  If value is None, a warning has already been issued.  Issue
-            # a final message and return.
+            # a final message for this particular total detection product and return.
             if segm_img is None:
                 log.warning("End processing for the segmentation catalog due to no sources detected with the current kernel.")
-                log.warning("No segmentation catalog will be produced.")
-                return
+                log.warning("No segmentation catalog will be produced for this total detection product, {}.".format(self.imgname))
+                is_big_crowded = True
+                big_island = 1.0
+                source_fraction = 1.0
 
-            # Determine if the segmentation image is filled with big sources/islands (bs) or is crowded with a large
-            # source fraction (sf). Depending upon these measurements, it can take a very, very long time to deblend
-            # the sources.
-            is_big_crowded = False
-            is_big_crowded, big_island, source_fraction = self._evaluate_segmentation_image(segm_img,
-                                                                                            imgarr,
-                                                                                            big_island_only=check_big_island_only,
-                                                                                            max_biggest_source=rw2d_biggest_source,
-                                                                                            max_source_fraction=rw2d_source_fraction)
+            else:
+                # Determine if the segmentation image is filled with big sources/islands (bs) or is crowded with a large
+                # source fraction (sf). Depending upon these measurements, it can take a very, very long time to deblend
+                # the sources.
+                is_big_crowded = True
+                is_big_crowded, big_island, source_fraction = self._evaluate_segmentation_image(segm_img,
+                                                                                                imgarr,
+                                                                                                big_island_only=check_big_island_only,
+                                                                                                max_biggest_source=rw2d_biggest_source,
+                                                                                                max_source_fraction=rw2d_source_fraction)
+
             return segm_img, is_big_crowded, big_island, source_fraction
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1934,7 +1951,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         log.info("FWHM: {}".format(self._fwhm))
         log.info("size_source_box: {}".format(self._size_source_box))
         log.info("")
-        log.info("{}".format("=" * 80))
 
         # This is the filter science data and its computed background
         imgarr_bkgsub = imgarr - self.image.bkg_background_ra
@@ -1960,6 +1976,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self.source_cat = self._define_filter_table(filter_measurements_table)
 
         log.info("Found and measured {} sources from segmentation map.".format(len(self.source_cat)))
+        log.info("")
+        log.info("{}".format("=" * 80))
+        log.info("")
 
         # Capture specified filter columns in order to append to the total detection table
         self.subset_filter_source_cat = self.source_cat["ID", "MagAp2", "CI", "Flags"]
@@ -2394,25 +2413,30 @@ class HAPSegmentCatalog(HAPCatalogBase):
         is_poor_quality: boolean
             True/False value indicating if the largest source or the total combination of
             all detected sources took up an abnormally high portion of the image (aka 'big islands').
+
+        biggest_source : float
+            Value of the largest source in comparison to the total number of illuminated
+            pixels in the image.
+
+        source_fraction : float
+            Value of the total combination of all detected sources in comparison to the total
+            number of illuminated pixels in the image.
         """
 
         log.info("")
         log.info("Analyzing segmentation image.")
 
-        is_poor_quality = False
-        biggest_source = 0.0
-        source_fraction = 0.0
+        is_poor_quality = True
+        biggest_source = 1.0
+        source_fraction = 1.0
 
         if segm_img is None:
             log.info("Segmentation image is blank.")
-            return False
+            return is_poor_quality, biggest_source, source_fraction
 
-        # segm_img is a SegmentationImage
+        # segm_img is a SegmentationImage, nbins must be at least 1 or segm_img == None
         nbins = segm_img.max_label
         log.info("Number of sources from segmentation map: %d", nbins)
-
-        if nbins == 0:
-            return False
 
         # narray = np.bincount(segm_img)
         # n = narray[1:]
