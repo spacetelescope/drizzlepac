@@ -78,7 +78,7 @@ setup(
         'Topic :: Scientific/Engineering :: Astronomy',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     setup_requires=['numpy>=1.19'],
     install_requires=[
         'astropy>=4.0.0',
