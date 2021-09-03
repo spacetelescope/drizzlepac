@@ -1123,10 +1123,9 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
 
     # Include magnitudes for each source for use in verification of alignment through
     # comparison with GAIA magnitudes
-    tbl = compute_photometry(tbl, photmode)
+    tbl = compute_photometry(src_table, photmode)
 
     # Insure all IDs are sequential and unique (at least in this catalog)
-    tbl.remove_column('label')
     tbl['cat_id'] = np.arange(1, len(tbl) + 1)
 
     if outroot:
