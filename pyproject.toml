@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=30.3.0", "wheel", "numpy", "astropy"]
+requires = ["setuptools>=30.3.0", "wheel", "oldest-supported-numpy", "astropy"]
 
 [tool.stsci-bot]
 
