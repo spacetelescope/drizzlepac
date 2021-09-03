@@ -1082,7 +1082,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
 
                     # Revert to segmentation photometry for sat. source posns
                     if OLD_PHOTUTILS:
-                        segment_properties = source_properties(detection_img, segment.data)
+                        segment_properties = SourceCatalog(detection_img, segment.data)
                     else:
                         segimg = SegmentationImage(segment.data)
                         segment_properties = SourceCatalog(detection_img, segimg)
