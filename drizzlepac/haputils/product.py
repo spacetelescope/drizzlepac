@@ -910,8 +910,11 @@ class SkyCellExposure(HAPProduct):
                 New MVM-compatible HAP filename for input exposure
 
         """
-        suffix = filename.split("_")[1]
-        sce_filename = '_'.join([self.product_basename, suffix])
+        if filename.startswith("hst"):
+            sce_filename = "{}_{}".format(self.product_basename, filename.split("_")[-1])
+        else:
+            suffix = filename.split("_")[1]
+            sce_filename = '_'.join([self.product_basename, suffix])
         log.info("Copying {} to MVM input: \n    {}".format(filename, sce_filename))
         try:
             shutil.copy(filename, sce_filename)
