@@ -1,6 +1,6 @@
 BSD 3-Clause License
 
-Copyright (c) 2019, Association of Universities for Research in Astronomy (AURA)
+Copyright (c) 2021, Association of Universities for Research in Astronomy (AURA)
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
