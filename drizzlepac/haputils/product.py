@@ -795,10 +795,14 @@ class SkyCellExposure(HAPProduct):
         # layer: [filter_str, pscale_str, exptime_str, epoch_str]
         # e.g.: [f160w, coarse, all, all]
         #
-        if layer[1] == 'coarse':
-            layer_vals = [layer[1], layer[2], self.exposure_name]
+        if filename.startswith("hst"):
+            exposure_name = filename.split("_")[-2]
         else:
-            layer_vals = ['all', self.exposure_name]
+            exposure_name = self.exposure_name
+        if layer[1] == 'coarse':
+            layer_vals = [layer[1], layer[2], exposure_name]
+        else:
+            layer_vals = ['all', exposure_name]
         layer_str = '-'.join(layer_vals)
 
         cell_id = "p{}{}".format(prop_id, obset_id)
