@@ -1090,11 +1090,18 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     sat_table = segment_properties.to_table()
                     seg_table['flux'][max_row] = sat_table[flux_colname][0]
                     seg_table['peak'][max_row] = sat_table['max_value'][0]
-                    seg_table['xcentroid'][max_row] = sat_table['xcentroid'][0].value
-                    seg_table['ycentroid'][max_row] = sat_table['ycentroid'][0].value
+                    if OLD_PHOTUTILS:
+                        xcentroid = sat_table['xcentroid'][0].value
+                        ycentroid = sat_table['ycentroid'][0].value
+                        sky = sat_table['background_mean'][0].value
+                    else:
+                        xcentroid = sat_table['xcentroid'][0]
+                        ycentroid = sat_table['ycentroid'][0]
+                        sky = sat_table['local_background'][0]
+                    seg_table['xcentroid'][max_row] = xcentroid
+                    seg_table['ycentroid'][max_row] = ycentroid
                     seg_table['npix'][max_row] = sat_table['area'][0].value
-                    sky = sat_table['background_mean'][0]
-                    seg_table['sky'][max_row] = sky.value if sky is not None and not np.isnan(sky) else 0.0
+                    seg_table['sky'][max_row] = sky if sky is not None and not np.isnan(sky) else 0.0
                     seg_table['mag'][max_row] = -2.5 * np.log10(sat_table[flux_colname][0])
 
                 # Add row for detected source to master catalog
