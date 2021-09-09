@@ -169,6 +169,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             # phot_mode.  If the point or segmentation algorithms found sources, need to continue
             # processing for that (those) algorithm(s) only.
 
+
             # When both algorithms have been requested...
             if input_phot_mode == 'both':
                 # If no sources found with either algorithm, skip to the next total detection product
@@ -870,23 +871,28 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
             pickle.dump(pickle_dict, pickle_out)
             pickle_out.close()
             log.info("Wrote hla_flag_filter param pickle file {} ".format(out_pickle_filename))
-        # TODO: REMOVE ABOVE CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
 
-        filter_product_catalogs.catalogs[cat_type].source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image,
-                                                                                                         flt_list,
-                                                                                                         param_dict,
-                                                                                                         exptime,
-                                                                                                         plate_scale,
-                                                                                                         median_sky,
-                                                                                                         catalog_name,
-                                                                                                         catalog_data,
-                                                                                                         cat_type,
-                                                                                                         drz_root_dir,
-                                                                                                         filter_product_obj.hla_flag_msk,
-                                                                                                         ci_lookup_file_path,
-                                                                                                         output_custom_pars_file,
-                                                                                                         log_level,
-                                                                                                         diagnostic_mode)
+        # TODO: REMOVE ABOVE CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
+        if len(catalog_data) > 0:
+             source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image,
+                                                                   flt_list,
+                                                                   param_dict,
+                                                                   exptime,
+                                                                   plate_scale,
+                                                                   median_sky,
+                                                                   catalog_name,
+                                                                   catalog_data,
+                                                                   cat_type,
+                                                                   drz_root_dir,
+                                                                   filter_product_obj.hla_flag_msk,
+                                                                   ci_lookup_file_path,
+                                                                   output_custom_pars_file,
+                                                                   log_level,
+                                                                   diagnostic_mode)
+        else:
+            source_cat = catalog_data
+
+        filter_product_catalogs.catalogs[cat_type].source_cat = source_cat
 
     return filter_product_catalogs
 
