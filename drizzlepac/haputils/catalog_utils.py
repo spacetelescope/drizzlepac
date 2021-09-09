@@ -1686,7 +1686,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 self._define_empty_table(g_segm_img)
                 return
 
-            # Deblend the segmentation image sources that are larger than the PSF kernel
+            # Deblend the segmentation image
             ncount += 1
             segm_img = self.deblend_segments(segm_img,
                                              imgarr,
