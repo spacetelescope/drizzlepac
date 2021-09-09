@@ -738,10 +738,12 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     else:
         fitgeom = 'rscale'
 
+    rel_fitgeom = 'rscale'
+
     common_pars = fit_pars['pars']
     del fit_pars['pars']
 
-    nclip = None if fitgeom == 'shift' else 3
+    nclip = None if fitgeom == 'shift' else 1
 
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
@@ -757,10 +759,10 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     # limits.
     match_relcat = tweakwcs.align_wcs(imglist, None,
                                       match=match,
-                                      minobj=common_pars['minobj'][fitgeom],
+                                      minobj=common_pars['minobj'][rel_fitgeom],
                                       expand_refcat=True,
-                                      fitgeom=fitgeom,
-                                      nclip=nclip)
+                                      fitgeom=rel_fitgeom,
+                                      nclip=1)
     # Implement a consistency check even before trying absolute alignment
     # If relative alignment in question, no use in aligning to GAIA
     if not check_consistency(imglist):
@@ -782,7 +784,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         msg = "Image {} --".format(i.meta['name'])
         msg += "\n    SHIFT:({:9.4f},{:9.4f})  NMATCHES: {} ".format(off[0], off[1], nmatches)
         msg += "\n    ROT:{:9.4f}  SCALE:{:9.4f}".format(rot, scale)
-        msg += "\n Using fitgeom = '{}'".format(fitgeom)
+        msg += "\n Using fitgeom = '{}'".format(rel_fitgeom)
         log.info(msg)
 
     # This logic enables performing only relative fitting and skipping fitting to GAIA
@@ -853,7 +855,7 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
     common_pars = fit_pars['pars']
     del fit_pars['pars']
 
-    nclip = None if fitgeom == 'shift' else 3
+    nclip = None if fitgeom == 'shift' else 1
 
     log.info("{} (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
@@ -917,7 +919,7 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     common_pars = fit_pars['pars']
     del fit_pars['pars']
 
-    nclip = None if fitgeom == 'shift' else 3
+    nclip = None if fitgeom == 'shift' else 1
 
     log.info("{} (match_2dhist_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 28))
@@ -961,14 +963,15 @@ def check_consistency(imglist, rot_tolerance=0.1, shift_tolerance=1.0):
                 rots[i] = finfo['proper_rot']
                 nmatches[i] = finfo['nmatches']
         else:
-            # Set default as value larger than we can use
-            nmatches[i] = 1000000
+            # 'status' == 'FAILED': Set default as negative value
+            nmatches[i] = -1
+            is_consistent = False
 
     # We should only need to check for consistency when less than 5
     # matches were used for the fit, leading to a higher potential for
     # a singular solution or mis-identified cross-matches.
     if nmatches.min() > 4:
-        return imglist
+        return is_consistent
 
     # compute deltas to look for outliers
     delta_rots = rots[1:] - rots[:-1]

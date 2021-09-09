@@ -22,12 +22,12 @@
       {
         "box_size":27,
         "win_size":3,
-        "nsigma":5.0,
+        "nsigma":3.0,
         "centering_mode": "starfind",
         "bkg_estimator": "SExtractorBackground",
         "rms_estimator": "StdBackgroundRMS",
         "num_sources": 500,
-        "deblend": false,
+        "deblend": true,
         "fwhmpsf": 0.13,
         "classify": true,
         "threshold": -1.1

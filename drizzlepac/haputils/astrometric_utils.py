@@ -295,6 +295,7 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
     ref_table.meta['catalog'] = catalog
     ref_table.meta['gaia_only'] = gaia_only
     ref_table.meta['epoch'] = epoch
+    ref_table.meta['converted'] = False
 
     # Convert common set of columns into standardized column names
     convert_astrometric_table(ref_table, catalog)
