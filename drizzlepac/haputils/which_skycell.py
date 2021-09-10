@@ -5,7 +5,6 @@
 import argparse
 import glob
 import os
-import pdb
 import sys
 
 from drizzlepac.haputils import cell_utils
