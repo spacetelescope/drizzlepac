@@ -651,7 +651,7 @@ def parse_obset_tree(det_tree, log_level):
                 # easier for the user by having the same WCS in both the direct and
                 # Grism/Prism products.
                 #
-                # The GrismExposureProduct is only an attibutes of the TotalProduct.
+                # The GrismExposureProduct is only an attribute of the TotalProduct.
                 prod_list = prod_info.split(" ")
 
                 # Determine if this image is a Grism/Prism or a nominal direct exposure
@@ -659,8 +659,9 @@ def parse_obset_tree(det_tree, log_level):
                 if prod_list[5].lower().find('g') != -1 or prod_list[5].lower().find('pr') != -1:
                     is_grism = True
                     filt_indx -= 1
-                    grism_sep_obj = GrismExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
-                                                         filename[1], prod_list[5], prod_list[6], log_level)
+                    grism_sep_obj = GrismExposureProduct(prod_list[0], prod_list[1], prod_list[2],
+                                                         prod_list[3], filename[1], prod_list[5],
+                                                         prod_list[6], log_level)
                 else:
                     sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
                                               filename[1], prod_list[5], prod_list[6], log_level)
@@ -1199,7 +1200,8 @@ def add_primary_fits_header_as_attr(hap_obj, log_level=logutil.logging.NOTSET):
         object to update
 
     log_level : int, optional.
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.
 
     Returns
     -------

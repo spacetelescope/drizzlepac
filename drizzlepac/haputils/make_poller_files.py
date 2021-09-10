@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """Makes .out files used as input to runsinglehap.py, runmultihap.py based on the files or rootnames listed
-user-specifed list file."""
+user-specified list file."""
 
 import argparse
 import os
@@ -12,6 +12,7 @@ from astropy.io import fits
 from drizzlepac.haputils import poller_utils
 
 __taskname__ = 'make_poller_files'
+
 
 def generate_poller_file(input_list, poller_file_type='svm', output_poller_filename="poller_file.out",
                          skycell_name=None):

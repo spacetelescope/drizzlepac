@@ -14,6 +14,7 @@ __version__ = 0.1
 __version_date__ = '08-Sept-2021'
 # ------------------------------------------------------------------------------------------------------------
 
+
 def identify_pc_sc(img_list):
     """identifies the projection cell(s) and skycell(s) that the observations in the user-specified input
     list occupy.
