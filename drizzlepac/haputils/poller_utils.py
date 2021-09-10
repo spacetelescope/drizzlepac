@@ -7,7 +7,6 @@ parse_obset_tree, converts the tree into product catagories.
 """
 from collections import OrderedDict
 import os
-import pdb
 import shutil
 import sys
 
