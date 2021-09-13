@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Returns the name(s) of the projection cell(s)/skycell(s) that the observations in the user-specified input
+"""Reports the name(s) of the projection cell(s)/skycell(s) that the observations in the user-specified input
  file occupy."""
 
 import argparse
