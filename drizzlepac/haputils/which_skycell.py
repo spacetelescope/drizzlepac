@@ -15,9 +15,9 @@ __version_date__ = '08-Sept-2021'
 # ------------------------------------------------------------------------------------------------------------
 
 
-def identify_pc_sc(img_list):
-    """identifies the projection cell(s) and skycell(s) that the observations in the user-specified input
-    list occupy.
+def report_skycells(img_list):
+    """reports the names of the projection cell(s)/skycell(s) that the observations in the user-specified
+    input list occupy.
 
     Parameters
     ----------
@@ -50,12 +50,12 @@ if __name__ == '__main__':
     if in_args.input_list is "NONE":
         img_list = glob.glob("*_fl?.fits")
         if len(img_list) > 0:
-            identify_pc_sc(img_list)
+            report_skycells(img_list)
         else:
             sys.exit("ERROR: No flc/flt fits files found in current path {}/".format(os.getcwd()))
     elif os.path.exists(in_args.input_list):
         with open(sys.argv[1]) as fin:
             img_list = fin.read().splitlines()
-        identify_pc_sc(img_list)
+        report_skycells(img_list)
     else:
         sys.exit("ERROR: Input file {} does not exist!".format(in_args.input_list))
