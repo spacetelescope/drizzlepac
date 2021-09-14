@@ -101,7 +101,7 @@ def augment_results(results):
     # populate dateobs_list, path_list
     for idx in results.index:
         rootname = results.exposure[idx]
-        imgname = make_poller_files.locate_fitspath_from_rootname(rootname)
+        imgname = make_poller_files.locate_fitsfile(rootname)
         dateobs_list.append(fits.getval(imgname, "DATE-OBS"))
         path_list.append(imgname)
 
@@ -305,7 +305,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--spec', required=False, default="None",
                         help='Filter name(s) to search for. To search for ACS observations that use two '
                              'spectral elements, enter the names of both spectral elements in any order '
-                             'seperated by a dash. Example two-spectral element input: f606w-pol60v')
+                             'separated by a dash. Example two-spectral element input: f606w-pol60v')
     parser.add_argument('-m', '--master_observations_file', required=False,
                         default=os.getenv("ALL_EXP_FILE"),
                         help='Name of the master observations .csv file containing comma-separated columns '
