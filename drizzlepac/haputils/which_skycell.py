@@ -54,7 +54,7 @@ if __name__ == '__main__':
         else:
             sys.exit("ERROR: No flc/flt fits files found in current path {}/".format(os.getcwd()))
     elif os.path.exists(in_args.input_list):
-        with open(sys.argv[1]) as fin:
+        with open(in_args.input_list) as fin:
             img_list = fin.read().splitlines()
         report_skycells(img_list)
     else:
