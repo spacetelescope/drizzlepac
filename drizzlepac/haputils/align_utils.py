@@ -169,6 +169,23 @@ class AlignmentTable:
                                           rms_estimator=self.alignment_pars['rms_estimator'],
                                           threshold_flag=self.alignment_pars['threshold'])
                 catimg.build_kernel(fwhmpsf)
+                catimg.crclean = self.alignment_pars['classify']
+                log.info("CATIMG.CRCLEAN: {}".format(catimg.crclean))
+                if catimg.crclean:
+                    log.info("Recomputing BACKGROUND after applying single-image CR clean")
+                    for chip in range(1, catimg.num_sci + 1):
+                        sciarr = amutils.crclean_image(catimg.imghdu[("SCI", chip)].data, catimg.threshold[chip],
+                                                       catimg.kernel, catimg.kernel_fwhm)
+                        catimg.imghdu[("SCI", chip)].data = sciarr
+                    # recompute now that the CRs have been removed (set to 0) from the science arrays
+                    catimg.compute_background(box_size=self.alignment_pars['box_size'],
+                                              win_size=self.alignment_pars['win_size'],
+                                              nsigma=self.alignment_pars['nsigma'],
+                                              bkg_estimator=self.alignment_pars['bkg_estimator'],
+                                              rms_estimator=self.alignment_pars['rms_estimator'],
+                                              threshold_flag=self.alignment_pars['threshold'])
+                    catimg.build_kernel(fwhmpsf)
+
                 # Use FWHM from first good exposure as default for remainder of exposures
                 if not default_fwhm_set and catimg.kernel is not None:
                     fwhmpsf = catimg.fwhmpsf
@@ -666,7 +683,8 @@ class HAPImage:
             dqmask = self.build_dqmask(chip=chip)
             sciarr = self.imghdu[("SCI", chip)].data.copy()
             #  TODO: replace detector_pars with dict from OO Config class
-            extract_pars = {'classify': alignment_pars['classify'],
+            # Turning off 'classify' since same CRs are being removed before segmentation now
+            extract_pars = {'classify': False,  # alignment_pars['classify'],
                             'centering_mode': alignment_pars['centering_mode'],
                             'nlargest': alignment_pars['MAX_SOURCES_PER_CHIP'],
                             'deblend': alignment_pars['deblend']}
@@ -743,7 +761,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     common_pars = fit_pars['pars']
     del fit_pars['pars']
 
-    nclip = None if fitgeom == 'shift' else 1
+    nclip = 1 if fitgeom == 'rscale' else 0  # Only perform sigma-clipping for 'rscale'
 
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
@@ -855,7 +873,7 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
     common_pars = fit_pars['pars']
     del fit_pars['pars']
 
-    nclip = None if fitgeom == 'shift' else 1
+    nclip = 1 if fitgeom == 'rscale' else 0  # Only perform sigma-clipping for 'rscale'
 
     log.info("{} (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
@@ -919,7 +937,7 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     common_pars = fit_pars['pars']
     del fit_pars['pars']
 
-    nclip = None if fitgeom == 'shift' else 1
+    nclip = 1 if fitgeom == 'rscale' else 0  # Only perform sigma-clipping for 'rscale'
 
     log.info("{} (match_2dhist_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 28))

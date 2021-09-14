@@ -1002,6 +1002,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     # If classify is turned on, it should modify the segmentation map
     dqmap = None
     if classify:
+        log.info('Removing suspected cosmic-rays from source catalog')
         cat = SourceCatalog(imgarr, segm)
         # Remove likely cosmic-rays based on central_moments classification
         bad_srcs = np.where(classify_sources(cat, fwhm) == 0)[0] + 1
@@ -1157,6 +1158,34 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
             ax[1][1].imshow(segment_threshold, origin='lower')
     return tbl, segm, dqmap
 
+
+def crclean_image(imgarr, segment_threshold, kernel, fwhm, source_box=7):
+
+    segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
+                          filter_kernel=kernel, connectivity=4)
+
+    # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
+    if segm is None or segm.nlabels == 0:
+        log.info("No sources to identify as cosmic-rays!")
+        return imgarr
+
+    segm = deblend_sources(imgarr, segm, npixels=5,
+                               filter_kernel=kernel, nlevels=32,
+                               contrast=0.01)
+
+    cat = SourceCatalog(imgarr, segm)
+    # Remove likely cosmic-rays based on central_moments classification
+    bad_srcs = np.where(classify_sources(cat, fwhm) == 0)[0]
+
+    # segm.remove_labels(bad_srcs)
+    # Instead of ignoring them by removing them from the catalog
+    # zero all these sources out from the image itself.
+    for src in bad_srcs:
+        src_slice = segm.segments[src].slices
+        src_mask = (np.clip(segm.segments[src], 0, 1) == 1)
+        imgarr[src_slice][src_mask] = 0.0  # segment_threshold[src_slice][src_mask]
+
+    return imgarr
 
 def classify_sources(catalog, fwhm, sources=None):
     """ Convert moments_central attribute for source catalog into star/cr flag.
