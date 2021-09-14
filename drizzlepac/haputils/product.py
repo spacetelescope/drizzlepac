@@ -794,10 +794,14 @@ class SkyCellExposure(HAPProduct):
         # layer: [filter_str, pscale_str, exptime_str, epoch_str]
         # e.g.: [f160w, coarse, all, all]
         #
-        if layer[1] == 'coarse':
-            layer_vals = [layer[1], layer[2], self.exposure_name]
+        if filename.startswith("hst"):
+            exposure_name = filename.split("_")[-2]
         else:
-            layer_vals = ['all', self.exposure_name]
+            exposure_name = self.exposure_name
+        if layer[1] == 'coarse':
+            layer_vals = [layer[1], layer[2], exposure_name]
+        else:
+            layer_vals = ['all', exposure_name]
         layer_str = '-'.join(layer_vals)
 
         cell_id = "p{}{}".format(prop_id, obset_id)
@@ -906,8 +910,11 @@ class SkyCellExposure(HAPProduct):
                 New MVM-compatible HAP filename for input exposure
 
         """
-        suffix = filename.split("_")[1]
-        sce_filename = '_'.join([self.product_basename, suffix])
+        if filename.startswith("hst"):
+            sce_filename = "{}_{}".format(self.product_basename, filename.split("_")[-1])
+        else:
+            suffix = filename.split("_")[1]
+            sce_filename = '_'.join([self.product_basename, suffix])
         log.info("Copying {} to MVM input: \n    {}".format(filename, sce_filename))
         try:
             shutil.copy(filename, sce_filename)
@@ -1079,6 +1086,7 @@ class SkyCellProduct(HAPProduct):
                   .format(meta_wcs, self.trl_logname))
 
         edp_filenames = [element.full_filename for element in self.edp_list]
+
         astrodrizzle.AstroDrizzle(input=edp_filenames,
                                   output=self.drizzle_filename,
                                   **drizzle_pars)

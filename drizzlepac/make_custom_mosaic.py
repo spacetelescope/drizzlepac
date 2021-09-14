@@ -177,7 +177,7 @@ def create_poller_file(img_list, proj_cell_dict):
     poller_filename = "temp_{}_mvm.out".format(skycell_name)
     rootname_list = []
     for imgname in img_list:
-        rootname_list.append(imgname.split("_")[0]+"\n")
+        rootname_list.append(imgname+"\n")
     tf = tempfile.NamedTemporaryFile(mode='w+t', dir=os.getcwd())
     with open(tf.name, 'w') as f:
         f.writelines(rootname_list)
