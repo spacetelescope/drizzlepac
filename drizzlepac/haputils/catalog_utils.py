@@ -1248,13 +1248,19 @@ class HAPPointCatalog(HAPCatalogBase):
         Nothing!
 
         """
-        if not reject_catalogs:
-            # Write out catalog to ecsv file
-            self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="aperture", product=self.image.ghd_product)
-            # self.source_cat.meta['comments'] = \
-            #     ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
-            self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
-            log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
+        # Insure catalog has all necessary metadata
+        self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="aperture",
+                                              product=self.image.ghd_product)
+        if reject_catalogs:
+            # We still want to write out empty files
+            # This will delete all rows from the existing table
+            self.source_cat.remove_rows(slice(0, None))
+
+        # Write out catalog to ecsv file
+        # self.source_cat.meta['comments'] = \
+        #     ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
+        self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
+        log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
         # Write out region file if in diagnostic_mode.
         if self.diagnostic_mode:
@@ -1667,7 +1673,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # No segments were detected in the total data product - no further processing done for this TDP,
                 # but processing of another TDP should proceed.
                 elif not rw_segm_img:
-                    self._define_empty_table(segm_img)
+                    self._define_empty_table(rw_segm_img)
                     return
 
             # The first round custom/Gaussian segmentation image is good, continue with the processing
@@ -1679,7 +1685,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # No segments were detected in the total data product - no further processing done for this TDP,
             # but processing of another TDP should proceed.
             elif not g_segm_img:
-                self._define_empty_table(segm_img)
+                self._define_empty_table(g_segm_img)
                 return
 
             # Deblend the segmentation image

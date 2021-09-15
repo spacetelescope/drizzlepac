@@ -356,30 +356,33 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             # rate of cosmic-ray contamination for the total detection product
             reject_catalogs = total_product_catalogs.verify_crthresh(n1_exposure_time)
 
-            if not reject_catalogs or diagnostic_mode:
-                for filter_product_obj in total_product_obj.fdp_list:
-                    filter_product_catalogs = filter_catalogs[filter_product_obj.drizzle_filename]
+            if diagnostic_mode:
+                # If diagnostic mode, we want to inspect the original full source catalogs
+                reject_catalogs = False
 
-                    # Now write the catalogs out for this filter product
-                    log.info("Writing out filter product catalog")
-                    # Write out photometric (filter) catalog(s)
-                    filter_product_catalogs.write(reject_catalogs)
+            for filter_product_obj in total_product_obj.fdp_list:
+                filter_product_catalogs = filter_catalogs[filter_product_obj.drizzle_filename]
 
-                    # append filter product catalogs to list
-                    if phot_mode in ['aperture', 'both']:
-                        product_list.append(filter_product_obj.point_cat_filename)
-                    if phot_mode in ['segment', 'both']:
-                        product_list.append(filter_product_obj.segment_cat_filename)
+                # Now write the catalogs out for this filter product
+                log.info("Writing out filter product catalog")
+                # Write out photometric (filter) catalog(s)
+                filter_product_catalogs.write(reject_catalogs)
 
-                log.info("Writing out total product catalog")
-                # write out list(s) of identified sources
-                total_product_catalogs.write(reject_catalogs)
-
-                # append total product catalogs to manifest list
+                # append filter product catalogs to list
                 if phot_mode in ['aperture', 'both']:
-                    product_list.append(total_product_obj.point_cat_filename)
+                    product_list.append(filter_product_obj.point_cat_filename)
                 if phot_mode in ['segment', 'both']:
-                    product_list.append(total_product_obj.segment_cat_filename)
+                    product_list.append(filter_product_obj.segment_cat_filename)
+
+            log.info("Writing out total product catalog")
+            # write out list(s) of identified sources
+            total_product_catalogs.write(reject_catalogs)
+
+            # append total product catalogs to manifest list
+            if phot_mode in ['aperture', 'both']:
+                product_list.append(total_product_obj.point_cat_filename)
+            if phot_mode in ['segment', 'both']:
+                product_list.append(total_product_obj.segment_cat_filename)
     return product_list
 
 
