@@ -2585,11 +2585,16 @@ class HAPSegmentCatalog(HAPCatalogBase):
         Nothing
 
         """
-        if not reject_catalogs:
-            # Write out catalog to ecsv file
-            self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="segment", product=self.image.ghd_product)
-            self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
-            log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
+        self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="segment",
+                                              product=self.image.ghd_product)
+        if reject_catalogs:
+            # We still want to write out empty files
+            # This will delete all rows from the existing table
+            self.source_cat.remove_rows(slice(0, None))
+
+        # Write out catalog to ecsv file
+        self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
+        log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
         # For debugging purposes only, create a "regions" files to use for ds9 overlay of the segm_img.
         # Create the image regions file here in case there is a failure.  This diagnostic portion of the
