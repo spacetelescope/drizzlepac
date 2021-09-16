@@ -1500,6 +1500,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                      check_big_island_only=False,
                                                                                      rw2d_biggest_source=self._rw2d_biggest_source,
                                                                                      rw2d_source_fraction=self._rw2d_source_fraction)
+            segm_img_orig = copy.deepcopy(g_segm_img)
 
             # If the science field via the segmentation map is deemed crowded or has big sources/islands, compute the
             # RickerWavelet2DKernel and call detect_and_eval_segments() again. Still use the custom fwhm as it
@@ -1995,7 +1996,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         -------
 
         """
-        if self.sources.nlabels == 0:
+        if self.sources is None or self.sources.nlabels == 0:
             # Report configuration values to log
             log.info("{}".format("=" * 80))
             log.info("")
@@ -2003,8 +2004,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("image name: {}".format(self.imgname))
             log.info("Generating empty segment catalog.")
             log.info("")
-            # define this attribute for use by the .write method
-            self._define_empty_table()
 
             # Capture specified filter columns in order to append to the total detection table
             self.subset_filter_source_cat = Table(names=["ID", "MagAp2", "CI", "Flags"])
@@ -2415,7 +2414,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         self.source_cat = empty_table
         self.sources = copy.deepcopy(segm_img)
-        self.sources.nlabels = 0  # Insure nlabels is set to 0 to indicate no valid sources
+        if self.sources:
+            self.sources.nlabels = 0  # Insure nlabels is set to 0 to indicate no valid sources
 
 
     def _define_total_table(self, updated_table):
