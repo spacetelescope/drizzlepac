@@ -1498,6 +1498,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                      check_big_island_only=False,
                                                                                      rw2d_biggest_source=self._rw2d_biggest_source,
                                                                                      rw2d_source_fraction=self._rw2d_source_fraction)
+            segm_img_orig = copy.deepcopy(g_segm_img)
 
             # If the science field via the segmentation map is deemed crowded or has big sources/islands, compute the
             # RickerWavelet2DKernel and call detect_and_eval_segments() again. Still use the custom fwhm as it
