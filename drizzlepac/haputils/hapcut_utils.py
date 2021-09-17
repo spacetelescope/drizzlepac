@@ -353,9 +353,15 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
     # MULTIPLE FILES: For each file cutout, there is an HDUList comprised of a PHDU and one or more EHDUs. 
     # The out_HDUList is then a list of HDULists.
     # SINGLE FILES: There is one bare minimum PHDU followed by all of the EHDUs.
-    out_HDUList = fits_cut(input_files, sky_coord, cutout_size, correct_wcs=CORRECT_WCS,
-                           extension=EXTENSION, single_outfile=SINGLE_OUTFILE, cutout_prefix=OUTPUT_PREFIX,
-                           output_dir=".", memory_only=MEMORY_ONLY, verbose=True)
+    out_HDUList = []
+    try:
+        out_HDUList = fits_cut(input_files, sky_coord, cutout_size, correct_wcs=CORRECT_WCS,
+                               extension=EXTENSION, single_outfile=SINGLE_OUTFILE, cutout_prefix=OUTPUT_PREFIX,
+                               output_dir=".", memory_only=MEMORY_ONLY, verbose=True)
+    except Exception as x_cept:
+        log.error("")
+        log.error("Exception encountered during the cutout process: {}".format(x_cept))
+        log.error("No cutout files were created.")
 
     # hst_cutout_skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>_detector_filter[_platescale][-ipppssoo].fits
     # Get the whole number and fractional components of the RA and Dec
@@ -560,10 +566,16 @@ def mvm_combine(cutout_files, output_dir=".", log_level=logutil.logging.INFO):
 
     # FILTER-LEVEL COMBINATION
     # For each detector/filter, generate the output filename and perform the combine
+    log.info("")
+    log.info("=== Combining filter-level files ===")
     __combine_cutouts(filter_dict, type="FILTER", img_combiner=img_combiner, output_dir=output_dir, log_level=log_level)
 
     # EXPOSURE-LEVEL COMBINATION
+    log.info("")
+    log.info("=== Combining exposure-level files ===")
     __combine_cutouts(exposure_dict, type="EXPOSURE", img_combiner=img_combiner, output_dir=output_dir, log_level=log_level)
+
+    log.info("Cutout combination is done.")
 
 
 def __combine_cutouts(input_dict, type="FILTER", img_combiner=None, output_dir=".", log_level=logutil.logging.INFO):
@@ -624,7 +636,12 @@ def __combine_cutouts(input_dict, type="FILTER", img_combiner=None, output_dir="
     
             # Combine the SCI and then the WHT extensions in the specified files
             log.info("Combining the SCI and then the WHT extensions of the input cutout files.")
-            combined_cutout = astrocut.CutoutsCombiner(file_list, img_combiner=img_combiner).combine(output_file=output_filename)
+            try:
+                combined_cutout = astrocut.CutoutsCombiner(file_list, img_combiner=img_combiner).combine(output_file=output_filename)
+            except Exception as x_cept:
+                log.warning("The cutout combine was not successful for files, {}, due to {}.".format(file_list, x_cept))
+                log.warning("Processing continuuing on next possible set of data.")
+                continue
             log.info("The combined output filename is {}.".format(output_filename))
 
         # Only a single file 
