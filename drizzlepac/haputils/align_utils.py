@@ -184,7 +184,9 @@ class AlignmentTable:
                                               bkg_estimator=self.alignment_pars['bkg_estimator'],
                                               rms_estimator=self.alignment_pars['rms_estimator'],
                                               threshold_flag=self.alignment_pars['threshold'])
+                    log.info("Finished computing revised BACKROUND")
                     catimg.build_kernel(fwhmpsf)
+                    log.info("Finished determining revised kernel")
 
                 # Use FWHM from first good exposure as default for remainder of exposures
                 if not default_fwhm_set and catimg.kernel is not None:

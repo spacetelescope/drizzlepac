@@ -1842,14 +1842,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
         """
 
         log.info("Computing the threshold value used for source detection.")
-
         if not self.tp_masks:
             threshold = bkg_mean + (nsigma * bkg_rms)
         else:
             threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
             log.info("Using WHT masks as a scale on the RMS to compute threshold detection limit.")
             for wht_mask in self.tp_masks:
-                threshold_rms = bkg_rms * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'].max())
+                threshold_rms = bkg_rms * np.sqrt(wht_mask['scale'] * wht_mask['mask'] / wht_mask['rel_weight'].max())
                 threshold_rms_median = np.nanmedian(threshold_rms[threshold_rms > 0])
                 threshold_item = bkg_mean + (nsigma * threshold_rms_median)
                 threshold += threshold_item

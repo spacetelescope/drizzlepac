@@ -27,7 +27,7 @@
         "bkg_estimator": "SExtractorBackground",
         "rms_estimator": "StdBackgroundRMS",
         "num_sources": 500,
-        "deblend": true,
+        "deblend": false,
         "fwhmpsf": 0.13,
         "classify": true,
         "threshold": -1.1
