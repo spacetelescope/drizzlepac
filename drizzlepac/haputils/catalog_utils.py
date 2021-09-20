@@ -1632,13 +1632,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
             elif not g_segm_img:
                 return
 
-            # Deblend the segmentation image
+            # Deblend the segmentation image sources that are larger than the PSF kernel
             ncount += 1
-            self.deblend_segments(segm_img,
-                                  imgarr,
-                                  ncount,
-                                  filter_kernel=self.kernel,
-                                  source_box=self._size_source_box)
+            segm_img = self.deblend_segments(segm_img,
+                                             imgarr,
+                                             ncount,
+                                             filter_kernel=self.kernel,
+                                             source_box=self._size_source_box)
 
             # The total product catalog consists of at least the X/Y and RA/Dec coordinates for the detected
             # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
@@ -1898,7 +1898,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         log.info("Deblending segments in total image product.")
         # Note: SExtractor has "connectivity=8" which is the default for detect_sources().
-
+        # Initialize return value in case of failure in deblending
+        segm_deblended_img = segm_img
         try:
             # Deblending is a combination of multi-thresholding and watershed
             # segmentation. Sextractor uses a multi-thresholding technique.
@@ -1909,14 +1910,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                  npixels=source_box,
                                                  filter_kernel=filter_kernel,
                                                  nlevels=self._nlevels,
-                                                 contrast=self._contrast)
+                                                 contrast=self._contrast,
+                                                 labels=segm_img.big_segments)
             if self.diagnostic_mode:
+                log.info("Deblended {} out of {} segments".format(len(segm_img.big_segments), segm_img.nlabels))
                 outname = self.imgname.replace(".fits", "_segment_deblended" + str(ncount) + ".fits")
                 fits.PrimaryHDU(data=segm_deblended_img.data).writeto(outname)
-
-            # The deblending was successful, so just copy the deblended sources back to the sources attribute.
-            segm_img = copy.deepcopy(segm_deblended_img)
-            del segm_deblended_img
 
         except Exception as x_cept:
             log.warning("Deblending the segments in image {} was not successful: {}.".format(self.imgname,
@@ -1924,6 +1923,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.warning("Processing can continue with the non-deblended segments, but the user should\n"
                         "check the output catalog for issues.")
 
+        # The deblending was successful, so just return the deblended SegmentationImage to calling routine.
+        return segm_deblended_img
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def measure_sources(self, filter_name):
@@ -2442,6 +2443,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # n = narray[1:]
         n, binedges = np.histogram(segm_img.data, range=(1, nbins))
         real_pixels = (image_data != 0).sum()
+
+        # Compute which segments are larger than the kernel.
+        deb_limit = self.kernel.size
+        log.debug("Deblending limit set at: {} pixels".format(deb_limit))
+        # add as attribute to SegmentationImage for use later
+        segm_img.big_segments = np.where(segm_img.areas >= deb_limit)[0] + 1  # Segment labels are 1-based
 
         biggest_source = n.max()/float(real_pixels)
         log.info("Biggest_source: %f", biggest_source)
