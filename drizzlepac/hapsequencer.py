@@ -162,47 +162,6 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             # images and some of the measurements can be appended to the total catalog
             total_product_catalogs.identify(mask=total_product_obj.mask)
 
-            # Determine how to continue if "aperture" or "segment" fails to find sources for this total
-            # detection product - take into account the initial setting of phot_mode.
-            # If no sources were found by either the point or segmentation algorithms, go on to
-            # the next total detection product (detector) in the visit with the initially requested
-            # phot_mode.  If the point or segmentation algorithms found sources, need to continue
-            # processing for that (those) algorithm(s) only.
-
-
-            # When both algorithms have been requested...
-            if input_phot_mode == 'both':
-                # If no sources found with either algorithm, skip to the next total detection product
-                if total_product_catalogs.catalogs['aperture'].sources is None and total_product_catalogs.catalogs['segment'].sources is None:
-                    log.info("No sources found with Segmentation or Point algorithms for TDP {} - skip to next TDP".format(total_product_obj.drizzle_filename))
-                    del total_product_catalogs.catalogs['aperture']
-                    del total_product_catalogs.catalogs['segment']
-                    continue
-
-                # Only point algorithm found sources, continue to the filter catalogs for just point
-                if total_product_catalogs.catalogs['aperture'].sources is not None and total_product_catalogs.catalogs['segment'].sources is None:
-                    log.info("Sources only found with Point algorithm for TDP {} - phot_mode set only to POINT for this TDP".format(total_product_obj.drizzle_filename))
-                    phot_mode = 'aperture'
-                    del total_product_catalogs.catalogs['segment']
-
-                # Only segment algorithm found sources, continue to the filter catalogs for just segmentation
-                if total_product_catalogs.catalogs['aperture'].sources is None and total_product_catalogs.catalogs['segment'].sources is not None:
-                    log.info("Sources only found with Segmentation algorithm for TDP {} - phot_mode set only to SEGMENT for this TDP".format(total_product_obj.drizzle_filename))
-                    phot_mode = 'segment'
-                    del total_product_catalogs.catalogs['aperture']
-
-            # Only requested the point algorithm
-            elif input_phot_mode == 'aperture':
-                if total_product_catalogs.catalogs['aperture'].sources is None:
-                    del total_product_catalogs.catalogs['aperture']
-                    continue
-
-            # Only requested the segmentation algorithm
-            elif input_phot_mode == 'segment':
-                if total_product_catalogs.catalogs['segment'].sources is None:
-                    del total_product_catalogs.catalogs['segment']
-                    continue
-
             # Build dictionary of total_product_catalogs.catalogs[*].sources to use for
             # filter photometric catalog generation
             sources_dict = {}
@@ -244,7 +203,6 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 # a filter "subset" table which will be combined with the total detection table.
                 filter_name = filter_product_obj.filters
                 filter_product_catalogs.measure(filter_name)
-
                 log.info("Flagging sources in filter product catalog")
                 filter_product_catalogs = run_sourcelist_flagging(filter_product_obj,
                                                                   filter_product_catalogs,
@@ -876,7 +834,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
             log.info("Wrote hla_flag_filter param pickle file {} ".format(out_pickle_filename))
 
         # TODO: REMOVE ABOVE CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
-        if len(catalog_data) > 0:
+        if catalog_data is not None and len(catalog_data) > 0:
              source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image,
                                                                    flt_list,
                                                                    param_dict,

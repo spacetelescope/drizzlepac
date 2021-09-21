@@ -206,7 +206,8 @@ class HAPProduct:
                                                                      full_catalog=True)
 
                     # Add a weight column which is based upon proper motion measurements
-                    if ref_catalog.meta['converted'] and ref_catalog['RA_error'][0] != np.nan:
+                    if 'converted' in ref_catalog.meta and ref_catalog.meta['converted'] \
+                            and ref_catalog['RA_error'][0] != np.nan:
                         ref_weight = np.sqrt(ref_catalog['RA_error'] ** 2 + ref_catalog['DEC_error'] ** 2)
                         ref_weight = np.nan_to_num(ref_weight, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
                     else:

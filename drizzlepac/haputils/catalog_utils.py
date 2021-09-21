@@ -577,7 +577,6 @@ class HAPCatalogs:
         # The syntax here is EXTREMELY cludgy, but until a more compact way to do this is found,
         #  it will have to do...
         self.catalogs = {}
-
         if 'segment' in self.types:
             self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict, self.param_dict_qc,
                                                          self.diagnostic_mode, tp_sources=tp_sources)
@@ -678,7 +677,6 @@ class HAPCatalogs:
             Supported types of catalogs include: 'aperture', 'segment'.
         """
         # Make sure we at least have a default 2D background computed
-
         for catalog in self.catalogs.values():
             if catalog.source_cat is None:
                 catalog.source_cat = catalog.sources
@@ -1500,7 +1498,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                      check_big_island_only=False,
                                                                                      rw2d_biggest_source=self._rw2d_biggest_source,
                                                                                      rw2d_source_fraction=self._rw2d_source_fraction)
-            segm_img_orig = copy.deepcopy(g_segm_img)
 
             # If the science field via the segmentation map is deemed crowded or has big sources/islands, compute the
             # RickerWavelet2DKernel and call detect_and_eval_segments() again. Still use the custom fwhm as it
@@ -1802,7 +1799,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # a final message for this particular total detection product and return.
             if segm_img is None:
                 log.warning("End processing for the segmentation catalog due to no sources detected with the current kernel.")
-                log.warning("No segmentation catalog will be produced for this total detection product, {}.".format(self.imgname))
+                log.warning("An empty catalog will be produced for this total detection product, {}.".format(self.imgname))
                 is_big_crowded = True
                 big_island = 1.0
                 source_fraction = 1.0
@@ -2004,6 +2001,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("image name: {}".format(self.imgname))
             log.info("Generating empty segment catalog.")
             log.info("")
+            self._define_empty_table(None)
 
             # Capture specified filter columns in order to append to the total detection table
             self.subset_filter_source_cat = Table(names=["ID", "MagAp2", "CI", "Flags"])
