@@ -175,7 +175,7 @@ class AlignmentTable:
                     log.info("Recomputing BACKGROUND after applying single-image CR clean")
                     for chip in range(1, catimg.num_sci + 1):
                         sciarr = amutils.crclean_image(catimg.imghdu[("SCI", chip)].data, catimg.threshold[chip],
-                                                       catimg.kernel, catimg.kernel_fwhm)
+                                                       catimg.kernel, catimg.kernel_fwhm, background=catimg.bkg[chip])
                         catimg.imghdu[("SCI", chip)].data = sciarr
                     # recompute now that the CRs have been removed (set to 0) from the science arrays
                     catimg.compute_background(box_size=self.alignment_pars['box_size'],
