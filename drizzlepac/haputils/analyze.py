@@ -1,10 +1,15 @@
-""" Utility to analyze an input dataset and determine whether the dataset can be aligned
+""" Utilities to analyze an input and determine whether the input is viable for a given process
 
-The function analyze_data opens an input list containing FLT and/or FLC FITS filenames
-in order to access the primary header data.  Based upon the values of specific
+The fundamental function analyze_data opens an input list containing FLT and/or FLC FITS
+filenames in order to access the primary header data.  Based upon the values of specific
 FITS keywords, the function determines whether or not each file within this dataset
 can or should be reconciled against an astrometric catalog and, for multiple images, used
 to create a mosaic.
+
+The functions, mvm_analyze_wrapper and analyze_wrapper, are thin wrappers around analyze_data
+to accommodate special case uses.  The mvm_analyze_wrapper takes a filename as input and
+returns a boolean indicator.  The analyze_wrapper has the same function signature as
+analyze_data, but it returns a list instead of an astropy table.
 """
 import math
 import sys
@@ -23,7 +28,7 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
-__all__ = ['analyze_data']
+__all__ = ['analyze_data', 'analyze_wrapper', 'mvm_analyze_wrapper']
 
 # Define global default keyword names for these fields
 OBSKEY = 'OBSTYPE'
@@ -51,6 +56,39 @@ class Messages(Enum):
     OK, WARN, NOPROC = 1, -1, -2
 
 
+def mvm_analyze_wrapper(input_filename, log_level=logutil.logging.DEBUG):
+    """
+    Thin wrapper for the analyze_data function to return a viability indicator regarding a image for MVM processing.
+
+    Parameters
+    ==========
+    input_filename : string
+        Full fileName of data to be analyzed for viability to be processed as an MVM constituent.
+
+    Returns
+    =======
+    use_for_mvm : boolean
+        Boolean which indicates whether the input image should be used for MVM processing -
+        True: use for MVM, False: do NOT use for MVM
+    """
+    # Set logging level to user-specified level
+    log.setLevel(log_level)
+
+    # Invoke the low-level analyze_data routine with type = "MVM"
+    filtered_table = analyze_data([input_filename], type = "MVM")
+
+    # There is only one row in this output table
+    use_for_mvm = False
+    if filtered_table['doProcess'] == 0:
+        use_for_mvm = False
+        log.warning("Image, {}, cannot be used for MVM processing.  Issue: {}.\n". \
+                    format(input_filename, filtered_table['processMsg'][0]))
+    else:
+        use_for_mvm = True
+
+    return use_for_mvm
+
+
 def analyze_wrapper(input_file_list, log_level=logutil.logging.NOTSET):
     """
     Thin wrapper for the analyze_data function to return a list of viable images.
@@ -70,7 +108,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.NOTSET):
     This routine returns a list containing only viable images instead of a table which
     provides information, as well as a doProcess bool, regarding each image.
     """
-    # set logging level to user-specified level
+    # Set logging level to user-specified level
     log.setLevel(log_level)
 
     process_list = []
@@ -89,7 +127,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.NOTSET):
     return process_list
 
 
-def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
+def analyze_data(input_file_list, log_level=logutil.logging.NOTSET, type=""):
     """
     Determine if images within the dataset can be aligned
 
@@ -103,6 +141,9 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
         Default value is 20, or 'info'.
+
+    type : string
+        String indicating whether this file is for MVM or some other processing.
 
     Returns
     =======
@@ -134,7 +175,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
 
     Please be aware of the FITS keyword value NONE vs the Python None.
     """
-    # set logging level to user-specified level
+    # Set logging level to user-specified level
     log.setLevel(log_level)
 
     acs_filt_name_list = [FILKEY1, FILKEY2]
@@ -303,7 +344,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET):
         # for all the good data.
         split_sfilter = sfilter.upper().split('_')
         for item in split_sfilter:
-            if item.startswith(('G', 'PR')) and not is_zero:
+            if item.startswith(('G', 'PR')) and not is_zero and type.upper() != "MVM":
                 no_proc_key = None
                 no_proc_value = None
             elif item.startswith(('G', 'PR')) and is_zero:
