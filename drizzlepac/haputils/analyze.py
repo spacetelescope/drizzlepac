@@ -25,7 +25,7 @@ __taskname__ = 'analyze'
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+log = logutil.create_logger(__name__, level=logutil.logging.DEBUG, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 __all__ = ['analyze_data', 'analyze_wrapper', 'mvm_analyze_wrapper']
@@ -56,7 +56,7 @@ class Messages(Enum):
     OK, WARN, NOPROC = 1, -1, -2
 
 
-def mvm_analyze_wrapper(input_filename, log_level=logutil.logging.NOTSET):
+def mvm_analyze_wrapper(input_filename, log_level=logutil.logging.DEBUG):
     """
     Thin wrapper for the analyze_data function to return a viability indicator regarding a image for MVM processing.
 
@@ -85,11 +85,12 @@ def mvm_analyze_wrapper(input_filename, log_level=logutil.logging.NOTSET):
                     format(input_filename, filtered_table['processMsg'][0]))
     else:
         use_for_mvm = True
+        log.info("Image, {}, will be used for MVM processing.".format(input_filename))
 
     return use_for_mvm
 
 
-def analyze_wrapper(input_file_list, log_level=logutil.logging.NOTSET):
+def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG):
     """
     Thin wrapper for the analyze_data function to return a list of viable images.
 
@@ -127,7 +128,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.NOTSET):
     return process_list
 
 
-def analyze_data(input_file_list, log_level=logutil.logging.NOTSET, type=""):
+def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
     """
     Determine if images within the dataset can be aligned
 
@@ -144,6 +145,9 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET, type=""):
 
     type : string
         String indicating whether this file is for MVM or some other processing.
+        If type == "MVM", then Grism/Prism data is ignored.  If type == "" (default) or any
+        other string, the Grism/Prism data is considered available for processing unless there is
+        some other issue (i.e., exposure time of zero).
 
     Returns
     =======
@@ -344,12 +348,20 @@ def analyze_data(input_file_list, log_level=logutil.logging.NOTSET, type=""):
         # for all the good data.
         split_sfilter = sfilter.upper().split('_')
         for item in split_sfilter:
+            # This is the only circumstance when Grism/Prism data WILL be processed.
             if item.startswith(('G', 'PR')) and not is_zero and type.upper() != "MVM":
                 no_proc_key = None
                 no_proc_value = None
-            elif item.startswith(('G', 'PR')) and is_zero:
-                no_proc_value += " and EXPTIME = 0.0"
-
+                log.info("The Grism/Prism data, {}, will be processed.".format(input_file))
+            # Grism/Prism WILL NOT be processed primarily if MVM processing or with an exposure time of zero.
+            elif item.startswith(('G', 'PR')): 
+                if type.upper() == "MVM":
+                    no_proc_value += ", Grism/Prism data and MVM processing"
+                    log.warning("The Grism/Prism data {} with MVM processing will be ignored.".format(input_file))
+                elif is_zero:
+                    no_proc_value += ", Grism/Prism data and EXPTIME = 0.0"
+                    log.warning("The Grism/Prism data {} with zero exposure time will be ignored.".format(input_file))
+    
             if item.startswith(('BLOCK')):
                 no_proc_key = FILKEY
                 no_proc_value = sfilter
