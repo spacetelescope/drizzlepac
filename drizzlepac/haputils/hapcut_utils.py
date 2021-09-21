@@ -319,9 +319,9 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
         Since both the SCI and WHT extensions of the input files are actually cut, individual fits files
         will contain two image extensions, a SCI followed by the WHT.  Each filter-level output
         filename will be of the form:
-          hst_skycell_cutout-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>_instrument_detector_filter[_platescale].fits
+          hst_cutout_skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>_instrument_detector_filter[_platescale].fits
         Each exposure-level filename will be of the form:
-          hst_skycell_cutout-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>_instrument_detector_filter[_platescale]-ipppssoo.fits
+          hst_cutout_skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>_instrument_detector_filter[_platescale]-ipppssoo.fits
 
         where platescale is not present representing the default of "fine" or has the value of "coarse".
 
@@ -403,7 +403,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
                                   "d" + ra_frac + "-dec" + ns + str(dec_whole) + "d" + \
                                   dec_frac + "_" + detector + "_" + filter + plate_scale + ".fits"
 
-                # Determine if the original file were a filter-level or exposure-level product
+                # Determine if the original file were a filter-level or exposure-level MVM product
                 # ORIG_FLE filter-level: hst_skycell-p1253x05y09_acs_wfc_f658n_all_drc.fits
                 # ORIG_FLE filter-level: hst_skycell-p0081x14y15_wfc3_ir_f128n_coarse-all_drz.fits
                 # ORIG_FLE filter-level: hst_skycell-p0081x14y15_wfc3_ir_f128n_all_drz.fits (fine scale)
