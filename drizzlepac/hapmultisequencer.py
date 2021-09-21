@@ -246,7 +246,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=False, diagnostic_mod
         part of the multi-visit.
 
     skip_gaia_alignment : bool, optional
-        Skip alignment of all input images to known Gaia/HSC sources in the FOV as reference sources? If set
+        Skip alignment of all input images to known Gaia/HSC sources in the input image footprint? If set to
         'True', The existing input image alignment solution will be used instead. The default is False.
 
     diagnostic_mode : bool, optional

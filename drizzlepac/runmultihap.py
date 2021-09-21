@@ -105,8 +105,9 @@ def main():
                              'specifying "error" will record/display both "error" and "critical" log '
                              'statements, and so on.')
     parser.add_argument('-s', '--skip_gaia_alignment', required=False, action='store_true',
-                        help='If this option is turned on, additional log messages will be displayed and '
-                             'additional files will be created during the course of the run.')
+                        help='Skip alignment of all input images to known Gaia/HSC sources in the input '
+                             'image footprint? This option is turned on, the existing input image alignment '
+                             'solution will be used instead. The default is False.')
     user_args = parser.parse_args()
 
     print("Multi-visit processing started for: {}".format(user_args.input_filename))
