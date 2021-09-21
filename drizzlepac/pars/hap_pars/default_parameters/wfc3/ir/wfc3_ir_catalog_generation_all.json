@@ -32,7 +32,7 @@
         "fwhm": 0.14,
         "source_box": 5,
         "segm_nsigma": 3.0,
-        "nlevels": 32,
+        "nlevels": 64,
         "contrast": 0.001,
         "border": 10,
         "rw2d_size": 11,
