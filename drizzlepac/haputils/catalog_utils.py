@@ -577,7 +577,6 @@ class HAPCatalogs:
         # The syntax here is EXTREMELY cludgy, but until a more compact way to do this is found,
         #  it will have to do...
         self.catalogs = {}
-
         if 'segment' in self.types:
             self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict, self.param_dict_qc,
                                                          self.diagnostic_mode, tp_sources=tp_sources)
@@ -678,7 +677,6 @@ class HAPCatalogs:
             Supported types of catalogs include: 'aperture', 'segment'.
         """
         # Make sure we at least have a default 2D background computed
-
         for catalog in self.catalogs.values():
             if catalog.source_cat is None:
                 catalog.source_cat = catalog.sources
@@ -1026,6 +1024,7 @@ class HAPPointCatalog(HAPCatalogBase):
             if not sources:
                 log.warning("No point sources were found in Total Detection Product, {}.".format(self.imgname))
                 log.warning("Processing for point source catalogs for this product is ending.")
+                self._define_empty_table()
                 return
 
             log.info("Measured {} sources in {}".format(len(sources), self.image.imgname))
@@ -1069,10 +1068,56 @@ class HAPPointCatalog(HAPCatalogBase):
             self.sources = self.tp_sources['aperture']['sources']
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    def _define_empty_table(self):
+        """Create basic empty table based on total product table to signify no valid source were detected"""
+        final_col_format = {"xcentroid": "10.3f", "ycentroid": "10.3f",
+                            "RA": "13.7f", "DEC": "13.7f",
+                            "id": "7d", "Flags": "5d"}
+
+        final_col_descrip = {"xcentroid": "Pixel Coordinate", "ycentroid": "Pixel Coordinate",
+                             "RA": "Sky coordinate at epoch of observation",
+                             "DEC": "Sky coordinate at epoch of observation",
+                             "id": "Catalog Object Identification Number",
+                             "Flags": "Numeric encoding for conditions on detected sources"}
+
+        final_col_units = {"xcentroid": "pixels", "ycentroid": "pixels", "RA": "degrees", "DEC": "degrees",
+                           "id": "unitless", "Flags": "unitless"}
+
+        final_colnames = [k for k in final_col_format.keys()]
+
+        # Initialize empty table with desired column names, descriptions and units
+        empty_table = Table(names=final_colnames,
+                      descriptions=final_col_descrip,
+                      units=final_col_units)
+
+        # Add formatting for each column
+        for fcf_key in final_col_format.keys():
+            empty_table[fcf_key].format = final_col_format[fcf_key]
+
+        self.sources = empty_table
+
 
     def measure_sources(self, filter_name):
         """Perform aperture photometry on identified sources
         """
+        if len(self.sources) == 0:
+            # Report configuration values to log
+            log.info("{}".format("=" * 80))
+            log.info("")
+            log.info("No point sources identified for photometry for")
+            log.info("image name: {}".format(self.imgname))
+            log.info("Generating empty point-source catalog.")
+            log.info("")
+            # define this attribute for use by the .write method
+            self.source_cat = self.sources
+
+            self.subset_filter_source_cat = Table(names=["ID", "MagAp2", "CI", "Flags"])
+            self.subset_filter_source_cat.rename_column("MagAp2", "MagAP2_" + filter_name)
+            self.subset_filter_source_cat.rename_column("CI", "CI_" + filter_name)
+            self.subset_filter_source_cat.rename_column("Flags", "Flags_" + filter_name)
+
+            return
+
         log.info("Performing aperture photometry on identified point-sources")
         # Open and background subtract image
         image = self.image.data.copy()
@@ -1201,13 +1246,19 @@ class HAPPointCatalog(HAPCatalogBase):
         Nothing!
 
         """
-        if not reject_catalogs:
-            # Write out catalog to ecsv file
-            self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="aperture", product=self.image.ghd_product)
-            # self.source_cat.meta['comments'] = \
-            #     ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
-            self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
-            log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
+        # Insure catalog has all necessary metadata
+        self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="aperture",
+                                              product=self.image.ghd_product)
+        if reject_catalogs:
+            # We still want to write out empty files
+            # This will delete all rows from the existing table
+            self.source_cat.remove_rows(slice(0, None))
+
+        # Write out catalog to ecsv file
+        # self.source_cat.meta['comments'] = \
+        #     ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
+        self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
+        log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
         # Write out region file if in diagnostic_mode.
         if self.diagnostic_mode:
@@ -1599,6 +1650,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                             log.warning("The Round 2 of segmentation images still contain big sources/islands or a\n"
                                      "large source fraction of segments.")
                             log.warning("The segmentation algorithm is unable to continue and no segmentation catalog will be produced.")
+                            self._define_empty_table(rw_segm_img)
                             del g_segm_img
                             del rw_segm_img
                             return
@@ -1619,6 +1671,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 # No segments were detected in the total data product - no further processing done for this TDP,
                 # but processing of another TDP should proceed.
                 elif not rw_segm_img:
+                    self._define_empty_table(rw_segm_img)
                     return
 
             # The first round custom/Gaussian segmentation image is good, continue with the processing
@@ -1630,6 +1683,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # No segments were detected in the total data product - no further processing done for this TDP,
             # but processing of another TDP should proceed.
             elif not g_segm_img:
+                self._define_empty_table(g_segm_img)
                 return
 
             # Deblend the segmentation image sources that are larger than the PSF kernel
@@ -1745,7 +1799,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # a final message for this particular total detection product and return.
             if segm_img is None:
                 log.warning("End processing for the segmentation catalog due to no sources detected with the current kernel.")
-                log.warning("No segmentation catalog will be produced for this total detection product, {}.".format(self.imgname))
+                log.warning("An empty catalog will be produced for this total detection product, {}.".format(self.imgname))
                 is_big_crowded = True
                 big_island = 1.0
                 source_fraction = 1.0
@@ -1940,6 +1994,24 @@ class HAPSegmentCatalog(HAPCatalogBase):
         -------
 
         """
+        if self.sources is None or self.sources.nlabels == 0:
+            # Report configuration values to log
+            log.info("{}".format("=" * 80))
+            log.info("")
+            log.info("No segmentation sources identified for photometry for")
+            log.info("image name: {}".format(self.imgname))
+            log.info("Generating empty segment catalog.")
+            log.info("")
+            self._define_empty_table(None)
+
+            # Capture specified filter columns in order to append to the total detection table
+            self.subset_filter_source_cat = Table(names=["ID", "MagAp2", "CI", "Flags"])
+            self.subset_filter_source_cat.rename_column("MagAp2", "MagAP2_" + filter_name)
+            self.subset_filter_source_cat.rename_column("CI", "CI_" + filter_name)
+            self.subset_filter_source_cat.rename_column("Flags", "Flags_" + filter_name)
+
+            return
+
         # Get filter-level science data
         imgarr = copy.deepcopy(self.image.data)
 
@@ -2313,6 +2385,37 @@ class HAPSegmentCatalog(HAPCatalogBase):
         return(final_filter_table)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    def _define_empty_table(self, segm_img):
+        """Create basic empty table based on total_table format to signify no valid sources were found"""
+
+        final_col_unit = {"X-Centroid": "pixels", "Y-Centroid": "pixels",
+                          "RA": "degrees", "DEC": "degrees", "Flags": "unitless"}
+        final_col_format = {"ID": "7d",
+                            "X-Centroid": "10.3f", "Y-Centroid": "10.3f",
+                            "RA": "13.7f", "DEC": "13.7f",
+                            "Flags": "5d"}
+        final_col_descrip = {"ID": "Catalog Object Identification Number",
+                             "X-Centroid": "Pixel Coordinate",
+                             "Y-Centroid": "Pixel Coordinate",
+                             "RA": "Sky coordinate at epoch of observation",
+                             "DEC": "Sky coordinate at epoch of observation",
+                             "Flags": "Numeric encoding for conditions on detected sources"}
+
+        final_colnames = [k for k in final_col_format.keys()]
+        # Initialize empty table with desired column names, descriptions and units
+        empty_table = Table(names=final_colnames,
+                      descriptions=final_col_descrip,
+                      units=final_col_unit)
+
+        # Add formatting for each column
+        for fcf_key in final_col_format.keys():
+            empty_table[fcf_key].format = final_col_format[fcf_key]
+
+        self.source_cat = empty_table
+        self.sources = copy.deepcopy(segm_img)
+        if self.sources:
+            self.sources.nlabels = 0  # Insure nlabels is set to 0 to indicate no valid sources
+
 
     def _define_total_table(self, updated_table):
         """Set the overall format for the total detection output catalog.
@@ -2435,12 +2538,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("Segmentation image is blank.")
             return is_poor_quality, biggest_source, source_fraction
 
+        # If the segmentation image is not blank, start out assuming it is good.
+        is_poor_quality = False
+
         # segm_img is a SegmentationImage, nbins must be at least 1 or segm_img == None
         nbins = segm_img.max_label
         log.info("Number of sources from segmentation map: %d", nbins)
 
-        # narray = np.bincount(segm_img)
-        # n = narray[1:]
         n, binedges = np.histogram(segm_img.data, range=(1, nbins))
         real_pixels = (image_data != 0).sum()
 
@@ -2486,11 +2590,16 @@ class HAPSegmentCatalog(HAPCatalogBase):
         Nothing
 
         """
-        if not reject_catalogs:
-            # Write out catalog to ecsv file
-            self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="segment", product=self.image.ghd_product)
-            self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
-            log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
+        self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="segment",
+                                              product=self.image.ghd_product)
+        if reject_catalogs:
+            # We still want to write out empty files
+            # This will delete all rows from the existing table
+            self.source_cat.remove_rows(slice(0, None))
+
+        # Write out catalog to ecsv file
+        self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
+        log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
         # For debugging purposes only, create a "regions" files to use for ds9 overlay of the segm_img.
         # Create the image regions file here in case there is a failure.  This diagnostic portion of the
