@@ -247,7 +247,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=False, diagnostic_mod
 
     skip_gaia_alignment : bool, optional
         Skip alignment of all input images to known Gaia/HSC sources in the input image footprint? If set to
-        'True', The existing input image alignment solution will be used instead. The default is False.
+        'True', the existing input image alignment solution will be used instead. The default is False.
 
     diagnostic_mode : bool, optional
         Allows printing of additional diagnostic information to the log.  Also, can turn on
