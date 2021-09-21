@@ -56,7 +56,7 @@ class Messages(Enum):
     OK, WARN, NOPROC = 1, -1, -2
 
 
-def mvm_analyze_wrapper(input_filename, log_level=logutil.logging.DEBUG):
+def mvm_analyze_wrapper(input_filename, log_level=logutil.logging.NOTSET):
     """
     Thin wrapper for the analyze_data function to return a viability indicator regarding a image for MVM processing.
 
