@@ -104,12 +104,17 @@ def main():
                              'Specifying "critical" will only record/display "critical" log statements, and '
                              'specifying "error" will record/display both "error" and "critical" log '
                              'statements, and so on.')
+    parser.add_argument('-s', '--skip_gaia_alignment', required=False, action='store_true',
+                        help='Skip alignment of all input images to known Gaia/HSC sources in the input '
+                             'image footprint? If this option is turned on, the existing input image '
+                             'alignment solution will be used instead. The default is False.')
     user_args = parser.parse_args()
 
     print("Multi-visit processing started for: {}".format(user_args.input_filename))
     rv = perform(user_args.input_filename,
                  diagnostic_mode=user_args.diagnostic_mode,
-                 log_level=user_args.log_level)
+                 log_level=user_args.log_level,
+                 skip_gaia_alignment=user_args.skip_gaia_alignment)
     print("Return Value: ", rv)
     return rv
 

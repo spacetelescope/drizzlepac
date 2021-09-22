@@ -231,9 +231,10 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_configs=True,
-                       input_custom_pars_file=None, output_custom_pars_file=None, phot_mode="both",
-                       custom_limits=None, output_file_prefix=None, log_level=logutil.logging.INFO):
+def run_mvm_processing(input_filename, skip_gaia_alignment=False, diagnostic_mode=False,
+                       use_defaults_configs=True, input_custom_pars_file=None, output_custom_pars_file=None,
+                       phot_mode="both", custom_limits=None, output_file_prefix=None,
+                       log_level=logutil.logging.INFO):
 
     """Run the HST Advanced Products (HAP) generation code.  This routine is the sequencer or
     controller which invokes the high-level functionality to process the multi-visit data.
@@ -243,6 +244,10 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
     input_filename: string
         The 'poller file' where each line contains information regarding an exposures considered
         part of the multi-visit.
+
+    skip_gaia_alignment : bool, optional
+        Skip alignment of all input images to known Gaia/HSC sources in the input image footprint? If set to
+        'True', the existing input image alignment solution will be used instead. The default is False.
 
     diagnostic_mode : bool, optional
         Allows printing of additional diagnostic information to the log.  Also, can turn on
@@ -355,11 +360,15 @@ def run_mvm_processing(input_filename, diagnostic_mode=False, use_defaults_confi
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
 
         # TODO: This is the place where updated WCS info is migrated from drizzlepac params to filter objects
-
-        reference_catalog = run_align_to_gaia(total_obj_list, custom_limits=custom_limits,
-                                              log_level=log_level, diagnostic_mode=diagnostic_mode)
-        if reference_catalog:
-            product_list += [reference_catalog]
+        if skip_gaia_alignment:
+            log.info("Gaia alignment step skipped. Existing input image alignment solution will be used instead.")
+        else:
+            reference_catalog = run_align_to_gaia(total_obj_list,
+                                                  custom_limits=custom_limits,
+                                                  log_level=log_level,
+                                                  diagnostic_mode=diagnostic_mode)
+            if reference_catalog:
+                product_list += [reference_catalog]
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
