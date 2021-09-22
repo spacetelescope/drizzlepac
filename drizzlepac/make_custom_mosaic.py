@@ -177,7 +177,7 @@ def create_poller_file(img_list, proj_cell_dict):
     poller_filename = "temp_{}_mvm.out".format(skycell_name)
     rootname_list = []
     for imgname in img_list:
-        rootname_list.append(imgname.split("_")[0]+"\n")
+        rootname_list.append(imgname+"\n")
     tf = tempfile.NamedTemporaryFile(mode='w+t', dir=os.getcwd())
     with open(tf.name, 'w') as f:
         f.writelines(rootname_list)
@@ -313,7 +313,7 @@ def determine_projection_cell(img_list):
 # ------------------------------------------------------------------------------------------------------------
 
 
-def perform(input_image_source, log_level='info', output_file_prefix=None):
+def perform(input_image_source, log_level='info', output_file_prefix=None, skip_gaia_alignment=False):
     """Main calling subroutine
 
     Parameters
@@ -339,6 +339,10 @@ def perform(input_image_source, log_level='info', output_file_prefix=None):
         that the "<n|s>" denotes if the declination is north (positive) or south (negative). Example: For
         skycell = 1974, ra = 201.9512, and dec = +26.0012, The filename prefix would be
         "skycell-p1974-ra201d9512-decn26d0012".
+
+    skip_gaia_alignment : bool, optional
+        Skip alignment of all input images to known Gaia/HSC sources in the input image footprint? If set to
+        'True', The existing input image alignment solution will be used instead. The default is False.
 
     Returns
     -------
@@ -384,7 +388,8 @@ def perform(input_image_source, log_level='info', output_file_prefix=None):
         return_value = hapmultisequencer.run_mvm_processing(poller_filename,
                                                             custom_limits=custom_limits,
                                                             log_level=logging_level,
-                                                            output_file_prefix=output_file_prefix)
+                                                            output_file_prefix=output_file_prefix,
+                                                            skip_gaia_alignment=skip_gaia_alignment)
 
     except Exception:
         if return_value == 0:
@@ -443,8 +448,15 @@ def main():
                              'Note that the "<n|s>" denotes if the declination is north (positive) or south '
                              '(negative). Example: For skycell = 1974, ra = 201.9512, and dec = +26.0012, '
                              'The filename prefix would be "skycell-p1974-ra201d9512-decn26d0012".')
+    parser.add_argument('-s', '--skip_gaia_alignment', required=False, action='store_true',
+                        help='Skip alignment of all input images to known Gaia/HSC sources in the input '
+                             'image footprint? If this option is turned on, the existing input image '
+                             'alignment solution will be used instead. The default is False.')
     user_args = parser.parse_args()
-    return_value = perform(user_args.input_image_source, user_args.log_level, user_args.output_file_prefix)
+    return_value = perform(user_args.input_image_source,
+                           log_level=user_args.log_level,
+                           output_file_prefix=user_args.output_file_prefix,
+                           skip_gaia_alignment=user_args.skip_gaia_alignment)
 # ------------------------------------------------------------------------------------------------------------
 
 

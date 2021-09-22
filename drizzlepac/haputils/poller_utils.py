@@ -283,7 +283,7 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0, u
         obset_table = copy.deepcopy(user_table)
 
     # Add INSTRUMENT column
-    instr = [INSTRUMENT_DICT[fname[0]] for fname in obset_table['filename']]
+    instr = [INSTRUMENT_DICT[fname.split("_")[-2][0]] for fname in obset_table['filename']]
     # convert input to an Astropy Table for parsing
     obset_table.add_column(Column(instr, name='instrument'))
 
@@ -457,7 +457,7 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 # Parse the first filename[1] to determine if the products are flt or flc
                 if det_indx != prev_det_indx:
                     filetype = "drc"
-                    if filename[1][10:13].lower().endswith("flt"):
+                    if filename[1][-8:-5].lower().endswith("flt"):
                         filetype = "drz"
                     prev_det_indx = det_indx
 
@@ -651,7 +651,7 @@ def parse_obset_tree(det_tree, log_level):
                 # easier for the user by having the same WCS in both the direct and
                 # Grism/Prism products.
                 #
-                # The GrismExposureProduct is only an attibutes of the TotalProduct.
+                # The GrismExposureProduct is only an attribute of the TotalProduct.
                 prod_list = prod_info.split(" ")
 
                 # Determine if this image is a Grism/Prism or a nominal direct exposure
@@ -659,8 +659,9 @@ def parse_obset_tree(det_tree, log_level):
                 if prod_list[5].lower().find('g') != -1 or prod_list[5].lower().find('pr') != -1:
                     is_grism = True
                     filt_indx -= 1
-                    grism_sep_obj = GrismExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
-                                                         filename[1], prod_list[5], prod_list[6], log_level)
+                    grism_sep_obj = GrismExposureProduct(prod_list[0], prod_list[1], prod_list[2],
+                                                         prod_list[3], filename[1], prod_list[5],
+                                                         prod_list[6], log_level)
                 else:
                     sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
                                               filename[1], prod_list[5], prod_list[6], log_level)
@@ -1199,7 +1200,8 @@ def add_primary_fits_header_as_attr(hap_obj, log_level=logutil.logging.NOTSET):
         object to update
 
     log_level : int, optional.
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.
 
     Returns
     -------

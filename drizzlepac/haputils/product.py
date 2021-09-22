@@ -184,6 +184,14 @@ class HAPProduct:
                     align_table.find_alignment_sources(output=output, crclean=crclean)
 
                 is_good_fit = False
+                # determine minimum number of sources available for alignment
+                source_nums = []
+                for img_cats in align_table.extracted_sources.values():
+                    sources = 0
+                    for chip in img_cats:
+                        sources += len(img_cats[chip])
+                    source_nums.append(sources)
+                min_sources = min(source_nums)
 
                 # Loop for available catlogs, the first successful fit for a
                 # (catalog, fitting method, and fit geometry) is satisfactory to break out of the looping.
@@ -206,7 +214,8 @@ class HAPProduct:
                                                                      full_catalog=True)
 
                     # Add a weight column which is based upon proper motion measurements
-                    if ref_catalog.meta['converted'] and ref_catalog['RA_error'][0] != np.nan:
+                    if 'converted' in ref_catalog.meta and ref_catalog.meta['converted'] \
+                            and ref_catalog['RA_error'][0] != np.nan:
                         ref_weight = np.sqrt(ref_catalog['RA_error'] ** 2 + ref_catalog['DEC_error'] ** 2)
                         ref_weight = np.nan_to_num(ref_weight, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
                     else:
@@ -242,7 +251,7 @@ class HAPProduct:
 
                         # If there are not enough references sources for the specified fitgeom,
                         # downgrade the fitgeom until a valid one is found.  Also, if the fit done
-                        # with the fitgeom was unsatisfactory, downgrade if possible and try again.
+                        # with the fitgeom was unsatisfactory, downgrade if possible and try again
                         while num_ref_sources < mosaic_fitgeom_list[mosaic_fitgeom_index][1]:
                             log.warning("Not enough reference sources for alignment using catalog '{}' with fit method '{}' and fit geometry '{}'.".format(catalog_item, method_name, mosaic_fitgeom_list[mosaic_fitgeom_index][0]))
                             mosaic_fitgeom_index -= 1
@@ -251,7 +260,6 @@ class HAPProduct:
                                 break
 
                         while mosaic_fitgeom_index > -1:
-
                             # In case of a downgrade, make sure the fit geometry "name" is based upon the index
                             mosaic_fitgeom = mosaic_fitgeom_list[mosaic_fitgeom_index][0]
                             log.info("Proceeding to use the '{}' fit geometry.".format(mosaic_fitgeom))
@@ -305,8 +313,19 @@ class HAPProduct:
                                          format(catalog_item, method_name, mosaic_fitgeom))
                                 traceback.print_exc()
 
+
                             # Try again with a different fit geometry algorithm
                             mosaic_fitgeom_index -= 1
+                            log.info("Resetting mosaic index for next fit method")
+                            # Only if there are too few sources to perform an alignment with the current
+                            # method should the next method be attempted.  Otherwise, it is assumed that the
+                            # image sources are either cosmic-rays or features that do not match across
+                            # the filters (e.g., F300X vs F475W from 'id7r03') and can't be aligned.  Trying with a
+                            # less strict method (rshift vs rscale) will only increase the probability of
+                            # matching incorrectly and introducing an error to the relative alignment.
+                            if min_sources > mosaic_fitgeom_list[mosaic_fitgeom_index][1]:
+                                mosaic_fitgeom_index = -1
+                                log.warning("Too many (bad?) sources to try any more fitting with this catalog.")
 
                         # Break out of the "fit method" for loop
                         if is_good_fit:
@@ -794,10 +813,14 @@ class SkyCellExposure(HAPProduct):
         # layer: [filter_str, pscale_str, exptime_str, epoch_str]
         # e.g.: [f160w, coarse, all, all]
         #
-        if layer[1] == 'coarse':
-            layer_vals = [layer[1], layer[2], self.exposure_name]
+        if filename.startswith("hst"):
+            exposure_name = filename.split("_")[-2]
         else:
-            layer_vals = ['all', self.exposure_name]
+            exposure_name = self.exposure_name
+        if layer[1] == 'coarse':
+            layer_vals = [layer[1], layer[2], exposure_name]
+        else:
+            layer_vals = ['all', exposure_name]
         layer_str = '-'.join(layer_vals)
 
         cell_id = "p{}{}".format(prop_id, obset_id)
@@ -906,8 +929,11 @@ class SkyCellExposure(HAPProduct):
                 New MVM-compatible HAP filename for input exposure
 
         """
-        suffix = filename.split("_")[1]
-        sce_filename = '_'.join([self.product_basename, suffix])
+        if filename.startswith("hst"):
+            sce_filename = "{}_{}".format(self.product_basename, filename.split("_")[-1])
+        else:
+            suffix = filename.split("_")[1]
+            sce_filename = '_'.join([self.product_basename, suffix])
         log.info("Copying {} to MVM input: \n    {}".format(filename, sce_filename))
         try:
             shutil.copy(filename, sce_filename)
@@ -1079,6 +1105,7 @@ class SkyCellProduct(HAPProduct):
                   .format(meta_wcs, self.trl_logname))
 
         edp_filenames = [element.full_filename for element in self.edp_list]
+
         astrodrizzle.AstroDrizzle(input=edp_filenames,
                                   output=self.drizzle_filename,
                                   **drizzle_pars)

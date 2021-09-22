@@ -20,6 +20,7 @@ import inspect
 import sys
 import time
 from distutils.version import LooseVersion
+import copy
 
 import numpy as np
 import scipy.stats as st
@@ -295,6 +296,7 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
     ref_table.meta['catalog'] = catalog
     ref_table.meta['gaia_only'] = gaia_only
     ref_table.meta['epoch'] = epoch
+    ref_table.meta['converted'] = False
 
     # Convert common set of columns into standardized column names
     convert_astrometric_table(ref_table, catalog)
@@ -1001,6 +1003,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     # If classify is turned on, it should modify the segmentation map
     dqmap = None
     if classify:
+        log.info('Removing suspected cosmic-rays from source catalog')
         cat = SourceCatalog(imgarr, segm)
         # Remove likely cosmic-rays based on central_moments classification
         bad_srcs = np.where(classify_sources(cat, fwhm) == 0)[0] + 1
@@ -1157,6 +1160,56 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     return tbl, segm, dqmap
 
 
+def crclean_image(imgarr, segment_threshold, kernel, fwhm,
+                  source_box=7, deblend=False, background=0.0):
+    """ Apply moments-based single-image CR clean algorithm to image
+
+    Returns
+    -------
+    imgarr : ndarray
+        Input array with pixels flagged as CRs set to 0.0
+    """
+    # Perform basic image segmentation to look for sources in image
+    segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
+                          filter_kernel=kernel, connectivity=4)
+
+    log.debug("Detected {} sources of all types ".format(segm.nlabels))
+    # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
+    if segm is None or segm.nlabels == 0:
+        log.info("No sources to identify as cosmic-rays!")
+        return imgarr
+
+    if deblend:
+        segm = deblend_sources(imgarr, segm, npixels=5,
+                               filter_kernel=kernel, nlevels=32,
+                               contrast=0.01)
+
+    # Measure segment sources to compute centralized moments for each source
+    cat = SourceCatalog(imgarr, segm)
+    # Remove likely cosmic-rays based on central_moments classification
+    bad_srcs = classify_sources(cat, fwhm)
+    # Get the label IDs for sources flagged as CRs, IDs are 1-based not 0-based
+    bad_ids = np.where(bad_srcs == 0)[0] + 1
+    log.debug("Recognized {} sources as cosmic-rays".format(len(bad_ids)))
+
+    # Instead of ignoring them by removing them from the catalog
+    # zero all these sources out from the image itself.
+    # Create a mask from the segmentation image with only the flagged CRs
+    cr_segm = copy.deepcopy(segm)
+    cr_segm.keep_labels(bad_ids)
+    cr_mask = np.where(cr_segm.data > 0)
+    # Use the mask to replace all pixels associated with the CRs
+    # with values specified as the background
+    if not isinstance(background, np.ndarray):
+        background = np.ones_like(imgarr, dtype=np.float32) * background
+
+    imgarr[cr_mask] = background[cr_mask]
+    del cr_segm
+
+    log.debug("Finshed zeroing out cosmic-rays")
+
+    return imgarr
+
 def classify_sources(catalog, fwhm, sources=None):
     """ Convert moments_central attribute for source catalog into star/cr flag.
 
@@ -1180,29 +1233,37 @@ def classify_sources(catalog, fwhm, sources=None):
         An ndarray where a value of 1 indicates a likely valid, non-cosmic-ray
         source, and a value of 0 indicates a likely cosmic-ray.
     """
-    moments = catalog.moments_central
-    semiminor_axis = catalog.semiminor_sigma
-    elon = catalog.elongation
+    # All these return ndarray objects
+    moments = catalog.moments_central  # (num_sources, 4, 4)
+    semiminor_axis = catalog.semiminor_sigma.to_value()  # (num_sources,)
+    elon = catalog.elongation.to_value()  # (num_sources,)
+    # Determine how many sources we have.
     if sources is None:
         sources = (0, len(moments))
     num_sources = sources[1] - sources[0]
     srctype = np.zeros((num_sources,), np.int32)
-    for src in range(sources[0], sources[1]):
-        # Protect against spurious detections
-        src_x = catalog[src].xcentroid
-        src_y = catalog[src].ycentroid
-        if np.isnan(src_x) or np.isnan(src_y):
-            continue
-        # This identifies moment of maximum value
-        x, y = np.where(moments[src] == moments[src].max())
-        valid_src = (x[0] > 1) and (y[0] > 1)
-        # These look for CR streaks (not delta CRs)
-        valid_width = semiminor_axis[src].value < (0.75 * fwhm)  # skinny source
-        valid_elon = elon[src].value > 2  # long source
-        valid_streak = valid_width and valid_elon  # long and skinny...
-        # If either a delta CR or a CR streak are identified, remove it
-        if valid_src and not valid_streak:
-            srctype[src] = 1
+
+    # Find which moment is the peak moment for all sources
+    mx = np.array([np.where(moments[src] == moments[src].max())[0][0] for src in range(num_sources)], np.int32)
+    my = np.array([np.where(moments[src] == moments[src].max())[1][0] for src in range(num_sources)], np.int32)
+    # Now avoid processing sources which had NaN as either/both of their X,Y positions (rare, but does happen)
+    src_x = catalog.xcentroid  # (num_sources, )
+    src_y = catalog.ycentroid  # (num_sources, )
+    valid_xy = ~np.bitwise_or(np.isnan(src_x), np.isnan(src_y))
+
+    # Define descriptors of CRs
+    # First: look for sources where the moment in X and Y is the first moment
+    valid_src = np.bitwise_and(mx > 1, my > 1)[valid_xy]
+    # Second: look for sources where the width of the source is less than the PSF FWHM
+    valid_width = (semiminor_axis < (0.75 * fwhm))[valid_xy]
+    # Third: identify sources which are elongated at least 2:1
+    valid_elon = (elon > 2)[valid_xy]
+    # Now combine descriptors into a single value
+    valid_streak = ~np.bitwise_and(valid_width, valid_elon)
+    src_cr = np.bitwise_and(valid_src, valid_streak)
+    # Flag identified sources as CRs with a value of 1
+    srctype[src_cr] = 1
+
     return srctype
 
 
