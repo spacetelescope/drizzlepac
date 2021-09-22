@@ -184,6 +184,14 @@ class HAPProduct:
                     align_table.find_alignment_sources(output=output, crclean=crclean)
 
                 is_good_fit = False
+                # determine minimum number of sources available for alignment
+                source_nums = []
+                for img_cats in align_table.extracted_sources.values():
+                    sources = 0
+                    for chip in img_cats:
+                        sources += len(img_cats[chip])
+                    source_nums.append(sources)
+                min_sources = min(source_nums)
 
                 # Loop for available catlogs, the first successful fit for a
                 # (catalog, fitting method, and fit geometry) is satisfactory to break out of the looping.
@@ -243,7 +251,7 @@ class HAPProduct:
 
                         # If there are not enough references sources for the specified fitgeom,
                         # downgrade the fitgeom until a valid one is found.  Also, if the fit done
-                        # with the fitgeom was unsatisfactory, downgrade if possible and try again.
+                        # with the fitgeom was unsatisfactory, downgrade if possible and try again
                         while num_ref_sources < mosaic_fitgeom_list[mosaic_fitgeom_index][1]:
                             log.warning("Not enough reference sources for alignment using catalog '{}' with fit method '{}' and fit geometry '{}'.".format(catalog_item, method_name, mosaic_fitgeom_list[mosaic_fitgeom_index][0]))
                             mosaic_fitgeom_index -= 1
@@ -252,7 +260,6 @@ class HAPProduct:
                                 break
 
                         while mosaic_fitgeom_index > -1:
-
                             # In case of a downgrade, make sure the fit geometry "name" is based upon the index
                             mosaic_fitgeom = mosaic_fitgeom_list[mosaic_fitgeom_index][0]
                             log.info("Proceeding to use the '{}' fit geometry.".format(mosaic_fitgeom))
@@ -306,8 +313,19 @@ class HAPProduct:
                                          format(catalog_item, method_name, mosaic_fitgeom))
                                 traceback.print_exc()
 
+
                             # Try again with a different fit geometry algorithm
                             mosaic_fitgeom_index -= 1
+                            log.info("Resetting mosaic index for next fit method")
+                            # Only if there are too few sources to perform an alignment with the current
+                            # method should the next method be attempted.  Otherwise, it is assumed that the
+                            # image sources are either cosmic-rays or features that do not match across
+                            # the filters (e.g., F300X vs F475W from 'id7r03') and can't be aligned.  Trying with a
+                            # less strict method (rshift vs rscale) will only increase the probability of
+                            # matching incorrectly and introducing an error to the relative alignment.
+                            if min_sources > mosaic_fitgeom_list[mosaic_fitgeom_index][1]:
+                                mosaic_fitgeom_index = -1
+                                log.warning("Too many (bad?) sources to try any more fitting with this catalog.")
 
                         # Break out of the "fit method" for loop
                         if is_good_fit:

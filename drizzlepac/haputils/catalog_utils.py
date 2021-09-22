@@ -1498,6 +1498,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                      check_big_island_only=False,
                                                                                      rw2d_biggest_source=self._rw2d_biggest_source,
                                                                                      rw2d_source_fraction=self._rw2d_source_fraction)
+            segm_img_orig = copy.deepcopy(g_segm_img)
 
             # If the science field via the segmentation map is deemed crowded or has big sources/islands, compute the
             # RickerWavelet2DKernel and call detect_and_eval_segments() again. Still use the custom fwhm as it
@@ -1686,7 +1687,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 self._define_empty_table(g_segm_img)
                 return
 
-            # Deblend the segmentation image sources that are larger than the PSF kernel
+            # Deblend the segmentation image
             ncount += 1
             segm_img = self.deblend_segments(segm_img,
                                              imgarr,
@@ -1841,14 +1842,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
         """
 
         log.info("Computing the threshold value used for source detection.")
-
         if not self.tp_masks:
             threshold = bkg_mean + (nsigma * bkg_rms)
         else:
             threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
             log.info("Using WHT masks as a scale on the RMS to compute threshold detection limit.")
             for wht_mask in self.tp_masks:
-                threshold_rms = bkg_rms * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'].max())
+                threshold_rms = bkg_rms * np.sqrt(wht_mask['scale'] * wht_mask['mask'] / wht_mask['rel_weight'].max())
                 threshold_rms_median = np.nanmedian(threshold_rms[threshold_rms > 0])
                 threshold_item = bkg_mean + (nsigma * threshold_rms_median)
                 threshold += threshold_item

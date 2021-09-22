@@ -169,6 +169,25 @@ class AlignmentTable:
                                           rms_estimator=self.alignment_pars['rms_estimator'],
                                           threshold_flag=self.alignment_pars['threshold'])
                 catimg.build_kernel(fwhmpsf)
+                catimg.crclean = self.alignment_pars['classify']
+                log.info("CATIMG.CRCLEAN: {}".format(catimg.crclean))
+                if catimg.crclean:
+                    log.info("Recomputing BACKGROUND after applying single-image CR clean")
+                    for chip in range(1, catimg.num_sci + 1):
+                        sciarr = amutils.crclean_image(catimg.imghdu[("SCI", chip)].data, catimg.threshold[chip],
+                                                       catimg.kernel, catimg.kernel_fwhm, background=catimg.bkg[chip])
+                        catimg.imghdu[("SCI", chip)].data = sciarr
+                    # recompute now that the CRs have been removed (set to 0) from the science arrays
+                    catimg.compute_background(box_size=self.alignment_pars['box_size'],
+                                              win_size=self.alignment_pars['win_size'],
+                                              nsigma=self.alignment_pars['nsigma'],
+                                              bkg_estimator=self.alignment_pars['bkg_estimator'],
+                                              rms_estimator=self.alignment_pars['rms_estimator'],
+                                              threshold_flag=self.alignment_pars['threshold'])
+                    log.info("Finished computing revised BACKROUND")
+                    catimg.build_kernel(fwhmpsf)
+                    log.info("Finished determining revised kernel")
+
                 # Use FWHM from first good exposure as default for remainder of exposures
                 if not default_fwhm_set and catimg.kernel is not None:
                     fwhmpsf = catimg.fwhmpsf
@@ -666,7 +685,8 @@ class HAPImage:
             dqmask = self.build_dqmask(chip=chip)
             sciarr = self.imghdu[("SCI", chip)].data.copy()
             #  TODO: replace detector_pars with dict from OO Config class
-            extract_pars = {'classify': alignment_pars['classify'],
+            # Turning off 'classify' since same CRs are being removed before segmentation now
+            extract_pars = {'classify': False,  # alignment_pars['classify'],
                             'centering_mode': alignment_pars['centering_mode'],
                             'nlargest': alignment_pars['MAX_SOURCES_PER_CHIP'],
                             'deblend': alignment_pars['deblend']}
@@ -738,10 +758,12 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     else:
         fitgeom = 'rscale'
 
+    rel_fitgeom = 'rscale'
+
     common_pars = fit_pars['pars']
     del fit_pars['pars']
 
-    nclip = None if fitgeom == 'shift' else 3
+    nclip = 1 if fitgeom == 'rscale' else 0  # Only perform sigma-clipping for 'rscale'
 
     # 0: Specify matching algorithm to use
     match = tweakwcs.TPMatch(**fit_pars)
@@ -757,10 +779,10 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     # limits.
     match_relcat = tweakwcs.align_wcs(imglist, None,
                                       match=match,
-                                      minobj=common_pars['minobj'][fitgeom],
+                                      minobj=common_pars['minobj'][rel_fitgeom],
                                       expand_refcat=True,
-                                      fitgeom=fitgeom,
-                                      nclip=nclip)
+                                      fitgeom=rel_fitgeom,
+                                      nclip=1)
     # Implement a consistency check even before trying absolute alignment
     # If relative alignment in question, no use in aligning to GAIA
     if not check_consistency(imglist):
@@ -782,7 +804,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         msg = "Image {} --".format(i.meta['name'])
         msg += "\n    SHIFT:({:9.4f},{:9.4f})  NMATCHES: {} ".format(off[0], off[1], nmatches)
         msg += "\n    ROT:{:9.4f}  SCALE:{:9.4f}".format(rot, scale)
-        msg += "\n Using fitgeom = '{}'".format(fitgeom)
+        msg += "\n Using fitgeom = '{}'".format(rel_fitgeom)
         log.info(msg)
 
     # This logic enables performing only relative fitting and skipping fitting to GAIA
@@ -853,7 +875,7 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
     common_pars = fit_pars['pars']
     del fit_pars['pars']
 
-    nclip = None if fitgeom == 'shift' else 3
+    nclip = 1 if fitgeom == 'rscale' else 0  # Only perform sigma-clipping for 'rscale'
 
     log.info("{} (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
@@ -917,7 +939,7 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     common_pars = fit_pars['pars']
     del fit_pars['pars']
 
-    nclip = None if fitgeom == 'shift' else 3
+    nclip = 1 if fitgeom == 'rscale' else 0  # Only perform sigma-clipping for 'rscale'
 
     log.info("{} (match_2dhist_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 28))
@@ -961,14 +983,15 @@ def check_consistency(imglist, rot_tolerance=0.1, shift_tolerance=1.0):
                 rots[i] = finfo['proper_rot']
                 nmatches[i] = finfo['nmatches']
         else:
-            # Set default as value larger than we can use
-            nmatches[i] = 1000000
+            # 'status' == 'FAILED': Set default as negative value
+            nmatches[i] = -1
+            is_consistent = False
 
     # We should only need to check for consistency when less than 5
     # matches were used for the fit, leading to a higher potential for
     # a singular solution or mis-identified cross-matches.
     if nmatches.min() > 4:
-        return imglist
+        return is_consistent
 
     # compute deltas to look for outliers
     delta_rots = rots[1:] - rots[:-1]

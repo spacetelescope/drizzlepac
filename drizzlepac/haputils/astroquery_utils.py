@@ -47,6 +47,17 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False,
     clobber : Boolean, optional
         Download and Overwrite existing files? Default is "False".
 
+    product_type : str, optional
+        Specify what type of product you want from the archive, either 'pipeline'
+        or 'HAP' or 'both' (default).  By default, all versions of the products
+        processed for the requested datasets will be returned.  This would include:
+          - pipeline : files processed by `runastrodriz` to include the latest
+                       distortion calibrations and the best possible alignment to GAIA
+                       with `ipppssoot_fl[tc].fits` filenames for FLT/FLC files.
+          - HAP : files processed as a single visit and aligned (as possible) to GAIA
+                  with `hst_<propid>_<visit>_<instr>_<det>_<filter>_<ipppssoo>_fl[tc].fits`
+                  filenames.
+
     Returns
     -------
     local_files : list
