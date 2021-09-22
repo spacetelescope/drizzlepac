@@ -5,6 +5,7 @@ user-specified list file."""
 
 import argparse
 import os
+import re
 import sys
 
 from astropy.io import fits
@@ -32,8 +33,10 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
 
     skycell_name : str, optional
         Name of the skycell to use when creating a MVM poller file. skycell_name is REQUIRED for the creation
-        of a MVM poller file, but completely unnecessary for the creation of a SVM poller file. Default value
-        is logical 'None'.
+        of a MVM poller file, but completely unnecessary for the creation of a SVM poller file. The correct
+        syntax for skycell names is 'skycell-pNNNNxXXyXX', where NNNN is the 4-digit projection cell number,
+        and XX and YY are the two-digit X and Y skycell indices, respectively. Default value is logical
+        'None'.
 
     Returns
     -------
@@ -71,10 +74,15 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
         linelist.append(filter.upper())
         linelist.append(imghdr['detector'].upper())
         if poller_file_type == 'mvm':  # Additional stuff to add to MVM poller files
-            if skycell_name.startswith("skycell-"):
-                linelist.append("{}".format(skycell_name))
-            if skycell_name.startswith("p"):
-                linelist.append("skycell-{}".format(skycell_name))
+            if skycell_name:
+                pattern = re.compile("(skycell-p\d{4}x\d{2}y\d{2})")
+                skycell_name_format_check = pattern.match(skycell_name)
+                if skycell_name_format_check:
+                    linelist.append("{}".format(skycell_name))
+                else:
+                    raise ValueError("'{}' is an improperly formatted skycell name. Please refer to documentation for information regarding correct skycell name syntax.".format(skycell_name))
+            else:
+                raise Exception("No skycell name was provided. The name of the skycell that the observations occupy is required for MVM poller file creation.")
             linelist.append("NEW")
         linelist.append(fullfilepath)
         imghdu.close()
@@ -159,8 +167,11 @@ if __name__ == '__main__':
                         help='Name of an output poller file that will be created. If not explicitly '
                              'specified, the poller file will be named "poller_file.out".')
     parser.add_argument('-s', '--skycell_name', required=False, default="None",
-                        help='Name of the skycell. NOTE: this input argument is *REQUIRED* only for MVM '
-                             'poller file creation. ')
+                        help='Name of the skycell. The correct syntax for skycell names is '
+                             '"skycell-pNNNNxXXyXX", where NNNN is the 4-digit projection cell number, and '
+                             'XX and YY are the two-digit X and Y skycell indices, respectively. NOTE: this '
+                             'input argument is not needed for SVM poller file creation, but *REQUIRED* for '
+                             'MVM poller file creation.')
     parser.add_argument('-t', '--poller_file_type', required=False, choices=['svm', 'mvm'], default='svm',
                         help='Type of poller file to be created. "smv" to create a poller file for use with '
                              'the single-visit mosaics pipeline and "mvm" to create a poller file for use '
