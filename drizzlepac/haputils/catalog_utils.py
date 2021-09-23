@@ -2357,7 +2357,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                           "RA": "degrees", "DEC": "degrees",
                           "Bck": "electrons/s",
                           "Area": "pixels**2",
-                          "FWHM": "unitless",
+                          "FWHM": "pixels",
                           "MagAp1": "ABMAG",
                           "MagErrAp1": "ABMAG",
                           "FluxAp1": "electrons/s",
