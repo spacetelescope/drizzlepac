@@ -131,28 +131,29 @@ def locate_fitsfile(search_string):
         # If not found in CWD, look elsewhere...
         if not os.getenv("DATA_PATH"):
             sys.exit("ERROR: Undefined online cache data root path. Please set environment variable 'DATA_PATH'")
-        fullfilepath = "{}/{}/{}/{}".format(os.getenv("DATA_PATH"), search_string[:4], search_string, search_string)
+        fullfilepath = "{}/{}/{}/{}".format(os.getenv("DATA_PATH"), search_string[:4], search_string[:-9], search_string)
         if os.path.exists(search_string):
             return fullfilepath
+        else:
+            return ""  # Return a null string if no file is found
             
     else:  # Process search_string as a rootname
         # Look for files in CWD first
-        if os.path.exists("{}_flc.fits".format(search_string)):
-            return "{}/{}_flc.fits".format(os.getcwd(), search_string)
-        if os.path.exists("{}_flt.fits".format(search_string)):
-            return "{}/{}_flt.fits".format(os.getcwd(), search_string)
+        for fits_ext in ["flc", "flt"]:
+            if os.path.exists("{}_{}.fits".format(search_string, fits_ext)):
+                return "{}/{}_{}.fits".format(os.getcwd(), search_string, fits_ext)
         # If not found in CWD, look elsewhere...
         if not os.getenv("DATA_PATH"):
             sys.exit("ERROR: Undefined online cache data root path. Please set environment variable 'DATA_PATH'")
         filenamestub = "{}/{}/{}/{}".format(os.getenv("DATA_PATH"), search_string[:4], search_string, search_string)
-        if os.path.exists("{}_flc.fits".format(filenamestub)):
-            fullfilepath = "{}_flc.fits".format(filenamestub)
-        else:
-            fullfilepath = "{}_flt.fits".format(filenamestub)
-        return fullfilepath
-
+        for fits_ext in ["flc", "flt"]:
+            if os.path.exists("{}_{}.fits".format(filenamestub, fits_ext)):
+                return "{}_{}.fits".format(filenamestub, fits_ext)
+        # it should never get here unless no file was found either locally or elsewhere in $DATA_PATH.
+        return ""  # Return a null string if no file is found
 
 # ============================================================================================================
+
 
 if __name__ == '__main__':
     # Parse input arguments
