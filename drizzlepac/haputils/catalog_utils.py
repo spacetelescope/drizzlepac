@@ -1406,13 +1406,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._sf_deblend_limit = self.param_dict["sourcex"]["source_fraction_deblend_limit"]
         self._ratio_bigsource_limit = self.param_dict["sourcex"]["ratio_bigsource_limit"]
 
-        # Columns to include from the computation of source properties to save
-        # computation time from computing values which are not used
-        self.include_filter_cols = ['area', bac_colname, 'bbox_xmax', 'bbox_xmin', 'bbox_ymax', 'bbox_ymin',
-                                    'covar_sigx2', 'covar_sigxy', 'covar_sigy2', 'cxx', 'cxy', 'cyy',
-                                    'ellipticity', 'elongation', id_colname, 'orientation', 'sky_centroid_icrs',
-                                    flux_colname, ferr_colname, 'xcentroid', 'ycentroid']
-
         # Initialize attributes to be computed later
         self.segm_img = None  # Segmentation image
 
@@ -2031,16 +2024,28 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Compute the Poisson error of the sources...
         total_error = calc_total_error(imgarr_bkgsub, self.image.bkg_rms_ra, 1.0)
 
+        # Columns to include from the computation of source properties to save
+        # computation time from computing values which are not used
+        include_filter_cols = ['area', bac_colname, 'bbox_xmax', 'bbox_xmin', 'bbox_ymax', 'bbox_ymin',
+                               'covar_sigx2', 'covar_sigxy', 'covar_sigy2', 'cxx', 'cxy', 'cyy',
+                               'ellipticity', 'elongation', id_colname, 'orientation', 'sky_centroid_icrs',
+                               flux_colname, ferr_colname, 'xcentroid', 'ycentroid']
+
         # Compute source properties...
         if OLD_PHOTUTILS:
             self.source_cat = source_properties(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
                                                 error=total_error, filter_kernel=self.kernel, wcs=self.image.imgwcs)
         else:
+            include_filter_cols.append('fwhm')
             self.source_cat = SourceCatalog(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
                                                 error=total_error, kernel=self.kernel, wcs=self.image.imgwcs)
 
-        # Convert source_cat which is a SourceCatalog to an Astropy Table
-        filter_measurements_table = Table(self.source_cat.to_table(columns=self.include_filter_cols))
+        filter_measurements_table = Table(self.source_cat.to_table(columns=include_filter_cols))
+
+        # Create zero-value "fwhm" column which did not exist in the versions < 1.1.0 of Photutils
+        if OLD_PHOTUTILS:
+            fwhm_col = Column(name="fwhm", data=np.zeros_like(filter_measurements_table['area']))
+            filter_measurements_table.add_column(fwhm_col)
 
         # Compute aperture photometry measurements and append the columns to the measurements table
         self.do_aperture_photometry(imgarr, filter_measurements_table, self.imgname, filter_name)
@@ -2249,7 +2254,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # table.add_column(iso_col)
 
         # Add zero-value "Flags" column in preparation for source flagging
-
         flag_col = Column(name="Flags", data=np.zeros_like(table[id_colname]))
         table.add_column(flag_col)
 
@@ -2281,7 +2285,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                            "cxx": "CXX", "cyy": "CYY", "cxy": "CXY",
                            "covar_sigx2": "X2", "covar_sigy2": "Y2", "covar_sigxy": "XY",
                            "orientation": "Theta",
-                           "elongation": "Elongation", "ellipticity": "Ellipticity", "area": "Area"}
+                           "elongation": "Elongation", "ellipticity": "Ellipticity", "area": "Area",
+                           "fwhm": "FWHM"}
         for old_col_title in final_col_names:
             filter_table.rename_column(old_col_title, final_col_names[old_col_title])
 
@@ -2289,7 +2294,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         final_col_order = ["X-Centroid", "Y-Centroid", "RA", "DEC", "ID",
                            "CI", "Flags", "MagAp1", "MagErrAp1", "FluxAp1", "FluxErrAp1",
                            "MagAp2", "MagErrAp2", "FluxAp2", "FluxErrAp2", "MSkyAp2",
-                           "Bck", "Area", "MagIso", "FluxIso", "FluxIsoErr",
+                           "Bck", "Area", "FWHM", "MagIso", "FluxIso", "FluxIsoErr",
                            "Xmin", "Ymin", "Xmax", "Ymax",
                            "X2", "Y2", "XY",
                            "CXX", "CYY", "CXY",
@@ -2305,7 +2310,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                             "Xmin": "8.0f", "Ymin": "8.0f", "Xmax": "8.0f", "Ymax": "8.0f",
                             "X2": "8.4f", "Y2": "8.4f", "XY": "8.4f",
                             "CXX": "9.5f", "CYY": "9.5f", "CXY": "9.5f",
-                            "Elongation": "7.2f", "Ellipticity": "7.2f", "Theta": "8.3f", "Area": "8.3f"}
+                            "Elongation": "7.2f", "Ellipticity": "7.2f", "Theta": "8.3f", "Area": "8.3f", "FWHM": "8.3f"}
         for fcf_key in final_col_format.keys():
             final_filter_table[fcf_key].format = final_col_format[fcf_key]
 
@@ -2316,6 +2321,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                              "DEC": "Sky coordinate at epoch of observation",
                              "Bck": "Background at the position of the source centroid",
                              "Area": "Total unmasked area of the source segment",
+                             "FWHM": "Circularized FWHM of 2D Gaussian function having the same second-order central moments as the source",
                              "MagAp1": "ABMAG of source based on the inner (smaller) aperture",
                              "MagErrAp1": "Error of MagAp1",
                              "FluxAp1": "Flux of source based on the inner (smaller) aperture",
@@ -2351,6 +2357,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                           "RA": "degrees", "DEC": "degrees",
                           "Bck": "electrons/s",
                           "Area": "pixels**2",
+                          "FWHM": "unitless",
                           "MagAp1": "ABMAG",
                           "MagErrAp1": "ABMAG",
                           "FluxAp1": "electrons/s",
