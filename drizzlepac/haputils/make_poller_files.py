@@ -22,7 +22,7 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
     Parameters
     ----------
     input_list : str
-        Name of the file containing the list of rootnames to process
+        Name of the text file containing the list of filenames or rootnames to process
 
     poller_file_type : str, optional
         Type of poller file to create. 'svm' for single visit mosaic, 'mvm' for multi-visit mosaic. Default
@@ -42,6 +42,8 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
     -------
     Nothing.
     """
+    if poller_file_type == 'svm' and skycell_name:
+        print("PROTIP: Users only need to provide a skycell name for the creation of MVM poller files, not SVM poller files.")
     # Open rootname list file
     f = open(input_list, 'r')
     rootname_list = f.readlines()
@@ -51,12 +53,18 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
         rootname = rootname.strip()
         fullfilepath = locate_fitsfile(rootname)
         if len(fullfilepath) > 0:
-            print("Rootname {}: Found fits file {}".format(rootname, fullfilepath))
+            if rootname.endswith(".fits"):
+                print("Found fits file {}".format(fullfilepath))
+            else:
+                print("Rootname {}: Found fits file {}".format(rootname, fullfilepath))
             imgname = fullfilepath.split("/")[-1]
         else:
             # Warn user if no fits file can be located for a given rootname, and skip processing of the file.
-            print("WARNING: No fits file found for rootname '{}'. This rootname will be omitted from poller "
-                  "file generation.".format(rootname))
+            if rootname.endswith(".fits"):
+               item_type = "filename"
+            else:
+                item_type = "rootname"
+            print("WARNING: No fits file found for {} '{}'. This {} will be omitted from the poller file.".format(item_type, rootname, item_type))
             continue
         # Build each individual poller file line
         linelist = []
@@ -125,8 +133,11 @@ def locate_fitsfile(search_string):
          full file path + image name of specified search_string.
     """
     if search_string.endswith("_flt.fits") or search_string.endswith("_flc.fits"):  # Process search_string as a full filename
-        # Look for files in CWD first
-        if os.path.exists(search_string):
+        # Look in user-provided path (assuming they provided one)
+        if os.path.exists(search_string) and "/" in search_string:
+            return search_string
+        # Look for files in CWD
+        if os.path.exists(search_string) and "/" not in search_string:
             return os.getcwd()+"/"+search_string
         # If not found in CWD, look elsewhere...
         if not os.getenv("DATA_PATH"):
@@ -163,7 +174,8 @@ if __name__ == '__main__':
                         help='Name of a file containing a list of calibrated fits files (ending with '
                              '"_flt.fits" or "_flc.fits") or rootnames (9 characters, usually ending '
                              'with a "q" to process. The corresponding flc.fits or flt.fits files must '
-                             'exist in the online cache')
+                             'exist in the user-specified path, the current working directory or the online '
+                             'cache')
     parser.add_argument('-o', '--output_poller_filename', required=False, default="poller_file.out",
                         help='Name of an output poller file that will be created. If not explicitly '
                              'specified, the poller file will be named "poller_file.out".')
