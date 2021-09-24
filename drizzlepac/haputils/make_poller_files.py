@@ -57,7 +57,7 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
                 print("Found fits file {}".format(fullfilepath))
             else:
                 print("Rootname {}: Found fits file {}".format(rootname, fullfilepath))
-            imgname = fullfilepath.split("/")[-1]
+            imgname = fullfilepath.split(os.sep)[-1]
         else:
             # Warn user if no fits file can be located for a given rootname, and skip processing of the file.
             if rootname.endswith(".fits"):
@@ -134,15 +134,16 @@ def locate_fitsfile(search_string):
     """
     if search_string.endswith("_flt.fits") or search_string.endswith("_flc.fits"):  # Process search_string as a full filename
         # Look in user-provided path (assuming they provided one)
-        if os.path.exists(search_string) and "/" in search_string:
+        if os.path.exists(search_string) and os.sep in search_string:
             return search_string
         # Look for files in CWD
-        if os.path.exists(search_string) and "/" not in search_string:
-            return os.getcwd()+"/"+search_string
+        if os.path.exists(search_string) and os.sep not in search_string:
+            return os.getcwd() + os.sep + search_string
         # If not found in CWD, look elsewhere...
         if not os.getenv("DATA_PATH"):
             sys.exit("ERROR: Undefined online cache data root path. Please set environment variable 'DATA_PATH'")
-        fullfilepath = "{}/{}/{}/{}".format(os.getenv("DATA_PATH"), search_string[:4], search_string[:-9], search_string)
+        fullfilepath = "{}{}{}{}{}{}{}".format(os.getenv("DATA_PATH"), os.sep, search_string[:4],
+                                               os.sep, search_string[:-9], os.sep, search_string)
         if os.path.exists(search_string):
             return fullfilepath
         else:
@@ -152,11 +153,12 @@ def locate_fitsfile(search_string):
         # Look for files in CWD first
         for fits_ext in ["flc", "flt"]:
             if os.path.exists("{}_{}.fits".format(search_string, fits_ext)):
-                return "{}/{}_{}.fits".format(os.getcwd(), search_string, fits_ext)
+                return "{}{}{}_{}.fits".format(os.getcwd(), os.sep, search_string, fits_ext)
         # If not found in CWD, look elsewhere...
         if not os.getenv("DATA_PATH"):
             sys.exit("ERROR: Undefined online cache data root path. Please set environment variable 'DATA_PATH'")
-        filenamestub = "{}/{}/{}/{}".format(os.getenv("DATA_PATH"), search_string[:4], search_string, search_string)
+        filenamestub = "{}{}{}{}{}{}{}".format(os.getenv("DATA_PATH"), os.sep, search_string[:4],
+                                               os.sep, search_string, os.sep, search_string)
         for fits_ext in ["flc", "flt"]:
             if os.path.exists("{}_{}.fits".format(filenamestub, fits_ext)):
                 return "{}_{}.fits".format(filenamestub, fits_ext)
