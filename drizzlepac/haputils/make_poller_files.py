@@ -61,7 +61,7 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
         else:
             # Warn user if no fits file can be located for a given rootname, and skip processing of the file.
             if rootname.endswith(".fits"):
-               item_type = "filename"
+                item_type = "filename"
             else:
                 item_type = "rootname"
             print("WARNING: No fits file found for {} '{}'. This {} will be omitted from the poller file.".format(item_type, rootname, item_type))
