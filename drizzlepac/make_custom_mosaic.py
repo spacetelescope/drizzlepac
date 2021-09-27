@@ -120,7 +120,7 @@ def create_input_image_list(user_input):
     if os.path.isfile(user_input) and not user_input.endswith(".fits"):
         with open(user_input, "r") as fin:
             img_list = fin.readlines()
-        # clean up any stray carrage returns
+        # clean up any stray carriage returns
         for ctr in range(0, len(img_list)):
             img_list[ctr] = img_list[ctr].strip()
         search_method_string = "in list file {}".format(user_input)
@@ -173,8 +173,7 @@ def create_poller_file(img_list, proj_cell_dict):
             closest_skycell = sc
 
     # Create poller file
-    skycell_name = closest_skycell.replace("skycell-", "")
-    poller_filename = "temp_{}_mvm.out".format(skycell_name)
+    poller_filename = "temp_{}_mvm.out".format(closest_skycell)
     rootname_list = []
     for imgname in img_list:
         rootname_list.append(imgname+"\n")
@@ -185,7 +184,7 @@ def create_poller_file(img_list, proj_cell_dict):
 
         make_poller_files.generate_poller_file(tf.name, poller_file_type="mvm",
                                                output_poller_filename=poller_filename,
-                                               skycell_name=skycell_name)
+                                               skycell_name=closest_skycell)
     return poller_filename
 
 # ------------------------------------------------------------------------------------------------------------
@@ -400,7 +399,7 @@ def perform(input_image_source, log_level='info', output_file_prefix=None, skip_
     finally:
         # remove any temp files like the poller file and
         if temp_files_to_delete and log_level != "debug":
-            log.info("Time delete some temporary files...")
+            log.info("Time to delete some temporary files...")
             for filename in temp_files_to_delete:
                 if os.path.exists(filename):
                     os.remove(filename)
