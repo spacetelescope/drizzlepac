@@ -15,48 +15,146 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-3.2.2 (unreleased)
+3.3.0 (28-Sep-2021)
 ==================
+This version includes all the functionality needed to generate
+source catalogs, both point source and extended (segment) source
+catalogs, during single-visit mosaic (SVM) processing.  In fact,
+
+- Updated code to work with Python >= 3.7
+- GAIAeDR3 catalog now the initial catalog of choice for a posteriori alignment
+  during standard pipeline processing, as well as for SVM/MVM processing.
+- SVM/MVM processing will loop over catalogs, fit methods and fit geometries in
+  looking for a successful fit, using the first successful fit it computes.
+  - CATALOGS used: **GAIAeDR3**, **GSC242**, **2MASS** (in this order)
+  - methods: relative, image-by-image
+  - geometries: **rscale**, **rshift**, **shift** (each with different minimum cross-matches)
+- SVM processing will always generate both point source and extended source catalogs, even
+  if the catalogs contain no rows of sources and measurements.
+  - point source catalog will be generated using TinyTim PSF-based detection
+  - extended source (segment) catalog will only have sources larger
+    than the PSF kernel deblended.
+  - catalog columns will closely resemble the Hubble Legacy Archive (HLA) catalogs columns
+- Grism/Prism exposures do not get aligned, but instead get the WCS correction from direct images
+- Added logic to handle visits where there are only Grism/Prism exposures with no direct images
+- ``S_REGION`` keyword:
+  - added to FLT/FLC file headers
+  - revised region computation to match closely the actual exposure footprint within mosaic
+- Always runs ``updatewcs`` on input files to insure pipeline-default WCSs are always present
+  - Add ``WCSNAME=OPUS`` if no ``IDCTAB`` WCS was created by ``updatewcs`` (``NGOODPIX=0``, ...).
+
+These changes, and additional significant bug fixes, were implemented using
+the following github PRs:
+
+- Implemented deblending of segmentation source catalogs ONLY
+  for sources larger than the PSF kernel. [#1131]
+
+- Insure SVM processing always generates point-source and
+  segmentation (extended) source catalogs, even if empty. [#1129]
+
+- Implemented an efficient single-image identifier of possible
+  cosmic-rays/defects, and applied it to help make image
+  alignment more reliable.  [#1129]
+
+- Update logic for fitting between source lists to minimize/eliminate
+  use of fitting with less than 4 sources. [#1129]
+
+- Implemented model PSF-based point-source identification for SVM
+  point-source catalog generation. [#903, #971, #1127]
+
+- Removed dependence on private photutils functions while enabling
+  support for all photutils versions >= 1.0.0.
+  [#1127, #1117, #1116, #1096]
+
+- Set values for crowding, biggest source, and source
+  fraction for use when to use the RickerWavelet kernel and
+  when to deblend sources when identifying extended sources
+  using segmentation for the segment catalog. [#1115]
+
+- Implemented a more efficient algorithm based on Harris corner
+  detection for computing the ``S_REGION`` keyword for pipeline
+  and SVM drizzle products. [#1106]
 
 - Fix a memory corruption issue in ``interpolate_bilinear()`` in
   ``cdrizzleblot.c`` which could result in segfault. [#1048]
 
 - Fixed multiprocessing incompatibility with ``Python >= 3.8``. [#1101]
 
-In addition to a couple dozen bug fixes for the new SVM processing code
-to expand the number of visits which can be aligned to GAIA, the
-following significant changes to the code or some of the APIs have also
-been implemented:
+- Add support for environment variable switch, ``PIPELINE_RESET_IDCTAB``,
+  to ``runastrodriz`` which will automatically reset ``IDCTAB``
+  in FLT/FLC files if different from ``IDCTAB`` in RAW files.  [#1046]
 
 - Update documentation based on revisions to the code.
   [#941, #947, #953]
 
 - Update default astrometry catalogs for alignment to try alignment to
-  the GAIA eDR3 catalog first. [#986, #1012]
+  the ``GAIA eDR3`` catalog first. [#986, #1012]
 
 - Enable user epoch selection when a user requests a GAIA catalog from
   the astrometry catalog web service. [#1006]
 
-- Insure that HDRNAME is always valid for updated WCS solutions. [#966]
+- Insure that ``HDRNAME`` is always valid for updated WCS solutions. [#966]
 
-- Revised S_REGION keyword value to reflect actual outline of chips in
+- Revised ``S_REGION`` keyword value to reflect actual outline of chips in
   drizzle products.  [#951]
 
-- Sky Subtraction step will automatically downgrade from 'match' to 'localmin',
-  and from 'globalmin+match' to 'globalmin' when sky matching runs into an
+- Sky Subtraction step will automatically downgrade from ``match`` to ``localmin``,
+  and from ``globalmin+match`` to ``globalmin`` when sky matching runs into an
   Exception. [# 1007]
 
-- Changed to insure that EXTNAME and EXTVER are always removed from
+- Changed to insure that ``EXTNAME`` and ``EXTVER`` are always removed from
   simple FITS drizzle product headers. [#954]
 
-- Changed to insure that all the distortion keywords (e.g., TDD*, D2IM*,...)
+- Changed to insure that all the distortion keywords (e.g., ``TDD*``, ``D2IM*``,...)
   are removed from from the output drizzle product headers [#954].
 
 - Fix a bug in ``tweakback`` that may cause incorrect "updated" WCS to be
   picked up from the drizzled image. [#913]
 
 - Added ``DRIZPARS`` keyword to final output drizzle product primary header
-  to document the name of the associated trailer file. [#934]
+  to document the name of the associated trailer file. [#934, #1078]
+
+In addition, numerous changes were made to insure this code stayed
+compatible with numpy versions > 1.20 and astropy versions > 4.1.
+
+Updates to the ``STWCS`` package version >= 1.6.0 also translated to
+the following changes to the Drizzlepac processing:
+- Insure HDRNAME keyword is never empty
+- Remove duplicate headerlet extensions when running updatewcs
+- Compute new a priori WCS solutions for new IDCTAB not already in astrometry database
+
+***API Changes:***
+
+**imageObject.py:**
+  - **class imageObject**: Added parameter ``output`` to enable determination
+    of rootname for use in processing of each detector.
+
+**adrizzle.py:**
+  - **drizSeparate**: Added optional parameter ``logfile`` for specifying
+    what file to use for log messages.
+  - **drizFinal**: Added optional parameter ``logfile`` for specifying
+    what file to use for log messages.
+
+**wcs_functions.py:**
+  - Removed ``hdulist`` as parameter from ``get_hstwcs``.
+
+**haputils/analyze.py:**
+  - **analyze_data**: Added parameter ``type`` to customize logic for SVM
+    processing.
+
+**haputils/astrometric_utils.py:**
+  - **retrieve_observation**:  Added parameter ``product_type`` to allow for selection of
+    type of products to be returned; pipeline, HAP, or both.
+
+**haputils/make_poller_files.py:**
+  - New function ``generate_poller_file`` added to create inputs for SVM processing
+    from files on disk.
+
+**haputils/processing_utils.py:**
+  - New function ``find_footprint`` added to determine corners of all chips
+    in an image for computation of ``S_REGION`` keyword.
+  - New function ``interpret_sregion`` added to convert ``S_REGION`` keyword
+    value into list of RA/Dec points for visualization.
 
 
 3.2.1 (16-Feb-2021)
