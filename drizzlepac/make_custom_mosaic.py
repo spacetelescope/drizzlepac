@@ -64,9 +64,6 @@ Python USAGE:
     >>> python
     >>> from drizzlepac import make_custom_mosaic
     >>> make_custom_mosaic.perform(<list file or search pattern>, log_level='info', output_file_prefix=None, skip_gaia_alignment=False)
-
-Classes and Functions
----------------------
 """
 
 import argparse
