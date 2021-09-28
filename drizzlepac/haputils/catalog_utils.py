@@ -1405,6 +1405,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._bs_deblend_limit = self.param_dict["sourcex"]["biggest_source_deblend_limit"]
         self._sf_deblend_limit = self.param_dict["sourcex"]["source_fraction_deblend_limit"]
         self._ratio_bigsource_limit = self.param_dict["sourcex"]["ratio_bigsource_limit"]
+        self._kron_scaling_radius = self.param_dict["sourcex"]["kron_scaling_radius"]
+        self._kron_minimum_radius = self.param_dict["sourcex"]["kron_minimum_radius"]
 
         # Initialize attributes to be computed later
         self.segm_img = None  # Segmentation image
@@ -1455,6 +1457,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("Percentage limit on source fraction over the image (criterion for RickerWavelet kernel): {}".format(100.0 * self._rw2d_source_fraction))
             log.info("Percentage limit on biggest source deblending limit: {}".format(100.0 * self._bs_deblend_limit))
             log.info("Percentage limit on source fraction deblending limit: {}".format(100.0 * self._sf_deblend_limit))
+            log.info("Scaling parameter of the Kron radius: {}".format(self._kron_scaling_radius))
+            log.info("Kron minimum circular radius: {}".format(self._kron_minimum_radius))
+            log.info("")
+            log.info("{}".format("=" * 80))
 
             # Get the SCI image data
             imgarr = copy.deepcopy(self.image.data)
@@ -1699,7 +1705,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                     filter_kernel=self.kernel, wcs=self.image.imgwcs)
             else:
                 self.source_cat = SourceCatalog(imgarr, self.segm_img, background=self.image.bkg_background_ra,
-                                                    kernel=self.kernel, wcs=self.image.imgwcs)
+                                                    kernel=self.kernel, wcs=self.image.imgwcs,
+                                                    kron_params=[self._kron_scaling_radius, self._kron_minimum_radius])
+
 
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
             # form to filter out bad rows and correspondingly bad segments before the filter images are processed.
@@ -2028,7 +2036,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # computation time from computing values which are not used
         include_filter_cols = ['area', bac_colname, 'bbox_xmax', 'bbox_xmin', 'bbox_ymax', 'bbox_ymin',
                                'covar_sigx2', 'covar_sigxy', 'covar_sigy2', 'cxx', 'cxy', 'cyy',
-                               'ellipticity', 'elongation', id_colname, 'orientation', 'sky_centroid_icrs',
+                               'ellipticity', 'elongation', id_colname, 'kron_radius', 'orientation', 'sky_centroid_icrs',
                                flux_colname, ferr_colname, 'xcentroid', 'ycentroid']
 
         # Compute source properties...
@@ -2286,7 +2294,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                            "covar_sigx2": "X2", "covar_sigy2": "Y2", "covar_sigxy": "XY",
                            "orientation": "Theta",
                            "elongation": "Elongation", "ellipticity": "Ellipticity", "area": "Area",
-                           "fwhm": "FWHM"}
+                           "fwhm": "FWHM", "kron_radius": "KronRadius"}
         for old_col_title in final_col_names:
             filter_table.rename_column(old_col_title, final_col_names[old_col_title])
 
@@ -2295,7 +2303,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                            "CI", "Flags", "MagAp1", "MagErrAp1", "FluxAp1", "FluxErrAp1",
                            "MagAp2", "MagErrAp2", "FluxAp2", "FluxErrAp2", "MSkyAp2",
                            "Bck", "Area", "FWHM", "MagIso", "FluxIso", "FluxIsoErr",
-                           "Xmin", "Ymin", "Xmax", "Ymax",
+                           "KronRadius", "Xmin", "Ymin", "Xmax", "Ymax",
                            "X2", "Y2", "XY",
                            "CXX", "CYY", "CXY",
                            "Elongation", "Ellipticity", "Theta"]
@@ -2307,7 +2315,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                             "MagAp1": "7.3f", "MagErrAp1": "7.3f", "FluxAp1": "10.4f", "FluxErrAp1": "10.4f",
                             "MagAp2": "7.3f", "MagErrAp2": "7.3f", "FluxAp2": "10.4f", "FluxErrAp2": "10.4f",
                             "MSkyAp2": "7.3f", "Bck": "10.4f", "MagIso": "7.3f", "FluxIso": "10.4f", "FluxIsoErr": "10.4f",
-                            "Xmin": "8.0f", "Ymin": "8.0f", "Xmax": "8.0f", "Ymax": "8.0f",
+                            "KronRadius": "8.4f", "Xmin": "8.0f", "Ymin": "8.0f", "Xmax": "8.0f", "Ymax": "8.0f",
                             "X2": "8.4f", "Y2": "8.4f", "XY": "8.4f",
                             "CXX": "9.5f", "CYY": "9.5f", "CXY": "9.5f",
                             "Elongation": "7.2f", "Ellipticity": "7.2f", "Theta": "8.3f", "Area": "8.3f", "FWHM": "8.3f"}
@@ -2333,6 +2341,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                              "MSkyAp2": "ABMAG of sky based on outer (larger) aperture",
                              "FluxIso": "Sum of unmasked data values in the source segment",
                              "FluxIsoErr": "Uncertainty of FluxIso, propagated from the input error array",
+                             "KronRadius": "The unscaled first-moment Kron radius",
                              "MagIso": "Magnitude corresponding to FluxIso",
                              "X2": "Variance along X",
                              "Y2": "Variance along Y",
@@ -2370,6 +2379,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                           "MagIso": "ABMAG",
                           "FluxIso": "electrons/s",
                           "FluxIsoErr": "electrons/s",
+                          "KronRadius": "pixels",
                           "X2": "pixels**2",
                           "Y2": "pixels**2",
                           "XY": "pixels**2",
