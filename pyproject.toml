@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = ["setuptools>=30.3.0", "wheel", "oldest-supported-numpy", "astropy"]
+requires = ["setuptools>=30.3.0", "wheel", "numpy", "astropy"]
 
 [tool.stsci-bot]
 
