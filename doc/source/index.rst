@@ -144,6 +144,7 @@ The **HAP Single Visit Mosaics (SVMs)** differ from the standard HST drizzled da
   singlevisit.rst
   runsinglehap.rst
   makecustommosaic.rst
+
   Glossary of HAP Terms <hap_glossary.rst>
 
 
