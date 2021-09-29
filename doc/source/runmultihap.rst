@@ -3,11 +3,12 @@
 ===================
 API for runmultihap
 ===================
-Place insightful text here!
+The task ``runmultihap`` serves as the primary interface for processing data
+from multiple visits that share a single skycell into a uniform set of images.
 
-Supporting code
-===============
-These modules and functions provide the core functionality for the multi-visit processing.
+Associated Helper Code
+======================
+These modules and functions assist with some of the logistics associated with multi-visit processing.
 
 .. _make_poller_files:
 
