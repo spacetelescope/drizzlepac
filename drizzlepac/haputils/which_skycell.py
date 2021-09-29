@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """Reports the name(s) of the projection cell(s)/skycell(s) that the observations in the user-specified input
- file occupy.
+file occupy.
 
- USAGE:
+USAGE:
     >>> python drizzlepac/haputils/which_skycell.py -[i]
 
     - The '-i' optional input allows users to specify the name of a file containing a list of calibrated fits

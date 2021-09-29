@@ -16,12 +16,14 @@ Associated Helper Code
 ======================
 These modules and functions assist with some of the logistics associated with multi-visit processing.
 
+
 .. _make_poller_files:
 
 drizzlepac.haputils.make_poller_files
 -------------------------------------
 .. automodule:: drizzlepac.haputils.make_poller_files
 .. autofunction:: drizzlepac.haputils.make_poller_files.generate_poller_file
+
 
 .. _which_skycell:
 

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 """Generates a poller file that will be used as input to runsinglehap.py, hapsequencer.py, runmultihap.py or
- hapmultisequencer.py based on the files or rootnames listed user-specified list file.
-
+hapmultisequencer.py based on the files or rootnames listed user-specified list file.
 
 USAGE
     >>> python drizzlepac/haputils/make_poller_files.py <input filename> -[ost]
