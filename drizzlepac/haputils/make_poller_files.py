@@ -21,7 +21,7 @@ USAGE
       their observations occupy using the ``haputils.which_skycell`` script.
 
     - The '-t' optional input allows users to specify the type of poller file that will be reated. The
-      valid input options are "smv" to create a poller file for use with the single-visit mosaics pipeline
+      valid input options are "svm" to create a poller file for use with the single-visit mosaics pipeline
       or "mvm" to create a poller file for use with the multiple-visit mosaics pipeline. If not explicitly
       specified, the default value is "svm". NOTE: if creating a MVM poller file, one must specify the
       skycell name using the "-s" input argument.
@@ -55,7 +55,7 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
 
     poller_file_type : str, optional
         Type of poller file to create. 'svm' for single visit mosaic, 'mvm' for multi-visit mosaic. Default
-        value is 'smv'.
+        value is 'svm'.
 
     output_poller_filename : str, optional
         Name of the output poller file that will be created. Default value is 'poller_file.out'.
@@ -65,7 +65,9 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
         of a MVM poller file, but completely unnecessary for the creation of a SVM poller file. The correct
         syntax for skycell names is 'skycell-pNNNNxXXyXX', where NNNN is the 4-digit projection cell number,
         and XX and YY are the two-digit X and Y skycell indices, respectively. Default value is logical
-        'None'.
+        'None'. NOTE: this input argument is not needed for SVM poller file creation, but *REQUIRED* for MVM
+        poller file creation. Users can determine the skycell(s) that their observations occupy using the
+        ``haputils.which_skycell`` script.
 
     Returns
     -------
@@ -218,7 +220,7 @@ if __name__ == '__main__':
                              'MVM poller file creation. Users can determine the skycell(s) that their '
                              'observations occupy using the haputils.which_skycell.py script.')
     parser.add_argument('-t', '--poller_file_type', required=False, choices=['svm', 'mvm'], default='svm',
-                        help='Type of poller file to be created. "smv" to create a poller file for use with '
+                        help='Type of poller file to be created. "svm" to create a poller file for use with '
                              'the single-visit mosaics pipeline and "mvm" to create a poller file for use '
                              'with the multiple-visit mosaics pipeline. If not explicitly '
                              'specified, the default value is "svm". NOTE: if creating a MVM poller file, '
