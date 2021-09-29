@@ -88,3 +88,10 @@ drizzlepac.haputils.generate_custom_svm_param_file
 --------------------------------------------------
 .. automodule:: drizzlepac.haputils.generate_custom_svm_param_file
 .. autofunction:: drizzlepac.haputils.generate_custom_svm_param_file.make_svm_input_file
+
+.. _make_poller_files:
+
+drizzlepac.haputils.make_poller_files
+-------------------------------------
+.. automodule:: drizzlepac.haputils.make_poller_files
+.. autofunction:: drizzlepac.haputils.make_poller_files.generate_poller_file
