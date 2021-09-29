@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-"""Generates a poller file that will be used as input to runsinglehap.py, runmultihap.py, and
-make_custom_mosaic.py based on the files or rootnames listed user-specified list file.
+"""Generates a poller file that will be used as input to runsinglehap.py, hapsequencer.py, runmultihap.py or
+ hapmultisequencer.py based on the files or rootnames listed user-specified list file.
 
 
 USAGE
@@ -20,7 +20,7 @@ USAGE
       file creation, but *REQUIRED* for MVM poller file creation. Users can determine the skycell(s) that
       their observations occupy using the ``haputils.which_skycell`` script.
 
-    - The '-t' optional input allows users to specify the type of poller file that will be reated. The
+    - The '-t' optional input allows users to specify the type of poller file that will be created. The
       valid input options are "svm" to create a poller file for use with the single-visit mosaics pipeline
       or "mvm" to create a poller file for use with the multiple-visit mosaics pipeline. If not explicitly
       specified, the default value is "svm". NOTE: if creating a MVM poller file, one must specify the
