@@ -16,8 +16,7 @@ USAGE:
 Python USAGE:
     >>> python
     >>> from drizzlepac import runmultihap
-    >>> runmultihap.perform(inputFilename,debug=True)
-
+    >>> runmultihap.perform(inputFilename, debug=False, log_level="info")
 """
 # Import standard Python modules
 import argparse
