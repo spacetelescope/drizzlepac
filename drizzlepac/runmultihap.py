@@ -4,14 +4,19 @@
 
 :License: :doc:`LICENSE`
 
-USAGE: runmultihap [-d] inputFilename
+USAGE:
+    >>> python drizzlepac/runmultihap [-dl] inputFilename
 
-The '-d' option will run this task in DEBUG mode producing additional outputs.
+- The '-d' option will run this task in DEBUG mode producing additional outputs. If not explicitly specified,
+  the default value is logical "False".
+- The '-l' option allows the user to control the level of verboseness in the log statements displayed on the
+  screen and written to the .log file. Valid options are "critical", "error", "warning", "info", and "debug".
+  If not explicitly specified, the default value is "info".
 
 Python USAGE:
-    python
-    from drizzlepac import runmultihap
-    runmultihap.perform(inputFilename,debug=True)
+    >>> python
+    >>> from drizzlepac import runmultihap
+    >>> runmultihap.perform(inputFilename,debug=True)
 
 """
 # Import standard Python modules

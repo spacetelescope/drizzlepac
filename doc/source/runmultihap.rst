@@ -3,8 +3,14 @@
 ===================
 API for runmultihap
 ===================
+.. toctree::
+   :maxdepth: 2
+
 The task ``runmultihap`` serves as the primary interface for processing data
 from multiple visits that share a single skycell into a uniform set of images.
+
+.. automodule:: drizzlepac.runmultihap
+.. autofunction:: drizzlepac.runmultihap.perform
 
 Associated Helper Code
 ======================
