@@ -82,9 +82,21 @@ drizzlepac.haputils.processing_utils
 .. autofunction:: drizzlepac.haputils.processing_utils.refine_product_headers
 .. autofunction:: drizzlepac.haputils.processing_utils.compute_sregion
 
+
+Associated Helper Code
+======================
+These modules and functions assist with some of the logistics associated with single-visit processing.
+
 .. _generate_custom_svm_param_file:
 
 drizzlepac.haputils.generate_custom_svm_param_file
 --------------------------------------------------
 .. automodule:: drizzlepac.haputils.generate_custom_svm_param_file
 .. autofunction:: drizzlepac.haputils.generate_custom_svm_param_file.make_svm_input_file
+
+.. _make_poller_files:
+
+drizzlepac.haputils.make_poller_files
+-------------------------------------
+.. automodule:: drizzlepac.haputils.make_poller_files
+.. autofunction:: drizzlepac.haputils.make_poller_files.generate_poller_file

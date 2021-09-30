@@ -9,7 +9,7 @@ projection cells, the bounds of the mosaic will be automatically clipped at the 
 
 As this script is simply a wrapper around hapmultisequencer.py, the final output products are the exact same
 as what one would expect from a pipeline MVM run. For a complete details about all hapmultisequencer.py
-inputs and output products, please refer to the hapmultisequencer.py documentation. # TODO: Make hapmultisequencer.py documentation
+inputs and output products, please refer to the hapmultisequencer.py documentation.
 
 hapmultisequencer.py  was explicitly written to process data from only a single skycell. However, this script
 gives users the ability to create mosaics spanning multiple skycells. As such, all output products produced
@@ -29,20 +29,41 @@ script produces an additional set up output products for WFC3/IR observations. T
 products is generated using the native detector platescale of 0.12 arcseconds per pixel. These files end in
 "_coarse_all_flt.fits".
 
-The output world cooordinate system (WCS) information is based on that of the projection cell in which the
+The output world coordinate system (WCS) information is based on that of the projection cell in which the
 observations reside. If the input observations happen to fall in a region of the sky where more than one
 projection cells overlap, the WCS information of the output products will be based on the projection cell
 whose center is closest to the geometric center of the input observations.
 
 USAGE:
+    >>> python drizzlepac/make_custom_mosaic.py -[los] <search pattern enclosed in quotes>
 
-- python drizzlepac/make_custom_mosaic.py <search pattern enclosed in quotes>
-- python drizzlepac/make_custom_mosaic.py <text file with list of input files>
+    or
+
+    >>> python drizzlepac/make_custom_mosaic.py -[los] <text file with list of input files>
+
+    - The '-l' option allows the user to control the level of verboseness in the log statements displayed on
+      the screen and written to the .log file. The level of verboseness from left to right, and includes all
+      log statements with a log_level left of the specified level. Specifying "critical" will only
+      record/display "critical" log statements, and specifying "error" will record/display both "error" and
+      "critical" log statements, and so on.
+
+    - The '-o' option allows the user to specify the text string that will be used as the filename prefix all
+      files created by hapmultisequencer.py during the MVM custom mosaic generation process. If not
+      explicitly specified, all output files will start with the following formatted text string:
+      "hst-skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>", where p<pppp> is the projection cell ID,
+      ra<##>d<####> are the whole-number and decimal portions of the right ascention, respectively, and
+      dec<n|s><##>d<####> are the whole-number and decimal portions of the declination, respectively. Note
+      that the "<n|s>" denotes if the declination is north (positive) or south (negative). Example: For
+      skycell = 1974, ra = 201.9512, and dec = +26.0012, The filename prefix would be
+      "skycell-p1974-ra201d9512-decn26d0012".
+
+    - When turned on, the '-s' option allows users to skip alignment of all input images to known Gaia/HSC
+      sources in the input image footprint and instead use the existing input image alignment solution.
 
 Python USAGE:
-    python
-    from drizzlepac import make_custom_mosaic
-    make_custom_mosaic.perform(<list file or search pattern>)
+    >>> python
+    >>> from drizzlepac import make_custom_mosaic
+    >>> make_custom_mosaic.perform(<list file or search pattern>, log_level='info', output_file_prefix=None, skip_gaia_alignment=False)
 """
 
 import argparse
@@ -120,7 +141,7 @@ def create_input_image_list(user_input):
     if os.path.isfile(user_input) and not user_input.endswith(".fits"):
         with open(user_input, "r") as fin:
             img_list = fin.readlines()
-        # clean up any stray carrage returns
+        # clean up any stray carriage returns
         for ctr in range(0, len(img_list)):
             img_list[ctr] = img_list[ctr].strip()
         search_method_string = "in list file {}".format(user_input)
@@ -149,7 +170,7 @@ def create_poller_file(img_list, proj_cell_dict):
     img_list : list
         list of images to process
 
-    proj_cell_dict : dictionary
+    proj_cell_dict : dict
         Dictionary containing projection cell information
 
     Returns
@@ -173,8 +194,7 @@ def create_poller_file(img_list, proj_cell_dict):
             closest_skycell = sc
 
     # Create poller file
-    skycell_name = closest_skycell.replace("skycell-", "")
-    poller_filename = "temp_{}_mvm.out".format(skycell_name)
+    poller_filename = "temp_{}_mvm.out".format(closest_skycell)
     rootname_list = []
     for imgname in img_list:
         rootname_list.append(imgname+"\n")
@@ -185,7 +205,7 @@ def create_poller_file(img_list, proj_cell_dict):
 
         make_poller_files.generate_poller_file(tf.name, poller_file_type="mvm",
                                                output_poller_filename=poller_filename,
-                                               skycell_name=skycell_name)
+                                               skycell_name=closest_skycell)
     return poller_filename
 
 # ------------------------------------------------------------------------------------------------------------
@@ -400,7 +420,7 @@ def perform(input_image_source, log_level='info', output_file_prefix=None, skip_
     finally:
         # remove any temp files like the poller file and
         if temp_files_to_delete and log_level != "debug":
-            log.info("Time delete some temporary files...")
+            log.info("Time to delete some temporary files...")
             for filename in temp_files_to_delete:
                 if os.path.exists(filename):
                     os.remove(filename)
