@@ -1,6 +1,19 @@
 #!/usr/bin/env python
 """Reports the name(s) of the projection cell(s)/skycell(s) that the observations in the user-specified input
- file occupy."""
+file occupy.
+
+USAGE:
+    >>> python drizzlepac/haputils/which_skycell.py -[i]
+
+    - The '-i' optional input allows users to specify the name of a file containing a list of calibrated fits
+      files (ending with "_flt.fits" or "_flc.fits") to process. If not explicitly specified, all
+      'flc/flt fits files in the current working directory will be processed.
+
+Python USAGE:
+    >>> python
+    >>> from drizzlepac.haputils import which_skycell
+    >>> which_skycell.report_skycells(img_list)
+ """
 
 import argparse
 import glob
