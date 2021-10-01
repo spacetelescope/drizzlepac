@@ -147,8 +147,21 @@ Astropy tool.
 2: Point (Aperture) Photometric Catalog Generation
 ==================================================
 
-2.1: Source Identification with DAOStarFinder
----------------------------------------------
+Source Identification Options
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+A number of options have been implemented within the catalog generation code in order
+to best match the contents of the exposure, including presence of saturated sources and
+cosmic-rays.  The available options include:
+
+  * dao : The `photutils DAOStarFinder class <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html#photutils.detection.DAOStarFinder>`_ that provides an implementation of the DAOFind algorithm.
+  * iraf : The `photutils IRAFStarFinder class <https://photutils.readthedocs.io/en/stable/api/photutils.detection.IRAFStarFinder.html#photutils.detection.IRAFStarFinder>`_ that implements IRAF's *starfind* algorithm.
+  * psf [DEFAULT] : This option is a modification of DAOStarFinder which relies on a library of TinyTim (model) PSFs to locate each source then uses DAOStarFinder to measure the final position and photometry of each identified source.
+
+These options are selected through the "starfinder_algorithm" parameter in the JSON configuration files in the `pars/hap_pars` directory as used by `runsinglehap`.
+
+
+Source Identification using DAOStarFinder
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html>`_ Astropy tool to identify sources in the background-subtracted
 multi-filter detection image. This would be where the background computed using one of the algorithms
 discussed in Section 1.3 is applied to the science data to initialize point-source detection processing.
@@ -158,8 +171,16 @@ described in `Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP
 The exact set of input parameters fed into DAOStarFinder is detector-dependent. The parameters can be found in
 the <instrument>_<detector>_catalog_generation_all.json files mentioned in the previous section.
 
-2.2: Aperture Photometry Measurement - Flux Determination
----------------------------------------------------------
+Source Identification using PSFs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This option, introduced in Drizzlepac v3.3.0, converts model PSFs created using TinyTim to match the orientation and plate scale of the observation to look for sources in the image.  Where DAOFind convolves the image with a perfect Gaussian whose FWHM has been specified by the user, this option convolves the image with the model PSF to identify all sources which most closely matches the PSF used.  Those positions are then turned into a list that is fed to `photutils DAOStarFinder` code to measure them using the Gaussian models with a FWHM measured from the model PSF.  One benefit of this method is that features in the core of saturated or high S/N sources in the image that would normally be erroneously identified as a separate point-source by DAOFind will be recognized as part of the full PSF as far out as the model PSF extends.
+
+For exposures which are comprised of images taken in different filters, the model PSF used is the drizzle combination of the model PSFs for each filter that comprised the image.  This allows the code to best match the PSF found in the image of the `total detection` image.   The model PSFs definitely do not exactly match the PSFs from the images due to focus changes and other telescope effects.  However, they are close enough to allow for reasonably complete identification of actual point-sources in the images.  Should the images suffer from extreme variations in the PSF, though, this algorithm will end up not identifying valid sources from the image.  The user can provide there own library of PSFs to use in place of the model PSFs included with this package in order to more reliably match and measure the sources from their data. The user-provided PSFs can be used to directly replace the PSFs installed with this package as long as they maintain the same naming convention.
+
+
+
+Aperture Photometry Measurement - Flux Determination
+-----------------------------------------------------
 Aperture photometry is then preformed on the previously identified sources using a pair of concentric
 photometric apertures. The sizes of these apertures depend on the specific detector being used, and are
 listed below in table 1:
