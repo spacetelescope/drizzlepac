@@ -1318,3 +1318,113 @@ def register_photutils_function(name):
 
     func = getattr(background, name)  # raises AttributeError if not found
     return func
+
+# --------------------------------------------------------------------------------------------------------------
+########################################################################################
+# Author: Ujash Joshi, University of Toronto, 2017                                     #
+# Based on Octave implementation by: Benjamin Eltzner, 2014 <b.eltzner@gmx.de>         #
+# Octave/Matlab normxcorr2 implementation in python 3.5                                #
+# Details:                                                                             #
+# Normalized cross-correlation. Similiar results upto 3 significant digits.            #
+# https://github.com/Sabrewarrior/normxcorr2-python/master/norxcorr2.py                #
+# http://lordsabre.blogspot.ca/2017/09/matlab-normxcorr2-implemented-in-python.html    #
+########################################################################################
+
+import numpy as np
+from scipy.signal import fftconvolve
+
+
+def normxcorr2(template, image, mode="full"):
+    """
+    Input arrays should be floating point numbers.
+    :param template: N-D array, of template or filter you are using for cross-correlation.
+    Must be less or equal dimensions to image.
+    Length of each dimension must be less than length of image.
+    :param image: N-D array
+    :param mode: Options, "full", "valid", "same"
+    full (Default): The output of fftconvolve is the full discrete linear convolution of the inputs.
+    Output size will be image size + 1/2 template size in each dimension.
+    valid: The output consists only of those elements that do not rely on the zero-padding.
+    same: The output is the same size as image, centered with respect to the ‘full’ output.
+    :return: N-D array of same dimensions as image. Size depends on mode parameter.
+    """
+
+    # If this happens, it is probably a mistake
+    if np.ndim(template) > np.ndim(image) or \
+            len([i for i in range(np.ndim(template)) if template.shape[i] > image.shape[i]]) > 0:
+        print("normxcorr2: TEMPLATE larger than IMG. Arguments may be swapped.")
+
+    template = template - np.mean(template)
+    image = image - np.mean(image)
+
+    a1 = np.ones(template.shape)
+    # Faster to flip up down and left right then use fftconvolve instead of scipy's correlate
+    ar = np.flipud(np.fliplr(template))
+    out = fftconvolve(image, ar.conj(), mode=mode)
+
+    image = fftconvolve(np.square(image), a1, mode=mode) - \
+            np.square(fftconvolve(image, a1, mode=mode)) / (np.prod(template.shape))
+
+    # Remove small machine precision errors after subtraction
+    image[np.where(image < 0)] = 0
+
+    template = np.sum(np.square(template))
+    out = out / np.sqrt(image * template)
+
+    # Remove any divisions by 0 or very close to 0
+    out[np.where(np.logical_not(np.isfinite(out)))] = 0
+
+    return out
+
+def compute_xcorr_offset(image, refimage, window=32):
+    """Use normxcorr2 to determine sub-pixel offset between two images.
+
+    Usage
+    -----
+    flcs = sorted(glob.glob('*fl?.fits'))
+    imglist = [fits.getdata(f, ext=0) for f in flcs]
+    # determine position of central source to be aligned
+    xcen = 512
+    ycen = 563
+    # create slice tuple for subarray around that position to be used for alignment
+    imgslice = (slice(ycen-256, ycen+256), slice(xcen-256, xcen+256))
+    # perform alignment relative to first image in list
+    offset = compute_xcorr_offset(imglist[1][imgslice], imglist[0][imgslice])
+
+
+    Parameters
+    ----------
+    image : ndarray
+        Numpy array of image to be aligned
+
+    refimage : ndarray
+        Numpy array of image which input image should be aligned to
+
+    Returns
+    -------
+    offset : tuple
+        X,Y tuple of the sub-pixel offset between the two images.
+    """
+    from astropy.modeling import models, fitting
+    xcorr_img = normxcorr2(image, refimage)
+
+    # determine initial guess (to a pixel) of the peak
+    xy_peaks = np.where(xcorr_img == xcorr_img.max())
+    peak_y = int(xy_peaks[0][0])
+    peak_x = int(xy_peaks[1][0])
+
+    # only fit the region extending out to the size of the window//2
+    # from the peak position
+    xcorr_slice = (slice(peak_y-window//2, peak_y+window//2), slice(peak_x-window//2, peak_x+window//2))
+
+    peak_img = xcorr_img[xcorr_slice]
+    y, x = np.mgrid[:window, :window]
+    # Now, fit a Gaussian to the peak to look for sub-pixel offset
+    p_model = models.Gaussian2D(x_mean=window//2, y_mean=window//2)
+    fit_p = fitting.LevMarLSQFitter()
+    p = fit_p(p_model, x, y, peak_img)
+
+    # compute offset
+    offset = (window//2 - p.x_mean.value, window//2 - p.y_mean.value)
+
+    return offset
