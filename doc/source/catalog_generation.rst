@@ -28,7 +28,7 @@ It should also be stressed here that the point and segment photometry source lis
 identify source catalogs independently of each other and DO NOT use a shared common source catalog for
 photometry.
 
-.. note ::
+.. note::
  A catalog file will always be written out for each type of catalog whether or not there are
 any identified sources in the exposure.
 
@@ -519,7 +519,7 @@ effort to only publish catalogs which provide the highest science value, criteri
 Archive (HLA) has been implemented to recognize those catalogs dominated by cosmic-rays and not provided as an
 output product.
 
-.. note ::
+.. note::
   This rejection criteria is NOT applied to WFC3/IR or ACS/SBC data since they are not affected by cosmic-rays
   in the same way as the other detectors.
 
