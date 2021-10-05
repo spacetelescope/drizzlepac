@@ -115,6 +115,8 @@ the following github PRs:
 - Changed to insure that all the distortion keywords (e.g., ``TDD*``, ``D2IM*``,...)
   are removed from from the output drizzle product headers [#954].
 
+- Set a common active WCS for direct as well as corresponding Grism/Prism images [#929, #946]
+
 - Fix a bug in ``tweakback`` that may cause incorrect "updated" WCS to be
   picked up from the drizzled image. [#913]
 
