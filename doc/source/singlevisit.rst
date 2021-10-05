@@ -649,19 +649,27 @@ the unique characteristics of the SVM products.  These keywords are:
 Defining the Footprint
 ^^^^^^^^^^^^^^^^^^^^^^^
 The `S_REGION` keyword records the footprint of the final drizzle image as it appears
-on the sky as a list of RA and Dec positions.  These positions outline only those pixels
+on the sky as a list of RA and Dec positions ordered in a counter-clockwise manner.
+These positions outline only those pixels
 which have been observed by HST, not just the rectangular shape of the final drizzle array.
 This allows the archive to provide a preview of the drizzle products footprints in their
 all-sky map to assist users in selecting the data most suited for their search.
 
 The computation of this keyword relies on automatically identifying all the corners of the
-exposed pixels from the final drizzle product, then applying the WCS to transform those pixel
+exposed pixels from the final drizzle product, ordering them in a counter-clockwise manner
+relative to North up, then applying the WCS to transform those pixel
 positions into sky coordinates.  The function `haputils/processing_utils/compute_sregion()`
 gets used to define the value of this keyword, and can be called directly for any FITS image.
 
 .. note::
     This function also gets called during standard-pipeline processing to populate the
     `S_REGION` keyword in all calibrated FLC/FLT files as well.
+
+.. note::
+    The list of positions for the footprint can contain more corner positions than expected
+    due to the sensitivity of the
+    `Harris corner detection algorithm<https://scikit-image.org/docs/0.7.0/auto_examples/plot_harris.html>`_
+    used to identify the corners.
 
 
 Catalog Generation
