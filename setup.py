@@ -101,7 +101,7 @@ setup(
         'astroquery>=0.4',
         'bokeh',
         'pandas',
-        'photutils>=1.0.0',
+        'photutils<1.2.0',
         'lxml',
         'PyPDF2',
         'scikit-image',
