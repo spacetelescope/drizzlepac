@@ -108,6 +108,12 @@ where the **Astrometric Catalog** refers the exact astrometric catalog used to c
     - A MAST-provided version of the second data release version of the official GAIA astrometric catalog.
     - This catalog contains initial proper motion measurements (and errors) for most sources in the catalog.
 
+  * **GAIAeDR3**
+
+    - A MAST-provided version of the early release of the third data release version of the official GAIA astrometric catalog.
+    - This catalog contains improved proper motion measurements (and errors) for most sources in the catalog compared to GAIADR2.
+    - This catalog also contains a larger number of sources compared to previous releases of the GAIA catalog.
+
 Although all solutions are appended to each FITS file, only 1 WCS (referred to as the **'active' WCS**) can be used at a time to represent the transformation from pixel coordinates to world coordinates. The active WCS is defined by the standard WCS keywords found in the header of the science extension for each chip in the exposure; *e.g.*, CRVAL1, CRVAL2, CRPIX1, CRPIX2, and so on.
 
 The *a priori* solution which gets selected to replace the active WCS solution represents the most accurate solution available in the astrometry database at the time, and will be chosen based on the following hierarchy (as of Summer 2019):
@@ -150,6 +156,9 @@ The terms are defined as:
   * **<Astrometric Catalog>**
 
     - This term describes the astrometric catalog, as listed for use with the *a priori* solutions, which was used for the cross-matching and fitting sources identified in the image(s).  If a value of **NONE** is specified here, it indicates that although the image appears (according to the code) to have been successfully relatively aligned one exposure to another, there were indications that the alignment to an astrometric catalog like **GAIADR2** failed.  The user will need to carefully review the state of alignment of this data when **NONE** is listed in the output WCS.
+
+  .. note::
+    As of v3.3.0, the **GAIAeDR3** catalog serves as the default catalog to use for aligning HST data.
 
 
 These separate terms provide as succinct a description of the solution determined for and applied to the exposure as possible. Additional keywords have been written out to the headerlet extension for the *a posteriori* fit which further describe the solution, including:
