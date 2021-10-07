@@ -10,6 +10,7 @@ from collections import OrderedDict
 
 import numpy as np
 from scipy import ndimage
+from scipy.signal import fftconvolve
 
 import astropy
 from astropy.io import fits
@@ -17,6 +18,7 @@ from astropy.table import Table
 from stsci.tools.bitmask import bitfield_to_boolean_mask
 from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
+from astropy.modeling import models, fitting
 
 from photutils import background
 from photutils.background import Background2D
@@ -1330,10 +1332,6 @@ def register_photutils_function(name):
 # http://lordsabre.blogspot.ca/2017/09/matlab-normxcorr2-implemented-in-python.html    #
 ########################################################################################
 
-import numpy as np
-from scipy.signal import fftconvolve
-
-
 def normxcorr2(template, image, mode="full"):
     """
     Input arrays should be floating point numbers.
@@ -1352,7 +1350,7 @@ def normxcorr2(template, image, mode="full"):
     # If this happens, it is probably a mistake
     if np.ndim(template) > np.ndim(image) or \
             len([i for i in range(np.ndim(template)) if template.shape[i] > image.shape[i]]) > 0:
-        print("normxcorr2: TEMPLATE larger than IMG. Arguments may be swapped.")
+        log.warning("normxcorr2: TEMPLATE larger than IMG. Arguments may be swapped.")
 
     template = template - np.mean(template)
     image = image - np.mean(image)
@@ -1405,7 +1403,6 @@ def compute_xcorr_offset(image, refimage, window=32):
     offset : tuple
         X,Y tuple of the sub-pixel offset between the two images.
     """
-    from astropy.modeling import models, fitting
     xcorr_img = normxcorr2(image, refimage)
 
     # determine initial guess (to a pixel) of the peak
