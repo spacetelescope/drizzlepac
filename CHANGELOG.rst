@@ -22,25 +22,32 @@ source catalogs, both point source and extended (segment) source
 catalogs, during single-visit mosaic (SVM) processing.  In fact,
 
 - Updated code to work with Python >= 3.7
-- GAIAeDR3 catalog now the initial catalog of choice for a posteriori alignment
+- **GAIAeDR3** catalog now the initial catalog of choice for a posteriori alignment
   during standard pipeline processing, as well as for SVM/MVM processing.
 - SVM/MVM processing will loop over catalogs, fit methods and fit geometries in
   looking for a successful fit, using the first successful fit it computes.
+
   - CATALOGS used: **GAIAeDR3**, **GSC242**, **2MASS** (in this order)
   - methods: relative, image-by-image
   - geometries: **rscale**, **rshift**, **shift** (each with different minimum cross-matches)
+
 - SVM processing will always generate both point source and extended source catalogs, even
   if the catalogs contain no rows of sources and measurements.
+
   - point source catalog will be generated using TinyTim PSF-based detection
   - extended source (segment) catalog will only have sources larger
     than the PSF kernel deblended.
   - catalog columns will closely resemble the Hubble Legacy Archive (HLA) catalogs columns
+
 - Grism/Prism exposures do not get aligned, but instead get the WCS correction from direct images
 - Added logic to handle visits where there are only Grism/Prism exposures with no direct images
 - ``S_REGION`` keyword:
+
   - added to FLT/FLC file headers
   - revised region computation to match closely the actual exposure footprint within mosaic
+
 - Always runs ``updatewcs`` on input files to insure pipeline-default WCSs are always present
+
   - Add ``WCSNAME=OPUS`` if no ``IDCTAB`` WCS was created by ``updatewcs`` (``NGOODPIX=0``, ...).
 
 These changes, and additional significant bug fixes, were implemented using
@@ -107,6 +114,8 @@ the following github PRs:
 
 - Changed to insure that all the distortion keywords (e.g., ``TDD*``, ``D2IM*``,...)
   are removed from from the output drizzle product headers [#954].
+
+- Set a common active WCS for direct as well as corresponding Grism/Prism images [#929, #946]
 
 - Fix a bug in ``tweakback`` that may cause incorrect "updated" WCS to be
   picked up from the drizzled image. [#913]

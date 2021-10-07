@@ -28,6 +28,11 @@ It should also be stressed here that the point and segment photometry source lis
 identify source catalogs independently of each other and DO NOT use a shared common source catalog for
 photometry.
 
+.. note::
+ A catalog file will always be written out for each type of catalog whether or not there are
+any identified sources in the exposure.
+
+
 1.2: Generation of Pixel Masks
 ------------------------------
 Every multi-filter, detector-level drizzle-combined image is associated with a boolean footprint mask which 
@@ -147,8 +152,21 @@ Astropy tool.
 2: Point (Aperture) Photometric Catalog Generation
 ==================================================
 
-2.1: Source Identification with DAOStarFinder
----------------------------------------------
+Source Identification Options
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+A number of options have been implemented within the catalog generation code in order
+to best match the contents of the exposure, including presence of saturated sources and
+cosmic-rays.  The available options include:
+
+  * dao : The `photutils DAOStarFinder class <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html#photutils.detection.DAOStarFinder>`_ that provides an implementation of the DAOFind algorithm.
+  * iraf : The `photutils IRAFStarFinder class <https://photutils.readthedocs.io/en/stable/api/photutils.detection.IRAFStarFinder.html#photutils.detection.IRAFStarFinder>`_ that implements IRAF's *starfind* algorithm.
+  * psf [DEFAULT] : This option is a modification of DAOStarFinder which relies on a library of TinyTim (model) PSFs to locate each source then uses DAOStarFinder to measure the final position and photometry of each identified source.
+
+These options are selected through the "starfinder_algorithm" parameter in the JSON configuration files in the `pars/hap_pars` directory as used by `runsinglehap`.
+
+
+Source Identification using DAOStarFinder
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html>`_ Astropy tool to identify sources in the background-subtracted
 multi-filter detection image. This would be where the background computed using one of the algorithms
 discussed in Section 1.3 is applied to the science data to initialize point-source detection processing.
@@ -158,8 +176,35 @@ described in `Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP
 The exact set of input parameters fed into DAOStarFinder is detector-dependent. The parameters can be found in
 the <instrument>_<detector>_catalog_generation_all.json files mentioned in the previous section.
 
-2.2: Aperture Photometry Measurement - Flux Determination
----------------------------------------------------------
+
+Source Identification using PSFs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This option, introduced in Drizzlepac v3.3.0, drizzles model PSFs created using TinyTim to match the orientation and plate
+scale of the observation to look for sources in the image.  Where DAOFind convolves the image with a perfect Gaussian whose
+FWHM has been specified by the user, this option convolves the image with the model PSF to identify all sources which most
+closely matches the PSF used.  Those positions are then turned into a list that is fed to `photutils DAOStarFinder` code to
+measure them using the Gaussian models with a FWHM measured from the model PSF.
+
+One benefit of this method is that features in
+the core of saturated or high S/N sources in the image that would normally be erroneously identified as a separate point-source
+by DAOFind will be recognized as part of the full PSF as far out as the model PSF extends.
+
+For exposures which are comprised of images taken in different filters, the model PSF used is the drizzle combination of the
+model PSFs for each filter that comprised the image.  This allows the code to best match the PSF found in the image of the
+`total detection` image.   The model PSFs definitely do not exactly match the PSFs from the images due to focus changes and
+other telescope effects.  However, they are close enough to allow for reasonably complete identification of actual
+point-sources in the images.  Should the images suffer from extreme variations in the PSF, though, this algorithm will end up
+not identifying valid sources from the image.  The user can provide their own library of PSFs to use in place of the model PSFs
+included with this package in order to more reliably match and measure the sources from their data.  The user-provided PSFs
+can be used to directly replace the PSFs installed with this package as long as they maintain the same naming convention.
+All model PSFs installed with the code can be found in the `pars/psfs` directory, with all PSFs organized by instrument
+and detector.  Each PSF file has a filename of `<instrument>_<detector>_<filter_name>.fits`.  The model PSFs all extend
+at least 3.0" in radius in order to recognize the features of the diffraction spikes out as far as possible to avoid as
+many false detections as possible for saturated sources.
+
+
+Aperture Photometry Measurement - Flux Determination
+-----------------------------------------------------
 Aperture photometry is then preformed on the previously identified sources using a pair of concentric
 photometric apertures. The sizes of these apertures depend on the specific detector being used, and are
 listed below in table 1:
@@ -474,7 +519,7 @@ effort to only publish catalogs which provide the highest science value, criteri
 Archive (HLA) has been implemented to recognize those catalogs dominated by cosmic-rays and not provided as an
 output product.
 
-.. note ::
+.. note::
   This rejection criteria is NOT applied to WFC3/IR or ACS/SBC data since they are not affected by cosmic-rays
   in the same way as the other detectors.
 
@@ -563,6 +608,24 @@ to identify signal which is similar in shape to the kernel. This process generat
 segmentation image or map where a segment is defined to be a number of connected pixels which are
 all identified by a numeric label and are considered part of the same source. 
 
+The segmentation map gets evaluated to determine the fraction of sources which are larger than a
+user-specified fraction of the image ("large" segments) and the total fraction of the image covered by segments.
+If either of these two scenarios is true, this is a strong indication the detection image is a
+crowded astronomical field. In such a crowded field, either the custom kernel or the Gaussian kernel
+(discussed in Section 1.4) can blend objects in close proximity together, making it difficult to
+differentiate between the independent objects.  In extreme cases, a large number of astronomical objects
+are blended together and are mistakenly identified as a single segment covering a large percent of the image.
+To address this situation an alternative kernel is derived using the
+`astropy.convolution.RickerWavelet2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.RickerWavelet2DKernel.html>`_
+Astropy tool. The RickerWavelet2DKernel is approximately a Gaussian surrounded by a negative
+halo, and it is useful for peak or multi-scale detection.
+This new kernel is then used for the generation of an improved segmentation
+map from the multi-filter detection image.
+
+The new segmentation map gets evaluated again to determine the number of "large" segments and the fraction
+of the image covered by segments.  Should the new map indicate too many "large" segments or too much of the
+image covered by segments, then deblending gets applied to the map.
+
 Because different sources in close proximity can be mis-identified as a single source, it is necessary
 to apply a deblending procedure to the segmentation map.  The deblending is a combination of 
 multi-thresholding, as is done by `Source Extractor <https://sextractor.readthedocs.io/en/latest/Introduction.html>`_
@@ -572,31 +635,18 @@ and the `watershed technique <https://en.wikipedia.org/wiki/Watershed_(image_pro
 
     The deblending can be problematic if the background determination has not been well-determined, resulting in 
     segments which are a large percentage of the map footprint.  In this case, the
-    deblending can take unreasonable amounts of time (e.g., days) to conclude.  Various mitigation 
-    schemes to handle this situation are being investigated (e.g., use of the evaluation strategy 
-    discussed in the following paragraph with different tolerances).
+    deblending can take unreasonable amounts of time (e.g., days) to conclude. This led to the
+    implementation of logic to **limit the use of deblending to only those segments which are larger
+    than the PSF kernel**.  This will result in some faint close sources being identified as a
+    single source in the final catalog.
 
 After deblending has successfully concluded, the resultant segmentation map is further evaluated
 based on an algorithm developed for the `Hubble Legacy Archive
 <https://hla.stsci.edu>`_ to determine if
 big segments/blended regions persist or if a large percentage of the map is covered by segments.  
-If either of these two scenarios is true, this is a strong indication the detection image is a 
-crowded astronomical field. 
-In a crowded field either the custom kernel or the Gaussian kernel (discussed in Section 1.4) 
-can blend objects in close proximity together, making it difficult to differentiate between
-the independent objects.  In extreme cases, a large number of astronomical objects are blended
-together and are mistakenly identified as a single segment covering a large percent of the
-image. 
-To address this situation an alternative kernel is derived using the 
-`astropy.convolution.RickerWavelet2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.RickerWavelet2DKernel.html>`_
-Astropy tool. The RickerWavelet2DKernel is approximately a Gaussian surrounded by a negative 
-halo, and it is useful for peak or multi-scale detection.
-This new kernel is then used for the generation of an improved segmentation
-map from the multi-filter detection image. 
 
 The segmentation map derived from *and when used in conjunction with* the multi-filter detection image for
-measuring source properties is **only** used to determine the
-centroids of sources.  
+measuring source properties is **only** used to determine the centroids of sources.
 
 .. note::
 

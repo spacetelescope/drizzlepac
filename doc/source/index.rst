@@ -77,8 +77,6 @@ are available.
    refimagefindpars
    imagefindpars
    image
-   catalogs
-   catalog_generation
    wcscorr
    tweakutils
    updatehdr
@@ -144,6 +142,9 @@ The **HAP Single Visit Mosaics (SVMs)** differ from the standard HST drizzled da
   singlevisit.rst
   runsinglehap.rst
   makecustommosaic.rst
+
+  catalog_generation
+  catalogs
 
   Glossary of HAP Terms <hap_glossary.rst>
 
