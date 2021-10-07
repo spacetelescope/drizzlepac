@@ -1586,6 +1586,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         sigma_for_threshold = self._nsigma * 2.0
                         rw2d_sigma_for_threshold = self._rw2d_nsigma * 2.0
 
+                    # Define thresholds for empty/zero background
+                    else:
+                        log.info("Defining the threshold image based on nsigma for source detection.")
+                        sigma_for_threshold = self._nsigma
+                        rw2d_sigma_for_threshold = self._rw2d_nsigma
+
                     # Detect segments and evaluate the detection in terms of big sources/islands or crowded fields
                     # Round 2
                     ncount += 1
