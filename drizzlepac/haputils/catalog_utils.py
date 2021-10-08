@@ -2115,10 +2115,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
         dd = Column(dec_icrs, name="DEC", unit="degrees")
         filter_measurements_table.add_columns([dd, rr])
 
-        # Compute the MagIso
-        filter_measurements_table["MagIso"] = photometry_tools.convert_flux_to_abmag(filter_measurements_table[flux_colname],
-                                                                                     self.image.keyword_dict['photflam'],
-                                                                                     self.image.keyword_dict['photplam'])
+        # Compute the MagSegment
+        filter_measurements_table["MagSegment"] = photometry_tools.convert_flux_to_abmag(filter_measurements_table[flux_colname],
+                                                                                         self.image.keyword_dict['photflam'],
+                                                                                         self.image.keyword_dict['photplam'])
 
         # Determine the "good rows" as defined by the X and Y coordinates not being nans as
         # the pos_xy array cannot contain any nan values.  Note: It is possible for a filter
@@ -2264,9 +2264,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         stdev_col = Column(data=np.ones(tblLen)*float('nan'), name="StdevAp2")
         table.add_column(stdev_col)
 
-        # iso_col = Column(data=np.ones(tblLen)*float('nan')), name="MagIso")
-        # table.add_column(iso_col)
-
         # Add zero-value "Flags" column in preparation for source flagging
         flag_col = Column(name="Flags", data=np.zeros_like(table[id_colname]))
         table.add_column(flag_col)
@@ -2294,7 +2291,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Rename columns to names used when HLA Classic catalog distributed by MAST
         final_col_names = {id_colname: "ID", "xcentroid": "X-Centroid", "ycentroid": "Y-Centroid",
-                           bac_colname: "Bck", flux_colname: "FluxIso", ferr_colname: "FluxIsoErr",
+                           bac_colname: "Bck", flux_colname: "FluxSegment", ferr_colname: "FluxSegmentErr",
                            "bbox_xmin": "Xmin", "bbox_ymin": "Ymin", "bbox_xmax": "Xmax", "bbox_ymax": "Ymax",
                            "cxx": "CXX", "cyy": "CYY", "cxy": "CXY",
                            "covar_sigx2": "X2", "covar_sigy2": "Y2", "covar_sigxy": "XY",
@@ -2308,7 +2305,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         final_col_order = ["X-Centroid", "Y-Centroid", "RA", "DEC", "ID",
                            "CI", "Flags", "MagAp1", "MagErrAp1", "FluxAp1", "FluxErrAp1",
                            "MagAp2", "MagErrAp2", "FluxAp2", "FluxErrAp2", "MSkyAp2",
-                           "Bck", "Area", "FWHM", "MagIso", "FluxIso", "FluxIsoErr",
+                           "Bck", "Area", "FWHM", "MagSegment", "FluxSegment", "FluxSegmentErr",
                            "KronRadius", "Xmin", "Ymin", "Xmax", "Ymax",
                            "X2", "Y2", "XY",
                            "CXX", "CYY", "CXY",
@@ -2320,7 +2317,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                             "CI": "7.3f", "Flags": "5d",
                             "MagAp1": "7.3f", "MagErrAp1": "7.3f", "FluxAp1": "10.4f", "FluxErrAp1": "10.4f",
                             "MagAp2": "7.3f", "MagErrAp2": "7.3f", "FluxAp2": "10.4f", "FluxErrAp2": "10.4f",
-                            "MSkyAp2": "7.3f", "Bck": "10.4f", "MagIso": "7.3f", "FluxIso": "10.4f", "FluxIsoErr": "10.4f",
+                            "MSkyAp2": "7.3f", "Bck": "10.4f", "MagSegment": "7.3f", "FluxSegment": "10.4f",
+                            "FluxSegmentErr": "10.4f",
                             "KronRadius": "8.4f", "Xmin": "8.0f", "Ymin": "8.0f", "Xmax": "8.0f", "Ymax": "8.0f",
                             "X2": "8.4f", "Y2": "8.4f", "XY": "8.4f",
                             "CXX": "9.5f", "CYY": "9.5f", "CXY": "9.5f",
@@ -2345,10 +2343,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
                              "FluxAp2": "Flux of source based on the outer (larger) aperture",
                              "FluxErrAp2": "Error of FluxAp2",
                              "MSkyAp2": "ABMAG of sky based on outer (larger) aperture",
-                             "FluxIso": "Sum of unmasked data values in the source segment",
-                             "FluxIsoErr": "Uncertainty of FluxIso, propagated from the input error array",
+                             "FluxSegment": "Sum of unmasked data values in the source segment",
+                             "FluxSegmentErr": "Uncertainty of FluxSegment, propagated from the input error array",
                              "KronRadius": "The unscaled first-moment Kron radius",
-                             "MagIso": "Magnitude corresponding to FluxIso",
+                             "MagSegment": "Magnitude corresponding to FluxSegment",
                              "X2": "Variance along X",
                              "Y2": "Variance along Y",
                              "XY": "Covariance of position between X and Y",
@@ -2382,9 +2380,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
                           "FluxAp2": "electrons/s",
                           "FluxErrAp2": "electrons/s",
                           "MSkyAp2": "ABMAG",
-                          "MagIso": "ABMAG",
-                          "FluxIso": "electrons/s",
-                          "FluxIsoErr": "electrons/s",
+                          "MagSegment": "ABMAG",
+                          "FluxSegment": "electrons/s",
+                          "FluxSegmentErr": "electrons/s",
                           "KronRadius": "pixels",
                           "X2": "pixels**2",
                           "Y2": "pixels**2",
