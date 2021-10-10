@@ -1231,7 +1231,13 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
         hdulist[sci_extn].header['RMS_DEC'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
         hdulist[sci_extn].header['CRDER1'] = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
         hdulist[sci_extn].header['CRDER2'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
-        hdulist[sci_extn].header['NMATCHES'] = len(info['ref_mag']) if info['ref_mag'] is not None else -1.0
+        if info['catalog'] and info['catalog'] != '':
+            nmatches = len(info['ref_mag']) if info['ref_mag'] is not None else -1.0
+        else:
+            nmatches = 0
+
+        hdulist[sci_extn].header['NMATCHES'] = nmatches
+
         if 'HDRNAME' in hdulist[sci_extn].header:
             del hdulist[sci_extn].header['HDRNAME']
         hdulist[sci_extn].header['HDRNAME'] = hdr_name

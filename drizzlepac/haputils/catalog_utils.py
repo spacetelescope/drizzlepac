@@ -868,7 +868,7 @@ class HAPCatalogBase:
         data_table.meta["h17.9"] = ["  128 - Bleeding and Cosmic Rays"]
         data_table.meta["h18"] = ["#================================================================================================="]
 
-        if proc_type is "segment":
+        if proc_type == "segment":
             if self.is_big_island:
                 data_table.meta["h19"] = ["WARNING: Segmentation catalog is considered to be of poor quality due to a crowded field or large segments."]
 
