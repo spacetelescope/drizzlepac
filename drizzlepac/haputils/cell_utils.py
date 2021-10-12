@@ -1677,6 +1677,8 @@ def ckmeans_test():
 
 def extract_visit(filename):
     """Extract the VISIT ID from the input filename"""
+    # First, make sure we are only working with a filename, not a full path+filename
+    filename = os.path.basename(filename)
     if filename.startswith('hst_'):
         rootname = filename.split('_')[-2]
         visit_id = rootname[:6]
