@@ -47,6 +47,7 @@
 """
 import datetime
 import fnmatch
+import glob
 import logging
 import os
 import pickle
@@ -55,7 +56,7 @@ import sys
 import traceback
 
 import numpy as np
-from astropy.io import fits
+from astropy.io import ascii, fits
 from astropy.table import Table
 
 import drizzlepac
@@ -650,13 +651,31 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         logging.exception("message")
 
     finally:
-        # Try to ensure there is a manifest filename if the code exits in the poller_utils.py
-        # so the shutdown is tidy
-        ntokens = len(input_filename.split("_"))
-        if manifest_name == "" and input_filename.lower().endswith("input.out") and ntokens == 4:
-            manifest_name = input_filename.lower().replace("input.out", "manifest.txt")
-        else:
-            manifest_name = "manifest.txt"
+        # If poller_utils.py did not exit with an exception, the manifest filename exists.
+        # If the manifest filename does not exist, need to construct a filename by using the
+        # input_filename so the shutdown is tidy.
+        if manifest_name == "":
+            # If the input filename is a string, it could be a poller file or it could
+            # be a file containing filenames.  Either way, if read as a table only the
+            # first column of the first row is needed.  It is desired to use the contents of the
+            # FITS header keywords INSTRUME and ROOTNAME to use/parse for necessary information.
+            # co = close out
+            if type(input_filename) == str:
+                co_filename= ascii.read(input_filename, format='no_header')["col1"][0]
+                h0 = fits.getheader(co_filename)
+
+            # Maybe the input filename was actually a Python list
+            elif type(input_filename) == list:
+                h0 = fits.getheader(input_filename[0])
+
+            co_inst = h0["INSTRUME"].lower()
+            co_root = h0["ROOTNAME"].lower()
+            tokens_tuple = (co_inst, co_root[1:4], co_root[4:6], "manifest.txt") 
+            manifest_name = "_".join(tokens_tuple)
+
+            # Problem case - just give it the base name
+            if type(input_filename) != str and type(input_filename) != list:
+                manifest_name = "manifest.txt"
 
         # Write out manifest file listing all products generated during processing
         log.info("Creating manifest file {}.".format(manifest_name))
