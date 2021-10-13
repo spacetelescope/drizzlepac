@@ -1243,6 +1243,13 @@ def update_active_wcs(filename, wcsname):
             # from the headerlet extension.
             try:
                 wcsutil.headerlet.restore_from_headerlet(filename, hdrname=hdrname, force=True)
+                # Update value of nmatches based on headerlet
+                log.debug("{}: Updating NMATCHES from EXT={}".format(filename, extensions[0]))
+                fhdu = fits.open(filename, mode='update')
+                for sciext in range(1, num_sci_ext+1):
+                    nm = fhdu[extensions[0]].header['nmatch'] if 'nmatch' in fhdu[extensions[0]].header else 0
+                    fhdu[(extname, sciext)].header['nmatches'] = nm
+                fhdu.close()
             except ValueError as err:
                 log.warning("Trapped ValueError - attempting recovery: {}".format(str(err)))
                 found_string = [i for i in keyword_wcs_list if wcsname == i]
@@ -1264,7 +1271,6 @@ def update_active_wcs(filename, wcsname):
                 log.warning("Could not restore the common WCS from alternate WCS solutions, {}, as the active WCS in this file {}.".format(wcsname, filename))
     else:
         log.info("No need to update active WCS solution of {} for {} as it is already the active solution.".format(wcsname, filename))
-
 
 # ------------------------------------------------------------------------------
 

@@ -1227,11 +1227,23 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
         hdr_name = "{}_{}-hlet.fits".format(image_name.rstrip(".fits"), wcs_name)
         updatehdr.update_wcs(hdulist, sci_extn, item.wcs, wcsname=wcs_name, reusename=True)
         info = item.meta['fit_info']
-        hdulist[sci_extn].header['RMS_RA'] = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
-        hdulist[sci_extn].header['RMS_DEC'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
-        hdulist[sci_extn].header['CRDER1'] = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
-        hdulist[sci_extn].header['CRDER2'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
-        hdulist[sci_extn].header['NMATCHES'] = len(info['ref_mag']) if info['ref_mag'] is not None else -1.0
+        if info['catalog'] and info['catalog'] != '':
+            hdulist[sci_extn].header['RMS_RA'] = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
+            hdulist[sci_extn].header['RMS_DEC'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
+            hdulist[sci_extn].header['CRDER1'] = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
+            hdulist[sci_extn].header['CRDER2'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
+            hdulist[sci_extn].header['NMATCHES'] = len(info['ref_mag']) if info['ref_mag'] is not None else 0
+        else:
+            hdulist[sci_extn].header['RMS_RA'] = -1.0
+            hdulist[sci_extn].header['RMS_DEC'] = -1.0
+            hdulist[sci_extn].header['CRDER1'] = -1.0
+            hdulist[sci_extn].header['CRDER2'] = -1.0
+            hdulist[sci_extn].header['NMATCHES'] = 0
+
+        # Update value of 'nmatches' in fit_info so that this value will get
+        # used in writing out the headerlet as a file.
+        info['nmatches'] = hdulist[sci_extn].header['NMATCHES']
+
         if 'HDRNAME' in hdulist[sci_extn].header:
             del hdulist[sci_extn].header['HDRNAME']
         hdulist[sci_extn].header['HDRNAME'] = hdr_name

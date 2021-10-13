@@ -1932,7 +1932,12 @@ def check_mag_corr(imglist, threshold=0.5):
             log.info("{} Magnitude correlation: {}".format(image.meta['name'], mag_corr))
             cross_match_check = True if abs(mag_corr) > threshold else False
         else:
-            cross_match_check = False
+            # Assume that if there is only one cross-match, that it is correct
+            # It may not be correct all the time, but works well for very sparse fields.
+            if len(input_mags) == 1:
+                cross_match_check = True
+            else:
+                cross_match_check = False
         mag_checks.append(cross_match_check)
 
     return mag_checks
