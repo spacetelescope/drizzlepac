@@ -696,18 +696,28 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
     do_consistency_check = align_pars['determine_fit_quality'].get('consistency_check', True)
 
     for item in imglist:
-        if item.meta['fit_info']['status'].startswith('FAILED') is False:
+        if item.meta['fit_info']['status'].startswith('REFERENCE'):
+            # Reference will never be modified, so set shifts to (0., 0.)
+            # so that there are entries for all images.
+            xshifts.append(0.0)
+            yshifts.append(0.0)
+            continue
+        if not item.meta['fit_info']['status'].startswith('FAILED'):
             xshifts.append(item.meta['fit_info']['shift'][0])
             yshifts.append(item.meta['fit_info']['shift'][1])
+        else:
+            # Fit not successful, so no shifts to collate
+            break
 
     for item in imglist:
         image_name = item.meta['name']
         chip_num = item.meta['chip']
-        fitgeom = item.meta['fit_info']['fitgeom'] if 'fitgeom' in item.meta['fit_info'] else 'rscale'
+        fit_info = item.meta['fit_info']
+        fitgeom = fit_info['fitgeom'] if 'fitgeom' in fit_info else 'rscale'
 
         log.debug("\n{}\n".format("-"*40))
         log.debug("FIT being evaluated for {}".format(image_name))
-        log.debug(item.meta['fit_info'])
+        log.debug(fit_info)
         log.debug("\n{}\n".format("-"*40))
 
         # Build fit_status_dict entry
@@ -719,16 +729,20 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
                                      'reason': ""}
 
         # Handle fitting failures (no matches found or any other failure in fit)
-        if item.meta['fit_info']['status'].startswith("FAILED") is True:
+        if fit_info['status'].startswith("FAILED"):
             log.warning("Alignment FAILED for {} - no processing done.".format(image_name))
             overall_valid = False
             continue
-        fit_rms_val = item.meta['fit_info']['FIT_RMS']
-        max_rms_val = item.meta['fit_info']['TOTAL_RMS']
-        # fit_rms_ra = item.meta['fit_info']['RMS_RA']
-        # fit_rms_dec = item.meta['fit_info']['RMS_DEC']
+        if fit_info['status'].startswith("REFERENCE") or 'FIT_RMS' not in fit_info:
+            # No fit information available for reference image
+            continue
+
+        fit_rms_val = fit_info['FIT_RMS']
+        max_rms_val = fit_info['TOTAL_RMS']
+        # fit_rms_ra = fit_info['RMS_RA']
+        # fit_rms_dec = fit_info['RMS_DEC']
         # rms_ratio = abs(fit_rms_ra - fit_rms_dec) / min(fit_rms_ra, fit_rms_dec)
-        num_xmatches = item.meta['fit_info']['nmatches']
+        num_xmatches = fit_info['nmatches']
         fit_status_dict[dict_key]['max_rms'] = max_rms_val
         fit_status_dict[dict_key]['num_matches'] = num_xmatches
 
@@ -756,8 +770,8 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
 
         radial_offset_check = False
         radial_offset = math.sqrt(
-            float(item.meta['fit_info']['shift'][0])**2 +
-            float(item.meta['fit_info']['shift'][1])**2) * item.wcs.pscale  # radial offset in arssec
+            float(fit_info['shift'][0])**2 +
+            float(fit_info['shift'][1])**2) * item.wcs.pscale  # radial offset in arssec
         # Without the '+2', this will always fail for xmatches < 3 regardless of how small
         # the offset is:  2*0.36 == 0.72 vs 0.8 + 0 [perfect alignment]
         # Adding 2 allows low offset solutions with only 1 or 2 sources to pass this check.
@@ -775,7 +789,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
 
         consistency_check = True
         if do_consistency_check:
-            rms_limit = max(item.meta['fit_info']['TOTAL_RMS'], 10.)
+            rms_limit = max(fit_info['TOTAL_RMS'], 10.)
             if not math.sqrt(np.std(np.asarray(xshifts)) ** 2 + np.std(
                              np.asarray(yshifts)) ** 2) <= (rms_limit / align_pars['determine_fit_quality']['MAS_TO_ARCSEC']) / (item.wcs.pscale):  # \
                              # or rms_ratio > MAX_RMS_RATIO:
@@ -829,7 +843,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
             log.info("chip: {}".format(item.meta['chip']))
             log.info("group_id: {}".format(item.meta['group_id']))
             for tweakwcs_info_key in log_info_keys:
-                log.info("{} : {}".format(tweakwcs_info_key, item.meta['fit_info'][tweakwcs_info_key]))
+                log.info("{} : {}".format(tweakwcs_info_key, fit_info[tweakwcs_info_key]))
             log.info("~" * 84)
             log.info("nmatches_check: {} radial_offset_check: {}"
                      " large_rms_check: {},"
