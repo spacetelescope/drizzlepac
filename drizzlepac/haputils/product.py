@@ -639,9 +639,6 @@ class ExposureProduct(HAPProduct):
         # Flag whether to use single-image CR identification with this exposure
         self.crclean = False
 
-        # Flag to indicate whether input exposure was modified (typically, with new WCS)
-        self.input_updated = False
-
         log.info("Exposure object {} created.".format(self.full_filename[0:9]))
 
     def find_member(self, name):
@@ -859,6 +856,9 @@ class SkyCellExposure(HAPProduct):
 
         # Flag whether to use single-image CR identification with this exposure
         self.crclean = False
+
+        # Flag to indicate whether input exposure was modified (typically, with new WCS)
+        self.input_updated = False
 
         log.info("Create SkyCellExposure object:\n    {}".format(self.full_filename))
 

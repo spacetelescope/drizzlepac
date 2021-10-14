@@ -475,7 +475,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
 
 def run_align_to_gaia(total_obj_list, custom_limits=None, log_level=logutil.logging.INFO, diagnostic_mode=False):
     # Run align.py on all input images sorted by overlap with GAIA bandpass
-    log.info("\n{}: Align the all filters to GAIA with the same fit".format(str(datetime.datetime.now())))
+    log.info("\n{}: Align all the filters to GAIA with the same fit".format(str(datetime.datetime.now())))
     gaia_obj = None
     # Start by creating a FilterProduct instance which includes ALL input exposures
     for tot_obj in total_obj_list:
