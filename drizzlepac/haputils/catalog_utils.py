@@ -1257,6 +1257,14 @@ class HAPPointCatalog(HAPCatalogBase):
         -------
         Nothing!
 
+        The total product catalog contains several columns contributed from each filter catalog.
+        However, there is no guarantee that every filter catalog contains measurements for each
+        source in the total product catalog which is to say the row is actually missing from the
+        filter product catalog.  When the catalog tables are combined in the combined_tables method,
+        the missing entries will contain masked values represented by dashes.  When these values are
+        written to output ECSV files, they are written as empty ("") strings.  In order for the catalogs
+        to be ingested into a database by possible downstream processing, the masked values will be
+        replaced by a numeric indicator.
         """
         # Insure catalog has all necessary metadata
         self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="aperture",
@@ -1265,6 +1273,9 @@ class HAPPointCatalog(HAPCatalogBase):
             # We still want to write out empty files
             # This will delete all rows from the existing table
             self.source_cat.remove_rows(slice(0, None))
+
+        # Fill the nans and masked values with numeric data
+        self.source_cat = fill_nans_maskvalues (self.source_cat, fill_value=-9999.9)
 
         # Write out catalog to ecsv file
         # self.source_cat.meta['comments'] = \
@@ -2622,6 +2633,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
         -------
         Nothing
 
+        The total product catalog contains several columns contributed from each filter catalog.
+        However, there is no guarantee that every filter catalog contains measurements for each
+        source in the total product catalog which is to say the row is actually missing from the
+        filter product catalog.  When the catalog tables are combined in the combined_tables method,
+        the missing entries will contain masked values represented by dashes.  When these values are
+        written to output ECSV files, they are written as empty ("") strings.  In order for the catalogs
+        to be ingested into a database by possible downstream processing, the masked values will be
+        replaced by a numeric indicator.
         """
         self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="segment",
                                               product=self.image.ghd_product)
@@ -2630,6 +2649,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # This will delete all rows from the existing table
             self.source_cat.remove_rows(slice(0, None))
 
+        # Fill the nans and masked values with numeric data
+        self.source_cat = fill_nans_maskvalues (self.source_cat, fill_value=-9999.9)
+ 
         # Write out catalog to ecsv file
         self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
         log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
@@ -2719,3 +2741,18 @@ def make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11, 11)
         limit /= scale
 
     return masks
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Utility functions supporting point and segmentation catalogs
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+def fill_nans_maskvalues(catalog, fill_value=-9999.9):
+
+    # Fill the masked values with fill_value - the value is truncated for int as datatype of column is known
+    catalog = catalog.filled(fill_value)
+
+    # Also fill any nan values with fill_value
+    for col in catalog.itercols():
+        np.nan_to_num(col, copy=False, nan=fill_value)
+
+    return catalog
