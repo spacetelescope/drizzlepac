@@ -289,7 +289,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             # At this point the total product catalog contains all columns contributed
             # by each filter catalog. However, some of the columns originating in one or more of
             # the filter catalogs contain no measurements for a particular source.  Remove all
-            # rows which contain empty strings (masked values) for all measurements for all
+            # rows which contain empty strings (masked values) for *all* measurements for *all*
             # of the filter catalogs.
             for cat_type in total_product_catalogs.catalogs.keys():
                 good_rows_index = []
