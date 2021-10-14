@@ -494,6 +494,13 @@ class CatalogImage:
         keyword_dict["photflam"] = proc_utils.find_flt_keyword(self.imghdu, "PHOTFLAM")
         keyword_dict["photplam"] = proc_utils.find_flt_keyword(self.imghdu, "PHOTPLAM")
 
+        # Include WCS keywords as well for use in updating the output catalog metadata
+        drzwcs = HSTWCS(self.imghdu, ext=1)
+        wcshdr = drzwcs.wcs2header()  # create FITS keywords with CD matrix
+        # add them to the keyword_dict preserving
+        keyword_dict['wcs'] = {}
+        keyword_dict['wcs'].update(wcshdr)
+
         return keyword_dict
 
 
@@ -836,6 +843,11 @@ class HAPCatalogBase:
         else:
             data_table.meta["Filter 1"] = self.image.keyword_dict["filter1"]
             data_table.meta["Filter 2"] = self.image.keyword_dict["filter2"]
+
+        # Insert WCS keywords into metadata
+        # This relies on the fact that the dicts are always ordered.
+        data_table.meta.update(self.image.keyword_dict['wcs'])
+
         num_sources = len(data_table)
         data_table.meta["Number of sources"] = num_sources
 
