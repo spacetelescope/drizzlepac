@@ -857,6 +857,9 @@ class SkyCellExposure(HAPProduct):
         # Flag whether to use single-image CR identification with this exposure
         self.crclean = False
 
+        # Flag to indicate whether input exposure was modified (typically, with new WCS)
+        self.input_updated = False
+
         log.info("Create SkyCellExposure object:\n    {}".format(self.full_filename))
 
     def find_member(self, name):
@@ -865,6 +868,36 @@ class SkyCellExposure(HAPProduct):
             return self
         else:
             return None
+
+    def verify_member(self, clean=True):
+        """Delete member from disk if it has not been modified during processing
+
+        This method not only deletes the file from disk, but also reports the full
+        filename of that file to allow the calling routine to keep track of what
+        was deleted.
+
+        Parameter
+        ---------
+        clean : bool
+            Specify whether or not to remove file from disk.  If False,
+            leave file behind, usually for debugging purposes when
+            `diagnostic_mode` is True.
+
+        Returns
+        --------
+        full_filename : str
+            Full filename of file that was deleted, IF it was not modified.
+            This value will be an empty string if the file was modified.
+
+        """
+        del_file = ''
+        if not self.input_updated:
+            if clean and os.path.exists(self.full_filename):
+                os.remove(self.full_filename)
+            del_file = self.full_filename
+
+        return del_file
+
 
     def __getattribute__(self, name):
         if name in ["generate_footprint_mask", "generate_metawcs", "meta_wcs", "mask_kws", "mask"]:
@@ -1020,6 +1053,28 @@ class SkyCellProduct(HAPProduct):
         """
         self.edp_list.append(edp)
         self.new_to_layer += edp.new_process
+
+    def verify_members(self, clean=True):
+        """ Verify whether input members were modified during processing.
+
+        Parameter
+        ---------
+        clean : bool
+            Specify whether or not to remove file from disk.  If False,
+            leave file behind, usually for debugging purposes when
+            `diagnostic_mode` is True.
+
+        Returns
+        --------
+        del_files : list
+            List of input exposure full_filename values for all exposures
+            which were NOT modified during processing based on the
+            `input_updated` attribute of the `ExposureProduct`.  This will be empty
+            if all exposures had their WCS updated, for example.
+
+        """
+        del_files = [edp.verify_member(clean=clean) for edp in self.edp_list]
+        return del_files
 
     def add_all_mvm_exposures_list(self, exp_list):
         """ Add a list containing all the MVM FLT or FLC filenames, even the
