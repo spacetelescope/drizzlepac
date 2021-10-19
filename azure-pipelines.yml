@@ -27,7 +27,7 @@ jobs:
 
 - job: 'PEP8'
   pool:
-    vmImage: 'Ubuntu-16.04'
+    vmImage: 'ubuntu-latest'
 
   steps:
   - task: UsePythonVersion@0
