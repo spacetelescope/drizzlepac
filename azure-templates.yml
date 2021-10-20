@@ -6,7 +6,7 @@ jobs:
     ${{ if eq(parameters.os, 'macos') }}:
       vmImage: macOS-10.14
     ${{ if eq(parameters.os, 'linux') }}:
-      vmImage: ubuntu-16.04
+      vmImage: ubuntu-latest
 
   strategy:
     matrix:

@@ -197,11 +197,6 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
         # Add individual single input images with updated WCS headers to manifest
         for exposure_obj in filt_obj.edp_list:
             product_list.append(exposure_obj.full_filename)
-            # Create Drizzled images for each input on SkyCell pixels
-            exposure_obj.wcs_drizzle_product(meta_wcs)
-            # Add drizzled FLC images to manifest
-            product_list.append(exposure_obj.drizzle_filename)
-            product_list.append(exposure_obj.trl_filename)
 
     # Ensure that all drizzled products have headers that are to specification
     try:
@@ -231,7 +226,7 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def run_mvm_processing(input_filename, skip_gaia_alignment=False, diagnostic_mode=False,
+def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode=False,
                        use_defaults_configs=True, input_custom_pars_file=None, output_custom_pars_file=None,
                        phot_mode="both", custom_limits=None, output_file_prefix=None,
                        log_level=logutil.logging.INFO):
@@ -420,6 +415,20 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=False, diagnostic_mod
         # 9: Compare results to HLA classic counterparts (if possible)
         # if diagnostic_mode:
             # run_sourcelist_comparison(total_obj_list, diagnostic_mode=diagnostic_mode, log_level=log_level)
+        # If we are running in diagnostic_mode, we want to see all inputs
+        del_files = []
+        # for each total product...
+        for tot_obj in total_obj_list:
+            # get the list of unmodified files and delete those files from disk
+            del_files.extend(tot_obj.verify_members(clean=not diagnostic_mode))
+
+        # Now remove those files from the manifest file
+        for f in del_files:
+            # Just in case something unexpected happened, check that
+            # unmodified file filename is still in product_list
+            if f in product_list:
+                # Remove filename from manifest file input
+                product_list.remove(f)
 
         # Insure manifest file does not contain duplicate entries
         # Use of numpy.unique preserves the order of the entries in the product list
@@ -461,7 +470,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=False, diagnostic_mod
 
 def run_align_to_gaia(total_obj_list, custom_limits=None, log_level=logutil.logging.INFO, diagnostic_mode=False):
     # Run align.py on all input images sorted by overlap with GAIA bandpass
-    log.info("\n{}: Align the all filters to GAIA with the same fit".format(str(datetime.datetime.now())))
+    log.info("\n{}: Align all the filters to GAIA with the same fit".format(str(datetime.datetime.now())))
     gaia_obj = None
     # Start by creating a FilterProduct instance which includes ALL input exposures
     for tot_obj in total_obj_list:
@@ -475,35 +484,40 @@ def run_align_to_gaia(total_obj_list, custom_limits=None, log_level=logutil.logg
                 gaia_obj.configobj_pars = tot_obj.configobj_pars
             gaia_obj.add_member(exp_obj)
 
-        log.info("\n{}: Combined all filter objects in gaia_obj".format(str(datetime.datetime.now())))
+    log.info("\n{}: Combined all filter objects in gaia_obj".format(str(datetime.datetime.now())))
 
-        # Now, perform alignment to GAIA with 'match_relative_fit' across all inputs
-        # Need to start with one filt_obj.align_table instance as gaia_obj.align_table
-        #  - append imglist from each filt_obj.align_table to the gaia_obj.align_table.imglist
-        #  - reset group_id for all members of gaia_obj.align_table.imglist to the unique incremental values
-        #  - run gaia_obj.align_table.perform_fit() with 'match_relative_fit' only
-        #  - migrate updated WCS solutions to exp_obj instances, if necessary (probably not?)
-        #  - re-run tot_obj.generate_metawcs() method to recompute total object meta_wcs based on updated
-        #    input exposure's WCSs
-        catalog_list = [gaia_obj.configobj_pars.pars['alignment'].pars_multidict['all']['run_align']['catalog_list'][0]]  # For now, just pass in a single catalog name as list
-        align_table, filt_exposures = gaia_obj.align_to_gaia(catalog_list=catalog_list,
-                                                             output=diagnostic_mode,
-                                                             fit_label='MVM')
+    # Now, perform alignment to GAIA with 'match_relative_fit' across all inputs
+    # Need to start with one filt_obj.align_table instance as gaia_obj.align_table
+    #  - append imglist from each filt_obj.align_table to the gaia_obj.align_table.imglist
+    #  - reset group_id for all members of gaia_obj.align_table.imglist to the unique incremental values
+    #  - run gaia_obj.align_table.perform_fit() with 'match_relative_fit' only
+    #  - migrate updated WCS solutions to exp_obj instances, if necessary (probably not?)
+    #  - re-run tot_obj.generate_metawcs() method to recompute total object meta_wcs based on updated
+    #    input exposure's WCSs
+    catalog_list = [gaia_obj.configobj_pars.pars['alignment'].pars_multidict['all']['run_align']['catalog_list'][0]]  # For now, just pass in a single catalog name as list
+    align_table, filt_exposures = gaia_obj.align_to_gaia(catalog_list=catalog_list,
+                                                         output=diagnostic_mode,
+                                                         fit_label='MVM')
 
+    for tot_obj in total_obj_list:
+        _ = tot_obj.generate_metawcs(custom_limits=custom_limits)
+    log.info("\n{}: Finished aligning gaia_obj to GAIA".format(str(datetime.datetime.now())))
+
+    # Return the name of the alignment catalog
+    if align_table is None:
+        gaia_obj.refname = None
+    else:
+        # update all input exposures with attribute to indicate their WCS has been modified
         for tot_obj in total_obj_list:
-            _ = tot_obj.generate_metawcs(custom_limits=custom_limits)
-        log.info("\n{}: Finished aligning gaia_obj to GAIA".format(str(datetime.datetime.now())))
+            for exp_obj in tot_obj.edp_list:
+                exp_obj.input_updated = True
 
-        # Return the name of the alignment catalog
-        if align_table is None:
-            gaia_obj.refname = None
+    return gaia_obj.refname
 
-        return gaia_obj.refname
-
-        #
-        # Composite WCS fitting should be done at this point so that all exposures have been fit to GAIA at
-        # the same time (on the same frame)
-        #
+    #
+    # Composite WCS fitting should be done at this point so that all exposures have been fit to GAIA at
+    # the same time (on the same frame)
+    #
 
 # ----------------------------------------------------------------------------------------------------------------------
 
