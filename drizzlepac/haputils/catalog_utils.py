@@ -1275,7 +1275,7 @@ class HAPPointCatalog(HAPCatalogBase):
             self.source_cat.remove_rows(slice(0, None))
 
         # Fill the nans and masked values with numeric data
-        self.source_cat = fill_nans_maskvalues (self.source_cat, fill_value=-9999.9)
+        self.source_cat = fill_nans_maskvalues (self.source_cat, fill_value=-9999.0)
 
         # Write out catalog to ecsv file
         # self.source_cat.meta['comments'] = \
@@ -2650,7 +2650,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             self.source_cat.remove_rows(slice(0, None))
 
         # Fill the nans and masked values with numeric data
-        self.source_cat = fill_nans_maskvalues (self.source_cat, fill_value=-9999.9)
+        self.source_cat = fill_nans_maskvalues (self.source_cat, fill_value=-9999.0)
  
         # Write out catalog to ecsv file
         self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
@@ -2746,7 +2746,7 @@ def make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11, 11)
 # Utility functions supporting point and segmentation catalogs
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-def fill_nans_maskvalues(catalog, fill_value=-9999.9):
+def fill_nans_maskvalues(catalog, fill_value=-9999.0):
 
     # Fill the masked values with fill_value - the value is truncated for int as datatype of column is known
     catalog = catalog.filled(fill_value)
