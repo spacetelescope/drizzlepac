@@ -15,10 +15,25 @@
     level chosen. The logger is acting as a gate on the messages which are allowed to be
     passed to the handlers.
 
+    Some environment variables can be used to specify whether or not to include some types of
+    data when creating MVM products.  By default, the code will generate SkyCell layers from
+    all data specified by the user.  These variables allow the user to ignore types of data
+    from the input during MVM processing.
+
+    - **MVM_INCLUDE_SMALL** : Generate MVM SkyCell layers from ACS/HRC and ACS/SBC data.  These
+      exposures typically only cover a miniscule fraction of a SkyCell and the plate scale
+      of the SkyCell would result in a degraded representation of the original ACS/HRC
+      and ACS/SBC data.  Therefore, this variable can be set to 'off' or 'false' to turn
+      off generation of layers from ACS/HRC and ACS/SBC data.
+
+    - **MVM_ONLY_CTE** : Generate MVM SkyCell layers using only CTE-corrected input files.  If
+      'off' or 'false', then both CTE-corrected and non-CTE-corrected data may end up in the
+      same SkyCell layer (image).
+
     The output products can be evaluated to determine the quality of the alignment and
     output data through the use of the environment variable:
 
-    - SVM_QUALITY_TESTING : Turn on quality assessment processing.  This environment
+    - **SVM_QUALITY_TESTING** : Turn on quality assessment processing.  This environment
       variable, if found with an affirmative value, will turn on processing to generate a JSON
       file which contains the results of evaluating the quality of the generated products.
 
@@ -57,6 +72,10 @@ __version_date__ = '01-May-2020'
 # for the Single Visit Mosaic processing.
 envvar_bool_dict = {'off': False, 'on': True, 'no': False, 'yes': True, 'false': False, 'true': True}
 envvar_qa_svm = "SVM_QUALITY_TESTING"
+
+# Default values for these environment variables set to include all available data
+envvar_cat_mvm = {"MVM_INCLUDE_SMALL": 'true',
+                  "MVM_ONLY_CTE": 'false'}
 
 # --------------------------------------------------------------------------------------------------------------
 
@@ -302,6 +321,10 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
 
     # Initialize total trailer filename as temp logname
     logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+
+    # Start by reading in any environment variable related to catalog generation that has been set
+    cat_switches = {sw: _get_envvar_switch(sw, default=envvar_cat_svm[sw]) for sw in envvar_cat_mvm}
+
     # start processing
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
@@ -316,7 +339,9 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
         # is the atomic exposure data.
         log.info("Parse the poller and determine what exposures need to be combined into separate products.\n")
         obs_info_dict, total_obj_list = poller_utils.interpret_mvm_input(input_filename, log_level,
-                                                                         layer_method='all')
+                                                                         layer_method='all',
+                                                                         include_small=cat_switches['MVM_INCLUDE_SMALL'],
+                                                                         only_cte=cat_switches['MVM_ONLY_CTE'])
 
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
