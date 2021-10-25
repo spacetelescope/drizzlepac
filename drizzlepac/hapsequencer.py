@@ -677,12 +677,13 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             if type(input_filename) != str and type(input_filename) != list:
                 manifest_name = "manifest.txt"
 
-        # Write out manifest file listing all products generated during processing
-        log.info("Creating manifest file {}.".format(manifest_name))
-        log.info("  The manifest contains the names of products generated during processing.")
-        with open(manifest_name, mode='w') as catfile:
-            if total_obj_list:
-                [catfile.write("{}\n".format(name)) for name in product_list]
+        if manifest_name != "manifest.txt":
+            # Write out manifest file listing all products generated during processing
+            log.info("Creating manifest file {}.".format(manifest_name))
+            log.info("  The manifest contains the names of products generated during processing.")
+            with open(manifest_name, mode='w') as catfile:
+                if total_obj_list:
+                    [catfile.write("{}\n".format(name)) for name in product_list]
 
         end_dt = datetime.datetime.now()
         log.info('Processing completed at {}'.format(str(end_dt)))
