@@ -1021,7 +1021,7 @@ class SkyCellProduct(HAPProduct):
         # to use only one of the SkyCellProducts to generate the manifest name as the name
         # is only dependent on the sky cell.
         # Example: hst_skycell-p<PPPP>x<XX>y<YY>_manifest.txt (e.g., hst_skycell-p0797x12y05_manifest.txt)
-        self.manifest_name = '_'.join(['hst', skycell_name, 'manifest.txt'])
+        self.manifest_name = '_'.join([skycell_name, 'manifest.txt'])
 
         # Define HAPLEVEL value for this product
         self.haplevel = 4
