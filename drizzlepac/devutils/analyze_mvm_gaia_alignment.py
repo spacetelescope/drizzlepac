@@ -10,10 +10,12 @@ import sys
 
 # Related third party imports
 from astropy.io import fits
+from astropy.table import Column
 import numpy as np
 from photutils.detection import DAOStarFinder
 
 # Local application imports
+from drizzlepac import wcs_functions
 from drizzlepac.haputils import astrometric_utils as amutils
 import stwcs
 # ============================================================================================================
@@ -33,7 +35,7 @@ def perform(mosaic_imgname, flcflt_list):
     -------
     Nothing!
     """
-    # 0: read in flc/flt fits files from user-specifed fits file
+    # 0: read in flc/flt fits files from user-specified fits file
     with open(flcflt_list, mode='r') as imgfile:
         imglist = imgfile.readlines()
     for x in range(0, len(imglist)): imglist[x] = imglist[x].strip()
@@ -42,19 +44,33 @@ def perform(mosaic_imgname, flcflt_list):
     mosaic_wcs = stwcs.wcsutil.HSTWCS(mosaic_imgname, ext=1)
 
     # 2a: generate table of all gaia sources in frame
-    gaia_tab = amutils.create_astrometric_catalog(imglist, existing_wcs=mosaic_wcs, catalog='GAIAedr3', output='test_gaia_edr3.ecsv', use_footprint=True)
+    gaia_table = amutils.create_astrometric_catalog(imglist, existing_wcs=mosaic_wcs, catalog='GAIAedr3', use_footprint=True)
+    gaia_table.remove_columns(["mag", "objID"])  # remove "mag" and "objID" columns leaving just "RA" and "DEC"
 
-    # 2b: compute new WCS from stack of input flc.fits images to remove gaia sources outside image footprint
-    uncal_imglist = []
-    for imgname in imglist:
-        uncal_imglist.append(fits.getval(imgname, "FILENAME"))
+    # 2b: Remove gaia sources outside footprint of input flc/flt images, add X and Y coord columns
+    mosaic_hdu = fits.open(mosaic_imgname)
+    drc_wht_array = np.zeros_like(mosaic_hdu["WHT"].data)
+    drc_list = glob.glob("hst*{}*drc.fits".format(fits.getval(imglist[0], "FILENAME")[:6]))
+    for wht_ctr, item in zip(range(0, len(drc_list)), drc_list):
+        print("{}/{}: Adding weight image from {} to combined weight image".format(wht_ctr + 1, len(drc_list), item))
+        drc_hdu = fits.open(item)
+        drc_wht_array += drc_hdu["WHT"].data
+        drc_hdu.close()
+    x, y = mosaic_wcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 1)
+    x_col = Column(name="X", data=x, dtype=np.float64)
+    y_col = Column(name="Y", data=y, dtype=np.float64)
+    gaia_table.add_column(x_col, index=3)
+    gaia_table.add_column(y_col, index=4)
+    drc_wht_array = np.where(drc_wht_array == 0, np.nan, drc_wht_array)
+    mask = amutils.within_footprint(drc_wht_array, mosaic_wcs, x, y)
+    gaia_table.write("gaia_edr3_untrimmed.reg", format="ascii.ecsv", overwrite=True)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    gaia_table = gaia_table[mask]
+    gaia_table.write("gaia_edr3_trimmed.reg", format="ascii.ecsv", overwrite=True)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
 
-    # 2c: use WCS computed in 2B to remove remove gaia sources outside image footprint from table (see svm_quality_analysis.py, line #1114)
-    # 3: Use step 1 WCS to compute detector X, Y coords from RA, DEC positions in trimmed gaia table (see svm_quality_analysis.py, line #1114)
-    # 4: feed x, y coords into photutils.detection.daostarfinder() as initial guesses to get actual centroid positions of gaia sources
-    # 5: convert daostarfinder output x, y centroid positions to RA, DEC using step 1 WCS info
-    # 6: compute and report statistics based on X, Y and RA, DEC position residuals. Some of what's needed
-    # 7 here can be pulled from svm_quality_analysis.characterize_gaia_distribution() and also from compare_sourcelists() or comparision_utils.
+    # 3: feed x, y coords into photutils.detection.daostarfinder() as initial guesses to get actual centroid positions of gaia sources
+    # 4: convert daostarfinder output x, y centroid positions to RA, DEC using step 1 WCS info
+    # 5: compute and report statistics based on X, Y and RA, DEC position residuals. Some of what's needed
+    # 6 here can be pulled from svm_quality_analysis.characterize_gaia_distribution() and also from compare_sourcelists() or comparision_utils.
 
     pdb.set_trace()
 # ============================================================================================================
