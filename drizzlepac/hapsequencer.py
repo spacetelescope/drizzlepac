@@ -679,7 +679,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             if type(input_filename) != str and type(input_filename) != list:
                 manifest_name = "manifest.txt"
 
-        if manifest and manifest_name != "manifest.txt":
+        if manifest_name and manifest_name != "manifest.txt":
             # Write out manifest file listing all products generated during processing
             log.info("Creating manifest file {}.".format(manifest_name))
             log.info("  The manifest contains the names of products generated during processing.")
