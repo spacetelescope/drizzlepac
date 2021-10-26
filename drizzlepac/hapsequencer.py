@@ -660,6 +660,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             # first column of the first row is needed.  It is desired to use the contents of the
             # FITS header keywords INSTRUME and ROOTNAME to use/parse for necessary information.
             # co = close out
+            h0 = None
             if type(input_filename) == str:
                 co_filename= ascii.read(input_filename, format='no_header')["col1"][0]
                 h0 = fits.getheader(co_filename)
@@ -668,21 +669,23 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             elif type(input_filename) == list:
                 h0 = fits.getheader(input_filename[0])
 
-            co_inst = h0["INSTRUME"].lower()
-            co_root = h0["ROOTNAME"].lower()
-            tokens_tuple = (co_inst, co_root[1:4], co_root[4:6], "manifest.txt") 
-            manifest_name = "_".join(tokens_tuple)
+            if h0:
+                co_inst = h0["INSTRUME"].lower()
+                co_root = h0["ROOTNAME"].lower()
+                tokens_tuple = (co_inst, co_root[1:4], co_root[4:6], "manifest.txt") 
+                manifest_name = "_".join(tokens_tuple)
 
             # Problem case - just give it the base name
             if type(input_filename) != str and type(input_filename) != list:
                 manifest_name = "manifest.txt"
 
-        # Write out manifest file listing all products generated during processing
-        log.info("Creating manifest file {}.".format(manifest_name))
-        log.info("  The manifest contains the names of products generated during processing.")
-        with open(manifest_name, mode='w') as catfile:
-            if total_obj_list:
-                [catfile.write("{}\n".format(name)) for name in product_list]
+        if manifest_name and manifest_name != "manifest.txt":
+            # Write out manifest file listing all products generated during processing
+            log.info("Creating manifest file {}.".format(manifest_name))
+            log.info("  The manifest contains the names of products generated during processing.")
+            with open(manifest_name, mode='w') as catfile:
+                if total_obj_list:
+                    [catfile.write("{}\n".format(name)) for name in product_list]
 
         end_dt = datetime.datetime.now()
         log.info('Processing completed at {}'.format(str(end_dt)))
