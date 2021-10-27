@@ -291,7 +291,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
 
                 # work out what rows have flag values > flag_limit in ALL flag columns
                 flag_bitmasks = [np.logical_or(filled_flag_columns[col] > flag_trim_value,
-                                               filled_flag_columns[col] == -9999.9)
+                                               np.isclose(filled_flag_columns[col], -9999.9))
                                  for col in filled_flag_columns.colnames]
                 flag_mask = np.logical_and.reduce(flag_bitmasks)
                 # Get indices of all good rows
