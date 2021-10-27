@@ -2391,7 +2391,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Add units
         final_col_unit = {"X-Centroid": "pixels", "Y-Centroid": "pixels",
                           "RA": "degrees", "DEC": "degrees",
-                          "Bck": "electrons/s/pixel**2",
+                          "Bck": "electrons/s",
                           "Area": "pixels**2",
                           "FWHM": "pixels",
                           "MagAp1": "ABMAG",
