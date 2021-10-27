@@ -1222,7 +1222,7 @@ class HAPPointCatalog(HAPCatalogBase):
         # add units to columns
         final_col_units = {"X-Center": "pixels", "Y-Center": "pixels", "RA": "degrees", "DEC": "degrees",
                            "ID": "unitless", "MagAp1": "ABMAG", "MagErrAp1": "ABMAG", "MagAp2": "ABMAG",
-                           "MagErrAp2": "ABMAG", "MSkyAp2": "electrons/s/pixel**2", "StdevAp2": "electrons/s/pixel**2",
+                           "MagErrAp2": "ABMAG", "MSkyAp2": "electrons/s/pixel", "StdevAp2": "electrons/s/pixel",
                            "FluxAp2": "electrons/sec", "CI": "ABMAG", "Flags": "unitless"}
         for col_title in final_col_units:
             output_photometry_table[col_title].unit = final_col_units[col_title]
@@ -2402,7 +2402,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                           "MagErrAp2": "ABMAG",
                           "FluxAp2": "electrons/s",
                           "FluxErrAp2": "electrons/s",
-                          "MSkyAp2": "electrons/s/pixel**2",
+                          "MSkyAp2": "electrons/s/pixel",
                           "MagSegment": "ABMAG",
                           "FluxSegment": "electrons/s",
                           "FluxSegmentErr": "electrons/s",
@@ -2410,9 +2410,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
                           "X2": "pixels**2",
                           "Y2": "pixels**2",
                           "XY": "pixels**2",
-                          "CXX": "pixels**2",
-                          "CYY": "pixels**2",
-                          "CXY": "pixels**2",
+                          "CXX": "pixels**(-2)",
+                          "CYY": "pixels**(-2)",
+                          "CXY": "pixels**(-2)",
                           "Xmin": "pixels",
                           "Ymin": "pixels",
                           "Xmax": "pixels",
