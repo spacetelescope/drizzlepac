@@ -10,13 +10,15 @@ import sys
 
 # Related third party imports
 from astropy.io import fits
-from astropy.table import Column
+from astropy.stats import sigma_clipped_stats
+from astropy.table import Column, Table
 import numpy as np
-from photutils.detection import DAOStarFinder
+# from photutils.detection import DAOStarFinder
 
 # Local application imports
 from drizzlepac import wcs_functions
 from drizzlepac.haputils import astrometric_utils as amutils
+from drizzlepac.haputils import deconvolve_utils as decutils
 import stwcs
 # ============================================================================================================
 
@@ -61,17 +63,23 @@ def perform(mosaic_imgname, flcflt_list):
     y_col = Column(name="Y", data=y, dtype=np.float64)
     gaia_table.add_column(x_col, index=3)
     gaia_table.add_column(y_col, index=4)
-    drc_wht_array = np.where(drc_wht_array == 0, np.nan, drc_wht_array)
-    mask = amutils.within_footprint(drc_wht_array, mosaic_wcs, x, y)
-    gaia_table.write("gaia_edr3_untrimmed.reg", format="ascii.ecsv", overwrite=True)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    gaia_mask_array = np.where(drc_wht_array == 0, np.nan, drc_wht_array)
+    mask = amutils.within_footprint(gaia_mask_array, mosaic_wcs, x, y)
+    # gaia_table.write("gaia_edr3_untrimmed.reg", format="ascii.ecsv", overwrite=True)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
     gaia_table = gaia_table[mask]
-    gaia_table.write("gaia_edr3_trimmed.reg", format="ascii.ecsv", overwrite=True)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    # gaia_table.write("gaia_edr3_trimmed.reg", format="ascii.ecsv", overwrite=True)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
 
     # 3: feed x, y coords into photutils.detection.daostarfinder() as initial guesses to get actual centroid positions of gaia sources
+    dao_mask_array = np.where(drc_wht_array == 0, 1, 0)  # create mask image for source detection. Pixels with value of "0" are to processed, and those with value of "1" will be omitted from processing.
+    xy_gaia_coords = Table([np.around(gaia_table['X'].data), np.around(gaia_table['Y'].data)], names=('x_peak', 'y_peak'))
+    mean, median, stddev = sigma_clipped_stats(mosaic_hdu["SCI"].data, sigma=3.0, mask=dao_mask_array)
+    daofind = decutils.UserStarFinder(fwhm=3.0, threshold=5.0*stddev)#, coords=xy_gaia_coords)
+    print("DAOFIND DONE")
+    detected_sources = daofind(mosaic_hdu["SCI"].data, mask=dao_mask_array)
     # 4: convert daostarfinder output x, y centroid positions to RA, DEC using step 1 WCS info
     # 5: compute and report statistics based on X, Y and RA, DEC position residuals. Some of what's needed
     # 6 here can be pulled from svm_quality_analysis.characterize_gaia_distribution() and also from compare_sourcelists() or comparision_utils.
-
+    print("\a \a \a")
     pdb.set_trace()
 # ============================================================================================================
 
