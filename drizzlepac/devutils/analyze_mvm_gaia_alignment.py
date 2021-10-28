@@ -7,20 +7,23 @@ import argparse
 import glob
 import os
 import pdb
+import random
+import string
 import sys
 
 # Related third party imports
 from astropy.io import fits
-from astropy.stats import sigma_clipped_stats
 from astropy.table import Column, Table
 import numpy as np
-# from photutils.detection import DAOStarFinder
+from scipy import ndimage
 
 # Local application imports
 from drizzlepac import wcs_functions
 from drizzlepac.haputils import astrometric_utils as amutils
+from drizzlepac.haputils import comparison_utils as cu
 from drizzlepac.haputils import deconvolve_utils as decutils
 import stwcs
+
 # ============================================================================================================
 
 def perform(mosaic_imgname, flcflt_list):
@@ -66,31 +69,54 @@ def perform(mosaic_imgname, flcflt_list):
     array2fits("drc_wht_image.fits", drc_wht_array)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
 
     mask = amutils.within_footprint(gaia_mask_array, mosaic_wcs, x, y)
-    write_region_file("gaia_edr3_untrimmed.reg", gaia_table, ['X', 'Y'])  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
     gaia_table = gaia_table[mask]
-    write_region_file("gaia_edr3_trimmed.reg", gaia_table, ['X', 'Y'])  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    write_region_file("gaia_edr3_trimmed.reg", gaia_table, ['RA', 'DEC'])  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
 
     # 3: feed x, y coords into photutils.detection.daostarfinder() as initial guesses to get actual centroid positions of gaia sources
     dao_mask_array = np.where(drc_wht_array == 0, 1, 0)  # create mask image for source detection. Pixels with value of "0" are to processed, and those with value of "1" will be omitted from processing.
     xy_gaia_coords = Table([gaia_table['X'].data.astype(np.int64), gaia_table['Y'].data.astype(np.int64)], names=('x_peak', 'y_peak'))
-    mean, median, stddev = sigma_clipped_stats(mosaic_hdu["SCI"].data, sigma=3.0, mask=dao_mask_array)
-    daofind = decutils.UserStarFinder(fwhm=7.0, threshold=0.0, coords=xy_gaia_coords)
-    detected_sources = daofind(mosaic_hdu["SCI"].data, mask=dao_mask_array)
-    n_detections = len(detected_sources)
+    # the below line computes a FWHM value based on detected sources (not the gaia sources). The FWHM value doesn't yeild a lot of sources.
+    # mpeaks, mfwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array), def_fwhm=3.0, box_size=11, block_size=(1024, 1024), diagnostic_mode=False)
+    mfwhm = 15.0
+    daofind = decutils.UserStarFinder(fwhm=mfwhm, threshold=0.0, coords=xy_gaia_coords)
+    detection_table = daofind(mosaic_hdu["SCI"].data, mask=dao_mask_array)
+    n_detection = len(detection_table)
     n_gaia = len(gaia_table)
-    pct_detection = 100.0 * (float(n_detections) / float(n_gaia))
-    print("Found {} peaks from {} GAIA source(s)".format(n_detections, n_gaia))
+    pct_detection = 100.0 * (float(n_detection) / float(n_gaia))
+    print("Found {} peaks from {} GAIA source(s)".format(n_detection, n_gaia))
     print("{}% of GAIA sources detected".format(pct_detection))
+
     # 4: convert daostarfinder output x, y centroid positions to RA, DEC using step 1 WCS info
-    ra, dec = mosaic_wcs.all_pix2world(detected_sources['xcentroid'],
-                                       detected_sources['ycentroid'], 1)  # TODO: verify that origin is 1, not 0.
+    ra, dec = mosaic_wcs.all_pix2world(detection_table['xcentroid'], detection_table['ycentroid'],  1)  # TODO: verify that origin is 1, not 0.
     ra_col = Column(name="ra", data=ra, dtype=np.float64)
     dec_col = Column(name="dec", data=dec, dtype=np.float64)
-    detected_sources.add_columns([ra_col, dec_col], indexes=[3, 3])
+    detection_table.add_columns([ra_col, dec_col], indexes=[3, 3])
+    write_region_file("test_detection.reg", detection_table, ['ra', 'dec'])  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+
     # 5: compute and report statistics based on X, Y and RA, DEC position residuals. Some of what's needed
-    # 6 here can be pulled from svm_quality_analysis.characterize_gaia_distribution() and also from compare_sourcelists() or comparision_utils.
-    write_region_file("test_detection.reg", detected_sources, ['xcentroid', 'ycentroid'])  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
-    pdb.set_trace()
+    #  here can be pulled from svm_quality_analysis.characterize_gaia_distribution() and also from compare_sourcelists() or comparision_utils.
+    # 5a: find sources common to both the gaia table and the detection table
+    try:
+        coo_prefix_string = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
+        gaia_coo_filename = "{}_gaia.coo".format(coo_prefix_string)
+        det_coo_filename = "{}_det.coo".format(coo_prefix_string)
+        write_region_file(gaia_coo_filename, gaia_table, ['X', 'Y'], verbose=False)
+        write_region_file(det_coo_filename, detection_table, ['xcentroid', 'ycentroid'], verbose=False)
+        matches_gaia_to_det, matches_det_to_gaia = cu.getMatchedLists([gaia_coo_filename, det_coo_filename],
+                                                                      [mosaic_imgname, mosaic_imgname],
+                                                                      [n_gaia, n_detection],
+                                                                      10)
+        n_matches = len(matches_gaia_to_det)
+        print("Found {} matching sources.".format(n_matches))
+        if n_matches == 0:
+            raise Exception("Error: No matching sources found.")
+    finally:
+        for item in [det_coo_filename, gaia_coo_filename]:
+            if os.path.exists(item):
+                os.remove(item)
+    # 5b: compute statistics on X residuals of matched sources
+    # 5c: compute statistics on Y residuals of matched sources
+    # 5d: compute statistics on RA/DEC residuals of matched sources
 
 
 # ============================================================================================================
@@ -117,7 +143,7 @@ def array2fits(filename, ra_data):
 
 # ============================================================================================================
 
-def write_region_file(filename, table_data, colnames, apply_zero_index_correction=False):
+def write_region_file(filename, table_data, colnames, apply_zero_index_correction=False, verbose=True):
     """Write out columns from user-specified table to ds9 region file
 
     Parameters
@@ -131,6 +157,9 @@ def write_region_file(filename, table_data, colnames, apply_zero_index_correctio
     apply_zero_index_correction : Bool, optional
         Add 1 to all X and Y values to make them 1-indexed if they were initially zero indexed. Default
         value is Boolean 'False'.
+
+    verbose : Bool, optional
+    Print confirmation? Default value is Boolean 'False'.
 
     Returns
     -------
@@ -147,7 +176,8 @@ def write_region_file(filename, table_data, colnames, apply_zero_index_correctio
         out_data[ycolname] += 1.0
 
     out_data.write(filename, format='ascii.fast_no_header', overwrite=True)
-    print("Wrote " + filename)
+    if verbose:
+        print("Wrote " + filename)
 
 
 # ============================================================================================================
