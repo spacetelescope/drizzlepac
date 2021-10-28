@@ -5,6 +5,7 @@
 # Standard library imports
 import argparse
 import glob
+import os
 import pdb
 import sys
 
@@ -64,6 +65,11 @@ def perform(mosaic_imgname, flcflt_list):
     gaia_table.add_column(x_col, index=3)
     gaia_table.add_column(y_col, index=4)
     gaia_mask_array = np.where(drc_wht_array == 0, np.nan, drc_wht_array)
+
+    # out_hdu = fits.PrimaryHDU(drc_wht_array)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    # output_hdu = fits.HDUList([out_hdu])  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    # output_hdu.writeto("drc_wht_image.fits")  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+
     mask = amutils.within_footprint(gaia_mask_array, mosaic_wcs, x, y)
     # gaia_table.write("gaia_edr3_untrimmed.reg", format="ascii.ecsv", overwrite=True)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
     gaia_table = gaia_table[mask]
@@ -71,17 +77,82 @@ def perform(mosaic_imgname, flcflt_list):
 
     # 3: feed x, y coords into photutils.detection.daostarfinder() as initial guesses to get actual centroid positions of gaia sources
     dao_mask_array = np.where(drc_wht_array == 0, 1, 0)  # create mask image for source detection. Pixels with value of "0" are to processed, and those with value of "1" will be omitted from processing.
-    xy_gaia_coords = Table([np.around(gaia_table['X'].data), np.around(gaia_table['Y'].data)], names=('x_peak', 'y_peak'))
+    xy_gaia_coords = Table([gaia_table['X'].data.astype(np.int64), gaia_table['Y'].data.astype(np.int64)], names=('x_peak', 'y_peak'))
     mean, median, stddev = sigma_clipped_stats(mosaic_hdu["SCI"].data, sigma=3.0, mask=dao_mask_array)
-    daofind = decutils.UserStarFinder(fwhm=3.0, threshold=5.0*stddev)#, coords=xy_gaia_coords)
-    print("DAOFIND DONE")
+    daofind = decutils.UserStarFinder(fwhm=3.0, threshold=5.0*stddev, coords=xy_gaia_coords)
     detected_sources = daofind(mosaic_hdu["SCI"].data, mask=dao_mask_array)
+
     # 4: convert daostarfinder output x, y centroid positions to RA, DEC using step 1 WCS info
+    ra, dec = mosaic_wcs.all_pix2world(detected_sources['xcentroid'],
+                                       detected_sources['ycentroid'], 1)  # TODO: verify that origin is 1, not 0.
     # 5: compute and report statistics based on X, Y and RA, DEC position residuals. Some of what's needed
     # 6 here can be pulled from svm_quality_analysis.characterize_gaia_distribution() and also from compare_sourcelists() or comparision_utils.
-    print("\a \a \a")
+    write_region_file("test_detection.reg", detected_sources)
     pdb.set_trace()
+
+
 # ============================================================================================================
+
+def array2fits(filename, ra_data):
+    """write input data to specified fits filename
+
+    Parameters
+    ----------
+    filename : str
+        name of the fits file to create
+
+    ra_data : numpy.ndarray
+        array data to write out
+
+    Returns
+    -------
+    Nothing
+    """
+    out_hdu = fits.PrimaryHDU(ra_data)
+    output_hdu = fits.HDUList([out_hdu])
+    output_hdu.writeto(filename, overwrite=True)
+    print("Wrote " + filename)
+
+# ============================================================================================================
+
+def write_region_file(filename, table_data, apply_zero_index_correction=False):
+    """Write out columns from user-specified table to ds9 region file
+
+    Parameters
+    ----------
+    filename : str
+        name of the output region file to be created
+
+    table_data : astropy.Table
+        Table continaing values to be written out
+
+    apply_zero_index_correction : Bool, optional
+        Add 1 to all X and Y values to make them 1-indexed if they were initially zero indexed. Default
+        value is Boolean 'False'.
+
+    Returns
+    -------
+    Nothing.
+    """
+    if 'x_peak' in table_data.colnames:
+        xcolname = 'x_peak'
+        ycolname = 'y_peak'
+    else:
+        xcolname = 'xcentroid'
+        ycolname = 'ycentroid'
+
+    out_data = table_data[xcolname, ycolname]
+
+    if apply_zero_index_correction:
+        out_data[xcolname] += 1.0
+        out_data[ycolname] += 1.0
+
+    out_data.write(filename, format='ascii.fast_no_header', overwrite=True)
+    print("Wrote " + filename)
+
+
+# ============================================================================================================
+
 
 if __name__ == "__main__":
     # Parse command-line input args
