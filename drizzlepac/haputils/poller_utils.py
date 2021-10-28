@@ -285,7 +285,7 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0,
         log.debug("Interpret the poller file for the observation set.")
         obset_table = build_poller_table(results, log_level, all_mvm_exposures=all_mvm_exposures,
                                          poller_type='mvm',
-                                         ignore_small=include_small,
+                                         include_small=include_small,
                                          only_cte=only_cte)
     else:
         obset_table = copy.deepcopy(user_table)
@@ -313,7 +313,6 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0,
     log.debug("Build the multi-visit layers tree.")
     obset_tree = build_mvm_tree(obset_table)
 
-    import pdb;pdb.set_trace()
     # Now create the output product objects
     log.debug("Parse the observation set tree and create the exposure, filter, and total detection objects.")
     obset_dict, tdp_list = parse_mvm_tree(obset_tree, all_mvm_exposures, log_level)
@@ -840,7 +839,7 @@ def determine_filter_name(raw_filter):
 
 
 def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm',
-                       ignore_small=True, only_cte=False):
+                       include_small=True, only_cte=False):
     """Create a poller file from dataset names.
 
     Parameters
@@ -922,13 +921,17 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
                     # Apply logic for ignoring additional data, based on which environment variables are defined
                     # when defining what output SkyCell layers to generate from a poller file
                     # start with removing ACS/HRC and ACS/SBC from input list
-                    if ignore_small and input_table[tbl_ctr]['detector'].upper() in ['HRC', 'SBC']:
+                    if not include_small and input_table[tbl_ctr]['detector'].upper() in ['HRC', 'SBC']:
                         rows_to_drop.append(tbl_ctr)
                     # Also need to ignore non-CTE-corrected UVIS data
                     cte_flag = input_table[tbl_ctr]['filename'][-6] == 'c'
-                    if only_cte and (input_table[tbl_ctr]['detector'].upper() == 'UVIS' and not cte_flag):
+                    # for WFC3 data, if UVIS and not CTE-corrected, flag for removal from processing
+                    wf3_cte = input_table[tbl_ctr]['detector'].upper() == 'UVIS' and not cte_flag
+                    # for ACS data, if WFC and not CTE-corrected, flag for removal from processing
+                    acs_cte = input_table[tbl_ctr]['detector'].upper() == 'WFC' and not cte_flag
+                    # if only CTE data is requested, and either acs_cte or wf3_cte is True, then remove from processing
+                    if only_cte and (wf3_cte or acs_cte):
                         rows_to_drop.append(tbl_ctr)
-
                 # Omit input images listed as "OLD" in the poller file from processing
                 if len(rows_to_drop) == len(input_table):
                     err_msg = "All images have already been MVM processed. No new MVM processing is needed. Exiting..."
