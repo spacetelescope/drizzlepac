@@ -48,7 +48,6 @@ def perform(mosaic_imgname, flcflt_list):
 
     # 2a: generate table of all gaia sources in frame
     gaia_table = amutils.create_astrometric_catalog(imglist, existing_wcs=mosaic_wcs, catalog='GAIAedr3', use_footprint=True)
-    gaia_table.remove_columns(["mag", "objID"])  # remove "mag" and "objID" columns leaving just "RA" and "DEC"
 
     # 2b: Remove gaia sources outside footprint of input flc/flt images, add X and Y coord columns
     mosaic_hdu = fits.open(mosaic_imgname)
@@ -62,32 +61,35 @@ def perform(mosaic_imgname, flcflt_list):
     x, y = mosaic_wcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 1)
     x_col = Column(name="X", data=x, dtype=np.float64)
     y_col = Column(name="Y", data=y, dtype=np.float64)
-    gaia_table.add_column(x_col, index=3)
-    gaia_table.add_column(y_col, index=4)
+    gaia_table.add_columns([x_col, y_col], indexes=[0, 0])
     gaia_mask_array = np.where(drc_wht_array == 0, np.nan, drc_wht_array)
-
-    # out_hdu = fits.PrimaryHDU(drc_wht_array)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
-    # output_hdu = fits.HDUList([out_hdu])  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
-    # output_hdu.writeto("drc_wht_image.fits")  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    array2fits("drc_wht_image.fits", drc_wht_array)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
 
     mask = amutils.within_footprint(gaia_mask_array, mosaic_wcs, x, y)
-    # gaia_table.write("gaia_edr3_untrimmed.reg", format="ascii.ecsv", overwrite=True)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    write_region_file("gaia_edr3_untrimmed.reg", gaia_table, ['X', 'Y'])  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
     gaia_table = gaia_table[mask]
-    # gaia_table.write("gaia_edr3_trimmed.reg", format="ascii.ecsv", overwrite=True)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    write_region_file("gaia_edr3_trimmed.reg", gaia_table, ['X', 'Y'])  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
 
     # 3: feed x, y coords into photutils.detection.daostarfinder() as initial guesses to get actual centroid positions of gaia sources
     dao_mask_array = np.where(drc_wht_array == 0, 1, 0)  # create mask image for source detection. Pixels with value of "0" are to processed, and those with value of "1" will be omitted from processing.
     xy_gaia_coords = Table([gaia_table['X'].data.astype(np.int64), gaia_table['Y'].data.astype(np.int64)], names=('x_peak', 'y_peak'))
     mean, median, stddev = sigma_clipped_stats(mosaic_hdu["SCI"].data, sigma=3.0, mask=dao_mask_array)
-    daofind = decutils.UserStarFinder(fwhm=3.0, threshold=5.0*stddev, coords=xy_gaia_coords)
+    daofind = decutils.UserStarFinder(fwhm=7.0, threshold=0.0, coords=xy_gaia_coords)
     detected_sources = daofind(mosaic_hdu["SCI"].data, mask=dao_mask_array)
-
+    n_detections = len(detected_sources)
+    n_gaia = len(gaia_table)
+    pct_detection = 100.0 * (float(n_detections) / float(n_gaia))
+    print("Found {} peaks from {} GAIA source(s)".format(n_detections, n_gaia))
+    print("{}% of GAIA sources detected".format(pct_detection))
     # 4: convert daostarfinder output x, y centroid positions to RA, DEC using step 1 WCS info
     ra, dec = mosaic_wcs.all_pix2world(detected_sources['xcentroid'],
                                        detected_sources['ycentroid'], 1)  # TODO: verify that origin is 1, not 0.
+    ra_col = Column(name="ra", data=ra, dtype=np.float64)
+    dec_col = Column(name="dec", data=dec, dtype=np.float64)
+    detected_sources.add_columns([ra_col, dec_col], indexes=[3, 3])
     # 5: compute and report statistics based on X, Y and RA, DEC position residuals. Some of what's needed
     # 6 here can be pulled from svm_quality_analysis.characterize_gaia_distribution() and also from compare_sourcelists() or comparision_utils.
-    write_region_file("test_detection.reg", detected_sources)
+    write_region_file("test_detection.reg", detected_sources, ['xcentroid', 'ycentroid'])  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
     pdb.set_trace()
 
 
@@ -115,7 +117,7 @@ def array2fits(filename, ra_data):
 
 # ============================================================================================================
 
-def write_region_file(filename, table_data, apply_zero_index_correction=False):
+def write_region_file(filename, table_data, colnames, apply_zero_index_correction=False):
     """Write out columns from user-specified table to ds9 region file
 
     Parameters
@@ -134,14 +136,11 @@ def write_region_file(filename, table_data, apply_zero_index_correction=False):
     -------
     Nothing.
     """
-    if 'x_peak' in table_data.colnames:
-        xcolname = 'x_peak'
-        ycolname = 'y_peak'
-    else:
-        xcolname = 'xcentroid'
-        ycolname = 'ycentroid'
+    xcolname = colnames[0]
+    ycolname = colnames[1]
 
-    out_data = table_data[xcolname, ycolname]
+    data_table = table_data.copy()
+    out_data = data_table[xcolname, ycolname]
 
     if apply_zero_index_correction:
         out_data[xcolname] += 1.0
