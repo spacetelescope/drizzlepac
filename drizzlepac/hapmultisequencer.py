@@ -323,7 +323,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
     logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
     # Start by reading in any environment variable related to catalog generation that has been set
-    cat_switches = {sw: _get_envvar_switch(sw, default=envvar_cat_svm[sw]) for sw in envvar_cat_mvm}
+    cat_switches = {sw: _get_envvar_switch(sw, default=envvar_cat_mvm[sw]) for sw in envvar_cat_mvm}
 
     # start processing
     starting_dt = datetime.datetime.now()
