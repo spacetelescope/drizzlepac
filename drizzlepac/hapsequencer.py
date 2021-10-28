@@ -266,18 +266,6 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 # all catalogs.
                 # This requires collating results for each type of catalog from all filter products.
                 for cat_type in filter_product_catalogs.catalogs.keys():
-                    catalog_mask = filter_product_catalogs.catalogs[cat_type].source_cat['Flags'] > flag_trim_value
-                    if source_mask[cat_type] is None:
-                        source_mask[cat_type] = catalog_mask
-                    else:
-                        # Combine masks for all filters for this catalog type
-                        source_mask[cat_type] = np.bitwise_or(source_mask[cat_type], catalog_mask)
-
-                    # Trim based on user-specified/default flag limit 'flag_trim_value' specified in parameter file
-                    trimmed_rows = np.where(source_mask[cat_type])[0].tolist()
-                    filter_product_catalogs.catalogs[cat_type].source_cat.remove_rows(trimmed_rows)
-                    filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat.remove_rows(trimmed_rows)
-
                     subset_columns_dict[cat_type] = {}
                     subset_columns_dict[cat_type]['subset'] = \
                         filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat
@@ -292,7 +280,6 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             # rows which contain empty strings (masked values) for *all* measurements for *all*
             # of the filter catalogs.
             for cat_type in total_product_catalogs.catalogs.keys():
-                good_rows_index = []
                 if cat_type == 'aperture':
                     all_columns = total_product_catalogs.catalogs[cat_type].sources.colnames
                     table_filled = total_product_catalogs.catalogs[cat_type].sources.filled(-9999.9)
@@ -301,11 +288,15 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                     table_filled = total_product_catalogs.catalogs[cat_type].source_cat.filled(-9999.9)
                 flag_columns = [colname for colname in all_columns if "Flags_" in colname]
                 filled_flag_columns = table_filled[flag_columns]
-                for i, trow in enumerate(filled_flag_columns):
-                    for tcol in trow:
-                        if tcol != -9999:
-                            good_rows_index.append(i)
-                            break
+
+                # work out what rows have flag values > flag_limit in ALL flag columns
+                flag_bitmasks = [np.logical_or(filled_flag_columns[col] > flag_trim_value,
+                                               np.isclose(filled_flag_columns[col], -9999.9))
+                                 for col in filled_flag_columns.colnames]
+                flag_mask = np.logical_and.reduce(flag_bitmasks)
+                # Get indices of all good rows
+                good_rows_index = np.where(flag_mask == False)[0]
+
                 if cat_type == 'aperture':
                     total_product_catalogs.catalogs[cat_type].sources = total_product_catalogs.catalogs[cat_type].sources[good_rows_index]
                 else:
