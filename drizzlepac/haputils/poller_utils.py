@@ -205,7 +205,8 @@ def create_row_info(row):
 # -----------------------------------------------------------------------------
 # Multi-Visit Processing Functions
 #
-def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0, user_table=None):
+def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0,
+                        user_table=None, include_small=True, only_cte=False):
     """
 
     Parameters
@@ -233,6 +234,11 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0, u
         The value of 'kmeans' relies on using 'kmeans' analysis for defining sub-layers
         based on exposure time.
 
+    include_small : bool, optional
+        Specify whether or not to create products from ACS/HRC and ACS/SBC data.
+
+    only_cte : bool, optional
+        Specify whether or not to create products only using CTE-corrected data.
 
     Notes
     -------
@@ -278,7 +284,9 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0, u
         all_mvm_exposures = []
         log.debug("Interpret the poller file for the observation set.")
         obset_table = build_poller_table(results, log_level, all_mvm_exposures=all_mvm_exposures,
-                                         poller_type='mvm')
+                                         poller_type='mvm',
+                                         include_small=include_small,
+                                         only_cte=only_cte)
     else:
         obset_table = copy.deepcopy(user_table)
 
@@ -830,7 +838,8 @@ def determine_filter_name(raw_filter):
 # ------------------------------------------------------------------------------
 
 
-def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'):
+def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm',
+                       include_small=True, only_cte=False):
     """Create a poller file from dataset names.
 
     Parameters
@@ -909,6 +918,20 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
                         err_msg = "'{}' is an invalid skycell_new poller file value. (Legal values: 'NEW' or 'OLD').  Exiting... ".format(input_table[tbl_ctr]['skycell_new'])
                         log.error(err_msg)
                         raise Exception(err_msg)
+                    # Apply logic for ignoring additional data, based on which environment variables are defined
+                    # when defining what output SkyCell layers to generate from a poller file
+                    # start with removing ACS/HRC and ACS/SBC from input list
+                    if not include_small and input_table[tbl_ctr]['detector'].upper() in ['HRC', 'SBC']:
+                        rows_to_drop.append(tbl_ctr)
+                    # Also need to ignore non-CTE-corrected UVIS data
+                    cte_flag = input_table[tbl_ctr]['filename'][-6] == 'c'
+                    # for WFC3 data, if UVIS and not CTE-corrected, flag for removal from processing
+                    wf3_cte = input_table[tbl_ctr]['detector'].upper() == 'UVIS' and not cte_flag
+                    # for ACS data, if WFC and not CTE-corrected, flag for removal from processing
+                    acs_cte = input_table[tbl_ctr]['detector'].upper() == 'WFC' and not cte_flag
+                    # if only CTE data is requested, and either acs_cte or wf3_cte is True, then remove from processing
+                    if only_cte and (wf3_cte or acs_cte):
+                        rows_to_drop.append(tbl_ctr)
                 # Omit input images listed as "OLD" in the poller file from processing
                 if len(rows_to_drop) == len(input_table):
                     err_msg = "All images have already been MVM processed. No new MVM processing is needed. Exiting..."
