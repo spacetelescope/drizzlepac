@@ -13,12 +13,13 @@ import sys
 
 # Related third party imports
 from astropy.io import fits
+from astropy.coordinates import SkyCoord
 from astropy.table import Column, Table
 import numpy as np
 from scipy import ndimage
 
 # Local application imports
-from drizzlepac import wcs_functions
+from drizzlepac.devutils.comparison_tools import compare_sourcelists as csl
 from drizzlepac.haputils import astrometric_utils as amutils
 from drizzlepac.haputils import comparison_utils as cu
 from drizzlepac.haputils import deconvolve_utils as decutils
@@ -89,9 +90,11 @@ def perform(mosaic_imgname, flcflt_list, log_level=logutil.logging.INFO):
     xy_gaia_coords = Table([gaia_table['X'].data.astype(np.int64), gaia_table['Y'].data.astype(np.int64)], names=('x_peak', 'y_peak'))
     # the below line computes a FWHM value based on detected sources (not the gaia sources). The FWHM value doesn't yeild a lot of sources.
     # mpeaks, mfwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array), def_fwhm=3.0, box_size=11, block_size=(1024, 1024), diagnostic_mode=False)
-    mfwhm = 15.0
+    mfwhm = 25.0
     daofind = decutils.UserStarFinder(fwhm=mfwhm, threshold=0.0, coords=xy_gaia_coords)
     detection_table = daofind(mosaic_hdu["SCI"].data, mask=dao_mask_array)
+    detection_table.rename_column('xcentroid', 'X')
+    detection_table.rename_column('ycentroid', 'Y')
     n_detection = len(detection_table)
     n_gaia = len(gaia_table)
     pct_detection = 100.0 * (float(n_detection) / float(n_gaia))
@@ -99,27 +102,25 @@ def perform(mosaic_imgname, flcflt_list, log_level=logutil.logging.INFO):
     log.info("{}% of GAIA sources detected".format(pct_detection))
 
     # 4: convert daostarfinder output x, y centroid positions to RA, DEC using step 1 WCS info
-    ra, dec = mosaic_wcs.all_pix2world(detection_table['xcentroid'], detection_table['ycentroid'],  1)  # TODO: verify that origin is 1, not 0.
-    ra_col = Column(name="ra", data=ra, dtype=np.float64)
-    dec_col = Column(name="dec", data=dec, dtype=np.float64)
+    ra, dec = mosaic_wcs.all_pix2world(detection_table['X'], detection_table['X'],  1)  # TODO: verify that origin is 1, not 0.
+    ra_col = Column(name="RA", data=ra, dtype=np.float64)
+    dec_col = Column(name="DEC", data=dec, dtype=np.float64)
     detection_table.add_columns([ra_col, dec_col], indexes=[3, 3])
-    write_region_file("test_detection.reg", detection_table, ['ra', 'dec'], log_level=log_level)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    write_region_file("test_detection.reg", detection_table, ['RA', 'DEC'], log_level=log_level)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
 
-    # 5: compute and report statistics based on X, Y and RA, DEC position residuals. Some of what's needed
-    #  here can be pulled from svm_quality_analysis.characterize_gaia_distribution() and also from compare_sourcelists() or comparision_utils.
+    # 5: Identify and isolate X, Y, RA and DEC values common to both the gaia and detection tables.
     # 5a: find sources common to both the gaia table and the detection table
     try:
         coo_prefix_string = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
         gaia_coo_filename = "{}_gaia.coo".format(coo_prefix_string)
         det_coo_filename = "{}_det.coo".format(coo_prefix_string)
         write_region_file(gaia_coo_filename, gaia_table, ['X', 'Y'], verbose=False, log_level=log_level)
-        write_region_file(det_coo_filename, detection_table, ['xcentroid', 'ycentroid'], verbose=False)
+        write_region_file(det_coo_filename, detection_table, ['X', 'Y'], verbose=False)
         matches_gaia_to_det, matches_det_to_gaia = cu.getMatchedLists([gaia_coo_filename, det_coo_filename],
                                                                       [mosaic_imgname, mosaic_imgname],
                                                                       [n_gaia, n_detection],
                                                                       log_level)
-
-        if n_matches == 0:
+        if len(matches_gaia_to_det) == 0:
             err_msg = "Error: No matching sources found."
             log.error(err_msg)
             raise Exception(err_msg)
@@ -128,14 +129,51 @@ def perform(mosaic_imgname, flcflt_list, log_level=logutil.logging.INFO):
             if os.path.exists(item):
                 log.debug("Removing temp coord file {}".format(item))
                 os.remove(item)
-    # 5b: compute statistics on X residuals of matched sources
-    # 5c: compute statistics on Y residuals of matched sources
-    # 5d: compute statistics on RA/DEC residuals of matched sources
 
+    # 5b: Isolate sources common to both the gaia table and the detection table
+    matched_values_dict = {}
+    for col_title in ['X', 'Y', 'RA', 'DEC']:
+        matched_values_dict[col_title] = cu.extractMatchedLines(col_title, gaia_table, detection_table,
+                                                                matches_gaia_to_det, matches_det_to_gaia)
+    # 6: compute and report statistics based on X, Y and RA, DEC position residuals.
+    plot_gen = "screen"
+    #plot_gen = "none"
+    # Some of what's needed here can be pulled from svm_quality_analysis.characterize_gaia_distribution() and also from compare_sourcelists() or comparision_utils.
+    # 6a: compute statistics on X residuals of matched sources
+    rt_status, pdf_files = csl.computeLinearStats(matched_values_dict['X'], 0.1, "Pixels", plot_gen,
+                                                  "X Axis Residuals", "GMD", ['GAIA', 'DETECTION'],
+                                                  True, log_level=log_level)
+
+    # 6b: compute statistics on Y residuals of matched sources
+    rt_status, pdf_files = csl.computeLinearStats(matched_values_dict['Y'], 0.1, "Pixels", plot_gen,
+                                                  "Y Axis Residuals", "GMD", ['GAIA', 'DETECTION'],
+                                                  True, log_level=log_level)
+
+
+    csl.check_match_quality(matched_values_dict['X'], matched_values_dict['Y']) # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+
+    # 6d: compute statistics on RA/DEC residuals of matched sources
+    # convert reference and comparison RA/Dec values into SkyCoord objects
+    img_coord_sys = mosaic_hdu['SCI'].header['radesys'].lower()
+    matched_values_ref = SkyCoord(matched_values_dict['RA'][0, :], matched_values_dict['DEC'][0, :],
+                                  frame=img_coord_sys, unit="deg")
+    matched_values_comp = SkyCoord(matched_values_dict['RA'][1, :], matched_values_dict['DEC'][1, :],
+                                  frame=img_coord_sys, unit="deg")
+    # convert to ICRS coord system if need be
+    if img_coord_sys != "icrs":
+        matched_values_ref = matched_values_ref.icrs
+        matched_values_comp = matched_values_comp.icrs
+
+    matched_values = [matched_values_ref, matched_values_comp]
+    rt_status, pdf_files = csl.computeLinearStats(matched_values, 0.1, "arcseconds", plot_gen,
+                                                  "On-Sky Separation", "GMD", ['GAIA', 'DETECTION'],
+                                                  True, log_level=log_level)
+
+    pdb.set_trace()
 
 # ============================================================================================================
 
-def array2fits(filename, ra_data,  log_level=logutil.logging.INFO, verbose=True,):
+def array2fits(filename, ra_data,  log_level=logutil.logging.INFO, verbose=True):
     """write input data to specified fits filename
 
     Parameters
