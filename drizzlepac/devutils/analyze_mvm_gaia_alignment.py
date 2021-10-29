@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-"""Quantify how well MVM products are aligned to GAIA sources found in the image footprint"""
+"""Quantify how well MVM products are aligned to GAIA sources found in the image footprint
+
+
+NOTE: daostarfinder coords are 0-indexed."""
 
 # Standard library imports
 import argparse
@@ -74,7 +77,7 @@ def perform(mosaic_imgname, flcflt_list, log_level=logutil.logging.INFO):
         drc_hdu = fits.open(item)
         drc_wht_array += drc_hdu["WHT"].data
         drc_hdu.close()
-    x, y = mosaic_wcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 1)
+    x, y = mosaic_wcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 0) # TODO: verify origin value should be 0, rather than 1.
     x_col = Column(name="X", data=x, dtype=np.float64)
     y_col = Column(name="Y", data=y, dtype=np.float64)
     gaia_table.add_columns([x_col, y_col], indexes=[0, 0])
@@ -102,7 +105,7 @@ def perform(mosaic_imgname, flcflt_list, log_level=logutil.logging.INFO):
     log.info("{}% of GAIA sources detected".format(pct_detection))
 
     # 4: convert daostarfinder output x, y centroid positions to RA, DEC using step 1 WCS info
-    ra, dec = mosaic_wcs.all_pix2world(detection_table['X'], detection_table['X'],  1)  # TODO: verify that origin is 1, not 0.
+    ra, dec = mosaic_wcs.all_pix2world(detection_table['X'], detection_table['Y'], 0)  # TODO: verify origin value should be 0, rather than 1.
     ra_col = Column(name="RA", data=ra, dtype=np.float64)
     dec_col = Column(name="DEC", data=dec, dtype=np.float64)
     detection_table.add_columns([ra_col, dec_col], indexes=[3, 3])
@@ -149,7 +152,8 @@ def perform(mosaic_imgname, flcflt_list, log_level=logutil.logging.INFO):
                                                   "Y Axis Residuals", "GMD", ['GAIA', 'DETECTION'],
                                                   True, log_level=log_level)
 
-
+    if plot_gen in ['screen', 'file']:
+        csl.makeVectorPlot(matched_values_dict['X'], matched_values_dict['Y'], mosaic_wcs.pscale, plot_gen, "GMD", ['GAIA', 'DETECTION'])
     csl.check_match_quality(matched_values_dict['X'], matched_values_dict['Y']) # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
 
     # 6d: compute statistics on RA/DEC residuals of matched sources
