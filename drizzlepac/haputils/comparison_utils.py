@@ -166,17 +166,17 @@ def getMatchedLists(slNames, imgNames, slLengths, log_level):
     # Report number and percentage of the total number of detected ref and comp sources that were matched
     log.info("Sourcelist Matching Results")
     log.info(
-        "Reference sourcelist:  {} of {} total sources matched ({} %)".format(len(matching_lines_ref),
-                                                                              slLengths[0],
-                                                                              100.0 * (float(
-                                                                                  len(matching_lines_ref)) /
-                                                                                       float(slLengths[0]))))
+        "Reference sourcelist:  {} of {} total sources matched ({}%)".format(len(matching_lines_ref),
+                                                                             slLengths[0],
+                                                                             100.0 * (float(
+                                                                                 len(matching_lines_ref)) /
+                                                                                      float(slLengths[0]))))
     log.info(
-        "Comparison sourcelist: {} of {} total sources matched ({} %)".format(len(matching_lines_img),
-                                                                              slLengths[1],
-                                                                              100.0 * (float(
-                                                                                  len(matching_lines_img)) /
-                                                                                       float(slLengths[1]))))
+        "Comparison sourcelist: {} of {} total sources matched ({}%)".format(len(matching_lines_img),
+                                                                             slLengths[1],
+                                                                             100.0 * (float(
+                                                                                 len(matching_lines_img)) /
+                                                                                      float(slLengths[1]))))
 
     return (matching_lines_ref, matching_lines_img)
 
