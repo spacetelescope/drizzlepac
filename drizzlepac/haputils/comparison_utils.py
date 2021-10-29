@@ -134,6 +134,7 @@ def getMatchedLists(slNames, imgNames, slLengths, log_level):
         A corresponding list of the indices of comparison sourcelist sources that match reference sourcelist
         sources
     """
+    log.setLevel(log_level)
     source_list_dict = {}
     equal_flag = False
     if slLengths[0] == slLengths[1]:

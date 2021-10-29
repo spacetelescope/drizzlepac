@@ -24,9 +24,16 @@ from drizzlepac.haputils import comparison_utils as cu
 from drizzlepac.haputils import deconvolve_utils as decutils
 import stwcs
 
+from stsci.tools import logutil
+__taskname__ = 'analyze_mvm_gaia_alignment'
+
+MSG_DATEFMT = '%Y%j%H%M%S'
+SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 # ============================================================================================================
 
-def perform(mosaic_imgname, flcflt_list):
+def perform(mosaic_imgname, flcflt_list, log_level=logutil.logging.INFO):
     """ Statistically quantify quality of GAIA MVM alignment
 
     Parameters
@@ -37,10 +44,15 @@ def perform(mosaic_imgname, flcflt_list):
     flcflt_list : list
         lList of calibrated flc.fits and/or flt.fits images to process
 
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'INFO'.
+
     Returns
     -------
     Nothing!
     """
+    log.setLevel(log_level)
     # 0: read in flc/flt fits files from user-specified fits file
     with open(flcflt_list, mode='r') as imgfile:
         imglist = imgfile.readlines()
@@ -57,7 +69,7 @@ def perform(mosaic_imgname, flcflt_list):
     drc_wht_array = np.zeros_like(mosaic_hdu["WHT"].data)
     drc_list = glob.glob("hst*{}*drc.fits".format(fits.getval(imglist[0], "FILENAME")[:6]))
     for wht_ctr, item in zip(range(0, len(drc_list)), drc_list):
-        print("{}/{}: Adding weight image from {} to combined weight image".format(wht_ctr + 1, len(drc_list), item))
+        log.debug("{}/{}: Adding weight image from {} to combined weight image".format(wht_ctr + 1, len(drc_list), item))
         drc_hdu = fits.open(item)
         drc_wht_array += drc_hdu["WHT"].data
         drc_hdu.close()
@@ -66,11 +78,11 @@ def perform(mosaic_imgname, flcflt_list):
     y_col = Column(name="Y", data=y, dtype=np.float64)
     gaia_table.add_columns([x_col, y_col], indexes=[0, 0])
     gaia_mask_array = np.where(drc_wht_array == 0, np.nan, drc_wht_array)
-    array2fits("drc_wht_image.fits", drc_wht_array)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    array2fits("drc_wht_image.fits", drc_wht_array, log_level=log_level)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
 
     mask = amutils.within_footprint(gaia_mask_array, mosaic_wcs, x, y)
     gaia_table = gaia_table[mask]
-    write_region_file("gaia_edr3_trimmed.reg", gaia_table, ['RA', 'DEC'])  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    write_region_file("gaia_edr3_trimmed.reg", gaia_table, ['RA', 'DEC'], log_level=log_level)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
 
     # 3: feed x, y coords into photutils.detection.daostarfinder() as initial guesses to get actual centroid positions of gaia sources
     dao_mask_array = np.where(drc_wht_array == 0, 1, 0)  # create mask image for source detection. Pixels with value of "0" are to processed, and those with value of "1" will be omitted from processing.
@@ -83,15 +95,15 @@ def perform(mosaic_imgname, flcflt_list):
     n_detection = len(detection_table)
     n_gaia = len(gaia_table)
     pct_detection = 100.0 * (float(n_detection) / float(n_gaia))
-    print("Found {} peaks from {} GAIA source(s)".format(n_detection, n_gaia))
-    print("{}% of GAIA sources detected".format(pct_detection))
+    log.info("Found {} peaks from {} GAIA source(s)".format(n_detection, n_gaia))
+    log.info("{}% of GAIA sources detected".format(pct_detection))
 
     # 4: convert daostarfinder output x, y centroid positions to RA, DEC using step 1 WCS info
     ra, dec = mosaic_wcs.all_pix2world(detection_table['xcentroid'], detection_table['ycentroid'],  1)  # TODO: verify that origin is 1, not 0.
     ra_col = Column(name="ra", data=ra, dtype=np.float64)
     dec_col = Column(name="dec", data=dec, dtype=np.float64)
     detection_table.add_columns([ra_col, dec_col], indexes=[3, 3])
-    write_region_file("test_detection.reg", detection_table, ['ra', 'dec'])  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    write_region_file("test_detection.reg", detection_table, ['ra', 'dec'], log_level=log_level)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
 
     # 5: compute and report statistics based on X, Y and RA, DEC position residuals. Some of what's needed
     #  here can be pulled from svm_quality_analysis.characterize_gaia_distribution() and also from compare_sourcelists() or comparision_utils.
@@ -100,19 +112,21 @@ def perform(mosaic_imgname, flcflt_list):
         coo_prefix_string = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
         gaia_coo_filename = "{}_gaia.coo".format(coo_prefix_string)
         det_coo_filename = "{}_det.coo".format(coo_prefix_string)
-        write_region_file(gaia_coo_filename, gaia_table, ['X', 'Y'], verbose=False)
+        write_region_file(gaia_coo_filename, gaia_table, ['X', 'Y'], verbose=False, log_level=log_level)
         write_region_file(det_coo_filename, detection_table, ['xcentroid', 'ycentroid'], verbose=False)
         matches_gaia_to_det, matches_det_to_gaia = cu.getMatchedLists([gaia_coo_filename, det_coo_filename],
                                                                       [mosaic_imgname, mosaic_imgname],
                                                                       [n_gaia, n_detection],
-                                                                      10)
-        n_matches = len(matches_gaia_to_det)
-        print("Found {} matching sources.".format(n_matches))
+                                                                      log_level)
+
         if n_matches == 0:
-            raise Exception("Error: No matching sources found.")
+            err_msg = "Error: No matching sources found."
+            log.error(err_msg)
+            raise Exception(err_msg)
     finally:
         for item in [det_coo_filename, gaia_coo_filename]:
             if os.path.exists(item):
+                log.debug("Removing temp coord file {}".format(item))
                 os.remove(item)
     # 5b: compute statistics on X residuals of matched sources
     # 5c: compute statistics on Y residuals of matched sources
@@ -121,7 +135,7 @@ def perform(mosaic_imgname, flcflt_list):
 
 # ============================================================================================================
 
-def array2fits(filename, ra_data):
+def array2fits(filename, ra_data,  log_level=logutil.logging.INFO, verbose=True,):
     """write input data to specified fits filename
 
     Parameters
@@ -132,18 +146,26 @@ def array2fits(filename, ra_data):
     ra_data : numpy.ndarray
         array data to write out
 
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'INFO'.
+
+    verbose : Bool, optional
+        Print confirmation? Default value is Boolean 'False'.
     Returns
     -------
     Nothing
     """
+    log.setLevel(log_level)
     out_hdu = fits.PrimaryHDU(ra_data)
     output_hdu = fits.HDUList([out_hdu])
     output_hdu.writeto(filename, overwrite=True)
-    print("Wrote " + filename)
+    if verbose and log_level <= 20:
+        log.info("Wrote " + filename)
 
 # ============================================================================================================
 
-def write_region_file(filename, table_data, colnames, apply_zero_index_correction=False, verbose=True):
+def write_region_file(filename, table_data, colnames, apply_zero_index_correction=False, log_level=logutil.logging.INFO, verbose=True):
     """Write out columns from user-specified table to ds9 region file
 
     Parameters
@@ -158,13 +180,18 @@ def write_region_file(filename, table_data, colnames, apply_zero_index_correctio
         Add 1 to all X and Y values to make them 1-indexed if they were initially zero indexed. Default
         value is Boolean 'False'.
 
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'INFO'.
+
     verbose : Bool, optional
-    Print confirmation? Default value is Boolean 'False'.
+        Print confirmation? Default value is Boolean 'False'.
 
     Returns
     -------
     Nothing.
     """
+    log.setLevel(log_level)
     xcolname = colnames[0]
     ycolname = colnames[1]
 
@@ -172,25 +199,39 @@ def write_region_file(filename, table_data, colnames, apply_zero_index_correctio
     out_data = data_table[xcolname, ycolname]
 
     if apply_zero_index_correction:
+        log.info("Added 1-pixel offset to X and Y output values to adjust from the 0-indexed coordinate "
+                 "system of the data table to the 1-indexed coordinate system assumed for ds9 .reg files.")
         out_data[xcolname] += 1.0
         out_data[ycolname] += 1.0
 
     out_data.write(filename, format='ascii.fast_no_header', overwrite=True)
-    if verbose:
-        print("Wrote " + filename)
+    if verbose and log_level <= 20:
+        log.info("Wrote " + filename)
 
 
 # ============================================================================================================
 
 
 if __name__ == "__main__":
+
+    log_level_dict = {"critical": logutil.logging.CRITICAL,
+                      "error": logutil.logging.ERROR,
+                      "warning": logutil.logging.WARNING,
+                      "info": logutil.logging.INFO,
+                      "debug": logutil.logging.DEBUG}
     # Parse command-line input args
     parser = argparse.ArgumentParser(description='Statistically quantify quality of GAIA MVM alignment')
     parser.add_argument('mosaic_imgname', help='Name of the MVM-processed mosaic image to process')
     parser.add_argument('flcflt_list', help='list of calibrated flc.fits and/or flt.fits images to process')
+    parser.add_argument('-l', '--log_level', required=False, default='info',
+                        choices=['critical', 'error', 'warning', 'info', 'debug'],
+                        help='The desired level of verboseness in the log statements displayed on the screen '
+                        'and written to the .log file. The level of verboseness from left to right, and '
+                        'includes all log statements with a log_level left of the specified level. '
+                        'Specifying "critical" will only record/display "critical" log statements, and '
+                        'specifying "error" will record/display both "error" and "critical" log statements, '
+                        'and so on.')
     input_args = parser.parse_args()
 
     # Perform analysis
-    perform(input_args.mosaic_imgname, input_args.flcflt_list)
-
-
+    perform(input_args.mosaic_imgname, input_args.flcflt_list, log_level=log_level_dict[input_args.log_level])
