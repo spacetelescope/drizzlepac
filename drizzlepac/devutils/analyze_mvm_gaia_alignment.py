@@ -37,7 +37,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 # ============================================================================================================
 
-def perform(mosaic_imgname, flcflt_list, log_level=logutil.logging.INFO):
+def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=logutil.logging.INFO):
     """ Statistically quantify quality of GAIA MVM alignment
 
     Parameters
@@ -48,6 +48,9 @@ def perform(mosaic_imgname, flcflt_list, log_level=logutil.logging.INFO):
     flcflt_list : list
         lList of calibrated flc.fits and/or flt.fits images to process
 
+    diagnostic_mode : bool, optional
+        If set to logical 'True', additional log messages will be displayed and additional files will be
+        created during the course of the run. Default value is logical 'False'.
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
         .log file. Default value is 'INFO'.
@@ -82,11 +85,12 @@ def perform(mosaic_imgname, flcflt_list, log_level=logutil.logging.INFO):
     y_col = Column(name="Y", data=y, dtype=np.float64)
     gaia_table.add_columns([x_col, y_col], indexes=[0, 0])
     gaia_mask_array = np.where(drc_wht_array == 0, np.nan, drc_wht_array)
-    array2fits("drc_wht_image.fits", drc_wht_array, log_level=log_level)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
-
+    if diagnostic_mode:
+        array2fits("drc_wht_image.fits", drc_wht_array, log_level=log_level)
     mask = amutils.within_footprint(gaia_mask_array, mosaic_wcs, x, y)
     gaia_table = gaia_table[mask]
-    write_region_file("gaia_edr3_trimmed.reg", gaia_table, ['RA', 'DEC'], log_level=log_level)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    if diagnostic_mode:
+        write_region_file("gaia_edr3_trimmed.reg", gaia_table, ['RA', 'DEC'], log_level=log_level)
 
     # 3: feed x, y coords into photutils.detection.daostarfinder() as initial guesses to get actual centroid positions of gaia sources
     dao_mask_array = np.where(drc_wht_array == 0, 1, 0)  # create mask image for source detection. Pixels with value of "0" are to processed, and those with value of "1" will be omitted from processing.
@@ -109,7 +113,8 @@ def perform(mosaic_imgname, flcflt_list, log_level=logutil.logging.INFO):
     ra_col = Column(name="RA", data=ra, dtype=np.float64)
     dec_col = Column(name="DEC", data=dec, dtype=np.float64)
     detection_table.add_columns([ra_col, dec_col], indexes=[3, 3])
-    write_region_file("test_detection.reg", detection_table, ['RA', 'DEC'], log_level=log_level)  # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+    if diagnostic_mode:
+        write_region_file("test_detection.reg", detection_table, ['RA', 'DEC'], log_level=log_level)
 
     # 5: Identify and isolate X, Y, RA and DEC values common to both the gaia and detection tables.
     # 5a: find sources common to both the gaia table and the detection table
@@ -117,7 +122,7 @@ def perform(mosaic_imgname, flcflt_list, log_level=logutil.logging.INFO):
         coo_prefix_string = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
         gaia_coo_filename = "{}_gaia.coo".format(coo_prefix_string)
         det_coo_filename = "{}_det.coo".format(coo_prefix_string)
-        write_region_file(gaia_coo_filename, gaia_table, ['X', 'Y'], verbose=False, log_level=log_level)
+        write_region_file(gaia_coo_filename, gaia_table, ['X', 'Y'], verbose=False)
         write_region_file(det_coo_filename, detection_table, ['X', 'Y'], verbose=False)
         matches_gaia_to_det, matches_det_to_gaia = cu.getMatchedLists([gaia_coo_filename, det_coo_filename],
                                                                       [mosaic_imgname, mosaic_imgname],
@@ -153,8 +158,10 @@ def perform(mosaic_imgname, flcflt_list, log_level=logutil.logging.INFO):
                                                   True, log_level=log_level)
 
     if plot_gen in ['screen', 'file']:
-        csl.makeVectorPlot(matched_values_dict['X'], matched_values_dict['Y'], mosaic_wcs.pscale, plot_gen, "GMD", ['GAIA', 'DETECTION'])
-    csl.check_match_quality(matched_values_dict['X'], matched_values_dict['Y']) # TODO: DIAGNOSTIC LINE REMOVE PRIOR TO DEPLOYMENT
+        csl.makeVectorPlot(matched_values_dict['X'], matched_values_dict['Y'], mosaic_wcs.pscale, plot_gen,
+                           "GMD", ['GAIA', 'DETECTION'])
+    if diagnostic_mode:
+        csl.check_match_quality(matched_values_dict['X'], matched_values_dict['Y'])
 
     # 6d: compute statistics on RA/DEC residuals of matched sources
     # convert reference and comparison RA/Dec values into SkyCoord objects
@@ -265,6 +272,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Statistically quantify quality of GAIA MVM alignment')
     parser.add_argument('mosaic_imgname', help='Name of the MVM-processed mosaic image to process')
     parser.add_argument('flcflt_list', help='list of calibrated flc.fits and/or flt.fits images to process')
+    parser.add_argument('-d', '--diagnostic_mode', required=False, action='store_true',
+                        help='If this option is turned on, additional log messages will be displayed and '
+                             'additional files will be created during the course of the run.')
     parser.add_argument('-l', '--log_level', required=False, default='info',
                         choices=['critical', 'error', 'warning', 'info', 'debug'],
                         help='The desired level of verboseness in the log statements displayed on the screen '
@@ -276,4 +286,4 @@ if __name__ == "__main__":
     input_args = parser.parse_args()
 
     # Perform analysis
-    perform(input_args.mosaic_imgname, input_args.flcflt_list, log_level=log_level_dict[input_args.log_level])
+    perform(input_args.mosaic_imgname, input_args.flcflt_list, diagnostic_mode=input_args.diagnostic_mode, log_level=log_level_dict[input_args.log_level])
