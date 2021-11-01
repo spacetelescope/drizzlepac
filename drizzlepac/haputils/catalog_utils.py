@@ -1211,8 +1211,8 @@ class HAPPointCatalog(HAPCatalogBase):
                              "MagErrAp1": "Error of MagAp1",
                              "MagAp2": "ABMAG of source based on the outer (larger) aperture",
                              "MagErrAp2": "Error of MagAp2",
-                             "MSkyAp2": "ABMAG of sky based on outer (larger) aperture",
-                             "StdevAp2": "Standard deviation of sky measurement in outer (larger) aperture",
+                             "MSkyAp2": "Sky estimate from an annulus outside Aperture 2",
+                             "StdevAp2": "Standard deviation of sky estimate from annulus outside Aperture 2",
                              "FluxAp2": "Flux of source based on the outer (larger) aperture",
                              "CI": "Concentration Index",
                              "Flags": "Numeric encoding for conditions on detected sources"}
@@ -1222,7 +1222,7 @@ class HAPPointCatalog(HAPCatalogBase):
         # add units to columns
         final_col_units = {"X-Center": "pixels", "Y-Center": "pixels", "RA": "degrees", "DEC": "degrees",
                            "ID": "unitless", "MagAp1": "ABMAG", "MagErrAp1": "ABMAG", "MagAp2": "ABMAG",
-                           "MagErrAp2": "ABMAG", "MSkyAp2": "ABMAG", "StdevAp2": "ABMAG",
+                           "MagErrAp2": "ABMAG", "MSkyAp2": "electrons/s/pixel", "StdevAp2": "electrons/s/pixel",
                            "FluxAp2": "electrons/sec", "CI": "ABMAG", "Flags": "unitless"}
         for col_title in final_col_units:
             output_photometry_table[col_title].unit = final_col_units[col_title]
@@ -2365,7 +2365,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                              "MagErrAp2": "Error of MagAp2",
                              "FluxAp2": "Flux of source based on the outer (larger) aperture",
                              "FluxErrAp2": "Error of FluxAp2",
-                             "MSkyAp2": "ABMAG of sky based on outer (larger) aperture",
+                             "MSkyAp2": "Sky estimate from an annulus outside Aperture 2",
                              "FluxSegment": "Sum of unmasked data values in the source segment",
                              "FluxSegmentErr": "Uncertainty of FluxSegment, propagated from the input error array",
                              "KronRadius": "The unscaled first-moment Kron radius",
@@ -2402,7 +2402,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                           "MagErrAp2": "ABMAG",
                           "FluxAp2": "electrons/s",
                           "FluxErrAp2": "electrons/s",
-                          "MSkyAp2": "ABMAG",
+                          "MSkyAp2": "electrons/s/pixel",
                           "MagSegment": "ABMAG",
                           "FluxSegment": "electrons/s",
                           "FluxSegmentErr": "electrons/s",
@@ -2410,9 +2410,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
                           "X2": "pixels**2",
                           "Y2": "pixels**2",
                           "XY": "pixels**2",
-                          "CXX": "pixels**2",
-                          "CYY": "pixels**2",
-                          "CXY": "pixels**2",
+                          "CXX": "pixels**(-2)",
+                          "CYY": "pixels**(-2)",
+                          "CXY": "pixels**(-2)",
                           "Xmin": "pixels",
                           "Ymin": "pixels",
                           "Xmax": "pixels",
