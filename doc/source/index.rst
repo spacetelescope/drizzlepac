@@ -142,6 +142,8 @@ The **HAP Single Visit Mosaics (SVMs)** differ from the standard HST drizzled da
   singlevisit.rst
   runsinglehap.rst
   makecustommosaic.rst
+  mvmutilities_api.rst
+  mvmutilities.rst
 
   catalog_generation
   catalogs
