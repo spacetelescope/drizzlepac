@@ -502,8 +502,12 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
     # Start by reading in any environment variable related to catalog generation that has been set
     cat_switches = {sw: _get_envvar_switch(sw, default=envvar_cat_svm[sw]) for sw in envvar_cat_svm}
 
+    # Since these are used in the finally block, make sure they are initialized
     total_obj_list = []
+    grism_product_list = []
+    ramp_product_list = []
     manifest_name = ""
+    found_data = False
     try:
         # Parse the poller file and generate the the obs_info_dict, as well as the total detection
         # product lists which contain the ExposureProduct, FilterProduct, and TotalProduct objects
@@ -528,19 +532,21 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
 
         # It is possible the total_obj_list output from the poller_utils contains only Grism/Prism
         # data and no direct images, so no further processing should be done.  If this is the case,
-        # there is actually nothing to be done for the visit, except write out a manifest and
-        # a log file.  Check every item in the total data product list.
-        found_data = False
+        # there is actually nothing to be done for the visit, except write out an empty manifest file.
+        # Check every item in the total data product list.
         for total_item in total_obj_list:
+            # Indicator of viable (e.g., not spectroscopic, etc.) direct images for processing
             if total_item.edp_list and not found_data:
                 found_data = True
+            # Indicator of only Grism/Prism data found with no direct images, so no processing done.
+            # Leaving the no_data_trl variable and just not adding it to the product_list in case
+            # the requirement changes again to write out a trailer file in this instance.
             elif total_item.grism_edp_list:
                 no_data_trl = total_item.trl_filename
         if not found_data:
             log.warning("")
             log.warning("There are no viable direct images in any Total Data Product for this visit. No processing can be done.")
             log.warning("No SVM processing is done for the Grism/Prism data - no SVM output products are generated.")
-            product_list += [no_data_trl]
             sys.exit(0)
 
         # Update all of the product objects with their associated configuration information.
@@ -575,7 +581,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
 
             # Need to delete the Ramp filter Exposure objects from the *Product lists as
             # these images should not be processed beyond the alignment to Gaia (run_align_to_gaia).
-            ramp_product_list = []
             _ = delete_ramp_exposures(total_item.fdp_list, 'FILTER')
             ramp_product_list = delete_ramp_exposures(total_item.edp_list, 'EXPOSURE')
             product_list += ramp_product_list
@@ -585,7 +590,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             # appropriate to be an 'a priori' or the pipeline default (fallback) solution.  Note: there
             # is no need to delete the Grism/Prism lists after the WCS update as the Grism/Prism
             # exposures are stored in an list ignored by a majority of the processing.
-            grism_product_list = []
             if total_item.grism_edp_list and total_item.edp_list:
                 grism_product_list = update_wcs_in_visit(total_item)
                 product_list += grism_product_list
@@ -701,7 +705,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         # Append total trailer file (from astrodrizzle) to all total log files
         if total_obj_list:
             for tot_obj in total_obj_list:
-                proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
+                if found_data:
+                    proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
                 if tot_obj.edp_list:
                     # Update DRIZPARS keyword value with new logfile name in ALL drizzle products
                     tot_obj.update_drizpars()
