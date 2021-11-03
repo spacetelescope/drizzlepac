@@ -547,11 +547,21 @@ def run_align_to_gaia(total_obj_list, custom_limits=None, log_level=logutil.logg
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def _get_envvar_switch(envvar_name):
+def _get_envvar_switch(envvar_name, default=None):
     """
-    This private routine interprets the environment variable, SVM_QUALITY_TESTING,
-    if specified.  NOTE: This is a copy of the routine in runastrodriz.py.  This
-    code should be put in a common place.
+    This private routine interprets any environment variable, such as SVM_QUALITY_TESTING.
+
+    PARAMETERS
+    -----------
+    envvar_name : str
+        name of environment variable to be interpreted
+
+    default : str or None
+        Value to be used in case environment variable was not defined or set.
+
+    .. note :
+    This is a copy of the routine in hapsequencer.py.  This code should be put in a common place.
+
     """
     if envvar_name in os.environ:
         val = os.environ[envvar_name].lower()
@@ -561,6 +571,6 @@ def _get_envvar_switch(envvar_name):
             raise ValueError(msg)
         switch_val = envvar_bool_dict[val]
     else:
-        switch_val = None
+        switch_val = envvar_bool_dict[default] if default else None
 
     return switch_val
