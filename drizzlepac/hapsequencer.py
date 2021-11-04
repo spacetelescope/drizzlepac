@@ -266,18 +266,6 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 # all catalogs.
                 # This requires collating results for each type of catalog from all filter products.
                 for cat_type in filter_product_catalogs.catalogs.keys():
-                    catalog_mask = filter_product_catalogs.catalogs[cat_type].source_cat['Flags'] > flag_trim_value
-                    if source_mask[cat_type] is None:
-                        source_mask[cat_type] = catalog_mask
-                    else:
-                        # Combine masks for all filters for this catalog type
-                        source_mask[cat_type] = np.bitwise_or(source_mask[cat_type], catalog_mask)
-
-                    # Trim based on user-specified/default flag limit 'flag_trim_value' specified in parameter file
-                    trimmed_rows = np.where(source_mask[cat_type])[0].tolist()
-                    filter_product_catalogs.catalogs[cat_type].source_cat.remove_rows(trimmed_rows)
-                    filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat.remove_rows(trimmed_rows)
-
                     subset_columns_dict[cat_type] = {}
                     subset_columns_dict[cat_type]['subset'] = \
                         filter_product_catalogs.catalogs[cat_type].subset_filter_source_cat
@@ -292,7 +280,6 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             # rows which contain empty strings (masked values) for *all* measurements for *all*
             # of the filter catalogs.
             for cat_type in total_product_catalogs.catalogs.keys():
-                good_rows_index = []
                 if cat_type == 'aperture':
                     all_columns = total_product_catalogs.catalogs[cat_type].sources.colnames
                     table_filled = total_product_catalogs.catalogs[cat_type].sources.filled(-9999.9)
@@ -301,11 +288,15 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                     table_filled = total_product_catalogs.catalogs[cat_type].source_cat.filled(-9999.9)
                 flag_columns = [colname for colname in all_columns if "Flags_" in colname]
                 filled_flag_columns = table_filled[flag_columns]
-                for i, trow in enumerate(filled_flag_columns):
-                    for tcol in trow:
-                        if tcol != -9999:
-                            good_rows_index.append(i)
-                            break
+
+                # work out what rows have flag values > flag_limit in ALL flag columns
+                flag_bitmasks = [np.logical_or(filled_flag_columns[col] > flag_trim_value,
+                                               np.isclose(filled_flag_columns[col], -9999.9))
+                                 for col in filled_flag_columns.colnames]
+                flag_mask = np.logical_and.reduce(flag_bitmasks)
+                # Get indices of all good rows
+                good_rows_index = np.where(flag_mask == False)[0]
+
                 if cat_type == 'aperture':
                     total_product_catalogs.catalogs[cat_type].sources = total_product_catalogs.catalogs[cat_type].sources[good_rows_index]
                 else:
@@ -511,8 +502,12 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
     # Start by reading in any environment variable related to catalog generation that has been set
     cat_switches = {sw: _get_envvar_switch(sw, default=envvar_cat_svm[sw]) for sw in envvar_cat_svm}
 
+    # Since these are used in the finally block, make sure they are initialized
     total_obj_list = []
+    grism_product_list = []
+    ramp_product_list = []
     manifest_name = ""
+    found_data = False
     try:
         # Parse the poller file and generate the the obs_info_dict, as well as the total detection
         # product lists which contain the ExposureProduct, FilterProduct, and TotalProduct objects
@@ -537,19 +532,21 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
 
         # It is possible the total_obj_list output from the poller_utils contains only Grism/Prism
         # data and no direct images, so no further processing should be done.  If this is the case,
-        # there is actually nothing to be done for the visit, except write out a manifest and
-        # a log file.  Check every item in the total data product list.
-        found_data = False
+        # there is actually nothing to be done for the visit, except write out an empty manifest file.
+        # Check every item in the total data product list.
         for total_item in total_obj_list:
+            # Indicator of viable (e.g., not spectroscopic, etc.) direct images for processing
             if total_item.edp_list and not found_data:
                 found_data = True
+            # Indicator of only Grism/Prism data found with no direct images, so no processing done.
+            # Leaving the no_data_trl variable and just not adding it to the product_list in case
+            # the requirement changes again to write out a trailer file in this instance.
             elif total_item.grism_edp_list:
                 no_data_trl = total_item.trl_filename
         if not found_data:
             log.warning("")
             log.warning("There are no viable direct images in any Total Data Product for this visit. No processing can be done.")
             log.warning("No SVM processing is done for the Grism/Prism data - no SVM output products are generated.")
-            product_list += [no_data_trl]
             sys.exit(0)
 
         # Update all of the product objects with their associated configuration information.
@@ -584,7 +581,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
 
             # Need to delete the Ramp filter Exposure objects from the *Product lists as
             # these images should not be processed beyond the alignment to Gaia (run_align_to_gaia).
-            ramp_product_list = []
             _ = delete_ramp_exposures(total_item.fdp_list, 'FILTER')
             ramp_product_list = delete_ramp_exposures(total_item.edp_list, 'EXPOSURE')
             product_list += ramp_product_list
@@ -594,7 +590,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             # appropriate to be an 'a priori' or the pipeline default (fallback) solution.  Note: there
             # is no need to delete the Grism/Prism lists after the WCS update as the Grism/Prism
             # exposures are stored in an list ignored by a majority of the processing.
-            grism_product_list = []
             if total_item.grism_edp_list and total_item.edp_list:
                 grism_product_list = update_wcs_in_visit(total_item)
                 product_list += grism_product_list
@@ -660,6 +655,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             # first column of the first row is needed.  It is desired to use the contents of the
             # FITS header keywords INSTRUME and ROOTNAME to use/parse for necessary information.
             # co = close out
+            h0 = None
             if type(input_filename) == str:
                 co_filename= ascii.read(input_filename, format='no_header')["col1"][0]
                 h0 = fits.getheader(co_filename)
@@ -668,21 +664,23 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             elif type(input_filename) == list:
                 h0 = fits.getheader(input_filename[0])
 
-            co_inst = h0["INSTRUME"].lower()
-            co_root = h0["ROOTNAME"].lower()
-            tokens_tuple = (co_inst, co_root[1:4], co_root[4:6], "manifest.txt") 
-            manifest_name = "_".join(tokens_tuple)
+            if h0:
+                co_inst = h0["INSTRUME"].lower()
+                co_root = h0["ROOTNAME"].lower()
+                tokens_tuple = (co_inst, co_root[1:4], co_root[4:6], "manifest.txt") 
+                manifest_name = "_".join(tokens_tuple)
 
             # Problem case - just give it the base name
             if type(input_filename) != str and type(input_filename) != list:
                 manifest_name = "manifest.txt"
 
-        # Write out manifest file listing all products generated during processing
-        log.info("Creating manifest file {}.".format(manifest_name))
-        log.info("  The manifest contains the names of products generated during processing.")
-        with open(manifest_name, mode='w') as catfile:
-            if total_obj_list:
-                [catfile.write("{}\n".format(name)) for name in product_list]
+        if manifest_name and manifest_name != "manifest.txt":
+            # Write out manifest file listing all products generated during processing
+            log.info("Creating manifest file {}.".format(manifest_name))
+            log.info("  The manifest contains the names of products generated during processing.")
+            with open(manifest_name, mode='w') as catfile:
+                if total_obj_list:
+                    [catfile.write("{}\n".format(name)) for name in product_list]
 
         end_dt = datetime.datetime.now()
         log.info('Processing completed at {}'.format(str(end_dt)))
@@ -707,7 +705,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         # Append total trailer file (from astrodrizzle) to all total log files
         if total_obj_list:
             for tot_obj in total_obj_list:
-                proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
+                if found_data:
+                    proc_utils.append_trl_file(tot_obj.trl_filename, logname, clean=False)
                 if tot_obj.edp_list:
                     # Update DRIZPARS keyword value with new logfile name in ALL drizzle products
                     tot_obj.update_drizpars()
