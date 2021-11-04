@@ -7,6 +7,7 @@ NOTE: daostarfinder coords are 0-indexed."""
 
 # Standard library imports
 import argparse
+from datetime import datetime
 import glob
 import os
 import pdb
@@ -18,6 +19,7 @@ import sys
 from astropy.io import fits
 from astropy.coordinates import SkyCoord
 from astropy.table import Column, Table
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy import ndimage
 
@@ -37,7 +39,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 # ============================================================================================================
 
-def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=logutil.logging.INFO, make_plots=False):
+def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=logutil.logging.INFO, plot_output_dest="none"):
     """ Statistically quantify quality of GAIA MVM alignment
 
     Parameters
@@ -56,14 +58,20 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
         The desired level of verboseness in the log statements displayed on the screen and written to the
         .log file. Default value is 'INFO'.
 
-    make_plots : bool, optional
-        Generate histogram and vector plots? Default value is logical 'False'.
+    plot_output_dest : str, optional
+        Destination to direct plots, 'screen' simply displays them to the screen. 'file' writes the plots and
+        statistics to a single multi-page .pdf file, and 'none' option turns off all plot generation. Default
+        value is "none".
 
     Returns
     -------
     Nothing!
     """
     log.setLevel(log_level)
+    if plot_output_dest not in ['file', 'none', 'screen']:
+        errmsg = "'{}' is not a valid input for argument 'plot_output_dest'. Valid inputs are 'file', 'none', or 'screen'.".format(plot_output_dest)
+        log.error(errmsg)
+        raise ValueError(errmsg)
     # 0: read in flc/flt fits files from user-specified fits file
     with open(flcflt_list, mode='r') as imgfile:
         imglist = imgfile.readlines()
@@ -78,7 +86,8 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     # 2b: Remove gaia sources outside footprint of input flc/flt images, add X and Y coord columns
     mosaic_hdu = fits.open(mosaic_imgname)
     drc_wht_array = np.zeros_like(mosaic_hdu["WHT"].data)
-    drc_list = glob.glob("hst*{}*drc.fits".format(fits.getval(imglist[0], "FILENAME")[:6]))
+    ippss = fits.getval(imglist[0], "FILENAME")[-17:-11]
+    drc_list = glob.glob("hst*{}*drc.fits".format(ippss))
     for wht_ctr, item in zip(range(0, len(drc_list)), drc_list):
         log.debug("{}/{}: Adding weight image from {} to combined weight image".format(wht_ctr + 1, len(drc_list), item))
         drc_hdu = fits.open(item)
@@ -100,10 +109,13 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     dao_mask_array = np.where(drc_wht_array == 0, 1, 0)  # create mask image for source detection. Pixels with value of "0" are to processed, and those with value of "1" will be omitted from processing.
     xy_gaia_coords = Table([gaia_table['X'].data.astype(np.int64), gaia_table['Y'].data.astype(np.int64)], names=('x_peak', 'y_peak'))
     # the below line computes a FWHM value based on detected sources (not the gaia sources). The FWHM value doesn't yeild a lot of sources.
-    # mpeaks, mfwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array), def_fwhm=3.0, box_size=7, block_size=(1024, 1024), diagnostic_mode=False)
-    mfwhm = 25.0
-    daofind = decutils.UserStarFinder(fwhm=mfwhm, threshold=0.0, coords=xy_gaia_coords)
+    mpeaks, mfwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array), def_fwhm=3.0, box_size=7, block_size=(1024, 1024), diagnostic_mode=False)
+    # mfwhm = 25.0
+    log.debug("SETUP DAOFIND")
+    daofind = decutils.UserStarFinder(fwhm=mfwhm, threshold=0.0, coords=xy_gaia_coords, sharplo=0.4, sharphi=0.9)
+    log.debug("RUN DAOFIND")
     detection_table = daofind(mosaic_hdu["SCI"].data, mask=dao_mask_array)
+    log.debug("DAOFIND RUN COMPLETE!")
     detection_table.rename_column('xcentroid', 'X')
     detection_table.rename_column('ycentroid', 'Y')
     n_detection = len(detection_table)
@@ -151,26 +163,31 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
         csl.check_match_quality(matched_values_dict['X'], matched_values_dict['Y'])
 
     # 6: compute and report statistics based on X, Y and RA, DEC position residuals.
-    if make_plots:
-        plot_gen = "screen"
-    else:
-        plot_gen = "none"
+    if plot_output_dest == "file":
+        pdf_file_list = []
+    plotfile_prefix = "{}_gaia".format(ippss)
     test_result_dict = {}
     # Some of what's needed here can be pulled from svm_quality_analysis.characterize_gaia_distribution() and also from compare_sourcelists() or comparision_utils.
     # 6a: compute statistics on X residuals of matched sources
-    rt_status, pdf_files = csl.computeLinearStats(matched_values_dict['X'], 0.1, "Pixels", plot_gen,
-                                                  "X Axis Residuals", "GMD", ['GAIA', 'DETECTION'],
+    rt_status, pdf_files = csl.computeLinearStats(matched_values_dict['X'], 0.1, "Pixels", plot_output_dest,
+                                                  "X Axis Residuals", plotfile_prefix, ['GAIA', 'DETECTION'],
                                                   True, log_level=log_level)
     test_result_dict["X Axis Residuals"] = rt_status
+    if plot_output_dest == "file":
+        pdf_file_list += pdf_files
     # 6b: compute statistics on Y residuals of matched sources
-    rt_status, pdf_files = csl.computeLinearStats(matched_values_dict['Y'], 0.1, "Pixels", plot_gen,
-                                                  "Y Axis Residuals", "GMD", ['GAIA', 'DETECTION'],
+    rt_status, pdf_files = csl.computeLinearStats(matched_values_dict['Y'], 0.1, "Pixels", plot_output_dest,
+                                                  "Y Axis Residuals", plotfile_prefix, ['GAIA', 'DETECTION'],
                                                   True, log_level=log_level)
     test_result_dict["Y Axis Residuals"] = rt_status
-    if plot_gen in ['screen', 'file']:
-        csl.makeVectorPlot(matched_values_dict['X'], matched_values_dict['Y'], mosaic_wcs.pscale, plot_gen,
-                           "GMD", ['GAIA', 'DETECTION'])
-
+    if plot_output_dest == "file":
+        pdf_file_list += pdf_files
+    # 6c: optionally generate X Y residuals vector plot
+    if plot_output_dest in ['screen', 'file']:
+        pdf_files = csl.makeVectorPlot(matched_values_dict['X'], matched_values_dict['Y'], mosaic_wcs.pscale,
+                                       plot_output_dest, plotfile_prefix, ['GAIA', 'DETECTION'])
+        if plot_output_dest == "file":
+            pdf_file_list += [pdf_files]
     # 6d: compute statistics on RA/DEC residuals of matched sources
     # convert reference and comparison RA/Dec values into SkyCoord objects
     img_coord_sys = mosaic_hdu['SCI'].header['radesys'].lower()
@@ -184,14 +201,15 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
         matched_values_comp = matched_values_comp.icrs
 
     matched_values = [matched_values_ref, matched_values_comp]
-    rt_status, pdf_files = csl.computeLinearStats(matched_values, 0.1, "arcseconds", plot_gen,
-                                                  "On-Sky Separation", "GMD", ['GAIA', 'DETECTION'],
+    rt_status, pdf_files = csl.computeLinearStats(matched_values, 0.1, "arcseconds", plot_output_dest,
+                                                  "On-Sky Separation", plotfile_prefix, ['GAIA', 'DETECTION'],
                                                   True, log_level=log_level)
     test_result_dict["On-Sky Separation"] = rt_status
+    if plot_output_dest == "file":
+        pdf_file_list += pdf_files
 
     # 7: Report results
     log_output_string_list = []
-
     lenList = []
     colTitles = ["X Axis Residuals", "Y Axis Residuals", "On-Sky Separation"]
     for item in colTitles:
@@ -213,6 +231,35 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     log_output_string_list.append("OVERALL TEST STATUS{}{}".format("." * (totalPaddedSize - 19), overallStatus))
     for log_line in log_output_string_list:
         log.info(log_line)
+
+
+    if plot_output_dest == "file":
+        # generate final overall summary pdf page
+        stat_summary_file_name = "stats_summary.pdf"
+        if plotfile_prefix is not None:
+            stat_summary_file_name = "{}_{}".format(plotfile_prefix, stat_summary_file_name)
+        fig = plt.figure(figsize=(11, 8.5))
+        # fig.text(0.5, 0.87, fullPlotTitle[:-1] + " statistics", transform=fig.transFigure, size=12, ha="center")
+        stat_text_blob = ""
+        for log_line in log_output_string_list:
+            if log_line != "\n":
+                stat_text_blob += log_line + "\n"
+            else:
+                stat_text_blob += "\n"
+
+        stat_text_blob += "\n\nGenerated {}\n".format(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
+        stat_text_blob = csl.wrap_long_filenames_on_stats_page(stat_text_blob, ['GAIA', 'DETECTION'])
+        fig.text(0.5, 0.5, stat_text_blob, transform=fig.transFigure, size=10, ha="center", va="center",
+                 multialignment="left", family="monospace")
+        fig.savefig(stat_summary_file_name)
+        plt.close()
+        pdf_file_list.append(stat_summary_file_name)
+        # combine all individual plot files into a single multiple-page pdf file
+        final_plot_filename = "residual_plots.pdf"
+        if plotfile_prefix:
+            final_plot_filename = "{}_{}".format(plotfile_prefix, final_plot_filename)
+        csl.pdf_merger(final_plot_filename, pdf_file_list)
+        log.info("Sourcelist comparison plots saved to file {}.".format(final_plot_filename))
 # ============================================================================================================
 
 def array2fits(filename, ra_data,  log_level=logutil.logging.INFO, verbose=True):
@@ -314,10 +361,11 @@ if __name__ == "__main__":
                         'Specifying "critical" will only record/display "critical" log statements, and '
                         'specifying "error" will record/display both "error" and "critical" log statements, '
                         'and so on.')
-    parser.add_argument('-p', '--make_plots', required=False, action='store_true',
+    parser.add_argument('-p', '--plot_output_dest', required=False, default='none',
+                        choices=['file', 'none', 'screen'],
                         help='If this option is turned on, histogram and vector plots will be created.')
     input_args = parser.parse_args()
 
     # Perform analysis
     perform(input_args.mosaic_imgname, input_args.flcflt_list, diagnostic_mode=input_args.diagnostic_mode,
-            log_level=log_level_dict[input_args.log_level], make_plots=input_args.make_plots)
+            log_level=log_level_dict[input_args.log_level], plot_output_dest=input_args.plot_output_dest)
