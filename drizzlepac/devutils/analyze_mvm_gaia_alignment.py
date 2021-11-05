@@ -37,6 +37,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 # ============================================================================================================
 
+
 def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=logutil.logging.INFO, plot_output_dest="none"):
     """ Statistically quantify quality of GAIA MVM alignment
 
@@ -73,7 +74,8 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     # 0: read in flc/flt fits files from user-specified fits file
     with open(flcflt_list, mode='r') as imgfile:
         imglist = imgfile.readlines()
-    for x in range(0, len(imglist)): imglist[x] = imglist[x].strip()
+    for x in range(0, len(imglist)):
+        imglist[x] = imglist[x].strip()
 
     # 1: generate WCS obj. for custom mosaic image
     mosaic_wcs = stwcs.wcsutil.HSTWCS(mosaic_imgname, ext=1)
@@ -84,7 +86,7 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
 
     # 2b: Remove gaia sources outside footprint of input flc/flt images, add X and Y coord columns
     mosaic_hdu = fits.open(mosaic_imgname)
-    x, y = mosaic_wcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 0) # TODO: verify origin value should be 0, rather than 1.
+    x, y = mosaic_wcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 0)
     x_col = Column(name="X", data=x, dtype=np.float64)
     y_col = Column(name="Y", data=y, dtype=np.float64)
     gaia_table.add_columns([x_col, y_col], indexes=[0, 0])
@@ -100,21 +102,22 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     if diagnostic_mode:
         write_region_file("gaia_edr3_trimmed.reg", gaia_table, ['RA', 'DEC'], log_level=log_level)
 
-    # 3: feed x, y coords into photutils.detection.daostarfinder() as initial guesses to get actual centroid positions of gaia sources
-    dao_mask_array = np.where(footprint.total_mask == 0, 1, 0)  # create mask image for source detection. Pixels with value of "0" are to processed, and those with value of "1" will be omitted from processing.
+    # 3: feed x, y coords into photutils.detection.daostarfinder() as initial guesses to get actual centroid
+    # positions of gaia sources
+    # create mask image for source detection. Pixels with value of "0" are to processed, and those with value
+    # of "1" will be omitted from processing.
+    dao_mask_array = np.where(footprint.total_mask == 0, 1, 0)
     xy_gaia_coords = Table([gaia_table['X'].data.astype(np.int64),
                             gaia_table['Y'].data.astype(np.int64)], names=('x_peak', 'y_peak'))
-    # the below line computes a FWHM value based on detected sources (not the gaia sources). The FWHM value doesn't yeild a lot of sources.
+    # the below line computes a FWHM value based on detected sources (not the gaia sources). The FWHM value
+    # doesn't kick out a lot of sources.
     mpeaks, mfwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array),
                                                 def_fwhm=3.0, box_size=7, block_size=(1024, 1024),
                                                 diagnostic_mode=False)
     # mfwhm = 25.0 # If it fails due to a lack of sources, use mfwhm = 25.0 instead.
-    log.debug("SETUP DAOFIND")
     daofind = decutils.UserStarFinder(fwhm=mfwhm, threshold=0.0, coords=xy_gaia_coords,
                                       sharplo=0.4, sharphi=0.9)
-    log.debug("RUN DAOFIND")
     detection_table = daofind(mosaic_hdu["SCI"].data, mask=dao_mask_array)
-    log.debug("DAOFIND RUN COMPLETE!")
     detection_table.rename_column('xcentroid', 'X')
     detection_table.rename_column('ycentroid', 'Y')
     n_detection = len(detection_table)
@@ -124,7 +127,7 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     log.info("{}% of GAIA sources detected".format(pct_detection))
 
     # 4: convert daostarfinder output x, y centroid positions to RA, DEC using step 1 WCS info
-    ra, dec = mosaic_wcs.all_pix2world(detection_table['X'], detection_table['Y'], 0)  # TODO: verify origin value should be 0, rather than 1.
+    ra, dec = mosaic_wcs.all_pix2world(detection_table['X'], detection_table['Y'], 0)
     ra_col = Column(name="RA", data=ra, dtype=np.float64)
     dec_col = Column(name="DEC", data=dec, dtype=np.float64)
     detection_table.add_columns([ra_col, dec_col], indexes=[3, 3])
@@ -166,7 +169,7 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
         pdf_file_list = []
     plotfile_prefix = "{}_gaia".format(fits.getval(imglist[0], "FILENAME")[-17:-11])
     test_result_dict = {}
-    # Some of what's needed here can be pulled from svm_quality_analysis.characterize_gaia_distribution() and also from compare_sourcelists() or comparision_utils.
+
     # 6a: compute statistics on X residuals of matched sources
     rt_status, pdf_files = csl.computeLinearStats(matched_values_dict['X'], 0.1, "Pixels", plot_output_dest,
                                                   "X Axis Residuals", plotfile_prefix, ['GAIA', 'DETECTION'],
@@ -174,6 +177,7 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     test_result_dict["X Axis Residuals"] = rt_status
     if plot_output_dest == "file":
         pdf_file_list += pdf_files
+
     # 6b: compute statistics on Y residuals of matched sources
     rt_status, pdf_files = csl.computeLinearStats(matched_values_dict['Y'], 0.1, "Pixels", plot_output_dest,
                                                   "Y Axis Residuals", plotfile_prefix, ['GAIA', 'DETECTION'],
@@ -193,7 +197,7 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     matched_values_ref = SkyCoord(matched_values_dict['RA'][0, :], matched_values_dict['DEC'][0, :],
                                   frame=img_coord_sys, unit="deg")
     matched_values_comp = SkyCoord(matched_values_dict['RA'][1, :], matched_values_dict['DEC'][1, :],
-                                  frame=img_coord_sys, unit="deg")
+                                   frame=img_coord_sys, unit="deg")
     # convert to ICRS coord system if need be
     if img_coord_sys != "icrs":
         matched_values_ref = matched_values_ref.icrs
@@ -209,28 +213,28 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
 
     # 7: Report results
     log_output_string_list = []
-    lenList = []
-    colTitles = ["X Axis Residuals", "Y Axis Residuals", "On-Sky Separation"]
-    for item in colTitles:
-        lenList.append(len(item))
-    totalPaddedSize = max(lenList) + 3
-    log_output_string_list.append("{}{}".format(" " * 35, "REGRESSION TESTING SUMMARY"))
-    log_output_string_list.append("-" * (70 + totalPaddedSize))
-    log_output_string_list.append("{}{}".format(" " * (totalPaddedSize + 46), "% within     % beyond"))
+    len_list = []
+    col_titles = ["X Axis Residuals", "Y Axis Residuals", "On-Sky Separation"]
+    for item in col_titles:
+        len_list.append(len(item))
+    total_padded_size = max(len_list) + 3
+    log_output_string_list.append("{}{}".format(" " * 36, "SUMMARY OF RESULTS"))
+    log_output_string_list.append("-" * (70 + total_padded_size))
+    log_output_string_list.append("{}{}".format(" " * (total_padded_size + 46), "% within     % beyond"))
     log_output_string_list.append(
         "COLUMN{}STATUS   MEAN        MEDIAN       STD DEV     3\u03C3 of mean   3\u03C3 of mean".format(
-            " " * (totalPaddedSize - 6)))
-    overallStatus = "OK"
-    for colTitle in colTitles:
+            " " * (total_padded_size - 6)))
+    overall_status = "OK"
+    for colTitle in col_titles:
         log_output_string_list.append(
-            "%s%s%s" % (colTitle, "." * (totalPaddedSize - len(colTitle)), test_result_dict[colTitle]))
+            "%s%s%s" % (colTitle, "." * (total_padded_size - len(colTitle)), test_result_dict[colTitle]))
         if not test_result_dict[colTitle].startswith("OK"):
-            overallStatus = "FAILURE"
-    log_output_string_list.append("-" * (70 + totalPaddedSize))
-    log_output_string_list.append("OVERALL TEST STATUS{}{}".format("." * (totalPaddedSize - 19), overallStatus))
+            overall_status = "FAILURE"
+    log_output_string_list.append("-" * (70 + total_padded_size))
+    log_output_string_list.append("OVERALL TEST STATUS{}{}".format("." * (total_padded_size - 19),
+                                                                   overall_status))
     for log_line in log_output_string_list:
         log.info(log_line)
-
 
     if plot_output_dest == "file":
         # generate final overall summary pdf page
@@ -238,7 +242,7 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
         if plotfile_prefix is not None:
             stat_summary_file_name = "{}_{}".format(plotfile_prefix, stat_summary_file_name)
         fig = plt.figure(figsize=(11, 8.5))
-        # fig.text(0.5, 0.87, fullPlotTitle[:-1] + " statistics", transform=fig.transFigure, size=12, ha="center")
+        fig.text(0.5, 0.87, "Summary of Results", transform=fig.transFigure, size=12, ha="center")
         stat_text_blob = ""
         for log_line in log_output_string_list:
             if log_line != "\n":
@@ -261,6 +265,7 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
         log.info("Sourcelist comparison plots saved to file {}.".format(final_plot_filename))
 # ============================================================================================================
 
+
 def write_region_file(filename, table_data, colnames, apply_zero_index_correction=False, log_level=logutil.logging.INFO, verbose=True):
     """Write out columns from user-specified table to ds9 region file
 
@@ -271,6 +276,9 @@ def write_region_file(filename, table_data, colnames, apply_zero_index_correctio
 
     table_data : astropy.Table
         Table continaing values to be written out
+
+    colnames : list
+        list of the columns from table_data to write out
 
     apply_zero_index_correction : Bool, optional
         Add 1 to all X and Y values to make them 1-indexed if they were initially zero indexed. Default
