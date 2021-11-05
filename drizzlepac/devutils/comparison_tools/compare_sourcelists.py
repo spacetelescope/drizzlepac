@@ -428,6 +428,10 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
     verbose : bool
         display verbose output?
 
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'INFO'.
+
     Returns
     -------
     regTestStatus : str
