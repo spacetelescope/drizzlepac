@@ -8,9 +8,7 @@ NOTE: daostarfinder coords are 0-indexed."""
 # Standard library imports
 import argparse
 from datetime import datetime
-import glob
 import os
-import pdb
 import random
 import string
 import sys
@@ -21,11 +19,11 @@ from astropy.coordinates import SkyCoord
 from astropy.table import Column, Table
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import ndimage
 
 # Local application imports
 from drizzlepac.devutils.comparison_tools import compare_sourcelists as csl
 from drizzlepac.haputils import astrometric_utils as amutils
+from drizzlepac.haputils import cell_utils
 from drizzlepac.haputils import comparison_utils as cu
 from drizzlepac.haputils import deconvolve_utils as decutils
 import stwcs
@@ -81,38 +79,39 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     mosaic_wcs = stwcs.wcsutil.HSTWCS(mosaic_imgname, ext=1)
 
     # 2a: generate table of all gaia sources in frame
-    gaia_table = amutils.create_astrometric_catalog(imglist, existing_wcs=mosaic_wcs, catalog='GAIAedr3', use_footprint=True)
+    gaia_table = amutils.create_astrometric_catalog(imglist, existing_wcs=mosaic_wcs,
+                                                    catalog='GAIAedr3', use_footprint=True)
 
     # 2b: Remove gaia sources outside footprint of input flc/flt images, add X and Y coord columns
     mosaic_hdu = fits.open(mosaic_imgname)
-    drc_wht_array = np.zeros_like(mosaic_hdu["WHT"].data)
-    ippss = fits.getval(imglist[0], "FILENAME")[-17:-11]
-    drc_list = glob.glob("hst*{}*drc.fits".format(ippss))
-    for wht_ctr, item in zip(range(0, len(drc_list)), drc_list):
-        log.debug("{}/{}: Adding weight image from {} to combined weight image".format(wht_ctr + 1, len(drc_list), item))
-        drc_hdu = fits.open(item)
-        drc_wht_array += drc_hdu["WHT"].data
-        drc_hdu.close()
     x, y = mosaic_wcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 0) # TODO: verify origin value should be 0, rather than 1.
     x_col = Column(name="X", data=x, dtype=np.float64)
     y_col = Column(name="Y", data=y, dtype=np.float64)
     gaia_table.add_columns([x_col, y_col], indexes=[0, 0])
-    gaia_mask_array = np.where(drc_wht_array == 0, np.nan, drc_wht_array)
+    footprint = cell_utils.SkyFootprint(meta_wcs=mosaic_wcs)
+    footprint.build(imglist)
+    gaia_mask_array = np.where(footprint.total_mask == 0, np.nan, footprint.total_mask)
     if diagnostic_mode:
-        array2fits("drc_wht_image.fits", drc_wht_array, log_level=log_level)
+        out_mask_fitsname = "gaia_mask_array.fits"
+        foo = footprint.get_footprint_hdu(filename=out_mask_fitsname)
+        log.info("Wrote " + out_mask_fitsname)
     mask = amutils.within_footprint(gaia_mask_array, mosaic_wcs, x, y)
     gaia_table = gaia_table[mask]
     if diagnostic_mode:
         write_region_file("gaia_edr3_trimmed.reg", gaia_table, ['RA', 'DEC'], log_level=log_level)
 
     # 3: feed x, y coords into photutils.detection.daostarfinder() as initial guesses to get actual centroid positions of gaia sources
-    dao_mask_array = np.where(drc_wht_array == 0, 1, 0)  # create mask image for source detection. Pixels with value of "0" are to processed, and those with value of "1" will be omitted from processing.
-    xy_gaia_coords = Table([gaia_table['X'].data.astype(np.int64), gaia_table['Y'].data.astype(np.int64)], names=('x_peak', 'y_peak'))
+    dao_mask_array = np.where(footprint.total_mask == 0, 1, 0)  # create mask image for source detection. Pixels with value of "0" are to processed, and those with value of "1" will be omitted from processing.
+    xy_gaia_coords = Table([gaia_table['X'].data.astype(np.int64),
+                            gaia_table['Y'].data.astype(np.int64)], names=('x_peak', 'y_peak'))
     # the below line computes a FWHM value based on detected sources (not the gaia sources). The FWHM value doesn't yeild a lot of sources.
-    mpeaks, mfwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array), def_fwhm=3.0, box_size=7, block_size=(1024, 1024), diagnostic_mode=False)
-    # mfwhm = 25.0
+    mpeaks, mfwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array),
+                                                def_fwhm=3.0, box_size=7, block_size=(1024, 1024),
+                                                diagnostic_mode=False)
+    # mfwhm = 25.0 # If it fails due to a lack of sources, use mfwhm = 25.0 instead.
     log.debug("SETUP DAOFIND")
-    daofind = decutils.UserStarFinder(fwhm=mfwhm, threshold=0.0, coords=xy_gaia_coords, sharplo=0.4, sharphi=0.9)
+    daofind = decutils.UserStarFinder(fwhm=mfwhm, threshold=0.0, coords=xy_gaia_coords,
+                                      sharplo=0.4, sharphi=0.9)
     log.debug("RUN DAOFIND")
     detection_table = daofind(mosaic_hdu["SCI"].data, mask=dao_mask_array)
     log.debug("DAOFIND RUN COMPLETE!")
@@ -165,7 +164,7 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     # 6: compute and report statistics based on X, Y and RA, DEC position residuals.
     if plot_output_dest == "file":
         pdf_file_list = []
-    plotfile_prefix = "{}_gaia".format(ippss)
+    plotfile_prefix = "{}_gaia".format(fits.getval(imglist[0], "FILENAME")[-17:-11])
     test_result_dict = {}
     # Some of what's needed here can be pulled from svm_quality_analysis.characterize_gaia_distribution() and also from compare_sourcelists() or comparision_utils.
     # 6a: compute statistics on X residuals of matched sources
@@ -262,36 +261,6 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
         log.info("Sourcelist comparison plots saved to file {}.".format(final_plot_filename))
 # ============================================================================================================
 
-def array2fits(filename, ra_data,  log_level=logutil.logging.INFO, verbose=True):
-    """write input data to specified fits filename
-
-    Parameters
-    ----------
-    filename : str
-        name of the fits file to create
-
-    ra_data : numpy.ndarray
-        array data to write out
-
-    log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the
-        .log file. Default value is 'INFO'.
-
-    verbose : Bool, optional
-        Print confirmation? Default value is Boolean 'False'.
-    Returns
-    -------
-    Nothing
-    """
-    log.setLevel(log_level)
-    out_hdu = fits.PrimaryHDU(ra_data)
-    output_hdu = fits.HDUList([out_hdu])
-    output_hdu.writeto(filename, overwrite=True)
-    if verbose and log_level <= 20:
-        log.info("Wrote " + filename)
-
-# ============================================================================================================
-
 def write_region_file(filename, table_data, colnames, apply_zero_index_correction=False, log_level=logutil.logging.INFO, verbose=True):
     """Write out columns from user-specified table to ds9 region file
 
@@ -363,7 +332,9 @@ if __name__ == "__main__":
                         'and so on.')
     parser.add_argument('-p', '--plot_output_dest', required=False, default='none',
                         choices=['file', 'none', 'screen'],
-                        help='If this option is turned on, histogram and vector plots will be created.')
+                        help='Destination to direct plots, "screen" simply displays them to the screen. '
+                        '"file" writes the plots and statistics to a single multi-page .pdf file, and "none" '
+                        'option turns off all plot generation. Default value is "none".')
     input_args = parser.parse_args()
 
     # Perform analysis
