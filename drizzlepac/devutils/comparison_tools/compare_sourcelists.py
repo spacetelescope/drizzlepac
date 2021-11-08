@@ -397,7 +397,7 @@ def computeFlagStats(matchedRA, max_diff, plotGen, plot_title, plotfile_prefix, 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
 def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, plotfile_prefix, catalog_names,
-                       verbose):
+                       verbose, log_level=logutil.logging.INFO):
     """Compute stats on the quantities with differences that can be computed with simple subtraction 
     (X, Y, RA, Dec, Flux, and Magnitude).
 
@@ -428,11 +428,16 @@ def computeLinearStats(matchedRA, max_diff, x_axis_units, plotGen, plot_title, p
     verbose : bool
         display verbose output?
 
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'INFO'.
+
     Returns
     -------
     regTestStatus : str
         overall test result and statistics
     """
+    log.setLevel(log_level)
     log.info(">>>>>> Comparison - reference sourcelist {} absolute differences <<<<<<".format(plot_title))
     if plot_title != "On-Sky Separation":
         # remove any "inf" or "nan" values in matchedRA.
