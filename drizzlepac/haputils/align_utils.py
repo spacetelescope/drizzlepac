@@ -660,7 +660,7 @@ class HAPImage:
         grown_sat_mask = ndimage.binary_dilation(sat_mask, iterations=5)
 
         # combine the two temporary DQ masks into a single composite DQ mask.
-        dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
+        dqmask = np.bitwise_and(non_sat_mask, grown_sat_mask)
 
         # astropy's code returned the opposite bitmask from what was originally
         # defined by stsci.tools own bitmask code.

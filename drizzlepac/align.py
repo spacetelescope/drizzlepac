@@ -30,11 +30,16 @@ __taskname__ = 'align'
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
-                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 __version__ = 0.0
 __version_date__ = '21-Aug-2019'
+
+def _init_logger():
+    log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
+                                format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+    return log
+
+log = _init_logger()
 
 # ----------------------------------------------------------------------------------------------------------
 
@@ -746,16 +751,20 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
         fit_status_dict[dict_key]['max_rms'] = max_rms_val
         fit_status_dict[dict_key]['num_matches'] = num_xmatches
 
-        if num_xmatches < align_pars['run_align']['mosaic_fitgeom_list'][fitgeom]:
+        if num_xmatches < align_pars['general']['MIN_FIT_MATCHES']:
+            overall_valid = False
             if catalogs_remaining:
                 log.warning(
                     "Not enough cross matches found between astrometric"
                     " catalog and sources found in {}".format(image_name))
-                overall_valid = False
                 continue
 
         # Compute correlation between input and GAIA magnitudes
-        if num_xmatches < max(0.1 * item.meta['num_ref_catalog'], 10):
+        # This check will only be performed when the fit may be uncertain
+        # due to less than 100 matches.
+        ref_cat_limit = min(1000, item.meta['num_ref_catalog'])
+        log.info("MAG CHECK REF_CAT_LIMIT: {}    XMATCHES: {}".format(ref_cat_limit, num_xmatches))
+        if num_xmatches < max(0.1 * ref_cat_limit, 10):
             cross_match_check = amutils.check_mag_corr([item])[0]
             log.info("Cross-match check: {} on {} ref sources".format(cross_match_check,
                                                                       item.meta['num_ref_catalog']))

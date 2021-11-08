@@ -180,7 +180,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     """ Run astrodrizzle on input file/ASN table
         using default values for astrodrizzle parameters.
     """
-    trlmsg = "{}: Calibration pipeline processing of {} started.\n".format(_getTime(), inFile)
+    init_time = time.time()
+    trlmsg = "{}: Calibration pipeline processing of {} started.\n".format(init_time, inFile)
     trlmsg += __trlmarker__
     trlmsg += "    drizzlepac version {}".format(drizzlepac.__version__)
     trlmsg += "    tweakwcs version {}".format(tweakwcs.__version__)
@@ -709,7 +710,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             pass
 
     # Append final timestamp to trailer file...
-    _final_msg = '%s: Finished processing %s \n' % (_getTime(), inFilename)
+    end_time = _getTime()
+    _delta_time = time.time() - init_time
+    _final_msg = '%s: Finished processing %s in %.2f seconds \n' % (end_time, inFilename, _delta_time)
     _final_msg += _timestamp('astrodrizzle completed ')
 
     _updateTrlFile(_trlfile, _final_msg)
